@@ -18,8 +18,6 @@ package jd.plugins;
 
 import java.io.File;
 import java.lang.reflect.Field;
-import java.util.logging.Level;
-
 import jd.controlling.JDLogger;
 import jd.nutils.Formatter;
 

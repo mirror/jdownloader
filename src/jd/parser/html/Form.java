@@ -473,6 +473,13 @@ public class Form extends Property {
                 return;
             }
         }
+        logger.warning("No exact match for submit found! Trying to find best match now!");
+        for (InputField ipf : this.inputfields) {
+            if (ipf.getType() != null && ipf.getValue() != null && ipf.getType().equalsIgnoreCase("submit") && ipf.getValue().contains(preferredSubmit)) {
+                this.preferredSubmit = ipf;
+                return;
+            }
+        }
         throw new IllegalArgumentException("No such Submitfield: " + preferredSubmit);
 
     }

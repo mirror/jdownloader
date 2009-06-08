@@ -1,6 +1,8 @@
 package jd.controlling;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 
 import jd.nutils.Formatter;
 
@@ -83,14 +85,10 @@ public class ByteBufferController {
         synchronized (bufferpool) {
             for (ByteBufferEntry entry : bufferpool) {
                 if (entry.size() >= size) {
-                    if (ret != null && ret.size() > entry.size()) {
-                        ret = entry;
-                    } else if (ret == null) ret = entry;
+                    ret = entry;
+                    bufferpool.remove(entry);
+                    return ret.getByteBufferEntry();
                 }
-            }
-            if (ret != null) {
-                bufferpool.remove(ret);
-                return ret.getByteBufferEntry();
             }
         }
         return null;
@@ -98,9 +96,12 @@ public class ByteBufferController {
 
     protected void putByteBufferEntry(ByteBufferEntry entry) {
         synchronized (bufferpool) {
-            if (!bufferpool.contains(entry)) {
-                bufferpool.add(entry);
-            }
+            if (!bufferpool.contains(entry)) bufferpool.add(entry);
+            Collections.sort(bufferpool, new Comparator<ByteBufferEntry>() {
+                public int compare(ByteBufferEntry a, ByteBufferEntry b) {
+                    return a.size() == b.size() ? 0 : a.size() > b.size() ? 1 : -1;
+                }
+            });
         }
     }
 }

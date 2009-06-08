@@ -81,6 +81,14 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
     public CountdownConfirmDialog(final JFrame owner, final String title, final int countdown, final boolean defaultResult, final int style, final String... msg) {
         super(owner);
         this.titleText = title;
+        final String finalmsg[];
+        if (msg == null || msg.length == 0) {
+            finalmsg = new String[] { "FIXME", "FIXME" };
+        } else if (msg.length == 1) {
+            finalmsg = new String[] { msg[0], "FIXME" };
+        } else {
+            finalmsg = new String[] { msg[0], msg[1] };
+        }
 
         if (title != null) this.setTitle(title);
 
@@ -129,12 +137,12 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
 
         if ((style & STYLE_NO_MSGLABLE) == 0) {
             if ((style & STYLE_MSGLABLE) != 0) {
-                htmlArea = new JLabel(msg[0]);
+                htmlArea = new JLabel(finalmsg[0]);
             } else {
                 htmlArea = new JTextPane();
                 ((JTextPane) htmlArea).setEditable(false);
                 ((JTextPane) htmlArea).setContentType("text/html");
-                ((JTextPane) htmlArea).setText(msg[0]);
+                ((JTextPane) htmlArea).setText(finalmsg[0]);
                 ((JTextPane) htmlArea).requestFocusInWindow();
                 ((JTextPane) htmlArea).addHyperlinkListener(this);
 
@@ -143,9 +151,9 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
         if ((style & STYLE_INPUTFIELD) != 0) {
             if (msg != null) {
                 if ((style & STYLE_NO_MSGLABLE) != 0) {
-                    inputField = new JTextField(msg[0]);
+                    inputField = new JTextField(finalmsg[0]);
                 } else if (msg.length > 1) {
-                    inputField = new JTextField(msg[1]);
+                    inputField = new JTextField(finalmsg[1]);
                 }
             }
             if (inputField == null) inputField = new JTextField();
@@ -181,7 +189,7 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
 
                 public void actionPerformed(ActionEvent e) {
                     JTextArea detailLable = new JTextArea();
-                    detailLable.setText(msg[1]);
+                    detailLable.setText(finalmsg[1]);
                     detailLable.setEditable(false);
 
                     JScrollPane sp = new JScrollPane(detailLable, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);

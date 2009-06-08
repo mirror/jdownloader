@@ -31,6 +31,7 @@ import java.lang.reflect.Constructor;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Locale;
@@ -384,9 +385,9 @@ public class Main {
             System.setProperty("com.apple.mrj.application.growbox.intrudes", "false");
             System.setProperty("apple.laf.useScreenMenuBar", "true");
             new MacOSController();
-            
+
             /*
-             * TODO: Pfade müssen nicht absolut angegeben werden. 
+             * TODO: Pfade müssen nicht absolut angegeben werden.
              */
             if (System.getProperty("java.version").startsWith("1.5")) {
                 File info15 = JDUtilities.getResourceFile("../../info_15.plist");
@@ -395,7 +396,7 @@ public class Main {
                     if (info.delete()) {
                         info15.renameTo(JDUtilities.getResourceFile("../../info.plist"));
                     }
-                }                
+                }
             }
         }
     }
@@ -518,36 +519,46 @@ public class Main {
      * @throws IOException
      */
     private void loadDynamics() throws IOException {
-        if (WebUpdater.PLUGIN_LIST == null) return;
-        URLClassLoader classLoader = new URLClassLoader(new URL[] { JDUtilities.getJDHomeDirectoryFromEnvironment().toURI().toURL(), JDUtilities.getResourceFile("java").toURI().toURL() }, Thread.currentThread().getContextClassLoader());
-
-        ArrayList<FileUpdate> filelist = new ArrayList<FileUpdate>();
         ArrayList<String> classes = new ArrayList<String>();
-        for (Entry<String, FileUpdate> entry : WebUpdater.PLUGIN_LIST.entrySet()) {
-            System.out.println("PLugins: " + entry.getKey());
-            if (entry.getKey().startsWith("/jd/dynamics/")) {
-                filelist.add(entry.getValue());
-                if (!entry.getKey().contains("$")) {
-                    classes.add(entry.getKey());
+        URLClassLoader classLoader = new URLClassLoader(new URL[] { JDUtilities.getJDHomeDirectoryFromEnvironment().toURI().toURL(), JDUtilities.getResourceFile("java").toURI().toURL() }, Thread.currentThread().getContextClassLoader());
+        if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL) {
+            /* dynamics aus eclipse heraus laden */
+            Enumeration<URL> resources = classLoader.getResources("jd/dynamics/");
+            ArrayList<String> dynamics = new ArrayList<String>();
+            while (resources.hasMoreElements()) {
+                URL resource = resources.nextElement();
+                String[] files = new File(resource.getFile()).list();
+                if (files != null) {
+                    for (String file : files) {
+                        dynamics.add(new File(file).getName());
+                    }
+                }
+            }
+            if (dynamics == null || dynamics.size() == 0) return;
+            for (String dynamic : dynamics) {
+                System.out.println("Plugins: " + dynamic);
+                if (!dynamic.contains("$") && !classes.contains("/jd/dynamics/" + dynamic)) classes.add("/jd/dynamics/" + dynamic);
+            }
+        } else {
+            /* dynamics in der public laden */
+            if (WebUpdater.PLUGIN_LIST == null) return;
+            for (Entry<String, FileUpdate> entry : WebUpdater.PLUGIN_LIST.entrySet()) {
+                System.out.println("Plugins: " + entry.getKey());
+                if (entry.getKey().startsWith("/jd/dynamics/")) {
+                    if (!entry.getValue().equals()) {
+                        if (!new WebUpdater().updateUpdatefile(entry.getValue())) {
+                            JDLogger.getLogger().warning("Could not update " + entry.getValue());
+                            continue;
+                        }
+                    }
+                    if (!entry.getKey().contains("$") && !classes.contains(entry.getKey())) classes.add(entry.getKey());
                 }
             }
         }
-
-        for (FileUpdate entry : filelist) {
-            if (!entry.equals()) {
-                if (!new WebUpdater().updateUpdatefile(entry)) {
-                    JDLogger.getLogger().warning("Could not update " + entry);
-                    return;
-                }
-            }
-        }
-
         for (String clazz : classes) {
             try {
                 Class<?> plgClass;
-
                 plgClass = classLoader.loadClass(clazz.replace("/", ".").replace(".class", "").substring(1));
-
                 if (plgClass == null) {
                     JDLogger.getLogger().info("Could not load " + clazz);
                     continue;

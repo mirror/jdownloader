@@ -420,7 +420,11 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public int getMaxSimultanPremiumDownloadNum() {
-        return 20;
+        return getMaxSimulatanDownloadNum();
+    }
+
+    public int getMaxSimulatanDownloadNum() {
+        return SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2);
     }
 
     public boolean ignoreHosterWaittime(DownloadLink link) {

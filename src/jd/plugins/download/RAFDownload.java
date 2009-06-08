@@ -21,8 +21,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
-import java.util.logging.Level;
-
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.ByteBufferEntry;

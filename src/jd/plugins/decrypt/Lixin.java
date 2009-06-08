@@ -61,10 +61,8 @@ public class Lixin extends PluginForDecrypt {
                     } else {
                         try {
                             form.setPreferredSubmit("continue");
-
                             br.submitForm(form);
-                        } catch (Exception e) {
-
+                        } catch (Exception e) {                            
                             lix_continue = true;
                             break;
                         }

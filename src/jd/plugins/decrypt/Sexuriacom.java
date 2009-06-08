@@ -21,6 +21,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.RandomUserAgent;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -35,50 +36,55 @@ public class Sexuriacom extends PluginForDecrypt {
     private static final Pattern PATTERN_PASSWORD = Pattern.compile("<strong>Passwort: </strong></div></td>.*?bgcolor=\"#EFEFEF\">(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
     private static final Pattern PATTERN_DL_LINK_PAGE = Pattern.compile("href=\"dl_links_(.*?)\" target=\"_blank\">", Pattern.CASE_INSENSITIVE);
     private static final Pattern PATTERN_REDIRECT_LINKS = Pattern.compile("value=\"(http://sexuria\\.com/out\\.php\\?id=\\d+\\&part=\\d+\\&link=\\d+)\" readonly", Pattern.CASE_INSENSITIVE);
+    private static final Object LOCK = new Object();
 
     public Sexuriacom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-
+        this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         String downloadId;
         String password = null;
         br.setFollowRedirects(false);
-
-        if (new Regex(parameter, PATTEREN_SUPPORTED_MAIN).matches()) {
-            br.getPage(parameter);
-            String links[] = br.getRegex(PATTERN_DL_LINK_PAGE).getColumn(0);
-            for (String link : links) {
-                decryptedLinks.add(createDownloadlink("http://sexuria.com/dl_links_" + link));
+        synchronized (LOCK) {
+            if (new Regex(parameter, PATTEREN_SUPPORTED_MAIN).matches()) {
+                br.getPage(parameter);
+                String links[] = br.getRegex(PATTERN_DL_LINK_PAGE).getColumn(0);
+                for (String link : links) {
+                    decryptedLinks.add(createDownloadlink("http://sexuria.com/dl_links_" + link));
+                }
+                return decryptedLinks;
+            } else if (new Regex(parameter, PATTERN_SUPPORTED_CRYPT).matches()) {
+                downloadId = new Regex(parameter, PATTERN_SUPPORTED_CRYPT).getMatch(0);
+                br.getPage("http://sexuria.com/Pornos_Kostenlos_info_" + downloadId + ".html");
+                password = br.getRegex(PATTERN_PASSWORD).getMatch(0);
+                Thread.sleep(1000);
+                br.getPage(parameter);
+                String links[] = br.getRegex(PATTERN_REDIRECT_LINKS).getColumn(0);
+                for (String link : links) {
+                    Thread.sleep(1000);
+                    br.getPage(link);
+                    DownloadLink dlLink = createDownloadlink(br.getRedirectLocation());
+                    dlLink.addSourcePluginPassword(password);
+                    dlLink.setDecrypterPassword(password);
+                    decryptedLinks.add(dlLink);
+                }
+                return decryptedLinks;
+            } else if (new Regex(parameter, PATTERN_SUPPORTED_REDIRECT).matches()) {
+                String id = new Regex(parameter, PATTERN_SUPPORTED_REDIRECT).getMatch(0);
+                decryptedLinks.add(createDownloadlink("http://sexuria.com/Pornos_Kostenlos_liebe_" + id + ".html"));
+                return decryptedLinks;
             }
-            return decryptedLinks;
-        } else if (new Regex(parameter, PATTERN_SUPPORTED_CRYPT).matches()) {
-            downloadId = new Regex(parameter, PATTERN_SUPPORTED_CRYPT).getMatch(0);
-            br.getPage("http://sexuria.com/Pornos_Kostenlos_info_" + downloadId + ".html");
-            password = br.getRegex(PATTERN_PASSWORD).getMatch(0);
-            br.getPage(parameter);
-            String links[] = br.getRegex(PATTERN_REDIRECT_LINKS).getColumn(0);
-            for (String link : links) {
-                br.getPage(link);
-                DownloadLink dlLink = createDownloadlink(br.getRedirectLocation());
-                dlLink.addSourcePluginPassword(password);
-                dlLink.setDecrypterPassword(password);
-                decryptedLinks.add(dlLink);
-            }
-            return decryptedLinks;
-        } else if (new Regex(parameter, PATTERN_SUPPORTED_REDIRECT).matches()) {
-            String id = new Regex(parameter, PATTERN_SUPPORTED_REDIRECT).getMatch(0);
-            decryptedLinks.add(createDownloadlink("http://sexuria.com/Pornos_Kostenlos_liebe_" + id + ".html"));
-            return decryptedLinks;
+            return null;
         }
-        return null;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }

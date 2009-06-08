@@ -20,8 +20,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.Locale;
-import java.util.logging.Level;
-
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 

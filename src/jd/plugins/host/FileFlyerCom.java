@@ -43,14 +43,11 @@ public class FileFlyerCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
-        if(br.containsHTML("access to the service may be unavailable for a while"))
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);    
+        if (br.containsHTML("access to the service may be unavailable for a while")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
         String filesize = br.getRegex(Pattern.compile("<a id=\"ItemsList_ctl00_size\">(.*?)</a>", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (filesize == null)
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String name = br.getRegex(Pattern.compile("<a id=\"ItemsList_ctl00_file\".*\\ title=\"(.*)..class=", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (name == null)
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String name = br.getRegex(Pattern.compile("<a id=\"ItemsList_ctl00_file\".*\\ title=\"(.*?)\".*?class=", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (name == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(name.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -68,7 +65,7 @@ public class FileFlyerCom extends PluginForHost {
         String linkurl = br.getRegex(Pattern.compile("<a id=\"ItemsList_ctl00_img\".*href=\"(.*)\">")).getMatch(0);
         br.setFollowRedirects(true);
         String downloadURL = Encoding.htmlDecode(linkurl);
-        dl = br.openDownload(downloadLink, downloadURL, true, 20);
+        dl = br.openDownload(downloadLink, downloadURL, true, 0);
         dl.startDownload();
     }
 

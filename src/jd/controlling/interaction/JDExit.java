@@ -35,7 +35,7 @@ public class JDExit extends Interaction implements Serializable {
     // @Override
     public boolean doInteraction(Object arg) {
         logger.info("Starting Exit");
-        CountdownConfirmDialog shutDownMessage = new CountdownConfirmDialog(SimpleGUI.CURRENTGUI, JDLocale.L("interaction.jdexit.message", "JD will close itself in 10 secs!"), 10, true, CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_CANCEL);
+        CountdownConfirmDialog shutDownMessage = new CountdownConfirmDialog(SimpleGUI.CURRENTGUI, JDLocale.L("interaction.jdexit.message", "JD will close itself in 10 secs!"), 10, true, CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_CANCEL, JDLocale.L("interaction.jdexit.message2", "JD will close itself if you do not abort!"));
         if (shutDownMessage.getResult()) {
             JDUtilities.getController().exit();
         }

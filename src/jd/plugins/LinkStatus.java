@@ -18,8 +18,6 @@ package jd.plugins;
 
 import java.io.Serializable;
 import java.lang.reflect.Field;
-import java.util.logging.Level;
-
 import javax.swing.ImageIcon;
 
 import jd.controlling.JDLogger;

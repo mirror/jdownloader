@@ -298,7 +298,6 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                                     if (nextDownloadLink.getLinkStatus().isStatus(LinkStatus.TODO)) {
 
                                         int maxPerHost = getSimultanDownloadNumPerHost();
-                                        if (maxPerHost == 0) maxPerHost = Integer.MAX_VALUE;
 
                                         if (activeDownloadsbyHosts(nextDownloadLink.getPlugin()) < (nextDownloadLink.getPlugin()).getMaxSimultanDownloadNum(nextDownloadLink) && activeDownloadsbyHosts(nextDownloadLink.getPlugin()) < maxPerHost && nextDownloadLink.getPlugin().getWrapper().usePlugin()) {
                                             if (returnDownloadLink == null) {
@@ -341,6 +340,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
      * @return
      */
     public int getSimultanDownloadNumPerHost() {
+        if (SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN_PER_HOST, 0) == 0) return Integer.MAX_VALUE;
         return SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN_PER_HOST, 0);
     }
 

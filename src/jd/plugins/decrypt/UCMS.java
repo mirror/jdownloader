@@ -27,6 +27,7 @@ import jd.controlling.ProgressController;
 import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.Encoding;
+import jd.http.RandomUserAgent;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
@@ -50,7 +51,8 @@ public class UCMS extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-
+        this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         try {
             br.getPage(parameter);
             if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
