@@ -30,7 +30,6 @@ import jd.gui.skins.simple.startmenu.actions.AddonConfiguration;
 import jd.plugins.Plugin;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
-import jd.utils.JDUtilities;
 
 public class AddonsMenu extends JStartMenu {
 
@@ -59,15 +58,14 @@ public class AddonsMenu extends JStartMenu {
         ArrayList<JMenuItem> itemsPress = new ArrayList<JMenuItem>();
         ArrayList<JMenuItem> itemsConfig = new ArrayList<JMenuItem>();
         for (final OptionalPluginWrapper plg : OptionalPluginWrapper.getOptionalWrapper()) {
-            if (!plg.isLoaded() || !JDUtilities.getConfiguration().getBooleanProperty(plg.getConfigParamKey(), false)) continue;
+            if (!plg.isLoaded() || !plg.isEnabled()) continue;
             boolean config = false;
             ArrayList<MenuItem> mis = plg.getPlugin().createMenuitems();
             if (mis == null && plg.getPlugin().getConfig() != null && plg.getPlugin().getConfig().getEntries().size() > 0) {
                 mis = new ArrayList<MenuItem>();
                 config = true;
             }
-            if (mis != null && JDUtilities.getConfiguration().getBooleanProperty(plg.getConfigParamKey(), false)) {
-
+            if (mis != null) {
                 if (plg.getPlugin().getConfig() != null && plg.getPlugin().getConfig().getEntries().size() > 0) {
                     MenuItem mi;
                     mis.add(0, mi = new MenuItem(JDLocale.LF("gui.startmenu.addons.config2", "%s's settings", plg.getHost()), -10000));

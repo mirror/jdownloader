@@ -105,12 +105,11 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
             if (col == 0) {
                 OptionalPluginWrapper plgWrapper = pluginsOptional.get(row);
                 if ((Boolean) value) {
-                    configuration.setProperty(plgWrapper.getConfigParamKey(), true);
                     plgWrapper.getPlugin().initAddon();
                 } else {
                     plgWrapper.getPlugin().onExit();
-                    configuration.setProperty(plgWrapper.getConfigParamKey(), false);
                 }
+                configuration.setProperty(plgWrapper.getConfigParamKey(), (Boolean) value);
                 configuration.save();
                 SimpleGUI.CURRENTGUI.getAddonPanel().initGUI();
             }

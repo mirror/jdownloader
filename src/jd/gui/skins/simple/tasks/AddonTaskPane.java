@@ -37,7 +37,6 @@ import jd.gui.skins.simple.components.JDUnderlinedText;
 import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
-import jd.utils.JDUtilities;
 
 public class AddonTaskPane extends TaskPanel implements ActionListener {
 
@@ -59,7 +58,7 @@ public class AddonTaskPane extends TaskPanel implements ActionListener {
         for (OptionalPluginWrapper wrapper : OptionalPluginWrapper.getOptionalWrapper()) {
             if (!wrapper.isEnabled() || wrapper.getPlugin() == null) continue;
             ArrayList<MenuItem> menuItems = wrapper.getPlugin().createMenuitems();
-            if (menuItems != null && JDUtilities.getConfiguration().getBooleanProperty(wrapper.getConfigParamKey(), false)) {
+            if (menuItems != null && wrapper.isEnabled()) {
                 if (menuItems.size() > 1 || wrapper.getPlugin().getConfig().getEntries().size() > 0) {
 
                     CollapseButton bt = new CollapseButton(wrapper.getPlugin().getHost(), JDTheme.II(wrapper.getPlugin().getIconKey(), 16, 16));
@@ -87,7 +86,7 @@ public class AddonTaskPane extends TaskPanel implements ActionListener {
                     }
 
                 }
-            } else if (JDUtilities.getConfiguration().getBooleanProperty(wrapper.getConfigParamKey(), false)) {
+            } else if (wrapper.isEnabled()) {
                 menuItems = new ArrayList<MenuItem>();
                 MenuItem mi;
                 menuItems.add(mi = new MenuItem(wrapper.getPlugin().getHost(), 0));
