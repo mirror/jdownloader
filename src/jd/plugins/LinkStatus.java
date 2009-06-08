@@ -18,6 +18,7 @@ package jd.plugins;
 
 import java.io.Serializable;
 import java.lang.reflect.Field;
+
 import javax.swing.ImageIcon;
 
 import jd.controlling.JDLogger;

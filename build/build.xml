@@ -6,6 +6,7 @@
 	<property name="res" value="ressourcen" />
 	<property name="keystore" value="G:\jDownloader.keystore" />
 	<property name="class-path" value="libs/JUnique.jar libs/JDGUI.jar libs/JDHttp.jar libs/JAntiCaptcha.jar libs/JDUtils.jar libs/balloontip.jar libs/BrowserLauncher2.jar libs/clink170.jar libs/cobra.jar libs/hsqldb.jar libs/htmlcleaner2_0.jar libs/irclib.jar libs/jl1.0.jar libs/js.jar libs/looks.jar libs/mail.jar libs/miglayout.jar libs/registry.jar libs/savemytube.jar libs/substance-swingx.jar libs/substance.jar libs/svnkit.jar libs/swingworker.jar libs/swingx.jar libs/synthetica.jar libs/syntheticaAddons.jar libs/syntheticaBlackMoon.jar libs/syntheticaBlackStar.jar libs/syntheticaBlueIce.jar libs/syntheticaBlueMoon.jar libs/syntheticaOrangeMetallic.jar libs/syntheticaSilverMoon.jar libs/syntheticaSimple2D.jar libs/syntheticaSkyMetallic.jar libs/syntheticaWhiteVision.jar" />
+
 	<target name="compile">
 		<mkdir dir="${cls}" />
 		<javac srcdir="${src}" destdir="${cls}" encoding="UTF-8" source="1.5" target="1.5"/>
@@ -13,12 +14,12 @@
 
 	<target name="jar">
 		<!-- jDownloader -->
-		<mkdir dir="${dist}" />
 		<manifest file="Manifest.MF">
 			<attribute name="Created-By" value="JD-Team and AppWork UG" />
 			<attribute name="Main-Class" value="jd.Main" />
 			<attribute name="Class-Path" value="${class-path}" />
 		</manifest>
+		<mkdir dir="${dist}" />
 		<jar jarfile="${dist}/JDownloader.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="**/*.class" />
@@ -39,19 +40,20 @@
 			</fileset>
 		</jar>
 		<delete file="Manifest.MF" failonerror="false" />
-			<manifest file="Manifest.MF">
-				<attribute name="Created-By" value="JD-Team and AppWork UG. Copyright Sauronsoftware.it" />
-				<attribute name="Class-Path" value="${class-path}" />
-			</manifest>
+		
+		<manifest file="Manifest.MF">
+			<attribute name="Created-By" value="JD-Team and AppWork UG. Copyright Sauronsoftware.it" />
+			<attribute name="Class-Path" value="${class-path}" />
+		</manifest>
 
-			<mkdir dir="${dist}/libs" />
-			<jar jarfile="${dist}/libs/JUnique.jar" manifest="Manifest.MF">
-				<fileset dir="${cls}">
-					<include name="it/**" />
-					
-				</fileset>
-			</jar>
+		<mkdir dir="${dist}/libs" />
+		<jar jarfile="${dist}/libs/JUnique.jar" manifest="Manifest.MF">
+			<fileset dir="${cls}">
+				<include name="it/**" />
+			</fileset>
+		</jar>
 		<delete file="Manifest.MF" failonerror="false" />
+
 		<manifest file="Manifest.MF">
 			<attribute name="Created-By" value="JD-Team and AppWork UG" />
 			<attribute name="Class-Path" value="${class-path}" />
@@ -92,7 +94,6 @@
 		<manifest file="Manifest.MF">
 			<attribute name="Created-By" value="coalado" />
 			<attribute name="Main-Class" value="jd.update.Main" />
-
 		</manifest>
 		<jar jarfile="${dist}/jdupdate.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
@@ -110,35 +111,34 @@
 			</fileset>
 			<zipfileset src="ressourcen/libs/hsqldb.jar" excludes="META-INF/*" />
 		</jar>
-	
 		<delete file="Manifest.MF" failonerror="false" />
 	</target>
-	<target name="jarhostservvice">
-			<!--Webupdater-->
-			<manifest file="Manifest.MF">
-				<attribute name="Created-By" value="coalado" />
-				<attribute name="Main-Class" value="hostservice.HostService" />
-				<attribute name="Class-Path" value="${class-path}" />
-			</manifest>
-			<jar jarfile="${dist}/jdhostservice.jar" manifest="Manifest.MF">
-				<fileset dir="${cls}">
-					<include name="**/*.class" />
-					<exclude name="jd/http/**" />
-								<exclude name="jd/captcha/**" />
-								<exclude name="jd/gui/**" />
-								<exclude name="it/**" />				
-								<exclude name="jd/plugins/host/**" />
-								<exclude name="jd/plugins/decrypt/**" />
-						<exclude name="jd/captcha/methods/**" />
-					<exclude name="jd/plugins/optional/**" />
-					<exclude name="sun/net/www/protocol/**" />
-					<include name="jd/plugins/host/HTTPAllgemein*" />
-				</fileset>
-			
-			</jar>
-		
-			<delete file="Manifest.MF" failonerror="false" />
-		</target>
+
+	<target name="jarHostService">
+		<!--HostService-->
+		<manifest file="Manifest.MF">
+			<attribute name="Created-By" value="coalado" />
+			<attribute name="Main-Class" value="hostservice.HostService" />
+			<attribute name="Class-Path" value="${class-path}" />
+		</manifest>
+		<jar jarfile="${dist}/jdhostservice.jar" manifest="Manifest.MF">
+			<fileset dir="${cls}">
+				<include name="**/*.class" />
+				<exclude name="jd/http/**" />
+				<exclude name="jd/captcha/**" />
+				<exclude name="jd/gui/**" />
+				<exclude name="it/**" />				
+				<exclude name="jd/plugins/host/**" />
+				<exclude name="jd/plugins/decrypt/**" />
+				<exclude name="jd/captcha/methods/**" />
+				<exclude name="jd/plugins/optional/**" />
+				<exclude name="sun/net/www/protocol/**" />
+				<include name="jd/plugins/host/HTTPAllgemein*" />
+			</fileset>
+		</jar>
+		<delete file="Manifest.MF" failonerror="false" />
+	</target>
+
 	<target name="jarOptionals">
 		<!-- Optional Plugins -->
 		<manifest file="Manifest.MF">
@@ -273,10 +273,10 @@
 		<delete file="${dist}/JDownloader.jar" failonerror="no" />
 		<move file="${dist}/JDownloader_obfuscated.jar" tofile="${dist}/JDownloader.jar" />
 	</target>
-	<target name="standardBuild" depends="compile,jar,jarOptionals,jarWebupdater,jarhostservvice">
+	<target name="standardBuild" depends="compile,jar,jarOptionals,jarWebupdater,jarHostService">
 	</target>
-	<target name="hostservice" depends="compile,jar,jarhostservvice">
-		</target>
+	<target name="hostservice" depends="compile,jar,jarHostService">
+	</target>
 	<target name="dlcEnabledBuild" depends="standardBuild,cryptContainer,sign">
 	</target>
 	<target name="signedBuild" depends="standardBuild,sign">

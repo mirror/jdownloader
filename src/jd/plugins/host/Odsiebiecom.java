@@ -90,7 +90,7 @@ public class Odsiebiecom extends PluginForHost {
     }
 
     public int getMaxSimultanPremiumDownloadNum() {
-        return getMaxSimulatanDownloadNum();
+        return getMaxSimultanDownloadNum();
     }
 
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
@@ -185,7 +185,7 @@ public class Odsiebiecom extends PluginForHost {
 
     // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return getMaxSimulatanDownloadNum();
+        return getMaxSimultanDownloadNum();
     }
 
     // @Override
