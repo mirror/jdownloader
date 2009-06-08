@@ -32,6 +32,7 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.RAFDownload;
@@ -114,13 +115,15 @@ public class RapidShareDe extends PluginForHost {
     }
 
     // @Override
+    /**
+     * Komplett umbauen auf neuen Browser!
+     */
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         String user = account.getUser();
         String pass = account.getPass();
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
         br.setFollowRedirects(false);
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
         String formatPass = "";
         for (int i = 0; i < pass.length(); i++) {
             formatPass += "%" + Integer.toString(pass.charAt(i), 16);
@@ -133,33 +136,21 @@ public class RapidShareDe extends PluginForHost {
         r.getCookies().add(new Cookie(getHost(), "user", user + "-" + formatPass));
 
         String page = r.load();
-        if (page.contains("Premium-Cookie nicht gefunden")) {
-            linkStatus.addStatus(LinkStatus.ERROR_PREMIUM);
-            linkStatus.setValue(LinkStatus.VALUE_ID_PREMIUM_DISABLE);
-            linkStatus.setErrorMessage(JDLocale.L("plugins.hoster.rapidsharede.errors.accountbad", "Account not found or password wrong"));
-            return;
-
-        }
+        if (page.contains("Premium-Cookie nicht gefunden")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, JDLocale.L("plugins.hoster.rapidsharede.errors.accountbad", "Account not found or password wrong"), LinkStatus.VALUE_ID_PREMIUM_DISABLE); }
         String error = new Regex(page, "alert\\(\"(.*)\"\\)<\\/script>").getMatch(0);
-        if (error != null) {
-            linkStatus.addStatus(LinkStatus.ERROR_FATAL);
-            linkStatus.setErrorMessage(JDLocale.L("plugins.hoster.rapidshareDE.errors." + JDHash.getMD5(error), error));
-            return;
-
-        }
+        if (error != null) { throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.hoster.rapidshareDE.errors." + JDHash.getMD5(error), error)); }
         String url = new Regex(page, "\\:<\\/b> <a href\\=\"([^\"].*)\">.*?.rapidshare.de").getMatch(0);
 
         URLConnectionAdapter urlConnection;
         GetRequest req = new GetRequest(url);
         r.getCookies().add(new Cookie(getHost(), "user", user + "-" + formatPass));
+        /** TODO: Umbauen auf br.openDownload(...) **/
         dl = RAFDownload.download(downloadLink, req, true, 0);
         dl.connect(br);
         urlConnection = req.getHttpConnection();
         if (urlConnection.getHeaderField("content-disposition") == null) {
             page = req.read();
-            linkStatus.addStatus(LinkStatus.ERROR_FATAL);
-            linkStatus.setErrorMessage(page);
-
+            throw new PluginException(LinkStatus.ERROR_FATAL, page);
         }
         dl.startDownload();
     }

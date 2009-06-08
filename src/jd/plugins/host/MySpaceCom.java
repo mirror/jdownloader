@@ -25,7 +25,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.download.RAFDownload;
 
 public class MySpaceCom extends PluginForHost {
     private static final String AGB_LINK = "http://www.myspace.com/index.cfm?fuseaction=misc.terms";
@@ -73,7 +72,7 @@ public class MySpaceCom extends PluginForHost {
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         this.requestFileInformation(downloadLink);
-        dl = RAFDownload.download(downloadLink, br.createRequest(getDownloadUrl(downloadLink)), true, 0);
+        dl = br.openDownload(downloadLink, getDownloadUrl(downloadLink), true, 0);
         dl.startDownload();
     }
 

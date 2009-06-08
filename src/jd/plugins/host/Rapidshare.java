@@ -21,9 +21,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Locale;
-import java.util.Vector;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
@@ -120,31 +118,6 @@ public class Rapidshare extends PluginForHost {
         String fileid = new Regex(link, "http://[\\w\\.]*?rapidshare\\.com/files/([\\d]{3,9})/?.*").getMatch(0);
         String filename = new Regex(link, "http://[\\w\\.]*?rapidshare\\.com/files/[\\d]{3,9}/?(.*)").getMatch(0);
         return "http://rapidshare.com/files/" + fileid + "/" + filename;
-        // Regex regex = new Regex(filename, "(.*\\..*)\\.htm?");
-        // String ret = "http://rapidshare.com/files/" + fileid + "/" +
-        // filename;
-        // if (regex.matches()) {
-        // Browser c = br.cloneBrowser();
-        // int l = 0;
-        // try {
-        // l = c.postPage("http://rapidshare.com/cgi-bin/checkfiles.cgi",
-        // "urls=" + ret + "&toolmode=1").split(",").length;
-        //
-        // } catch (Exception e) {
-        //
-        // }
-        // if (l < 6) {
-        //
-        // filename = regex.getMatch(0);
-        // return "http://rapidshare.com/files/" + fileid + "/" + filename;
-        // } else {
-        // return ret;
-        // }
-        //
-        // } else {
-        // return ret;
-        // }
-
     }
 
     private String selectedServer;
@@ -203,13 +176,13 @@ public class Rapidshare extends PluginForHost {
             logger.finest("OnlineCheck: " + urls.length + " links");
             StringBuilder idlist = new StringBuilder();
             StringBuilder namelist = new StringBuilder();
-            Vector<DownloadLink> links = new Vector<DownloadLink>();
+            ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
             int size = 0;
             for (DownloadLink u : urls) {
                 if (size > 3000) {
                     logger.finest("OnlineCheck: SplitCheck " + links.size() + "/" + urls.length + " links");
                     if (!checkLinksIntern(links.toArray(new DownloadLink[] {}))) return false;
-                    links = new Vector<DownloadLink>();
+                    links = new ArrayList<DownloadLink>();
                     idlist = new StringBuilder();
                     namelist = new StringBuilder();
                 }
@@ -460,6 +433,7 @@ public class Rapidshare extends PluginForHost {
 
             Request request = br.createPostRequest(postTarget, "mirror=on&x=" + Math.random() * 40 + "&y=" + Math.random() * 40);
 
+            /** TODO: Umbauen auf br.openDownload(...) **/
             // Download
             dl = new RAFDownload(this, downloadLink, request);
             // long startTime = System.currentTimeMillis();
@@ -475,49 +449,8 @@ public class Rapidshare extends PluginForHost {
                 con.disconnect();
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
             }
-            // downloadLink.setProperty("REQUEST_TIME",
-            // (System.currentTimeMillis() - startTime));
-            dl.startDownload();
 
-            // downloadLink.setProperty("DOWNLOAD_TIME",
-            // (System.currentTimeMillis() - startTime));
-            // int dif = (int) ((System.currentTimeMillis() - startTime) /
-            // 1000);
-            // if (dif > 0) downloadLink.setProperty("DOWNLOAD_SPEED",
-            // (downloadLink.getDownloadSize() / dif) / 1024);
-            // if (downloadLink.getStringProperty("USE_SERVER") != null) {
-            // new File(downloadLink.getFileOutput()).delete();
-            // downloadLink.getLinkStatus().setStatusText(" | SRV: " +
-            // downloadLink.getStringProperty("USE_SERVER") + " Speed: " +
-            // downloadLink.getProperty("DOWNLOAD_SPEED") + " kb/s");
-            //
-            // ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-            // String msg = "";
-            // for (DownloadLink dLink :
-            // downloadLink.getFilePackage().getDownloadLinks()) {
-            // if (dLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
-            // ret.add(dLink);
-            //
-            // msg += "Server: " + dLink.getStringProperty("USE_SERVER") +
-            // " : Speed: " + dLink.getProperty("DOWNLOAD_SPEED") + " kb/s\r\n";
-            // } else if (dLink.getLinkStatus().isFailed()) {
-            // ret.add(dLink);
-            //
-            // msg += "Server: " + dLink.getStringProperty("USE_SERVER") +
-            // " not available\r\n";
-            // } else {
-            // return;
-            // }
-            // }
-            // final String passToThread = msg;
-            // new Thread() {
-            // // @Override
-            // public void run() {
-            // TextAreaDialog.showDialog(SimpleGUI.CURRENTGUI,
-            // "Speedtest result", "Your speedtest results", passToThread);
-            // }
-            // }.start();
-            // }
+            dl.startDownload();
         } finally {
             if (!downloadLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                 selectedServer = null;
@@ -582,37 +515,22 @@ public class Rapidshare extends PluginForHost {
                 }
                 if ((error = findError(br.toString())) != null) {
                     logger.warning(error);
-                    if (Regex.matches(error, Pattern.compile("(Ihr Cookie wurde nicht erkannt)"))) {
-                        account.setProperty("cookies", null);
-
-                        throw new PluginException(LinkStatus.ERROR_RETRY);
-                    }
                     if (Regex.matches(error, Pattern.compile("(Verletzung unserer Nutzungsbedingungen)"))) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
                     if (Regex.matches(error, Pattern.compile("(weder einem Premiumaccount)"))) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
                     if (Regex.matches(error, Pattern.compile("(in 2 Minuten)"))) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many users are currently downloading this file", 120 * 1000l); }
                     if (Regex.matches(error, Pattern.compile("(Die Datei konnte nicht gefunden werden)"))) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-                    if (Regex.matches(error, Pattern.compile("(Betrugserkennung)"))) {
-                        logger.finest("1\r\n" + br);
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, JDLocale.L("plugin.rapidshare.error.fraud", "Fraud detected: This Account has been illegally used by several users."), LinkStatus.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                    if (Regex.matches(error, Pattern.compile("(expired|abgelaufen)"))) {
-                        logger.finest("2\r\n" + br);
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, dynTranslate(error), LinkStatus.VALUE_ID_PREMIUM_DISABLE);
-                    } else if (Regex.matches(error, Pattern.compile("(You have exceeded the download limit|Sie haben heute das Limit überschritten)"))) {
-                        logger.finest("3\r\n" + br);
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, JDLocale.L("plugin.rapidshare.error.limitexeeded", "You have exceeded the download limit."), LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                    } else if (Regex.matches(error, Pattern.compile("Passwort ist falsch"))) {
-                        logger.finest("4\r\n" + br);
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, dynTranslate(error), LinkStatus.VALUE_ID_PREMIUM_DISABLE);
-                    } else if (Regex.matches(error, Pattern.compile("IP"))) {
-                        logger.finest("5\r\n" + br);
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, dynTranslate(error), LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                    } else if (Regex.matches(error, Pattern.compile("Der Server .*? ist momentan nicht verf.*"))) {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.LF("plugin.rapidshare.error.serverunavailable", "The Server %s is currently unavailable.", error.substring(11, error.indexOf(" ist"))), 3600 * 1000l);
-                    } else if (Regex.matches(error, Pattern.compile("(Account wurde nicht gefunden|Your Premium Account has not been found)"))) {
+                    if (Regex.matches(error, Pattern.compile("(Betrugserkennung)"))) { throw new PluginException(LinkStatus.ERROR_PREMIUM, JDLocale.L("plugin.rapidshare.error.fraud", "Fraud detected: This Account has been illegally used by several users."), LinkStatus.VALUE_ID_PREMIUM_DISABLE); }
+                    if (Regex.matches(error, Pattern.compile("(expired|abgelaufen)"))) { throw new PluginException(LinkStatus.ERROR_PREMIUM, dynTranslate(error), LinkStatus.VALUE_ID_PREMIUM_DISABLE); }
+                    if (Regex.matches(error, Pattern.compile("(You have exceeded the download limit|Sie haben heute das Limit überschritten)"))) { throw new PluginException(LinkStatus.ERROR_PREMIUM, JDLocale.L("plugin.rapidshare.error.limitexeeded", "You have exceeded the download limit."), LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE); }
+                    if (Regex.matches(error, Pattern.compile("Passwort ist falsch"))) { throw new PluginException(LinkStatus.ERROR_PREMIUM, dynTranslate(error), LinkStatus.VALUE_ID_PREMIUM_DISABLE); }
+                    if (Regex.matches(error, Pattern.compile("IP"))) { throw new PluginException(LinkStatus.ERROR_PREMIUM, dynTranslate(error), LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE); }
+                    if (Regex.matches(error, Pattern.compile("Der Server .*? ist momentan nicht verf.*"))) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.LF("plugin.rapidshare.error.serverunavailable", "The Server %s is currently unavailable.", error.substring(11, error.indexOf(" ist"))), 3600 * 1000l); }
+                    if (Regex.matches(error, Pattern.compile("(Ihr Cookie wurde nicht erkannt)"))) {
                         account.setProperty("cookies", null);
-
-                        logger.finest("6\r\n" + br);
+                        throw new PluginException(LinkStatus.ERROR_RETRY);
+                    }
+                    if (Regex.matches(error, Pattern.compile("(Account wurde nicht gefunden|Your Premium Account has not been found)"))) {
+                        account.setProperty("cookies", null);
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, JDLocale.L("plugin.rapidshare.error.accountnotfound", "Your Premium Account has not been found."), LinkStatus.VALUE_ID_PREMIUM_DISABLE);
                     } else {
 
@@ -643,7 +561,7 @@ public class Rapidshare extends PluginForHost {
                 logger.finest("Direct-Download: Server-Selection not available!");
                 request = br.createGetRequest(directurl);
             }
-
+            /** TODO: Umbauen auf br.openDownload(...) **/
             // Download
             dl = new RAFDownload(this, downloadLink, request);
             // Premiumdownloads sind resumefähig
@@ -693,23 +611,16 @@ public class Rapidshare extends PluginForHost {
                     if (Regex.matches(error, Pattern.compile("(in 2 Minuten)"))) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many users are currently downloading this file", 120 * 1000l); }
                     if (Regex.matches(error, Pattern.compile("(Die Datei konnte nicht gefunden werden)"))) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
                     if (Regex.matches(error, Pattern.compile("(Betrugserkennung)"))) { throw new PluginException(LinkStatus.ERROR_PREMIUM, JDLocale.L("plugin.rapidshare.error.fraud", "Fraud detected: This Account has been illegally used by several users."), LinkStatus.VALUE_ID_PREMIUM_DISABLE); }
-                    if (Regex.matches(error, Pattern.compile("(expired|abgelaufen)"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, dynTranslate(error), LinkStatus.VALUE_ID_PREMIUM_DISABLE);
-                    } else if (Regex.matches(error, Pattern.compile("(You have exceeded the download limit|Sie haben heute das Limit überschritten)"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, JDLocale.L("plugin.rapidshare.error.limitexeeded", "You have exceeded the download limit."), LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                    } else if (Regex.matches(error, Pattern.compile("Passwort ist falsch"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, dynTranslate(error), LinkStatus.VALUE_ID_PREMIUM_DISABLE);
-                    } else if (Regex.matches(error, Pattern.compile("IP"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, dynTranslate(error), LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                    } else if (Regex.matches(error, Pattern.compile("Der Server .*? ist momentan nicht verf.*"))) {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.LF("plugin.rapidshare.error.serverunavailable", "The Server %s is currently unavailable.", error.substring(11, error.indexOf(" ist"))), 3600 * 1000l);
-                    } else if (Regex.matches(error, Pattern.compile("(Account wurde nicht gefunden|Your Premium Account has not been found)"))) {
+                    if (Regex.matches(error, Pattern.compile("(expired|abgelaufen)"))) { throw new PluginException(LinkStatus.ERROR_PREMIUM, dynTranslate(error), LinkStatus.VALUE_ID_PREMIUM_DISABLE); }
+                    if (Regex.matches(error, Pattern.compile("(You have exceeded the download limit|Sie haben heute das Limit überschritten)"))) { throw new PluginException(LinkStatus.ERROR_PREMIUM, JDLocale.L("plugin.rapidshare.error.limitexeeded", "You have exceeded the download limit."), LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE); }
+                    if (Regex.matches(error, Pattern.compile("Passwort ist falsch"))) { throw new PluginException(LinkStatus.ERROR_PREMIUM, dynTranslate(error), LinkStatus.VALUE_ID_PREMIUM_DISABLE); }
+                    if (Regex.matches(error, Pattern.compile("IP"))) { throw new PluginException(LinkStatus.ERROR_PREMIUM, dynTranslate(error), LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE); }
+                    if (Regex.matches(error, Pattern.compile("Der Server .*? ist momentan nicht verf.*"))) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.LF("plugin.rapidshare.error.serverunavailable", "The Server %s is currently unavailable.", error.substring(11, error.indexOf(" ist"))), 3600 * 1000l); }
+                    if (Regex.matches(error, Pattern.compile("(Account wurde nicht gefunden|Your Premium Account has not been found)"))) {
                         account.setProperty("cookies", null);
-
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, JDLocale.L("plugin.rapidshare.error.accountnotfound", "Your Premium Account has not been found."), LinkStatus.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         account.setProperty("cookies", null);
-
                         throw new PluginException(LinkStatus.ERROR_FATAL, dynTranslate(error));
                     }
                 } else {
@@ -719,51 +630,7 @@ public class Rapidshare extends PluginForHost {
 
             }
 
-            // downloadLink.setProperty("REQUEST_TIME",
-            // (System.currentTimeMillis() - startTime));
             dl.startDownload();
-            // downloadLink.setProperty("DOWNLOAD_TIME",
-            // (System.currentTimeMillis() - startTime));
-            // int dif = (int) ((System.currentTimeMillis() - startTime) /
-            // 1000);
-            // if (dif > 0) downloadLink.setProperty("DOWNLOAD_SPEED",
-            // (downloadLink.getDownloadSize() / dif) / 1024);
-            // if (downloadLink.getStringProperty("USE_SERVER") != null) {
-            // new File(downloadLink.getFileOutput()).delete();
-            // downloadLink.getLinkStatus().setStatusText(" | SRV: " +
-            // downloadLink.getStringProperty("USE_SERVER") + " Speed: " +
-            // downloadLink.getProperty("DOWNLOAD_SPEED") + " kb/s");
-            //
-            // ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-            // String msg = "";
-            // for (DownloadLink dLink :
-            // downloadLink.getFilePackage().getDownloadLinks()) {
-            // if (dLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
-            // ret.add(dLink);
-            //
-            // msg += "Server: " + dLink.getStringProperty("USE_SERVER") +
-            // " : Speed: " + dLink.getProperty("DOWNLOAD_SPEED") + " kb/s\r\n";
-            // } else if (dLink.getLinkStatus().isFailed()) {
-            // ret.add(dLink);
-            //
-            // msg += "Server: " + dLink.getStringProperty("USE_SERVER") +
-            // " not available\r\n";
-            // } else {
-            // return;
-            // }
-            // }
-            // final String passToThread = msg;
-            // new Thread() {
-            // // @Override
-            // public void run() {
-            // TextAreaDialog.showDialog(SimpleGUI.CURRENTGUI,
-            // JDLocale.L("plugins.host.rapidshare.speedtestresult.title",
-            // "Speedtest result"),
-            // JDLocale.L("plugins.host.rapidshare.speedtestresult.message",
-            // "Your speedtest results"), passToThread);
-            // }
-            // }.start();
-            // }
         } finally {
             if (!downloadLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                 selectedServer = null;
@@ -828,14 +695,6 @@ public class Rapidshare extends PluginForHost {
         String server1 = getPluginConfig().getStringProperty(PROPERTY_SELECTED_SERVER, "Level(3)");
         String server2 = getPluginConfig().getStringProperty(PROPERTY_SELECTED_SERVER2, "TeliaSonera");
         String server3 = getPluginConfig().getStringProperty(PROPERTY_SELECTED_SERVER3, "TeliaSonera");
-        // boolean serverTest = false;
-        // if (downloadLink.getProperty("USE_SERVER") != null) {
-        // serverTest = true;
-        // server1 = server2 = server3 =
-        // downloadLink.getStringProperty("USE_SERVER");
-        // logger.finer("Speedtest detected. use Server: " + server1);
-        //
-        // }
 
         String serverAbb = serverMap.get(server1);
         String server2Abb = serverMap.get(server2);
@@ -852,7 +711,7 @@ public class Rapidshare extends PluginForHost {
             server3Abb = serverList3[(int) (Math.random() * (serverList3.length - 1))];
             logger.finer("Use Random #3 server " + server3Abb);
         }
-        // String endServerAbb = "";
+
         boolean telekom = getPluginConfig().getBooleanProperty(PROPERTY_USE_TELEKOMSERVER, false);
         boolean preselected = getPluginConfig().getBooleanProperty(PROPERTY_USE_PRESELECTED, true);
 
@@ -911,10 +770,8 @@ public class Rapidshare extends PluginForHost {
     }
 
     private String getServerName(String id) {
-        Iterator<Entry<String, String>> it = serverMap.entrySet().iterator();
-        while (it.hasNext()) {
-            Entry<String, String> next = it.next();
-            if (next.getValue().equalsIgnoreCase(id)) { return next.getKey(); }
+        for (Entry<String, String> next : serverMap.entrySet()) {
+            if (next.getValue().equalsIgnoreCase(id)) return next.getKey();
         }
         return null;
     }
@@ -960,9 +817,9 @@ public class Rapidshare extends PluginForHost {
      * Erzeugt den Configcontainer für die Gui
      */
     private void setConfigElements() {
-        Vector<String> m1 = new Vector<String>();
-        Vector<String> m2 = new Vector<String>();
-        Vector<String> m3 = new Vector<String>();
+        ArrayList<String> m1 = new ArrayList<String>();
+        ArrayList<String> m2 = new ArrayList<String>();
+        ArrayList<String> m3 = new ArrayList<String>();
         for (String element : serverList1) {
             m1.add(getServerName(element));
         }
@@ -989,38 +846,12 @@ public class Rapidshare extends PluginForHost {
         ce.setEnabledCondidtion(cond, "==", false);
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PROPERTY_USE_TELEKOMSERVER, JDLocale.L("plugins.hoster.rapidshare.com.telekom", "Telekom Server verwenden falls verfügbar")).setDefaultValue(false));
         ce.setEnabledCondidtion(cond, "==", false);
-        // config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, new
-        // ActionListener() {
-        //
-        // public void actionPerformed(ActionEvent e) {
-        // String link =
-        // JDUtilities.getGUI().showUserInputDialog(JDLocale.L("plugins.host.rapidshare.speedtest.link",
-        // "Enter a Rapidshare.com Link"), "Please enter a Rapidshare Link");
-        // if (link == null) return;
-        // if (!canHandle(link)) return;
-        // FilePackage fp = FilePackage.getInstance();
-        // fp.setName("RS Speedtest");
-        // for (Entry<String, String> n : serverMap.entrySet()) {
-        // DownloadLink dlink = new DownloadLink((PluginForHost)
-        // getWrapper().getNewPluginInstance(),
-        // link.substring(link.lastIndexOf("/") + 1), getHost(), link, true);
-        // dlink.setProperty("USE_SERVER", n.getKey());
-        // dlink.setProperty("ALLOW_DUPE", true);
-        // dlink.setFinalFileName("Speedtest_svr_" + n.getKey() + ".test");
-        // dlink.setFilePackage(fp);
-        // dlink.getLinkStatus().setStatusText("Server: " + n.getKey());
-        //
-        // }
-        // JDUtilities.getDownloadController().addPackageAt(fp, 0);
-        //
-        // }
-        //
-        // }, JDLocale.L("plugins.host.rapidshare.speedtest", "SpeedTest")));
 
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), PROPERTY_INCREASE_TICKET, JDLocale.L("plugins.hoster.rapidshare.com.increaseTicketTime", "Ticketwartezeit verlängern (0%-500%)"), 0, 500).setDefaultValue(0).setStep(1));
     }
 
+    @SuppressWarnings("unchecked")
     public Browser login(Account account, boolean usesavedcookie) throws IOException, PluginException {
         synchronized (loginlock) {
             Browser br = new Browser();
@@ -1030,11 +861,8 @@ public class Rapidshare extends PluginForHost {
 
             HashMap<String, String> cookies = (HashMap<String, String>) account.getProperty("cookies");
 
-            Entry<String, String> cookie;
             if (usesavedcookie && cookies != null) {
-
-                for (Iterator<Entry<String, String>> it = cookies.entrySet().iterator(); it.hasNext();) {
-                    cookie = it.next();
+                for (Entry<String, String> cookie : cookies.entrySet()) {
                     br.setCookie("http://rapidshare.com", cookie.getKey(), cookie.getValue());
                     logger.finer("Cookie Login: " + cookie.getKey());
                 }
@@ -1084,9 +912,7 @@ public class Rapidshare extends PluginForHost {
         }
 
         account.setProperty("accountinfo", ai);
-        if (account.getBooleanProperty("extended", false)) {
 
-        }
         return ai;
     }
 

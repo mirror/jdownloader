@@ -17,6 +17,7 @@
 package jd.router;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -30,7 +31,7 @@ import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
 
 public class ConvertRouterData {
-    private static void ConvertXml(File file, File out) {
+    private static void convertXml(File file, File out) {
         ConvertRouterData conv = new ConvertRouterData();
         RouterData[] routers = conv.readRouterDat(file);
         Vector<String[]> routersv = new Vector<String[]>();
@@ -51,7 +52,7 @@ public class ConvertRouterData {
 
         File fileRoutersout = JDUtilities.getResourceFile("jd/new.xml");
         // formateNames(fileRoutersDat, fileRoutersout);
-        ConvertRouterData.ConvertXml(fileRoutersDat, fileRoutersout);
+        ConvertRouterData.convertXml(fileRoutersDat, fileRoutersout);
         // RouterParser parser = new RouterParser();
         // parser.routerDatToXML(JDUtilities.getResourceFile("jd/Routers.dat"),
         // JDUtilities.getResourceFile("jd/Routers.xml"));
@@ -59,7 +60,7 @@ public class ConvertRouterData {
 
     private String cookie = null;
     private String ip = "            Host: %%%routerip%%%\r\n";
-    private Vector<String[]> routerData = null;
+    private ArrayList<String[]> routerData = null;
 
     private String convertUserPass(String arg) {
         if (arg != null) { return arg.replaceAll("MD5PasswordL(%PASSWORD%)", "%%%MD5:::pass%%%").replaceAll("\\%USERNAME\\%", "%%%user%%%").replaceAll("\\%PASSWORD\\%", "%%%pass%%%"); }

@@ -31,9 +31,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Vector;
 import java.util.Map.Entry;
 
 import javax.swing.JCheckBoxMenuItem;
@@ -117,10 +117,10 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
     private JMenuItem mnuContextAdopt, mnuContextClear, mnuContextDelete, mnuContextTranslate;
 
     private HashMap<String, String> sourceEntries = new HashMap<String, String>();
-    private Vector<String> sourcePatterns = new Vector<String>();
+    private ArrayList<String> sourcePatterns = new ArrayList<String>();
     private HashMap<String, String> fileEntries = new HashMap<String, String>();
-    private Vector<KeyInfo> data = new Vector<KeyInfo>();
-    private HashMap<String, Vector<String>> dupes = new HashMap<String, Vector<String>>();
+    private ArrayList<KeyInfo> data = new ArrayList<KeyInfo>();
+    private HashMap<String, ArrayList<String>> dupes = new HashMap<String, ArrayList<String>>();
     private String lngKey = null;
     private boolean changed = false;
     private final JDFileFilter fileFilter;
@@ -672,21 +672,20 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         }
     }
 
-    @SuppressWarnings("unchecked")
     private void deleteSelectedKeys() {
         int[] rows = getSelectedRows();
 
         int len = rows.length - 1;
-        String[] keys = dupes.keySet().toArray(new String[dupes.size()]);
-        Object[] obj = dupes.values().toArray();
-        Vector<String> values;
+        ArrayList<String> keys = new ArrayList<String>(dupes.keySet());
+        ArrayList<ArrayList<String>> obj = new ArrayList<ArrayList<String>>(dupes.values());
+        ArrayList<String> values;
         for (int i = len; i >= 0; --i) {
             String temp = data.remove(rows[i]).getKey();
             data.remove(temp);
-            for (int j = obj.length - 1; j >= 0; --j) {
-                values = (Vector<String>) obj[j];
+            for (int j = obj.size() - 1; j >= 0; --j) {
+                values = obj.get(j);
                 values.remove(temp);
-                if (values.size() == 1) dupes.remove(keys[j]);
+                if (values.size() == 1) dupes.remove(keys.get(j));
             }
             tableModel.fireTableRowsDeleted(rows[i], rows[i]);
         }
@@ -744,7 +743,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         dupes.clear();
         lngKey = null;
 
-        Vector<String> values;
+        ArrayList<String> values;
         String value, key, language;
         KeyInfo keyInfo;
         for (Entry<String, String> entry : sourceEntries.entrySet()) {
@@ -757,7 +756,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
                 if (dupeHelp.containsKey(language)) {
                     values = dupes.get(language);
                     if (values == null) {
-                        values = new Vector<String>();
+                        values = new ArrayList<String>();
                         values.add(dupeHelp.get(language));
                         dupes.put(language, values);
                     }
@@ -834,8 +833,8 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         }
     }
 
-    private Vector<File> getSourceFiles(File directory) {
-        Vector<File> files = new Vector<File>();
+    private ArrayList<File> getSourceFiles(File directory) {
+        ArrayList<File> files = new ArrayList<File>();
 
         if (directory != null) {
             for (File file : directory.listFiles()) {

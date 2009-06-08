@@ -18,7 +18,6 @@ package jd.plugins.host;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
-import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
@@ -26,11 +25,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.download.RAFDownload;
 
 public class FastShareorg extends PluginForHost {
-
-    private String url;
 
     public FastShareorg(PluginWrapper wrapper) {
         super(wrapper);
@@ -75,7 +71,7 @@ public class FastShareorg extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-        url = downloadLink.getDownloadURL();
+        String url = downloadLink.getDownloadURL();
         requestFileInformation(downloadLink);
 
         /* Link holen */
@@ -89,14 +85,7 @@ public class FastShareorg extends PluginForHost {
         /* Zwangswarten, 10seks */
         sleep(10000, downloadLink);
 
-        dl = RAFDownload.download(downloadLink, br.createGetRequest(url), false, 1);
-        URLConnectionAdapter urlConnection = dl.connect(br);
-        if (urlConnection.getLongContentLength() == 0) {
-            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            linkStatus.setValue(20 * 60 * 1000l);
-            return;
-        }
-
+        dl = br.openDownload(downloadLink, url, false, 1);
         dl.startDownload();
 
     }

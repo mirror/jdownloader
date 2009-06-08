@@ -23,7 +23,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.download.RAFDownload;
 
 public class FileMojoCom extends PluginForHost {
 
@@ -74,7 +73,7 @@ public class FileMojoCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
 
-        dl = RAFDownload.download(downloadLink, br.createFormRequest(br.getForm(1)));
+        dl = br.openDownload(downloadLink, br.getForm(1));
         dl.startDownload();
     }
 

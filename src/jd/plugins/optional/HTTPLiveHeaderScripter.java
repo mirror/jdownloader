@@ -128,7 +128,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
             if (JDIO.getFileExtension(ret) == null || !JDIO.getFileExtension(ret).equalsIgnoreCase("xml")) {
                 ret = new File(ret.getAbsolutePath() + ".xml");
             }
-            Vector<String> save = new Vector<String>();
+            ArrayList<String> save = new ArrayList<String>();
             String manu = JDUtilities.getGUI().showUserInputDialog(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.save.manufactur", "Manufactur? (e.g. Siemens)"));
             String model = JDUtilities.getGUI().showUserInputDialog(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.save.model", "Model? (e.g. Gigaset 555 (fw 3.01.05)"));
             if (manu == null || model == null) { return; }
@@ -392,7 +392,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
     }
 
     private void importLHScript() {
-        Vector<String[]> scripts = new HTTPLiveHeader().getLHScripts();
+        ArrayList<String[]> scripts = new HTTPLiveHeader().getLHScripts();
 
         Collections.sort(scripts, new Comparator<String[]>() {
             public int compare(String[] a, String[] b) {

@@ -22,10 +22,10 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.Vector;
 
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
@@ -134,7 +134,7 @@ public class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionLi
             }.start();
 
         } else if (e.getSource() == btnSelectRouter) {
-            final Vector<String[]> scripts = lh.getLHScripts();
+            final ArrayList<String[]> scripts = lh.getLHScripts();
 
             Collections.sort(scripts, new Comparator<String[]>() {
                 public int compare(String[] a, String[] b) {
@@ -241,11 +241,11 @@ public class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionLi
 
                 public void valueChanged(ListSelectionEvent e) {
                     String selected = (String) list.getSelectedValue();
-                    if(selected!=null){
-                    int id = Integer.parseInt(selected.split("\\.")[0]);
-                    String[] data = scripts.get(id);
+                    if (selected != null) {
+                        int id = Integer.parseInt(selected.split("\\.")[0]);
+                        String[] data = scripts.get(id);
 
-                    preview.setText(data[2]);
+                        preview.setText(data[2]);
                     }
                 }
 
@@ -334,7 +334,7 @@ public class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionLi
         addGUIConfigEntry(ip);
 
         add(new JScrollPane((script = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, configuration, Configuration.PARAM_HTTPSEND_REQUESTS, JDLocale.L("gui.config.httpliveheader.script", "Reconnect Script")))).getInput()[0]), "gaptop 10,spanx,gapright 20,pushy, growy");
-        
+
         script.setData(configuration.getStringProperty(Configuration.PARAM_HTTPSEND_REQUESTS));
         // sp.setBorder(null);
         // routerScript = new GUIConfigEntry();

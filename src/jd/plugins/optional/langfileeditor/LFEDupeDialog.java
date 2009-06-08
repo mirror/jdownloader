@@ -2,6 +2,7 @@ package jd.plugins.optional.langfileeditor;
 
 import java.awt.Color;
 import java.awt.Dimension;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Vector;
 
@@ -22,11 +23,11 @@ public class LFEDupeDialog extends JDialog {
 
     private static final long serialVersionUID = 1L;
 
-    public static void showDialog(JFrame owner, HashMap<String, Vector<String>> dupes) {
+    public static void showDialog(JFrame owner, HashMap<String, ArrayList<String>> dupes) {
         new LFEDupeDialog(owner, dupes).setVisible(true);
     }
 
-    private LFEDupeDialog(JFrame owner, HashMap<String, Vector<String>> dupes) {
+    private LFEDupeDialog(JFrame owner, HashMap<String, ArrayList<String>> dupes) {
         super(owner);
 
         setModal(true);
@@ -57,11 +58,11 @@ public class LFEDupeDialog extends JDialog {
 
         private String[] columnNames;
 
-        private HashMap<String, Vector<String>> tableData;
+        private HashMap<String, ArrayList<String>> tableData;
 
         private Vector<String> keys;
 
-        public MyDupeTableModel(HashMap<String, Vector<String>> data) {
+        public MyDupeTableModel(HashMap<String, ArrayList<String>> data) {
             columnNames = new String[] { "*", JDLocale.L("plugins.optional.langfileeditor.string", "String"), JDLocale.L("plugins.optional.langfileeditor.keys", "Keys") };
             tableData = data;
             keys = new Vector<String>(data.keySet());
@@ -88,7 +89,7 @@ public class LFEDupeDialog extends JDialog {
                 return keys.get(row);
             case 2:
                 StringBuilder ret = new StringBuilder();
-                Vector<String> values = tableData.get(keys.get(row));
+                ArrayList<String> values = tableData.get(keys.get(row));
                 for (String value : values) {
                     if (ret.length() > 0) ret.append(" || ");
                     ret.append(value);

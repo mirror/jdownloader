@@ -17,29 +17,24 @@
 package jd.plugins.host;
 
 import java.io.IOException;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
-import jd.http.requests.Request;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.download.RAFDownload;
 
 public class ArchivTo extends PluginForHost {
 
     public ArchivTo(PluginWrapper wrapper) {
         super(wrapper);
-        // TODO Auto-generated constructor stub
     }
 
     // @Override
     public String getAGBLink() {
-
         return "http://archiv.to/?Module=Policy";
     }
 
@@ -69,13 +64,14 @@ public class ArchivTo extends PluginForHost {
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        br.setCookiesExclusive(true);
-        br.clearCookies(getHost());
-
+        this.setBrowserExclusive();
         requestFileInformation(downloadLink);
-        Request request = br.createGetRequest("http://archiv.to/" + Encoding.htmlDecode(new Regex(br.getPage(downloadLink.getDownloadURL()), Pattern.compile("<a href=\"http://ww\\.archiv\\.to/(Get.*?)\" style=", Pattern.CASE_INSENSITIVE)).getMatch(0)));
 
-        dl = new RAFDownload(this, downloadLink, request);
+        br.getPage(downloadLink.getDownloadURL());
+        String link = br.getRegex("<a href=\"http://ww\\.archiv\\.to/(Get.*?)\" style=").getMatch(0);
+        String dlLink = "http://archiv.to/" + Encoding.htmlDecode(link);
+
+        dl = br.openDownload(downloadLink, dlLink);
         dl.startDownload();
     }
 

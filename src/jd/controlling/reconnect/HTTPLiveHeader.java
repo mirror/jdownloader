@@ -18,9 +18,9 @@ package jd.controlling.reconnect;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Vector;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -416,9 +416,9 @@ public class HTTPLiveHeader extends ReconnectMethod {
     }
 
     @SuppressWarnings("unchecked")
-    public Vector<String[]> getLHScripts() {
+    public ArrayList<String[]> getLHScripts() {
         File[] list = new File(new File(JDUtilities.getJDHomeDirectoryFromEnvironment(), "jd"), "router").listFiles();
-        Vector<String[]> ret = new Vector<String[]>();
+        ArrayList<String[]> ret = new ArrayList<String[]>();
         for (File element : list) {
             if (element.isFile() && element.getName().toLowerCase().matches(".*\\.xml$")) {
                 ret.addAll((Collection<? extends String[]>) JDIO.loadObject(new JFrame(), element, true));

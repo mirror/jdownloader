@@ -36,7 +36,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
 
 public class FilerNet extends PluginForHost {
@@ -93,9 +92,8 @@ public class FilerNet extends PluginForHost {
         page = br.submitForm(forms[1]);
         sleep(61000, downloadLink);
 
-        dl = RAFDownload.download(downloadLink, br.createGetRequest(null));
+        dl = br.openDownload(downloadLink, (String) null);
         dl.startDownload();
-
     }
 
     public void login(Account account) throws IOException, PluginException, InterruptedException {

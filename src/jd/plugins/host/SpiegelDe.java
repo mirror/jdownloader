@@ -28,7 +28,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.download.RAFDownload;
 import jd.utils.JDMediaConvert;
 
 public class SpiegelDe extends PluginForHost {
@@ -41,12 +40,12 @@ public class SpiegelDe extends PluginForHost {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return AGB_LINK;
     }
 
-    //@Override
+    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException {
         URLConnectionAdapter urlConnection;
         try {
@@ -65,27 +64,20 @@ public class SpiegelDe extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
         this.requestFileInformation(downloadLink);
-        dl = new RAFDownload(this, downloadLink, br.createGetRequest(downloadLink.getDownloadURL()));
-        dl.setChunkNum(1);
-        dl.setResume(false);
-        URLConnectionAdapter urlConnection = dl.connect();
-        if (urlConnection.getLongContentLength() == 0) {
-            linkStatus.addStatus(LinkStatus.ERROR_FATAL);
-            return;
-        }
+        dl = br.openDownload(downloadLink, downloadLink.getDownloadURL(), false, 1);
+
         if (new Regex(downloadLink.getDownloadURL(), PATTERN_SUPPORTED_FOTOSTRECKE).matches()) {
             dl.startDownload();
         } else if (new Regex(downloadLink.getDownloadURL(), PATTERN_SUPPORTED_VIDEO).matches()) {
@@ -107,15 +99,13 @@ public class SpiegelDe extends PluginForHost {
         }
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    //@Override
+    // @Override
     public void reset_downloadlink(DownloadLink link) {
-        // TODO Auto-generated method stub
-
     }
 
 }

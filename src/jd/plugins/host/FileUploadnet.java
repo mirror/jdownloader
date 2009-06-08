@@ -19,15 +19,12 @@ package jd.plugins.host;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.http.requests.Request;
 import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.download.RAFDownload;
 
 public class FileUploadnet extends PluginForHost {
     static private final Pattern PAT_Download = Pattern.compile("http://[\\w\\.]*?file-upload\\.net/(member/){0,1}download-\\d+/(.*?).html", Pattern.CASE_INSENSITIVE);
@@ -35,8 +32,6 @@ public class FileUploadnet extends PluginForHost {
     static private final Pattern PAT_VIEW = Pattern.compile("http://[\\w\\.]*?file-upload\\.net/(view-\\d+/(.*?).html|member/view_\\d+_(.*?).html)", Pattern.CASE_INSENSITIVE);
 
     static private final Pattern PAT_Member = Pattern.compile("http://[\\w\\.]*?file-upload\\.net/member/data3\\.php\\?user=(.*?)&name=(.*)", Pattern.CASE_INSENSITIVE);
-
-    private String downloadurl;
 
     public FileUploadnet(PluginWrapper wrapper) {
         super(wrapper);
@@ -55,7 +50,7 @@ public class FileUploadnet extends PluginForHost {
         try {
             if (new Regex(downloadLink.getDownloadURL(), Pattern.compile(PAT_Download.pattern() + "|" + PAT_Member.pattern(), Pattern.CASE_INSENSITIVE)).matches()) {
                 /* LinkCheck für DownloadFiles */
-                downloadurl = downloadLink.getDownloadURL();
+                String downloadurl = downloadLink.getDownloadURL();
 
                 br.getPage(downloadurl);
                 if (!br.containsHTML("Datei existiert nicht auf unserem Server")) {
@@ -69,7 +64,7 @@ public class FileUploadnet extends PluginForHost {
                 }
             } else if (new Regex(downloadLink.getDownloadURL(), PAT_VIEW).matches()) {
                 /* LinkCheck für DownloadFiles */
-                downloadurl = downloadLink.getDownloadURL();
+                String downloadurl = downloadLink.getDownloadURL();
                 br.getPage(downloadurl);
                 if (!br.containsHTML("Datei existiert nicht auf unserem Server")) {
                     String filename = br.getRegex("<h1>Bildeigenschaften von \"(.*?)\"</h1>").getMatch(0);
@@ -95,25 +90,19 @@ public class FileUploadnet extends PluginForHost {
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
         requestFileInformation(downloadLink);
-        Request request;
+
         if (new Regex(downloadLink.getDownloadURL(), Pattern.compile(PAT_Download.pattern() + "|" + PAT_Member.pattern(), Pattern.CASE_INSENSITIVE)).matches()) {
             /* DownloadFiles */
-            downloadurl = br.getRegex("action=\"(.*?)\" method=\"post\"").getMatch(0);
-            Form form = br.getForm(0);
-            request = br.createFormRequest(form);
-
+            dl = br.openDownload(downloadLink, br.getForm(0));
         } else if (new Regex(downloadLink.getDownloadURL(), PAT_VIEW).matches()) {
             /* DownloadFiles */
-            downloadurl = br.getRegex("<center>\n<a href=\"(.*?)\" rel=\"lightbox\"").getMatch(0);
-            request = br.createGetRequest(downloadurl);
+            String downloadurl = br.getRegex("<center>\n<a href=\"(.*?)\" rel=\"lightbox\"").getMatch(0);
+            dl = br.openDownload(downloadLink, downloadurl);
         } else {
-            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            return;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
 
-        dl = RAFDownload.download(downloadLink, request);
         dl.startDownload();
     }
 
