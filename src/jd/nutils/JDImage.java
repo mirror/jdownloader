@@ -138,11 +138,11 @@ public class JDImage {
      *         kann
      */
     public static BufferedImage getImage(String imageName) {
-        File file = JDUtilities.getResourceFile("jd/img/" + imageName + ".png");
-        if (!file.exists()) return null;
-
         BufferedImage ret = BUFFERED_IMAGE_CACHE.get(imageName);
         if (ret != null) return ret;
+
+        File file = JDUtilities.getResourceFile("jd/img/" + imageName + ".png");
+        if (!file.exists()) return null;
 
         try {
             ret = ImageIO.read(file);
@@ -152,7 +152,6 @@ public class JDImage {
         }
         BUFFERED_IMAGE_CACHE.put(imageName, ret);
         return ret;
-
     }
 
     public static BufferedImage getImage(File file) {
