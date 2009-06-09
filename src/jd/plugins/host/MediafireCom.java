@@ -134,7 +134,7 @@ public class MediafireCom extends PluginForHost {
                 url = Context.toString(result);
             }
         }
-        dl = br.openDownload(downloadLink, url, true, 1);
+        dl = br.openDownload(downloadLink, url, true, 0);
         dl.startDownload();
     }
 
