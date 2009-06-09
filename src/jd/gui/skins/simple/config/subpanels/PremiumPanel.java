@@ -612,7 +612,7 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
 
     }
 
-    public void controlEvent(ControlEvent event) {
+    public void controlEvent(ControlEvent event) {        
         if (!this.isDisplayable()) {
             JDController.getInstance().removeControlListener(this);
         }

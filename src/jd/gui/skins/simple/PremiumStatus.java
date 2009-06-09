@@ -285,10 +285,11 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
                         PluginForHost plugin = JDUtilities.getPluginForHost(host);
                         long max = 0l;
                         long left = 0l;
-
+                        long workingaccs = 0;
                         for (AccountInfo ai : list) {
                             max += ai.getTrafficMax();
                             left += ai.getTrafficLeft();
+                            if (ai.getAccount().isEnabled() && !ai.getAccount().isTempDisabled()) workingaccs++;
                         }
 
                         bars[i].setVisible(true);
@@ -296,14 +297,14 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
                         bars[i].setAlignmentX(RIGHT_ALIGNMENT);
                         bars[i].setPlugin(plugin);
 
-                        if (left > 0) {
-                            bars[i].setMaximum(max);
-                            bars[i].setValue(left);
-                            bars[i].setToolTipText(JDLocale.LF("gui.premiumstatus.traffic.tooltip", "%s - %s account(s) -- You can download up to %s today.", host, list.size(), Formatter.formatReadable(left)));
-                        } else if (left == 0) {
+                        if (left == 0 || workingaccs == 0) {
                             bars[i].setMaximum(10);
                             bars[i].setValue(0);
                             bars[i].setToolTipText(JDLocale.LF("gui.premiumstatus.expired_traffic.tooltip", "%s - %s account(s) -- At the moment no premium traffic is available.", host, list.size()));
+                        } else if (left > 0) {
+                            bars[i].setMaximum(max);
+                            bars[i].setValue(left);
+                            bars[i].setToolTipText(JDLocale.LF("gui.premiumstatus.traffic.tooltip", "%s - %s account(s) -- You can download up to %s today.", host, list.size(), Formatter.formatReadable(left)));
                         } else {
                             bars[i].setMaximum(10);
                             bars[i].setValue(10);

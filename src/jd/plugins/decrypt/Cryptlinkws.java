@@ -58,7 +58,7 @@ public class Cryptlinkws extends PluginForDecrypt {
                 br.getPage("http://www.cryptlink.ws/" + link);
 
                 /* Das hier ist eher weniger gut gelöst */
-                decryptedLinks.addAll(new DistributeData(br.toString()).findLinks(false));
+                decryptedLinks.addAll(new DistributeData(br.toString()).findLinks());
             } else {
                 /* Direkte Weiterleitung */
                 decryptedLinks.add(createDownloadlink(link));

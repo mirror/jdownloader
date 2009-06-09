@@ -107,13 +107,14 @@ public class HotFileCom extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
         if (br.containsHTML("You are currently downloading")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
-        if (br.containsHTML("starthtimer\\(\\)")) {
+        if (br.getRegex("Choose.*?value=\"&nbsp;Free&nbsp;\" style=\"width:.*?\" onclick=\"starttimer\\(\\);").matches()) {
+            String waittime = br.getRegex("starttimer\\(\\).*?timerend=.*?\\+(\\d+);").getMatch(0);
+            if (waittime == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            this.sleep(Long.parseLong(waittime.trim()), link);
+        } else if (br.containsHTML("starthtimer\\(\\)")) {
             String waittime = br.getRegex("starthtimer\\(\\).*?timerend=.*?\\+(\\d+);").getMatch(0);
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(waittime.trim()));
         }
-        String waittime = br.getRegex("starttimer\\(\\).*?timerend=.*?\\+(\\d+);").getMatch(0);
-        if (waittime == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        this.sleep(Long.parseLong(waittime.trim()), link);
         Form form = br.getForm(1);
         br.submitForm(form);
         String dl_url = br.getRegex("Downloading.*?<a href=\"(.*?/get/.*?)\">").getMatch(0);
