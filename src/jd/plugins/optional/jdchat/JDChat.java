@@ -818,7 +818,7 @@ public class JDChat extends PluginOptional implements ControlListener {
 
     // @Override
     public String getHost() {
-        return JDLocale.L("plugins.optional.jdchat.name", "JD Chat");
+        return JDLocale.L("plugins.optional.jdchat.name2", "JD Support Chat");
     }
 
     // @Override
@@ -1357,7 +1357,7 @@ public class JDChat extends PluginOptional implements ControlListener {
     public void setEnabled(boolean b) {
         if (b) {
             initGUI();
-            tp = new JDChatTaskPane(JDLocale.L("plugins.optional.jdChat.gui.title", "JD Chat"), JDTheme.II("gui.images.config.tip", 24, 24));
+            tp = new JDChatTaskPane(JDLocale.L("plugins.optional.jdChat.gui.title2", "JD Support Chat"), JDTheme.II("gui.images.config.tip", 24, 24));
             SimpleGUI.CURRENTGUI.getTaskPane().add(tp);
             tp.addActionListener(new ActionListener() {
 

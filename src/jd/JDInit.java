@@ -646,7 +646,7 @@ public class JDInit {
         new OptionalPluginWrapper("JDFolderWatch", 1.5, "folderwatch", JDLocale.L("plugins.optional.folderwatch.name", "JDFolderWatch"));
         new OptionalPluginWrapper("JDShutdown", 1.5, "shutdown", JDLocale.L("plugins.optional.jdshutdown.name", "JDShutdown"));
         new OptionalPluginWrapper("JDRemoteControl", 1.5, "remotecontrol", JDLocale.L("plugins.optional.remotecontrol.name", "RemoteControl"));
-        new OptionalPluginWrapper("jdchat.JDChat", 1.5, "chat", JDLocale.L("plugins.optional.jdchat.name", "JD Chat"));
+        new OptionalPluginWrapper("jdchat.JDChat", 1.5, "chat", JDLocale.L("plugins.optional.jdchat.name2", "JD Support Chat"));
         new OptionalPluginWrapper("Newsfeeds", 1.5, "newsfeed", JDLocale.L("plugins.optional.newsfeeds.pluginTitle", "Newsfeed Check"));
         new OptionalPluginWrapper("JDInfoFileWriter", 1.5, "infofilewriter", JDLocale.L("plugins.optional.infoFileWriter.name", "Info File Writer"));
         new OptionalPluginWrapper("langfileeditor.LangFileEditor", 1.5, "langfileditor", JDLocale.L("plugins.optional.langfileeditor.name", "Language File Editor"));
