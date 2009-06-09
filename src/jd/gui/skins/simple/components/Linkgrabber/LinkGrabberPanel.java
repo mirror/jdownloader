@@ -163,11 +163,11 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                             }
                             if (count > (internalTreeTable.getVisibleRect().getHeight() / 16.0)) {
                                 for (LinkGrabberFilePackage fp : fps) {
-                                    if (!(Boolean) fp.getProperty(LinkGrabberTreeTable.PROPERTY_USEREXPAND, false)) fp.setProperty(LinkGrabberTreeTable.PROPERTY_EXPANDED, false);
+                                    if (!fp.getBooleanProperty(LinkGrabberTreeTable.PROPERTY_USEREXPAND, false)) fp.setProperty(LinkGrabberTreeTable.PROPERTY_EXPANDED, false);
                                 }
                             } else {
                                 for (LinkGrabberFilePackage fp : fps) {
-                                    if (!(Boolean) fp.getProperty(LinkGrabberTreeTable.PROPERTY_USEREXPAND, false)) fp.setProperty(LinkGrabberTreeTable.PROPERTY_EXPANDED, true);
+                                    if (!fp.getBooleanProperty(LinkGrabberTreeTable.PROPERTY_USEREXPAND, false)) fp.setProperty(LinkGrabberTreeTable.PROPERTY_EXPANDED, true);
                                 }
                             }
                         }
@@ -564,7 +564,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                                 nfp.setComment(fp.getComment());
                                 ArrayList<String> passwords = null;
                                 for (DownloadLink link : selected_links) {
-                                    fp = LGINSTANCE.getFPwithLink(link);                                    
+                                    fp = LGINSTANCE.getFPwithLink(link);
                                     if (fp != null) passwords = JDUtilities.mergePasswords(passwords, fp.getPassword());
                                 }
                                 nfp.addAll(selected_links);
@@ -639,9 +639,8 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
         SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).save();
     }
 
-    @SuppressWarnings("unchecked")
     private ArrayList<String[]> getDownloadDirList() {
-        return ((ArrayList<String[]>) SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getProperty("DOWNLOADDIR_LIST", new ArrayList<String[]>()));
+        return SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getGenericProperty("DOWNLOADDIR_LIST", new ArrayList<String[]>());
     }
 
     public void confirmPackage(LinkGrabberFilePackage fpv2, String host, int index) {

@@ -78,7 +78,6 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
     private Timer updateIntervalTimer;
     private boolean updateinprogress = false;
 
-    @SuppressWarnings("unchecked")
     public PremiumStatus() {
         super();
         bars = new PremiumBar[BARCOUNT];
@@ -132,8 +131,8 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
         }
         this.setOpaque(false);
         config = SubConfiguration.getConfig("PREMIUMSTATUS");
-        this.map = (TreeMap<String, ArrayList<AccountInfo>>) config.getProperty(MAP_PROP, new TreeMap<String, ArrayList<AccountInfo>>());
-        this.mapSize = (TreeMap<String, Long>) config.getProperty(MAPSIZE_PROP, new TreeMap<String, Long>());
+        this.map = config.getGenericProperty(MAP_PROP, new TreeMap<String, ArrayList<AccountInfo>>());
+        this.mapSize = config.getGenericProperty(MAPSIZE_PROP, new TreeMap<String, Long>());
         updateIntervalTimer = new Timer(5000, this);
         updateIntervalTimer.setInitialDelay(5000);
         updateIntervalTimer.setRepeats(false);

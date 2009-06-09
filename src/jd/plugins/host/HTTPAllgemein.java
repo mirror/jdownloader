@@ -73,9 +73,9 @@ public class HTTPAllgemein extends PluginForHost {
     // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException {
         this.setBrowserExclusive();
-        String basicauth = (String) downloadLink.getProperty("basicauth", null);
+        String basicauth = downloadLink.getStringProperty("basicauth", null);
         if (basicauth == null) {
-            basicauth = (String) downloadLink.getProperty("pass", null);
+            basicauth = downloadLink.getStringProperty("pass", null);
             if (basicauth != null) basicauth = "Basic " + Encoding.Base64Encode(basicauth);
         }
         if (basicauth != null) {

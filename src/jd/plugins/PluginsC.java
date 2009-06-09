@@ -73,7 +73,7 @@ public abstract class PluginsC extends Plugin {
 
     public abstract ContainerStatus callDecryption(File file);
 
-    //@Override
+    // @Override
     public synchronized boolean canHandle(String data) {
         if (data == null) { return false; }
         String match = new Regex(data, this.getSupportedLinks()).getMatch(-1);
@@ -85,7 +85,7 @@ public abstract class PluginsC extends Plugin {
         return null;
     }
 
-    //@Override
+    // @Override
     public ArrayList<MenuItem> createMenuitems() {
         return null;
     }
@@ -200,7 +200,7 @@ public abstract class PluginsC extends Plugin {
     public synchronized String extractDownloadURL(DownloadLink downloadLink) {
         // logger.info("EXTRACT " + downloadLink);
         if (dlU == null) {
-            initContainer(downloadLink.getContainerFile(), (byte[]) downloadLink.getProperty("k", new byte[] {}));
+            initContainer(downloadLink.getContainerFile(), downloadLink.getGenericProperty("k", new byte[] {}));
         }
         checkWorkaround(downloadLink);
         if (dlU == null || dlU.size() <= downloadLink.getContainerIndex()) { return null; }

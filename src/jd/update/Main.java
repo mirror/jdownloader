@@ -169,17 +169,16 @@ public class Main {
             JDIO.writeLocalFile(JDUtilities.getResourceFile("updateLog.txt"), log.toString());
             System.exit(0);
         } catch (Exception e) {
-         e.printStackTrace();
+            e.printStackTrace();
 
             Main.log(log, "ERROR " + e.getLocalizedMessage());
 
         }
     }
 
-    @SuppressWarnings("unchecked")
     private static void installAddons() {
         SubConfiguration jdus = WebUpdater.getConfig("JDU");
-        ArrayList<PackageData> data = (ArrayList<PackageData>) jdus.getProperty("PACKAGEDATA", new ArrayList<PackageData>());
+        ArrayList<PackageData> data = jdus.getGenericProperty("PACKAGEDATA", new ArrayList<PackageData>());
 
         for (PackageData pa : data) {
             if (!pa.isDownloaded()) continue;
@@ -213,7 +212,7 @@ public class Main {
                 }
             } catch (Exception e) {
 
-           e.printStackTrace();
+                e.printStackTrace();
 
                 StackTraceElement[] trace = e.getStackTrace();
                 for (int i = 0; i < trace.length; i++)
@@ -385,7 +384,7 @@ public class Main {
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (Exception e1) {
-        e1.printStackTrace();
+            e1.printStackTrace();
         }
 
         int n = 5;

@@ -143,9 +143,9 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         showMissing = subConfig.getBooleanProperty(PROPERTY_SHOW_MISSING, true);
         showOld = subConfig.getBooleanProperty(PROPERTY_SHOW_OLD, true);
 
-        colorDone = (Color) subConfig.getProperty(PROPERTY_DONE_COLOR, Color.GREEN);
-        colorMissing = (Color) subConfig.getProperty(PROPERTY_MISSING_COLOR, Color.RED);
-        colorOld = (Color) subConfig.getProperty(PROPERTY_OLD_COLOR, Color.ORANGE);
+        colorDone = subConfig.getGenericProperty(PROPERTY_DONE_COLOR, Color.GREEN);
+        colorMissing = subConfig.getGenericProperty(PROPERTY_MISSING_COLOR, Color.RED);
+        colorOld = subConfig.getGenericProperty(PROPERTY_OLD_COLOR, Color.ORANGE);
 
         doneHighlighter = new ColorHighlighter(new DonePredicate(), colorDone, null);
         missingHighlighter = new ColorHighlighter(new MissingPredicate(), colorMissing, null);

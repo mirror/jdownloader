@@ -160,13 +160,12 @@ public class PackageManager extends Interaction implements Serializable {
         return JDLocale.L("interaction.packagemanager.name", "Pakete aktualisieren");
     }
 
-    @SuppressWarnings("unchecked")
     public ArrayList<PackageData> getPackageData() {
         if (PACKAGE_DATA != null) return PACKAGE_DATA;
         SubConfiguration config = WebUpdater.getConfig("JDU");
         Browser br = new Browser();
         br.setFollowRedirects(true);
-        ArrayList<PackageData> data = (ArrayList<PackageData>) config.getProperty("PACKAGEDATA", new ArrayList<PackageData>());
+        ArrayList<PackageData> data = config.getGenericProperty("PACKAGEDATA", new ArrayList<PackageData>());
         for (int i = data.size() - 1; i >= 0; --i) {
             if (data.get(i).getStringProperty("category") == null || data.get(i).getStringProperty("category").indexOf("[LIGHT]") >= 0) {
                 data.remove(i);

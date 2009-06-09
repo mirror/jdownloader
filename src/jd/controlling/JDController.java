@@ -625,7 +625,6 @@ public class JDController implements ControlListener {
     public void loadContainerFile(final File file, final boolean hideGrabber, final boolean startDownload) {
         System.out.println("load container");
         new Thread() {
-            @SuppressWarnings("unchecked")
             public void run() {
                 ArrayList<CPluginWrapper> pluginsForContainer = CPluginWrapper.getCWrapper();
                 ArrayList<DownloadLink> downloadLinks = new ArrayList<DownloadLink>();
@@ -662,7 +661,7 @@ public class JDController implements ControlListener {
                         String app;
                         String uploader;
                         if (downloadLinks.get(0).getFilePackage().getProperty("header", null) != null) {
-                            HashMap<String, String> header = (HashMap<String, String>) downloadLinks.get(0).getFilePackage().getProperty("header", null);
+                            HashMap<String, String> header = downloadLinks.get(0).getFilePackage().getGenericProperty("header", new HashMap<String, String>());
                             uploader = header.get("tribute");
                             app = header.get("generator.app") + " v." + header.get("generator.version") + " (" + header.get("generator.url") + ")";
                         } else {

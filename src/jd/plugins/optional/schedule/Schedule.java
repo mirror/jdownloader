@@ -68,11 +68,10 @@ public class Schedule extends PluginOptional {
         return "gui.images.config.eventmanager";
     }
 
-    @SuppressWarnings("unchecked")
     private void initGUI() {
         if (tabbedPanel != null) return;
 
-        Vector<ScheduleFrameSettings> scheduleSettings = (Vector<ScheduleFrameSettings>) getPluginConfig().getProperty(PROPERTY_SCHEDULES, new Vector<ScheduleFrameSettings>());
+        Vector<ScheduleFrameSettings> scheduleSettings = getPluginConfig().getGenericProperty(PROPERTY_SCHEDULES, new Vector<ScheduleFrameSettings>());
         schedules = new Vector<ScheduleFrame>();
         for (ScheduleFrameSettings scheduleSetting : scheduleSettings) {
             schedules.add(new ScheduleFrame(scheduleSetting));

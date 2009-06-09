@@ -31,7 +31,6 @@ import javax.swing.JPanel;
 import javax.swing.filechooser.FileFilter;
 
 import jd.config.SubConfiguration;
-import jd.controlling.JDLogger;
 import jd.utils.JDLocale;
 import net.miginfocom.swing.MigLayout;
 
@@ -58,15 +57,8 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
     @SuppressWarnings("unused")
     private Logger logger = jd.controlling.JDLogger.getLogger();
 
-    @SuppressWarnings("unchecked")
     public ComboBrowseFile(String string) {
-        Vector<String> list;
-        try {
-            list = (Vector<String>) SubConfiguration.getConfig("GUI").getProperty(string, new Vector<String>());
-        } catch (Exception e) {
-            JDLogger.exception(e);
-            list = new Vector<String>();
-        }
+        Vector<String> list = SubConfiguration.getConfig("GUI").getGenericProperty(string, new Vector<String>());
         setFiles(list);
 
         this.setName(string);

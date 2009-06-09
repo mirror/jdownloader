@@ -47,10 +47,9 @@ public class PasswordListController implements ActionListener, DownloadControlle
         return INSTANCE;
     }
 
-    @SuppressWarnings("unchecked")
     private PasswordListController() {
         CONFIG = SubConfiguration.getConfig("PASSWORDLIST");
-        LIST2 = (ArrayList<String>) CONFIG.getProperty("LIST2", new ArrayList<String>());
+        LIST2 = CONFIG.getGenericProperty("LIST2", new ArrayList<String>());
         asyncSaveIntervalTimer = new Timer(2000, this);
         asyncSaveIntervalTimer.setInitialDelay(2000);
         asyncSaveIntervalTimer.setRepeats(false);

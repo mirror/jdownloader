@@ -205,7 +205,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 response.addContent(getVersion());
             } else if (request.getRequestUrl().equals("/get/speedlimit")) {
                 // Get SpeedLimit
-                response.addContent(SubConfiguration.getConfig("DOWNLOAD").getProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, "0"));
+                response.addContent(SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0));
             } else if (request.getRequestUrl().equals("/get/downloads/currentcount")) {
                 // Get Current DLs COUNT
                 int counter = 0;

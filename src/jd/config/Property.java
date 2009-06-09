@@ -42,27 +42,30 @@ public class Property implements Serializable {
     private HashMap<String, Integer> propertiesHashes;
 
     private long saveCount = 0;
-    protected transient boolean changes=false;
-    /**
-     * 
-     */
+    protected transient boolean changes = false;
+
     public Property() {
-        properties=new HashMap<String, Object>();
+        properties = new HashMap<String, Object>();
         propertiesHashes = new HashMap<String, Integer>();
 
         logger = jd.controlling.JDLogger.getLogger();
-
-    }
-
-    public Property(Object obj) {
-        this();
-        setProperty(null, obj);
     }
 
     public Property(String value, Object obj) {
         this();
-       
         setProperty(value, obj);
+    }
+
+    @SuppressWarnings("unchecked")
+    public <E> E getGenericProperty(String key, E def) {
+        Object r = getProperty(key, def);
+        try {
+            E ret = (E) r;
+            return ret;
+        } catch (Exception e) {
+            logger.finer("Could not cast " + r.getClass().getSimpleName() + " to " + e.getClass().getSimpleName() + " for key " + key);
+            return def;
+        }
     }
 
     /**
@@ -158,7 +161,7 @@ public class Property implements Serializable {
     }
 
     /**
-     * Gibt dne Wert zu key zurück
+     * Gibt den Wert zu key zurück
      * 
      * @param key
      * @return Value zu key
@@ -171,7 +174,7 @@ public class Property implements Serializable {
     }
 
     /**
-     * Gibtd en wert zu key zurück und falls keiner festgelegt ist def
+     * Gibt den wert zu key zurück und falls keiner festgelegt ist def
      * 
      * @param key
      * @param def
@@ -265,13 +268,13 @@ public class Property implements Serializable {
         Object old = getProperty(key);
 
         properties.put(key, value);
-        
-        //changes
-        if(propertiesHashes==null){
-            propertiesHashes= new HashMap<String, Integer>();
+
+        // changes
+        if (propertiesHashes == null) {
+            propertiesHashes = new HashMap<String, Integer>();
         }
         Integer oldHash = propertiesHashes.get(key);
-    
+
         /*
          * check for null to avoid nullpointer due to .toString() method
          */
@@ -283,30 +286,30 @@ public class Property implements Serializable {
         try {
             if (old == null && value != null) {
                 JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));
-                this.changes=true;
+                this.changes = true;
                 return;
             } else if (value instanceof Comparable) {
                 if (((Comparable<Comparable<?>>) value).compareTo((Comparable<?>) old) != 0) {
                     JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));
-                    this.changes=true;
+                    this.changes = true;
                 }
                 return;
             } else if (value instanceof Object) {
-                if (!value.equals(old)||oldHash!=value.hashCode()) {
+                if (!value.equals(old) || oldHash != value.hashCode()) {
                     JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));
-                    this.changes=true;
-                } 
+                    this.changes = true;
+                }
                 return;
             } else {
                 if (value != old) {
                     JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));
-                    this.changes=true;
+                    this.changes = true;
                 }
 
             }
         } catch (Exception e) {
             JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));
-            this.changes=true;
+            this.changes = true;
         }
 
         // logger.finer("Config property: " + key + " = " + value+" - "+this);
@@ -322,7 +325,7 @@ public class Property implements Serializable {
      * 
      * @return PropertyString
      */
-    //@Override
+    // @Override
     public String toString() {
         if (properties.size() == 0) return "";
         return "Property(" + saveCount + "): " + properties;

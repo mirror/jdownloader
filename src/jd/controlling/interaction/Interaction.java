@@ -81,9 +81,8 @@ public abstract class Interaction extends Property implements Serializable {
         INTERACTION_EXIT = new InteractionTrigger(20, JDLocale.L("interaction.trigger.exit", "JD wird beendet"), JDLocale.L("interaction.trigger.exit.desc", "Wird beim Beenden vor dem Schließen des Programms aufgerufen"));
     }
 
-    @SuppressWarnings("unchecked")
     public static Vector<Interaction> getSavedInteractions() {
-        return (Vector<Interaction>) SubConfiguration.getConfig(Configuration.CONFIG_INTERACTIONS).getProperty(Configuration.PARAM_INTERACTIONS, new Vector<Interaction>());
+        return SubConfiguration.getConfig(Configuration.CONFIG_INTERACTIONS).getGenericProperty(Configuration.PARAM_INTERACTIONS, new Vector<Interaction>());
     }
 
     /**

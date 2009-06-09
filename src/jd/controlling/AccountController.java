@@ -146,16 +146,14 @@ public class AccountController extends SubConfiguration implements ActionListene
         provider.removeListener(l);
     }
 
-    @SuppressWarnings("unchecked")
     private TreeMap<String, ArrayList<Account>> loadAccounts() {
-        return (TreeMap<String, ArrayList<Account>>) getProperty("accountlist", new TreeMap<String, ArrayList<Account>>());
+        return getGenericProperty("accountlist", new TreeMap<String, ArrayList<Account>>());
     }
 
-    @SuppressWarnings("unchecked")
     private void importOldAccounts() {
         if (getBooleanProperty("oldimported21", false)) return;
         for (HostPluginWrapper wrapper : JDUtilities.getPluginsForHost()) {
-            ArrayList<Account> list = (ArrayList<Account>) wrapper.getPluginConfig().getProperty("PREMIUM", new ArrayList<Account>());
+            ArrayList<Account> list = wrapper.getPluginConfig().getGenericProperty("PREMIUM", new ArrayList<Account>());
             for (Account acc : list) {
                 addAccount(wrapper.getHost(), acc);
             }
@@ -164,12 +162,11 @@ public class AccountController extends SubConfiguration implements ActionListene
         saveSync();
     }
 
-    @SuppressWarnings("unchecked")
     private void importOldAccounts2() {
         if (getBooleanProperty("oldimported22", false)) return;
         SubConfiguration sub = SubConfiguration.getConfig("AccountManager");
         for (HostPluginWrapper wrapper : JDUtilities.getPluginsForHost()) {
-            ArrayList<Account> list = (ArrayList<Account>) sub.getProperty(wrapper.getHost(), new ArrayList<Account>());
+            ArrayList<Account> list = sub.getGenericProperty(wrapper.getHost(), new ArrayList<Account>());
             for (Account acc : list) {
                 addAccount(wrapper.getHost(), acc);
             }
@@ -241,7 +238,7 @@ public class AccountController extends SubConfiguration implements ActionListene
         }
     }
 
-    public boolean removeAccount(PluginForHost pluginForHost, Account account) {        
+    public boolean removeAccount(PluginForHost pluginForHost, Account account) {
         if (pluginForHost == null) return false;
         if (account == null) return false;
         String host = pluginForHost.getHost();
