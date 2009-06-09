@@ -116,14 +116,15 @@ public class RAFDownload extends DownloadInterface {
 
             }
             DownloadLink sfv;
-
+            /**DEBUG*/
+downloadLink.setMD5Hash("73f9a38729ba20d38ff6f95a7110fbaa");
             if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_DO_CRC, false) && (sfv = downloadLink.getFilePackage().getSFV()) != null) {
                 if (sfv.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                     downloadLink.getLinkStatus().setStatusText(JDLocale.LF("system.download.doCRC2", "CRC-Check running(%s)", "CRC32"));
                     downloadLink.requestGuiUpdate();
 
                     long crc = JDUtilities.getCRC(new File(downloadLink.getFileOutput()));
-
+              
                     String sfvText = JDIO.getLocalFile(new File(sfv.getFileOutput()));
                     if (sfvText != null && sfvText.toLowerCase().contains(new File(downloadLink.getFileOutput()).getName().toLowerCase())) {
                         String[] l = Regex.getLines(sfvText);
@@ -149,10 +150,15 @@ public class RAFDownload extends DownloadInterface {
 
                         }
 
+                    }else{
+                        
+                        downloadLink.getLinkStatus().setStatusText(null);
+                        downloadLink.requestGuiUpdate();    
                     }
                 }
 
-            } else if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_DO_CRC, false)) {
+            }
+            if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_DO_CRC, false)) {
 
                 String linkHash = null;
                 String localHash = null;
