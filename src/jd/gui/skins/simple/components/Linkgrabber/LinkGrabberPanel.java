@@ -301,7 +301,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                 int links = 0;
                 for (LinkGrabberFilePackage fp : fps) {
                     links += fp.getDownloadLinks().size();
-                }                
+                }
                 Balloon.showIfHidden("Linkgrabber", JDTheme.II("gui.images.add", 32, 32), JDLocale.LF("gui.linkgrabber.finished", "Grabbed %s link(s) in %s Package(s)", "" + links, "" + fps.size()));
                 fps = null;
             }
@@ -558,7 +558,17 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                             if (name == null) name = SimpleGUI.CURRENTGUI.showUserInputDialog(JDLocale.L("gui.linklist.newpackage.message", "Name of the new package"), fp.getName());
                             if (name != null) {
                                 nfp = new LinkGrabberFilePackage(name, LGINSTANCE);
+                                nfp.setDownloadDirectory(fp.getDownloadDirectory());
+                                nfp.setExtractAfterDownload(fp.isExtractAfterDownload());
+                                nfp.setUseSubDir(fp.useSubDir());
+                                nfp.setComment(fp.getComment());
+                                ArrayList<String> passwords = null;
+                                for (DownloadLink link : selected_links) {
+                                    fp = LGINSTANCE.getFPwithLink(link);                                    
+                                    if (fp != null) passwords = JDUtilities.mergePasswords(passwords, fp.getPassword());
+                                }
                                 nfp.addAll(selected_links);
+                                if (passwords != null) nfp.setPassword(JDUtilities.passwordArrayToString(passwords.toArray(new String[passwords.size()])));
                                 if (SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.PARAM_INSERT_NEW_LINKS_AT, false)) {
                                     LGINSTANCE.addPackageAt(nfp, 0);
                                 } else {
@@ -615,7 +625,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
     private void confirmPackages(ArrayList<LinkGrabberFilePackage> all) {
         if (all.size() == 0) return;
         for (int i = 0; i < all.size(); ++i) {
-            confirmPackage(all.get(i), null,i);
+            confirmPackage(all.get(i), null, i);
         }
         LGINSTANCE.throwLinksAdded();
         if (SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.PARAM_START_AFTER_ADDING_LINKS, true)) {
@@ -634,7 +644,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
         return ((ArrayList<String[]>) SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getProperty("DOWNLOADDIR_LIST", new ArrayList<String[]>()));
     }
 
-    public void confirmPackage(LinkGrabberFilePackage fpv2, String host,int index) {
+    public void confirmPackage(LinkGrabberFilePackage fpv2, String host, int index) {
         if (fpv2 == null) return;
         ArrayList<DownloadLink> linkList = fpv2.getDownloadLinks();
         if (linkList.isEmpty()) return;

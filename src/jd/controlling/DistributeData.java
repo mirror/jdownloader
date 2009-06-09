@@ -243,31 +243,31 @@ public class DistributeData extends Thread {
      * @return Link-ArrayList
      */
     public ArrayList<DownloadLink> findLinks() {
+        ArrayList<String> foundPasswords = HTMLParser.findPasswords(data);
         data = HTMLEntities.unhtmlentities(data);
         data = data.replaceAll("jd://", "http://");
-        ArrayList<DownloadLink> ret = findLinks(true);
+        ArrayList<DownloadLink> ret = findLinksIntern();
         data = Encoding.urlDecode(data, true);
-        ret.addAll(findLinks(true));
+        ret.addAll(findLinksIntern());
         if (!filterNormalHTTP) {
             data = data.replaceAll("--CUT--", "\n");
             data = data.replaceAll("http://", "httpviajd://");
             data = data.replaceAll("https://", "httpsviajd://");
-            ret.addAll(findLinks(true));
+            ret.addAll(findLinksIntern());
             data = data.replaceAll("httpviajd://", "http://");
             data = data.replaceAll("httpsviajd://", "https://");
+        }
+        for (DownloadLink link : ret) {
+            link.addSourcePluginPasswordList(foundPasswords);
         }
         return ret;
     }
 
-    public ArrayList<DownloadLink> findLinks(boolean searchpw) {
+    private ArrayList<DownloadLink> findLinksIntern() {
 
         ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
         if (JDUtilities.getPluginsForHost() == null) return new ArrayList<DownloadLink>();
 
-        ArrayList<String> foundPasswords = new ArrayList<String>();
-        if (searchpw == true) {
-            foundPasswords = HTMLParser.findPasswords(data);
-        }
         this.orgData = data;
         reformDataString();
         // es werden die entschlüsselten Links (soweit überhaupt
@@ -279,32 +279,33 @@ public class DistributeData extends Thread {
         ArrayList<DownloadLink> alldecrypted = handleDecryptPlugins();
         ArrayList<HostPluginWrapper> pHostAll = JDUtilities.getPluginsForHost();
         for (DownloadLink decrypted : alldecrypted) {
-            if (!checkdecrypted(pHostAll, foundPasswords, links, decrypted)) {
+            if (!checkdecrypted(pHostAll, links, decrypted)) {
                 if (decrypted.getDownloadURL() != null) {
                     if (!filterNormalHTTP) {
                         decrypted.setUrlDownload(decrypted.getDownloadURL().replaceAll("http://", "httpviajd://"));
                         decrypted.setUrlDownload(decrypted.getDownloadURL().replaceAll("https://", "httpsviajd://"));
-                        checkdecrypted(pHostAll, foundPasswords, links, decrypted);
+                        checkdecrypted(pHostAll, links, decrypted);
                     }
                 }
             }
         }
         // Danach wird der (noch verbleibende) Inhalt der Zwischenablage an die
         // Plugins der Hoster geschickt
-        useHoster(foundPasswords, links);
+        useHoster(links);
         return links;
     }
 
-    private boolean checkdecrypted(ArrayList<HostPluginWrapper> pHostAll, ArrayList<String> foundPasswords, ArrayList<DownloadLink> links, DownloadLink decrypted) {
+    private boolean checkdecrypted(ArrayList<HostPluginWrapper> pHostAll, ArrayList<DownloadLink> links, DownloadLink decrypted) {
         if (decrypted.getDownloadURL() == null) return true;
         if (LinkGrabberController.isFiltered(decrypted)) return true;
         boolean gothost = false;
         for (HostPluginWrapper pHost : pHostAll) {
             try {
-                if (pHost.usePlugin() && pHost.canHandle(decrypted.getDownloadURL())) {
+                if (pHost.canHandle(decrypted.getDownloadURL())) {
                     ArrayList<DownloadLink> dLinks = pHost.getPlugin().getDownloadLinks(decrypted.getDownloadURL(), decrypted.getFilePackage() != FilePackage.getDefaultFilePackage() ? decrypted.getFilePackage() : null);
+                    gothost = true;
+                    if (!pHost.usePlugin()) break;
                     for (int c = 0; c < dLinks.size(); c++) {
-                        dLinks.get(c).addSourcePluginPasswordList(foundPasswords);
                         dLinks.get(c).addSourcePluginPasswordList(decrypted.getSourcePluginPasswordList());
                         dLinks.get(c).setSourcePluginComment(decrypted.getSourcePluginComment());
                         dLinks.get(c).setName(decrypted.getName());
@@ -316,7 +317,6 @@ public class DistributeData extends Thread {
                         dLinks.get(c).setDownloadSize(decrypted.getDownloadSize());
                         dLinks.get(c).setSubdirectory(decrypted);
                     }
-                    gothost = true;
                     links.addAll(dLinks);
                     break;
                 }
@@ -328,23 +328,19 @@ public class DistributeData extends Thread {
         return gothost;
     }
 
-    private void useHoster(ArrayList<String> passwords, ArrayList<DownloadLink> links) {
+    private void useHoster(ArrayList<DownloadLink> links) {
         for (HostPluginWrapper pHost : JDUtilities.getPluginsForHost()) {
-            if (pHost.usePlugin() && pHost.canHandle(pHost.isAcceptOnlyURIs() ? data : orgData)) {
+            if (pHost.canHandle(pHost.isAcceptOnlyURIs() ? data : orgData)) {
                 ArrayList<DownloadLink> dl = pHost.getPlugin().getDownloadLinks(pHost.isAcceptOnlyURIs() ? data : orgData, null);
-                if (passwords.size() > 0) {
-                    for (DownloadLink dLink : dl) {
-                        dLink.addSourcePluginPasswordList(passwords);
-                    }
-                }
-                for (DownloadLink dll : dl) {
-                    if (LinkGrabberController.isFiltered(dll)) continue;
-                    links.add(dll);
-                }
                 if (pHost.isAcceptOnlyURIs()) {
                     data = pHost.getPlugin().cutMatches(data);
                 } else {
                     orgData = pHost.getPlugin().cutMatches(orgData);
+                }
+                if (!pHost.usePlugin()) continue;
+                for (DownloadLink dll : dl) {
+                    if (LinkGrabberController.isFiltered(dll)) continue;
+                    links.add(dll);
                 }
             }
         }

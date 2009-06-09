@@ -367,21 +367,12 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
         ArrayList<String> pwList = new ArrayList<String>();
         for (String element : pws) {
             pwList.add(element);
-        }
-
-        ArrayList<String> dlpwList = new ArrayList<String>();
+        }        
         synchronized (downloadLinkList) {
-            for (DownloadLink element : downloadLinkList) {
-                pws = JDUtilities.passwordStringToArray(element.getSourcePluginPassword());
-
-                String dlpw = element.getStringProperty("pass", null);
-                if (dlpw != null && !dlpwList.contains(dlpw)) dlpwList.add(dlpw);
-                for (String element2 : pws) {
-                    if (pwList.indexOf(element2) < 0) {
-                        pwList.add(element2);
-                    }
-                }
-
+            for (DownloadLink element : downloadLinkList) {                
+                for (String pw : element.getSourcePluginPasswordList()) {
+                    if (!pwList.contains(pw)) pwList.add(pw);
+                }                
                 String newComment = element.getSourcePluginComment();
                 if (newComment != null && comment.indexOf(newComment) < 0) {
                     comment.append("|");
@@ -486,14 +477,6 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
      */
     public boolean hasDownloadDirectory() {
         return downloadDirectory != null && downloadDirectory.length() > 0;
-    }
-
-    /**
-     * @return true/false, je nachdem ob ein Passwort festgelegt wurde
-     *         (archivpasswort)
-     */
-    public boolean hasPassword() {
-        return password != null && password.length() > 0;
     }
 
     public int indexOf(DownloadLink link) {

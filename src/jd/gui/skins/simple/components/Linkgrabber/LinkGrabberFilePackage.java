@@ -205,16 +205,11 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
             pwList.add(element);
         }
 
-        // Vector<String> dlpwList = new Vector<String>();
         synchronized (downloadLinks) {
             for (DownloadLink element : downloadLinks) {
-                pws = JDUtilities.passwordStringToArray(element.getSourcePluginPassword());
-                for (String element2 : pws) {
-                    if (pwList.indexOf(element2) < 0) {
-                        pwList.add(element2);
-                    }
+                for (String pw : element.getSourcePluginPasswordList()) {
+                    if (!pwList.contains(pw)) pwList.add(pw);
                 }
-
                 String newComment = element.getSourcePluginComment();
                 if (newComment != null && comment.indexOf(newComment) < 0) {
                     comment.append("|");

@@ -93,7 +93,7 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
     private void checkHosterList(ArrayList<DownloadLink> hosterList) {
         if (hosterList.size() != 0) {
             DownloadLink link = hosterList.get(0);
-            boolean ret = ((PluginForHost) link.getPlugin()).checkLinks(hosterList.toArray(new DownloadLink[] {}));
+            boolean ret = ((PluginForHost) link.getPlugin().getWrapper().getNewPluginInstance()).checkLinks(hosterList.toArray(new DownloadLink[] {}));
             if (!ret) {
                 for (int i = 0; i < hosterList.size(); i++) {
                     link = hosterList.get(i);

@@ -973,6 +973,16 @@ public class JDUtilities {
         return new String[] { password };
     }
 
+    public static ArrayList<String> mergePasswords(ArrayList<String> passwords, String newpassword) {
+        String[] newpws = passwordStringToArray(newpassword);
+        if (newpws.length == 0) return passwords;
+        if (passwords == null) passwords = new ArrayList<String>();
+        for (String newpw : newpws) {
+            if (!passwords.contains(newpw)) passwords.add(newpw);
+        }
+        return passwords;
+    }
+
     public static String passwordArrayToString(String[] passwords) {
         LinkedList<String> pws = new LinkedList<String>();
         for (int i = 0; i < passwords.length; i++) {

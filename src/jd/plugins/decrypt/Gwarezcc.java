@@ -78,7 +78,7 @@ public class Gwarezcc extends PluginForDecrypt {
 
             if (dlc_found == false) {
                 /* Mirrors suchen (Verschlüsselt) */
-                String mirror_pages[] = br.getRegex(Pattern.compile("<img src=\"gfx/icons/dl\\.png\" style=\"vertical-align\\:bottom\\;\"> <a href=\"mirror/(\\d+)/checked/game/" + downloadid + "/\" onmouseover", Pattern.CASE_INSENSITIVE)).getColumn(0);
+                String mirror_pages[] = br.getRegex(Pattern.compile("<a href=\"mirror/(\\d+)/checked/game/" + downloadid + "/", Pattern.CASE_INSENSITIVE)).getColumn(0);
                 for (String mirror_page : mirror_pages) {
                     /* Mirror Page zur weiteren Verarbeitung adden */
                     decryptedLinks.add(createDownloadlink("http://gwarez.cc/mirror/" + mirror_page + "/parts/game/" + downloadid + "/"));
@@ -97,35 +97,36 @@ public class Gwarezcc extends PluginForDecrypt {
             // "<a href=\"redirect\\.php\\?to=([^\"]*?)\"",
             // Pattern.CASE_INSENSITIVE)).getColumn(0);
 
-            Form[] forms = br.getForms();
-
+            Form[] forms = br.getForms();      
+            
             /* Passwort suchen */
             br.getPage("http://gwarez.cc/" + downloadid + "#details");
-            String password = br.getRegex(Pattern.compile("<img src=\"gfx/icons/passwort\\.png\"> <b>Passwort:</b>.*?class=\"up\">(.*?)<\\/td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+            String password = br.getRegex(Pattern.compile("<strong>Passwort:</strong>.*?<td align=.*?listdetail2.*?>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
             if (password == null) {
                 logger.severe("Please Update Gwarez Plugin(PW Pattern)");
             } else {
                 password = password.trim();
             }
             progress.setRange(forms.length);
+            Browser brc = br.cloneBrowser();
             for (Form form : forms) {
                 /* Parts decrypten und adden */
                 if (form.getAction().trim().startsWith("redirect")) {
-
-                    br.submitForm(form);
+                    brc=br.cloneBrowser();
+                    brc.submitForm(form);
 
                     String linkString = null;
 
                     for (int i = 0; i < 10; i++) {
                         // viele links werden auch ohne recaptcha angeboten.
                         // deshalb wird der check zuerst gemacht.
-                        linkString = br.getRegex("<meta http-equiv=\"refresh\".*?URL=(.*?)\">").getMatch(0);
+                        linkString = brc.getRegex("<meta http-equiv=\"refresh\".*?URL=(.*?)\">").getMatch(0);
                         if (linkString != null) break;
-                        String k = br.getRegex("<script type=\"text/javascript\" src=\"http://api.recaptcha.net/challenge\\?k=(.*?)\"></script>").getMatch(0);
+                        String k = brc.getRegex("<script type=\"text/javascript\" src=\"http://api.recaptcha.net/challenge\\?k=(.*?)\"></script>").getMatch(0);
                         if (k != null) {
                             /* recaptcha */
 
-                            Browser rcBr = br.cloneBrowser();
+                            Browser rcBr = brc.cloneBrowser();
                             rcBr.getPage("http://api.recaptcha.net/challenge?k=" + k);
                             String challenge = rcBr.getRegex("challenge : '(.*?)',").getMatch(0);
                             String server = rcBr.getRegex("server : '(.*?)',").getMatch(0);
@@ -136,16 +137,16 @@ public class Gwarezcc extends PluginForDecrypt {
                             if (code == null) continue;
                             form.put("recaptcha_challenge_field", challenge);
                             form.put("recaptcha_response_field", code);
-                            br.submitForm(form);
+                            brc.submitForm(form);
                         } else {
                             String code = getCaptchaCode("captcha/captcha.php", param);
                             Form cap = br.getForm(0);
                             cap.put("sicherheitscode", code);
-                            br.submitForm(cap);
+                            brc.submitForm(cap);
                         }
 
                     }
-                    if (linkString == null) linkString = br.getRegex("<meta http-equiv=\"refresh\".*?URL=(.*?)\">").getMatch(0);
+                    if (linkString == null) linkString = brc.getRegex("<meta http-equiv=\"refresh\".*?URL=(.*?)\">").getMatch(0);
 
                     progress.increase(1);
 
@@ -160,7 +161,7 @@ public class Gwarezcc extends PluginForDecrypt {
             String downloadid = new Regex(parameter, "\\/download/dlc/(\\d+)/").getMatch(0);
             /* Passwort suchen */
             br.getPage("http://gwarez.cc/" + downloadid + "#details");
-            String password = br.getRegex(Pattern.compile("<img src=\"gfx/icons/passwort\\.png\"> <b>Passwort:</b>.*?class=\"up\">(.*?)<\\/td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+            String password = br.getRegex(Pattern.compile("<strong>Passwort:</strong>.*?<td align=.*?listdetail2.*?>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
             if (password == null) {
                 logger.severe("Please Update Gwarez Plugin(PW Pattern)");
             } else {

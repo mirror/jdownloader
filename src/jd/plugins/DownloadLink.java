@@ -65,8 +65,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     public static enum AvailableStatus {
         UNCHECKED, FALSE, UNCHECKABLE, TRUE;
-        
-      
+
     }
 
     public static final int LINKTYPE_CONTAINER = 1;
@@ -214,10 +213,11 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     public DownloadLink addSourcePluginPassword(String sourcePluginPassword) {
-        if (sourcePluginPasswordList.indexOf(sourcePluginPassword) < 0 && sourcePluginPassword != null && sourcePluginPassword.trim().length() > 0) {
-            sourcePluginPasswordList.add(sourcePluginPassword);
+        if (sourcePluginPassword == null || sourcePluginPassword.trim().length() == 0) return this;
+        synchronized (sourcePluginPasswordList) {
+            if (!sourcePluginPasswordList.contains(sourcePluginPassword)) sourcePluginPasswordList.add(sourcePluginPassword);
+            return this;
         }
-        return this;
     }
 
     public void addSourcePluginPasswords(String[] sourcePluginPasswords) {
@@ -507,25 +507,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     public String getSourcePluginComment() {
         return sourcePluginComment;
-    }
-
-    public String getSourcePluginPassword() {
-        if (sourcePluginPasswordList==null||sourcePluginPasswordList.size() == 0) { return null; }
-        if (sourcePluginPasswordList.size() == 1) { return sourcePluginPasswordList.get(0); }
-        StringBuilder ret = new StringBuilder();
-        ret.append('{');
-        for (int i = 0; i < sourcePluginPasswordList.size(); i++) {
-            if (sourcePluginPasswordList.get(i).trim().length() > 0) {
-                ret.append('"');
-                ret.append(sourcePluginPasswordList.get(i));
-                ret.append('"');
-                if (i < sourcePluginPasswordList.size() - 1) {
-                    ret.append(new char[] { ',', ' ' });
-                }
-            }
-        }
-        ret.append('}');
-        return ret.toString();
     }
 
     public ArrayList<String> getSourcePluginPasswordList() {

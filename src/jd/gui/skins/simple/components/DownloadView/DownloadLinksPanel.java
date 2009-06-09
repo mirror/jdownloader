@@ -483,9 +483,18 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                     if (name != null) {
                         FilePackage nfp = FilePackage.getInstance();
                         nfp.setName(name);
+                        nfp.setDownloadDirectory(fp.getDownloadDirectory());
+                        nfp.setExtractAfterDownload(fp.isExtractAfterDownload());
+                        nfp.setComment(fp.getComment());
+                        ArrayList<String> passwords = null;
+                        for (DownloadLink link2 : selected_links) {
+                            FilePackage fp2 = link2.getFilePackage();
+                            passwords = JDUtilities.mergePasswords(passwords, fp2.getPassword());
+                        }
                         for (int i = 0; i < selected_links.size(); i++) {
                             selected_links.get(i).setFilePackage(nfp);
                         }
+                        if (passwords != null) nfp.setPassword(JDUtilities.passwordArrayToString(passwords.toArray(new String[passwords.size()])));
                         if (SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.PARAM_INSERT_NEW_LINKS_AT, false)) {
                             JDUtilities.getDownloadController().addPackageAt(nfp, 0);
                         } else {
