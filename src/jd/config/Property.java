@@ -160,7 +160,11 @@ public class Property implements Serializable {
      * @return Value zu key
      */
     public Object getProperty(String key) {
-        return getProperty(key, null);
+        if (properties == null) {
+            properties = new HashMap<String, Object>();
+        }
+
+        return properties.get(key);
     }
 
     /**
