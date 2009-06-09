@@ -33,6 +33,7 @@ import javax.swing.JLabel;
 import javax.swing.JSeparator;
 
 import jd.PluginWrapper;
+import jd.captcha.specials.Raubkopierer;
 import jd.controlling.ProgressController;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.SimpleGUI;
@@ -117,7 +118,10 @@ public class RaubkopiererWs extends PluginForDecrypt {
             if (!mirrors.get(i).getUse() && !mirrors.get(i).getUseForSample()) continue;
             for (int retry = 1; retry <= 5; retry++) {
                 String captchaURL = "/captcha" + form.getRegex("<img\\ssrc=\"/captcha(.*?)\"").getMatch(0);
-                String code = getCaptchaCode(captchaURL, param);
+                File captchaFile = this.getLocalCaptchaFile();
+                Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaURL));
+                Raubkopierer.prepareCaptcha(captchaFile);
+                String code = getCaptchaCode(captchaFile, param);
                 br.postPage(parameter, "captcha=" + code + "&" + mirrors.get(i).getKey() + "=");
                 if (!br.containsHTML("Fehler: Der Sicherheits-Code")) {
                     break;
