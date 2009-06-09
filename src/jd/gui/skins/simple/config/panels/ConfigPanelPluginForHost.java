@@ -63,7 +63,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
         private static final long serialVersionUID = 1155282457354673850L;
 
-        // @Override
+        @Override
         public Class<?> getColumnClass(int columnIndex) {
             return getValueAt(0, columnIndex).getClass();
         }
@@ -72,7 +72,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
             return 5;
         }
 
-        // @Override
+        @Override
         public String getColumnName(int column) {
             switch (column) {
             case 0:
@@ -124,12 +124,12 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
             return null;
         }
 
-        // @Override
+        @Override
         public boolean isCellEditable(int rowIndex, int columnIndex) {
             return columnIndex >= 2;
         }
 
-        // @Override
+        @Override
         public void setValueAt(Object value, int row, int col) {
             if (col == 2) {
                 if ((Boolean) value) {
@@ -180,7 +180,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
                     if (a.isLoaded() && !b.isLoaded()) {
                         return -1;
                     } else {
-                        return +1;
+                        return 1;
                     }
                 }
             }
@@ -219,9 +219,8 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         loadEntry(pluginsForHost.get(table.getSelectedRow()));
     }
 
-    // @Override
+    @Override
     public void initPanel() {
-
         tableModel = new InternalTableModel();
         table = new JXTable(tableModel);
         table.setSortable(false);
@@ -285,16 +284,16 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         btnLoad.setEnabled(false);
         btnLoad.addActionListener(this);
 
-        JPanel bpanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        JPanel bpanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
         bpanel.add(btnEdit);
         bpanel.add(btnLoad);
 
-        this.setLayout(new MigLayout("ins 10, wrap 1", "[grow, fill]", "[grow, fill]0[]"));
-        this.add(new JScrollPane(table), "span");
-        this.add(bpanel, "dock west, dock south, gapbottom 10");
+        setLayout(new MigLayout("ins 5,wrap 1", "[fill,grow]", "[fill,grow][]"));
+        add(new JScrollPane(table));
+        add(bpanel, "w pref!, dock south");
     }
 
-    // @Override
+    @Override
     public void load() {
     }
 
@@ -322,10 +321,11 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     public void mouseReleased(MouseEvent e) {
     }
 
-    // @Override
+    @Override
     public void save() {
     }
 
+    @Override
     public PropertyType hasChanges() {
         return PropertyType.NONE;
     }

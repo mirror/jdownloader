@@ -2,6 +2,7 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Vector;
 
@@ -39,7 +40,7 @@ public class ThemeKeys extends JFrame {
     private final String sourceDir = "C:\\Dokumente und Einstellungen\\Towelie\\Eigene Dateien\\Java\\jd\\src\\";
 
     private final int themeFile = 1;
-    private final Vector<String> themes = JDTheme.getThemeIDs();
+    private final ArrayList<String> themes = JDTheme.getThemeIDs();
 
     private Vector<KeyInfo> themeData = new Vector<KeyInfo>();
 

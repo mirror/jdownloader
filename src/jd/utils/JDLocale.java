@@ -21,17 +21,16 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Vector;
 
 import javax.swing.UIManager;
 
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
+import jd.http.Browser;
 import jd.http.Encoding;
-import jd.http.requests.PostRequest;
 import jd.nutils.io.JDFileFilter;
-import jd.parser.Regex;
 
 public class JDLocale {
 
@@ -71,11 +70,11 @@ public class JDLocale {
         return (ret.equals("0.0")) ? info : ret;
     }
 
-    public static Vector<String> getLocaleIDs() {
+    public static ArrayList<String> getLocaleIDs() {
         File dir = JDUtilities.getResourceFile(LANGUAGES_DIR);
         if (!dir.exists()) return null;
         File[] files = dir.listFiles(new JDFileFilter(null, ".lng", false));
-        Vector<String> ret = new Vector<String>();
+        ArrayList<String> ret = new ArrayList<String>();
         for (File element : files) {
             ret.add(element.getName().split("\\.")[0]);
         }
@@ -237,15 +236,17 @@ public class JDLocale {
 
     public static String translate(String from, String to, String msg) {
         try {
-            PostRequest r = new PostRequest("http://translate.google.com/translate_t?sl=" + from + "&tl=" + to);
+            HashMap<String, String> postData = new HashMap<String, String>();
+            postData.put("hl", "de");
+            postData.put("text", msg);
+            postData.put("sl", from);
+            postData.put("tl", to);
+            postData.put("ie", "UTF8");
 
-            r.addVariable("hl", "de");
-            r.addVariable("text", msg);
-            r.addVariable("sl", from);
-            r.addVariable("tl", to);
-            r.addVariable("ie", "UTF8");
+            Browser br = new Browser();
+            br.postPage("http://translate.google.com/translate_t", postData);
 
-            return Encoding.UTF8Decode(Encoding.htmlDecode(new Regex(r.load(), "<div id\\=result_box dir\\=\"ltr\">(.*?)</div>").getMatch(0)));
+            return Encoding.UTF8Decode(Encoding.htmlDecode(br.getRegex("<div id\\=result_box dir\\=\"ltr\">(.*?)</div>").getMatch(0)));
         } catch (IOException e) {
             JDLogger.exception(e);
             return null;

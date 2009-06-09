@@ -107,11 +107,12 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
             final long timel = System.currentTimeMillis();
 
             final Thread timer = new Thread() {
+                @Override
                 public void run() {
                     while (true) {
                         new GuiRunnable<Object>() {
 
-                            // @Override
+                            @Override
                             public Object runSave() {
                                 time.setText(Formatter.formatSeconds((System.currentTimeMillis() - timel) / 1000));
                                 time.setEnabled(true);
@@ -132,7 +133,7 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
             JDUtilities.getConfiguration().setProperty(ReconnectMethod.PARAM_RETRIES, 0);
             progress.setStatus(30);
             new Thread() {
-                // @Override
+                @Override
                 public void run() {
                     if (Reconnecter.doManualReconnect()) {
                         progress.setStatusText(JDLocale.L("gui.warning.reconnectSuccess", "Reconnect successfull"));
@@ -160,14 +161,11 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
         }
     }
 
-    // @Override
+    @Override
     public void initPanel() {
         setupContainer();
         /* 0=LiveHeader, 1=Extern, 2=Batch,3=CLR */
         maintabbed = new JTabbedPane();
-
-        // panel.setLayout(new MigLayout("ins 0,wrap 1,debug", "[fill,grow]",
-        // "[fill,grow]"));
 
         method = new JPanel(new MigLayout("ins 0 0 0 0,wrap 2", "[fill,grow 10]10[fill,grow]"));
 
@@ -212,6 +210,7 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
         beforeIP.setEnabled(false);
 
         new Thread() {
+            @Override
             public void run() {
                 String ip = JDUtilities.getIPAddress(null);
                 currentip.setText(ip);
@@ -238,6 +237,7 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
 
     }
 
+    @Override
     public boolean needsViewport() {
         return false;
     }
@@ -270,18 +270,19 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
 
     }
 
-    // @Override
+    @Override
     public void load() {
         tabbed.setSelectedIndex(configuration.getIntegerProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, 0));
         loadConfigEntries();
     }
 
+    @Override
     public ConfigEntry.PropertyType hasChanges() {
         ConfigEntry.PropertyType ret = tabbed.getSelectedIndex() != configuration.getIntegerProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, ReconnectMethod.LIVEHEADER) ? PropertyType.NORMAL : PropertyType.NONE;
         return PropertyType.getMax(ret, super.hasChanges(), ((ConfigPanel) tabbed.getSelectedComponent()).hasChanges());
     }
 
-    // @Override
+    @Override
     public void save() {
         cep.save();
         saveConfigEntries();

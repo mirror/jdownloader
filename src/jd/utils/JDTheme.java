@@ -20,8 +20,8 @@ import java.awt.Color;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Vector;
 import java.util.logging.Logger;
 
 import javax.swing.ImageIcon;
@@ -45,15 +45,15 @@ public class JDTheme {
 
     private static String currentTheme;
 
-    public static Vector<String> getThemeIDs() {
+    public static ArrayList<String> getThemeIDs() {
         File dir = JDUtilities.getResourceFile(THEME_DIR);
         if (!dir.exists()) return null;
         File[] files = dir.listFiles(new JDFileFilter(null, ".icl", false));
-        Vector<String> ret = new Vector<String>();
-        
-         for (File element : files) {
-         ret.add(element.getName().split("\\.")[0]);
-         }
+        ArrayList<String> ret = new ArrayList<String>();
+
+        for (File element : files) {
+            ret.add(element.getName().split("\\.")[0]);
+        }
         return ret;
     }
 

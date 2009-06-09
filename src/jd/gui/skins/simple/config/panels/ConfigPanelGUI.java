@@ -19,6 +19,7 @@ package jd.gui.skins.simple.config.panels;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Locale;
 
 import javax.swing.SwingUtilities;
@@ -62,11 +63,12 @@ public class ConfigPanelGUI extends ConfigPanel {
         load();
     }
 
+    @Override
     public boolean needsViewport() {
         return false;
     }
 
-    // @Override
+    @Override
     public void initPanel() {
         ConfigContainer container = new ConfigContainer();
 
@@ -86,13 +88,14 @@ public class ConfigPanelGUI extends ConfigPanel {
         ce.setDefaultValue(Locale.getDefault());
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
 
-        if (JDTheme.getThemeIDs().size() <= 1) {
-            JDTheme.getThemeIDs().get(0);
-            subConfig.setProperty(SimpleGuiConstants.PARAM_THEME, JDTheme.getThemeIDs().get(0));
+        ArrayList<String> themeIDs = JDTheme.getThemeIDs();
+        if (themeIDs.size() == 0) {
+            logger.info("You have to update your resources dir! No Themefiles (*.icl) found!");
+        } else if (themeIDs.size() == 1) {
+            subConfig.setProperty(SimpleGuiConstants.PARAM_THEME, themeIDs.get(0));
             subConfig.save();
         } else {
-
-            look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, SimpleGuiConstants.PARAM_THEME, JDTheme.getThemeIDs().toArray(new String[] {}), JDLocale.L("gui.config.gui.theme", "Theme")).setGroup(lookGroup));
+            look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, SimpleGuiConstants.PARAM_THEME, themeIDs.toArray(new String[] {}), JDLocale.L("gui.config.gui.theme", "Theme")).setGroup(lookGroup));
             ce.setDefaultValue("default");
             ce.setPropertyType(PropertyType.NEEDS_RESTART);
         }
@@ -274,12 +277,12 @@ public class ConfigPanelGUI extends ConfigPanel {
 
     }
 
-    // @Override
+    @Override
     public void load() {
         loadConfigEntries();
     }
 
-    // @Override
+    @Override
     public void save() {
         cep.save();
         subConfig.save();
@@ -290,10 +293,12 @@ public class ConfigPanelGUI extends ConfigPanel {
     @SuppressWarnings("unused")
     private void updateLAF() {
         new Thread() {
+            @Override
             public void run() {
 
                 new GuiRunnable<Object>() {
 
+                    @Override
                     public Object runSave() {
                         try {
 
@@ -321,6 +326,7 @@ public class ConfigPanelGUI extends ConfigPanel {
 
     }
 
+    @Override
     public PropertyType hasChanges() {
         return PropertyType.getMax(super.hasChanges(), cep.hasChanges());
     }

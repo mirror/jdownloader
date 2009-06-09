@@ -18,7 +18,7 @@ package jd.update;
 
 import jd.config.Property;
 
-public class PackageData extends Property {
+public class PackageData extends Property implements Comparable<PackageData>{
 
     private static final long serialVersionUID = 313280647294844981L;
 
@@ -101,6 +101,10 @@ public class PackageData extends Property {
 
     public void setUpdating(boolean updating) {
         this.updating = updating;
+    }
+
+    public int compareTo(PackageData pd) {
+        return (getStringProperty("category") + " " + getStringProperty("name")).compareToIgnoreCase(pd.getStringProperty("category") + " " + pd.getStringProperty("name"));
     }
 
 }

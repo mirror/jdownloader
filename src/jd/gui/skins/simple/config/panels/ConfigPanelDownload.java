@@ -49,24 +49,29 @@ public class ConfigPanelDownload extends ConfigPanel {
         load();
     }
 
+    @Override
     public void initPanel() {
         this.setLayout(new MigLayout("ins 0", "[fill,grow]", "[fill,grow]"));
         this.add(cep = new ConfigEntriesPanel(setupContainer()));
     }
 
+    @Override
     public void load() {
         loadConfigEntries();
     }
 
+    @Override
     public void save() {
         cep.save();
         config.save();
     }
 
+    @Override
     public boolean needsViewport() {
         return false;
     }
 
+    @Override
     public PropertyType hasChanges() {
 
         return PropertyType.getMax(super.hasChanges(), cep.hasChanges());

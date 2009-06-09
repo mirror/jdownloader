@@ -50,6 +50,7 @@ public class ConfigPanelCaptcha extends ConfigPanel {
 
         private static final long serialVersionUID = 1155282457354673850L;
 
+        @Override
         public Class<?> getColumnClass(int columnIndex) {
             switch (columnIndex) {
             case 0:
@@ -68,6 +69,7 @@ public class ConfigPanelCaptcha extends ConfigPanel {
             return 4;
         }
 
+        @Override
         public String getColumnName(int column) {
             switch (column) {
             case 0:
@@ -86,6 +88,7 @@ public class ConfigPanelCaptcha extends ConfigPanel {
             return methods.size();
         }
 
+        @Override
         public boolean isCellEditable(int rowIndex, int columnIndex) {
             return columnIndex == 0;
         }
@@ -105,6 +108,7 @@ public class ConfigPanelCaptcha extends ConfigPanel {
             return null;
         }
 
+        @Override
         public void setValueAt(Object value, int row, int col) {
             if (col == 0) {
                 configuration.setProperty(jacKeyForMethod(row), value);
@@ -136,10 +140,12 @@ public class ConfigPanelCaptcha extends ConfigPanel {
         load();
     }
 
+    @Override
     public boolean needsViewport() {
         return false;
     }
 
+    @Override
     public void initPanel() {
         setupContainer();
 
@@ -175,22 +181,22 @@ public class ConfigPanelCaptcha extends ConfigPanel {
         tabbed.addTab(JDLocale.L("gui.config.panels.captcha.advancedtab", "Advanced settings"), cep = new ConfigEntriesPanel(container));
         tabbed.setIconAt(1, JDTheme.II("gui.images.config.ocr", 16, 16));
 
-        panel.setLayout(new MigLayout("ins 0,wrap 1", "[fill,grow 10]", "[fill,grow]"));
-        panel.add(tabbed);
-
         setLayout(new MigLayout("ins 0,wrap 1", "[fill,grow 10]", "[fill,grow]"));
-        add(panel);
+        add(tabbed);
     }
 
+    @Override
     public void load() {
         loadConfigEntries();
     }
 
+    @Override
     public void save() {
         cep.save();
         saveConfigEntries();
     }
 
+    @Override
     public PropertyType hasChanges() {
         return PropertyType.getMax(super.hasChanges(), cep.hasChanges());
     }

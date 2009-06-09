@@ -56,7 +56,7 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
 
         private static final long serialVersionUID = 1155282457354673850L;
 
-        // @Override
+        @Override
         public Class<?> getColumnClass(int columnIndex) {
             return String.class;
         }
@@ -65,7 +65,7 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
             return 3;
         }
 
-        // @Override
+        @Override
         public String getColumnName(int column) {
             switch (column) {
             case 0:
@@ -128,6 +128,7 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
         load();
     }
 
+    @Override
     public boolean needsViewport() {
         return false;
     }
@@ -189,11 +190,8 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
         pop.setVisible(true);
     }
 
-    // @Override
+    @Override
     public void initPanel() {
-        setLayout(new MigLayout("ins 5,wrap 1", "[fill,grow]", "[fill,grow]"));
-        panel.setLayout(new MigLayout("ins 0,wrap 1", "[fill,grow]", "[fill,grow][]"));
-
         tableModel = new InternalTableModel();
         table = new JTable(tableModel);
         table.addMouseListener(this);
@@ -235,12 +233,12 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
         bpanel.add(btnRemove);
         bpanel.add(btnEdit);
 
-        panel.add(new JScrollPane(table));
-        panel.add(bpanel, "w pref!, dock south");
-        add(panel);
+        setLayout(new MigLayout("ins 5,wrap 1", "[fill,grow]", "[fill,grow][]"));
+        add(new JScrollPane(table));
+        add(bpanel, "w pref!, dock south");
     }
 
-    // @Override
+    @Override
     public void load() {
     }
 
@@ -263,17 +261,19 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
     public void mouseReleased(MouseEvent e) {
     }
 
+    @Override
     public void onDisplay() {
         super.onDisplay();
         this.changes = false;
     }
 
-    // @Override
+    @Override
     public void save() {
         subConfig.setProperty(Configuration.PARAM_INTERACTIONS, interactions);
         subConfig.save();
     }
 
+    @Override
     public PropertyType hasChanges() {
         PropertyType ret = PropertyType.NONE;
         if (changes) ret = PropertyType.NORMAL;

@@ -16,7 +16,6 @@
 
 package jd.gui.skins.simple.config.panels;
 
-import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.logging.Level;
@@ -47,7 +46,7 @@ public class ConfigPanelGeneral extends ConfigPanel {
         load();
     }
 
-    // @Override
+    @Override
     public void initPanel() {
         ConfigEntry conditionEntry;
 
@@ -83,15 +82,15 @@ public class ConfigPanelGeneral extends ConfigPanel {
 
         }, JDLocale.L("gui.config.general.cnl.uninstall", "uninstall")).setDefaultValue(false).setGroup(cnl).setEnabled(OSDetector.isWindows())));
 
-        this.add(panel, BorderLayout.NORTH);
+        this.add(panel);
     }
 
-    // @Override
+    @Override
     public void load() {
         loadConfigEntries();
     }
 
-    // @Override
+    @Override
     public void save() {
         saveConfigEntries();
         logger.setLevel((Level) configuration.getProperty(Configuration.PARAM_LOGGER_LEVEL));

@@ -20,7 +20,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 
 import javax.swing.JButton;
 import javax.swing.JScrollPane;
@@ -45,7 +44,7 @@ public class SubPanelOptionalInstaller extends ConfigPanel implements ActionList
 
         private static final long serialVersionUID = 1L;
 
-        // @Override
+        @Override
         public Class<?> getColumnClass(int columnIndex) {
             return getValueAt(0, columnIndex).getClass();
         }
@@ -54,14 +53,13 @@ public class SubPanelOptionalInstaller extends ConfigPanel implements ActionList
             return 5;
         }
 
-        // @Override
+        @Override
         public String getColumnName(int column) {
             switch (column) {
             case 0:
                 return JDLocale.L("gui.config.packagemanager.column_name", "Paket");
             case 1:
                 return JDLocale.L("gui.config.packagemanager.column_category", "Kategorie");
-
             case 2:
                 return JDLocale.L("gui.config.packagemanager.column_latestVersion", "Akt. Version");
             case 3:
@@ -98,12 +96,12 @@ public class SubPanelOptionalInstaller extends ConfigPanel implements ActionList
             return "";
         }
 
-        // @Override
+        @Override
         public boolean isCellEditable(int rowIndex, int columnIndex) {
             return columnIndex == 4;
         }
 
-        // @Override
+        @Override
         public void setValueAt(Object value, int row, int col) {
             if (col == 4) {
                 PackageData element = packageData.get(row);
@@ -139,17 +137,10 @@ public class SubPanelOptionalInstaller extends ConfigPanel implements ActionList
         }
     }
 
-    // @Override
+    @Override
     public void initPanel() {
-        setLayout(new MigLayout("ins 5,wrap 1", "[fill,grow]", "[fill,grow]"));
-        panel.setLayout(new MigLayout("ins 0,wrap 1", "[fill,grow]", "[fill,grow][]"));
-
         packageData = new PackageManager().getPackageData();
-        Collections.sort(packageData, new Comparator<PackageData>() {
-            public int compare(PackageData a, PackageData b) {
-                return (a.getStringProperty("category") + " " + a.getStringProperty("name")).compareToIgnoreCase(b.getStringProperty("category") + " " + b.getStringProperty("name"));
-            }
-        });
+        Collections.sort(packageData);
 
         tableModel = new InternalTableModel();
         table = new JTable(tableModel);
@@ -186,18 +177,17 @@ public class SubPanelOptionalInstaller extends ConfigPanel implements ActionList
         btnReset = new JButton(JDLocale.L("gui.config.packagemanager.reset", "Addons neu herunterladen"));
         btnReset.addActionListener(this);
 
-        panel.add(new JScrollPane(table));
-        panel.add(btnReset, "w pref!, dock south");
-        add(panel);
+        setLayout(new MigLayout("ins 5,wrap 1", "[fill,grow]", "[fill,grow][]"));
+        add(new JScrollPane(table));
+        add(btnReset, "w pref!, dock south");
     }
 
-    // @Override
+    @Override
     public void load() {
     }
 
-    // @Override
+    @Override
     public void save() {
-
     }
 
 }

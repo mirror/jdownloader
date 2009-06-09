@@ -18,7 +18,6 @@ package jd.gui.skins.simple.config;
 
 import java.awt.Graphics;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
@@ -52,14 +51,12 @@ public abstract class ConfigPanel extends JTabbedPanel {
     protected boolean viewport = true;
 
     public ConfigPanel() {
-
-        panel = new JPanel();
         this.setLayout(new MigLayout("ins 0 0 0 0", "[fill,grow]", "[fill,grow]"));
+        panel = new JPanel();
         panel.setLayout(new MigLayout("ins 0 10 10 10,wrap 2", "[fill,grow 10]10[fill,grow]"));
-        // this.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1,
-        // this.getBackground().darker()));
     }
 
+    @Override
     public boolean needsViewport() {
         return viewport;
     }
@@ -69,6 +66,7 @@ public abstract class ConfigPanel extends JTabbedPanel {
 
     }
 
+    @Override
     public void paint(Graphics g) {
 
         super.paint(g);
@@ -173,14 +171,11 @@ public abstract class ConfigPanel extends JTabbedPanel {
     }
 
     private String getGapRight() {
-
         return tabbed ? "16" : "20";
     }
 
     public void addGUIConfigEntry(GUIConfigEntry entry) {
-
         addGUIConfigEntry(entry, panel);
-
     }
 
     public abstract void initPanel();
@@ -188,56 +183,31 @@ public abstract class ConfigPanel extends JTabbedPanel {
     public abstract void load();
 
     public void loadConfigEntries() {
-        Iterator<GUIConfigEntry> it = entries.iterator();
-
-        while (it.hasNext()) {
-            GUIConfigEntry akt = it.next();
-
+        for (GUIConfigEntry akt : entries) {
             if (akt.getConfigEntry().getPropertyInstance() != null && akt.getConfigEntry().getPropertyName() != null) {
                 akt.setData(akt.getConfigEntry().getPropertyInstance().getProperty(akt.getConfigEntry().getPropertyName()));
             }
-
         }
     }
 
     public abstract void save();
 
-    // @Override
+    @Override
     public void onDisplay() {
         System.out.println("Display " + this);
         loadConfigEntries();
     }
 
+    @Override
     public void onHide() {
-        // PropertyType changes = this.hasChanges();
-        // if (changes != ConfigEntry.PropertyType.NONE) {
-        // if (JDUtilities.getGUI().showConfirmDialog(JDLocale.L(
-        // "gui.config.save.doyourealywant",
-        // "Do you want to save your changes?"),
-        // JDLocale.L("gui.config.save.doyourealywant.title", "Changes"))) {
         this.save();
-        // if (changes == ConfigEntry.PropertyType.NEEDS_RESTART) {
-        // if (JDUtilities.getGUI().showConfirmDialog(JDLocale.L(
-        // "gui.config.save.restart",
-        // "Your changes need a restart of JDownloader to take effect.\r\nRestart now?"
-        // ), JDLocale.L("gui.config.save.restart.title",
-        // "JDownloader restart requested"))) {
-        // JDUtilities.restartJD();
-        // }
-        // }
-        // }
-        // }
-
     }
 
     public ConfigEntry.PropertyType hasChanges() {
         PropertyType ret = ConfigEntry.PropertyType.NONE;
-        GUIConfigEntry akt;
         Object old;
         synchronized (entries) {
-            for (Iterator<GUIConfigEntry> it = entries.iterator(); it.hasNext();) {
-                akt = it.next();
-
+            for (GUIConfigEntry akt : entries) {
                 if (akt.getConfigEntry().getPropertyInstance() != null && akt.getConfigEntry().getPropertyName() != null) {
                     if (akt.getConfigEntry().hasChanges()) {
                         ret = ret.getMax(PropertyType.NORMAL);
@@ -266,22 +236,18 @@ public abstract class ConfigPanel extends JTabbedPanel {
     }
 
     public void saveConfigEntries() {
-        GUIConfigEntry akt;
         ArrayList<SubConfiguration> subs = new ArrayList<SubConfiguration>();
-        for (Iterator<GUIConfigEntry> it = entries.iterator(); it.hasNext();) {
-            akt = it.next();
+        for (GUIConfigEntry akt : entries) {
             if (akt.getConfigEntry().getPropertyInstance() instanceof SubConfiguration && subs.indexOf(akt.getConfigEntry().getPropertyInstance()) < 0) {
                 subs.add((SubConfiguration) akt.getConfigEntry().getPropertyInstance());
             }
-
             if (akt.getConfigEntry().getPropertyInstance() != null && akt.getConfigEntry().getPropertyName() != null) {
                 akt.getConfigEntry().getPropertyInstance().setProperty(akt.getConfigEntry().getPropertyName(), akt.getText());
             }
-
         }
 
-        for (Iterator<SubConfiguration> it = subs.iterator(); it.hasNext();) {
-            it.next().save();
+        for (SubConfiguration subConfiguration : subs) {
+            subConfiguration.save();
         }
     }
 

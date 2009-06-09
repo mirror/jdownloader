@@ -41,7 +41,6 @@ import net.miginfocom.swing.MigLayout;
 
 /**
  * @author JD-Team
- * 
  */
 public class SubPanelPluginsOptional extends ConfigPanel implements ActionListener, MouseListener {
 
@@ -49,7 +48,7 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
 
         private static final long serialVersionUID = 1155282457354673850L;
 
-        // @Override
+        @Override
         public Class<?> getColumnClass(int columnIndex) {
             return getValueAt(0, columnIndex).getClass();
         }
@@ -58,7 +57,7 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
             return 5;
         }
 
-        // @Override
+        @Override
         public String getColumnName(int column) {
             switch (column) {
             case 0:
@@ -95,12 +94,12 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
             return null;
         }
 
-        // @Override
+        @Override
         public boolean isCellEditable(int rowIndex, int columnIndex) {
             return columnIndex == 0;
         }
 
-        // @Override
+        @Override
         public void setValueAt(Object value, int row, int col) {
             if (col == 0) {
                 OptionalPluginWrapper plgWrapper = pluginsOptional.get(row);
@@ -148,15 +147,13 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
         SimpleGUI.displayConfig(pluginsOptional.get(table.getSelectedRow()).getPlugin().getConfig(), 0);
     }
 
+    @Override
     public boolean needsViewport() {
         return false;
     }
 
-    // @Override
+    @Override
     public void initPanel() {
-        setLayout(new MigLayout("ins 5,wrap 1", "[fill,grow]", "[fill,grow]"));
-        panel.setLayout(new MigLayout("ins 0,wrap 1", "[fill,grow]", "[fill,grow][]"));
-
         tableModel = new InternalTableModel();
         table = new JTable(tableModel);
         table.addMouseListener(this);
@@ -185,13 +182,12 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
         btnEdit.setEnabled(false);
         btnEdit.addActionListener(this);
 
-        panel.add(new JScrollPane(table));
-        panel.add(btnEdit, "w pref!, dock south");
-        add(panel);
-
+        setLayout(new MigLayout("ins 5,wrap 1", "[fill,grow]", "[fill,grow][]"));
+        add(new JScrollPane(table));
+        add(btnEdit, "w pref!, dock south");
     }
 
-    // @Override
+    @Override
     public void load() {
     }
 
@@ -213,7 +209,7 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
     public void mouseReleased(MouseEvent e) {
     }
 
-    // @Override
+    @Override
     public void save() {
     }
 }

@@ -361,6 +361,7 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
                  */
                 private static final long serialVersionUID = -6257425518692601676L;
 
+                @Override
                 public void paint(Graphics g) {
                     super.paint(g);
                     SimpleGUI.CURRENTGUI.setWaiting(false);
@@ -392,7 +393,7 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
             add(info, "skip,spanx,growx,newline");
         }
 
-        // @Override
+        @Override
         public void setEnabled(final boolean flag) {
             if (flag == txtPassword.isEnabled()) return;
             new GuiRunnable<Object>() {
@@ -546,7 +547,8 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
     }
 
     private class ChartRefresh extends Thread {
-        // @Override
+
+        @Override
         public void run() {
             Long collectTraffic = new Long(0);
             freeTrafficChart.clear();
@@ -570,8 +572,8 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
 
             if (collectTraffic > 0) freeTrafficChart.addEntity(new ChartAPIEntity(JDLocale.L("plugins.config.premium.chartapi.maxTraffic", "Max. Traffic to collect") + " [" + Math.round(((collectTraffic.floatValue() / 1024 / 1024 / 1024) * 100) / 100.0) + " GB]", collectTraffic, new Color(150, 150, 150)));
             freeTrafficChart.fetchImage();
-
         }
+
     }
 
     private class JDPasswordField extends JPasswordField implements ClipboardOwner {
@@ -582,7 +584,7 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
             super();
         }
 
-        // @Override
+        @Override
         public void cut() {
             StringSelection stringSelection = new StringSelection(String.valueOf(this.getSelectedText()));
             Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
@@ -598,7 +600,7 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
             this.setSelectionEnd(position);
         }
 
-        // @Override
+        @Override
         public void copy() {
             StringSelection stringSelection = new StringSelection(String.valueOf(this.getSelectedText()));
             Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
@@ -618,7 +620,7 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
             premiumActivated = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true);
             new GuiRunnable<Object>() {
 
-                // @Override
+                @Override
                 public Object runSave() {
                     for (AccountPanel ap : accs) {
                         if (premiumActivated) {
