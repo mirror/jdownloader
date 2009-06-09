@@ -142,6 +142,8 @@ public abstract class PluginForHost extends Plugin {
 
     private boolean canResume = false;
 
+    private ImageIcon hosterIcon;
+
     public void setResume(boolean b) {
         canResume = b;
     }
@@ -690,10 +692,15 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public final boolean hasHosterIcon() {
-        return JDImage.getImage("hosterlogos/" + getHost()) != null;
+        return hosterIcon != null || JDImage.getImage("hosterlogos/" + getHost()) != null;
     }
 
     public final ImageIcon getHosterIcon() {
+        if (hosterIcon == null) hosterIcon = initHosterIcon();
+        return hosterIcon;
+    }
+
+    private final ImageIcon initHosterIcon() {
         Image image = JDImage.getImage("hosterlogos/" + getHost());
         if (image == null) image = createDefaultIcon();
         if (image != null) return new ImageIcon(image);
