@@ -75,7 +75,7 @@ public class Zippysharecom extends PluginForHost {
 
     // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return this.getMaxSimultanDownloadNum();
     }
 
     // @Override
