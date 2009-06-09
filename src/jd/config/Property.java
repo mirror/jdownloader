@@ -20,6 +20,7 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.logging.Logger;
 
+import jd.controlling.JDLogger;
 import jd.event.ControlEvent;
 import jd.utils.JDUtilities;
 
@@ -41,14 +42,13 @@ public class Property implements Serializable {
     private HashMap<String, Object> properties;
     private HashMap<String, Integer> propertiesHashes;
 
-    private long saveCount = 0;
     protected transient boolean changes = false;
 
     public Property() {
         properties = new HashMap<String, Object>();
         propertiesHashes = new HashMap<String, Integer>();
 
-        logger = jd.controlling.JDLogger.getLogger();
+        logger = JDLogger.getLogger();
     }
 
     public Property(String value, Object obj) {
@@ -77,11 +77,9 @@ public class Property implements Serializable {
      */
     public Boolean getBooleanProperty(String key) {
         return getBooleanProperty(key, false);
-
     }
 
     public Boolean getBooleanProperty(String key, boolean def) {
-        Boolean ret;
         try {
             Object r = getProperty(key, def);
             if (!(r instanceof Boolean)) {
@@ -92,7 +90,7 @@ public class Property implements Serializable {
                     r = ((String) r).length() > 0;
                 }
             }
-            ret = (Boolean) r;
+            Boolean ret = (Boolean) r;
             return ret;
         } catch (Exception e) {
             return false;
@@ -111,18 +109,16 @@ public class Property implements Serializable {
     }
 
     public Double getDoubleProperty(String key, Double def) {
-        Double ret;
         try {
             Object r = getProperty(key, def);
             if (r instanceof String) {
                 r = Double.parseDouble((String) r);
             }
-            ret = (Double) r;
+            Double ret = (Double) r;
             return ret;
         } catch (Exception e) {
             return def;
         }
-
     }
 
     /**
@@ -134,27 +130,24 @@ public class Property implements Serializable {
      * @return Der Wert
      */
     public int getIntegerProperty(String key) {
-
         return getIntegerProperty(key, -1);
     }
 
     public int getIntegerProperty(String key, int def) {
-        int ret;
         try {
             Object r = getProperty(key, def);
             if (r instanceof String) {
                 r = Integer.parseInt((String) r);
             }
-            ret = (Integer) r;
+            Integer ret = (Integer) r;
             return ret;
         } catch (Exception e) {
             return def;
         }
-
     }
 
     /**
-     * @return gibt die INterne properties hashmap zurück
+     * Gibt die interne Properties HashMap zurück
      */
     public HashMap<String, Object> getProperties() {
         return properties;
@@ -167,14 +160,11 @@ public class Property implements Serializable {
      * @return Value zu key
      */
     public Object getProperty(String key) {
-        if (properties == null) {
-            properties = new HashMap<String, Object>();
-        }
-        return properties.get(key);
+        return getProperty(key, null);
     }
 
     /**
-     * Gibt den wert zu key zurück und falls keiner festgelegt ist def
+     * Gibt den Wert zu key zurück und falls keiner festgelegt ist def
      * 
      * @param key
      * @param def
@@ -184,29 +174,11 @@ public class Property implements Serializable {
         if (properties == null) {
             properties = new HashMap<String, Object>();
         }
-        if (getProperty(key) == null) {
+        if (properties.get(key) == null) {
             setProperty(key, def);
             return def;
         }
         return properties.get(key);
-    }
-
-    /**
-     * Gibt zurück wie oft in dieser propertyinstanz schon Werte geändert wurden
-     * 
-     * @return zahl der Änderungen
-     */
-    public long getSaveCount() {
-        return saveCount;
-    }
-
-    /**
-     * Gibt die Anzahl der gespeicherten Einträge zurück
-     * 
-     * @return Zahl der Elemente
-     */
-    public long getCount() {
-        return properties.size();
     }
 
     /**
@@ -221,18 +193,13 @@ public class Property implements Serializable {
     }
 
     public String getStringProperty(String key, String def) {
-        String ret;
         try {
             Object r = getProperty(key, def);
-            if (!(r instanceof String) && r != null) {
-                r = r + "";
-            }
-            ret = (String) r;
+            String ret = (r == null) ? null : r.toString();
             return ret;
         } catch (Exception e) {
             return def;
         }
-
     }
 
     public boolean hasProperty(String key) {
@@ -245,7 +212,6 @@ public class Property implements Serializable {
      * @param properties
      */
     public void setProperties(HashMap<String, Object> properties) {
-        saveCount++;
         this.properties = properties;
     }
 
@@ -257,32 +223,25 @@ public class Property implements Serializable {
      */
     @SuppressWarnings("unchecked")
     public void setProperty(String key, Object value) {
-        // if(key==Configuration.PARAM_USE_GLOBAL_PREMIUM&&this==JDUtilities.
-        // getConfiguration()){
-        // logger.info("II");
-        // }
-        saveCount++;
         if (properties == null) {
             properties = new HashMap<String, Object>();
         }
+        if (propertiesHashes == null) {
+            propertiesHashes = new HashMap<String, Integer>();
+        }
+
         Object old = getProperty(key);
 
         properties.put(key, value);
 
-        // changes
-        if (propertiesHashes == null) {
-            propertiesHashes = new HashMap<String, Integer>();
-        }
         Integer oldHash = propertiesHashes.get(key);
 
         /*
          * check for null to avoid nullpointer due to .toString() method
          */
         propertiesHashes.put(key, (value == null) ? null : value.toString().hashCode());
-        if (logger == null) {
-            logger = jd.controlling.JDLogger.getLogger();
-        }
-        if (JDUtilities.getController() == null) { return; }
+
+        if (JDUtilities.getController() == null) return;
         try {
             if (old == null && value != null) {
                 JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));
@@ -311,12 +270,9 @@ public class Property implements Serializable {
             JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));
             this.changes = true;
         }
-
-        // logger.finer("Config property: " + key + " = " + value+" - "+this);
-
     }
 
-    public boolean isChanges() {
+    public boolean hasChanges() {
         return changes;
     }
 
@@ -328,7 +284,7 @@ public class Property implements Serializable {
     // @Override
     public String toString() {
         if (properties.size() == 0) return "";
-        return "Property(" + saveCount + "): " + properties;
+        return "Property: " + properties;
     }
 
 }

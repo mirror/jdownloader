@@ -97,12 +97,13 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
                         return;
                     }
                 }
-
+                /*
+                 * Da der Button immer Up-To-Date ist, ist die Überprüfung auf
+                 * Changes hier sinnlos.
+                 */
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, premium.isSelected());
-                if (JDUtilities.getConfiguration().isChanges()) {
-                    updateGUI();
-                    JDUtilities.getConfiguration().save();
-                }
+                JDUtilities.getConfiguration().save();
+                updateGUI();
             }
 
         });
