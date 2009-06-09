@@ -72,7 +72,7 @@ import net.miginfocom.swing.MigLayout;
 
 public class Serienjunkies extends PluginForDecrypt {
 
-    public static String lastHtmlCode = "";
+    private static String lastHtmlCode = "";
 
     private static final int saveScat = 1;
 
@@ -83,7 +83,7 @@ public class Serienjunkies extends PluginForDecrypt {
     private static final int sCatNoThing = 0;
 
     private static int[] useScat = new int[] { 0, 0 };
-    private static String[] mirrorManagement = new String[] { JDLocale.L("plugins.decrypt.serienjunkies.usePremiumLinks", "use premiumlinks if possible"), JDLocale.L("plugins.decrypt.serienjunkies.automaticMirrorManagment", "automatic mirror managment"), JDLocale.L("plugins.decrypt.serienjunkies.noMirrorManagment", "no mirror managment"), JDLocale.L("plugins.decrypt.serienjunkies.RsComOnly", "nur Rapidshare.com"), JDLocale.L("plugins.decrypt.serienjunkies.RsDeOnly", "nur Rapidshare.de"), JDLocale.L("plugins.decrypt.serienjunkies.NetloadOnly", "nur Netload.in"), JDLocale.L("plugins.decrypt.serienjunkies.UlOnly", "nur Uploaded.to"), JDLocale.L("plugins.decrypt.serienjunkies.FFOnly", "nur FileFactory.com"), JDLocale.L("plugins.decrypt.serienjunkies.QSFOnly", "nur Qshare.com") };
+    private static String[] mirrorManagement = new String[] { JDLocale.L("plugins.decrypt.serienjunkies.usePremiumLinks", "use premiumlinks if possible"), JDLocale.L("plugins.decrypt.serienjunkies.automaticMirrorManagment", "automatic mirror managment"), JDLocale.L("plugins.decrypt.serienjunkies.noMirrorManagment", "no mirror managment"), JDLocale.L("plugins.decrypt.serienjunkies.RsComOnly", "nur Rapidshare.com"), JDLocale.L("plugins.decrypt.serienjunkies.RsDeOnly", "nur Rapidshare.de"), JDLocale.L("plugins.decrypt.serienjunkies.NetloadOnly", "nur Netload.in"), JDLocale.L("plugins.decrypt.serienjunkies.UlOnly", "nur Uploaded.to"), JDLocale.L("plugins.decrypt.serienjunkies.FFOnly", "nur FileFactory.com") };
 
     private static String mirror = mirrorManagement[0];
     private String dynamicCaptcha = "(?s)<FORM ACTION=\".*?\" METHOD=\"post\".*?<INPUT TYPE=\"HIDDEN\" NAME=\"s\" VALUE=\"(.*?)\">.*?<IMG SRC=\"([^\"]*)\"";
@@ -92,11 +92,9 @@ public class Serienjunkies extends PluginForDecrypt {
     private static int active = 0;
     private ProgressController progress;
 
-    private boolean next = false;
-
     private boolean scatChecked = false;
 
-    private static ArrayList<String> passwords = new ArrayList<String>();
+    private ArrayList<String> passwords = new ArrayList<String>();
     private static boolean rc = false;
 
     private static URLConnectionAdapter openGetConnection(Browser capbr, String captchaAdress) throws IOException {
@@ -119,7 +117,7 @@ public class Serienjunkies extends PluginForDecrypt {
                 return null;
             }
         }
-        return br3.getPage(url + "");
+        return br3.getPage(url.toString());
 
     }
 
@@ -142,54 +140,10 @@ public class Serienjunkies extends PluginForDecrypt {
         passwords.add("dokujunkies.org");
     }
 
-    public boolean[] checkLinks(DownloadLink[] urls) {
-        boolean[] ret = new boolean[urls.length];
-        for (int i = 0; i < ret.length; i++) {
-            ret[i] = false;
-        }
-        return ret;
-    }
-
-    // @Override
-    public synchronized boolean canHandle(String data) {
-        boolean cat = false;
-        if (data == null) return false;
-        data = data.replaceAll("http://vote.serienjunkies.org/?", "");
-        if (data.contains("serienjunkies.org") && data.contains("/?cat=")) {
-            cat = getSerienJunkiesCat() != sCatNoThing;
-        }
-        next = false;
-        StringBuilder hosterStr = new StringBuilder();
-        hosterStr.append("(");
-        hosterStr.append(isNext()).append("rc[\\_\\-]");
-        hosterStr.append(isNext()).append("rs[\\_\\-]");
-        hosterStr.append(isNext()).append("nl[\\_\\-]");
-        hosterStr.append(isNext()).append("u[tl][\\_\\-]");
-        hosterStr.append(isNext()).append("ff[\\_\\-]");
-        hosterStr.append(isNext()).append("p\\=[\\d]+");
-        if (cat) hosterStr.append(isNext()).append("cat\\=[\\d]+");
-        hosterStr.append(")");
-
-        Matcher matcher = Pattern.compile("http://[\\w\\.]{0,10}serienjunkies\\.org.*" + hosterStr.toString() + ".*", Pattern.CASE_INSENSITIVE).matcher(data);
-        if (matcher.find()) {
-            return true;
-        } else {
-
-            String[] links = new Regex(data, "http://[\\w\\.]{3,10}\\.serienjunkies.org/.*", Pattern.CASE_INSENSITIVE).getColumn(-1);
-            Pattern pat = Pattern.compile("http://[\\w\\.]{3,10}\\.serienjunkies.org/.*(rc[\\_\\-]|rs[\\_\\-]|nl[\\_\\-]|ut[\\_\\-]|su[\\_\\-]|ff[\\_\\-]|cat\\=[\\d]+|p\\=[\\d]+).*", Pattern.CASE_INSENSITIVE);
-            for (String element : links) {
-                Matcher m = pat.matcher(element);
-
-                if (!m.matches()) return true;
-            }
-        }
-        return false;
-    }
-
     /**
      * Für Links die bei denen die Parts angezeigt werden
      */
-    private ArrayList<String> ContainerLinks(String url, CryptedLink downloadLink) throws PluginException {
+    private ArrayList<String> containerLinks(String url, CryptedLink downloadLink) throws PluginException {
         final ArrayList<String> links = new ArrayList<String>();
         final Browser br3 = getBrowser();
         if (url.matches("http://[\\w\\.]*?.serienjunkies.org/..\\-.*")) {
@@ -411,7 +365,7 @@ public class Serienjunkies extends PluginForDecrypt {
     /**
      * Für Links die gleich auf den Hoster relocaten
      */
-    private String EinzelLinks(String url, CryptedLink downloadLink) throws PluginException {
+    private String einzelLinks(String url, CryptedLink downloadLink) throws PluginException {
         String links = "";
         Browser br3 = getBrowser();
         if (!url.startsWith("http://")) {
@@ -471,7 +425,7 @@ public class Serienjunkies extends PluginForDecrypt {
         return links;
     }
 
-    public ArrayList<DownloadLink> getDLinks(String parameter, CryptedLink cryptedLink) {
+    private ArrayList<DownloadLink> getDLinks(String parameter, CryptedLink cryptedLink) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         Browser br3 = getBrowser();
 
@@ -556,7 +510,7 @@ public class Serienjunkies extends PluginForDecrypt {
                 url = new URL(furl + modifiedURL);
                 logger.info("Frame found. frame url: " + furl + modifiedURL);
                 br3.setFollowRedirects(true);
-                getPage(br3, url + "");
+                getPage(br3, url.toString());
                 parameter = furl + modifiedURL;
 
             }
@@ -568,12 +522,12 @@ public class Serienjunkies extends PluginForDecrypt {
             // Einzellink
             if (parameter.indexOf("/safe/") >= 0 || parameter.indexOf("/save/") >= 0) {
                 logger.info("safe link");
-                helpstring = EinzelLinks(parameter, cryptedLink);
+                helpstring = einzelLinks(parameter, cryptedLink);
 
                 decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(helpstring)));
             } else if (parameter.indexOf(subdomain + "serienjunkies.org") >= 0 || parameter.indexOf("/sjsafe/") >= 0) {
                 logger.info("sjsafe link");
-                helpvector = ContainerLinks(parameter, cryptedLink);
+                helpvector = containerLinks(parameter, cryptedLink);
                 if (helpvector == null) return null;
                 for (int j = 0; j < helpvector.size(); j++) {
                     decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(helpvector.get(j))));
@@ -583,10 +537,10 @@ public class Serienjunkies extends PluginForDecrypt {
                 // Kategorien
                 for (String link : links) {
                     if (link.indexOf("/safe/") >= 0) {
-                        helpstring = EinzelLinks(link, cryptedLink);
+                        helpstring = einzelLinks(link, cryptedLink);
                         decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(helpstring)));
                     } else if (link.indexOf("/sjsafe/") >= 0) {
-                        helpvector = ContainerLinks(link, cryptedLink);
+                        helpvector = containerLinks(link, cryptedLink);
                         if (helpvector == null) return null;
                         for (int j = 0; j < helpvector.size(); j++) {
                             decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(helpvector.get(j))));
@@ -642,14 +596,10 @@ public class Serienjunkies extends PluginForDecrypt {
     }
 
     // @Override
-    public String cutMatches(String data) {
-        return data.replaceAll("(?i)http://[\\w\\.]*?(serienjunkies\\.org|85\\.17\\.177\\.195|serienjunki\\.es).*", "--CUT--");
-    }
-
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         Browser.setRequestIntervalLimitGlobal("serienjunkies.org", 400);
         Browser.setRequestIntervalLimitGlobal("download.serienjunkies.org", 400);
+
         br = getBrowser();
         final ArrayList<DownloadLink> ar2 = decryptItMain(param);
         ArrayList<DownloadLink> ar = ar2;
@@ -688,11 +638,14 @@ public class Serienjunkies extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    public ArrayList<DownloadLink> decryptItMain(CryptedLink param) throws Exception {
+    private ArrayList<DownloadLink> decryptItMain(CryptedLink param) throws Exception {
         String parameter = param.toString().trim();
-        br.setCookiesExclusive(true);
-        br.clearCookies("serienjunkies.org");
+        this.setBrowserExclusive();
         getPage(br, "http://serienjunkies.org/enter/");
+
+        if (parameter.contains("/\\?cat=")) {
+            if (getSerienJunkiesCat() == sCatNoThing) return new ArrayList<DownloadLink>();
+        }
 
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         if (parameter.matches(".*\\?(cat|p)\\=[\\d]+.*")) {
@@ -705,14 +658,14 @@ public class Serienjunkies extends PluginForDecrypt {
                 getPage(br, "http://serienjunkies.org/");
 
                 Pattern pattern = Pattern.compile("<a href=\"http://serienjunkies.org/\\?cat\\=" + cat + "\">(.*?)</a><br", Pattern.CASE_INSENSITIVE);
-                Matcher matcher = pattern.matcher(br + "");
+                Matcher matcher = pattern.matcher(br.toString());
                 ArrayList<String> names = new ArrayList<String>();
                 while (matcher.find()) {
                     names.add(matcher.group(1).toLowerCase());
                 }
                 if (names.size() == 0) { return decryptedLinks; }
                 getPage(br, parameter);
-                lastHtmlCode = br + "";
+                lastHtmlCode = br.toString();
                 for (String name : names) {
                     name += " ";
                     String[] bet = null;
@@ -771,10 +724,10 @@ public class Serienjunkies extends PluginForDecrypt {
                 String htmlcode = "";
                 if (isP) {
                     getPage(br, parameter);
-                    htmlcode = br + "";
+                    htmlcode = br.toString();
                 } else {
                     getPage(br, "http://serienjunkies.org/?cat=" + cat);
-                    htmlcode = br + "";
+                    htmlcode = br.toString();
                     try {
                         int pages = Integer.parseInt(br.getRegex("<p align=\"center\">  Pages \\(([\\d]+)\\):").getMatch(0));
                         for (int i = 2; i < pages + 1; i++) {
@@ -919,33 +872,22 @@ public class Serienjunkies extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    // @Override
-    public CryptedLink[] getDecryptableLinks(String data) {
-        String[] links = new Regex(data, "http://[\\w\\.]*?(serienjunkies\\.org|85\\.17\\.177\\.195|serienjunki\\.es)[^\"]*", Pattern.CASE_INSENSITIVE).getColumn(-1);
-        ArrayList<CryptedLink> ret = new ArrayList<CryptedLink>();
-        scatChecked = true;
-        for (String element : links) {
-            if (canHandle(element)) {
-                ret.add(new CryptedLink(element));
-            }
-        }
-        return ret.toArray(new CryptedLink[ret.size()]);
-    }
-
     private String getHostWishedHost() {
-        if (mirror == null) return null;
-        if (mirror.equals(mirrorManagement[3]))
+        if (mirror == null) {
+            return null;
+        } else if (mirror.equals(mirrorManagement[3])) {
             return "rapidshare.com";
-        else if (mirror.equals(mirrorManagement[4]))
+        } else if (mirror.equals(mirrorManagement[4])) {
             return "rapidshare.de";
-        else if (mirror.equals(mirrorManagement[5]))
+        } else if (mirror.equals(mirrorManagement[5])) {
             return "netload.in";
-        else if (mirror.equals(mirrorManagement[6]))
+        } else if (mirror.equals(mirrorManagement[6])) {
             return "uploaded.to";
-        else if (mirror.equals(mirrorManagement[7]))
+        } else if (mirror.equals(mirrorManagement[7])) {
             return "filefactory.com";
-        else if (mirror.equals(mirrorManagement[8])) return "qshare.com";
-        return null;
+        } else {
+            return null;
+        }
     }
 
     private String getHostname(String link) {
@@ -959,8 +901,6 @@ public class Serienjunkies extends PluginForDecrypt {
             return "uploaded.to";
         } else if (link.matches(".*ff[\\_\\-].*")) {
             return "filefactory.com";
-        } else if (link.matches(".*qshare[\\_\\-]com.*")) {
-            return "qshare.com";
         } else {
             return "rapidshare.com";
         }
@@ -1031,16 +971,6 @@ public class Serienjunkies extends PluginForDecrypt {
     // @Override
     public String getVersion() {
         return getVersion("$Revision$");
-    }
-
-    private String isNext() {
-        if (next) {
-            return "|";
-        } else {
-            next = true;
-        }
-        return "";
-
     }
 
     private void sCatDialog() {
@@ -1138,7 +1068,7 @@ public class Serienjunkies extends PluginForDecrypt {
                 ArrayList<DownloadLink> dls = getDLinks(link, cryptedLink);
                 if (dls != null && dls.size() < 1) {
                     linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
-                    if (linkStatus.getErrorMessage() == null || linkStatus.getErrorMessage().endsWith("")) linkStatus.setErrorMessage(JDLocale.L("plugin.serienjunkies.pageerror", "SJ liefert keine Downloadlinks"));
+                    if (linkStatus.getErrorMessage() == null) linkStatus.setErrorMessage(JDLocale.L("plugin.serienjunkies.pageerror", "SJ liefert keine Downloadlinks"));
                     logger.warning("SJ returned no Downloadlinks");
                 } else {
                     ArrayList<DownloadLink> finaldls = null;

@@ -103,7 +103,6 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
                  */
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, premium.isSelected());
                 JDUtilities.getConfiguration().save();
-                updateGUI();
             }
 
         });
