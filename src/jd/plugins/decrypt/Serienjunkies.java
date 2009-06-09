@@ -1208,18 +1208,17 @@ public class Serienjunkies extends PluginForDecrypt {
             final JTable m_table = new JTable(new SerienjunkiesTM(dls));
 
             TableColumn column = null;
-
             for (int c = 0; c < m_table.getColumnCount(); c++) {
                 column = m_table.getColumnModel().getColumn(c);
                 switch (c) {
                 case 0:
-                    column.setPreferredWidth(200);
+                    column.setPreferredWidth(400);
                     break;
                 case 1:
-                    column.setPreferredWidth(160);
+                    column.setPreferredWidth(120);
                     break;
                 case 2:
-                    column.setPreferredWidth(100);
+                    column.setPreferredWidth(80);
                     break;
                 }
             }
@@ -1273,7 +1272,7 @@ public class Serienjunkies extends PluginForDecrypt {
             setModal(true);
             setLayout(new MigLayout("ins 5, wrap 1", "[center, grow]"));
             add(m_title, "left");
-            add(new JScrollPane(m_table), "growx, spanx");
+            add(new JScrollPane(m_table), "growx, spanx, w :600:");
             add(deleteButton, "split 3, w pref!");
             add(insertButton, "w pref!");
             add(closeButton, "w pref!");
