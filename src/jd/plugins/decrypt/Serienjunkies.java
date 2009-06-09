@@ -1223,19 +1223,8 @@ class SerienjunkiesSJTable extends JDialog {
             }
         }
 
-        JButton del = new JButton(JDLocale.L("gui.component.textarea.context.delete", "Löschen"));
-        addWindowListener(new WindowAdapter() {
-
-            public void windowClosed(WindowEvent e) {
-                dispose();
-            }
-
-            public void windowClosing(WindowEvent e) {
-                dls = new ArrayList<DownloadLink>();
-            }
-
-        });
-        del.addActionListener(new ActionListener() {
+        JButton deleteButton = new JButton(JDLocale.L("gui.component.textarea.context.delete", "Löschen"));
+        deleteButton.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
                 int[] rows = m_table.getSelectedRows();
@@ -1258,13 +1247,35 @@ class SerienjunkiesSJTable extends JDialog {
 
         });
 
+        final JButton closeButton = new JButton(JDLocale.L("gui.btn_cancel", "Cancel"));
+        closeButton.addActionListener(new ActionListener() {
+
+            public void actionPerformed(ActionEvent e) {
+                dls = new ArrayList<DownloadLink>();
+                dispose();
+            }
+
+        });
+
+        addWindowListener(new WindowAdapter() {
+
+            public void windowClosed(WindowEvent e) {
+                dispose();
+            }
+
+            public void windowClosing(WindowEvent e) {
+                dls = new ArrayList<DownloadLink>();
+            }
+
+        });
         setTitle(JDLocale.L("plugin.serienjunkies.manager.title", "SerienJunkies Linkverwaltung"));
         setModal(true);
-        setLayout(new MigLayout("ins 5, wrap 1", "[center]"));
+        setLayout(new MigLayout("ins 5, wrap 1", "[center, grow]"));
         add(m_title, "left");
         add(new JScrollPane(m_table), "growx, spanx");
-        add(del, "split 2");
-        add(insertButton);
+        add(deleteButton, "split 3, w pref!");
+        add(insertButton, "w pref!");
+        add(closeButton, "w pref!");
         pack();
         setLocation(Screen.getCenterOfComponent(null, this));
         setVisible(true);
