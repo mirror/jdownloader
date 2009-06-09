@@ -221,12 +221,14 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     public void addSourcePluginPasswords(String[] sourcePluginPasswords) {
+        if (sourcePluginPasswords == null || sourcePluginPasswords.length == 0) return;
         for (String sourcePluginPassword : sourcePluginPasswords) {
             addSourcePluginPassword(sourcePluginPassword);
         }
     }
 
     public void addSourcePluginPasswordList(ArrayList<String> sourcePluginPasswords) {
+        if (sourcePluginPasswords == null || sourcePluginPasswords.size() == 0) return;
         for (int i = 0; i < sourcePluginPasswords.size(); i++) {
             addSourcePluginPassword(sourcePluginPasswords.get(i));
         }

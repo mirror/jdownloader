@@ -43,21 +43,21 @@ public class DreiDlAm extends PluginForDecrypt {
         br.getPage(parameter);
         Thread.sleep(500);
         // passwort auslesen
-        password = br.getRegex(Pattern.compile("<b>Passwort:</b></td><td><input type='text' value='(.*?)'", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (password != null && (password.contains("kein") || password.contains("kein P"))) {
+        password = br.getRegex(Pattern.compile("Passwort:</th><td colspan=.*?<input type=\"text\" value=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (password == null || (password != null && (password.contains("kein") || password.contains("kein P")) || password.contains("keines"))) {
             password = null;
         }
         if (br.containsHTML("Versuche es in ein paar Minuten wieder.")) { throw new DecrypterException("Too many wrong captcha codes. Try it again in few minutes, please."); }
         for (int retry = 1; retry < 5; retry++) {
             br.getPage(parameter);
             Thread.sleep(500);
-            String captcha = br.getRegex(Pattern.compile("><img src=\"/images/captcha5\\.php(.*?)\" /></td>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+            String captcha = br.getRegex(Pattern.compile("captcha\"><img src=\"(/index\\.php\\?action=captcha.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
             if (captcha != null) {
-                String capTxt = getCaptchaCode("http://3dl.am/images/captcha5.php" + captcha, link);
-                Form form = br.getForm(3);
-                form.put("antwort", capTxt);
+                String capTxt = getCaptchaCode("http://3dl.am" + captcha, link);
+                Form form = br.getForm(0);
+                form.put("answer", capTxt);
                 br.submitForm(form);
-                if (!br.containsHTML("/failed.html';")) break;
+                if (!br.containsHTML("/failed.html")) break;
             }
         }
         if (br.containsHTML("/failed.html';")) throw new DecrypterException("Wrong Captcha Code");
@@ -65,7 +65,7 @@ public class DreiDlAm extends PluginForDecrypt {
 
     private String decryptFromLink(String parameter) throws IOException {
         br.getPage(parameter);
-        String link = br.getRegex(Pattern.compile("<frame src=\"(.*?)\" width=\"100%\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        String link = br.getRegex(Pattern.compile("<frame src=\"(http.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
         return link;
     }
 
@@ -76,9 +76,9 @@ public class DreiDlAm extends PluginForDecrypt {
             String url = br.getRegex(PluginPattern.DECRYPTER_3DLAM_3).getMatch(-1);
             decryptFromDownload(url);
         }
-        String[] links = br.getRegex(Pattern.compile("value='http://3dl\\.am/link/(.*?)/'", Pattern.CASE_INSENSITIVE)).getColumn(0);
+        String[] links = br.getRegex(Pattern.compile("value=\"(http://.*?3dl\\.am/link/.*?/)\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
         for (String link2 : links) {
-            linksReturn.add("http://3dl.am/link/" + link2 + "/");
+            linksReturn.add(link2);
         }
         return linksReturn;
     }
@@ -91,7 +91,7 @@ public class DreiDlAm extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage("http://3dl.am");
         Thread.sleep(500);
-        br.getPage("http://3dl.am/index.php");
+        br.postPage("http://3dl.am/?", "set_enter_ts=true");
         Thread.sleep(500);
         link = param;
         if (new Regex(parameter, PluginPattern.DECRYPTER_3DLAM_2).matches()) {

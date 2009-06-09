@@ -89,7 +89,7 @@ public class PluginPattern {
     static public final String DECRYPTER_3DLAM_1 = "http://[\\w\\.]*?3dl\\.am/link/[a-zA-Z0-9]+";
     static public final String DECRYPTER_3DLAM_2 = "http://[\\w\\.]*?3dl\\.am/download/start/[0-9]+/";
     static public final String DECRYPTER_3DLAM_3 = "http://[\\w\\.]*?3dl\\.am/download/[0-9]+/.+\\.html";
-    static public final String DECRYPTER_3DLAM_4 = "http://[\\w\\.]*?3dl\\.am/index\\.php\\?action=detailansicht&file_id=[0-9]+";
+    static public final String DECRYPTER_3DLAM_4 = "http://[\\w\\.]*?3dl\\.am/\\?action=entrydetail&entry_id=[0-9]+";
     static public final String DECRYPTER_3DLAM_PLUGIN = DECRYPTER_3DLAM_1 + "|" + DECRYPTER_3DLAM_2 + "|" + DECRYPTER_3DLAM_3 + "|" + DECRYPTER_3DLAM_4;
 
 }

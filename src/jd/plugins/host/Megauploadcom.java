@@ -50,14 +50,10 @@ public class Megauploadcom extends PluginForHost {
     private static final String MU_PARAM_PORT = "MU_PARAM_PORT";
     private static final String CAPTCHA_MODE = "CAPTCHAMODE";
     private static String PASSWORD = null;
-    private static int FREE = 30;
-    // private static int FREE = 1;
 
     private static int simultanpremium = 1;
 
     private String user;
-
-    private static Boolean DL = false;
 
     public Megauploadcom(PluginWrapper wrapper) {
         super(wrapper);
@@ -141,11 +137,9 @@ public class Megauploadcom extends PluginForHost {
 
         br.setFollowRedirects(false);
         br.getPage("http://megaupload.com/?d=" + getDownloadID(link));
-        
-        if(br.containsHTML("Unfortunately, the link you have clicked is not available")) {
-        	throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        
+
+        if (br.containsHTML("Unfortunately, the link you have clicked is not available")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+
         if (br.getRedirectLocation() == null) {
             Form form = br.getForm(0);
             if (form != null && form.containsHTML("logout")) form = br.getForm(1);
@@ -348,9 +342,8 @@ public class Megauploadcom extends PluginForHost {
 
     public void handleFree1(DownloadLink link, Account account) throws Exception {
         this.setBrowserExclusive();
-        br.setCookie("http://megaupload.com", "l", "en");
         initHeaders(br);
-
+        br.setCookie("http://megaupload.com", "l", "en");
         if (account != null) {
             login(account);
         }
@@ -433,23 +426,9 @@ public class Megauploadcom extends PluginForHost {
             }
         }
 
-        if (form != null && form.containsHTML("captchacode")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
-
-        // waitForNext(link);
-        link.getLinkStatus().setStatusText(JDLocale.L("plugins.host.megaupload.waitforstart", "Waiting for start..."));
-        link.requestGuiUpdate();
-
+        if (form != null && form.containsHTML("captchacode")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         String url = br.getRegex("id=\"downloadlink\">.*?<a href=\"(.*?)\"").getMatch(0);
-        synchronized (DL) {
-            if (Thread.currentThread().isInterrupted()) {
-                link.getLinkStatus().setStatusText(null);
-                link.requestGuiUpdate();
-                return;
-            }
-            doDownload(link, url, true, 1);
-        }
-        // decreaseCounter();
-
+        doDownload(link, url, true, 1);
     }
 
     private void initHeaders(Browser br) {
@@ -481,7 +460,7 @@ public class Megauploadcom extends PluginForHost {
     }
 
     public void handleFree0(DownloadLink link, Account account) throws Exception {
-
+        this.setBrowserExclusive();
         br.setFollowRedirects(false);
         String dlID = getDownloadID(link);
         br.setDebug(true);
@@ -508,23 +487,13 @@ public class Megauploadcom extends PluginForHost {
             return;
         }
 
-        link.getLinkStatus().setStatusText("Wait for start");
-        link.requestGuiUpdate();
-
         String url = br.getRedirectLocation();
 
         br.getHeaders().put("Host", new URL(url).getHost());
         br.getHeaders().put("Connection", "Keep-Alive,TE");
-        synchronized (DL) {
-            if (Thread.currentThread().isInterrupted()) {
-                link.getLinkStatus().setStatusText(null);
-                link.requestGuiUpdate();
-                br.getHeaders().clear();
-                br.getHeaders().setDominant(false);
-                return;
-            }
-            doDownload(link, url, true, 1);
-        }
+
+        doDownload(link, url, true, 1);
+
         br.getHeaders().clear();
         br.getHeaders().setDominant(false);
     }
@@ -539,7 +508,7 @@ public class Megauploadcom extends PluginForHost {
 
     // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE;
+        return 1;
     }
 
     // @Override
