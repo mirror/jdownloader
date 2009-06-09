@@ -91,8 +91,6 @@ public class Serienjunkies extends PluginForDecrypt {
     private static int active = 0;
     private ProgressController progress;
 
-    private boolean scatChecked = false;
-
     private ArrayList<String> passwords = new ArrayList<String>();
     private static boolean rc = false;
 
@@ -647,22 +645,21 @@ public class Serienjunkies extends PluginForDecrypt {
         }
 
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        if (parameter.matches(".*\\?(cat|p)\\=[\\d]+.*")) {
-            boolean isP = parameter.contains("/?p=");
-            int catst = sCatGrabb;
-            if (!isP) catst = getSerienJunkiesCat();
-            scatChecked = false;
-            int cat = Integer.parseInt(parameter.replaceFirst(".*\\?(cat|p)\\=", "").replaceFirst("[^\\d].*", ""));
-            if (sCatNewestDownload == catst) {
+        if (parameter.matches(".*\\?(cat|p)=.*")) {
+            int catst = getSerienJunkiesCat();
+            if (catst == sCatNoThing) return new ArrayList<DownloadLink>();
+
+            int cat = Integer.parseInt(parameter.replaceFirst(".*\\?(cat|p)=", "").replaceFirst("[^\\d].*", ""));
+            if (catst == sCatNewestDownload) {
                 getPage(br, "http://serienjunkies.org/");
 
-                Pattern pattern = Pattern.compile("<a href=\"http://serienjunkies.org/\\?cat\\=" + cat + "\">(.*?)</a><br", Pattern.CASE_INSENSITIVE);
-                Matcher matcher = pattern.matcher(br.toString());
+                String[] linkss = br.getRegex("<a href=\"http://serienjunkies\\.org/\\?cat=" + cat + "\">(.*?)</a><br").getColumn(0);
+                if (linkss.length == 0) return decryptedLinks;
                 ArrayList<String> names = new ArrayList<String>();
-                while (matcher.find()) {
-                    names.add(matcher.group(1).toLowerCase());
+                for (String link : linkss) {
+                    names.add(link.toLowerCase());
                 }
-                if (names.size() == 0) { return decryptedLinks; }
+
                 getPage(br, parameter);
                 lastHtmlCode = br.toString();
                 for (String name : names) {
@@ -670,11 +667,8 @@ public class Serienjunkies extends PluginForDecrypt {
                     String[] bet = null;
                     while (bet == null) {
                         name = name.substring(0, name.length() - 1);
-                        if (name.length() == 0) { return decryptedLinks; }
-                        try {
-                            bet = br.getRegex("<p><strong>(" + name + ".*?)</strong>(.*?)</p>").getMatches()[0];
-                        } catch (Exception e) {
-                        }
+                        if (name.length() == 0) return decryptedLinks;
+                        bet = br.getRegex("<p><strong>(" + name + ".*?)</strong>(.*?)</p>").getRow(0);
                     }
 
                     String[] links = HTMLParser.getHttpLinks(bet[1], br.getRequest().getUrl().toString());
@@ -721,7 +715,7 @@ public class Serienjunkies extends PluginForDecrypt {
 
             } else if (catst == sCatGrabb) {
                 String htmlcode = "";
-                if (isP) {
+                if (parameter.contains("/?p=")) {
                     getPage(br, parameter);
                     htmlcode = br.toString();
                 } else {
@@ -963,7 +957,7 @@ public class Serienjunkies extends PluginForDecrypt {
     }
 
     private int getSerienJunkiesCat() {
-        if (!scatChecked && useScat[1] != saveScat) {
+        if (useScat[1] != saveScat) {
             new GuiRunnable<Object>() {
 
                 // @Override
@@ -1135,7 +1129,7 @@ public class Serienjunkies extends PluginForDecrypt {
 
             final JComboBox methods = new JComboBox(meths);
             final JComboBox settings = new JComboBox(mirrorManagement);
-            final JCheckBox checkScat = new JCheckBox("Einstellungen für diese Sitzung beibehalten?", true);
+            final JCheckBox checkScat = new JCheckBox(JDLocale.L("plugins.SerienJunkies.CatDialog.sCatSave", "Einstellungen für diese Sitzung beibehalten?"));
             JButton btnOK = new JButton(JDLocale.L("gui.btn_ok", "OK"));
             btnOK.addActionListener(new ActionListener() {
 
