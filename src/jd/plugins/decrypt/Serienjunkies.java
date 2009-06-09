@@ -35,7 +35,6 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
@@ -609,7 +608,7 @@ public class Serienjunkies extends PluginForDecrypt {
 
                 // @Override
                 public ArrayList<DownloadLink> runSave() {
-                    SerienjunkiesSJTable sjt = new SerienjunkiesSJTable(SimpleGUI.CURRENTGUI, ar2);
+                    SerienjunkiesSJTable sjt = new SerienjunkiesSJTable(ar2);
 
                     return sjt.dls;
                 }
@@ -964,7 +963,17 @@ public class Serienjunkies extends PluginForDecrypt {
     }
 
     private int getSerienJunkiesCat() {
-        sCatDialog();
+        if (!scatChecked && useScat[1] != saveScat) {
+            new GuiRunnable<Object>() {
+
+                // @Override
+                public Object runSave() {
+                    new SerienjunkiesCatDialog().setVisible(true);
+
+                    return null;
+                }
+            }.waitForEDT();
+        }
         return useScat[0];
     }
 
@@ -973,73 +982,7 @@ public class Serienjunkies extends PluginForDecrypt {
         return getVersion("$Revision$");
     }
 
-    private void sCatDialog() {
-        if (scatChecked || useScat[1] == saveScat) return;
-
-        new GuiRunnable<Object>() {
-
-            // @Override
-            public Object runSave() {
-                final JDialog dialog = new JDialog(SimpleGUI.CURRENTGUI);
-
-                SerienjunkiesMeth[] meths = new SerienjunkiesMeth[3];
-                meths[0] = new SerienjunkiesMeth(JDLocale.L("plugins.SerienJunkies.CatDialog.sCatNoThing", "Kategorie nicht hinzufügen"), sCatNoThing);
-                meths[1] = new SerienjunkiesMeth(JDLocale.L("plugins.SerienJunkies.CatDialog.sCatGrabb", "Alle Serien in dieser Kategorie hinzufügen"), sCatGrabb);
-                meths[2] = new SerienjunkiesMeth(JDLocale.L("plugins.SerienJunkies.CatDialog.sCatNewestDownload", "Den neusten Download dieser Kategorie hinzufügen"), sCatNewestDownload);
-
-                final JComboBox methods = new JComboBox(meths);
-                final JComboBox settings = new JComboBox(mirrorManagement);
-                final JCheckBox checkScat = new JCheckBox("Einstellungen für diese Sitzung beibehalten?", true);
-                JButton btnOK = new JButton(JDLocale.L("gui.btn_ok", "OK"));
-                btnOK.addActionListener(new ActionListener() {
-
-                    public void actionPerformed(ActionEvent e) {
-                        useScat = new int[] { ((SerienjunkiesMeth) methods.getSelectedItem()).var, checkScat.isSelected() ? saveScat : 0 };
-                        mirror = (String) settings.getSelectedItem();
-                        dialog.dispose();
-                    }
-
-                });
-                JButton btnCancel = new JButton(JDLocale.L("gui.btn_cancel", "Cancel"));
-                btnCancel.addActionListener(new ActionListener() {
-
-                    public void actionPerformed(ActionEvent e) {
-                        useScat = new int[] { sCatNoThing, 0 };
-                        dialog.dispose();
-                    }
-
-                });
-
-                dialog.setLayout(new MigLayout("wrap 1"));
-                dialog.setModal(true);
-                dialog.setTitle(JDLocale.L("plugins.SerienJunkies.CatDialog.title", "SerienJunkies ::CAT::"));
-                dialog.setAlwaysOnTop(true);
-                dialog.addWindowListener(new WindowAdapter() {
-
-                    public void windowClosing(WindowEvent e) {
-                        useScat = new int[] { sCatNoThing, 0 };
-                        dialog.dispose();
-                    }
-
-                });
-                dialog.add(new JLabel(JDLocale.L("plugins.SerienJunkies.CatDialog.action", "Wählen sie eine Aktion aus:")));
-                dialog.add(methods);
-                dialog.add(new JLabel(JDLocale.L("plugins.SerienJunkies.CatDialog.mirror", "Wählen sie eine Mirrorverwalung:")));
-                dialog.add(settings);
-                dialog.add(checkScat);
-                dialog.add(btnOK, "split 2, center");
-                dialog.add(btnCancel);
-                dialog.pack();
-                dialog.setLocation(Screen.getCenterOfComponent(null, dialog));
-                dialog.setVisible(true);
-
-                return null;
-            }
-        }.waitForEDT();
-
-    }
-
-    public class SerienjunkiesThread extends Thread {
+    private class SerienjunkiesThread extends Thread {
         private DownloadLink downloadLink;
         public ArrayList<DownloadLink> result = null;
         private CryptedLink cryptedLink;
@@ -1174,153 +1117,219 @@ public class Serienjunkies extends PluginForDecrypt {
         }
     }
 
-    private class SerienjunkiesMeth {
-        public String name;
+    private class SerienjunkiesCatDialog extends JDialog {
 
-        public int var;
+        private static final long serialVersionUID = -6111708970744373146L;
 
-        public SerienjunkiesMeth(String name, int var) {
-            this.name = name;
-            this.var = var;
+        public SerienjunkiesCatDialog() {
+            super(SimpleGUI.CURRENTGUI);
+
+            initGUI();
         }
 
-        // @Override
-        public String toString() {
-            return name;
-        }
-    }
+        private void initGUI() {
+            SerienjunkiesMeth[] meths = new SerienjunkiesMeth[3];
+            meths[0] = new SerienjunkiesMeth(JDLocale.L("plugins.SerienJunkies.CatDialog.sCatNoThing", "Kategorie nicht hinzufügen"), sCatNoThing);
+            meths[1] = new SerienjunkiesMeth(JDLocale.L("plugins.SerienJunkies.CatDialog.sCatGrabb", "Alle Serien in dieser Kategorie hinzufügen"), sCatGrabb);
+            meths[2] = new SerienjunkiesMeth(JDLocale.L("plugins.SerienJunkies.CatDialog.sCatNewestDownload", "Den neusten Download dieser Kategorie hinzufügen"), sCatNewestDownload);
 
-}
+            final JComboBox methods = new JComboBox(meths);
+            final JComboBox settings = new JComboBox(mirrorManagement);
+            final JCheckBox checkScat = new JCheckBox("Einstellungen für diese Sitzung beibehalten?", true);
+            JButton btnOK = new JButton(JDLocale.L("gui.btn_ok", "OK"));
+            btnOK.addActionListener(new ActionListener() {
 
-class SerienjunkiesSJTable extends JDialog {
-    private static final long serialVersionUID = 4525944250937805028L;
-
-    public ArrayList<DownloadLink> dls;
-
-    public SerienjunkiesSJTable(JFrame owner, ArrayList<DownloadLink> dLinks) {
-        super(owner);
-
-        dls = dLinks;
-
-        JLabel m_title = new JLabel(JDLocale.L("plugin.serienjunkies.manager.dllinks", "Unerwünschte Links einfach löschen"), new ImageIcon(JDImage.getImage(JDTheme.V("gui.images.config.addons"))), SwingConstants.LEFT);
-
-        final JTable m_table = new JTable(new SerienjunkiesTM(dls));
-
-        TableColumn column = null;
-
-        for (int c = 0; c < m_table.getColumnCount(); c++) {
-            column = m_table.getColumnModel().getColumn(c);
-            switch (c) {
-            case 0:
-                column.setPreferredWidth(200);
-                break;
-            case 1:
-                column.setPreferredWidth(160);
-                break;
-            case 2:
-                column.setPreferredWidth(100);
-                break;
-            }
-        }
-
-        JButton deleteButton = new JButton(JDLocale.L("gui.component.textarea.context.delete", "Löschen"));
-        deleteButton.addActionListener(new ActionListener() {
-
-            public void actionPerformed(ActionEvent e) {
-                int[] rows = m_table.getSelectedRows();
-                ArrayList<DownloadLink> delDls = new ArrayList<DownloadLink>();
-                for (int j : rows) {
-                    delDls.add(dls.get(j));
+                public void actionPerformed(ActionEvent e) {
+                    useScat = new int[] { ((SerienjunkiesMeth) methods.getSelectedItem()).var, checkScat.isSelected() ? saveScat : 0 };
+                    mirror = (String) settings.getSelectedItem();
+                    dispose();
                 }
-                dls.removeAll(delDls);
-                m_table.tableChanged(new TableModelEvent(m_table.getModel()));
+
+            });
+            JButton btnCancel = new JButton(JDLocale.L("gui.btn_cancel", "Cancel"));
+            btnCancel.addActionListener(new ActionListener() {
+
+                public void actionPerformed(ActionEvent e) {
+                    useScat = new int[] { sCatNoThing, 0 };
+                    dispose();
+                }
+
+            });
+
+            setLayout(new MigLayout("wrap 1"));
+            setModal(true);
+            setTitle(JDLocale.L("plugins.SerienJunkies.CatDialog.title", "SerienJunkies ::CAT::"));
+            setAlwaysOnTop(true);
+            addWindowListener(new WindowAdapter() {
+
+                public void windowClosing(WindowEvent e) {
+                    useScat = new int[] { sCatNoThing, 0 };
+                    dispose();
+                }
+
+            });
+            add(new JLabel(JDLocale.L("plugins.SerienJunkies.CatDialog.action", "Wählen sie eine Aktion aus:")));
+            add(methods);
+            add(new JLabel(JDLocale.L("plugins.SerienJunkies.CatDialog.mirror", "Wählen sie eine Mirrorverwalung:")));
+            add(settings);
+            add(checkScat);
+            add(btnOK, "split 2, center");
+            add(btnCancel);
+            pack();
+            setLocation(Screen.getCenterOfComponent(null, this));
+        }
+
+        private class SerienjunkiesMeth {
+            public String name;
+
+            public int var;
+
+            public SerienjunkiesMeth(String name, int var) {
+                this.name = name;
+                this.var = var;
             }
 
-        });
-
-        final JButton insertButton = new JButton(JDLocale.L("gui.component.textarea.context.paste", "Einfügen"));
-        insertButton.addActionListener(new ActionListener() {
-
-            public void actionPerformed(ActionEvent e) {
-                dispose();
+            // @Override
+            public String toString() {
+                return name;
             }
-
-        });
-
-        final JButton closeButton = new JButton(JDLocale.L("gui.btn_cancel", "Cancel"));
-        closeButton.addActionListener(new ActionListener() {
-
-            public void actionPerformed(ActionEvent e) {
-                dls = new ArrayList<DownloadLink>();
-                dispose();
-            }
-
-        });
-
-        addWindowListener(new WindowAdapter() {
-
-            public void windowClosed(WindowEvent e) {
-                dispose();
-            }
-
-            public void windowClosing(WindowEvent e) {
-                dls = new ArrayList<DownloadLink>();
-            }
-
-        });
-        setTitle(JDLocale.L("plugin.serienjunkies.manager.title", "SerienJunkies Linkverwaltung"));
-        setModal(true);
-        setLayout(new MigLayout("ins 5, wrap 1", "[center, grow]"));
-        add(m_title, "left");
-        add(new JScrollPane(m_table), "growx, spanx");
-        add(deleteButton, "split 3, w pref!");
-        add(insertButton, "w pref!");
-        add(closeButton, "w pref!");
-        pack();
-        setLocation(Screen.getCenterOfComponent(null, this));
-        setVisible(true);
+        }
     }
 
-    private class SerienjunkiesTM extends AbstractTableModel {
+    private class SerienjunkiesSJTable extends JDialog {
+        private static final long serialVersionUID = 4525944250937805028L;
 
-        private static final long serialVersionUID = 5068062216039834333L;
+        public ArrayList<DownloadLink> dls;
 
-        private String m_columns[] = { JDLocale.L("gui.packageinfo.name", "Name"), JDLocale.L("gui.treetable.header_3.hoster", "Anbieter"), JDLocale.L("gui.linkgrabber.packagetab.table.column.size", "Größe") };
+        public SerienjunkiesSJTable(ArrayList<DownloadLink> dLinks) {
+            super(SimpleGUI.CURRENTGUI);
 
-        private ArrayList<DownloadLink> dls;
-
-        public SerienjunkiesTM(ArrayList<DownloadLink> dls) {
-            this.dls = dls;
+            dls = dLinks;
+            initGUI();
         }
 
-        public int getRowCount() {
-            return dls == null ? 0 : dls.size();
-        }
+        private void initGUI() {
+            JLabel m_title = new JLabel(JDLocale.L("plugin.serienjunkies.manager.dllinks", "Unerwünschte Links einfach löschen"), new ImageIcon(JDImage.getImage(JDTheme.V("gui.images.config.addons"))), SwingConstants.LEFT);
 
-        public int getColumnCount() {
-            return m_columns.length;
-        }
+            final JTable m_table = new JTable(new SerienjunkiesTM(dls));
 
-        // @Override
-        public String getColumnName(int column) {
-            return m_columns[column];
-        }
+            TableColumn column = null;
 
-        // @Override
-        public boolean isCellEditable(int nRow, int nCol) {
-            return false;
-        }
-
-        public Object getValueAt(int nRow, int nCol) {
-            switch (nCol) {
-            case 0:
-                return dls.get(nRow).getName();
-            case 1:
-                return dls.get(nRow).getHost();
-            case 2:
-                return Formatter.formatReadable(dls.get(nRow).getDownloadSize());
+            for (int c = 0; c < m_table.getColumnCount(); c++) {
+                column = m_table.getColumnModel().getColumn(c);
+                switch (c) {
+                case 0:
+                    column.setPreferredWidth(200);
+                    break;
+                case 1:
+                    column.setPreferredWidth(160);
+                    break;
+                case 2:
+                    column.setPreferredWidth(100);
+                    break;
+                }
             }
-            return "";
+
+            JButton deleteButton = new JButton(JDLocale.L("gui.component.textarea.context.delete", "Löschen"));
+            deleteButton.addActionListener(new ActionListener() {
+
+                public void actionPerformed(ActionEvent e) {
+                    int[] rows = m_table.getSelectedRows();
+                    ArrayList<DownloadLink> delDls = new ArrayList<DownloadLink>();
+                    for (int j : rows) {
+                        delDls.add(dls.get(j));
+                    }
+                    dls.removeAll(delDls);
+                    m_table.tableChanged(new TableModelEvent(m_table.getModel()));
+                }
+
+            });
+
+            final JButton insertButton = new JButton(JDLocale.L("gui.component.textarea.context.paste", "Einfügen"));
+            insertButton.addActionListener(new ActionListener() {
+
+                public void actionPerformed(ActionEvent e) {
+                    dispose();
+                }
+
+            });
+
+            final JButton closeButton = new JButton(JDLocale.L("gui.btn_cancel", "Cancel"));
+            closeButton.addActionListener(new ActionListener() {
+
+                public void actionPerformed(ActionEvent e) {
+                    dls = new ArrayList<DownloadLink>();
+                    dispose();
+                }
+
+            });
+
+            addWindowListener(new WindowAdapter() {
+
+                public void windowClosed(WindowEvent e) {
+                    dispose();
+                }
+
+                public void windowClosing(WindowEvent e) {
+                    dls = new ArrayList<DownloadLink>();
+                }
+
+            });
+            setTitle(JDLocale.L("plugin.serienjunkies.manager.title", "SerienJunkies Linkverwaltung"));
+            setModal(true);
+            setLayout(new MigLayout("ins 5, wrap 1", "[center, grow]"));
+            add(m_title, "left");
+            add(new JScrollPane(m_table), "growx, spanx");
+            add(deleteButton, "split 3, w pref!");
+            add(insertButton, "w pref!");
+            add(closeButton, "w pref!");
+            pack();
+            setLocation(Screen.getCenterOfComponent(null, this));
+            setVisible(true);
+        }
+
+        private class SerienjunkiesTM extends AbstractTableModel {
+
+            private static final long serialVersionUID = 5068062216039834333L;
+
+            private String m_columns[] = { JDLocale.L("gui.packageinfo.name", "Name"), JDLocale.L("gui.treetable.header_3.hoster", "Anbieter"), JDLocale.L("gui.linkgrabber.packagetab.table.column.size", "Größe") };
+
+            private ArrayList<DownloadLink> dls;
+
+            public SerienjunkiesTM(ArrayList<DownloadLink> dls) {
+                this.dls = dls;
+            }
+
+            public int getRowCount() {
+                return dls == null ? 0 : dls.size();
+            }
+
+            public int getColumnCount() {
+                return m_columns.length;
+            }
+
+            // @Override
+            public String getColumnName(int column) {
+                return m_columns[column];
+            }
+
+            // @Override
+            public boolean isCellEditable(int nRow, int nCol) {
+                return false;
+            }
+
+            public Object getValueAt(int nRow, int nCol) {
+                switch (nCol) {
+                case 0:
+                    return dls.get(nRow).getName();
+                case 1:
+                    return dls.get(nRow).getHost();
+                case 2:
+                    return Formatter.formatReadable(dls.get(nRow).getDownloadSize());
+                }
+                return "";
+            }
+
         }
 
     }
