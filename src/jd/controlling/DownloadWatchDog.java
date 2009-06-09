@@ -59,8 +59,6 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
 
     private boolean paused = false;
 
-    private int oldSpeed2 = 0;
-
     private int totalSpeed = 0;
 
     private Thread watchDogThread = null;
@@ -87,6 +85,13 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
 
     public void start() {
         stopMark = nostopMark;
+        /* ursprünglichen speed wiederherstellen */
+        if (SubConfiguration.getConfig("DOWNLOAD").getProperty("MAXSPEEDBEFOREPAUSE", null) != null) {
+            logger.info("Restoring old speedlimit");
+            SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty("MAXSPEEDBEFOREPAUSE", 0));
+            SubConfiguration.getConfig("DOWNLOAD").setProperty("MAXSPEEDBEFOREPAUSE", null);
+            SubConfiguration.getConfig("DOWNLOAD").save();
+        }
         startWatchDogThread();
     }
 
@@ -371,11 +376,12 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
         if (paused == value) return;
         paused = value;
         if (value) {
-            oldSpeed2 = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0);
+            SubConfiguration.getConfig("DOWNLOAD").setProperty("MAXSPEEDBEFOREPAUSE", SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0));
             SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_PAUSE_SPEED, 10));
-            logger.info("Pause enabled: Reduced downloadspeed to 10 kb/s");
+            logger.info("Pause enabled: Reducing downloadspeed to " + SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_PAUSE_SPEED, 10) + " kb/s");
         } else {
-            SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, oldSpeed2);
+            SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty("MAXSPEEDBEFOREPAUSE", 0));
+            SubConfiguration.getConfig("DOWNLOAD").setProperty("MAXSPEEDBEFOREPAUSE", null);
             logger.info("Pause disabled: Switch back to old downloadspeed");
         }
         SubConfiguration.getConfig("DOWNLOAD").save();
@@ -544,6 +550,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                     JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED, this));
                     JDUtilities.getController().removeControlListener(INSTANCE);
                     Interaction.handleInteraction(Interaction.INTERACTION_ALL_DOWNLOADS_FINISHED, this);
+                    pause(false);
                 }
             };
             watchDogThread.start();
