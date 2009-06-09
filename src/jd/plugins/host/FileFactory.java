@@ -22,7 +22,6 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.reconnect.Reconnecter;
-import jd.http.Browser;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -48,7 +47,7 @@ public class FileFactory extends PluginForHost {
     private static final String WAIT_TIME = "have exceeded the download limit for free users.*Please wait ([0-9]+).*to download more files";
 
     private static final String LOGIN_ERROR = "The email or password you have entered is incorrect";
-    
+
     private static Pattern patternForDownloadlink = Pattern.compile("downloadLink.*href..(.*)..Click", Pattern.DOTALL);
 
     private static final String SERVER_DOWN = "server hosting the file you are requesting is currently down";
@@ -94,13 +93,13 @@ public class FileFactory extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML(SERVER_DOWN) || br.containsHTML(NO_SLOT)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l); }
 
-        //URL von zweiter Seite ermitteln
+        // URL von zweiter Seite ermitteln
         String urlWithFilename = Encoding.htmlDecode("http://www.filefactory.com" + br.getRegex(baseLink).getMatch(0));
 
-        //Zweite Seite laden
+        // Zweite Seite laden
         br.getPage(urlWithFilename);
 
-        //Datei Downloadlink filtern
+        // Datei Downloadlink filtern
         String downloadUrl = Encoding.htmlDecode(br.getRegex(patternForDownloadlink).getMatch(0));
 
         sleep(31000, parameter);
@@ -139,12 +138,8 @@ public class FileFactory extends PluginForHost {
         return 20;
     }
 
-    // @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo(this, account);
-        Browser br = new Browser();
-        br.setCookiesExclusive(true);
-        br.clearCookies(getHost());
+    private void login(Account account) throws Exception {
+        this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage("http://filefactory.com");
 
@@ -153,11 +148,20 @@ public class FileFactory extends PluginForHost {
         login.put("password", account.getPass());
         br.submitForm(login);
 
-        if (br.containsHTML(LOGIN_ERROR)) {
+        if (br.containsHTML(LOGIN_ERROR)) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    // @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo(this, account);
+
+        try {
+            login(account);
+        } catch (PluginException e) {
             ai.setValid(false);
-            ai.setStatus(LOGIN_ERROR);
             return ai;
         }
+
         br.getPage("http://www.filefactory.com/member/");
         String expire = br.getMatch("Your account is valid until the <strong>(.*?)</strong>");
         if (expire == null) {
@@ -171,71 +175,36 @@ public class FileFactory extends PluginForHost {
         String points = br.getMatch("Available reward points.*?class=\"amount\">(.*?) points").replaceAll("\\,", "");
         ai.setPremiumPoints(Long.parseLong(points.trim()));
 
-        /*
-         * br.getPage("http://www.filefactory.com/members/details/premium/usage/"
-         * );
-         * 
-         * String[] dat =br.getRegex(
-         * "You have downloaded (.*?) in the last 24 hours.*?Your daily limit is (.*?), and your download usage will be reset "
-         * ).getRow(0); long gone; if (dat == null && Regex.matches(br,
-         * "You have not downloaded anything")) {
-         * 
-         * gone = 0; } else {
-         * 
-         * gone = Regex.getSize(dat[0].replace(",", "")); } ai.setTrafficMax(12
-         * 1024 1024 1024l); ai.setTrafficLeft(12 1024 1024 1024l - gone);
-         */
-
         return ai;
     }
 
     // @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        String user = account.getUser();
-        String pass = account.getPass();
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
+        requestFileInformation(downloadLink);
 
-        if (user == null || pass == null) {
-            linkStatus.setStatus(LinkStatus.ERROR_PREMIUM);
-            return;
-        }
-        br.setCookiesExclusive(true);
-        br.setFollowRedirects(true);
-        br.getPage("http://filefactory.com");
-
-        Form login = br.getForm(0);
-        login.put("email", account.getUser());
-        login.put("password", account.getPass());
-        br.submitForm(login);
-        br.setFollowRedirects(true);
-
-        if (br.getRegex(LOGIN_ERROR).getMatch(0) != null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LOGIN_ERROR, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        login(account);
 
         br.setFollowRedirects(false);
-        br.openGetConnection(downloadLink.getDownloadURL());
+        br.getPage(downloadLink.getDownloadURL());
+
         dl = br.openDownload(downloadLink, br.getRedirectLocation(), true, 0);
 
         if (dl.getConnection().getHeaderField("Content-Disposition") == null) {
             br.followConnection();
 
             if (br.containsHTML(NOT_AVAILABLE)) {
-                linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                return;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (br.containsHTML(SERVER_DOWN)) {
-                linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                linkStatus.setValue(20 * 60 * 1000l);
-                return;
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
             } else {
-                String red = br.getRegex("Description: .*?p style=.*?><a href=\"(.*?)\".*?>.*?Click here to begin your download").getMatch(0);
+                String red = br.getRegex(Pattern.compile("10px 0;\">.*<a href=\"(.*?)\">Download with FileFactory Premium", Pattern.DOTALL)).getMatch(0);
                 logger.finer("Indirect download");
                 dl = br.openDownload(downloadLink, red, true, 0);
-
             }
         } else {
             logger.finer("DIRECT download");
         }
         dl.startDownload();
-        return;
     }
 
     // @Override
