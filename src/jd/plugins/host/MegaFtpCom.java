@@ -43,6 +43,7 @@ public class MegaFtpCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception, PluginException, InterruptedException {
         this.setBrowserExclusive();
 
+        br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if(br.containsHTML("404 Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
@@ -56,10 +57,10 @@ public class MegaFtpCom extends PluginForHost {
         // (br.containsHTML("access to the service may be unavailable for a while"))
         // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE); TODO: kein Link zu
 
-        String filename = br.getRegex(Pattern.compile("<font color=\"#FC8622\" size=\"4\">(.*?)</font>")).getMatch(0);
+        String filename = br.getRegex("<font color=\"#FC8622\" size=\"4\">(.*?)</font>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
-        
+        br.setFollowRedirects(false);        
         return AvailableStatus.TRUE;
     }
 
@@ -107,7 +108,7 @@ public class MegaFtpCom extends PluginForHost {
 
     // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return 20;
     }
 
     // @Override
