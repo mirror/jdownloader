@@ -97,25 +97,27 @@ public class Updater {
     public static void main(String[] args) throws Exception {
 
         Updater upd = new Updater();
-        System.out.println("STATUS: Webupdate");
-        upd.webupdate();
-        System.out.println("STATUS: Webupdate ende");
-        System.out.println("STATUS: Scan local");
-        upd.removeFileOverhead();
-        if (JOptionPane.showConfirmDialog(upd.getFrame(), "SVN UPdate") == JOptionPane.OK_OPTION) {
-            System.out.println("STATUS: update svn");
-            upd.updateSource();
-        }
-        System.out.println("STATUS: move plugins");
-        upd.movePlugins(getCFG("plugins_dir"));
-        System.out.println("STATUS: FINISHED");
-        ArrayList<File> list = upd.getFileList();
+//        System.out.println("STATUS: Webupdate");
+//        upd.webupdate();
+//        System.out.println("STATUS: Webupdate ende");
+//        System.out.println("STATUS: Scan local");
+//        upd.removeFileOverhead();
+//        if (JOptionPane.showConfirmDialog(upd.getFrame(), "SVN UPdate") == JOptionPane.OK_OPTION) {
+//            System.out.println("STATUS: update svn");
+//            upd.updateSource();
+//        }
+//        System.out.println("STATUS: move plugins");
+//        upd.movePlugins(getCFG("plugins_dir"));
+//        System.out.println("STATUS: FINISHED");
+//        ArrayList<File> list = upd.getFileList();
+//
+//        upd.upload(list);
+//
+//        upd.merge();
+        upd.checkHashes();
 
-        upd.upload(list);
-
-        upd.merge();
-        upd.uploadHashList();
-        upd.spread(list);
+//        upd.spread(list);
+//        upd.uploadHashList();
         System.exit(0);
     }
 
@@ -151,6 +153,22 @@ public class Updater {
             e.printStackTrace();
         }
         System.out.println("Spread ok");
+    }
+
+    private void checkHashes() throws IOException {
+        while (true) {
+            HashMap<String, String> map = createHashList(this.workingDir);
+            Browser br = new Browser();
+            br.forceDebug(true);
+
+            map.put("pass", getCFG("updateHashPW"));
+
+            br.postPage("http://update1.jdownloader.org/checkHashes.php", map);
+            System.out.println(br + "");
+            if (br.containsHTML("success") && !br.containsHTML("<b>Warning</b>") && !br.containsHTML("<b>Error</b>")) break;
+
+            JOptionPane.showConfirmDialog(frame, "MD5 ERROR!!!! See log");
+        }
     }
 
     private void uploadHashList() throws IOException {
@@ -308,7 +326,7 @@ public class Updater {
         return listUpdate;
     }
 
-    /** Copies host and decryptplugins from svn dir to updatelist */    
+    /** Copies host and decryptplugins from svn dir to updatelist */
     private void movePlugins(String cfg) throws IOException {
         if (cfg == null) return;
         pluginsDir = new File(cfg);
@@ -332,7 +350,7 @@ public class Updater {
         Subversion sv = new Subversion("https://www.syncom.org/svn/jdownloader/trunk/ressourcen/");
         sv.export(svn);
         moveSrcToDif("jd/languages", "jd/languages");
-//        moveSrcToDif("jd/captcha", "jd/captcha");
+        // moveSrcToDif("jd/captcha", "jd/captcha");
     }
 
     /**
