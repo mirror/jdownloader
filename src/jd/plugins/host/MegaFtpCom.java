@@ -45,10 +45,11 @@ public class MegaFtpCom extends PluginForHost {
         if(br.containsHTML("404 Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         //Javascript Redirect
-        String redirectUrl = br.getPage(br.getRegex(Pattern.compile("location.replace\\('(.*?)'\\);")).getMatch(0));
+        /*String redirectUrl = br.getPage(br.getRegex(Pattern.compile("location.replace\\('(.*?)'\\);")).getMatch(0));
         if(redirectUrl != null) {
             br.getPage(redirectUrl);
         }
+        if(br.containsHTML("404 Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);*/
 
         // (br.containsHTML("access to the service may be unavailable for a while"))
         // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE); TODO: kein Link zu
