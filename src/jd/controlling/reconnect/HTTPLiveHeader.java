@@ -394,6 +394,7 @@ public class HTTPLiveHeader extends ReconnectMethod {
                     br.getPage(http + host + path);
                 } else if (requestType.equalsIgnoreCase("POST")) {
                     String poster = post.toString().trim();
+                  
                     br.postPageRaw(http + host + path, poster);
                 } else if (requestType.equalsIgnoreCase("AUTH")) {
                     logger.finer("Convert AUTH->GET");

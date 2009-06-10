@@ -40,4 +40,11 @@ public class JDFlags {
         return true;
     }
 
+    public static boolean hasSomeFlags(int status, int... flags) {
+        for (int i : flags) {
+            if ((status & i) > 0) return true;
+        }
+        return false;
+    }
+
 }

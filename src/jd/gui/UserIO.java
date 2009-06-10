@@ -48,9 +48,11 @@ public abstract class UserIO {
     public static final int RETURN_CANCEL = 1 << 2;
     public static final int RETURN_DONT_SHOW_AGAIN = 1 << 3;
     public static final int RETURN_SKIPPED_BY_DONT_SHOW = 1 << 4;
+    public static final int RETURN_COUNTDOWN_TIMEOUT = 1<<5;
     public static final int ICON_INFO = 0;
     public static final int ICON_WARNING = 1;
     public static final int ICON_ERROR = 2;
+
  
 
     protected static UserIO INSTANCE = null;

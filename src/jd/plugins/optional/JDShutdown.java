@@ -210,7 +210,9 @@ public class JDShutdown extends PluginOptional {
             UserIO.setCountdownTime(count);
             int ret = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, JDLocale.L("interaction.shutdown.dialog.title", "Shutdown"), message, UserIO.getInstance().getIcon(UserIO.ICON_WARNING), null, null);
             UserIO.setCountdownTime(null);
-            if (JDFlags.hasAllFlags(ret, UserIO.RETURN_OK)) {
+            logger.info("Return code: "+ret);
+            if (JDFlags.hasSomeFlags(ret, UserIO.RETURN_OK,UserIO.RETURN_COUNTDOWN_TIMEOUT)) {
+                logger.info("Prepare Shutdown");
                 JDUtilities.getController().prepareShutdown();
                 switch (OSDetector.getOSID()) {
                 case OSDetector.OS_WINDOWS_2003:

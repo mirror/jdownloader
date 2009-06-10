@@ -46,7 +46,11 @@ public class PostRequest extends Request {
     // public Request toHeadRequest() throws MalformedURLException {
 
     public String getPostDataString() {
-        if (postData.isEmpty()) { return null; }
+        if (postData.isEmpty()) {
+
+        return postDataString;
+
+        }
 
         StringBuilder buffer = new StringBuilder();
 
@@ -70,7 +74,7 @@ public class PostRequest extends Request {
         this.postDataString = post;
     }
 
-    //@Override
+    // @Override
     public void postRequest(URLConnectionAdapter httpConnection) throws IOException {
         httpConnection.setDoOutput(true);
         String parameter = postDataString != null ? postDataString : getPostDataString();
@@ -91,7 +95,7 @@ public class PostRequest extends Request {
         }
     }
 
-    //@Override
+    // @Override
     public void preRequest(URLConnectionAdapter httpConnection) throws IOException {
         httpConnection.setRequestMethod("POST");
 

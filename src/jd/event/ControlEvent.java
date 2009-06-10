@@ -128,6 +128,10 @@ public class ControlEvent extends AWTEvent {
      * werden als File[] parameter übergeben
      */
     public static final int CONTROL_ON_FILEOUTPUT = 33;
+/**
+ * Sammelt über DataBox.java daten ein
+ */
+    public static final int CONTROL_COLLECT_DATA = 34;
 
     /**
      * Die ID des Ereignisses

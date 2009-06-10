@@ -226,6 +226,8 @@ public class HTTPConnection extends sun.net.www.protocol.http.HttpURLConnection 
         }
         sb.append(new char[] { '\r', '\n' });
 
+        
+     
         if (this.getRequest() != null) {
             if (getRequest() instanceof PostRequest) {
                 sb.append(((PostRequest) getRequest()).getPostDataString());

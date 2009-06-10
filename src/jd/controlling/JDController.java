@@ -360,12 +360,19 @@ public class JDController implements ControlListener {
     }
 
     public void prepareShutdown() {
+        logger.info("Stop all runing downloads");
         stopDownloads();
+        logger.info("Save downloadlist");
         JDUtilities.getDownloadController().saveDownloadLinksSyncnonThread();
+        logger.info("Save accountlist");
         AccountController.getInstance().saveSyncnonThread();
+        logger.info("Save PAsswordlist");
         PasswordListController.getInstance().saveSync();
+        logger.info("Call Exit event");
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SYSTEM_EXIT, this));
+        logger.info("Call Exit interactions");
         Interaction.handleInteraction(Interaction.INTERACTION_EXIT, null);
+        logger.info("Shutdown Database");
         JDUtilities.getDatabaseConnector().shutdownDatabase();
     }
 

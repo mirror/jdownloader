@@ -187,6 +187,7 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
     protected void onCountdown() {
 
         setReturnValue(false);
+        returnValue |= UserIO.RETURN_COUNTDOWN_TIMEOUT;
         this.dispose();
     }
 
