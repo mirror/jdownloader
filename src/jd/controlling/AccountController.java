@@ -180,6 +180,15 @@ public class AccountController extends SubConfiguration implements ActionListene
         addAccount(host, account);
     }
 
+    public boolean hasAccounts(String host) {
+        return !getAllAccounts(host).isEmpty();
+    }
+
+    public ArrayList<Account> getAllAccounts(PluginForHost pluginForHost) {
+        if (pluginForHost == null) return new ArrayList<Account>();
+        return this.getAllAccounts(pluginForHost.getHost());
+    }
+
     public ArrayList<Account> getAllAccounts(String host) {
         if (host == null) return new ArrayList<Account>();
         synchronized (hosteraccounts) {
@@ -261,11 +270,6 @@ public class AccountController extends SubConfiguration implements ActionListene
                 return b;
             }
         }
-    }
-
-    public ArrayList<Account> getAllAccounts(PluginForHost pluginForHost) {
-        if (pluginForHost == null) return new ArrayList<Account>();
-        return this.getAllAccounts(pluginForHost.getHost());
     }
 
     public void actionPerformed(ActionEvent arg0) {

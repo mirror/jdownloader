@@ -40,10 +40,10 @@ public class BizHatCom extends PluginForHost {
     }
 
     // @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
 
-        System.out.println(br.getPage(downloadLink.getDownloadURL()));
+        br.getPage(downloadLink.getDownloadURL());
         // if
         // (br.containsHTML("access to the service may be unavailable for a while"))
         // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);

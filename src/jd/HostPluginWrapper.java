@@ -18,6 +18,7 @@ package jd;
 
 import java.util.ArrayList;
 
+import jd.controlling.AccountController;
 import jd.plugins.PluginForHost;
 
 public class HostPluginWrapper extends PluginWrapper {
@@ -38,7 +39,7 @@ public class HostPluginWrapper extends PluginWrapper {
         this(host, className, patternSupported, 0);
     }
 
-    //@Override
+    @Override
     public PluginForHost getPlugin() {
         return (PluginForHost) super.getPlugin();
     }
@@ -54,6 +55,38 @@ public class HostPluginWrapper extends PluginWrapper {
 
     public boolean isPremiumEnabled() {
         return this.isLoaded() && this.getPlugin().isPremiumEnabled();
+    }
+
+    @Override
+    public int compareTo(PluginWrapper pw) {
+        if (!(pw instanceof HostPluginWrapper)) return super.compareTo(pw);
+
+        HostPluginWrapper plg = (HostPluginWrapper) pw;
+        if (this.isLoaded() && plg.isLoaded()) {
+            if (this.isPremiumEnabled() && plg.isPremiumEnabled()) {
+                boolean a = AccountController.getInstance().hasAccounts(this.getHost());
+                boolean b = AccountController.getInstance().hasAccounts(plg.getHost());
+                if ((a && b) || (!a && !b)) {
+                    return this.getHost().compareToIgnoreCase(plg.getHost());
+                } else if (a && !b) {
+                    return -1;
+                } else {
+                    return 1;
+                }
+            } else if (!this.isPremiumEnabled() && !plg.isPremiumEnabled()) {
+                return this.getHost().compareToIgnoreCase(plg.getHost());
+            } else if (this.isPremiumEnabled() && !plg.isPremiumEnabled()) {
+                return -1;
+            } else {
+                return 1;
+            }
+        } else if (!this.isLoaded() && !plg.isLoaded()) {
+            return this.getHost().compareToIgnoreCase(plg.getHost());
+        } else if (this.isLoaded() && !plg.isLoaded()) {
+            return -1;
+        } else {
+            return 1;
+        }
     }
 
 }

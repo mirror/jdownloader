@@ -37,6 +37,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -683,7 +684,9 @@ public class JDUtilities {
      * @return Plugins zum Downloaden von einem Anbieter
      */
     public static ArrayList<HostPluginWrapper> getPluginsForHost() {
-        return HostPluginWrapper.getHostWrapper();
+        ArrayList<HostPluginWrapper> hosts = HostPluginWrapper.getHostWrapper();
+        Collections.sort(hosts);
+        return hosts;
     }
 
     /**
