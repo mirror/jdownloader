@@ -203,7 +203,8 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
         long trafficTotal = 0;
         TreeMap<String, ArrayList<AccountInfo>> map = new TreeMap<String, ArrayList<AccountInfo>>();
         TreeMap<String, Long> mapSize = new TreeMap<String, Long>();
-        for (HostPluginWrapper wrapper : JDUtilities.getPluginsForHost()) {
+        ArrayList<HostPluginWrapper> pluginsForHost = new ArrayList<HostPluginWrapper>(JDUtilities.getPluginsForHost());
+        for (HostPluginWrapper wrapper : pluginsForHost) {
             if (wrapper.isLoaded() && wrapper.usePlugin()) {
                 final PluginForHost helpPlugin = (PluginForHost) wrapper.getNewPluginInstance();
                 if (helpPlugin.getPremiumAccounts().size() > 0) {

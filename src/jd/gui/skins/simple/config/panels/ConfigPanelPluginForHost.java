@@ -159,7 +159,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
     public ConfigPanelPluginForHost(Configuration configuration) {
         super();
-        pluginsForHost = JDUtilities.getPluginsForHost();
+        pluginsForHost = new ArrayList<HostPluginWrapper>(JDUtilities.getPluginsForHost());
         Collections.sort(pluginsForHost);
         initPanel();
         load();
