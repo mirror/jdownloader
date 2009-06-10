@@ -365,6 +365,8 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
                 public void paint(Graphics g) {
                     super.paint(g);
                     SimpleGUI.CURRENTGUI.setWaiting(false);
+                    SimpleGUI.CURRENTGUI.invalidate();
+                    SimpleGUI.CURRENTGUI.repaint();
                 }
 
             };
@@ -375,8 +377,8 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
 
                 public void propertyChange(PropertyChangeEvent evt) {
                     if (evt.getOldValue() != null) {
-                        PremiumPanel.this.getParent().getParent().getParent().invalidate();
-                        PremiumPanel.this.getParent().getParent().getParent().repaint();
+//                        PremiumPanel.this.getParent().getParent().getParent().invalidate();
+//                        PremiumPanel.this.getParent().getParent().getParent().repaint();
                     }
 
                 }

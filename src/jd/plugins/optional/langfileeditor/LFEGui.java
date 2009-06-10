@@ -54,6 +54,7 @@ import jd.config.ConfigEntry;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
+import jd.gui.UserIO;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.JTabbedPanel;
 import jd.gui.skins.simple.SimpleGUI;
@@ -62,6 +63,7 @@ import jd.gui.skins.simple.components.ComboBrowseFile;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.PieChartAPI;
 import jd.gui.skins.simple.components.TwoTextFieldDialog;
+import jd.nutils.JDFlags;
 import jd.nutils.io.JDFileFilter;
 import jd.nutils.io.JDIO;
 import jd.nutils.svn.Subversion;
@@ -196,6 +198,11 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
                     @Override
                     public Object runSave() {
                         LFEGui.this.setEnabled(false);
+
+                        if (!subConfig.hasProperty(PROPERTY_SVN_UPDATE_ON_START)) {
+                            int result = UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, JDLocale.L("plugins.optional.langfileeditor.svn.title", "Updating SVN"), JDLocale.L("plugins.optional.langfileeditor.svn.message", "Do you want to load the current SourceCode from the SVN Repository to be up-to-date for creating a complete LanguageFile? You can change your selection by editing the SVN settings in the MenuBar!"), UserIO.getInstance().getIcon(UserIO.ICON_INFO), null, null);
+                            subConfig.setProperty(PROPERTY_SVN_UPDATE_ON_START, JDFlags.hasAllFlags(result, UserIO.RETURN_OK));
+                        }
 
                         if (subConfig.getBooleanProperty(PROPERTY_SVN_UPDATE_ON_START, true)) updateSVN();
 
