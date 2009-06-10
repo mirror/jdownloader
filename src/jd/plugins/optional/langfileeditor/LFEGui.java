@@ -651,6 +651,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
     }
 
     private void updateSVN() {
+        SimpleGUI.CURRENTGUI.setWaiting(true);
         ProgressController progress = new ProgressController(JDLocale.L("plugins.optional.langfileeditor.svn.updating", "Updating SVN: Please wait"));
         progress.setRange(2);
         try {
@@ -675,6 +676,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
             progress.setStatusText(JDLocale.L("plugins.optional.langfileeditor.svn.updating.error", "Updating SVN: Error!"));
             progress.finalize(5 * 1000l);
         }
+        SimpleGUI.CURRENTGUI.setWaiting(false);
     }
 
     private String getLanguageKey() {
@@ -759,6 +761,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
     }
 
     private void initLocaleData() {
+        SimpleGUI.CURRENTGUI.setWaiting(true);
         parseLanguageFile(languageFile, fileEntries);
 
         HashMap<String, String> dupeHelp = new HashMap<String, String>();
@@ -814,14 +817,17 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         mnuReload.setEnabled(true);
         mnuSave.setEnabled(true);
         mnuSaveAs.setEnabled(true);
+        SimpleGUI.CURRENTGUI.setWaiting(false);
     }
 
     private void getSourceEntries() {
+        SimpleGUI.CURRENTGUI.setWaiting(true);
         if (sourceFile.isDirectory()) {
             getSourceEntriesFromFolder();
         } else {
             getSourceEntriesFromFile();
         }
+        SimpleGUI.CURRENTGUI.setWaiting(false);
     }
 
     private void getSourceEntriesFromFile() {
