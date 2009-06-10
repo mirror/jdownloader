@@ -630,6 +630,7 @@ public class JDInit {
         new HostPluginWrapper("RuTube.ru", "RuTubeRu", "http://[\\w\\.]*?rutube\\.ru/tracks/\\d+\\.html");
         new HostPluginWrapper("FileFlyer.com", "FileFlyerCom", "http://[\\w\\.]*?fileflyer\\.com/view/[\\w]+");
         new HostPluginWrapper("BizHat.com", "BizHatCom", "http://[\\w\\.]*?uploads\\.bizhat\\.com/file/[0-9]+");
+        new HostPluginWrapper("MegaFTP.com", "MegaFtpCom", "http://[\\w\\.]*?megaftp\\.com/[0-9]+");
 
         // Hoster from Extern
         new HostPluginWrapper("iFolder.ru", "IfolderRu", "http://[\\-\\w\\.]*?ifolder\\.ru/\\d+");
