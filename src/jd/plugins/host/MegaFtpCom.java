@@ -15,16 +15,18 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.host;
 
-import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.utils.JDLocale;
 import jd.http.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
-import jd.plugins.*;
+import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.JDLocale;
 
 public class MegaFtpCom extends PluginForHost {
 
@@ -83,7 +85,7 @@ public class MegaFtpCom extends PluginForHost {
                 passCode = link.getStringProperty("pass", null);
             }
 
-            /* Passwort Ÿbergeben */
+            /* Passwort ï¿½bergeben */
             form.put("psw", passCode);
             br.submitForm(form);
 

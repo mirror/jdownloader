@@ -18,19 +18,12 @@ package jd.gui.skins.simple.tasks;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.logging.Level;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.JComboBox;
-import javax.swing.JLabel;
-import javax.swing.JSeparator;
 
-import jd.config.Configuration;
-import jd.controlling.JDLogger;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
-import jd.utils.JDUtilities;
 
 public class LogTaskPane extends TaskPanel implements ActionListener {
 

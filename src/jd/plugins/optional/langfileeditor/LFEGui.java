@@ -177,7 +177,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         cmboFile.setFileFilter(fileFilter);
         cmboFile.addActionListener(this);
 
-        keyChart = new PieChartAPI(JDLocale.L("plugins.optional.langfileeditor.keychart", "KeyChart"), 250, 60);
+        keyChart = new PieChartAPI("", 225, 50);
         keyChart.addEntity(entDone = new ChartAPIEntity(JDLocale.L("plugins.optional.langfileeditor.keychart.done", "Done"), 0, colorDone));
         keyChart.addEntity(entMissing = new ChartAPIEntity(JDLocale.L("plugins.optional.langfileeditor.keychart.missing", "Missing"), 0, colorMissing));
         keyChart.addEntity(entOld = new ChartAPIEntity(JDLocale.L("plugins.optional.langfileeditor.keychart.old", "Old"), 0, colorOld));
@@ -186,7 +186,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         this.add(buildMenu(), "span 3, growx, spanx");
         this.add(new JLabel(JDLocale.L("plugins.optional.langfileeditor.source", "Source:")));
         this.add(cmboSource, "growx");
-        this.add(keyChart, "spany 2, w 250!, h 60!");
+        this.add(keyChart, "spany 2, w 225!, h 50!");
         this.add(new JLabel(JDLocale.L("plugins.optional.langfileeditor.languageFile", "Language File:")));
         this.add(cmboFile, "growx");
         this.add(new JScrollPane(table), "span 3, grow, span");
@@ -197,28 +197,28 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         new Thread(new Runnable() {
 
             public void run() {
-                SwingUtilities.invokeLater(new Runnable() {
+                // SwingUtilities.invokeLater(new Runnable() {
+                //
+                // public void run() {
+                LFEGui.this.setEnabled(false);
 
-                    public void run() {
-                        LFEGui.this.setEnabled(false);
+                if (!subConfig.hasProperty(PROPERTY_SVN_UPDATE_ON_START)) {
+                    int result = UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, JDLocale.L("plugins.optional.langfileeditor.svn.title", "Updating SVN"), JDLocale.L("plugins.optional.langfileeditor.svn.message", "Do you want to load the current SourceCode from the SVN Repository to be up-to-date for creating a complete LanguageFile? You can change your selection by editing the SVN settings in the MenuBar!"), UserIO.getInstance().getIcon(UserIO.ICON_INFO), null, null);
+                    subConfig.setProperty(PROPERTY_SVN_UPDATE_ON_START, JDFlags.hasAllFlags(result, UserIO.RETURN_OK));
+                }
 
-                        if (!subConfig.hasProperty(PROPERTY_SVN_UPDATE_ON_START)) {
-                            int result = UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, JDLocale.L("plugins.optional.langfileeditor.svn.title", "Updating SVN"), JDLocale.L("plugins.optional.langfileeditor.svn.message", "Do you want to load the current SourceCode from the SVN Repository to be up-to-date for creating a complete LanguageFile? You can change your selection by editing the SVN settings in the MenuBar!"), UserIO.getInstance().getIcon(UserIO.ICON_INFO), null, null);
-                            subConfig.setProperty(PROPERTY_SVN_UPDATE_ON_START, JDFlags.hasAllFlags(result, UserIO.RETURN_OK));
-                        }
+                if (subConfig.getBooleanProperty(PROPERTY_SVN_UPDATE_ON_START, true)) updateSVN();
+                if (languageFile == null) cmboFile.setCurrentPath(JDLocale.getLanguageFile());
 
-                        if (subConfig.getBooleanProperty(PROPERTY_SVN_UPDATE_ON_START, true)) updateSVN();
-                        if (languageFile == null) cmboFile.setCurrentPath(JDLocale.getLanguageFile());
+                initComplete = true;
 
-                        initComplete = true;
+                if (sourceFile != null) getSourceEntries();
+                initLocaleData();
 
-                        if (sourceFile != null) getSourceEntries();
-                        initLocaleData();
+                LFEGui.this.setEnabled(true);
+                // }
 
-                        LFEGui.this.setEnabled(true);
-                    }
-
-                });
+                // });
             }
 
         }).start();
@@ -610,7 +610,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
 
                 public void actionPerformed(ActionEvent e) {
 
-                    updateSVN();
+                    updateSVNinThread();
 
                 }
 
@@ -619,7 +619,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
 
         } else if (e.getSource() == mnuSVNCheckOutNow) {
 
-            updateSVN();
+            updateSVNinThread();
 
         }
 
@@ -652,6 +652,16 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         return true;
     }
 
+    private void updateSVNinThread() {
+        new Thread(new Runnable() {
+
+            public void run() {
+                updateSVN();
+            }
+
+        }).start();
+    }
+
     private void updateSVN() {
         SimpleGUI.CURRENTGUI.setWaiting(true);
 
@@ -666,7 +676,8 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
             svn.export(new File(workingCopy));
             progress.increase(1);
 
-            progress.finalize();
+            progress.setStatusText(JDLocale.L("plugins.optional.langfileeditor.svn.updating.ready", "Updating SVN: Complete"));
+            progress.finalize(2 * 1000l);
         } catch (SVNException e) {
             JDLogger.exception(e);
             progress.setColor(Color.RED);
@@ -815,12 +826,19 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         table.packAll();
         changed = false;
 
-        updateKeyChart();
-        mnuEntries.setEnabled(true);
-        mnuKey.setEnabled(true);
-        mnuReload.setEnabled(true);
-        mnuSave.setEnabled(true);
-        mnuSaveAs.setEnabled(true);
+        SwingUtilities.invokeLater(new Runnable() {
+
+            public void run() {
+                updateKeyChart();
+                mnuEntries.setEnabled(true);
+                mnuKey.setEnabled(true);
+                mnuReload.setEnabled(true);
+                mnuSave.setEnabled(true);
+                mnuSaveAs.setEnabled(true);
+            }
+
+        });
+
         SimpleGUI.CURRENTGUI.setWaiting(false);
     }
 
@@ -847,7 +865,6 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         String[][] matches;
         ArrayList<File> files = getSourceFiles(sourceFile);
         progress.setRange(files.size());
-        progress.setStatusText(JDLocale.LF("plugins.optional.langfileeditor.analyzingSource", "Analyzing Source Folder: %s", sourceFile.getAbsolutePath()));
         for (File file : files) {
             matches = new Regex(JDIO.getLocalFile(file), "JDLocale[\\s]*\\.L[F]?[\\s]*\\([\\s]*\"(.*?)\"[\\s]*,[\\s]*(\".*?\"|.*?)[\\s]*[,\\)]").getMatches();
 
@@ -869,7 +886,8 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
 
         }
 
-        progress.finalize();
+        progress.setStatusText(JDLocale.L("plugins.optional.langfileeditor.analyzingSource.ready", "Analyzing Source Folder: Complete"));
+        progress.finalize(2 * 1000l);
     }
 
     private ArrayList<File> getSourceFiles(File directory) {
