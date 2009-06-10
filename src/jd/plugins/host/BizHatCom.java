@@ -43,14 +43,15 @@ public class BizHatCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
 
-        br.getPage(downloadLink.getDownloadURL());
-        //if (br.containsHTML("access to the service may be unavailable for a while")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE); //TODO: kein Link zu
-        String filesize = br.getRegex(Pattern.compile("<div style=\"font-size: 12pt; font-weight: bold;\">.*-(.*?)</div>", Pattern.CASE_INSENSITIVE)).getMatch(0).trim();  //TODO: Grš§e und Name werden nicht gefiltert
-        if (filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String name = br.getRegex(Pattern.compile("<div style=\"font-size: 12pt; font-weight: bold;\">(.*?)-.*</div>", Pattern.CASE_INSENSITIVE)).getMatch(0).trim();
-        if (name == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setName(name);
-        downloadLink.setDownloadSize(Regex.getSize(filesize));
+        System.out.println(br.getPage(downloadLink.getDownloadURL()));
+        // if
+        // (br.containsHTML("access to the service may be unavailable for a while"))
+        // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+        // //TODO: kein Link zu
+        String[] infos = br.getRegex("<div style=\"font-size: 12pt;font-weight:bold;\">[\\s]*(.*?) &nbsp; - &nbsp; (.*?)[\\s]*</div>").getRow(0);
+        if (infos == null || infos[0] == null || infos[1] == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        downloadLink.setName(infos[0].trim());
+        downloadLink.setDownloadSize(Regex.getSize(infos[1].trim()));
         return AvailableStatus.TRUE;
     }
 
@@ -80,6 +81,5 @@ public class BizHatCom extends PluginForHost {
     }
 
     public void resetDownloadlink(DownloadLink link) {
-        // TODO Auto-generated method stub
     }
 }
