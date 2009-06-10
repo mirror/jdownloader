@@ -59,7 +59,7 @@ public class MegaFtpCom extends PluginForHost {
 
     // @Override
     public String getVersion() {
-        return getVersion("$Revision$");
+        return getVersion("$Revision 6012$");
     }
 
     // @Override
@@ -101,7 +101,7 @@ public class MegaFtpCom extends PluginForHost {
 
     // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return this.getMaxSimultanDownloadNum();
+        return 1;
     }
 
     // @Override
