@@ -12,10 +12,10 @@ public class ByteBufferEntry {
         if (ret != null) {
             ByteBufferController.getInstance().increaseReused(ret.size());
             ByteBufferController.getInstance().decreaseFree(ret.size());
-            //System.out.println("Reuse old ByteBufferEntry " + ret.size());
+            // System.out.println("Reuse old ByteBufferEntry " + ret.size());
             return ret.getByteBufferEntry();
         } else {
-            //System.out.println("Create new ByteBufferEntry " + size);
+            // System.out.println("Create new ByteBufferEntry " + size);
             return new ByteBufferEntry(size).getByteBufferEntry();
         }
     }
@@ -23,10 +23,11 @@ public class ByteBufferEntry {
     private ByteBufferEntry(int size) {
         ByteBufferController.getInstance().increaseFresh(size);
         buffer = ByteBuffer.allocateDirect(size);
+        buffer.clear();
         used = 0;
     }
 
-    public int size() {
+    public int size() {        
         return buffer.capacity();
     }
 

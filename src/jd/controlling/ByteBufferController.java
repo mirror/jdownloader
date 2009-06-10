@@ -85,12 +85,14 @@ public class ByteBufferController {
         synchronized (bufferpool) {
             for (ByteBufferEntry entry : bufferpool) {
                 if (entry.size() >= size) {
+                    JDLogger.getLogger().severe("found bytebufferentry with " + entry.size() + " to serve request with " + size);
                     ret = entry;
                     bufferpool.remove(entry);
                     return ret.getByteBufferEntry();
                 }
             }
         }
+        JDLogger.getLogger().severe("no bytebufferentry found to serve request with " + size);
         return null;
     }
 
