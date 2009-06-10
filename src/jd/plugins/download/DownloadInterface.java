@@ -424,7 +424,7 @@ abstract public class DownloadInterface {
                     bufferSize = Math.max(128, tempBuff);
                     try {
                         /* max 2gb buffer */
-                        if ((int) bufferSize > buffer.getBuffer().capacity()) {
+                        if ((int) bufferSize > buffer.size()) {
                             buffer.setUnused();
                             buffer = ByteBufferEntry.getByteBufferEntry((int) bufferSize);
                             buffer.clear();

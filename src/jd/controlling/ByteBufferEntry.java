@@ -11,8 +11,8 @@ public class ByteBufferEntry {
     public static ByteBufferEntry getByteBufferEntry(int size) {
         ByteBufferEntry ret = ByteBufferController.getInstance().getByteBufferEntry(size);
         if (ret != null) {
-            ByteBufferController.getInstance().increaseReused(ret.maxsize());
-            ByteBufferController.getInstance().decreaseFree(ret.maxsize());
+            ByteBufferController.getInstance().increaseReused(ret.capacity());
+            ByteBufferController.getInstance().decreaseFree(ret.capacity());
             // System.out.println("Reuse old ByteBufferEntry " + ret.size());
             return ret.getbytebufferentry(size);
         } else {
@@ -25,11 +25,11 @@ public class ByteBufferEntry {
         this.size = size;
         ByteBufferController.getInstance().increaseFresh(size);
         buffer = ByteBuffer.allocateDirect(size);
-        buffer.clear();
+        clear();
         used = 0;
     }
 
-    public int maxsize() {
+    public int capacity() {
         return buffer.capacity();
     }
 
@@ -50,7 +50,7 @@ public class ByteBufferEntry {
         this.size = size;
         used++;
         inuse = true;
-        buffer.clear();
+        clear();
         return this;
     }
 
@@ -65,11 +65,11 @@ public class ByteBufferEntry {
     public void setUnused() {
         if (!inuse) return;
         inuse = false;
-        ByteBufferController.getInstance().increaseFree(maxsize());
+        ByteBufferController.getInstance().increaseFree(capacity());
         if (used > 1) {
-            ByteBufferController.getInstance().decreaseReused(maxsize());
+            ByteBufferController.getInstance().decreaseReused(capacity());
         } else {
-            ByteBufferController.getInstance().decreaseFresh(maxsize());
+            ByteBufferController.getInstance().decreaseFresh(capacity());
         }
         ByteBufferController.getInstance().putByteBufferEntry(this);
     }
