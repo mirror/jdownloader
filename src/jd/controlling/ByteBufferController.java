@@ -84,11 +84,11 @@ public class ByteBufferController {
         ByteBufferEntry ret = null;
         synchronized (bufferpool) {
             for (ByteBufferEntry entry : bufferpool) {
-                if (entry.size() >= size) {
+                if (entry.maxsize() >= size) {
                     JDLogger.getLogger().severe("found bytebufferentry with " + entry.size() + " to serve request with " + size);
                     ret = entry;
                     bufferpool.remove(entry);
-                    return ret.getByteBufferEntry();
+                    return ret.getbytebufferentry(size);
                 }
             }
         }
@@ -101,7 +101,7 @@ public class ByteBufferController {
             if (!bufferpool.contains(entry)) bufferpool.add(entry);
             Collections.sort(bufferpool, new Comparator<ByteBufferEntry>() {
                 public int compare(ByteBufferEntry a, ByteBufferEntry b) {
-                    return a.size() == b.size() ? 0 : a.size() > b.size() ? 1 : -1;
+                    return a.maxsize() == b.maxsize() ? 0 : a.maxsize() > b.maxsize() ? 1 : -1;
                 }
             });
         }

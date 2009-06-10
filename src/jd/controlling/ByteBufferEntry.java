@@ -4,30 +4,32 @@ import java.nio.ByteBuffer;
 
 public class ByteBufferEntry {
     private ByteBuffer buffer = null;
+    private int size = 0;
     private int used = 0;
     boolean inuse = false;
 
     public static ByteBufferEntry getByteBufferEntry(int size) {
         ByteBufferEntry ret = ByteBufferController.getInstance().getByteBufferEntry(size);
         if (ret != null) {
-            ByteBufferController.getInstance().increaseReused(ret.size());
-            ByteBufferController.getInstance().decreaseFree(ret.size());
+            ByteBufferController.getInstance().increaseReused(ret.maxsize());
+            ByteBufferController.getInstance().decreaseFree(ret.maxsize());
             // System.out.println("Reuse old ByteBufferEntry " + ret.size());
-            return ret.getByteBufferEntry();
+            return ret.getbytebufferentry(size);
         } else {
             // System.out.println("Create new ByteBufferEntry " + size);
-            return new ByteBufferEntry(size).getByteBufferEntry();
+            return new ByteBufferEntry(size).getbytebufferentry(size);
         }
     }
 
     private ByteBufferEntry(int size) {
+        this.size = size;
         ByteBufferController.getInstance().increaseFresh(size);
         buffer = ByteBuffer.allocateDirect(size);
         buffer.clear();
         used = 0;
     }
 
-    public int size() {        
+    public int maxsize() {
         return buffer.capacity();
     }
 
@@ -35,7 +37,17 @@ public class ByteBufferEntry {
         return buffer;
     }
 
-    protected ByteBufferEntry getByteBufferEntry() {
+    public void clear() {
+        buffer.clear();
+        buffer.limit(size);
+    }
+
+    public int size() {
+        return buffer.limit();
+    }
+
+    protected ByteBufferEntry getbytebufferentry(int size) {
+        this.size = size;
         used++;
         inuse = true;
         buffer.clear();
@@ -53,11 +65,11 @@ public class ByteBufferEntry {
     public void setUnused() {
         if (!inuse) return;
         inuse = false;
-        ByteBufferController.getInstance().increaseFree(size());
+        ByteBufferController.getInstance().increaseFree(maxsize());
         if (used > 1) {
-            ByteBufferController.getInstance().decreaseReused(size());
+            ByteBufferController.getInstance().decreaseReused(maxsize());
         } else {
-            ByteBufferController.getInstance().decreaseFresh(size());
+            ByteBufferController.getInstance().decreaseFresh(maxsize());
         }
         ByteBufferController.getInstance().putByteBufferEntry(this);
     }

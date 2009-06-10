@@ -293,7 +293,7 @@ abstract public class DownloadInterface {
 
                 source = Channels.newChannel(inputStream);
 
-                buffer.getBuffer().clear();
+                buffer.clear();
 
                 long deltaTime;
                 long timer;
@@ -303,7 +303,7 @@ abstract public class DownloadInterface {
                 long tempBuff = 0;
                 long addWait = 0;
                 miniBuffer = ByteBufferEntry.getByteBufferEntry(1024 * 10);
-                miniBuffer.getBuffer().clear();
+                miniBuffer.clear();
                 int ti = 0;
                 blockStart = System.currentTimeMillis();
 
@@ -327,10 +327,15 @@ abstract public class DownloadInterface {
                         // kann den connectiontimeout nicht auswerten
 
                         try {
-                            miniBuffer.getBuffer().clear();
+                            miniBuffer.clear();
                             if (miniBuffer.getBuffer().remaining() > buffer.getBuffer().remaining()) {
                                 miniBuffer.getBuffer().limit(buffer.getBuffer().remaining());
+                                if (miniBuffer.getBuffer().remaining() > 10 * 1024) {
+                                    System.out.println("WTF more remaining as wished?!");
+                                }
+                                System.out.println("limitiert auf " + buffer.getBuffer().remaining() + " mini" + miniBuffer.getBuffer().remaining());
                             }
+
                             miniblock = source.read(miniBuffer.getBuffer());
                             miniBuffer.getBuffer().flip();
                             buffer.getBuffer().put(miniBuffer.getBuffer());
@@ -387,7 +392,7 @@ abstract public class DownloadInterface {
 
                     writeBytes(this);
 
-                    buffer.getBuffer().clear();
+                    buffer.clear();
 
                     // logger.info(this.getID() + ": " + this.startByte + " -->
                     // " + currentBytePosition + " -->" + this.endByte + "/" +
@@ -422,9 +427,9 @@ abstract public class DownloadInterface {
                         if ((int) bufferSize > buffer.getBuffer().capacity()) {
                             buffer.setUnused();
                             buffer = ByteBufferEntry.getByteBufferEntry((int) bufferSize);
-                            buffer.getBuffer().clear();
+                            buffer.clear();
                         } else {
-                            buffer.getBuffer().clear();
+                            buffer.clear();
                             buffer.getBuffer().limit((int) bufferSize);
                         }
 
