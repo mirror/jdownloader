@@ -425,18 +425,24 @@ public abstract class PluginForHost extends Plugin {
         return getMaxSimultanDownloadNum();
     }
 
+    /**
+     * TODO: Which one is the correct one?
+     */
     public int getMaxSimultanDownloadNum() {
         return SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2);
     }
 
-    public boolean ignoreHosterWaittime(DownloadLink link) {
+    /**
+     * TODO: Which one is the correct one? The parameter is useless.
+     */
+    public int getMaxSimultanDownloadNum(DownloadLink link) {
+        return ignoreHosterWaittime() ? getMaxSimultanPremiumDownloadNum() : getMaxSimultanFreeDownloadNum();
+    }
+    
+    public boolean ignoreHosterWaittime() {
         if (AccountController.getInstance().getValidAccount(this) == null) return false;
         if (!this.enablePremium || !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) return false;
         return true;
-    }
-
-    public int getMaxSimultanDownloadNum(DownloadLink link) {
-        return ignoreHosterWaittime(link) ? getMaxSimultanPremiumDownloadNum() : getMaxSimultanFreeDownloadNum();
     }
 
     public long getRemainingHosterWaittime() {

@@ -295,7 +295,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                         nextDownloadLink.getLinkStatus().setStatus(LinkStatus.TODO);
                     }
                     if (nextDownloadLink.isEnabled() && !nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE)) {
-                        if (nextDownloadLink.getPlugin().ignoreHosterWaittime(nextDownloadLink) || nextDownloadLink.getPlugin().getRemainingHosterWaittime() <= 0) {
+                        if (nextDownloadLink.getPlugin().ignoreHosterWaittime() || nextDownloadLink.getPlugin().getRemainingHosterWaittime() <= 0) {
                             if (!isDownloadLinkActive(nextDownloadLink)) {
                                 // if (!nextDownloadLink.isAborted()) {
                                 if (!nextDownloadLink.getLinkStatus().isPluginActive()) {
