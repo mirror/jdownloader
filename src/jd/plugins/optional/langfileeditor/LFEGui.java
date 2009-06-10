@@ -47,6 +47,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
+import javax.swing.SwingUtilities;
 import javax.swing.table.AbstractTableModel;
 
 import jd.config.ConfigContainer;
@@ -55,7 +56,6 @@ import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.gui.UserIO;
-import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.JTabbedPanel;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.ChartAPIEntity;
@@ -122,6 +122,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
     private HashMap<String, ArrayList<String>> dupes = new HashMap<String, ArrayList<String>>();
     private String lngKey = null;
     private boolean changed = false;
+    private boolean initComplete = false;
     private final JDFileFilter fileFilter;
 
     private boolean colorizeDone, colorizeMissing, colorizeOld, showDone, showMissing, showOld;
@@ -190,13 +191,15 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         this.add(cmboFile, "growx");
         this.add(new JScrollPane(table), "span 3, grow, span");
 
+        sourceFile = cmboSource.getCurrentPath();
+        languageFile = cmboFile.getCurrentPath();
+
         new Thread(new Runnable() {
 
             public void run() {
-                new GuiRunnable<Object>() {
+                SwingUtilities.invokeLater(new Runnable() {
 
-                    @Override
-                    public Object runSave() {
+                    public void run() {
                         LFEGui.this.setEnabled(false);
 
                         if (!subConfig.hasProperty(PROPERTY_SVN_UPDATE_ON_START)) {
@@ -205,19 +208,17 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
                         }
 
                         if (subConfig.getBooleanProperty(PROPERTY_SVN_UPDATE_ON_START, true)) updateSVN();
-
-                        sourceFile = cmboSource.getCurrentPath();
-                        if (sourceFile != null) getSourceEntries();
-                        languageFile = cmboFile.getCurrentPath();
                         if (languageFile == null) cmboFile.setCurrentPath(JDLocale.getLanguageFile());
+
+                        initComplete = true;
+
+                        if (sourceFile != null) getSourceEntries();
                         initLocaleData();
 
                         LFEGui.this.setEnabled(true);
-
-                        return null;
                     }
 
-                }.waitForEDT();
+                });
             }
 
         }).start();
@@ -371,6 +372,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == cmboSource) {
 
+            if (!initComplete) return;
             File sourceFile = cmboSource.getCurrentPath();
             if (sourceFile == this.sourceFile) return;
 
@@ -652,22 +654,17 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
 
     private void updateSVN() {
         SimpleGUI.CURRENTGUI.setWaiting(true);
+
+        String workingCopy = subConfig.getStringProperty(PROPERTY_SVN_WORKING_COPY, JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + System.getProperty("file.separator") + "svn");
+
         ProgressController progress = new ProgressController(JDLocale.L("plugins.optional.langfileeditor.svn.updating", "Updating SVN: Please wait"));
         progress.setRange(2);
         try {
             Subversion svn = new Subversion("https://www.syncom.org/svn/jdownloader/trunk/src/");
 
-            String workingCopy = subConfig.getStringProperty(PROPERTY_SVN_WORKING_COPY, JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + System.getProperty("file.separator") + "svn");
-
             progress.increase(1);
             svn.export(new File(workingCopy));
             progress.increase(1);
-
-            if (sourceFile == null || !sourceFile.getAbsolutePath().equalsIgnoreCase(workingCopy)) {
-                cmboSource.setText(workingCopy);
-            } else if (sourceFile.getAbsolutePath().equalsIgnoreCase(workingCopy) && !changed) {
-                initLocaleDataComplete();
-            }
 
             progress.finalize();
         } catch (SVNException e) {
@@ -677,6 +674,13 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
             progress.finalize(5 * 1000l);
         }
         SimpleGUI.CURRENTGUI.setWaiting(false);
+
+        if (sourceFile == null || !sourceFile.getAbsolutePath().equalsIgnoreCase(workingCopy)) {
+            if (!initComplete) sourceFile = new File(workingCopy);
+            cmboSource.setText(workingCopy);
+        } else if (sourceFile.getAbsolutePath().equalsIgnoreCase(workingCopy) && !changed) {
+            if (initComplete) initLocaleDataComplete();
+        }
     }
 
     private String getLanguageKey() {
