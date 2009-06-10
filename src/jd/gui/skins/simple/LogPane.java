@@ -75,10 +75,7 @@ public class LogPane extends JTabbedPanel implements ActionListener, ControlList
     public void actionPerformed(ActionEvent e) {
 
         switch (e.getID()) {
-        case LogTaskPane.ACTION_LEVEL:
-            onHide();
-            onDisplay();
-            break;
+   
         case LogTaskPane.ACTION_SAVE:
             JDFileChooser fc = new JDFileChooser();
             fc.setApproveButtonText(JDLocale.L("gui.btn_save", "Save"));
@@ -154,7 +151,8 @@ public class LogPane extends JTabbedPanel implements ActionListener, ControlList
             ArrayList<LogRecord> buff = JDLogHandler.getHandler().getBuffer();
             StringBuilder sb = new StringBuilder();
             for (LogRecord lr : buff) {
-                if (lr.getLevel().intValue() >= JDLogger.getLogger().getLevel().intValue()) sb.append(JDLogHandler.getHandler().getFormatter().format(lr));
+//                if (lr.getLevel().intValue() >= JDLogger.getLogger().getLevel().intValue()) 
+                    sb.append(JDLogHandler.getHandler().getFormatter().format(lr));
             }
             logField.setText(sb.toString());
             SimpleGUI.CURRENTGUI.setWaiting(false);
