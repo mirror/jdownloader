@@ -123,6 +123,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
     private String lngKey = null;
     private boolean changed = false;
     private boolean initComplete = false;
+    private boolean updatingInProgress = false;
     private final JDFileFilter fileFilter;
 
     private boolean colorizeDone, colorizeMissing, colorizeOld, showDone, showMissing, showOld;
@@ -197,9 +198,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         new Thread(new Runnable() {
 
             public void run() {
-                // SwingUtilities.invokeLater(new Runnable() {
-                //
-                // public void run() {
+
                 LFEGui.this.setEnabled(false);
 
                 if (!subConfig.hasProperty(PROPERTY_SVN_UPDATE_ON_START)) {
@@ -216,9 +215,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
                 initLocaleData();
 
                 LFEGui.this.setEnabled(true);
-                // }
 
-                // });
             }
 
         }).start();
@@ -653,6 +650,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
     }
 
     private void updateSVNinThread() {
+        if (updatingInProgress) return;
         new Thread(new Runnable() {
 
             public void run() {
@@ -664,6 +662,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
 
     private void updateSVN() {
         SimpleGUI.CURRENTGUI.setWaiting(true);
+        updatingInProgress = true;
 
         String workingCopy = subConfig.getStringProperty(PROPERTY_SVN_WORKING_COPY, JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + System.getProperty("file.separator") + "svn");
 
@@ -684,6 +683,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
             progress.setStatusText(JDLocale.L("plugins.optional.langfileeditor.svn.updating.error", "Updating SVN: Error!"));
             progress.finalize(5 * 1000l);
         }
+        updatingInProgress = false;
         SimpleGUI.CURRENTGUI.setWaiting(false);
 
         if (sourceFile == null || !sourceFile.getAbsolutePath().equalsIgnoreCase(workingCopy)) {
