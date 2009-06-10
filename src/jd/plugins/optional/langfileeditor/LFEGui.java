@@ -53,6 +53,8 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
+import jd.controlling.ProgressController;
+import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.JTabbedPanel;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.ChartAPIEntity;
@@ -93,10 +95,6 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
     private final String PROPERTY_MISSING_COLOR = "PROPERTY_MISSING_COLOR";
     private final String PROPERTY_OLD_COLOR = "PROPERTY_OLD_COLOR";
 
-    private final String PROPERTY_SVN_REPOSITORY = "PROPERTY_SVN_REPOSITORY";
-    private final String PROPERTY_SVN_ACCESS_ANONYMOUS = "PROPERTY_SVN_CHECKOUT_ANONYMOUS";
-    private final String PROPERTY_SVN_ACCESS_USER = "PROPERTY_SVN_CHECKOUT_USER";
-    private final String PROPERTY_SVN_ACCESS_PASS = "PROPERTY_SVN_CHECKOUT_PASS";
     private final String PROPERTY_SVN_WORKING_COPY = "PROPERTY_SVN_WORKING_COPY";
     private final String PROPERTY_SVN_UPDATE_ON_START = "PROPERTY_SVN_UPDATE_ON_START";
 
@@ -190,13 +188,32 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         this.add(cmboFile, "growx");
         this.add(new JScrollPane(table), "span 3, grow, span");
 
-        if (subConfig.getBooleanProperty(PROPERTY_SVN_UPDATE_ON_START, false)) updateSVN();
+        new Thread(new Runnable() {
 
-        sourceFile = cmboSource.getCurrentPath();
-        if (sourceFile != null) getSourceEntries();
-        languageFile = cmboFile.getCurrentPath();
-        if (languageFile == null) cmboFile.setCurrentPath(JDLocale.getLanguageFile());
-        initLocaleData();
+            public void run() {
+                new GuiRunnable<Object>() {
+
+                    @Override
+                    public Object runSave() {
+                        LFEGui.this.setEnabled(false);
+
+                        if (subConfig.getBooleanProperty(PROPERTY_SVN_UPDATE_ON_START, true)) updateSVN();
+
+                        sourceFile = cmboSource.getCurrentPath();
+                        if (sourceFile != null) getSourceEntries();
+                        languageFile = cmboFile.getCurrentPath();
+                        if (languageFile == null) cmboFile.setCurrentPath(JDLocale.getLanguageFile());
+                        initLocaleData();
+
+                        LFEGui.this.setEnabled(true);
+
+                        return null;
+                    }
+
+                }.waitForEDT();
+            }
+
+        }).start();
     }
 
     private void updateKeyChart() {
@@ -575,25 +592,20 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
 
         } else if (e.getSource() == mnuSVNSettings) {
 
-            ConfigEntry ce, conditionEntry;
             ConfigContainer container = new ConfigContainer();
-            container.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, PROPERTY_SVN_REPOSITORY, JDLocale.L("plugins.optional.langfileeditor.svn.repository", "SVN Repository")).setDefaultValue("https://www.syncom.org/svn/jdownloader/trunk/src/"));
+
+            container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_SVN_UPDATE_ON_START, JDLocale.L("plugins.optional.langfileeditor.svn.checkOutOnStart", "CheckOut SVN on start")).setDefaultValue(true));
             container.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, subConfig, PROPERTY_SVN_WORKING_COPY, JDLocale.L("plugins.optional.langfileeditor.svn.workingCopy", "SVN Working Copy")).setDefaultValue(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + System.getProperty("file.separator") + "svn"));
-            container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-            container.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_SVN_ACCESS_ANONYMOUS, JDLocale.L("plugins.optional.langfileeditor.svn.access.anonymous", "Anonymous SVN CheckOut")).setDefaultValue(true));
-            container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, PROPERTY_SVN_ACCESS_USER, JDLocale.L("plugins.optional.langfileeditor.svn.access.user", "SVN Username")));
-            ce.setEnabledCondidtion(conditionEntry, "==", false);
-            container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, subConfig, PROPERTY_SVN_ACCESS_PASS, JDLocale.L("plugins.optional.langfileeditor.svn.access.pass", "SVN Password")));
-            ce.setEnabledCondidtion(conditionEntry, "==", false);
             container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
             container.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
 
                 public void actionPerformed(ActionEvent e) {
+
                     updateSVN();
+
                 }
 
             }, JDLocale.L("plugins.optional.langfileeditor.svn.checkOut", "CheckOut SVN now (This may take several seconds ...)")));
-            container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_SVN_UPDATE_ON_START, JDLocale.L("plugins.optional.langfileeditor.svn.checkOutOnStart", "CheckOut SVN on start")).setDefaultValue(false));
             SimpleGUI.displayConfig(container, 0);
 
         } else if (e.getSource() == mnuSVNCheckOutNow) {
@@ -632,25 +644,29 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
     }
 
     private void updateSVN() {
+        ProgressController progress = new ProgressController(JDLocale.L("plugins.optional.langfileeditor.svn.updating", "Updating SVN: Please wait"));
+        progress.setRange(2);
         try {
-            Subversion svn;
-            if (subConfig.getBooleanProperty(PROPERTY_SVN_ACCESS_ANONYMOUS, true)) {
-                svn = new Subversion(subConfig.getStringProperty(PROPERTY_SVN_REPOSITORY, "https://www.syncom.org/svn/jdownloader/trunk/src/"));
-            } else {
-                svn = new Subversion(subConfig.getStringProperty(PROPERTY_SVN_REPOSITORY, "https://www.syncom.org/svn/jdownloader/trunk/src/"), subConfig.getStringProperty(PROPERTY_SVN_ACCESS_USER), subConfig.getStringProperty(PROPERTY_SVN_ACCESS_PASS));
-            }
+            Subversion svn = new Subversion("https://www.syncom.org/svn/jdownloader/trunk/src/");
+
             String workingCopy = subConfig.getStringProperty(PROPERTY_SVN_WORKING_COPY, JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + System.getProperty("file.separator") + "svn");
+
+            progress.increase(1);
             svn.export(new File(workingCopy));
+            progress.increase(1);
+
             if (sourceFile == null || !sourceFile.getAbsolutePath().equalsIgnoreCase(workingCopy)) {
-                if (JOptionPane.showConfirmDialog(this, JDLocale.L("plugins.optional.langfileeditor.svn.change.message", "Change the current source to the checked out SVN Repository?"), JDLocale.L("plugins.optional.langfileeditor.svn.change.title", "Change now?"), JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION) {
-                    cmboSource.setText(workingCopy);
-                }
+                cmboSource.setText(workingCopy);
             } else if (sourceFile.getAbsolutePath().equalsIgnoreCase(workingCopy) && !changed) {
                 initLocaleDataComplete();
             }
+
+            progress.finalize();
         } catch (SVNException e) {
             JDLogger.exception(e);
-            JOptionPane.showMessageDialog(this, JDLocale.LF("plugins.optional.langfileeditor.svn.error.message", "An error occured while checking the SVN Repository out! Please check the SVN settings!\n%s", e.getMessage()), JDLocale.L("plugins.optional.langfileeditor.svn.error.title", "Error!"), JOptionPane.ERROR_MESSAGE);
+            progress.setColor(Color.RED);
+            progress.setStatusText(JDLocale.L("plugins.optional.langfileeditor.svn.updating.error", "Updating SVN: Error!"));
+            progress.finalize(5 * 1000l);
         }
     }
 
@@ -717,6 +733,9 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
             BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF8"));
             out.write(sb.toString());
             out.close();
+
+            File noUpdateFile = new File(file.getAbsolutePath() + ".noupdate");
+            if (!noUpdateFile.exists()) noUpdateFile.createNewFile();
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, JDLocale.LF("plugins.optional.langfileeditor.save.error.message", "An error occured while writing the LanguageFile:\n%s", e.getMessage()), JDLocale.L("plugins.optional.langfileeditor.save.error.title", "Error!"), JOptionPane.ERROR_MESSAGE);
             return;
@@ -806,10 +825,13 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
     private void getSourceEntriesFromFolder() {
         sourceEntries.clear();
         sourcePatterns.clear();
+        ProgressController progress = new ProgressController(JDLocale.LF("plugins.optional.langfileeditor.analyzingSource", "Analyzing Source Folder: %s", sourceFile.getAbsolutePath()));
 
         String[][] matches;
-        for (File file : getSourceFiles(sourceFile)) {
-
+        ArrayList<File> files = getSourceFiles(sourceFile);
+        progress.setRange(files.size());
+        progress.setStatusText(JDLocale.LF("plugins.optional.langfileeditor.analyzingSource", "Analyzing Source Folder: %s", sourceFile.getAbsolutePath()));
+        for (File file : files) {
             matches = new Regex(JDIO.getLocalFile(file), "JDLocale[\\s]*\\.L[F]?[\\s]*\\([\\s]*\"(.*?)\"[\\s]*,[\\s]*(\".*?\"|.*?)[\\s]*[,\\)]").getMatches();
 
             for (String[] match : matches) {
@@ -827,7 +849,10 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
                     sourcePatterns.add(match[0]);
                 }
             }
+
         }
+
+        progress.finalize();
     }
 
     private ArrayList<File> getSourceFiles(File directory) {
