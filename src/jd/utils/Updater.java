@@ -59,6 +59,8 @@ public class Updater {
     private File updateDir;
     private File svn;
 
+    private File jars;
+
     public Updater() throws IOException, SVNException {
         workingDir = new File(".").getCanonicalFile();
 
@@ -97,28 +99,91 @@ public class Updater {
     public static void main(String[] args) throws Exception {
 
         Updater upd = new Updater();
-//        System.out.println("STATUS: Webupdate");
-//        upd.webupdate();
-//        System.out.println("STATUS: Webupdate ende");
-//        System.out.println("STATUS: Scan local");
-//        upd.removeFileOverhead();
-//        if (JOptionPane.showConfirmDialog(upd.getFrame(), "SVN UPdate") == JOptionPane.OK_OPTION) {
-//            System.out.println("STATUS: update svn");
-//            upd.updateSource();
-//        }
-//        System.out.println("STATUS: move plugins");
-//        upd.movePlugins(getCFG("plugins_dir"));
-//        System.out.println("STATUS: FINISHED");
-//        ArrayList<File> list = upd.getFileList();
-//
-//        upd.upload(list);
-//
-//        upd.merge();
+        System.out.println("STATUS: Webupdate");
+        upd.webupdate();
+        System.out.println("STATUS: Webupdate ende");
+        System.out.println("STATUS: Scan local");
+        upd.lockUpdate();
+        upd.removeFileOverhead();
+        if (JOptionPane.showConfirmDialog(upd.getFrame(), "SVN UPdate") == JOptionPane.OK_OPTION) {
+            System.out.println("STATUS: update svn");
+            upd.updateSource();
+        }
+        System.out.println("STATUS: move plugins");
+        upd.movePlugins(getCFG("plugins_dir"));
+        upd.moveJars(getCFG("dist_dir"));
+        // System.out.println("STATUS: FINISHED");
+        ArrayList<File> list = upd.getFileList();
+        //
+        upd.upload(list);
+        //
+        upd.merge();
         upd.checkHashes();
+        upd.clone0();
+        upd.clone2();
+        upd.uploadHashList();
+        upd.spread(list);
 
-//        upd.spread(list);
-//        upd.uploadHashList();
         System.exit(0);
+    }
+
+    private void moveJars(String string) throws IOException {
+        jars = new File(string);
+        File file;
+
+        copyDirectory(new File(jars, "libs"), new File(this.updateDir, "libs"));
+        copyFile(new File(jars, "JDownloader.jar"), new File(updateDir, "JDownloader.jar"));
+        copyFile(new File(jars.getParentFile(), "ressourcen\\outdated.dat"), new File(updateDir, "outdated.dat"));
+        copyDirectory(new File(jars.getParentFile(), "ressourcen\\pluginressourcen\\128__JDTray"), this.updateDir);
+        copyDirectory(new File(jars.getParentFile(), "ressourcen\\pluginressourcen\\127__JDHJMerge"), this.updateDir);
+        copyDirectory(new File(jars.getParentFile(), "ressourcen\\pluginressourcen\\123__JDUnrar"), this.updateDir);
+        copyDirectory(new File(jars.getParentFile(), "ressourcen\\pluginressourcen\\106__JDShutdown"), this.updateDir);
+        copyDirectory(new File(jars.getParentFile(), "ressourcen\\pluginressourcen\\100__JDChat"), this.updateDir);
+    }
+
+    private void clone2() throws IOException {
+        HashMap<String, String> map = createHashList(this.workingDir);
+        Browser br = new Browser();
+        br.forceDebug(true);
+
+        map.put("pass", getCFG("updateHashPW"));
+
+        br.postPage("http://update2.jdownloader.org/clone.php?pass=" + getCFG("updateHashPW"), map);
+        System.out.println(br + "");
+        if (br.containsHTML("success") && !br.containsHTML("<b>Warning</b>") && !br.containsHTML("<b>Error</b>")) {
+            System.out.println("CLONE update2 OK");
+            return;
+        }
+
+        JOptionPane.showConfirmDialog(frame, "MD5 ERROR!!!! See log");
+
+    }
+
+    private void clone0() throws IOException {
+        HashMap<String, String> map = createHashList(this.workingDir);
+        Browser br = new Browser();
+        br.forceDebug(true);
+
+        map.put("pass", getCFG("updateHashPW"));
+
+        br.postPage("http://update2.jdownloader.org/clone.php?pass=" + getCFG("updateHashPW"), map);
+        System.out.println(br + "");
+        if (br.containsHTML("success") && !br.containsHTML("<b>Warning</b>") && !br.containsHTML("<b>Error</b>")) {
+            System.out.println("CLONE update2 OK");
+            return;
+        }
+
+        JOptionPane.showConfirmDialog(frame, "MD5 ERROR!!!! See log");
+
+    }
+
+    private void lockUpdate() throws IOException {
+        Browser br = new Browser();
+        br.forceDebug(true);
+        br.getPage("http://update0.jdownloader.org/lock.php");
+        br.getPage("http://update1.jdownloader.org/lock.php");
+        br.getPage("http://update2.jdownloader.org/lock.php");
+
     }
 
     /**
@@ -147,11 +212,7 @@ public class Updater {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        try {
-            System.out.println(br.getPage("http://update1.jdownloader.org/spread.php?pass=" + getCFG("server_pass") + "&server=update2.jdownloader.org"));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+
         System.out.println("Spread ok");
     }
 
@@ -338,6 +399,10 @@ public class Updater {
         copyDirectory(new File(pluginsDir, "decrypt"), file);
         System.out.println("Updated BIN->" + file);
 
+        JDIO.removeDirectoryOrFile(file = new File(this.updateDir, "jd/dynamics"));
+        copyDirectory(new File(pluginsDir.getParentFile().getParentFile(), "dynamics"), file);
+        System.out.println("Updated BIN->" + file);
+
     }
 
     /**
@@ -349,7 +414,9 @@ public class Updater {
     private void updateSource() throws SVNException, IOException {
         Subversion sv = new Subversion("https://www.syncom.org/svn/jdownloader/trunk/ressourcen/");
         sv.export(svn);
-        moveSrcToDif("jd/languages", "jd/languages");
+        moveSrcToDif("jd", "jd");
+        moveSrcToDif("tools", "tools");
+        moveSrcToDif("libs", "libs");
         // moveSrcToDif("jd/captcha", "jd/captcha");
     }
 
@@ -361,7 +428,8 @@ public class Updater {
      * @throws IOException
      */
     public void copyDirectory(File srcPath, File dstPath) throws IOException {
-
+        if (srcPath.getAbsolutePath().contains(".svn")) return;
+        System.out.println("Copy " + srcPath + " -> " + dstPath);
         if (srcPath.isDirectory()) {
             if (!dstPath.exists()) {
                 dstPath.mkdir();
@@ -371,23 +439,36 @@ public class Updater {
                 copyDirectory(new File(srcPath, files[i]), new File(dstPath, files[i]));
             }
         } else {
-            if (!srcPath.exists()) {
-                System.out.println("File or directory does not exist.");
-                System.exit(0);
-            } else {
-                InputStream in = new FileInputStream(srcPath);
-                dstPath.getParentFile().mkdirs();
-                dstPath.createNewFile();
-                OutputStream out = new FileOutputStream(dstPath);
+            copyFile(srcPath, dstPath);
 
-                byte[] buf = new byte[1024];
-                int len;
-                while ((len = in.read(buf)) > 0) {
-                    out.write(buf, 0, len);
-                }
-                in.close();
-                out.close();
+        }
+
+    }
+
+    private void copyFile(File srcPath, File dstPath) throws IOException {
+        String hashd = JDHash.getMD5(dstPath);
+        String hashs = JDHash.getMD5(srcPath);
+        if (dstPath.exists()) dstPath.delete();
+        if (srcPath.getAbsolutePath().contains(".svn")) return;
+
+        if (!srcPath.exists()) {
+            System.out.println("File or directory does not exist.");
+            System.exit(0);
+        } else {
+            if (hashs.equalsIgnoreCase(hashd)) return;
+            InputStream in = new FileInputStream(srcPath);
+            dstPath.getParentFile().mkdirs();
+            dstPath.createNewFile();
+            OutputStream out = new FileOutputStream(dstPath);
+
+            byte[] buf = new byte[1024];
+            int len;
+            while ((len = in.read(buf)) > 0) {
+                out.write(buf, 0, len);
             }
+            in.close();
+            out.close();
+            System.out.println("        Copy File " + srcPath + " -> " + dstPath);
         }
 
     }
