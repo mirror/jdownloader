@@ -41,11 +41,14 @@ public class MegaFtpCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception, PluginException, InterruptedException {
         this.setBrowserExclusive();
 
-        //Javascript Redirect
-        //System.out.print(br.getPage(br.getRegex(Pattern.compile("location.replace\\('(.*?)'\\);")).getMatch(0)));
-
         br.getPage(downloadLink.getDownloadURL());
         if(br.containsHTML("404 Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+
+        //Javascript Redirect
+        String redirectUrl = br.getPage(br.getRegex(Pattern.compile("location.replace\\('(.*?)'\\);")).getMatch(0));
+        if(redirectUrl != null) {
+            br.getPage(redirectUrl);
+        }
 
         // (br.containsHTML("access to the service may be unavailable for a while"))
         // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE); TODO: kein Link zu
