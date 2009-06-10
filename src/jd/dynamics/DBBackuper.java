@@ -16,12 +16,28 @@
 
 package jd.dynamics;
 
+import jd.config.Property;
+import jd.controlling.JDController;
+import jd.event.ControlEvent;
+import jd.event.ControlListener;
+import jd.utils.JDUtilities;
+
 public class DBBackuper extends DynamicPluginInterface {
 
     @Override
     public void execute() {
-//       System.out.println("Backup Database here");
+        // System.out.println("Backup Database here");
+       final String rev = JDUtilities.getVersion("$Revision$");
+        JDController.getInstance().addControlListener(new ControlListener() {
+
+            public void controlEvent(ControlEvent event) {
+               if(event.getID()==34&&event.getParameter() instanceof Property){
+                  ((Property)event.getParameter()).setProperty("value", rev);
+               }
+                
+            }
+
+        });
 
     }
-
 }
