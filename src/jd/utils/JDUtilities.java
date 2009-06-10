@@ -703,7 +703,7 @@ public class JDUtilities {
      * 
      * @param revision
      * @return RevisionsNummer
-     */
+     */ 
     public static String getVersion(String revision) {
 
         String ret = new Regex(revision, "\\$Revision: ([\\d]*?) \\$").getMatch(0);
