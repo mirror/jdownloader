@@ -794,6 +794,14 @@ abstract public class DownloadInterface {
                 connection = copyConnection(connection);
 
                 if (connection == null) {
+
+                    // workaround für fertigen endchunk
+                    if (startByte >= fileSize && fileSize > 0 && downloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_DOWNLOAD_FAILED)) {
+
+                        downloadLink.getLinkStatus().removeStatus(LinkStatus.ERROR_DOWNLOAD_FAILED);
+                        logger.finer("Is no error. Last chunk is just already finished");
+                        return;
+                    }
                     error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDLocale.L("download.error.message.connectioncopyerror", "Could not clone the connection"));
                     logger.severe("ERROR Chunk (connection copy failed) " + chunks.indexOf(this));
                     return;

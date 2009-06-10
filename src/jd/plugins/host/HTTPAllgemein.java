@@ -174,7 +174,7 @@ public class HTTPAllgemein extends PluginForHost {
     }
 
     // @Override
-    public void reset_downloadlink(DownloadLink link) {
+    public void resetDownloadlink(DownloadLink link) {
         link.setProperty("nochunkload", false);
         link.setProperty("nochunk", false);
         link.setProperty("basicauth", null);

@@ -138,7 +138,7 @@ public class HotFileCom extends PluginForHost {
     }
 
     // @Override
-    public void reset_downloadlink(DownloadLink link) {
+    public void resetDownloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 
     }

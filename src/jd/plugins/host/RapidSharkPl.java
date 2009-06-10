@@ -130,7 +130,7 @@ public class RapidSharkPl extends PluginForHost {
     }
 
     // @Override
-    public void reset_downloadlink(DownloadLink link) {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
 }

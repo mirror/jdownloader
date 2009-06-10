@@ -665,7 +665,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
                 }
             }
         }
-        if (getPlugin() != null) getPlugin().reset_downloadlink(this);
+        if (getPlugin() != null) getPlugin().resetDownloadlink(this);
         // downloadMax = 0;
         priority = 0;
         chunksProgress = null;

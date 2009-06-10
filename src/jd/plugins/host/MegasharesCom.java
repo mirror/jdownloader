@@ -262,7 +262,7 @@ public class MegasharesCom extends PluginForHost {
     }
 
     // @Override
-    public void reset_downloadlink(DownloadLink link) {
+    public void resetDownloadlink(DownloadLink link) {
         link.setProperty("pass", null);
     }
 

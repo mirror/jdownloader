@@ -567,7 +567,7 @@ public abstract class PluginForHost extends Plugin {
      */
     public abstract void reset();
 
-    public abstract void reset_downloadlink(DownloadLink link);
+    public abstract void resetDownloadlink(DownloadLink link);
 
     public void resetHosterWaitTime() {
         HOSTER_WAIT_TIMES.put(this.getClass(), 0l);

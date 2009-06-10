@@ -232,7 +232,7 @@ public class MeinUpload extends PluginForHost {
     }
 
     // @Override
-    public void reset_downloadlink(DownloadLink link) {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
 }

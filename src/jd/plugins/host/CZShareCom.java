@@ -226,7 +226,7 @@ public class CZShareCom extends PluginForHost {
     }
 
     // @Override
-    public void reset_downloadlink(DownloadLink link) {
+    public void resetDownloadlink(DownloadLink link) {
         link.setProperty("directLink", null);
         link.setProperty("captcha", null);
         link.setProperty("dlurl", null);
