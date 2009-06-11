@@ -26,7 +26,7 @@ public class Cookies {
         synchronized (cookies) {
             for (Cookie cookie2 : cookies) {
                 if (cookie2.equals(cookie)) {
-                    cookie2.setValue(cookie.getValue());
+                    cookie2.update(cookie);
                     return;
                 }
             }

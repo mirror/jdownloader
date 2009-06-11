@@ -21,6 +21,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
+import jd.http.RandomUserAgent;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
@@ -41,7 +42,7 @@ public class UploadingCom extends PluginForHost {
         this.enablePremium("http://www.uploading.com/premium/");
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://uploading.com/terms/";
     }
@@ -55,14 +56,16 @@ public class UploadingCom extends PluginForHost {
 
     public void login(Account account) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.setCookie("http://www.uploading.com/", "_lang", "en");
         br.setCookie("http://www.uploading.com/", "setlang", "en");
+        br.getPage("http://www.uploading.com/");
         br.getPage("http://www.uploading.com/login/");
         br.postPage("http://www.uploading.com/login/", "log_ref=&login=" + Encoding.urlEncode(account.getUser()) + "&pwd=" + Encoding.urlEncode(account.getPass()));
         if (br.getCookie("http://www.uploading.com/", "ulogin") == null || br.getCookie("http://www.uploading.com/", "upass") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
     }
 
-    //@Override
+    // @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         this.setBrowserExclusive();
@@ -84,7 +87,7 @@ public class UploadingCom extends PluginForHost {
         return ai;
     }
 
-    //@Override
+    // @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
         login(account);
@@ -101,8 +104,13 @@ public class UploadingCom extends PluginForHost {
         }
         br.getPage(link.getDownloadURL());
         Form form = br.getForm(2);
+        br.setDebug(true);
         br.setFollowRedirects(true);
-        dl = br.openDownload(link, form, true, 0);
+        dl = br.openDownload(link, form, true, 1);
+        if (!dl.getConnection().isContentDisposition()) {
+            dl.getConnection().disconnect();
+            dl = br.openDownload(link, form, true, 1);
+        }
         dl.startDownload();
     }
 
@@ -126,38 +134,37 @@ public class UploadingCom extends PluginForHost {
         dl.startDownload();
     }
 
-    //@Override
+    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
-        try{
-        setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.setCookie("http://www.uploading.com/", "_lang", "en");
-        br.setCookie("http://www.uploading.com/", "setlang", "en");
-        br.getPage(downloadLink.getDownloadURL());
-        String filesize = br.getRegex("File size:(.*?)<br").getMatch(0);
-        String filename = br.getRegex(Pattern.compile("Download file.*?<b>(.*?)</b>", Pattern.DOTALL)).getMatch(0);
-        if(filename==null){
-            filename = br.getRegex("<b>(.*?)</b>  File size").getMatch(0);
-           
-        }
-        if (filesize == null || filename == null){
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        downloadLink.setName(filename.trim());
-        downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
-        return AvailableStatus.TRUE;
-        }catch(Exception e){
-            
+        try {
+            setBrowserExclusive();
+            br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+            br.setFollowRedirects(true);
+            br.setCookie("http://www.uploading.com/", "_lang", "en");
+            br.setCookie("http://www.uploading.com/", "setlang", "en");
+            br.getPage(downloadLink.getDownloadURL());
+            String filesize = br.getRegex("File size:(.*?)<br").getMatch(0);
+            String filename = br.getRegex(Pattern.compile("Download file.*?<b>(.*?)</b>", Pattern.DOTALL)).getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<b>(.*?)</b>  File size").getMatch(0);
+
+            }
+            if (filesize == null || filename == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+            downloadLink.setName(filename.trim());
+            downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
+            return AvailableStatus.TRUE;
+        } catch (Exception e) {
+
             throw e;
         }
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
@@ -172,38 +179,38 @@ public class UploadingCom extends PluginForHost {
         this.sleep(100000l, downloadLink);
         br.setFollowRedirects(false);
         form = br.getFormbyProperty("id", "downloadform");
+        br.setFollowRedirects(true);
         br.submitForm(form);
         if (br.getRedirectLocation() == null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
-        br.setFollowRedirects(true);
         dl = br.openDownload(downloadLink, br.getRedirectLocation(), false, 1);
         dl.startDownload();
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 5;
     }
 
-    //@Override
+    // @Override
     public int getTimegapBetweenConnections() {
-        return 2500;
+        return 100;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return simultanpremium;
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
 
     }
 
-    //@Override
+    // @Override
     public void resetDownloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

@@ -48,6 +48,14 @@ public class Cookie {
         value = "";
     }
 
+    public long getCreationTime() {
+        return creationTime;
+    }
+
+    public void setCreationTime(long time) {
+        creationTime = time;
+    }
+
     public void setHost(String host) {
         this.host = host;
     }
@@ -120,8 +128,16 @@ public class Cookie {
         return this.hostTime;
     }
 
+    public void setHostTime(long time) {
+        hostTime = time;
+    }
+
     public long getExpireDate() {
         return this.expireTime;
+    }
+
+    public void setExpireDate(long time) {
+        expireTime = time;
     }
 
     public void setHostTime(String Date) {
@@ -174,6 +190,14 @@ public class Cookie {
         return key + "=" + value + " @" + host;
     }
 
+    public void update(Cookie cookie2) {
+        this.setCreationTime(cookie2.getCreationTime());
+        this.setExpireDate(cookie2.getExpireDate());
+        this.setValue(cookie2.getValue());
+        this.setHostTime(cookie2.getCreationTime());
+    }
+
+    /* compares host and key */
     public boolean equals(Cookie cookie2) {
         if (cookie2 == this) return true;
         if (!cookie2.getHost().equalsIgnoreCase(this.getHost())) return false;
