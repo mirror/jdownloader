@@ -201,7 +201,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
         addinginprogress = true;
         new Thread() {
             public void run() {
-                Balloon.showIfHidden("Linkgrabber", JDTheme.II("gui.images.add", 32, 32), JDLocale.LF("gui.linkgrabber.adding", "Adding %s link(s) to LinkGrabber", "" + linkList.length));
+                Balloon.showIfHidden(JDLocale.L("gui.config.gui.linkgrabber", "LinkGrabber"), JDTheme.II("gui.images.add", 32, 32), JDLocale.LF("gui.linkgrabber.adding", "Adding %s link(s) to LinkGrabber", "" + linkList.length));
                 for (DownloadLink element : linkList) {
                     if (LGINSTANCE.isDupe(element)) continue;
                     addToWaitingList(element);
@@ -302,7 +302,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                 for (LinkGrabberFilePackage fp : fps) {
                     links += fp.getDownloadLinks().size();
                 }
-                Balloon.showIfHidden("Linkgrabber", JDTheme.II("gui.images.add", 32, 32), JDLocale.LF("gui.linkgrabber.finished", "Grabbed %s link(s) in %s Package(s)", "" + links, "" + fps.size()));
+                Balloon.showIfHidden(JDLocale.L("gui.config.gui.linkgrabber", "LinkGrabber"), JDTheme.II("gui.images.add", 32, 32), JDLocale.LF("gui.linkgrabber.finished", "Grabbed %s link(s) in %s Package(s)", "" + links, "" + fps.size()));
                 fps = null;
             }
         };
