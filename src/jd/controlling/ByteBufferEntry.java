@@ -13,7 +13,8 @@ public class ByteBufferEntry {
         if (ret != null) {
             ByteBufferController.getInstance().increaseReused(ret.capacity());
             ByteBufferController.getInstance().decreaseFree(ret.capacity());
-            // System.out.println("Reuse old ByteBufferEntry " + ret.size());
+            // System.out.println("Reuse old ByteBufferEntry " +
+            // ret.size());
             return ret.getbytebufferentry(size);
         } else {
             // System.out.println("Create new ByteBufferEntry " + size);
@@ -33,7 +34,8 @@ public class ByteBufferEntry {
         return buffer.capacity();
     }
 
-    public ByteBuffer getBuffer() {
+    public ByteBuffer getBuffer() throws Exception {
+        if (!inuse) throw new Exception("cannot access bytebuffer if bytebufferentry is unused");
         return buffer;
     }
 
@@ -44,6 +46,11 @@ public class ByteBufferEntry {
 
     public int size() {
         return buffer.limit();
+    }
+
+    public void limit(int size) {
+        this.size = size;
+        buffer.limit(size);
     }
 
     protected ByteBufferEntry getbytebufferentry(int size) {
@@ -62,6 +69,11 @@ public class ByteBufferEntry {
         return used;
     }
 
+    /*
+     * may be called only once in lifetime of the bytebufferentry!, please call
+     * this only at the end of usage, because buffer is instantly available for
+     * others to use
+     */
     public void setUnused() {
         if (!inuse) return;
         inuse = false;

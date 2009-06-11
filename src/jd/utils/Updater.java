@@ -148,8 +148,6 @@ public class Updater {
 
     private void moveJars(String string) throws IOException {
         jars = new File(string);
-        File file;
-
         copyDirectory(new File(jars, "libs"), new File(this.updateDir, "libs"));
         copyFile(new File(jars, "JDownloader.jar"), new File(updateDir, "JDownloader.jar"));
         copyFile(new File(jars.getParentFile(), "ressourcen\\outdated.dat"), new File(updateDir, "outdated.dat"));

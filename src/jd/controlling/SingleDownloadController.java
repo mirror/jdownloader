@@ -26,7 +26,6 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.PackageManager;
-import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlEvent;
 import jd.gui.skins.simple.AgbDialog;
 import jd.gui.skins.simple.Balloon;

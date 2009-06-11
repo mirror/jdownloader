@@ -276,7 +276,7 @@ abstract public class DownloadInterface {
                 /* max 2gb buffer */
                 buffer = ByteBufferEntry.getByteBufferEntry((int) bufferSize);
 
-            } catch (OutOfMemoryError e) {
+            } catch (Exception e) {
                 error(LinkStatus.ERROR_FATAL, JDLocale.L("download.error.message.outofmemory", "The downloadsystem is out of memory"));
 
                 return;
@@ -329,13 +329,8 @@ abstract public class DownloadInterface {
                         try {
                             miniBuffer.clear();
                             if (miniBuffer.getBuffer().remaining() > buffer.getBuffer().remaining()) {
-                                miniBuffer.getBuffer().limit(buffer.getBuffer().remaining());
-                                if (miniBuffer.getBuffer().remaining() > 10 * 1024) {
-                                    System.out.println("WTF more remaining as wished?!");
-                                }
-                                System.out.println("limitiert auf " + buffer.getBuffer().remaining() + " mini" + miniBuffer.getBuffer().remaining());
+                                miniBuffer.limit(buffer.getBuffer().remaining());
                             }
-
                             miniblock = source.read(miniBuffer.getBuffer());
                             miniBuffer.getBuffer().flip();
                             buffer.getBuffer().put(miniBuffer.getBuffer());
@@ -430,14 +425,12 @@ abstract public class DownloadInterface {
                             buffer.clear();
                         } else {
                             buffer.clear();
-                            buffer.getBuffer().limit((int) bufferSize);
+                            buffer.limit((int) bufferSize);
                         }
 
                     } catch (Exception e) {
                         JDLogger.exception(e);
                         error(LinkStatus.ERROR_FATAL, JDLocale.L("download.error.message.outofmemory", "The downloadsystem is out of memory"));
-                        miniBuffer.setUnused();
-                        buffer.setUnused();
                         return;
                     }
                     try {
@@ -474,8 +467,6 @@ abstract public class DownloadInterface {
                     logger.warning("Download not finished. Loaded until now: " + getCurrentBytesPosition() + "/" + endByte);
                     error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDLocale.L("download.error.message.incomplete", "Download unvollständig"));
                 }
-                miniBuffer.setUnused();
-                buffer.setUnused();
                 inputStream.close();
                 if (source.isOpen()) source.close();
 
@@ -532,8 +523,6 @@ abstract public class DownloadInterface {
             if (speedDebug) {
                 logger.finer("Finalized: " + downloadLink + " : " + getID());
             }
-            if (buffer != null) buffer.setUnused();
-            if (miniBuffer != null) miniBuffer.setUnused();
         }
 
         /**
@@ -672,8 +661,10 @@ abstract public class DownloadInterface {
 
         /**
          * Gibt die Schreibposition des Chunks in der gesamtfile zurück
+         * 
+         * @throws Exception
          */
-        public long getWritePosition() {
+        public long getWritePosition() throws Exception {
             long c = getCurrentBytesPosition();
             long l = buffer.getBuffer().limit();
             return c - l;
@@ -1855,9 +1846,11 @@ abstract public class DownloadInterface {
      */
     private void terminate(int id) {
         logger.severe("A critical Downloaderror occured. Terminate...");
-        Iterator<Chunk> it = chunks.iterator();
-        while (it.hasNext()) {
-            it.next().interrupt();
+        synchronized (chunks) {
+            Iterator<Chunk> it = chunks.iterator();
+            while (it.hasNext()) {
+                it.next().interrupt();
+            }
         }
     }
 
