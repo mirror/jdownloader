@@ -478,6 +478,16 @@ public class JDInit {
         new DecryptPluginWrapper("hotfile.com", "HotfileCom", "http://[\\w\\.]*?hotfile\\.com/list/\\d+/[\\w]+");
         new DecryptPluginWrapper("adf.ly", "AdfLy", "http://[\\w\\.]*?adf\\.ly/[\\w]+");
         new DecryptPluginWrapper("uploadr.eu", "UploadrEu", "http://[\\w\\.]*?uploadr\\.eu/(link/[\\w]+|folder/\\d+/)");
+        new DecryptPluginWrapper("seriousurls.com", "LinkBucks", "http://[\\w\\.]*?seriousurls\\.com(/link/[0-9a-fA-F]+(/\\d+)?)?");
+        new DecryptPluginWrapper("thesegalleries.com", "LinkBucks", "http://[\\w\\.]*?thesegalleries\\.com(/link/[0-9a-fA-F]+(/\\d+)?)?");
+        new DecryptPluginWrapper("ubucks.com", "LinkBucks", "http://[\\w\\.]*?ubucks\\.com(/link/[0-9a-fA-F]+(/\\d+)?)?");
+        new DecryptPluginWrapper("viraldatabase.com", "LinkBucks", "http://[\\w\\.]*?viraldatabase\\.com(/link/[0-9a-fA-F]+(/\\d+)?)?");
+        new DecryptPluginWrapper("placepictures.com", "LinkBucks", "http://[\\w\\.]*?placepictures\\.com(/link/[0-9a-fA-F]+(/\\d+)?)?");
+        new DecryptPluginWrapper("urlpulse.net", "LinkBucks", "http://[\\w\\.]*?urlpulse\\.net(/link/[0-9a-fA-F]+(/\\d+)?)?");
+        new DecryptPluginWrapper("thesefiles.com", "LinkBucks", "http://[\\w\\.]*?thesefiles\\.com(/link/[0-9a-fA-F]+(/\\d+)?)?");
+        new DecryptPluginWrapper("linkgalleries.net", "LinkBucks", "http://[\\w\\.]*?linkgalleries\\.net(/link/[0-9a-fA-F]+(/\\d+)?)?");
+        new DecryptPluginWrapper("youfap.com", "LinkBucks", "http://[\\w\\.]*?youfap\\.com(/link/[0-9a-fA-F]+(/\\d+)?)?");
+        new DecryptPluginWrapper("realfiles.net", "LinkBucks", "http://[\\w\\.]*?realfiles\\.net(/link/[0-9a-fA-F]+(/\\d+)?)?");
 
         // Decrypter from Extern
         new DecryptPluginWrapper("rapidlibrary.com", "RapidLibrary", "http://rapidlibrary\\.com/download_file_i\\.php\\?.+");
