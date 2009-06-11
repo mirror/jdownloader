@@ -50,6 +50,8 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
 
     protected JComponent contentpane;
     protected static Color BACKGROUND_COLOR = new Color(0xeae9d7);
+
+    private static Dimension DEFAULT_DIMENSION;
     protected int flag;
 
     private int returnValue = -1;
@@ -94,7 +96,7 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
         }
         this.setModal(true);
 
-        this.setLayout(new MigLayout("ins 0", "[fill,grow]", "[fill,grow]"));
+        this.setLayout(new MigLayout("ins 5", "[fill,grow]", "[fill,grow][]"));
 
         this.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         btnOK = new JButton(this.okOption);
@@ -107,7 +109,7 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
         contentpane = contentInit();
         add(contentpane, "pushx,growx,pushy,growy,spanx,aligny center,wrap");
 
-        add(this.countDownLabel, "split 4,growx,growy,pushy");
+        add(this.countDownLabel, "split 4,growx");
 
         if ((flag & UserIO.DONT_SHOW_AGAIN) > 0) {
             dont = new JCheckBox();
@@ -132,14 +134,6 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
         }
         this.setMinimumSize(new Dimension(300, -1));
 
-        if (SimpleGUI.CURRENTGUI == null) {
-            this.setLocation(Screen.getCenterOfComponent(null, this));
-        } else if (SimpleGUI.CURRENTGUI.getExtendedState() == JFrame.ICONIFIED || !SimpleGUI.CURRENTGUI.isVisible() || !SimpleGUI.CURRENTGUI.isActive()) {
-            this.setLocation(Screen.getDockBottomRight(this));
-        } else {
-            this.setLocation(Screen.getCenterOfComponent(SimpleGUI.CURRENTGUI, this));
-        }
-
         if (JDFlags.hasNoFlags(flag, UserIO.NO_COUNTDOWN)) {
             this.countdown(UserIO.getCountdownTime());
         } else {
@@ -154,6 +148,14 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
         this.packed();
         this.toFront();
         this.setMinimumSize(this.getPreferredSize());
+        if(DEFAULT_DIMENSION!=null)this.setSize(DEFAULT_DIMENSION);
+        if (SimpleGUI.CURRENTGUI == null) {
+            this.setLocation(Screen.getCenterOfComponent(null, this));
+        } else if (SimpleGUI.CURRENTGUI.getExtendedState() == JFrame.ICONIFIED || !SimpleGUI.CURRENTGUI.isVisible() || !SimpleGUI.CURRENTGUI.isActive()) {
+            this.setLocation(Screen.getDockBottomRight(this));
+        } else {
+            this.setLocation(Screen.getCenterOfComponent(SimpleGUI.CURRENTGUI, this));
+        }
         this.setVisible(true);
         this.pack();
 
@@ -191,7 +193,7 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
         this.dispose();
     }
 
-    private void setReturnValue(boolean b) {
+    protected void setReturnValue(boolean b) {
         returnValue = b ? UserIO.RETURN_OK : UserIO.RETURN_CANCEL;
         if (JDFlags.hasAllFlags(flag, UserIO.DONT_SHOW_AGAIN)) {
 
@@ -211,5 +213,10 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
 
     public int getReturnValue() {
         return returnValue;
+    }
+
+    public static void setDefaultDimension(Dimension dimension) {
+        DEFAULT_DIMENSION = dimension;
+
     }
 }

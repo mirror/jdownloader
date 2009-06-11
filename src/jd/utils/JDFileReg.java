@@ -16,11 +16,24 @@
 
 package jd.utils;
 
+import java.awt.Dimension;
+import java.awt.Font;
+
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JSeparator;
+import javax.swing.JTextArea;
+
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.gui.UserIO;
+import jd.gui.skins.simple.GuiRunnable;
+import jd.gui.userio.dialog.AbstractDialog;
+import jd.gui.userio.dialog.ContainerDialog;
+import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
 import jd.nutils.io.JDIO;
+import net.miginfocom.swing.MigLayout;
 
 public class JDFileReg {
 
@@ -55,9 +68,10 @@ public class JDFileReg {
             sb.append(createRegisterWinProtocol("dlc"));
             sb.append(createRegisterWinProtocol("ccf"));
             sb.append(createRegisterWinProtocol("rsdf"));
+            AbstractDialog.setDefaultDimension(new Dimension(550, 400));
             JDIO.writeLocalFile(JDUtilities.getResourceFile("tmp/installcnl.reg"), "Windows Registry Editor Version 5.00\r\n\r\n\r\n\r\n" + sb.toString());
-
-            if ((UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, JDLocale.L("gui.cnl.install.title", "Click'n'Load Installation"), JDLocale.L("gui.cnl.install.text", "Click'n'load is a very comfortable way to add links to JDownloader. \r\nTo install Click'n'Load, JDownloader has to set some registry entries. \r\nYou might have to confirm some Windows messages to continue."), JDTheme.II("gui.clicknload", 48, 48), null, null) & UserIO.RETURN_OK) > 0) {
+            int answer = showQuestion();
+            if ((answer & UserIO.RETURN_OK) > 0) {
                 JDUtilities.runCommand("cmd", new String[] { "/c", "regedit", JDUtilities.getResourceFile("tmp/installcnl.reg").getAbsolutePath() }, JDUtilities.getResourceFile("tmp").getAbsolutePath(), 600);
                 JDUtilities.runCommand("cmd", new String[] { "/c", "regedit", "/e", JDUtilities.getResourceFile("tmp/test.reg").getAbsolutePath(), "HKEY_CLASSES_ROOT\\.dlc" }, JDUtilities.getResourceFile("tmp").getAbsolutePath(), 600);
                 if (JDUtilities.getResourceFile("tmp/test.reg").exists()) {
@@ -75,6 +89,57 @@ public class JDFileReg {
             SubConfiguration.getConfig("CNL2").save();
         }
         JDUtilities.getResourceFile("tmp/test.reg").delete();
+
+    }
+
+    private static int showQuestion() {
+        return (Integer) new GuiRunnable<Object>() {
+
+            private ContainerDialog dialog;
+
+            @Override
+            public Object runSave() {
+                JPanel c = new JPanel(new MigLayout("ins 10,wrap 1", "[grow,fill]", "[][][grow,fill]"));
+
+                JLabel lbl = new JLabel(JDLocale.L("installer.gui.message", "After Installation, JDownloader will update to the latest version."));
+
+                if (OSDetector.isWindows()) {
+                    JDUtilities.getResourceFile("downloads");
+
+                }
+                c.add(lbl, "pushx,growx,split 2");
+
+                Font f = lbl.getFont();
+                f = f.deriveFont(f.getStyle() ^ Font.BOLD);
+
+                lbl.setFont(f);
+                c.add(new JLabel(JDTheme.II("gui.clicknload", 48, 48)), "alignx right");
+                c.add(new JSeparator(), "pushx,growx,gapbottom 5");
+
+                JTextArea txt;
+                c.add(txt = new JTextArea(), "growy,pushy");
+                txt.setText(JDLocale.L("gui.cnl.install.text", "Click'n'load is a very comfortable way to add links to JDownloader. \r\nTo install Click'n'Load, JDownloader has to set some registry entries. \r\nYou might have to confirm some Windows messages to continue."));
+                txt.setLineWrap(true);
+                txt.setBorder(null);
+                txt.setOpaque(false);
+
+                new ContainerDialog(UserIO.NO_COUNTDOWN, JDLocale.L("gui.cnl.install.title", "Click'n'Load Installation"), c, null, null) {
+                    protected void packed() {
+                        dialog = this;
+                        this.setIconImage(JDImage.getImage("logo/jd_logo_54_54"));
+                        this.setSize(550, 400);
+                    }
+
+                    protected void setReturnValue(boolean b) {
+                        super.setReturnValue(b);
+
+                    }
+                };
+
+                return dialog.getReturnValue();
+            }
+
+        }.getReturnValue();
 
     }
 

@@ -241,15 +241,7 @@ public class JDInit {
                 File home = JDUtilities.getResourceFile(".");
                 if (home.canWrite() && !JDUtilities.getResourceFile("noupdate.txt").exists()) {
 
-                    new GuiRunnable<Object>() {
-
-                        // @Override
-                        public Object runSave() {
-                            JOptionPane.showMessageDialog(null, JDLocale.L("installer.welcome", "Welcome to jDownloader."));
-                            return null;
-                        }
-
-                    }.waitForEDT();
+              
                     // try {
                     // new WebUpdate().doWebupdate(true);
                     // JDUtilities.getConfiguration().save();

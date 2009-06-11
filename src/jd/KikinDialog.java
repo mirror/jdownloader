@@ -28,6 +28,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
 import javax.swing.JTextPane;
+import javax.swing.SwingConstants;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
@@ -59,10 +60,10 @@ public class KikinDialog extends AbstractDialog {
     private static final long serialVersionUID = -7647771640756844691L;
 
     public JComponent contentInit() {
-        JPanel cp = new JPanel(new MigLayout("ins 0,wrap 1", "[fill,grow]"));
+        JPanel cp = new JPanel(new MigLayout("ins 0,wrap 1", "[fill,grow]", "[][fill,grow][]"));
         // cp.setLayout(new MigLayout("ins 0,wrap 1,debug", "[fill,grow]"));
         JPanel p = new JPanel(new MigLayout("ins 5,wrap 2"));
-      
+
         JLabel lbl;
         p.add(lbl = new JLabel(JDLocale.L("gui.installer.kikin.message", "Free! Personalize your search experience")), "alignx left, aligny bottom");
         Font f = lbl.getFont();
@@ -78,7 +79,9 @@ public class KikinDialog extends AbstractDialog {
             label = new JLabel(JDImage.getImageIcon(JDUtilities.getResourceFile("tools/Windows/kikin/ins_en.png")));
         }
         cp.add(p, "growx, pushx");
-        cp.add(label);
+        cp.add(label, "alignx left,aligny top");
+        label.setHorizontalAlignment(SwingConstants.LEFT);
+        label.setVerticalAlignment(SwingConstants.TOP);
         checkbox = new JCheckBox();
 
         checkbox.addActionListener(new ActionListener() {
@@ -95,12 +98,11 @@ public class KikinDialog extends AbstractDialog {
 
         });
 
-     
         textField = new JTextPane();
         textField.setContentType("text/html");
-    
+
         textField.setBorder(null);
-      
+
         textField.setOpaque(false);
 
         textField.setText("<style type='text/css'> body {        font-family: Geneva, Arial, Helvetica, sans-serif; font-size:9px;}</style>" + JDLocale.L("gui.installer.kikin.agree", "<b><a href=\"http://jdownloader.org/kikin\">What is Kikin?</a> <br/>Best Parts? kikin is free and works automatically.<br>I agree to the kikin <a href=\"http://www.kikin.com/terms-of-service\">Terms of Service</a> and <a href=\"http://www.kikin.com/privacy-policy\">Privacy Policy</a></b>"));
@@ -176,6 +178,10 @@ public class KikinDialog extends AbstractDialog {
     public Integer getReturnID() {
         // TODO Auto-generated method stub
         return (Integer) super.getReturnValue();
+    }
+
+    protected void packed() {
+        this.setSize(550, 400);
     }
 
     public static void main(String[] args) {

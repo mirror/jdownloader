@@ -65,11 +65,11 @@ public class Updater {
       
 
         System.out.println("STATUS: Webupdate");
-//        upd.webupdate();
+        upd.webupdate();
         // System.out.println("STATUS: Webupdate ende");
         // System.out.println("STATUS: Scan local");
-//        upd.lockUpdate();
-//        upd.removeFileOverhead();
+        upd.lockUpdate();
+        upd.removeFileOverhead();
         // if (JOptionPane.showConfirmDialog(upd.getFrame(), "SVN UPdate") ==
         // JOptionPane.OK_OPTION) {
         // System.out.println("STATUS: update svn");
@@ -79,7 +79,7 @@ public class Updater {
 //        upd.movePlugins(getCFG("plugins_dir"));
 //        upd.moveJars(getCFG("dist_dir"));
 //        // // System.out.println("STATUS: FINISHED");
-     //  ArrayList<File> list = upd.getFileList();
+//       ArrayList<File> list = upd.getFileList();
 //        //
 //        upd.upload(list);
 //        //
