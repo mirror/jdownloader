@@ -473,8 +473,7 @@ public class SingleDownloadController extends Thread {
             milliSeconds = 3600000l;
         }
         status.setWaitTime(milliSeconds);
-        plugin.setHosterWaittime(milliSeconds);
-        Reconnecter.requestReconnect();
+        plugin.setHosterWaittime(milliSeconds);        
         DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
     }
 

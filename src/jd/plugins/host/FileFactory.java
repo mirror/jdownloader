@@ -21,7 +21,6 @@ import java.util.Locale;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.controlling.reconnect.Reconnecter;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -110,9 +109,7 @@ public class FileFactory extends PluginForHost {
             long cu = parameter.getDownloadCurrent();
             dl.startDownload();
             long loaded = parameter.getDownloadCurrent() - cu;
-            if (loaded > 30 * 1024 * 1024l) {
-                Reconnecter.requestReconnect();
-            }
+            if (loaded > 30 * 1024 * 1024l) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 1000l * 60);
         } else {
             // Falls nicht wird die html seite geladen
             br.followConnection();

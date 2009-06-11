@@ -40,7 +40,7 @@ public class Reconnecter {
     private static boolean IS_RECONNECTREQUESTING = false;
     private static long lastIPUpdate = 0;
     private static Logger logger = JDLogger.getLogger();
-    private static int RECONNECT_REQUESTS = 0;
+    public static boolean hasWaittimeLinks = false;
 
     public static void toggleReconnect() {
         boolean newState = !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true);
@@ -110,7 +110,6 @@ public class Reconnecter {
         logger.info("Reconnect success: " + ipChangeSuccess);
         lastIPUpdate = System.currentTimeMillis();
         CURRENT_IP = JDUtilities.getIPAddress(null);
-        RECONNECT_REQUESTS = 0;
         return ipChangeSuccess;
     }
 
@@ -123,7 +122,7 @@ public class Reconnecter {
          * falls reconnect gewünscht ist und dieser erfolgreich eingestellt und
          * reconnects vorrang gegenüber reconnectfreie downloads haben soll
          */
-        if (RECONNECT_REQUESTS > 0 && SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty("PARAM_DOWNLOAD_PREFER_RECONNECT", true) && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_LATEST_RECONNECT_RESULT, true)) return true;
+        if (hasWaittimeLinks && SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty("PARAM_DOWNLOAD_PREFER_RECONNECT", true) && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_LATEST_RECONNECT_RESULT, true)) return true;
         return false;
     }
 
@@ -148,7 +147,7 @@ public class Reconnecter {
     public static boolean doReconnectIfRequestedInternal() {
         boolean ret = false;
         /* überhaupt ein reconnect angefragt? */
-        if (RECONNECT_REQUESTS > 0) {
+        if (hasWaittimeLinks) {
             /* erstma schau ob überhaupt eingeschalten */
             if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true)) {
                 if (System.currentTimeMillis() - lastIPUpdate > 1000 * SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty("EXTERNAL_IP_CHECK_INTERVAL", 60 * 10)) ret = Reconnecter.checkExternalIPChange();
@@ -164,13 +163,6 @@ public class Reconnecter {
             JDUtilities.getConfiguration().save();
         }
         return ret;
-    }
-
-    /**
-     * Fordert einen Reconnect über die in der Config gegebenen Daten an.
-     */
-    public static void requestReconnect() {
-        RECONNECT_REQUESTS++;
     }
 
     private static void resetAllLinks() {
@@ -193,7 +185,7 @@ public class Reconnecter {
     }
 
     public static boolean waitForNewIP(long i) {
-        Reconnecter.requestReconnect();
+        hasWaittimeLinks = true;
         final ProgressController progress = new ProgressController(JDLocale.LF("gui.reconnect.progress.status", "Reconnect running: %s m:s", "0:00s"), 2);
         if (i > 0) {
             i += System.currentTimeMillis();
@@ -233,7 +225,7 @@ public class Reconnecter {
             progress.setStatusText(JDLocale.L("gui.reconnect.progress.status.success", "Reconnect successfull"));
 
         }
-
+        hasWaittimeLinks = false;
         progress.finalize(4000);
         return ret;
     }

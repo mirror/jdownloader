@@ -408,8 +408,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                     ArrayList<DownloadLink> updates = new ArrayList<DownloadLink>();
                     ArrayList<FilePackage> fps;
                     DownloadLink link;
-                    LinkStatus linkStatus;
-                    boolean hasWaittimeLinks;
+                    LinkStatus linkStatus;                    
                     boolean hasInProgressLinks;
                     boolean hasTempDisabledLinks;
                     aborted = false;
@@ -420,7 +419,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                     ArrayList<DownloadLink> removes = new ArrayList<DownloadLink>();
                     while (aborted != true) {
 
-                        hasWaittimeLinks = false;
+                        Reconnecter.hasWaittimeLinks = false;
                         hasInProgressLinks = false;
                         hasTempDisabledLinks = false;
 
@@ -463,7 +462,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                                     }
 
                                     if (linkStatus.getRemainingWaittime() > 0) {
-                                        hasWaittimeLinks = true;
+                                        Reconnecter.hasWaittimeLinks = true;
                                         updates.add(link);
                                     }
                                     if (link.isEnabled() && linkStatus.isPluginActive()) {
@@ -519,7 +518,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                                 if (!reachedStopMark()) ret = setDownloadActive();
                             }
                             if (ret == 0) {
-                                if (!hasTempDisabledLinks && !hasInProgressLinks && !hasWaittimeLinks && getNextDownloadLink() == null && activeDownloads == 0) {
+                                if (!hasTempDisabledLinks && !hasInProgressLinks && !Reconnecter.hasWaittimeLinks && getNextDownloadLink() == null && activeDownloads == 0) {
                                     /*
                                      * nur runterzählen falls auch erlaubt war
                                      * nen download zu starten
