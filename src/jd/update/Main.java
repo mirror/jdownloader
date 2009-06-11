@@ -401,6 +401,7 @@ public class Main {
             public void run() {
                 while (true) {
                     logWindow.setText(log.toString());
+                    logWindow.setCaretPosition(logWindow.getText().length());
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
