@@ -16,7 +16,7 @@ import jd.utils.JDUtilities;
 import org.junit.*;
 
 public class Decrypter {
-	String url = "http://serienfreaks.to/category/Weeds/Weeds_S03E13_German_WS_DVDRip_XviD-iNSPiRED_19734.html";
+	String url = "";
 
 	@Before
 	public void setUp() throws Exception {
