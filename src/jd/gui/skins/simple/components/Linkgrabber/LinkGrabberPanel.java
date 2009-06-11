@@ -243,20 +243,15 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
     public ArrayList<String> getExtensions() {
         ArrayList<String> extensions = new ArrayList<String>();
         String ext = null;
-        synchronized (LGINSTANCE.getPackages()) {
-            ArrayList<LinkGrabberFilePackage> fps = new ArrayList<LinkGrabberFilePackage>(LGINSTANCE.getPackages());
-            fps.add(LGINSTANCE.getFILTERPACKAGE());
-            for (LinkGrabberFilePackage fp : fps) {
-                synchronized (fp.getDownloadLinks()) {
-                    for (DownloadLink l : fp.getDownloadLinks()) {
-                        ext = JDIO.getFileExtension(l.getName());
-                        if (ext != null && ext.trim().length() > 1) {
-                            if (!extensions.contains(ext.trim())) extensions.add(ext.trim());
-                        }
-                    }
+        ArrayList<LinkGrabberFilePackage> fps = new ArrayList<LinkGrabberFilePackage>(LGINSTANCE.getPackages());
+        fps.add(LGINSTANCE.getFILTERPACKAGE());
+        for (LinkGrabberFilePackage fp : fps) {
+            for (DownloadLink l : new ArrayList<DownloadLink>(fp.getDownloadLinks())) {
+                ext = JDIO.getFileExtension(l.getName());
+                if (ext != null && ext.trim().length() > 1) {
+                    if (!extensions.contains(ext.trim())) extensions.add(ext.trim());
                 }
             }
-
         }
         Collections.sort(extensions);
         return extensions;
@@ -547,7 +542,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                                     }
                                     return null;
                                 }
-                            }.waitForEDT();
+                            }.start();
                             break;
                         case LinkGrabberTreeTableAction.MERGE_PACKAGE:
                             fp = LGINSTANCE.getFPwithLink(selected_links.get(0));

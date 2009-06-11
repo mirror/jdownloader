@@ -46,8 +46,8 @@ public class UploadBoxCom extends PluginForHost {
         this.setBrowserExclusive();
         br.getPage(parameter.getDownloadURL());
         if (br.containsHTML("class=\"not_found\">")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<li><strong>File name:</strong>(.*?)</li>").getMatch(0);
-        String filesize = br.getRegex("<li><strong>File size:</strong>(.*?)</li>").getMatch(0);
+        String filename = br.getRegex("<.*?>File name:<.*?>(.*?)</.*?>").getMatch(0);
+        String filesize = br.getRegex("<.*?>File size:<.*?>(.*?)</.*?>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         parameter.setName(filename.trim());
         parameter.setDownloadSize(Regex.getSize(filesize));
@@ -57,7 +57,7 @@ public class UploadBoxCom extends PluginForHost {
     // @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
-        Form form = br.getForm(1);
+        Form form = br.getFormbyProperty("id", "free");
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.submitForm(form);
         if (br.containsHTML("The last download from your IP was done less than 30 minutes ago")) {
@@ -65,7 +65,7 @@ public class UploadBoxCom extends PluginForHost {
             String strWaittimeArray[] = strWaittime.split(":");
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, ((Integer.parseInt(strWaittimeArray[0]) * 3600) + (Integer.parseInt(strWaittimeArray[1]) * 60) + Integer.parseInt(strWaittimeArray[2])) * 1000l);
         }
-        form = br.getForm(1);
+        form = br.getFormbyProperty("id", "free");
         String captchaUrl = form.getRegex("captcha.*?src=\"(.*?)\"").getMatch(0);
         if (captchaUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         String code = getCaptchaCode(captchaUrl, link);

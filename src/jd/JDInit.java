@@ -154,23 +154,26 @@ public class JDInit {
     }
 
     public void initPlugins() {
+        try {
+            loadPluginForDecrypt();
+            loadPluginForHost();
+            loadCPlugins();
+            loadPluginOptional();
 
-        loadPluginForDecrypt();
-        loadPluginForHost();
-        loadCPlugins();
-        loadPluginOptional();
-
-        for (final OptionalPluginWrapper plg : OptionalPluginWrapper.getOptionalWrapper()) {
-            if (plg.isLoaded()) {
-                try {
-                    if (plg.isEnabled() && !plg.getPlugin().initAddon()) {
-                        logger.severe("Error loading Optional Plugin:" + plg.getClassName());
+            for (final OptionalPluginWrapper plg : OptionalPluginWrapper.getOptionalWrapper()) {
+                if (plg.isLoaded()) {
+                    try {
+                        if (plg.isEnabled() && !plg.getPlugin().initAddon()) {
+                            logger.severe("Error loading Optional Plugin:" + plg.getClassName());
+                        }
+                    } catch (Throwable e) {
+                        logger.severe("Error loading Optional Plugin: " + e.getMessage());
+                        JDLogger.exception(e);
                     }
-                } catch (Throwable e) {
-                    logger.severe("Error loading Optional Plugin: " + e.getMessage());
-                    JDLogger.exception(e);
                 }
             }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 

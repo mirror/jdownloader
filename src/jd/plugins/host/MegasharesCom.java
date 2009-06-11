@@ -135,8 +135,8 @@ public class MegasharesCom extends PluginForHost {
         }
         if (br.containsHTML("All download slots for this link are currently filled")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
         // Reconnet/wartezeit check
-        String[] dat = br.getRegex("Your download passport will renew.*?in (\\d+):<strong>(\\d+)</strong>:<strong>(\\d+)</strong>").getRow(0);
-        if (dat != null) {
+        String[] dat = br.getRegex("Your download passport will renew.*?in.*?(\\d+).*?:.*?(\\d+).*?:.*?(\\d+)</strong>").getRow(0);
+        if (!br.containsHTML("left that you can download with this passport")) {
             long wait = Long.parseLong(dat[1]) * 60000l + Long.parseLong(dat[2]) * 1000l;
             linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
             linkStatus.setValue(wait);
@@ -158,14 +158,14 @@ public class MegasharesCom extends PluginForHost {
                 linkStatus.setValue(30 * 1000l);
                 return;
             }
+            loadpage(downloadLink.getDownloadURL());
+            if (br.containsHTML("continue using Free service")) {
+                loadpage(downloadLink.getDownloadURL());
+            }
             if (!checkPassword(downloadLink)) { return; }
         }
         // Downloadlink
         String url = br.getRegex("<div id=\"dlink\"><a href=\"(.*?)\">Click here to download</a>").getMatch(0);
-        if (url == null) {
-            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            return;
-        }
         // Dateigröße holen
         br.setFollowRedirects(true);
         dl = br.openDownload(downloadLink, url, true, 1);
@@ -220,15 +220,15 @@ public class MegasharesCom extends PluginForHost {
         }
         if (br.containsHTML("You already have the maximum")) {
             downloadLink.getLinkStatus().setStatusText(JDLocale.L("plugins.hoster.megasharescom.errors.alreadyloading", "Cannot check, because aready loading file"));
-            return AvailableStatus.TRUE;
+            return AvailableStatus.UNCHECKABLE;
         }
         if (br.containsHTML("All download slots for this link are currently filled")) {
             downloadLink.getLinkStatus().setStatusText(JDLocale.L("plugins.hoster.megasharescom.errors.allslotsfilled", "Cannot check, because all slots filled"));
-            return AvailableStatus.TRUE;
+            return AvailableStatus.UNCHECKABLE;
         }
         if (br.containsHTML("This link requires a password")) {
             downloadLink.getLinkStatus().setStatusText(JDLocale.L("plugins.hoster.megasharescom.errors.passwordprotected", "Password protected download"));
-            return AvailableStatus.TRUE;
+            return AvailableStatus.UNCHECKABLE;
         }
         String[] dat = br.getRegex("<dt>Filename:.*?<strong>(.*?)</strong>.*?size:(.*?)</dt>").getRow(0);
         if (dat == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
