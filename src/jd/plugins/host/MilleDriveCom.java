@@ -26,6 +26,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.JDLocale;
 
 public class MilleDriveCom extends PluginForHost {
 
@@ -45,17 +46,25 @@ public class MilleDriveCom extends PluginForHost {
         br.setFollowRedirects(true);
         String firstlink = downloadLink.getDownloadURL();
         br.getPage(firstlink);
+        if (!br.containsHTML("<head>")) 
+        {
+            this.sleep(2000, downloadLink);
+            br.getPage(firstlink);
+        }
         if (br.containsHTML("URL does not exist") || br.containsHTML("404 not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("/wait_encode.png") || br.containsHTML("This video is still being encoded")) downloadLink.getLinkStatus().setStatusText(JDLocale.L("plugin.hoster.milledrive.com.stillencoding","This video is still being encoded"));
         String filename, filesize;
         if (!firstlink.contains("/files/")) // for videos & music links
         {
             filename = br.getRegex("down.direct\"\\s+href=\"http://.*?milledrive.com/files/\\w+/\\d+/(.*?)\"").getMatch(0);
             filesize = br.getRegex("Size:</span>\\s(.*?)\\s</span>").getMatch(0);
+            filesize = filesize.replaceFirst("bytes", "B");
+            if (filename == null) filename = br.getRegex("<title>(.*?) - Milledrive</title>").getMatch(0);
         } else {
             filename = br.getRegex("id=\"free-down\" action=\".*milledrive.com/files/\\d+/(.*?)\"").getMatch(0);
             filesize = br.getRegex("\\|\\s+<span style=[^>]*>(.*?)</span>").getMatch(0);
         }
-        // System.out.println(filename+" "+filesize);
+        //System.out.println(filename+" "+filesize);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
@@ -70,6 +79,7 @@ public class MilleDriveCom extends PluginForHost {
     //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (br.containsHTML("/wait_encode.png") || br.containsHTML("This video is still being encoded")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE,JDLocale.L("plugin.hoster.milledrive.com.stillencoding","This video is still being encoded"),15*60*1000);
         String directlink = br.getRegex("file:\"(.*?)\"").getMatch(0);
         if (directlink == null) {
             String firstlink = downloadLink.getDownloadURL();
@@ -83,16 +93,15 @@ public class MilleDriveCom extends PluginForHost {
             this.sleep(30001, downloadLink);
             br.submitForm(down1);
             Form down2 = br.getFormbyProperty("id", "free-down");
+            if (br.containsHTML("The requested URL does not exist")) throw new PluginException(LinkStatus.ERROR_RETRY);
             String downurl = br.getRegex("name=\"down-url\" value=\"(.*?)\"").getMatch(0);
             String ticket = br.getRegex("name=\"ticket\" value=\"(.*?)\"").getMatch(0);
             if (downurl == null || ticket == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-            // dl = br.openDownload(downloadLink, down2.getAction(),
-            // "ticket="+ticket+"&down-url="+downurl);
             dl = br.openDownload(downloadLink, down2, true, 1);
 
         } else {
             String finalfilename = downloadLink.getName();
-            dl = br.openDownload(downloadLink, directlink, true, 0);
+            dl = br.openDownload(downloadLink, directlink, true, 1);
             downloadLink.setFinalFileName(finalfilename);
         }
         dl.startDownload();
