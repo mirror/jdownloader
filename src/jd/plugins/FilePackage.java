@@ -363,16 +363,18 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
         String password = this.password;
         StringBuilder comment = new StringBuilder(this.comment == null ? "" : this.comment);
 
-        String[] pws = JDUtilities.passwordStringToArray(password);
         ArrayList<String> pwList = new ArrayList<String>();
-        for (String element : pws) {
-            pwList.add(element);
-        }        
+        if (password != null) {
+            String[] pws = JDUtilities.passwordStringToArray(password);
+            for (String element : pws) {
+                pwList.add(element);
+            }
+        }
         synchronized (downloadLinkList) {
-            for (DownloadLink element : downloadLinkList) {                
+            for (DownloadLink element : downloadLinkList) {
                 for (String pw : element.getSourcePluginPasswordList()) {
                     if (!pwList.contains(pw)) pwList.add(pw);
-                }                
+                }
                 String newComment = element.getSourcePluginComment();
                 if (newComment != null && comment.indexOf(newComment) < 0) {
                     comment.append("|");

@@ -197,12 +197,14 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
 
     public synchronized void updateData() {
         String password = this.password;
-        StringBuilder comment = new StringBuilder(this.comment);
+        StringBuilder comment = new StringBuilder(this.comment == null ? "" : this.comment);
 
-        String[] pws = JDUtilities.passwordStringToArray(password);
         ArrayList<String> pwList = new ArrayList<String>();
-        for (String element : pws) {
-            pwList.add(element);
+        if (password != null) {
+            String[] pws = JDUtilities.passwordStringToArray(password);
+            for (String element : pws) {
+                pwList.add(element);
+            }
         }
 
         synchronized (downloadLinks) {

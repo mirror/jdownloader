@@ -173,7 +173,7 @@ public class Reconnecter {
                     if (nextDownloadLink.getPlugin() != null && nextDownloadLink.getPlugin().getRemainingHosterWaittime() > 0) {
                         if (nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED)) {
                             nextDownloadLink.getLinkStatus().setStatus(LinkStatus.TODO);
-
+                            nextDownloadLink.getLinkStatus().resetWaitTime();
                             nextDownloadLink.getPlugin().resetHosterWaitTime();
                             logger.finer("Reset GLOBALS: " + nextDownloadLink.getPlugin());
                             nextDownloadLink.getPlugin().resetPluginGlobals();

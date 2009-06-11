@@ -408,7 +408,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                     ArrayList<DownloadLink> updates = new ArrayList<DownloadLink>();
                     ArrayList<FilePackage> fps;
                     DownloadLink link;
-                    LinkStatus linkStatus;                    
+                    LinkStatus linkStatus;
                     boolean hasInProgressLinks;
                     boolean hasTempDisabledLinks;
                     aborted = false;
@@ -523,7 +523,10 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                                      * nur runterzählen falls auch erlaubt war
                                      * nen download zu starten
                                      */
-                                    if (newDLStartAllowed()) stopCounter--;
+                                    if (newDLStartAllowed()) {
+                                        stopCounter--;
+                                        logger.info(stopCounter + "rounds left to start new downloads");
+                                    }
                                     if (stopCounter == 0) {
                                         totalSpeed = 0;
                                         break;
