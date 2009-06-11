@@ -175,7 +175,7 @@ public class Moosharenet extends PluginForHost {
 
     // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 5;
+        return 1;
     }
 
     // @Override
