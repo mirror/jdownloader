@@ -19,12 +19,16 @@ package jd.utils;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Properties;
+import java.util.Map.Entry;
+import java.util.regex.Pattern;
 
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
@@ -38,16 +42,57 @@ import jd.http.URLConnectionAdapter;
 import jd.http.requests.FormData;
 import jd.http.requests.PostFormDataRequest;
 import jd.nutils.JDHash;
+import jd.nutils.SimpleFTP;
 import jd.nutils.io.JDIO;
 import jd.nutils.svn.Subversion;
+import jd.nutils.zip.Zip;
 import jd.parser.Regex;
 import jd.update.FileUpdate;
 import jd.update.WebUpdater;
 
+import org.tmatesoft.svn.core.SVNDirEntry;
 import org.tmatesoft.svn.core.SVNException;
 
 public class Updater {
+    /**
+     * @param args
+     * @throws Exception
+     */
+    public static void main(String[] args) throws Exception {
 
+        Updater upd = new Updater();
+
+      
+
+        System.out.println("STATUS: Webupdate");
+//        upd.webupdate();
+        // System.out.println("STATUS: Webupdate ende");
+        // System.out.println("STATUS: Scan local");
+//        upd.lockUpdate();
+//        upd.removeFileOverhead();
+        // if (JOptionPane.showConfirmDialog(upd.getFrame(), "SVN UPdate") ==
+        // JOptionPane.OK_OPTION) {
+        // System.out.println("STATUS: update svn");
+        // upd.updateSource();
+        // }
+//        System.out.println("STATUS: move plugins");
+//        upd.movePlugins(getCFG("plugins_dir"));
+//        upd.moveJars(getCFG("dist_dir"));
+//        // // System.out.println("STATUS: FINISHED");
+     //  ArrayList<File> list = upd.getFileList();
+//        //
+//        upd.upload(list);
+//        //
+//        upd.merge();
+//        upd.checkHashes();
+//        upd.clone0();
+//        upd.clone2();
+        // upd.clonebluehost2();
+        upd.uploadHashList();
+//         upd.spread(list);
+
+        System.exit(0);
+    }
     private File pluginsDir;
 
     private WebUpdater webupdater;
@@ -92,41 +137,7 @@ public class Updater {
         return ret;
     }
 
-    /**
-     * @param args
-     * @throws Exception
-     */
-    public static void main(String[] args) throws Exception {
 
-        Updater upd = new Updater();
-        System.out.println("STATUS: Webupdate");
-        upd.webupdate();
-//        System.out.println("STATUS: Webupdate ende");
-//        System.out.println("STATUS: Scan local");
-        upd.lockUpdate();
-        upd.removeFileOverhead();
-//        if (JOptionPane.showConfirmDialog(upd.getFrame(), "SVN UPdate") == JOptionPane.OK_OPTION) {
-//            System.out.println("STATUS: update svn");
-//            upd.updateSource();
-//        }
-        System.out.println("STATUS: move plugins");
-        upd.movePlugins(getCFG("plugins_dir"));
-        upd.moveJars(getCFG("dist_dir"));
-//        // System.out.println("STATUS: FINISHED");
-       ArrayList<File> list = upd.getFileList();
-        //
-        upd.upload(list);
-        //
-        upd.merge();
-        upd.checkHashes();
-        upd.clone0();
-        upd.clone2();
-//        upd.clonebluehost2();
-        upd.uploadHashList();
-//        upd.spread(list);
-
-        System.exit(0);
-    }
 
     private void clonebluehost2() throws IOException {
         HashMap<String, String> map = createHashList(this.workingDir);
@@ -143,7 +154,7 @@ public class Updater {
         }
 
         JOptionPane.showConfirmDialog(frame, "MD5 ERROR!!!! See log");
-        
+
     }
 
     private void moveJars(String string) throws IOException {
@@ -157,7 +168,7 @@ public class Updater {
         copyDirectory(new File(jars.getParentFile(), "ressourcen\\pluginressourcen\\106__JDShutdown"), this.updateDir);
         copyDirectory(new File(jars.getParentFile(), "ressourcen\\pluginressourcen\\100__JDChat"), this.updateDir);
     }
-
+   
     private void clone2() throws IOException {
         HashMap<String, String> map = createHashList(this.workingDir);
         Browser br = new Browser();
@@ -183,7 +194,7 @@ public class Updater {
 
         map.put("pass", getCFG("updateHashPW"));
 
-        br.postPage("http://update2.jdownloader.org/clone.php?pass=" + getCFG("updateHashPW"), map);
+        br.postPage("http://update0.jdownloader.org/clone.php?pass=" + getCFG("updateHashPW"), map);
         System.out.println(br + "");
         if (!br.containsHTML("<b>fail</b>") && !br.containsHTML("<b>Warning</b>") && !br.containsHTML("<b>Error</b>")) {
             System.out.println("CLONE update2 OK");
@@ -197,9 +208,9 @@ public class Updater {
     private void lockUpdate() throws IOException {
         Browser br = new Browser();
         br.forceDebug(true);
-        System.out.println(br.getPage("http://update0.jdownloader.org/lock.php?pass="+ getCFG("server_pass")));
-        System.out.println(br.getPage("http://update1.jdownloader.org/lock.php?pass="+ getCFG("server_pass")));
-        System.out.println(br.getPage("http://update2.jdownloader.org/lock.php?pass="+ getCFG("server_pass")));
+        System.out.println(br.getPage("http://update0.jdownloader.org/lock.php?pass=" + getCFG("server_pass")));
+        System.out.println(br.getPage("http://update1.jdownloader.org/lock.php?pass=" + getCFG("server_pass")));
+        System.out.println(br.getPage("http://update2.jdownloader.org/lock.php?pass=" + getCFG("server_pass")));
 
     }
 
@@ -230,6 +241,7 @@ public class Updater {
             e.printStackTrace();
         }
 
+        
         System.out.println("Spread ok");
     }
 
@@ -249,7 +261,7 @@ public class Updater {
         }
     }
 
-    private void uploadHashList() throws IOException {
+    private void uploadHashList() throws Exception {
         while (true) {
 
             HashMap<String, String> map = createHashList(this.workingDir);
@@ -260,13 +272,13 @@ public class Updater {
             serverList.append("-1:http://update0.jdownloader.org/bin/\r\n");
             serverList.append("-1:http://update4ex.jdownloader.org/\r\n");
             serverList.append("-1:http://jdupdate.bluehost.to/nupd/\r\n");
-//            serverList.append("-1:http://update1.jdownloader.org/bin/\r\n");
+            // serverList.append("-1:http://update1.jdownloader.org/bin/\r\n");
             serverList.append("-1:http://update2.jdownloader.org/bin/\r\n");
-            br.postPage("http://update1.jdownloader.org/unlock.php?pass=" + getCFG("updateHashPW"), "server="+serverList.toString());
+            br.postPage("http://update1.jdownloader.org/unlock.php?pass=" + getCFG("updateHashPW"), "server=" + serverList.toString());
             map.put("pass", getCFG("updateHashPW"));
-            File file = new File(this.workingDir, "addonlist.lst");
+       
 
-            String addonlist = JDIO.getLocalFile(file);
+            String addonlist = createAddonList();
             map.put("addonlist", Encoding.urlEncode(addonlist));
             br.postPage("http://update1.jdownloader.org/updateHashList.php?pass=" + getCFG("updateHashPW"), map);
             System.out.println(br + "");
@@ -274,6 +286,84 @@ public class Updater {
 
             JOptionPane.showConfirmDialog(frame, "MD5 ERROR!!!! See log");
         }
+    }
+
+    private String createAddonList() throws Exception {
+        File file = new File(getCFG("addon_dir"));
+        StringBuilder sb = new StringBuilder();
+        sb.append("<packages>\r\n");
+        for (File addon : file.listFiles()) {
+
+            if (new File(addon, "info.txt").exists()) {
+
+                Properties info = new Properties();
+                FileInputStream stream;
+                try {
+                    stream = new FileInputStream(new File(addon, "info.txt"));
+                    info.load(stream);
+                    stream.close();
+                } catch (Exception e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+
+                if (info.getProperty("disabled") == null || !info.getProperty("disabled").equalsIgnoreCase("false")) {
+                    addAddon(sb, addon, info);
+                }
+            }
+        }
+
+        sb.append("</packages>");
+        System.out.println(sb);
+        return sb.toString();
+    }
+
+    private void addAddon(StringBuilder sb, File addon, Properties info) throws Exception {
+
+        File[] files = addon.listFiles(new FilenameFilter() {
+            public boolean accept(File dir, String name) {
+                if (name.endsWith(".svn") || name.endsWith("info.txt")) { return false; }
+                return true;
+
+            }
+
+        });
+
+        File des = File.createTempFile("test", ".jdu");
+        des = new File(des.getParentFile(), info.getProperty("filename"));
+        Zip zip = new Zip(files, des);
+        zip.setExcludeFilter(Pattern.compile("\\.svn", Pattern.CASE_INSENSITIVE));
+        zip.zip();
+        SimpleFTP.uploadSecure("update2.jdownloader.org", 2121, getCFG("update2_ftp_user"), getCFG("update2_ftp_pass"), "/http/addons", des);
+        sb.append("    <package>\r\n");
+        for (Iterator<Entry<Object, Object>> it = info.entrySet().iterator(); it.hasNext();) {
+            Entry<Object, Object> next = it.next();
+            if (next.getKey().toString().equalsIgnoreCase("version")) {
+                Subversion svn = new Subversion("https://www.syncom.org/svn/jdownloader/");
+                SVNDirEntry svnInfo = svn.getRepository().info("/trunk/ressourcen/pluginressourcen/" + addon.getName(), svn.latestRevision());
+                next.setValue(svnInfo.getRevision());
+
+                sb.append("          <lastAuthor>" + svnInfo.getAuthor() + "</lastAuthor>\r\n");
+                sb.append("          <lastChangeDate>" + svnInfo.getDate() + "</lastChangeDate>\r\n");
+
+            }
+
+            if (next.getKey().toString().equalsIgnoreCase("url")) {
+                next.setValue("http://update2.jdownloader.org/addons/" + des.getName() + "?.zip");
+                Browser br = new Browser();
+                br.openGetConnection("http://update2.jdownloader.org/addons/" + des.getName());
+
+                sb.append("          <filesize>" + br.getRequest().getContentLength() + "</filesize>\r\n");
+                sb.append("          <md5>" + JDHash.getMD5(addon) + "</md5>\r\n");
+                sb.append("          <responseCode>" + br.getRequest().getHttpConnection().getResponseCode() + "</responseCode>\r\n");
+                br.getRequest().getHttpConnection().disconnect();
+            }
+            if (next.getKey().toString().equalsIgnoreCase("light-url")) {
+                next.setValue("http://update2.jdownloader.org/addons/" + des.getName() + "?.zip");
+            }
+            sb.append("          <" + next.getKey() + ">" + next.getValue() + "</" + next.getKey() + ">\r\n");
+        }
+        sb.append("    </package>\r\n");
     }
 
     /**
@@ -473,7 +563,7 @@ public class Updater {
     private void copyFile(File srcPath, File dstPath) throws IOException {
         String hashd = JDHash.getMD5(dstPath);
         String hashs = JDHash.getMD5(srcPath);
-      
+
         if (srcPath.getAbsolutePath().contains(".svn")) return;
 
         if (!srcPath.exists()) {
@@ -576,25 +666,29 @@ public class Updater {
          * rest move
          * 
          */
-//        for (String path : remRequested) {
-//            File f = new File(path);
-//            if (f.exists()) {
-//                String newPath = path.replace(workingDir.getAbsolutePath(), this.updateDir.getAbsolutePath());
-//                File newFile = new File(newPath);
-//                if (newFile.exists() && newFile.lastModified() >= f.lastModified()) {
-//                    System.out.println("Removed " + path + "(newer file in " + updateDir.getAbsolutePath());
-//                    f.delete();
-//                } else if (newFile.exists()) {
-//                    System.out.println("Rename " + path + "-->" + newPath + "(newer file in " + workingDir.getAbsolutePath());
-//                    newFile.delete();
-//                    f.renameTo(newFile);
-//                } else {
-//                    System.out.println("Move " + path + "->" + newFile.getAbsolutePath());
-//                    f.renameTo(newFile);
-//                }
-//            }
-//
-//        }
+        // for (String path : remRequested) {
+        // File f = new File(path);
+        // if (f.exists()) {
+        // String newPath = path.replace(workingDir.getAbsolutePath(),
+        // this.updateDir.getAbsolutePath());
+        // File newFile = new File(newPath);
+        // if (newFile.exists() && newFile.lastModified() >= f.lastModified()) {
+        // System.out.println("Removed " + path + "(newer file in " +
+        // updateDir.getAbsolutePath());
+        // f.delete();
+        // } else if (newFile.exists()) {
+        // System.out.println("Rename " + path + "-->" + newPath +
+        // "(newer file in " + workingDir.getAbsolutePath());
+        // newFile.delete();
+        // f.renameTo(newFile);
+        // } else {
+        // System.out.println("Move " + path + "->" +
+        // newFile.getAbsolutePath());
+        // f.renameTo(newFile);
+        // }
+        // }
+        //
+        // }
     }
 
     private void initGUI() {

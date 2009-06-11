@@ -23,6 +23,7 @@ import java.util.Collection;
 import jd.nutils.io.JDIO;
 
 import org.tmatesoft.svn.core.SVNDepth;
+import org.tmatesoft.svn.core.SVNDirEntry;
 import org.tmatesoft.svn.core.SVNErrorCode;
 import org.tmatesoft.svn.core.SVNErrorMessage;
 import org.tmatesoft.svn.core.SVNException;
@@ -42,7 +43,7 @@ import org.tmatesoft.svn.core.wc.SVNUpdateClient;
 import org.tmatesoft.svn.core.wc.SVNWCUtil;
 
 public class Subversion {
-
+ 
     private SVNRepository repository;
     private SVNURL svnurl;
     private String user;
@@ -111,7 +112,7 @@ public class Subversion {
         return rev;
     }
 
-    private long latestRevision() throws SVNException {
+    public long latestRevision() throws SVNException {
         return repository.getLatestRevision();
     }
 
@@ -141,4 +142,11 @@ public class Subversion {
         System.out.println("SVN Update finished");
 
     }
+
+    public SVNRepository getRepository() {
+        // TODO Auto-generated method stub
+        return this.repository;
+    }
+
+
 }

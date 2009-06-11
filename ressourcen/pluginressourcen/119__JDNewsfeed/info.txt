@@ -1,0 +1,9 @@
+category=Addon
+name=JD-Newsfeed Loader
+version=$Revision$
+url=http://update2.jdownloader.org/addons/jdnewsfeed.jdu?.zip
+light-url=http://update2.jdownloader.org/addons/jdnewsfeed.jdu?.zip
+filename=JDNewsfeed.jdu
+infourl=http://jdownloader.org/knowledge/wiki/addons
+preselected=false
+id=119
