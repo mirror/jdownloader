@@ -101,7 +101,7 @@ public class ByteBufferController {
             if (!bufferpool.contains(entry)) bufferpool.add(entry);
             Collections.sort(bufferpool, new Comparator<ByteBufferEntry>() {
                 public int compare(ByteBufferEntry a, ByteBufferEntry b) {
-                    return a.capacity() == b.capacity() ? 0 : a.capacity() > b.capacity() ? -1 : 1;
+                    return a.capacity() == b.capacity() ? 0 : a.capacity() > b.capacity() ? 1 : -1;
                 }
             });
         }
