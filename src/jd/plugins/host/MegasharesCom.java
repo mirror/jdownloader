@@ -173,7 +173,9 @@ public class MegasharesCom extends PluginForHost {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }
-        dl.startDownload();
+        if (!dl.startDownload()) {
+            downloadLink.getLinkStatus().setRetryCount(0);
+        }
     }
 
     private boolean checkPassword(DownloadLink link) throws Exception {
