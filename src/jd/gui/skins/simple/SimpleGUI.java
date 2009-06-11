@@ -344,7 +344,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
         JPanel glass = new JPanel(new MigLayout("ins 0"));
         glass.add(startbutton, "gapleft 2,gaptop 2,alignx left,aligny top");
         glass.setOpaque(false);
-       // this.setGlassPane(glass);
+        this.setGlassPane(glass);
         glass.setVisible(true);
     }
 

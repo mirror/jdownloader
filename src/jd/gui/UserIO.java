@@ -52,6 +52,7 @@ public abstract class UserIO {
     public static final int ICON_INFO = 0;
     public static final int ICON_WARNING = 1;
     public static final int ICON_ERROR = 2;
+//    private static final int ICON_QUESTION = 3;
 
  
 
@@ -89,6 +90,7 @@ public abstract class UserIO {
 
     public int requestConfirmDialog(int flag, String title, String message, ImageIcon icon, String okOption, String cancelOption) {
         synchronized (INSTANCE) {
+            if(icon==null)icon=this.getIcon(ICON_INFO);
             return showConfirmDialog(flag, title, message, icon, okOption, cancelOption);
         }
 
@@ -97,6 +99,7 @@ public abstract class UserIO {
     abstract protected int showConfirmDialog(int flag, String title, String message, ImageIcon icon, String okOption, String cancelOption);
 
     public String requestInputDialog(int flag, String title, String message, String defaultMessage, ImageIcon icon, String okOption, String cancelOption) {
+
         synchronized (INSTANCE) {
             return showInputDialog(flag, title, message, defaultMessage, icon, okOption, cancelOption);
         }
