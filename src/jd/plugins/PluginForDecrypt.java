@@ -354,10 +354,12 @@ public abstract class PluginForDecrypt extends Plugin {
             for (int i = hits.length - 1; i >= 0; i--) {
                 String file = hits[i];
                 file = file.trim();
-                while (file.charAt(0) == '"') {
+
+                while (file.length() > 0 && file.charAt(0) == '"') {
                     file = file.substring(1);
                 }
-                while (file.charAt(file.length() - 1) == '"') {
+
+                while (file.length() > 0 && file.charAt(file.length() - 1) == '"') {
                     file = file.substring(0, file.length() - 1);
                 }
                 hits[i] = file;

@@ -40,13 +40,11 @@ public class LinksaveIn extends PluginForDecrypt {
 
     // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-
-if(true)throw new Exception("CNL");
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        this.setBrowserExclusive();
         br.setCookie("http://linksave.in/", "Linksave_Language", "german");
         br.getPage(param.getCryptedUrl());
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         if (br.containsHTML("Ordner nicht gefunden")) return decryptedLinks;
-
         Form form = br.getFormbyProperty("name", "form");
         for (int retry = 0; retry < 5; retry++) {
             if (form == null) break;
@@ -69,7 +67,7 @@ if(true)throw new Exception("CNL");
             }
         }
 
-        String[] container = br.getRegex("link\\'\\)\\.href\\=unescape\\(\\'(.*?)\\'\\)\\;").getColumn(0);
+        String[] container = br.getRegex("\\.href\\=unescape\\(\\'(.*?)\\'\\)\\;").getColumn(0);
         if (container != null && container.length > 0) {
             for (String c : container) {
                 /*

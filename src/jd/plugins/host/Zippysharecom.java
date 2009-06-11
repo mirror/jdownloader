@@ -19,8 +19,11 @@ import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.Encoding;
+import jd.http.RandomUserAgent;
 import jd.parser.Regex;
+import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -43,6 +46,7 @@ public class Zippysharecom extends PluginForHost {
     // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.setCookie("http://www.zippyshare.com", "ziplocale", "en");
         br.getPage(downloadLink.getDownloadURL().replaceAll("locale=..", "locale=en"));
         if (br.containsHTML("<title>Zippyshare.com - File does not exist</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -63,14 +67,24 @@ public class Zippysharecom extends PluginForHost {
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        br.getPage(downloadLink.getDownloadURL());
         br.setFollowRedirects(true);
-        String linkurl = br.getRegex(Pattern.compile("var\\s[comeonguys]+\\s+=\\s+'(.*?)';", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        // To remove zippies "greetings"
-        linkurl= linkurl.substring(linkurl.indexOf("http"));
-        String downloadURL = Encoding.htmlDecode(linkurl);
-        dl = br.openDownload(downloadLink, downloadURL);
+        String page = Encoding.urlDecode(br.toString(), true);
+        String[] links = HTMLParser.getHttpLinks(page, null);
+        boolean found = false;
         sleep(10000l, downloadLink);
+        for (String link : links) {
+            if (!new Regex(link, ".*?www\\.zippyshare\\.com/[^\\?]*\\..{1,4}$").matches()) continue;
+            Browser brc = br.cloneBrowser();
+            dl = brc.openDownload(downloadLink, link);
+            if (dl.getConnection().isContentDisposition()) {
+                found = true;
+                break;
+            } else {
+                dl.getConnection().disconnect();
+            }
+        }
+        if (!found) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        dl.setFilenameFix(true);
         dl.startDownload();
     }
 
