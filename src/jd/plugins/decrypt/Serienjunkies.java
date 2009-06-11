@@ -582,7 +582,7 @@ public class Serienjunkies extends PluginForDecrypt {
 
         br = getBrowser();
         final ArrayList<SerienjunkiesLinks> ar2 = decryptItMain(param);
-        ArrayList<SerienjunkiesLinks> ar = null;
+        ArrayList<SerienjunkiesLinks> ar = ar2;
         if (ar2.size() > 1) {
 
             ar = new GuiRunnable<ArrayList<SerienjunkiesLinks>>() {
