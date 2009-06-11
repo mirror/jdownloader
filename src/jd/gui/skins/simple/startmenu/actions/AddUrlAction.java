@@ -50,8 +50,7 @@ public class AddUrlAction extends StartAction {
         }
 
         String link = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN | UserIO.STYLE_LARGE, JDLocale.L("gui.dialog.addurl.title", "Add URL(s)"), JDLocale.L("gui.dialog.addurl.message", "Add a URL(s). JDownloader will load and parse them for further links."), def, JDTheme.II("gui.images.taskpanes.linkgrabber", 32, 32), JDLocale.L("gui.dialog.addurl.okoption_parse", "Parse URL(s)"), null);
-        if (link == null) return;
-        DistributeData.loadAndParse(link);
+        if (link == null || link.length() == 0) return;
+        new DistributeData(link, false).start();
     }
-
 }

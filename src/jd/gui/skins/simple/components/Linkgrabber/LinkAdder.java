@@ -30,6 +30,7 @@ import javax.swing.event.DocumentListener;
 
 import jd.config.SubConfiguration;
 import jd.controlling.ClipboardHandler;
+import jd.controlling.DistributeData;
 import jd.gui.skins.simple.Factory;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.JTabbedPanel;
@@ -38,7 +39,6 @@ import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.parser.html.HTMLParser;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
-import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
 public class LinkAdder extends JTabbedPanel {
@@ -99,7 +99,7 @@ public class LinkAdder extends JTabbedPanel {
         bt.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
-                JDUtilities.getController().distributeLinks(text.getText());
+                new DistributeData(text.getText(), false).start();
                 reset();
             }
 
@@ -114,7 +114,7 @@ public class LinkAdder extends JTabbedPanel {
     // @Override
     public void onDisplay() {
         if (!SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getBooleanProperty(SimpleGuiConstants.PARAM_LINKGRABBER_CLIPBOARD_OBSERVER, true)) return;
-        
+
         ClipboardHandler.getClipboard().setTempDisabled(true);
         setClipboard(true);
     }

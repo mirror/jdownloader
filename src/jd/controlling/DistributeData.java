@@ -90,6 +90,7 @@ public class DistributeData extends Thread {
     public DistributeData(String data) {
         super("JD-DistributeData");
         this.data = new String(data);
+        this.disableDeepEmergencyScan = true;
     }
 
     public DistributeData(String data, boolean disableDeepEmergencyScan) {
@@ -101,6 +102,7 @@ public class DistributeData extends Thread {
         this(data);
         this.hideGrabber = hideGrabber;
         this.startDownload = startDownload;
+        this.disableDeepEmergencyScan = true;
     }
 
     public void setFilterNormalHTTP(boolean b) {

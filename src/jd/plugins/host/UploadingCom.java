@@ -183,6 +183,7 @@ public class UploadingCom extends PluginForHost {
         br.submitForm(form);
         if (br.getRedirectLocation() == null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
         dl = br.openDownload(downloadLink, br.getRedirectLocation(), false, 1);
+        dl.setFilenameFix(true);
         dl.startDownload();
     }
 
