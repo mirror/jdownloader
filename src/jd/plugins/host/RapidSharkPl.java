@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2008  JD-Team support@jdownloader.org
+//    Copyright (C) 2009  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -17,7 +17,6 @@
 package jd.plugins.host;
 
 import java.io.IOException;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
@@ -59,13 +58,34 @@ public class RapidSharkPl extends PluginForHost {
         } else {
             form = br.getFormbyProperty("name", "F1");
             if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-            // TODO: AntiCaptcha Method would allow simultanous connections
-            String captchaurl = br.getRegex(Pattern.compile("below:</b></td></tr>\\s+<tr><td><img src=\"(.*?)\"", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
-            String code = getCaptchaCode(captchaurl, downloadLink);
+            String code = "";
+            String captchascope = br.getRegex("<div style='width:80px[^>]*>(.*?)</div>").getMatch(0);
+            String[] captchaletters = new Regex(captchascope, "<span[^>]*>(\\d)</span>").getColumn(0);
+            String[] captchalpositions = new Regex(captchascope, "padding-left:(\\d+)px").getColumn(0);
+            int i,k = 0,position = 0,less = -1;
+            for(k=0;k<captchalpositions.length;k++)
+            {
+                for (i=0;i<captchalpositions.length;i++)
+                {
+                if (less==-1 || less>Integer.parseInt(captchalpositions[i])) 
+                    {
+                    less = Integer.parseInt(captchalpositions[i]);
+                    position = i;
+                    }
+                }
+                captchalpositions[position] = "99999";
+                less = -1;
+                code = code+captchaletters[position];
+                position = 0;
+   
+            }
+            System.out.println(captchascope);
+            System.out.println(code);
             form.put("code", code);
             form.setAction(downloadLink.getDownloadURL());
             // Ticket Time
-            this.sleep(30001, downloadLink);
+            int ticketwait = Integer.parseInt(br.getRegex("id=\"countdown\">(.*?)</span>").getMatch(0));
+            this.sleep(ticketwait * 1001, downloadLink);
             br.submitForm(form);
             URLConnectionAdapter con2 = br.getHttpConnection();
             String dllink = br.getRedirectLocation();
@@ -90,7 +110,6 @@ public class RapidSharkPl extends PluginForHost {
     // TODO: AntiCaptcha Method would allow simultanous connections
     // if user is quick; he can enter captchas one-by-one and then server allow
     // him simulatanous downloads
-    // that's why I left it 10.
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
