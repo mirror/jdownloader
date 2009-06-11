@@ -19,12 +19,15 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.StringTokenizer;
 
@@ -36,7 +39,7 @@ import java.util.StringTokenizer;
  * href="http://www.jibble.org/">http://www.jibble.org/</a>
  */
 public class SimpleFTP {
-    private static boolean DEBUG = false;
+    private static boolean DEBUG = true;
     private BufferedReader reader = null;
     private Socket socket = null;
     private BufferedWriter writer = null;
@@ -205,6 +208,25 @@ public class SimpleFTP {
      */
     public synchronized boolean stor(InputStream inputStream, String filename) throws IOException {
         BufferedInputStream input = new BufferedInputStream(inputStream);
+        InetSocketAddress pasv = pasv();
+        sendLine("STOR " + filename);
+        Socket dataSocket = new Socket(pasv.getHostName(), pasv.getPort());
+        String response = readLine();
+        if (!response.startsWith("150 ") && !response.startsWith("125 ")) { throw new IOException("SimpleFTP was not allowed to send the file: " + response); }
+        BufferedOutputStream output = new BufferedOutputStream(dataSocket.getOutputStream());
+        byte[] buffer = new byte[4096];
+        int bytesRead = 0;
+        while ((bytesRead = input.read(buffer)) != -1) {
+            output.write(buffer, 0, bytesRead);
+        }
+        output.flush();
+        output.close();
+        input.close();
+        response = readLine();
+        return response.startsWith("226 ");
+    }
+
+    private InetSocketAddress pasv() throws IOException {
         sendLine("PASV");
         String response = readLine();
         if (!response.startsWith("227 ")) { throw new IOException("SimpleFTP could not request passive mode: " + response); }
@@ -218,25 +240,12 @@ public class SimpleFTP {
             try {
                 ip = tokenizer.nextToken() + "." + tokenizer.nextToken() + "." + tokenizer.nextToken() + "." + tokenizer.nextToken();
                 port = Integer.parseInt(tokenizer.nextToken()) * 256 + Integer.parseInt(tokenizer.nextToken());
+                return new InetSocketAddress(ip, port);
             } catch (Exception e) {
                 throw new IOException("SimpleFTP received bad data link information: " + response);
             }
         }
-        sendLine("STOR " + filename);
-        Socket dataSocket = new Socket(ip, port);
-        response = readLine();
-        if (!response.startsWith("150 ") && !response.startsWith("125 ")) { throw new IOException("SimpleFTP was not allowed to send the file: " + response); }
-        BufferedOutputStream output = new BufferedOutputStream(dataSocket.getOutputStream());
-        byte[] buffer = new byte[4096];
-        int bytesRead = 0;
-        while ((bytesRead = input.read(buffer)) != -1) {
-            output.write(buffer, 0, bytesRead);
-        }
-        output.flush();
-        output.close();
-        input.close();
-        response = readLine();
-        return response.startsWith("226 ");
+        throw new IOException("SimpleFTP received bad data link information: " + response);
     }
 
     public boolean mkdir(String cw) throws IOException {
@@ -270,6 +279,96 @@ public class SimpleFTP {
 
     public String getDir() {
         return dir;
+    }
+
+    /**
+     * UPloads varios files to a single remotefolder
+     * 
+     * @param ip
+     * @param port
+     * @param user
+     * @param password
+     * @param destfolder
+     * @param src
+     * @throws IOException
+     */
+    public static void upload(String ip, int port, String user, String password, String destfolder, File... src) throws IOException {
+
+        SimpleFTP ftp = new SimpleFTP();
+        ftp.connect(ip, port, user, password);
+        ftp.bin();
+        ftp.cwd(destfolder);
+        for (File f : src) {
+            ftp.stor(f);
+        }
+
+        // Quit from the FTP server.
+        ftp.disconnect();
+
+    }
+    /**
+     * Uploades files to a remotefolder and downloads them again to check for transfer errors
+     * @param ip
+     * @param port
+     * @param user
+     * @param password
+     * @param destfolder
+     * @param src
+     * @throws IOException
+     */
+    public static void uploadSecure(String ip, int port, String user, String password, String destfolder, File... src) throws IOException {
+
+        SimpleFTP ftp = new SimpleFTP();
+        ftp.connect(ip, port, user, password);
+        ftp.bin();
+        ftp.cwd(destfolder);
+        for (File f : src) {
+            ftp.stor(f);
+            
+            File dummy = File.createTempFile("simpleftp_secure", null);
+            
+            ftp.download(f.getName(), dummy);
+            
+            if(!JDHash.getMD5(dummy).equalsIgnoreCase(JDHash.getMD5(f))){
+                throw new IOException("MD5 check failed for: "+f);
+            }else{
+                if (DEBUG) {
+                    System.out.println("---- MD5 OK: /" + ftp.getDir()+""+f.getName()+" -----");
+                }
+            }
+            dummy.delete();
+        }
+
+        // Quit from the FTP server.
+        ftp.disconnect();
+
+    }
+
+
+    public void download(String filename, File file) throws IOException {
+        InetSocketAddress pasv = pasv();
+
+        sendLine("RETR " + filename);
+
+        Socket dataSocket = new Socket(pasv.getHostName(), pasv.getPort());
+        BufferedInputStream input = new BufferedInputStream(dataSocket.getInputStream());
+        DataOutputStream out = new DataOutputStream(new FileOutputStream(file));
+
+        String response = readLine();
+        if (!response.startsWith("150")) { throw new IOException("Unexpected Response: " + response); }
+        byte[] buffer = new byte[4096];
+        int bytesRead = 0;
+        while ((bytesRead = input.read(buffer)) != -1) {
+            out.write(buffer, 0, bytesRead);
+
+        }
+
+        out.flush();
+        out.close();
+        input.close();
+        response = readLine();
+        if (!response.startsWith("226")) { throw new IOException("Download failed: " + response); }
+
     }
 
 }
