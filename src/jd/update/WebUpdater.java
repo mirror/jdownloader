@@ -168,7 +168,7 @@ public class WebUpdater implements Serializable {
                 entry = new FileUpdate(m[0], m[1]);
             }
             sum.add((byte) entry.getRemoteHash().charAt(0));
-            System.out.println(""+entry.getLocalPath());
+            System.out.println("" + entry.getLocalPath());
             if (entry.getLocalPath().endsWith(".class")) {
                 plugins.put(entry.getLocalPath(), entry);
             }
@@ -315,6 +315,7 @@ public class WebUpdater implements Serializable {
 
     @SuppressWarnings("unchecked")
     private ArrayList<Server> getAvailableServers() {
+        if (Main.clone) return Main.clonePrefix;
         try {
             return (ArrayList<Server>) WebUpdater.getConfig("WEBUPDATE").getProperty("SERVERLIST");
         } catch (Exception e) {
@@ -388,8 +389,8 @@ public class WebUpdater implements Serializable {
                     if (progressload != null) progressload.setForeground(Color.RED);
                 }
             } catch (Exception e) {
-              e.printStackTrace();
-              log(e.getLocalizedMessage());
+                e.printStackTrace();
+                log(e.getLocalizedMessage());
                 log(file.toString());
                 log("Failed\r\n");
                 if (progressload != null) progressload.setForeground(Color.RED);
@@ -407,7 +408,9 @@ public class WebUpdater implements Serializable {
     }
 
     public boolean updateUpdatefile(FileUpdate file) {
-        return file.update(getAvailableServers());
+        if (file.update(getAvailableServers())) return true;
+        errors++;
+        return false;
     }
 
     /**
