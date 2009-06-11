@@ -101,19 +101,19 @@ public class Updater {
         Updater upd = new Updater();
         System.out.println("STATUS: Webupdate");
         upd.webupdate();
-        System.out.println("STATUS: Webupdate ende");
-        System.out.println("STATUS: Scan local");
+//        System.out.println("STATUS: Webupdate ende");
+//        System.out.println("STATUS: Scan local");
         upd.lockUpdate();
         upd.removeFileOverhead();
-        if (JOptionPane.showConfirmDialog(upd.getFrame(), "SVN UPdate") == JOptionPane.OK_OPTION) {
-            System.out.println("STATUS: update svn");
-            upd.updateSource();
-        }
+//        if (JOptionPane.showConfirmDialog(upd.getFrame(), "SVN UPdate") == JOptionPane.OK_OPTION) {
+//            System.out.println("STATUS: update svn");
+//            upd.updateSource();
+//        }
         System.out.println("STATUS: move plugins");
         upd.movePlugins(getCFG("plugins_dir"));
         upd.moveJars(getCFG("dist_dir"));
-        // System.out.println("STATUS: FINISHED");
-        ArrayList<File> list = upd.getFileList();
+//        // System.out.println("STATUS: FINISHED");
+       ArrayList<File> list = upd.getFileList();
         //
         upd.upload(list);
         //
@@ -121,10 +121,29 @@ public class Updater {
         upd.checkHashes();
         upd.clone0();
         upd.clone2();
+//        upd.clonebluehost2();
         upd.uploadHashList();
-        upd.spread(list);
+//        upd.spread(list);
 
         System.exit(0);
+    }
+
+    private void clonebluehost2() throws IOException {
+        HashMap<String, String> map = createHashList(this.workingDir);
+        Browser br = new Browser();
+        br.forceDebug(true);
+
+        map.put("pass", getCFG("updateHashPW"));
+
+        br.postPage("http://jdupdate.bluehost.to/clone.php?pass=" + getCFG("updateHashPW"), map);
+        System.out.println(br + "");
+        if (!br.containsHTML("<b>fail</b>") && !br.containsHTML("<b>Warning</b>") && !br.containsHTML("<b>Error</b>")) {
+            System.out.println("CLONE update2 OK");
+            return;
+        }
+
+        JOptionPane.showConfirmDialog(frame, "MD5 ERROR!!!! See log");
+        
     }
 
     private void moveJars(String string) throws IOException {
@@ -150,7 +169,7 @@ public class Updater {
 
         br.postPage("http://update2.jdownloader.org/clone.php?pass=" + getCFG("updateHashPW"), map);
         System.out.println(br + "");
-        if (br.containsHTML("success") && !br.containsHTML("<b>Warning</b>") && !br.containsHTML("<b>Error</b>")) {
+        if (!br.containsHTML("<b>fail</b>") && !br.containsHTML("<b>Warning</b>") && !br.containsHTML("<b>Error</b>")) {
             System.out.println("CLONE update2 OK");
             return;
         }
@@ -168,7 +187,7 @@ public class Updater {
 
         br.postPage("http://update2.jdownloader.org/clone.php?pass=" + getCFG("updateHashPW"), map);
         System.out.println(br + "");
-        if (br.containsHTML("success") && !br.containsHTML("<b>Warning</b>") && !br.containsHTML("<b>Error</b>")) {
+        if (!br.containsHTML("<b>fail</b>") && !br.containsHTML("<b>Warning</b>") && !br.containsHTML("<b>Error</b>")) {
             System.out.println("CLONE update2 OK");
             return;
         }
@@ -180,9 +199,9 @@ public class Updater {
     private void lockUpdate() throws IOException {
         Browser br = new Browser();
         br.forceDebug(true);
-        br.getPage("http://update0.jdownloader.org/lock.php");
-        br.getPage("http://update1.jdownloader.org/lock.php");
-        br.getPage("http://update2.jdownloader.org/lock.php");
+        System.out.println(br.getPage("http://update0.jdownloader.org/lock.php?pass="+ getCFG("server_pass")));
+        System.out.println(br.getPage("http://update1.jdownloader.org/lock.php?pass="+ getCFG("server_pass")));
+        System.out.println(br.getPage("http://update2.jdownloader.org/lock.php?pass="+ getCFG("server_pass")));
 
     }
 
@@ -234,16 +253,24 @@ public class Updater {
 
     private void uploadHashList() throws IOException {
         while (true) {
+
             HashMap<String, String> map = createHashList(this.workingDir);
             Browser br = new Browser();
             br.forceDebug(true);
+            StringBuilder serverList = new StringBuilder();
 
+            serverList.append("-1:http://update0.jdownloader.org/bin/\r\n");
+            serverList.append("-1:http://update4ex.jdownloader.org/\r\n");
+            serverList.append("-1:http://jdupdate.bluehost.to/nupd/\r\n");
+//            serverList.append("-1:http://update1.jdownloader.org/bin/\r\n");
+            serverList.append("-1:http://update2.jdownloader.org/bin/\r\n");
+            br.postPage("http://update1.jdownloader.org/unlock.php?pass=" + getCFG("updateHashPW"), "server="+serverList.toString());
             map.put("pass", getCFG("updateHashPW"));
             File file = new File(this.workingDir, "addonlist.lst");
 
             String addonlist = JDIO.getLocalFile(file);
             map.put("addonlist", Encoding.urlEncode(addonlist));
-            br.postPage("http://update1.jdownloader.org/updateHashList.php", map);
+            br.postPage("http://update1.jdownloader.org/updateHashList.php?pass=" + getCFG("updateHashPW"), map);
             System.out.println(br + "");
             if (br.containsHTML("success") && !br.containsHTML("<b>Warning</b>") && !br.containsHTML("<b>Error</b>")) break;
 
@@ -400,7 +427,7 @@ public class Updater {
         System.out.println("Updated BIN->" + file);
 
         JDIO.removeDirectoryOrFile(file = new File(this.updateDir, "jd/dynamics"));
-        copyDirectory(new File(pluginsDir.getParentFile().getParentFile(), "dynamics"), file);
+        copyDirectory(new File(pluginsDir.getParentFile(), "dynamics"), file);
         System.out.println("Updated BIN->" + file);
 
     }
@@ -448,7 +475,7 @@ public class Updater {
     private void copyFile(File srcPath, File dstPath) throws IOException {
         String hashd = JDHash.getMD5(dstPath);
         String hashs = JDHash.getMD5(srcPath);
-        if (dstPath.exists()) dstPath.delete();
+      
         if (srcPath.getAbsolutePath().contains(".svn")) return;
 
         if (!srcPath.exists()) {
@@ -456,6 +483,9 @@ public class Updater {
             System.exit(0);
         } else {
             if (hashs.equalsIgnoreCase(hashd)) return;
+            if (dstPath.exists()) {
+                dstPath.delete();
+            }
             InputStream in = new FileInputStream(srcPath);
             dstPath.getParentFile().mkdirs();
             dstPath.createNewFile();
@@ -548,25 +578,25 @@ public class Updater {
          * rest move
          * 
          */
-        for (String path : remRequested) {
-            File f = new File(path);
-            if (f.exists()) {
-                String newPath = path.replace(workingDir.getAbsolutePath(), this.updateDir.getAbsolutePath());
-                File newFile = new File(newPath);
-                if (newFile.exists() && newFile.lastModified() >= f.lastModified()) {
-                    System.out.println("Removed " + path + "(newer file in " + updateDir.getAbsolutePath());
-                    f.delete();
-                } else if (newFile.exists()) {
-                    System.out.println("Rename " + path + "-->" + newPath + "(newer file in " + workingDir.getAbsolutePath());
-                    newFile.delete();
-                    f.renameTo(newFile);
-                } else {
-                    System.out.println("Move " + path + "->" + newFile.getAbsolutePath());
-                    f.renameTo(newFile);
-                }
-            }
-
-        }
+//        for (String path : remRequested) {
+//            File f = new File(path);
+//            if (f.exists()) {
+//                String newPath = path.replace(workingDir.getAbsolutePath(), this.updateDir.getAbsolutePath());
+//                File newFile = new File(newPath);
+//                if (newFile.exists() && newFile.lastModified() >= f.lastModified()) {
+//                    System.out.println("Removed " + path + "(newer file in " + updateDir.getAbsolutePath());
+//                    f.delete();
+//                } else if (newFile.exists()) {
+//                    System.out.println("Rename " + path + "-->" + newPath + "(newer file in " + workingDir.getAbsolutePath());
+//                    newFile.delete();
+//                    f.renameTo(newFile);
+//                } else {
+//                    System.out.println("Move " + path + "->" + newFile.getAbsolutePath());
+//                    f.renameTo(newFile);
+//                }
+//            }
+//
+//        }
     }
 
     private void initGUI() {
