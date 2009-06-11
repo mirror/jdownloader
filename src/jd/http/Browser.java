@@ -1480,9 +1480,13 @@ public class Browser {
             if (pass != null && pass.trim().length() > 0) {
                 pr.setPass(pass);
             }
+            
+            log("Proxy: "+user+":"+pass+"@"+this.getStringProperty("proxy_ip")+":"+getIntegerProperty("proxy_port"));
             Browser.setGlobalProxy(pr);
 
             Browser br = new Browser();
+            br.setConnectTimeout(10000);
+            br.setReadTimeout(10000);
             try {
                 br.getPage("http://jdownloader.org");
             } catch (Exception e) {

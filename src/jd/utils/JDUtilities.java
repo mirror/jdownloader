@@ -69,6 +69,7 @@ import jd.controlling.DownloadController;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.gui.UIInterface;
+import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.nutils.Executer;
 import jd.nutils.Formatter;
@@ -936,7 +937,7 @@ public class JDUtilities {
 
                     if (!new File(configpath + "database.script").delete() || !new File(configpath + "database.properties").delete()) {
                         logger.severe("Could not delete broken Database");
-                        JOptionPane.showMessageDialog(null, "Could not delete broken database. Please remove the JD_HOME/config directory and restart JD");
+                        UserIO.getInstance().requestMessageDialog( "Could not delete broken database. Please remove the JD_HOME/config directory and restart JD");
 
                     }
                 }
@@ -945,7 +946,7 @@ public class JDUtilities {
                     dbconnect = new DatabaseConnector();
                 } catch (Exception e1) {
                     JDLogger.exception(e1);
-                    JOptionPane.showMessageDialog(null, "Could not create database. Please remove the JD_HOME/config directory and restart JD");
+                    UserIO.getInstance().requestMessageDialog( "Could not create database. Please remove the JD_HOME/config directory and restart JD");
 
                     System.exit(1);
                 }

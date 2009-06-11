@@ -37,6 +37,7 @@ import javax.swing.UIManager.LookAndFeelInfo;
 import javax.swing.border.EmptyBorder;
 
 import jd.config.SubConfiguration;
+import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
@@ -290,7 +291,7 @@ public class Main {
                  * dass er nicht angelegt werden konnte? - Greeny
                  */
                 Main.log(log, "Not found: " + (JDUtilities.getResourceFile("/backup/").getAbsolutePath()) + "\r\n");
-                JOptionPane.showMessageDialog(frame, "JDownloader could not create a backup. Please make sure that\r\n " + JDUtilities.getResourceFile("/backup/").getAbsolutePath() + " exists and is writable before starting the update");
+                UserIO.getInstance().requestMessageDialog("JDownloader could not create a backup. Please make sure that\r\n " + JDUtilities.getResourceFile("/backup/").getAbsolutePath() + " exists and is writable before starting the update");
                 JDUtilities.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", "-rfu" }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0);
                 System.exit(0);
                 return;

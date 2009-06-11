@@ -28,6 +28,7 @@ import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.interaction.Interaction;
 import jd.event.ControlEvent;
+import jd.gui.UserIO;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Browser;
 import jd.nutils.OSDetector;
@@ -44,7 +45,6 @@ public abstract class UnitTest {
     private static void init() {
         tests = new ArrayList<Class<?>>();
         tests.add(Browser.Test.class);
-        // tests.add(LinkGrabber.Test.class);
 
     }
 
@@ -95,7 +95,7 @@ public abstract class UnitTest {
 
         if (init.loadConfiguration() == null) {
 
-            JOptionPane.showMessageDialog(null, "JDownloader cannot create the config files. Make sure, that JD_HOME/config/ exists and is writeable");
+            UserIO.getInstance().requestMessageDialog("JDownloader cannot create the config files. Make sure, that JD_HOME/config/ exists and is writeable");
         }
 
         final JDController controller = init.initController();
@@ -124,8 +124,8 @@ public abstract class UnitTest {
     }
 
     public static void main(String args[]) throws Exception {
-        // UnitTest.run("jd\\.http.*");
-        UnitTest.run("jd\\.gui.*");
+        UnitTest.run("jd\\.http.*");
+        // UnitTest.run("jd\\.gui.*");
     }
 
     private static void run(String pattern) {

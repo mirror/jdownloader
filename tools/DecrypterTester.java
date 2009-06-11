@@ -63,7 +63,7 @@ public class DecrypterTester {
             result.append(dLink.getDownloadURL());
             result.append(new char[] { '\r', '\n' });
         }
-        JOptionPane.showMessageDialog(null, result.toString());
+         JOptionPane.showMessageDialog(null,result.toString());
 
         System.exit(0);
     }

@@ -53,6 +53,7 @@ import jd.captcha.pixelgrid.Letter;
 import jd.captcha.pixelobject.PixelObject;
 import jd.captcha.utils.Utilities;
 import jd.controlling.JDLogger;
+import jd.gui.UserIO;
 import jd.nutils.Executer;
 import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
@@ -205,7 +206,7 @@ public class JAntiCaptcha {
         w.setText(0, i + 1, "Erkennung: " + Utilities.getPercent(correctLetters, totalLetters) + "%");
         w.setText(4, i + 1, "Richtig: " + correctLetters);
         w.setText(5, i + 1, "Falsch: " + (totalLetters - correctLetters));
-        JOptionPane.showMessageDialog(null, "Erkennung: " + correctLetters + "/" + totalLetters + " = " + Utilities.getPercent(correctLetters, totalLetters) + "%");
+        JOptionPane.showMessageDialog(new JFrame(),"Erkennung: " + correctLetters + "/" + totalLetters + " = " + Utilities.getPercent(correctLetters, totalLetters) + "%");
     }
 
     /**

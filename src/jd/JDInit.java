@@ -34,6 +34,7 @@ import jd.controlling.PasswordListController;
 import jd.controlling.interaction.Interaction;
 import jd.gui.JDLookAndFeelManager;
 import jd.gui.UIInterface;
+import jd.gui.UserIO;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.SimpleGuiConstants;
@@ -261,30 +262,18 @@ public class JDInit {
                 if (!home.canWrite()) {
                     logger.severe("INSTALL abgebrochen");
 
-                    new GuiRunnable<Object>() {
-
-                        // @Override
-                        public Object runSave() {
-                            JOptionPane.showMessageDialog(new JFrame(), JDLocale.L("installer.error.noWriteRights", "Error. You do not have permissions to write to the dir"));
-                            return null;
-                        }
-
-                    }.waitForEDT();
+                  
+                            UserIO.getInstance().requestMessageDialog( JDLocale.L("installer.error.noWriteRights", "Error. You do not have permissions to write to the dir"));
+                    
                     JDIO.removeDirectoryOrFile(JDUtilities.getResourceFile("config"));
                     System.exit(1);
                 }
 
             } else {
                 logger.severe("INSTALL abgebrochen2");
-                new GuiRunnable<Object>() {
-
-                    // @Override
-                    public Object runSave() {
-                        JOptionPane.showMessageDialog(new JFrame(), JDLocale.L("installer.abortInstallation", "Error. User aborted installation."));
-                        return null;
-                    }
-
-                }.waitForEDT();
+              
+                        UserIO.getInstance().requestMessageDialog( JDLocale.L("installer.abortInstallation", "Error. User aborted installation."));
+               
                 JDIO.removeDirectoryOrFile(JDUtilities.getResourceFile("config"));
                 System.exit(0);
 

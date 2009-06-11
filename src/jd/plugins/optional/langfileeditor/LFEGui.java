@@ -438,7 +438,10 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
             result[0] = result[0].toLowerCase();
             for (KeyInfo ki : data) {
                 if (ki.getKey().equals(result[0])) {
-                    JOptionPane.showMessageDialog(this, JDLocale.LF("plugins.optional.langfileeditor.addKey.error.message", "The key '%s' is already in use!", result[0]), JDLocale.L("plugins.optional.langfileeditor.addKey.error.title", "Duplicated key"), JOptionPane.ERROR_MESSAGE);
+                    
+                    UserIO.getInstance().requestConfirmDialog(UserIO.NO_CANCEL_OPTION,JDLocale.L("plugins.optional.langfileeditor.addKey.error.title", "Duplicated key"),  JDLocale.LF("plugins.optional.langfileeditor.addKey.error.message", "The key '%s' is already in use!", result[0]), UserIO.getInstance().getIcon(UserIO.ICON_ERROR), null, null);
+                    
+                 
                     return;
                 }
             }
@@ -761,13 +764,18 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
             File noUpdateFile = new File(file.getAbsolutePath() + ".noupdate");
             if (!noUpdateFile.exists()) noUpdateFile.createNewFile();
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, JDLocale.LF("plugins.optional.langfileeditor.save.error.message", "An error occured while writing the LanguageFile:\n%s", e.getMessage()), JDLocale.L("plugins.optional.langfileeditor.save.error.title", "Error!"), JOptionPane.ERROR_MESSAGE);
+            
+            UserIO.getInstance().requestConfirmDialog(UserIO.NO_CANCEL_OPTION,JDLocale.L("plugins.optional.langfileeditor.save.error.title", "Error!"), JDLocale.LF("plugins.optional.langfileeditor.save.error.message", "An error occured while writing the LanguageFile:\n%s", e.getMessage()), UserIO.getInstance().getIcon(UserIO.ICON_ERROR), null, null);
+            
+           
             return;
         }
 
         if (languageFile.getAbsolutePath() != cmboFile.getText()) cmboFile.setCurrentPath(languageFile);
         changed = false;
-        JOptionPane.showMessageDialog(this, JDLocale.L("plugins.optional.langfileeditor.save.success.message", "LanguageFile saved successfully!"), JDLocale.L("plugins.optional.langfileeditor.save.success.title", "Save successful!"), JOptionPane.INFORMATION_MESSAGE);
+        UserIO.getInstance().requestConfirmDialog(UserIO.NO_CANCEL_OPTION,JDLocale.L("plugins.optional.langfileeditor.save.success.title", "Save successful!"),JDLocale.L("plugins.optional.langfileeditor.save.success.message", "LanguageFile saved successfully!"), UserIO.getInstance().getIcon(UserIO.ICON_INFO), null, null);
+        
+
     }
 
     private void initLocaleDataComplete() {

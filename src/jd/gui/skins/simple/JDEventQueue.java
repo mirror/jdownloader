@@ -30,6 +30,7 @@ import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
+import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
@@ -93,7 +94,7 @@ public class JDEventQueue extends EventQueue {
                 lastPoint--;
                 break qh;
             } else if (e.getID() == MouseEvent.MOUSE_PRESSED && e.isControlDown() && e.isShiftDown()) {
-       
+
                 this.lastPoint = 2;
                 Point point = e.getPoint();
                 Component source = SimpleGUI.CURRENTGUI.getRealContentPane();
@@ -178,12 +179,16 @@ public class JDEventQueue extends EventQueue {
         MouseEvent e = (MouseEvent) ev;
         if (!e.isPopupTrigger()) { return; }
         if (e.getComponent() == null) return;
-        
+        Component c = null;
         Point point = e.getPoint();
-        Component source = SimpleGUI.CURRENTGUI.getRealContentPane();
-        point.x -= (source.getLocationOnScreen().x - SimpleGUI.CURRENTGUI.getLocationOnScreen().x);
-        point.y -= (source.getLocationOnScreen().y - SimpleGUI.CURRENTGUI.getLocationOnScreen().y);
-        Component c = SwingUtilities.getDeepestComponentAt(source, (int)point.getX(), (int)point.getY());
+        if (e.getSource() instanceof JDialog) {
+            c = SwingUtilities.getDeepestComponentAt((JDialog)e.getSource(), (int) point.getX(), (int) point.getY());
+        } else {
+            Component source = SimpleGUI.CURRENTGUI.getRealContentPane();
+            point.x -= (source.getLocationOnScreen().x - SimpleGUI.CURRENTGUI.getLocationOnScreen().x);
+            point.y -= (source.getLocationOnScreen().y - SimpleGUI.CURRENTGUI.getLocationOnScreen().y);
+             c = SwingUtilities.getDeepestComponentAt(source, (int) point.getX(), (int) point.getY());
+        }
         if (!(c instanceof JTextComponent)) { return; }
         if (MenuSelectionManager.defaultManager().getSelectedPath().length > 0) { return; }
         final JTextComponent t = (JTextComponent) c;

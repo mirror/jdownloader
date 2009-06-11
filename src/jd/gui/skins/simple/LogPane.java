@@ -33,6 +33,7 @@ import jd.controlling.JDLogHandler;
 import jd.controlling.JDLogger;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
+import jd.gui.UserIO;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.tasks.LogTaskPane;
@@ -101,9 +102,11 @@ public class LogPane extends JTabbedPanel implements ActionListener, ControlList
 
             if (content == null || content.length() == 0) return;
 
-            String name = JOptionPane.showInputDialog(this, JDLocale.L("gui.askName", "Your name?"));
+            String name = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN,JDLocale.L("userio.input.title", "Please enter!"), JDLocale.L("gui.askName", "Your name?"), null, null, null, null);
             if (name == null) return;
-            String question = JOptionPane.showInputDialog(this, JDLocale.L("gui.logger.askQuestion", "Please describe your Problem/Bug/Question!"));
+            String question = 
+                UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN, JDLocale.L("userio.input.title", "Please enter!"), JDLocale.L("gui.logger.askQuestion", "Please describe your Problem/Bug/Question!"), null, null, null, null);
+              
             if (question == null) return;
             SimpleGUI.CURRENTGUI.setWaiting(true);
             String url = Upload.toJDownloader(content, name + "\r\n\r\n" + question);
@@ -151,8 +154,9 @@ public class LogPane extends JTabbedPanel implements ActionListener, ControlList
             ArrayList<LogRecord> buff = JDLogHandler.getHandler().getBuffer();
             StringBuilder sb = new StringBuilder();
             for (LogRecord lr : buff) {
-//                if (lr.getLevel().intValue() >= JDLogger.getLogger().getLevel().intValue()) 
-                    sb.append(JDLogHandler.getHandler().getFormatter().format(lr));
+                // if (lr.getLevel().intValue() >=
+                // JDLogger.getLogger().getLevel().intValue())
+                sb.append(JDLogHandler.getHandler().getFormatter().format(lr));
             }
             logField.setText(sb.toString());
             SimpleGUI.CURRENTGUI.setWaiting(false);

@@ -71,8 +71,8 @@ import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlEvent;
 import jd.gui.JDLookAndFeelManager;
 import jd.gui.UIInterface;
+import jd.gui.UserIO;
 import jd.gui.skins.simple.components.ChartAPIEntity;
-import jd.gui.skins.simple.components.CountdownConfirmDialog;
 import jd.gui.skins.simple.components.HTMLDialog;
 import jd.gui.skins.simple.components.JHelpDialog;
 import jd.gui.skins.simple.components.JLinkButton;
@@ -101,7 +101,9 @@ import jd.gui.skins.simple.tasks.DownloadTaskPane;
 import jd.gui.skins.simple.tasks.LinkGrabberTaskPane;
 import jd.gui.skins.simple.tasks.LogTaskPane;
 import jd.gui.skins.simple.tasks.TaskPanel;
+import jd.gui.userio.dialog.ContainerDialog;
 import jd.nutils.Formatter;
+import jd.nutils.JDFlags;
 import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
 import jd.plugins.Account;
@@ -342,7 +344,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
         JPanel glass = new JPanel(new MigLayout("ins 0"));
         glass.add(startbutton, "gapleft 2,gaptop 2,alignx left,aligny top");
         glass.setOpaque(false);
-        this.setGlassPane(glass);
+       // this.setGlassPane(glass);
         glass.setVisible(true);
     }
 
@@ -847,14 +849,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
 
     public String showCountdownUserInputDialog(final String message, final String def) {
 
-        GuiRunnable<String> run = new GuiRunnable<String>() {
-
-            public String runSave() {
-                return new InputDialog(SimpleGUI.this, message, def).getInputText();
-            }
-
-        };
-        return run.getReturnValue();
+        return UserIO.getInstance().requestInputDialog(0, JDLocale.L("gui.userio.input.title", "Please enter!"), message, def, JDTheme.II("gui.images.config.tip", 32, 32), null, null);
 
     }
 
@@ -890,36 +885,25 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
     }
 
     public boolean showConfirmDialog(String message) {
-        return showConfirmDialog(message, "");
+       
+            return JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, JDLocale.L("userio.countdownconfirm", "Please confirm"), message, null, null, null), UserIO.RETURN_OK);
+       
 
     }
-
-    public boolean showConfirmDialog(final String message, final String title) {
-
-        GuiRunnable<Boolean> run = new GuiRunnable<Boolean>() {
-
-            // @Override
-            public Boolean runSave() {
-                Object[] options = { JDLocale.L("gui.btn_yes", "Yes"), JDLocale.L("gui.btn_no", "No") };
-                int n = JOptionPane.showOptionDialog(SimpleGUI.this, message, title, JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
-
-                return n == 0;
-            }
-        };
-
-        return run.getReturnValue();
+    public boolean showConfirmDialog(String string, String title) {
+      
+            return JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, title, string, null, null, null), UserIO.RETURN_OK);
+       
     }
 
     public boolean showCountdownConfirmDialog(final String string, final int sec) {
-        return new GuiRunnable<Boolean>() {
-            // @Override
-            public Boolean runSave() {
-                return CountdownConfirmDialog.showCountdownConfirmDialog(SimpleGUI.this, string, sec);
-
-            }
-
-        }.getReturnValue();
-
+        int cd = UserIO.getCountdownTime();
+        UserIO.setCountdownTime(sec);
+        try {
+            return JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(0, JDLocale.L("userio.countdownconfirm", "Please confirm"), string, JDTheme.II("gui.images.config.eventmanager", 32, 32), null, null), UserIO.RETURN_OK);
+        } finally {
+            UserIO.setCountdownTime(cd);
+        }
     }
 
     public int showHelpMessage(final String title, String message, final boolean toHTML, final String url, final String helpMsg, final int sec) {
@@ -963,7 +947,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
             // @Override
             public Object runSave() {
 
-                JOptionPane.showMessageDialog(SimpleGUI.this, string);
+                UserIO.getInstance().requestMessageDialog(string);
                 return null;
             }
 
@@ -1161,7 +1145,8 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
                     }
 
                 }
-                JOptionPane.showMessageDialog(SimpleGUI.this, panel, def, JOptionPane.INFORMATION_MESSAGE);
+                new ContainerDialog(UserIO.NO_CANCEL_OPTION, def, panel, null, null);
+               
 
                 return null;
             }
@@ -1238,5 +1223,6 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
 
         return new String[] { d.getPanel().getUserName(), new String(d.getPanel().getPassword()) };
     }
+
 
 }
