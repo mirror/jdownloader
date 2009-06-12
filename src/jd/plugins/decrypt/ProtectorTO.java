@@ -63,7 +63,7 @@ public class ProtectorTO extends PluginForDecrypt {
          */
         synchronized (lock) {
             if (param.getStringProperty("referer", null) != null) {
-                br.getHeaders().put("Referer", param.getStringProperty("referer", null));
+                //br.getHeaders().put("Referer", param.getStringProperty("referer", null));
             }
             if (param.getProperty("protector_cookies", null) != null) {
                 br.getCookies(this.getHost()).add((Cookies) param.getProperty("protector_cookies", null));
