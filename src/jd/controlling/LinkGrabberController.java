@@ -468,7 +468,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
         int lastPoint = name.lastIndexOf(".");
         if (lastPoint <= 0) return name;
         String extension = name.substring(name.length() - lastPoint + 1);
-        if (extension.length() > 0 && extension.length() < 6) {
+        if (extension.length() > 0 && lastPoint > 0) {
             name = name.substring(0, lastPoint);
         }
         return JDUtilities.removeEndingPoints(name);

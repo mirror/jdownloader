@@ -122,7 +122,7 @@ public class Reconnecter {
          * falls reconnect gewünscht ist und dieser erfolgreich eingestellt und
          * reconnects vorrang gegenüber reconnectfreie downloads haben soll
          */
-        if (hasWaittimeLinks && SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty("PARAM_DOWNLOAD_PREFER_RECONNECT", true) && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_LATEST_RECONNECT_RESULT, true)) return true;
+        if (hasWaittimeLinks && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true) && SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty("PARAM_DOWNLOAD_PREFER_RECONNECT", true) && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_LATEST_RECONNECT_RESULT, true)) return true;
         return false;
     }
 
