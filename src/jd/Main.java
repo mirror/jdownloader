@@ -424,7 +424,8 @@ public class Main {
         }
         LOGGER.info("init Configuration");
         Main.increaseSplashStatus();
-
+        WebUpdater.getConfig("WEBUPDATE").setProperty("BRANCH","1244836080516_testbin" );
+        WebUpdater.getConfig("WEBUPDATE").save();
         String old = SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getStringProperty("LOCALE", null);
         if (old != null) {
             SubConfiguration.getConfig(JDLocale.CONFIG).setProperty(JDLocale.LOCALE_ID, old);

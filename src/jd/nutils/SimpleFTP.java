@@ -31,6 +31,8 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.StringTokenizer;
 
+import jd.parser.Regex;
+
 /**
  * SimpleFTP is a simple package that implements a Java FTP client. With
  * SimpleFTP, you can connect to an FTP server and upload multiple files.
@@ -103,19 +105,33 @@ public class SimpleFTP {
         sendLine("PASS " + pass);
         response = readLine();
         if (!response.startsWith("230 ")) { throw new IOException("SimpleFTP was unable to log in with the supplied password: " + response); }
+        sendLine("PWD");
+        response = readLine();
+        if (!response.startsWith("257 ")) { throw new IOException("PWD COmmand not understood " + response); }
+
+        // Response: 257 "/" is the current directory
+        dir = new Regex(response, "\"(.*)\"").getMatch(0);
+        dir = dir;
         // Now logged in.
     }
 
     /**
-     * Changes the working directory (like cd). Returns true if successful.
+     * Changes the working directory (like cd). Returns true if
+     * successful.RELATIVE!!!
      */
     public synchronized boolean cwd(String dir) throws IOException {
         dir = dir.replaceAll("[\\\\|//]+?", "/");
         sendLine("CWD " + dir);
         String response = readLine();
         boolean ret = response.startsWith("250 ");
+        if (!ret) return ret;
         if (!dir.endsWith("/") && !dir.endsWith("\\")) dir += "/";
-        if (ret) this.dir = dir;
+        if (dir.startsWith("/")) {
+            this.dir = dir;
+        } else {
+            this.dir += dir;
+        }
+
         return ret;
     }
 
@@ -248,17 +264,28 @@ public class SimpleFTP {
         throw new IOException("SimpleFTP received bad data link information: " + response);
     }
 
+    /**
+     * creates directories
+     * 
+     * @param cw
+     * @return
+     * @throws IOException
+     */
     public boolean mkdir(String cw) throws IOException {
         String tmp = this.dir;
+        cw = cw.replace("\\", "/");
+        if (cw.startsWith(this.dir)) cw = cw.substring(this.dir.length());
         boolean ret = true;
         String ddir = tmp;
-        String[] dirs = cw.split("[\\\\]{1}");
+        String[] dirs = cw.split("[\\\\|/]{1}");
+
         for (String d : dirs) {
             if (d == null || d.trim().length() == 0) continue;
 
             sendLine("MKD " + d);
             String response = readLine();
             if (!response.startsWith("257 ") && !response.startsWith("550 ")) {
+
                 ret = false;
                 break;
             }
@@ -306,8 +333,11 @@ public class SimpleFTP {
         ftp.disconnect();
 
     }
+
     /**
-     * Uploades files to a remotefolder and downloads them again to check for transfer errors
+     * Uploades files to a remotefolder and downloads them again to check for
+     * transfer errors
+     * 
      * @param ip
      * @param port
      * @param user
@@ -316,7 +346,7 @@ public class SimpleFTP {
      * @param src
      * @throws IOException
      */
-    public static void uploadSecure(String ip, int port, String user, String password, String destfolder, File... src) throws IOException {
+    public static void uploadtoFolderSecure(String ip, int port, String user, String password, String destfolder, File... src) throws IOException {
 
         SimpleFTP ftp = new SimpleFTP();
         ftp.connect(ip, port, user, password);
@@ -324,16 +354,16 @@ public class SimpleFTP {
         ftp.cwd(destfolder);
         for (File f : src) {
             ftp.stor(f);
-            
+
             File dummy = File.createTempFile("simpleftp_secure", null);
-            
+
             ftp.download(f.getName(), dummy);
-            
-            if(!JDHash.getMD5(dummy).equalsIgnoreCase(JDHash.getMD5(f))){
-                throw new IOException("MD5 check failed for: "+f);
-            }else{
+
+            if (!JDHash.getMD5(dummy).equalsIgnoreCase(JDHash.getMD5(f))) {
+                throw new IOException("MD5 check failed for: " + f);
+            } else {
                 if (DEBUG) {
-                    System.out.println("---- MD5 OK: /" + ftp.getDir()+""+f.getName()+" -----");
+                    System.out.println("---- MD5 OK: /" + ftp.getDir() + "" + f.getName() + " -----");
                 }
             }
             dummy.delete();
@@ -344,6 +374,72 @@ public class SimpleFTP {
 
     }
 
+    public static void uploadSecure(String ip, int port, String user, String password, String destfolder, File root, File... list) throws IOException {
+        SimpleFTP ftp = new SimpleFTP();
+        ftp.connect(ip, port, user, password);
+        ftp.bin();
+
+        for (File f : list) {
+            if (!f.getAbsolutePath().startsWith(root.getAbsolutePath())) { throw new IOException(f + " is not part of " + root); }
+            String subfolder = f.getParentFile().getAbsolutePath().replace(root.getAbsolutePath(), "");
+            if (!ftp.cwd(mergeFolders(destfolder, subfolder))) {
+                ftp.mkdir(mergeFolders(destfolder, subfolder));
+                if (!ftp.cwd(mergeFolders(destfolder, subfolder))) { throw new IOException("Unexpected error"); }
+            }
+
+            File dummy = File.createTempFile("simpleftp_secure", null);
+            try {
+                ftp.download(f.getName(), dummy);
+                if (JDHash.getMD5(dummy).equalsIgnoreCase(JDHash.getMD5(f))) {
+                    if (DEBUG) {
+                        System.out.println("---- Skip .MD5 ok: " + ftp.getDir() + "" + f.getName() + " -----");
+                    }
+                    continue;
+
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            dummy.delete();
+            ftp.stor(f);
+
+            ftp.download(f.getName(), dummy);
+
+            if (!JDHash.getMD5(dummy).equalsIgnoreCase(JDHash.getMD5(f))) {
+                throw new IOException("MD5 check failed for: " + f);
+            } else {
+                if (DEBUG) {
+                    System.out.println("---- MD5 OK: /" + ftp.getDir() + "" + f.getName() + " -----");
+                }
+            }
+            dummy.delete();
+        }
+
+        // Quit from the FTP server.
+        ftp.disconnect();
+
+    }
+
+    /**
+     * m,erges to folderparts and takes care that there is no double "/"
+     * 
+     * @param dirs
+     * @return
+     */
+    private static String mergeFolders(String... dirs) {
+        String res = dirs[0];
+
+        for (int i = 1; i < dirs.length; i++) {
+            while (res.endsWith("/") || res.endsWith("\\"))
+                res = res.substring(0, res.length() - 1);
+            while (dirs[i].startsWith("/") || dirs[i].startsWith("\\"))
+                dirs[i] = dirs[i].substring(1);
+            res += "/" + dirs[i];
+
+        }
+        return res;
+
+    }
 
     public void download(String filename, File file) throws IOException {
         InetSocketAddress pasv = pasv();

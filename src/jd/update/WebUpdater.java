@@ -68,6 +68,7 @@ public class WebUpdater implements Serializable {
 
     private Browser br;
     private File workingdir;
+    private String[] branches;
 
     public File getWorkingdir() {
         return workingdir;
@@ -213,6 +214,34 @@ public class WebUpdater implements Serializable {
         return ret;
     }
 
+    /**
+     * loads branches.lst from a random (0-2) updateserver.
+     * 
+     * @return
+     */
+    private String[] getBranches() {
+        ArrayList<String> updateMirror = new ArrayList<String>();
+        updateMirror.add("http://update0.jdownloader.org/");
+        updateMirror.add("http://update1.jdownloader.org/");
+        updateMirror.add("http://update2.jdownloader.org/");
+
+        for (int i = 0; i < 3; i++) {
+            String serv = updateMirror.remove((int) (Math.random() * 2));
+            try {
+                br.getPage(serv + "branches.lst");
+                if (br.getRequest().getHttpConnection().isOK()) {
+                    this.branches = Regex.getLines(br.toString());
+                    System.out.println("Found branches on " + serv + ":\r\n" + br);
+                    return branches;
+                }
+            } catch (Exception e) {
+
+            }
+            System.err.println("No branches found on " + serv);
+        }
+        return null;
+    }
+
     public boolean isIgnorePlugins() {
         return ignorePlugins;
     }
@@ -227,7 +256,7 @@ public class WebUpdater implements Serializable {
         } else {
             trycount = trycount % ServerPool;
         }
-        return "http://update" + trycount + ".jdownloader.org/update.zip";
+        return "http://update" + trycount + ".jdownloader.org/" + getBranch() + "_update.zip";
     }
 
     private String getZipMD5(int trycount) {
@@ -236,7 +265,7 @@ public class WebUpdater implements Serializable {
         } else {
             trycount = trycount % ServerPool;
         }
-        return "http://update" + trycount + ".jdownloader.org/update.md5";
+        return "http://update" + trycount + ".jdownloader.org/" + getBranch() + "_update.md5";
     }
 
     private void loadUpdateList() throws Exception {
@@ -272,7 +301,36 @@ public class WebUpdater implements Serializable {
         } else {
             trycount = trycount % ServerPool;
         }
-        return "http://update" + trycount + ".jdownloader.org/server.list";
+        return "http://update" + trycount + ".jdownloader.org/" + getBranch() + "_server.list";
+    }
+
+    /**
+     * Returns the current branch
+     * 
+     * @return
+     */
+    public String getBranch() {
+        String latestBranch = getLatestBranch();
+
+        String ret = WebUpdater.getConfig("WEBUPDATE").getStringProperty("BRANCH", latestBranch);
+
+        WebUpdater.getConfig("WEBUPDATE").setProperty("BRANCHINUSE", ret);
+        WebUpdater.getConfig("WEBUPDATE").save();
+        return ret;
+    }
+
+    /**
+     * loads branches.lst and returns the latest branch
+     * 
+     * @return
+     */
+    private synchronized String getLatestBranch() {
+        if (branches == null) {
+            this.getBranches();
+        }
+        if (branches == null || branches.length == 0) return null;
+
+        return branches[0];
     }
 
     private ArrayList<Server> updateAvailableServers() {

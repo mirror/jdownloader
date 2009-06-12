@@ -38,9 +38,6 @@ import jd.controlling.JDLogger;
 import jd.gui.skins.simple.components.TextAreaDialog;
 import jd.http.Browser;
 import jd.http.Encoding;
-import jd.http.URLConnectionAdapter;
-import jd.http.requests.FormData;
-import jd.http.requests.PostFormDataRequest;
 import jd.nutils.JDHash;
 import jd.nutils.SimpleFTP;
 import jd.nutils.io.JDIO;
@@ -61,38 +58,50 @@ public class Updater {
     public static void main(String[] args) throws Exception {
 
         Updater upd = new Updater();
-
-      
-
+//        WebUpdater.getConfig("WEBUPDATE").setProperty("BRANCH","bin" );
         System.out.println("STATUS: Webupdate");
         upd.webupdate();
         // System.out.println("STATUS: Webupdate ende");
         // System.out.println("STATUS: Scan local");
-        upd.lockUpdate();
+        // upd.lockUpdate();
         upd.removeFileOverhead();
         // if (JOptionPane.showConfirmDialog(upd.getFrame(), "SVN UPdate") ==
         // JOptionPane.OK_OPTION) {
         // System.out.println("STATUS: update svn");
         // upd.updateSource();
         // }
-//        System.out.println("STATUS: move plugins");
-//        upd.movePlugins(getCFG("plugins_dir"));
-//        upd.moveJars(getCFG("dist_dir"));
-//        // // System.out.println("STATUS: FINISHED");
-//       ArrayList<File> list = upd.getFileList();
-//        //
-//        upd.upload(list);
-//        //
-//        upd.merge();
-//        upd.checkHashes();
-//        upd.clone0();
-//        upd.clone2();
+        System.out.println("STATUS: move plugins");
+        upd.movePlugins(getCFG("plugins_dir"));
+        upd.moveJars(getCFG("dist_dir"));
+        // // // System.out.println("STATUS: FINISHED");
+
+        String id = upd.createBranch(System.currentTimeMillis() + "_testbin");
+
+        ArrayList<File> list = upd.getFileList();
+        // //
+        upd.upload(list);
+        // //
+        upd.merge();
+        // upd.checkHashes();
+        // upd.clone0(upd.branch);
+        // upd.clone2();
         // upd.clonebluehost2();
         upd.uploadHashList();
-//         upd.spread(list);
+        // upd.spread(list);
 
         System.exit(0);
     }
+
+    private String branch;
+
+    private String createBranch(String id) throws IOException {
+        this.branch = id;
+ 
+        String ret = new Browser().getPage(UPDATE_SERVER + "createBranch.php?pass=" + getCFG("updateHashPW") + "&parent=" + latestBranch + "&branch=" + id);
+        System.out.println(ret);
+        return id;
+    }
+
     private File pluginsDir;
 
     private WebUpdater webupdater;
@@ -103,8 +112,12 @@ public class Updater {
     private static String UPDATE_SUB_SRC = "exclude_jd_src";
     private File updateDir;
     private File svn;
-
+    private static String UPDATE_SERVER = "http://update1.jdownloader.org/";
     private File jars;
+
+    private boolean uploadaddons;
+
+    private String latestBranch;
 
     public Updater() throws IOException, SVNException {
         workingDir = new File(".").getCanonicalFile();
@@ -137,8 +150,6 @@ public class Updater {
         return ret;
     }
 
-
-
     private void clonebluehost2() throws IOException {
         HashMap<String, String> map = createHashList(this.workingDir);
         Browser br = new Browser();
@@ -168,16 +179,17 @@ public class Updater {
         copyDirectory(new File(jars.getParentFile(), "ressourcen\\pluginressourcen\\106__JDShutdown"), this.updateDir);
         copyDirectory(new File(jars.getParentFile(), "ressourcen\\pluginressourcen\\100__JDChat"), this.updateDir);
     }
-   
-    private void clone2() throws IOException {
+
+    private void clone2(String branch) throws IOException {
         HashMap<String, String> map = createHashList(this.workingDir);
         Browser br = new Browser();
         br.forceDebug(true);
 
         map.put("pass", getCFG("updateHashPW"));
 
-        br.postPage("http://update2.jdownloader.org/clone.php?pass=" + getCFG("updateHashPW"), map);
+        br.postPage("http://update2.jdownloader.org/clone.php?pass=" + getCFG("updateHashPW") + "&branch=" + branch, map);
         System.out.println(br + "");
+        map = map;
         if (!br.containsHTML("<b>fail</b>") && !br.containsHTML("<b>Warning</b>") && !br.containsHTML("<b>Error</b>")) {
             System.out.println("CLONE update2 OK");
             return;
@@ -187,17 +199,18 @@ public class Updater {
 
     }
 
-    private void clone0() throws IOException {
+    private void clone0(String branch) throws IOException {
         HashMap<String, String> map = createHashList(this.workingDir);
         Browser br = new Browser();
         br.forceDebug(true);
 
         map.put("pass", getCFG("updateHashPW"));
 
-        br.postPage("http://update0.jdownloader.org/clone.php?pass=" + getCFG("updateHashPW"), map);
+        br.postPage("http://update0.jdownloader.org/clone.php?pass=" + getCFG("updateHashPW") + "&branch=" + branch, map);
         System.out.println(br + "");
+        map = map;
         if (!br.containsHTML("<b>fail</b>") && !br.containsHTML("<b>Warning</b>") && !br.containsHTML("<b>Error</b>")) {
-            System.out.println("CLONE update2 OK");
+            System.out.println("CLONE update0 OK");
             return;
         }
 
@@ -205,14 +218,17 @@ public class Updater {
 
     }
 
-    private void lockUpdate() throws IOException {
-        Browser br = new Browser();
-        br.forceDebug(true);
-        System.out.println(br.getPage("http://update0.jdownloader.org/lock.php?pass=" + getCFG("server_pass")));
-        System.out.println(br.getPage("http://update1.jdownloader.org/lock.php?pass=" + getCFG("server_pass")));
-        System.out.println(br.getPage("http://update2.jdownloader.org/lock.php?pass=" + getCFG("server_pass")));
-
-    }
+    // private void lockUpdate() throws IOException {
+    // Browser br = new Browser();
+    // br.forceDebug(true);
+    // System.out.println(br.getPage("http://update0.jdownloader.org/lock.php?pass="
+    // + getCFG("server_pass")));
+    // System.out.println(br.getPage("http://update1.jdownloader.org/lock.php?pass="
+    // + getCFG("server_pass")));
+    // System.out.println(br.getPage("http://update2.jdownloader.org/lock.php?pass="
+    // + getCFG("server_pass")));
+    //
+    // }
 
     /**
      * TODO spreadinglist wird online nicht verabeitet
@@ -241,7 +257,6 @@ public class Updater {
             e.printStackTrace();
         }
 
-        
         System.out.println("Spread ok");
     }
 
@@ -269,19 +284,19 @@ public class Updater {
             br.forceDebug(true);
             StringBuilder serverList = new StringBuilder();
 
-            serverList.append("-1:http://update0.jdownloader.org/bin/\r\n");
-            serverList.append("-1:http://update4ex.jdownloader.org/\r\n");
-            serverList.append("-1:http://jdupdate.bluehost.to/nupd/\r\n");
-            // serverList.append("-1:http://update1.jdownloader.org/bin/\r\n");
-            serverList.append("-1:http://update2.jdownloader.org/bin/\r\n");
-            br.postPage("http://update1.jdownloader.org/unlock.php?pass=" + getCFG("updateHashPW"), "server=" + serverList.toString());
+            serverList.append("-1:http://update0.jdownloader.org/" + branch + "/\r\n");
+            serverList.append("-1:http://update4ex.jdownloader.org/" + branch + "/\r\n");
+            serverList.append("-1:http://jdupdate.bluehost.to/" + branch + "/\r\n");
+            // serverList.append("-1:http://update1.jdownloader.org/"+branch+"/\r\n");
+            serverList.append("-1:http://update2.jdownloader.org/" + branch + "/\r\n");
+            System.out.println(br.postPage("http://update1.jdownloader.org/unlock.php?pass=" + getCFG("updateHashPW") + "&branch=" + branch, "server=" + serverList.toString()));
             map.put("pass", getCFG("updateHashPW"));
-       
-
+            // map = map;
             String addonlist = createAddonList();
             map.put("addonlist", Encoding.urlEncode(addonlist));
-            br.postPage("http://update1.jdownloader.org/updateHashList.php?pass=" + getCFG("updateHashPW"), map);
+            br.postPage("http://update1.jdownloader.org/updateHashList.php?pass=" + getCFG("updateHashPW") + "&branch=" + branch, map);
             System.out.println(br + "");
+            br = br;
             if (br.containsHTML("success") && !br.containsHTML("<b>Warning</b>") && !br.containsHTML("<b>Error</b>")) break;
 
             JOptionPane.showConfirmDialog(frame, "MD5 ERROR!!!! See log");
@@ -291,6 +306,17 @@ public class Updater {
     private String createAddonList() throws Exception {
         File file = new File(getCFG("addon_dir"));
         StringBuilder sb = new StringBuilder();
+        uploadaddons = JOptionPane.showConfirmDialog(frame, "Upload addons?") == JOptionPane.OK_OPTION;
+
+        if (!uploadaddons) {
+
+            if (new File(this.workingDir, "addonlist.lst").exists()) {
+                return JDIO.getLocalFile(new File(this.workingDir, "addonlist.lst"));
+            } else {
+                return "";
+            }
+
+        }
         sb.append("<packages>\r\n");
         for (File addon : file.listFiles()) {
 
@@ -314,6 +340,7 @@ public class Updater {
         }
 
         sb.append("</packages>");
+        JDIO.writeLocalFile(new File(this.workingDir, "addonlist.lst"), sb.toString());
         System.out.println(sb);
         return sb.toString();
     }
@@ -334,7 +361,7 @@ public class Updater {
         Zip zip = new Zip(files, des);
         zip.setExcludeFilter(Pattern.compile("\\.svn", Pattern.CASE_INSENSITIVE));
         zip.zip();
-        SimpleFTP.uploadSecure("update2.jdownloader.org", 2121, getCFG("update2_ftp_user"), getCFG("update2_ftp_pass"), "/http/addons", des);
+        SimpleFTP.uploadtoFolderSecure("update2.jdownloader.org", 2121, getCFG("update2_ftp_user"), getCFG("update2_ftp_pass"), "/http/addons", des);
         sb.append("    <package>\r\n");
         for (Iterator<Entry<Object, Object>> it = info.entrySet().iterator(); it.hasNext();) {
             Entry<Object, Object> next = it.next();
@@ -354,7 +381,7 @@ public class Updater {
                 br.openGetConnection("http://update2.jdownloader.org/addons/" + des.getName());
 
                 sb.append("          <filesize>" + br.getRequest().getContentLength() + "</filesize>\r\n");
-                sb.append("          <md5>" + JDHash.getMD5(addon) + "</md5>\r\n");
+                sb.append("          <md5>" + JDHash.getMD5(des) + "</md5>\r\n");
                 sb.append("          <responseCode>" + br.getRequest().getHttpConnection().getResponseCode() + "</responseCode>\r\n");
                 br.getRequest().getHttpConnection().disconnect();
             }
@@ -411,55 +438,9 @@ public class Updater {
      * @throws IOException
      */
     private boolean upload(ArrayList<File> list) throws IOException {
-        Browser br = new Browser();
-        System.out.println("Starting upload: " + list.size() + " files");
-        br.forceDebug(true);
-        PostFormDataRequest request = (PostFormDataRequest) br.createPostFormDataRequest("http://update1.jdownloader.org/upload.php");
-        int i = 0;
-        request.addFormData(new FormData("fileNum", list.size() + ""));
-        request.addFormData(new FormData("pass", getCFG("server_pass") + ""));
-        for (File f : list) {
-            if (i > 10) {
-                URLConnectionAdapter con = br.openRequestConnection(request);
-                String res = br.loadConnection(con);
-                if (res.contains("hash failed") || res.contains("Forbidden") || res.contains("Warning</b>") || res.contains("Error</b>")) {
-                    System.err.println("Error uploading: " + res);
-                    return false;
-                } else {
-                    System.out.println(res);
 
-                }
+        SimpleFTP.uploadSecure("update1.jdownloader.org", 2121, getCFG("update1_ftp_user"), getCFG("update1_ftp_pass"), "/http/" + this.branch, updateDir, list.toArray(new File[] {}));
 
-                request = (PostFormDataRequest) br.createPostFormDataRequest("http://update1.jdownloader.org/upload.php");
-                i = 0;
-                request.addFormData(new FormData("fileNum", list.size() + ""));
-                request.addFormData(new FormData("pass", getCFG("server_pass") + ""));
-            }
-            String newFile = f.getAbsolutePath().replace(updateDir.getAbsolutePath(), "");
-            newFile = newFile.replace("\\", "/");
-            if (newFile.trim().length() == 0) continue;
-            i++;
-            if (f.isDirectory()) {
-
-                request.addFormData(new FormData("path_" + i, newFile));
-
-            } else {
-                request.addFormData(new FormData("file_" + i, f.getName(), f));
-                request.addFormData(new FormData("path_" + i, newFile));
-                request.addFormData(new FormData("hash_" + i, JDHash.getMD5(f)));
-            }
-        }
-
-        URLConnectionAdapter con = br.openRequestConnection(request);
-        String res = br.loadConnection(con);
-        if (res.contains("hash failed") || res.contains("Forbidden") || res.contains("Warning</b>") || res.contains("Error</b>")) {
-            System.err.println("Error uploading: " + res);
-            return false;
-        } else {
-            System.out.println(res);
-
-        }
-        System.out.println("Succeded hashes ok");
         return true;
 
     }
@@ -474,6 +455,8 @@ public class Updater {
      * @return
      */
     private ArrayList<File> getFileList() {
+
+        System.out.println("Demerge updatelist");
         ArrayList<File> listUpdate = this.getLocalFileList(this.updateDir, true);
         listUpdate.remove(0);
         ArrayList<File> listLocal = this.getLocalFileList(this.workingDir, false);
@@ -499,6 +482,7 @@ public class Updater {
                 }
             }
         }
+        System.out.println("Demerge updatelist finished: " + listUpdate.size() + " files");
         return listUpdate;
     }
 
@@ -711,7 +695,7 @@ public class Updater {
             webupdater.setWorkingdir(workingDir);
             webupdater.setOSFilter(false);
             remoteFileList = webupdater.getAvailableFiles();
-
+            latestBranch = webupdater.getBranch();
             ArrayList<FileUpdate> update = (ArrayList<FileUpdate>) remoteFileList.clone();
             webupdater.filterAvailableUpdates(update);
             System.out.println("UPdate: " + update);
