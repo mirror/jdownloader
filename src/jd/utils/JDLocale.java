@@ -182,7 +182,7 @@ public class JDLocale {
 
     public static void setLocale(String lID) {
         // if (data != null && localeFile != null) return;
-
+        lID = correctLID(lID);
         localeID = lID;
         System.out.println("Loaded language: " + lID);
         localeFile = JDUtilities.getResourceFile(LANGUAGES_DIR + localeID + ".lng");
@@ -192,6 +192,42 @@ public class JDLocale {
             System.out.println("Language " + localeID + " not installed");
             return;
         }
+    }
+
+    /**
+     * Due to languagefile correction, it may be possible that user have
+     * language IDs stored that are not available any more.
+     * 
+     * @param lID
+     * @return
+     */
+    private static String correctLID(String lID) {
+        if (lID.equalsIgnoreCase("Chinese(traditionalbig5)")) {
+            lID = "Chinese (traditionalbig5)";
+            SubConfiguration.getConfig(JDLocale.CONFIG).setProperty(JDLocale.LOCALE_ID, lID);
+        }
+        if (lID.equalsIgnoreCase("Italiano")) {
+            lID = "Italian";
+            SubConfiguration.getConfig(JDLocale.CONFIG).setProperty(JDLocale.LOCALE_ID, lID);
+        }
+        if (lID.equalsIgnoreCase("Nederlands")) {
+            lID = "Dutch";
+            SubConfiguration.getConfig(JDLocale.CONFIG).setProperty(JDLocale.LOCALE_ID, lID);
+        }
+        if (lID.equalsIgnoreCase("Polski")) {
+            lID = "Polish";
+            SubConfiguration.getConfig(JDLocale.CONFIG).setProperty(JDLocale.LOCALE_ID, lID);
+        }
+        if (lID.equalsIgnoreCase("Portugues(brazil)")) {
+            lID = "Portuguese (brazil)";
+            SubConfiguration.getConfig(JDLocale.CONFIG).setProperty(JDLocale.LOCALE_ID, lID);
+        }
+        if (lID.equalsIgnoreCase("arabic")) {
+            lID = "Arabian";
+            SubConfiguration.getConfig(JDLocale.CONFIG).setProperty(JDLocale.LOCALE_ID, lID);
+        }
+        return lID;
+
     }
 
     public static void initLocalisation() {

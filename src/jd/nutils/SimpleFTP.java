@@ -386,33 +386,36 @@ public class SimpleFTP {
                 ftp.mkdir(mergeFolders(destfolder, subfolder));
                 if (!ftp.cwd(mergeFolders(destfolder, subfolder))) { throw new IOException("Unexpected error"); }
             }
-
-            File dummy = File.createTempFile("simpleftp_secure", null);
-            try {
-                ftp.download(f.getName(), dummy);
-                if (JDHash.getMD5(dummy).equalsIgnoreCase(JDHash.getMD5(f))) {
-                    if (DEBUG) {
-                        System.out.println("---- Skip .MD5 ok: " + ftp.getDir() + "" + f.getName() + " -----");
-                    }
-                    continue;
-
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            dummy.delete();
-            ftp.stor(f);
-
-            ftp.download(f.getName(), dummy);
-
-            if (!JDHash.getMD5(dummy).equalsIgnoreCase(JDHash.getMD5(f))) {
-                throw new IOException("MD5 check failed for: " + f);
+            if (f.isDirectory()) {
+                ftp.mkdir(f.getName());
             } else {
-                if (DEBUG) {
-                    System.out.println("---- MD5 OK: /" + ftp.getDir() + "" + f.getName() + " -----");
+                File dummy = File.createTempFile("simpleftp_secure", null);
+                try {
+                    ftp.download(f.getName(), dummy);
+                    if (JDHash.getMD5(dummy).equalsIgnoreCase(JDHash.getMD5(f))) {
+                        if (DEBUG) {
+                            System.out.println("---- Skip .MD5 ok: " + ftp.getDir() + "" + f.getName() + " -----");
+                        }
+                        continue;
+
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
+                dummy.delete();
+                ftp.stor(f);
+
+                ftp.download(f.getName(), dummy);
+
+                if (!JDHash.getMD5(dummy).equalsIgnoreCase(JDHash.getMD5(f))) {
+                    throw new IOException("MD5 check failed for: " + f);
+                } else {
+                    if (DEBUG) {
+                        System.out.println("---- MD5 OK: /" + ftp.getDir() + "" + f.getName() + " -----");
+                    }
+                }
+                dummy.delete();
             }
-            dummy.delete();
         }
 
         // Quit from the FTP server.

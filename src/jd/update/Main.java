@@ -23,6 +23,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.logging.Level;
 
 import javax.swing.JComponent;
 import javax.swing.JFrame;
@@ -36,7 +37,6 @@ import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.UIManager.LookAndFeelInfo;
 import javax.swing.border.EmptyBorder;
 
-import jd.JDInitFlags;
 import jd.config.SubConfiguration;
 import jd.gui.UserIO;
 import jd.http.Browser;
@@ -96,7 +96,7 @@ public class Main {
                     OSFilter = false;
                 } else if (p.trim().equalsIgnoreCase("-brdebug")) {
                     Browser.setVerbose(true);
-                    JDInitFlags.SWITCH_DEBUG = true;
+                  
                 } else if (p.trim().equalsIgnoreCase("-branch")) {
                     String br = args[++i];
                     if (br.equalsIgnoreCase("reset")) br = null;

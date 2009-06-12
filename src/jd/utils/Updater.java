@@ -58,23 +58,19 @@ public class Updater {
     public static void main(String[] args) throws Exception {
 
         Updater upd = new Updater();
-//        WebUpdater.getConfig("WEBUPDATE").setProperty("BRANCH","bin" );
+        // WebUpdater.getConfig("WEBUPDATE").setProperty("BRANCH","bin" );
         System.out.println("STATUS: Webupdate");
         upd.webupdate();
         // System.out.println("STATUS: Webupdate ende");
         // System.out.println("STATUS: Scan local");
         // upd.lockUpdate();
         upd.removeFileOverhead();
-        // if (JOptionPane.showConfirmDialog(upd.getFrame(), "SVN UPdate") ==
-        // JOptionPane.OK_OPTION) {
-        // System.out.println("STATUS: update svn");
-        // upd.updateSource();
-        // }
+
         System.out.println("STATUS: move plugins");
         upd.movePlugins(getCFG("plugins_dir"));
         upd.moveJars(getCFG("dist_dir"));
         // // // System.out.println("STATUS: FINISHED");
-
+        upd.cleanUp();
         String id = upd.createBranch(System.currentTimeMillis() + "_testbin");
 
         ArrayList<File> list = upd.getFileList();
@@ -82,9 +78,9 @@ public class Updater {
         upd.upload(list);
         // //
         upd.merge();
-        // upd.checkHashes();
-        // upd.clone0(upd.branch);
-        // upd.clone2();
+        upd.checkHashes();
+        upd.clone0(upd.branch);
+        upd.clone2(upd.branch);
         // upd.clonebluehost2();
         upd.uploadHashList();
         // upd.spread(list);
@@ -92,11 +88,26 @@ public class Updater {
         System.exit(0);
     }
 
+    private void cleanUp() {
+        String[] outdated = Regex.getLines(JDIO.getLocalFile(new File(this.updateDir, "outdated.dat")));
+
+        for (String path : outdated) {
+            if (new File(this.workingDir, path).exists()) {
+                new File(this.workingDir, path).delete();
+                System.err.println(" CLEAN UP: " + new File(this.workingDir, path).getAbsolutePath());
+            }
+            if (new File(this.updateDir, path).exists()) {
+                new File(this.updateDir, path).delete();
+                System.err.println(" CLEAN UP: " + new File(this.updateDir, path).getAbsolutePath());
+            }
+        }
+    }
+
     private String branch;
 
     private String createBranch(String id) throws IOException {
         this.branch = id;
- 
+
         String ret = new Browser().getPage(UPDATE_SERVER + "createBranch.php?pass=" + getCFG("updateHashPW") + "&parent=" + latestBranch + "&branch=" + id);
         System.out.println(ret);
         return id;
@@ -178,6 +189,11 @@ public class Updater {
         copyDirectory(new File(jars.getParentFile(), "ressourcen\\pluginressourcen\\123__JDUnrar"), this.updateDir);
         copyDirectory(new File(jars.getParentFile(), "ressourcen\\pluginressourcen\\106__JDShutdown"), this.updateDir);
         copyDirectory(new File(jars.getParentFile(), "ressourcen\\pluginressourcen\\100__JDChat"), this.updateDir);
+
+        copyDirectory(new File(jars.getParentFile(), "ressourcen\\jd"), new File(this.updateDir, "jd"));
+        copyDirectory(new File(jars.getParentFile(), "ressourcen\\tools"), new File(this.updateDir, "tools"));
+        copyDirectory(new File(jars.getParentFile(), "ressourcen\\libs"), new File(this.updateDir, "libs"));
+
     }
 
     private void clone2(String branch) throws IOException {
@@ -268,7 +284,7 @@ public class Updater {
 
             map.put("pass", getCFG("updateHashPW"));
 
-            br.postPage("http://update1.jdownloader.org/checkHashes.php", map);
+            br.postPage("http://update1.jdownloader.org/checkHashes.php?pass=" + getCFG("updateHashPW") + "&branch=" + branch, map);
             System.out.println(br + "");
             if (br.containsHTML("success") && !br.containsHTML("<b>Warning</b>") && !br.containsHTML("<b>Error</b>")) break;
 
@@ -355,9 +371,11 @@ public class Updater {
             }
 
         });
+        Subversion svn = new Subversion("https://www.syncom.org/svn/jdownloader/");
+        SVNDirEntry svnInfo = svn.getRepository().info("/trunk/ressourcen/pluginressourcen/" + addon.getName(), svn.latestRevision());
 
         File des = File.createTempFile("test", ".jdu");
-        des = new File(des.getParentFile(), info.getProperty("filename"));
+        des = new File(des.getParentFile(), svnInfo.getRevision() + "_" + info.getProperty("filename"));
         Zip zip = new Zip(files, des);
         zip.setExcludeFilter(Pattern.compile("\\.svn", Pattern.CASE_INSENSITIVE));
         zip.zip();
@@ -366,8 +384,6 @@ public class Updater {
         for (Iterator<Entry<Object, Object>> it = info.entrySet().iterator(); it.hasNext();) {
             Entry<Object, Object> next = it.next();
             if (next.getKey().toString().equalsIgnoreCase("version")) {
-                Subversion svn = new Subversion("https://www.syncom.org/svn/jdownloader/");
-                SVNDirEntry svnInfo = svn.getRepository().info("/trunk/ressourcen/pluginressourcen/" + addon.getName(), svn.latestRevision());
                 next.setValue(svnInfo.getRevision());
 
                 sb.append("          <lastAuthor>" + svnInfo.getAuthor() + "</lastAuthor>\r\n");
@@ -466,21 +482,16 @@ public class Updater {
             String newFile = file.getAbsolutePath().replace(updateDir.getAbsolutePath(), "");
             newFile = newFile.replace("\\", "/");
             if (newFile.trim().length() == 0) continue;
+          
 
-            for (File rf : listLocal) {
-                String localFile = rf.getAbsolutePath().replace(workingDir.getAbsolutePath(), "");
-                localFile = localFile.replace("\\", "/");
-                if (localFile.trim().length() == 0) continue;
-                if (localFile.equalsIgnoreCase(newFile)) {
-                    String localHash = JDHash.getMD5(rf);
-                    if (localHash == newHash || localHash.equalsIgnoreCase(newHash)) {
-                        it.remove();
-                        continue main;
-                    } else {
-                        System.out.println("Update: " + rf);
-                    }
-                }
+            File localFile = new File(workingDir, newFile);
+            String localHash = JDHash.getMD5(localFile);
+            if (localHash != null && localHash.equalsIgnoreCase(newHash)) {
+                it.remove();
+                continue main;
             }
+
+            System.out.println("Update: " + localFile);
         }
         System.out.println("Demerge updatelist finished: " + listUpdate.size() + " files");
         return listUpdate;
@@ -528,9 +539,10 @@ public class Updater {
      */
     public void copyDirectory(File srcPath, File dstPath) throws IOException {
         if (srcPath.getAbsolutePath().contains(".svn")) return;
-        System.out.println("Copy " + srcPath + " -> " + dstPath);
+
         if (srcPath.isDirectory()) {
             if (!dstPath.exists()) {
+                System.out.println("Create Dir" + dstPath);
                 dstPath.mkdir();
             }
             String files[] = srcPath.list();
@@ -650,29 +662,25 @@ public class Updater {
          * rest move
          * 
          */
-        // for (String path : remRequested) {
-        // File f = new File(path);
-        // if (f.exists()) {
-        // String newPath = path.replace(workingDir.getAbsolutePath(),
-        // this.updateDir.getAbsolutePath());
-        // File newFile = new File(newPath);
-        // if (newFile.exists() && newFile.lastModified() >= f.lastModified()) {
-        // System.out.println("Removed " + path + "(newer file in " +
-        // updateDir.getAbsolutePath());
-        // f.delete();
-        // } else if (newFile.exists()) {
-        // System.out.println("Rename " + path + "-->" + newPath +
-        // "(newer file in " + workingDir.getAbsolutePath());
-        // newFile.delete();
-        // f.renameTo(newFile);
-        // } else {
-        // System.out.println("Move " + path + "->" +
-        // newFile.getAbsolutePath());
-        // f.renameTo(newFile);
-        // }
-        // }
-        //
-        // }
+        for (String path : remRequested) {
+            File f = new File(path);
+            if (f.exists()) {
+                String newPath = path.replace(workingDir.getAbsolutePath(), this.updateDir.getAbsolutePath());
+                File newFile = new File(newPath);
+                if (newFile.exists() && newFile.lastModified() >= f.lastModified()) {
+                    System.out.println("Removed " + path + "(newer file in " + updateDir.getAbsolutePath());
+                    f.delete();
+                } else if (newFile.exists()) {
+                    System.out.println("Rename " + path + "-->" + newPath + "(newer file in " + workingDir.getAbsolutePath());
+                    newFile.delete();
+                    f.renameTo(newFile);
+                } else {
+                    System.out.println("Move " + path + "->" + newFile.getAbsolutePath());
+                    f.renameTo(newFile);
+                }
+            }
+
+        }
     }
 
     private void initGUI() {

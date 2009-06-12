@@ -226,7 +226,7 @@ public class WebUpdater implements Serializable {
         updateMirror.add("http://update2.jdownloader.org/");
 
         for (int i = 0; i < 3; i++) {
-            String serv = updateMirror.remove((int) (Math.random() * 2));
+            String serv = updateMirror.remove((int) (Math.random() * (2-i)));
             try {
                 br.getPage(serv + "branches.lst");
                 if (br.getRequest().getHttpConnection().isOK()) {
