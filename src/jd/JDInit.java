@@ -20,9 +20,6 @@ import java.io.File;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.swing.JFrame;
-import javax.swing.JOptionPane;
-
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -35,7 +32,6 @@ import jd.controlling.interaction.Interaction;
 import jd.gui.JDLookAndFeelManager;
 import jd.gui.UIInterface;
 import jd.gui.UserIO;
-import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.http.Browser;

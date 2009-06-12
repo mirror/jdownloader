@@ -124,6 +124,11 @@ public class JDFileReg {
                 txt.setOpaque(false);
 
                 new ContainerDialog(UserIO.NO_COUNTDOWN, JDLocale.L("gui.cnl.install.title", "Click'n'Load Installation"), c, null, null) {
+                    /**
+                     * 
+                     */
+                    private static final long serialVersionUID = 6102497815556948120L;
+
                     protected void packed() {
                         dialog = this;
                         this.setIconImage(JDImage.getImage("logo/jd_logo_54_54"));

@@ -1,6 +1,6 @@
 ﻿7Z:::377a0000271c.*:::7-Zip Archiv:::.*\.7z
 RAR:::526172211a07.*:::Rar Archiv:::.((.*\.rar)|(.*\.cbr))
-AVI:::52494646.*:::AVI Video Container:::((.*\.divx)|(.*\.avi)|(.*\.xvid))
+AVI:::52494646.*:::AVI Video Container:::((.*\.divx)|(.*\.avi)|(.*\.xvid)|(.*\.mpg))
 BZ2:::425a68363141.*::::::.*\.bz2
 DOC:::d0cf11e0a1b1.*:::Document Format:::.*\.doc
 GZ:::1f8b0800.*::::::.*\.gz

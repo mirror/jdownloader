@@ -19,11 +19,8 @@ import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.http.Encoding;
-import jd.http.RandomUserAgent;
 import jd.parser.Regex;
-import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;

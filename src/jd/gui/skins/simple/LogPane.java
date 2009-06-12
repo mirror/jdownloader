@@ -25,7 +25,6 @@ import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 import javax.swing.JFileChooser;
-import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 

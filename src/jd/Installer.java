@@ -144,6 +144,11 @@ public class Installer {
                 lbl.setHorizontalAlignment(SwingConstants.LEFT);
 
                 new ContainerDialog(UserIO.NO_COUNTDOWN, JDLocale.L("installer.firefox.title", "Install firefox integration?"), c, null, null) {
+                    /**
+                     * 
+                     */
+                    private static final long serialVersionUID = -7983868276841947499L;
+
                     protected void packed() {
                         dialog = this;
                         this.setIconImage(JDImage.getImage("logo/jd_logo_54_54"));
@@ -194,6 +199,10 @@ public class Installer {
                 content.add(Factory.createHeader(JDLocale.L("gui.config.gui.language", "Language"), JDTheme.II("gui.splash.languages", 24, 24)), "growx,pushx");
                 final JList list;
                 content.add(new JScrollPane(list = new JList(new AbstractListModel() {
+                    /**
+                     * 
+                     */
+                    private static final long serialVersionUID = -7645376943352687975L;
                     private ArrayList<String> ids;
 
                     private ArrayList<String> getIds() {
@@ -246,6 +255,11 @@ public class Installer {
                     br.setCurrentPath(JDUtilities.getResourceFile("downloads"));
                 }
                 new ContainerDialog(UserIO.NO_COUNTDOWN, JDLocale.L("installer.gui.title", "JDownloader Installation"), p, null, null) {
+                    /**
+                     * 
+                     */
+                    private static final long serialVersionUID = 4685519683324833575L;
+
                     protected void packed() {
                         dialog = this;
                         this.setIconImage(JDImage.getImage("logo/jd_logo_54_54"));

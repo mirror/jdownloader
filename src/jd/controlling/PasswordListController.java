@@ -62,8 +62,12 @@ public class PasswordListController implements ActionListener, DownloadControlle
     public void addPassword(String pw) {
         if (pw == null || pw.trim().length() == 0) return;
         synchronized (LIST2) {
-            if (LIST2.contains(pw)) LIST2.remove(pw);
-            LIST2.add(0, pw);
+            if (LIST2.contains(pw)) {
+                LIST2.remove(pw);
+                LIST2.add(0, pw);
+            } else {
+                LIST2.add(pw);
+            }
         }
         save();
     }

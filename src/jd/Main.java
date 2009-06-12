@@ -44,8 +44,6 @@ import java.util.logging.Logger;
 
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
-import javax.swing.JOptionPane;
-
 import jd.captcha.JACController;
 import jd.captcha.JACMethod;
 import jd.captcha.JAntiCaptcha;
@@ -180,7 +178,17 @@ public class Main {
 
         for (int i = 0; i < args.length; i++) {
 
-            if (args[i].equals("-prot")) {
+            if (args[i].equalsIgnoreCase("-branch")) {
+                if (args[i + 1].equalsIgnoreCase("reset")) {
+                    WebUpdater.getConfig("WEBUPDATE").setProperty("BRANCH", null);
+                    LOGGER.info("Switching back to default JDownloader branch");
+                } else {
+                    WebUpdater.getConfig("WEBUPDATE").setProperty("BRANCH", args[i + 1]);
+                    LOGGER.info("Switching to " + args[i + 1] + " JDownloader branch");
+                }
+                WebUpdater.getConfig("WEBUPDATE").save();
+                i++;
+            } else if (args[i].equals("-prot")) {
 
                 LOGGER.finer(args[i] + " " + args[i + 1]);
                 i++;
@@ -424,8 +432,6 @@ public class Main {
         }
         LOGGER.info("init Configuration");
         Main.increaseSplashStatus();
-        WebUpdater.getConfig("WEBUPDATE").setProperty("BRANCH","1244836080516_testbin" );
-        WebUpdater.getConfig("WEBUPDATE").save();
         String old = SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getStringProperty("LOCALE", null);
         if (old != null) {
             SubConfiguration.getConfig(JDLocale.CONFIG).setProperty(JDLocale.LOCALE_ID, old);
@@ -536,8 +542,8 @@ public class Main {
                 }
             }
             if (dynamics == null || dynamics.size() == 0) return;
-            for (String dynamic : dynamics) {                
-                if (!dynamic.contains("$") && !classes.contains("/jd/dynamics/" + dynamic)){
+            for (String dynamic : dynamics) {
+                if (!dynamic.contains("$") && !classes.contains("/jd/dynamics/" + dynamic)) {
                     System.out.println("Plugins: " + dynamic);
                     classes.add("/jd/dynamics/" + dynamic);
                 }

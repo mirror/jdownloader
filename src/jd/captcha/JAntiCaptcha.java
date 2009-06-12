@@ -53,7 +53,6 @@ import jd.captcha.pixelgrid.Letter;
 import jd.captcha.pixelobject.PixelObject;
 import jd.captcha.utils.Utilities;
 import jd.controlling.JDLogger;
-import jd.gui.UserIO;
 import jd.nutils.Executer;
 import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
