@@ -21,6 +21,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -47,6 +48,25 @@ public class FourSharedCom extends PluginForHost {
             this.setBrowserExclusive();
             br.setFollowRedirects(true);
             br.getPage(downloadLink.getDownloadURL());
+            if (br.containsHTML("enter a password to access")) {
+                Form form = br.getFormbyProperty("name", "theForm");
+                if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                if (downloadLink.getProperty("pass") != null) downloadLink.setDecrypterPassword(downloadLink.getProperty("pass").toString());
+                if (downloadLink.getDecrypterPassword() == null) {
+                    for (int retry = 1; retry <= 5; retry++) {
+                        String pass = getUserInput("Password:", downloadLink);
+                        form.put("userPass2", pass);
+                        br.submitForm(form);
+                        if (!br.containsHTML("enter a password to access")) {
+                            downloadLink.setDecrypterPassword(pass);
+                            break;
+                        } else if (retry == 5) logger.severe("Wrong Password!");
+                    }
+                } else {
+                    form.put("userPass2", downloadLink.getDecrypterPassword());
+                    br.submitForm(form);
+                }
+            }
             String filename = br.getRegex(Pattern.compile("<title>4shared.com.*?download(.*?)</title>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0).trim();
             String size = br.getRegex(Pattern.compile("<b>Size:</b></td>.*?<.*?>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
             if (filename == null || size == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
