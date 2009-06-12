@@ -28,3 +28,15 @@ jd/languages/Català.lng
 jDownloaderContainer.jar
 JDownloaderPlugins.jar
 JDownloaderContainer.jar
+jd/languages/Chinese(traditionalbig5).lng
+jd/languages/Italiano.lng
+jd/languages/Nederlands.lng
+jd/languages/Polski.lng
+jd/languages/Portugues(brazil).lng
+jd/languages/arabic.lng
+libs/ui.jar
+libs/mail.jar
+libs/mail.jar
+libs/junit-4.6.jar
+tools/mac/unrar2
+ICE_JNIRegistry.dll
