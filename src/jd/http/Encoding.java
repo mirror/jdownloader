@@ -93,7 +93,9 @@ public class Encoding {
         StringBuffer sb = new StringBuffer();
         for (int i = 0; i < url.length(); i++) {
             char ch = url.charAt(i);
-            if (ch >= 33 && ch <= 38) {
+            if (ch == ' ') {
+                sb.append("%20");
+            } else if (ch >= 33 && ch <= 38) {
                 sb.append(ch);
                 continue;
             } else if (ch >= 40 && ch <= 59) {
