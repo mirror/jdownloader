@@ -626,6 +626,8 @@ public class JDInit {
         new HostPluginWrapper("BizHat.com", "BizHatCom", "http://[\\w\\.]*?uploads\\.bizhat\\.com/file/[0-9]+");
         new HostPluginWrapper("MegaFTP.com", "MegaFtpCom", "http://[\\w\\.]*?megaftp\\.com/[0-9]+");
         new HostPluginWrapper("Duckload.com", "DuckLoad", "http://[\\w\\.]*?(duckload\\.com|youload\\.to)/download/\\d+/.+");
+        new HostPluginWrapper("Hetrixload.com", "HetrixLoadCom", "http://[\\w\\.]*?hetrixload\\.com/files/[A-Za-z0-9]+/.+\\.html");
+        http://hetrixload.com/files/w8at7jh4/nedivx-push-cd1.avi.html
 
         // Hoster from Extern
         new HostPluginWrapper("iFolder.ru", "IfolderRu", "http://[\\-\\w\\.]*?ifolder\\.ru/\\d+");
