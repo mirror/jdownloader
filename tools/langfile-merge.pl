@@ -47,7 +47,7 @@ while(my $line = <IN>)
 {
     if ($line =~ /\s*(\S+)\s*=\s*(.+?)\s*$/)
     {
-        $hash{$1}=$2;
+        $hash{lc($1)}=$2;
     }
 	else
 	{
