@@ -20,8 +20,10 @@ import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.RandomUserAgent;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
@@ -138,11 +140,17 @@ public class UploadingCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         try {
             setBrowserExclusive();
-            br.getHeaders().put("User-Agent", RandomUserAgent.generate());
             br.setFollowRedirects(true);
             br.setCookie("http://www.uploading.com/", "_lang", "en");
             br.setCookie("http://www.uploading.com/", "setlang", "en");
             br.getPage(downloadLink.getDownloadURL());
+            br.cloneBrowser().getPage("http://img.uploading.com/css/blue.main.css");
+            String quant = br.getRegex("<img src=\"(http://pixel.quantserve.com/pixel/.*?)\"").getMatch(0);
+            Browser brc = br.cloneBrowser();
+            URLConnectionAdapter con = brc.openGetConnection(quant);
+            con.disconnect();
+            con = brc.openGetConnection("http://img.uploading.com/bb_bg_big.png");
+            con.disconnect();
             String filesize = br.getRegex("File size:(.*?)<br").getMatch(0);
             String filename = br.getRegex(Pattern.compile("Download file.*?<b>(.*?)</b>", Pattern.DOTALL)).getMatch(0);
             if (filename == null) {
@@ -179,9 +187,9 @@ public class UploadingCom extends PluginForHost {
         this.sleep(100000l, downloadLink);
         br.setFollowRedirects(false);
         form = br.getFormbyProperty("id", "downloadform");
-        br.setFollowRedirects(true);
         br.submitForm(form);
         if (br.getRedirectLocation() == null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
+        br.setFollowRedirects(true);
         dl = br.openDownload(downloadLink, br.getRedirectLocation(), false, 1);
         dl.setFilenameFix(true);
         dl.startDownload();

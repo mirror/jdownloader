@@ -436,38 +436,33 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                                     link = links.get(i);
                                     linkStatus = link.getLinkStatus();
                                     if (!link.isEnabled() && link.getLinkType() == DownloadLink.LINKTYPE_JDU && linkStatus.getTotalWaitTime() <= 0) {
-
                                         removes.add(link);
                                         continue;
                                     }
-                                    if (linkStatus.hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE)) {
-
-                                        if (linkStatus.getRemainingWaittime() == 0) {
-                                            // link.setEnabled(true);
-                                            linkStatus.reset();
-                                            // updates.add(link);
+                                    // Link mit Temp Unavailable in der Queue
+                                    if (link.isEnabled() && linkStatus.hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) && !linkStatus.hasStatus(LinkStatus.PLUGIN_IN_PROGRESS)) {
+                                        if (linkStatus.getRemainingWaittime() == 0) {                                            
+                                            linkStatus.reset();                                            
+                                        } else if (linkStatus.getRemainingWaittime() > 0) {
+                                            hasTempDisabledLinks = true;
+                                            updates.add(link);
                                         }
-                                        hasTempDisabledLinks = true;
-
                                     }
 
                                     // Link mit Wartezeit in der queue
                                     if (link.isEnabled() && linkStatus.hasStatus(LinkStatus.ERROR_IP_BLOCKED) && !linkStatus.hasStatus(LinkStatus.PLUGIN_IN_PROGRESS)) {
-                                        if (linkStatus.getRemainingWaittime() == 0) {
-                                            // reaktiviere Downloadlink
+                                        if (linkStatus.getRemainingWaittime() == 0) {                                            
                                             linkStatus.reset();
-
+                                        } else if (linkStatus.getRemainingWaittime() > 0) {
+                                            Reconnecter.hasWaittimeLinks = true;
+                                            updates.add(link);
                                         }
-
                                     }
-
-                                    if (linkStatus.getRemainingWaittime() > 0) {
-                                        Reconnecter.hasWaittimeLinks = true;
-                                        updates.add(link);
-                                    }
+                                    // Laufende DownloadLinks 
                                     if (link.isEnabled() && linkStatus.isPluginActive()) {
                                         hasInProgressLinks = true;
                                     }
+                                    // Laufende und sich im Download befindenten Downloads
                                     if (link.isEnabled() && linkStatus.hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
                                         inProgress++;
                                         currentTotalSpeed += link.getDownloadSpeed();
