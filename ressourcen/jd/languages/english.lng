@@ -1288,4 +1288,14 @@ gui.menu.action.break2.desc = Pause downloads. Limits global speed to %s kb/s
 quickhelp.toolbar.clipboard = Toolbar clipboard observer
 quickhelp.toolbar.reconnect = Reconnect Toolbar
 plugins.optional.jdchat.name2 = JD Support Chat
-
+gui.splash.progress.updateplugins = Update Plugins
+gui.menu.action.reconnectauto.desc = Auto reconnect. Get a new IP by resetting your internet connection
+gui.mainframe.title.updatemessage = -->Updates available:
+gui.config.gui.linkgrabber = LinkGrabber
+gui.linkgrabber.adding = Adding %s link(s) to LinkGrabber
+gui.linkgrabberv2.splithoster = Split by hoster
+gui.table.contextmenu.newpackage2 = Move to new package
+gui.table.contextmenu.mergepackage2 = Merge to one package
+userio.countdownconfirm = Please confirm
+gui.linkgrabberv2.lg.addselectedlinks = Add selected link(s)
+gui.linkgrabber.finished = Grabbed %s link(s) in %s Package(s)
