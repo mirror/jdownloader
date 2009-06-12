@@ -38,5 +38,5 @@ libs/ui.jar
 libs/mail.jar
 libs/mail.jar
 libs/junit-4.6.jar
-tools/mac/unrar2
+tools/mac/unrar
 ICE_JNIRegistry.dll
