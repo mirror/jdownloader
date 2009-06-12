@@ -226,6 +226,7 @@ public class Browser {
     private static int TEMP_INDEX = 0;
     private static HashMap<String, Integer> REQUEST_INTERVAL_LIMIT_MAP;
     private static HashMap<String, Long> REQUESTTIME_MAP;
+    private static boolean VERBOSE = false;
     private static final Authenticator AUTHENTICATOR = new Authenticator() {
         protected PasswordAuthentication getPasswordAuthentication() {
             Browser br = Browser.getAssignedBrowserInstance(this.getRequestingURL());
@@ -921,12 +922,17 @@ public class Browser {
      * @throws IOException
      */
     public String loadConnection(URLConnectionAdapter con) throws IOException {
-
+        String ret = null;
         if (con == null) {
             checkContentLengthLimit(request);
-            return request.read();
+            ret = request.read();
+        } else {
+            ret = Request.read(con);
         }
-        return Request.read(con);
+
+        if (isVerbose()) JDLogger.getLogger().finest("\r\n" + ret+"\r\n");
+
+        return ret;
 
     }
 
@@ -1115,7 +1121,7 @@ public class Browser {
     }
 
     public boolean isDebug() {
-        return debug;
+        return debug || VERBOSE;
     }
 
     public void setDebug(boolean debug) {
@@ -1448,6 +1454,13 @@ public class Browser {
 
     }
 
-    
+    public static boolean isVerbose() {
+        return VERBOSE;
+    }
+
+    public static void setVerbose(boolean b) {
+        VERBOSE = b;
+
+    }
 
 }

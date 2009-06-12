@@ -36,6 +36,7 @@ import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.UIManager.LookAndFeelInfo;
 import javax.swing.border.EmptyBorder;
 
+import jd.JDInitFlags;
 import jd.config.SubConfiguration;
 import jd.gui.UserIO;
 import jd.http.Browser;
@@ -84,8 +85,8 @@ public class Main {
 
             }
 
-            for (int i=0;i<args.length;i++) {
-                String p=args[i];
+            for (int i = 0; i < args.length; i++) {
+                String p = args[i];
                 if (p.trim().equalsIgnoreCase("-noosfilter")) {
                     OSFilter = false;
                 } else if (p.trim().equalsIgnoreCase("-allplugins")) {
@@ -93,12 +94,15 @@ public class Main {
                 } else if (p.trim().equalsIgnoreCase("-full")) {
                     loadAllPlugins = true;
                     OSFilter = false;
+                } else if (p.trim().equalsIgnoreCase("-brdebug")) {
+                    Browser.setVerbose(true);
+                    JDInitFlags.SWITCH_DEBUG = true;
                 } else if (p.trim().equalsIgnoreCase("-branch")) {
                     String br = args[++i];
-                    if(br.equalsIgnoreCase("reset"))br=null;
-                    WebUpdater.getConfig("WEBUPDATE").setProperty("BRANCH",br);
+                    if (br.equalsIgnoreCase("reset")) br = null;
+                    WebUpdater.getConfig("WEBUPDATE").setProperty("BRANCH", br);
                     WebUpdater.getConfig("WEBUPDATE").save();
-                    System.out.println("Switched branch: "+br);
+                    System.out.println("Switched branch: " + br);
                 } else if (p.trim().equalsIgnoreCase("-clone")) {
                     loadAllPlugins = true;
                     OSFilter = false;

@@ -44,6 +44,7 @@ import java.util.logging.Logger;
 
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
+
 import jd.captcha.JACController;
 import jd.captcha.JACMethod;
 import jd.captcha.JAntiCaptcha;
@@ -167,6 +168,10 @@ public class Main {
         for (String p : args) {
             if (p.equalsIgnoreCase("-debug")) {
                 JDInitFlags.SWITCH_DEBUG = true;
+            }
+            if (p.equalsIgnoreCase("-brdebug")) {
+                JDInitFlags.SWITCH_DEBUG = true;
+                Browser.setVerbose(true);
             }
             if (p.equalsIgnoreCase("-rfb")) {
                 JDInitFlags.SWITCH_RETURNED_FROM_UPDATE = true;
@@ -432,6 +437,7 @@ public class Main {
         }
         LOGGER.info("init Configuration");
         Main.increaseSplashStatus();
+
         String old = SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getStringProperty("LOCALE", null);
         if (old != null) {
             SubConfiguration.getConfig(JDLocale.CONFIG).setProperty(JDLocale.LOCALE_ID, old);
