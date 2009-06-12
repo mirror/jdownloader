@@ -155,6 +155,7 @@ public class JDInit {
             loadPluginForDecrypt();
             loadPluginForHost();
             loadCPlugins();
+          
             loadPluginOptional();
 
             for (final OptionalPluginWrapper plg : OptionalPluginWrapper.getOptionalWrapper()) {
@@ -238,7 +239,6 @@ public class JDInit {
                 File home = JDUtilities.getResourceFile(".");
                 if (home.canWrite() && !JDUtilities.getResourceFile("noupdate.txt").exists()) {
 
-              
                     // try {
                     // new WebUpdate().doWebupdate(true);
                     // JDUtilities.getConfiguration().save();
@@ -258,18 +258,17 @@ public class JDInit {
                 if (!home.canWrite()) {
                     logger.severe("INSTALL abgebrochen");
 
-                  
-                            UserIO.getInstance().requestMessageDialog( JDLocale.L("installer.error.noWriteRights", "Error. You do not have permissions to write to the dir"));
-                    
+                    UserIO.getInstance().requestMessageDialog(JDLocale.L("installer.error.noWriteRights", "Error. You do not have permissions to write to the dir"));
+
                     JDIO.removeDirectoryOrFile(JDUtilities.getResourceFile("config"));
                     System.exit(1);
                 }
 
             } else {
                 logger.severe("INSTALL abgebrochen2");
-              
-                        UserIO.getInstance().requestMessageDialog( JDLocale.L("installer.abortInstallation", "Error. User aborted installation."));
-               
+
+                UserIO.getInstance().requestMessageDialog(JDLocale.L("installer.abortInstallation", "Error. User aborted installation."));
+
                 JDIO.removeDirectoryOrFile(JDUtilities.getResourceFile("config"));
                 System.exit(0);
 

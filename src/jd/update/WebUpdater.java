@@ -51,11 +51,10 @@ public class WebUpdater implements Serializable {
     private static final long serialVersionUID = 1946622313175234371L;
     private static final String UPDATE_ZIP_LOCAL_PATH = "tmp/update.zip";
 
-    public static final int ServerPool = 3;
     public static HashMap<String, FileUpdate> PLUGIN_LIST = null;
 
     private boolean ignorePlugins = true;
-
+    public static final String[] UPDATE_MIRROR = new String[] { "http://update0.jdownloader.org/", "http://update0.jdownloader.org/", "http://update1.jdownloader.org/", "http://update2.jdownloader.org/", };
     private StringBuilder logger;
 
     private boolean OSFilter = true;
@@ -89,9 +88,22 @@ public class WebUpdater implements Serializable {
      *            (Dir Pfad zum Updateserver)
      */
     public WebUpdater() {
+        randomizeMirrors();
         logger = new StringBuilder();
         this.br = new Browser();
         errors = 0;
+    }
+
+    public static void randomizeMirrors() {
+        ArrayList<String> mirrors = new ArrayList<String>();
+        for (String m : UPDATE_MIRROR)
+            mirrors.add(m);
+
+        for (int i = 0; i < UPDATE_MIRROR.length; i++) {
+
+            UPDATE_MIRROR[i] = mirrors.remove((int) (Math.random() * (UPDATE_MIRROR.length - 1 - i)));
+        }
+
     }
 
     public int getErrors() {
@@ -220,13 +232,12 @@ public class WebUpdater implements Serializable {
      * @return
      */
     private String[] getBranches() {
-        ArrayList<String> updateMirror = new ArrayList<String>();
-        updateMirror.add("http://update0.jdownloader.org/");
-        updateMirror.add("http://update1.jdownloader.org/");
-        updateMirror.add("http://update2.jdownloader.org/");
+        ArrayList<String> mirrors = new ArrayList<String>();
+        for (String m : UPDATE_MIRROR)
+            mirrors.add(m);
 
-        for (int i = 0; i < 3; i++) {
-            String serv = updateMirror.remove((int) (Math.random() * (2-i)));
+        for (int i = 0; i < UPDATE_MIRROR.length; i++) {
+            String serv = mirrors.remove((int) (Math.random() * (UPDATE_MIRROR.length - 1 - i)));
             try {
                 br.getPage(serv + "branches.lst");
                 if (br.getRequest().getHttpConnection().isOK()) {
@@ -251,21 +262,12 @@ public class WebUpdater implements Serializable {
     }
 
     private String getZipUrl(int trycount) {
-        if (trycount < 0) {
-            trycount = -(trycount % ServerPool);
-        } else {
-            trycount = trycount % ServerPool;
-        }
-        return "http://update" + trycount + ".jdownloader.org/" + getBranch() + "_update.zip";
+        return UPDATE_MIRROR[trycount % UPDATE_MIRROR.length] + getBranch() + "_update.zip";
     }
 
     private String getZipMD5(int trycount) {
-        if (trycount < 0) {
-            trycount = -(trycount % ServerPool);
-        } else {
-            trycount = trycount % ServerPool;
-        }
-        return "http://update" + trycount + ".jdownloader.org/" + getBranch() + "_update.md5";
+
+        return UPDATE_MIRROR[trycount % UPDATE_MIRROR.length] + getBranch() + "_update.md5";
     }
 
     private void loadUpdateList() throws Exception {
@@ -296,12 +298,7 @@ public class WebUpdater implements Serializable {
     }
 
     private String getListPath(int trycount) {
-        if (trycount < 0) {
-            trycount = -(trycount % ServerPool);
-        } else {
-            trycount = trycount % ServerPool;
-        }
-        return "http://update" + trycount + ".jdownloader.org/" + getBranch() + "_server.list";
+        return UPDATE_MIRROR[trycount % UPDATE_MIRROR.length] + getBranch() + "_server.list";
     }
 
     /**

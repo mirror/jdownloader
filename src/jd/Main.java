@@ -475,21 +475,49 @@ public class Main {
         WebUpdate.DynamicPluginsFinished();
         LOGGER.info("init plugins");
         Main.increaseSplashStatus();
+        SPLASH.setProgress(10, 100, JDLocale.L("gui.splash.progress.updateplugins", "Update Plugins"));
+        
+        Thread th = new Thread() {
+            public void run() {
+                try {
+                  
+
+                    int i = 10;
+                    while (true) {
+                        SPLASH.setProgress(i % 100, 100, JDLocale.L("gui.splash.progress.updateplugins", "Update Plugins"));
+                     
+;                        Thread.sleep(100);
+                        i++;
+
+                    }
+                } catch (InterruptedException e) {
+                    return;
+                }
+            }
+        };
+        th.start();
         init.initPlugins();
+        th.interrupt();
+        th = null;
+        
 
         Locale.setDefault(Locale.ENGLISH);
 
         LOGGER.info("init gui");
         Main.increaseSplashStatus();
+        SPLASH.setProgress(30, 100, JDLocale.L("gui.splash.progress.updateplugins", "Update Plugins"));
         new GuiRunnable<Object>() {
 
             // @Override
-            public Object runSave() {
+            public Object runSave()  {
                 init.initGUI(controller);
+               
+              
                 return null;
             }
 
         }.waitForEDT();
+        SPLASH.setProgress(0, 0, null);
         LOGGER.info("init downloadqueue");
         Main.increaseSplashStatus();
         init.initControllers();

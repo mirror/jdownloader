@@ -55,21 +55,12 @@ public class WebUpdate implements ControlListener {
     }
 
     private static String getUpdaterMD5(int trycount) {
-        if (trycount < 0) {
-            trycount = -(trycount % WebUpdater.ServerPool);
-        } else {
-            trycount = trycount % WebUpdater.ServerPool;
-        }
-        return "http://update" + trycount + ".jdownloader.org/jdupdate.jar.md5";
+
+        return WebUpdater.UPDATE_MIRROR[trycount % WebUpdater.UPDATE_MIRROR.length] + "jdupdate.jar.md5";
     }
 
     private static String getUpdater(int trycount) {
-        if (trycount < 0) {
-            trycount = -(trycount % WebUpdater.ServerPool);
-        } else {
-            trycount = trycount % WebUpdater.ServerPool;
-        }
-        return "http://update" + trycount + ".jdownloader.org/jdupdate.jar";
+        return WebUpdater.UPDATE_MIRROR[trycount % WebUpdater.UPDATE_MIRROR.length] + "jdupdate.jar";
     }
 
     public static boolean updateUpdater() {
@@ -83,11 +74,13 @@ public class WebUpdate implements ControlListener {
                     } catch (InterruptedException e) {
                         break;
                     }
+                    if(progress.getValue()>95)progress.setStatus(10);
                     progress.increase(1);
                 }
 
             }
         };
+        WebUpdater.randomizeMirrors();
         ttmp.start();
         Browser br = new Browser();
         File file;
@@ -215,17 +208,27 @@ public class WebUpdate implements ControlListener {
                     progress.setStatus(org - (files.size() + packages.size()));
                     logger.finer("Files to update: " + files);
                     logger.finer("JDUs to update: " + packages.size());
-
+                    while (JDInitialized == false) {
+                        int i = 0;
+                        try {
+                            Thread.sleep(1000);
+                            i++;
+                            logger.severe("Waiting on JD-Init-Complete since " + i + " secs!");
+                        } catch (InterruptedException e) {
+                        }
+                    }
                     EventQueue.invokeLater(new Runnable() {
                         public void run() {
 
                             if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, false)) {
-                                CountdownConfirmDialog ccd = new CountdownConfirmDialog(SimpleGUI.CURRENTGUI, JDLocale.L("init.webupdate.auto.countdowndialog", "Automatic update."), 10, true, CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_CANCEL,JDLocale.LF("system.dialogs.update.message", "<font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\">%s update(s)  and %s package(s) or addon(s) available. Install now?</font>", files.size(), packages.size()));
+                            
+                                CountdownConfirmDialog ccd = new CountdownConfirmDialog(SimpleGUI.CURRENTGUI, JDLocale.L("init.webupdate.auto.countdowndialog", "Automatic update."), 10, true, CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_CANCEL, JDLocale.LF("system.dialogs.update.message", "<font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\">%s update(s)  and %s package(s) or addon(s) available. Install now?</font>", files.size(), packages.size()));
                                 if (ccd.getResult()) {
                                     doUpdate();
                                 }
                             } else {
                                 try {
+                                 
                                     CountdownConfirmDialog ccd = new CountdownConfirmDialog(SimpleGUI.CURRENTGUI, JDLocale.L("system.dialogs.update", "Updates available"), 20, false, CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_CANCEL, JDLocale.LF("system.dialogs.update.message", "<font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\">%s update(s)  and %s package(s) or addon(s) available. Install now?</font>", files.size(), packages.size()));
                                     if (ccd.getResult()) {
                                         doUpdate();

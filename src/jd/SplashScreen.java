@@ -19,7 +19,6 @@ package jd;
 import java.awt.AWTException;
 import java.awt.AlphaComposite;
 import java.awt.Color;
-import java.awt.Container;
 import java.awt.Graphics2D;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
@@ -35,10 +34,13 @@ import java.util.ArrayList;
 
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
+import javax.swing.JProgressBar;
 import javax.swing.JWindow;
 import javax.swing.Timer;
 
 import jd.gui.JDLookAndFeelManager;
+import jd.gui.skins.simple.GuiRunnable;
+import net.miginfocom.swing.MigLayout;
 
 public class SplashScreen implements ActionListener {
 
@@ -68,12 +70,15 @@ public class SplashScreen implements ActionListener {
 
     private int imageCounter = 1;
 
+    private JProgressBar progress;
+
     public void setNextImage() {
         imageCounter++;
     }
 
     public SplashScreen(Image image) throws IOException, AWTException {
         // final URL url =
+
         // this.getClass().getClassLoader().getResource(path);
         JDLookAndFeelManager.setUIManager();
         this.image = (BufferedImage) image;
@@ -105,10 +110,13 @@ public class SplashScreen implements ActionListener {
         label.setIcon(drawImage(0.0f));
 
         window = new JWindow(gc);
+        window.setLayout(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[grow,fill][]"));
         window.setAlwaysOnTop(true);
         window.setSize(image.getWidth(null), image.getHeight(null));
-        Container content = window.getContentPane();
-        content.add(label);
+        // Container content = window.getContentPane();
+        window.add(label);
+        window.add(progress = new JProgressBar(), "hidemode 3,height 20!");
+        progress.setVisible(false);
         window.pack();
         Rectangle b = gc.getBounds();
         window.setLocation(b.x + x, b.y + y);
@@ -179,6 +187,30 @@ public class SplashScreen implements ActionListener {
     public void finish() {
         timer.stop();
         window.dispose();
+    }
+
+    public void setProgress(final int i, final int j, final String l) {
+        new GuiRunnable() {
+
+            @Override
+            public Object runSave() {
+                if (j <= 0) {
+                    progress.setVisible(false);
+                } else {
+                    progress.setVisible(true);
+window.pack();
+                    progress.setStringPainted(true);
+                    progress.setMaximum(j);
+                    progress.setValue(i);
+                    
+                    System.out.println("fg"+i+"/"+j);
+                    progress.setString(l);
+                }
+                return null;
+            }
+
+        }.waitForEDT();
+
     }
 
 }
