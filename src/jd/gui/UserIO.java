@@ -52,7 +52,7 @@ public abstract class UserIO {
     public static final int ICON_INFO = 0;
     public static final int ICON_WARNING = 1;
     public static final int ICON_ERROR = 2;
-//    private static final int ICON_QUESTION = 3;
+    public static final int ICON_QUESTION = 3;
 
  
 
@@ -90,10 +90,25 @@ public abstract class UserIO {
 
     public int requestConfirmDialog(int flag, String title, String message, ImageIcon icon, String okOption, String cancelOption) {
         synchronized (INSTANCE) {
-            if(icon==null)icon=this.getIcon(ICON_INFO);
+            if(icon==null){
+               icon=getDefaultIcon(title+message);
+               
+            }
             return showConfirmDialog(flag, title, message, icon, okOption, cancelOption);
         }
 
+    }
+
+    private ImageIcon getDefaultIcon(String text) {
+        if(text.contains("?")){
+            return this.getIcon(ICON_QUESTION); 
+        }else if (text.matches(JDLocale.L("userio.errorregex",".*(error|failed).*"))){
+            return this.getIcon(ICON_ERROR); 
+        }else if (text.contains("!")){
+            return this.getIcon(ICON_WARNING);            
+        }else{
+            return this.getIcon(ICON_INFO);
+        }
     }
 
     abstract protected int showConfirmDialog(int flag, String title, String message, ImageIcon icon, String okOption, String cancelOption);

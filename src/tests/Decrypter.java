@@ -16,7 +16,7 @@ import jd.utils.JDUtilities;
 import org.junit.*;
 
 public class Decrypter {
-	String url = "";
+	
 
 	@Before
 	public void setUp() throws Exception {
@@ -34,7 +34,8 @@ public class Decrypter {
 	}
 	
 	@Test
-	public void decrypt() {
+	public void decryptUCMS() {
+	    String url = TestUtils.getStringProperty("UCMS_URL");
 		boolean found = false;
 		for (DecryptPluginWrapper pd : DecryptPluginWrapper.getDecryptWrapper()) {
 			if(pd.canHandle(url)) {
@@ -57,6 +58,31 @@ public class Decrypter {
 			fail();
 	}
 	
+	@Test
+	   public void decryptSerienjunkies() {
+	        String url = TestUtils.getStringProperty("SERIENJUNKIES_URL");
+	        boolean found = false;
+	        for (DecryptPluginWrapper pd : DecryptPluginWrapper.getDecryptWrapper()) {
+	            if(pd.canHandle(url)) {
+	                found = true;
+	                PluginForDecrypt plg = (PluginForDecrypt) pd.getNewPluginInstance();
+
+	                CryptedLink[] d = plg.getDecryptableLinks(url);
+	                
+	                try {
+	                    ArrayList<DownloadLink> a = plg.decryptIt(d[0], new ProgressController("test", 10));
+	                    
+	                    assertTrue(a.size() > 1 || (a.size() == 1 && a.get(0).getBrowserUrl() != null));
+	                } catch (Exception e) {
+	                    e.printStackTrace();
+	                }
+	                break;
+	            }
+	        }
+	        if(!found)
+	            fail();
+	    }
+	    
 
 	@After
 	public void tearDown() throws Exception {

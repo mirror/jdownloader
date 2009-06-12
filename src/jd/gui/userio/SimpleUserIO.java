@@ -98,6 +98,8 @@ public class SimpleUserIO extends UserIO {
             return JDTheme.II("gui.images.stop", 32, 32);
         case UserIO.ICON_WARNING:
             return JDTheme.II("gui.images.warning", 32, 32);
+        case UserIO.ICON_QUESTION:
+            return JDTheme.II("gui.images.help", 32, 32);
         default:
             return JDTheme.II("gui.images.config.tip", 32, 32);
         }
