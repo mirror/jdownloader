@@ -74,4 +74,8 @@ public class DuckLoad extends PluginForHost {
         return getVersion("$Revision$");
     }
 
+    public int getMaxSimultanFreeDownloadNum() {
+        return getMaxSimultanDownloadNum();
+    }
+
 }
