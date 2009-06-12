@@ -32,26 +32,26 @@ public class NewsUrlDe extends PluginForDecrypt {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         synchronized (lock) {
             br.getPage(parameter);
             String link = br.getRedirectLocation();
-            if (link == null) link = br.getRegex("<a href=\"([^\"]*)\" style").getMatch(0);
+            if (link == null) link = br.getRegex("<a href=\"([^\"]*)\" .*?(style|onClick)").getMatch(0);
             if (link == null) link = br.getRegex("<META HTTP-EQUIV=\"Refresh\" .*? URL=(.*?)\">").getMatch(0);
             if (link == null) link = br.getRegex("onClick=\"top\\.location='(.*?)'\">").getMatch(0);
             if (link == null) link = br.getRegex("<iframe name='redirectframe' id='redirectframe'.*?src='(.*?)'.*?></iframe>").getMatch(0);
             if (link == null) return null;
             decryptedLinks.add(dl = createDownloadlink(link));
             dl.setProperties(param.getProperties());
-            dl.setProperty("referer", param.getCryptedUrl());            
+            dl.setProperty("referer", param.getCryptedUrl());
         }
         return decryptedLinks;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
