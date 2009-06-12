@@ -166,6 +166,10 @@ public class MegasharesCom extends PluginForHost {
         }
         // Downloadlink
         String url = br.getRegex("<div id=\"dlink\"><a href=\"(.*?)\">Click here to download</a>").getMatch(0);
+        if (url==null){
+            downloadLink.getLinkStatus().setRetryCount(0);
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        }
         // Dateigröße holen
         br.setFollowRedirects(true);
         dl = br.openDownload(downloadLink, url, true, 1);
