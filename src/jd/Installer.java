@@ -184,6 +184,8 @@ public class Installer {
                 }.waitForEDT();
             }
         }
+        
+        AbstractDialog.setDefaultDimension(null);
     }
 
     private void showConfig() {
