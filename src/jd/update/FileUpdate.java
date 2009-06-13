@@ -134,7 +134,7 @@ public class FileUpdate {
         long startTime, endTime;
         for (int retry = 0; retry < 3; retry++) {
             if (availableServers == null || availableServers.size() == 0) {
-                result.append("no downloadsource available!");
+                log(result, "no downloadsource available!");
                 return false;
             }
             reset(availableServers);
@@ -153,48 +153,53 @@ public class FileUpdate {
                 } else {
                     url += "?r=" + System.currentTimeMillis();
                 }
-                result.append("Downloadsource: " + url + "\r\n");
+                log(result, "Downloadsource: " + url + "\r\n");
                 startTime = System.currentTimeMillis();
                 URLConnectionAdapter con = null;
-                int response=-1;
+                int response = -1;
                 try {
                     con = br.openGetConnection(url);
                     endTime = System.currentTimeMillis();
                     response = con.getResponseCode();
                     currentServer.setRequestTime(endTime - startTime);
+
                 } catch (Exception e) {
-                    result.append("Error. Connection error\r\n");
+                    log(result, "Error. Connection error\r\n");
                     currentServer.setRequestTime(100000l);
                     continue;
                 }
-                if(response!=200){
-                    result.append("Error. Connection error "+response+"\r\n");
+
+                if (response != 200) {
+                    log(result, "Error. Connection error " + response + "\r\n");
                     currentServer.setRequestTime(500000l);
-                    continue;  
-                    
+                    continue;
+
                 }
-                
+
                 try {
                     Browser.download(tmpFile, con);
                 } catch (Exception e) {
-                    result.append("Error. Connection broke\r\n");
+                    log(result, "Error. Connection broke\r\n");
                     currentServer.setRequestTime(100000l);
                     continue;
                 }
+                log(result, currentServer + " requesttimeAVG=" + currentServer.getRequestTime() + "\r\n");
                 String downloadedHash = JDHash.getMD5(tmpFile);
                 if (downloadedHash.equalsIgnoreCase(hash)) {
+                    log(result, "Hash OK\r\n");
                     this.getLocalFile().delete();
                     boolean ret = tmpFile.renameTo(getLocalFile());
                     if (ret) {
                         return ret;
                     } else {
-                        result.append("Error. Rename failed\r\n");
+                        log(result, "Error. Rename failed\r\n");
                     }
                 } else {
+                    log(result, "Hash Failed\r\n");
                     if (hasServer()) {
-                        result.append("Error. Retry\r\n");
+                        log(result, "Error. Retry\r\n");
                     } else {
-                        result.append("Error. Updateserver down\r\n");
+                        log(result, "Error. Updateserver down\r\n");
                     }
                     tmpFile.delete();
                     continue;
@@ -207,6 +212,12 @@ public class FileUpdate {
             }
         }
         return false;
+
+    }
+
+    private void log(StringBuilder result2, String string) {
+        result2.append(string);
+        System.out.println(string.trim());
 
     }
 

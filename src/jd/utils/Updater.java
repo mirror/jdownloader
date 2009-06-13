@@ -41,6 +41,8 @@ import jd.http.Encoding;
 import jd.nutils.JDHash;
 import jd.nutils.SimpleFTP;
 import jd.nutils.io.JDIO;
+import jd.nutils.jobber.JDRunnable;
+import jd.nutils.jobber.Jobber;
 import jd.nutils.svn.Subversion;
 import jd.nutils.zip.Zip;
 import jd.parser.Regex;
@@ -51,6 +53,17 @@ import org.tmatesoft.svn.core.SVNDirEntry;
 import org.tmatesoft.svn.core.SVNException;
 
 public class Updater {
+
+    public static StringBuilder SERVERLIST = new StringBuilder();
+    static {
+        SERVERLIST.append("-1:http://update0.jdownloader.org/%BRANCH%/\r\n");
+        SERVERLIST.append("-1:http://update4ex.jdownloader.org/branches/%BRANCH%/\r\n");
+        SERVERLIST.append("-1:http://jdupdate.bluehost.to/branches/%BRANCH%/\r\n");
+        // serverList.append("-1:http://update1.jdownloader.org/"+branch+"/\r\n");
+        SERVERLIST.append("-1:http://update2.jdownloader.org/%BRANCH%/\r\n");
+        ;
+    }
+
     /**
      * @param args
      * @throws Exception
@@ -58,7 +71,7 @@ public class Updater {
     public static void main(String[] args) throws Exception {
 
         Updater upd = new Updater();
-         WebUpdater.getConfig("WEBUPDATE").setProperty("BRANCH","BETA_20090613_001" );
+        WebUpdater.getConfig("WEBUPDATE").setProperty("BRANCH", "BETA_20090613_001");
         System.out.println("STATUS: Webupdate");
         upd.webupdate();
         // System.out.println("STATUS: Webupdate ende");
@@ -71,7 +84,7 @@ public class Updater {
         upd.moveJars(getCFG("dist_dir"));
         // // // System.out.println("STATUS: FINISHED");
         upd.cleanUp();
-        String id = upd.createBranch(JOptionPane.showInputDialog(upd.frame,"branchname"));
+        String id = upd.createBranch(JOptionPane.showInputDialog(upd.frame, "branchname"));
 
         ArrayList<File> list = upd.getFileList();
         // //
@@ -81,6 +94,7 @@ public class Updater {
         upd.checkHashes();
         upd.clone0(upd.branch);
         upd.clone2(upd.branch);
+        upd.incFTPSpread(upd.branch);
         // upd.clonebluehost2();
         upd.uploadHashList();
         // upd.spread(list);
@@ -88,10 +102,57 @@ public class Updater {
         System.exit(0);
     }
 
+    private void incFTPSpread(final String branch2) throws IOException {
+        final ArrayList<File> list = this.getLocalFileList(this.workingDir, false);
+
+        Jobber uploader = new Jobber(4);
+        uploader.add(new JDRunnable() {
+
+            public void go() throws Exception {
+                SimpleFTP.uploadSecure("jdupdate.bluehost.to", 2100, getCFG("bluehost_user"), getCFG("bluehost_pass"), "/branches/" + branch2, workingDir, list.toArray(new File[] {}));
+                
+            }
+        });
+        uploader.add(new JDRunnable() {
+
+            public void go() throws Exception {
+                SimpleFTP.uploadSecure("update4ex.jdownloader.org", 21, getCFG("update4ex_user"), getCFG("update4ex_pass"), "/branches/" + branch2, workingDir, list.toArray(new File[] {}));
+
+            }
+        });
+     
+       
+       int todo = uploader.getJobsAdded();
+       uploader.start();
+       while (uploader.getJobsFinished() != todo) {
+           try {
+               Thread.sleep(200);
+           } catch (InterruptedException e) {
+               return;
+           }
+       }
+       uploader.stop();
+   
+    }
+
     private void cleanUp() {
         String[] outdated = Regex.getLines(JDIO.getLocalFile(new File(this.updateDir, "outdated.dat")));
 
         for (String path : outdated) {
+            if (new File(this.workingDir, path).exists()) {
+                new File(this.workingDir, path).delete();
+                System.err.println(" CLEAN UP: " + new File(this.workingDir, path).getAbsolutePath());
+            }
+            if (new File(this.updateDir, path).exists()) {
+                new File(this.updateDir, path).delete();
+                System.err.println(" CLEAN UP: " + new File(this.updateDir, path).getAbsolutePath());
+            }
+        }
+
+        String[] rest = new String[] { "libs/svnkit.jar"
+
+        };
+        for (String path : rest) {
             if (new File(this.workingDir, path).exists()) {
                 new File(this.workingDir, path).delete();
                 System.err.println(" CLEAN UP: " + new File(this.workingDir, path).getAbsolutePath());
@@ -298,14 +359,8 @@ public class Updater {
             HashMap<String, String> map = createHashList(this.workingDir);
             Browser br = new Browser();
             br.forceDebug(true);
-            StringBuilder serverList = new StringBuilder();
 
-            serverList.append("-1:http://update0.jdownloader.org/" + branch + "/\r\n");
-            serverList.append("-1:http://update4ex.jdownloader.org/" + branch + "/\r\n");
-            serverList.append("-1:http://jdupdate.bluehost.to/" + branch + "/\r\n");
-            // serverList.append("-1:http://update1.jdownloader.org/"+branch+"/\r\n");
-            serverList.append("-1:http://update2.jdownloader.org/" + branch + "/\r\n");
-            System.out.println(br.postPage("http://update1.jdownloader.org/unlock.php?pass=" + getCFG("updateHashPW") + "&branch=" + branch, "server=" + serverList.toString()));
+            System.out.println(br.postPage("http://update1.jdownloader.org/unlock.php?pass=" + getCFG("updateHashPW") + "&branch=" + branch, "server=" + SERVERLIST.toString().replaceAll("\\%BRANCH\\%", branch)));
             map.put("pass", getCFG("updateHashPW"));
             // map = map;
             String addonlist = createAddonList();
@@ -478,19 +533,18 @@ public class Updater {
         ArrayList<File> listLocal = this.getLocalFileList(this.workingDir, false);
         main: for (Iterator<File> it = listUpdate.iterator(); it.hasNext();) {
             File file = it.next();
-           
+
             String newHash = JDHash.getMD5(file);
             String newFile = file.getAbsolutePath().replace(updateDir.getAbsolutePath(), "");
             newFile = newFile.replace("\\", "/");
             if (newFile.trim().length() == 0) continue;
-          
 
             File localFile = new File(workingDir, newFile);
-            if(file.isDirectory()&&localFile.isDirectory()&&localFile.exists()){
+            if (file.isDirectory() && localFile.isDirectory() && localFile.exists()) {
                 it.remove();
-                continue main; 
+                continue main;
             }
-            
+
             String localHash = JDHash.getMD5(localFile);
             if (localHash != null && localHash.equalsIgnoreCase(newHash)) {
                 it.remove();
@@ -730,7 +784,7 @@ public class Updater {
             if (f.isDirectory()) {
                 if (remote.startsWith(local)) { return true; }
             } else {
-                if (remote.equals(local)) { return true; }
+                if (remote.equals(local)&&JDHash.getMD5(f).equalsIgnoreCase(fu.getRemoteHash())) { return true; }
             }
 
         }

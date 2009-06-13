@@ -99,7 +99,7 @@ public class JDUtilities {
 
     private static HashMap<String, PluginsC> containerPlugins = new HashMap<String, PluginsC>();
 
-    /**
+    /** 
      * Der DownloadController
      */
     private static JDController controller = null;

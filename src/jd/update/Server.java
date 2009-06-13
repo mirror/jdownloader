@@ -102,7 +102,7 @@ public class Server implements Serializable {
     public void setRequestTime(long l) {
         requestTime = (requestTime * requestCount + l) / (requestCount + 1);
         this.requestCount++;
-        System.out.println(this + " requesttime=" + requestTime);
+       
     }
 
     public long getRequestTime() {

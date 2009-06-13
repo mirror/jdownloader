@@ -38,7 +38,7 @@ import jd.parser.Regex;
  * SimpleFTP, you can connect to an FTP server and upload multiple files.
  * <p>
  * Copyright Paul Mutton, <a
- * href="http://www.jibble.org/">http://www.jibble.org/</a>
+ * href="http://www.jibble.org/host+" >http://www.jibble.org/</a>
  */
 public class SimpleFTP {
     private static boolean DEBUG = true;
@@ -46,6 +46,7 @@ public class SimpleFTP {
     private Socket socket = null;
     private BufferedWriter writer = null;
     private String dir = "/";
+    private String host;
 
     /**
      * Create an instance of SimpleFTP.
@@ -95,6 +96,7 @@ public class SimpleFTP {
     public synchronized void connect(String host, int port, String user, String pass) throws IOException {
         if (socket != null) { throw new IOException("SimpleFTP is already connected. Disconnect first."); }
         socket = new Socket(host, port);
+        this.host=host;
         reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
         String response = readLine();
@@ -121,6 +123,7 @@ public class SimpleFTP {
      */
     public synchronized boolean cwd(String dir) throws IOException {
         dir = dir.replaceAll("[\\\\|//]+?", "/");
+        if (dir.equals(this.dir)) return true;
         sendLine("CWD " + dir);
         String response = readLine();
         boolean ret = response.startsWith("250 ");
@@ -166,7 +169,7 @@ public class SimpleFTP {
     private String readLine() throws IOException {
         String line = reader.readLine();
         if (DEBUG) {
-            System.out.println("< " + line);
+            System.out.println(host+" < " + line);
         }
         return line;
     }
@@ -198,7 +201,7 @@ public class SimpleFTP {
             writer.write(line + "\r\n");
             writer.flush();
             if (DEBUG) {
-                System.out.println("> " + line);
+                System.out.println(host+" > " + line);
             }
         } catch (IOException e) {
             socket = null;
@@ -263,7 +266,21 @@ public class SimpleFTP {
         }
         throw new IOException("SimpleFTP received bad data link information: " + response);
     }
+    public static void main(String[] args) throws Exception {
+        SimpleFTP ftp = new SimpleFTP();
+        ftp.connect("jdupdate.bluehost.to", 2100, "**", "****");
+        ftp.bin();
 
+       ftp.mkdir("/testa/testb/testc");
+       ftp.cwd("/testa/testb/");
+       
+       ftp.mkdir("testd/teste");
+       ftp.mkdir("/testa/testxxx");
+       ftp.mkdir("/testa/testxxx/");
+       ftp.cwd("/testa/testxxx/");
+       ftp.mkdir("/testa/testxxx/");
+       ftp.mkdir("/testa/testxxx/aaa");
+    }
     /**
      * creates directories
      * 
@@ -271,31 +288,49 @@ public class SimpleFTP {
      * @return
      * @throws IOException
      */
-    public boolean mkdir(String cw) throws IOException {
+    public boolean mkdir(String cw2) throws IOException {
         String tmp = this.dir;
-        cw = cw.replace("\\", "/");
-        if (cw.startsWith(this.dir)) cw = cw.substring(this.dir.length());
-        boolean ret = true;
-        String ddir = tmp;
-        String[] dirs = cw.split("[\\\\|/]{1}");
-
-        for (String d : dirs) {
-            if (d == null || d.trim().length() == 0) continue;
-
-            sendLine("MKD " + d);
-            String response = readLine();
-            if (!response.startsWith("257 ") && !response.startsWith("550 ")) {
-
-                ret = false;
-                break;
+        String cw=cw2;
+        try {
+            cw =cw.replace("\\", "/");
+        
+            String[] cwdirs = cw.split("[\\\\|/]{1}");
+            String[] dirdirs = dir.split("[\\\\|/]{1}");
+            int i;
+            int length=0;
+            String root="";
+           for(i=0;i<Math.min(cwdirs.length,dirdirs.length);i++){               
+                if(cwdirs[i].equals(dirdirs[i])){
+                   length+=cwdirs[i].length()+1;
+                   root+=cwdirs[i]+"/";
+                }
             }
-            ddir += d + "/";
-            cwd(ddir);
+           cw=cw;
+           cw=cw.substring(length);
+            String[] dirs = cw.split("[\\\\|/]{1}");
+           if(root.length()>0) cwd(root);
+            for (String d : dirs) {
+                if (d == null || d.trim().length() == 0) {
+                    cwd("/");
+                    continue;
+                }
+
+                sendLine("MKD " + d);
+                String response = readLine();
+                if (!response.startsWith("257 ") && !response.startsWith("550 ")) {
+
+                return false;
+
+                }
+
+                cwd(d);
+            }
+            return true;
+        } finally {
+
+            this.cwd(tmp);
         }
 
-        this.cwd(tmp);
-
-        return ret;
     }
 
     public boolean cwdAdd(String cw) throws IOException {
@@ -380,14 +415,25 @@ public class SimpleFTP {
         ftp.bin();
 
         for (File f : list) {
+
             if (!f.getAbsolutePath().startsWith(root.getAbsolutePath())) { throw new IOException(f + " is not part of " + root); }
-            String subfolder = f.getParentFile().getAbsolutePath().replace(root.getAbsolutePath(), "");
+            String subfolder;
+            // f=f;
+            if (f.isDirectory()) {
+
+                subfolder = f.getAbsolutePath().substring(root.getAbsolutePath().length());
+            } else {
+                subfolder = f.getParent().substring(root.getAbsolutePath().length());
+
+            }
+          
             if (!ftp.cwd(mergeFolders(destfolder, subfolder))) {
                 ftp.mkdir(mergeFolders(destfolder, subfolder));
                 if (!ftp.cwd(mergeFolders(destfolder, subfolder))) { throw new IOException("Unexpected error"); }
             }
             if (f.isDirectory()) {
-                ftp.mkdir(f.getName());
+
+                // ftp.mBETA_20090613_001kdir(f.getName());
             } else {
                 File dummy = File.createTempFile("simpleftp_secure", null);
                 try {
