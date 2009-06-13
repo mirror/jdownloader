@@ -105,8 +105,9 @@ public class WebUpdate implements ControlListener {
             }
             if (localHash == null || !remoteHash.equalsIgnoreCase(localHash)) {
                 logger.info("Download " + file.getAbsolutePath() + "");
+                URLConnectionAdapter con = null;
                 try {
-                    URLConnectionAdapter con = br.openGetConnection(getUpdater(trycount) + "?t=" + System.currentTimeMillis());
+                    con = br.openGetConnection(getUpdater(trycount) + "?t=" + System.currentTimeMillis());
                     if (con.isOK()) {
                         File tmp;
                         Browser.download(tmp = new File(file.getAbsolutePath() + ".tmp"), con);
@@ -132,6 +133,10 @@ public class WebUpdate implements ControlListener {
                         con.disconnect();
                     }
                 } catch (Exception e) {
+                    try {
+                        con.disconnect();
+                    } catch (Exception e2) {
+                    }
                 }
                 new File(file.getAbsolutePath() + ".tmp").delete();
             }
