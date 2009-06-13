@@ -77,11 +77,17 @@ public class Installer {
         language = "us";
         try {
             /* determine real country id */
-            language = new Browser().getPage("http://jdownloader.net:8081/advert/getLanguage.php");
+            Browser br = new Browser();
+            br.setConnectTimeout(10000);
+            br.setReadTimeout(10000);
+            language = br.getPage("http://jdownloader.net:8081/advert/getLanguage.php");
+            if (!br.getRequest().getHttpConnection().isOK()) language = null;
             if (language != null) {
                 language = language.trim();
                 SubConfiguration.getConfig(JDLocale.CONFIG).setProperty("DEFAULTLANGUAGE", language);
                 SubConfiguration.getConfig(JDLocale.CONFIG).save();
+            } else {
+                language = "us";
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -184,7 +190,7 @@ public class Installer {
                 }.waitForEDT();
             }
         }
-        
+
         AbstractDialog.setDefaultDimension(null);
     }
 
@@ -226,7 +232,7 @@ public class Installer {
 
                 })), "growx,pushx,gapleft 40,gapright 10");
                 list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-                if(error)list.setEnabled(false);
+                if (error) list.setEnabled(false);
                 list.setSelectedValue(SubConfiguration.getConfig(JDLocale.CONFIG).getStringProperty(JDLocale.LOCALE_ID, languageid), true);
                 list.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
 
@@ -244,7 +250,7 @@ public class Installer {
 
                 final BrowseFile br;
                 content.add(br = new BrowseFile(), "growx,pushx,gapleft 40,gapright 10");
-                if(error)br.setEnabled(false);
+                if (error) br.setEnabled(false);
                 content.add(new JSeparator(), "growx,pushx,gaptop 5");
                 if (OSDetector.isMac()) {
                     br.setCurrentPath(new File(System.getProperty("user.home") + "/Downloads"));
@@ -266,9 +272,9 @@ public class Installer {
                         dialog = this;
                         this.setIconImage(JDImage.getImage("logo/jd_logo_54_54"));
                         this.setSize(550, 400);
-                       if(error){
-                           this.btnOK.setEnabled(false);
-                       }
+                        if (error) {
+                            this.btnOK.setEnabled(false);
+                        }
                     }
 
                     protected void setReturnValue(boolean b) {
@@ -334,17 +340,17 @@ public class Installer {
 
     public JPanel getInstallerPanel() {
         JPanel c = new JPanel(new MigLayout("ins 10,wrap 1", "[grow,fill]", "[][grow,fill]"));
-      
+
         JLabel lbl = new JLabel(JDLocale.L("installer.gui.message", "After Installation, JDownloader will update to the latest version."));
 
         if (OSDetector.getOSID() == OSDetector.OS_WINDOWS_VISTA) {
-            String dir=JDUtilities.getResourceFile("downloads").getAbsolutePath().substring(3).toLowerCase();
-            
-          if (dir.startsWith("programme\\")|| dir.startsWith("program files\\")) {
+            String dir = JDUtilities.getResourceFile("downloads").getAbsolutePath().substring(3).toLowerCase();
+
+            if (dir.startsWith("programme\\") || dir.startsWith("program files\\")) {
                 lbl.setText(JDLocale.LF("installer.vistaDir.warning", "Warning! JD is installed in %s. This causes errors.", JDUtilities.getResourceFile("downloads")));
                 lbl.setForeground(Color.RED);
                 lbl.setBackground(Color.RED);
-                error=true;
+                error = true;
             }
 
         }
