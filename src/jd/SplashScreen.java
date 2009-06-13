@@ -77,10 +77,17 @@ public class SplashScreen implements ActionListener {
         imageCounter++;
     }
 
+    /*
+     * dieser konstruktor wird benutzt falls kein splash angezeigt werden soll
+     */
     public SplashScreen() {
+
         unused = true;
     }
 
+    /*
+     * dieser konstruktor wird benutzt falls ein splash angezeigt werden soll
+     */
     public SplashScreen(Image image) throws IOException, AWTException {
         // final URL url =
 

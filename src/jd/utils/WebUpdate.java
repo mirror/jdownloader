@@ -64,7 +64,7 @@ public class WebUpdate implements ControlListener {
     }
 
     public static boolean updateUpdater() {
-        final ProgressController progress = new ProgressController(JDLocale.LF("wrapper.webupdate.updateUpdater", "Download updater"));
+        final ProgressController progress = new ProgressController(JDLocale.LF("wrapper.webupdate.updatenewupdater", "Downloading new jdupdate.jar"));
         progress.increase(1);
         Thread ttmp = new Thread() {
             public void run() {
@@ -136,7 +136,7 @@ public class WebUpdate implements ControlListener {
         }
         ttmp.interrupt();
         progress.setColor(Color.RED);
-        progress.setStatusText(JDLocale.LF("wrapper.webupdate.updateUpdater.error_reqeust2", "Could not download current jdupdate.jar"));
+        progress.setStatusText(JDLocale.LF("wrapper.webupdate.updateUpdater.error_reqeust2", "Could not download new jdupdate.jar"));
         progress.finalize(5000);
         logger.info("Update of " + file.getAbsolutePath() + " failed");
         return false;
@@ -248,38 +248,42 @@ public class WebUpdate implements ControlListener {
 
     private static void doUpdate() {
         if (updateinprogress == true) return;
-        updateinprogress = true;
-        while (JDInitialized == false) {
-            int i = 0;
-            try {
-                Thread.sleep(1000);
-                i++;
-                logger.severe("Waiting on JD-Init-Complete since " + i + " secs!");
-            } catch (InterruptedException e) {
+        new Thread() {
+            public void run() {
+                updateinprogress = true;
+                while (JDInitialized == false) {
+                    int i = 0;
+                    try {
+                        Thread.sleep(1000);
+                        i++;
+                        logger.severe("Waiting on JD-Init-Complete since " + i + " secs!");
+                    } catch (InterruptedException e) {
+                    }
+                }
+
+                while (DynamicPluginsFinished == false) {
+                    int i = 0;
+                    try {
+                        Thread.sleep(1000);
+                        i++;
+                        logger.severe("Waiting on DynamicPlugins since " + i + " secs!");
+                    } catch (InterruptedException e) {
+                    }
+                }
+
+                DownloadController.getInstance().backupDownloadLinksSync();
+
+                if (!WebUpdate.updateUpdater()) {
+                    updateinprogress = false;
+                    return;
+                }
+                JDIO.writeLocalFile(JDUtilities.getResourceFile("webcheck.tmp"), new Date().toString() + "\r\n(Revision" + JDUtilities.getRevision() + ")");
+                logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "jdupdate.jar", "/restart", "/rt" + JDUtilities.getRunType() }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
+                if (JDUtilities.getController() != null) JDUtilities.getController().prepareShutdown();
+                updateinprogress = false;
+                System.exit(0);
             }
-        }
-
-        while (DynamicPluginsFinished == false) {
-            int i = 0;
-            try {
-                Thread.sleep(1000);
-                i++;
-                logger.severe("Waiting on DynamicPlugins since " + i + " secs!");
-            } catch (InterruptedException e) {
-            }
-        }
-
-        DownloadController.getInstance().backupDownloadLinksSync();
-
-        if (!WebUpdate.updateUpdater()) {
-            updateinprogress = false;
-            return;
-        }
-        JDIO.writeLocalFile(JDUtilities.getResourceFile("webcheck.tmp"), new Date().toString() + "\r\n(Revision" + JDUtilities.getRevision() + ")");
-        logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "jdupdate.jar", "/restart", "/rt" + JDUtilities.getRunType() }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
-        if (JDUtilities.getController() != null) JDUtilities.getController().prepareShutdown();
-        updateinprogress = false;
-        System.exit(0);
+        }.start();
     }
 
     public void controlEvent(ControlEvent event) {
