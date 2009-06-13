@@ -57,26 +57,28 @@ public class Updater {
     public static StringBuilder SERVERLIST = new StringBuilder();
     static {
         SERVERLIST.append("-1:http://update4ex.jdownloader.org/branches/%BRANCH%/\r\n");
-       
-      
+
         SERVERLIST.append("-1:http://jdupdate.bluehost.to/branches/%BRANCH%/\r\n");
         SERVERLIST.append("-1:http://update1.jdownloader.org/%BRANCH%/\r\n");
         SERVERLIST.append("-1:http://update2.jdownloader.org/%BRANCH%/\r\n");
         SERVERLIST.append("-1:http://update0.jdownloader.org/%BRANCH%/\r\n");
         ;
     }
-//
+
+    //
     /**
      * @param args
      * @throws Exception
      */
     public static void main(String[] args) throws Exception {
 
-        
-        
-//        String s= JDHash.getMD5(new File("C:\\Users\\thomas\\workspace\\JDownloader\\dist\\jdupdate.jar"));
+       
         Updater upd = new Updater();
-        WebUpdater.getConfig("WEBUPDATE").setProperty("BRANCH", "jd_branchy");
+     
+
+      
+        WebUpdater.getConfig("WEBUPDATE").setProperty("BRANCH", "null");
+        WebUpdater.getConfig("WEBUPDATE").save();
         System.out.println("STATUS: Webupdate");
         upd.webupdate();
         // System.out.println("STATUS: Webupdate ende");
@@ -99,12 +101,100 @@ public class Updater {
         upd.checkHashes();
         upd.clone0(upd.branch);
         upd.clone2(upd.branch);
-       
+
         // upd.clonebluehost2();
         upd.uploadHashList();
+        upd.refreshUpdateJar();
         // upd.spread(list);
         upd.incFTPSpread(upd.branch);
+       
         System.exit(0);
+    }
+
+    private void refreshUpdateJar() throws IOException {
+        if (JOptionPane.showConfirmDialog(frame, "upload latest updater?") == JOptionPane.OK_OPTION) {
+            uploadJDUpdateJar();
+        } else {
+
+            File file0 = null;
+            try {
+                SimpleFTP.download("update0.jdownloader.org", 2121, getCFG("update012user"), getCFG("update012pass"), "/http/", "jdupdate.jar", file0 = File.createTempFile("hash", null));
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                file0 = null;
+            }
+            File file1 = null;
+            try {
+                SimpleFTP.download("update1.jdownloader.org", 2121, getCFG("update012user"), getCFG("update012pass"), "/http/", "jdupdate.jar", file1 = File.createTempFile("hash", null));
+            } catch (Exception e) {
+                e.printStackTrace();
+                file1 = null;
+            }
+            File file2 = null;
+            try {
+                SimpleFTP.download("update2.jdownloader.org", 2121, getCFG("update012user"), getCFG("update012pass"), "/http/", "jdupdate.jar", file2 = File.createTempFile("hash", null));
+            } catch (Exception e) {
+                e.printStackTrace();
+                file2 = null;
+            }
+         
+            
+            File hash0 = null;
+            try {
+                SimpleFTP.download("update0.jdownloader.org", 2121, getCFG("update012user"), getCFG("update012pass"), "/http/", "jdupdate.jar.md5", hash0 = File.createTempFile("hash", null));
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                file0 = null;
+            }
+            File hash1 = null;
+            try {
+                SimpleFTP.download("update1.jdownloader.org", 2121, getCFG("update012user"), getCFG("update012pass"), "/http/", "jdupdate.jar.md5", hash1 = File.createTempFile("hash", null));
+            } catch (Exception e) {
+                e.printStackTrace();
+                file1 = null;
+            }
+            File hash2 = null;
+            try {
+                SimpleFTP.download("update2.jdownloader.org", 2121, getCFG("update012user"), getCFG("update012pass"), "/http/", "jdupdate.jar.md5", hash2 = File.createTempFile("hash", null));
+            } catch (Exception e) {
+                e.printStackTrace();
+                file2 = null;
+            }
+            
+            
+            String[] hashes = new String[] { JDHash.getMD5(file0), JDHash.getMD5(file1), JDHash.getMD5(file2) ,JDIO.getLocalFile(hash0),JDIO.getLocalFile(hash1),JDIO.getLocalFile(hash2)};
+            String c = null;
+            boolean res = false;
+            for (String h : hashes) {
+                if (h == null) continue;
+                if (c != null && !c.equalsIgnoreCase(h.trim())) {
+                    System.err.println("Upadte.jar sind nicht gleich");
+                    if (JOptionPane.showConfirmDialog(frame, "upload latest updater?") == JOptionPane.OK_OPTION) {
+                        uploadJDUpdateJar();
+                        return;
+                    }
+
+                }
+                c = h.trim();
+            }
+            System.out.println("JDUpdate.jar überprüft: hashwerte ok: " + c);
+
+        }
+    }
+
+    private void uploadJDUpdateJar() throws IOException {
+        File file = File.createTempFile("hash", null);
+        file = new File(file.getParentFile(), "jdupdate.jar.md5");
+
+        JDIO.writeLocalFile(file, JDHash.getMD5(new File(getCFG("localupdatejarpath"))));
+
+        System.out.println("Hash: " + JDIO.getLocalFile(file));
+        SimpleFTP.uploadtoFolderSecure("update0.jdownloader.org", 2121, getCFG("update012user"), getCFG("update012pass"), "/http/", new File(getCFG("localupdatejarpath")), file);
+        SimpleFTP.uploadtoFolderSecure("update1.jdownloader.org", 2121, getCFG("update012user"), getCFG("update012pass"), "/http/", new File(getCFG("localupdatejarpath")), file);
+        SimpleFTP.uploadtoFolderSecure("update2.jdownloader.org", 2121, getCFG("update012user"), getCFG("update012pass"), "/http/", new File(getCFG("localupdatejarpath")), file);
+
     }
 
     private void incFTPSpread(final String branch2) throws IOException {
@@ -115,7 +205,7 @@ public class Updater {
 
             public void go() throws Exception {
                 SimpleFTP.uploadSecure("jdupdate.bluehost.to", 2100, getCFG("bluehost_user"), getCFG("bluehost_pass"), "/branches/" + branch2, workingDir, list.toArray(new File[] {}));
-                
+
             }
         });
         uploader.add(new JDRunnable() {
@@ -125,19 +215,18 @@ public class Updater {
 
             }
         });
-     
-       
-       int todo = uploader.getJobsAdded();
-       uploader.start();
-       while (uploader.getJobsFinished() != todo) {
-           try {
-               Thread.sleep(200);
-           } catch (InterruptedException e) {
-               return;
-           }
-       }
-       uploader.stop();
-   
+
+        int todo = uploader.getJobsAdded();
+        uploader.start();
+        while (uploader.getJobsFinished() != todo) {
+            try {
+                Thread.sleep(200);
+            } catch (InterruptedException e) {
+                return;
+            }
+        }
+        uploader.stop();
+
     }
 
     private void cleanUp() {
@@ -789,7 +878,7 @@ public class Updater {
             if (f.isDirectory()) {
                 if (remote.startsWith(local)) { return true; }
             } else {
-                if (remote.equals(local)&&JDHash.getMD5(f).equalsIgnoreCase(fu.getRemoteHash())) { return true; }
+                if (remote.equals(local) && JDHash.getMD5(f).equalsIgnoreCase(fu.getRemoteHash())) { return true; }
             }
 
         }

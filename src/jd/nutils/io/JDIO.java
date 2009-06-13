@@ -273,6 +273,7 @@ public class JDIO {
      * @return File Content als String
      */
     public static String getLocalFile(File file) {
+        if (file == null) return null;
         if (!file.exists()) { return ""; }
         BufferedReader f;
         try {

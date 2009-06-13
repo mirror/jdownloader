@@ -525,4 +525,14 @@ public class SimpleFTP {
 
     }
 
+    public static void download(String ip, int port, String user, String password, String filepath,String name, File file) throws IOException {
+        SimpleFTP ftp = new SimpleFTP();
+        ftp.connect(ip, port, user, password);
+        ftp.bin();
+        ftp.cwd(filepath);
+        ftp.download(name, file);
+        
+        
+    }
+
 }
