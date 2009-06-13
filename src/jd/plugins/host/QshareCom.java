@@ -17,15 +17,12 @@
 package jd.plugins.host;
 
 import java.io.IOException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
+import java.util.HashMap;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.http.Encoding;
+import jd.nutils.JDHash;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
@@ -42,68 +39,32 @@ public class QshareCom extends PluginForHost {
         this.enablePremium("http://s1.qshare.com/index.php?sysm=sys_page&sysf=site&site=buy");
     }
 
-    //@Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo(this, account);
-        Browser br = new Browser();
-        br.setCookiesExclusive(true);
-        br.clearCookies(getHost());
-        br.setAcceptLanguage("en, en-gb;q=0.8");
-
-        br.getPage("http://www.qshare.com");
-        br.getPage("http://www.qshare.com/index.php?sysm=user_portal&sysf=login");
+    // @Override
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        setBrowserExclusive();
         br.setFollowRedirects(false);
-        // passt invalid html code an. es fehlt der form-close tag
-        if (br.getRequest().getHtmlCode().toLowerCase().contains("<form") && !br.getRequest().getHtmlCode().toLowerCase().contains("</form")) {
-            br.getRequest().setHtmlCode(br.getRequest().getHtmlCode() + "</form>");
+
+        String id = new Regex(downloadLink.getDownloadURL(), "get/(\\d+)/").getMatch(0);
+        br.getPage("http://qshare.com/api/file_info.php?id=" + id);
+        if (!br.containsHTML("#")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        HashMap<String, String> infoMap = new HashMap<String, String>();
+        String[] infos = br.toString().split("#");
+        for (String info : infos) {
+            infoMap.put(info.split(":")[0], info.split(":")[1]);
         }
+        downloadLink.setName(infoMap.get("NAME").trim());
+        downloadLink.setDownloadSize(Long.parseLong(infoMap.get("SIZE").trim()));
+        downloadLink.setMD5Hash(infoMap.get("MD5").trim());
 
-        Form[] forms = br.getForms();
-        Form login = forms[0];
-        login.put("username", account.getUser());
-        login.put("password", account.getPass());
-        login.put("cookie", "1");
-        br.submitForm(login);
-
-        String premiumError = br.getRegex("Following error occured: (.*?)[\\.|<]").getMatch(0);
-        if (premiumError != null) {
-            ai.setValid(false);
-            ai.setStatus(premiumError);
-            return ai;
-        }
-        br.getPage("http://qshare.com/index.php?sysm=user_adm&sysf=details");
-
-        String expire = br.getRegex("[Ablauf der Flatrate am|Flatrate expires on]: <SPAN STYLE=.*?>(.*?)</SPAN>").getMatch(0);
-
-        SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy hh:mm:ss", Locale.UK);
-        if (expire == null) {
-            if (br.containsHTML("Flatrate")) {
-                ai.setStatus("Account expired");
-            } else {
-                ai.setStatus("Logins not valid");
-            }
-
-            ai.setValid(false);
-            return ai;
-        }
-        ai.setStatus("Account is ok");
-        // 2009-07-19 17:50:29
-        logger.info(dateFormat.format(new Date()) + "");
-        Date date;
-        try {
-            date = dateFormat.parse(expire);
-            ai.setValidUntil(date.getTime());
-        } catch (ParseException e) {
-            logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
-        }
-        return ai;
+        return AvailableStatus.TRUE;
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
+        br.setDebug(false);
         String error = br.getRegex("<SPAN STYLE=\"font\\-size:13px;color:#BB0000;font\\-weight:bold\">(.*?)</SPAN>").getMatch(0);
         if (error != null) throw new PluginException(LinkStatus.ERROR_FATAL, Encoding.UTF8Encode(error));
 
@@ -111,22 +72,26 @@ public class QshareCom extends PluginForHost {
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.getPage(url);
 
-        if (br.getRegex("Du hast die maximal zulässige Anzahl").matches()) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
+        if (br.getRegex("(Du hast die maximal zulässige Anzahl|You have exceeded the maximum allowed)").matches()) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
 
-        String wait = br.getRegex("Dein Frei-Traffic wird in ([\\d]*?) Minuten wieder").getMatch(0);
-
+        String wait = br.getRegex("Dein Freivolumen wird in <b>([\\d]*?) Minuten").getMatch(0);
         if (wait != null && !downloadLink.getBooleanProperty("trywithoutwait", true)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait.trim()) * 60 * 1000l);
 
-        String link = br.getRegex("<DIV ID=\"download_link\"><A HREF=\"(.*?)\"").getMatch(0);
-
+        String link = br.getRegex("writeToPage\\('<A HREF=\"(.*?)\"").getMatch(0);
         if (link == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
 
-        br.setFollowRedirects(true);
+        br.setFollowRedirects(false);
         dl = br.openDownload(downloadLink, link, true, 1);
-        if (!dl.getConnection().isContentDisposition() && wait != null) {
+        if (!dl.getConnection().isContentDisposition()) {
             dl.getConnection().disconnect();
-            downloadLink.setProperty("trywithoutwait", false);
-            throw new PluginException(LinkStatus.ERROR_RETRY);
+            if (dl.getConnection().getContentType().contains("html")) {
+                logger.severe("Server error. The file does not exist");
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            }
+            if (wait != null) {
+                downloadLink.setProperty("trywithoutwait", false);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
         }
         if (dl.startDownload()) {
             downloadLink.setProperty("trywithoutwait", true);
@@ -134,116 +99,132 @@ public class QshareCom extends PluginForHost {
 
     }
 
-    //@Override
+    // @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        String user = account.getUser();
-        String pass = account.getPass();
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
+        requestFileInformation(downloadLink);
+        login(account);
 
-        br.setCookiesExclusive(true);
-        br.clearCookies(getHost());
-        br.getPage("http://www.qshare.com");
-        br.getPage("http://www.qshare.com/index.php?sysm=user_portal&sysf=login");
-        br.setFollowRedirects(false);
-        // passt invalid html code an. es fehlt der form-close tag
-        if (br.getRequest().getHtmlCode().toLowerCase().contains("<form") && !br.getRequest().getHtmlCode().toLowerCase().contains("</form")) {
-            br.getRequest().setHtmlCode(br.getRequest().getHtmlCode() + "</form>");
-        }
-
-        Form[] forms = br.getForms();
-        Form login = forms[0];
-        login.put("username", user);
-        login.put("password", pass);
-        login.put("cookie", "1");
-        br.submitForm(login);
-
-        String premiumError = br.getRegex("[Following error occured|Folgender Fehler ist aufgetreten]: (.*?)[\\.|<]").getMatch(0);
-        if (premiumError != null) {
-            linkStatus.setErrorMessage(Encoding.htmlDecode(premiumError));
-            linkStatus.addStatus(LinkStatus.ERROR_PREMIUM);
-            linkStatus.setValue(LinkStatus.VALUE_ID_PREMIUM_DISABLE);
-            return;
-        }
         br.getPage(downloadLink.getDownloadURL());
         String url = br.getRegex("A HREF=\"(.*?)\">").getMatch(0);
-        br.openGetConnection(url);
+        br.getPage(url);
 
         if (br.getRedirectLocation() != null) {
-            logger.info("Direct Download is activ");
-            dl = br.openDownload(downloadLink, (String) null, true, 0);
+            logger.info("QSHARE.COM: Direct Download is activ");
+            dl = br.openDownload(downloadLink, br.getRedirectLocation(), true, 0);
         } else {
-            logger.warning("InDirect Download is activ (is much slower... you should active direct downloading in the configs(qshare configs)");
-            br.loadConnection(null);
+            logger.warning("QSHARE.COM: Indirect Download is activ (is much slower... you should active direct downloading in the configs(qshare configs)");
+            // Keine errors gefunden, deshalb folgendes Regex evtl falsch
             String error = br.getRegex("<SPAN STYLE=\"font\\-size:13px;color:#BB0000;font\\-weight:bold\">(.*?)</SPAN>").getMatch(0);
             if (error != null) {
-                linkStatus.setErrorMessage(error);
-                linkStatus.addStatus(LinkStatus.ERROR_FATAL);
-                return;
+                logger.severe(error);
+                throw new PluginException(LinkStatus.ERROR_FATAL);
             }
-            forms = br.getForms();
-            Form premium = forms[forms.length - 1];
-
-            br.setCookiesExclusive(true);
-            br.clearCookies(getHost());
-            br.setFollowRedirects(false);
-            br.submitForm(premium);
-            br.getPage((String) null);
-            if (br.getRequest().getHtmlCode().toLowerCase().contains("<form") && !br.getRequest().getHtmlCode().toLowerCase().contains("</form")) {
-                br.getRequest().setHtmlCode(br.getRequest().getHtmlCode() + "</form>");
-            }
-            forms = br.getForms();
-            login = forms[forms.length - 1];
-            login.put("username", user);
-            login.put("password", pass);
-            login.put("cookie", "1");
-            br.submitForm(login);
-            br.getPage((String) null);
+            String[] links = br.getRegex("class=\"button\" href=\"(.*?)\"><span>").getColumn(0);
+            if (links.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            br.getPage(links[1]);
             url = br.getRegex("(http://\\w{1,5}.qshare.com/\\w{1,10}/\\w{1,50}/\\w{1,50}/\\w{1,50}/\\w{1,50}/" + account.getUser() + "/" + account.getPass() + "/.*?)\"").getMatch(0);
+            if (links.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             br.setFollowRedirects(true);
             dl = br.openDownload(downloadLink, url, true, 0);
 
         }
 
+        if (!dl.getConnection().isContentDisposition()) {
+            dl.getConnection().disconnect();
+            if (dl.getConnection().getContentType().contains("html")) {
+                logger.severe("QSHARE.COM: Server error. The file does not exist");
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            }
+        }
         dl.startDownload();
 
     }
 
-    //@Override
+    public void login(Account account) throws Exception {
+        setBrowserExclusive();
+        br.setFollowRedirects(false);
+        br.getPage("http://www.qshare.com/index.php?sysm=user_portal&sysf=login&new_lang=1");
+        // passt invalid html code an. es fehlt der form-close tag
+        if (br.getRequest().getHtmlCode().toLowerCase().contains("<form") && !br.getRequest().getHtmlCode().toLowerCase().contains("</form")) {
+            br.getRequest().setHtmlCode(br.getRequest().getHtmlCode() + "</form>");
+        }
+        Form form = br.getForm(0);
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        form.put("username", Encoding.urlEncode(account.getUser()));
+        form.put("password", Encoding.urlEncode(account.getPass()));
+        form.remove("cookie");
+        br.submitForm(form);
+
+        String premiumError = br.getRegex("[Following error occured|Folgender Fehler ist aufgetreten]: (.*?)[\\.|<]").getMatch(0);
+        if (premiumError != null) {
+            account.setEnabled(false);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        }
+
+    }
+
+    // @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo(this, account);
+        HashMap<String, Long> apiMap = new HashMap<String, Long>();
+        String[] accInfos = br.getPage("http://qshare.com/api/account_info.php?user=" + account.getUser() + "&pass=" + JDHash.getMD5(account.getPass())).split("#");
+        for (String accInfo : accInfos) {
+            if (!accInfo.split(":")[0].trim().equalsIgnoreCase("USER")) {
+                apiMap.put(accInfo.split(":")[0].trim(), Long.parseLong(accInfo.split(":")[1].trim()));
+            }
+        }
+
+        if (apiMap.get("ACTIVE") == 0) {
+            ai.setValid(false);
+            ai.setStatus("Invalid account");
+            return ai;
+        } else
+            ai.setValid(true);
+
+        if (apiMap.get("FLAT") == 1) {
+            ai.setTrafficLeft(-1l);
+            if (apiMap.get("FLAT_END") != 0)
+                ai.setValidUntil(apiMap.get("FLAT_END") * 1000);
+            else
+                ai.setValidUntil(-1l);
+            ai.setStatus("Flatrate account");
+        } else {
+            ai.setTrafficLeft(apiMap.get("TRAFFIC_REMAIN"));
+            ai.setTrafficMax(apiMap.get("TRAFFICMAX"));
+            ai.setValidUntil(apiMap.get("VOLUME_EXIRE") * 1000);
+            ai.setStatus("Volume account");
+        }
+        ai.setCreateTime(apiMap.get("CREATETIME") * 1000);
+        ai.setFilesNum(apiMap.get("FILESNUM"));
+        ai.setUsedSpace(apiMap.get("FILESIZE"));
+        ai.setPremiumPoints(apiMap.get("PREMIUMPOINTS"));
+        return ai;
+    }
+
+    // @Override
     public String getAGBLink() {
         return "http://s1.qshare.com/index.php?sysm=sys_page&sysf=site&site=terms";
     }
 
-    //@Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        String[] dat = br.getRegex("<SPAN STYLE=\"font-size:13px;vertical-align:middle\">(.*?) \\((.*?)\\).*?</SPAN>").getRow(0);
-        if (dat.length != 2) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setName(dat[0].trim());
-        downloadLink.setDownloadSize(Regex.getSize(dat[1].trim()));
-        return AvailableStatus.TRUE;
-    }
-
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void resetDownloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 
