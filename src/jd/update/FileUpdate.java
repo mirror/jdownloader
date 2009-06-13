@@ -156,15 +156,24 @@ public class FileUpdate {
                 result.append("Downloadsource: " + url + "\r\n");
                 startTime = System.currentTimeMillis();
                 URLConnectionAdapter con = null;
+                int response=-1;
                 try {
                     con = br.openGetConnection(url);
                     endTime = System.currentTimeMillis();
+                    response = con.getResponseCode();
                     currentServer.setRequestTime(endTime - startTime);
                 } catch (Exception e) {
                     result.append("Error. Connection error\r\n");
-                    currentServer.setRequestTime(10000l);
+                    currentServer.setRequestTime(100000l);
                     continue;
                 }
+                if(response!=200){
+                    result.append("Error. Connection error "+response+"\r\n");
+                    currentServer.setRequestTime(500000l);
+                    continue;  
+                    
+                }
+                
                 try {
                     Browser.download(tmpFile, con);
                 } catch (Exception e) {

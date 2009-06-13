@@ -71,7 +71,7 @@ public class Updater {
         upd.moveJars(getCFG("dist_dir"));
         // // // System.out.println("STATUS: FINISHED");
         upd.cleanUp();
-        String id = upd.createBranch(System.currentTimeMillis() + "_testbin");
+        String id = upd.createBranch(JOptionPane.showInputDialog(upd.frame,"branchname"));
 
         ArrayList<File> list = upd.getFileList();
         // //

@@ -250,7 +250,8 @@ public class WebUpdater implements Serializable {
             }
             System.err.println("No branches found on " + serv);
         }
-        return null;
+        branches = new String[] {};
+        return branches;
     }
 
     public boolean isIgnorePlugins() {
@@ -273,10 +274,14 @@ public class WebUpdater implements Serializable {
     private void loadUpdateList() throws Exception {
         for (int trycount = 0; trycount < 10; trycount++) {
             try {
-                String serverHash = br.getPage(getZipMD5(trycount) + "?t=" + System.currentTimeMillis()).trim();
+                String path = getZipMD5(trycount);
+                if (path == null) continue;
+                String serverHash = br.getPage(path + "?t=" + System.currentTimeMillis()).trim();
                 String localHash = JDHash.getMD5(JDUtilities.getResourceFile(UPDATE_ZIP_LOCAL_PATH));
                 if (!serverHash.equalsIgnoreCase(localHash)) {
-                    Browser.download(JDUtilities.getResourceFile(UPDATE_ZIP_LOCAL_PATH), getZipUrl(trycount) + "?t=" + System.currentTimeMillis());
+                    path = getZipUrl(trycount);
+                    if (path == null) continue;
+                    Browser.download(JDUtilities.getResourceFile(UPDATE_ZIP_LOCAL_PATH), path + "?t=" + System.currentTimeMillis());
                 }
                 UnZip u = new UnZip(JDUtilities.getResourceFile(UPDATE_ZIP_LOCAL_PATH), JDUtilities.getResourceFile("tmp/"));
 
@@ -298,6 +303,7 @@ public class WebUpdater implements Serializable {
     }
 
     private String getListPath(int trycount) {
+        if (getBranch() == null) return null;
         return UPDATE_MIRROR[trycount % UPDATE_MIRROR.length] + getBranch() + "_server.list";
     }
 
@@ -313,6 +319,7 @@ public class WebUpdater implements Serializable {
 
         WebUpdater.getConfig("WEBUPDATE").setProperty("BRANCHINUSE", ret);
         WebUpdater.getConfig("WEBUPDATE").save();
+        if (ret == null || ret.contains("%") || ret.contains(" ")) { return null; }
         return ret;
     }
 
@@ -331,10 +338,23 @@ public class WebUpdater implements Serializable {
     }
 
     private ArrayList<Server> updateAvailableServers() {
+        boolean fnf = true;
         for (int trycount = 0; trycount < 10; trycount++) {
             try {
                 log("Update Downloadmirrors");
-                br.getPage(getListPath(trycount) + "?t=" + System.currentTimeMillis());
+                String path = getListPath(trycount);
+                if (path == null) continue;
+                br.getPage(path + "?t=" + System.currentTimeMillis());
+                if (br.getRequest().getHttpConnection().getResponseCode() != 404l) {
+                    fnf = false;
+
+                   
+
+                }
+                if (br.getRequest().getHttpConnection().getResponseCode() != 200l) {
+
+                    continue;
+                }
                 int total = 0;
                 ArrayList<Server> servers = new ArrayList<Server>();
                 Server serv;
@@ -364,6 +384,12 @@ public class WebUpdater implements Serializable {
             } catch (InterruptedException e) {
                 continue;
             }
+        }
+        if (fnf && WebUpdater.getConfig("WEBUPDATE").getStringProperty("BRANCH") != null) {
+            log("Branch " + WebUpdater.getConfig("WEBUPDATE").getStringProperty("BRANCH") + " is not available any more. Reset to default");
+            WebUpdater.getConfig("WEBUPDATE").setProperty("BRANCH", null);
+            WebUpdater.getConfig("WEBUPDATE").save();
+            return updateAvailableServers();
         }
         return getAvailableServers();
     }
