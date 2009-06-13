@@ -332,14 +332,14 @@ public class Installer {
 
     public JPanel getInstallerPanel() {
         JPanel c = new JPanel(new MigLayout("ins 10,wrap 1", "[grow,fill]", "[][grow,fill]"));
-
+      
         JLabel lbl = new JLabel(JDLocale.L("installer.gui.message", "After Installation, JDownloader will update to the latest version."));
 
         if (OSDetector.getOSID() == OSDetector.OS_WINDOWS_VISTA) {
-
-            String programs = new File(System.getProperty("java.home")).getParentFile().getParentFile().getParent();
-            if (JDUtilities.getResourceFile("downloads").getAbsolutePath().startsWith(programs)) {
-                lbl.setText(JDLocale.LF("installer.vistaDir.warning", "Warning! JD is installed in %s. This causes errors.", programs));
+            String dir=JDUtilities.getResourceFile("downloads").getAbsolutePath().substring(3).toLowerCase();
+            
+          if (dir.startsWith("programme\\")|| dir.startsWith("program files\\")) {
+                lbl.setText(JDLocale.LF("installer.vistaDir.warning", "Warning! JD is installed in %s. This causes errors.", JDUtilities.getResourceFile("downloads")));
                 lbl.setForeground(Color.RED);
                 lbl.setBackground(Color.RED);
                 error=true;
