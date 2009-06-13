@@ -307,6 +307,18 @@ public class Main {
                         }
 
                     }.waitForEDT();
+                } else {
+                    new GuiRunnable<Object>() {
+                        // @Override
+                        public Object runSave() {
+                            try {
+                                SPLASH = new SplashScreen();
+                            } catch (Exception e) {
+                                JDLogger.exception(e);
+                            }
+                            return null;
+                        }
+                    }.waitForEDT();
                 }
             }
 
@@ -416,7 +428,6 @@ public class Main {
     }
 
     private static void increaseSplashStatus() {
-        if (SPLASH == null) return;
         SPLASH.setNextImage();
     }
 
@@ -484,14 +495,14 @@ public class Main {
             public void run() {
                 JDUtilities.getController().addControlListener(new ControlListener() {
                     public void controlEvent(ControlEvent event) {
-                        if (event.getID() == ControlEvent.CONTROL_INIT_COMPLETE && event.getSource() instanceof Main) {                            
+                        if (event.getID() == ControlEvent.CONTROL_INIT_COMPLETE && event.getSource() instanceof Main) {
                             JDUtilities.getController().removeControlListener(this);
                             stop = true;
                         }
                     }
                 });
                 int i = 10;
-                
+
                 while (!stop) {
                     SPLASH.setProgress(i % 100, 100, JDLocale.L("gui.splash.progress.updateplugins", "Update Plugins"));
                     try {

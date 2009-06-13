@@ -71,9 +71,14 @@ public class SplashScreen implements ActionListener {
     private int imageCounter = 1;
 
     private JProgressBar progress;
+    private boolean unused = false;
 
     public void setNextImage() {
         imageCounter++;
+    }
+
+    public SplashScreen() {
+        unused = true;
     }
 
     public SplashScreen(Image image) throws IOException, AWTException {
@@ -185,11 +190,13 @@ public class SplashScreen implements ActionListener {
     }
 
     public void finish() {
+        if (unused) return;
         timer.stop();
         window.dispose();
     }
 
     public void setProgress(final int i, final int j, final String l) {
+        if (unused) return;
         new GuiRunnable<Object>() {
 
             @Override
