@@ -37,6 +37,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -663,15 +664,15 @@ public class JDUtilities {
      * @return Ein passendes Plugin oder null
      */
     public static PluginForHost getPluginForHost(String host) {
-        for (int i = 0; i < HostPluginWrapper.getHostWrapper().size(); i++) {
-            if (HostPluginWrapper.getHostWrapper().get(i).getHost().equals(host.toLowerCase())) { return (PluginForHost) HostPluginWrapper.getHostWrapper().get(i).getPlugin(); }
+        for (HostPluginWrapper pHost : JDUtilities.getPluginsForHost()) {
+            if (pHost.getHost().equals(host.toLowerCase())) return pHost.getPlugin();
         }
         return null;
     }
 
     public static PluginForHost getNewPluginForHostInstance(String host) {
-        for (int i = 0; i < HostPluginWrapper.getHostWrapper().size(); i++) {
-            if (HostPluginWrapper.getHostWrapper().get(i).getHost().equals(host.toLowerCase())) { return (PluginForHost) HostPluginWrapper.getHostWrapper().get(i).getNewPluginInstance(); }
+        for (HostPluginWrapper pHost : JDUtilities.getPluginsForHost()) {
+            if (pHost.getHost().equals(host.toLowerCase())) return (PluginForHost) pHost.getNewPluginInstance();
         }
         return null;
     }
@@ -683,10 +684,11 @@ public class JDUtilities {
      * @return Plugins zum Downloaden von einem Anbieter
      */
     public static ArrayList<HostPluginWrapper> getPluginsForHost() {
-        ArrayList<HostPluginWrapper> hosts = HostPluginWrapper.getHostWrapper();
+        ArrayList<HostPluginWrapper> hosts = new ArrayList<HostPluginWrapper>(HostPluginWrapper.getHostWrapper());
+        Collections.sort(hosts);
         return hosts;
     }
-
+    
     /**
      * Parsed den Revision-String ins Format 0.000
      * 
@@ -703,7 +705,7 @@ public class JDUtilities {
      * 
      * @param revision
      * @return RevisionsNummer
-     */ 
+     */
     public static String getVersion(String revision) {
 
         String ret = new Regex(revision, "\\$Revision: ([\\d]*?) \\$").getMatch(0);
@@ -936,7 +938,7 @@ public class JDUtilities {
 
                     if (!new File(configpath + "database.script").delete() || !new File(configpath + "database.properties").delete()) {
                         logger.severe("Could not delete broken Database");
-                        UserIO.getInstance().requestMessageDialog( "Could not delete broken database. Please remove the JD_HOME/config directory and restart JD");
+                        UserIO.getInstance().requestMessageDialog("Could not delete broken database. Please remove the JD_HOME/config directory and restart JD");
 
                     }
                 }
@@ -945,7 +947,7 @@ public class JDUtilities {
                     dbconnect = new DatabaseConnector();
                 } catch (Exception e1) {
                     JDLogger.exception(e1);
-                    UserIO.getInstance().requestMessageDialog( "Could not create database. Please remove the JD_HOME/config directory and restart JD");
+                    UserIO.getInstance().requestMessageDialog("Could not create database. Please remove the JD_HOME/config directory and restart JD");
 
                     System.exit(1);
                 }

@@ -16,12 +16,77 @@
 
 package jd.gui.skins.simple.startmenu;
 
-public class PremiumMenu extends JStartMenu {
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JMenu;
+import javax.swing.JMenuItem;
+
+import jd.HostPluginWrapper;
+import jd.config.Configuration;
+import jd.config.MenuItem;
+import jd.gui.UserIO;
+import jd.gui.skins.simple.JDMenu;
+import jd.nutils.JDFlags;
+import jd.plugins.PluginForHost;
+import jd.utils.JDLocale;
+import jd.utils.JDTheme;
+import jd.utils.JDUtilities;
+
+public class PremiumMenu extends JStartMenu implements ActionListener {
 
     private static final long serialVersionUID = 5075413754334671773L;
 
+    private JCheckBoxMenuItem premium;
+
     public PremiumMenu() {
         super("gui.menu.premium", "gui.images.taskpanes.premium");
+
+        updateMenu();
+    }
+
+    private void updateMenu() {
+        premium = new JCheckBoxMenuItem(JDLocale.L("gui.menu.action.premium.desc", "Enable Premiumusage globally"));
+        premium.addActionListener(this);
+        premium.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true));
+        this.add(premium);
+        this.addSeparator();
+
+        PluginForHost plugin;
+        JMenu pluginPopup;
+        JMenuItem mi;
+        for (HostPluginWrapper wrapper : JDUtilities.getPluginsForHost()) {
+            if (!wrapper.isLoaded()) continue;
+            if (!wrapper.isPremiumEnabled()) continue;
+            plugin = wrapper.getPlugin();
+            pluginPopup = new JMenu(wrapper.getHost());
+            if (plugin.hasHosterIcon()) pluginPopup.setIcon(plugin.getHosterIcon());
+            for (MenuItem next : plugin.createMenuitems()) {
+                mi = JDMenu.getJMenuItem(next);
+                if (mi == null) {
+                    pluginPopup.addSeparator();
+                } else {
+                    pluginPopup.add(mi);
+                }
+            }
+            this.add(pluginPopup);
+        }
+    }
+
+    public void actionPerformed(ActionEvent e) {
+        if (e.getSource() == premium) {
+            if (!premium.isSelected()) {
+                int answer = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_COUNTDOWN, JDLocale.L("dialogs.premiumstatus.global.title", "Disable Premium?"), JDLocale.L("dialogs.premiumstatus.global.message", "Do you really want to disable all premium accounts?"), JDTheme.II("gui.images.warning", 32, 32), JDLocale.L("gui.btn_yes", "Yes"), JDLocale.L("gui.btn_no", "No"));
+                if (JDFlags.hasAllFlags(answer, UserIO.RETURN_CANCEL) && !JDFlags.hasAllFlags(answer, UserIO.RETURN_SKIPPED_BY_DONT_SHOW)) {
+                    premium.setSelected(true);
+                    return;
+                }
+            }
+
+            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, premium.isSelected());
+            JDUtilities.getConfiguration().save();
+        }
     }
 
 }

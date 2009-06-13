@@ -23,7 +23,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.logging.Level;
 
 import javax.swing.JComponent;
 import javax.swing.JFrame;
@@ -96,7 +95,7 @@ public class Main {
                     OSFilter = false;
                 } else if (p.trim().equalsIgnoreCase("-brdebug")) {
                     Browser.setVerbose(true);
-                  
+
                 } else if (p.trim().equalsIgnoreCase("-branch")) {
                     String br = args[++i];
                     if (br.equalsIgnoreCase("reset")) br = null;

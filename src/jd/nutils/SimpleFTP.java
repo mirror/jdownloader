@@ -113,7 +113,7 @@ public class SimpleFTP {
 
         // Response: 257 "/" is the current directory
         dir = new Regex(response, "\"(.*)\"").getMatch(0);
-        dir = dir;
+        // dir = dir;
         // Now logged in.
     }
 

@@ -29,6 +29,7 @@ public class JDStartMenu {
         popup.add(new CleanupMenu());
         popup.add(new SaveMenu());
         popup.addSeparator();
+        popup.add(new PremiumMenu());
         popup.add(new AddonsMenu());
         popup.addSeparator();
         popup.add(new AboutMenu());

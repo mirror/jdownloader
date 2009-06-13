@@ -266,7 +266,7 @@ public class Updater {
 
         br.postPage("http://update2.jdownloader.org/clone.php?pass=" + getCFG("updateHashPW") + "&branch=" + branch, map);
         System.out.println(br + "");
-        map = map;
+        // map = map;
         if (!br.containsHTML("<b>fail</b>") && !br.containsHTML("<b>Warning</b>") && !br.containsHTML("<b>Error</b>")) {
             System.out.println("CLONE update2 OK");
             return;
@@ -285,7 +285,7 @@ public class Updater {
 
         br.postPage("http://update0.jdownloader.org/clone.php?pass=" + getCFG("updateHashPW") + "&branch=" + branch, map);
         System.out.println(br + "");
-        map = map;
+        // map = map;
         if (!br.containsHTML("<b>fail</b>") && !br.containsHTML("<b>Warning</b>") && !br.containsHTML("<b>Error</b>")) {
             System.out.println("CLONE update0 OK");
             return;
@@ -367,7 +367,7 @@ public class Updater {
             map.put("addonlist", Encoding.urlEncode(addonlist));
             br.postPage("http://update1.jdownloader.org/updateHashList.php?pass=" + getCFG("updateHashPW") + "&branch=" + branch, map);
             System.out.println(br + "");
-            br = br;
+            // br = br;
             if (br.containsHTML("success") && !br.containsHTML("<b>Warning</b>") && !br.containsHTML("<b>Error</b>")) break;
 
             JOptionPane.showConfirmDialog(frame, "MD5 ERROR!!!! See log");

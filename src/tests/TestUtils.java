@@ -71,7 +71,7 @@ public abstract class TestUtils {
     }
 
     public static void initJD() {
-        new GuiRunnable(){
+        new GuiRunnable<Object>() {
 
             @Override
             public Object runSave() {
@@ -79,9 +79,9 @@ public abstract class TestUtils {
                 FRAME.setVisible(true);
                 return null;
             }
-            
+
         }.waitForEDT();
- 
+
         // frame.setAlwaysOnTop(true);
         System.setProperty("file.encoding", "UTF-8");
         // Mac specific //
@@ -111,7 +111,7 @@ public abstract class TestUtils {
         init.loadPluginForHost();
         init.loadCPlugins();
         init.loadPluginOptional();
-        new GuiRunnable() {
+        new GuiRunnable<Object>() {
 
             @Override
             public Object runSave() {

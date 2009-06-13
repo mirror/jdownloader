@@ -97,10 +97,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
                         return;
                     }
                 }
-                /*
-                 * Da der Button immer Up-To-Date ist, ist die Überprüfung auf
-                 * Changes hier sinnlos.
-                 */
+
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, premium.isSelected());
                 JDUtilities.getConfiguration().save();
             }
@@ -203,8 +200,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
         long trafficTotal = 0;
         TreeMap<String, ArrayList<AccountInfo>> map = new TreeMap<String, ArrayList<AccountInfo>>();
         TreeMap<String, Long> mapSize = new TreeMap<String, Long>();
-        ArrayList<HostPluginWrapper> pluginsForHost = new ArrayList<HostPluginWrapper>(JDUtilities.getPluginsForHost());
-        for (HostPluginWrapper wrapper : pluginsForHost) {
+        for (HostPluginWrapper wrapper : JDUtilities.getPluginsForHost()) {
             if (wrapper.isLoaded() && wrapper.usePlugin()) {
                 final PluginForHost helpPlugin = (PluginForHost) wrapper.getNewPluginInstance();
                 if (helpPlugin.getPremiumAccounts().size() > 0) {
@@ -393,13 +389,17 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
             if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
                 SimpleGUI.CURRENTGUI.setWaiting(true);
                 JPopupMenu popup = new JPopupMenu();
-                for (HostPluginWrapper wrapper : HostPluginWrapper.getHostWrapper()) {
+                PluginForHost plugin;
+                JMenu pluginPopup;
+                JMenuItem mi;
+                for (HostPluginWrapper wrapper : JDUtilities.getPluginsForHost()) {
                     if (!wrapper.isLoaded()) continue;
                     if (!wrapper.isPremiumEnabled()) continue;
-                    JMenu pluginPopup = new JMenu(wrapper.getHost());
-                    ArrayList<MenuItem> entries = wrapper.getPlugin().createMenuitems();
-                    for (MenuItem next : entries) {
-                        JMenuItem mi = JDMenu.getJMenuItem(next);
+                    plugin = wrapper.getPlugin();
+                    pluginPopup = new JMenu(wrapper.getHost());
+                    if (plugin.hasHosterIcon()) pluginPopup.setIcon(plugin.getHosterIcon());
+                    for (MenuItem next : plugin.createMenuitems()) {
+                        mi = JDMenu.getJMenuItem(next);
                         if (mi == null) {
                             pluginPopup.addSeparator();
                         } else {
@@ -407,9 +407,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
                         }
                     }
                     popup.add(pluginPopup);
-
                 }
-
                 popup.show(premium, e.getPoint().x, e.getPoint().y);
                 SimpleGUI.CURRENTGUI.setWaiting(false);
             }

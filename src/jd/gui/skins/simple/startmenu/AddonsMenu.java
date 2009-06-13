@@ -35,22 +35,13 @@ public class AddonsMenu extends JStartMenu {
 
     private static final long serialVersionUID = 1019851981865519325L;
 
-    static public AddonsMenu INSTANCE;
-
     public AddonsMenu() {
         super("gui.menu.addons", "gui.images.config.addons");
 
         updateMenu();
-        INSTANCE = this;
     }
 
     private void updateMenu() {
-        // Component temp = (menAddons.getComponentCount() != 0) ?
-        // menAddons.getComponent(0) :
-        // SimpleGUI.createMenuItem(this.actionOptionalConfig);
-        removeAll();
-        // menAddons.add(temp);
-        // menAddons.addSeparator();
         this.add(new AddonConfiguration());
 
         ArrayList<JMenuItem> itemsWithSubmenu = new ArrayList<JMenuItem>();
