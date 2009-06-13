@@ -178,7 +178,7 @@ public class FileUpdate {
                     Browser.download(tmpFile, con);
                 } catch (Exception e) {
                     result.append("Error. Connection broke\r\n");
-                    currentServer.setRequestTime(10000l);
+                    currentServer.setRequestTime(100000l);
                     continue;
                 }
                 String downloadedHash = JDHash.getMD5(tmpFile);

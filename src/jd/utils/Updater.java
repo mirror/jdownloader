@@ -58,7 +58,7 @@ public class Updater {
     public static void main(String[] args) throws Exception {
 
         Updater upd = new Updater();
-        // WebUpdater.getConfig("WEBUPDATE").setProperty("BRANCH","bin" );
+         WebUpdater.getConfig("WEBUPDATE").setProperty("BRANCH","BETA_20090613_001" );
         System.out.println("STATUS: Webupdate");
         upd.webupdate();
         // System.out.println("STATUS: Webupdate ende");
@@ -478,6 +478,7 @@ public class Updater {
         ArrayList<File> listLocal = this.getLocalFileList(this.workingDir, false);
         main: for (Iterator<File> it = listUpdate.iterator(); it.hasNext();) {
             File file = it.next();
+           
             String newHash = JDHash.getMD5(file);
             String newFile = file.getAbsolutePath().replace(updateDir.getAbsolutePath(), "");
             newFile = newFile.replace("\\", "/");
@@ -485,6 +486,11 @@ public class Updater {
           
 
             File localFile = new File(workingDir, newFile);
+            if(file.isDirectory()&&localFile.isDirectory()&&localFile.exists()){
+                it.remove();
+                continue main; 
+            }
+            
             String localHash = JDHash.getMD5(localFile);
             if (localHash != null && localHash.equalsIgnoreCase(newHash)) {
                 it.remove();
