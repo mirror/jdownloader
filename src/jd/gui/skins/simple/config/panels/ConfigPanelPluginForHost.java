@@ -23,6 +23,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.ArrayList;
+import java.util.Collections;
 
 import javax.swing.AbstractAction;
 import javax.swing.JButton;
@@ -159,6 +160,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     public ConfigPanelPluginForHost(Configuration configuration) {
         super();
         pluginsForHost = JDUtilities.getPluginsForHost();
+        Collections.sort(pluginsForHost);
         initPanel();
         load();
     }

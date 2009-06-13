@@ -37,7 +37,6 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -100,7 +99,7 @@ public class JDUtilities {
 
     private static HashMap<String, PluginsC> containerPlugins = new HashMap<String, PluginsC>();
 
-    /** 
+    /**
      * Der DownloadController
      */
     private static JDController controller = null;
@@ -684,11 +683,15 @@ public class JDUtilities {
      * @return Plugins zum Downloaden von einem Anbieter
      */
     public static ArrayList<HostPluginWrapper> getPluginsForHost() {
+        /*
+         * @GREENY: hier darf NICHT Collections.sort werden 1.) die funktion oft
+         * genutzt wird -> langsam 2.) beim starten eine endlos rekursion
+         * verursacht
+         */
         ArrayList<HostPluginWrapper> hosts = new ArrayList<HostPluginWrapper>(HostPluginWrapper.getHostWrapper());
-        Collections.sort(hosts);
         return hosts;
     }
-    
+
     /**
      * Parsed den Revision-String ins Format 0.000
      * 

@@ -491,6 +491,7 @@ public class Main {
                     }
                 });
                 int i = 10;
+                
                 while (!stop) {
                     SPLASH.setProgress(i % 100, 100, JDLocale.L("gui.splash.progress.updateplugins", "Update Plugins"));
                     try {
