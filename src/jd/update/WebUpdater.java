@@ -315,8 +315,8 @@ public class WebUpdater implements Serializable {
     public String getBranch() {
         String latestBranch = getLatestBranch();
 
-        String ret = WebUpdater.getConfig("WEBUPDATE").getStringProperty("BRANCH", latestBranch);
-
+        String ret = WebUpdater.getConfig("WEBUPDATE").getStringProperty("BRANCH");
+        if (ret == null) ret = latestBranch;
         WebUpdater.getConfig("WEBUPDATE").setProperty("BRANCHINUSE", ret);
         WebUpdater.getConfig("WEBUPDATE").save();
         if (ret == null || ret.contains("%") || ret.contains(" ")) { return null; }
@@ -347,8 +347,6 @@ public class WebUpdater implements Serializable {
                 br.getPage(path + "?t=" + System.currentTimeMillis());
                 if (br.getRequest().getHttpConnection().getResponseCode() != 404l) {
                     fnf = false;
-
-                   
 
                 }
                 if (br.getRequest().getHttpConnection().getResponseCode() != 200l) {

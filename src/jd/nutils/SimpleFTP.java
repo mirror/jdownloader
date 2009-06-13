@@ -413,7 +413,12 @@ public class SimpleFTP {
         SimpleFTP ftp = new SimpleFTP();
         ftp.connect(ip, port, user, password);
         ftp.bin();
-
+        long size=0;
+        long transfered=0;
+        for (File f : list) {
+            size+=f.length();
+            
+        }
         for (File f : list) {
 
             if (!f.getAbsolutePath().startsWith(root.getAbsolutePath())) { throw new IOException(f + " is not part of " + root); }
@@ -461,6 +466,10 @@ public class SimpleFTP {
                     }
                 }
                 dummy.delete();
+            }
+            transfered+=f.length();
+            if (DEBUG) {
+            System.out.println(ftp.host+": "+((transfered*100l)/size)+"%");
             }
         }
 

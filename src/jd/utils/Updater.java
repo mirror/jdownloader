@@ -63,7 +63,7 @@ public class Updater {
         SERVERLIST.append("-1:http://update2.jdownloader.org/%BRANCH%/\r\n");
         ;
     }
-
+//
     /**
      * @param args
      * @throws Exception
