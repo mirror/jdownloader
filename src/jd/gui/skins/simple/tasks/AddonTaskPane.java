@@ -32,7 +32,6 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigGroup;
 import jd.config.MenuItem;
 import jd.gui.skins.simple.SimpleGUI;
-import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.gui.skins.simple.components.JDUnderlinedText;
 import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import jd.utils.JDLocale;
@@ -130,9 +129,8 @@ public class AddonTaskPane extends TaskPanel implements ActionListener {
                 SimpleGUI.CURRENTGUI.getContentPane().display(new ConfigEntriesPanel(cfg));
             }
         }
-        if (e.getSource() == config) {
-            SimpleGuiConstants.GUI_CONFIG.setProperty("LAST_CONFIG_PANEL", ConfigTaskPane.ACTION_ADDONS);
-            SimpleGUI.CURRENTGUI.getTaskPane().switcher(SimpleGUI.CURRENTGUI.getCfgTskPane());
+        if (e.getSource() == config) {            
+            SimpleGUI.CURRENTGUI.getContentPane().display(SimpleGUI.CURRENTGUI.getCfgTskPane().getPanel(ConfigTaskPane.ACTION_ADDONS));
             isAction = true;
         }
         if (isAction) {

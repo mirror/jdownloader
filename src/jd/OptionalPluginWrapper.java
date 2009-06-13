@@ -72,8 +72,7 @@ public class OptionalPluginWrapper extends PluginWrapper {
 
     // @Override
     public PluginOptional getPlugin() {
-        if (!OPTIONAL_WRAPPER.contains(this)) return null;
-        if (!isEnabled()) return null;
+        if (!OPTIONAL_WRAPPER.contains(this)) return null;        
         if (loadedPlugin == null) loadPlugin();
         return (PluginOptional) loadedPlugin;
     }

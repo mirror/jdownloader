@@ -190,7 +190,7 @@ public class SplashScreen implements ActionListener {
     }
 
     public void setProgress(final int i, final int j, final String l) {
-        new GuiRunnable() {
+        new GuiRunnable<Object>() {
 
             @Override
             public Object runSave() {
@@ -198,12 +198,12 @@ public class SplashScreen implements ActionListener {
                     progress.setVisible(false);
                 } else {
                     progress.setVisible(true);
-window.pack();
+                    window.pack();
                     progress.setStringPainted(true);
                     progress.setMaximum(j);
                     progress.setValue(i);
-                    
-                    System.out.println("fg"+i+"/"+j);
+
+                    System.out.println("fg" + i + "/" + j);
                     progress.setString(l);
                 }
                 return null;

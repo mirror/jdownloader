@@ -78,11 +78,12 @@ public class JDInit {
             String old = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_UPDATE_VERSION, "");
             if (!old.equals(JDUtilities.getRevision())) {
                 logger.info("Detected that JD just got updated");
-
-                if (splashScreen != null) {
-                    splashScreen.finish();
+                try {
+                    if (splashScreen != null) {
+                        splashScreen.finish();
+                    }
+                } catch (Exception e) {
                 }
-
                 SimpleGUI.showChangelogDialog();
 
             }
@@ -155,7 +156,7 @@ public class JDInit {
             loadPluginForDecrypt();
             loadPluginForHost();
             loadCPlugins();
-          
+
             loadPluginOptional();
 
             for (final OptionalPluginWrapper plg : OptionalPluginWrapper.getOptionalWrapper()) {

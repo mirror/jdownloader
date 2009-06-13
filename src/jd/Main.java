@@ -56,6 +56,7 @@ import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.PackageManager;
 import jd.dynamics.DynamicPluginInterface;
 import jd.event.ControlEvent;
+import jd.event.ControlListener;
 import jd.gui.UserIO;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.JDEventQueue;
@@ -476,30 +477,32 @@ public class Main {
         LOGGER.info("init plugins");
         Main.increaseSplashStatus();
         SPLASH.setProgress(10, 100, JDLocale.L("gui.splash.progress.updateplugins", "Update Plugins"));
-        
-        Thread th = new Thread() {
+
+        new Thread() {
+            boolean stop = false;
+
             public void run() {
-                try {
-                  
-
-                    int i = 10;
-                    while (true) {
-                        SPLASH.setProgress(i % 100, 100, JDLocale.L("gui.splash.progress.updateplugins", "Update Plugins"));
-                     
-;                        Thread.sleep(100);
-                        i++;
-
+                JDUtilities.getController().addControlListener(new ControlListener() {
+                    public void controlEvent(ControlEvent event) {
+                        if (event.getID() == ControlEvent.CONTROL_INIT_COMPLETE && event.getSource() instanceof Main) {                            
+                            JDUtilities.getController().removeControlListener(this);
+                            stop = true;
+                        }
                     }
-                } catch (InterruptedException e) {
-                    return;
+                });
+                int i = 10;
+                while (!stop) {
+                    SPLASH.setProgress(i % 100, 100, JDLocale.L("gui.splash.progress.updateplugins", "Update Plugins"));
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        break;
+                    }
+                    i++;
                 }
             }
-        };
-        th.start();
+        }.start();
         init.initPlugins();
-        th.interrupt();
-        th = null;
-        
 
         Locale.setDefault(Locale.ENGLISH);
 
@@ -507,15 +510,11 @@ public class Main {
         Main.increaseSplashStatus();
         SPLASH.setProgress(30, 100, JDLocale.L("gui.splash.progress.updateplugins", "Update Plugins"));
         new GuiRunnable<Object>() {
-
             // @Override
-            public Object runSave()  {
+            public Object runSave() {
                 init.initGUI(controller);
-               
-              
                 return null;
             }
-
         }.waitForEDT();
         SPLASH.setProgress(0, 0, null);
         LOGGER.info("init downloadqueue");

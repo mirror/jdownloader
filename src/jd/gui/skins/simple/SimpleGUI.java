@@ -567,9 +567,6 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
 
     private void addAddonTask() {
         addonTaskPanel = new AddonTaskPane(JDLocale.L("gui.taskpanes.addons", "Addons"), JDTheme.II("gui.images.taskpanes.addons", 24, 24));
-
-        // addonPanel = new SingletonPanel(AddonPane.class);
-        // addonTaskPanel.addPanel(addonPanel);
         taskPane.add(addonTaskPanel);
     }
 
@@ -885,15 +882,15 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
     }
 
     public boolean showConfirmDialog(String message) {
-       
-            return JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, JDLocale.L("userio.countdownconfirm", "Please confirm"), message, null, null, null), UserIO.RETURN_OK);
-       
+
+        return JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, JDLocale.L("userio.countdownconfirm", "Please confirm"), message, null, null, null), UserIO.RETURN_OK);
 
     }
+
     public boolean showConfirmDialog(String string, String title) {
-      
-            return JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, title, string, null, null, null), UserIO.RETURN_OK);
-       
+
+        return JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, title, string, null, null, null), UserIO.RETURN_OK);
+
     }
 
     public boolean showCountdownConfirmDialog(final String string, final int sec) {
@@ -1146,7 +1143,6 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
 
                 }
                 new ContainerDialog(UserIO.NO_CANCEL_OPTION, def, panel, null, null);
-               
 
                 return null;
             }
@@ -1223,6 +1219,5 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
 
         return new String[] { d.getPanel().getUserName(), new String(d.getPanel().getPassword()) };
     }
-
 
 }
