@@ -83,6 +83,8 @@ public class WebUpdate implements ControlListener {
         WebUpdater.randomizeMirrors();
         ttmp.start();
         Browser br = new Browser();
+        br.setReadTimeout(20 * 1000);
+        br.setConnectTimeout(10 * 1000);
         File file;
         String localHash = JDHash.getMD5(file = JDUtilities.getResourceFile("jdupdate.jar"));
         String remoteHash = null;

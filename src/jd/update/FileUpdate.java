@@ -129,7 +129,7 @@ public class FileUpdate {
     public boolean update(ArrayList<Server> availableServers) {
         this.result = new StringBuilder();
         Browser br = new Browser();
-        br.setReadTimeout(10 * 1000);
+        br.setReadTimeout(20 * 1000);
         br.setConnectTimeout(10 * 1000);
         long startTime, endTime;
         for (int retry = 0; retry < 3; retry++) {
