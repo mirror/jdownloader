@@ -91,6 +91,8 @@ public class WebUpdater implements Serializable {
         randomizeMirrors();
         logger = new StringBuilder();
         this.br = new Browser();
+        br.setReadTimeout(10 * 1000);
+        br.setConnectTimeout(10 * 1000);
         errors = 0;
     }
 
