@@ -54,7 +54,7 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
     private static Dimension DEFAULT_DIMENSION;
     protected int flag;
 
-    private int returnValue = -1;
+    private int returnValue = 0;
 
     private ImageIcon icon;
 

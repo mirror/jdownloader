@@ -47,8 +47,9 @@ public class ConfirmDialog extends AbstractDialog {
         if (JDFlags.hasAllFlags(this.flag, UserIO.STYLE_HTML)) {
             textField.setContentType("text/html");
             // textPane.setEditable(false);
+        } else {
+            textField.setContentType("text");
         }
-        textField.setContentType("text/html");
         // textField.setBorder(null);
         // textField.setBackground(null);
         textField.setOpaque(false);

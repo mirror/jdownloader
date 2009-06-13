@@ -280,7 +280,8 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
                 });
 
                 tableColumn.setVisible(config.getBooleanProperty("VISABLE_COL_" + i, true));
-
+                tableColumn.setPreferredWidth(config.getIntegerProperty("WIDTH_COL_" + i, tableColumn.getWidth()));
+                
                 if (tableColumn != null) {
                     getColumnModel().addColumn(tableColumn);
                 }

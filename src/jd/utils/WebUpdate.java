@@ -33,10 +33,10 @@ import jd.controlling.ProgressController;
 import jd.controlling.interaction.PackageManager;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
-import jd.gui.skins.simple.SimpleGUI;
-import jd.gui.skins.simple.components.CountdownConfirmDialog;
+import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.JDFlags;
 import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
 import jd.update.FileUpdate;
@@ -74,7 +74,7 @@ public class WebUpdate implements ControlListener {
                     } catch (InterruptedException e) {
                         break;
                     }
-                    if(progress.getValue()>95)progress.setStatus(10);
+                    if (progress.getValue() > 95) progress.setStatus(10);
                     progress.increase(1);
                 }
 
@@ -221,16 +221,17 @@ public class WebUpdate implements ControlListener {
                         public void run() {
 
                             if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, false)) {
-                            
-                                CountdownConfirmDialog ccd = new CountdownConfirmDialog(SimpleGUI.CURRENTGUI, JDLocale.L("init.webupdate.auto.countdowndialog", "Automatic update."), 10, true, CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_CANCEL, JDLocale.LF("system.dialogs.update.message", "<font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\">%s update(s)  and %s package(s) or addon(s) available. Install now?</font>", files.size(), packages.size()));
-                                if (ccd.getResult()) {
+
+                                int answer = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, JDLocale.L("init.webupdate.auto.countdowndialog", "Automatic update."), JDLocale.LF("system.dialogs.update.message", "<font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\">%s update(s)  and %s package(s) or addon(s) available. Install now?</font>", files.size(), packages.size()), JDTheme.II("gui.splash.update", 32, 32), null, null);
+
+                                if (JDFlags.hasAllFlags(answer, UserIO.RETURN_OK)) {
                                     doUpdate();
                                 }
                             } else {
                                 try {
-                                 
-                                    CountdownConfirmDialog ccd = new CountdownConfirmDialog(SimpleGUI.CURRENTGUI, JDLocale.L("system.dialogs.update", "Updates available"), 20, false, CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_CANCEL, JDLocale.LF("system.dialogs.update.message", "<font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\">%s update(s)  and %s package(s) or addon(s) available. Install now?</font>", files.size(), packages.size()));
-                                    if (ccd.getResult()) {
+                                    int answer = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, JDLocale.L("system.dialogs.update", "Updates available"), JDLocale.LF("system.dialogs.update.message", "<font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\">%s update(s)  and %s package(s) or addon(s) available. Install now?</font>", files.size(), packages.size()), JDTheme.II("gui.splash.update", 32, 32), null, null);
+
+                                    if (JDFlags.hasAllFlags(answer, UserIO.RETURN_OK)) {
                                         doUpdate();
                                     }
                                 } catch (HeadlessException e) {
