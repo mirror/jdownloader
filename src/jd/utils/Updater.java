@@ -56,11 +56,13 @@ public class Updater {
 
     public static StringBuilder SERVERLIST = new StringBuilder();
     static {
-        SERVERLIST.append("-1:http://update0.jdownloader.org/%BRANCH%/\r\n");
         SERVERLIST.append("-1:http://update4ex.jdownloader.org/branches/%BRANCH%/\r\n");
+       
+      
         SERVERLIST.append("-1:http://jdupdate.bluehost.to/branches/%BRANCH%/\r\n");
-        // serverList.append("-1:http://update1.jdownloader.org/"+branch+"/\r\n");
+        SERVERLIST.append("-1:http://update1.jdownloader.org/%BRANCH%/\r\n");
         SERVERLIST.append("-1:http://update2.jdownloader.org/%BRANCH%/\r\n");
+        SERVERLIST.append("-1:http://update0.jdownloader.org/%BRANCH%/\r\n");
         ;
     }
 //
@@ -70,6 +72,9 @@ public class Updater {
      */
     public static void main(String[] args) throws Exception {
 
+        
+        
+//        String s= JDHash.getMD5(new File("C:\\Users\\thomas\\workspace\\JDownloader\\dist\\jdupdate.jar"));
         Updater upd = new Updater();
         WebUpdater.getConfig("WEBUPDATE").setProperty("BRANCH", "jd_branchy");
         System.out.println("STATUS: Webupdate");
@@ -94,11 +99,11 @@ public class Updater {
         upd.checkHashes();
         upd.clone0(upd.branch);
         upd.clone2(upd.branch);
-        upd.incFTPSpread(upd.branch);
+       
         // upd.clonebluehost2();
         upd.uploadHashList();
         // upd.spread(list);
-
+        upd.incFTPSpread(upd.branch);
         System.exit(0);
     }
 

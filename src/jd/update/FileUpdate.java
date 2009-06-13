@@ -166,12 +166,20 @@ public class FileUpdate {
                 } catch (Exception e) {
                     log(result, "Error. Connection error\r\n");
                     currentServer.setRequestTime(100000l);
+                    try {
+                        con.disconnect();
+                    } catch (Exception e1) {
+                    }
                     continue;
                 }
 
                 if (response != 200) {
                     log(result, "Error. Connection error " + response + "\r\n");
                     currentServer.setRequestTime(500000l);
+                    try {
+                        con.disconnect();
+                    } catch (Exception e) {
+                    }
                     continue;
 
                 }
@@ -181,7 +189,15 @@ public class FileUpdate {
                 } catch (Exception e) {
                     log(result, "Error. Connection broke\r\n");
                     currentServer.setRequestTime(100000l);
+                    try {
+                        con.disconnect();
+                    } catch (Exception e1) {
+                    }
                     continue;
+                }
+                try {
+                    con.disconnect();
+                } catch (Exception e) {
                 }
                 log(result, currentServer + " requesttimeAVG=" + currentServer.getRequestTime() + "\r\n");
                 String downloadedHash = JDHash.getMD5(tmpFile);
