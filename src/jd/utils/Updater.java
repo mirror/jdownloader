@@ -71,7 +71,7 @@ public class Updater {
     public static void main(String[] args) throws Exception {
 
         Updater upd = new Updater();
-        WebUpdater.getConfig("WEBUPDATE").setProperty("BRANCH", "BETA_20090613_001");
+        WebUpdater.getConfig("WEBUPDATE").setProperty("BRANCH", "jd_branchy");
         System.out.println("STATUS: Webupdate");
         upd.webupdate();
         // System.out.println("STATUS: Webupdate ende");

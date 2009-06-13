@@ -1299,3 +1299,7 @@ gui.table.contextmenu.mergepackage2 = Merge to one package
 userio.countdownconfirm = Please confirm
 gui.linkgrabberv2.lg.addselectedlinks = Add selected link(s)
 gui.linkgrabber.finished = Grabbed %s link(s) in %s Package(s)
+gui.config.gui.disable.linkgrabberclipboard = Linkgrabber Clipboard observer
+gui.config.gui.showBalloon = Show Balloon infos
+gui.tooltips.quickhelp = Quickhelp available: %s (ctrl+shift+CLICK)
+gui.menu.premium = Premium
