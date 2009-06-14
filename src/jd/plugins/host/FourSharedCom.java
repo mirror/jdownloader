@@ -95,9 +95,9 @@ public class FourSharedCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         try {
             handleFree0(downloadLink);
-            decreaseCounter();
+            // decreaseCounter();
         } catch (Exception e) {
-            decreaseCounter();
+            // decreaseCounter();
 
             throw e;
         }
@@ -115,10 +115,10 @@ public class FourSharedCom extends PluginForHost {
         downloadLink.getLinkStatus().setStatusText(JDLocale.L("plugins.hoster.4sharedcom.waiting", "Waiting..."));
         downloadLink.requestGuiUpdate();
         // Das wartesystem lässt link b warten während link a lädt
-        while (COUNTER > 0) {
-            Thread.sleep(100);
-        }
-        increaseCounter();
+        // while (COUNTER > 0) {
+        // Thread.sleep(100);
+        // }
+        // increaseCounter();
         br.setDebug(true);
         dl = br.openDownload(downloadLink, url, false, 1);
 
@@ -130,7 +130,7 @@ public class FourSharedCom extends PluginForHost {
 
     // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 2;
+        return 10;
     }
 
     // @Override
