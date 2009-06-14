@@ -141,7 +141,7 @@ public class AboutDialog extends AbstractDialog {
 
     private DevEntry[] getDevs() {
         Vector<DevEntry> devs = new Vector<DevEntry>();
-        devs.add(new DevEntry("coalado", "support@jdownloader.org", "JDownloader core, Framework, OCR, Swing GUI, Reconnect, Container, Website, Project Administration"));
+        devs.add(new DevEntry("coalado", "coalado@jdownloader.org", "JDownloader core, Framework, OCR, Swing GUI, Reconnect, Container, Homepage, Project Administration"));
 
         devs.add(new DevEntry("Botzi", "botzi@jdownloader.org", "Hoster / Decrypter / Addons, Bugfixing, Database backend, No Support"));
         devs.add(new DevEntry("DwD", "dwd@jdownloader.org", "hoster, ocr, decrypter, extractor, reconnect"));
@@ -156,10 +156,19 @@ public class AboutDialog extends AbstractDialog {
         devs.add(new DevEntry("eXecuTe", "jd.execute@gmail.com", "command line support, language editor, newsfeed addon, tango theme, some plugins"));
         devs.add(new DevEntry("ManiacMansion", "ManiacMansion@jdownloader.org", "OCR/AntiCaptcha, Hoster/Decrypter plugins, Bugfixing"));
 
+
         devs.add(new DevEntry("Sheadox", "sheadox@jdownloader.org", "Hoster plugins, Decrypt plugins, Support"));
         devs.add(new DevEntry("Viperb0y", "support@jdownloader.org", "Hoster / Decrypter, Support and Bugfixing"));
-        devs.add(new DevEntry("Andrei", "andrei030@hotmail.com", "Logo Design (v2)"));
+        devs.add(new DevEntry("Gamewalker", "-", "Hoster plugins, Decrypt plugins, Support"));
         devs.add(new DevEntry("Trazo", "ancoar@gmail.com", "Logo Design (v3)"));
+        devs.add(new DevEntry("Freeloader", "-", "Turkish Translation, Homepage Translation")); 
+        devs.add(new DevEntry("Muelas", "-", "Spanish Translation, Homepage Translation"));
+        devs.add(new DevEntry("Thartist", "-", "Spanish Translation, Homepage Translation"));
+        devs.add(new DevEntry("Firx", "-", "Russian Translation"));
+        devs.add(new DevEntry("Now Y-Dr", "-", "Spanish Translation"));
+        devs.add(new DevEntry("Jaak", "-", "Dutch Translation"));
+        devs.add(new DevEntry("Moktar", "-", "Arabic Translation"));
+        devs.add(new DevEntry("Sna696", "-", "Italian Translation"));
         // Collections.sort(devs);
         return devs.toArray(new DevEntry[] {});
     }

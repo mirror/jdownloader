@@ -739,6 +739,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
                 switch (event.getID()) {
                 case ControlEvent.CONTROL_INIT_COMPLETE:
                     // setTitle(JDUtilities.getJDTitle());
+                    logger.info("Init complete");
                     SimpleGUI.this.setWaiting(false);
 
                     SimpleGUI.this.setEnabled(true);

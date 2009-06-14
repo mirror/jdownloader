@@ -31,6 +31,7 @@ import java.lang.reflect.Constructor;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -159,6 +160,7 @@ public class Main {
     }
 
     public static void main(String args[]) {
+       
         System.setProperty("file.encoding", "UTF-8");
         OSDetector.setOSString(System.getProperty("os.name"));
         // System.setProperty("os.name", "Windows Vista m.a.c");
@@ -447,6 +449,7 @@ public class Main {
             } catch (IOException e1) {
             }
         }
+        LOGGER.info(new Date()+"");
         LOGGER.info("init Configuration");
         Main.increaseSplashStatus();
 

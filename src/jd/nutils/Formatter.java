@@ -51,7 +51,13 @@ public class Formatter {
         if (hours == 0) { return Formatter.fillInteger(minutes, 2, "0") + ":" + Formatter.fillInteger(seconds, 2, "0"); }
         return Formatter.fillInteger(hours, 2, "0") + ":" + Formatter.fillInteger(minutes, 2, "0") + ":" + Formatter.fillInteger(seconds, 2, "0");
     }
-
+    /**
+     * FOIrmatiert im format hours:minutes:seconds.ms
+     * @param ms
+     */
+public static String formatMilliseconds(long ms){ 
+    return formatSeconds(ms/1000)+"."+ms%1000;
+}
     public static String formatFilesize(double value, int size) {
         if (value > 1024 && size < 5) {
             return formatFilesize(value / 1024.0, ++size);

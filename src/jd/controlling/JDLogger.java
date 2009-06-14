@@ -25,6 +25,7 @@ public class JDLogger {
     private static Logger LOGGER = null;
     public static String LOGGER_NAME = "java_downloader";
     private static ConsoleHandler console;
+    public static long INIT_TIME=System.currentTimeMillis();
 
     /**
      * Liefert die Klasse zurück, mit der Nachrichten ausgegeben werden können
@@ -35,7 +36,7 @@ public class JDLogger {
     public static Logger getLogger() {
 
         if (LOGGER == null) {
-
+         
             LOGGER = Logger.getLogger(LOGGER_NAME);
             Formatter formatter = new LogFormatter();
             LOGGER.setUseParentHandlers(false);
@@ -52,7 +53,10 @@ public class JDLogger {
         }
         return LOGGER;
     }
+public static void timestamp(String msg){
 
+    getLogger().warning(jd.nutils.Formatter.formatMilliseconds(System.currentTimeMillis()-INIT_TIME)+" : "+msg);
+}
     public static void exception(Throwable e) {
         exception(Level.SEVERE, e);
     }

@@ -77,8 +77,8 @@ public class Updater {
      
 
       
-        WebUpdater.getConfig("WEBUPDATE").setProperty("BRANCH", "null");
-        WebUpdater.getConfig("WEBUPDATE").save();
+//        WebUpdater.getConfig("WEBUPDATE").setProperty("BRANCH", "null");
+//        WebUpdater.getConfig("WEBUPDATE").save();
         System.out.println("STATUS: Webupdate");
         upd.webupdate();
         // System.out.println("STATUS: Webupdate ende");
@@ -91,7 +91,7 @@ public class Updater {
         upd.moveJars(getCFG("dist_dir"));
         // // // System.out.println("STATUS: FINISHED");
         upd.cleanUp();
-        String id = upd.createBranch(JOptionPane.showInputDialog(upd.frame, "branchname"));
+        upd.createBranch(JOptionPane.showInputDialog(upd.frame, "branchname"));
 
         ArrayList<File> list = upd.getFileList();
         // //
@@ -104,9 +104,9 @@ public class Updater {
 
         // upd.clonebluehost2();
         upd.uploadHashList();
-        upd.refreshUpdateJar();
+//        upd.refreshUpdateJar();
         // upd.spread(list);
-        upd.incFTPSpread(upd.branch);
+//        upd.incFTPSpread(upd.branch);
        
         System.exit(0);
     }

@@ -24,6 +24,8 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.SimpleFormatter;
 
+import jd.nutils.Formatter;
+
 
 /**
  * Mit dieser Klasse können die Logmeldungen anders dargestellt werden. Der Code
@@ -35,15 +37,15 @@ import java.util.logging.SimpleFormatter;
  */
 public class LogFormatter extends SimpleFormatter {
 
-    private final static String format = "{0,date} {0,time}";
+//    private final static String format = "{0,date} {0,time}";
     private Object args[] = new Object[1];
     Date dat = new Date();
-    private MessageFormat formatter;
+//    private MessageFormat formatter;
     // Line separator string. This is the value of the line.separator
     // property at the moment that the SimpleFormatter was created.
     private String lineSeparator = System.getProperty("line.separator");
     private StringBuilder sb;
-    private StringBuffer text;
+//    private StringBuffer text;
     
     //@Override
     public synchronized String format(LogRecord record) {
@@ -54,17 +56,18 @@ public class LogFormatter extends SimpleFormatter {
         dat.setTime(record.getMillis());
         args[0] = dat;
 
-        text = new StringBuffer();
-        if (formatter == null) {
-            formatter = new MessageFormat(format);
-        }
-        formatter.format(args, text, null);
+//        text = new StringBuffer();
+//        if (formatter == null) {
+//            formatter = new MessageFormat(format);
+//        }
+//        formatter.format(args, text, null);
         String message = formatMessage(record);
-        sb.append(text);
-        sb.append(" - ");
+//        sb.append(text);
+//        sb.append(" - ");
         if(JDLogger.getLogger().getLevel()==Level.ALL){
-            sb.append(record.getLevel().getLocalizedName());
-
+            sb.append(Formatter.formatMilliseconds(record.getMillis()-JDLogger.INIT_TIME));
+            sb.append(" - ");
+            sb.append(record.getLevel().getName());
             sb.append(" [");
             if (record.getSourceClassName() != null) {
                 sb.append(record.getSourceClassName());
