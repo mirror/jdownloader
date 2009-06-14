@@ -592,11 +592,11 @@ public class JDInit {
         new HostPluginWrapper("Only4files.com", "OnlyFourFilesCom", "http://[\\w\\.]*?only4files\\.com/[\\w]+/.*");
         new HostPluginWrapper("Fileuploadshark.com", "FileuploadsharkCom", "http://[\\w\\.]*?fileuploadshark\\.com/[\\w]+/?");
         new HostPluginWrapper("Xshareware.com", "XsharewareCom", "http://[\\w\\.]*?xshareware\\.com/[\\w]+/.*");
-        new HostPluginWrapper("Qsave.info", "QsaveInfo", "http://[\\w\\.]*?qsave\\.info/[\\w]+/?");
         new HostPluginWrapper("Savefile.ro", "SavefileRo", "http://[\\w\\.]*?savefile\\.ro/[\\w]+/?");
         new HostPluginWrapper("Pixelhit.com", "PixelhitCom", "http://[\\w\\.]*?pixelhit\\.com/[\\w]+/?");
         new HostPluginWrapper("Bagruj.cz", "BagrujCz", "http://[\\w\\.]*?bagruj\\.cz/.*");
         new HostPluginWrapper("Uploadline.com", "UploadlineCom", "http://[\\w\\.]*?uploadline\\.com/\\d+/.+");
+        new HostPluginWrapper("Biggerupload.com", "BiggeruploadCom", "http://[\\w\\.]*?biggerupload\\.com/[\\w]+/?.*");
         new HostPluginWrapper("Ziddu.com", "ZidduCom", "http://[\\w\\.]*?ziddu\\.com/((download/\\d+/.*?\\.html)|(download\\.php\\?uid=[\\w%]+)|downloadfile/\\d+/.*?\\.html)");
         // new HostPluginWrapper("FilesDump.com", "FilesDumpCom",
         // "http://.*?filesdump\\.com/file/[a-f0-9]+/.*?");

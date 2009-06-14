@@ -69,7 +69,8 @@ public class UploadlineCom extends PluginForHost {
                 form = br.getFormbyProperty("name", "F1");
                 if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
                 form.setAction(downloadLink.getDownloadURL());
-                sleep(20500, downloadLink);
+                int tt = Integer.parseInt(br.getRegex("countdown\">(\\d+)</span>").getMatch(0));
+                sleep(tt * 1001, downloadLink);
                 br.submitForm(form);
                 URLConnectionAdapter con2 = br.getHttpConnection();
                 dllink = br.getRedirectLocation();

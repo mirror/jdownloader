@@ -93,6 +93,7 @@ public class RapidSharkPl extends PluginForHost {
                 String error = br.getRegex("class=\"err\">(.*?)</font>").getMatch(0);
                 if (error != null) {
                     logger.warning(error);
+                    con2.disconnect();
                     if (error.equalsIgnoreCase("Wrong captcha") || error.equalsIgnoreCase("Expired session")) {
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     } else {
@@ -101,6 +102,7 @@ public class RapidSharkPl extends PluginForHost {
                 }
                 if (br.containsHTML("Download Link Generated")) dllink = br.getRegex("padding:7px;\">\\s+<a\\s+href=\"(.*?)\">").getMatch(0);
             }
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             dl = br.openDownload(downloadLink, dllink);
             dl.startDownload();
         }

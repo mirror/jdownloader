@@ -54,13 +54,13 @@ public class SavefileRo extends PluginForHost {
         } else {
             Form form = br.getFormbyProperty("name", "F1");
             if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-            // TODO: AntiCaptcha Method would allow simultanous connections
             String captchaurl = br.getRegex(Pattern.compile("below:</div></b></td></tr>\\s+<tr><td><img src=\"(.*?)\"", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
             String code = getCaptchaCode(captchaurl, downloadLink);
             form.put("code", code);
             form.setAction(downloadLink.getDownloadURL());
             // Ticket Time
-            this.sleep(5000, downloadLink);
+            int tt = Integer.parseInt(br.getRegex("countdown\">(\\d+)</span>").getMatch(0));
+            sleep(tt * 1001, downloadLink);
             br.submitForm(form);
             URLConnectionAdapter con2 = br.getHttpConnection();
             String dllink = br.getRedirectLocation();
@@ -68,6 +68,7 @@ public class SavefileRo extends PluginForHost {
                 String error = br.getRegex("class=\"err\"\\s+color=\"#ffffff\">(.*?)</font>").getMatch(0);
                 if (error != null) {
                     logger.warning(error);
+                    con2.disconnect();
                     if (error.equalsIgnoreCase("Wrong captcha") || error.equalsIgnoreCase("Expired session")) {
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     } else {
@@ -76,16 +77,13 @@ public class SavefileRo extends PluginForHost {
                 }
                 if (br.containsHTML("Download Link Generated")) dllink = br.getRegex("Download:</font><br>\\s+<a\\s+href=\"(.*?)\"\\s+class").getMatch(0);
             }
-            dl = br.openDownload(downloadLink, dllink);
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            dl = br.openDownload(downloadLink, dllink, false, 1);
             dl.startDownload();
         }
     }
 
     // @Override
-    // TODO: AntiCaptcha Method would allow simultanous connections
-    // if user is quick; he can enter captchas one-by-one and then server allow
-    // him simulatanous downloads
-    // that's why I left it 10.
     public int getMaxSimultanFreeDownloadNum() {
         return 10;
     }

@@ -64,7 +64,8 @@ public class BagrujCz extends PluginForHost {
                 form.put("password", password);
             }
             // Ticket Time
-            this.sleep(15000, downloadLink);
+            int tt = Integer.parseInt(br.getRegex("countdown\">(\\d+)</span>").getMatch(0));
+            sleep(tt * 1001, downloadLink);
             br.submitForm(form);
             URLConnectionAdapter con2 = br.getHttpConnection();
             String dllink = br.getRedirectLocation();
@@ -72,6 +73,7 @@ public class BagrujCz extends PluginForHost {
                 String error = br.getRegex("class=\"err\">(.*?)</font>").getMatch(0);
                 if (error != null) {
                     logger.warning(error);
+                    con2.disconnect();
                     if (error.equalsIgnoreCase("Wrong captcha") || error.equalsIgnoreCase("Expired session")) {
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     } else {
@@ -80,7 +82,8 @@ public class BagrujCz extends PluginForHost {
                 }
                 if (br.containsHTML("Odkaz ke stažení vygenerován")) dllink = br.getRegex("padding:7px;\">\\s+<a\\s+href=\"(.*?)\">").getMatch(0);
             }
-            dl = br.openDownload(downloadLink, dllink);
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            dl = br.openDownload(downloadLink, dllink, false, 1);
             dl.startDownload();
         }
     }

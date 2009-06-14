@@ -58,13 +58,13 @@ public class EnteruploadCom extends PluginForHost {
         } else {
             form = br.getFormbyProperty("name", "F1");
             if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-            // TODO: AntiCaptcha Method would allow simultanous connections
             String captchaurl = br.getRegex(Pattern.compile("<img src=\"(http://www.enterupload.com/captchas/.*?\\.jpg)\">", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
             String code = getCaptchaCode(captchaurl, downloadLink);
             form.put("code", code);
             form.setAction(downloadLink.getDownloadURL());
             // Ticket Time
-            this.sleep(40500, downloadLink);
+            int tt = Integer.parseInt(br.getRegex("countdown\">(\\d+)</span>").getMatch(0));
+            sleep(tt * 1001, downloadLink);
             br.submitForm(form);
             String dllink = br.getRedirectLocation();
 
@@ -72,26 +72,21 @@ public class EnteruploadCom extends PluginForHost {
             if (error != null) {
                 logger.warning(error);
                 if (error.equalsIgnoreCase("Wrong captcha") || error.equalsIgnoreCase("Expired session")) {
-
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 } else {
-
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, error, 10000);
                 }
             }
             if (br.containsHTML("Download Link Generated")) dllink = br.getRegex("padding:7px;\">\\s+<a\\s+href=\"(.*?)\">").getMatch(0);
 
             br.setFollowRedirects(true);
-            dl = br.openDownload(downloadLink, dllink);
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            dl = br.openDownload(downloadLink, dllink, false, 1);
             dl.startDownload();
         }
     }
 
     // @Override
-    // TODO: AntiCaptcha Method would allow simultanous connections
-    // if user is quick; he can enter captchas one-by-one and then server allow
-    // him simulatanous downloads
-    // that's why I left it 10.
     public int getMaxSimultanFreeDownloadNum() {
         return 10;
     }
