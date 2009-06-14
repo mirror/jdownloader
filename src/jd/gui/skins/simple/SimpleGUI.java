@@ -883,23 +883,20 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
     }
 
     public boolean showConfirmDialog(String message) {
-
-        return JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, JDLocale.L("userio.countdownconfirm", "Please confirm"), message, null, null, null), UserIO.RETURN_OK);
-
+        return showConfirmDialog(message, JDLocale.L("userio.countdownconfirm", "Please confirm"));
     }
 
     public boolean showConfirmDialog(String string, String title) {
-        int flags=UserIO.NO_COUNTDOWN;
-if(string.contains("<")&&string.contains(">"))flags|=UserIO.STYLE_HTML;
+        int flags = UserIO.NO_COUNTDOWN;
+        if (string.contains("<") && string.contains(">")) flags |= UserIO.STYLE_HTML;
         return JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(flags, title, string, null, null, null), UserIO.RETURN_OK);
-
     }
 
     public boolean showCountdownConfirmDialog(final String string, final int sec) {
         int cd = UserIO.getCountdownTime();
         UserIO.setCountdownTime(sec);
-        int flags=0;
-        if(string.contains("<")&&string.contains(">"))flags|=UserIO.STYLE_HTML;
+        int flags = 0;
+        if (string.contains("<") && string.contains(">")) flags |= UserIO.STYLE_HTML;
         try {
             return JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(flags, JDLocale.L("userio.countdownconfirm", "Please confirm"), string, JDTheme.II("gui.images.config.eventmanager", 32, 32), null, null), UserIO.RETURN_OK);
         } finally {

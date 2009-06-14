@@ -56,16 +56,11 @@ public class SplashScreen implements ActionListener {
     private Timer timer;
     private JWindow window;
 
-    // private BufferedImage screenshot;
-
     private ArrayList<SplashProgressImage> progressimages;
 
     private int x;
-
     private int y;
-
     private int h;
-
     private int w;
 
     private int imageCounter = 1;
@@ -77,21 +72,17 @@ public class SplashScreen implements ActionListener {
         imageCounter++;
     }
 
-    /*
-     * dieser konstruktor wird benutzt falls kein splash angezeigt werden soll
+    /**
+     * dieser konstruktor wird benutzt falls KEIN splash angezeigt werden soll
      */
     public SplashScreen() {
-
         unused = true;
     }
 
-    /*
+    /**
      * dieser konstruktor wird benutzt falls ein splash angezeigt werden soll
      */
     public SplashScreen(Image image) throws IOException, AWTException {
-        // final URL url =
-
-        // this.getClass().getClassLoader().getResource(path);
         JDLookAndFeelManager.setUIManager();
         this.image = (BufferedImage) image;
         progressimages = new ArrayList<SplashProgressImage>();
@@ -104,7 +95,6 @@ public class SplashScreen implements ActionListener {
         y = (int) (screenHeight / 2 - image.getHeight(null) / 2);
         w = image.getWidth(null);
         h = image.getHeight(null);
-        // createScreenshot();
         initGui();
         startAnimation();
     }
@@ -122,10 +112,9 @@ public class SplashScreen implements ActionListener {
         label.setIcon(drawImage(0.0f));
 
         window = new JWindow(gc);
-        window.setLayout(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[grow,fill][]"));
+        window.setLayout(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[grow,fill]0[]"));
         window.setAlwaysOnTop(true);
         window.setSize(image.getWidth(null), image.getHeight(null));
-        // Container content = window.getContentPane();
         window.add(label);
         window.add(progress = new JProgressBar(), "hidemode 3,height 20!");
         progress.setVisible(false);
@@ -135,12 +124,6 @@ public class SplashScreen implements ActionListener {
         window.setVisible(true);
 
     }
-
-    // private void createScreenshot() throws AWTException {
-    // final Robot robot = new Robot();
-    // final Rectangle rectangle = new Rectangle(x, y, w, h);
-    // screenshot = robot.createScreenCapture(rectangle);
-    // }
 
     public void actionPerformed(ActionEvent e) {
         float percent = Math.min(1.0f, (System.currentTimeMillis() - startTime) / duration);
@@ -160,14 +143,7 @@ public class SplashScreen implements ActionListener {
         GraphicsConfiguration gc = gd.getDefaultConfiguration();
         BufferedImage res = gc.createCompatibleImage(w, h, Transparency.BITMASK);
         Graphics2D g2d = res.createGraphics();
-        // RenderingHints qualityHints = new
-        // RenderingHints(RenderingHints.KEY_ANTIALIASING,
-        // RenderingHints.VALUE_ANTIALIAS_ON);
-        // qualityHints.put(RenderingHints.KEY_RENDERING,
-        // RenderingHints.VALUE_RENDER_QUALITY);
-        // g2d.setRenderingHints(qualityHints);
 
-        // g2d.drawImage(screenshot, 0, 0, null);
         g2d.setColor(Color.WHITE);
         g2d.fillRect(1, 1, w - 2, h - 2);
         g2d.setColor(Color.BLACK.brighter());
@@ -210,14 +186,13 @@ public class SplashScreen implements ActionListener {
             public Object runSave() {
                 if (j <= 0) {
                     progress.setVisible(false);
+                    window.pack();
                 } else {
                     progress.setVisible(true);
                     window.pack();
                     progress.setStringPainted(true);
                     progress.setMaximum(j);
                     progress.setValue(i);
-
-                    System.out.println("fg" + i + "/" + j);
                     progress.setString(l);
                 }
                 return null;

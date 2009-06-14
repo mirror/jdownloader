@@ -16,26 +16,17 @@
 
 package jd.gui.skins.simple;
 
-import java.awt.EventQueue;
-
 import javax.swing.SwingUtilities;
 
 /**
  * This calss invokes a Runnable EDT Save and is able to return values.
  * 
  * @author coalado
- * 
  */
 public abstract class GuiRunnable<T> implements Runnable {
-    // private long id;
 
-    /**
-     * 
-     */
-    // private static int COUNTER = 0;
     public GuiRunnable() {
-        // this.id = System.currentTimeMillis();
-        // //System.out.println("Created " + id);
+
     }
 
     private static final long serialVersionUID = 7777074589566807490L;
@@ -61,7 +52,6 @@ public abstract class GuiRunnable<T> implements Runnable {
      * @return
      */
     public T getReturnValue() {
-
         waitForEDT();
         return returnValue;
     }
@@ -77,78 +67,38 @@ public abstract class GuiRunnable<T> implements Runnable {
             if (lock != null) {
                 synchronized (lock) {
                     try {
-                        // System.out.println(id + " lock ");
                         if (lock != null) {
                             lock.wait();
-                        } else {
-                            // System.out.println(id +
-                            // " concurrent Thread faster ");
                         }
-                        // System.out.println(id + " unlocked ");
                     } catch (InterruptedException e) {
-                        // jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE,
-                        // "Exception occurred", e);
                     }
                 }
-            } else {
-                // System.out.println(id + " concurrent Thread faster ");
             }
-
         }
-        // System.out.println(COUNTER + " : " + id + " return ");
         done = true;
     }
 
     public void run() {
-        // System.out.println(COUNTER + " : " + id + " run ");
-        // final long starttime = System.currentTimeMillis();
-        // final Exception source= new Exception();
-        // Thread observer = new Thread() {
-        // public void run() {
-        // try {
-        // Thread.sleep(10000);
-        // } catch (InterruptedException e) {
-        // return;
-        // }
-        //              
-        // source.printStackTrace();
-        // //System.out.println("FREEZE DETECTED!!");
-        //                
-        // }
-        // };
-        // observer.start();
         this.returnValue = this.runSave();
-        // try{
-        // observer.interrupt();
-        // observer=null;
-        // }catch(Exception e){}
-        // System.out.println(COUNTER + " : " + id + " finished ");
-        // COUNTER--;
+
         synchronized (lock) {
-            // System.out.println(COUNTER + " : " + id + " notify ");
             lock.notify();
             lock = null;
         }
     }
 
-    abstract public T runSave();
+    public abstract T runSave();
 
     /**
      * Starts the Runnable and adds it to the ETD
      */
     public void start() {
-        // new Exception().printStackTrace();
-        // System.out.println(COUNTER + " : " + id + " Started ");
         setStarted(true);
-        // COUNTER++;
         if (SwingUtilities.isEventDispatchThread()) {
-            // System.out.println(COUNTER + " : " + id + " run direct ");
             run();
         } else {
-            // System.out.println(COUNTER + " : " + id + " queue ");
-            EventQueue.invokeLater(this);
-
+            SwingUtilities.invokeLater(this);
         }
-
     }
+
 }
