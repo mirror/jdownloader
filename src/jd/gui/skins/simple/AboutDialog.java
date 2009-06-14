@@ -1,20 +1,20 @@
-package jd.gui.skins.simple;
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2009  JD-Team support@jdownloader.org
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-//jDownloader - Downloadmanager
-//Copyright (C) 2009  JD-Team support@jdownloader.org
-//
-//This program is free software: you can redistribute it and/or modify
-//it under the terms of the GNU General Public License as published by
-//the Free Software Foundation, either version 3 of the License, or
-//(at your option) any later version.
-//
-//This program is distributed in the hope that it will be useful,
-//but WITHOUT ANY WARRANTY; without even the implied warranty of
-//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-//GNU General Public License for more details.
-//
-//You should have received a copy of the GNU General Public License
-//along with this program.  If not, see <http://www.gnu.org/licenses/>.
+package jd.gui.skins.simple;
 
 import java.awt.Color;
 import java.io.IOException;
@@ -74,9 +74,8 @@ public class AboutDialog extends AbstractDialog {
         // textField.setOpaque(false);
         textField.setText("");
         textField.setEditable(false);
-        new Thread() {
+        new Thread(new Runnable() {
 
-            // //@Override
             public void run() {
                 try {
                     Browser br = new Browser();
@@ -91,20 +90,15 @@ public class AboutDialog extends AbstractDialog {
                 }
             }
 
-        }.start();
+        }).start();
         textField.addHyperlinkListener(new HyperlinkListener() {
 
             public void hyperlinkUpdate(HyperlinkEvent e) {
-                // (e);
-
                 if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
-
                     try {
                         JLinkButton.openURL(e.getURL());
                     } catch (Exception e1) {
-
                     }
-                    //
                 }
             }
 
@@ -115,7 +109,6 @@ public class AboutDialog extends AbstractDialog {
 
             public void valueChanged(ListSelectionEvent e) {
                 textField.setText(((DevEntry) list.getSelectedValue()).getHTML());
-
             }
 
         });
@@ -136,7 +129,6 @@ public class AboutDialog extends AbstractDialog {
         this.remove(countDownLabel);
         this.setSize(800, 450);
         this.setDefaultCloseOperation(AbstractDialog.DISPOSE_ON_CLOSE);
-
     }
 
     private DevEntry[] getDevs() {
@@ -156,12 +148,11 @@ public class AboutDialog extends AbstractDialog {
         devs.add(new DevEntry("eXecuTe", "jd.execute@gmail.com", "command line support, language editor, newsfeed addon, tango theme, some plugins"));
         devs.add(new DevEntry("ManiacMansion", "ManiacMansion@jdownloader.org", "OCR/AntiCaptcha, Hoster/Decrypter plugins, Bugfixing"));
 
-
         devs.add(new DevEntry("Sheadox", "sheadox@jdownloader.org", "Hoster plugins, Decrypt plugins, Support"));
         devs.add(new DevEntry("Viperb0y", "support@jdownloader.org", "Hoster / Decrypter, Support and Bugfixing"));
         devs.add(new DevEntry("Gamewalker", "-", "Hoster plugins, Decrypt plugins, Support"));
         devs.add(new DevEntry("Trazo", "ancoar@gmail.com", "Logo Design (v3)"));
-        devs.add(new DevEntry("Freeloader", "-", "Turkish Translation, Homepage Translation")); 
+        devs.add(new DevEntry("Freeloader", "-", "Turkish Translation, Homepage Translation"));
         devs.add(new DevEntry("Muelas", "-", "Spanish Translation, Homepage Translation"));
         devs.add(new DevEntry("Thartist", "-", "Spanish Translation, Homepage Translation"));
         devs.add(new DevEntry("Firx", "-", "Russian Translation"));
@@ -169,9 +160,8 @@ public class AboutDialog extends AbstractDialog {
         devs.add(new DevEntry("Jaak", "-", "Dutch Translation"));
         devs.add(new DevEntry("Moktar", "-", "Arabic Translation"));
         devs.add(new DevEntry("Sna696", "-", "Italian Translation"));
-        devs.add(new DevEntry("Giandena", "-", "Italian Translation"));  
-        
-        // Collections.sort(devs);
+        devs.add(new DevEntry("Giandena", "-", "Italian Translation"));
+
         return devs.toArray(new DevEntry[] {});
     }
 
@@ -208,7 +198,7 @@ public class AboutDialog extends AbstractDialog {
             ret.append("<h2>");
             ret.append(name);
             ret.append("</h2>");
-            if (mail != null) {
+            if (mail != null && !mail.equals("-")) {
                 ret.append("<h3>Email</h3>");
                 ret.append(mail);
             }

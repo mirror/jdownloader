@@ -438,10 +438,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
             result[0] = result[0].toLowerCase();
             for (KeyInfo ki : data) {
                 if (ki.getKey().equals(result[0])) {
-                    
-                    UserIO.getInstance().requestConfirmDialog(UserIO.NO_CANCEL_OPTION,JDLocale.L("plugins.optional.langfileeditor.addKey.error.title", "Duplicated key"),  JDLocale.LF("plugins.optional.langfileeditor.addKey.error.message", "The key '%s' is already in use!", result[0]), UserIO.getInstance().getIcon(UserIO.ICON_ERROR), null, null);
-                    
-                 
+                    UserIO.getInstance().requestConfirmDialog(UserIO.NO_CANCEL_OPTION, JDLocale.L("plugins.optional.langfileeditor.addKey.error.title", "Duplicated key"), JDLocale.LF("plugins.optional.langfileeditor.addKey.error.message", "The key '%s' is already in use!", result[0]), UserIO.getInstance().getIcon(UserIO.ICON_ERROR), null, null);
                     return;
                 }
             }
@@ -764,18 +761,13 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
             File noUpdateFile = new File(file.getAbsolutePath() + ".noupdate");
             if (!noUpdateFile.exists()) noUpdateFile.createNewFile();
         } catch (Exception e) {
-            
-            UserIO.getInstance().requestConfirmDialog(UserIO.NO_CANCEL_OPTION,JDLocale.L("plugins.optional.langfileeditor.save.error.title", "Error!"), JDLocale.LF("plugins.optional.langfileeditor.save.error.message", "An error occured while writing the LanguageFile:\n%s", e.getMessage()), UserIO.getInstance().getIcon(UserIO.ICON_ERROR), null, null);
-            
-           
+            UserIO.getInstance().requestConfirmDialog(UserIO.NO_CANCEL_OPTION, JDLocale.L("plugins.optional.langfileeditor.save.error.title", "Error!"), JDLocale.LF("plugins.optional.langfileeditor.save.error.message", "An error occured while writing the LanguageFile:\n%s", e.getMessage()), UserIO.getInstance().getIcon(UserIO.ICON_ERROR), null, null);
             return;
         }
 
         if (languageFile.getAbsolutePath() != cmboFile.getText()) cmboFile.setCurrentPath(languageFile);
         changed = false;
-        UserIO.getInstance().requestConfirmDialog(UserIO.NO_CANCEL_OPTION,JDLocale.L("plugins.optional.langfileeditor.save.success.title", "Save successful!"),JDLocale.L("plugins.optional.langfileeditor.save.success.message", "LanguageFile saved successfully!"), UserIO.getInstance().getIcon(UserIO.ICON_INFO), null, null);
-        
-
+        UserIO.getInstance().requestConfirmDialog(UserIO.NO_CANCEL_OPTION, JDLocale.L("plugins.optional.langfileeditor.save.success.title", "Save successful!"), JDLocale.L("plugins.optional.langfileeditor.save.success.message", "LanguageFile saved successfully!"), UserIO.getInstance().getIcon(UserIO.ICON_INFO), null, null);
     }
 
     private void initLocaleDataComplete() {
@@ -798,6 +790,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         for (Entry<String, String> entry : sourceEntries.entrySet()) {
             key = entry.getKey();
             keyInfo = new KeyInfo(key, entry.getValue(), fileEntries.remove(key));
+            if (key.equalsIgnoreCase("$Version$")) keyInfo.setLanguage("$Revision$");
             data.add(keyInfo);
             if (!keyInfo.isMissing()) {
 
@@ -892,6 +885,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
                 }
             }
 
+            progress.increase(1);
         }
 
         progress.setStatusText(JDLocale.L("plugins.optional.langfileeditor.analyzingSource.ready", "Analyzing Source Folder: Complete"));
@@ -1013,7 +1007,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
             return this.getKey().compareToIgnoreCase(o.getKey());
         }
 
-        // @Override
+        @Override
         public String toString() {
             return this.getKey() + " = " + this.getLanguage();
         }
@@ -1065,7 +1059,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
             return data.size();
         }
 
-        // @Override
+        @Override
         public String getColumnName(int col) {
             return columnNames[col];
         }
@@ -1082,17 +1076,18 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
             return "";
         }
 
-        // @Override
+        @Override
         public Class<?> getColumnClass(int c) {
             return String.class;
         }
 
-        // @Override
+        @Override
         public boolean isCellEditable(int row, int col) {
+            if (table.getValueAt(row, 0).toString().equalsIgnoreCase("$Version$")) return false;
             return true;
         }
 
-        // @Override
+        @Override
         public void setValueAt(Object value, int row, int col) {
             if (col == 2) {
                 data.get(row).setLanguage((String) value);
@@ -1104,17 +1099,18 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
 
     }
 
-    // @Override
+    @Override
     public void onDisplay() {
     }
 
-    // @Override
+    @Override
     public void onHide() {
         if (changed && JOptionPane.showConfirmDialog(this, JDLocale.L("plugins.optional.langfileeditor.changed.message", "Language File changed! Save changes?"), JDLocale.L("plugins.optional.langfileeditor.changed.title", "Save changes?"), JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
             saveLanguageFile(languageFile);
         }
     }
 
+    @Override
     public boolean needsViewport() {
         return false;
     }
