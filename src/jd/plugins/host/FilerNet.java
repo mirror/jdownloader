@@ -105,6 +105,11 @@ public class FilerNet extends PluginForHost {
         Thread.sleep(500);
         String cookie = br.getCookie("http://filer.net", "filer_net");
         if (cookie == null) {
+            if(br.containsHTML("Mit diesem Usernamen ist bereits ein Benutzer eingelogged")){
+                throw new PluginException(LinkStatus.ERROR_PREMIUM,"Fraud Detection. This Username is currently used by someone else.", LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                
+            }
+            
             account.setEnabled(false);
             throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
         }
