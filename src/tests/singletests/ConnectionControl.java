@@ -1,4 +1,4 @@
-package tests.browser;
+package tests.singletests;
 
 import static org.junit.Assert.assertTrue;
 
@@ -12,7 +12,7 @@ import jd.nutils.jobber.JDRunnable;
 import org.junit.Before;
 import org.junit.Test;
 
-import tests.TestUtils;
+import tests.utils.TestUtils;
 
 public class ConnectionControl {
 

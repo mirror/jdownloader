@@ -1,4 +1,4 @@
-package tests.browser;
+package tests.singletests;
 
 import static org.junit.Assert.fail;
 
@@ -12,7 +12,7 @@ import jd.utils.JDUtilities;
 import org.junit.Before;
 import org.junit.Test;
 
-import tests.TestUtils;
+import tests.utils.TestUtils;
 
 public class ProxyAuthTest {
 
