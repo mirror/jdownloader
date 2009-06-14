@@ -470,7 +470,7 @@ public class JDInit {
         new DecryptPluginWrapper("realfiles.net", "LinkBucks", "http://[\\w\\.]*?realfiles\\.net(/link/[0-9a-fA-F]+(/\\d+)?)?");
         new DecryptPluginWrapper("urlcut.com", "UrlCutCom", "http://[\\w\\.]*?urlcut\\.com/[0-9a-zA-Z]+");
         new DecryptPluginWrapper("sp2.ro", "Redirecter", "http://[\\w\\.]*?sp2\\.ro/[0-9a-zA-Z]+");
-
+ 
         // Decrypter from Extern
         new DecryptPluginWrapper("rapidlibrary.com", "RapidLibrary", "http://rapidlibrary\\.com/download_file_i\\.php\\?.+");
 
@@ -626,6 +626,7 @@ public class JDInit {
         new HostPluginWrapper("MegaFTP.com", "MegaFtpCom", "http://[\\w\\.]*?megaftp\\.com/[0-9]+");
         new HostPluginWrapper("Duckload.com", "DuckLoad", "http://[\\w\\.]*?(duckload\\.com|youload\\.to)/download/\\d+/.+");
         new HostPluginWrapper("Hetrixload.com", "HetrixLoadCom", "http://[\\w\\.]*?hetrixload\\.com/files/[A-Za-z0-9]+/.+\\.html");
+        new HostPluginWrapper("Usershare.net", "Usershare", "http://[\\w\\.]*?usershare\\.net/[0-9a-zA-Z.]+");
 
         // Hoster from Extern
         new HostPluginWrapper("iFolder.ru", "IfolderRu", "http://[\\-\\w\\.]*?ifolder\\.ru/\\d+");
