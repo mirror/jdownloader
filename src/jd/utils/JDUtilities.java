@@ -79,6 +79,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
+import jd.update.WebUpdater;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
@@ -609,6 +610,13 @@ public class JDUtilities {
 
     public static String getJDTitle() {
         StringBuilder ret = new StringBuilder(JDUtilities.JD_TITLE);
+        
+        if( WebUpdater.getConfig("WEBUPDATE").getStringProperty("BRANCHINUSE", null)!=null){
+            ret.append(' ');
+            ret.append('(');
+            ret.append(WebUpdater.getConfig("WEBUPDATE").getStringProperty("BRANCHINUSE", null));
+            ret.append(')');
+        }
         ret.append(' ');
         ret.append(JDUtilities.JD_VERSION);
         ret.append(JDUtilities.getRevision());
@@ -630,7 +638,7 @@ public class JDUtilities {
         return c.format(100.0 * downloadCurrent / (double) downloadMax) + "%";
     }
 
-    /**
+    /** 
      * Sucht ein passendes Plugin für ein Containerfile
      * 
      * @param container
