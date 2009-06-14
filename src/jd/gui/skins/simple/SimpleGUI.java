@@ -50,7 +50,6 @@ import javax.swing.JViewport;
 import javax.swing.UIManager;
 import javax.swing.WindowConstants;
 
-import jd.Main;
 import jd.config.ConfigContainer;
 import jd.config.ConfigPropertyListener;
 import jd.config.Configuration;
@@ -741,12 +740,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
                     // setTitle(JDUtilities.getJDTitle());
                     logger.info("Init complete");
                     SimpleGUI.this.setWaiting(false);
-
-                    SimpleGUI.this.setEnabled(true);
-                    try {
-                        Main.SPLASH.finish();
-                    } catch (Exception e) {
-                    }
+                    SimpleGUI.this.setEnabled(true);                    
                     if (SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.PARAM_START_DOWNLOADS_AFTER_START, false)) {
                         new Thread() {
                             public void run() {

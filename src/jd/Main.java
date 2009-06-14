@@ -57,7 +57,6 @@ import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.PackageManager;
 import jd.dynamics.DynamicPluginInterface;
 import jd.event.ControlEvent;
-import jd.event.ControlListener;
 import jd.gui.UserIO;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.JDEventQueue;
@@ -82,15 +81,10 @@ import jd.utils.WebUpdate;
 
 public class Main {
 
-    private static boolean BETA = false;
     private static Logger LOGGER;
-    public static SplashScreen SPLASH;
+    public static SplashScreen SPLASHSCREEN = null;
     private static String instanceID = Main.class.getName();
     private static boolean instanceStarted = false;
-
-    public static boolean isBeta() {
-        return BETA;
-    }
 
     public static String getCaptcha(String path, String host) {
 
@@ -160,7 +154,7 @@ public class Main {
     }
 
     public static void main(String args[]) {
-       
+
         System.setProperty("file.encoding", "UTF-8");
         OSDetector.setOSString(System.getProperty("os.name"));
         // System.setProperty("os.name", "Windows Vista m.a.c");
@@ -283,43 +277,23 @@ public class Main {
             LOGGER.severe("Instance Handling not possible!");
             instanceStarted = true;
         }
+        new JDController();
         if (instanceStarted || JDInitFlags.SWITCH_NEW_INSTANCE) {
-            SPLASH = null;
             JDTheme.setTheme("default");
             if (JDInitFlags.SHOW_SPLASH) {
                 if (SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getBooleanProperty(SimpleGuiConstants.PARAM_SHOW_SPLASH, true)) {
                     LOGGER.info("init Splash");
                     new GuiRunnable<Object>() {
-
                         // @Override
                         public Object runSave() {
                             try {
-                                SPLASH = new SplashScreen(JDTheme.I("gui.splash"));
-                                SPLASH.addProgressImage(new SplashProgressImage(JDTheme.I("gui.splash.languages", 32, 32)));
-                                SPLASH.addProgressImage(new SplashProgressImage(JDTheme.I("gui.splash.settings", 32, 32)));
-                                SPLASH.addProgressImage(new SplashProgressImage(JDTheme.I("gui.splash.controller", 32, 32)));
-                                SPLASH.addProgressImage(new SplashProgressImage(JDTheme.I("gui.splash.update", 32, 32)));
-                                SPLASH.addProgressImage(new SplashProgressImage(JDTheme.I("gui.splash.plugins", 32, 32)));
-                                SPLASH.addProgressImage(new SplashProgressImage(JDTheme.I("gui.splash.screen", 32, 32)));
-                                SPLASH.addProgressImage(new SplashProgressImage(JDTheme.I("gui.splash.dllist", 32, 32)));
+                                new SplashScreen(JDController.getInstance());
                             } catch (Exception e) {
                                 JDLogger.exception(e);
                             }
                             return null;
                         }
 
-                    }.waitForEDT();
-                } else {
-                    new GuiRunnable<Object>() {
-                        // @Override
-                        public Object runSave() {
-                            try {
-                                SPLASH = new SplashScreen();
-                            } catch (Exception e) {
-                                JDLogger.exception(e);
-                            }
-                            return null;
-                        }
                     }.waitForEDT();
                 }
             }
@@ -327,8 +301,6 @@ public class Main {
             LOGGER.info("init Eventmanager");
             Interaction.initTriggers();
             LOGGER.info("init Localisation");
-            Main.increaseSplashStatus();
-
             start(args);
         } else {
             if (args.length > 0) {
@@ -346,22 +318,21 @@ public class Main {
         }
     }
 
-    private static void start(String args[]) {
+    private static void start(final String args[]) {
         if (!JDInitFlags.STOP && !JDInitFlags.ENOUGH_MEMORY) {
             JDUtilities.restartJD();
             return;
         }
-        final String[] processArgs = args;
         if (!JDInitFlags.STOP) {
             final Main main = new Main();
             EventQueue.invokeLater(new Runnable() {
                 public void run() {
                     Toolkit.getDefaultToolkit().getSystemEventQueue().push(new JDEventQueue());
                     main.go();
-                    for (String p : processArgs) {
+                    for (String p : args) {
                         LOGGER.finest("Param: " + p);
                     }
-                    ParameterManager.processParameters(processArgs);
+                    ParameterManager.processParameters(args);
                 }
             });
         }
@@ -429,29 +400,15 @@ public class Main {
         }
     }
 
-    private static void increaseSplashStatus() {
-        SPLASH.setNextImage();
-    }
-
     @SuppressWarnings("unchecked")
     private void go() {
-        final JDInit init = new JDInit(SPLASH);
-
+        final JDInit init = new JDInit();
+        final JDController controller = JDController.getInstance();
+        JDUtilities.getController().fireControlEvent(new ControlEvent(new Object(), SplashScreen.SPLASH_PROGRESS, new String("This is JD :)")));
         init.init();
-        if (isBeta()) {
-            Browser br = new Browser();
-            br.setDebug(true);
-            try {
-                br.getPage("http://update1.jdownloader.org/betas/beta_" + JDUtilities.getRevision());
-                if (br.getRequest().getHttpConnection().isOK()) {
-                    BETA = false;
-                }
-            } catch (IOException e1) {
-            }
-        }
-        LOGGER.info(new Date()+"");
+        LOGGER.info(new Date() + "");
         LOGGER.info("init Configuration");
-        Main.increaseSplashStatus();
+        JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_PROGRESS, new String("Once upon a time...")));
 
         String old = SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getStringProperty("LOCALE", null);
         if (old != null) {
@@ -469,17 +426,13 @@ public class Main {
             LOGGER.setLevel(Level.ALL);
         } else {
             JDLogger.removeConsoleHandler();
-        }
-
-        WebUpdater.getConfig("WEBUPDATE").save();
+        }        
         init.removeFiles();
         LOGGER.info("init Controller");
-        Main.increaseSplashStatus();
-
-        final JDController controller = init.initController();
+        JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_PROGRESS, new String("Ready...")));
 
         LOGGER.info("init Webupdate");
-        Main.increaseSplashStatus();
+        JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_PROGRESS, new String("Steady...")));
 
         new WebUpdate().doWebupdate(false);
         try {
@@ -489,41 +442,14 @@ public class Main {
         }
         WebUpdate.DynamicPluginsFinished();
         LOGGER.info("init plugins");
-        Main.increaseSplashStatus();
-        SPLASH.setProgress(10, 100, JDLocale.L("gui.splash.progress.updateplugins", "Update Plugins"));
+        JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_PROGRESS, new String("D'OH")));
 
-        new Thread() {
-            boolean stop = false;
-
-            public void run() {
-                JDUtilities.getController().addControlListener(new ControlListener() {
-                    public void controlEvent(ControlEvent event) {
-                        if (event.getID() == ControlEvent.CONTROL_INIT_COMPLETE && event.getSource() instanceof Main) {
-                            JDUtilities.getController().removeControlListener(this);
-                            stop = true;
-                        }
-                    }
-                });
-                int i = 10;
-
-                while (!stop) {
-                    SPLASH.setProgress(i % 100, 100, JDLocale.L("gui.splash.progress.updateplugins", "Update Plugins"));
-                    try {
-                        Thread.sleep(100);
-                    } catch (InterruptedException e) {
-                        break;
-                    }
-                    i++;
-                }
-            }
-        }.start();
         init.initPlugins();
 
         Locale.setDefault(Locale.ENGLISH);
 
         LOGGER.info("init gui");
-        Main.increaseSplashStatus();
-        SPLASH.setProgress(30, 100, JDLocale.L("gui.splash.progress.updateplugins", "Update Plugins"));
+        JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_PROGRESS, new String("And then we created the GUI")));
         new GuiRunnable<Object>() {
             // @Override
             public Object runSave() {
@@ -531,9 +457,8 @@ public class Main {
                 return null;
             }
         }.waitForEDT();
-        SPLASH.setProgress(0, 0, null);
         LOGGER.info("init downloadqueue");
-        Main.increaseSplashStatus();
+        JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_PROGRESS, new String("Oh no, more sxxx to do!")));
         init.initControllers();
 
         LOGGER.info("Initialisation finished");
@@ -554,7 +479,7 @@ public class Main {
         LOGGER.info("Revision: " + JDUtilities.getJDTitle());
         LOGGER.finer("Runtype: " + JDUtilities.getRunType());
 
-        if (!Main.isBeta()) init.checkUpdate();
+        init.checkUpdate();
 
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_INIT_COMPLETE, null));
 
@@ -564,7 +489,7 @@ public class Main {
             JDLogger.exception(e);
         }
 
-        if (!Main.isBeta()) new PackageManager().interact(this);
+        new PackageManager().interact(this);
 
     }
 

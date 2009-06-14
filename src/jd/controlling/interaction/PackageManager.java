@@ -23,7 +23,6 @@ import java.util.ArrayList;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 
-import jd.Main;
 import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
 import jd.controlling.JDLogger;
@@ -69,8 +68,7 @@ public class PackageManager extends Interaction implements Serializable {
     }
 
     // @Override
-    public boolean doInteraction(Object arg) {
-        if (Main.isBeta()) return false;
+    public boolean doInteraction(Object arg) {       
         checkNewInstalled();
 
         SubConfiguration config = WebUpdater.getConfig("JDU");

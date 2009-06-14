@@ -90,7 +90,7 @@ public class MegaFtpCom extends PluginForHost {
         Form downloadForm = br.getFormbyProperty("name", "download");
         downloadForm.put("download", Encoding.urlEncode("Click Here to Download"));
 
-        dl = br.openDownload(downloadLink, downloadForm, false, 0);
+        dl = br.openDownload(downloadLink, downloadForm, true, 0);
         dl.startDownload();
     }
 

@@ -110,7 +110,7 @@ public class ControlEvent extends AWTEvent {
      * Wird vom Controller vor dem beeenden des Programms aufgerufen
      */
     public static final int CONTROL_SYSTEM_EXIT = 26;
-    public static final int CONTROL_INIT_COMPLETE = 30;
+    public static final int CONTROL_INIT_COMPLETE = 30;    
 
     /**
      * serialVersionUID
@@ -128,9 +128,9 @@ public class ControlEvent extends AWTEvent {
      * werden als File[] parameter übergeben
      */
     public static final int CONTROL_ON_FILEOUTPUT = 33;
-/**
- * Sammelt über DataBox.java daten ein
- */
+    /**
+     * Sammelt über DataBox.java daten ein
+     */
     public static final int CONTROL_COLLECT_DATA = 34;
 
     /**

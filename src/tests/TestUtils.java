@@ -96,7 +96,7 @@ public abstract class TestUtils {
 
         JDTheme.setTheme("default");
 
-        final JDInit init = new JDInit(null);
+        final JDInit init = new JDInit();
         init.init();
 
         if (init.loadConfiguration() == null) {
@@ -104,7 +104,7 @@ public abstract class TestUtils {
             UserIO.getInstance().requestMessageDialog("JDownloader cannot create the config files. Make sure, that JD_HOME/config/ exists and is writeable");
         }
 
-        final JDController controller = init.initController();
+        final JDController controller = JDController.getInstance();
         JDUtilities.getConfiguration();
 
         init.loadPluginForDecrypt();

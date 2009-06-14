@@ -45,7 +45,7 @@ public class AdriveCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("is no longer available")) return AvailableStatus.FALSE;
+        if (br.containsHTML("is no longer available")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String linkurl = Encoding.htmlDecode(new Regex(br, Pattern.compile("<a href=\"(.*?)\">here</a>", Pattern.CASE_INSENSITIVE)).getMatch(0));
         URLConnectionAdapter con = br.openGetConnection(linkurl);
         if (!con.isContentDisposition()) {

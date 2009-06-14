@@ -7,6 +7,7 @@ import java.util.ArrayList;
 
 import jd.DecryptPluginWrapper;
 import jd.JDInit;
+import jd.controlling.JDController;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -27,7 +28,7 @@ public class Decrypter {
         JDInit init = new JDInit();
 
         init.init();
-        init.initController();
+        new JDController();
         // init.initPlugins();
         init.loadPluginForHost();
         init.loadPluginForDecrypt();

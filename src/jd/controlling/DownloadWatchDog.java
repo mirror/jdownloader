@@ -441,8 +441,8 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                                     }
                                     // Link mit Temp Unavailable in der Queue
                                     if (link.isEnabled() && linkStatus.hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) && !linkStatus.hasStatus(LinkStatus.PLUGIN_IN_PROGRESS)) {
-                                        if (linkStatus.getRemainingWaittime() == 0) {                                            
-                                            linkStatus.reset();                                            
+                                        if (linkStatus.getRemainingWaittime() == 0) {
+                                            linkStatus.reset();
                                         } else if (linkStatus.getRemainingWaittime() > 0) {
                                             hasTempDisabledLinks = true;
                                             updates.add(link);
@@ -451,18 +451,24 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
 
                                     // Link mit Wartezeit in der queue
                                     if (link.isEnabled() && linkStatus.hasStatus(LinkStatus.ERROR_IP_BLOCKED) && !linkStatus.hasStatus(LinkStatus.PLUGIN_IN_PROGRESS)) {
-                                        if (linkStatus.getRemainingWaittime() == 0) {                                            
+                                        if (linkStatus.getRemainingWaittime() == 0) {
                                             linkStatus.reset();
                                         } else if (linkStatus.getRemainingWaittime() > 0) {
                                             Reconnecter.hasWaittimeLinks = true;
                                             updates.add(link);
                                         }
                                     }
-                                    // Laufende DownloadLinks 
+                                    /* Link mit HosterWartezeit */
+                                    if (link.isEnabled() && link.getPlugin().getRemainingHosterWaittime() > 0 && !linkStatus.hasStatus(LinkStatus.PLUGIN_IN_PROGRESS)) {
+                                        Reconnecter.hasWaittimeLinks = true;
+                                        updates.add(link);
+                                    }
+                                    // Laufende DownloadLinks
                                     if (link.isEnabled() && linkStatus.isPluginActive()) {
                                         hasInProgressLinks = true;
                                     }
-                                    // Laufende und sich im Download befindenten Downloads
+                                    // Laufende und sich im Download befindenten
+                                    // Downloads
                                     if (link.isEnabled() && linkStatus.hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
                                         inProgress++;
                                         currentTotalSpeed += link.getDownloadSpeed();

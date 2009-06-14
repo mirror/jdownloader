@@ -309,10 +309,10 @@ public class AccountController extends SubConfiguration implements ActionListene
 
     public void saveSync() {
         if (saveinprogress == true) return;
+        saveinprogress = true;
         new Thread() {
             public void run() {
-                this.setName("AccountController: Saving");
-                saveinprogress = true;
+                this.setName("AccountController: Saving");                
                 synchronized (hosteraccounts) {
                     save();
                 }

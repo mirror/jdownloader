@@ -89,8 +89,7 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
 
     public synchronized Plugin getPlugin() {
         if (loadedPlugin != null) return loadedPlugin;
-        boolean manualupdate = SubConfiguration.getConfig("WEBUPDATE").getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false);
-        if (Main.isBeta()) manualupdate = true;
+        boolean manualupdate = SubConfiguration.getConfig("WEBUPDATE").getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false);        
         try {
 
             if (CL == null) CL = new URLClassLoader(new URL[] { JDUtilities.getJDHomeDirectoryFromEnvironment().toURI().toURL(), JDUtilities.getResourceFile("java").toURI().toURL() }, Thread.currentThread().getContextClassLoader());

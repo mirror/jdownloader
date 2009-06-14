@@ -45,7 +45,6 @@ public class Usershare extends PluginForHost {
             if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
         br.setFollowRedirects(true);
-
         dl = br.openDownload(link, linkurl, true, -10);
         dl.startDownload();
     }

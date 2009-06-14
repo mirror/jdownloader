@@ -38,11 +38,43 @@ import javax.swing.JProgressBar;
 import javax.swing.JWindow;
 import javax.swing.Timer;
 
+import jd.controlling.JDController;
+import jd.event.ControlEvent;
+import jd.event.ControlListener;
 import jd.gui.JDLookAndFeelManager;
 import jd.gui.skins.simple.GuiRunnable;
+import jd.utils.JDTheme;
+import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
-public class SplashScreen implements ActionListener {
+class SplashProgressImage {
+
+    private Image image;
+
+    private long startTime = 0;
+    private final int dur = 500;
+
+    public SplashProgressImage(Image i) {
+        image = i;
+    }
+
+    public Image getImage() {
+        return image;
+    }
+
+    public float getAlpha() {
+        if (this.startTime == 0) {
+            this.startTime = System.currentTimeMillis();
+        }
+        return Math.min((System.currentTimeMillis() - startTime) / (float) dur, 1.0f);
+    }
+
+}
+
+public class SplashScreen implements ActionListener, ControlListener {
+
+    public static final int SPLASH_FINISH = 0;
+    public static final int SPLASH_PROGRESS = 1;
 
     private float duration = 500.0f;
 
@@ -50,7 +82,7 @@ public class SplashScreen implements ActionListener {
 
     private JLabel label;
 
-    private final int speed = 1000 / 10;
+    private final int speed = 100;
     private long startTime = 0;
 
     private Timer timer;
@@ -66,26 +98,28 @@ public class SplashScreen implements ActionListener {
     private int imageCounter = 1;
 
     private JProgressBar progress;
-    private boolean unused = false;
 
-    public void setNextImage() {
-        imageCounter++;
-    }
+    private String curString = new String();
 
-    /**
-     * dieser konstruktor wird benutzt falls KEIN splash angezeigt werden soll
-     */
-    public SplashScreen() {
-        unused = true;
-    }
+    private boolean show = true;
+    private int progressvalue = 0;
 
     /**
      * dieser konstruktor wird benutzt falls ein splash angezeigt werden soll
      */
-    public SplashScreen(Image image) throws IOException, AWTException {
+
+    public SplashScreen(JDController controller) throws IOException, AWTException {
+
         JDLookAndFeelManager.setUIManager();
-        this.image = (BufferedImage) image;
+        this.image = (BufferedImage) JDTheme.I("gui.splash");
         progressimages = new ArrayList<SplashProgressImage>();
+        progressimages.add(new SplashProgressImage(JDTheme.I("gui.splash.languages", 32, 32)));
+        progressimages.add(new SplashProgressImage(JDTheme.I("gui.splash.settings", 32, 32)));
+        progressimages.add(new SplashProgressImage(JDTheme.I("gui.splash.controller", 32, 32)));
+        progressimages.add(new SplashProgressImage(JDTheme.I("gui.splash.update", 32, 32)));
+        progressimages.add(new SplashProgressImage(JDTheme.I("gui.splash.plugins", 32, 32)));
+        progressimages.add(new SplashProgressImage(JDTheme.I("gui.splash.screen", 32, 32)));
+        progressimages.add(new SplashProgressImage(JDTheme.I("gui.splash.dllist", 32, 32)));
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
 
         Rectangle v = ge.getDefaultScreenDevice().getDefaultConfiguration().getBounds();
@@ -97,6 +131,8 @@ public class SplashScreen implements ActionListener {
         h = image.getHeight(null);
         initGui();
         startAnimation();
+        show = true;
+        controller.addControlListener(this);
     }
 
     private void startAnimation() {
@@ -104,6 +140,7 @@ public class SplashScreen implements ActionListener {
         timer.setCoalesce(true);
         timer.start();
         startTime = System.currentTimeMillis();
+        startProgressBar();
     }
 
     private void initGui() {
@@ -117,7 +154,9 @@ public class SplashScreen implements ActionListener {
         window.setSize(image.getWidth(null), image.getHeight(null));
         window.add(label);
         window.add(progress = new JProgressBar(), "hidemode 3,height 20!");
-        progress.setVisible(false);
+        progress.setVisible(true);
+        progress.setMaximum(100);
+        progress.setValue(0);
         window.pack();
         Rectangle b = gc.getBounds();
         window.setLocation(b.x + x, b.y + y);
@@ -168,38 +207,61 @@ public class SplashScreen implements ActionListener {
         return new ImageIcon(res);
     }
 
-    public void addProgressImage(SplashProgressImage splashProgressImage) {
-        this.progressimages.add(splashProgressImage);
+    private void startProgressBar() {
+        new Thread() {
+            public void run() {
+                while (show) {
+                    incProgress();
+                    try {
+                        Thread.sleep(40);
+                    } catch (InterruptedException e) {
+                        break;
+                    }
+                }
+            }
+        }.start();
     }
 
-    public void finish() {
-        if (unused) return;
-        timer.stop();
-        window.dispose();
-    }
-
-    public void setProgress(final int i, final int j, final String l) {
-        if (unused) return;
+    private void finish() {
         new GuiRunnable<Object>() {
-
             @Override
             public Object runSave() {
-                if (j <= 0) {
-                    progress.setVisible(false);
-                    window.pack();
-                } else {
-                    progress.setVisible(true);
-                    window.pack();
-                    progress.setStringPainted(true);
-                    progress.setMaximum(j);
-                    progress.setValue(i);
-                    progress.setString(l);
-                }
+                show = false;
+                timer.stop();
+                window.dispose();
                 return null;
             }
-
-        }.waitForEDT();
-
+        }.start();
     }
 
+    private void incProgress() {
+        progressvalue = (progressvalue + 1) % 100;
+        new GuiRunnable<Object>() {
+            @Override
+            public Object runSave() {
+                progress.setStringPainted(true);
+                progress.setValue(progressvalue);
+                progress.setString(curString);
+                return null;
+            }
+        }.waitForEDT();
+    }
+
+    public void controlEvent(ControlEvent event) {
+        if (event.getID() == SPLASH_PROGRESS) {
+            if (event.getParameter() != null && event.getParameter() instanceof String) {
+                synchronized (curString) {
+                    curString = (String) event.getParameter();
+                }
+            }
+            imageCounter++;
+        } else if (event.getID() == ControlEvent.CONTROL_INIT_COMPLETE && event.getSource() instanceof Main) {
+            JDUtilities.getController().removeControlListener(this);
+            finish();
+        } else if (event.getID() == SPLASH_FINISH) {
+            JDUtilities.getController().removeControlListener(this);
+            finish();
+        }
+
+    }
 }

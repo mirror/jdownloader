@@ -28,7 +28,6 @@ import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
 import javax.swing.SwingUtilities;
 
-import jd.Main;
 import jd.config.ConfigPropertyListener;
 import jd.config.Configuration;
 import jd.config.Property;
@@ -146,15 +145,9 @@ public class JDToolBar extends JToolBar implements ControlListener {
             stopButton.setToolTipText(tt);
         }
         if ((flag & JDToolBar.ENTRY_UPDATE) > 0) {
-            if (Main.isBeta()) {
-                update.setEnabled(false);
-                update.setToolTipText("This is a BETA version. Updates for betaversions are only available at jdownloader.org");
-            } else {
-                update.setEnabled(b);
-                update.setToolTipText(tt);
-            }
+            update.setEnabled(b);
+            update.setToolTipText(tt);
         }
-
     }
 
     private void initListeners() {
@@ -199,12 +192,6 @@ public class JDToolBar extends JToolBar implements ControlListener {
 
         add(update = new JButton(JDTheme.II("gui.images.update", 24, 24)), BUTTON_CONSTRAINTS);
         update.setToolTipText(JDLocale.L("gui.menu.action.update.desc", "Check for new updates"));
-
-        if (Main.isBeta()) {
-            update.setEnabled(false);
-            update.setToolTipText("This is a BETA version. Updates for betaversions are only available at jdownloader.org");
-
-        }
         update.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {

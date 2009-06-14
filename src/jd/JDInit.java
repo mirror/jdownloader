@@ -29,6 +29,7 @@ import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.PasswordListController;
 import jd.controlling.interaction.Interaction;
+import jd.event.ControlEvent;
 import jd.gui.JDLookAndFeelManager;
 import jd.gui.UIInterface;
 import jd.gui.UserIO;
@@ -55,14 +56,7 @@ public class JDInit {
 
     private boolean installerVisible = false;
 
-    private SplashScreen splashScreen;
-
     public JDInit() {
-        this(null);
-    }
-
-    public JDInit(SplashScreen splashScreen) {
-        this.splashScreen = splashScreen;
     }
 
     public void checkUpdate() {
@@ -78,12 +72,7 @@ public class JDInit {
             String old = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_UPDATE_VERSION, "");
             if (!old.equals(JDUtilities.getRevision())) {
                 logger.info("Detected that JD just got updated");
-                try {
-                    if (splashScreen != null) {
-                        splashScreen.finish();
-                    }
-                } catch (Exception e) {
-                }
+                JDUtilities.getController().fireControlEvent(new ControlEvent(null, SplashScreen.SPLASH_FINISH));
                 SimpleGUI.showChangelogDialog();
 
             }
@@ -128,10 +117,6 @@ public class JDInit {
 
     public void init() {
         Browser.init();
-    }
-
-    public JDController initController() {
-        return new JDController();
     }
 
     public void initControllers() {
@@ -224,10 +209,7 @@ public class JDInit {
 
             JDUtilities.getDatabaseConnector().saveConfiguration("jdownloaderconfig", JDUtilities.getConfiguration());
             installerVisible = true;
-            try {
-                splashScreen.finish();
-            } catch (Exception e) {
-            }
+            JDUtilities.getController().fireControlEvent(new ControlEvent(null, SplashScreen.SPLASH_FINISH));
             /**
              * Workaround to enable JGoodies for MAC oS
              */
@@ -470,7 +452,7 @@ public class JDInit {
         new DecryptPluginWrapper("realfiles.net", "LinkBucks", "http://[\\w\\.]*?realfiles\\.net(/link/[0-9a-fA-F]+(/\\d+)?)?");
         new DecryptPluginWrapper("urlcut.com", "UrlCutCom", "http://[\\w\\.]*?urlcut\\.com/[0-9a-zA-Z]+");
         new DecryptPluginWrapper("sp2.ro", "Redirecter", "http://[\\w\\.]*?sp2\\.ro/[0-9a-zA-Z]+");
- 
+
         // Decrypter from Extern
         new DecryptPluginWrapper("rapidlibrary.com", "RapidLibrary", "http://rapidlibrary\\.com/download_file_i\\.php\\?.+");
 
@@ -526,7 +508,7 @@ public class JDInit {
         new HostPluginWrapper("Files.To", "FilesTo", "http://[\\w\\.]*?files\\.to/get/[0-9]+/[\\w]+");
         new HostPluginWrapper("File-Upload.net", "FileUploadnet", "((http://[\\w\\.]*?file-upload\\.net/(member/){0,1}download-\\d+/(.*?).html)|(http://[\\w\\.]*?file-upload\\.net/(view-\\d+/(.*?).html|member/view_\\d+_(.*?).html))|(http://[\\w\\.]*?file-upload\\.net/member/data3\\.php\\?user=(.*?)&name=(.*)))");
         new HostPluginWrapper("GoogleGroups.com", "GoogleGroups", "http://[\\w\\.]*?googlegroups.com/web/.*");
-        new HostPluginWrapper("HTTP Links", "HTTPAllgemein", "https?viajd://[\\d\\w\\.:\\-@]*/.*\\.(jdu|otrkey|ac3|3gp|7zip|7z|aiff|aif|aifc|au|avi|bin|bz2|ccf|cue|divx|dlc|doc|docx|dot|exe|flv|gif|gz|iso|java|jpg|jpeg|mkv|mp2|mp3|mp4|mov|movie|mpe|mpeg|mpg|msi|msu|nfo|png|pdf|ppt|pptx|pps|ppz|pot|qt|rar|rsdf|rtf|snd|sfv|tar|tif|tiff|viv|vivo|wav|wmv|xla|xls|zip|ts)");
+        new HostPluginWrapper("HTTP Links", "HTTPAllgemein", "https?viajd://[\\d\\w\\.:\\-@]*/.*\\.(jdu|otrkey|ac3|3gp|7zip|7z|aiff|aif|aifc|au|avi|bin|bz2|ccf|cue|divx|dlc|doc|docx|dot|exe|flv|gif|gz|iso|java|jpg|jpeg|mkv|mp2|mp3|mp4|mov|movie|mpe|mpeg|mpg|msi|msu|nfo|png|pdf|ppt|pptx|pps|ppz|pot|qt|rar|r\\d+|\\d+|rsdf|rtf|snd|sfv|tar|tif|tiff|viv|vivo|wav|wmv|xla|xls|zip|ts)");
         new HostPluginWrapper("ImageFap.com", "ImageFap", "http://[\\w\\.]*?imagefap.com/image.php\\?id=.*(&pgid=.*&gid=.*&page=.*)?");
         new HostPluginWrapper("MediaFire.Com", "MediafireCom", "http://[\\w\\.]*?mediafire\\.com/(download\\.php\\?.+|\\?.+|file/.+)");
         // new HostPluginWrapper("MySpace.Com", "MySpaceCom", "myspace://.+");
