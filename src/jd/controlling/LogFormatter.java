@@ -44,9 +44,6 @@ public class LogFormatter extends SimpleFormatter {
     private String lineSeparator = System.getProperty("line.separator");
     private StringBuilder sb;
 
-    // private StringBuffer text;
-
-    // @Override
     public synchronized String format(LogRecord record) {
 
         sb = new StringBuilder();

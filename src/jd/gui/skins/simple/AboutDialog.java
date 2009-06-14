@@ -76,7 +76,7 @@ public class AboutDialog extends AbstractDialog {
         textField.setEditable(false);
         new Thread() {
 
-            // @Override
+            // //@Override
             public void run() {
                 try {
                     Browser br = new Browser();
@@ -169,6 +169,8 @@ public class AboutDialog extends AbstractDialog {
         devs.add(new DevEntry("Jaak", "-", "Dutch Translation"));
         devs.add(new DevEntry("Moktar", "-", "Arabic Translation"));
         devs.add(new DevEntry("Sna696", "-", "Italian Translation"));
+        devs.add(new DevEntry("Giandena", "-", "Italian Translation"));  
+        
         // Collections.sort(devs);
         return devs.toArray(new DevEntry[] {});
     }
