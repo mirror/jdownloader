@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2008  JD-Team support@jdownloader.org
+//    Copyright (C) 2009  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -19,8 +19,6 @@ package jd.plugins.host;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
@@ -45,9 +43,9 @@ public class BitRoadNet extends PluginForHost {
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("File:<b[^>]*>(.*?)</b>").getMatch(0);
-        String size = br.getRegex("Size:<b[^>]*>(.*?)</b>").getMatch(0);
+        if (br.containsHTML("file is not found") || br.containsHTML("Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("name=\"name\" value=\"(.*?)\"").getMatch(0);
+        String size = br.getRegex("<h1>.*\\[\\s(.*?)\\s\\]</h1>").getMatch(0);
         if (filename == null || size == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(size));
@@ -61,48 +59,16 @@ public class BitRoadNet extends PluginForHost {
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        String previousLink = downloadLink.getStringProperty("directLink", null);
-        String url = null;
-        if (previousLink == null) {
-            requestFileInformation(downloadLink);
-            Form dl1 = br.getFormbyProperty("id", "Premium");
-            if (dl1 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-            br.submitForm(dl1);
-            dl1 = null;
-            dl1 = br.getForm(0);
-            if (dl1 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-            String id = dl1.getVarsMap().get("uid");
-            String captchaurl = "http://bitroad.net/cap/" + id;
-            Browser br2 = br.cloneBrowser();
-            br2.getPage(captchaurl);
-            String code = br2.toString().replaceAll("\\W", "");
-            dl1.setAction("http://bitroad.net/download3.php");
-            if (code.length() > 7 || code.length() < 3) {
-                logger.warning("Cannot use psp's captcha method, trying normal OCR...");
-                captchaurl = captchaurl + ".jpg";
-                code = getCaptchaCode(captchaurl, downloadLink);
-            }
-            dl1.put("cap", code);
-            br.submitForm(dl1);
-            if (!br.containsHTML("Your link to")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            url = br.getRegex("<div id=\"links\"[^>]*><a href='(.*?)'").getMatch(0);
-            this.sleep(2000, downloadLink);
-            downloadLink.setProperty("directLink", url);
-        } else {
-            url = previousLink;
-        }
-        dl = br.openDownload(downloadLink, url, true, 1);
-        URLConnectionAdapter cond = dl.getConnection();
-        if (!cond.isOK()) {
-            if (previousLink != null) {
-                downloadLink.setProperty("directLink", null);
-                cond.disconnect();
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            } else {
-                cond.disconnect();
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            }
-        }
+        requestFileInformation(downloadLink);
+        br.setFollowRedirects(false);
+        if (br.containsHTML("Downloading is in process from your IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED,10*60*1001);
+        Form dl1 = br.getFormbyProperty("id", "Premium");
+        if (dl1 == null) dl1 = br.getFormbyProperty("name", "Premium");
+        if (dl1 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        br.submitForm(dl1);
+        String url = br.getRedirectLocation();
+        if (url == null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+        dl = br.openDownload(downloadLink, url, false, 1);
         dl.startDownload();
     }
 
@@ -121,6 +87,5 @@ public class BitRoadNet extends PluginForHost {
 
     // @Override
     public void resetDownloadlink(DownloadLink link) {
-        link.setProperty("directLink", null);
     }
 }
