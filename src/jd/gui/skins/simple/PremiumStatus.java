@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.TreeMap;
 
 import javax.swing.JLabel;
-import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
@@ -389,25 +388,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
             if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
                 SimpleGUI.CURRENTGUI.setWaiting(true);
                 JPopupMenu popup = new JPopupMenu();
-                PluginForHost plugin;
-                JMenu pluginPopup;
-                JMenuItem mi;
-                for (HostPluginWrapper wrapper : JDUtilities.getPluginsForHost()) {
-                    if (!wrapper.isLoaded()) continue;
-                    if (!wrapper.isPremiumEnabled()) continue;
-                    plugin = wrapper.getPlugin();
-                    pluginPopup = new JMenu(wrapper.getHost());
-                    if (plugin.hasHosterIcon()) pluginPopup.setIcon(plugin.getHosterIcon());
-                    for (MenuItem next : plugin.createMenuitems()) {
-                        mi = JDMenu.getJMenuItem(next);
-                        if (mi == null) {
-                            pluginPopup.addSeparator();
-                        } else {
-                            pluginPopup.add(mi);
-                        }
-                    }
-                    popup.add(pluginPopup);
-                }
+                Factory.createHosterPopup(popup);
                 popup.show(premium, e.getPoint().x, e.getPoint().y);
                 SimpleGUI.CURRENTGUI.setWaiting(false);
             }

@@ -37,8 +37,8 @@ import jd.parser.Regex;
  * SimpleFTP is a simple package that implements a Java FTP client. With
  * SimpleFTP, you can connect to an FTP server and upload multiple files.
  * <p>
- * Copyright Paul Mutton, <a
- * href="http://www.jibble.org/host+" >http://www.jibble.org/</a>
+ * Copyright Paul Mutton, <a href="http://www.jibble.org/host+"
+ * >http://www.jibble.org/</a>
  */
 public class SimpleFTP {
     private static boolean DEBUG = true;
@@ -96,7 +96,7 @@ public class SimpleFTP {
     public synchronized void connect(String host, int port, String user, String pass) throws IOException {
         if (socket != null) { throw new IOException("SimpleFTP is already connected. Disconnect first."); }
         socket = new Socket(host, port);
-        this.host=host;
+        this.host = host;
         reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
         String response = readLine();
@@ -169,7 +169,7 @@ public class SimpleFTP {
     private String readLine() throws IOException {
         String line = reader.readLine();
         if (DEBUG) {
-            System.out.println(host+" < " + line);
+            System.out.println(host + " < " + line);
         }
         return line;
     }
@@ -201,7 +201,7 @@ public class SimpleFTP {
             writer.write(line + "\r\n");
             writer.flush();
             if (DEBUG) {
-                System.out.println(host+" > " + line);
+                System.out.println(host + " > " + line);
             }
         } catch (IOException e) {
             socket = null;
@@ -266,21 +266,23 @@ public class SimpleFTP {
         }
         throw new IOException("SimpleFTP received bad data link information: " + response);
     }
+
     public static void main(String[] args) throws Exception {
         SimpleFTP ftp = new SimpleFTP();
         ftp.connect("jdupdate.bluehost.to", 2100, "**", "****");
         ftp.bin();
 
-       ftp.mkdir("/testa/testb/testc");
-       ftp.cwd("/testa/testb/");
-       
-       ftp.mkdir("testd/teste");
-       ftp.mkdir("/testa/testxxx");
-       ftp.mkdir("/testa/testxxx/");
-       ftp.cwd("/testa/testxxx/");
-       ftp.mkdir("/testa/testxxx/");
-       ftp.mkdir("/testa/testxxx/aaa");
+        ftp.mkdir("/testa/testb/testc");
+        ftp.cwd("/testa/testb/");
+
+        ftp.mkdir("testd/teste");
+        ftp.mkdir("/testa/testxxx");
+        ftp.mkdir("/testa/testxxx/");
+        ftp.cwd("/testa/testxxx/");
+        ftp.mkdir("/testa/testxxx/");
+        ftp.mkdir("/testa/testxxx/aaa");
     }
+
     /**
      * creates directories
      * 
@@ -290,25 +292,25 @@ public class SimpleFTP {
      */
     public boolean mkdir(String cw2) throws IOException {
         String tmp = this.dir;
-        String cw=cw2;
+        String cw = cw2;
         try {
-            cw =cw.replace("\\", "/");
-        
+            cw = cw.replace("\\", "/");
+
             String[] cwdirs = cw.split("[\\\\|/]{1}");
             String[] dirdirs = dir.split("[\\\\|/]{1}");
             int i;
-            int length=0;
-            String root="";
-           for(i=0;i<Math.min(cwdirs.length,dirdirs.length);i++){               
-                if(cwdirs[i].equals(dirdirs[i])){
-                   length+=cwdirs[i].length()+1;
-                   root+=cwdirs[i]+"/";
+            int length = 0;
+            String root = "";
+            for (i = 0; i < Math.min(cwdirs.length, dirdirs.length); i++) {
+                if (cwdirs[i].equals(dirdirs[i])) {
+                    length += cwdirs[i].length() + 1;
+                    root += cwdirs[i] + "/";
                 }
             }
-           cw=cw;
-           cw=cw.substring(length);
+            // cw=cw;
+            cw = cw.substring(length);
             String[] dirs = cw.split("[\\\\|/]{1}");
-           if(root.length()>0) cwd(root);
+            if (root.length() > 0) cwd(root);
             for (String d : dirs) {
                 if (d == null || d.trim().length() == 0) {
                     cwd("/");
@@ -413,11 +415,11 @@ public class SimpleFTP {
         SimpleFTP ftp = new SimpleFTP();
         ftp.connect(ip, port, user, password);
         ftp.bin();
-        long size=0;
-        long transfered=0;
+        long size = 0;
+        long transfered = 0;
         for (File f : list) {
-            size+=f.length();
-            
+            size += f.length();
+
         }
         for (File f : list) {
 
@@ -431,7 +433,7 @@ public class SimpleFTP {
                 subfolder = f.getParent().substring(root.getAbsolutePath().length());
 
             }
-          
+
             if (!ftp.cwd(mergeFolders(destfolder, subfolder))) {
                 ftp.mkdir(mergeFolders(destfolder, subfolder));
                 if (!ftp.cwd(mergeFolders(destfolder, subfolder))) { throw new IOException("Unexpected error"); }
@@ -467,9 +469,9 @@ public class SimpleFTP {
                 }
                 dummy.delete();
             }
-            transfered+=f.length();
+            transfered += f.length();
             if (DEBUG) {
-            System.out.println(ftp.host+": "+((transfered*100l)/size)+"%");
+                System.out.println(ftp.host + ": " + ((transfered * 100l) / size) + "%");
             }
         }
 
@@ -525,14 +527,13 @@ public class SimpleFTP {
 
     }
 
-    public static void download(String ip, int port, String user, String password, String filepath,String name, File file) throws IOException {
+    public static void download(String ip, int port, String user, String password, String filepath, String name, File file) throws IOException {
         SimpleFTP ftp = new SimpleFTP();
         ftp.connect(ip, port, user, password);
         ftp.bin();
         ftp.cwd(filepath);
         ftp.download(name, file);
-        
-        
+
     }
 
 }

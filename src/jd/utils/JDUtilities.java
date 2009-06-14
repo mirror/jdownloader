@@ -100,7 +100,7 @@ public class JDUtilities {
 
     private static HashMap<String, PluginsC> containerPlugins = new HashMap<String, PluginsC>();
 
-    /** 
+    /**
      * Der DownloadController
      */
     private static JDController controller = null;
@@ -610,8 +610,8 @@ public class JDUtilities {
 
     public static String getJDTitle() {
         StringBuilder ret = new StringBuilder(JDUtilities.JD_TITLE);
-        
-        if( WebUpdater.getConfig("WEBUPDATE").getStringProperty("BRANCHINUSE", null)!=null){
+
+        if (WebUpdater.getConfig("WEBUPDATE").getStringProperty("BRANCHINUSE", null) != null) {
             ret.append(' ');
             ret.append('(');
             ret.append(WebUpdater.getConfig("WEBUPDATE").getStringProperty("BRANCHINUSE", null));
@@ -638,7 +638,7 @@ public class JDUtilities {
         return c.format(100.0 * downloadCurrent / (double) downloadMax) + "%";
     }
 
-    /** 
+    /**
      * Sucht ein passendes Plugin für ein Containerfile
      * 
      * @param container
@@ -685,19 +685,12 @@ public class JDUtilities {
     }
 
     /**
-     * Liefert alle Plugins zum Downloaden von einem Anbieter zurück. Die liste
-     * wird dabei sortiert zurückgegeben
+     * Liefert alle Plugins zum Downloaden von einem Anbieter zurück.
      * 
      * @return Plugins zum Downloaden von einem Anbieter
      */
     public static ArrayList<HostPluginWrapper> getPluginsForHost() {
-        /*
-         * @GREENY: hier darf NICHT Collections.sort werden 1.) die funktion oft
-         * genutzt wird -> langsam 2.) beim starten eine endlos rekursion
-         * verursacht
-         */
-        ArrayList<HostPluginWrapper> hosts = new ArrayList<HostPluginWrapper>(HostPluginWrapper.getHostWrapper());
-        return hosts;
+        return new ArrayList<HostPluginWrapper>(HostPluginWrapper.getHostWrapper());
     }
 
     /**

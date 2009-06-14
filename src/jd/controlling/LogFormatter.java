@@ -18,14 +18,12 @@ package jd.controlling;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.text.MessageFormat;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.SimpleFormatter;
 
 import jd.nutils.Formatter;
-
 
 /**
  * Mit dieser Klasse können die Logmeldungen anders dargestellt werden. Der Code
@@ -37,35 +35,36 @@ import jd.nutils.Formatter;
  */
 public class LogFormatter extends SimpleFormatter {
 
-//    private final static String format = "{0,date} {0,time}";
+    // private final static String format = "{0,date} {0,time}";
     private Object args[] = new Object[1];
     Date dat = new Date();
-//    private MessageFormat formatter;
+    // private MessageFormat formatter;
     // Line separator string. This is the value of the line.separator
     // property at the moment that the SimpleFormatter was created.
     private String lineSeparator = System.getProperty("line.separator");
     private StringBuilder sb;
-//    private StringBuffer text;
-    
-    //@Override
+
+    // private StringBuffer text;
+
+    // @Override
     public synchronized String format(LogRecord record) {
 
-    	sb = new StringBuilder();
+        sb = new StringBuilder();
 
         // Minimize memory allocations here.
         dat.setTime(record.getMillis());
         args[0] = dat;
 
-//        text = new StringBuffer();
-//        if (formatter == null) {
-//            formatter = new MessageFormat(format);
-//        }
-//        formatter.format(args, text, null);
+        // text = new StringBuffer();
+        // if (formatter == null) {
+        // formatter = new MessageFormat(format);
+        // }
+        // formatter.format(args, text, null);
         String message = formatMessage(record);
-//        sb.append(text);
-//        sb.append(" - ");
-        if(JDLogger.getLogger().getLevel()==Level.ALL){
-            sb.append(Formatter.formatMilliseconds(record.getMillis()-JDLogger.INIT_TIME));
+        // sb.append(text);
+        // sb.append(" - ");
+        if (JDLogger.getLogger().getLevel() == Level.ALL) {
+            sb.append(Formatter.formatMilliseconds(record.getMillis() - JDLogger.INIT_TIME));
             sb.append(" - ");
             sb.append(record.getLevel().getName());
             sb.append(" [");
@@ -82,17 +81,14 @@ public class LogFormatter extends SimpleFormatter {
             sb.append("] ");
 
             sb.append("-> ");
-        }else{
-         
-            
-          
+        } else {
+
             if (record.getSourceClassName() != null) {
-                sb.append(record.getSourceClassName().substring(record.getSourceClassName().lastIndexOf(".")+1));
+                sb.append(record.getSourceClassName().substring(record.getSourceClassName().lastIndexOf(".") + 1));
             } else {
                 sb.append(record.getLoggerName());
             }
-                  
-           
+
             sb.append("-> ");
         }
         sb.append(message);
