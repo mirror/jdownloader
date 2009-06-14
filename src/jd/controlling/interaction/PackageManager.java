@@ -52,6 +52,7 @@ public class PackageManager extends Interaction implements Serializable {
     private void checkNewInstalled() {
         StringBuilder links = new StringBuilder();
         StringBuilder error = new StringBuilder();
+
         for (PackageData pa : getPackageData()) {
             if (pa.isInstalled()) {
                 if (pa.getInstalledVersion() != Integer.parseInt(pa.getStringProperty("version"))) {
@@ -60,26 +61,11 @@ public class PackageManager extends Interaction implements Serializable {
                     links.append(JDLocale.LF("system.update.success.message.infolink", "%s v.%s <a href='%s'>INFO</a><br/>", pa.getStringProperty("name"), pa.getStringProperty("version"), pa.getStringProperty("infourl")));
                 }
                 pa.setInstalled(false);
-
-                // for (OptionalPluginWrapper plg :
-                // OptionalPluginWrapper.getOptionalWrapper()) {
-                // if
-                // (JDUtilities.getConfiguration().getBooleanProperty(plg.getConfigParamKey(),
-                // false) !=
-                // JDUtilities.getConfiguration().getBooleanProperty(plg.getConfigParamKey(),
-                // true)) {
-                // JDUtilities.getConfiguration().setProperty(plg.getConfigParamKey(),
-                // true);
-                // plg.getPlugin().initAddon();
-                // }
-                // }
-
             }
         }
 
         if (links.length() > 0) JDUtilities.getGUI().showCountdownConfirmDialog(JDLocale.LF("system.update.success.message", "Installed new updates<hr>%s", links.toString()), 15);
         if (error.length() > 0) JDUtilities.getGUI().showCountdownConfirmDialog(JDLocale.LF("system.update.error.message", "Installing updates FAILED for this packages:<hr>%s", links.toString()), 15);
-
     }
 
     // @Override
@@ -116,17 +102,10 @@ public class PackageManager extends Interaction implements Serializable {
             if (pkg.isSelected() && !pkg.isUptodate() && !pkg.isUpdating()) {
                 pkg.setUpdating(true);
 
-                DistributeData distributeData = null;
-                // /*Currently no pumped up addons*/
-                // if (config.getBooleanProperty("SUPPORT_JD", true)||false) {
-                distributeData = new DistributeData(pkg.getStringProperty("url"));
-                // } else {
-                // distributeData = new
-                // DistributeData(pkg.getStringProperty("light-url"));
-                // }
+                DistributeData distributeData = new DistributeData(pkg.getStringProperty("url"));
                 ArrayList<DownloadLink> links = distributeData.findLinks();
                 for (DownloadLink link : links) {
-                    logger.info("Add link " + link /* + " : " + pkg */);
+                    logger.info("Add link " + link);
                     link.setFilePackage(fp);
                     link.setLinkType(DownloadLink.LINKTYPE_JDU);
                     link.setProperty("JDU", pkg);
@@ -134,9 +113,7 @@ public class PackageManager extends Interaction implements Serializable {
             }
         }
         config.save();
-        if (fp.size() > 0) {
-            if (!oldUpdatePackage) JDUtilities.getDownloadController().addPackageAt(fp, 0);
-        }
+        if (fp.size() > 0 && !oldUpdatePackage) JDUtilities.getDownloadController().addPackageAt(fp, 0);
         return true;
     }
 
@@ -147,12 +124,12 @@ public class PackageManager extends Interaction implements Serializable {
             dat.setDownloaded(false);
             dat.setUpdating(false);
         }
+
         // Updatelink wurde vermutlich aus der Liste entfernt
-        if (!dat.isDownloaded() && dat.isUpdating() && !(JDUtilities.getDownloadController().hasDownloadLinkwithURL(dat.getStringProperty("url"))) || JDUtilities.getDownloadController().hasDownloadLinkwithURL(dat.getStringProperty("light-url"))) {
+        if (!dat.isDownloaded() && dat.isUpdating() && !JDUtilities.getDownloadController().hasDownloadLinkwithURL(dat.getStringProperty("url"))) {
             logger.info("PM: validate restet2");
             dat.setUpdating(false);
         }
-
     }
 
     // @Override
