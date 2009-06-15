@@ -404,7 +404,7 @@ public class Main {
     private void go() {
         final JDInit init = new JDInit();
         final JDController controller = JDController.getInstance();
-        JDUtilities.getController().fireControlEvent(new ControlEvent(new Object(), SplashScreen.SPLASH_PROGRESS, new String("This is JD :)")));
+        JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_PROGRESS, new String("This is JD :)")));
         init.init();
         LOGGER.info(new Date() + "");
         LOGGER.info("init Configuration");

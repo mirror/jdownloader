@@ -72,7 +72,7 @@ public class JDInit {
             String old = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_UPDATE_VERSION, "");
             if (!old.equals(JDUtilities.getRevision())) {
                 logger.info("Detected that JD just got updated");
-                JDUtilities.getController().fireControlEvent(new ControlEvent(null, SplashScreen.SPLASH_FINISH));
+                JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_FINISH));
                 SimpleGUI.showChangelogDialog();
 
             }
@@ -209,7 +209,7 @@ public class JDInit {
 
             JDUtilities.getDatabaseConnector().saveConfiguration("jdownloaderconfig", JDUtilities.getConfiguration());
             installerVisible = true;
-            JDUtilities.getController().fireControlEvent(new ControlEvent(null, SplashScreen.SPLASH_FINISH));
+            JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_FINISH));
             /**
              * Workaround to enable JGoodies for MAC oS
              */
@@ -335,7 +335,8 @@ public class JDInit {
         new DecryptPluginWrapper("redirect.musicalmente.info", "MusicalmenteInfo", "http://[\\w\\.]*?redirect\\.musicalmente\\.info/.+");
         new DecryptPluginWrapper("music-base.ws", "MusicBaseWs", "http://[\\w\\.]*?music-base\\.ws/dl\\.php.*?c=[\\w]+");
         new DecryptPluginWrapper("myref.de", "MyRef", "http://[\\w\\.]*?myref\\.de(/){0,1}\\?\\d{0,10}");
-        // new DecryptPluginWrapper("myspace.com", "MySpaceCom", "http://[\\w\\.]*?myspace\\.(com|de)/.+");
+        // new DecryptPluginWrapper("myspace.com", "MySpaceCom",
+        // "http://[\\w\\.]*?myspace\\.(com|de)/.+");
         new DecryptPluginWrapper("myup.cc", "Myupcc", "http://[\\w\\.]*?myup\\.cc/link-[\\w]+\\.html");
         new DecryptPluginWrapper("myvideo.de", "MyvideoDe", "http://[\\w\\.]*?myvideo\\.de/watch/[0-9]+/");
         new DecryptPluginWrapper("netfolder.in", "NetfolderIn", "http://[\\w\\.]*?netfolder\\.in/folder\\.php\\?folder_id\\=[\\w]{7}|http://[\\w\\.]*?netfolder\\.in/[\\w]{7}/.*?");
