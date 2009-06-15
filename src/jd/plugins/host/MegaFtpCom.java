@@ -43,26 +43,26 @@ public class MegaFtpCom extends PluginForHost {
 
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if(br.containsHTML("404 Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("404 Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         String filename = br.getRegex("<font color=\"#FC8622\" size=\"4\">(.*?)</font>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
-        br.setFollowRedirects(false);        
+        br.setFollowRedirects(false);
         return AvailableStatus.TRUE;
     }
 
     // @Override
     public String getVersion() {
-        return getVersion("$Revision 6156$");
+        return getVersion("$Revision$");
     }
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
 
-        //Datei hat Passwortschutz?
-        if(br.containsHTML("This file is password-protected")) {
+        // Datei hat Passwortschutz?
+        if (br.containsHTML("This file is password-protected")) {
             String passCode;
             DownloadLink link = downloadLink;
             Form form = br.getFormbyProperty("name", "pswcheck");

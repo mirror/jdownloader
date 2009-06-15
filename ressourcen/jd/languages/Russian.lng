@@ -1,5 +1,5 @@
 $translater$ = Y-Dr. Now  and Firx
-$version$ = 0.6193 0.9 (13.06.2009)
+$version$ = $Revision$
 addons.jdgrowlnotification.menu = Сообщения об ошибках
 addons.jdshutdown.menu = разрешено
 addons.jdshutdown.statusmessage.disabled = Система не будет выключена после завершения закачек

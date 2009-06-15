@@ -15,17 +15,17 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.host;
 
+import java.io.IOException;
+import java.util.regex.Pattern;
+
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import java.io.IOException;
-import java.util.regex.Pattern;
+import jd.plugins.DownloadLink.AvailableStatus;
 
 public class SlingFileCom extends PluginForHost {
 
@@ -65,7 +65,7 @@ public class SlingFileCom extends PluginForHost {
         downloadForm.put("download", "1");
         br.submitForm(downloadForm);
         String downloadUrl = br.getRegex(Pattern.compile("<a class=\"link_v3\" href=\"(.*?)\">here</a>")).getMatch(0);
-        
+
         dl = br.openDownload(downloadLink, downloadUrl, true, 0);
         dl.startDownload();
     }

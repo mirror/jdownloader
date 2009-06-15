@@ -16,9 +16,18 @@
 
 package jd;
 
+import java.io.File;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
-import jd.controlling.*;
+import jd.controlling.AccountController;
+import jd.controlling.ByteBufferController;
+import jd.controlling.DownloadController;
+import jd.controlling.JDController;
+import jd.controlling.JDLogger;
+import jd.controlling.PasswordListController;
 import jd.controlling.interaction.Interaction;
 import jd.event.ControlEvent;
 import jd.gui.JDLookAndFeelManager;
@@ -34,10 +43,6 @@ import jd.parser.Regex;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
-
-import java.io.File;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * @author JD-Team

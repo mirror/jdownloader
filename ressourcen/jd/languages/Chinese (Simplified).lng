@@ -1,5 +1,5 @@
 $translater$ = revlaay
-$version$ = $Revision: 5810 $
+$version$ = $Revision$
 addons.jdgrowlnotification.menu = 提示信息
 addons.jdshutdown.menu = 自动关机
 addons.jdshutdown.statusmessage.disabled = 自动关机已停用

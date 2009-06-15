@@ -16,6 +16,8 @@
 
 package jd.plugins.decrypt;
 
+import java.util.ArrayList;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Encoding;
@@ -23,8 +25,6 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-
-import java.util.ArrayList;
 
 public class ThreeArabForestCom extends PluginForDecrypt {
 
@@ -40,7 +40,7 @@ public class ThreeArabForestCom extends PluginForDecrypt {
         br.getPage("http://short.3arabforest.com/m1.php?id=" + linkid);
         String declink = br.getRegex("onclick=\"NewWindow\\('(.*?)','name'").getMatch(0);
         decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(declink)));
-        
+
         return decryptedLinks;
     }
 

@@ -1,5 +1,5 @@
-$translater$ = thartist (thartist@hotmail.com)
-$version$ = 0.6.230+
+$translater$ = thartist (thartist@hotmail.com) & JD-Team
+$version$ = $Revision$
 a.very.important.warning = WARNING!! 6 NON OBSOLETE KEYS, DON'T DELETE: gui.menu.about gui.menu.add gui.menu.addons gui.menu.premium gui.menu.remove gui.menu.save 
 addons.jdgrowlnotification.menu = Growl Messages
 addons.jdshutdown.menu = enabled

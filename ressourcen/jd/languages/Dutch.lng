@@ -1,5 +1,5 @@
 $translater$ = C.Pattyn
-$version$ = $Revision: 6002 $
+$version$ = $Revision$
 addons.jdgrowlnotification.menu = Growl Berichten
 addons.jdgrowlnotification.menu.enable = Meldingen Activeren
 addons.jdlowspeed.statusmessage.disabled = Lage Snelheid detectie uitschakelen

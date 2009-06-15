@@ -1,5 +1,5 @@
 $translater$ = Hugo5688 [take-ez.com]
-$version$ = 0.5.949
+$version$ = $Revision$
 addons.jdgrowlnotification.menu = 提示訊息
 addons.jdshutdown.menu = 下載完成後，自動關機。
 addons.jdshutdown.statusmessage.disabled = 系統將不會由 JDownloader 來關機

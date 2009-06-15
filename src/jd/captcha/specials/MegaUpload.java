@@ -128,7 +128,7 @@ public class MegaUpload {
 
     public static void saveBoders(File file) throws IOException {
         String methodsPath = JDUtilities.getResourceFile("jd/captcha/methods").getAbsolutePath();
-        String hoster = "megaupload.com2";
+        String hoster = "megaupload.com";
 
         JAntiCaptcha jac = new JAntiCaptcha(methodsPath, hoster);
         Image captchaImage = ImageIO.read(file);
@@ -219,7 +219,7 @@ public class MegaUpload {
 
     private static void go() throws IOException {
         String methodsPath = JDUtilities.getResourceFile("jd/captcha/methods").getAbsolutePath();
-        String hoster = "megaupload.com2";
+        String hoster = "megaupload.com";
 
         final JAntiCaptcha jac = new JAntiCaptcha(methodsPath, hoster);
 

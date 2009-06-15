@@ -40,7 +40,7 @@ public class JACTest {
     }
 
     private void go() {
-        String hoster = "megaupload.com2";
+        String hoster = "megaupload.com";
 
         JAntiCaptcha jac = new JAntiCaptcha(Utilities.getMethodDir(), hoster);
 
@@ -81,7 +81,7 @@ public class JACTest {
         }
         // Utilities.getLogger().info(JAntiCaptcha.getCaptchaCode(Utilities.
         // loadImage(new
-        // File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath()
+        //File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath()
         // +"/jd/captcha/methods"+
         // "/rapidshare.com/captchas/rapidsharecom24190807214810.jpg")),
         // null, "rapidshare.com"));

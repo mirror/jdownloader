@@ -1,5 +1,5 @@
 $translater$ = Jorge Mendes
-$version$ = $Revisão: 6131 $
+$version$ = $Revision$
 addons.jdgrowlnotification.menu = Notificação de Mensagens
 addons.jdshutdown.menu = Shutdown após download terminado
 addons.jdshutdown.statusmessage.disabled = O sistema não será encerrado pelo JDownloader

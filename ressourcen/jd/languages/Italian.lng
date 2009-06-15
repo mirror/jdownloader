@@ -1,5 +1,5 @@
 $translater$ = Giandena, Fra Diavolo e Apicio
-$version$ = 5810
+$version$ = $Revision$
 addons.jdgrowlnotification.menu = Messaggi abilitati
 addons.jdshutdown.menu = Arresta il sistema al termine dei download
 addons.jdshutdown.statusmessage.disabled = JDownloader NON arresterà il sistema alla termine dei download

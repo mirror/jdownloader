@@ -226,6 +226,10 @@ public class JDLocale {
             lID = "Arabian";
             SubConfiguration.getConfig(JDLocale.CONFIG).setProperty(JDLocale.LOCALE_ID, lID);
         }
+        if (lID.equalsIgnoreCase("Spanish(Argentina)")) {
+            lID = "Spanish";
+            SubConfiguration.getConfig(JDLocale.CONFIG).setProperty(JDLocale.LOCALE_ID, lID);
+        }
         return lID;
 
     }

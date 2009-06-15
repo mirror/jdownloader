@@ -127,7 +127,7 @@ public class BiggeruploadCom extends PluginForHost {
 
     // @Override
     public String getVersion() {
-        return getVersion("$Revision: 5713 $");
+        return getVersion("$Revision$");
     }
 
     // @Override

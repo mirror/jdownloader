@@ -55,7 +55,7 @@ public class FileFlyerCom extends PluginForHost {
 
     // @Override
     public String getVersion() {
-        return getVersion("$Revision: 6016 $");
+        return getVersion("$Revision$");
     }
 
     // @Override

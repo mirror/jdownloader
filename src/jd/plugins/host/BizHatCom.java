@@ -45,7 +45,8 @@ public class BizHatCom extends PluginForHost {
 
         br.getPage(downloadLink.getDownloadURL());
         // if
-        // (br.containsHTML("access to the service may be unavailable for a while"))
+        //(br.containsHTML("access to the service may be unavailable for a while"
+        // ))
         // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
         // //TODO: kein Link zu
         String[] infos = br.getRegex("<div style=\"font-size: 12pt;font-weight:bold;\">[\\s]*(.*?) &nbsp; - &nbsp; (.*?)[\\s]*</div>").getRow(0);
@@ -57,7 +58,7 @@ public class BizHatCom extends PluginForHost {
 
     // @Override
     public String getVersion() {
-        return getVersion("$Revision: 6016 $");
+        return getVersion("$Revision$");
     }
 
     // @Override
