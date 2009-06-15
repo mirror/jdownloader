@@ -447,7 +447,7 @@ public class JDInit {
         new DecryptPluginWrapper("urlcut.com", "UrlCutCom", "http://[\\w\\.]*?urlcut\\.com/[0-9a-zA-Z]+");
         new DecryptPluginWrapper("sp2.ro", "Redirecter", "http://[\\w\\.]*?sp2\\.ro/[0-9a-zA-Z]+");
         new DecryptPluginWrapper("short.3arabforest.com", "ThreeArabForestCom", "http://[\\w\\.]*?short\\.3arabforest\\.com/\\d+");
-
+        new DecryptPluginWrapper("youcrypt.com", "YouCryptCom", "http://[\\w\\.]*?youcrypt\\.com/[0-9a-zA-Z]+\\.html");
         // Decrypter from Extern
         new DecryptPluginWrapper("rapidlibrary.com", "RapidLibrary", "http://rapidlibrary\\.com/download_file_i\\.php\\?.+");
     }
