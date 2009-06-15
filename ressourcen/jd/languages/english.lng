@@ -1,5 +1,6 @@
 $translater$ = thartist (thartist@hotmail.com)
-$version$ = 0.6.200+
+$version$ = 0.6.230+
+a.very.important.warning = WARNING!! 6 NON OBSOLETE KEYS, DON'T DELETE: gui.menu.about gui.menu.add gui.menu.addons gui.menu.premium gui.menu.remove gui.menu.save 
 addons.jdgrowlnotification.menu = Growl Messages
 addons.jdshutdown.menu = enabled
 addons.jdshutdown.statusmessage.disabled = The System will NOT be shut down by JDownloader
@@ -601,6 +602,7 @@ gui.menu.action.wiki.name = Open Wiki
 gui.menu.add = Add links
 gui.menu.addons = Addons
 gui.menu.addurl.action.mnem = U
+gui.menu.premium = Premium
 gui.menu.remove = Clean up
 gui.menu.save = Save
 gui.menu.tooltip = Click to open the main menu
