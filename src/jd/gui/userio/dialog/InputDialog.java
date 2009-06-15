@@ -27,7 +27,9 @@ import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTextField;
 import javax.swing.JTextPane;
+import javax.swing.text.JTextComponent;
 
 import jd.gui.UserIO;
 import jd.nutils.JDFlags;
@@ -38,7 +40,7 @@ public class InputDialog extends AbstractDialog implements KeyListener, MouseLis
     private String defaultMessage;
     private String message;
     private JTextPane messageArea;
-    private JTextPane input;
+    private JTextComponent input;
 
     public InputDialog(int flag, String title, String message, String defaultMessage, ImageIcon icon, String okOption, String cancelOption) {
         super(flag, title, icon, okOption, cancelOption);
@@ -75,7 +77,7 @@ public class InputDialog extends AbstractDialog implements KeyListener, MouseLis
             sp.setBounds(0, 0, 450, 600);
             sp.setMaximumSize(new Dimension(450, 600));
         } else {
-            input = new JTextPane();
+            input = new JTextField();
             input.setBorder(BorderFactory.createEtchedBorder());
             input.setText(this.defaultMessage);
             input.addKeyListener(this);
