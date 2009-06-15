@@ -48,7 +48,6 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.container.JDLabelContainer;
 import jd.controlling.JDLogger;
-import jd.controlling.PasswordListController;
 import jd.gui.skins.simple.components.BrowseFile;
 import jd.gui.skins.simple.components.JDTextArea;
 import jd.gui.skins.simple.components.JDTextField;
@@ -138,7 +137,7 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
 
             break;
         case ConfigContainer.TYPE_TEXTAREA:
-        case ConfigContainer.TYPE_UNRARPASSWORDS:
+        case ConfigContainer.TYPE_LISTCONTROLLED:
             decoration = new JLabel(configEntry.getLabel());
 
             input[0] = new JDTextArea();
@@ -319,8 +318,8 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
         case ConfigContainer.TYPE_PREMIUMPANEL:
             ((PremiumPanel) input[0]).saveAccounts();
             return null;
-        case ConfigContainer.TYPE_UNRARPASSWORDS:
-            PasswordListController.getInstance().setPasswordList(((JDTextArea) input[0]).getText());
+        case ConfigContainer.TYPE_LISTCONTROLLED:
+            configEntry.getListController().setList(((JDTextArea) input[0]).getText());
             return null;
         case ConfigContainer.TYPE_BUTTON:
             return null;
@@ -414,8 +413,8 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
         case ConfigContainer.TYPE_TEXTFIELD:
             ((JDTextField) input[0]).setText(text == null ? "" : text.toString());
             break;
-        case ConfigContainer.TYPE_UNRARPASSWORDS:
-            ((JDTextArea) input[0]).setText(PasswordListController.getInstance().getPasswordListasString());
+        case ConfigContainer.TYPE_LISTCONTROLLED:
+            ((JDTextArea) input[0]).setText(configEntry.getListController().getList());
             break;
         case ConfigContainer.TYPE_TEXTAREA:
             ((JDTextArea) input[0]).setText(text == null ? "" : text.toString());

@@ -529,9 +529,9 @@ public class DownloadController implements FilePackageListener, DownloadControll
     /**
      * Returns all needful downloadinformation
      */
-    public DownloadInformations getDownloadStatus() {
-        DownloadInformations ds = new DownloadInformations();
-
+    public void getDownloadStatus(DownloadInformations ds) {
+        ds.reset();
+        ds.addRunningDownloads(DownloadWatchDog.getInstance().getActiveDownloads());
         synchronized (packages) {
             for (FilePackage fp : packages) {
                 ds.addPackages(1);
@@ -552,8 +552,6 @@ public class DownloadController implements FilePackageListener, DownloadControll
                 }
             }
         }
-
-        return ds;
     }
 
     // Den Optimizer muss ich noch fertig machen

@@ -534,6 +534,8 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                                     }
 
                                 }
+                            }else{
+                                stopCounter = 5;
                             }
                         } catch (Exception e) {
                             JDLogger.exception(e);

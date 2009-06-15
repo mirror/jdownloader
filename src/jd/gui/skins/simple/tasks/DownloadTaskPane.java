@@ -44,7 +44,7 @@ public class DownloadTaskPane extends TaskPanel {
     private JLabel progresslabel;
     private Thread fadeTimer;
 
-    private DownloadInformations ds;
+    private DownloadInformations ds = new DownloadInformations();
     private long speedm = 0;
     private DownloadController dlc = JDUtilities.getDownloadController();
 
@@ -73,26 +73,25 @@ public class DownloadTaskPane extends TaskPanel {
      * TODO: soll mal über events aktuallisiert werden
      */
     private void update() {
-        ds = dlc.getDownloadStatus();
-
-        speedm = JDUtilities.getController().getSpeedMeter();
         new GuiRunnable<Object>() {
             @Override
             public Object runSave() {
+                dlc.getDownloadStatus(ds);
+                speedm = JDUtilities.getController().getSpeedMeter();
                 packages.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.packages", "%s Packages", ds.getPackagesCount()));
                 downloadlinks.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.downloadLinks", "%s Links", ds.getDownloadCount()));
                 totalsize.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.size", "Total size: %s", Formatter.formatReadable(ds.getTotalDownloadSize())));
                 progress.setMaximum(ds.getTotalDownloadSize());
                 progress.setValue(ds.getCurrentDownloadSize());
                 progress.setToolTipText(Math.round((ds.getCurrentDownloadSize() * 10000.0) / ds.getTotalDownloadSize()) / 100.0 + "%");
-                // if (speedm > 1024) {
-                speed.setText(JDLocale.LF("gui.taskpanes.download.progress.speed", "Speed: %s", Formatter.formatReadable(speedm) + "/s"));
-                long etanum = speedm == 0 ? 0 : (ds.getTotalDownloadSize() - ds.getCurrentDownloadSize()) / speedm;
-                eta.setText(JDLocale.LF("gui.taskpanes.download.progress.eta", "ETA: %s", Formatter.formatSeconds(etanum)));
-                // } else {
-                // eta.setText("");
-                // speed.setText("");
-                // }
+                if (speedm > 1024) {
+                    speed.setText(JDLocale.LF("gui.taskpanes.download.progress.speed", "Speed: %s", Formatter.formatReadable(speedm) + "/s"));
+                    long etanum = speedm == 0 ? 0 : (ds.getTotalDownloadSize() - ds.getCurrentDownloadSize()) / speedm;
+                    eta.setText(JDLocale.LF("gui.taskpanes.download.progress.eta", "ETA: %s", Formatter.formatSeconds(etanum)));
+                } else {
+                    eta.setText("");
+                    speed.setText("");
+                }
                 return null;
             }
         }.start();
@@ -121,5 +120,6 @@ public class DownloadTaskPane extends TaskPanel {
         add(eta, D2_LABEL);
     }
 
-    public void actionPerformed(ActionEvent arg0) {}
+    public void actionPerformed(ActionEvent arg0) {
+    }
 }

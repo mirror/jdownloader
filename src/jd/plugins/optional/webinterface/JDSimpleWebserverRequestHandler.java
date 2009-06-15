@@ -188,7 +188,7 @@ public class JDSimpleWebserverRequestHandler {
                                 } else if (dowhat.compareToIgnoreCase("add") == 0) {
                                     /* link adden */
                                     for (LinkGrabberFilePackage fp : packages) {
-                                        LinkGrabberPanel.getLinkGrabber().confirmPackage(fp, null,-1);
+                                        LinkGrabberPanel.getLinkGrabber().confirmPackage(fp, null, -1);
                                     }
 
                                 }
@@ -371,7 +371,7 @@ public class JDSimpleWebserverRequestHandler {
                 filerequest.handleRequest(url, requestParameter);
             } else {
                 JDSimpleWebserverStaticFileRequestHandler filerequest;
-                filerequest = new JDSimpleWebserverStaticFileRequestHandler(response);
+                filerequest = new JDSimpleWebserverStaticFileRequestHandler(headers, response);
                 filerequest.handleRequest(url, requestParameter);
             }
         }

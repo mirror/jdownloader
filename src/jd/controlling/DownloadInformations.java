@@ -16,108 +16,118 @@
 
 package jd.controlling;
 
-
 /**
  * Contains all needful information about the downloads
  * 
  * @author botzi
- *
+ * 
  */
 public class DownloadInformations {
-	private long totalDownloadSize = 0;
-	private long currentDownloadSize = 0;
-	private int packages = 0;
-	private int downloadLinks = 0;
-	private int disabledDownloads = 0;
-	private int runningDownloads = 0;
-	private int finishedDownloads = 0;
-	private int duplicateDownloads = 0;
-	
-	protected void addTotalDownloadSize(long size) {
-		totalDownloadSize += size;
-	}
-	
-	protected void addCurrentDownloadSize(long size) {
-		currentDownloadSize += size;
-	}
-	
-	protected void addPackages(int size) {
-		packages += size;
-	}
-	
-	protected void addDownloadLinks(int size) {
-		downloadLinks += size;
-	}
-	
-	protected void addDisabledDownloads(int size) {
-		disabledDownloads += size;
-	}
-	
-	protected void addRunningDownloads(int size) {
-		runningDownloads += size;
-	}
-	
-	protected void addFinishedDownloads(int size) {
-		finishedDownloads += size;
-	}
-	
-	protected void addDuplicateDownloads(int size) {
-		duplicateDownloads+= size;
-	}
-	
-	/**
-	 * Returns the total downloadsize
-	 */
-	public long getTotalDownloadSize() {
-		return totalDownloadSize;
-	}
-	
-	/**
-	 * Returns the current downloaded size
-	 */
-	public long getCurrentDownloadSize() {
-		return currentDownloadSize;
-	}
-	
-	/**
-	 * Returns the count of all packages
-	 */
-	public int getPackagesCount() {
-		return packages;
-	}
-	
-	/**
-	 * Returns the count of all downloads
-	 */
-	public int getDownloadCount() {
-		return downloadLinks;
-	}
-	
-	/**
-	 * Returns the count of all disabled downloads
-	 */
-	public int getDisabledDownloads() {
-		return disabledDownloads;
-	}
-	
-	/**
-	 * Returns the count of all running downloads
-	 */
-	public int getRunningDownloads() {
-		return runningDownloads;
-	}
-	
-	/**
-	 * Returns the count of all finished downloads
-	 */
-	public int getFinishedDownloads() {
-		return finishedDownloads;
-	}
-	
-	/**
-	 * Returns the count of all duplicate downloads
-	 */
-	public int getDuplicateDownloads() {
-		return duplicateDownloads;
-	}
+    private long totalDownloadSize = 0;
+    private long currentDownloadSize = 0;
+    private int packages = 0;
+    private int downloadLinks = 0;
+    private int disabledDownloads = 0;
+    private int runningDownloads = 0;
+    private int finishedDownloads = 0;
+    private int duplicateDownloads = 0;
+
+    protected void reset() {
+        totalDownloadSize = 0;
+        currentDownloadSize = 0;
+        packages = 0;
+        downloadLinks = 0;
+        disabledDownloads = 0;
+        runningDownloads = 0;
+        finishedDownloads = 0;
+        duplicateDownloads = 0;
+    }
+
+    protected void addTotalDownloadSize(long size) {
+        totalDownloadSize += size;
+    }
+
+    protected void addCurrentDownloadSize(long size) {
+        currentDownloadSize += size;
+    }
+
+    protected void addPackages(int size) {
+        packages += size;
+    }
+
+    protected void addDownloadLinks(int size) {
+        downloadLinks += size;
+    }
+
+    protected void addDisabledDownloads(int size) {
+        disabledDownloads += size;
+    }
+
+    protected void addRunningDownloads(int size) {
+        runningDownloads += size;
+    }
+
+    protected void addFinishedDownloads(int size) {
+        finishedDownloads += size;
+    }
+
+    protected void addDuplicateDownloads(int size) {
+        duplicateDownloads += size;
+    }
+
+    /**
+     * Returns the total downloadsize
+     */
+    public long getTotalDownloadSize() {
+        return totalDownloadSize;
+    }
+
+    /**
+     * Returns the current downloaded size
+     */
+    public long getCurrentDownloadSize() {
+        return currentDownloadSize;
+    }
+
+    /**
+     * Returns the count of all packages
+     */
+    public int getPackagesCount() {
+        return packages;
+    }
+
+    /**
+     * Returns the count of all downloads
+     */
+    public int getDownloadCount() {
+        return downloadLinks;
+    }
+
+    /**
+     * Returns the count of all disabled downloads
+     */
+    public int getDisabledDownloads() {
+        return disabledDownloads;
+    }
+
+    /**
+     * Returns the count of all running downloads
+     */
+    public int getRunningDownloads() {
+        return runningDownloads;
+    }
+
+    /**
+     * Returns the count of all finished downloads
+     */
+    public int getFinishedDownloads() {
+        return finishedDownloads;
+    }
+
+    /**
+     * Returns the count of all duplicate downloads
+     */
+    public int getDuplicateDownloads() {
+        return duplicateDownloads;
+    }
 }

@@ -99,7 +99,7 @@ public class ConfigContainer implements Serializable {
     public static final int TYPE_CONTAINER = 13;
     public static final int TYPE_PREMIUMPANEL = 14;
 
-    public static final int TYPE_UNRARPASSWORDS = 110;
+    public static final int TYPE_LISTCONTROLLED = 110;
     /**
      * ConfigElement ist ein Combobox ConfigEntry(int type, Property
      * propertyInstance, String propertyName, Object[] list, String label)

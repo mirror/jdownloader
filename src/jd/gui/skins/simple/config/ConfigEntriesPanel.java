@@ -74,7 +74,7 @@ public class ConfigEntriesPanel extends ConfigPanel {
                     switch (cfgEntry.getType()) {
 
                     case ConfigContainer.TYPE_TEXTAREA:
-                    case ConfigContainer.TYPE_UNRARPASSWORDS:
+                    case ConfigContainer.TYPE_LISTCONTROLLED:
                         viewport = false;
                         break;
                     }

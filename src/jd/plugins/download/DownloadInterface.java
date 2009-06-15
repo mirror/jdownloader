@@ -841,22 +841,21 @@ abstract public class DownloadInterface {
                         }
 
                         if (endByte <= 0) {
-                            endByte = gotEB;
-                        } else {
-                            if (gotEB == endByte) {
-                                logger.finer("ServerType: RETURN Rangeend-1");
-                            } else if (gotEB == endByte + 1) {
-                                logger.finer("ServerType: RETURN exact rangeend");
-                            }
-                            if (gotEB < endByte) {
-                                logger.severe("Range Conflict");
-                            }
-                            if (gotEB > endByte + 1) {
-                                logger.warning("Possible RangeConflict or Servermisconfiguration. wished endByte: " + endByte + " got: " + gotEB);
-                            }
-                            endByte = Math.min(endByte, gotEB);
-
+                            endByte = gotEB - 1;
                         }
+                        if (gotEB == endByte) {
+                            logger.finer("ServerType: RETURN Rangeend-1");
+                        } else if (gotEB == endByte + 1) {
+                            logger.finer("ServerType: RETURN exact rangeend");
+                        }
+                        if (gotEB < endByte) {
+                            logger.severe("Range Conflict");
+                        }
+                        if (gotEB > endByte + 1) {
+                            logger.warning("Possible RangeConflict or Servermisconfiguration. wished endByte: " + endByte + " got: " + gotEB);
+                        }
+                        endByte = Math.min(endByte, gotEB);
+
                         if (gotSB == gotEB) {
                             // schon fertig
                             return;
@@ -884,23 +883,22 @@ abstract public class DownloadInterface {
                     }
 
                     if (endByte <= 0) {
-                        endByte = gotEB;
-                    } else {
-                        if (gotEB == endByte) {
-                            logger.finer("ServerType: RETURN Rangeend-1");
-                        } else if (gotEB == endByte + 1) {
-                            logger.finer("ServerType: RETURN exact rangeend");
-                        }
-                        if (gotEB < endByte) {
-                            logger.severe("Range Conflict " + range[0] + " - " + range[1] + " wishedend: " + endByte);
-                            // logger.finest(connection.toString());
-                        }
-                        if (gotEB > endByte + 1) {
-                            logger.warning("Possible RangeConflict or Servermisconfiguration. wished endByte: " + endByte + " got: " + gotEB);
-                            // logger.finest(connection.toString());
-                        }
-                        endByte = Math.min(endByte, gotEB);
+                        endByte = gotEB - 1;
                     }
+                    if (gotEB == endByte) {
+                        logger.finer("ServerType: RETURN Rangeend-1");
+                    } else if (gotEB == endByte + 1) {
+                        logger.finer("ServerType: RETURN exact rangeend");
+                    }
+                    if (gotEB < endByte) {
+                        logger.severe("Range Conflict " + range[0] + " - " + range[1] + " wishedend: " + endByte);
+                        // logger.finest(connection.toString());
+                    }
+                    if (gotEB > endByte + 1) {
+                        logger.warning("Possible RangeConflict or Servermisconfiguration. wished endByte: " + endByte + " got: " + gotEB);
+                        // logger.finest(connection.toString());
+                    }
+                    endByte = Math.min(endByte, gotEB);
 
                     if (speedDebug) {
                         logger.finer("Resulting Range" + startByte + " - " + endByte);

@@ -32,6 +32,7 @@ import jd.config.ConfigEntry;
 import jd.config.MenuItem;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
+import jd.controlling.ListController;
 import jd.controlling.PasswordListController;
 import jd.controlling.ProgressController;
 import jd.controlling.SingleDownloadController;
@@ -676,7 +677,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         this.passwordConfig = new ConfigContainer(JDLocale.L("plugins.optional.jdunrar.config.passwordtab", "List of passwords"));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, passwordConfig));
 
-        passwordConfig.addEntry(new ConfigEntry(ConfigContainer.TYPE_UNRARPASSWORDS, SubConfiguration.getConfig(PasswordListController.PASSWORDCONTROLLER), "LIST", JDLocale.LF("plugins.optional.jdunrar.config.passwordlist2", "List of all passwords. Each line one password. Available passwords: %s", "")));
+        passwordConfig.addEntry(new ConfigEntry(ConfigContainer.TYPE_LISTCONTROLLED, (ListController) PasswordListController.getInstance(), JDLocale.LF("plugins.optional.jdunrar.config.passwordlist2", "List of all passwords. Each line one password. Available passwords: %s", "")));
 
         ConfigContainer ext = new ConfigContainer(JDLocale.L("plugins.optional.jdunrar.config.advanced", "Advanced settings"));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, ext));
@@ -1291,7 +1292,9 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
                 nums = test.length();
                 i = 1;
                 while ((file = new File(new File(downloadLink.getFileOutput()).getParentFile(), name + ".part" + Formatter.fillString(i + "", "0", "", nums) + ".rar")).exists() || JDUtilities.getController().getDownloadLinkByFileOutput(file, LinkStatus.FINISHED) != null) {
-                    ret.add(JDUtilities.getController().getDownloadLinkByFileOutput(file, LinkStatus.FINISHED));
+                    DownloadLink dl = JDUtilities.getController().getDownloadLinkByFileOutput(file, LinkStatus.FINISHED);
+                    if (dl == null) dl = JDUtilities.getController().getDownloadLinkByFileOutput(file, LinkStatus.ERROR_ALREADYEXISTS);
+                    ret.add(dl);
                     i++;
                 }
                 break;
@@ -1311,7 +1314,9 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
                 }
                 if (nums != -1) {
                     while ((file = new File(new File(downloadLink.getFileOutput()).getParentFile(), name + ".r" + Formatter.fillString(i + "", "0", "", nums))).exists() || JDUtilities.getController().getDownloadLinkByFileOutput(file, LinkStatus.FINISHED) != null) {
-                        ret.add(JDUtilities.getController().getDownloadLinkByFileOutput(file, LinkStatus.FINISHED));
+                        DownloadLink dl = JDUtilities.getController().getDownloadLinkByFileOutput(file, LinkStatus.FINISHED);
+                        if (dl == null) dl = JDUtilities.getController().getDownloadLinkByFileOutput(file, LinkStatus.ERROR_ALREADYEXISTS);
+                        ret.add(dl);
                         i++;
                     }
                 }

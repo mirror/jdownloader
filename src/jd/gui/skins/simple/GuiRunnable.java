@@ -79,11 +79,15 @@ public abstract class GuiRunnable<T> implements Runnable {
     }
 
     public void run() {
-        this.returnValue = this.runSave();
+        if (SwingUtilities.isEventDispatchThread()) {
+            this.returnValue = this.runSave();
 
-        synchronized (lock) {
-            lock.notify();
-            lock = null;
+            synchronized (lock) {
+                lock.notify();
+                lock = null;
+            }
+        } else {
+            SwingUtilities.invokeLater(this);
         }
     }
 

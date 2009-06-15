@@ -25,12 +25,14 @@ import java.util.HashMap;
 import java.util.logging.Logger;
 
 import jd.nutils.io.JDIO;
+import jd.parser.Regex;
 import jd.utils.JDUtilities;
 
 public class JDSimpleWebserverStaticFileRequestHandler {
 
     private Logger logger = jd.controlling.JDLogger.getLogger();
     private JDSimpleWebserverResponseCreator response;
+    private HashMap<String, String> headers = new HashMap<String, String>();
 
     /**
      * Create a new handler that serves files from a base directory
@@ -38,8 +40,8 @@ public class JDSimpleWebserverStaticFileRequestHandler {
      * @param base
      *            directory
      */
-    public JDSimpleWebserverStaticFileRequestHandler(JDSimpleWebserverResponseCreator response) {
-
+    public JDSimpleWebserverStaticFileRequestHandler(HashMap<String, String> headers, JDSimpleWebserverResponseCreator response) {
+        this.headers = headers;
         this.response = response;
     }
 
@@ -54,6 +56,23 @@ public class JDSimpleWebserverStaticFileRequestHandler {
     public void handleRequest(String url, HashMap<String, String> requestParameter) {
         File fileToRead = JDUtilities.getResourceFile("plugins/webinterface/" + url);
 
+        if (fileToRead.length() > 10 * 1024) {
+
+            response.setContentType("application/octet-stream");
+            if (!headers.containsKey("range")) {
+                response.setFileServe(fileToRead.toString(), 0, -1, fileToRead.length(), false);
+            } else {
+                String[] dat = new Regex(headers.get("range"), "bytes=(\\d+)-(\\d+)?").getRow(0);
+                if (dat[1] == null) {
+                    response.setFileServe(fileToRead.toString(), Long.parseLong(dat[0]), -1, fileToRead.length(), true);
+                } else {
+                    response.setFileServe(fileToRead.toString(), Long.parseLong(dat[0]), Long.parseLong(dat[1]), fileToRead.length(), true);
+                }
+            }
+            response.setFilename(fileToRead.getName());
+            response.setOk();
+            return;
+        }
         HashMap<String, String> mimes = new HashMap<String, String>();
 
         mimes.put("html", "text/html");

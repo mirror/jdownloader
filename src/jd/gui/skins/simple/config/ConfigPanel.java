@@ -85,7 +85,7 @@ public abstract class ConfigPanel extends JTabbedPanel {
                 panel.add(new JSeparator(), "spanx,gapbottom 15,gaptop 15");
             }
             if (entry.getDecoration() != null) {
-                if ((entry.getConfigEntry().getType() == ConfigContainer.TYPE_TEXTAREA) || (entry.getConfigEntry().getType() == ConfigContainer.TYPE_UNRARPASSWORDS)) {
+                if ((entry.getConfigEntry().getType() == ConfigContainer.TYPE_TEXTAREA) || (entry.getConfigEntry().getType() == ConfigContainer.TYPE_LISTCONTROLLED)) {
                     panel.add(entry.getDecoration(), "spany " + entry.getInput().length + ",spanx, gapright " + getGapRight());
 
                 } else {
@@ -96,7 +96,7 @@ public abstract class ConfigPanel extends JTabbedPanel {
             for (JComponent c : entry.getInput()) {
                 switch (entry.getConfigEntry().getType()) {
                 case ConfigContainer.TYPE_TEXTAREA:
-                case ConfigContainer.TYPE_UNRARPASSWORDS:
+                case ConfigContainer.TYPE_LISTCONTROLLED:
                     panel.add(new JScrollPane(c), "spanx,gapright " + getGapRight() + ",growy,pushy");
                     // panel.add(new JScrollPane(c),
                     // "spanx,gapright 20,growy,pushy");

@@ -25,6 +25,8 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.Vector;
 
+import jd.controlling.ListController;
+
 public class ConfigEntry implements Serializable, PropertyChangeListener {
     public static enum PropertyType {
         NONE, NORMAL, NEEDS_RESTART;
@@ -62,9 +64,10 @@ public class ConfigEntry implements Serializable, PropertyChangeListener {
     private Object defaultValue;
     private boolean enabled = true;
     private int end;
-    private String helptags=null;
+    private String helptags = null;
+
     public String getHelptags() {
-        if(helptags==null)return label;
+        if (helptags == null) return label;
         return helptags;
     }
 
@@ -98,6 +101,7 @@ public class ConfigEntry implements Serializable, PropertyChangeListener {
     private ConfigGroup group;
 
     private boolean changes;
+    private ListController controller;
 
     public PropertyType getPropertyType() {
         return propertyType;
@@ -186,7 +190,7 @@ public class ConfigEntry implements Serializable, PropertyChangeListener {
         this.propertyName = propertyName;
         this.propertyInstance = propertyInstance;
         this.label = label;
-        
+
         enabled = true;
     }
 
@@ -215,6 +219,14 @@ public class ConfigEntry implements Serializable, PropertyChangeListener {
         this.label = label;
         this.start = start;
         this.end = end;
+    }
+
+    public ConfigEntry(int type, ListController controller, String label) {
+        this.type = type;
+        this.label = label;
+        this.controller = controller;
+        this.propertyName = "ListControlled";
+        enabled = true;
     }
 
     /**
@@ -339,6 +351,18 @@ public class ConfigEntry implements Serializable, PropertyChangeListener {
      */
     public int getType() {
         return type;
+    }
+
+    public ListController getListController() {
+        if (controller == null) controller = new ListController() {
+            public String getList() {
+                return "";
+            }
+
+            public void setList(String list) {
+            }
+        };
+        return controller;
     }
 
     @SuppressWarnings("unchecked")

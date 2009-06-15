@@ -54,8 +54,8 @@ public class TrayIconTooltip extends JWindow {
 
     private Point estimatedTopLeft;
     private TrayIcon trayIcon;
-    
-    private DownloadInformations ds;
+
+    private DownloadInformations ds = new DownloadInformations();
 
     public TrayIconTooltip() {
 
@@ -148,7 +148,7 @@ public class TrayIconTooltip extends JWindow {
                 SwingUtilities.invokeLater(new Runnable() {
 
                     public void run() {
-                        ds = dlc.getDownloadStatus();
+                        dlc.getDownloadStatus(ds);
 
                         lblDlRunning.setText(String.valueOf(ds.getRunningDownloads()));
                         lblDlFinished.setText(String.valueOf(ds.getFinishedDownloads()));

@@ -17,6 +17,10 @@
 package jd.plugins.host;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
+import jd.controlling.HTACCESSController;
+import jd.controlling.ListController;
 import jd.http.Encoding;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
@@ -34,6 +38,7 @@ public class HTTPAllgemein extends PluginForHost {
 
     public HTTPAllgemein(PluginWrapper wrapper) {
         super(wrapper);
+        setConfigElements();
     }
 
     // @Override
@@ -66,14 +71,14 @@ public class HTTPAllgemein extends PluginForHost {
             if (url != null) link.setUrlDownload("https://" + url);
             if (url == null) url = new Regex(url, "http.*?@(.+)").getMatch(0);
             if (url != null) link.setUrlDownload("http://" + url);
-            link.setProperty("basicauth", basicauth);
+            HTACCESSController.getInstance().add(link.getDownloadURL(), Encoding.Base64Encode(basicauth));
         }
     }
 
     // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException {
-        this.setBrowserExclusive();
-        String basicauth = downloadLink.getStringProperty("basicauth", null);
+        this.setBrowserExclusive();        
+        String basicauth = HTACCESSController.getInstance().get(downloadLink.getDownloadURL());
         if (basicauth == null) {
             basicauth = downloadLink.getStringProperty("pass", null);
             if (basicauth != null) basicauth = "Basic " + Encoding.Base64Encode(basicauth);
@@ -85,9 +90,9 @@ public class HTTPAllgemein extends PluginForHost {
         URLConnectionAdapter urlConnection = null;
         try {
             urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
-            if (urlConnection.getResponseCode() == 401) {
+            if (urlConnection.getResponseCode() == 401 || urlConnection.getResponseCode() == 403) {
                 if (basicauth != null) {
-                    downloadLink.setProperty("basicauth", null);
+                    HTACCESSController.getInstance().remove(downloadLink.getDownloadURL());
                 }
                 urlConnection.disconnect();
                 basicauth = getBasicAuth(downloadLink);
@@ -96,11 +101,10 @@ public class HTTPAllgemein extends PluginForHost {
                 urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
                 if (urlConnection.getResponseCode() == 401) {
                     urlConnection.disconnect();
-                    downloadLink.setProperty("basicauth", null);
-                    downloadLink.setProperty("pass", null);
+                    HTACCESSController.getInstance().remove(downloadLink.getDownloadURL());
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, JDLocale.L("plugins.hoster.httplinks.errors.basicauthneeded", "BasicAuth needed"));
                 } else {
-                    downloadLink.setProperty("basicauth", basicauth);
+                    HTACCESSController.getInstance().add(downloadLink.getDownloadURL(), basicauth);
                 }
             }
             if (urlConnection.getResponseCode() == 404 || !urlConnection.isOK()) {
@@ -137,6 +141,7 @@ public class HTTPAllgemein extends PluginForHost {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
+        br.setDebug(true);
         boolean resume = true;
         int chunks = 0;
 
@@ -173,11 +178,15 @@ public class HTTPAllgemein extends PluginForHost {
     public void reset() {
     }
 
+    private void setConfigElements() {
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_LISTCONTROLLED, (ListController) HTACCESSController.getInstance(), JDLocale.L("plugins.http.htaccess", "List of all HTAccess passwords. Each line one password.")));
+    }
+
     // @Override
     public void resetDownloadlink(DownloadLink link) {
         link.setProperty("nochunkload", false);
         link.setProperty("nochunk", false);
-        link.setProperty("basicauth", null);
+        // link.setProperty("basicauth", null);
     }
 
     // @Override

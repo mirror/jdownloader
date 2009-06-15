@@ -18,7 +18,9 @@ package jd.plugins.optional.webinterface;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.RandomAccessFile;
 
+import jd.http.Encoding;
 import jd.nutils.Executer;
 
 public class JDSimpleWebserverResponseCreator {
@@ -33,6 +35,18 @@ public class JDSimpleWebserverResponseCreator {
 
     // The headers
     private StringBuilder headers;
+
+    private String filepath = null;
+
+    private long filestart = 0;
+
+    private long fileend = -1;
+
+    private long filesize = 0;
+
+    private boolean range = false;
+
+    private String filename = null;
 
     // Create new response
     public JDSimpleWebserverResponseCreator() {
@@ -67,6 +81,22 @@ public class JDSimpleWebserverResponseCreator {
      */
     public void setBinaryContent(byte[] bytes) {
         this.bytes = bytes;
+    }
+
+    public void setFileServe(String path, long start, long end, long filesize, boolean range) {
+        this.filepath = path;
+        this.filestart = start;
+        if (end == -1) {
+            this.fileend = filesize;
+        } else {
+            this.fileend = end;
+        }
+        this.filesize = filesize;
+        this.range = range;
+    }
+
+    public void setFilename(String filename) {
+        this.filename = filename;
     }
 
     /**
@@ -112,14 +142,36 @@ public class JDSimpleWebserverResponseCreator {
      * method should not be called until all content has been appended
      */
     public void setOk() {
-        headers.append("HTTP/1.1 200 OK\r\n");
+        if (!this.range) {
+            headers.append("HTTP/1.1 200 OK\r\n");
+        } else {
+            headers.append("HTTP/1.1 206 Partial content\r\n");
+        }
         headers.append("Connection: close\r\n");
         headers.append("Content-Type: ");
         headers.append(contentType);
         headers.append("\r\n");
         try {
             headers.append("Content-Length: ");
-            if (bytes != null) {
+            if (this.filepath != null) {
+                if (!this.range) {
+                    headers.append(this.filesize);
+                    headers.append("\r\n");
+                } else {
+                    if (this.fileend == -1) {
+                        this.fileend = this.filesize;
+                    }
+                    headers.append(Math.max(0, fileend - filestart));
+                    headers.append("\r\n");
+                    headers.append("Content-Range: bytes " + filestart + "-" + fileend + "/" + filesize);
+                    headers.append("\r\n");
+                }
+                if (filename != null) {
+                    headers.append("Content-Disposition: attachment;filename*=UTF-8''" + Encoding.urlEncode(filename));
+                    headers.append("\r\n");
+                }
+                headers.append("Accept-Ranges: bytes");
+            } else if (bytes != null) {
                 headers.append(bytes.length);
             } else {
                 headers.append(body.toString().getBytes(Executer.CODEPAGE).length);
@@ -151,6 +203,38 @@ public class JDSimpleWebserverResponseCreator {
     public void writeToStream(OutputStream outputStream) throws IOException {
         headers.append("\r\n");
         outputStream.write(headers.toString().getBytes(Executer.CODEPAGE));
+        if (this.filepath != null) {
+            RandomAccessFile raf = null;
+            long served = 0;
+            try {
+                raf = new RandomAccessFile(this.filepath, "r");
+                raf.seek(filestart);
+                long curpos = filestart;
+                int toread = 1024;
+                int read = 0;
+                byte[] buffer = new byte[1024];
+                if (fileend - curpos < 1024) {
+                    toread = (int) (fileend - curpos);
+                }
+                while ((read = raf.read(buffer, 0, toread)) != -1) {
+                    curpos += read;
+                    served += read;
+                    outputStream.write(buffer);
+                    if ((fileend - curpos) < 1024) {
+                        toread = (int) (fileend - curpos);
+                    }
+                    if (toread == 0 || fileend == curpos) {
+                        break;
+                    }
+                }
+                raf.close();
+            } finally {                
+                try {
+                    raf.close();
+                } catch (Exception e) {
+                }
+            }
+        }
         if (bytes != null) {
             outputStream.write(bytes);
         } else {

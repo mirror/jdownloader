@@ -31,12 +31,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.utils.JDUtilities;
 
-public class PasswordListController implements ActionListener, DownloadControllerListener {
+public class PasswordListController implements ActionListener, DownloadControllerListener, ListController {
     private transient static SubConfiguration CONFIG = null;
     private transient ArrayList<String> LIST2;
     private transient static PasswordListController INSTANCE = null;
-
-    public transient static String PASSWORDCONTROLLER = "PASSWORDCONTROLLER";
 
     private Timer asyncSaveIntervalTimer;
 
@@ -85,7 +83,7 @@ public class PasswordListController implements ActionListener, DownloadControlle
         }
     }
 
-    public void setPasswordList(String list) {
+    public void setList(String list) {
         if (list == null) list = "";
         String[] spl = Regex.getLines(list);
         synchronized (LIST2) {
@@ -95,7 +93,7 @@ public class PasswordListController implements ActionListener, DownloadControlle
         }
     }
 
-    public String getPasswordListasString() {
+    public String getList() {
         synchronized (LIST2) {
             StringBuilder sb = new StringBuilder();
             for (String pw : getPasswordList()) {
