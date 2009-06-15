@@ -1779,8 +1779,13 @@ abstract public class DownloadInterface {
      */
     public boolean startDownload() throws Exception {
         logger.finer("Start Download");
-        if (downloadLink.getPlugin() != null) downloadLink.getPlugin().setResume(resume);
         if (!connected) connect();
+        if (connection != null && connection.getHeaderField("Content-Encoding") != null && connection.getHeaderField("Content-Encoding").equalsIgnoreCase("gzip")) {
+            /* GZIP Encoding kann weder chunk noch resume */
+            resume = false;
+            setChunkNum(1);
+        }
+        if (downloadLink.getPlugin() != null) downloadLink.getPlugin().setResume(resume);
         // Erst hier Dateinamen holen, somit umgeht man das Problem das bei
         // mehrfachAufruf von connect entstehen kann
         if (this.downloadLink.getFinalFileName() == null && connection != null && connection.isContentDisposition()) {
