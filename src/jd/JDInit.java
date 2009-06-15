@@ -16,18 +16,9 @@
 
 package jd;
 
-import java.io.File;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
-import jd.controlling.AccountController;
-import jd.controlling.ByteBufferController;
-import jd.controlling.DownloadController;
-import jd.controlling.JDController;
-import jd.controlling.JDLogger;
-import jd.controlling.PasswordListController;
+import jd.controlling.*;
 import jd.controlling.interaction.Interaction;
 import jd.event.ControlEvent;
 import jd.gui.JDLookAndFeelManager;
@@ -43,6 +34,10 @@ import jd.parser.Regex;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+
+import java.io.File;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author JD-Team
@@ -599,12 +594,17 @@ public class JDInit {
         new HostPluginWrapper("Duckload.com", "DuckLoad", "http://[\\w\\.]*?(duckload\\.com|youload\\.to)/download/\\d+/.+");
         new HostPluginWrapper("Hetrixload.com", "HetrixLoadCom", "http://[\\w\\.]*?hetrixload\\.com/files/[A-Za-z0-9]+/.+\\.html");
         new HostPluginWrapper("Usershare.net", "Usershare", "http://[\\w\\.]*?usershare\\.net/[0-9a-zA-Z.]+");
+        new HostPluginWrapper("Slingfile.com", "SlingFileCom", "http://[\\w\\.]*?slingfile\\.com/(file|audio|video)/.+\\.html");
+        
+
+
 
         // Hoster from Extern
         new HostPluginWrapper("iFolder.ru", "IfolderRu", "http://[\\-\\w\\.]*?ifolder\\.ru/\\d+");
         new HostPluginWrapper("ExtraShare.us", "ExtraShareUs", "http://[\\w\\.]*?extrashare.us/file/.+/.+");
         new HostPluginWrapper("Addat.hu", "AddatHu", "http://[\\w\\.]*?addat.hu/.+/.+");
         new HostPluginWrapper("LinkFile.de", "LinkFileDe", "http://[\\w\\.]*?linkfile.de/download-[\\w]+\\.php");
+
 
     }
 
