@@ -29,18 +29,12 @@ public class Formatter {
     /**
      * The format describing an http date.
      */
-    public static SimpleDateFormat DATE_FORMAT;
-    static {
-        DATE_FORMAT = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
-        DATE_FORMAT.setTimeZone(new SimpleTimeZone(0, "GMT"));
-        DATE_FORMAT.setLenient(true);
-    }
+    private static SimpleDateFormat DATE_FORMAT = null;
 
     /**
      * Formatiert Sekunden in das zeitformat stunden:minuten:sekunden
      * 
      * @param eta
-     *            toURI().toURL();
      * @return formatierte Zeit
      */
     public static String formatSeconds(long eta) {
@@ -48,16 +42,19 @@ public class Formatter {
         eta -= hours * 60 * 60;
         long minutes = eta / 60;
         long seconds = eta - minutes * 60;
-        if (hours == 0) { return Formatter.fillInteger(minutes, 2, "0") + ":" + Formatter.fillInteger(seconds, 2, "0"); }
+        if (hours == 0) return Formatter.fillInteger(minutes, 2, "0") + ":" + Formatter.fillInteger(seconds, 2, "0");
         return Formatter.fillInteger(hours, 2, "0") + ":" + Formatter.fillInteger(minutes, 2, "0") + ":" + Formatter.fillInteger(seconds, 2, "0");
     }
+
     /**
      * FOIrmatiert im format hours:minutes:seconds.ms
+     * 
      * @param ms
      */
-public static String formatMilliseconds(long ms){ 
-    return formatSeconds(ms/1000)+"."+ms%1000;
-}
+    public static String formatMilliseconds(long ms) {
+        return formatSeconds(ms / 1000) + "." + Formatter.fillInteger(ms % 1000, 3, "0");
+    }
+
     public static String formatFilesize(double value, int size) {
         if (value > 1024 && size < 5) {
             return formatFilesize(value / 1024.0, ++size);
@@ -80,7 +77,6 @@ public static String formatMilliseconds(long ms){
     }
 
     public static String formatReadable(long value) {
-
         DecimalFormat c = new DecimalFormat("0.00");
         if (value >= (1024 * 1024 * 1024 * 1024l)) return c.format(value / (1024 * 1024 * 1024 * 1024.0)) + " TB";
         if (value >= (1024 * 1024 * 1024l)) return c.format(value / (1024 * 1024 * 1024.0)) + " GB";
@@ -146,10 +142,14 @@ public static String formatMilliseconds(long ms){
      * 
      * @param time
      *            The date to format (current time in msec).
-     * 
      * @return HTTP date string representing the given time.
      */
     public static String formatTime(long time) {
+        if (DATE_FORMAT == null) {
+            DATE_FORMAT = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
+            DATE_FORMAT.setTimeZone(new SimpleTimeZone(0, "GMT"));
+            DATE_FORMAT.setLenient(true);
+        }
         return DATE_FORMAT.format(new Date(time)).substring(0, 29);
     }
 
