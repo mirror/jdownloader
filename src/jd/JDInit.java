@@ -594,7 +594,7 @@ public class JDInit {
         new HostPluginWrapper("Duckload.com", "DuckLoad", "http://[\\w\\.]*?(duckload\\.com|youload\\.to)/download/\\d+/.+");
         new HostPluginWrapper("Hetrixload.com", "HetrixLoadCom", "http://[\\w\\.]*?hetrixload\\.com/files/[A-Za-z0-9]+/.+\\.html");
         new HostPluginWrapper("Usershare.net", "Usershare", "http://[\\w\\.]*?usershare\\.net/[0-9a-zA-Z.]+");
-        new HostPluginWrapper("Slingfile.com", "SlingFileCom", "http://[\\w\\.]*?slingfile\\.com/(file|audio|video)/.+\\.html");
+        new HostPluginWrapper("Slingfile.com", "SlingFileCom", "http://[\\w\\.]*?slingfile\\.com/(file|audio|video)/.+");
         
 
 

@@ -66,13 +66,13 @@ public class SlingFileCom extends PluginForHost {
         br.submitForm(downloadForm);
         String downloadUrl = br.getRegex(Pattern.compile("<a class=\"link_v3\" href=\"(.*?)\">here</a>")).getMatch(0);
         
-        dl = br.openDownload(downloadLink, downloadUrl, false, 1);
+        dl = br.openDownload(downloadLink, downloadUrl, true, 0);
         dl.startDownload();
     }
 
     // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return this.getMaxSimultanDownloadNum();
     }
 
     // @Override
