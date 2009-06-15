@@ -77,7 +77,7 @@ public class HTTPAllgemein extends PluginForHost {
 
     // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException {
-        this.setBrowserExclusive();        
+        this.setBrowserExclusive();
         String basicauth = HTACCESSController.getInstance().get(downloadLink.getDownloadURL());
         if (basicauth == null) {
             basicauth = downloadLink.getStringProperty("pass", null);
@@ -141,7 +141,6 @@ public class HTTPAllgemein extends PluginForHost {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
-        br.setDebug(true);
         boolean resume = true;
         int chunks = 0;
 

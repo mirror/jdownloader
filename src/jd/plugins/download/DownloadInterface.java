@@ -854,7 +854,13 @@ abstract public class DownloadInterface {
                         if (gotEB > endByte + 1) {
                             logger.warning("Possible RangeConflict or Servermisconfiguration. wished endByte: " + endByte + " got: " + gotEB);
                         }
-                        endByte = Math.min(endByte, gotEB);
+
+                        if (chunks.indexOf(this) == chunkNum - 1) {
+                            logger.severe("Use Workaround for wrong last range!");
+                            endByte = Math.max(endByte, gotEB);
+                        } else {
+                            endByte = Math.min(endByte, gotEB);
+                        }
 
                         if (gotSB == gotEB) {
                             // schon fertig
@@ -898,7 +904,12 @@ abstract public class DownloadInterface {
                         logger.warning("Possible RangeConflict or Servermisconfiguration. wished endByte: " + endByte + " got: " + gotEB);
                         // logger.finest(connection.toString());
                     }
-                    endByte = Math.min(endByte, gotEB);
+                    if (chunks.indexOf(this) == chunkNum - 1) {
+                        logger.severe("Use Workaround for wrong last range!");
+                        endByte = Math.max(endByte, gotEB);
+                    } else {
+                        endByte = Math.min(endByte, gotEB);
+                    }
 
                     if (speedDebug) {
                         logger.finer("Resulting Range" + startByte + " - " + endByte);
