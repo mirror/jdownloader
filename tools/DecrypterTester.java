@@ -16,11 +16,11 @@ import jd.utils.JDUtilities;
 
 public class DecrypterTester {
 
-    private static final String decrypter_prefix = "jd.plugins.decrypt.";
+    private final String decrypter_prefix = "jd.plugins.decrypt.";
 
-    private static final String decrypter_classname = null;
+    private final String decrypter_classname = null;
 
-    private static final String decrypter_testlink = null;
+    private final String decrypter_testlink = null;
 
     public static void main(String[] args) {
         new DecrypterTester();
@@ -45,6 +45,9 @@ public class DecrypterTester {
         if (testlink == null) {
             System.out.println("TestLink is null!");
             System.exit(0);
+        } else if (!decrypter.canHandle(testlink)) {
+            System.out.println("Decrypter can't handle the TestLink: " + testlink);
+            System.exit(0);
         }
 
         ArrayList<DownloadLink> dLinks = null;
@@ -63,7 +66,7 @@ public class DecrypterTester {
             result.append(dLink.getDownloadURL());
             result.append(new char[] { '\r', '\n' });
         }
-         JOptionPane.showMessageDialog(null,result.toString());
+        JOptionPane.showMessageDialog(null, result.toString());
 
         System.exit(0);
     }

@@ -5,7 +5,7 @@
 	<property name="dist" value="dist" />
 	<property name="res" value="ressourcen" />
 	<property name="keystore" value="G:\jDownloader.keystore" />
-	<property name="class-path" value="libs/JUnique.jar libs/JDGUI.jar libs/JDHttp.jar libs/JAntiCaptcha.jar libs/JDUtils.jar libs/balloontip.jar libs/BrowserLauncher2.jar libs/clink170.jar libs/cobra.jar libs/hsqldb.jar libs/htmlcleaner2_0.jar libs/irclib.jar libs/jl1.0.jar libs/js.jar libs/looks.jar libs/mail.jar libs/miglayout.jar libs/registry.jar libs/savemytube.jar libs/substance-swingx.jar libs/substance.jar libs/svnkit.jar libs/swingworker.jar libs/swingx.jar libs/synthetica.jar libs/syntheticaAddons.jar libs/syntheticaBlackMoon.jar libs/syntheticaBlackStar.jar libs/syntheticaBlueIce.jar libs/syntheticaBlueMoon.jar libs/syntheticaOrangeMetallic.jar libs/syntheticaSilverMoon.jar libs/syntheticaSimple2D.jar libs/syntheticaSkyMetallic.jar libs/syntheticaWhiteVision.jar" />
+	<property name="class-path" value="libs/JUnique.jar libs/JDGUI.jar libs/JDHttp.jar libs/JAntiCaptcha.jar libs/JDUtils.jar libs/BrowserLauncher2.jar libs/clink170.jar libs/cobra.jar libs/hsqldb.jar libs/htmlcleaner2_0.jar libs/irclib.jar libs/js.jar libs/looks.jar libs/mail.jar libs/miglayout.jar libs/savemytube.jar libs/substance-swingx.jar libs/substance.jar libs/svnkit.jar libs/swingworker.jar libs/swingx.jar libs/ui.jar" />
 
 	<target name="compile">
 		<mkdir dir="${cls}" />
@@ -40,7 +40,7 @@
 			</fileset>
 		</jar>
 		<delete file="Manifest.MF" failonerror="false" />
-		
+
 		<manifest file="Manifest.MF">
 			<attribute name="Created-By" value="JD-Team and AppWork UG. Copyright Sauronsoftware.it" />
 			<attribute name="Class-Path" value="${class-path}" />
@@ -242,7 +242,6 @@
 				<include name="jd/plugins/optional/jdtrayicon/**" />
 			</fileset>
 		</jar>
-
 	</target>
 
 	<target name="sign">
