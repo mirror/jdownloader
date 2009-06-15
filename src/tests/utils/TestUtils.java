@@ -37,9 +37,9 @@ import jd.utils.MacOSController;
 public abstract class TestUtils {
 
     private static JFrame FRAME;
-    
+
     private static JDInit jdi;
-    
+
     private static JDController jdc;
 
     /**
@@ -87,12 +87,11 @@ public abstract class TestUtils {
     public static void log(String msg) {
         System.out.println(new Exception().getStackTrace()[1].toString() + " : " + msg);
     }
-    
+
     public static void mainInit() {
-    	if(JDUtilities.getController() != null)
-    		return;
-    	
-    	new GuiRunnable<Object>() {
+        if (JDUtilities.getController() != null) return;
+
+        new GuiRunnable<Object>() {
             @Override
             public Object runSave() {
                 FRAME = new JFrame();
@@ -115,49 +114,44 @@ public abstract class TestUtils {
 
         JDTheme.setTheme("default");
 
-        jdi = new JDInit(null);
+        jdi = new JDInit();
         jdi.init();
 
         if (jdi.loadConfiguration() == null) {
             UserIO.getInstance().requestMessageDialog("JDownloader cannot create the config files. Make sure, that JD_HOME/config/ exists and is writeable");
         }
 
-        jdc = jdi.initController();
-        JDUtilities.getConfiguration();
+        jdc = JDController.getInstance();
     }
-    
+
     public static void initDecrypter() {
-    	if(DecryptPluginWrapper.getDecryptWrapper().size() > 0)
-    		return;
-    	
-    	jdi.loadPluginForDecrypt();
+        if (DecryptPluginWrapper.getDecryptWrapper().size() > 0) return;
+
+        jdi.loadPluginForDecrypt();
     }
-    
+
     public static void initHosts() {
-    	if(JDUtilities.getPluginsForHost().size() > 0)
-    		return;
-    	
-    	jdi.loadPluginForHost();
+        if (JDUtilities.getPluginsForHost().size() > 0) return;
+
+        jdi.loadPluginForHost();
     }
-    
+
     public static void initOptionalPlugins() {
-    	if(OptionalPluginWrapper.getOptionalWrapper().size() > 0)
-    		return;
-    	
-    	jdi.loadPluginOptional();
+        if (OptionalPluginWrapper.getOptionalWrapper().size() > 0) return;
+
+        jdi.loadPluginOptional();
     }
-    
+
     public static void initAllPlugins() {
-    	initDecrypter();
-    	initHosts();
-    	initOptionalPlugins();
+        initDecrypter();
+        initHosts();
+        initOptionalPlugins();
     }
-    
+
     public static void initGUI() {
-    	if(SimpleGUI.CURRENTGUI != null)
-    		return;
-    	
-    	new GuiRunnable<Object>() {
+        if (SimpleGUI.CURRENTGUI != null) return;
+
+        new GuiRunnable<Object>() {
             @Override
             public Object runSave() {
                 jdi.initGUI(jdc);
@@ -167,11 +161,11 @@ public abstract class TestUtils {
 
         SimpleGUI.CURRENTGUI.setVisible(false);
     }
-    
+
     public static void initControllers() {
-    	jdi.initControllers();
+        jdi.initControllers();
     }
-    
+
     public static void finishInit() {
         jdc.setInitStatus(JDController.INIT_STATUS_COMPLETE);
         JDUtilities.getController().fireControlEvent(new ControlEvent(new Object(), ControlEvent.CONTROL_INIT_COMPLETE, null));

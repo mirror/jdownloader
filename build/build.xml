@@ -145,17 +145,10 @@
 			<attribute name="Created-By" value="JD-Team" />
 		</manifest>
 
-		<mkdir dir="${dist}/pluginressourcen/128__JDTray/plugins" />
-		<jar jarfile="${dist}/pluginressourcen/128__JDTray/plugins/JDTray.jar" manifest="Manifest.MF">
+		<mkdir dir="${dist}/pluginressourcen/100__JDChat/plugins" />
+		<jar jarfile="${dist}/pluginressourcen/100__JDChat/plugins/JDChat.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
-				<include name="jd/plugins/optional/jdtrayicon/**" />
-			</fileset>
-		</jar>
-
-		<mkdir dir="${dist}/pluginressourcen/105__JDScheduler/plugins" />
-		<jar jarfile="${dist}/pluginressourcen/105__JDScheduler/plugins/schedule.jar" manifest="Manifest.MF">
-			<fileset dir="${cls}">
-				<include name="jd/plugins/optional/schedule/**" />
+				<include name="jd/plugins/optional/jdchat/**" />
 			</fileset>
 		</jar>
 
@@ -166,17 +159,24 @@
 			</fileset>
 		</jar>
 
-		<mkdir dir="${dist}/pluginressourcen/100__JDChat/plugins" />
-		<jar jarfile="${dist}/pluginressourcen/100__JDChat/plugins/JDChat.jar" manifest="Manifest.MF">
-			<fileset dir="${cls}">
-				<include name="jd/plugins/optional/jdchat/**" />
-			</fileset>
-		</jar>
-
 		<mkdir dir="${dist}/pluginressourcen/104__JDRemoteControl/plugins" />
 		<jar jarfile="${dist}/pluginressourcen/104__JDRemoteControl/plugins/JDRemoteControl.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/JDRemoteControl*" />
+			</fileset>
+		</jar>
+
+		<mkdir dir="${dist}/pluginressourcen/105__JDScheduler/plugins" />
+		<jar jarfile="${dist}/pluginressourcen/105__JDScheduler/plugins/schedule.jar" manifest="Manifest.MF">
+			<fileset dir="${cls}">
+				<include name="jd/plugins/optional/schedule/**" />
+			</fileset>
+		</jar>
+
+		<mkdir dir="${dist}/pluginressourcen/106__JDShutdown/plugins" />
+		<jar jarfile="${dist}/pluginressourcen/106__JDShutdown/plugins/JDShutdown.jar" manifest="Manifest.MF">
+			<fileset dir="${cls}">
+				<include name="jd/plugins/optional/JDShutdown*" />
 			</fileset>
 		</jar>
 
@@ -201,17 +201,10 @@
 			</fileset>
 		</jar>
 
-		<mkdir dir="${dist}/pluginressourcen/123__JDUnrar/plugins" />
-		<jar jarfile="${dist}/pluginressourcen/123__JDUnrar/plugins/JDUnrar.jar" manifest="Manifest.MF">
+		<mkdir dir="${dist}/pluginressourcen/121__JDWatchFolder/plugins" />
+		<jar jarfile="${dist}/pluginressourcen/121__JDWatchFolder/plugins/JDFolderWatch.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
-				<include name="jd/plugins/optional/jdunrar/**" />
-			</fileset>
-		</jar>
-
-		<mkdir dir="${dist}/pluginressourcen/127__JDHJMerge/plugins" />
-		<jar jarfile="${dist}/pluginressourcen/127__JDHJMerge/plugins/JDHJMerge.jar" manifest="Manifest.MF">
-			<fileset dir="${cls}">
-				<include name="jd/plugins/optional/hjsplit/**" />
+				<include name="jd/plugins/optional/JDFolderWatch*" />
 			</fileset>
 		</jar>
 
@@ -222,17 +215,10 @@
 			</fileset>
 		</jar>
 
-		<mkdir dir="${dist}/pluginressourcen/121__JDWatchFolder/plugins" />
-		<jar jarfile="${dist}/pluginressourcen/121__JDWatchFolder/plugins/JDFolderWatch.jar" manifest="Manifest.MF">
+		<mkdir dir="${dist}/pluginressourcen/123__JDUnrar/plugins" />
+		<jar jarfile="${dist}/pluginressourcen/123__JDUnrar/plugins/JDUnrar.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
-				<include name="jd/plugins/optional/JDFolderWatch*" />
-			</fileset>
-		</jar>
-
-		<mkdir dir="${dist}/pluginressourcen/106__JDShutdown/plugins" />
-		<jar jarfile="${dist}/pluginressourcen/106__JDShutdown/plugins/JDShutdown.jar" manifest="Manifest.MF">
-			<fileset dir="${cls}">
-				<include name="jd/plugins/optional/JDShutdown*" />
+				<include name="jd/plugins/optional/jdunrar/**" />
 			</fileset>
 		</jar>
 
@@ -242,6 +228,21 @@
 				<include name="jd/plugins/optional/JDPremiumCollector*" />
 			</fileset>
 		</jar>
+
+		<mkdir dir="${dist}/pluginressourcen/127__JDHJMerge/plugins" />
+		<jar jarfile="${dist}/pluginressourcen/127__JDHJMerge/plugins/JDHJMerge.jar" manifest="Manifest.MF">
+			<fileset dir="${cls}">
+				<include name="jd/plugins/optional/hjsplit/**" />
+			</fileset>
+		</jar>
+
+		<mkdir dir="${dist}/pluginressourcen/128__JDTray/plugins" />
+		<jar jarfile="${dist}/pluginressourcen/128__JDTray/plugins/JDTray.jar" manifest="Manifest.MF">
+			<fileset dir="${cls}">
+				<include name="jd/plugins/optional/jdtrayicon/**" />
+			</fileset>
+		</jar>
+
 	</target>
 
 	<target name="sign">
@@ -273,12 +274,17 @@
 		<delete file="${dist}/JDownloader.jar" failonerror="no" />
 		<move file="${dist}/JDownloader_obfuscated.jar" tofile="${dist}/JDownloader.jar" />
 	</target>
+
 	<target name="standardBuild" depends="compile,jar,jarOptionals,jarWebupdater,jarHostService">
 	</target>
+
 	<target name="hostservice" depends="compile,jar,jarHostService">
 	</target>
+
 	<target name="dlcEnabledBuild" depends="standardBuild,cryptContainer,sign">
 	</target>
+	
 	<target name="signedBuild" depends="standardBuild,sign">
 	</target>
+
 </project>
