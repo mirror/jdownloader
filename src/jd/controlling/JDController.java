@@ -111,13 +111,21 @@ public class JDController implements ControlListener {
                     if (event == null || waitFlag) continue;
                     eventStart = System.currentTimeMillis();
                     currentListener = JDController.this;
-                    controlEvent(event);
+                    try {
+                        controlEvent(event);
+                    } catch (Exception e) {
+                        JDLogger.exception(e);
+                    }
                     eventStart = 0;
                     synchronized (controlListener) {
                         if (controlListener.size() > 0) {
                             for (ControlListener cl : controlListener) {
                                 eventStart = System.currentTimeMillis();
-                                cl.controlEvent(event);
+                                try {
+                                    cl.controlEvent(event);
+                                } catch (Exception e) {
+                                    JDLogger.exception(e);
+                                }
                                 eventStart = 0;
                             }
                         }
@@ -402,16 +410,19 @@ public class JDController implements ControlListener {
 
     public void fireControlEventDirect(ControlEvent controlEvent) {
         if (controlEvent == null) return;
-        synchronized (controlListener) {
-            synchronized (removeList) {
-                controlListener.removeAll(removeList);
-                removeList.clear();
-            }
-            if (controlListener.size() > 0) {
-                for (ControlListener cl : controlListener) {
-                    cl.controlEvent(controlEvent);
+        try {
+            synchronized (controlListener) {
+                synchronized (removeList) {
+                    controlListener.removeAll(removeList);
+                    removeList.clear();
+                }
+                if (controlListener.size() > 0) {
+                    for (ControlListener cl : controlListener) {
+                        cl.controlEvent(controlEvent);
+                    }
                 }
             }
+        } catch (Exception e) {
         }
     }
 

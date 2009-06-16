@@ -360,11 +360,11 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
 
     public synchronized void updateData() {
 
-        String password = this.password;
+        String password = this.password == null ? "" : this.password;
         StringBuilder comment = new StringBuilder(this.comment == null ? "" : this.comment);
 
         ArrayList<String> pwList = new ArrayList<String>();
-        if (password != null) {
+        if (password.length() > 0) {
             String[] pws = JDUtilities.passwordStringToArray(password);
             for (String element : pws) {
                 pwList.add(element);
@@ -372,13 +372,17 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
         }
         synchronized (downloadLinkList) {
             for (DownloadLink element : downloadLinkList) {
-                for (String pw : element.getSourcePluginPasswordList()) {
-                    if (!pwList.contains(pw)) pwList.add(pw);
+                if (element.getSourcePluginPasswordList() != null) {
+                    for (String pw : element.getSourcePluginPasswordList()) {
+                        if (!pwList.contains(pw)) pwList.add(pw);
+                    }
                 }
-                String newComment = element.getSourcePluginComment();
-                if (newComment != null && comment.indexOf(newComment) < 0) {
-                    comment.append("|");
-                    comment.append(newComment);
+                if (element.getSourcePluginComment() != null) {
+                    String newComment = element.getSourcePluginComment();
+                    if (newComment != null && comment.indexOf(newComment) < 0) {
+                        comment.append("|");
+                        comment.append(newComment);
+                    }
                 }
             }
         }

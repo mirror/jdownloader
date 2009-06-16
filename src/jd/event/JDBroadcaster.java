@@ -19,6 +19,8 @@ package jd.event;
 import java.util.EventListener;
 import java.util.Vector;
 
+import jd.controlling.JDLogger;
+
 public abstract class JDBroadcaster<T extends EventListener, TT extends JDEvent> {
 
     transient protected Vector<T> callList = null;
@@ -46,7 +48,11 @@ public abstract class JDBroadcaster<T extends EventListener, TT extends JDEvent>
             removeList.clear();
         }
         for (int i = callList.size() - 1; i >= 0; i--) {
-            this.fireEvent(callList.get(i), event);
+            try {
+                this.fireEvent(callList.get(i), event);
+            } catch (Exception e) {
+                JDLogger.exception(e);
+            }
         }
         return false;
         // System.out.println("Broadcast stop" + this.getClass());
