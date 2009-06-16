@@ -101,20 +101,33 @@ public class WrzutaPl extends PluginForHost {
         dl = br.openDownload(downloadLink, linkurl);
         URLConnectionAdapter con = dl.getConnection();
         if (!con.getContentType().equalsIgnoreCase("unknown") && addext != false) {
-            if (con.getContentType().contains("mpeg3")) {
+            if (con.getContentType().contains("mpeg3") || con.getContentType().contains("audio/mpeg")) {
                 downloadLink.setFinalFileName(filename.trim() + ".mp3");
             } else if (con.getContentType().contains("flv")) {
                 downloadLink.setFinalFileName(filename.trim() + ".flv");
             } else if (con.getContentType().contains("png")) {
                 downloadLink.setFinalFileName(filename.trim() + ".png");
+            } else if (con.getContentType().contains("gif")) {
+                downloadLink.setFinalFileName(filename.trim() + ".gif");
+            } else if (con.getContentType().contains("application/zip")) {
+                downloadLink.setFinalFileName(filename.trim() + ".zip");
+            } else if (con.getContentType().contains("audio/mid")) {
+                downloadLink.setFinalFileName(filename.trim() + ".mid");
+            } else if (con.getContentType().contains("application/pdf")) {
+                downloadLink.setFinalFileName(filename.trim() + ".pdf");
+            } else if (con.getContentType().contains("application/rtf")) {
+                downloadLink.setFinalFileName(filename.trim() + ".rtf");
+            } else if (con.getContentType().contains("application/msword")) {
+                downloadLink.setFinalFileName(filename.trim() + ".doc");
             } else if (con.getContentType().contains("jpg") || con.getContentType().contains("jpeg")) {
                 downloadLink.setFinalFileName(filename.trim() + ".jpg");
             } else if (con.getContentType().contains("bmp") || con.getContentType().contains("bitmap")) {
                 downloadLink.setFinalFileName(filename.trim() + ".bmp");
             } else {
-                logger.info("Unknown filetype, cannot determine file extension...");
+                logger.info("Unknown filetype: " + con.getContentType() + ", cannot determine file extension...");
             }
         }
+        System.out.println(con.getContentType());
         dl.startDownload();
     }
 
