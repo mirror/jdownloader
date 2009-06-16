@@ -359,6 +359,7 @@ public class RAFDownload extends DownloadInterface {
         DownloadInterface dl = new RAFDownload(downloadLink.getPlugin(), downloadLink, request);
         downloadLink.getPlugin().setDownloadInterface(dl);
         dl.setResume(b);
+        dl.setResumable(b);
         if (i == 0) {
             dl.setChunkNum(SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
 

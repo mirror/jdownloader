@@ -463,22 +463,14 @@ public class JDController implements ControlListener {
     }
 
     public int getForbiddenReconnectDownloadNum() {
+        boolean allowinterrupt = SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty("PARAM_DOWNLOAD_AUTORESUME_ON_RECONNECT", true);
         int ret = 0;
-        DownloadLink nextDownloadLink;
-        synchronized (JDUtilities.getDownloadController().getPackages()) {
-            for (FilePackage fp : JDUtilities.getDownloadController().getPackages()) {
-                Iterator<DownloadLink> it2 = fp.getDownloadLinkList().iterator();
-                while (it2.hasNext()) {
-                    nextDownloadLink = it2.next();
-                    if (nextDownloadLink.getPlugin() != null && !nextDownloadLink.getPlugin().canResume(nextDownloadLink)) {
-                        if (nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS) || nextDownloadLink.getLinkStatus().isPluginActive() && nextDownloadLink.getPlugin().getRemainingHosterWaittime() <= 0 && nextDownloadLink.isEnabled()) {
-                            ret++;
-                        }
-                    }
-                }
+        ArrayList<DownloadLink> links = DownloadWatchDog.getInstance().getRunningDownloads();
+        for (DownloadLink link : links) {
+            if (link.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
+                if (!(link.getPlugin().isResumable() && allowinterrupt)) ret++;
             }
         }
-        if (watchdog != null && !watchdog.isAborted() && watchdog.isAlive()) { return Math.min(watchdog.ActiveDownloadControllers(), ret); }
         return ret;
     }
 

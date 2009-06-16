@@ -209,6 +209,10 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
         DownloadController.getInstance().fireGlobalUpdate();
     }
 
+    public ArrayList<DownloadLink> getRunningDownloads() {
+        return new ArrayList<DownloadLink>(DownloadControllers.keySet());
+    }
+
     public void controlEvent(ControlEvent event) {
         if (event.getID() == ControlEvent.CONTROL_PLUGIN_INACTIVE && event.getSource() instanceof PluginForHost) {
             this.deactivateDownload(((SingleDownloadController) event.getParameter()).getDownloadLink());
@@ -534,7 +538,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                                     }
 
                                 }
-                            }else{
+                            } else {
                                 stopCounter = 5;
                             }
                         } catch (Exception e) {

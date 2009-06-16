@@ -419,13 +419,11 @@ public class JDUtilities {
      * @return ip oder /offline
      */
     public static String getIPAddress(Browser br) {
-
         if (br == null) {
             br = new Browser();
             // br.setProxy(JDProxy.NO_PROXY);
-
-            br.setConnectTimeout(5000);
-            br.setReadTimeout(5000);
+            br.setConnectTimeout(10000);
+            br.setReadTimeout(10000);
         }
         if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
             JDLogger.getLogger().finer("IP Check is disabled. return current Milliseconds");
@@ -436,49 +434,28 @@ public class JDUtilities {
         String patt = SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_PATTERN, "Address\\: ([0-9.]*)\\<\\/body\\>");
 
         try {
-            JDLogger.getLogger().finer("IP Check via " + site);
+            JDLogger.getLogger().finer("Primary IP Check via " + site);
             Pattern pattern = Pattern.compile(patt);
             Matcher matcher = pattern.matcher(br.getPage(site));
             if (matcher.find()) {
-                if (matcher.groupCount() > 0) {
-                    return LATEST_IP = matcher.group(1);
-                } else {
-                    JDLogger.getLogger().severe("Primary bad Regex: " + patt);
-
-                }
+                if (matcher.groupCount() > 0) return LATEST_IP = matcher.group(1);
             }
-            JDLogger.getLogger().info("Primary IP Check failed. Ip not found via regex: " + patt + " on " + site + " htmlcode: " + br.toString());
-
+        } catch (Exception e1) {
         }
-
-        catch (Exception e1) {
-            JDLogger.getLogger().severe("url not found. " + e1.toString());
-
-        }
+        LATEST_IP = null;
+        JDLogger.getLogger().finer("Primary IP Check failed. IP not found via regex: " + patt + " on " + site);
 
         try {
-
-            JDLogger.getLogger().finer("http://service.jdownloader.org/tools/getip.php");
-
+            JDLogger.getLogger().finer("Secondary IP Check via JDownloader-IPCheck");
             Pattern pattern = Pattern.compile(patt);
             Matcher matcher = pattern.matcher(br.getPage("http://service.jdownloader.org/tools/getip.php"));
             if (matcher.find()) {
-                if (matcher.groupCount() > 0) {
-                    return LATEST_IP = matcher.group(1);
-                } else {
-                    JDLogger.getLogger().severe("Primary bad Regex: " + patt);
-                }
+                if (matcher.groupCount() > 0) return LATEST_IP = matcher.group(1);
             }
-            LATEST_IP = null;
-            return "offline";
-        }
-
-        catch (Exception e1) {
-            JDLogger.getLogger().severe("url not found. " + e1.toString());
-            JDLogger.getLogger().info("Sec. IP Check failed.");
-
+        } catch (Exception e1) {
         }
         LATEST_IP = null;
+        JDLogger.getLogger().finer("Secondary IP Check failed. IP not found via regex: " + patt + " on JDownloader-IPChek");
         return "offline";
     }
 
@@ -885,7 +862,14 @@ public class JDUtilities {
      * @return
      */
     public static boolean validateIP(String ip) {
-        return Pattern.compile(SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_MASK, "\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).)" + "{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b")).matcher(ip).matches();
+        /* Zeitstempel nicht der Validierung unterziehen */
+        if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) return true;
+        try {
+            return Pattern.compile(SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_MASK, "\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).)" + "{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b")).matcher(ip).matches();
+        } catch (Exception e) {
+            JDLogger.getLogger().severe("Could not validate IP! " + e);
+        }
+        return true;
     }
 
     public static String removeEndingPoints(String name) {

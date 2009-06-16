@@ -144,7 +144,7 @@ public abstract class PluginForHost extends Plugin {
 
     private ImageIcon hosterIcon;
 
-    public void setResume(boolean b) {
+    public void setResumable(boolean b) {
         canResume = b;
     }
 
@@ -438,7 +438,7 @@ public abstract class PluginForHost extends Plugin {
     public int getMaxSimultanDownloadNum(DownloadLink link) {
         return ignoreHosterWaittime() ? getMaxSimultanPremiumDownloadNum() : getMaxSimultanFreeDownloadNum();
     }
-    
+
     public boolean ignoreHosterWaittime() {
         if (AccountController.getInstance().getValidAccount(this) == null) return false;
         if (!this.enablePremium || !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) return false;
@@ -473,7 +473,7 @@ public abstract class PluginForHost extends Plugin {
         link.getLinkStatus().setErrorMessage(JDLocale.L("plugins.hoster.nopremiumsupport", "Plugin has no handlePremium Method!"));
     }
 
-    public boolean canResume(DownloadLink link) {
+    public boolean isResumable() {
         return canResume;
     }
 

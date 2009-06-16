@@ -22,6 +22,7 @@ import java.util.logging.Logger;
 
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
+import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
@@ -70,43 +71,60 @@ public class Reconnecter {
         JDController controller = JDUtilities.getController();
         boolean ipChangeSuccess = false;
         if (System.currentTimeMillis() - lastIPUpdate > 1000 * SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty("EXTERNAL_IP_CHECK_INTERVAL", 60 * 10)) {
-            /* gab schon nen externen reconnect */
-            if (Reconnecter.checkExternalIPChange()) return true;
+
+            /*
+             * gab schon nen externen reconnect , checke nur falls wirklich
+             * ipcheck aktiv ist!
+             */
+            if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
+                ipChangeSuccess = Reconnecter.checkExternalIPChange();
+            }
+            if (ipChangeSuccess) return ipChangeSuccess;
+
         }
-        ArrayList<DownloadLink> disabled = new ArrayList<DownloadLink>();
 
         Interaction.handleInteraction(Interaction.INTERACTION_BEFORE_RECONNECT, controller);
         int type = JDUtilities.getConfiguration().getIntegerProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, ReconnectMethod.LIVEHEADER);
-        logger.info("DO RECONNECT NOW");
-        boolean interrupt = SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty("PARAM_DOWNLOAD_AUTORESUME_ON_RECONNECT", true);
-        if (interrupt) {
-            for (FilePackage fp : controller.getPackages()) {
-                for (DownloadLink nextDownloadLink : fp.getDownloadLinkList()) {
-                    if (nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.PLUGIN_IN_PROGRESS)) {
-                        nextDownloadLink.setEnabled(false);
-                        logger.info("disabled " + nextDownloadLink);
-                        disabled.add(nextDownloadLink);
-                    }
-                }
+        logger.info("Try to reconnect...");
+        /* laufende downloads stoppen */
+        ArrayList<DownloadLink> disabled = DownloadWatchDog.getInstance().getRunningDownloads();
+        if (disabled.size() != 0) logger.info("Stopping all running downloads!");
+        for (DownloadLink link : disabled) {
+            link.setEnabled(false);
+        }
+        /* warte bis alle gestoppt sind */
+        for (int wait = 0; wait < 10; wait++) {
+            if (DownloadWatchDog.getInstance().getActiveDownloads() == 0) break;
+            try {
+                Thread.sleep(1000);
+                logger.info("Still waiting for all downloads to stop!");
+            } catch (InterruptedException e) {
+                break;
             }
         }
-        switch (type) {
-        case ReconnectMethod.EXTERN:
-            ipChangeSuccess = new ExternReconnect().doReconnect();
-            break;
-        case ReconnectMethod.BATCH:
-            ipChangeSuccess = new BatchReconnect().doReconnect();
-            break;
-        default:
-            ipChangeSuccess = new HTTPLiveHeader().doReconnect();
+        if (DownloadWatchDog.getInstance().getActiveDownloads() > 0) {
+            logger.severe("Could not stop all running downloads!");
         }
-        if (interrupt) {
-            for (DownloadLink link : disabled) {
-                logger.info("enable " + link);
-                link.setEnabled(true);
+
+        try {
+            switch (type) {
+            case ReconnectMethod.EXTERN:
+                ipChangeSuccess = new ExternReconnect().doReconnect();
+                break;
+            case ReconnectMethod.BATCH:
+                ipChangeSuccess = new BatchReconnect().doReconnect();
+                break;
+            default:
+                ipChangeSuccess = new HTTPLiveHeader().doReconnect();
+
             }
+        } catch (Exception e) {
+            logger.severe("ReconnectMethod failed!");
         }
-        logger.info("Reconnect success: " + ipChangeSuccess);
+        /* gestoppte downloads wieder aufnehmen */
+        for (DownloadLink link : disabled) {
+            link.setEnabled(true);
+        }
         lastIPUpdate = System.currentTimeMillis();
         CURRENT_IP = JDUtilities.getIPAddress(null);
         return ipChangeSuccess;
@@ -133,10 +151,15 @@ public class Reconnecter {
             return false;
         }
         IS_RECONNECTREQUESTING = true;
-        boolean ret = doReconnectIfRequestedInternal();
-        if (ret) {
-            Reconnecter.resetAllLinks();
-            Interaction.handleInteraction(Interaction.INTERACTION_AFTER_RECONNECT, JDUtilities.getController());
+        boolean ret = false;
+        try {
+            ret = doReconnectIfRequestedInternal();
+            if (ret) {
+                Reconnecter.resetAllLinks();
+                Interaction.handleInteraction(Interaction.INTERACTION_AFTER_RECONNECT, JDUtilities.getController());
+            }
+
+        } catch (Exception e) {
         }
         IS_RECONNECTREQUESTING = false;
         return ret;
@@ -146,20 +169,37 @@ public class Reconnecter {
         boolean ret = false;
         /* überhaupt ein reconnect angefragt? */
         if (hasWaittimeLinks) {
-            /* erstma schau ob überhaupt eingeschalten */
             if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true)) {
-                if (System.currentTimeMillis() - lastIPUpdate > 1000 * SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty("EXTERNAL_IP_CHECK_INTERVAL", 60 * 10)) return Reconnecter.checkExternalIPChange();
-                return false;
+                /*
+                 * auto reconnect ist AUS, dann nur noch schaun ob sich ip
+                 * geändert hat
+                 */
+                if (System.currentTimeMillis() - lastIPUpdate > 1000 * SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty("EXTERNAL_IP_CHECK_INTERVAL", 60 * 10)) {
+                    /*
+                     * hier nur ein ip check falls auch ip check wirklich aktiv,
+                     * sonst gibts ne endlos reconnectschleife
+                     */
+                    if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
+                        ret = Reconnecter.checkExternalIPChange();
+                    }
+                }
+                return ret;
+
+            } else {
+                /* auto reconnect ist AN */
+                try {
+                    ret = Reconnecter.doReconnect();
+                    if (ret) {
+                        logger.info("Reconnect successfully!");
+                    } else {
+                        logger.info("Reconnect failed!");
+                    }
+                } catch (Exception e) {
+                    logger.finest("Reconnect failed.");
+                }
+                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_LATEST_RECONNECT_RESULT, ret);
+                JDUtilities.getConfiguration().save();
             }
-            /* jetzt nen echten reconnect versuchen */
-            try {
-                ret = Reconnecter.doReconnect();
-            } catch (Exception e) {
-                logger.finest("Reconnect failed. Exception " + e.getMessage());
-                JDLogger.exception(e);
-            }
-            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_LATEST_RECONNECT_RESULT, ret);
-            JDUtilities.getConfiguration().save();
         }
         return ret;
     }
