@@ -31,7 +31,7 @@ public class DBBackuper extends DynamicPluginInterface {
 
             public void controlEvent(ControlEvent event) {
                 if (event.getID() == 34 && event.getParameter() instanceof Property) {
-                    ((Property) event.getParameter()).setProperty("value", "12");
+                    ((Property) event.getParameter()).setProperty("value", "1966");
                 }
 
             }
