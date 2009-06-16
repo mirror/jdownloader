@@ -43,7 +43,7 @@ public class Configuration extends SubConfiguration implements Serializable {
 
     public static final String PARAM_DO_CRC = "DO_CRC";
 
-    public static final String PARAM_DOWNLOAD_CONNECT_TIMEOUT = "DOWNLOAD_CONNECT_TIMEOUT_V2";
+    public static final String PARAM_DOWNLOAD_CONNECT_TIMEOUT = "DOWNLOAD_CONNECT_TIMEOUT_V3";
 
     public static final String PARAM_DOWNLOAD_DIRECTORY = "DOWNLOAD_DIRECTORY";
 
@@ -57,7 +57,7 @@ public class Configuration extends SubConfiguration implements Serializable {
 
     public static final String PARAM_DOWNLOAD_MAX_SPEED = "DOWNLOAD_MAX_SPEED_V2";
 
-    public static final String PARAM_DOWNLOAD_READ_TIMEOUT = "DOWNLOAD_READ_TIMEOUT_V2";
+    public static final String PARAM_DOWNLOAD_READ_TIMEOUT = "DOWNLOAD_READ_TIMEOUT_V3";
 
     public static final String PARAM_FILE_BROWSER = "PARAM_FILE_BROWSER";
 
