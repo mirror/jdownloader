@@ -1,5 +1,5 @@
-$translater$ = thartist (thartist@hotmail.com) & JD-Team
-$version$ = $Revision$
+$translater$ = JD-Team & thartist
+$version$ = $Revision: 6250+$
 a.very.important.warning = WARNING!! 6 NON OBSOLETE KEYS, DON'T DELETE: gui.menu.about gui.menu.add gui.menu.addons gui.menu.premium gui.menu.remove gui.menu.save 
 addons.jdgrowlnotification.menu = Growl Messages
 addons.jdshutdown.menu = enabled
@@ -1024,6 +1024,7 @@ plugins.hoster.uploadingcom.errors.countrylimitreached = You have reached your c
 plugins.hoster.vipfilecom.errors.nofreedownloadlink = No free download link for this file
 plugins.hoster.xupin.errors.passwrong = Password wrong
 plugins.hoster.youtube.accountok = Account is OK.
+plugins.http.htaccess = List of all HTAccess passwords. Each line one password.
 plugins.menu.accounts = Accounts
 plugins.menu.configs = Configuration
 plugins.menu.enable_premium = Enable Account
