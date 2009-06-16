@@ -252,26 +252,6 @@ public class JDUtilities {
         cont.add(comp, cons);
     }
 
-    /**
-     * Fügt dem Dateinamen den erkannten Code noch hinzu
-     * 
-     * @param file
-     *            Die Datei, der der Captchacode angefügt werden soll
-     * @param captchaCode
-     *            Der erkannte Captchacode
-     * @param isGood
-     *            Zeigt, ob der erkannte Captchacode korrekt ist
-     */
-    public static void appendInfoToFilename(File file, String captchaCode, boolean isGood) {
-        String dest = file.getAbsolutePath();
-        if (captchaCode == null) {
-            captchaCode = "null";
-        }
-        int idx = dest.lastIndexOf('.');
-        dest = dest.substring(0, idx) + "_" + captchaCode.toUpperCase() + (isGood ? "_GOOD" : "_BAD") + dest.substring(idx);
-        file.renameTo(new File(dest));
-    }
-
     public static String convertExceptionReadable(Exception e) {
         String s = e.getClass().getName().replaceAll("Exception", "");
         s = s.substring(s.lastIndexOf(".") + 1);

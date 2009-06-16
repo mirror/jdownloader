@@ -27,7 +27,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.logging.Level;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.swing.ImageIcon;
@@ -59,7 +58,6 @@ import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
@@ -82,8 +80,7 @@ public class Serienjunkies extends PluginForDecrypt {
     private static String[] mirrorManagement = new String[] { JDLocale.L("plugins.decrypt.serienjunkies.usePremiumLinks", "use premiumlinks if possible"), JDLocale.L("plugins.decrypt.serienjunkies.automaticMirrorManagment", "automatic mirror managment"), JDLocale.L("plugins.decrypt.serienjunkies.noMirrorManagment", "no mirror managment"), JDLocale.L("plugins.decrypt.serienjunkies.RsComOnly", "nur Rapidshare.com"), JDLocale.L("plugins.decrypt.serienjunkies.RsDeOnly", "nur Rapidshare.de"), JDLocale.L("plugins.decrypt.serienjunkies.NetloadOnly", "nur Netload.in"), JDLocale.L("plugins.decrypt.serienjunkies.UlOnly", "nur Uploaded.to"), JDLocale.L("plugins.decrypt.serienjunkies.FFOnly", "nur FileFactory.com") };
 
     private static String mirror = mirrorManagement[0];
-    private String dynamicCaptcha = "(?s)<FORM ACTION=\".*?\" METHOD=\"post\".*?<INPUT TYPE=\"HIDDEN\" NAME=\"s\" VALUE=\"(.*?)\">.*?<IMG SRC=\"([^\"]*)\"";
-    private Pattern patternCaptcha = null;
+    private final Pattern patternCaptcha = Pattern.compile("(?s)<FORM ACTION=\".*?\" METHOD=\"post\".*?<INPUT TYPE=\"HIDDEN\" NAME=\"s\" VALUE=\"(.*?)\">.*?<IMG SRC=\"([^\"]*)\"");
     private String subdomain = "download.";
     private static int active = 0;
     private ProgressController progress;
@@ -152,12 +149,9 @@ public class Serienjunkies extends PluginForDecrypt {
             String capTxt = null;
             while (true) {
                 htmlcode = htmlcode.replaceAll("(?s)<!--.*?-->", "").replaceAll("(?i)(?s)<div style=\"display: none;\">.*?</div>", "");
-                Matcher matcher = patternCaptcha.matcher(htmlcode);
-                if (matcher.find()) {
-                    if (captchaFile != null && capTxt != null) {
-                        JDUtilities.appendInfoToFilename(captchaFile, capTxt, false);
-                    }
-                    String gif = new Regex(htmlcode, patternCaptcha).getMatch(1);
+                Regex captchaRegex = new Regex(htmlcode, patternCaptcha);
+                if (captchaRegex.matches()) {
+                    String gif = captchaRegex.getMatch(1);
 
                     String captchaAdress = "http://" + subdomain + "serienjunkies.org" + gif;
                     Browser capbr = br3.cloneBrowser();
@@ -224,7 +218,6 @@ public class Serienjunkies extends PluginForDecrypt {
                         continue;
                     }
 
-                    logger.info("captchafile: " + captchaFile);
                     active++;
                     try {
                         capTxt = getCaptchaCode(captchaFile, downloadLink);
@@ -234,7 +227,7 @@ public class Serienjunkies extends PluginForDecrypt {
                     }
                     active--;
 
-                    htmlcode = postPage(br3, url, "s=" + matcher.group(1) + "&c=" + capTxt + "&action=Download");
+                    htmlcode = postPage(br3, url, "s=" + captchaRegex.getMatch(0) + "&c=" + capTxt + "&action=Download");
 
                 } else {
                     break;
@@ -371,12 +364,9 @@ public class Serienjunkies extends PluginForDecrypt {
             String capTxt = null;
             while (true) {
                 htmlcode = htmlcode.replaceAll("(?s)<!--.*?-->", "").replaceAll("(?i)(?s)<div style=\"display: none;\">.*?</div>", "");
-                Matcher matcher = patternCaptcha.matcher(htmlcode);
-                if (matcher.find()) {
-                    if (captchaFile != null && capTxt != null) {
-                        JDUtilities.appendInfoToFilename(captchaFile, capTxt, false);
-                    }
-                    String captchaAdress = "http://serienjunkies.org" + matcher.group(2);
+                Regex captchaRegex = new Regex(htmlcode, patternCaptcha);
+                if (captchaRegex.matches()) {
+                    String captchaAdress = "http://serienjunkies.org" + captchaRegex.getMatch(1);
                     captchaFile = getLocalCaptchaFile(".png");
                     try {
                         Browser.download(captchaFile, captchaAdress);
@@ -401,7 +391,7 @@ public class Serienjunkies extends PluginForDecrypt {
                     }
                     active--;
 
-                    htmlcode = postPage(br3, url, "s=" + matcher.group(1) + "&c=" + capTxt + "&dl.start=Download");
+                    htmlcode = postPage(br3, url, "s=" + captchaRegex.getMatch(0) + "&c=" + capTxt + "&dl.start=Download");
                 } else {
                     break;
                 }
@@ -427,8 +417,6 @@ public class Serienjunkies extends PluginForDecrypt {
             modifiedURL = modifiedURL.replaceAll("save/", "save/f");
             modifiedURL = modifiedURL.substring(modifiedURL.lastIndexOf("/"));
 
-            patternCaptcha = Pattern.compile(dynamicCaptcha);
-            logger.fine("using patternCaptcha:" + patternCaptcha);
             br3.setFollowRedirects(true);
             getPage(br3, url);
             if (br3.getRedirectLocation() != null) {
@@ -718,13 +706,11 @@ public class Serienjunkies extends PluginForDecrypt {
 
                     String title = new Regex(element, "([^><]*?)</a>").getMatch(0);
                     String[] sp = element.split("(?is)<strong>Gr(ö|oe)(ß|ss)e:?</strong>:?[\\s]*");
-                    int b = 1;
                     for (String element2 : sp) {
 
                         String size = "0";
                         try {
-                            String[] dsize = new Regex(element2, "([\\d\\,]+)[\\s]*(..)?").getMatches()[0];
-
+                            String[] dsize = new Regex(element2, "([\\d\\,]+)[\\s]*(..)?").getRow(0);
                             double si = Double.parseDouble(dsize[0].replaceAll("\\,", "."));
                             if (dsize.length > 1 && dsize[1].equalsIgnoreCase("gb")) {
                                 si = si * 1024;
@@ -733,10 +719,7 @@ public class Serienjunkies extends PluginForDecrypt {
                             size = size.substring(0, size.indexOf("."));
                         } catch (Exception e) {
                         }
-                        FilePackage fp = FilePackage.getInstance();
-                        fp.setName(title + (b > 1 ? " " + b : ""));
-                        b++;
-                        fp.setPassword(JDUtilities.passwordArrayToString(passwords.toArray(new String[passwords.size()])));
+
                         String[][] links = new Regex(element2, "<p><strong>(.*?)</strong>(.*?)</p>").getMatches();
                         for (String[] element3 : links) {
                             String[] sp2 = element3[1].split("<strong>.*?</strong>");
@@ -855,15 +838,15 @@ public class Serienjunkies extends PluginForDecrypt {
     }
 
     private String getHostname(String link) {
-        if (link.matches(".*rc[\\_\\-].*")) {
+        if (link.matches(".*rc[_-].*")) {
             return "rapidshare.com";
-        } else if (link.matches(".*rs[\\_\\-].*")) {
+        } else if (link.matches(".*rs[_-].*")) {
             return "rapidshare.de";
-        } else if (link.matches(".*nl[\\_\\-].*")) {
+        } else if (link.matches(".*nl[_-].*")) {
             return "netload.in";
-        } else if (link.matches(".*u[tl][\\_\\-].*")) {
+        } else if (link.matches(".*u[tl][_-].*")) {
             return "uploaded.to";
-        } else if (link.matches(".*ff[\\_\\-].*")) {
+        } else if (link.matches(".*ff[_-].*")) {
             return "filefactory.com";
         } else {
             return "rapidshare.com";
@@ -883,7 +866,7 @@ public class Serienjunkies extends PluginForDecrypt {
 
                 for (String[] element3 : links) {
                     try {
-                        if (element3[1].toLowerCase().contains(Encoding.UTF8Decode(link).toLowerCase())) { return new String[] { size, element3[0], element3[1], title }; }
+                        if (element3[1].toLowerCase().contains(Encoding.UTF8Decode(link).toLowerCase())) return new String[] { size, element3[0], element3[1], title };
                     } catch (Exception e) {
                         logger.log(Level.SEVERE, "Exception occurred", e);
                     }
