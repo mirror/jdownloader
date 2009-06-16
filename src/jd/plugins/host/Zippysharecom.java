@@ -73,7 +73,7 @@ public class Zippysharecom extends PluginForHost {
         boolean found = false;
         sleep(10000l, downloadLink);
         for (String link : links) {
-            if (!new Regex(link, ".*?www\\.zippyshare\\.com/[^\\?]*\\..{1,4}$").matches()) continue;
+            if (!new Regex(link, ".*?www\\d*\\.zippyshare\\.com/[^\\?]*\\..{1,4}$").matches()) continue;
             Browser brc = br.cloneBrowser();
             dl = brc.openDownload(downloadLink, link);
             if (dl.getConnection().isContentDisposition()) {
