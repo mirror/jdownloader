@@ -690,7 +690,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
             fpv2.setDownloadLinks(linkList);
         }
         if (!fpv2.isIgnored()) {
-            if (SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.PARAM_INSERT_NEW_LINKS_AT, false)) {
+            if (SimpleGuiConstants.GUI_CONFIG != null && SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.PARAM_INSERT_NEW_LINKS_AT, false)) {
                 JDUtilities.getDownloadController().addPackageAt(fp, index);
             } else {
                 JDUtilities.getDownloadController().addPackage(fp);

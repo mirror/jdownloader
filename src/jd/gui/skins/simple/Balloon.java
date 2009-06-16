@@ -43,7 +43,7 @@ public class Balloon {
      * Displays only if mainframe is hidden
      */
     public static void showIfHidden(String title, ImageIcon icon, String htmlmessage) {
-        if (!SimpleGUI.CURRENTGUI.isActive()) Balloon.show(title, icon, htmlmessage);
+        if (SimpleGUI.CURRENTGUI != null && !SimpleGUI.CURRENTGUI.isActive()) Balloon.show(title, icon, htmlmessage);
     }
 
     public static void show(String title, ImageIcon icon, String htmlmessage) {

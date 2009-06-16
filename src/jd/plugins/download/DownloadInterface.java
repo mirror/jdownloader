@@ -883,13 +883,14 @@ abstract public class DownloadInterface {
                 } else if (range != null) {
                     long gotSB = Formatter.filterLong(range[0][0]);
                     long gotEB = Formatter.filterLong(range[0][1]);
+                    long gotS = Formatter.filterLong(range[0][2]);
                     if (gotSB != startByte) {
                         logger.severe("Range Conflict " + range[0][0] + " - " + range[0][1] + " wished start: " + 0);
                         // logger.finest(connection.toString());
                     }
 
                     if (endByte <= 0) {
-                        endByte = gotEB - 1;
+                        endByte = gotS - 1;
                     }
                     if (gotEB == endByte) {
                         logger.finer("ServerType: RETURN Rangeend-1");
@@ -904,12 +905,8 @@ abstract public class DownloadInterface {
                         logger.warning("Possible RangeConflict or Servermisconfiguration. wished endByte: " + endByte + " got: " + gotEB);
                         // logger.finest(connection.toString());
                     }
-                    if (chunks.indexOf(this) == chunkNum - 1) {
-                        logger.severe("Use Workaround for wrong last range!");
-                        endByte = Math.max(endByte, gotEB);
-                    } else {
-                        endByte = Math.min(endByte, gotEB);
-                    }
+
+                    endByte = Math.min(endByte, gotEB);
 
                     if (speedDebug) {
                         logger.finer("Resulting Range" + startByte + " - " + endByte);

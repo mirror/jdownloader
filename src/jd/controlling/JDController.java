@@ -371,7 +371,7 @@ public class JDController implements ControlListener {
         logger.info("Save HTACCESSlist");
         HTACCESSController.getInstance().saveSync();
         logger.info("Call Exit event");
-        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SYSTEM_EXIT, this));
+        fireControlEventDirect(new ControlEvent(this, ControlEvent.CONTROL_SYSTEM_EXIT, this));
         logger.info("Call Exit interactions");
         Interaction.handleInteraction(Interaction.INTERACTION_EXIT, null);
         logger.info("Shutdown Database");

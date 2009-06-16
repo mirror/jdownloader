@@ -141,6 +141,7 @@ public class HTTPAllgemein extends PluginForHost {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
+        br.setDebug(true);
         boolean resume = true;
         int chunks = 0;
 

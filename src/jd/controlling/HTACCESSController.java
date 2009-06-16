@@ -48,7 +48,7 @@ public class HTACCESSController implements ActionListener, ListController {
         }
     }
 
-    private String[] getUserDatafromBasicauth(String basicauth) {
+    public static String[] getUserDatafromBasicauth(String basicauth) {
         if (basicauth == null || basicauth.length() == 0) return null;
         if (basicauth.startsWith("Basic")) basicauth = new Regex(basicauth, "Basic (.*?)$").getMatch(0);
         basicauth = Encoding.Base64Decode(basicauth);
