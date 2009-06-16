@@ -25,7 +25,7 @@ public class DBBackuper extends DynamicPluginInterface {
 
     @Override
     public void execute() {
-        // System.out.println("Backup Database here");
+         System.out.println("Backup Database here $Revision$");
 
         JDController.getInstance().addControlListener(new ControlListener() {
 
