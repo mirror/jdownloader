@@ -161,6 +161,8 @@ public class AboutDialog extends AbstractDialog {
         devs.add(new DevEntry("Moktar", "-", "Arabic Translation"));
         devs.add(new DevEntry("Sna696", "-", "Italian Translation"));
         devs.add(new DevEntry("Giandena", "-", "Italian Translation"));
+        devs.add(new DevEntry("nguyenkimvy", "-", "Vietnamese Translation"));
+        
 
         return devs.toArray(new DevEntry[] {});
     }

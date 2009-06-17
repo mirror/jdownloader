@@ -72,13 +72,10 @@ public class Updater {
      */
     public static void main(String[] args) throws Exception {
 
-       
         Updater upd = new Updater();
-     
 
-      
-//        WebUpdater.getConfig("WEBUPDATE").setProperty("BRANCH", "null");
-//        WebUpdater.getConfig("WEBUPDATE").save();
+        WebUpdater.getConfig("WEBUPDATE").setProperty("BRANCH", "NIGHTLY");
+        WebUpdater.getConfig("WEBUPDATE").save();
         System.out.println("STATUS: Webupdate");
         upd.webupdate();
         // System.out.println("STATUS: Webupdate ende");
@@ -91,6 +88,7 @@ public class Updater {
         upd.moveJars(getCFG("dist_dir"));
         // // // System.out.println("STATUS: FINISHED");
         upd.cleanUp();
+        //upd.filter("DBBackup.*.class");
         upd.createBranch(JOptionPane.showInputDialog(upd.frame, "branchname"));
 
         ArrayList<File> list = upd.getFileList();
@@ -104,11 +102,24 @@ public class Updater {
 
         // upd.clonebluehost2();
         upd.uploadHashList();
-//        upd.refreshUpdateJar();
+        // upd.refreshUpdateJar();
         // upd.spread(list);
-//        upd.incFTPSpread(upd.branch);
-       
+         upd.incFTPSpread(upd.branch);
+
         System.exit(0);
+    }
+
+    private void filter(String filter) {
+        ArrayList<File> list = getLocalFileList(this.updateDir, true);
+
+        for (File f : list) {
+            if (!new Regex(f.getAbsolutePath(),filter).matches()) {
+                f.delete();
+                System.out.println("Filter: remove " + f);
+            } else {
+                System.out.println("Filter: keep " + f);
+            }
+        }
     }
 
     private void refreshUpdateJar() throws IOException {
@@ -138,8 +149,7 @@ public class Updater {
                 e.printStackTrace();
                 file2 = null;
             }
-         
-            
+
             File hash0 = null;
             try {
                 SimpleFTP.download("update0.jdownloader.org", 2121, getCFG("update012user"), getCFG("update012pass"), "/http/", "jdupdate.jar.md5", hash0 = File.createTempFile("hash", null));
@@ -162,9 +172,8 @@ public class Updater {
                 e.printStackTrace();
                 file2 = null;
             }
-            
-            
-            String[] hashes = new String[] { JDHash.getMD5(file0), JDHash.getMD5(file1), JDHash.getMD5(file2) ,JDIO.getLocalFile(hash0),JDIO.getLocalFile(hash1),JDIO.getLocalFile(hash2)};
+
+            String[] hashes = new String[] { JDHash.getMD5(file0), JDHash.getMD5(file1), JDHash.getMD5(file2), JDIO.getLocalFile(hash0), JDIO.getLocalFile(hash1), JDIO.getLocalFile(hash2) };
             String c = null;
             boolean res = false;
             for (String h : hashes) {
