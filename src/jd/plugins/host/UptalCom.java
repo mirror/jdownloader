@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.http.Encoding;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -35,12 +36,12 @@ public class UptalCom extends PluginForHost {
         this.setStartIntervall(100l);
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://www.uptal.com/faq.php";
     }
 
-    //@Override
+    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
@@ -54,61 +55,58 @@ public class UptalCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        String getlink;
+        requestFileInformation(downloadLink);
+        String getlink = null;
         String filename = downloadLink.getName();
-        String previousLink = downloadLink.getStringProperty("directLink", null);
-        if (previousLink == null) {
-            requestFileInformation(downloadLink);
-            br.setFollowRedirects(true);
+        br.setDebug(true);
+        br.setFollowRedirects(true);
+        getlink = br.getRegex("document\\.location=\"(.*?)\"").getMatch(0);
+        if (getlink == null) getlink = br.getRegex("name=downloadurl value=\"(.*?)\"").getMatch(0);
+        if (getlink == null && br.containsHTML("captcha.php")) {
+            /* captcha? */
+            String code = getCaptchaCode("http://www.uptal.com/captcha.php", downloadLink);
+            Form form = br.getForm(1);
+            form.put("captchacode", code);
+            br.submitForm(form);
+            if (!br.containsHTML("com/getfile.php")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             getlink = br.getRegex("document\\.location=\"(.*?)\"").getMatch(0);
             if (getlink == null) getlink = br.getRegex("name=downloadurl value=\"(.*?)\"").getMatch(0);
-            if (getlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-            br.setFollowRedirects(true);
-            getlink = getlink.replaceAll(" ", "%20");
-            downloadLink.setProperty("directLink", getlink);
-        } else {
-            getlink = previousLink;
         }
-        // this.sleep(3000, downloadLink); // uncomment when they find a better
-        // way to force wait time
-        dl = br.openDownload(downloadLink, getlink, true, 1);
+        if (getlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        br.setFollowRedirects(true);
+        getlink = getlink.replaceAll(" ", "%20");
+        this.sleep(3000, downloadLink);
+        dl = br.openDownload(downloadLink, getlink, false, 1);
         downloadLink.setFinalFileName(filename);
         URLConnectionAdapter con = dl.getConnection();
         if (!con.isOK()) {
-            if (previousLink != null) {
-                downloadLink.setProperty("directLink", null);
-                con.disconnect();
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            } else {
-                con.disconnect();
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            }
+            con.disconnect();
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
         }
         dl.startDownload();
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void resetDownloadlink(DownloadLink link) {
-        link.setProperty("directLink", null);
     }
 }
