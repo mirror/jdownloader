@@ -1058,7 +1058,8 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             }
             if (this.getPluginConfig().getBooleanProperty(JDUnrarConstants.CONFIG_KEY_REMOVE_INFO_FILE, false)) {
                 File fileOutput = new File(wrapper.getDownloadLink().getFileOutput());
-                File infoFiles = new File(fileOutput.getParentFile(), fileOutput.getName().replaceFirst("(?i)(\\.part[0-9]+\\.rar|\\.rar)$", "") + ".info");
+                String packname = wrapper.getDownloadLink().getFilePackage().getName();
+                File infoFiles = new File(fileOutput.getParentFile(), packname.replaceFirst("(?i)(\\.part[0-9]+\\.rar|\\.rar)$", "") + ".info");
                 if (infoFiles.exists() && infoFiles.delete()) {
                     logger.info(infoFiles.getName() + " removed");
                 }
