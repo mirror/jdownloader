@@ -30,7 +30,7 @@ public class URLCash extends PluginForDecrypt {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -39,12 +39,13 @@ public class URLCash extends PluginForDecrypt {
         String link = br.getRegex("<META HTTP-EQUIV=\"Refresh\" .*? URL=(.*?)\">").getMatch(0);
         if (link == null) link = br.getRegex("onClick=\"top\\.location='(.*?)'\">").getMatch(0);
         if (link == null) link = br.getRegex("<iframe name='redirectframe' id='redirectframe'.*?src='(.*?)'.*?></iframe>").getMatch(0);
+        if (link == null) link = br.getRedirectLocation();
         if (link == null) return null;
         decryptedLinks.add(createDownloadlink(link));
         return decryptedLinks;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }

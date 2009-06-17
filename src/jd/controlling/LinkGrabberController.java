@@ -22,6 +22,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 
+import jd.PluginPattern;
 import jd.config.ConfigPropertyListener;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -454,7 +455,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
         name = getNameMatch(name, "(.*)\\.part[0-9]+.rar$");
         name = getNameMatch(name, "(.*)\\.rar$");
         name = getNameMatch(name, "(.*)\\.r\\d+$");
-        name = getNameMatch(name, "(.*)\\.\\d+$");
+        name = getNameMatch(name, "(.*)(\\.|_)\\d+$");
 
         /**
          * remove 7zip and hjmerge extensions
@@ -463,9 +464,10 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
         name = getNameMatch(name, "(?is).*\\.7z\\.[\\d]+$");
         name = getNameMatch(name, "(.*)\\.a.$");
 
-        name = getNameMatch(name, "(.*)\\.[\\d]+($|\\.(7z|rar|divx|avi|xvid|bz2|doc|gz|jpg|jpeg|m4a|mdf|mkv|mp3|mp4|mpg|mpeg|pdf|wma|wmv|xcf|zip|jar|swf|class|bmp|cue|bin|dll|cab|png|ico|exe|gif|iso|flv|cso)$)");
+        name = getNameMatch(name, "(.*)(\\.|_)[\\d]+($|" + PluginPattern.ENDINGS + "$)");
 
         int lastPoint = name.lastIndexOf(".");
+        if (lastPoint <= 0) lastPoint = name.lastIndexOf("_");
         if (lastPoint <= 0) return name;
         String extension = name.substring(name.length() - lastPoint + 1);
         if (extension.length() > 0 && lastPoint > 0) {
