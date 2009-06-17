@@ -20,14 +20,16 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import javax.swing.ImageIcon;
-import javax.swing.JToggleButton;
+import javax.swing.JButton;
 
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 
-public class JDSeparator extends JToggleButton implements ActionListener {
+public class JDSeparator extends JButton implements ActionListener {
 
     private static final long serialVersionUID = 3007033193590223026L;
+
+    private boolean closed = false;
 
     private String leftToolTip;
     private String rightToolTip;
@@ -37,16 +39,10 @@ public class JDSeparator extends JToggleButton implements ActionListener {
 
     public JDSeparator() {
         leftToolTip = JDLocale.L("gui.tooltips.jdseparator", "Close sidebar");
-        rightToolTip = JDLocale.L("gui.tooltips.jdseparator", "Open sidebar");
+        rightToolTip = JDLocale.L("gui.tooltips.jdseparator.open", "Open sidebar");
 
         left = JDTheme.II("gui.images.minimize.left", 5, 10);
         right = JDTheme.II("gui.images.minimize.right", 5, 10);
-
-        setIcon(left);
-        setSelectedIcon(right);
-
-        setRolloverIcon(left);
-        setRolloverSelectedIcon(right);
 
         setFocusable(false);
         setMinimized(false);
@@ -55,12 +51,13 @@ public class JDSeparator extends JToggleButton implements ActionListener {
     }
 
     public void setMinimized(boolean b) {
-        setSelected(b);
+        closed = b;
+        setIcon(b ? right : left);
         setToolTipText(b ? rightToolTip : leftToolTip);
     }
 
     public void actionPerformed(ActionEvent e) {
-        SimpleGUI.CURRENTGUI.hideSideBar(isSelected());
+        SimpleGUI.CURRENTGUI.hideSideBar(!closed);
     }
 
 }
