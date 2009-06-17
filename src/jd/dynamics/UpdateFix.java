@@ -1,6 +1,7 @@
 package jd.dynamics;
 
 import jd.config.Configuration;
+import jd.controlling.DynamicPluginInterface;
 import jd.controlling.JDLogger;
 import jd.utils.JDUtilities;
 

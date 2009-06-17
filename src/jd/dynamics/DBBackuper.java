@@ -17,6 +17,7 @@
 package jd.dynamics;
 
 import jd.config.Property;
+import jd.controlling.DynamicPluginInterface;
 import jd.controlling.JDController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
