@@ -300,7 +300,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                     SubConfiguration.getConfig("WEBUPDATE").setProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false);
                 }
 
-                new WebUpdate().doWebupdate(true);
+                new WebUpdate().doWebupdate(true,true);
 
                 response.addContent("Do Webupdate...");
             } else if (request.getRequestUrl().equals("/action/reconnect")) {

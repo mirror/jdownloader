@@ -250,8 +250,9 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     }
 
     private void calcLocation(final JWindow window, final Point p) {
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
+        new GuiRunnable<Object>() {
+            // @Override
+            public Object runSave() {
                 Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
                 int limitX = (int) screenSize.getWidth() / 2;
                 int limitY = (int) screenSize.getHeight() / 2;
@@ -280,8 +281,10 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
                         window.setLocation(p.x - window.getWidth(), 22);
                     }
                 }
+
+                return null;
             }
-        });
+        }.waitForEDT();
     }
 
     private void miniIt() {

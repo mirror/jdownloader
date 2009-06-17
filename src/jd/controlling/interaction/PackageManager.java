@@ -279,7 +279,7 @@ public class PackageManager extends Interaction implements Serializable {
                             String message = JDLocale.LF("modules.packagemanager.downloadednewpackage.title2", "<p>Updates loaded. A JD restart is required.<br/> RESTART NOW?<hr>%s</p>", list.toString());
                             boolean ret = JDUtilities.getGUI().showCountdownConfirmDialog(message, 15);
                             if (ret) {
-                                new WebUpdate().doWebupdate(true);
+                                new WebUpdate().doWebupdate(true,true);
                             }
                         }
 

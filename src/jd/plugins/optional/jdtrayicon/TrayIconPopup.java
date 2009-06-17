@@ -73,6 +73,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
     private JSpinner spMaxDls;
 
     public TrayIconPopup() {
+        setVisible(false);
         setLayout(new MigLayout("ins 5, wrap 1", "[]", "[]5[]5[]5[]5[]"));
         addMouseMotionListener(this);
         addMouseListener(this);
@@ -86,9 +87,8 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
         add(new JSeparator(), "growx, spanx");
         add(bottomPanel);
 
-        toFront();
+        //toFront();
         setAlwaysOnTop(true);
-        setVisible(false);
         pack();
     }
 
@@ -260,7 +260,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
             Reconnecter.toggleReconnect();
             break;
         case TrayIconPopup.ACTION_UPDATE:
-            new WebUpdate().doWebupdate(true);
+            new WebUpdate().doWebupdate(true, true);
             break;
         case TrayIconPopup.ACTION_EXIT:
             SimpleGUI.CURRENTGUI.getContentPane().getRightPanel().onHide();

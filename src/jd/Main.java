@@ -434,7 +434,7 @@ public class Main {
         LOGGER.info("init Webupdate");
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_PROGRESS, new String("Steady...")));
 
-        new WebUpdate().doWebupdate(false);
+        new WebUpdate().doWebupdate(true,false);
         try {
             loadDynamics();
         } catch (Exception e1) {

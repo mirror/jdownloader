@@ -78,11 +78,10 @@ public class TrayIconTooltip extends JWindow {
         toolPanel.add(prgTotal = new JDProgressBar(), "spanx 2");
         toolPanel.add(new JLabel(JDLocale.L("plugins.optional.trayIcon.eta", "ETA:")));
         toolPanel.add(lblETA = new JLabel(""));
-
+        this.setVisible(false);
         this.setAlwaysOnTop(true);
         this.add(toolPanel);
         this.pack();
-        this.setVisible(false);
 
     }
 
@@ -99,7 +98,7 @@ public class TrayIconTooltip extends JWindow {
 
             @Override
             public Object runSave() {
-                TrayIconTooltip.this.setVisible(false);
+                if (TrayIconTooltip.this.isVisible()) TrayIconTooltip.this.setVisible(false);
                 return null;
             }
 
@@ -109,8 +108,9 @@ public class TrayIconTooltip extends JWindow {
     }
 
     private void setLocation() {
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
+        new GuiRunnable<Object>() {
+            // @Override
+            public Object runSave() {
                 Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
                 int limitX = (int) screenSize.getWidth() / 2;
                 int limitY = (int) screenSize.getHeight() / 2;
@@ -128,8 +128,9 @@ public class TrayIconTooltip extends JWindow {
                         setLocation(pp.x - getWidth(), pp.y - getHeight());
                     }
                 }
+                return null;
             }
-        });
+        }.waitForEDT();
     }
 
     private class TrayInfo extends Thread implements Runnable {

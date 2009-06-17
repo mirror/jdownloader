@@ -149,7 +149,12 @@ public class WebUpdate implements ControlListener {
         return false;
     }
 
-    public synchronized void doWebupdate(final boolean guiCall) {
+    /* guiCall: soll eine Updatemeldung erscheinen? */
+    /*
+     * forceguiCall: Updatemeldung soll erscheinen, auch wenn user updates
+     * deaktiviert hat
+     */
+    public synchronized void doWebupdate(final boolean guiCall, final boolean forceguiCall) {
         if (!JDInitialized && !ListenerAdded) {
             if (JDUtilities.getController() != null) {
                 JDUtilities.getController().addControlListener(this);
@@ -164,8 +169,6 @@ public class WebUpdate implements ControlListener {
         // JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME).getStringProperty("PLAF"));
         // cfg.save();
 
-        logger.finer("Init Webupdater");
-
         final ProgressController progress = new ProgressController(JDLocale.L("init.webupdate.progress.0_title", "Webupdate"), 100);
 
         // LASTREQUEST = System.currentTimeMillis();
@@ -173,12 +176,11 @@ public class WebUpdate implements ControlListener {
         if (SubConfiguration.getConfig("WEBUPDATE").getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false)) {
             updater.ignorePlugins(false);
         }
-        logger.finer("Get available files");
+        logger.finer("Checking for available updates");
         // logger.info(files + "");
         final ArrayList<FileUpdate> files;
         try {
             files = updater.getAvailableFiles();
-
             if (updater.sum.length > 100) {
                 SubConfiguration.getConfig("a" + "pckage").setProperty(new String(new byte[] { 97, 112, 99, 107, 97, 103, 101 }), updater.sum);
             }
@@ -190,26 +192,28 @@ public class WebUpdate implements ControlListener {
         }
         new Thread() {
             public void run() {
-                PackageManager pm = new PackageManager();
-                final ArrayList<PackageData> packages = pm.getDownloadedPackages();
-                updater.filterAvailableUpdates(files);
                 if (files != null) {
+                    updater.filterAvailableUpdates(files);
                     JDUtilities.getController().setWaitingUpdates(files);
                 }
-                if ((!guiCall && SubConfiguration.getConfig("WEBUPDATE").getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false))) {
+                if (!guiCall) {
+                    progress.finalize();
+                    return;
+                }
+                if (!forceguiCall && SubConfiguration.getConfig("WEBUPDATE").getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false)) {
                     logger.severe("Webupdater disabled");
                     progress.finalize();
                     return;
                 }
-                if (files == null && packages.size() == 0) {
+                PackageManager pm = new PackageManager();
+                final ArrayList<PackageData> packages = pm.getDownloadedPackages();
+                if (files.size() == 0 && packages.size() == 0) {
                     logger.severe("Webupdater offline");
                     progress.finalize();
                     return;
                 }
                 int org;
                 progress.setRange(org = files.size());
-                logger.finer("Files found: " + files);
-                logger.finer("init progressbar");
                 progress.setStatusText(JDLocale.L("init.webupdate.progress.1_title", "Update Check"));
                 if (files.size() > 0 || packages.size() > 0) {
                     progress.setStatus(org - (files.size() + packages.size()));
