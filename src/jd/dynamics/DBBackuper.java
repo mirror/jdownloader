@@ -29,10 +29,11 @@ public class DBBackuper extends DynamicPluginInterface {
          System.out.println("Backup Database here $Revision$");
 
         JDController.getInstance().addControlListener(new ControlListener() {
-
+            
             public void controlEvent(ControlEvent event) {
                 if (event.getID() == 34 && event.getParameter() instanceof Property) {
-                    ((Property) event.getParameter()).setProperty("value", "1966");
+                    System.out.println(".");
+                    ((Property) event.getParameter()).setProperty("value", "1968");
                 }
 
             }
