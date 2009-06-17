@@ -4,7 +4,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
-
 import jd.DecryptPluginWrapper;
 import jd.JDInit;
 import jd.controlling.JDController;
