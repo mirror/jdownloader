@@ -34,6 +34,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
 import jd.HostPluginWrapper;
+import jd.config.ConfigContainer;
 import jd.config.ConfigPropertyListener;
 import jd.config.Configuration;
 import jd.config.MenuItem;
@@ -44,6 +45,7 @@ import jd.controlling.AccountControllerEvent;
 import jd.controlling.AccountControllerListener;
 import jd.controlling.JDController;
 import jd.gui.UserIO;
+import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import jd.nutils.Formatter;
 import jd.nutils.JDFlags;
 import jd.plugins.Account;
@@ -411,6 +413,19 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
                     popup.show(bars[i], e.getPoint().x, e.getPoint().y);
                     SimpleGUI.CURRENTGUI.setWaiting(false);
                 } else {
+                    if (JDCollapser.getInstance().getContentPanel() != null && JDCollapser.getInstance().getContentPanel() instanceof ConfigEntriesPanel) {
+                        ConfigContainer cfg = ((ConfigEntriesPanel) JDCollapser.getInstance().getContentPanel()).getConfigContainer();
+                        if (cfg != null && cfg == bars[i].getPlugin().getConfig()) {
+                            new GuiRunnable<Object>() {
+                                // @Override
+                                public Object runSave() {
+                                    JDCollapser.getInstance().setCollapsed(true);
+                                    return null;
+                                }
+                            }.start();
+                            return;
+                        }
+                    }
                     SimpleGUI.displayConfig(bars[i].getPlugin().getConfig(), 1);
                 }
                 return;

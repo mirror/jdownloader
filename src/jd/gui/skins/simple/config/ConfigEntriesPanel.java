@@ -227,4 +227,8 @@ public class ConfigEntriesPanel extends ConfigPanel {
         saveConfigEntries();
     }
 
+    public ConfigContainer getConfigContainer() {
+        return container;
+    }
+
 }

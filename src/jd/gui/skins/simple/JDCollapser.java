@@ -102,6 +102,10 @@ public class JDCollapser extends JPanel {
         content.revalidate();
     }
 
+    public JTabbedPanel getContentPanel() {
+        return panel;
+    }
+
     public void setTitle(String l) {
         title.setText(l);
 

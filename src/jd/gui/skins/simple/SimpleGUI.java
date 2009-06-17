@@ -1007,6 +1007,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
             // @Override
             public Object runSave() {
                 ConfigEntriesPanel cep;
+                
                 JDCollapser.getInstance().setContentPanel(cep = new ConfigEntriesPanel(container));
                 if (i > 0) {
                     Component comp = cep.getComponent(0);
