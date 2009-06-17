@@ -22,6 +22,7 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Encoding;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -29,6 +30,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.JDLocale;
 
 public class FileBaseTo extends PluginForHost {
 
@@ -77,10 +79,32 @@ public class FileBaseTo extends PluginForHost {
         }
 
         String dlAction = br.getRegex("<form action=\"(http.*?)\"").getMatch(0);
-        if (dlAction == null) dlAction = br.getRegex("value=\"(http.*?/download/ticket.*?)\"").getMatch(0);
-        if (dlAction == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (dlAction != null) 
+        {
+            dl = br.openDownload(downloadLink, dlAction, "wait=" + Encoding.urlEncode("Download - " + downloadLink.getName()));
+        }
+        else
+        {
+            dlAction = br.getRegex("value=\"(http.*?/download/ticket.*?)\"").getMatch(0);
+            if (dlAction == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            dl = br.openDownload(downloadLink, dlAction);
+        }
         br.setDebug(true);
-        dl = br.openDownload(downloadLink, dlAction, "wait=" + Encoding.urlEncode("Download - " + downloadLink.getName()));
+        URLConnectionAdapter con = dl.getConnection();
+        if (con.getContentType().contains("html")) {
+            br.getPage(dlAction);
+            if (br.containsHTML("error")) {
+                con.disconnect();
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND,JDLocale.L("plugins.hoster.filebaseto.servererror","Server error"));
+            }
+            else
+            {
+                con.disconnect();
+                logger.warning("Unsupported error:");
+                logger.warning(br.toString());
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT,JDLocale.L("plugins.hoster.filebaseto.unsupportederror","Unsupported error"));
+            }
+        }
         dl.startDownload();
     }
 
