@@ -376,6 +376,10 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
         }
     }
 
+    public boolean isPaused() {
+        return paused;
+    }
+
     public void pause(boolean value) {
         if (paused == value) return;
         paused = value;
@@ -405,6 +409,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                 this.activeDownloads = 0;
             }
             watchDogThread = new Thread() {
+                @Override
                 public void run() {
                     JDUtilities.getController().addControlListener(INSTANCE);
                     this.setName("DownloadWatchDog");

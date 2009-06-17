@@ -71,16 +71,13 @@ public class Reconnecter {
         JDController controller = JDUtilities.getController();
         boolean ipChangeSuccess = false;
         if (System.currentTimeMillis() - lastIPUpdate > 1000 * SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty("EXTERNAL_IP_CHECK_INTERVAL", 60 * 10)) {
-
             /*
              * gab schon nen externen reconnect , checke nur falls wirklich
              * ipcheck aktiv ist!
              */
             if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
-                ipChangeSuccess = Reconnecter.checkExternalIPChange();
+                if (Reconnecter.checkExternalIPChange()) return true;
             }
-            if (ipChangeSuccess) return ipChangeSuccess;
-
         }
 
         Interaction.handleInteraction(Interaction.INTERACTION_BEFORE_RECONNECT, controller);
@@ -179,11 +176,9 @@ public class Reconnecter {
                      * hier nur ein ip check falls auch ip check wirklich aktiv,
                      * sonst gibts ne endlos reconnectschleife
                      */
-                    if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
-                        ret = Reconnecter.checkExternalIPChange();
-                    }
+                    if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) return Reconnecter.checkExternalIPChange();
                 }
-                return ret;
+                return false;
 
             } else {
                 /* auto reconnect ist AN */
@@ -233,6 +228,7 @@ public class Reconnecter {
         final long startTime = System.currentTimeMillis();
         boolean ret;
         Thread timer = new Thread() {
+            @Override
             public void run() {
                 while (true) {
                     progress.setStatusText(JDLocale.LF("gui.reconnect.progress.status", "Reconnect running: %s m:s", Formatter.formatSeconds((System.currentTimeMillis() - startTime) / 1000)));

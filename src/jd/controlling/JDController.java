@@ -67,6 +67,7 @@ public class JDController implements ControlListener {
         public EventSender() {
             super("EventSender");
             watchDog = new Thread("EventSenderWatchDog") {
+                @Override
                 public void run() {
                     while (true) {
                         if (eventStart > 0 && System.currentTimeMillis() - eventStart > MAX_EVENT_TIME) {
@@ -87,6 +88,7 @@ public class JDController implements ControlListener {
             watchDog.start();
         }
 
+        @Override
         public void run() {
             while (true) {
                 synchronized (this) {
@@ -575,6 +577,11 @@ public class JDController implements ControlListener {
         return downloadLinks;
     }
 
+    public boolean isPaused() {
+        if (watchdog == null) return false;
+        return watchdog.isPaused();
+    }
+
     public void pauseDownloads(boolean value) {
         if (watchdog == null) return;
         watchdog.pause(value);
@@ -612,7 +619,7 @@ public class JDController implements ControlListener {
                         nextDownloadLink.getLinkStatus().setStatusText("");
                         nextDownloadLink.getLinkStatus().reset();
                         // nextDownloadLink.setEndOfWaittime(0);
-                        ((PluginForHost) nextDownloadLink.getPlugin()).resetPluginGlobals();
+                        nextDownloadLink.getPlugin().resetPluginGlobals();
                         al.add(nextDownloadLink);
                     }
 
@@ -637,6 +644,7 @@ public class JDController implements ControlListener {
     public void loadContainerFile(final File file, final boolean hideGrabber, final boolean startDownload) {
         System.out.println("load container");
         new Thread() {
+            @Override
             public void run() {
                 ArrayList<CPluginWrapper> pluginsForContainer = CPluginWrapper.getCWrapper();
                 ArrayList<DownloadLink> downloadLinks = new ArrayList<DownloadLink>();
@@ -686,7 +694,7 @@ public class JDController implements ControlListener {
 
                     }
                     // schickt die Links zuerst mal zum Linkgrabber
-                    uiInterface.addLinksToGrabber((ArrayList<DownloadLink>) downloadLinks, hideGrabber);
+                    uiInterface.addLinksToGrabber(downloadLinks, hideGrabber);
                     if (startDownload && getDownloadStatus() == JDController.DOWNLOAD_NOT_RUNNING) {
                         toggleStartStop();
                     }

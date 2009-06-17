@@ -45,9 +45,6 @@ import jd.utils.JDUtilities;
 
 public class SpeedMeterPanel extends JPanel implements ControlListener, ActionListener {
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = 5571694800446993879L;
     private int i;
     private int[] cache;
@@ -80,6 +77,7 @@ public class SpeedMeterPanel extends JPanel implements ControlListener, ActionLi
         if (th != null) return;
         th = new Thread() {
 
+            @Override
             public void run() {
                 while (!this.isInterrupted()) {
 
@@ -99,7 +97,6 @@ public class SpeedMeterPanel extends JPanel implements ControlListener, ActionLi
         th.start();
 
         fadeIn();
-        // ctor
     }
 
     public void stop() {
@@ -108,102 +105,81 @@ public class SpeedMeterPanel extends JPanel implements ControlListener, ActionLi
             th = null;
         }
         fadeOut();
-
     }
 
-    // public Dimension getPreferredSize() {
-    // return new Dimension(WIDTH, HEIGHT);
-    // }
     public synchronized void update() {
         repaint();
     }
 
+    @Override
     public void paintComponent(Graphics g) {
-        // Paint background
         ((Graphics2D) g).setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity));
         super.paintComponent(g);
         Graphics2D g2 = (Graphics2D) g;
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g2.setStroke(new BasicStroke(1));
 
-        // g2.clearRect(0, 0, getWidth(), getHeight());
         Color col1 = new Color(0x7CD622);
         Color col2 = new Color(0x339933);
 
         int id = i;
         int limit = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) * 1024;
         int max = Math.max(10, limit);
-        for (int x = 0; x < cache.length; x++) {
-            max = Math.max(cache[x], max);
+        for (int element : cache) {
+            max = Math.max(element, max);
         }
         int width = getWidth();
         int height = getHeight();
-        if (limit != 1024) {
-            Polygon poly = new Polygon();
-     
-            poly.addPoint(0, height);
 
-            for (int x = 0; x < CAPACITY; x++) {
+        Polygon poly = new Polygon();
 
-                poly.addPoint((x * width) / (CAPACITY - 1), height - (int) (height * cache[id] * 0.9) / max);
-                id++;
-                id = id % cache.length;
+        poly.addPoint(0, height);
 
-            }
-            poly.addPoint(width, height);
+        for (int x = 0; x < CAPACITY; x++) {
 
-            ((Graphics2D) g).setPaint(new GradientPaint(width / 2, 0, col1, width / 2, height, col2.darker()));
+            poly.addPoint((x * width) / (CAPACITY - 1), height - (int) (height * cache[id] * 0.9) / max);
+            id++;
+            id = id % cache.length;
 
-            // g2.draw(poly);
-            g2.fill(poly);
         }
+        poly.addPoint(width, height);
+
+        ((Graphics2D) g).setPaint(new GradientPaint(width / 2, 0, col1, width / 2, height, col2.darker()));
+
+        g2.fill(poly);
+
         FontUIResource f = (FontUIResource) UIManager.getDefaults().get("Panel.font");
 
         g2.setFont(f);
 
-        String txt = (limit == 1024 ? 0 : Formatter.formatReadable(JDUtilities.getController().getSpeedMeter() )) + "/s";
+        String txt = Formatter.formatReadable(JDUtilities.getController().getSpeedMeter()) + "/s";
         FontMetrics fmetrics = g2.getFontMetrics();
 
         int len = fmetrics.stringWidth(txt);
-        Color fontCol = Color.DARK_GRAY;
+        Color fontCol = getForeground();
         if (limit > 0) {
             int limitpx = height - (int) (height * limit * 0.9) / max;
             g2.setColor(Color.RED);
             g2.drawLine(0, limitpx, width, limitpx);
             if (limitpx > height / 2) {
-                g2.drawString(limit == 1024 ? JDLocale.L("gui.speedmeter.pause", "pause") : Formatter.formatReadable(limit ) + "/s", 5, limitpx - 4);
-
+                g2.drawString((JDUtilities.getController().isPaused() ? JDLocale.L("gui.speedmeter.pause", "pause") + " " : "") + Formatter.formatReadable(limit) + "/s", 5, limitpx - 4);
             } else {
-                g2.drawString(limit == 1024 ? JDLocale.L("gui.speedmeter.pause", "pause") : Formatter.formatReadable(limit ) + "/s", 5, limitpx + 12);
-
+                g2.drawString((JDUtilities.getController().isPaused() ? JDLocale.L("gui.speedmeter.pause", "pause") + " " : "") + Formatter.formatReadable(limit) + "/s", 5, limitpx + 12);
             }
+        } else {
+            g2.setColor(fontCol);
+            g2.drawString(Formatter.formatReadable(JDUtilities.getController().getSpeedMeter()) + "/s", width - len - 5, 12);
         }
-        if (limit != 1024) {
-        g2.setColor(fontCol);
-
-        g2.drawString(Formatter.formatReadable(JDUtilities.getController().getSpeedMeter() ) + "/s", width - len - 5, 12);
-        }
-        // int[] xPoints = { 30, 700, 400 };
-        // int[] yPoints = { 30, 30, 600 };
-        // Polygon imageTriangle = new Polygon(xPoints, yPoints, 3);
-        // g2.draw(imageTriangle);
-        // g2.fill(imageTriangle);
-        // Set current drawing color
-
-        // Draw a rectangle centered at the mid-point
-
-    } // paintComponent
+    }
 
     public void controlEvent(ControlEvent event) {
         if (event.getID() == ControlEvent.CONTROL_JDPROPERTY_CHANGED) {
             if (event.getParameter().equals(Configuration.PARAM_DOWNLOAD_MAX_SPEED)) {
                 update();
-            }
-            if (event.getParameter().equals(SimpleGuiConstants.PARAM_SHOW_SPEEDMETER_WINDOWSIZE)) {
+            } else if (event.getParameter().equals(SimpleGuiConstants.PARAM_SHOW_SPEEDMETER_WINDOWSIZE)) {
                 window = SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getIntegerProperty(SimpleGuiConstants.PARAM_SHOW_SPEEDMETER_WINDOWSIZE, 60);
             }
         }
-
     }
 
     private float opacity = 0f;
@@ -251,12 +227,5 @@ public class SpeedMeterPanel extends JPanel implements ControlListener, ActionLi
 
         update();
     }
-    // public void paintComponent(Graphics g) {
-    // ((Graphics2D) g).setComposite(
-    // AlphaComposite.getInstance(AlphaComposite.SRC_OVER,
-    // opacity));
-    // g.setColor(getBackground());
-    // g.fillRect(0,0,getWidth(),getHeight());
-    // }
-    // }
+
 }
