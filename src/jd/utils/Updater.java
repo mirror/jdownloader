@@ -56,9 +56,9 @@ public class Updater {
 
     public static StringBuilder SERVERLIST = new StringBuilder();
     static {
-        SERVERLIST.append("-1:http://update4ex.jdownloader.org/branches/%BRANCH%/\r\n");
+//        SERVERLIST.append("-1:http://update4ex.jdownloader.org/branches/%BRANCH%/\r\n");
 
-        SERVERLIST.append("-1:http://jdupdate.bluehost.to/branches/%BRANCH%/\r\n");
+//        SERVERLIST.append("-1:http://jdupdate.bluehost.to/branches/%BRANCH%/\r\n");
         SERVERLIST.append("-1:http://update1.jdownloader.org/%BRANCH%/\r\n");
         SERVERLIST.append("-1:http://update2.jdownloader.org/%BRANCH%/\r\n");
         SERVERLIST.append("-1:http://update0.jdownloader.org/%BRANCH%/\r\n");
@@ -104,7 +104,7 @@ public class Updater {
         upd.uploadHashList();
         // upd.refreshUpdateJar();
         // upd.spread(list);
-         upd.incFTPSpread(upd.branch);
+//         upd.incFTPSpread(upd.branch);
 
         System.exit(0);
     }
@@ -354,6 +354,11 @@ public class Updater {
         copyDirectory(new File(jars.getParentFile(), "ressourcen\\pluginressourcen\\123__JDUnrar"), this.updateDir);
         copyDirectory(new File(jars.getParentFile(), "ressourcen\\pluginressourcen\\106__JDShutdown"), this.updateDir);
         copyDirectory(new File(jars.getParentFile(), "ressourcen\\pluginressourcen\\100__JDChat"), this.updateDir);
+        copyDirectory(new File(jars, "pluginressourcen\\128__JDTray"), this.updateDir);
+        copyDirectory(new File(jars, "pluginressourcen\\127__JDHJMerge"), this.updateDir);
+        copyDirectory(new File(jars, "pluginressourcen\\123__JDUnrar"), this.updateDir);
+        copyDirectory(new File(jars, "pluginressourcen\\106__JDShutdown"), this.updateDir);
+        copyDirectory(new File(jars, "pluginressourcen\\100__JDChat"), this.updateDir);
 
         copyDirectory(new File(jars.getParentFile(), "ressourcen\\jd"), new File(this.updateDir, "jd"));
         copyDirectory(new File(jars.getParentFile(), "ressourcen\\tools"), new File(this.updateDir, "tools"));

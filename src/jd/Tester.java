@@ -1,25 +1,32 @@
 package jd;
 
-import javax.swing.JDialog;
-import javax.swing.JTextPane;
+import java.io.File;
 
-import net.miginfocom.swing.MigLayout;
+import jd.nutils.svn.Subversion;
+
+import org.tmatesoft.svn.core.SVNCommitInfo;
+import org.tmatesoft.svn.core.SVNException;
+import org.tmatesoft.svn.core.SVNURL;
+import org.tmatesoft.svn.core.wc.SVNRevision;
 
 public class Tester {
 
-   
-    public static void main(String[] args) {
+    private static Subversion svn;
 
-        JDialog frame = new JDialog();
+    public static void main(String[] args) throws SVNException {
 
-        frame.setLayout(new MigLayout("ins 0,debug", "[fill,grow]", "[fill,grow]"));
-        JTextPane txt = new JTextPane();
-        txt.setOpaque(false);
-        txt.setText("This ");
-txt.setBounds(0, 0, 100, 100);
-        frame.add(txt, "width n:n:150");
+        File dstPath = new File("C:\\Users\\thomas\\Desktop\\containerex\\Neuer Ordner\\tests\\tests\\TestUtils.java");
+        SVNURL url;
 
-        frame.pack();
-        frame.setVisible(true);
+        svn = new Subversion("https://www.syncom.org/svn/jdownloader/trunk/src/", "user", "pass");
+        // svn.showInfo(dstPath, null, true);
+
+        svn.update(dstPath, SVNRevision.HEAD);
+//        svn.lock(dstPath, "This file is locked for testing purposes");
+        svn.unlock(dstPath);
+//         svn.cleanUp(dstPath,true);
+        // svn.revert(dstPath);
+//        SVNCommitInfo re = svn.commit(dstPath, "just a test");
+        // re=re;
     }
 }

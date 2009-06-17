@@ -503,6 +503,7 @@ public class Main {
         URLClassLoader classLoader = new URLClassLoader(new URL[] { JDUtilities.getJDHomeDirectoryFromEnvironment().toURI().toURL(), JDUtilities.getResourceFile("java").toURI().toURL() }, Thread.currentThread().getContextClassLoader());
         if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL) {
             /* dynamics aus eclipse heraus laden */
+          
             Enumeration<URL> resources = classLoader.getResources("jd/dynamics/");
             ArrayList<String> dynamics = new ArrayList<String>();
             while (resources.hasMoreElements()) {
@@ -523,14 +524,19 @@ public class Main {
             }
         } else {
             /* dynamics in der public laden */
+            JDLogger.getLogger().finest("Run dynamics");
             if (WebUpdater.PLUGIN_LIST == null) return;
             for (Entry<String, FileUpdate> entry : WebUpdater.PLUGIN_LIST.entrySet()) {
                 System.out.println("Plugins: " + entry.getKey());
                 if (entry.getKey().startsWith("/jd/dynamics/")) {
+                    JDLogger.getLogger().finest("Found dynamic: "+entry.getKey());
                     if (!entry.getValue().equals()) {
+                        
                         if (!new WebUpdater().updateUpdatefile(entry.getValue())) {
                             JDLogger.getLogger().warning("Could not update " + entry.getValue());
                             continue;
+                        }else{
+                            JDLogger.getLogger().finest("Update OK!");
                         }
                     }
                     if (!entry.getKey().contains("$") && !classes.contains(entry.getKey())) classes.add(entry.getKey());
@@ -540,6 +546,7 @@ public class Main {
         for (String clazz : classes) {
             try {
                 Class<?> plgClass;
+                JDLogger.getLogger().finest("Init Dynamic "+clazz);
                 plgClass = classLoader.loadClass(clazz.replace("/", ".").replace(".class", "").substring(1));
                 if (plgClass == null) {
                     JDLogger.getLogger().info("Could not load " + clazz);

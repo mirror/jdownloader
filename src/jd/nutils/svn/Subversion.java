@@ -22,6 +22,7 @@ import java.util.Collection;
 
 import jd.nutils.io.JDIO;
 
+import org.tmatesoft.svn.core.SVNCommitInfo;
 import org.tmatesoft.svn.core.SVNDepth;
 import org.tmatesoft.svn.core.SVNErrorCode;
 import org.tmatesoft.svn.core.SVNErrorMessage;
@@ -36,18 +37,26 @@ import org.tmatesoft.svn.core.internal.io.svn.SVNRepositoryFactoryImpl;
 import org.tmatesoft.svn.core.io.ISVNEditor;
 import org.tmatesoft.svn.core.io.ISVNReporterBaton;
 import org.tmatesoft.svn.core.io.SVNRepository;
+import org.tmatesoft.svn.core.wc.ISVNCommitParameters;
 import org.tmatesoft.svn.core.wc.SVNClientManager;
+import org.tmatesoft.svn.core.wc.SVNCommitClient;
+import org.tmatesoft.svn.core.wc.SVNCommitPacket;
 import org.tmatesoft.svn.core.wc.SVNRevision;
 import org.tmatesoft.svn.core.wc.SVNUpdateClient;
+import org.tmatesoft.svn.core.wc.SVNWCClient;
 import org.tmatesoft.svn.core.wc.SVNWCUtil;
 
 public class Subversion {
- 
+
     private SVNRepository repository;
     private SVNURL svnurl;
     private String user;
     private String pass;
     private ISVNAuthenticationManager authManager;
+    private SVNClientManager clientManager;
+    private SVNUpdateClient updateClient;
+    private SVNCommitClient commitClient;
+    private SVNWCClient wcClient;
 
     public Subversion(String url) throws SVNException {
         setupType(url);
@@ -96,16 +105,7 @@ public class Subversion {
         ISVNEditor exportEditor = new ExportEditor(file);
         long rev = latestRevision();
         ISVNReporterBaton reporterBaton = new ExportReporterBaton(rev);
-        /*
-         * Now ask SVNKit to perform generic 'update' operation using our
-         * reporter and editor.
-         * 
-         * We are passing:
-         * 
-         * - revision from which we would like to export - null as "target"
-         * name, to perform export from the URL SVNRepository was created for,
-         * not from some child directory. - reporterBaton - exportEditor.
-         */
+   
         repository.update(rev, null, true, reporterBaton, exportEditor);
 
         return rev;
@@ -114,7 +114,13 @@ public class Subversion {
     public long latestRevision() throws SVNException {
         return repository.getLatestRevision();
     }
-
+/**
+ * Returns all changesets between revision start and end
+ * @param start
+ * @param end
+ * @return
+ * @throws SVNException
+ */
     @SuppressWarnings("unchecked")
     public ArrayList<SVNLogEntry> getChangeset(int start, int end) throws SVNException {
         Collection log = repository.log(new String[] { "" }, null, start, end, true, true);
@@ -124,28 +130,174 @@ public class Subversion {
         return list;
     }
 
-    public void update(File file) throws SVNException {
-        JDIO.removeDirectoryOrFile(file);
+    /**
+     * Updates the repo to file. if there is no repo at file, a checkout is
+     * performed
+     * 
+     * @param file
+     * @param revision
+     * @throws SVNException
+     * @return revision
+     */
+    public long update(File file, SVNRevision revision) throws SVNException {
+        // JDIO.removeDirectoryOrFile(file);
         file.mkdirs();
 
-        SVNClientManager clientManager = SVNClientManager.newInstance(SVNWCUtil.createDefaultOptions(true), authManager);
-
-        SVNUpdateClient updateClient = clientManager.getUpdateClient();
+        SVNUpdateClient updateClient = this.getUpdateClient();
         updateClient.setIgnoreExternals(false);
-        System.out.println("SVN Update at " + file);
+        if (revision == null) revision = SVNRevision.HEAD;
+
         try {
-            updateClient.doUpdate(file, SVNRevision.HEAD, SVNDepth.INFINITY, true, true);
+            System.out.println("SVN Update at " + file);
+            return updateClient.doUpdate(file, revision, SVNDepth.INFINITY, false, true);
         } catch (Exception e) {
-            updateClient.doCheckout(svnurl, file, SVNRevision.HEAD, SVNRevision.HEAD, SVNDepth.INFINITY, true);
+            e.printStackTrace();
+            try {
+                System.out.println("SVN Checkout at " + file);
+                return updateClient.doCheckout(svnurl, file, SVNRevision.HEAD, revision, SVNDepth.INFINITY, true);
+            } catch (Exception e2) {
+                e2.printStackTrace();
+                return -1;
+            } finally {
+                System.out.println("SVN Update finished");
+            }
+        } finally {
+            System.out.println("SVN Update finished");
         }
-        System.out.println("SVN Update finished");
 
     }
-
+/**
+ * Return repo for external actions
+ * @return
+ */
     public SVNRepository getRepository() {
         // TODO Auto-generated method stub
         return this.repository;
     }
 
+    private SVNUpdateClient getUpdateClient() {
+        if (updateClient == null) {
+            updateClient = getClientManager().getUpdateClient();
+            updateClient.setEventHandler(new UpdateEventHandler());
+        }
 
+        return updateClient;
+    }
+
+    private synchronized SVNClientManager getClientManager() {
+        if (clientManager == null) {
+            clientManager = SVNClientManager.newInstance(SVNWCUtil.createDefaultOptions(true), authManager);
+        }
+        return clientManager;
+    }
+
+    /**
+     * Commits the wholepath and KEEPS locks
+     * 
+     * @param dstPath
+     * @param message
+     * @return
+     * @throws SVNException
+     */
+    public SVNCommitInfo commit(File dstPath, String message) throws SVNException {
+        getWCClient().doAdd(dstPath, true, false, true, SVNDepth.INFINITY, false, false);
+       
+        SVNCommitPacket packet = getCommitClient().doCollectCommitItems(new File[] { dstPath }, false, false, SVNDepth.INFINITY, null);
+
+        SVNCommitInfo ret = getCommitClient().doCommit(packet, true, false, message, null);
+
+        return null;
+
+    }
+
+    private SVNWCClient getWCClient() {
+        if (wcClient == null) {
+            wcClient = getClientManager().getWCClient();
+            wcClient.setEventHandler(new WCEventHandler());
+        }
+
+        return wcClient;
+    }
+
+    public void showInfo(File wcPath, SVNRevision revision, boolean isRecursive) throws SVNException {
+        if (revision == null) revision = SVNRevision.HEAD;
+        getWCClient().doInfo(wcPath, revision, isRecursive, new InfoEventHandler());
+    }
+
+    public void showStatus(File wcPath, boolean isRecursive, boolean isRemote, boolean isReportAll, boolean isIncludeIgnored, boolean isCollectParentExternals) throws SVNException {
+
+        getClientManager().getStatusClient().doStatus(wcPath, isRecursive, isRemote, isReportAll, isIncludeIgnored, isCollectParentExternals, new StatusEventHandler(isRemote));
+    }
+
+    private SVNCommitClient getCommitClient() {
+
+        if (commitClient == null) {
+            commitClient = getClientManager().getCommitClient();
+            commitClient.setEventHandler(new CommitEventHandler());
+            // ISVNCommitParameters
+            commitClient.setCommitParameters(new ISVNCommitParameters() {
+
+                public boolean onDirectoryDeletion(File directory) {
+                    // TODO Auto-generated method stub
+                    return false;
+                }
+
+                public boolean onFileDeletion(File file) {
+                    // TODO Auto-generated method stub
+                    return false;
+                }
+
+                public Action onMissingDirectory(File file) {
+                    // TODO Auto-generated method stub
+                    return ISVNCommitParameters.DELETE;
+                }
+
+                public Action onMissingFile(File file) {
+                    // TODO Auto-generated method stub
+                    return ISVNCommitParameters.DELETE;
+                }
+            });
+        }
+        return commitClient;
+
+    }
+/**
+ * Cleans up the file or doirectory
+ * @param dstPath
+ * @param deleteWCProperties
+ * @throws SVNException
+ */
+    public void cleanUp(File dstPath, boolean deleteWCProperties) throws SVNException {
+        getWCClient().doCleanup(dstPath, deleteWCProperties);
+
+    }
+/**
+ * Reverts the file or directory
+ * @param dstPath
+ * @throws SVNException
+ */
+    public void revert(File dstPath) throws SVNException {
+        getWCClient().doRevert(new File[] { dstPath }, SVNDepth.INFINITY, null);
+
+    }
+/**
+ * Locks a file or directory as long as it it not locked by someone else
+ * @param dstPath
+ * @param message
+ * @throws SVNException
+ */
+    public void lock(File dstPath, String message) throws SVNException {
+        getWCClient().doLock(new File[] { dstPath }, false, message);
+
+    }
+/**
+ * Unlocks this file only if it is locked by you
+ * @param dstPath
+ * @param message
+ * @throws SVNException
+ */
+    public void unlock(File dstPath) throws SVNException {
+        getWCClient().doUnlock(new File[] { dstPath }, false);
+
+    }
 }
