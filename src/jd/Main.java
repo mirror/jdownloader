@@ -528,7 +528,7 @@ public class Main {
             if (WebUpdater.PLUGIN_LIST == null) return;
             for (Entry<String, FileUpdate> entry : WebUpdater.PLUGIN_LIST.entrySet()) {
                 System.out.println("Plugins: " + entry.getKey());
-                if (entry.getKey().startsWith("/jd/dynamics/")) {
+                if (entry.getKey().startsWith("/jd/dynamics/")&&!entry.getKey().endsWith("DynamicPluginInterface.class")) {
                     JDLogger.getLogger().finest("Found dynamic: "+entry.getKey());
                     if (!entry.getValue().equals()) {
                         
