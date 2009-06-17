@@ -63,7 +63,6 @@ import jd.gui.skins.simple.components.ComboBrowseFile;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.PieChartAPI;
 import jd.gui.skins.simple.components.TwoTextFieldDialog;
-import jd.nutils.JDFlags;
 import jd.nutils.io.JDFileFilter;
 import jd.nutils.io.JDIO;
 import jd.nutils.svn.Subversion;
@@ -80,6 +79,7 @@ import org.jdesktop.swingx.decorator.FilterPipeline;
 import org.jdesktop.swingx.decorator.HighlightPredicate;
 import org.jdesktop.swingx.decorator.PatternFilter;
 import org.tmatesoft.svn.core.SVNException;
+import org.tmatesoft.svn.core.wc.SVNRevision;
 
 public class LFEGui extends JTabbedPanel implements ActionListener, MouseListener {
 
@@ -97,8 +97,9 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
     private final String PROPERTY_MISSING_COLOR = "PROPERTY_MISSING_COLOR";
     private final String PROPERTY_OLD_COLOR = "PROPERTY_OLD_COLOR";
 
-    private final String PROPERTY_SVN_WORKING_COPY = "PROPERTY_SVN_WORKING_COPY";
-    private final String PROPERTY_SVN_UPDATE_ON_START = "PROPERTY_SVN_UPDATE_ON_START";
+    private final String PROPERTY_SVN_ACCESS_ANONYMOUS = "PROPERTY_SVN_CHECKOUT_ANONYMOUS";
+    private final String PROPERTY_SVN_ACCESS_USER = "PROPERTY_SVN_CHECKOUT_USER";
+    private final String PROPERTY_SVN_ACCESS_PASS = "PROPERTY_SVN_CHECKOUT_PASS";
 
     private JXTable table;
     private MyTableModel tableModel;
@@ -125,6 +126,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
     private boolean initComplete = false;
     private boolean updatingInProgress = false;
     private final JDFileFilter fileFilter;
+    private final File dirLanguages, dirWorkingCopy;
 
     private boolean colorizeDone, colorizeMissing, colorizeOld, showDone, showMissing, showOld;
     private Color colorDone, colorMissing, colorOld;
@@ -133,6 +135,10 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
     public LFEGui() {
         subConfig = SubConfiguration.getConfig("ADDONS_LANGFILEEDITOR");
         fileFilter = new JDFileFilter(JDLocale.L("plugins.optional.langfileeditor.fileFilter2", "JD Language File (*.lng) or Folder with Sourcefiles"), ".lng", true);
+        String lfeHome = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/plugins/lfe/";
+        dirLanguages = new File(lfeHome + "lng/");
+        dirWorkingCopy = new File(lfeHome + "svn/");
+
         showGui();
     }
 
@@ -201,12 +207,10 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
 
                 LFEGui.this.setEnabled(false);
 
-                if (!subConfig.hasProperty(PROPERTY_SVN_UPDATE_ON_START)) {
-                    int result = UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, JDLocale.L("plugins.optional.langfileeditor.svn.title", "Updating SVN"), JDLocale.L("plugins.optional.langfileeditor.svn.message", "Do you want to load the current SourceCode from the SVN Repository to be up-to-date for creating a complete LanguageFile? You can change your selection by editing the SVN settings in the MenuBar!"), UserIO.getInstance().getIcon(UserIO.ICON_INFO), null, null);
-                    subConfig.setProperty(PROPERTY_SVN_UPDATE_ON_START, JDFlags.hasAllFlags(result, UserIO.RETURN_OK));
-                }
-
-                if (subConfig.getBooleanProperty(PROPERTY_SVN_UPDATE_ON_START, true)) updateSVN();
+                /*
+                 * SVN Working Copy nur Updaten, wenn per Jar gestartet!
+                 */
+                if (JDUtilities.getRunType() != JDUtilities.RUNTYPE_LOCAL) updateSVN();
                 if (languageFile == null) cmboFile.setCurrentPath(JDLocale.getLanguageFile());
 
                 initComplete = true;
@@ -385,6 +389,10 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
             File languageFile = cmboFile.getCurrentPath();
             if (languageFile == this.languageFile) return;
 
+            if (!languageFile.getAbsolutePath().startsWith(this.dirLanguages.getAbsolutePath())) {
+                UserIO.getInstance().requestMessageDialog(JDLocale.LF("plugins.optional.langfileeditor.wrongLanguageFile", "With the selected LanguageFile you are unable to let the LanguageFileEditor commit your changes to the SVN! Please change to a LanguageFile from the folder %s", dirLanguages.getAbsolutePath()));
+            }
+
             if (!saveChanges(this.languageFile, false, languageFile)) return;
 
             if (languageFile != this.languageFile && languageFile != null) {
@@ -438,7 +446,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
             result[0] = result[0].toLowerCase();
             for (KeyInfo ki : data) {
                 if (ki.getKey().equals(result[0])) {
-                    UserIO.getInstance().requestConfirmDialog(UserIO.NO_CANCEL_OPTION, JDLocale.L("plugins.optional.langfileeditor.addKey.error.title", "Duplicated key"), JDLocale.LF("plugins.optional.langfileeditor.addKey.error.message", "The key '%s' is already in use!", result[0]), UserIO.getInstance().getIcon(UserIO.ICON_ERROR), null, null);
+                    UserIO.getInstance().requestMessageDialog(JDLocale.LF("plugins.optional.langfileeditor.addKey.error.message", "The key '%s' is already in use!", result[0]));
                     return;
                 }
             }
@@ -598,10 +606,14 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
 
         } else if (e.getSource() == mnuSVNSettings) {
 
+            ConfigEntry ce, conditionEntry;
             ConfigContainer container = new ConfigContainer();
 
-            container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_SVN_UPDATE_ON_START, JDLocale.L("plugins.optional.langfileeditor.svn.checkOutOnStart", "CheckOut SVN on start")).setDefaultValue(true));
-            container.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, subConfig, PROPERTY_SVN_WORKING_COPY, JDLocale.L("plugins.optional.langfileeditor.svn.workingCopy", "SVN Working Copy")).setDefaultValue(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + System.getProperty("file.separator") + "svn"));
+            container.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_SVN_ACCESS_ANONYMOUS, JDLocale.L("plugins.optional.langfileeditor.svn.access.anonymous2", "Anonymous SVN Access (You can't commit your changes without a SVN account!)")).setDefaultValue(true));
+            container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, PROPERTY_SVN_ACCESS_USER, JDLocale.L("plugins.optional.langfileeditor.svn.access.user", "SVN Username")));
+            ce.setEnabledCondidtion(conditionEntry, "==", false);
+            container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, subConfig, PROPERTY_SVN_ACCESS_PASS, JDLocale.L("plugins.optional.langfileeditor.svn.access.pass", "SVN Password")));
+            ce.setEnabledCondidtion(conditionEntry, "==", false);
             container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
             container.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
 
@@ -664,16 +676,25 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         SimpleGUI.CURRENTGUI.setWaiting(true);
         updatingInProgress = true;
 
-        String workingCopy = subConfig.getStringProperty(PROPERTY_SVN_WORKING_COPY, JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + System.getProperty("file.separator") + "svn");
+        if (!dirLanguages.exists()) dirLanguages.mkdirs();
+        if (!dirWorkingCopy.exists()) dirWorkingCopy.mkdirs();
 
         ProgressController progress = new ProgressController(JDLocale.L("plugins.optional.langfileeditor.svn.updating", "Updating SVN: Please wait"));
-        progress.setRange(2);
+        progress.setRange(3);
         try {
-            Subversion svn = new Subversion("https://www.syncom.org/svn/jdownloader/trunk/src/");
-
+            Subversion svn;
+            Subversion svnLanguageDir;
+            if (subConfig.getBooleanProperty(PROPERTY_SVN_ACCESS_ANONYMOUS, true)) {
+                svn = new Subversion("https://www.syncom.org/svn/jdownloader/trunk/src/");
+                svnLanguageDir = new Subversion("https://www.syncom.org/svn/jdownloader/trunk/ressourcen/jd/languages");
+            } else {
+                svn = new Subversion("https://www.syncom.org/svn/jdownloader/trunk/src/", subConfig.getStringProperty(PROPERTY_SVN_ACCESS_USER), subConfig.getStringProperty(PROPERTY_SVN_ACCESS_PASS));
+                svnLanguageDir = new Subversion("https://www.syncom.org/svn/jdownloader/trunk/ressourcen/jd/languages", subConfig.getStringProperty(PROPERTY_SVN_ACCESS_USER), subConfig.getStringProperty(PROPERTY_SVN_ACCESS_PASS));
+            }
             progress.increase(1);
-            svn.export(new File(workingCopy));
+            svn.export(dirWorkingCopy);
             progress.increase(1);
+            svnLanguageDir.update(dirLanguages, SVNRevision.HEAD);
 
             progress.setStatusText(JDLocale.L("plugins.optional.langfileeditor.svn.updating.ready", "Updating SVN: Complete"));
             progress.finalize(2 * 1000l);
@@ -686,10 +707,10 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         updatingInProgress = false;
         SimpleGUI.CURRENTGUI.setWaiting(false);
 
-        if (sourceFile == null || !sourceFile.getAbsolutePath().equalsIgnoreCase(workingCopy)) {
-            if (!initComplete) sourceFile = new File(workingCopy);
-            cmboSource.setText(workingCopy);
-        } else if (sourceFile.getAbsolutePath().equalsIgnoreCase(workingCopy) && !changed) {
+        if (sourceFile == null || !sourceFile.equals(dirWorkingCopy)) {
+            if (!initComplete) sourceFile = dirWorkingCopy;
+            cmboSource.setCurrentPath(dirWorkingCopy);
+        } else if (sourceFile.equals(dirWorkingCopy) && !changed) {
             if (initComplete) initLocaleDataComplete();
         }
     }
@@ -761,13 +782,13 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
             File noUpdateFile = new File(file.getAbsolutePath() + ".noupdate");
             if (!noUpdateFile.exists()) noUpdateFile.createNewFile();
         } catch (Exception e) {
-            UserIO.getInstance().requestConfirmDialog(UserIO.NO_CANCEL_OPTION, JDLocale.L("plugins.optional.langfileeditor.save.error.title", "Error!"), JDLocale.LF("plugins.optional.langfileeditor.save.error.message", "An error occured while writing the LanguageFile:\n%s", e.getMessage()), UserIO.getInstance().getIcon(UserIO.ICON_ERROR), null, null);
+            UserIO.getInstance().requestMessageDialog(JDLocale.LF("plugins.optional.langfileeditor.save.error.message", "An error occured while writing the LanguageFile:\n%s", e.getMessage()));
             return;
         }
 
         if (languageFile.getAbsolutePath() != cmboFile.getText()) cmboFile.setCurrentPath(languageFile);
         changed = false;
-        UserIO.getInstance().requestConfirmDialog(UserIO.NO_CANCEL_OPTION, JDLocale.L("plugins.optional.langfileeditor.save.success.title", "Save successful!"), JDLocale.L("plugins.optional.langfileeditor.save.success.message", "LanguageFile saved successfully!"), UserIO.getInstance().getIcon(UserIO.ICON_INFO), null, null);
+        UserIO.getInstance().requestMessageDialog(JDLocale.L("plugins.optional.langfileeditor.save.success.message", "LanguageFile saved successfully!"));
     }
 
     private void initLocaleDataComplete() {

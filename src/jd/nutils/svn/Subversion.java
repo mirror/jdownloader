@@ -20,6 +20,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import jd.controlling.JDLogger;
 import jd.nutils.io.JDIO;
 
 import org.tmatesoft.svn.core.SVNCommitInfo;
@@ -105,7 +106,7 @@ public class Subversion {
         ISVNEditor exportEditor = new ExportEditor(file);
         long rev = latestRevision();
         ISVNReporterBaton reporterBaton = new ExportReporterBaton(rev);
-   
+
         repository.update(rev, null, true, reporterBaton, exportEditor);
 
         return rev;
@@ -114,13 +115,15 @@ public class Subversion {
     public long latestRevision() throws SVNException {
         return repository.getLatestRevision();
     }
-/**
- * Returns all changesets between revision start and end
- * @param start
- * @param end
- * @return
- * @throws SVNException
- */
+
+    /**
+     * Returns all changesets between revision start and end
+     * 
+     * @param start
+     * @param end
+     * @return
+     * @throws SVNException
+     */
     @SuppressWarnings("unchecked")
     public ArrayList<SVNLogEntry> getChangeset(int start, int end) throws SVNException {
         Collection log = repository.log(new String[] { "" }, null, start, end, true, true);
@@ -151,7 +154,7 @@ public class Subversion {
             System.out.println("SVN Update at " + file);
             return updateClient.doUpdate(file, revision, SVNDepth.INFINITY, false, true);
         } catch (Exception e) {
-            e.printStackTrace();
+            JDLogger.getLogger().finer(e.getMessage());
             try {
                 System.out.println("SVN Checkout at " + file);
                 return updateClient.doCheckout(svnurl, file, SVNRevision.HEAD, revision, SVNDepth.INFINITY, true);
@@ -166,12 +169,13 @@ public class Subversion {
         }
 
     }
-/**
- * Return repo for external actions
- * @return
- */
+
+    /**
+     * Return repo for external actions
+     * 
+     * @return
+     */
     public SVNRepository getRepository() {
-        // TODO Auto-generated method stub
         return this.repository;
     }
 
@@ -201,13 +205,12 @@ public class Subversion {
      */
     public SVNCommitInfo commit(File dstPath, String message) throws SVNException {
         getWCClient().doAdd(dstPath, true, false, true, SVNDepth.INFINITY, false, false);
-       
+
         SVNCommitPacket packet = getCommitClient().doCollectCommitItems(new File[] { dstPath }, false, false, SVNDepth.INFINITY, null);
 
-        SVNCommitInfo ret = getCommitClient().doCommit(packet, true, false, message, null);
+        getCommitClient().doCommit(packet, true, false, message, null);
 
         return null;
-
     }
 
     private SVNWCClient getWCClient() {
@@ -219,13 +222,14 @@ public class Subversion {
         return wcClient;
     }
 
+    @SuppressWarnings("deprecation")
     public void showInfo(File wcPath, SVNRevision revision, boolean isRecursive) throws SVNException {
         if (revision == null) revision = SVNRevision.HEAD;
         getWCClient().doInfo(wcPath, revision, isRecursive, new InfoEventHandler());
     }
 
+    @SuppressWarnings("deprecation")
     public void showStatus(File wcPath, boolean isRecursive, boolean isRemote, boolean isReportAll, boolean isIncludeIgnored, boolean isCollectParentExternals) throws SVNException {
-
         getClientManager().getStatusClient().doStatus(wcPath, isRecursive, isRemote, isReportAll, isIncludeIgnored, isCollectParentExternals, new StatusEventHandler(isRemote));
     }
 
@@ -234,26 +238,21 @@ public class Subversion {
         if (commitClient == null) {
             commitClient = getClientManager().getCommitClient();
             commitClient.setEventHandler(new CommitEventHandler());
-            // ISVNCommitParameters
             commitClient.setCommitParameters(new ISVNCommitParameters() {
 
                 public boolean onDirectoryDeletion(File directory) {
-                    // TODO Auto-generated method stub
                     return false;
                 }
 
                 public boolean onFileDeletion(File file) {
-                    // TODO Auto-generated method stub
                     return false;
                 }
 
                 public Action onMissingDirectory(File file) {
-                    // TODO Auto-generated method stub
                     return ISVNCommitParameters.DELETE;
                 }
 
                 public Action onMissingFile(File file) {
-                    // TODO Auto-generated method stub
                     return ISVNCommitParameters.DELETE;
                 }
             });
@@ -261,41 +260,49 @@ public class Subversion {
         return commitClient;
 
     }
-/**
- * Cleans up the file or doirectory
- * @param dstPath
- * @param deleteWCProperties
- * @throws SVNException
- */
+
+    /**
+     * Cleans up the file or doirectory
+     * 
+     * @param dstPath
+     * @param deleteWCProperties
+     * @throws SVNException
+     */
     public void cleanUp(File dstPath, boolean deleteWCProperties) throws SVNException {
         getWCClient().doCleanup(dstPath, deleteWCProperties);
 
     }
-/**
- * Reverts the file or directory
- * @param dstPath
- * @throws SVNException
- */
+
+    /**
+     * Reverts the file or directory
+     * 
+     * @param dstPath
+     * @throws SVNException
+     */
     public void revert(File dstPath) throws SVNException {
         getWCClient().doRevert(new File[] { dstPath }, SVNDepth.INFINITY, null);
 
     }
-/**
- * Locks a file or directory as long as it it not locked by someone else
- * @param dstPath
- * @param message
- * @throws SVNException
- */
+
+    /**
+     * Locks a file or directory as long as it it not locked by someone else
+     * 
+     * @param dstPath
+     * @param message
+     * @throws SVNException
+     */
     public void lock(File dstPath, String message) throws SVNException {
         getWCClient().doLock(new File[] { dstPath }, false, message);
 
     }
-/**
- * Unlocks this file only if it is locked by you
- * @param dstPath
- * @param message
- * @throws SVNException
- */
+
+    /**
+     * Unlocks this file only if it is locked by you
+     * 
+     * @param dstPath
+     * @param message
+     * @throws SVNException
+     */
     public void unlock(File dstPath) throws SVNException {
         getWCClient().doUnlock(new File[] { dstPath }, false);
 

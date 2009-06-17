@@ -41,7 +41,7 @@ public abstract class TestUtils {
     private static JDInit jdi;
 
     private static JDController jdc;
-    // Where's the Lock?
+
     /**
      * Returns a stored property or asks to enter it
      * 
