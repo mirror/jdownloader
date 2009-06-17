@@ -243,11 +243,12 @@ public class Updater {
 
         for (String path : outdated) {
             if (new File(this.workingDir, path).exists()) {
-                new File(this.workingDir, path).delete();
+              
+                JDIO.removeDirectoryOrFile(new File(this.workingDir, path));
                 System.err.println(" CLEAN UP: " + new File(this.workingDir, path).getAbsolutePath());
             }
             if (new File(this.updateDir, path).exists()) {
-                new File(this.updateDir, path).delete();
+                JDIO.removeDirectoryOrFile(new File(this.updateDir, path));
                 System.err.println(" CLEAN UP: " + new File(this.updateDir, path).getAbsolutePath());
             }
         }
@@ -257,11 +258,11 @@ public class Updater {
         };
         for (String path : rest) {
             if (new File(this.workingDir, path).exists()) {
-                new File(this.workingDir, path).delete();
+                JDIO.removeDirectoryOrFile(new File(this.workingDir, path));
                 System.err.println(" CLEAN UP: " + new File(this.workingDir, path).getAbsolutePath());
             }
             if (new File(this.updateDir, path).exists()) {
-                new File(this.updateDir, path).delete();
+                JDIO.removeDirectoryOrFile(new File(this.updateDir, path));
                 System.err.println(" CLEAN UP: " + new File(this.updateDir, path).getAbsolutePath());
             }
         }
