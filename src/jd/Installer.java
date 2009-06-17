@@ -23,6 +23,7 @@ import java.io.File;
 import java.util.ArrayList;
 
 import javax.swing.AbstractListModel;
+import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
@@ -250,6 +251,7 @@ public class Installer {
 
                 final BrowseFile br;
                 content.add(br = new BrowseFile(), "growx,pushx,gapleft 40,gapright 10");
+                br.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
                 if (error) br.setEnabled(false);
                 content.add(new JSeparator(), "growx,pushx,gaptop 5");
                 if (OSDetector.isMac()) {
