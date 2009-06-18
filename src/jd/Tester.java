@@ -18,7 +18,7 @@ public class Tester {
 
         svn = new Subversion("https://www.syncom.org/svn/jdownloader/trunk/src/", "user", "pass");
         // svn.showInfo(dstPath, null, true);
-
+ 
         svn.update(dstPath, SVNRevision.HEAD);
         // svn.lock(dstPath, "This file is locked for testing purposes");
         svn.unlock(dstPath);
