@@ -46,7 +46,7 @@ public class ProtectBoxIn extends PluginForDecrypt {
 
         File file = this.getLocalCaptchaFile();
 
-        Form form = br.getForm(1);
+        Form form = br.getForm(0);
         Browser.download(file, br.cloneBrowser().openGetConnection("http://www.protectbox.in/captcha/imagecreate.php"));
         Point p = UserIO.getInstance().requestClickPositionDialog(file, JDLocale.L("plugins.decrypt.stealthto.captcha.title", "Captcha"), JDLocale.L("plugins.decrypt.stealthto.captcha", "Please click on the Circle with a gap"));
         if (p == null) throw new DecrypterException(DecrypterException.CAPTCHA);
