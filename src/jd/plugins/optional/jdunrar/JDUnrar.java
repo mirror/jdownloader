@@ -694,10 +694,10 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDUnrarConstants.CONFIG_KEY_ASK_UNKNOWN_PASS, JDLocale.L("gui.config.unrar.ask_path", "Ask for unknown passwords?")));
         ce.setDefaultValue(true);
         ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDUnrarConstants.CONFIG_KEY_DEEP_EXTRACT, JDLocale.L("gui.config.unrar.deep_extract", "Deep-Extraction")));
+        ce.setDefaultValue(true);
         ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDUnrarConstants.CONFIG_KEY_COPY_FILES_TO_BASE_DIR_AFTER_EXTRACT, JDLocale.L("gui.config.unrar.copy_to_base_dir", "Copy to base dir")));
         ce.setDefaultValue(false);
         
-        ce.setDefaultValue(true);
         ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDUnrarConstants.CONFIG_KEY_REMOVE_INFO_FILE, JDLocale.L("gui.config.unrar.remove_infofile", "Delete Infofile after extraction")));
         ce.setDefaultValue(false);
     }
