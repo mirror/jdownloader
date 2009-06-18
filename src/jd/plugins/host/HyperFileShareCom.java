@@ -80,7 +80,7 @@ public class HyperFileShareCom extends PluginForHost {
 
     // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return 5;
     }
 
     // @Override
