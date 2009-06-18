@@ -34,7 +34,7 @@ public class ByteBufferController {
                 while (true) {
                     ByteBufferController.getInstance().printDebug();
                     try {
-                        sleep(1000 * 60);
+                        sleep(1000 * 60 * 10);
                     } catch (InterruptedException e) {
                         break;
                     }
@@ -85,14 +85,16 @@ public class ByteBufferController {
         synchronized (bufferpool) {
             for (ByteBufferEntry entry : bufferpool) {
                 if (entry.capacity() >= size) {
-                    JDLogger.getLogger().severe("found bytebufferentry with " + entry.capacity() + " to serve request with " + size);
+                    // JDLogger.getLogger().severe("found bytebufferentry with "
+                    // + entry.capacity() + " to serve request with " + size);
                     ret = entry;
                     bufferpool.remove(entry);
                     return ret.getbytebufferentry(size);
                 }
             }
         }
-        JDLogger.getLogger().severe("no bytebufferentry found to serve request with " + size);
+        // JDLogger.getLogger().severe("no bytebufferentry found to serve request with "
+        // + size);
         return null;
     }
 

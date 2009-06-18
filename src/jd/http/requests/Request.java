@@ -385,7 +385,7 @@ public abstract class Request {
     private void initDefaultHeader() {
 
         headers = new RequestHeader();
-        headers.put("User-Agent", "User-Agent: Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.0.10) Gecko/2009042523 Ubuntu/9.04 (jaunty) Firefox/3.0.10");
+        headers.put("User-Agent", "Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.0.10) Gecko/2009042523 Ubuntu/9.04 (jaunty) Firefox/3.0.10");
         headers.put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         headers.put("Accept-Language", "de, en-gb;q=0.9, en;q=0.8");
         headers.put("Accept-Encoding", "gzip,deflate");
