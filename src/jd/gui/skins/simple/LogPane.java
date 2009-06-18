@@ -37,6 +37,7 @@ import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.tasks.LogTaskPane;
 import jd.http.Encoding;
+import jd.nutils.JDFlags;
 import jd.nutils.io.JDIO;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -75,7 +76,7 @@ public class LogPane extends JTabbedPanel implements ActionListener, ControlList
     public void actionPerformed(ActionEvent e) {
 
         switch (e.getID()) {
-   
+
         case LogTaskPane.ACTION_SAVE:
             JDFileChooser fc = new JDFileChooser();
             fc.setApproveButtonText(JDLocale.L("gui.btn_save", "Save"));
@@ -91,9 +92,12 @@ public class LogPane extends JTabbedPanel implements ActionListener, ControlList
             break;
         case LogTaskPane.ACTION_UPLOAD:
             Level level = JDLogger.getLogger().getLevel();
+
             if (!level.equals(Level.ALL)) {
-                SimpleGUI.CURRENTGUI.showHelpMessage(null, JDLocale.LF("gui.logdialog.loglevelwarning", "The selected loglevel (%s) isn't preferred to upload a log! Please change it to ALL and create a new log!", level.getName()), false, "http://jdownloader.org/knowledge/wiki/support/create-a-jd-log", null, 30);
+                int status = UserIO.getInstance().requestHelpDialog(UserIO.NO_COUNTDOWN, JDLocale.L("gui.logdialog.loglevelwarning.title", "Wrong Loglevel for Uploading selected!"), JDLocale.LF("gui.logdialog.loglevelwarning", "The selected loglevel (%s) isn't preferred to upload a log! Please change it to ALL and create a new log!", level.getName()), null, "http://jdownloader.org/knowledge/wiki/support/create-a-jd-log");
+                if (JDFlags.hasSomeFlags(status, UserIO.RETURN_CANCEL, UserIO.RETURN_COUNTDOWN_TIMEOUT)) return;
             }
+
             String content = logField.getSelectedText();
             if (content == null || content.length() == 0) {
                 content = Encoding.UTF8Encode(logField.getText());
@@ -101,11 +105,10 @@ public class LogPane extends JTabbedPanel implements ActionListener, ControlList
 
             if (content == null || content.length() == 0) return;
 
-            String name = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN,JDLocale.L("userio.input.title", "Please enter!"), JDLocale.L("gui.askName", "Your name?"), null, null, null, null);
+            String name = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN, JDLocale.L("userio.input.title", "Please enter!"), JDLocale.L("gui.askName", "Your name?"), null, null, null, null);
             if (name == null) return;
-            String question = 
-                UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN, JDLocale.L("userio.input.title", "Please enter!"), JDLocale.L("gui.logger.askQuestion", "Please describe your Problem/Bug/Question!"), null, null, null, null);
-              
+            String question = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN, JDLocale.L("userio.input.title", "Please enter!"), JDLocale.L("gui.logger.askQuestion", "Please describe your Problem/Bug/Question!"), null, null, null, null);
+
             if (question == null) return;
             SimpleGUI.CURRENTGUI.setWaiting(true);
             String url = Upload.toJDownloader(content, name + "\r\n\r\n" + question);

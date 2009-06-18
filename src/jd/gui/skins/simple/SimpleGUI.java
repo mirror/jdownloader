@@ -29,8 +29,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -73,7 +71,6 @@ import jd.gui.UIInterface;
 import jd.gui.UserIO;
 import jd.gui.skins.simple.components.ChartAPIEntity;
 import jd.gui.skins.simple.components.HTMLDialog;
-import jd.gui.skins.simple.components.JHelpDialog;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.components.PieChartAPI;
 import jd.gui.skins.simple.components.SpeedMeterPanel;
@@ -739,10 +736,9 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
                 case ControlEvent.CONTROL_INIT_COMPLETE:
                     // setTitle(JDUtilities.getJDTitle());
                     logger.info("Init complete");
-                    
-                   
+
                     SimpleGUI.this.setWaiting(false);
-                    SimpleGUI.this.setEnabled(true);                    
+                    SimpleGUI.this.setEnabled(true);
                     if (SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.PARAM_START_DOWNLOADS_AFTER_START, false)) {
                         new Thread() {
                             public void run() {
@@ -900,26 +896,6 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
         }
     }
 
-    public int showHelpMessage(final String title, String message, final boolean toHTML, final String url, final String helpMsg, final int sec) {
-
-        final String msg = toHTML ? "<font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\">" + message + "</font>" : message;
-
-        return new GuiRunnable<Integer>() {
-            // @Override
-            public Integer runSave() {
-                try {
-                    return JHelpDialog.showHelpMessage(SimpleGUI.this, title, msg, new URL(url), helpMsg, sec);
-                } catch (MalformedURLException e) {
-
-                }
-                return -1;
-
-            }
-
-        }.getReturnValue();
-
-    }
-
     public boolean showHTMLDialog(final String title, final String htmlQuestion) {
         return new GuiRunnable<Boolean>() {
             // @Override
@@ -1007,7 +983,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
             // @Override
             public Object runSave() {
                 ConfigEntriesPanel cep;
-                
+
                 JDCollapser.getInstance().setContentPanel(cep = new ConfigEntriesPanel(container));
                 if (i > 0) {
                     Component comp = cep.getComponent(0);
@@ -1149,8 +1125,8 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
     }
 
     public static void showChangelogDialog() {
-        int status = JDUtilities.getGUI().showHelpMessage(JDLocale.LF("system.update.message.title", "Updated to version %s", JDUtilities.getRevision()), JDLocale.L("system.update.message", "Update successfull"), false, "http://jdownloader.org/changes/index", JDLocale.L("system.update.showchangelogv2", "What's new?"), 60);
-        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_AUTO_SHOW_CHANGELOG, true) && status != 0) {
+        int status = UserIO.getInstance().requestHelpDialog(UserIO.NO_CANCEL_OPTION, JDLocale.LF("system.update.message.title", "Updated to version %s", JDUtilities.getRevision()), JDLocale.L("system.update.message", "Update successfull"), JDLocale.L("system.update.showchangelogv2", "What's new?"), "http://jdownloader.org/changes/index");
+        if (JDFlags.hasAllFlags(status, UserIO.RETURN_OK) && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_AUTO_SHOW_CHANGELOG, true)) {
             try {
                 JLinkButton.openURL("http://jdownloader.org/changes/index");
             } catch (Exception e) {

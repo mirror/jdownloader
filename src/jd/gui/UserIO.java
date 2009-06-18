@@ -58,12 +58,12 @@ public abstract class UserIO {
     protected static UserIO INSTANCE = null;
     private static Integer COUNTDOWN_TIME = null;
 
-    protected UserIO() {
-
-    }
-
     public static UserIO getInstance() {
         return INSTANCE;
+    }
+
+    public static void setInstance(UserIO instance) {
+        INSTANCE = instance;
     }
 
     public String requestCaptchaDialog(int flag, String methodname, File captchafile, String suggestion, String explain) {
@@ -82,9 +82,13 @@ public abstract class UserIO {
 
     abstract protected Point showClickPositionDialog(File imagefile, String title, String explain);
 
-    public static void setInstance(UserIO instance2) {
-        INSTANCE = instance2;
+    public int requestHelpDialog(int flag, String title, String message, String helpMessage, String url) {
+        synchronized (INSTANCE) {
+            return showHelpDialog(flag, title, message, helpMessage, url);
+        }
     }
+
+    abstract protected int showHelpDialog(int flag, String title, String message, String helpMessage, String url);
 
     public int requestConfirmDialog(int flag, String title, String message, ImageIcon icon, String okOption, String cancelOption) {
         synchronized (INSTANCE) {

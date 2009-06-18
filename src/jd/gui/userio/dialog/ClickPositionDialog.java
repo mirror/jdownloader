@@ -29,7 +29,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JTextField;
+import javax.swing.JTextPane;
 import javax.swing.WindowConstants;
 
 import jd.config.Configuration;
@@ -86,13 +86,14 @@ public class ClickPositionDialog extends JCountdownDialog implements ActionListe
 
         this.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
         if (explain != null) {
-            JTextField tf;
-            add(tf = new JTextField(), "");
+            JTextPane tf = new JTextPane();
             tf.setBorder(null);
             tf.setBackground(null);
+            tf.setContentType("text/html");
             tf.setOpaque(false);
             tf.setText(explain);
             tf.setEditable(false);
+            add(tf, "");
         }
         add(captcha, "w pref!, h pref!, alignx center");
         add(this.countDownLabel, "split 2,growx");
