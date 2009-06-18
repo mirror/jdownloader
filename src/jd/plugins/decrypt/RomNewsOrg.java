@@ -22,8 +22,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.gui.skins.simple.SimpleGUI;
-import jd.gui.skins.simple.components.ClickPositionDialog;
+import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
@@ -55,9 +54,8 @@ public class RomNewsOrg extends PluginForDecrypt {
             String cap = br.getRegex("\"image\" src=\"(.*?image.*?)\"").getMatch(0);
             Form form = br.getForm(0);
             Browser.download(file, br.cloneBrowser().openGetConnection(cap));
-            ClickPositionDialog d = ClickPositionDialog.show(SimpleGUI.CURRENTGUI, file, JDLocale.L("plugins.decrypt.stealthto.captcha.title", "Captcha"), whattoclick, 20, null);
-            if (d.abort) throw new DecrypterException(DecrypterException.CAPTCHA);
-            Point p = d.result;
+            Point p = UserIO.getInstance().requestClickPositionDialog(file, JDLocale.L("plugins.decrypt.stealthto.captcha.title", "Captcha"), whattoclick);
+            if (p == null) throw new DecrypterException(DecrypterException.CAPTCHA);
             form.remove("x");
             form.remove("y");
             form.put("name.x", p.x + "");

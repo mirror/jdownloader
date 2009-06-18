@@ -19,7 +19,6 @@ package jd.gui.skins.simple.components;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.util.logging.Logger;
 
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
@@ -42,9 +41,6 @@ public class BrowseFile extends JPanel implements ActionListener {
     private boolean editable = false;
 
     private int fileSelectionMode = JFileChooser.FILES_ONLY;
-
-    @SuppressWarnings("unused")
-    private Logger logger = jd.controlling.JDLogger.getLogger();
 
     private JTextField txtInput;
 
@@ -182,7 +178,7 @@ public class BrowseFile extends JPanel implements ActionListener {
         editable = value;
     }
 
-    //@Override
+    // @Override
     public void setEnabled(boolean value) {
         txtInput.setEnabled(value);
         btnBrowse.setEnabled(value);

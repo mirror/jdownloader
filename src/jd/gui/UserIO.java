@@ -16,6 +16,7 @@
 
 package jd.gui;
 
+import java.awt.Point;
 import java.io.File;
 
 import javax.swing.ImageIcon;
@@ -69,18 +70,17 @@ public abstract class UserIO {
         synchronized (INSTANCE) {
             return showCaptchaDialog(flag, methodname, captchafile, suggestion, explain);
         }
-
     }
 
-    /**
-     * abstracts
-     * 
-     * @param methodname
-     * @param captchafile
-     * @param suggestion
-     * @return
-     */
     abstract protected String showCaptchaDialog(int flag, String methodname, File captchafile, String suggestion, String explain);
+
+    public Point requestClickPositionDialog(File imagefile, String title, String explain) {
+        synchronized (INSTANCE) {
+            return showClickPositionDialog(imagefile, title, explain);
+        }
+    }
+
+    abstract protected Point showClickPositionDialog(File imagefile, String title, String explain);
 
     public static void setInstance(UserIO instance2) {
         INSTANCE = instance2;

@@ -208,10 +208,17 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
                 LFEGui.this.setEnabled(false);
 
                 /*
-                 * SVN Working Copy nur Updaten, wenn per Jar gestartet!
+                 * SVN Working Copy nur dann automatisch Updaten, wenn per Jar
+                 * gestartet!
                  */
                 if (JDUtilities.getRunType() != JDUtilities.RUNTYPE_LOCAL) updateSVN();
-                if (languageFile == null) cmboFile.setCurrentPath(JDLocale.getLanguageFile());
+                if (languageFile == null) {
+                    if (dirLanguages.exists() && new File(dirLanguages, JDLocale.getLocale() + ".lng").exists()) {
+                        cmboFile.setCurrentPath(new File(dirLanguages, JDLocale.getLocale() + ".lng"));
+                    } else {
+                        cmboFile.setCurrentPath(JDLocale.getLanguageFile());
+                    }
+                }
 
                 initComplete = true;
 

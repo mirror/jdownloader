@@ -46,25 +46,6 @@ public class JACLoad {
         loadMegaUpload();
     }
 
-    @SuppressWarnings("unused")
-    private void loadGwarez() {
-        final String dir = "/home/dwd/.jd_home/captchas/gwarez.cc/";
-
-        for (int i = 0; i < 200; i++) {
-            new Thread(new Runnable() {
-                public void run() {
-                    Browser br = new Browser();
-                    try {
-                        String cap = "http://gwarez.cc/captcha/captcha.php";
-                        br.getDownload(new File(dir + System.currentTimeMillis() + ".png"), cap);
-                    } catch (IOException e) {
-                        JDLogger.exception(e);
-                    }
-                }
-            }).start();
-        }
-    }
-
     private void loadMegaUpload() {
         final String dir = "/home/dwd/.jd_home/captchas/megaupload.com/";
 

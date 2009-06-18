@@ -23,8 +23,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.gui.skins.simple.SimpleGUI;
-import jd.gui.skins.simple.components.ClickPositionDialog;
+import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
@@ -52,9 +51,8 @@ public class Charts4You extends PluginForDecrypt {
         String pass = br.getRegex(Pattern.compile("Passwort.*?</td>.*?<input type=\"text\" value=\"(.*?)\"", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         Form form = br.getForm(2);
         Browser.download(file, br.cloneBrowser().openGetConnection("captcha/imagecreate.php"));
-        ClickPositionDialog d = ClickPositionDialog.show(SimpleGUI.CURRENTGUI, file, JDLocale.L("plugins.decrypt.stealthto.captcha.title", "Captcha"), JDLocale.L("plugins.decrypt.stealthto.captcha", "Please click on the Circle with a gap"), 20, null);
-        if (d.abort) throw new DecrypterException(DecrypterException.CAPTCHA);
-        Point p = d.result;
+        Point p = UserIO.getInstance().requestClickPositionDialog(file, JDLocale.L("plugins.decrypt.stealthto.captcha.title", "Captcha"), JDLocale.L("plugins.decrypt.stealthto.captcha", "Please click on the Circle with a gap"));
+        if (p == null) throw new DecrypterException(DecrypterException.CAPTCHA);
         form.remove("x");
         form.remove("y");
         form.put("button.x", p.x + "");

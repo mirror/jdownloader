@@ -16,12 +16,8 @@
 
 package jd.gui.skins.simple.components;
 
-import java.awt.Component;
-import java.awt.HeadlessException;
 import java.io.File;
-import java.util.logging.Logger;
 
-import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 
 import jd.utils.JDUtilities;
@@ -36,8 +32,6 @@ public class JDFileChooser extends JFileChooser {
 
     private static final long serialVersionUID = 3315263822025280362L;
     private String fcID;
-    @SuppressWarnings("unused")
-    private Logger logger = jd.controlling.JDLogger.getLogger();
 
     public JDFileChooser() {
         super();
@@ -56,11 +50,7 @@ public class JDFileChooser extends JFileChooser {
         setCurrentDirectory(JDUtilities.getCurrentWorkingDirectory(fcID));
     }
 
-    public JDialog createDialog(Component parent) throws HeadlessException {
-        return super.createDialog(parent);
-        }
-
-    //@Override
+    // @Override
     public File getSelectedFile() {
         File ret = super.getSelectedFile();
 
@@ -73,7 +63,7 @@ public class JDFileChooser extends JFileChooser {
         return ret;
     }
 
-    //@Override
+    // @Override
     public File[] getSelectedFiles() {
         File[] ret = super.getSelectedFiles();
 

@@ -22,9 +22,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Locale;
 
-import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
-
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
@@ -34,7 +31,6 @@ import jd.config.ConfigEntry.PropertyType;
 import jd.controlling.JDLogger;
 import jd.controlling.LinkGrabberController;
 import jd.gui.JDLookAndFeelManager;
-import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.gui.skins.simple.components.JLinkButton;
@@ -290,41 +286,48 @@ public class ConfigPanelGUI extends ConfigPanel {
 
     }
 
-    @SuppressWarnings("unused")
-    private void updateLAF() {
-        new Thread() {
-            @Override
-            public void run() {
-
-                new GuiRunnable<Object>() {
-
-                    @Override
-                    public Object runSave() {
-                        try {
-
-                            if (UIManager.getLookAndFeel().getClass().getName().equals(JDLookAndFeelManager.getPlaf().getClassName())) return null;
-                            boolean restart = false;
-                            restart |= JDLookAndFeelManager.getPlaf().isJGoodies() && UIManager.getLookAndFeel().getSupportsWindowDecorations();
-                            restart |= JDLookAndFeelManager.getPlaf().isSubstance() && !UIManager.getLookAndFeel().getSupportsWindowDecorations();
-                            if (restart) {
-                                if (!SimpleGUI.CURRENTGUI.showConfirmDialog(JDLocale.L("gui.dialog.plaf.restart", "This Look&Feel needs JDownloader to restart. Restart now?"), JDLocale.L("gui.dialog.plaf.restart.title", "Restart JDownloader?"))) return null;
-
-                                JDUtilities.restartJD();
-                            }
-                            UIManager.setLookAndFeel(JDLookAndFeelManager.getPlaf().getClassName());
-
-                            SwingUtilities.updateComponentTreeUI(SimpleGUI.CURRENTGUI);
-                            SimpleGUI.CURRENTGUI.onLAFChanged();
-                        } catch (Exception e) {
-                            JDLogger.exception(e);
-                        }
-                        return null;
-                    }
-                }.start();
-            }
-        }.start();
-
-    }
+    // private void updateLAF() {
+    // new Thread() {
+    // @Override
+    // public void run() {
+    //
+    // new GuiRunnable<Object>() {
+    //
+    // @Override
+    // public Object runSave() {
+    // try {
+    //
+    // if
+    // (UIManager.getLookAndFeel().getClass().getName().equals(JDLookAndFeelManager.getPlaf().getClassName()))
+    // return null;
+    // boolean restart = false;
+    // restart |= JDLookAndFeelManager.getPlaf().isJGoodies() &&
+    // UIManager.getLookAndFeel().getSupportsWindowDecorations();
+    // restart |= JDLookAndFeelManager.getPlaf().isSubstance() &&
+    // !UIManager.getLookAndFeel().getSupportsWindowDecorations();
+    // if (restart) {
+    // if
+    // (!SimpleGUI.CURRENTGUI.showConfirmDialog(JDLocale.L("gui.dialog.plaf.restart",
+    // "This Look&Feel needs JDownloader to restart. Restart now?"),
+    // JDLocale.L("gui.dialog.plaf.restart.title", "Restart JDownloader?")))
+    // return null;
+    //
+    // JDUtilities.restartJD();
+    // }
+    // UIManager.setLookAndFeel(JDLookAndFeelManager.getPlaf().getClassName());
+    //
+    // SwingUtilities.updateComponentTreeUI(SimpleGUI.CURRENTGUI);
+    // SimpleGUI.CURRENTGUI.onLAFChanged();
+    // } catch (Exception e) {
+    // JDLogger.exception(e);
+    // }
+    // return null;
+    // }
+    // }.start();
+    // }
+    // }.start();
+    //
+    // }
 
     @Override
     public PropertyType hasChanges() {

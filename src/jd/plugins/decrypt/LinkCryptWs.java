@@ -23,8 +23,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.gui.skins.simple.SimpleGUI;
-import jd.gui.skins.simple.components.ClickPositionDialog;
+import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -63,9 +62,8 @@ public class LinkCryptWs extends PluginForDecrypt {
                 File file = this.getLocalCaptchaFile();
                 Form form = br.getForm(0);
                 Browser.download(file, br.cloneBrowser().openGetConnection("http://linkcrypt.ws/captx.php"));
-                ClickPositionDialog d = ClickPositionDialog.show(SimpleGUI.CURRENTGUI, file, JDLocale.L("plugins.decrypt.stealthto.captcha.title", "Captcha"), JDLocale.L("plugins.decrypt.stealthto.captcha", "Please click on the Circle with a gap"), 20, null);
-                if (d.abort) throw new DecrypterException(DecrypterException.CAPTCHA);
-                Point p = d.result;
+                Point p = UserIO.getInstance().requestClickPositionDialog(file, JDLocale.L("plugins.decrypt.stealthto.captcha.title", "Captcha"), JDLocale.L("plugins.decrypt.stealthto.captcha", "Please click on the Circle with a gap"));
+                if (p == null) throw new DecrypterException(DecrypterException.CAPTCHA);
                 form.put("x", p.x + "");
                 form.put("y", p.y + "");
                 br.submitForm(form);

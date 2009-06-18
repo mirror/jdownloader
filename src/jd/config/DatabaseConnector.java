@@ -49,19 +49,14 @@ public class DatabaseConnector implements Serializable {
     private static Connection con = null;
 
     static {
-        // try {
-        // Class.forName("org.hsqldb.jdbcDriver");
+
         try {
             Class.forName("org.hsqldb.jdbcDriver").newInstance();
-
         } catch (IllegalAccessException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         } catch (InstantiationException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         } catch (ClassNotFoundException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
 
@@ -72,16 +67,14 @@ public class DatabaseConnector implements Serializable {
      * 
      * @throws Exception
      */
-    @SuppressWarnings("unused")
     public DatabaseConnector() throws SQLException {
 
         if (con != null) return;
         logger.finer("Loading database");
         if (new File(configpath + "database.script").exists()) {
-             if (!checkDatabaseHeader()) { throw new
-             SQLException("Database broken!");
-            
-             }
+            if (!checkDatabaseHeader()) { throw new SQLException("Database broken!");
+
+            }
         }
 
         con = DriverManager.getConnection("jdbc:hsqldb:file:" + configpath + "database;shutdown=true", "sa", "");
@@ -98,13 +91,12 @@ public class DatabaseConnector implements Serializable {
             PreparedStatement pst = con.prepareStatement("INSERT INTO config VALUES (?,?)");
             logger.finer("Starting database wrapper");
 
-            File f = null;
             for (String tmppath : new File(configpath).list()) {
                 try {
                     if (tmppath.endsWith(".cfg")) {
                         logger.finest("Wrapping " + tmppath);
 
-                        Object props = JDIO.loadObject(null, f = JDUtilities.getResourceFile("config/" + tmppath), false);
+                        Object props = JDIO.loadObject(null, JDUtilities.getResourceFile("config/" + tmppath), false);
 
                         if (props != null) {
                             pst.setString(1, tmppath.split(".cfg")[0]);
@@ -242,7 +234,7 @@ public class DatabaseConnector implements Serializable {
      */
     public void saveConfiguration(String name, Object data) {
         dbdata.put(name, data);
-      
+
         try {
             ResultSet rs = con.createStatement().executeQuery("SELECT COUNT(name) FROM config WHERE name = '" + name + "'");
             rs.next();
@@ -259,7 +251,7 @@ public class DatabaseConnector implements Serializable {
 
         } catch (Exception e) {
             try {
-                System.out.println("First save "+name);
+                System.out.println("First save " + name);
                 PreparedStatement pst = con.prepareStatement("INSERT INTO config VALUES (?,?)");
                 pst.setString(1, name);
                 pst.setObject(2, data);

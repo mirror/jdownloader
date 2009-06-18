@@ -22,7 +22,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.Vector;
-import java.util.logging.Logger;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -53,9 +52,6 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
     private int fileSelectionMode = JFileChooser.FILES_ONLY;
 
     private FileFilter fileFilter;
-
-    @SuppressWarnings("unused")
-    private Logger logger = jd.controlling.JDLogger.getLogger();
 
     public ComboBrowseFile(String string) {
         Vector<String> list = SubConfiguration.getConfig("GUI").getGenericProperty(string, new Vector<String>());

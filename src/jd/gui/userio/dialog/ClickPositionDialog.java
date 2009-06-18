@@ -16,11 +16,13 @@
 
 package jd.gui.userio.dialog;
 
+import java.awt.Cursor;
 import java.awt.Dimension;
+import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.io.File;
 
 import javax.swing.ImageIcon;
@@ -32,53 +34,30 @@ import javax.swing.WindowConstants;
 
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
-import jd.controlling.CaptchaController;
-import jd.gui.UserIO;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.nutils.Screen;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import net.miginfocom.swing.MigLayout;
 
-import org.jdesktop.swingworker.SwingWorker;
+public class ClickPositionDialog extends JCountdownDialog implements ActionListener, MouseListener {
 
-/**
- * Mit dieser Klasse wird ein Captcha Bild angezeigt
- * 
- * @author astaldo
- */
-public class CaptchaDialog extends JCountdownDialog implements ActionListener, KeyListener {
-
-    private static final long serialVersionUID = -2046990134131595481L;
+    private static final long serialVersionUID = 5540481255364141955L;
 
     private JButton btnBAD;
 
-    private JButton btnOK;
-
-    private String captchaText = null;
-
-    private boolean abort = false;
-
-    private JTextField textField;
-
-    private int flag;
-
-    private String method;
+    private Point result = null;
 
     private File imagefile;
 
-    private String defaultValue;
+    private String title;
 
     private String explain;
 
-    private SwingWorker<Object, Object> jacWorker;
-
-    public CaptchaDialog(int flag, String methodname, File captchafile, String suggestion, String explain) {
+    public ClickPositionDialog(File imagefile, String title, String explain) {
         super(SimpleGUI.CURRENTGUI);
-        this.flag = flag;
-        this.method = methodname;
-        this.imagefile = captchafile;
-        this.defaultValue = suggestion;
+        this.imagefile = imagefile;
+        this.title = title;
         this.explain = explain;
         this.init();
     }
@@ -86,7 +65,7 @@ public class CaptchaDialog extends JCountdownDialog implements ActionListener, K
     public void init() {
 
         this.setModal(true);
-
+        this.setTitle(title);
         this.setLayout(new MigLayout("ins 5,wrap 1", "[fill,grow]"));
 
         ImageIcon imageIcon = null;
@@ -97,17 +76,14 @@ public class CaptchaDialog extends JCountdownDialog implements ActionListener, K
             imageIcon = JDTheme.II("gui.images.config.ocr");
         }
 
-        textField = new JTextField(10);
-        textField.addKeyListener(this);
-
-        textField.setText(this.defaultValue);
-        btnOK = new JButton(JDLocale.L("gui.btn_ok", "OK"));
-        btnOK.addActionListener(this);
-
         btnBAD = new JButton(JDLocale.L("gui.btn_cancel", "Cancel"));
         btnBAD.addActionListener(this);
 
-        this.getRootPane().setDefaultButton(btnOK);
+        JLabel captcha = new JLabel(imageIcon);
+        captcha.addMouseListener(this);
+        captcha.setCursor(new Cursor(Cursor.CROSSHAIR_CURSOR));
+        captcha.setToolTipText(explain);
+
         this.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
         if (explain != null) {
             JTextField tf;
@@ -118,10 +94,8 @@ public class CaptchaDialog extends JCountdownDialog implements ActionListener, K
             tf.setText(explain);
             tf.setEditable(false);
         }
-        add(new JLabel(imageIcon), "alignx center");
-        add(textField);
-        add(this.countDownLabel, "split 3,growx");
-        add(btnOK, "alignx right");
+        add(captcha, "w pref!, h pref!, alignx center");
+        add(this.countDownLabel, "split 2,growx");
         add(btnBAD, "alignx right");
         this.setMinimumSize(new Dimension(300, -1));
         this.pack();
@@ -134,82 +108,44 @@ public class CaptchaDialog extends JCountdownDialog implements ActionListener, K
         this.toFront();
         this.setAlwaysOnTop(true);
         this.requestFocus();
-        textField.requestFocusInWindow();
-        textField.selectAll();
+
         this.countdown(Math.max(2, SubConfiguration.getConfig("JAC").getIntegerProperty(Configuration.JAC_SHOW_TIMEOUT, 20)));
-        if ((flag & UserIO.NO_JAC) == 0) {
-            startJAC();
-        }
+
         this.setVisible(true);
         this.toFront();
 
     }
 
-    private void startJAC() {
-        final String title = getTitle();
-        this.setTitle(title + "-JAntiCaptcha");
-        jacWorker = new SwingWorker<Object, Object>() {
-
-            private String code;
-
-            // @Override
-            protected Object doInBackground() throws Exception {
-                CaptchaController cc = new CaptchaController(method, imagefile, null, null);
-                this.code = cc.getCode(flag | UserIO.NO_USER_INTERACTION);
-                return null;
-            }
-
-            public void done() {
-                setTitle(title);
-                if (!this.isCancelled() && code != null) textField.setText(code);
-
-            }
-        };
-        jacWorker.execute();
-
-    }
-
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == btnOK) {
-            captchaText = textField.getText();
-        } else if (e.getSource() == btnBAD) {
-            abort = true;
-            captchaText = null;
-        }
+        mouseEntered(null);
         dispose();
-
-        keyPressed(null);
     }
 
-    /**
-     * Liefert den eingetippten Text zurück
-     * 
-     * @return Der Text, den der Benutzer eingetippt hat
-     */
-    public String getCaptchaText() {
-        if (abort == true) return null;
-        return captchaText;
-    }
-
-    public void keyPressed(KeyEvent e) {
-
-        this.interrupt();
-        if (jacWorker != null) {
-            jacWorker.cancel(true);
-            jacWorker = null;
-        }
-        setTitle(JDLocale.L("gui.captchaWindow.askForInput", "Please enter..."));
-    }
-
-    public void keyReleased(KeyEvent e) {
-    }
-
-    public void keyTyped(KeyEvent e) {
+    public Point getPoint() {
+        return result;
     }
 
     // @Override
     protected void onCountdown() {
-        this.captchaText = textField.getText();
         this.dispose();
     }
+
+    public void mouseClicked(MouseEvent e) {
+    }
+
+    public void mouseEntered(MouseEvent e) {
+        this.interrupt();
+    }
+
+    public void mouseExited(MouseEvent e) {
+    }
+
+    public void mousePressed(MouseEvent e) {
+    }
+
+    public void mouseReleased(MouseEvent e) {
+        this.result = e.getPoint();
+        dispose();
+    }
+
 }

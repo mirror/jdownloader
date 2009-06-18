@@ -734,12 +734,6 @@ public class GifDecoder {
         lastRect = new Rectangle(ix, iy, iw, ih);
         lastImage = image;
         lastBgColor = bgColor;
-        @SuppressWarnings("unused")
-        int dispose = 0;
-        @SuppressWarnings("unused")
-        boolean transparency = false;
-        @SuppressWarnings("unused")
-        int delay = 0;
         lct = null;
     }
 

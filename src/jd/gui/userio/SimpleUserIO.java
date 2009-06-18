@@ -16,6 +16,7 @@
 
 package jd.gui.userio;
 
+import java.awt.Point;
 import java.io.File;
 
 import javax.swing.ImageIcon;
@@ -23,6 +24,7 @@ import javax.swing.ImageIcon;
 import jd.gui.UserIO;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.userio.dialog.CaptchaDialog;
+import jd.gui.userio.dialog.ClickPositionDialog;
 import jd.gui.userio.dialog.ConfirmDialog;
 import jd.gui.userio.dialog.InputDialog;
 import jd.utils.JDTheme;
@@ -39,43 +41,45 @@ public class SimpleUserIO extends UserIO {
         return INSTANCE;
     }
 
-    // @Override
+    @Override
     protected String showCaptchaDialog(final int flag, final String methodname, final File captchafile, final String suggestion, final String explain) {
         if ((flag & UserIO.NO_USER_INTERACTION) > 0) return suggestion;
         return new GuiRunnable<String>() {
-      
-            // @Override
+
+            @Override
             public String runSave() {
                 return new CaptchaDialog(flag, methodname, captchafile, suggestion, explain).getCaptchaText();
             }
-        }.getReturnValue();
 
+        }.getReturnValue();
+    }
+
+    @Override
+    protected Point showClickPositionDialog(final File imagefile, final String title, final String explain) {
+        return new GuiRunnable<Point>() {
+
+            @Override
+            public Point runSave() {
+                return new ClickPositionDialog(imagefile, title, explain).getPoint();
+            }
+
+        }.getReturnValue();
     }
 
     public static void main(String args[]) {
         UserIO.setInstance(SimpleUserIO.getInstance());
-        // String res = UserIO.getInstance().requestCaptchaDialog(0,
-        // "megaupload.com", new File(
-        // "C:\\Users\\oem\\.jd_home\\captchas\\megaupload.com\\23.04.2009_12.28.22.245.jpg"
-        // ), "01234", null);
-        // System.out.println("result: " + res);
-        
-        //test this 
-//        UserIO.getInstance().requestInputDialog(0, "Titl", "message", "default", null, null, null);
-//        UserIO.getInstance().requestConfirmDialog(UserIO.NO_CANCEL_OPTION, "JD Update", "New Update available! The following restart may take afew minutes. This is not a crash! Just wait.",null, null, null);
-      //  UserIO.getInstance().requestConfirmDialog(UserIO.NO_CANCEL_OPTION, JDLocale.L("gui.cnl.install.error.title", "Click'n'Load Installation"), JDLocale.LF("gui.cnl.install.error.message", "Installation of CLick'n'Load failed. Try these alternatives:\r\n * Start JDownloader as Admin.\r\n * Try to execute %s manually.\r\n * Open Configuration->General->Click'n'load-> [Install].\r\nFor details, visit http://jdownloader.org/click-n-load.", JDUtilities.getResourceFile("tmp/installcnl.reg").getAbsolutePath()), JDTheme.II("gui.clicknload", 48, 48), null, null);
-
     }
 
-    // @Override
+    @Override
     protected int showConfirmDialog(final int flag, final String title, final String message, final ImageIcon icon, final String okOption, final String cancelOption) {
         if ((flag & UserIO.NO_USER_INTERACTION) > 0) return 0;
         return new GuiRunnable<Integer>() {
 
-            // @Override
+            @Override
             public Integer runSave() {
                 return new ConfirmDialog(flag, title, message, icon, okOption, cancelOption).getReturnID();
             }
+
         }.getReturnValue();
     }
 
@@ -84,10 +88,11 @@ public class SimpleUserIO extends UserIO {
         if ((flag & UserIO.NO_USER_INTERACTION) > 0) return defaultMessage;
         return new GuiRunnable<String>() {
 
-            // @Override
+            @Override
             public String runSave() {
                 return new InputDialog(flag, title, message, defaultMessage, icon, okOption, cancelOption).getReturnID();
             }
+
         }.getReturnValue();
     }
 
@@ -103,6 +108,5 @@ public class SimpleUserIO extends UserIO {
         default:
             return JDTheme.II("gui.images.config.tip", 32, 32);
         }
-
     }
 }
