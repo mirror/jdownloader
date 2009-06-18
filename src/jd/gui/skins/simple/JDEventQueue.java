@@ -118,7 +118,6 @@ public class JDEventQueue extends EventQueue {
                                         JLinkButton.openURL(url);
                                         return;
                                     } catch (Exception e) {
-                                        // TODO Auto-generated catch block
                                         e.printStackTrace();
                                     }
 
@@ -151,7 +150,6 @@ public class JDEventQueue extends EventQueue {
                 point.y -= (source.getLocationOnScreen().y - SimpleGUI.CURRENTGUI.getLocationOnScreen().y);
                 StringBuilder sb2 = new StringBuilder();
                 int i = 0;
-                final StringBuilder sb = new StringBuilder();
                 while (source != null) {
                     Component source2 = source.getComponentAt(point);
                     if (source instanceof JTabbedPane) {
@@ -176,30 +174,22 @@ public class JDEventQueue extends EventQueue {
                                 Method method = null;
                                 try {
                                     method = source2.getClass().getMethod("getText", new Class[] {});
-
                                 } catch (Exception e1) {
-                                    // TODO Auto-generated catch block
                                     // e1.printStackTrace();
                                 }
                                 try {
                                     method = source2.getClass().getMethod("getTitle", new Class[] {});
-
                                 } catch (Exception e1) {
-                                    // TODO Auto-generated catch block
                                     // e1.printStackTrace();
                                 }
                                 if (method != null) {
-
                                     try {
                                         text = method.invoke(source2) + "";
                                     } catch (IllegalArgumentException e1) {
-                                        // TODO Auto-generated catch block
                                         e1.printStackTrace();
                                     } catch (IllegalAccessException e1) {
-                                        // TODO Auto-generated catch block
                                         e1.printStackTrace();
                                     } catch (InvocationTargetException e1) {
-                                        // TODO Auto-generated catch block
                                         e1.printStackTrace();
                                     }
                                 }
