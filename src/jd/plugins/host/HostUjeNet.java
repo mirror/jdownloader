@@ -60,7 +60,6 @@ public class HostUjeNet extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String code = getCaptchaCode(br.getBaseURL() + "obraz.php", downloadLink);
-        Form[] test = br.getForms();
         Form captchaForm = br.getForm(1);
         if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         captchaForm.put("kod", code);

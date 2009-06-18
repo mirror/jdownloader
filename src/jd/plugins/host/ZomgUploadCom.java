@@ -16,7 +16,6 @@
 
 package jd.plugins.host;
 
-import java.util.Iterator;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
@@ -48,11 +47,11 @@ public class ZomgUploadCom extends PluginForHost {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("<Title>ZOMG Upload - Free File Hosting</Title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        Form[] forms = br.getForms();
-        forms[0].remove("method_premium");
-        br.submitForm(forms[0]);
+        Form form = br.getForm(0);
+        form.remove("method_premium");
+        br.submitForm(form);
 
-        forms = br.getForms();
+        form = br.getForm(0);
         // Captcha. no image, just html placed numbers
         String[][] temp = br.getRegex("<span style='position:absolute;padding-left:([0-9]+)px;padding-top:[0-9]px;'>([0-9])</span>").getMatches();
         // COPY FROM BIGGERUPLOADCOM
@@ -62,17 +61,16 @@ public class ZomgUploadCom extends PluginForHost {
         for (String[] letter : temp) {
             capMap.put(Integer.parseInt(letter[0]), letter[1]);
         }
-        String code = "";
-        Iterator<Integer> it = capMap.keySet().iterator();
-        while (it.hasNext()) {
-            code += capMap.get(it.next());
+        StringBuilder code = new StringBuilder();
+        for (String value : capMap.values()) {
+            code.append(value);
         }
-        forms[0].put("code", code);
-        forms[0].setAction(link.getDownloadURL());
+        form.put("code", code.toString());
+        form.setAction(link.getDownloadURL());
         // Ticket Time
         int tt = Integer.parseInt(br.getRegex("countdown\">(\\d+)</span>").getMatch(0));
         sleep(tt * 1001, link);
-        br.submitForm(forms[0]);
+        br.submitForm(form);
         URLConnectionAdapter con2 = br.getHttpConnection();
         String dllink = br.getRedirectLocation();
         if (con2.getContentType().contains("html")) {
@@ -91,8 +89,6 @@ public class ZomgUploadCom extends PluginForHost {
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         dl = br.openDownload(link, dllink, false, 1);
         dl.startDownload();
-        // COPY FROM BIGGERUPLOADCOM END
-        logger.fine(code);
 
     }
 

@@ -35,12 +35,10 @@ public class ZomgUploadCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.getPage(parameter.toString());
-        String[][] links = null;
-        logger.fine("url:" + br.getURL());
-        links = br.getRegex("<TR><TD><a href=\"(.*?)\" target=\"_blank\">.*?</a></TD>").getMatches();
-        for (String data[] : links) {
-            DownloadLink l = this.createDownloadlink(data[0]);
-            decryptedLinks.add(l);
+        String[] links = br.getRegex("<TR><TD><a href=\"(.*?)\" target=\"_blank\">.*?</a></TD>").getColumn(0);
+        progress.setRange(links.length);
+        for (String data : links) {
+            decryptedLinks.add(createDownloadlink(data));
             progress.increase(1);
         }
         return decryptedLinks;

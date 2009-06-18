@@ -168,7 +168,6 @@ public class JDLocale {
             }
             f.close();
         } catch (IOException e) {
-
             JDLogger.exception(e);
         }
 
@@ -217,7 +216,6 @@ public class JDLocale {
     }
 
     public static void setLocale(String lID) {
-        // if (data != null && localeFile != null) return;
         lID = correctLID(lID);
         localeID = lID;
         System.out.println("Loaded language: " + lID);
@@ -270,8 +268,68 @@ public class JDLocale {
 
     }
 
+    private static String getCountryID() {
+        if (localeID.equalsIgnoreCase("english")) {
+            return "UK";
+        } else if (localeID.equalsIgnoreCase("german")) {
+            return "DE";
+        } else if (localeID.equalsIgnoreCase("Spanish")) {
+            return "ES";
+        } else if (localeID.equalsIgnoreCase("french")) {
+            return "FR";
+        } else if (localeID.equalsIgnoreCase("Italian")) {
+            return "IT";
+        } else if (localeID.equalsIgnoreCase("Arabian")) {
+            return "SA";
+        } else if (localeID.equalsIgnoreCase("Bosnian")) {
+            return "BA";
+        } else if (localeID.equalsIgnoreCase("Catala")) {
+            // TODO: ???
+            return "US";
+        } else if (localeID.equalsIgnoreCase("Chinese (Simplified)")) {
+            return "CN";
+        } else if (localeID.equalsIgnoreCase("Chinese (traditionalbig5)")) {
+            return "CN";
+        } else if (localeID.equalsIgnoreCase("Chinese")) {
+            return "CN";
+        } else if (localeID.equalsIgnoreCase("Czech")) {
+            return "CZ";
+        } else if (localeID.equalsIgnoreCase("Danish")) {
+            return "DK";
+        } else if (localeID.equalsIgnoreCase("Dutch")) {
+            return "NL";
+        } else if (localeID.equalsIgnoreCase("Greek")) {
+            return "GR";
+        } else if (localeID.equalsIgnoreCase("Magyar")) {
+            // TODO: ???
+            return "US";
+        } else if (localeID.equalsIgnoreCase("Polish")) {
+            return "PL";
+        } else if (localeID.equalsIgnoreCase("Portuguese (brazil)")) {
+            return "BR";
+        } else if (localeID.equalsIgnoreCase("Russian")) {
+            return "RU";
+        } else if (localeID.equalsIgnoreCase("Serbian(latin)")) {
+            // TODO: ???
+            return "US";
+        } else if (localeID.equalsIgnoreCase("Serbian")) {
+            // TODO: ???
+            return "US";
+        } else if (localeID.equalsIgnoreCase("Slovak")) {
+            return "SK";
+        } else if (localeID.equalsIgnoreCase("Spanish(Argentina)")) {
+            return "AR";
+        } else if (localeID.equalsIgnoreCase("Turkish")) {
+            return "TR";
+        } else if (localeID.equalsIgnoreCase("Vietnamese")) {
+            return "VN";
+        } else {
+            return "US";
+        }
+    }
+
     public static void initLocalisation() {
-        JComponent.setDefaultLocale(new Locale(JDLocale.getLocale()));
+        JComponent.setDefaultLocale(new Locale(JDLocale.getCountryID()));
     }
 
     public static String translate(String to, String msg) {

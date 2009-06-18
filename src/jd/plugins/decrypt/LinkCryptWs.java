@@ -76,6 +76,7 @@ public class LinkCryptWs extends PluginForDecrypt {
         if (valid == false) throw new DecrypterException(DecrypterException.CAPTCHA);
 
         File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
+        if (!container.exists()) container.createNewFile();
 
         /* TODO: Das kann man sicher besser lösen.. bitte mal wer reinschauen */
         String dlc = br.getRegex("(^.*?)<script").getMatch(0);

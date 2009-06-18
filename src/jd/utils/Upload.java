@@ -32,9 +32,9 @@ public class Upload {
     public static String toJDownloader(String str, String desc) {
         try {
             Browser br = new Browser();
-            
-            String ret = br.postPage("http://jdownloader.org/pastebin", "upload=1&desc=" + Encoding.urlEncode(desc) + "&log=" + Encoding.urlEncode(str));
-           String path=br.getRegex("window.location = \"(.*?)\"").getMatch(0);
+
+            br.postPage("http://jdownloader.org/pastebin", "upload=1&desc=" + Encoding.urlEncode(desc) + "&log=" + Encoding.urlEncode(str));
+            String path = br.getRegex("window.location = \"(.*?)\"").getMatch(0);
             return "http://www.jdownloader.org" + path;
         } catch (IOException e) {
             JDLogger.exception(e);
@@ -57,7 +57,7 @@ public class Upload {
 
     public static String toRapidshareComPremium(File file, String userid, String pass) {
         try {
-            Browser br = new Browser();      
+            Browser br = new Browser();
             String[] data = br.getPage("http://rapidshare.com/cgi-bin/upload.cgi?intsysdata=1").split("\\,");
             PostFormDataRequest r = (PostFormDataRequest) br.createPostFormDataRequest("http://rs" + data[0].trim() + "l3.rapidshare.com/cgi-bin/upload.cgi");
             r.addFormData(new FormData("toolmode2", "1"));
