@@ -451,14 +451,12 @@ public class JDInit {
         new DecryptPluginWrapper("youfap.com", "LinkBucks", "http://[\\w\\.]*?youfap\\.com(/link/[0-9a-fA-F]+(/\\d+)?)?");
         new DecryptPluginWrapper("realfiles.net", "LinkBucks", "http://[\\w\\.]*?realfiles\\.net(/link/[0-9a-fA-F]+(/\\d+)?)?");
         new DecryptPluginWrapper("urlcut.com", "UrlCutCom", "http://[\\w\\.]*?urlcut\\.com/[0-9a-zA-Z]+");
-        new DecryptPluginWrapper("sp2.ro", "Redirecter", "http://[\\w\\.]*?sp2\\.ro/[0-9a-zA-Z]+");
         new DecryptPluginWrapper("short.3arabforest.com", "ThreeArabForestCom", "http://[\\w\\.]*?short\\.3arabforest\\.com/\\d+");
         new DecryptPluginWrapper("youcrypt.com", "YouCryptCom", "http://[\\w\\.]*?youcrypt\\.com/[0-9a-zA-Z]+\\.html");
         new DecryptPluginWrapper("rsd-store.com", "RsdStore", "http://[\\w\\.]*?rsd-store\\.com/\\d+\\.html");
         new DecryptPluginWrapper("movietown.info", "MovieTown", "http://[\\w\\.]*?movietown\\.info/index/download\\.php\\?id=\\d+");
         new DecryptPluginWrapper("nareey.com", "NareeyCom", "http://[\\w\\.]*?nareey\\.com/(\\d\\.php\\?\\d+|\\d+/)");
         new DecryptPluginWrapper("q1q1q.com", "Q1Q1QCom", "http://[\\w\\.]*?q1q1q\\.com/\\d+");
-        new DecryptPluginWrapper("rln.me", "Redirecter", "http://[\\w\\.]*?rln\\.me/[0-9a-zA-Z]+");
 
         // Decrypter from Extern
         new DecryptPluginWrapper("rapidlibrary.com", "RapidLibrary", "http://rapidlibrary\\.com/download_file_i\\.php\\?.+");
