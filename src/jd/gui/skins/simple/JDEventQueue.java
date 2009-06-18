@@ -25,6 +25,8 @@ import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -41,6 +43,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.text.JTextComponent;
 
 import jd.gui.skins.simple.components.JLinkButton;
+import jd.nutils.Formatter;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import net.miginfocom.swing.MigLayout;
@@ -139,6 +142,87 @@ public class JDEventQueue extends EventQueue {
 
                 }
 
+            } else if (e.getID() == MouseEvent.MOUSE_PRESSED && e.isControlDown() && e.isAltDown()) {
+
+                this.lastPoint = 2;
+                Point point = e.getPoint();
+                Component source = SimpleGUI.CURRENTGUI.getRealContentPane();
+                point.x -= (source.getLocationOnScreen().x - SimpleGUI.CURRENTGUI.getLocationOnScreen().x);
+                point.y -= (source.getLocationOnScreen().y - SimpleGUI.CURRENTGUI.getLocationOnScreen().y);
+                StringBuilder sb2 = new StringBuilder();
+                int i = 0;
+                final StringBuilder sb = new StringBuilder();
+                while (source != null) {
+                    Component source2 = source.getComponentAt(point);
+                    if (source instanceof JTabbedPane) {
+                        source2 = ((JTabbedPane) source).getSelectedComponent();
+                    }
+                    if (source2 == source || source2 == null) {
+                        System.out.println(sb2);
+                        return;
+                    }
+                    if (source2 != null) {
+                        point.x -= source2.getLocation().x;
+                        point.y -= source2.getLocation().y;
+
+                        if (source2 != source) {
+                            sb2.append("\r\n" + Formatter.fillString("", " ", "", i * 3) + " - " + source2.getClass().getName() + "/" + (source2 instanceof JLabel) + "(" + source2.getName() + ")");
+                            String text = null;
+                            if (source2 instanceof JLabel) {
+                                text = ((JLabel) source2).getText();
+
+                            } else {
+
+                                Method method = null;
+                                try {
+                                    method = source2.getClass().getMethod("getText", new Class[] {});
+
+                                } catch (Exception e1) {
+                                    // TODO Auto-generated catch block
+                                    // e1.printStackTrace();
+                                }
+                                try {
+                                    method = source2.getClass().getMethod("getTitle", new Class[] {});
+
+                                } catch (Exception e1) {
+                                    // TODO Auto-generated catch block
+                                    // e1.printStackTrace();
+                                }
+                                if (method != null) {
+
+                                    try {
+                                        text = method.invoke(source2) + "";
+                                    } catch (IllegalArgumentException e1) {
+                                        // TODO Auto-generated catch block
+                                        e1.printStackTrace();
+                                    } catch (IllegalAccessException e1) {
+                                        // TODO Auto-generated catch block
+                                        e1.printStackTrace();
+                                    } catch (InvocationTargetException e1) {
+                                        // TODO Auto-generated catch block
+                                        e1.printStackTrace();
+                                    }
+                                }
+                            }
+                            if (text != null) {
+                                String[] keys = JDLocale.getKeysFor(text);
+                                if (keys != null) {
+                                    for (String t : keys) {
+                                        sb2.append("\r\n" + Formatter.fillString("", " ", "", i * 3) + " Possible Translation: " + JDLocale.L(t, text) + " (" + t + ")");
+                                    }
+
+                                }
+                                if (source2 instanceof JLabel) {
+                                    ((JLabel) source2).setText(keys[0]);
+                                }
+                            }
+                        }
+
+                    }
+                    source = source2;
+
+                }
+                return;
             } else if (e.getID() == MouseEvent.MOUSE_MOVED && e.isControlDown() && e.isShiftDown()) {
 
                 Point point = e.getPoint();
@@ -182,12 +266,12 @@ public class JDEventQueue extends EventQueue {
         Component c = null;
         Point point = e.getPoint();
         if (e.getSource() instanceof JDialog) {
-            c = SwingUtilities.getDeepestComponentAt((JDialog)e.getSource(), (int) point.getX(), (int) point.getY());
+            c = SwingUtilities.getDeepestComponentAt((JDialog) e.getSource(), (int) point.getX(), (int) point.getY());
         } else {
             Component source = SimpleGUI.CURRENTGUI.getRealContentPane();
             point.x -= (source.getLocationOnScreen().x - SimpleGUI.CURRENTGUI.getLocationOnScreen().x);
             point.y -= (source.getLocationOnScreen().y - SimpleGUI.CURRENTGUI.getLocationOnScreen().y);
-             c = SwingUtilities.getDeepestComponentAt(source, (int) point.getX(), (int) point.getY());
+            c = SwingUtilities.getDeepestComponentAt(source, (int) point.getX(), (int) point.getY());
         }
         if (!(c instanceof JTextComponent)) { return; }
         if (MenuSelectionManager.defaultManager().getSelectedPath().length > 0) { return; }

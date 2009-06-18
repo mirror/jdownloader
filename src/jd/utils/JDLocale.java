@@ -23,6 +23,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map.Entry;
 
 import javax.swing.UIManager;
 
@@ -43,6 +45,8 @@ public class JDLocale {
     public static final String CONFIG = "LOCALE";
 
     public static final String LOCALE_ID = "LOCALE";
+
+    public static boolean DEBUG = false;
 
     private static String LANGUAGES_DIR = "jd/languages/";
 
@@ -82,6 +86,7 @@ public class JDLocale {
     }
 
     public static String getLocaleString(String key2, String def) {
+        if (DEBUG) return key2;
         if (data == null || localeFile == null) {
             JDLocale.setLocale(SubConfiguration.getConfig(JDLocale.CONFIG).getStringProperty(JDLocale.LOCALE_ID, JDLocale.isGerman() ? "german" : "english"));
         }
@@ -122,6 +127,7 @@ public class JDLocale {
      * @return
      */
     public static String LF(String key, String def, Object... args) {
+        if (DEBUG) return key;
         if (args == null || args.length == 0) {
             JDLogger.getLogger().severe("FIXME: " + key);
         }
@@ -165,6 +171,37 @@ public class JDLocale {
             JDLogger.exception(e);
         }
 
+    }
+
+    /**
+     * Searches the key to a givven hashcode. only needed for dbeug issues
+     * 
+     * @param hash
+     * @return
+     */
+    private static String hashToKey(Integer hash) {
+        BufferedReader f;
+        try {
+            f = new BufferedReader(new InputStreamReader(new FileInputStream(localeFile), "UTF8"));
+
+            String line;
+            String key;
+            String value;
+            while ((line = f.readLine()) != null) {
+                if (line.startsWith("#")) continue;
+                int split = line.indexOf("=");
+                if (split <= 0) continue;
+
+                key = line.substring(0, split).trim().toLowerCase();
+                if (hash == key.hashCode()) return key;
+
+            }
+            f.close();
+        } catch (IOException e) {
+
+            JDLogger.exception(e);
+        }
+        return null;
     }
 
     private static void loadDefault() {
@@ -291,6 +328,37 @@ public class JDLocale {
             JDLogger.exception(e);
             return null;
         }
+    }
+
+    /**
+     * Returns an array for the best matching key to text
+     * 
+     * @param text
+     * @return
+     */
+    public static String[] getKeysFor(String text) {
+        ArrayList<Integer> bestKeys = new ArrayList<Integer>();
+        int bestValue = Integer.MAX_VALUE;
+        for (Iterator<Entry<Integer, String>> it = data.entrySet().iterator(); it.hasNext();) {
+            Entry<Integer, String> next = it.next();
+            int dist = EditDistance.getLevenshteinDistance(text, next.getValue());
+
+            if (dist < bestValue) {
+                bestKeys.clear();
+                bestKeys.add(next.getKey());
+                bestValue = dist;
+            } else if (bestValue == dist) {
+                bestKeys.add(next.getKey());
+                bestValue = dist;
+            }
+
+        }
+        if (bestKeys.size() == 0) return null;
+        String[] ret = new String[bestKeys.size()];
+        for (int i = 0; i < ret.length; i++) {
+            ret[i] = hashToKey(bestKeys.get(i));
+        }
+        return ret;
     }
 
 }

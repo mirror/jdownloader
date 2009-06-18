@@ -170,6 +170,10 @@ public class Main {
                 JDInitFlags.SWITCH_DEBUG = true;
                 Browser.setVerbose(true);
             }
+            if (p.equalsIgnoreCase("-trdebug")) {
+                JDLocale.DEBUG=true;
+                LOGGER.info("Translation DEBUG Modus aktiv");
+            }
             if (p.equalsIgnoreCase("-rfb")) {
                 JDInitFlags.SWITCH_RETURNED_FROM_UPDATE = true;
             }
