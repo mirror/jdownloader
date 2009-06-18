@@ -441,7 +441,8 @@ public class JDInit {
         new DecryptPluginWrapper("uploadr.eu", "UploadrEu", "http://[\\w\\.]*?uploadr\\.eu/(link/[\\w]+|folder/\\d+/)");
         new DecryptPluginWrapper("seriousurls.com", "LinkBucks", "http://[\\w\\.]*?seriousurls\\.com(/link/[0-9a-fA-F]+(/\\d+)?)?");
         new DecryptPluginWrapper("thesegalleries.com", "LinkBucks", "http://[\\w\\.]*?thesegalleries\\.com(/link/[0-9a-fA-F]+(/\\d+)?)?");
-        new DecryptPluginWrapper("ubucks.com", "LinkBucks", "http://[\\w\\.]*?ubucks\\.com(/link/[0-9a-fA-F]+(/\\d+)?)?");
+        new DecryptPluginWrapper("ubucks.net", "LinkBucks", "http://[\\w\\.]*?ubucks\\.net(/link/[0-9a-fA-F]+(/\\d+)?)?");
+        new DecryptPluginWrapper("seriousfiles.com", "LinkBucks", "http://[\\w\\.]*?seriousfiles\\.com(/link/[0-9a-fA-F]+(/\\d+)?)?");
         new DecryptPluginWrapper("viraldatabase.com", "LinkBucks", "http://[\\w\\.]*?viraldatabase\\.com(/link/[0-9a-fA-F]+(/\\d+)?)?");
         new DecryptPluginWrapper("placepictures.com", "LinkBucks", "http://[\\w\\.]*?placepictures\\.com(/link/[0-9a-fA-F]+(/\\d+)?)?");
         new DecryptPluginWrapper("urlpulse.net", "LinkBucks", "http://[\\w\\.]*?urlpulse\\.net(/link/[0-9a-fA-F]+(/\\d+)?)?");
