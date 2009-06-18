@@ -129,7 +129,8 @@ public class UnrarWrapper extends Thread implements JDRunnable {
     private Exception exception;
     private File extractTo;
     private boolean removeAfterExtraction;
-
+    private boolean moveFilesToBaseDirAfterExtraction;
+    
     private ArrayList<String> archiveParts;
     private int crackProgress;
     private int exitCode;
@@ -215,6 +216,9 @@ public class UnrarWrapper extends Thread implements JDRunnable {
                 case EXIT_CODE_SUCCESS:
                     if (!gotInterrupted && removeAfterExtraction) {
                         removeArchiveFiles();
+                    }
+                    if (!gotInterrupted && moveFilesToBaseDirAfterExtraction) {
+                        moveExtractedFilesToBaseDir();
                     }
                     fireEvent(JDUnrarConstants.WRAPPER_FINISHED_SUCCESSFULL);
                     break;
@@ -311,6 +315,24 @@ public class UnrarWrapper extends Thread implements JDRunnable {
             }
         }
 
+    }
+    
+    private void moveExtractedFilesToBaseDir() {
+        for(ArchivFile f : files) {
+            String[] pathParts = f.getFilepath().split(Regex.escape(File.separator));
+            if(pathParts.length>1) {
+                File newFile = new File(extractTo.getAbsolutePath() + File.separatorChar + pathParts[0]+file.separator + f.getFile().getName());
+                if (!newFile.exists()) {
+                    f.getFile().renameTo(newFile);
+                    JDLogger.getLogger().warning("Moved file after extraction: " + f +" to "+newFile);
+                    File parentDir = f.getFile().getParentFile();
+                    if (parentDir.isDirectory() && parentDir.listFiles().length==0) {
+                            parentDir.delete();
+                            JDLogger.getLogger().warning("Deleted empty directory after extraction: " + parentDir);
+                    }
+                }
+            }
+        }
     }
 
     public Exception getException() {
@@ -858,6 +880,10 @@ public class UnrarWrapper extends Thread implements JDRunnable {
 
     public void setRemoveAfterExtract(boolean setProperty) {
         this.removeAfterExtraction = setProperty;
+    }
+    
+    public void setMoveFilesToBaseDirAfterExtraction(boolean setProperty) {
+        this.moveFilesToBaseDirAfterExtraction = setProperty;
     }
 
     public void setOverwrite(boolean booleanProperty) {
