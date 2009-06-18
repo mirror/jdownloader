@@ -26,11 +26,9 @@ public class AboutMenu extends JStartMenu {
 
     public AboutMenu() {
         super("gui.menu.about", "gui.images.help");
-        this.setIconTextGap(15);
         this.add(new AboutAction());
         this.add(new KnowledgeAction());
         this.add(new LatestChanges());
 
     }
-
 }
