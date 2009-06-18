@@ -78,6 +78,7 @@ import org.jdesktop.swingx.decorator.Filter;
 import org.jdesktop.swingx.decorator.FilterPipeline;
 import org.jdesktop.swingx.decorator.HighlightPredicate;
 import org.jdesktop.swingx.decorator.PatternFilter;
+import org.jdesktop.swingx.search.SearchFactory;
 import org.tmatesoft.svn.core.SVNException;
 import org.tmatesoft.svn.core.wc.SVNRevision;
 
@@ -111,7 +112,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
     private JMenuItem mnuNew, mnuReload, mnuSave, mnuSaveAs;
     private JMenuItem mnuSVNSettings, mnuSVNCheckOutNow;
     private JMenuItem mnuAdd, mnuAdopt, mnuAdoptMissing, mnuClear, mnuDelete, mnuTranslate, mnuTranslateMissing;
-    private JMenuItem mnuPickDoneColor, mnuPickMissingColor, mnuPickOldColor, mnuShowDupes;
+    private JMenuItem mnuPickDoneColor, mnuPickMissingColor, mnuPickOldColor, mnuShowDupes, mnuOpenSearchDialog;
     private JCheckBoxMenuItem mnuColorizeDone, mnuColorizeMissing, mnuColorizeOld, mnuShowDone, mnuShowMissing, mnuShowOld;
     private JPopupMenu mnuContextPopup;
     private JMenuItem mnuContextAdopt, mnuContextClear, mnuContextDelete, mnuContextTranslate;
@@ -327,6 +328,8 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         mnuEntries.add(mnuPickDoneColor = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.pickDoneColor", "Pick Color for Done Entries")));
         mnuEntries.addSeparator();
         mnuEntries.add(mnuShowDupes = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.showDupes", "Show Dupes")));
+        mnuEntries.addSeparator();
+        mnuEntries.add(mnuOpenSearchDialog = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.openSearchDialog", "Open Search Dialog")));
 
         mnuShowMissing.setSelected(showMissing);
         mnuColorizeMissing.setSelected(colorizeMissing);
@@ -345,11 +348,13 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         mnuColorizeDone.addActionListener(this);
         mnuPickDoneColor.addActionListener(this);
         mnuShowDupes.addActionListener(this);
+        mnuOpenSearchDialog.addActionListener(this);
 
         mnuColorizeMissing.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F5, 0));
         mnuColorizeOld.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F6, 0));
         mnuColorizeDone.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F7, 0));
         mnuShowDupes.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_D, KeyEvent.CTRL_DOWN_MASK));
+        mnuOpenSearchDialog.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F, KeyEvent.CTRL_DOWN_MASK));
 
         // Menü-Bar zusammensetzen
         JMenuBar menuBar = new JMenuBar();
@@ -591,6 +596,10 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         } else if (e.getSource() == mnuShowDupes) {
 
             LFEDupeDialog.showDialog(SimpleGUI.CURRENTGUI, dupes);
+
+        } else if (e.getSource() == mnuOpenSearchDialog) {
+
+            SearchFactory.getInstance().showFindInput(table, table.getSearchable());
 
         } else if (e.getSource() == mnuTranslate || e.getSource() == mnuContextTranslate) {
 
