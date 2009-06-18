@@ -458,7 +458,7 @@ public class JDInit {
         new DecryptPluginWrapper("nareey.com", "NareeyCom", "http://[\\w\\.]*?nareey\\.com/(\\d\\.php\\?\\d+|\\d+/)");
         new DecryptPluginWrapper("q1q1q.com", "Q1Q1QCom", "http://[\\w\\.]*?q1q1q\\.com/\\d+");
         new DecryptPluginWrapper("minyurl.net", "MinyUrlNet", "http://[\\w\\.]*?minyurl\\.net/[^\\s^/]+");
-
+        new DecryptPluginWrapper("linksafe.info","LinksafeInfo","http://[\\w\\.]*?linksafe\\.info/[^\\s^/]+");
         // Decrypter from Extern
         new DecryptPluginWrapper("rapidlibrary.com", "RapidLibrary", "http://rapidlibrary\\.com/download_file_i\\.php\\?.+");
     }
