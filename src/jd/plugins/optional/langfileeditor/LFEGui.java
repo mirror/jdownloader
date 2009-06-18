@@ -34,6 +34,7 @@ import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map.Entry;
 
 import javax.swing.JCheckBoxMenuItem;
@@ -170,6 +171,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         table.addMouseListener(this);
         table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         table.setAutoStartEditOnKeyStroke(false);
+        table.setLocale(new Locale(JDLocale.getLocale()));
 
         if (colorizeDone) table.addHighlighter(doneHighlighter);
         if (colorizeMissing) table.addHighlighter(missingHighlighter);
