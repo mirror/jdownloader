@@ -20,7 +20,8 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
+import jd.http.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -35,28 +36,26 @@ public class KnofflCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-
         br.getPage(parameter);
-        String[] links = br.getRegex("dl\\('(.*?)'\\)").getColumn(0);
-        if (links.length == 0) {
-            String url = br.getRegex("<frame src=\"(http://knoffl.com/\\?goto=.*?)\"").getMatch(0);
-            br.getPage(url);
-            links = br.getRegex("dl\\('(.*?)'\\)").getColumn(0);
+        String properurl = br.getRegex("frame src=\"([^\\s]+)\" name=\"main\"").getMatch(0);
+        if (properurl != null) br.getPage(properurl);
+        if (br.containsHTML("Seite wird geladen"))
+        {
+            properurl = null;
+            properurl = br.getRegex("content=\"0;URL=([\\s]+)\"").getMatch(0);
+            if (properurl == null) properurl = br.getRegex("a href=\"([\\s]+)\"").getMatch(0);
+            if (properurl != null) br.getPage(properurl);
         }
+        String[] links = br.getRegex("dl\\('(.*?)'\\)").getColumn(0);
         if (links.length == 0) {
             String url = br.getRegex("<a href=\"(http://.*?knoffl\\.com.*?/.*?)\">").getMatch(0);
             br.getPage(url);
             links = br.getRegex("dl\\('(.*?)'\\)").getColumn(0);
         }
-        Browser brc;
-        for (String element : links) {
-            Thread.sleep(1000);
-            brc = br.cloneBrowser();
-            brc.getPage(element);
-            String url = brc.getRegex("<frame src=\"(out\\.php\\?page=.*?)\"").getMatch(0);
-            brc.getPage(url);
-            url = brc.getRegex("<iframe src=\"(.*?)\"").getMatch(0);
-            decryptedLinks.add(createDownloadlink(url));
+        String codedurl;
+        for (int i=0;i<links.length;i++) {
+            codedurl = new Regex(links[i],"&go=([a-zA-Z0-9=]+)").getMatch(0);
+            decryptedLinks.add(createDownloadlink(Encoding.Base64Decode(codedurl)));
         }
         return decryptedLinks;
     }
