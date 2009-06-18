@@ -46,6 +46,7 @@ public class LinkGrabberTreeTableAction extends AbstractAction {
     public static final int DELETE_OFFLINE = 9991;
     public static final int CLEAR = 9999;
     public static final int EXT_FILTER = 99999;
+    public static final int SAVE_DLC = 20;
 
     private int actionID;
     private ActionListener actionListener;

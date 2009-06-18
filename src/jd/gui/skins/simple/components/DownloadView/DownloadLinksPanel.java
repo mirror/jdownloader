@@ -143,7 +143,8 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                         try {
                             internalTreeTable.fireTableChanged(id2, links2);
                         } catch (Exception e) {
-                            e.printStackTrace();
+                            logger.severe("TreeTable Exception, complete refresh!");
+                            updateTableTask(REFRESH_DATA_AND_STRUCTURE_CHANGED, null);
                         }
                     }
                     tablerefreshinprogress = false;

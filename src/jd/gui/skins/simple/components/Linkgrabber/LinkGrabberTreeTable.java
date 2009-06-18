@@ -361,6 +361,7 @@ public class LinkGrabberTreeTable extends JXTreeTable implements MouseListener, 
                 popup.add(new JSeparator());
             }
             if (obj instanceof LinkGrabberFilePackage || obj instanceof DownloadLink) {
+                popup.add(new JMenuItem(new LinkGrabberTreeTableAction(linkgrabber, JDTheme.II("gui.images.dlc", 16, 16), JDLocale.L("gui.table.contextmenu.dlc", "DLC erstellen") + " (" + alllinks.size() + ")", LinkGrabberTreeTableAction.SAVE_DLC, new Property("links", alllinks))));
                 popup.add(buildpriomenu(alllinks));
                 popup.add(buildExtMenu());
                 Set<String> hoster = linkgrabber.getHosterList(alllinks);

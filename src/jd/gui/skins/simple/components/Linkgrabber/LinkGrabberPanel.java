@@ -174,7 +174,8 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                         try {
                             internalTreeTable.fireTableChanged();
                         } catch (Exception e) {
-                            e.printStackTrace();
+                            logger.severe("TreeTable Exception, complete refresh!");
+                            Update_Async.restart();
                         }
                         tablerefreshinprogress = false;
                     }
@@ -434,6 +435,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                             case LinkGrabberTreeTableAction.SET_PW:
                             case LinkGrabberTreeTableAction.NEW_PACKAGE:
                             case LinkGrabberTreeTableAction.MERGE_PACKAGE:
+                            case LinkGrabberTreeTableAction.SAVE_DLC:
                             case LinkGrabberTreeTableAction.ADD_SELECTED_LINKS:
                                 selected_links = (ArrayList<DownloadLink>) ((LinkGrabberTreeTableAction) ((JMenuItem) arg0.getSource()).getAction()).getProperty().getProperty("links");
                                 break;
@@ -571,6 +573,24 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                                 }
                             }
                             return;
+                        case LinkGrabberTreeTableAction.SAVE_DLC: {
+                            GuiRunnable<File> temp = new GuiRunnable<File>() {
+                                // @Override
+                                public File runSave() {
+                                    JDFileChooser fc = new JDFileChooser("_LOADSAVEDLC");
+                                    fc.setFileFilter(new JDFileFilter(null, ".dlc", true));
+                                    if (fc.showSaveDialog(SimpleGUI.CURRENTGUI) == JDFileChooser.APPROVE_OPTION) return fc.getSelectedFile();
+                                    return null;
+                                }
+                            };
+                            File ret = temp.getReturnValue();
+                            if (ret == null) return;
+                            if (JDIO.getFileExtension(ret) == null || !JDIO.getFileExtension(ret).equalsIgnoreCase("dlc")) {
+                                ret = new File(ret.getAbsolutePath() + ".dlc");
+                            }
+                            JDUtilities.getController().saveDLC(ret, selected_links);
+                            return;
+                        }
                         case LinkGrabberTreeTableAction.SET_PW:
                             pw = SimpleGUI.CURRENTGUI.showUserInputDialog(JDLocale.L("gui.linklist.setpw.message", "Set download password"), null);
                             for (int i = 0; i < selected_links.size(); i++) {
