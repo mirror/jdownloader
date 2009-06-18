@@ -38,7 +38,6 @@ public class Q1Q1QCom extends PluginForDecrypt {
         String id;
         String parameter = param.toString();
         id = new Regex(parameter,"q1q1q\\.com/(\\d+)").getMatch(0);
-        System.out.println(id);
         br.getPage("http://www.q1q1q.com/show2.php?id="+id);
         String link = br.getRegex("name=\"ifram\" src=\"(.*?)\"").getMatch(0);
         decryptedLinks.add(createDownloadlink(link));

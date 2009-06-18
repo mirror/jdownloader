@@ -602,10 +602,11 @@ public class JDInit {
         new HostPluginWrapper("FileFlyer.com", "FileFlyerCom", "http://[\\w\\.]*?fileflyer\\.com/view/[\\w]+");
         new HostPluginWrapper("BizHat.com", "BizHatCom", "http://[\\w\\.]*?uploads\\.bizhat\\.com/file/[0-9]+");
         new HostPluginWrapper("MegaFTP.com", "MegaFtpCom", "http://[\\w\\.]*?megaftp\\.com/[0-9]+");
-        new HostPluginWrapper("Duckload.com", "DuckLoad", "http://[\\w\\.]*?(duckload\\.com|youload\\.to)/download/\\d+/.+");
-        new HostPluginWrapper("Hetrixload.com", "HetrixLoadCom", "http://[\\w\\.]*?hetrixload\\.com/files/[A-Za-z0-9]+/.+\\.html");
-        new HostPluginWrapper("Usershare.net", "Usershare", "http://[\\w\\.]*?usershare\\.net/[0-9a-zA-Z.]+");
-        new HostPluginWrapper("Slingfile.com", "SlingFileCom", "http://[\\w\\.]*?slingfile\\.com/(file|audio|video)/.+");
+        new HostPluginWrapper("DuckLoad.com", "DuckLoad", "http://[\\w\\.]*?(duckload\\.com|youload\\.to)/download/\\d+/.+");
+        new HostPluginWrapper("HetrixLoad.com", "HetrixLoadCom", "http://[\\w\\.]*?hetrixload\\.com/files/[A-Za-z0-9]+/.+\\.html");
+        new HostPluginWrapper("UserShare.net", "Usershare", "http://[\\w\\.]*?usershare\\.net/[0-9a-zA-Z.]+");
+        new HostPluginWrapper("SlingFile.com", "SlingFileCom", "http://[\\w\\.]*?slingfile\\.com/(file|audio|video)/.+");
+        new HostPluginWrapper("HyperFileShare.com", "HyperFileShareCom", "http://[\\w\\.]*?hyperfileshare\\.com/(d/|download\\.php\\?code=)[a-fA-F0-9]+");
 
         // Hoster from Extern
         new HostPluginWrapper("iFolder.ru", "IfolderRu", "http://[\\-\\w\\.]*?ifolder\\.ru/\\d+");
