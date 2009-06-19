@@ -239,28 +239,22 @@ public class JDLocale {
         if (lID.equalsIgnoreCase("Chinese(traditionalbig5)")) {
             lID = "Chinese (traditionalbig5)";
             SubConfiguration.getConfig(JDLocale.CONFIG).setProperty(JDLocale.LOCALE_ID, lID);
-        }
-        if (lID.equalsIgnoreCase("Italiano")) {
+        } else if (lID.equalsIgnoreCase("Italiano")) {
             lID = "Italian";
             SubConfiguration.getConfig(JDLocale.CONFIG).setProperty(JDLocale.LOCALE_ID, lID);
-        }
-        if (lID.equalsIgnoreCase("Nederlands")) {
+        } else if (lID.equalsIgnoreCase("Nederlands")) {
             lID = "Dutch";
             SubConfiguration.getConfig(JDLocale.CONFIG).setProperty(JDLocale.LOCALE_ID, lID);
-        }
-        if (lID.equalsIgnoreCase("Polski")) {
+        } else if (lID.equalsIgnoreCase("Polski")) {
             lID = "Polish";
             SubConfiguration.getConfig(JDLocale.CONFIG).setProperty(JDLocale.LOCALE_ID, lID);
-        }
-        if (lID.equalsIgnoreCase("Portugues(brazil)")) {
+        } else if (lID.equalsIgnoreCase("Portugues(brazil)")) {
             lID = "Portuguese (brazil)";
             SubConfiguration.getConfig(JDLocale.CONFIG).setProperty(JDLocale.LOCALE_ID, lID);
-        }
-        if (lID.equalsIgnoreCase("arabic")) {
+        } else if (lID.equalsIgnoreCase("arabic")) {
             lID = "Arabian";
             SubConfiguration.getConfig(JDLocale.CONFIG).setProperty(JDLocale.LOCALE_ID, lID);
-        }
-        if (lID.equalsIgnoreCase("Spanish(Argentina)")) {
+        } else if (lID.equalsIgnoreCase("Spanish(Argentina)")) {
             lID = "Spanish";
             SubConfiguration.getConfig(JDLocale.CONFIG).setProperty(JDLocale.LOCALE_ID, lID);
         }

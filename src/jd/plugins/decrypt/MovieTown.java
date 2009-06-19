@@ -12,7 +12,6 @@ public class MovieTown extends PluginForDecrypt {
 
     public MovieTown(PluginWrapper wrapper) {
         super(wrapper);
-        // TODO Auto-generated constructor stub
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
@@ -23,16 +22,18 @@ public class MovieTown extends PluginForDecrypt {
         String pw = br.getRegex("Passwort:<.*?<span class=.*?>(.*?)</span>").getMatch(0);
 
         String[] links = br.getRegex("Mirror.*?\\d+.*?<a href=\"(.*?)\"").getColumn(0);
+        progress.setRange(links.length);
         for (String link : links) {
             DownloadLink dl = this.createDownloadlink(link);
             if (pw != null && !pw.contains("keins")) dl.addSourcePluginPassword(pw.trim());
             decryptedLinks.add(dl);
+            progress.increase(1);
         }
         return decryptedLinks;
     }
 
     public String getVersion() {
-        return getVersion("$Revision: 5927 $");
+        return getVersion("$Revision$");
     }
 
 }
