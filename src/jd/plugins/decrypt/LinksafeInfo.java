@@ -45,10 +45,9 @@ public class LinksafeInfo extends PluginForDecrypt {
         return decryptedLinks;
 	}
 
-	@Override
-	public String getVersion() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+	// @Override
+    public String getVersion() {
+    	return getVersion("$Revision$");
+    }
 
 }
