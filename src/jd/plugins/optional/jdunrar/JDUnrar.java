@@ -261,11 +261,11 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
      * @param link
      * @return
      */
-    private int getArchivePartType(DownloadLink link) {
+    public static int getArchivePartType(DownloadLink link) {
         return getArchivePartType(new File(link.getFileOutput()));
     }
 
-    private int getArchivePartType(File file) {
+    public static int getArchivePartType(File file) {
         if (file.getName().matches(".*part\\d+.rar$")) return JDUnrarConstants.MULTIPART_START_PART;
         if (file.getName().matches(".*.rar$")) {
             String filename = new Regex(file, "(.*)\\.rar$").getMatch(0);
