@@ -67,6 +67,18 @@ public class JACController {
         } else {
             chooserText = JDLocale.L("showcaptcha.choose.file", "Wählen sie eine Bilddatei aus");
         }
+        
+        
+        /* JDL JDLocale.L("showcaptcha.choose.tester", "Wählen sie eine Bilddatei aus");  */
+        
+        
+        
+        /*
+         *  JDLocale.L("showcaptcha.choose.tester2", "Wählen sie eine Bilddatei aus");
+         * 
+         * 
+         */
+        // fdsfds dsf fdgfdsg  JDLocale.L("showcaptcha.choose.tester3", "Wählen sie eine Bilddatei aus");
         frame.add(new JLabel(JDLocale.L("train.method", "Wählen sie eine Methode aus:")));
         frame.add(methods, "growx, spanx");
         frame.add(new JLabel(chooserText));
