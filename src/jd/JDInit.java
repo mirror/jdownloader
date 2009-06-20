@@ -462,6 +462,7 @@ public class JDInit {
         new DecryptPluginWrapper("linksafe.info","LinksafeInfo","http://[\\w\\.]*?linksafe\\.info/[^\\s^/]+");
         new DecryptPluginWrapper("shrunkin.com","ShrunkinCom","http://[\\w\\.]*?shrunkin\\.com/.+");
         new DecryptPluginWrapper("go4Down.net", "GoFourDownNet", "http://[\\w\\.]*?short\\.go4down\\.(com|net)/\\d+");
+        new DecryptPluginWrapper("sogood.net", "SoGoodNet", "http://[\\w\\.]*?sogood\\.net/.+");
 
         // Decrypter from Extern
         new DecryptPluginWrapper("rapidlibrary.com", "RapidLibrary", "http://rapidlibrary\\.com/download_file_i\\.php\\?.+");
