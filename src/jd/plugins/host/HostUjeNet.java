@@ -75,7 +75,7 @@ public class HostUjeNet extends PluginForHost {
 
     // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return this.getMaxSimultanDownloadNum();
     }
 
     // @Override
