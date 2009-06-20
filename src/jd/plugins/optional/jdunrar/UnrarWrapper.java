@@ -33,6 +33,7 @@ import jd.plugins.DownloadLink;
 import jd.utils.EditDistance;
 import jd.utils.JDLocale;
 
+
 /**
  * Die klasse dient zum verpacken der Unrar binary.
  * 
@@ -129,7 +130,6 @@ public class UnrarWrapper extends Thread implements JDRunnable {
     private Exception exception;
     private File extractTo;
     private boolean removeAfterExtraction;
-    private boolean moveFilesToBaseDirAfterExtraction;
 
     private ArrayList<String> archiveParts;
     private int crackProgress;
@@ -216,9 +216,6 @@ public class UnrarWrapper extends Thread implements JDRunnable {
                 case EXIT_CODE_SUCCESS:
                     if (!gotInterrupted && removeAfterExtraction) {
                         removeArchiveFiles();
-                    }
-                    if (!gotInterrupted && moveFilesToBaseDirAfterExtraction) {
-                        moveExtractedFilesToBaseDir();
                     }
                     fireEvent(JDUnrarConstants.WRAPPER_FINISHED_SUCCESSFULL);
                     break;
@@ -315,29 +312,6 @@ public class UnrarWrapper extends Thread implements JDRunnable {
             }
         }
 
-    }
-    
-    private void moveExtractedFilesToBaseDir() {
-        // method fails when used with deep extraction. files that get extracted
-        // in second+ run dont get moved due to missing extractTo path of the
-        // first extraction run. they will stay where they get extracted
-        for (ArchivFile f : files) {
-            if (JDUnrar.getArchivePartType(f.getFile()) == JDUnrarConstants.NO_RAR_ARCHIVE || JDUnrar.getArchivePartType(f.getFile()) == JDUnrarConstants.NO_START_PART) {
-                String[] pathParts = f.getFilepath().split(Regex.escape(File.separator));
-                if (pathParts.length > 1) {
-                    File newFile = new File(extractTo.getAbsolutePath() + File.separator + pathParts[0] + File.separator + f.getFile().getName());
-                    if (!newFile.exists()) {
-                        f.getFile().renameTo(newFile);
-                        JDLogger.getLogger().warning("Moved file after extraction: " + f + " to " + newFile);
-                        File parentDir = f.getFile().getParentFile();
-                        if (parentDir.isDirectory() && parentDir.listFiles().length == 0) {
-                            parentDir.delete();
-                            JDLogger.getLogger().warning("Deleted empty directory after extraction: " + parentDir);
-                        }
-                    }
-                }
-            }
-            }
     }
 
     public Exception getException() {
@@ -483,6 +457,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
 
         if (smallestFile.getSize() < 2097152) {
             int c = 0;
+            
             for (String pass : this.passwordList) {
                 crackProgress = ((c++) * 100) / passwordList.length;
                 fireEvent(JDUnrarConstants.WRAPPER_PASSWORT_CRACKING);
@@ -885,10 +860,6 @@ public class UnrarWrapper extends Thread implements JDRunnable {
 
     public void setRemoveAfterExtract(boolean setProperty) {
         this.removeAfterExtraction = setProperty;
-    }
-
-    public void setMoveFilesToBaseDirAfterExtraction(boolean setProperty) {
-        this.moveFilesToBaseDirAfterExtraction = setProperty;
     }
 
     public void setOverwrite(boolean booleanProperty) {

@@ -356,7 +356,6 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         wrapper.setExtractTo(dl);
 
         wrapper.setRemoveAfterExtract(this.getPluginConfig().getBooleanProperty(JDUnrarConstants.CONFIG_KEY_REMVE_AFTER_EXTRACT, false));
-        wrapper.setMoveFilesToBaseDirAfterExtraction(this.getPluginConfig().getBooleanProperty(JDUnrarConstants.CONFIG_KEY_COPY_FILES_TO_BASE_DIR_AFTER_EXTRACT, false));
         
         wrapper.setOverwrite(this.getPluginConfig().getBooleanProperty(JDUnrarConstants.CONFIG_KEY_OVERWRITE, true));
         wrapper.setUnrarCommand(getPluginConfig().getStringProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND));
@@ -695,8 +694,6 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         ce.setDefaultValue(true);
         ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDUnrarConstants.CONFIG_KEY_DEEP_EXTRACT, JDLocale.L("gui.config.unrar.deep_extract", "Deep-Extraction")));
         ce.setDefaultValue(true);
-        ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDUnrarConstants.CONFIG_KEY_COPY_FILES_TO_BASE_DIR_AFTER_EXTRACT, JDLocale.L("gui.config.unrar.copy_to_base_dir", "Copy to base dir")));
-        ce.setDefaultValue(false);
         
         ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDUnrarConstants.CONFIG_KEY_REMOVE_INFO_FILE, JDLocale.L("gui.config.unrar.remove_infofile", "Delete Infofile after extraction")));
         ce.setDefaultValue(false);
@@ -776,7 +773,16 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         String hash = this.getPluginConfig().getStringProperty(JDUnrarConstants.UNRAR_HASH, null);
         if (hash != null && hash.length() == 32 && path != null && path.length() != 0) {
             String curhash = JDHash.getMD5(new File(path));
-            if (curhash != null && curhash.equalsIgnoreCase(hash)) return true;
+            if (curhash != null) {
+                if (curhash.equalsIgnoreCase(hash)) {
+                    return true;
+                } else {
+                    this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, path);
+                    this.getPluginConfig().setProperty(JDUnrarConstants.UNRAR_HASH, curhash);
+                    this.getPluginConfig().save();
+                    return true;
+                }
+            }
         } else {
             path = null;
             hash = null;
