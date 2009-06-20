@@ -614,6 +614,7 @@ public class JDInit {
         new HostPluginWrapper("HyperFileShare.com", "HyperFileShareCom", "http://[\\w\\.]*?hyperfileshare\\.com/(d/|download\\.php\\?code=)[a-fA-F0-9]+");
         new HostPluginWrapper("zomgupload.com", "ZomgUploadCom", "http://[\\w\\.]*?zomgupload\\.com/.+[/0-9a-zA-Z]+.html");
         new HostPluginWrapper("hostuje.net", "HostUjeNet", "http://[\\w\\.]*?hostuje\\.net/file\\.php\\?id=.+");
+        new HostPluginWrapper("ulozto.net", "UlozToNet", "http://[\\w\\.]*?ulozto\\.net/.+");
 
         // Hoster from Extern
         new HostPluginWrapper("iFolder.ru", "IfolderRu", "http://[\\-\\w\\.]*?ifolder\\.ru/\\d+");
