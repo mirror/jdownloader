@@ -22,6 +22,8 @@ import javax.swing.Icon;
 
 import jd.event.ControlEvent;
 import jd.event.JDBroadcaster;
+import jd.event.MessageEvent;
+import jd.event.MessageListener;
 import jd.utils.JDUtilities;
 
 class ProgressControllerBroadcaster extends JDBroadcaster<ProgressControllerListener, ProgressControllerEvent> {
@@ -41,7 +43,7 @@ class ProgressControllerBroadcaster extends JDBroadcaster<ProgressControllerList
  * 
  * @author JD-Team
  */
-public class ProgressController {
+public class ProgressController implements MessageListener {
 
     private static int idCounter = 0;
     private long currentValue;
@@ -49,7 +51,7 @@ public class ProgressController {
     private boolean finalizing = false;
 
     private int id;
-
+    private boolean indeterminate = false;
     private long max;
 
     private Object source;
@@ -222,5 +224,26 @@ public class ProgressController {
     public void fireCancelAction() {
         abort = true;
         getBroadcaster().fireEvent(new ProgressControllerEvent(this, ProgressControllerEvent.CANCEL));
+    }
+
+    /**
+     * @param indeterminate
+     *            the indeterminate to set
+     */
+    public void setIndeterminate(boolean indeterminate) {
+        this.indeterminate = indeterminate;
+        fireChanges();
+    }
+
+    /**
+     * @return the indeterminate
+     */
+    public boolean isIndeterminate() {
+        return indeterminate;
+    }
+
+    public void onMessage(MessageEvent event) {
+        this.setStatusText(event.getMessage());
+
     }
 }

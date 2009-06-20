@@ -1,5 +1,5 @@
 $translater$ = Fabxr3
-$version$ = $Revision$
+$version$ = $Revision: 6193 $
 addons.jdgrowlnotification.menu = Alertes
 addons.jdshutdown.menu = Quitter après les téléchargements complétés
 addons.jdshutdown.statusmessage.disabled = Le Système ne sera pas arrêté par JDownloader

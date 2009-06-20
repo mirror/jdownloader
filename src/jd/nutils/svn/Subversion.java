@@ -21,8 +21,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 import jd.controlling.JDLogger;
+import jd.event.JDBroadcaster;
+import jd.event.MessageEvent;
+import jd.event.MessageListener;
 import jd.nutils.io.JDIO;
 
+import org.tmatesoft.svn.core.SVNCancelException;
 import org.tmatesoft.svn.core.SVNCommitInfo;
 import org.tmatesoft.svn.core.SVNDepth;
 import org.tmatesoft.svn.core.SVNErrorCode;
@@ -30,6 +34,7 @@ import org.tmatesoft.svn.core.SVNErrorMessage;
 import org.tmatesoft.svn.core.SVNException;
 import org.tmatesoft.svn.core.SVNLogEntry;
 import org.tmatesoft.svn.core.SVNNodeKind;
+import org.tmatesoft.svn.core.SVNProperty;
 import org.tmatesoft.svn.core.SVNURL;
 import org.tmatesoft.svn.core.auth.ISVNAuthenticationManager;
 import org.tmatesoft.svn.core.internal.io.dav.DAVRepositoryFactory;
@@ -39,15 +44,19 @@ import org.tmatesoft.svn.core.io.ISVNEditor;
 import org.tmatesoft.svn.core.io.ISVNReporterBaton;
 import org.tmatesoft.svn.core.io.SVNRepository;
 import org.tmatesoft.svn.core.wc.ISVNCommitParameters;
+import org.tmatesoft.svn.core.wc.ISVNEventHandler;
 import org.tmatesoft.svn.core.wc.SVNClientManager;
 import org.tmatesoft.svn.core.wc.SVNCommitClient;
 import org.tmatesoft.svn.core.wc.SVNCommitPacket;
+import org.tmatesoft.svn.core.wc.SVNEvent;
+import org.tmatesoft.svn.core.wc.SVNEventAction;
 import org.tmatesoft.svn.core.wc.SVNRevision;
+import org.tmatesoft.svn.core.wc.SVNStatusType;
 import org.tmatesoft.svn.core.wc.SVNUpdateClient;
 import org.tmatesoft.svn.core.wc.SVNWCClient;
 import org.tmatesoft.svn.core.wc.SVNWCUtil;
 
-public class Subversion {
+public class Subversion implements ISVNEventHandler {
 
     private SVNRepository repository;
     private SVNURL svnurl;
@@ -58,10 +67,25 @@ public class Subversion {
     private SVNUpdateClient updateClient;
     private SVNCommitClient commitClient;
     private SVNWCClient wcClient;
+    private JDBroadcaster<MessageListener, MessageEvent> broadcaster;
 
     public Subversion(String url) throws SVNException {
         setupType(url);
         checkRoot();
+
+        this.broadcaster = new JDBroadcaster<MessageListener, MessageEvent>() {
+
+            @Override
+            protected void fireEvent(MessageListener listener, MessageEvent event) {
+                listener.onMessage(event);
+
+            }
+
+        };
+    }
+
+    public JDBroadcaster<MessageListener, MessageEvent> getBroadcaster() {
+        return broadcaster;
     }
 
     public Subversion(String url, String user, String pass) throws SVNException {
@@ -182,7 +206,7 @@ public class Subversion {
     private SVNUpdateClient getUpdateClient() {
         if (updateClient == null) {
             updateClient = getClientManager().getUpdateClient();
-            updateClient.setEventHandler(new UpdateEventHandler());
+            updateClient.setEventHandler(this);
         }
 
         return updateClient;
@@ -216,7 +240,7 @@ public class Subversion {
     private SVNWCClient getWCClient() {
         if (wcClient == null) {
             wcClient = getClientManager().getWCClient();
-            wcClient.setEventHandler(new WCEventHandler());
+            wcClient.setEventHandler(this);
         }
 
         return wcClient;
@@ -237,7 +261,7 @@ public class Subversion {
 
         if (commitClient == null) {
             commitClient = getClientManager().getCommitClient();
-            commitClient.setEventHandler(new CommitEventHandler());
+            commitClient.setEventHandler(this);
             commitClient.setCommitParameters(new ISVNCommitParameters() {
 
                 public boolean onDirectoryDeletion(File directory) {
@@ -305,6 +329,197 @@ public class Subversion {
      */
     public void unlock(File dstPath) throws SVNException {
         getWCClient().doUnlock(new File[] { dstPath }, false);
+
+    }
+
+    /**
+     * WCClientHanlder
+     * 
+     * @param event
+     * @param progress
+     * @throws SVNException
+     */
+    public void handleEvent(SVNEvent event, double progress) throws SVNException {
+        /* WCCLient */
+        String nullString = " ";
+        SVNEventAction action = event.getAction();
+        String pathChangeType = nullString;
+        if (action == SVNEventAction.ADD) {
+            /*
+             * The item is scheduled for addition.
+             */
+            broadcaster.fireEvent(new MessageEvent(this, action.getID(), "A     " + event.getFile()));
+
+            return;
+        } else if (action == SVNEventAction.COPY) {
+            /*
+             * The item is scheduled for addition with history (copied, in other
+             * words).
+             */
+            broadcaster.fireEvent(new MessageEvent(this, action.getID(), "A  +  " + event.getFile()));
+
+            return;
+        } else if (action == SVNEventAction.DELETE) {
+            /*
+             * The item is scheduled for deletion.
+             */
+            broadcaster.fireEvent(new MessageEvent(this, action.getID(), "D     " + event.getFile()));
+
+            return;
+        } else if (action == SVNEventAction.LOCKED) {
+            /*
+             * The item is locked.
+             */
+
+            broadcaster.fireEvent(new MessageEvent(this, action.getID(), "L     " + event.getFile()));
+            return;
+        } else if (action == SVNEventAction.LOCK_FAILED) {
+            /*
+             * Locking operation failed.
+             */
+            broadcaster.fireEvent(new MessageEvent(this, action.getID(), "failed to lock    " + event.getFile()));
+
+            return;
+        }
+
+        /* UPdatehandler */
+
+        if (action == SVNEventAction.UPDATE_ADD) {
+            /*
+             * the item was added
+             */
+            pathChangeType = "A";
+        } else if (action == SVNEventAction.UPDATE_DELETE) {
+            /*
+             * the item was deleted
+             */
+            pathChangeType = "D";
+        } else if (action == SVNEventAction.UPDATE_UPDATE) {
+            /*
+             * Find out in details what state the item is (after having been
+             * updated).
+             * 
+             * Gets the status of file/directory item contents. It is
+             * SVNStatusType who contains information on the state of an item.
+             */
+            SVNStatusType contentsStatus = event.getContentsStatus();
+            if (contentsStatus == SVNStatusType.CHANGED) {
+                /*
+                 * the item was modified in the repository (got the changes from
+                 * the repository
+                 */
+                pathChangeType = "U";
+            } else if (contentsStatus == SVNStatusType.CONFLICTED) {
+                /*
+                 * The file item is in a state of Conflict. That is, changes
+                 * received from the repository during an update, overlap with
+                 * local changes the user has in his working copy.
+                 */
+                pathChangeType = "C";
+            } else if (contentsStatus == SVNStatusType.MERGED) {
+                /*
+                 * The file item was merGed (those changes that came from the
+                 * repository did not overlap local changes and were merged into
+                 * the file).
+                 */
+                pathChangeType = "G";
+            }
+        } else if (action == SVNEventAction.UPDATE_EXTERNAL) {
+            /* for externals definitions */
+
+            broadcaster.fireEvent(new MessageEvent(this, action.getID(), "Fetching external item into '" + event.getFile().getAbsolutePath() + "'"));
+            broadcaster.fireEvent(new MessageEvent(this, action.getID(), "External at revision " + event.getRevision()));
+
+            return;
+        } else if (action == SVNEventAction.UPDATE_COMPLETED) {
+            /*
+             * Working copy update is completed. Prints out the revision.
+             */
+            broadcaster.fireEvent(new MessageEvent(this, action.getID(), "At revision " + event.getRevision()));
+
+            return;
+        }
+
+        /*
+         * Status of properties of an item. SVNStatusType also contains
+         * information on the properties state.
+         */
+        SVNStatusType propertiesStatus = event.getPropertiesStatus();
+        String propertiesChangeType = nullString;
+        if (propertiesStatus == SVNStatusType.CHANGED) {
+            /*
+             * Properties were updated.
+             */
+            propertiesChangeType = "U";
+        } else if (propertiesStatus == SVNStatusType.CONFLICTED) {
+            /*
+             * Properties are in conflict with the repository.
+             */
+            propertiesChangeType = "C";
+        } else if (propertiesStatus == SVNStatusType.MERGED) {
+            /*
+             * Properties that came from the repository were merged with the
+             * local ones.
+             */
+            propertiesChangeType = "G";
+        }
+
+        /*
+         * Gets the status of the lock.
+         */
+        String lockLabel = nullString;
+        SVNStatusType lockType = event.getLockStatus();
+
+        if (lockType == SVNStatusType.LOCK_UNLOCKED) {
+            /*
+             * The lock is broken by someone.
+             */
+            lockLabel = "B";
+        }
+        if (pathChangeType != nullString || propertiesChangeType != nullString || lockLabel != nullString) {
+            broadcaster.fireEvent(new MessageEvent(this, action.getID(), pathChangeType + propertiesChangeType + lockLabel + "       " + event.getFile()));
+        }
+
+        /*
+         * Comitghandler
+         */
+
+        if (action == SVNEventAction.COMMIT_MODIFIED) {
+            broadcaster.fireEvent(new MessageEvent(this, action.getID(), "Sending   " + event.getFile()));
+
+        } else if (action == SVNEventAction.COMMIT_DELETED) {
+            broadcaster.fireEvent(new MessageEvent(this, action.getID(), "Deleting   " + event.getFile()));
+
+        } else if (action == SVNEventAction.COMMIT_REPLACED) {
+            broadcaster.fireEvent(new MessageEvent(this, action.getID(), "Replacing   " + event.getFile()));
+
+        } else if (action == SVNEventAction.COMMIT_DELTA_SENT) {
+            broadcaster.fireEvent(new MessageEvent(this, action.getID(), "Transmitting file data...."));
+
+        } else if (action == SVNEventAction.COMMIT_ADDED) {
+            /*
+             * Gets the MIME-type of the item.
+             */
+            String mimeType = event.getMimeType();
+            if (SVNProperty.isBinaryMimeType(mimeType)) {
+                /*
+                 * If the item is a binary file
+                 */
+                broadcaster.fireEvent(new MessageEvent(this, action.getID(), "Adding  (bin)  " + event.getFile()));
+
+            } else {
+                broadcaster.fireEvent(new MessageEvent(this, action.getID(), "Adding         " + event.getFile()));
+
+            }
+        }
+
+    }
+
+    /**
+     * WCClient
+     */
+    public void checkCancelled() throws SVNCancelException {
+        // TODO Auto-generated method stub
 
     }
 }

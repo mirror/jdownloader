@@ -1,5 +1,5 @@
 $translater$ = Fogh
-$version$ = $Revision$
+$version$ = $Revision: 6068 $
 addons.jdgrowlnotification.menu = Growl beskeder
 addons.jdshutdown.menu = Luk jdownloader efter endt download
 addons.jdshutdown.statusmessage.disabled = Systemet vil IKKE blive lukket ned af jdownloader

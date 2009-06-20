@@ -1,5 +1,5 @@
 $translater$ = djuzi
-$version$ = $Revision$
+$version$ = $Revision: 6243 $
 addons.jdgrowlnotification.menu = Powiadomienia
 addons.jdlowspeed.statusmessage.disabled = Wykrywanie powolnych transferów wyłączone
 addons.jdlowspeed.statusmessage.enabled = Wykrywanie powolnych transferów włączone

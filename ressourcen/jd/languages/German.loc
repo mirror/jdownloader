@@ -1,5 +1,5 @@
 $translater$ = JDownloader-Team & Friends
-$version$ = $Revision$
+$version$ = $Revision: 6251 $
 addons.jdgrowlnotification.menu = Growl
 addons.jdshutdown.menu = aktivieren
 addons.jdshutdown.statusmessage.disabled = Das System wird nach dem Download NICHT heruntergefahren.

@@ -16,6 +16,8 @@
 
 package jd.controlling;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Formatter;
 import java.util.logging.Level;
@@ -79,6 +81,18 @@ public static void timestamp(String msg){
     public static void quickLog() {
         System.out.println("Footstep: " + new Exception().getStackTrace()[1]);
 
+    }
+    /**
+     * Retusn a Stacdktrace of an Exception
+     * @param thrown
+     * @return
+     */
+    public static String getStackTrace(Throwable thrown) {
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+        thrown.printStackTrace(pw);
+        pw.close();
+        return sw.toString();
     }
 
 }

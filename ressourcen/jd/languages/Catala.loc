@@ -1,5 +1,5 @@
 $translater$ = MrColt
-$version$ = $Revision$
+$version$ = $Revision: 6013 $
 addons.jdgrowlnotification.menu = Grunyir Missatges
 addons.jdshutdown.menu = Apagar l’equip en finalitzar la descàrrega 
 addons.jdshutdown.statusmessage.disabled = jDownloader NO apagarà el sistema

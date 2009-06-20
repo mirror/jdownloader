@@ -1,5 +1,5 @@
 $translater$ = juraj@halcak.sk
-$version$ = $Revision$
+$version$ = $Revision: 6243 $
 addons.jdgrowlnotification.menu = Growl správy
 addons.jdlowspeed.statusmessage.disabled = Zakázať detekciu pomalej rýchlosti
 addons.jdlowspeed.statusmessage.enabled = Povoliť detekciu pomalej rýchlosti

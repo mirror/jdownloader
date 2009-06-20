@@ -91,14 +91,11 @@ public class LogFormatter extends SimpleFormatter {
         sb.append(message);
         sb.append(lineSeparator);
         if (record.getThrown() != null) {
-            try {
-                StringWriter sw = new StringWriter();
-                PrintWriter pw = new PrintWriter(sw);
-                record.getThrown().printStackTrace(pw);
-                pw.close();
-                sb.append(sw.toString());
-            } catch (Exception ex) {
-            }
+            ;
+           
+             
+                sb.append(JDLogger.getStackTrace( record.getThrown()));
+          
         }
         return sb.toString();
     }

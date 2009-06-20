@@ -1,5 +1,5 @@
 $translater$ = JD-Grupa
-$version$ = $Revision$
+$version$ = $Revision: 5555 $
 addons.jdgrowlnotification.menu = Growl Poruke
 addons.jdlowspeed.statusmessage.disabled = Onemogući detekciju niske brzine
 addons.jdlowspeed.statusmessage.enabled = Omogući detekciju niske brzine

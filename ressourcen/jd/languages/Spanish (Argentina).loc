@@ -1,5 +1,5 @@
 $translater$ = thartist (thartist@hotmail.com)
-$version$ = $Revision$
+$version$ = $Revision: 6256 $
 a.very.important.warning = ADVERTENCIA!! Hay llaves NO OBSOLETAS, NO ELIMINARLAS!! gui.menu.about gui.menu.add gui.menu.addons gui.menu.premium gui.menu.remove gui.menu.save
 addons.jdgrowlnotification.menu = Gruñir Mensajes
 addons.jdshutdown.menu = Apagar el equipo al finalizar las descargas

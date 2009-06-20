@@ -1,5 +1,5 @@
 $translater$ = JD-Team
-$version$ = $Revision$
+$version$ = $Revision: 6243 $
 addons.jdgrowlnotification.menu = Μυνήματα Ανακοινώσεων
 addons.jdshutdown.menu = Κλείνει μετά τις λήψεις .
 addons.jdshutdown.statusmessage.disabled = Το σύστημα δεν κλείνει μετά τις λήψεις.

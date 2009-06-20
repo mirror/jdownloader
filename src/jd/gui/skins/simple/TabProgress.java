@@ -250,8 +250,12 @@ public class TabProgress extends JPanel implements ActionListener, ControlListen
             if (cancel != null) cancel.setToolTipText(controller.isInterruptable() ? JDLocale.L("gui.progressbars.cancel.tooltip.enabled", "Interrupt this module") : JDLocale.L("gui.progressbars.cancel.tooltip.disabled", "Not possible to interrupt this module"));
             label.setIcon(controller.getIcon() == null ? JDTheme.II("gui.images.running", 16, 16) : controller.getIcon());
             label.setToolTipText(JDLocale.L("gui.tooltip.progressicon", "This module is active"));
+         if(controller.isIndeterminate()){
+            bar.setIndeterminate(true);
+         }else{
             bar.setMaximum(10000);
             bar.setValue(controller.getPercent());
+         }
             bar.setStringPainted(true);
             bar.setString(controller.getStatusText());
             if (controller.getColor() != null) {

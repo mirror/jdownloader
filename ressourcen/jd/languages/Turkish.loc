@@ -1,5 +1,5 @@
 $translater$ = Tamer Ray Frost
-$version$ = $Revision$
+$version$ = $Revision: 6150 $
 addons.jdgrowlnotification.menu = Growl Mesajları
 addons.jdshutdown.menu = JD-Sistem Kapatma
 addons.jdshutdown.statusmessage.disabled = Tüm indirmeler bittiğinde yada durdurulduğunda sisteminiz kapatılmayacak !

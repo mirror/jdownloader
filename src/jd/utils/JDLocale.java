@@ -78,7 +78,7 @@ public class JDLocale {
     public static ArrayList<String> getLocaleIDs() {
         File dir = JDUtilities.getResourceFile(LANGUAGES_DIR);
         if (!dir.exists()) return null;
-        File[] files = dir.listFiles(new JDFileFilter(null, ".lng", false));
+        File[] files = dir.listFiles(new JDFileFilter(null, ".loc", false));
         ArrayList<String> ret = new ArrayList<String>();
         for (File element : files) {
             ret.add(element.getName().split("\\.")[0]);
@@ -206,7 +206,7 @@ public class JDLocale {
         if (defaultData == null) {
             System.err.println("JD have to load the default language, there is an missing entry");
             defaultData = new HashMap<Integer, String>();
-            File defaultFile = JDUtilities.getResourceFile(LANGUAGES_DIR + DEFAULTLANGUAGE + ".lng");
+            File defaultFile = JDUtilities.getResourceFile(LANGUAGES_DIR + DEFAULTLANGUAGE + ".loc");
             if (defaultFile.exists()) {
                 JDLocale.parseLanguageFile(defaultFile, defaultData);
             } else {
@@ -219,7 +219,7 @@ public class JDLocale {
         lID = correctLID(lID);
         localeID = lID;
         System.out.println("Loaded language: " + lID);
-        localeFile = JDUtilities.getResourceFile(LANGUAGES_DIR + localeID + ".lng");
+        localeFile = JDUtilities.getResourceFile(LANGUAGES_DIR + localeID + ".loc");
         if (localeFile.exists()) {
             JDLocale.parseLanguageFile(localeFile, data);
         } else {

@@ -1,5 +1,5 @@
 $translater$ = Gorštak
-$version$ = $Revision$
+$version$ = $Revision: 6243 $
 addons.jdgrowlnotification.menu = Growl poruke
 addons.jdshutdown.menu = Isključi računar po završetku preuzimanja
 addons.jdshutdown.statusmessage.disabled = Računar NEĆE biti isključen nakon preuzimanja

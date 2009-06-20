@@ -521,7 +521,7 @@ public class Main {
             }
             if (dynamics == null || dynamics.size() == 0) return;
             for (String dynamic : dynamics) {
-                if (!dynamic.contains("$") && !classes.contains("/jd/dynamics/" + dynamic)) {
+                if (!dynamic.contains("$") && !classes.contains("/jd/dynamics/" + dynamic)&&!dynamic.equalsIgnoreCase("DynamicPluginInterface.class")) {
                     System.out.println("Plugins: " + dynamic);
                     classes.add("/jd/dynamics/" + dynamic);
                 }
@@ -532,7 +532,7 @@ public class Main {
             if (WebUpdater.PLUGIN_LIST == null) return;
             for (Entry<String, FileUpdate> entry : WebUpdater.PLUGIN_LIST.entrySet()) {
                 System.out.println("Plugins: " + entry.getKey());
-                if (entry.getKey().startsWith("/jd/dynamics/")&&!entry.getKey().endsWith("DynamicPluginInterface.class")) {
+                if (entry.getKey().startsWith("/jd/dynamics/")&&!entry.getKey().contains("DynamicPluginInterface")) {
                     JDLogger.getLogger().finest("Found dynamic: "+entry.getKey());
                     if (!entry.getValue().equals()) {
                         

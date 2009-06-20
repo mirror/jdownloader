@@ -1,5 +1,5 @@
 $translater$ = JDownloader csapat
-$version$ = $Revision$
+$version$ = $Revision: 5810 $
 addons.jdgrowlnotification.menu = Growl-üzenetek
 addons.jdshutdown.menu = engedélyez
 addons.jdshutdown.statusmessage.disabled = JDownloader bezárásakor a gép NEM kapcsol ki!
