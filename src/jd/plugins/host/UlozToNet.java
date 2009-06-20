@@ -48,9 +48,13 @@ public class UlozToNet extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         br.getPage(downloadLink.getDownloadURL());
         this.setBrowserExclusive();
-        String name = br.getRegex(Pattern.compile("<div style=\"font-size:16px;color:000;\"><b>(.*?)</b>", Pattern.DOTALL)).getMatch(0);
+        System.out.print(br);
+        String name = br.getRegex(Pattern.compile("<div style=\"font-size:16px;color:000;\"><b>(.*?)</b>")).getMatch(0);
         if (name == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filesize = br.getRegex(Pattern.compile("Velikost souboru je <b>(.*?)</b> <br />")).getMatch(0);
+        if (filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(name.trim());
+        downloadLink.setDownloadSize(Regex.getSize(filesize));
 
         return AvailableStatus.TRUE;
     }
@@ -80,7 +84,7 @@ public class UlozToNet extends PluginForHost {
 
         br.setFollowRedirects(true);
         br.setDebug(true);
-        dl = br.openDownload(downloadLink, dlLink, false, 0);
+        dl = br.openDownload(downloadLink, dlLink, false, 1);
         dl.startDownload();
     }
 
