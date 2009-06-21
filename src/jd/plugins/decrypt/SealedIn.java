@@ -42,8 +42,19 @@ public class SealedIn extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        br.setFollowRedirects(true);
+
         String page = br.getPage(parameter);
+        // Redirector link handling
+        if (br.getRedirectLocation() != null) {
+            decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
+            return decryptedLinks;
+        }
+        String link = br.getRegex("refresh\" content=\"\\d+; URL=(.*?)\"").getMatch(0);
+        if (link != null) {
+            decryptedLinks.add(createDownloadlink(link));
+            return decryptedLinks;
+        }
+
         Form f = br.getForm(0);
         boolean do_continue = false;
 
@@ -77,27 +88,24 @@ public class SealedIn extends PluginForDecrypt {
             /* Container */
             if (!getContainer(page, parameter, "dlc", decryptedLinks)) {
                 if (!getContainer(page, parameter, "ccf", decryptedLinks)) {
-                    if (getContainer(page, parameter, "rsdf", decryptedLinks))
-                    ;
+                    getContainer(page, parameter, "rsdf", decryptedLinks);
                 }
             }
             /* No Container */
             if (decryptedLinks.size() == 0) {
                 String[] ids = br.getRegex("startDownload\\(\\'(.*?)\\'\\)").getColumn(0);
                 if (ids.length > 0) {
-                    /* Use if decrypter uses iframes one day */
-                    // Browser tab;
-                    // tab = br.cloneBrowser();
                     progress.setRange(ids.length);
                     for (String id : ids) {
-                        decryptedLinks.add(createDownloadlink(DecodeLink(br.getPage("http://sealed.in/encd_" + id))));
-                        /*
-                         * Use next 2 lines instead of last line if decrypter
-                         * uses iframes
-                         */
-                        // String link =
-                        // tab.getRegex("<iframe .*? src=\"(.*?)\">").getMatch(0);
-                        // decryptedLinks.add(createDownloadlink(link));
+                        br.getPage("http://www.sealed.in/pl-" + id);
+                        System.out.println(br.toString());
+                        if (br.containsHTML("<title>RapidShare")) {
+                            Form form = br.getFormbyProperty("name", "downloadForm");
+                            if (form != null) decryptedLinks.add(createDownloadlink(form.getAction()));
+                        } else {
+                            decryptedLinks.add(createDownloadlink(DecodeLink(br.getPage("http://www.sealed.in/encd_" + id))));
+                        }
+
                         progress.increase(1);
 
                     }
@@ -116,7 +124,7 @@ public class SealedIn extends PluginForDecrypt {
         if (container_link != null) {
             File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + "." + containerFormat);
             Browser browser = br.cloneBrowser();
-            browser.getDownload(container, "http://sealed.in/" + Encoding.htmlDecode(container_link));
+            browser.getDownload(container, "http://www.sealed.in/" + Encoding.htmlDecode(container_link));
             decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
             container.delete();
             return true;
