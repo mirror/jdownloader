@@ -40,8 +40,6 @@ public abstract class TestUtils {
 
     private static JDInit jdi;
 
-    private static JDController jdc;
-
     /**
      * Returns a stored property or asks to enter it
      * 
@@ -121,7 +119,7 @@ public abstract class TestUtils {
             UserIO.getInstance().requestMessageDialog("JDownloader cannot create the config files. Make sure, that JD_HOME/config/ exists and is writeable");
         }
 
-        jdc = JDController.getInstance();
+        new JDController();
     }
 
     public static void initDecrypter() {
@@ -154,7 +152,7 @@ public abstract class TestUtils {
         new GuiRunnable<Object>() {
             @Override
             public Object runSave() {
-                jdi.initGUI(jdc);
+                jdi.initGUI(JDUtilities.getController());
                 return null;
             }
         }.waitForEDT();
@@ -167,7 +165,7 @@ public abstract class TestUtils {
     }
 
     public static void finishInit() {
-        jdc.setInitStatus(JDController.INIT_STATUS_COMPLETE);
+        JDUtilities.getController().setInitStatus(JDController.INIT_STATUS_COMPLETE);
         JDUtilities.getController().fireControlEvent(new ControlEvent(new Object(), ControlEvent.CONTROL_INIT_COMPLETE, null));
     }
 }
