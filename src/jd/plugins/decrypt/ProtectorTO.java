@@ -126,6 +126,17 @@ public class ProtectorTO extends PluginForDecrypt {
                 br.submitForm(form);
                 retry++;
             }
+            retry = 1;
+            while ((img = br.getRegex("<img src=\"(/captcha/display.php[/?]uuid=[0-9a-z.]+)\" />").getMatch(0)) != null) {
+                if (retry > 5) throw new DecrypterException(DecrypterException.CAPTCHA);
+                Form form = br.getForm(0);
+                String captchaCode = getCaptchaCode("http://protector.to"+img, param);
+                if (captchaCode == null) return null;
+                form.put("code", captchaCode);
+                br.submitForm(form);
+                img = null;
+                retry++;
+            }
 
             String containerlink = br.getRegex("<a href=\"(http://protector.to/container/[^\"]*)").getMatch(0);
             if (containerlink != null) {
