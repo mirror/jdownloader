@@ -69,13 +69,13 @@ public class FisierulMeuRo extends PluginForHost {
         requestFileInformation(downloadLink);
 
         Form downloadForm = br.getFormbyProperty("name", "F1");
-        dl = br.openDownload(downloadLink, downloadForm, true, -5);
+        dl = br.openDownload(downloadLink, downloadForm, true, 1);
         dl.startDownload();
     }
 
     // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 2;
+        return 1;
     }
 
     // @Override
