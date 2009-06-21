@@ -461,7 +461,7 @@ public class JDInit {
         new DecryptPluginWrapper("minyurl.net", "MinyUrlNet", "http://[\\w\\.]*?minyurl\\.net/[^\\s^/]+");
         new DecryptPluginWrapper("linksafe.info","LinksafeInfo","http://[\\w\\.]*?linksafe\\.info/[^\\s^/]+");
         new DecryptPluginWrapper("shrunkin.com","ShrunkinCom","http://[\\w\\.]*?shrunkin\\.com/.+");
-        new DecryptPluginWrapper("go4Down.net", "GoFourDownNet", "http://[\\w\\.]*?short\\.go4down\\.(com|net)/\\d+");
+        new DecryptPluginWrapper("go4Down.net", "GoFourDownNet", "http://[\\w\\.]*?(short\\.)?go4down\\.(com|net)/(short/)\\d+");
         new DecryptPluginWrapper("sogood.net", "SoGoodNet", "http://[\\w\\.]*?sogood\\.net/.+");
 
         // Decrypter from Extern
@@ -616,6 +616,9 @@ public class JDInit {
         new HostPluginWrapper("zomgupload.com", "ZomgUploadCom", "http://[\\w\\.]*?zomgupload\\.com/.+[/0-9a-zA-Z]+.html");
         new HostPluginWrapper("hostuje.net", "HostUjeNet", "http://[\\w\\.]*?hostuje\\.net/file\\.php\\?id=.+");
         new HostPluginWrapper("ulozto.net", "UlozToNet", "http://[\\w\\.]*?(ulozto\\.net|uloz\\.to)/.+");
+        new HostPluginWrapper("FisierulMeu.Ro", "FisierulMeuRo", "http://[\\w\\.]*?fisierulmeu\\.ro/.+/.+\\.html");
+
+
 
         // Hoster from Extern
         new HostPluginWrapper("iFolder.ru", "IfolderRu", "http://[\\-\\w\\.]*?ifolder\\.ru/\\d+");
