@@ -152,11 +152,9 @@ public class JDToolBar extends JToolBar implements ControlListener {
 
     private void initListeners() {
         JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_LATEST_RECONNECT_RESULT, Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, Configuration.PARAM_ALLOW_RECONNECT, Configuration.PARAM_DOWNLOAD_PAUSE_SPEED) {
-
             @Override
             public void onPropertyChanged(Property source, final String key) {
                 SwingUtilities.invokeLater(new Runnable() {
-
                     public void run() {
                         if (key == Configuration.PARAM_LATEST_RECONNECT_RESULT) {
                             updateReconnectButtons();
@@ -168,10 +166,8 @@ public class JDToolBar extends JToolBar implements ControlListener {
                             updatePauseButton();
                         }
                     }
-
                 });
             }
-
         });
     }
 
@@ -179,7 +175,6 @@ public class JDToolBar extends JToolBar implements ControlListener {
         add(reconnectButton = new JButton(JDTheme.II("gui.images.reconnect", 24, 24)), BUTTON_CONSTRAINTS);
 
         reconnectButton.addActionListener(new ActionListener() {
-
             public void actionPerformed(ActionEvent e) {
                 new Thread() {
                     public void run() {
@@ -187,13 +182,11 @@ public class JDToolBar extends JToolBar implements ControlListener {
                     }
                 }.start();
             }
-
         });
 
         add(update = new JButton(JDTheme.II("gui.images.update", 24, 24)), BUTTON_CONSTRAINTS);
         update.setToolTipText(JDLocale.L("gui.menu.action.update.desc", "Check for new updates"));
         update.addActionListener(new ActionListener() {
-
             public void actionPerformed(ActionEvent e) {
                 new Thread() {
                     public void run() {
@@ -201,9 +194,7 @@ public class JDToolBar extends JToolBar implements ControlListener {
                     }
                 }.start();
             }
-
         });
-
     }
 
     private void initQuickConfig() {
@@ -211,11 +202,9 @@ public class JDToolBar extends JToolBar implements ControlListener {
         add(clipboard = new JToggleButton(), BUTTON_CONSTRAINTS);
         clipboard.setToolTipText(JDLocale.L("gui.menu.action.clipboard.desc", null));
         clipboard.addActionListener(new ActionListener() {
-
             public void actionPerformed(ActionEvent e) {
                 ClipboardHandler.getClipboard().setEnabled(clipboard.isSelected());
             }
-
         });
         clipboard.setName(JDLocale.L("quickhelp.toolbar.clipboard", "Toolbar clipboard observer"));
 
@@ -223,13 +212,11 @@ public class JDToolBar extends JToolBar implements ControlListener {
         add(reconnect = new JToggleButton(JDTheme.II("gui.images.reconnect_disabled", 24, 24)), BUTTON_CONSTRAINTS);
         reconnect.setName(JDLocale.L("quickhelp.toolbar.reconnect", "Reconnect Toolbar"));
         reconnect.addActionListener(new ActionListener() {
-
             public void actionPerformed(ActionEvent e) {
                 Reconnecter.toggleReconnect();
             }
 
         });
-
     }
 
     private void updateClipboardButton() {
@@ -253,7 +240,6 @@ public class JDToolBar extends JToolBar implements ControlListener {
             reconnectButton.setIcon(JDTheme.II("gui.images.reconnect", 24, 24));
             reconnect.setEnabled(true);
             reconnect.setToolTipText(JDLocale.L("gui.menu.action.reconnectauto.desc", "Auto reconnect. Get a new IP by resetting your internet connection"));
-
         }
     }
 
@@ -274,9 +260,8 @@ public class JDToolBar extends JToolBar implements ControlListener {
     private void initController() {
         add(playButton = new JButton(JDTheme.II("gui.images.next", 24, 24)), BUTTON_CONSTRAINTS);
         playButton.setToolTipText(JDLocale.L("gui.menu.action.start.desc", null));
-
+        playButton.setName("playButton");
         playButton.addActionListener(new ActionListener() {
-
             public void actionPerformed(ActionEvent e) {
                 new Thread() {
                     public void run() {
@@ -297,23 +282,21 @@ public class JDToolBar extends JToolBar implements ControlListener {
                     }
                 }.start();
             }
-
         });
 
         add(pauseButton = new JToggleButton(JDTheme.II("gui.images.break", 24, 24)), BUTTON_CONSTRAINTS);
         updatePauseButton();
+        pauseButton.setName("pauseButton");
         pauseButton.addActionListener(new ActionListener() {
-
             public void actionPerformed(ActionEvent e) {
                 setPause(pauseButton.isSelected());
             }
-
         });
+        
         add(stopButton = new JButton(JDTheme.II("gui.images.stop", 24, 24)), BUTTON_CONSTRAINTS);
         stopButton.setToolTipText(JDLocale.L("gui.menu.action.stop.desc", null));
-
+        stopButton.setName("stopButton");
         stopButton.addActionListener(new ActionListener() {
-
             public void actionPerformed(ActionEvent e) {
                 new Thread() {
                     public void run() {
@@ -338,12 +321,10 @@ public class JDToolBar extends JToolBar implements ControlListener {
                     }
                 }.start();
             }
-
         });
         stopButton.setEnabled(false);
         pauseButton.setEnabled(false);
         playButton.setEnabled(true);
-
     }
 
     private void addSpeedMeter() {
@@ -356,7 +337,6 @@ public class JDToolBar extends JToolBar implements ControlListener {
 
     private void setPause(final boolean b) {
         new GuiRunnable<Object>() {
-            // @Override
             public Object runSave() {
                 pauseButton.setSelected(b);
                 JDUtilities.getController().pauseDownloads(b);
@@ -367,8 +347,6 @@ public class JDToolBar extends JToolBar implements ControlListener {
 
     public void controlEvent(final ControlEvent event) {
         new GuiRunnable<Object>() {
-
-            // @Override
             public Object runSave() {
                 switch (event.getID()) {
                 case ControlEvent.CONTROL_DOWNLOAD_START:
@@ -388,9 +366,6 @@ public class JDToolBar extends JToolBar implements ControlListener {
                 }
                 return null;
             }
-
         }.start();
-
     }
-
 }
