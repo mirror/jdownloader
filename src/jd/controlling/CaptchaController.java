@@ -47,17 +47,16 @@ public class CaptchaController {
     /**
      * Returns if the method is enabled.
      * 
-     * @param method
      * @return
      */
-    private boolean isJACMethodEnabled(String method) {
-        return (JDUtilities.getConfiguration() == null || !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CAPTCHA_JAC_DISABLE, false)) && JACMethod.hasMethod(method) && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_JAC_METHODS + method.toLowerCase(), true);
+    private boolean isMethodEnabled() {
+        return (JDUtilities.getConfiguration() != null && !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CAPTCHA_JAC_DISABLE, false)) && JACMethod.hasMethod(methodname) && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_JAC_METHODS + methodname.toLowerCase(), true);
     }
 
     public String getCode(int flag) {
 
         if ((flag & UserIO.NO_JAC) > 0) return UserIO.getInstance().requestCaptchaDialog(flag, methodname, captchafile, suggest, explain);
-        if (!isJACMethodEnabled(methodname)) {
+        if (!isMethodEnabled()) {
             if ((flag & UserIO.NO_USER_INTERACTION) > 0) return null;
             return UserIO.getInstance().requestCaptchaDialog(flag | UserIO.NO_JAC, methodname, captchafile, suggest, explain);
         }

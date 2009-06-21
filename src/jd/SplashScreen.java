@@ -102,11 +102,6 @@ public class SplashScreen implements ActionListener, ControlListener {
     private String curString = new String();
 
     private boolean show = true;
-    private int progressvalue = 0;
-
-    /**
-     * dieser konstruktor wird benutzt falls ein splash angezeigt werden soll
-     */
 
     public SplashScreen(JDController controller) throws IOException, AWTException {
 
@@ -155,8 +150,7 @@ public class SplashScreen implements ActionListener, ControlListener {
         window.add(label);
         window.add(progress = new JProgressBar(), "hidemode 3,height 20!");
         progress.setVisible(true);
-        progress.setMaximum(100);
-        progress.setValue(0);
+        progress.setIndeterminate(true);
         window.pack();
         Rectangle b = gc.getBounds();
         window.setLocation(b.x + x, b.y + y);
@@ -235,12 +229,10 @@ public class SplashScreen implements ActionListener, ControlListener {
     }
 
     private void incProgress() {
-        progressvalue = (progressvalue + 1) % 100;
         new GuiRunnable<Object>() {
             @Override
             public Object runSave() {
                 progress.setStringPainted(true);
-                progress.setValue(progressvalue);
                 progress.setString(curString);
                 return null;
             }
