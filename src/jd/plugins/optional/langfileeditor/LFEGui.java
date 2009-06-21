@@ -34,7 +34,6 @@ import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Map.Entry;
 
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JColorChooser;
@@ -66,9 +65,7 @@ import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.PieChartAPI;
 import jd.gui.skins.simple.components.TwoTextFieldDialog;
 import jd.nutils.io.JDFileFilter;
-import jd.nutils.io.JDIO;
 import jd.nutils.svn.Subversion;
-import jd.parser.Regex;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
@@ -82,7 +79,6 @@ import org.jdesktop.swingx.decorator.HighlightPredicate;
 import org.jdesktop.swingx.decorator.PatternFilter;
 import org.jdesktop.swingx.search.SearchFactory;
 import org.tmatesoft.svn.core.SVNException;
-import org.tmatesoft.svn.core.wc.SVNRevision;
 
 public class LFEGui extends JTabbedPanel implements ActionListener, MouseListener {
 
@@ -125,14 +121,15 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
     private JPopupMenu mnuContextPopup;
     private JMenuItem mnuContextAdopt, mnuContextClear, mnuContextDelete, mnuContextTranslate;
 
-//    private HashMap<String, String> sourceEntries = new HashMap<String, String>();
-//    private ArrayList<String> sourcePatterns = new ArrayList<String>();
+    // private HashMap<String, String> sourceEntries = new HashMap<String,
+    // String>();
+    // private ArrayList<String> sourcePatterns = new ArrayList<String>();
     private HashMap<String, String> fileEntries = new HashMap<String, String>();
     private ArrayList<KeyInfo> data = new ArrayList<KeyInfo>();
     private HashMap<String, ArrayList<String>> dupes = new HashMap<String, ArrayList<String>>();
     private String lngKey = null;
     private boolean changed = false;
-    private boolean initComplete = false;
+    // private boolean initComplete = false;
     private boolean updatingInProgress = false;
     private final JDFileFilter fileFilter;
     private final File dirLanguages, dirWorkingCopy;
@@ -146,7 +143,9 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
     public LFEGui() {
         subConfig = SubConfiguration.getConfig("ADDONS_LANGFILEEDITOR");
         fileFilter = new JDFileFilter(JDLocale.L(LOCALE_PREFIX + "fileFilter2", "JD Language File (*.loc) or Folder with Sourcefiles"), ".loc", true);
-        String lfeHome = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/plugins/lfe/";
+        // String lfeHome =
+        // JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() +
+        // "/plugins/lfe/";
         dirLanguages = JDUtilities.getResourceFile("tmp/lfe/lng/");
         dirWorkingCopy = JDUtilities.getResourceFile("tmp/lfe/src/");
         dirLanguages.mkdirs();
@@ -201,14 +200,15 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         keyChart.addEntity(entMissing = new ChartAPIEntity(JDLocale.L(LOCALE_PREFIX + "keychart.missing", "Missing"), 0, colorMissing));
         keyChart.addEntity(entOld = new ChartAPIEntity(JDLocale.L(LOCALE_PREFIX + "keychart.old", "Old"), 0, colorOld));
 
-        this.setLayout(new MigLayout("wrap 3", "[][grow, fill][]", "[][][][grow, fill]"));
+        this.setLayout(new MigLayout("wrap 3", "[][grow, fill][]", "[][][grow, fill]"));
         this.add(buildMenu(), "span 3, growx, spanx");
-//        this.add(new JLabel(JDLocale.L(LOCALE_PREFIX + "source", "Source:")));
+        // this.add(new JLabel(JDLocale.L(LOCALE_PREFIX + "source",
+        // "Source:")));
         // this.add(cmboSource, "growx");
-       
+
         this.add(new JLabel(JDLocale.L(LOCALE_PREFIX + "languageFile", "Language File:")));
         this.add(cmboFile, "growx");
-        
+
         this.add(keyChart, "spany 1, w 225!, h 50!");
         this.add(new JScrollPane(table), "span 3, grow, span");
 
@@ -236,7 +236,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
                 // }
                 // }
 
-                initComplete = true;
+                // initComplete = true;
 
                 // if (sourceFile != null)
                 getSourceEntries();
@@ -740,7 +740,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
                 UserIO.getInstance().requestMessageDialog(JDLocale.L(LOCALE_PREFIX + "error.title", "Error occured"), JDLocale.LF(LOCALE_PREFIX + "error.updatesource.message", "Error while updating source:\r\n %s", JDLogger.getStackTrace(e)));
             }
             try {
-                svnLanguageDir.update(dirLanguages, SVNRevision.HEAD);
+                svnLanguageDir.update(dirLanguages, null);
             } catch (Exception e) {
                 JDLogger.exception(e);
                 UserIO.getInstance().requestMessageDialog(JDLocale.L(LOCALE_PREFIX + "error.title", "Error occured"), JDLocale.LF(LOCALE_PREFIX + "error.updatelanguages.message", "Error while updating languages:\r\n %s", JDLogger.getStackTrace(e)));
@@ -879,18 +879,19 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
             }
         }
 
-//        for (Entry<String, String> entry : fileEntries.entrySet()) {
-//            key = entry.getKey();
-//            value = null;
-//
-//            for (String pattern : sourcePatterns) {
-//                if (key.matches(pattern)) {
-//                    value = JDLocale.L(LOCALE_PREFIX + "patternEntry", "<Entry matches Pattern>");
-//                    break;
-//                }
-//            }
-//            data.add(new KeyInfo(key, value, entry.getValue()));
-//        }
+        // for (Entry<String, String> entry : fileEntries.entrySet()) {
+        // key = entry.getKey();
+        // value = null;
+        //
+        // for (String pattern : sourcePatterns) {
+        // if (key.matches(pattern)) {
+        // value = JDLocale.L(LOCALE_PREFIX + "patternEntry",
+        // "<Entry matches Pattern>");
+        // break;
+        // }
+        // }
+        // data.add(new KeyInfo(key, value, entry.getValue()));
+        // }
 
         Collections.sort(data);
 
@@ -930,19 +931,15 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
     // }
 
     private void getSourceEntriesFromFolder() {
-     
+
         ProgressController progress = new ProgressController(JDLocale.L(LOCALE_PREFIX + "analyzingSource1", "Analyzing Source Folder"));
         progress.setIndeterminate(true);
-       sourceParser = new SrcParser(this.dirWorkingCopy);
-       sourceParser.getBroadcaster().addListener(progress);
-       sourceParser.parse();
+        sourceParser = new SrcParser(this.dirWorkingCopy);
+        sourceParser.getBroadcaster().addListener(progress);
+        sourceParser.parse();
         progress.setStatusText(JDLocale.L(LOCALE_PREFIX + "analyzingSource.ready", "Analyzing Source Folder: Complete"));
         progress.finalize(2 * 1000l);
     }
-
-   
-
-  
 
     private void parseLanguageFile(File file, HashMap<String, String> data) {
         data.clear();

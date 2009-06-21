@@ -11,14 +11,12 @@ import jd.event.MessageEvent;
 import jd.event.MessageListener;
 import jd.nutils.Formatter;
 import jd.nutils.io.JDIO;
-import jd.nutils.svn.Subversion;
 import jd.parser.Regex;
 import jd.utils.JDUtilities;
 
 import org.tmatesoft.svn.core.SVNException;
 
 public class SrcParser {
-
 
     public static final int PARSE_NEW_FILE = 0;
     public static final int PARSE_NEW_ENTRY = 1;
@@ -33,7 +31,6 @@ public class SrcParser {
             @Override
             protected void fireEvent(MessageListener listener, MessageEvent event) {
                 listener.onMessage(event);
-
             }
 
         };
@@ -66,18 +63,16 @@ public class SrcParser {
 
     private void parseFile(File file) {
         this.currentFile = file;
-        String[] matches;
-        broadcaster.fireEvent(new MessageEvent(this,PARSE_NEW_FILE,"Parse "+file.getAbsolutePath()));
-        if (file.getAbsolutePath().contains("AccountController")) {
-            file = file;
-        }
+        broadcaster.fireEvent(new MessageEvent(this, PARSE_NEW_FILE, "Parse " + file.getAbsolutePath()));
+
         // find all lines containing JDLocale calls
         currentContent = JDIO.getLocalFile(file);
         prepareContent();
         currentContent = Pattern.compile("\\/\\*(.*?)\\*\\/", Pattern.DOTALL).matcher(currentContent).replaceAll("[[/*.....*/]]");
         currentContent = Pattern.compile("[^:]//(.*?)[\n|\r]", Pattern.DOTALL).matcher(currentContent).replaceAll("[[\\.....]]");
-        
-        matches = new Regex(currentContent, "([^;^{^}]*JDLocale\\.L.*?\\(.*?\\)[^;^{^}]*)").getColumn(0);
+
+        // TODO: Hiermit wird auch JDLocale.LOCALEID gemachted ...
+        String[] matches = new Regex(currentContent, "([^;^{^}]*JDLocale\\.L.*?\\(.*?\\)[^;^{^}]*)").getColumn(0);
 
         for (String match : matches) {
             // splitting all calls.
@@ -158,7 +153,6 @@ public class SrcParser {
                     continue;
                 }
                 int i = 0;
-                String p;
                 if (parameter[1].contains("+")) {
                     JDLogger.getLogger().severe("Mailformated translation value in " + currentFile + " : " + match);
                     continue;
@@ -215,18 +209,16 @@ public class SrcParser {
                 }
                 if (!parameter[0].contains(".")) {
                     JDLogger.getLogger().warning(" Prob. Mailformated translation key in " + currentFile + " : " + match);
-
                 }
                 if (parameter[0].contains("null")) {
                     JDLogger.getLogger().warning(" Prob. Mailformated translation key in " + currentFile + " : " + match);
-
                 }
                 entry = new LngEntry(parameter[0], parameter[1]);
                 if (!hasEntry(entry)) {
                     entries.add(entry);
                     System.out.println(Formatter.fillInteger(entries.size(), 3, "0") + " " + entry);
-                    broadcaster.fireEvent(new MessageEvent(this,PARSE_NEW_ENTRY,Formatter.fillInteger(entries.size(), 3, "0")+" "+entry));
-                    
+                    broadcaster.fireEvent(new MessageEvent(this, PARSE_NEW_ENTRY, Formatter.fillInteger(entries.size(), 3, "0") + " " + entry));
+
                 }
             }
 
