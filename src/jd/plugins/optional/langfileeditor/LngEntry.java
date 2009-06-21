@@ -2,7 +2,15 @@ package jd.plugins.optional.langfileeditor;
 
 public class LngEntry {
 
+    private String value;
+
     private String key;
+
+    public LngEntry(String key, String value) {
+        this.key = key;
+        this.value = value;
+    }
+
     public String getKey() {
         return key;
     }
@@ -19,14 +27,9 @@ public class LngEntry {
         this.value = value;
     }
 
-    private String value;
-
-    public LngEntry(String key, String value) {
-        this.key = key;
-        this.value = value;
-    }
-    public String toString(){
-        return key+" = "+value;
+    @Override
+    public String toString() {
+        return key + " = " + value;
     }
 
 }

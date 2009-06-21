@@ -16,8 +16,9 @@
 
 package jd.plugins.host;
 
+import java.io.IOException;
+
 import jd.PluginWrapper;
-import jd.utils.JDLocale;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
@@ -25,8 +26,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-
-import java.io.IOException;
+import jd.utils.JDLocale;
 
 public class HostUjeNet extends PluginForHost {
 

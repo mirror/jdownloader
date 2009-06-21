@@ -1,6 +1,7 @@
 package tests.singletests;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import jd.DecryptPluginWrapper;
 import jd.JDInit;
 import jd.OptionalPluginWrapper;

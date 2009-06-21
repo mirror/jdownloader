@@ -73,6 +73,10 @@ public class Subversion implements ISVNEventHandler {
         setupType(url);
         checkRoot();
 
+        initBroadcaster();
+    }
+
+    private void initBroadcaster() {
         this.broadcaster = new JDBroadcaster<MessageListener, MessageEvent>() {
 
             @Override
@@ -95,6 +99,8 @@ public class Subversion implements ISVNEventHandler {
         authManager = SVNWCUtil.createDefaultAuthenticationManager(this.user, this.pass);
         repository.setAuthenticationManager(authManager);
         checkRoot();
+
+        initBroadcaster();
     }
 
     private void checkRoot() throws SVNException {

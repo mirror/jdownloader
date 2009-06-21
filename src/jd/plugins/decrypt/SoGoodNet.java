@@ -19,15 +19,13 @@ package jd.plugins.decrypt;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
-import jd.utils.JDLocale;
 import jd.controlling.ProgressController;
 import jd.http.Encoding;
-import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.DecrypterException;
+import jd.utils.JDLocale;
 
 public class SoGoodNet extends PluginForDecrypt {
 

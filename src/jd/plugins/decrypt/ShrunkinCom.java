@@ -20,9 +20,8 @@ import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.http.Encoding;
 import jd.controlling.ProgressController;
-import jd.parser.Regex;
+import jd.http.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
