@@ -356,7 +356,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         wrapper.setExtractTo(dl);
 
         wrapper.setRemoveAfterExtract(this.getPluginConfig().getBooleanProperty(JDUnrarConstants.CONFIG_KEY_REMVE_AFTER_EXTRACT, false));
-        
+
         wrapper.setOverwrite(this.getPluginConfig().getBooleanProperty(JDUnrarConstants.CONFIG_KEY_OVERWRITE, true));
         wrapper.setUnrarCommand(getPluginConfig().getStringProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND));
         ArrayList<String> pwList = new ArrayList<String>();
@@ -694,7 +694,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         ce.setDefaultValue(true);
         ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDUnrarConstants.CONFIG_KEY_DEEP_EXTRACT, JDLocale.L("gui.config.unrar.deep_extract", "Deep-Extraction")));
         ce.setDefaultValue(true);
-        
+
         ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDUnrarConstants.CONFIG_KEY_REMOVE_INFO_FILE, JDLocale.L("gui.config.unrar.remove_infofile", "Delete Infofile after extraction")));
         ce.setDefaultValue(false);
     }
@@ -1289,7 +1289,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
 
         File file;
-        int type = this.getArchivePartType(downloadLink);
+        int type = JDUnrar.getArchivePartType(downloadLink);
         String name = null;
         int nums = 0;
         int i = 0;

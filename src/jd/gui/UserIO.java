@@ -90,6 +90,14 @@ public abstract class UserIO {
 
     abstract protected int showHelpDialog(int flag, String title, String message, String helpMessage, String url);
 
+    public int requestHtmlDialog(int flag, String title, String message) {
+        synchronized (INSTANCE) {
+            return showHtmlDialog(flag, title, message);
+        }
+    }
+
+    abstract protected int showHtmlDialog(int flag, String title, String message);
+
     public int requestConfirmDialog(int flag, String title, String message, ImageIcon icon, String okOption, String cancelOption) {
         synchronized (INSTANCE) {
             if (icon == null) {
@@ -99,18 +107,6 @@ public abstract class UserIO {
             return showConfirmDialog(flag, title, message, icon, okOption, cancelOption);
         }
 
-    }
-
-    private ImageIcon getDefaultIcon(String text) {
-        if (text.contains("?")) {
-            return this.getIcon(ICON_QUESTION);
-        } else if (text.matches(JDLocale.L("userio.errorregex", ".*(error|failed).*"))) {
-            return this.getIcon(ICON_ERROR);
-        } else if (text.contains("!")) {
-            return this.getIcon(ICON_WARNING);
-        } else {
-            return this.getIcon(ICON_INFO);
-        }
     }
 
     abstract protected int showConfirmDialog(int flag, String title, String message, ImageIcon icon, String okOption, String cancelOption);
@@ -132,6 +128,18 @@ public abstract class UserIO {
     public void requestMessageDialog(String title, String message) {
         synchronized (INSTANCE) {
             showConfirmDialog(UserIO.NO_CANCEL_OPTION, title, message, getIcon(UserIO.ICON_INFO), null, null);
+        }
+    }
+
+    private ImageIcon getDefaultIcon(String text) {
+        if (text.contains("?")) {
+            return this.getIcon(ICON_QUESTION);
+        } else if (text.matches(JDLocale.L("userio.errorregex", ".*(error|failed).*"))) {
+            return this.getIcon(ICON_ERROR);
+        } else if (text.contains("!")) {
+            return this.getIcon(ICON_WARNING);
+        } else {
+            return this.getIcon(ICON_INFO);
         }
     }
 

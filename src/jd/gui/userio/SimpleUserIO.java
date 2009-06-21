@@ -27,6 +27,7 @@ import jd.gui.userio.dialog.CaptchaDialog;
 import jd.gui.userio.dialog.ClickPositionDialog;
 import jd.gui.userio.dialog.ConfirmDialog;
 import jd.gui.userio.dialog.HelpDialog;
+import jd.gui.userio.dialog.HtmlDialog;
 import jd.gui.userio.dialog.InputDialog;
 import jd.utils.JDTheme;
 
@@ -74,6 +75,18 @@ public class SimpleUserIO extends UserIO {
             @Override
             public Integer runSave() {
                 return new HelpDialog(flag, title, message, helpMessage, url).getReturnValue();
+            }
+
+        }.getReturnValue();
+    }
+
+    @Override
+    protected int showHtmlDialog(final int flag, final String title, final String message) {
+        return new GuiRunnable<Integer>() {
+
+            @Override
+            public Integer runSave() {
+                return new HtmlDialog(flag, title, message).getReturnValue();
             }
 
         }.getReturnValue();

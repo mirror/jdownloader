@@ -70,7 +70,6 @@ import jd.gui.JDLookAndFeelManager;
 import jd.gui.UIInterface;
 import jd.gui.UserIO;
 import jd.gui.skins.simple.components.ChartAPIEntity;
-import jd.gui.skins.simple.components.HTMLDialog;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.components.PieChartAPI;
 import jd.gui.skins.simple.components.SpeedMeterPanel;
@@ -897,16 +896,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
     }
 
     public boolean showHTMLDialog(final String title, final String htmlQuestion) {
-        return new GuiRunnable<Boolean>() {
-            // @Override
-            public Boolean runSave() {
-
-                return HTMLDialog.showDialog(SimpleGUI.this, title, htmlQuestion);
-
-            }
-
-        }.getReturnValue();
-
+        return JDFlags.hasAllFlags(UserIO.getInstance().requestHtmlDialog(UserIO.NO_COUNTDOWN, title, htmlQuestion), UserIO.RETURN_OK);
     }
 
     public void showMessageDialog(final String string) {
