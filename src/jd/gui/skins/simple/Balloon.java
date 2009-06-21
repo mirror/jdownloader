@@ -12,8 +12,6 @@ import javax.swing.JPanel;
 import javax.swing.JSeparator;
 import javax.swing.JTextPane;
 import javax.swing.JWindow;
-import javax.swing.event.HyperlinkEvent;
-import javax.swing.event.HyperlinkListener;
 
 import jd.config.SubConfiguration;
 import jd.gui.skins.simple.components.JLinkButton;
@@ -236,18 +234,7 @@ public class Balloon {
                 textField.setText(string2);
                 textField.setEditable(false);
 
-                textField.addHyperlinkListener(new HyperlinkListener() {
-
-                    public void hyperlinkUpdate(HyperlinkEvent e) {
-                        if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
-                            try {
-                                JLinkButton.openURL(e.getURL());
-                            } catch (Exception e1) {
-                            }
-                        }
-                    }
-
-                });
+                textField.addHyperlinkListener(JLinkButton.getHyperlinkListener());
                 return p;
             }
         }.getReturnValue();

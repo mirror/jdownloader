@@ -110,20 +110,16 @@ public class KikinDialog extends AbstractDialog {
         textField.addHyperlinkListener(new HyperlinkListener() {
 
             public void hyperlinkUpdate(HyperlinkEvent e) {
-                // (e);
 
                 if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
-
-                    // "rundll32.exe url.dll,FileProtocolHandler
                     try {
                         JLinkButton.openURL(e.getURL());
                     } catch (Exception e1) {
-                        // TODO Auto-generated catch block
                         e1.printStackTrace();
                         JDUtilities.runCommand("cmd", new String[] { "/c", "start " + e.getURL() + "" }, null, 0);
                     }
-                    //
                 }
+
             }
 
         });

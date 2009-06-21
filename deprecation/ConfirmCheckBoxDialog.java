@@ -27,10 +27,7 @@ import javax.swing.JDialog;
 import javax.swing.JPanel;
 import javax.swing.JTextPane;
 import javax.swing.border.EmptyBorder;
-import javax.swing.event.HyperlinkEvent;
-import javax.swing.event.HyperlinkListener;
 
-import jd.controlling.JDLogger;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.nutils.Screen;
 import jd.utils.JDLocale;
@@ -84,21 +81,7 @@ public class ConfirmCheckBoxDialog extends JDialog implements ActionListener {
         if (html) {
             labelInfo.setContentType("text/html");
             labelInfo.requestFocusInWindow();
-            labelInfo.addHyperlinkListener(new HyperlinkListener() {
-
-                public void hyperlinkUpdate(HyperlinkEvent e) {
-                    if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
-                        try {
-                            JLinkButton.openURL(e.getURL());
-
-                        } catch (Exception e1) {
-                            // TODO Auto-generated catch block
-                            JDLogger.exception(e1);
-                        }
-                    }
-
-                }
-            });
+            labelInfo.addHyperlinkListener(JLinkButton.getHyperlinkListener());
 
         } else {
             labelInfo.setForeground(Color.red);

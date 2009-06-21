@@ -32,8 +32,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.JTextPane;
-import javax.swing.event.HyperlinkEvent;
-import javax.swing.event.HyperlinkListener;
 
 import jd.controlling.JDLogger;
 import jd.nutils.Formatter;
@@ -41,7 +39,7 @@ import jd.nutils.Screen;
 import jd.utils.JDLocale;
 import net.miginfocom.swing.MigLayout;
 
-public class CountdownConfirmDialog extends JDialog implements ActionListener, HyperlinkListener {
+public class CountdownConfirmDialog extends JDialog implements ActionListener {
 
     private static final long serialVersionUID = 1L;
 
@@ -144,7 +142,7 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
                 ((JTextPane) htmlArea).setContentType("text/html");
                 ((JTextPane) htmlArea).setText(finalmsg[0]);
                 ((JTextPane) htmlArea).requestFocusInWindow();
-                ((JTextPane) htmlArea).addHyperlinkListener(this);
+                ((JTextPane) htmlArea).addHyperlinkListener(JLinkButton.getHyperlinkListener());
 
             }
         }
@@ -259,16 +257,6 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
             countdownThread.interrupt();
         }
         countdownThread = null;
-    }
-
-    public void hyperlinkUpdate(HyperlinkEvent e) {
-        if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
-            try {
-                JLinkButton.openURL(e.getURL());
-            } catch (Exception e1) {
-                JDLogger.exception(e1);
-            }
-        }
     }
 
 }

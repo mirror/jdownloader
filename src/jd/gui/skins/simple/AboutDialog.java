@@ -28,8 +28,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTextPane;
 import javax.swing.SwingUtilities;
-import javax.swing.event.HyperlinkEvent;
-import javax.swing.event.HyperlinkListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
@@ -91,18 +89,7 @@ public class AboutDialog extends AbstractDialog {
             }
 
         }).start();
-        textField.addHyperlinkListener(new HyperlinkListener() {
-
-            public void hyperlinkUpdate(HyperlinkEvent e) {
-                if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
-                    try {
-                        JLinkButton.openURL(e.getURL());
-                    } catch (Exception e1) {
-                    }
-                }
-            }
-
-        });
+        textField.addHyperlinkListener(JLinkButton.getHyperlinkListener());
         DevEntry[] devs = getDevs();
         cp.add(new JScrollPane(list = new JList(devs)), "split 2,width 120!,growy,pushy");
         list.addListSelectionListener(new ListSelectionListener() {
@@ -162,7 +149,6 @@ public class AboutDialog extends AbstractDialog {
         devs.add(new DevEntry("Sna696", "-", "Italian Translation"));
         devs.add(new DevEntry("Giandena", "-", "Italian Translation"));
         devs.add(new DevEntry("nguyenkimvy", "-", "Vietnamese Translation"));
-        
 
         return devs.toArray(new DevEntry[] {});
     }
