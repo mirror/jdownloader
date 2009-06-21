@@ -25,6 +25,8 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.InputField;
+import jd.parser.html.Form.MethodType;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
@@ -51,10 +53,17 @@ public class DreiDlAm extends PluginForDecrypt {
         for (int retry = 1; retry < 5; retry++) {
             br.getPage(parameter);
             Thread.sleep(500);
-            String captcha = br.getRegex(Pattern.compile("captcha\"><img src=\"(/index\\.php\\?action=captcha.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
+            logger.fine(br.toString());
+            String captcha = br.getRegex(Pattern.compile("<img src=\"(/index\\.php\\?action=captcha.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
             if (captcha != null) {
                 String capTxt = getCaptchaCode("http://3dl.am" + captcha, link);
-                Form form = br.getForm(0);
+                Form form = new Form();
+                form.setAction(br.getRegex("<form action=\"(.*?)\" method=\"post\"").getMatch(0));
+                form.setMethod(MethodType.POST);
+                InputField nv = new InputField("answer", "1");
+                InputField nv2 = new InputField("submit", "Datei herunterladen");
+                form.addInputField(nv);
+                form.addInputField(nv2);
                 form.put("answer", capTxt);
                 br.submitForm(form);
                 if (!br.containsHTML("/failed.html")) break;
