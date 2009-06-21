@@ -323,7 +323,6 @@ public class JDInit {
         new DecryptPluginWrapper("linkprotect.in", "LinkProtectIn", "http://[\\w\\.]*?linkprotect\\.in/index.php\\?site=folder&id=[\\w]{1,50}");
         new DecryptPluginWrapper("linkcrypt.com", "LinkcryptCom", "http://[\\w\\.]*?linkcrypt\\.com/[a-zA-Z]-[\\w]+");
         new DecryptPluginWrapper("sealed.in", "SealedIn", "http://[\\w\\.]*?sealed\\.in/[a-zA-Z]-[\\w]+");
-        new DecryptPluginWrapper("crypting.cc", "CryptingCC", "http://[\\w\\.]*?crypting\\.cc/[a-zA-Z]-[\\w]+");
         new DecryptPluginWrapper("link-protector.com", "LinkProtectorCom", "http://[\\w\\.]*?link-protector\\.com/(x-)?\\d+");
         new DecryptPluginWrapper("linkr.at|rapidblogger.com", "LinkrAt", "http://[\\w\\.]*?(linkr\\.at/\\?p=|rapidblogger\\.com/link/)\\w+");
         new DecryptPluginWrapper("linksafe.ws", "LinkSafeWs", "http://[\\w\\.]*?linksafe\\.ws/files/[\\w]{4}-[\\d]{5}-[\\d]");

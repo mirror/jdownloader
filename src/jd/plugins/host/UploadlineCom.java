@@ -17,6 +17,9 @@
 package jd.plugins.host;
 
 import java.io.IOException;
+import java.util.Iterator;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
@@ -41,6 +44,13 @@ public class UploadlineCom extends PluginForHost {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
         String dllink = "";
+
+        // Initial Errorhandling
+        if (br.containsHTML("Error happened when generating Download Link")) {
+            String error = br.getRegex("err\">(.*?)</font>").getMatch(0);
+            if (error != null) logger.severe(error);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60000 * 60);
+        }
 
         /* variation 1 for small files */
         if (br.containsHTML("for your IP next 24 hours")) {
@@ -68,7 +78,22 @@ public class UploadlineCom extends PluginForHost {
             } else {
                 form = br.getFormbyProperty("name", "F1");
                 if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+
+                /* "Captcha Method" */
+                String[][] letters = br.getRegex("<span style='position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;'>(\\d)</span>").getMatches();
+                if (letters.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                SortedMap<Integer, String> capMap = new TreeMap<Integer, String>();
+                for (String[] letter : letters) {
+                    capMap.put(Integer.parseInt(letter[0]), letter[1]);
+                }
+                String code = "";
+                Iterator<Integer> it = capMap.keySet().iterator();
+                while (it.hasNext()) {
+                    code += capMap.get(it.next());
+                }
                 form.setAction(downloadLink.getDownloadURL());
+                form.put("code", code);
+
                 int tt = Integer.parseInt(br.getRegex("countdown\">(\\d+)</span>").getMatch(0));
                 sleep(tt * 1001, downloadLink);
                 br.submitForm(form);
@@ -76,13 +101,18 @@ public class UploadlineCom extends PluginForHost {
                 dllink = br.getRedirectLocation();
                 if (con2.getContentType().contains("html")) {
                     if (br.containsHTML("Download Link Generated")) dllink = br.getRegex("hours<br><br>\\s+<a\\shref=\"(.*?)\">").getMatch(0);
+                    if (br.containsHTML("Error happened when generating Download Link")) {
+                        con2.disconnect();
+                        String error = br.getRegex("err\">(.*?)</font>").getMatch(0);
+                        if (error != null) logger.severe(error);
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60000 * 60);
+                    }
                 }
             }
         }
 
         if (dllink != null && dllink != "") {
             dl = br.openDownload(downloadLink, dllink, true, -4);
-            dl.setResume(true);
             dl.startDownload();
         } else
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
@@ -90,7 +120,7 @@ public class UploadlineCom extends PluginForHost {
 
     // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return 1;
     }
 
     // @Override
@@ -105,7 +135,7 @@ public class UploadlineCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setCookie("http://www.uploadline.com/", "lang", "english");
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(No such file)|(No such user exist)|(Link expired)|(File Not Found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(No such file)|(No such user exist)|(Link expired)|(File Not Found)|(Error happened)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("available for Premium users only")) {
             logger.warning(JDLocale.L("plugins.host.uploadlinecom.premiumonly", "Uploadline.com: Files over 1 Gb are available for Premium users only"));
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "See log");
