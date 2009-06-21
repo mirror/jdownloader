@@ -117,9 +117,20 @@ public class HotFileCom extends PluginForHost {
         }
         Form form = br.getForm(1);
         br.submitForm(form);
-        String dl_url = br.getRegex("Downloading.*?<a href=\"(.*?/get/.*?)\">").getMatch(0);
+        
+        //captcha
+        if(!br.containsHTML("Click here to download"))
+        {
+        form = br.getForm(1);
+        String captchaUrl ="http://www.hotfile.com"+br.getRegex("<img src=\"(/captcha.php.*?)\">").getMatch(0);
+        String captchaCode = getCaptchaCode(captchaUrl, link);
+        form.put("captcha", captchaCode);
+        br.submitForm(form);
+        if(!br.containsHTML("Click here to download"))throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
+        
+        String dl_url = br.getRegex("<h3 style='margin-top: 20px'><a href=\"(.*?)\">Click here to download</a>").getMatch(0);
         if (dl_url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        br.setDebug(true);
         br.setFollowRedirects(true);
         dl = br.openDownload(link, dl_url, true, 0);
         dl.setFilenameFix(true);
