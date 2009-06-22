@@ -1270,7 +1270,7 @@ public class JDChat extends PluginOptional implements ControlListener {
             if (end < 0) {
                 end = text.length();
             }
-            String cmd = text.substring(1, end);
+            String cmd = text.substring(1, end).trim();
             String rest = text.substring(end).trim();
             if (Regex.matches(cmd, CMD_PM)) {
                 textField.setText("");
@@ -1322,7 +1322,13 @@ public class JDChat extends PluginOptional implements ControlListener {
                 conn.doTopic(CHANNEL, prepareToSend(rest));
                 lastCommand = "/topic ";
             } else if (Regex.matches(cmd, CMD_JOIN)) {
-                conn.doJoin(CHANNEL, null);
+                NAMES.clear();
+                if (conn != null) addToText(null, STYLE_NOTICE, "Change channel to: " + rest);
+                if (conn != null) conn.doPart(CHANNEL, " --> " + rest);
+                CHANNEL = rest;
+                if (conn != null) conn.doJoin(CHANNEL, null);
+
+                lastCommand = "/join " + rest;
                 setLoggedIn(true);
                 perform();
             } else if (Regex.matches(cmd, CMD_NICK)) {
@@ -1345,13 +1351,12 @@ public class JDChat extends PluginOptional implements ControlListener {
                 addToText(null, STYLE_ERROR, "Command /" + cmd + " is not available");
             }
 
-            textField.requestFocus();
         } else {
             conn.doPrivmsg(channel2, prepareToSend(text));
             addToText(getUser(conn.getNick()), STYLE_SELF, Utils.prepareMsg(text));
-            textField.setText("");
-            textField.requestFocus();
         }
+        textField.setText("");
+        textField.requestFocus();
     }
 
     public void setEnabled(boolean b) {

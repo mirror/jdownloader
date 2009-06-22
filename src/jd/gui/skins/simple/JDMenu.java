@@ -25,13 +25,7 @@ import javax.swing.event.MenuListener;
 
 import jd.config.MenuItem;
 
-public class JDMenu extends JMenu {
-
-    private static final long serialVersionUID = 7827312050360423912L;
-
-    public JDMenu(String l) {
-        super(l);
-    }
+public class JDMenu {
 
     public static JMenuItem getJMenuItem(final MenuItem mi) {
         JMenuItem m;
