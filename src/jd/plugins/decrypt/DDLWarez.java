@@ -19,6 +19,7 @@ package jd.plugins.decrypt;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -321,5 +322,33 @@ public class DDLWarez extends PluginForDecrypt {
             return retcode;
         }
         return null; /* keines */
+    }
+
+    private String unpack(String packedScript, String[] tokens) {
+        int seed = 95;
+        HashMap<String, String> dictionary = new HashMap<String, String>();
+        for (int i = 0; i < tokens.length; i++) {
+            dictionary.put(createKey(i, seed), tokens[i]);
+        }
+
+        Pattern p = Pattern.compile("([\\xa1-\\xff]+)");
+        Matcher m = p.matcher(packedScript);
+        StringBuffer sb = new StringBuffer();
+        while (m.find()) {
+            String replacement = dictionary.get(m.group());
+            if (replacement != null) {
+                m.appendReplacement(sb, replacement);
+            }
+        }
+        m.appendTail(sb);
+        return sb.toString();
+    }
+
+    private String createKey(int number, int seed) {
+        int offset = 256 - seed;
+        if (number < seed)
+            return String.valueOf((char) (number + offset));
+        else
+            return createKey(number / seed, seed) + String.valueOf((char) (number % seed + offset));
     }
 }
