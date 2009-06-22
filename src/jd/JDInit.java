@@ -432,7 +432,7 @@ public class JDInit {
         new DecryptPluginWrapper("pspisos.org", "PspIsosOrg", "http://[\\w\\.]*?pspisos\\.org/(d\\d\\d?wn|d3741l5)/.+(/\\d+)?");
         new DecryptPluginWrapper("fileducky.com", "Fileducky", "http://[\\w\\.]*?fileducky\\.com/[\\w]+/?");
         new DecryptPluginWrapper("megarotic.com", "MegaRoticCom", "http://[\\w\\.]*?(megarotic|sexuploader)\\.com/.*?(\\?|&)d=[\\w]+");
-        new DecryptPluginWrapper("foxlink.info", "FoxLinkInfo", "http://[\\w\\.]*?(fox|vip)link\\.info/\\d+");
+        new DecryptPluginWrapper("foxlink.info", "FoxLinkInfo", "http://[\\w\\.]*?(foxlink|viplink|zero10)\\.info/\\d+");
         new DecryptPluginWrapper("referhush.com", "ReferHushCom", "http://[\\w\\.]*?referhush\\.com/\\?rh=[a-f0-9]+");
         new DecryptPluginWrapper("amigura.co.uk", "AmiguraCoUk", "http://[\\w\\.]*?amigura\\.co\\.uk/(s\\d+|send_file)\\.php\\?d=(\\d+(-|/)[A-Z0-9]+(-|/)\\d+(-|/)|\\d+/).+");
         new DecryptPluginWrapper("hotfile.com", "HotfileCom", "http://[\\w\\.]*?hotfile\\.com/list/\\d+/[\\w]+");
