@@ -136,7 +136,6 @@ public class ConfigPanelGUI extends ConfigPanel {
 
         ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.PARAM_SHOW_SPEEDMETER, JDLocale.L("gui.config.gui.show_speed_graph", "Display speedmeter graph")).setGroup(speedmeter));
         ce.setDefaultValue(true);
-        ce.setPropertyType(PropertyType.NEEDS_RESTART);
         ConfigEntry cond = ce;
 
         ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, SimpleGuiConstants.PARAM_SHOW_SPEEDMETER_WINDOWSIZE, JDLocale.L("gui.config.gui.show_speed_graph_window", "Speedmeter Time period (sec)"), 10, 60 * 60 * 12).setGroup(speedmeter));

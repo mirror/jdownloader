@@ -38,43 +38,60 @@ import javax.swing.Timer;
 import javax.swing.UIManager;
 import javax.swing.plaf.FontUIResource;
 
+import jd.config.ConfigPropertyListener;
 import jd.config.Configuration;
+import jd.config.Property;
 import jd.config.SubConfiguration;
-import jd.event.ControlEvent;
-import jd.event.ControlListener;
+import jd.controlling.JDController;
 import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.nutils.Formatter;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
-public class SpeedMeterPanel extends JPanel implements ControlListener, ActionListener, MouseListener {
+public class SpeedMeterPanel extends JPanel implements ActionListener, MouseListener {
 
     private static final long serialVersionUID = 5571694800446993879L;
     private int i;
     private int[] cache;
     private Thread th;
     private int window;
+    private boolean show;
 
     private static final int CAPACITY = 40;
 
     public SpeedMeterPanel() {
-        this.i = 0;
-        this.window = SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getIntegerProperty(SimpleGuiConstants.PARAM_SHOW_SPEEDMETER_WINDOWSIZE, 60);
-        this.setOpaque(false);
-        this.setBorder(BorderFactory.createEtchedBorder());
-        this.addMouseListener(this);
-        this.cache = new int[CAPACITY];
-
+        i = 0;
+        window = SimpleGuiConstants.GUI_CONFIG.getIntegerProperty(SimpleGuiConstants.PARAM_SHOW_SPEEDMETER_WINDOWSIZE, 60);
+        show = SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.PARAM_SHOW_SPEEDMETER, true);
+        cache = new int[CAPACITY];
         for (int x = 0; x < CAPACITY; x++) {
             cache[x] = 0;
         }
 
-        this.setVisible(false);
-        JDUtilities.getController().addControlListener(this);
+        setOpaque(false);
+        setBorder(show ? BorderFactory.createEtchedBorder() : null);
+        addMouseListener(this);
+
+        JDUtilities.getController().addControlListener(new ConfigPropertyListener(Configuration.PARAM_DOWNLOAD_MAX_SPEED, SimpleGuiConstants.PARAM_SHOW_SPEEDMETER_WINDOWSIZE, SimpleGuiConstants.PARAM_SHOW_SPEEDMETER) {
+
+            @Override
+            public void onPropertyChanged(Property source, String key) {
+                if (key == Configuration.PARAM_DOWNLOAD_MAX_SPEED) {
+                    update();
+                } else if (key == SimpleGuiConstants.PARAM_SHOW_SPEEDMETER_WINDOWSIZE) {
+                    window = SimpleGuiConstants.GUI_CONFIG.getIntegerProperty(SimpleGuiConstants.PARAM_SHOW_SPEEDMETER_WINDOWSIZE, 60);
+                } else if (key == SimpleGuiConstants.PARAM_SHOW_SPEEDMETER) {
+                    show = SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.PARAM_SHOW_SPEEDMETER, true);
+                    setBorder(show ? BorderFactory.createEtchedBorder() : null);
+                }
+            }
+
+        });
 
     }
 
     public void start() {
+        if (!show) return;
         if (th != null) return;
         th = new Thread() {
 
@@ -101,6 +118,7 @@ public class SpeedMeterPanel extends JPanel implements ControlListener, ActionLi
     }
 
     public void stop() {
+        if (!show) return;
         if (th != null) {
             th.interrupt();
             th = null;
@@ -114,6 +132,10 @@ public class SpeedMeterPanel extends JPanel implements ControlListener, ActionLi
 
     @Override
     public void paintComponent(Graphics g) {
+        if (!show) {
+            super.paintComponent(g);
+            return;
+        }
         ((Graphics2D) g).setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity));
         super.paintComponent(g);
         Graphics2D g2 = (Graphics2D) g;
@@ -173,16 +195,6 @@ public class SpeedMeterPanel extends JPanel implements ControlListener, ActionLi
         }
     }
 
-    public void controlEvent(ControlEvent event) {
-        if (event.getID() == ControlEvent.CONTROL_JDPROPERTY_CHANGED) {
-            if (event.getParameter().equals(Configuration.PARAM_DOWNLOAD_MAX_SPEED)) {
-                update();
-            } else if (event.getParameter().equals(SimpleGuiConstants.PARAM_SHOW_SPEEDMETER_WINDOWSIZE)) {
-                window = SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getIntegerProperty(SimpleGuiConstants.PARAM_SHOW_SPEEDMETER_WINDOWSIZE, 60);
-            }
-        }
-    }
-
     private float opacity = 0f;
     private float fadeSteps = .1f;
     private Timer fadeTimer;
@@ -222,21 +234,21 @@ public class SpeedMeterPanel extends JPanel implements ControlListener, ActionLi
                 fadeTimer = null;
             } else if (opacity < 0) {
                 opacity = 0;
-                this.setVisible(false);
                 fadeTimer.stop();
                 fadeTimer = null;
             }
 
             update();
         } else if (e.getSource() instanceof JMenuItem) {
-            SimpleGuiConstants.GUI_CONFIG.setProperty(SimpleGuiConstants.PARAM_SHOW_SPEEDMETER, false);
+            SimpleGuiConstants.GUI_CONFIG.setProperty(SimpleGuiConstants.PARAM_SHOW_SPEEDMETER, !show);
             SimpleGuiConstants.GUI_CONFIG.save();
         }
     }
 
     public void mouseClicked(MouseEvent e) {
         if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
-            JMenuItem mi = new JMenuItem(JDLocale.L("gui.speedmeter.hide", "Hide"));
+            if (JDController.getInstance().getDownloadStatus() != JDController.DOWNLOAD_RUNNING) return;
+            JMenuItem mi = new JMenuItem(show ? JDLocale.L("gui.speedmeter.hide", "Hide Speedmeter") : JDLocale.L("gui.speedmeter.show", "Show Speedmeter"));
             mi.addActionListener(this);
 
             JPopupMenu popup = new JPopupMenu();

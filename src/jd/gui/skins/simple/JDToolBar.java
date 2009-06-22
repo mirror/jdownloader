@@ -16,7 +16,6 @@
 
 package jd.gui.skins.simple;
 
-import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
@@ -81,7 +80,7 @@ public class JDToolBar extends JToolBar implements ControlListener {
 
     public static final int ENTRY_ALL = ENTRY_CONTROL | ENTRY_CONFIG | ENTRY_INTERACTION;
 
-    public JDToolBar(boolean noTitlePane, Image mainMenuIcon) {
+    public JDToolBar(boolean noTitlePane) {
         super(JToolBar.HORIZONTAL);
 
         noTitlePainter = noTitlePane;
@@ -150,7 +149,7 @@ public class JDToolBar extends JToolBar implements ControlListener {
     }
 
     private void initListeners() {
-        JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_LATEST_RECONNECT_RESULT, Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, Configuration.PARAM_ALLOW_RECONNECT, Configuration.PARAM_DOWNLOAD_PAUSE_SPEED, SimpleGuiConstants.PARAM_SHOW_SPEEDMETER) {
+        JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_LATEST_RECONNECT_RESULT, Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, Configuration.PARAM_ALLOW_RECONNECT, Configuration.PARAM_DOWNLOAD_PAUSE_SPEED) {
             @Override
             public void onPropertyChanged(Property source, final String key) {
                 SwingUtilities.invokeLater(new Runnable() {
@@ -163,8 +162,6 @@ public class JDToolBar extends JToolBar implements ControlListener {
                             updateReconnectButtonIcon();
                         } else if (key == Configuration.PARAM_DOWNLOAD_PAUSE_SPEED) {
                             updatePauseButton();
-                        } else if (key == SimpleGuiConstants.PARAM_SHOW_SPEEDMETER) {
-                            updateSpeedMeterPanel();
                         }
                     }
                 });
@@ -330,17 +327,7 @@ public class JDToolBar extends JToolBar implements ControlListener {
 
     private void addSpeedMeter() {
         speedmeter = new SpeedMeterPanel();
-        updateSpeedMeterPanel();
-    }
-
-    private void updateSpeedMeterPanel() {
-        if (SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.PARAM_SHOW_SPEEDMETER, true)) {
-            add(speedmeter, "cell 0 13,dock east,hidemode 3,height 30!,width 30:200:300");
-        } else {
-            remove(speedmeter);
-            validate();
-            repaint();
-        }
+        add(speedmeter, "cell 0 13,dock east,hidemode 3,height 30!,width 30:200:300");
     }
 
     private void setPause(final boolean b) {

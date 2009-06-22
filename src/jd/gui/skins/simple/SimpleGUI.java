@@ -220,7 +220,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
 
         if (isSubstance()) this.getRootPane().setUI(new JDSubstanceUI(mainMenuIcon));
 
-        toolBar = new JDToolBar(noTitlePane, mainMenuIcon);
+        toolBar = new JDToolBar(noTitlePane);
 
         // System.out.println(ui);
         addWindowListener(this);
