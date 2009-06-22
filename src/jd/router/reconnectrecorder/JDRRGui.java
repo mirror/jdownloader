@@ -33,8 +33,9 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.controlling.reconnect.ReconnectMethod;
-import jd.gui.skins.simple.components.CountdownConfirmDialog;
+import jd.gui.UserIO;
 import jd.gui.skins.simple.components.JLinkButton;
+import jd.nutils.JDFlags;
 import jd.nutils.Screen;
 import jd.parser.Regex;
 import jd.utils.JDLocale;
@@ -60,11 +61,9 @@ public class JDRRGui extends JDialog implements ActionListener {
     public String methode = null, user = null, pass = null;
     private static long check_intervall = 3000;
     private static long reconnect_duration = 0;
-    private JFrame frame;
 
     public JDRRGui(JFrame frame, String ip) {
         super(frame);
-        this.frame = frame;
 
         RouterIP = ip;
 
@@ -98,7 +97,8 @@ public class JDRRGui extends JDialog implements ActionListener {
     }
 
     private void save() {
-        if (new CountdownConfirmDialog(this.frame, JDLocale.L("gui.config.jdrr.success", "Success!"), 10, true, CountdownConfirmDialog.STYLE_YES | CountdownConfirmDialog.STYLE_NO, JDLocale.L("gui.config.jdrr.savereconnect", "Der Reconnect war erfolgreich möchten sie jetzt speichern?")).getResult()) {
+        int ret = UserIO.getInstance().requestConfirmDialog(0, JDLocale.L("gui.config.jdrr.success", "Success!"), JDLocale.L("gui.config.jdrr.savereconnect", "Der Reconnect war erfolgreich möchten sie jetzt speichern?"), UserIO.getInstance().getIcon(UserIO.ICON_QUESTION), JDLocale.L("gui.btn_yes", "Ja"), JDLocale.L("gui.btn_no", "Nein"));
+        if (JDFlags.hasSomeFlags(ret, UserIO.RETURN_OK, UserIO.RETURN_COUNTDOWN_TIMEOUT)) {
 
             Configuration configuration = JDUtilities.getConfiguration();
 

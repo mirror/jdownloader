@@ -23,9 +23,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.gui.skins.simple.GuiRunnable;
-import jd.gui.skins.simple.SimpleGUI;
-import jd.gui.skins.simple.components.CountdownConfirmDialog;
+import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.HTMLEntities;
@@ -159,26 +157,12 @@ public class DDLWarez extends PluginForDecrypt {
                                 if (captchaText != null)
                                     ipf.setValue(captchaText);
                                 else {
-                                    final String text = form.getHtmlCode().replaceAll("<.*?>", "").trim();
-                                    String res = new GuiRunnable<String>() {
-                                        @Override
-                                        public String runSave() {
-                                            CountdownConfirmDialog input = new CountdownConfirmDialog(SimpleGUI.CURRENTGUI, JDLocale.L("plugins.decrypt.ddlwarez.humanverification", "DDL-Warez Human Verification"), 10, true, CountdownConfirmDialog.STYLE_INPUTFIELD | CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_CANCEL, text, new Regex(Encoding.deepHtmlDecode(HTMLEntities.unhtmlAngleBrackets(text)), "[A-Za-z0-9_äÄöÖüÜß\\s\\,\\.]+[^A-Za-z0-9_äÄöÖüÜß\\,\\.]+\\s(\\S+)").getMatch(0));
-                                            if (input.getResult()) {
-                                                return input.getInput();
-                                            } else {
-                                                return null;
-                                            }
-                                        }
+                                    String text = form.getHtmlCode().replaceAll("<.*?>", "").trim();
+                                    String res = UserIO.getInstance().requestInputDialog(0, JDLocale.L("plugins.decrypt.ddlwarez.humanverification", "DDL-Warez Human Verification"), new Regex(Encoding.deepHtmlDecode(HTMLEntities.unhtmlAngleBrackets(text)), "[A-Za-z0-9_äÄöÖüÜß\\s\\,\\.]+[^A-Za-z0-9_äÄöÖüÜß\\,\\.]+\\s(\\S+)").getMatch(0), null, UserIO.getInstance().getIcon(UserIO.ICON_QUESTION), null, null);
+                                    if (res == null) throw new DecrypterException(DecrypterException.CAPTCHA);
+                                    captchaText = res;
+                                    ipf.setValue(captchaText);
 
-                                    }.getReturnValue();
-
-                                    if (res != null) {
-                                        captchaText = res;
-                                        ipf.setValue(captchaText);
-                                    } else {
-                                        throw new DecrypterException(DecrypterException.CAPTCHA);
-                                    }
                                 }
                             }
                         }

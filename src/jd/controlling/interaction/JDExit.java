@@ -18,8 +18,8 @@ package jd.controlling.interaction;
 
 import java.io.Serializable;
 
-import jd.gui.skins.simple.SimpleGUI;
-import jd.gui.skins.simple.components.CountdownConfirmDialog;
+import jd.gui.UserIO;
+import jd.nutils.JDFlags;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -32,26 +32,26 @@ public class JDExit extends Interaction implements Serializable {
 
     private static final long serialVersionUID = -4825002404662625527L;
 
-    // @Override
+    @Override
     public boolean doInteraction(Object arg) {
         logger.info("Starting Exit");
-        CountdownConfirmDialog shutDownMessage = new CountdownConfirmDialog(SimpleGUI.CURRENTGUI, JDLocale.L("interaction.jdexit.message", "JD will close itself in 10 secs!"), 10, true, CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_CANCEL, JDLocale.L("interaction.jdexit.message2", "JD will close itself if you do not abort!"));
-        if (shutDownMessage.getResult()) {
+        int ret = UserIO.getInstance().requestConfirmDialog(0, JDLocale.L("interaction.jdexit.title", "JD will close itself!"), JDLocale.L("interaction.jdexit.message2", "JD will close itself if you do not abort!"), UserIO.getInstance().getIcon(UserIO.ICON_WARNING), null, null);
+        if (JDFlags.hasSomeFlags(ret, UserIO.RETURN_OK, UserIO.RETURN_COUNTDOWN_TIMEOUT)) {
             JDUtilities.getController().exit();
         }
         return true;
     }
 
-    // @Override
+    @Override
     public String getInteractionName() {
         return JDLocale.L("interaction.jdexit.name", "JD Beenden");
     }
 
-    // @Override
+    @Override
     public void initConfig() {
     }
 
-    // @Override
+    @Override
     public String toString() {
         return JDLocale.L("interaction.jdexit.name", "JD Beenden");
     }

@@ -46,14 +46,15 @@ import jd.config.Configuration;
 import jd.controlling.JDLogger;
 import jd.controlling.reconnect.ReconnectMethod;
 import jd.controlling.reconnect.Reconnecter;
+import jd.gui.UserIO;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.ProgressDialog;
 import jd.gui.skins.simple.SimpleGUI;
-import jd.gui.skins.simple.components.CountdownConfirmDialog;
 import jd.gui.skins.simple.config.GUIConfigEntry;
 import jd.http.Browser;
 import jd.http.RequestHeader;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.JDFlags;
 import jd.nutils.OSDetector;
 import jd.nutils.Threader;
 import jd.nutils.jobber.JDRunnable;
@@ -65,7 +66,6 @@ public class GetRouterInfo {
     private Threader threader = null;
     private Threader th2 = null;
     private boolean cancel = false;
-    private CountdownConfirmDialog confirm = null;
 
     public static boolean isFritzbox(String iPaddress) {
         Browser br = new Browser();
@@ -83,13 +83,11 @@ public class GetRouterInfo {
             try {
                 threader.interrupt();
             } catch (Exception e) {
-                // TODO: handle exception
             }
         } else if (th2 != null) {
             try {
                 th2.interrupt();
             } catch (Exception e) {
-                // TODO: handle exception
             }
         }
 
@@ -161,7 +159,7 @@ public class GetRouterInfo {
         return ret;
     }
 
-    private Logger logger = jd.controlling.JDLogger.getLogger();
+    private Logger logger = JDLogger.getLogger();
 
     public String password = null;
 
@@ -282,7 +280,6 @@ public class GetRouterInfo {
                     }
                 }
             } catch (Exception e) {
-                // TODO: handle exception
             }
 
         }
@@ -604,7 +601,6 @@ public class GetRouterInfo {
                         try {
                             wait();
                         } catch (Exception e) {
-                            // TODO: handle exception
                         }
 
                     }
@@ -661,7 +657,6 @@ public class GetRouterInfo {
 
                     }
                 } catch (Exception e) {
-                    // TODO: handle exception
                 }
                 isalv.isAlv = false;
             }
@@ -771,14 +766,15 @@ public class GetRouterInfo {
                             try {
                                 wait();
                             } catch (Exception e) {
-                                // TODO: handle exception
                             }
 
                         }
                         if (isalv.meths == null) {
 
-                            confirm = new CountdownConfirmDialog(SimpleGUI.CURRENTGUI, JDLocale.LF("gui.config.liveHeader.warning.upnpinactive", "Bitte aktivieren sie fals vorhanden Upnp in den Netzwerkeinstellungen ihres Routers <br><a href=\"http://%s\">zum Router</a><br><a href=\"http://wiki.jdownloader.org/index.php?title=Router_Upnp\">Wikiartikel: Upnp Routern</a><br>drücken sie Ok wenn sie Upnp aktiviert haben oder abbrechen wenn sie fortfahren wollen!", infos.getRouterHost()), 600, false, CountdownConfirmDialog.STYLE_CANCEL | CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_STOP_COUNTDOWN | CountdownConfirmDialog.STYLE_NOTALWAYSONTOP);
-                            if (confirm.getResult()) {
+                            UserIO.setCountdownTime(600);
+                            int ret = UserIO.getInstance().requestConfirmDialog(0, null, JDLocale.LF("gui.config.liveHeader.warning.upnpinactive", "Bitte aktivieren sie fals vorhanden Upnp in den Netzwerkeinstellungen ihres Routers <br><a href=\"http://%s\">zum Router</a><br><a href=\"http://wiki.jdownloader.org/index.php?title=Router_Upnp\">Wikiartikel: Upnp Routern</a><br>drücken sie Ok wenn sie Upnp aktiviert haben oder abbrechen wenn sie fortfahren wollen!", infos.getRouterHost()), UserIO.getInstance().getIcon(UserIO.ICON_WARNING), null, null);
+                            UserIO.setCountdownTime(null);
+                            if (JDFlags.hasAllFlags(ret, UserIO.RETURN_OK)) {
                                 try {
                                     setProgressText(JDLocale.L("gui.config.routeripfinder.status.testingupnp", "Testing UPnP..."));
                                     for (int i = 0; i < 30 && !cancel; i++) {
@@ -795,7 +791,6 @@ public class GetRouterInfo {
                                         }
                                     }
                                 } catch (Exception e) {
-                                    // TODO: handle exception
                                 }
                             }
                         }
@@ -927,7 +922,6 @@ public class GetRouterInfo {
                     try {
                         th.wait();
                     } catch (Exception e) {
-                        // TODO: handle exception
                     }
                 }
                 routerInfo.cancel();
