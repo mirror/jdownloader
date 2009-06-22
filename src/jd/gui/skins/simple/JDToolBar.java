@@ -16,7 +16,6 @@
 
 package jd.gui.skins.simple;
 
-import java.awt.Dimension;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -151,7 +150,7 @@ public class JDToolBar extends JToolBar implements ControlListener {
     }
 
     private void initListeners() {
-        JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_LATEST_RECONNECT_RESULT, Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, Configuration.PARAM_ALLOW_RECONNECT, Configuration.PARAM_DOWNLOAD_PAUSE_SPEED) {
+        JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_LATEST_RECONNECT_RESULT, Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, Configuration.PARAM_ALLOW_RECONNECT, Configuration.PARAM_DOWNLOAD_PAUSE_SPEED, SimpleGuiConstants.PARAM_SHOW_SPEEDMETER) {
             @Override
             public void onPropertyChanged(Property source, final String key) {
                 SwingUtilities.invokeLater(new Runnable() {
@@ -164,6 +163,8 @@ public class JDToolBar extends JToolBar implements ControlListener {
                             updateReconnectButtonIcon();
                         } else if (key == Configuration.PARAM_DOWNLOAD_PAUSE_SPEED) {
                             updatePauseButton();
+                        } else if (key == SimpleGuiConstants.PARAM_SHOW_SPEEDMETER) {
+                            updateSpeedMeterPanel();
                         }
                     }
                 });
@@ -292,7 +293,7 @@ public class JDToolBar extends JToolBar implements ControlListener {
                 setPause(pauseButton.isSelected());
             }
         });
-        
+
         add(stopButton = new JButton(JDTheme.II("gui.images.stop", 24, 24)), BUTTON_CONSTRAINTS);
         stopButton.setToolTipText(JDLocale.L("gui.menu.action.stop.desc", null));
         stopButton.setName("stopButton");
@@ -329,9 +330,16 @@ public class JDToolBar extends JToolBar implements ControlListener {
 
     private void addSpeedMeter() {
         speedmeter = new SpeedMeterPanel();
-        speedmeter.setPreferredSize(new Dimension(100, 30));
-        if (SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getBooleanProperty(SimpleGuiConstants.PARAM_SHOW_SPEEDMETER, true)) {
-            add(speedmeter, "cell 0 13,dock east,hidemode 3,height 30,width 30:200:300");
+        updateSpeedMeterPanel();
+    }
+
+    private void updateSpeedMeterPanel() {
+        if (SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.PARAM_SHOW_SPEEDMETER, true)) {
+            add(speedmeter, "cell 0 13,dock east,hidemode 3,height 30!,width 30:200:300");
+        } else {
+            remove(speedmeter);
+            validate();
+            repaint();
         }
     }
 
@@ -353,7 +361,7 @@ public class JDToolBar extends JToolBar implements ControlListener {
                     stopButton.setEnabled(true);
                     pauseButton.setEnabled(true);
                     playButton.setEnabled(false);
-                    if (speedmeter != null) speedmeter.start();
+                    speedmeter.start();
                     break;
                 case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
                 case ControlEvent.CONTROL_DOWNLOAD_STOP:
@@ -361,7 +369,7 @@ public class JDToolBar extends JToolBar implements ControlListener {
                     setPause(false);
                     pauseButton.setEnabled(false);
                     playButton.setEnabled(true);
-                    if (speedmeter != null) speedmeter.stop();
+                    speedmeter.stop();
                     break;
                 }
                 return null;

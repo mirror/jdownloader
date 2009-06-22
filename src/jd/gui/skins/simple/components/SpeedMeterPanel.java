@@ -27,9 +27,13 @@ import java.awt.Polygon;
 import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 
 import javax.swing.BorderFactory;
+import javax.swing.JMenuItem;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.Timer;
 import javax.swing.UIManager;
 import javax.swing.plaf.FontUIResource;
@@ -43,7 +47,7 @@ import jd.nutils.Formatter;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
-public class SpeedMeterPanel extends JPanel implements ControlListener, ActionListener {
+public class SpeedMeterPanel extends JPanel implements ControlListener, ActionListener, MouseListener {
 
     private static final long serialVersionUID = 5571694800446993879L;
     private int i;
@@ -54,18 +58,15 @@ public class SpeedMeterPanel extends JPanel implements ControlListener, ActionLi
     private static final int CAPACITY = 40;
 
     public SpeedMeterPanel() {
-        // Set background color for the applet's panel.
         this.i = 0;
-
         this.window = SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getIntegerProperty(SimpleGuiConstants.PARAM_SHOW_SPEEDMETER_WINDOWSIZE, 60);
-
         this.setOpaque(false);
         this.setBorder(BorderFactory.createEtchedBorder());
+        this.addMouseListener(this);
         this.cache = new int[CAPACITY];
 
         for (int x = 0; x < CAPACITY; x++) {
             cache[x] = 0;
-
         }
 
         this.setVisible(false);
@@ -213,19 +214,47 @@ public class SpeedMeterPanel extends JPanel implements ControlListener, ActionLi
     }
 
     public void actionPerformed(ActionEvent e) {
-        opacity += fadeSteps;
-        if (opacity > 1) {
-            opacity = 1;
-            fadeTimer.stop();
-            fadeTimer = null;
-        } else if (opacity < 0) {
-            opacity = 0;
-            this.setVisible(false);
-            fadeTimer.stop();
-            fadeTimer = null;
-        }
+        if (e.getSource() == fadeTimer) {
+            opacity += fadeSteps;
+            if (opacity > 1) {
+                opacity = 1;
+                fadeTimer.stop();
+                fadeTimer = null;
+            } else if (opacity < 0) {
+                opacity = 0;
+                this.setVisible(false);
+                fadeTimer.stop();
+                fadeTimer = null;
+            }
 
-        update();
+            update();
+        } else if (e.getSource() instanceof JMenuItem) {
+            SimpleGuiConstants.GUI_CONFIG.setProperty(SimpleGuiConstants.PARAM_SHOW_SPEEDMETER, false);
+            SimpleGuiConstants.GUI_CONFIG.save();
+        }
+    }
+
+    public void mouseClicked(MouseEvent e) {
+        if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
+            JMenuItem mi = new JMenuItem(JDLocale.L("gui.speedmeter.hide", "Hide"));
+            mi.addActionListener(this);
+
+            JPopupMenu popup = new JPopupMenu();
+            popup.add(mi);
+            popup.show(this, e.getPoint().x, e.getPoint().y);
+        }
+    }
+
+    public void mouseEntered(MouseEvent e) {
+    }
+
+    public void mouseExited(MouseEvent e) {
+    }
+
+    public void mousePressed(MouseEvent e) {
+    }
+
+    public void mouseReleased(MouseEvent e) {
     }
 
 }

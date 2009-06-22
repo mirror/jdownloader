@@ -72,7 +72,6 @@ import jd.gui.UserIO;
 import jd.gui.skins.simple.components.ChartAPIEntity;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.components.PieChartAPI;
-import jd.gui.skins.simple.components.SpeedMeterPanel;
 import jd.gui.skins.simple.components.TextAreaDialog;
 import jd.gui.skins.simple.components.TwoTextFieldDialog;
 import jd.gui.skins.simple.components.DownloadView.DownloadLinksPanel;
@@ -144,8 +143,6 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
     private Logger logger = JDLogger.getLogger();
 
     private TabProgress progressBar;
-
-    private SpeedMeterPanel speedmeter;
 
     private TaskPane taskPane;
 
@@ -733,7 +730,6 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
             public void run() {
                 switch (event.getID()) {
                 case ControlEvent.CONTROL_INIT_COMPLETE:
-                    // setTitle(JDUtilities.getJDTitle());
                     logger.info("Init complete");
 
                     SimpleGUI.this.setWaiting(false);
@@ -763,11 +759,6 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
                     break;
                 case ControlEvent.CONTROL_PLUGIN_ACTIVE:
                     logger.info("Module started: " + event.getSource());
-                    // if (event.getSource() instanceof Interaction) {
-                    // setTitle(JDUtilities.JD_TITLE + " | " +
-                    // JDLocale.L("gui.titleaddaction", "Action: ") + " " +
-                    // ((Interaction) event.getSource()).getInteractionName());
-                    // }
                     setTitle(JDUtilities.getJDTitle());
                     break;
                 case ControlEvent.CONTROL_SYSTEM_EXIT:
@@ -776,15 +767,9 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
                     break;
                 case ControlEvent.CONTROL_PLUGIN_INACTIVE:
                     logger.info("Module finished: " + event.getSource());
-                    // if (event.getSource() instanceof Interaction) {
-                    // if (Interaction.areInteractionsInProgress()) {
-                    // setTitle(JDUtilities.getJDTitle());
-                    // }
-                    // }
                     setTitle(JDUtilities.getJDTitle());
                     break;
                 case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
-                    if (speedmeter != null) speedmeter.stop();
                     for (DownloadLink link : DownloadController.getInstance().getAllDownloadLinks()) {
                         if (link.getLinkStatus().hasStatus(LinkStatus.TODO)) {
                             logger.info("Downloads stopped");
@@ -794,23 +779,11 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
                     logger.info("All downloads finished");
 
                     break;
-                // case ControlEvent.CONTROL_DISTRIBUTE_FINISHED:
-                // break;
-                // case ControlEvent.CONTROL_DOWNLOAD_TERMINATION_ACTIVE:
-                // setTitle(JDUtilities.getJDTitle() + " - terminate");
-                // break;
-                // case ControlEvent.CONTROL_DOWNLOAD_TERMINATION_INACTIVE:
-                // setTitle(JDUtilities.getJDTitle());
-                // break;
                 case ControlEvent.CONTROL_DOWNLOAD_START:
                     Balloon.showIfHidden(JDLocale.L("ballon.download.title", "Download"), JDTheme.II("gui.images.next", 32, 32), JDLocale.L("ballon.download.finished.started", "Download started"));
-
-                    if (speedmeter != null) speedmeter.start();
                     break;
                 case ControlEvent.CONTROL_DOWNLOAD_STOP:
                     Balloon.showIfHidden(JDLocale.L("ballon.download.title", "Download"), JDTheme.II("gui.images.next", 32, 32), JDLocale.L("ballon.download.finished.stopped", "Download stopped"));
-
-                    if (speedmeter != null) speedmeter.stop();
                     break;
                 }
             }
@@ -837,7 +810,6 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
     }
 
     public String showCountdownUserInputDialog(final String message, final String def) {
-
         return UserIO.getInstance().requestInputDialog(0, JDLocale.L("gui.userio.input.title", "Please enter!"), message, def, JDTheme.II("gui.images.config.tip", 32, 32), null, null);
 
     }
