@@ -111,12 +111,15 @@ public class BadongoCom extends PluginForHost {
         sleep(5000l, parameter);
         if (parameter.getStringProperty("type", "single").equalsIgnoreCase("split")) {
             String downloadLinks[] = br.getRegex("doDownload\\(.?'(.*?).?'\\)").getColumn(0);
-            link = downloadLinks[parameter.getIntegerProperty("part", 1) - 1];
-            sleep(5000l, parameter);
+            int part = parameter.getIntegerProperty("part", 1);
+            link = downloadLinks[part - 1];
+            link = link + (char) (part + 96);
             br.getPage(link + "/ifr?pr=1&zenc=");
             link = link + "/loc?pr=1";
         } else {
             link = br.getRegex("onclick=\"return doDownload\\('(.*?)'\\)").getMatch(0);
+            link = link.replaceFirst("/1$", "/0");
+            br.getPage(link + "/ifr?zenc=");
         }
         if (link == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         dl = br.openDownload(parameter, link, true, 0);
@@ -256,7 +259,7 @@ public class BadongoCom extends PluginForHost {
         form.put("username", Encoding.urlEncode(account.getUser()));
         form.put("password", Encoding.urlEncode(account.getPass()));
         br.submitForm(form);
-        if (br.getCookie("http://www.badongo.com", "badongoU") == null || br.getCookie("http://www.badongo.com", "badongoP") == null) {
+        if (br.getCookie("http://www.badongo.com", "badongo_user") == null || br.getCookie("http://www.badongo.com", "badongo_password") == null) {
             account.setEnabled(false);
             throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
         }
