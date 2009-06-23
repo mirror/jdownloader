@@ -35,8 +35,6 @@ public class AudioBeatsNet extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.getPage(parameter.toString());
-
-        logger.fine(br.toString());
         String[] linksa = br.getRegex("<b><a href=\"(/app/livesets/.*?)\">.*?</a></b><br>").getColumn(0);
         String[] linksb = br.getRegex("<a href=\"(/app/links/.*?)\" target=\"_blank\">.*?</a>").getColumn(0);
         progress.setRange(linksa.length + linksb.length);
