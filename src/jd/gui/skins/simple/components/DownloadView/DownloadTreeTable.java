@@ -187,7 +187,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         // Color.BLACK));
     }
 
-    public static Painter<Component> getFolderPainter(JXTreeTable table) {
+    public static Painter<?> getFolderPainter(JXTreeTable table) {
 
         if (JDUtilities.getJavaVersion() >= 1.6 && SimpleGUI.isSubstance()) {
 
@@ -198,10 +198,10 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
             // Color[] colors= new
             // Color[]{Color.RED,Color.BLUE,Color.BLUE,Color.RED};
             LinearGradientPaint paint = new LinearGradientPaint(0, 0, 0, height, new float[] { 0.0f, 0.4f, 0.5f, 1.0f }, colors, CycleMethod.REPEAT);
-            return new MattePainter<Component>(paint);
+            return new MattePainter(paint);
 
         } else {
-            return new MattePainter<Component>(JDTheme.C("gui.color.downloadlist.package", "4c4c4c", 150));
+            return new MattePainter(JDTheme.C("gui.color.downloadlist.package", "4c4c4c", 150));
         }
 
     }
@@ -281,7 +281,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
 
                 tableColumn.setVisible(config.getBooleanProperty("VISABLE_COL_" + i, true));
                 tableColumn.setPreferredWidth(config.getIntegerProperty("WIDTH_COL_" + i, tableColumn.getWidth()));
-                
+
                 if (tableColumn != null) {
                     getColumnModel().addColumn(tableColumn);
                 }

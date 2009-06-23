@@ -694,7 +694,7 @@ public class JDUtilities {
         boolean useconc = false;
         boolean minheap = false;
         boolean maxheap = false;
-
+System.out.println("RESTART NOW");
         for (String h : lst) {
             if (h.contains("Xmx")) {
                 xmxset = true;
@@ -729,11 +729,13 @@ public class JDUtilities {
         System.arraycopy(jdArgs, 0, finalArgs, javaArgs.length, jdArgs.length);
 
         if (!OSDetector.isMac()) {
+      
+
             JDLogger.getLogger().info(JDUtilities.runCommand("java", finalArgs, getResourceFile(".").getAbsolutePath(), 0));
         } else {
             JDLogger.getLogger().info(JDUtilities.runCommand("open", new String[] { "-n", "jDownloader.app" }, JDUtilities.getResourceFile(".").getParentFile().getParentFile().getParentFile().getParentFile().getAbsolutePath(), 0));
         }
-
+        System.out.println("EXIT NOW");
         System.exit(0);
     }
 

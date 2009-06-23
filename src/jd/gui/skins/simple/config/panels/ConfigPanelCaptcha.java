@@ -153,7 +153,7 @@ public class ConfigPanelCaptcha extends ConfigPanel {
         table = new JXTable(tableModel);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getTableHeader().setReorderingAllowed(false);
-        table.addHighlighter(new PainterHighlighter(HighlightPredicate.ROLLOVER_ROW, new MattePainter<Component>(Colors.getColor(getBackground().brighter(), 50))));
+        table.addHighlighter(new PainterHighlighter(HighlightPredicate.ROLLOVER_ROW, new MattePainter(Colors.getColor(getBackground().brighter(), 50))));
 
         TableColumn column = null;
         for (int c = 0; c < tableModel.getColumnCount(); c++) {

@@ -127,101 +127,189 @@ public class SrcParser {
         String pat_string = "\"(.*?)(?<!\\\\)\"";
 
         LngEntry entry;
-        main: for (String m : calls) {
+        String m;
+        main: for (String orgm : calls) {
+            m = orgm;
             m = m.trim();
+            if (m.startsWith(".L")) {
 
-            if (m.startsWith(".LF")) {
-
-            } else if (m.startsWith(".L")) {
-                if (m.substring(2).trim().charAt(0) != '(') {
-
-                    JDLogger.getLogger().severe("Mailformated translation value in " + currentFile + " : " + m);
-                    continue;
-                }
                 String[] strings = new Regex(m, pat_string).getColumn(0);
                 m = m.replace("\r", "");
                 m = m.replace("\n", "");
                 m = m.replaceAll(pat_string, "%%%S%%%");
 
                 m = m.replace(" ", "");
-
-                m = new Regex(m, "\\((.*?)\\)").getMatch(0);
+                orgm=m;
+                m = new Regex(m, "\\((.*?\\,.*?)[\\)\\,]").getMatch(0);
+                if (m == null) {
+//                    JDLogger.getLogger().severe("unknown: " + orgm);
+                    continue;
+                }
                 String[] parameter = m.split(",");
-                if (parameter.length != 2) {
+             
+                if (orgm.startsWith(".LF")) {
+                    if (orgm.substring(3).trim().charAt(0) != '(') {
 
-                    JDLogger.getLogger().severe("Mailformated translation pair (inner functions?) in " + currentFile + " : " + match);
-                    continue;
-                }
-                int i = 0;
-                if (parameter[1].contains("+")) {
-                    JDLogger.getLogger().severe("Mailformated translation value in " + currentFile + " : " + match);
-                    continue;
-                }
-                /*
-                 * merge expressions
-                 */
-                merge: while (parameter[0].contains("+")) {
-                    try {
-                        String[][] matches = new Regex(parameter[0], "(\\+(\\w+)\\+?)").getMatches();
-                        for (String[] mm : matches) {
-                            try {
-                                String value = getValueOf(mm[1]);
-                                parameter[0] = parameter[0].replace(mm[0], value);
+                        JDLogger.getLogger().severe("Mailformated translation value in " + currentFile + " : " + m);
+                        continue;
+                    }
+                    if (parameter.length !=2) {
 
-                            } catch (Exception e) {
+                        JDLogger.getLogger().severe("Mailformated translation pair (inner functions?) in " + currentFile + " : " + match);
+                        continue;
+                    }
+                    int i = 0;
+                    if (parameter[1].contains("+")) {
+                        JDLogger.getLogger().severe("Mailformated translation value in " + currentFile + " : " + match);
+                        continue;
+                    }
 
-                                JDLogger.getLogger().severe("Mailformated translation key in " + currentFile + " : " + match);
-                                break main;
+                    /*
+                     * merge expressions
+                     */
+                    merge: while (parameter[0].contains("+")) {
+                        try {
+                            String[][] matches = new Regex(parameter[0], "(\\+(\\w+)\\+?)").getMatches();
+                            for (String[] mm : matches) {
+                                try {
+                                    String value = getValueOf(mm[1]);
+                                    parameter[0] = parameter[0].replace(mm[0], value);
+
+                                } catch (Exception e) {
+
+                                    JDLogger.getLogger().severe("Mailformated translation key in " + currentFile + " : " + match);
+                                    break main;
+                                }
                             }
+
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            break;
                         }
 
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        break;
-                    }
+                        try {
+                            String[][] matches = new Regex(parameter[0], "(\\+?(\\w+)\\+)").getMatches();
+                            for (String[] mm : matches) {
+                                try {
+                                    String value = getValueOf(mm[1]);
+                                    parameter[0] = parameter[0].replace(mm[0], value);
 
-                    try {
-                        String[][] matches = new Regex(parameter[0], "(\\+?(\\w+)\\+)").getMatches();
-                        for (String[] mm : matches) {
-                            try {
-                                String value = getValueOf(mm[1]);
-                                parameter[0] = parameter[0].replace(mm[0], value);
-
-                            } catch (Exception e) {
-                                JDLogger.getLogger().severe("Mailformated translation key in " + currentFile + " : " + match);
-                                break main;
+                                } catch (Exception e) {
+                                    JDLogger.getLogger().severe("Mailformated translation key in " + currentFile + " : " + match);
+                                    break main;
+                                }
                             }
+
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            break;
                         }
 
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        break;
+                    }
+                    for (int x = 0; x < parameter.length; x++) {
+
+                        while (parameter[x].contains("%%%S%%%")) {
+
+                            parameter[x] = parameter[x].replaceFirst("%%%S%%%", Matcher.quoteReplacement(strings[i++]));
+                        }
+
+                    }
+                    if (!parameter[0].contains(".")) {
+                        JDLogger.getLogger().warning(" Prob. Mailformated translation key in " + currentFile + " : " + match);
+                    }
+                    if (parameter[0].contains("null")) {
+                        JDLogger.getLogger().warning(" Prob. Mailformated translation key in " + currentFile + " : " + match);
+                    }
+                    entry = new LngEntry(parameter[0], parameter[1]);
+                    if (!hasEntry(entry)) {
+                        entries.add(entry);
+                        System.out.println(Formatter.fillInteger(entries.size(), 3, "0") + " " + entry);
+                        broadcaster.fireEvent(new MessageEvent(this, PARSE_NEW_ENTRY, Formatter.fillInteger(entries.size(), 3, "0") + " " + entry));
+
+                    }
+                } else if (orgm.startsWith(".L")) {
+                    if (orgm.substring(2).trim().charAt(0) != '(') {
+
+                        JDLogger.getLogger().severe("Mailformated translation value in " + currentFile + " : " + m);
+                        continue;
+                    }
+                    if (parameter.length != 2) {
+
+                        JDLogger.getLogger().severe("Mailformated translation pair (inner functions?) in " + currentFile + " : " + match);
+                        continue;
+                    }
+                    int i = 0;
+                    if (parameter[1].contains("+")) {
+                        JDLogger.getLogger().severe("Mailformated translation value in " + currentFile + " : " + match);
+                        continue;
                     }
 
-                }
-                for (int x = 0; x < parameter.length; x++) {
+                    /*
+                     * merge expressions
+                     */
+                    merge: while (parameter[0].contains("+")) {
+                        try {
+                            String[][] matches = new Regex(parameter[0], "(\\+(\\w+)\\+?)").getMatches();
+                            for (String[] mm : matches) {
+                                try {
+                                    String value = getValueOf(mm[1]);
+                                    parameter[0] = parameter[0].replace(mm[0], value);
 
-                    while (parameter[x].contains("%%%S%%%")) {
+                                } catch (Exception e) {
 
-                        parameter[x] = parameter[x].replaceFirst("%%%S%%%", Matcher.quoteReplacement(strings[i++]));
+                                    JDLogger.getLogger().severe("Mailformated translation key in " + currentFile + " : " + match);
+                                    break main;
+                                }
+                            }
+
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            break;
+                        }
+
+                        try {
+                            String[][] matches = new Regex(parameter[0], "(\\+?(\\w+)\\+)").getMatches();
+                            for (String[] mm : matches) {
+                                try {
+                                    String value = getValueOf(mm[1]);
+                                    parameter[0] = parameter[0].replace(mm[0], value);
+
+                                } catch (Exception e) {
+                                    JDLogger.getLogger().severe("Mailformated translation key in " + currentFile + " : " + match);
+                                    break main;
+                                }
+                            }
+
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            break;
+                        }
+
                     }
+                    for (int x = 0; x < parameter.length; x++) {
 
-                }
-                if (!parameter[0].contains(".")) {
-                    JDLogger.getLogger().warning(" Prob. Mailformated translation key in " + currentFile + " : " + match);
-                }
-                if (parameter[0].contains("null")) {
-                    JDLogger.getLogger().warning(" Prob. Mailformated translation key in " + currentFile + " : " + match);
-                }
-                entry = new LngEntry(parameter[0], parameter[1]);
-                if (!hasEntry(entry)) {
-                    entries.add(entry);
-                    System.out.println(Formatter.fillInteger(entries.size(), 3, "0") + " " + entry);
-                    broadcaster.fireEvent(new MessageEvent(this, PARSE_NEW_ENTRY, Formatter.fillInteger(entries.size(), 3, "0") + " " + entry));
+                        while (parameter[x].contains("%%%S%%%")) {
 
+                            parameter[x] = parameter[x].replaceFirst("%%%S%%%", Matcher.quoteReplacement(strings[i++]));
+                        }
+
+                    }
+                    if (!parameter[0].contains(".")) {
+                        JDLogger.getLogger().warning(" Prob. Mailformated translation key in " + currentFile + " : " + match);
+                    }
+                    if (parameter[0].contains("null")) {
+                        JDLogger.getLogger().warning(" Prob. Mailformated translation key in " + currentFile + " : " + match);
+                    }
+                    entry = new LngEntry(parameter[0], parameter[1]);
+                    if (!hasEntry(entry)) {
+                        entries.add(entry);
+                        System.out.println(Formatter.fillInteger(entries.size(), 3, "0") + " " + entry);
+                        broadcaster.fireEvent(new MessageEvent(this, PARSE_NEW_ENTRY, Formatter.fillInteger(entries.size(), 3, "0") + " " + entry));
+
+                    }
                 }
+
             }
-
         }
     }
 

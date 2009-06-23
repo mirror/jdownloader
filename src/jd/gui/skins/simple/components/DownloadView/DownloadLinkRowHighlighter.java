@@ -63,15 +63,15 @@ public abstract class DownloadLinkRowHighlighter extends PainterHighlighter {
         };
     }
 
-    public Painter<Component> getGradientPainter(Color colora, Color colorb) {
+    public Painter<?> getGradientPainter(Color colora, Color colorb) {
         int height = 20;
 if(JDUtilities.getJavaVersion()>=1.6){
     LinearGradientPaint gradientPaint = new LinearGradientPaint(1, 0, 1, height, new float[] { 0.0f, 1.0f }, new Color[] { colora, colorb });
 
-    return new MattePainter<Component>(gradientPaint);
+    return new MattePainter(gradientPaint);
 }else{
 
-    return new MattePainter<Component>(colora);  
+    return new MattePainter(colora);  
 }
      
     }

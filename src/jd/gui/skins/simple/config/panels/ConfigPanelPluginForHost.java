@@ -216,10 +216,10 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
                 return pluginsForHost.get(adapter.row).hasConfig();
             }
         });
-        highlighter.setPainter(new MattePainter<Component>(Colors.getColor(getBackground().darker(), 50)));
+        highlighter.setPainter(new MattePainter(Colors.getColor(getBackground().darker(), 50)));
 
         table.addHighlighter(highlighter);
-        table.addHighlighter(new PainterHighlighter(HighlightPredicate.ROLLOVER_ROW, new MattePainter<Component>(Colors.getColor(getBackground().brighter(), 50))));
+        table.addHighlighter(new PainterHighlighter(HighlightPredicate.ROLLOVER_ROW, new MattePainter(Colors.getColor(getBackground().brighter(), 50))));
 
         TableColumn column = null;
 
