@@ -489,7 +489,7 @@ public class JDInit {
         new HostPluginWrapper("Share-Online.Biz", "ShareOnlineBiz", "http://[\\w\\.]*?share\\-online\\.biz/download.php\\?id\\=[\\w]+", PluginWrapper.LOAD_ON_INIT);
         new HostPluginWrapper("FileHostMe.com", "FileHostMecom", "http://[\\w\\.]*?filehostme\\.com/[\\w]+\\.html", PluginWrapper.LOAD_ON_INIT);
         new HostPluginWrapper("GigaSize.com", "GigaSizeCom", "http://[\\w\\.]*?gigasize\\.com/get\\.php.*", PluginWrapper.LOAD_ON_INIT);
-        new HostPluginWrapper("LetItBit.net", "LetitBitNet", "http://[\\w\\.]*?letitbit\\.net/download/[\\w]+?/.*", PluginWrapper.LOAD_ON_INIT);
+        new HostPluginWrapper("LetItBit.net", "LetitBitNet", "http://[\\w\\.]*?letitbit\\.net/download/[0-9a-zA-z/.-]+", PluginWrapper.LOAD_ON_INIT);
         new HostPluginWrapper("Speedy-Share.com", "Speedy_ShareCom", "http://[\\w\\.]*?speedy\\-share\\.com/[\\w]+/(.*)");
         new HostPluginWrapper("Shragle.com", "ShragleCom", "http://[\\w\\.]*?shragle\\.(com|de)/files/[\\w]+/.*", PluginWrapper.LOAD_ON_INIT);
         new HostPluginWrapper("Vip-File.com", "Vipfilecom", "http://[\\w\\.]*?vip-file\\.com/download/[\\w]+/(.*?)\\.html", PluginWrapper.LOAD_ON_INIT);
