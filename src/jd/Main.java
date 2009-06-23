@@ -381,12 +381,10 @@ public class Main {
     private static void initMACProperties() {
         // Mac specific //
         if (OSDetector.isMac()) {
-            LOGGER.info("apple.laf.useScreenMenuBar=true");
             LOGGER.info("com.apple.mrj.application.growbox.intrudes=false");
             LOGGER.info("com.apple.mrj.application.apple.menu.about.name=jDownloader");
             System.setProperty("com.apple.mrj.application.apple.menu.about.name", "jDownloader");
             System.setProperty("com.apple.mrj.application.growbox.intrudes", "false");
-            System.setProperty("apple.laf.useScreenMenuBar", "true");
             new MacOSController();
 
             /*
