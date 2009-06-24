@@ -129,12 +129,12 @@ public class DistributeData extends Thread {
         if (!filterNormalHTTP) {
             data = data.replaceAll("http://", "httpviajd://");
             data = data.replaceAll("https://", "httpsviajd://");
-        }
-        for (DecryptPluginWrapper pDecrypt : DecryptPluginWrapper.getDecryptWrapper()) {
-            if (pDecrypt.usePlugin() && pDecrypt.canHandle(data)) return true;
-        }
-        for (HostPluginWrapper pHost : JDUtilities.getPluginsForHost()) {
-            if (pHost.usePlugin() && pHost.canHandle(data)) return true;
+            for (DecryptPluginWrapper pDecrypt : DecryptPluginWrapper.getDecryptWrapper()) {
+                if (pDecrypt.usePlugin() && pDecrypt.canHandle(data)) return true;
+            }
+            for (HostPluginWrapper pHost : JDUtilities.getPluginsForHost()) {
+                if (pHost.usePlugin() && pHost.canHandle(data)) return true;
+            }
         }
         return false;
     }
@@ -471,6 +471,10 @@ public class DistributeData extends Thread {
 
     public void setLinkData(ArrayList<DownloadLink> linkData) {
         this.linkData = linkData;
+    }
+
+    public String getRestData() {
+        return data;
     }
 
     /**

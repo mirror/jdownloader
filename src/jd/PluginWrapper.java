@@ -31,6 +31,7 @@ import jd.config.SubConfiguration;
 import jd.controlling.DownloadController;
 import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
+import jd.nutils.JDFlags;
 import jd.plugins.Plugin;
 import jd.update.FileUpdate;
 import jd.update.WebUpdater;
@@ -41,12 +42,14 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
 
     public static final int LOAD_ON_INIT = 1 << 1;
     public static final int ACCEPTONLYSURLSFALSE = 1 << 2;
+    public static final int ALWAYS_ENABLED = 1 << 3;
     private Pattern pattern;
     private String host;
     private String className;
     protected Logger logger = jd.controlling.JDLogger.getLogger();
     protected Plugin loadedPlugin = null;
     private boolean acceptOnlyURIs = true;
+    private boolean alwaysenabled = false;
     private static URLClassLoader CL;
     private static final HashMap<String, PluginWrapper> WRAPPER = new HashMap<String, PluginWrapper>();
 
@@ -57,10 +60,10 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
         }
         this.host = host.toLowerCase();
         this.className = className;
-        if ((flags & PluginWrapper.LOAD_ON_INIT) != 0) this.getPlugin();
-        if ((flags & ACCEPTONLYSURLSFALSE) != 0) this.acceptOnlyURIs = false;
+        if (JDFlags.hasSomeFlags(flags, LOAD_ON_INIT)) this.getPlugin();
+        if (JDFlags.hasSomeFlags(flags, ALWAYS_ENABLED)) this.alwaysenabled = true;
+        if (JDFlags.hasSomeFlags(flags, ACCEPTONLYSURLSFALSE)) this.acceptOnlyURIs = false;
         WRAPPER.put(className, this);
-
     }
 
     public Pattern getPattern() {
@@ -89,7 +92,7 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
 
     public synchronized Plugin getPlugin() {
         if (loadedPlugin != null) return loadedPlugin;
-        boolean manualupdate = SubConfiguration.getConfig("WEBUPDATE").getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false);        
+        boolean manualupdate = SubConfiguration.getConfig("WEBUPDATE").getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false);
         try {
 
             if (CL == null) CL = new URLClassLoader(new URL[] { JDUtilities.getJDHomeDirectoryFromEnvironment().toURI().toURL(), JDUtilities.getResourceFile("java").toURI().toURL() }, Thread.currentThread().getContextClassLoader());
@@ -153,10 +156,11 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
     }
 
     public boolean usePlugin() {
-        return getPluginConfig().getBooleanProperty("USE_PLUGIN", true);
+        return this.alwaysenabled || getPluginConfig().getBooleanProperty("USE_PLUGIN", true);
     }
 
     public void setUsePlugin(boolean bool) {
+        if (this.alwaysenabled) return;
         getPluginConfig().setProperty("USE_PLUGIN", bool);
         getPluginConfig().save();
         if (JDUtilities.getController() != null) DownloadController.getInstance().fireGlobalUpdate();

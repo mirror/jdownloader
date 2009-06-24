@@ -19,6 +19,7 @@ gui.images.config.gui = default/preferences-desktop-wallpaper
 gui.images.config.reconnect = default/view-refresh
 gui.images.config.host = default/internet-web-browser
 gui.images.browse = default/internet-web-browser
+gui.images.addons.flashgot = default/flashgot
 gui.images.addons.unrar = default/package-x-generic
 gui.images.addons.merge = default/merge
 gui.images.config.ocr = default/format-text-italic

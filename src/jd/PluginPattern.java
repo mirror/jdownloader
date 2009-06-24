@@ -92,7 +92,7 @@ public class PluginPattern {
     static public final String DECRYPTER_3DLAM_4 = "http://[\\w\\.]*?3dl\\.am/\\?action=entrydetail&entry_id=[0-9]+";
     static public final String DECRYPTER_3DLAM_PLUGIN = DECRYPTER_3DLAM_1 + "|" + DECRYPTER_3DLAM_2 + "|" + DECRYPTER_3DLAM_3 + "|" + DECRYPTER_3DLAM_4;
 
-    static public final String ENDINGS = "\\.(jdu|otrkey|ac3|3gp|7zip|7z|aiff|aif|aifc|au|avi|bin|bz2|ccf|cue|divx|dlc|doc|docx|dot|exe|flv|gif|gz|iso|java|jpg|jpeg|mkv|mp2|mp3|mp4|mov|movie|mpe|mpeg|mpg|msi|msu|nfo|png|pdf|ppt|pptx|pps|ppz|pot|qt|rmvb|rar|r\\d+|\\d+|rsdf|rtf|snd|sfv|tar|tif|tiff|viv|vivo|wav|wmv|xla|xls|zip|ts|load)";
+    static public final String ENDINGS = "\\.(otrkey|ac3|3gp|7zip|7z|aiff|aif|aifc|au|avi|bin|bz2|ccf|cue|divx|dlc|doc|docx|dot|exe|flv|gif|gz|iso|java|jpg|jpeg|mkv|mp2|mp3|mp4|mov|movie|mpe|mpeg|mpg|msi|msu|nfo|png|pdf|ppt|pptx|pps|ppz|pot|qt|rmvb|rar|r\\d+|\\d+|rsdf|rtf|snd|sfv|tar|tif|tiff|viv|vivo|wav|wmv|xla|xls|zip|ts|load)";
     static public final String URLCASH = "(sealed\\.in|urlcash\\.net|urlcash\\.org|clb1\\.com|urlgalleries\\.com|celebclk\\.com|smilinglinks\\.com|peekatmygirlfriend\\.com|looble\\.net)";
 
 }

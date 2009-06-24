@@ -399,7 +399,7 @@ public class JDInit {
         new DecryptPluginWrapper("xup.in", "XupInFolder", "http://[\\w\\.]*?xup\\.in/a,[0-9]+(/.+)?(/(list|mini))?");
         new DecryptPluginWrapper("youporn.com", "YouPornCom", "http://[\\w\\.]*?youporn\\.com/watch/\\d+/?.+/?");
         new DecryptPluginWrapper("yourfiles.biz", "YourFilesBizFolder", "http://[\\w\\.]*?yourfiles\\.biz/.*/folders/[0-9]+/.+\\.html");
-        new DecryptPluginWrapper("youtube.com", "YouTubeCom", "http://[\\w\\.]*?youtube\\.com/(watch\\?v=[a-z-_A-Z0-9]+|view_play_list\\?p=[a-z-_A-Z0-9]+)");
+        new DecryptPluginWrapper("youtube.com", "YouTubeCom", "http://[\\w\\.]*?youtube\\.com/(watch\\?v=[a-z-_A-Z0-9]+|view_play_list\\?p=[a-z-_A-Z0-9]+(.*?page=\\d+)?)");
         new DecryptPluginWrapper("megaupload.com folder", "MegauploadComFolder", "http://[\\w\\.]*?megaupload\\.com/.*?\\?f=[\\w]+");
         new DecryptPluginWrapper("rsmonkey.com", "RsMonkeyCom", "http://[\\w\\.]*?rsmonkey\\.com/\\d+");
         new DecryptPluginWrapper("savefile.com Project", "SavefileComProject", "http://[\\w\\.]*?savefile\\.com/projects/[0-9]+");
@@ -458,8 +458,8 @@ public class JDInit {
         new DecryptPluginWrapper("nareey.com", "NareeyCom", "http://[\\w\\.]*?nareey\\.com/(\\d\\.php\\?\\d+|\\d+/)");
         new DecryptPluginWrapper("q1q1q.com", "Q1Q1QCom", "http://[\\w\\.]*?q1q1q\\.com/\\d+");
         new DecryptPluginWrapper("minyurl.net", "MinyUrlNet", "http://[\\w\\.]*?minyurl\\.net/[^\\s^/]+");
-        new DecryptPluginWrapper("linksafe.info","LinksafeInfo","http://[\\w\\.]*?linksafe\\.info/[^\\s^/]+");
-        new DecryptPluginWrapper("shrunkin.com","ShrunkinCom","http://[\\w\\.]*?shrunkin\\.com/.+");
+        new DecryptPluginWrapper("linksafe.info", "LinksafeInfo", "http://[\\w\\.]*?linksafe\\.info/[^\\s^/]+");
+        new DecryptPluginWrapper("shrunkin.com", "ShrunkinCom", "http://[\\w\\.]*?shrunkin\\.com/.+");
         new DecryptPluginWrapper("go4Down.net", "GoFourDownNet", "http://[\\w\\.]*?(short\\.)?go4down\\.(com|net)/(short/)\\d+");
         new DecryptPluginWrapper("sogood.net", "SoGoodNet", "http://[\\w\\.]*?sogood\\.net/.+");
         new DecryptPluginWrapper("audiobeats.net", "AudioBeatsNet","http://[\\w\\.]*?audiobeats\\.net/app/(parties|livesets|artists)/show/[0-9a-zA-z-]+");
@@ -519,6 +519,7 @@ public class JDInit {
         new HostPluginWrapper("File-Upload.net", "FileUploadnet", "((http://[\\w\\.]*?file-upload\\.net/(member/){0,1}download-\\d+/(.*?).html)|(http://[\\w\\.]*?file-upload\\.net/(view-\\d+/(.*?).html|member/view_\\d+_(.*?).html))|(http://[\\w\\.]*?file-upload\\.net/member/data3\\.php\\?user=(.*?)&name=(.*)))");
         new HostPluginWrapper("GoogleGroups.com", "GoogleGroups", "http://[\\w\\.]*?googlegroups.com/web/.*");
         new HostPluginWrapper("HTTP Links", "HTTPAllgemein", "https?viajd://[\\d\\w\\.:\\-@]*/.*" + PluginPattern.ENDINGS);
+        new HostPluginWrapper("JDAddons", "HTTPAllgemein", "https?viajd://[\\d\\w\\.:\\-@]*/.*\\.jdu", PluginWrapper.ALWAYS_ENABLED);
         new HostPluginWrapper("ImageFap.com", "ImageFap", "http://[\\w\\.]*?imagefap.com/image.php\\?id=.*(&pgid=.*&gid=.*&page=.*)?");
         new HostPluginWrapper("MediaFire.Com", "MediafireCom", "http://[\\w\\.]*?mediafire\\.com/(download\\.php\\?.+|\\?.+|file/.+)");
         new HostPluginWrapper("MyVideo.de", "MyVideo", "http://[\\w\\.]*?myvideo.*?/.*?/\\d+\\.flv");
@@ -617,14 +618,11 @@ public class JDInit {
         new HostPluginWrapper("ulozto.net", "UlozToNet", "http://[\\w\\.]*?(ulozto\\.net|uloz\\.to)/.+");
         new HostPluginWrapper("FisierulMeu.Ro", "FisierulMeuRo", "http://[\\w\\.]*?fisierulmeu\\.ro/.+/.+\\.html");
 
-
-
         // Hoster from Extern
         new HostPluginWrapper("iFolder.ru", "IfolderRu", "http://[\\-\\w\\.]*?ifolder\\.ru/\\d+");
         new HostPluginWrapper("ExtraShare.us", "ExtraShareUs", "http://[\\w\\.]*?extrashare.us/file/.+/.+");
         new HostPluginWrapper("Addat.hu", "AddatHu", "http://[\\w\\.]*?addat.hu/.+/.+");
         new HostPluginWrapper("LinkFile.de", "LinkFileDe", "http://[\\w\\.]*?linkfile.de/download-[\\w]+\\.php");
-
 
     }
 
@@ -643,6 +641,7 @@ public class JDInit {
         new OptionalPluginWrapper("jdunrar.JDUnrar", 1.5, "unrar", JDLocale.L("plugins.optional.jdunrar.name", "JD-Unrar"));
         new OptionalPluginWrapper("hjsplit.JDHJSplit", 1.5, "hjsplit", JDLocale.L("plugins.optional.jdhjsplit.name", "JD-HJMerge"));
         new OptionalPluginWrapper("JDPremiumCollector", 1.5, "premcol", JDLocale.L("plugins.optional.premiumcollector.name", "PremiumCollector"));
+        new OptionalPluginWrapper("JDFlashGot", 1.5, "flashgot", JDLocale.L("plugins.optional.flashgot.name", "FlashGot Integration"));
         if (OSDetector.isMac()) new OptionalPluginWrapper("JDGrowlNotification", 1.5, "growl", JDLocale.L("plugins.optional.jdgrowlnotification.name", "JDGrowlNotification"));
         new OptionalPluginWrapper("HTTPLiveHeaderScripter", 1.5, "livescripter", JDLocale.L("plugins.optional.httpliveheaderscripter.name", "HTTPLiveHeaderScripter"));
 

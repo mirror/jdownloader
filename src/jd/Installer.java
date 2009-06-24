@@ -43,10 +43,10 @@ import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.components.BrowseFile;
 import jd.gui.userio.dialog.AbstractDialog;
 import jd.gui.userio.dialog.ContainerDialog;
-import jd.nutils.Executer;
 import jd.nutils.JDFlags;
 import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
+import jd.nutils.nativeintegration.LocaleBrowser;
 import jd.utils.JDFileReg;
 import jd.utils.JDGeoCode;
 import jd.utils.JDLocale;
@@ -282,48 +282,7 @@ public class Installer {
     }
 
     public static void installFirefoxaddon() {
-        String path = null;
-
-        if (OSDetector.isWindows()) {
-
-            if (new File("C:\\Program Files\\Mozilla Firefox\\firefox.exe").exists()) {
-
-                path = "C:\\Program Files\\Mozilla Firefox\\firefox.exe";
-            } else if (new File("C:\\Programme\\Mozilla Firefox\\firefox.exe").exists()) {
-                path = "C:\\Programme\\Mozilla Firefox\\firefox.exe";
-            }
-            if (path != null) {
-                Executer exec = new Executer(path);
-                exec.addParameters(new String[] { JDUtilities.getResourceFile("tools/jdownff.xpi").getAbsolutePath() });
-
-                exec.setWaitTimeout(180);
-                exec.start();
-                String res = exec.getOutputStream() + " \r\n " + exec.getErrorStream();
-
-                System.out.println(res);
-            }
-        } else if (OSDetector.isMac()) {
-
-            if (new File("/Applications/Firefox.app").exists()) {
-                path = "/Applications/Firefox.app " + JDUtilities.getResourceFile("tools/jdownff.xpi");
-
-                Executer exec = new Executer("open");
-                exec.addParameters(new String[] { path });
-
-                exec.setWaitTimeout(180);
-                exec.start();
-            }
-
-        } else if (OSDetector.isLinux()) {
-
-            Executer exec = new Executer("firefox");
-            exec.addParameters(new String[] { JDUtilities.getResourceFile("tools/jdownff.xpi").getAbsolutePath() });
-
-            exec.setWaitTimeout(180);
-            exec.start();
-
-        }
-
+        LocaleBrowser.openinFirefox(JDUtilities.getResourceFile("tools/jdownff.xpi").getAbsolutePath());
     }
 
     public JPanel getInstallerPanel() {

@@ -220,17 +220,17 @@ abstract public class LocaleBrowser implements Serializable {
     abstract public void openURL(URL url) throws Exception;
 
     public static void openURL(String browser, URL url) throws Exception {
-       
+
         if (url == null) return;
         LocaleBrowser[] browsers = getBrowserList();
         if (browsers == null || browsers.length == 0) return;
-        if(browser!=null){
-        for (LocaleBrowser b : browsers) {
-            if (browser.equalsIgnoreCase(b.toString())) {
-                b.openURL(url);
-                return;
+        if (browser != null) {
+            for (LocaleBrowser b : browsers) {
+                if (browser.equalsIgnoreCase(b.toString())) {
+                    b.openURL(url);
+                    return;
+                }
             }
-        }
         }
         browsers[0].openURL(url);
     }
@@ -239,5 +239,36 @@ abstract public class LocaleBrowser implements Serializable {
         LocaleBrowser[] browsers = getBrowserList();
         if (browsers == null || browsers.length == 0) return;
         browsers[0].openURL(url);
+    }
+
+    /* can be used to e.g. install a firefox addon */
+    public static void openinFirefox(String url) {
+        String path = null;
+        if (OSDetector.isWindows()) {
+            if (new File("C:\\Program Files\\Mozilla Firefox\\firefox.exe").exists()) {
+                path = "C:\\Program Files\\Mozilla Firefox\\firefox.exe";
+            } else if (new File("C:\\Programme\\Mozilla Firefox\\firefox.exe").exists()) {
+                path = "C:\\Programme\\Mozilla Firefox\\firefox.exe";
+            }
+            if (path != null) {
+                Executer exec = new Executer(path);
+                exec.addParameters(new String[] { url });
+                exec.setWaitTimeout(180);
+                exec.start();
+            }
+        } else if (OSDetector.isMac()) {
+            if (new File("/Applications/Firefox.app").exists()) {
+                path = "/Applications/Firefox.app";
+                Executer exec = new Executer("open");
+                exec.addParameters(new String[] { path, url });
+                exec.setWaitTimeout(180);
+                exec.start();
+            }
+        } else if (OSDetector.isLinux()) {
+            Executer exec = new Executer("firefox");
+            exec.addParameters(new String[] { url });
+            exec.setWaitTimeout(180);
+            exec.start();
+        }
     }
 }
