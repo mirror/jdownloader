@@ -3,8 +3,12 @@ package tests.singletests;
 import static org.junit.Assert.assertTrue;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
+import jd.controlling.DistributeData;
+import jd.controlling.DownloadController;
 import jd.controlling.DownloadWatchDog;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
 
 import org.fest.swing.fixture.FrameFixture;
 import org.junit.AfterClass;
@@ -23,6 +27,26 @@ public class Gui {
         Thread.sleep(2000);
 
         frame = new FrameFixture(SimpleGUI.CURRENTGUI);
+    }
+
+    @Test
+    public void addDownloads() throws InterruptedException {
+        String url = "http://rapidshare.com/files/248009194/JDownloader_0.6.193.zip";
+        new DistributeData(url, false).start();
+        Thread.sleep(5000);
+        int links = 0;
+        for (DownloadLink dl : DownloadController.getInstance().getAllDownloadLinks()) {
+
+            if (dl.getLinkStatus().hasStatus(LinkStatus.TODO)) links++;
+            ;
+        }
+        frame.button("addAllPackages").click();
+
+        Thread.sleep(5000);
+        for (DownloadLink dl : DownloadController.getInstance().getAllDownloadLinks()) {
+            if (dl.getLinkStatus().hasStatus(LinkStatus.TODO)) links--;
+        }
+        assertTrue("Adding link failed", links < 0);
     }
 
     @Test
