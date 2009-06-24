@@ -1,5 +1,6 @@
 package tests.singletests;
 
+import static org.junit.Assert.*;
 import static org.junit.Assert.fail;
 
 import java.net.InetSocketAddress;
@@ -46,7 +47,9 @@ public class ProxyAuthTest {
             String ip = JDUtilities.getIPAddress(br);
             InetSocketAddress proxyadress = new InetSocketAddress(pr.getHost(), pr.getPort());
             String proxyip = proxyadress.getAddress().getHostAddress();
-
+         
+                assertFalse("Coult not connect to proxy", ip.equals("offline"));
+            
             if (!ip.equals(proxyip)) {
                 fail("Request did not use the proxy");
             }

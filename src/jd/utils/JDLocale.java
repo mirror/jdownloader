@@ -45,7 +45,11 @@ public class JDLocale {
 
     public static final String CONFIG = "LOCALE";
 
-    public static final String LOCALE_ID = "LOCALE";
+    public static final String LOCALE_ID = "LOCALE3";
+
+    private static final HashMap<String, JDLocale> CACHE = new HashMap<String, JDLocale>();
+
+    private static String COUNTRY_CODE = null;
 
     public static boolean DEBUG = false;
 
@@ -56,6 +60,19 @@ public class JDLocale {
     private static File localeFile;
 
     private static int key;
+
+    private String lngGeoCode;
+
+    private String[] codes;
+
+    public String getLngGeoCode() {
+        return lngGeoCode;
+    }
+
+    public JDLocale(String lngGeoCode) {
+        this.lngGeoCode = lngGeoCode;
+        codes = JDGeoCode.parseLanguageCode(lngGeoCode);
+    }
 
     public static String getLocale() {
         return localeID;
@@ -75,21 +92,44 @@ public class JDLocale {
         return (ret.equals("0.0")) ? info : ret;
     }
 
-    public static ArrayList<String> getLocaleIDs() {
+    public static ArrayList<JDLocale> getLocaleIDs() {
         File dir = JDUtilities.getResourceFile(LANGUAGES_DIR);
         if (!dir.exists()) return null;
         File[] files = dir.listFiles(new JDFileFilter(null, ".loc", false));
-        ArrayList<String> ret = new ArrayList<String>();
+        ArrayList<JDLocale> ret = new ArrayList<JDLocale>();
         for (File element : files) {
-            ret.add(element.getName().split("\\.")[0]);
+            if (JDGeoCode.parseLanguageCode(element.getName().split("\\.")[0]) == null) {
+                element.renameTo(new File(element, ".outdated"));
+            } else {
+
+                ret.add(getInstance(element.getName().split("\\.")[0]));
+            }
         }
         return ret;
+    }
+
+    /**
+     * Creates a new JDLocale instance or uses a cached one
+     * 
+     * @param lngGeoCode
+     * @return
+     */
+    public static JDLocale getInstance(String lngGeoCode) {
+        JDLocale ret;
+        if ((ret = CACHE.get(lngGeoCode)) != null) return ret;
+        ret = new JDLocale(lngGeoCode);
+        CACHE.put(lngGeoCode, ret);
+        return ret;
+    }
+
+    public String toString() {
+        return JDGeoCode.toLongerNative(lngGeoCode);
     }
 
     public static String getLocaleString(String key2, String def) {
         if (DEBUG) return key2;
         if (data == null || localeFile == null) {
-            JDLocale.setLocale(SubConfiguration.getConfig(JDLocale.CONFIG).getStringProperty(JDLocale.LOCALE_ID, JDLocale.isGerman() ? "german" : "english"));
+            JDLocale.setLocale(SubConfiguration.getConfig(JDLocale.CONFIG).getStringProperty(JDLocale.LOCALE_ID, JDLocale.isGerman() ? "de" : "en"));
         }
 
         key = key2.toLowerCase().hashCode();
@@ -236,94 +276,40 @@ public class JDLocale {
      * @return
      */
     private static String correctLID(String lID) {
+        String ret = JDGeoCode.longToShort(lID);
+        if (ret != null) return ret;
+
         if (lID.equalsIgnoreCase("Chinese(traditionalbig5)")) {
-            lID = "Chinese (traditionalbig5)";
+            lID = "zh_hant";
             SubConfiguration.getConfig(JDLocale.CONFIG).setProperty(JDLocale.LOCALE_ID, lID);
         } else if (lID.equalsIgnoreCase("Italiano")) {
-            lID = "Italian";
+            lID = "it";
             SubConfiguration.getConfig(JDLocale.CONFIG).setProperty(JDLocale.LOCALE_ID, lID);
         } else if (lID.equalsIgnoreCase("Nederlands")) {
-            lID = "Dutch";
+            lID = "nl";
             SubConfiguration.getConfig(JDLocale.CONFIG).setProperty(JDLocale.LOCALE_ID, lID);
         } else if (lID.equalsIgnoreCase("Polski")) {
-            lID = "Polish";
+            lID = "pl";
             SubConfiguration.getConfig(JDLocale.CONFIG).setProperty(JDLocale.LOCALE_ID, lID);
         } else if (lID.equalsIgnoreCase("Portugues(brazil)")) {
-            lID = "Portuguese (brazil)";
+            lID = "Pt_BR";
             SubConfiguration.getConfig(JDLocale.CONFIG).setProperty(JDLocale.LOCALE_ID, lID);
         } else if (lID.equalsIgnoreCase("arabic")) {
-            lID = "Arabian";
+            lID = "ar";
             SubConfiguration.getConfig(JDLocale.CONFIG).setProperty(JDLocale.LOCALE_ID, lID);
         } else if (lID.equalsIgnoreCase("Spanish(Argentina)")) {
-            lID = "Spanish";
+            lID = "es";
+            SubConfiguration.getConfig(JDLocale.CONFIG).setProperty(JDLocale.LOCALE_ID, lID);
+        } else if (lID.equalsIgnoreCase("German")) {
+            lID = "de";
             SubConfiguration.getConfig(JDLocale.CONFIG).setProperty(JDLocale.LOCALE_ID, lID);
         }
         return lID;
 
     }
 
-    private static String getCountryID() {
-        if (localeID.equalsIgnoreCase("english")) {
-            return "UK";
-        } else if (localeID.equalsIgnoreCase("german")) {
-            return "DE";
-        } else if (localeID.equalsIgnoreCase("Spanish")) {
-            return "ES";
-        } else if (localeID.equalsIgnoreCase("french")) {
-            return "FR";
-        } else if (localeID.equalsIgnoreCase("Italian")) {
-            return "IT";
-        } else if (localeID.equalsIgnoreCase("Arabian")) {
-            return "SA";
-        } else if (localeID.equalsIgnoreCase("Bosnian")) {
-            return "BA";
-        } else if (localeID.equalsIgnoreCase("Catala")) {
-            // TODO: ???
-            return "US";
-        } else if (localeID.equalsIgnoreCase("Chinese (Simplified)")) {
-            return "CN";
-        } else if (localeID.equalsIgnoreCase("Chinese (traditionalbig5)")) {
-            return "CN";
-        } else if (localeID.equalsIgnoreCase("Chinese")) {
-            return "CN";
-        } else if (localeID.equalsIgnoreCase("Czech")) {
-            return "CZ";
-        } else if (localeID.equalsIgnoreCase("Danish")) {
-            return "DK";
-        } else if (localeID.equalsIgnoreCase("Dutch")) {
-            return "NL";
-        } else if (localeID.equalsIgnoreCase("Greek")) {
-            return "GR";
-        } else if (localeID.equalsIgnoreCase("Magyar")) {
-            // TODO: ???
-            return "US";
-        } else if (localeID.equalsIgnoreCase("Polish")) {
-            return "PL";
-        } else if (localeID.equalsIgnoreCase("Portuguese (brazil)")) {
-            return "BR";
-        } else if (localeID.equalsIgnoreCase("Russian")) {
-            return "RU";
-        } else if (localeID.equalsIgnoreCase("Serbian(latin)")) {
-            // TODO: ???
-            return "US";
-        } else if (localeID.equalsIgnoreCase("Serbian")) {
-            // TODO: ???
-            return "US";
-        } else if (localeID.equalsIgnoreCase("Slovak")) {
-            return "SK";
-        } else if (localeID.equalsIgnoreCase("Spanish(Argentina)")) {
-            return "AR";
-        } else if (localeID.equalsIgnoreCase("Turkish")) {
-            return "TR";
-        } else if (localeID.equalsIgnoreCase("Vietnamese")) {
-            return "VN";
-        } else {
-            return "US";
-        }
-    }
-
     public static void initLocalisation() {
-        JComponent.setDefaultLocale(new Locale(JDLocale.getCountryID()));
+        JComponent.setDefaultLocale(new Locale(JDLocale.getInstance(JDLocale.getLocale()).getLanguageCode()));
     }
 
     public static String translate(String to, String msg) {
@@ -378,6 +364,52 @@ public class JDLocale {
             ret[i] = hashToKey(bestKeys.get(i));
         }
         return ret;
+    }
+
+    /**
+     * returns the correct country code
+     * 
+     * @return
+     */
+    public static String getCountryCodeByIP() {
+
+        if (COUNTRY_CODE != null) return COUNTRY_CODE;
+
+        if ((COUNTRY_CODE = SubConfiguration.getConfig(JDLocale.CONFIG).getStringProperty("DEFAULTLANGUAGE", null)) != null) { return COUNTRY_CODE; }
+        Browser br = new Browser();
+        br.setConnectTimeout(10000);
+        br.setReadTimeout(10000);
+        try {
+            COUNTRY_CODE = br.getPage("http://jdownloader.net:8081/advert/getLanguage.php");
+            if (!br.getRequest().getHttpConnection().isOK()) {
+                COUNTRY_CODE = null;
+            } else {
+                COUNTRY_CODE = COUNTRY_CODE.trim().toUpperCase();
+
+                SubConfiguration.getConfig(JDLocale.CONFIG).setProperty("DEFAULTLANGUAGE", COUNTRY_CODE);
+                SubConfiguration.getConfig(JDLocale.CONFIG).save();
+            }
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
+        return COUNTRY_CODE;
+    }
+
+    public String getCountryCode() {
+        // TODO Auto-generated method stub
+        return codes[1];
+    }
+
+    public String getExtensionCode() {
+        // TODO Auto-generated method stub
+        return codes[1];
+    }
+
+    public String getLanguageCode() {
+        // TODO Auto-generated method stub
+        return codes[0];
     }
 
 }

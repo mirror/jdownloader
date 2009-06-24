@@ -78,9 +78,9 @@ public class ConfigPanelGUI extends ConfigPanel {
         ConfigGroup lookGroup = new ConfigGroup(JDLocale.L("gui.config.gui.view", "Look"), JDTheme.II("gui.images.config.gui", 32, 32));
 
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, look));
-        look.addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.LF("gui.config.gui.languageFileInfo", "Current Language File: %s from %s in version %s", SubConfiguration.getConfig(JDLocale.CONFIG).getStringProperty(JDLocale.LOCALE_ID, Locale.getDefault().toString()), JDLocale.getTranslater(), JDLocale.getVersion())).setGroup(lookGroup));
+        look.addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.LF("gui.config.gui.languageFileInfo2", "Current Language File: %s", SubConfiguration.getConfig(JDLocale.CONFIG).getStringProperty(JDLocale.LOCALE_ID, Locale.getDefault().toString()))).setGroup(lookGroup));
 
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, SubConfiguration.getConfig(JDLocale.CONFIG), JDLocale.LOCALE_ID, JDLocale.getLocaleIDs().toArray(new String[] {}), JDLocale.L("gui.config.gui.language", "Language")).setGroup(lookGroup));
+        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, SubConfiguration.getConfig(JDLocale.CONFIG), JDLocale.LOCALE_ID, JDLocale.getLocaleIDs().toArray(new JDLocale[]{}), JDLocale.L("gui.config.gui.language", "Language")).setGroup(lookGroup));
         ce.setDefaultValue(Locale.getDefault());
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
 

@@ -1,6 +1,10 @@
 package jd.utils;
 
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map.Entry;
+
+import jd.parser.Regex;
 
 /**
  * Language and COUNRTYCode database
@@ -27,23 +31,23 @@ public class JDGeoCode {
      * countrycode,extension
      * 
      * 
-     * de-AT  -->[de,AT,null]
-     * de-2   -->[
+     * de-AT -->[de,AT,null] de-2 -->[
+     * 
      * @param lngCode
      * @return
      */
     public static String[] parseLanguageCode(String lngCode) {
         int length = lngCode.length();
         String languagecode;
-        String[] split;
-        if (length == 2) {
+        String[] split = lngCode.split("\\-");
+        if (split.length == 1) {
             languagecode = lngCode.toLowerCase();
 
-            return new String[] { lngCode, COUNTRIES.containsKey(languagecode.toUpperCase()) ? languagecode.toUpperCase() : null, null };
-        } else if (length == 5) {
-            split = lngCode.split("\\-");
+            return new String[] { lngCode, null, null };
+        } else if (split.length == 2) {
+
             boolean h = COUNTRIES.containsKey(split[1].toUpperCase());
-            return new String[] { split[0].toLowerCase(),   h? split[1].toUpperCase() : null, h?null:split[1] };
+            return new String[] { split[0].toLowerCase(), h ? split[1].toUpperCase() : null, h ? null : split[1] };
         } else {
             split = lngCode.split("\\-");
             return new String[] { split[0].toLowerCase(), split[1].toUpperCase(), split[2] };
@@ -91,7 +95,7 @@ public class JDGeoCode {
         LANGUAGES.put("el", new String[] { "Greek", "Ελληνικά" });
         LANGUAGES.put("en", new String[] { "English", "English" });
         LANGUAGES.put("eo", new String[] { "Esperanto", "Esperanto" });
-        LANGUAGES.put("es", new String[] { "Spanish", "Español; castellano" });
+        LANGUAGES.put("es", new String[] { "Spanish", "Español" });
         LANGUAGES.put("et", new String[] { "Estonian", "eesti; eesti keel" });
         LANGUAGES.put("eu", new String[] { "Basque", "euskara; euskera" });
         LANGUAGES.put("fa", new String[] { "Persian", "فارسی" });
@@ -515,11 +519,118 @@ public class JDGeoCode {
         COUNTRIES.put("ZR", "Zaire");
         COUNTRIES.put("ZW", "Zimbabwe");
     }
-    
+
     public final static HashMap<String, String> EXTENSIONS = new HashMap<String, String>();
     static {
 
-        COUNTRIES.put("hans", "simplified");
-        COUNTRIES.put("hant", "traditional");
+        EXTENSIONS.put("hans", "simplified");
+        EXTENSIONS.put("hant", "traditional");
     }
+
+    /**
+     * TRansforms a lng-country-ext code into its longer form
+     * 
+     * @param string
+     * @return
+     */
+    public static String toLonger(String string) {
+        String[] p = JDGeoCode.parseLanguageCode(string);
+        String language = LANGUAGES.get(p[0])[0];
+        String country = COUNTRIES.get(p[1]);
+        String extension = EXTENSIONS.get(p[1]);
+
+        String ret = language;
+        if (country != null) {
+            ret += " [" + country;
+            if (extension != null) ret += " | " + extension;
+            ret += "]";
+        } else if (extension != null) {
+            ret += " [" + extension + "]";
+        }
+
+        return ret;
+    }
+
+    public static String toLongerNative(String string) {
+        String[] p = JDGeoCode.parseLanguageCode(string);
+        String language = LANGUAGES.get(p[0])[1];
+        String country = COUNTRIES.get(p[1]);
+        String extension = EXTENSIONS.get(p[2]);
+        if (extension == null) extension = p[2];
+
+        String ret = language;
+        if (country != null) {
+            ret += " [" + country;
+            if (extension != null) ret += " | " + extension;
+            ret += "]";
+        } else if (extension != null) {
+            ret += " [" + extension + "]";
+        }
+
+        return ret;
+    }
+
+    public static String longToShort(String lng) {
+        String[] row = new Regex(lng, "(.*?)\\[(.*)\\|(.*?)\\]").getRow(0);
+        if (row != null) { return getLanguageCode(row[0].trim()) + "-" + getCountryCode(row[1].trim()) + "-" + getExtensionCode(row[2].trim()); }
+        row = new Regex(lng, "(.*?)\\[(.*)\\]").getRow(0);
+        if (row != null) {
+            String countryCode = getCountryCode(row[1].trim());
+
+            if (countryCode != null) {
+                return getLanguageCode(row[0].trim()) + "-" + countryCode;
+
+            } else {
+                return getLanguageCode(row[0].trim()) + "-" + getExtensionCode(row[1].trim());
+            }
+        }
+
+        return getLanguageCode(lng.trim());
+    }
+
+    /**
+     * Returns the languagecode for a native or english languagename
+     * 
+     * @param string
+     * @return
+     */
+    public static String getLanguageCode(String name) {
+        Entry<String, String[]> next;
+        for (Iterator<Entry<String, String[]>> it = LANGUAGES.entrySet().iterator(); it.hasNext();) {
+            next = it.next();
+            if (next.getValue()[0].equalsIgnoreCase(name) || next.getValue()[1].equalsIgnoreCase(name)) return next.getKey();
+        }
+        return null;
+    }
+
+    /**
+     * Returns the extension code for the extensionname
+     * 
+     * @param string
+     * @return
+     */
+    public static String getExtensionCode(String name) {
+        Entry<String, String> next;
+        for (Iterator<Entry<String, String>> it = EXTENSIONS.entrySet().iterator(); it.hasNext();) {
+            next = it.next();
+            if (next.getValue().equalsIgnoreCase(name)) return next.getKey();
+        }
+        return name;
+    }
+
+    /**
+     * Returns the countrycode for a givven countryname
+     * 
+     * @param name
+     * @return
+     */
+    public static String getCountryCode(String name) {
+        Entry<String, String> next;
+        for (Iterator<Entry<String, String>> it = COUNTRIES.entrySet().iterator(); it.hasNext();) {
+            next = it.next();
+            if (next.getValue().equalsIgnoreCase(name)) return next.getKey();
+        }
+        return null;
+    }
+
 }

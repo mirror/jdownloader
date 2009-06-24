@@ -43,12 +43,12 @@ import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.components.BrowseFile;
 import jd.gui.userio.dialog.AbstractDialog;
 import jd.gui.userio.dialog.ContainerDialog;
-import jd.http.Browser;
 import jd.nutils.Executer;
 import jd.nutils.JDFlags;
 import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
 import jd.utils.JDFileReg;
+import jd.utils.JDGeoCode;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -67,51 +67,17 @@ public class Installer {
 
     private boolean aborted = false;
 
-    private String language;
-
-    private String languageid;
+    private String countryCode;
 
     private boolean error;
 
+    private String languageCode;
+
     public Installer() {
+        countryCode = JDLocale.getCountryCodeByIP();
 
-        language = "us";
-        try {
-            /* determine real country id */
-            Browser br = new Browser();
-            br.setConnectTimeout(10000);
-            br.setReadTimeout(10000);
-            language = br.getPage("http://jdownloader.net:8081/advert/getLanguage.php");
-            if (!br.getRequest().getHttpConnection().isOK()) language = null;
-            if (language != null) {
-                language = language.trim();
-                SubConfiguration.getConfig(JDLocale.CONFIG).setProperty("DEFAULTLANGUAGE", language);
-                SubConfiguration.getConfig(JDLocale.CONFIG).save();
-            } else {
-                language = "us";
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        languageCode = countryCode.toLowerCase();
 
-        languageid = "english";
-        if (language.equalsIgnoreCase("de")) {
-            languageid = "german";
-        } else if (language.equalsIgnoreCase("es")) {
-            languageid = "Spanish";
-        } else if (language.equalsIgnoreCase("ar")) {
-            languageid = "Spanish";
-        } else if (language.equalsIgnoreCase("it")) {
-            languageid = "Italiano";
-        } else if (language.equalsIgnoreCase("pl")) {
-            languageid = "Polski";
-        } else if (language.equalsIgnoreCase("fr")) {
-            languageid = "French";
-        } else if (language.equalsIgnoreCase("tr")) {
-            languageid = "Turkish";
-        } else if (language.equalsIgnoreCase("ru")) {
-            languageid = "Russian";
-        }
         SubConfiguration.getConfig(JDLocale.CONFIG).setProperty(JDLocale.LOCALE_ID, null);
 
         showConfig();
@@ -178,7 +144,7 @@ public class Installer {
         JDUtilities.getConfiguration().save();
 
         if (OSDetector.isWindows()) {
-            String lng = SubConfiguration.getConfig(JDLocale.CONFIG).getStringProperty("DEFAULTLANGUAGE", "DE");
+            String lng = JDLocale.getCountryCodeByIP();
             if (lng.equalsIgnoreCase("de") || lng.equalsIgnoreCase("us")) {
                 new GuiRunnable<Object>() {
 
@@ -212,9 +178,9 @@ public class Installer {
                      * 
                      */
                     private static final long serialVersionUID = -7645376943352687975L;
-                    private ArrayList<String> ids;
+                    private ArrayList<JDLocale> ids;
 
-                    private ArrayList<String> getIds() {
+                    private ArrayList<JDLocale> getIds() {
                         if (ids == null) {
                             ids = JDLocale.getLocaleIDs();
                         }
@@ -223,6 +189,7 @@ public class Installer {
                     }
 
                     public Object getElementAt(int index) {
+
                         return getIds().get(index);
                     }
 
@@ -234,13 +201,32 @@ public class Installer {
                 })), "growx,pushx,gapleft 40,gapright 10");
                 list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
                 if (error) list.setEnabled(false);
-                list.setSelectedValue(SubConfiguration.getConfig(JDLocale.CONFIG).getStringProperty(JDLocale.LOCALE_ID, languageid), true);
+
+                String def = null;
+                for (JDLocale id : JDLocale.getLocaleIDs()) {
+                    if (id.getCountryCode().equalsIgnoreCase(languageCode)) {
+                        def = languageCode;
+                        break;
+                    }
+                }
+                if (def == null) {
+                    for (JDLocale id : JDLocale.getLocaleIDs()) {
+                        if (id.getLanguageCode().equalsIgnoreCase(languageCode)) {
+                            def = languageCode;
+                            break;
+                        }
+                    }
+                }
+                if (def == null) def = "en";
+                list.setSelectedValue(SubConfiguration.getConfig(JDLocale.CONFIG).getStringProperty(JDLocale.LOCALE_ID, def), true);
                 list.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
 
                     public void valueChanged(ListSelectionEvent e) {
                         String lng = list.getSelectedValue().toString();
-                        SubConfiguration.getConfig(JDLocale.CONFIG).setProperty(JDLocale.LOCALE_ID, lng);
-                        JDLocale.setLocale(SubConfiguration.getConfig(JDLocale.CONFIG).getStringProperty(JDLocale.LOCALE_ID, "english"));
+
+                        String code = JDGeoCode.longToShort(lng);
+                        SubConfiguration.getConfig(JDLocale.CONFIG).setProperty(JDLocale.LOCALE_ID, code);
+                        JDLocale.setLocale(SubConfiguration.getConfig(JDLocale.CONFIG).getStringProperty(JDLocale.LOCALE_ID, "en"));
                         SubConfiguration.getConfig(JDLocale.CONFIG).save();
                         dialog.dispose();
                         showConfig();

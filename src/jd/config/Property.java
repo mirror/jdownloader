@@ -233,7 +233,9 @@ public class Property implements Serializable {
         if (propertiesHashes == null) {
             propertiesHashes = new HashMap<String, Integer>();
         }
-
+        if (value!=null &&!(value instanceof Serializable)) {
+            value = value.toString();
+        }
         Object old = getProperty(key);
 
         properties.put(key, value);
