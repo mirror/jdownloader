@@ -45,13 +45,14 @@ import jd.update.WebUpdater;
 
 public class WebUpdate implements ControlListener {
     private static Logger logger = JDLogger.getLogger();
-    private static boolean JDInitialized = false;
-    private static boolean DynamicPluginsFinished = false;
-    private static boolean ListenerAdded = false;
-    private static boolean updateinprogress = false;
+    private static boolean JD_INIT_COMPLETE = false;
+    
+    private static boolean DYNAMIC_PLUGINS_FINISHED = false;
+    private static boolean LISTENER_ADDED = false;
+    private static boolean UPDATE_IN_PROGRESS = false;
 
     public static void DynamicPluginsFinished() {
-        DynamicPluginsFinished = true;
+        DYNAMIC_PLUGINS_FINISHED = true;
     }
 
     private static String getUpdaterMD5(int trycount) {
@@ -155,10 +156,10 @@ public class WebUpdate implements ControlListener {
      * deaktiviert hat
      */
     public synchronized void doWebupdate(final boolean guiCall, final boolean forceguiCall) {
-        if (!JDInitialized && !ListenerAdded) {
+        if (!JD_INIT_COMPLETE && !LISTENER_ADDED) {
             if (JDUtilities.getController() != null) {
                 JDUtilities.getController().addControlListener(this);
-                ListenerAdded = true;
+                LISTENER_ADDED = true;
             }
         }
         // SubConfiguration cfg = WebUpdater.getConfig("WEBUPDATE");
@@ -219,7 +220,7 @@ public class WebUpdate implements ControlListener {
                     progress.setStatus(org - (files.size() + packages.size()));
                     logger.finer("Files to update: " + files);
                     logger.finer("JDUs to update: " + packages.size());
-                    while (JDInitialized == false) {
+                    while (JD_INIT_COMPLETE == false) {
                         int i = 0;
                         try {
                             Thread.sleep(1000);
@@ -258,11 +259,11 @@ public class WebUpdate implements ControlListener {
     }
 
     private static void doUpdate() {
-        if (updateinprogress == true) return;
+        if (UPDATE_IN_PROGRESS == true) return;
         new Thread() {
             public void run() {
-                updateinprogress = true;
-                while (JDInitialized == false) {
+                UPDATE_IN_PROGRESS = true;
+                while (JD_INIT_COMPLETE == false) {
                     int i = 0;
                     try {
                         Thread.sleep(1000);
@@ -272,7 +273,7 @@ public class WebUpdate implements ControlListener {
                     }
                 }
 
-                while (DynamicPluginsFinished == false) {
+                while (DYNAMIC_PLUGINS_FINISHED == false) {
                     int i = 0;
                     try {
                         Thread.sleep(1000);
@@ -285,13 +286,14 @@ public class WebUpdate implements ControlListener {
                 DownloadController.getInstance().backupDownloadLinksSync();
 
                 if (!WebUpdate.updateUpdater()) {
-                    updateinprogress = false;
+                    UPDATE_IN_PROGRESS = false;
                     return;
                 }
+                if (JDUtilities.getController() != null) JDUtilities.getController().prepareShutdown();
+                
                 JDIO.writeLocalFile(JDUtilities.getResourceFile("webcheck.tmp"), new Date().toString() + "\r\n(Revision" + JDUtilities.getRevision() + ")");
                 logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "jdupdate.jar", "/restart", "/rt" + JDUtilities.getRunType() }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
-                if (JDUtilities.getController() != null) JDUtilities.getController().prepareShutdown();
-                updateinprogress = false;
+                UPDATE_IN_PROGRESS = false;
                 System.exit(0);
             }
         }.start();
@@ -300,7 +302,7 @@ public class WebUpdate implements ControlListener {
     public void controlEvent(ControlEvent event) {
 
         if (event.getID() == ControlEvent.CONTROL_INIT_COMPLETE && event.getSource() instanceof Main) {
-            JDInitialized = true;
+            JD_INIT_COMPLETE = true;
             JDUtilities.getController().removeControlListener(this);
         }
     }
