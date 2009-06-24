@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.plugins.decrypt;
 
 import java.io.IOException;
@@ -92,10 +91,12 @@ public class YouTubeCom extends PluginForDecrypt {
         if (parameter.contains("view_play_list")) {
             br.getPage(parameter);
             addVideosCurrentPage(decryptedLinks);
-            String[] pages = br.getRegex("<a href=\"(http://www.youtube.com/view_play_list\\?p=.*?page=\\d+)\"").getColumn(0);
-            for (int i = 0; i < pages.length - 1; i++) {
-                br.getPage(pages[i]);
-                addVideosCurrentPage(decryptedLinks);
+            if (!parameter.contains("page=")) {
+                String[] pages = br.getRegex("<a href=(\"|')(http://www.youtube.com/view_play_list\\?p=.*?page=\\d+)(\"|')").getColumn(1);
+                for (int i = 0; i < pages.length - 1; i++) {
+                    br.getPage(pages[i]);
+                    addVideosCurrentPage(decryptedLinks);
+                }
             }
         } else {
             ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts("youtube.com");
