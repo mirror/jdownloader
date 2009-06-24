@@ -490,7 +490,8 @@ public abstract class Request {
         }
         String cs = con.getCharset();
         if (cs == null) {
-            isr = new InputStreamReader(is);
+            /* default encoding ist ISO-8859-1, falls nicht anders angegeben */
+            isr = new InputStreamReader(is, "ISO-8859-1");
         } else {
             try {
                 isr = new InputStreamReader(is, cs);

@@ -5,37 +5,28 @@ import java.nio.ByteBuffer;
 public class ByteBufferEntry {
     private ByteBuffer buffer = null;
     private int size = 0;
-    private int used = 0;
-    boolean inuse = false;
+    private boolean unused = true;
 
     public static ByteBufferEntry getByteBufferEntry(int size) {
         ByteBufferEntry ret = ByteBufferController.getInstance().getByteBufferEntry(size);
         if (ret != null) {
-            ByteBufferController.getInstance().increaseReused(ret.capacity());
-            ByteBufferController.getInstance().decreaseFree(ret.capacity());
-            // System.out.println("Reuse old ByteBufferEntry " +
-            // ret.size());
             return ret.getbytebufferentry(size);
         } else {
-            // System.out.println("Create new ByteBufferEntry " + size);
             return new ByteBufferEntry(size).getbytebufferentry(size);
         }
     }
 
     private ByteBufferEntry(int size) {
         this.size = size;
-        ByteBufferController.getInstance().increaseFresh(size);
         buffer = ByteBuffer.allocateDirect(size);
         clear();
-        used = 0;
     }
 
     public int capacity() {
         return buffer.capacity();
     }
 
-    public ByteBuffer getBuffer() throws Exception {
-        if (!inuse) throw new Exception("cannot access bytebuffer if bytebufferentry is unused");
+    public ByteBuffer getBuffer() {
         return buffer;
     }
 
@@ -54,19 +45,10 @@ public class ByteBufferEntry {
     }
 
     protected ByteBufferEntry getbytebufferentry(int size) {
+        unused = false;
         this.size = size;
-        used++;
-        inuse = true;
         clear();
         return this;
-    }
-
-    public boolean inUse() {
-        return inuse;
-    }
-
-    public int used() {
-        return used;
     }
 
     /*
@@ -75,14 +57,8 @@ public class ByteBufferEntry {
      * others to use
      */
     public void setUnused() {
-        if (!inuse) return;
-        inuse = false;
-        ByteBufferController.getInstance().increaseFree(capacity());
-        if (used > 1) {
-            ByteBufferController.getInstance().decreaseReused(capacity());
-        } else {
-            ByteBufferController.getInstance().decreaseFresh(capacity());
-        }
+        if (unused) return;
+        unused = true;
         ByteBufferController.getInstance().putByteBufferEntry(this);
     }
 

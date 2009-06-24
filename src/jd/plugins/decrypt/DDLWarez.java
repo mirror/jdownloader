@@ -78,8 +78,8 @@ public class DDLWarez extends PluginForDecrypt {
                     for (int retry = 1; retry <= 10; retry++) {
                         try {
                             clone.submitForm(form);
-
-                            downloadlink = clone.getRegex(Pattern.compile("<frame\\s.*?src=\"(.*?)\r?\n?\" (?=(NAME=\"second\"))", Pattern.CASE_INSENSITIVE)).getMatch(0);
+                            String unpackedScript = jsunpacker(clone);
+                            downloadlink = new Regex(unpackedScript, Pattern.compile("<frame.*?src=\"([^\" ]*?)\r?\n?\" (?=(NAME=\"second\"))", Pattern.CASE_INSENSITIVE)).getMatch(0);
                             break;
                         } catch (Exception e) {
                             logger.finest("DDLWarez_Linkgrabber: id=" + new Integer(Worker_ID) + " PostRequest-Error, try again!");
@@ -183,50 +183,7 @@ public class DDLWarez extends PluginForDecrypt {
                         continue;
                     }
                 }
-
-                /*
-                 * at this point we should be on the final page that contains
-                 * the download links.
-                 * 
-                 * ddlwarez hides the links by executing a packed javascript
-                 * when the page gets loaded. The packed javascript writes the
-                 * forms with the final links to the page with a simple
-                 * document.write.
-                 * 
-                 * We need to unpack the script and extract those forms.
-                 */
-
-                // get the complete argument list of the p.a.c.k.e.d function
-                String argList = br.getRegex("eval\\(function\\(p,a,c,k,e,d\\)\\{.*\\}\\((.*)\\)\\)").getMatch(0);
-                if (argList == null) {
-                    logger.log(Level.SEVERE, "Couldn't extract packed js.");
-                    return null;
-                }
-                // extract the packed js and the replacement tokens from the
-                // argument list
-                Regex argSplitRegex = new Regex(argList, "\\'(.*)\\',[0-9]+,[0-9]+,\\'(.*)\\'\\.split\\(.*");
-                String packedScript = argSplitRegex.getMatch(0);
-                String tokens = argSplitRegex.getMatch(1);
-
-                if (packedScript == null || tokens == null) {
-                    logger.log(Level.SEVERE, "Couldn't extract packed js.");
-                    return null;
-                }
-                
-
-                /*
-                 * TODO packedScript muss noch umkodiert werden es kommt kaputt (�)
-                 * im browser an, da die seite zwar in ISO-8859-1 kodiert ist,
-                 * aber im header keine kodierungs informationen gesendet
-                 * werden.
-                 */
-
-                // unpack the js
-                String unpackedScript = unpack(packedScript, tokens.split("\\|"));
-                // unescape the html code
-                unpackedScript = Encoding.htmlDecode(unpackedScript);
-
-                // extract the forms from the script
+                String unpackedScript = jsunpacker(br);
                 Form[] forms = Form.getForms(unpackedScript);
                 progress.setRange(forms.length);
                 DDLWarez_Linkgrabber DDLWarez_Linkgrabbers[] = new DDLWarez_Linkgrabber[forms.length];
@@ -368,7 +325,30 @@ public class DDLWarez extends PluginForDecrypt {
         return null; /* keines */
     }
 
-    private String unpack(String packedScript, String[] tokens) {
+    private static String jsunpacker(Browser br) throws DecrypterException {
+        String argList = br.getRegex("eval\\(function\\(p,a,c,k,e,d\\)\\{.*\\}\\((.*)\\)\\)").getMatch(0);
+        if (argList == null) {
+            logger.log(Level.SEVERE, "Couldn't extract packed js.");
+            return null;
+        }
+        // extract the packed js and the replacement tokens from the
+        // argument list
+        Regex argSplitRegex = new Regex(argList, "\\'(.*)\\',[0-9]+,[0-9]+,\\'(.*)\\'\\.split\\(.*");
+        String packedScript = argSplitRegex.getMatch(0);
+        String tokens = argSplitRegex.getMatch(1);
+
+        if (packedScript == null || tokens == null) {
+            logger.log(Level.SEVERE, "Couldn't extract packed js.");
+            throw new DecrypterException("Plugin out of date");
+        }
+
+        // unpack the js
+        String unpackedScript = unpack(packedScript, tokens.split("\\|"));
+        // unescape the html code
+        return Encoding.htmlDecode(unpackedScript);
+    }
+
+    private static String unpack(String packedScript, String[] tokens) {
         int seed = 95;
         HashMap<String, String> dictionary = new HashMap<String, String>();
         for (int i = 0; i < tokens.length; i++) {
@@ -388,7 +368,7 @@ public class DDLWarez extends PluginForDecrypt {
         return sb.toString();
     }
 
-    private String createKey(int number, int seed) {
+    private static String createKey(int number, int seed) {
         int offset = 256 - seed;
         if (number < seed)
             return String.valueOf((char) (number + offset));
