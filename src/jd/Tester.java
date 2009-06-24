@@ -14,11 +14,11 @@ public class Tester {
 
     public static void main(String[] args) throws SVNException, IOException {
 
-        Browser.init();
-        Browser.setVerbose(true);
-        Browser br = new Browser();
-        br.setProxy(new JDProxy("85.133.65.113:80"));
-        br.getPage("http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=checkfiles_v1&files=");
-
+    Browser br = new Browser();
+    br.getPage("http://www.davros.org/misc/iso3166.html#existing");
+   String[][] matches = br.getRegex("<TR>.*?<TD>(.*?)</TD>.*?<TD>(.*?)</TD>.*?<TD>(.*?)</TD>.*?<TD>+b</TD>.*?<TD>(.*?)</TD></TR>").getMatches();
+   for(int i=0; i<matches.length;i++){
+       System.out.println("COUNTRIES.put(\""+matches[i][0]+"\",new String[]{\""+matches[i][1]+"\",\""+matches[i][2]+"\"});");
+   }
     }
 }

@@ -157,7 +157,7 @@ public abstract class TestUtils {
             }
         }.waitForEDT();
 
-        SimpleGUI.CURRENTGUI.setVisible(false);
+//        SimpleGUI.CURRENTGUI.setVisible(false);
     }
 
     public static void initControllers() {

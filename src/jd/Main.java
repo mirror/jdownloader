@@ -431,10 +431,9 @@ public class Main {
         }        
         init.removeFiles();
         LOGGER.info("init Controller");
-        JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_PROGRESS, new String("Ready...")));
-
+   
         LOGGER.info("init Webupdate");
-        JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_PROGRESS, new String("Steady...")));
+        JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_PROGRESS, JDLocale.L("gui.splash.progress.webupdate", "Check updates")));
 
         new WebUpdate().doWebupdate(true,false);
         try {
@@ -444,14 +443,14 @@ public class Main {
         }
         WebUpdate.DynamicPluginsFinished();
         LOGGER.info("init plugins");
-        JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_PROGRESS, new String("D'OH")));
+        JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_PROGRESS, JDLocale.L("gui.splash.progress.initplugins", "Init plugins")));
 
         init.initPlugins();
 
         Locale.setDefault(Locale.ENGLISH);
 
         LOGGER.info("init gui");
-        JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_PROGRESS, new String("And then we created the GUI")));
+        JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_PROGRESS, JDLocale.L("gui.splash.progress.paintgui", "Paint user interface")));
         new GuiRunnable<Object>() {
             // @Override
             public Object runSave() {
@@ -460,7 +459,7 @@ public class Main {
             }
         }.waitForEDT();
         LOGGER.info("init downloadqueue");
-        JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_PROGRESS, new String("Oh no, more sxxx to do!")));
+        JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_PROGRESS, JDLocale.L("gui.splash.progress.controller", "Start controller")));
         init.initControllers();
 
         LOGGER.info("Initialisation finished");

@@ -29,7 +29,7 @@ public class Gui {
     public void startDownloads() throws InterruptedException {
         frame.button("playButton").click();
 
-        Thread.sleep(1000);
+        Thread.sleep(5000);
 
         assertTrue(DownloadWatchDog.getInstance().getActiveDownloads() > 0);
     }

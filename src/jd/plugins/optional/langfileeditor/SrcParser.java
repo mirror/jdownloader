@@ -136,6 +136,7 @@ public class SrcParser {
                 String[] strings = new Regex(m, pat_string).getColumn(0);
                 m = m.replace("\r", "");
                 m = m.replace("\n", "");
+              
                 m = m.replaceAll(pat_string, "%%%S%%%");
 
                 m = m.replace(" ", "");
@@ -148,6 +149,7 @@ public class SrcParser {
                 String[] parameter = m.split(",");
              
                 if (orgm.startsWith(".LF")) {
+                    
                     if (orgm.substring(3).trim().charAt(0) != '(') {
 
                         JDLogger.getLogger().severe("Mailformated translation value in " + currentFile + " : " + m);
@@ -214,20 +216,34 @@ public class SrcParser {
                         }
 
                     }
+                    String error;
+                    if ((error=new Regex(parameter[0],"([\\(\\)\\{\\}\\/\\\\\\$\\&\\+\\~\\#\\\"\\!\\?]+)").getMatch(0))!=null) {
+                        
+                        int index=parameter[0].indexOf(error);
+                        if(index>=0){
+                            JDLogger.getLogger().warning(" Unsupported chars ("+parameter[0].substring(0,index)+"<< |"+parameter[0].substring(index+1)+") in key:" + currentFile + " : " + parameter[0]);
+                            
+                        }else{
+                            JDLogger.getLogger().warning(" Unsupported chars in key:" + currentFile + " : " + parameter[0]);
+                             
+                        }
+                        continue;
+                    }
                     if (!parameter[0].contains(".")) {
-                        JDLogger.getLogger().warning(" Prob. Mailformated translation key in " + currentFile + " : " + match);
+                        JDLogger.getLogger().warning(" Prob. Malformated translation key in " + currentFile + " : " + match);
                     }
                     if (parameter[0].contains("null")) {
-                        JDLogger.getLogger().warning(" Prob. Mailformated translation key in " + currentFile + " : " + match);
+                        JDLogger.getLogger().warning(" Prob. Malformated translation key in " + currentFile + " : " + match);
                     }
                     entry = new LngEntry(parameter[0], parameter[1]);
                     if (!hasEntry(entry)) {
                         entries.add(entry);
-                        System.out.println(Formatter.fillInteger(entries.size(), 3, "0") + " " + entry);
-                        broadcaster.fireEvent(new MessageEvent(this, PARSE_NEW_ENTRY, Formatter.fillInteger(entries.size(), 3, "0") + " " + entry));
+                        System.out.println("LF  "+Formatter.fillInteger(entries.size(), 3, "0") + " " + entry);
+                        broadcaster.fireEvent(new MessageEvent(this, PARSE_NEW_ENTRY, "LF  "+Formatter.fillInteger(entries.size(), 3, "0") + " " + entry));
 
                     }
                 } else if (orgm.startsWith(".L")) {
+                  
                     if (orgm.substring(2).trim().charAt(0) != '(') {
 
                         JDLogger.getLogger().severe("Mailformated translation value in " + currentFile + " : " + m);
@@ -294,6 +310,22 @@ public class SrcParser {
                         }
 
                     }
+                    
+                    
+
+                    String error;
+                    if ((error=new Regex(parameter[0],"([\\(\\)\\{\\}\\/\\\\\\$\\&\\+\\~\\#\\\"\\!\\?]+)").getMatch(0))!=null) {
+                        
+                        int index=parameter[0].indexOf(error);
+                        if(index>=0){
+                            JDLogger.getLogger().warning(" Unsupported chars ("+parameter[0].substring(0,index)+"<< |"+parameter[0].substring(index+1)+") in key:" + currentFile + " : " + parameter[0]);
+                            
+                        }else{
+                            JDLogger.getLogger().warning(" Unsupported chars in key:" + currentFile + " : " + parameter[0]);
+                             
+                        }
+                        continue;
+                    }
                     if (!parameter[0].contains(".")) {
                         JDLogger.getLogger().warning(" Prob. Mailformated translation key in " + currentFile + " : " + match);
                     }
@@ -303,8 +335,8 @@ public class SrcParser {
                     entry = new LngEntry(parameter[0], parameter[1]);
                     if (!hasEntry(entry)) {
                         entries.add(entry);
-                        System.out.println(Formatter.fillInteger(entries.size(), 3, "0") + " " + entry);
-                        broadcaster.fireEvent(new MessageEvent(this, PARSE_NEW_ENTRY, Formatter.fillInteger(entries.size(), 3, "0") + " " + entry));
+                        System.out.println("L   "+Formatter.fillInteger(entries.size(), 3, "0") + " " + entry);
+                        broadcaster.fireEvent(new MessageEvent(this, PARSE_NEW_ENTRY, "L   "+Formatter.fillInteger(entries.size(), 3, "0") + " " + entry));
 
                     }
                 }
