@@ -167,7 +167,10 @@ public class LinkStatus implements Serializable {
 
     private String getDefaultErrorMessage() {
         switch (lastestStatus) {
-
+        case LinkStatus.ERROR_RETRY:
+            return JDLocale.L("downloadlink.status.error.retry", "Unknown error, retrying");
+        case LinkStatus.ERROR_PLUGIN_DEFEKT:
+            return JDLocale.L("downloadlink.status.error.defect", "Plugin outdated");
         case LinkStatus.ERROR_DOWNLOAD_INCOMPLETE:
             return JDLocale.L("downloadlink.status.incomplete", "Incomplete");
         case LinkStatus.ERROR_AGB_NOT_SIGNED:

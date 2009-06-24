@@ -841,11 +841,11 @@ public class Rapidshare extends PluginForHost {
 
             HashMap<String, String> cookies = (HashMap<String, String>) account.getProperty("cookies");
 
-            if (usesavedcookie && cookies != null && false) {
-                if (cookies.get("user") != null && cookies.get("user").length() != 0 && cookies.get("enc") != null && cookies.get("enc").length() != 0) {
+            if (usesavedcookie && cookies != null) {
+                if (cookies.get("enc") != null && cookies.get("enc").length() != 0) {
+                    logger.finer("Cookie Login");
                     for (Entry<String, String> cookie : cookies.entrySet()) {
-                        br.setCookie("http://rapidshare.com", cookie.getKey(), cookie.getValue());
-                        logger.finer("Cookie Login: " + cookie.getKey());
+                        br.setCookie("http://rapidshare.com", cookie.getKey(), cookie.getValue());                        
                     }
                     return br;
                 } else {
@@ -856,9 +856,7 @@ public class Rapidshare extends PluginForHost {
             br.getPage(req);
             try {
                 Thread.sleep(2000);
-            } catch (InterruptedException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+            } catch (InterruptedException e) {                
                 return br;
             }
             if (br.containsHTML("Login failed")) {
@@ -868,29 +866,22 @@ public class Rapidshare extends PluginForHost {
             if (br.containsHTML("access flood")) {
                 logger.warning("RS API flooded! will not check again the next 5 minutes!");
                 logger.finer("HTTPS Login");
-
                 br.setAcceptLanguage("en, en-gb;q=0.8");
                 br.getPage("https://ssl.rapidshare.com/cgi-bin/premiumzone.cgi?login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-
-                HashMap<String, String> map = new HashMap<String, String>();
-                map.put("user", br.getCookie("http://rapidshare.com", "user"));
-                map.put("enc", br.getCookie("http://rapidshare.com", "enc"));
-
-                account.setProperty("cookies", map);
-                return br;
             } else {
                 logger.finer("API Login");
                 String cookie = br.getRegex("cookie=([A-Z0-9]+)").getMatch(0);
                 br.setCookie("http://rapidshare.com", "enc", cookie);
-                HashMap<String, String> map = new HashMap<String, String>();
-                map.put("user", br.getCookie("http://rapidshare.com", "user"));
-                map.put("enc", br.getCookie("http://rapidshare.com", "enc"));
-
-                account.setProperty("cookies", map);
-                return br;
-
             }
-
+            String cookie =br.getCookie("http://rapidshare.com", "enc");
+            if (cookie==null){
+                account.setProperty("cookies", null);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+            }
+            HashMap<String, String> map = new HashMap<String, String>();                
+            map.put("enc", cookie);
+            account.setProperty("cookies", map);
+            return br;
         }
     }
 
