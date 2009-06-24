@@ -100,6 +100,8 @@ public class Rapidshare extends PluginForHost {
 
     private static HashMap<String, String> serverMap = new HashMap<String, String>();
 
+    private static Account dummyAccount = new Account("TRAFSHARE", "TRAFSHARE");
+
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(getCorrectedURL(link.getDownloadURL()));
     }
@@ -322,7 +324,7 @@ public class Rapidshare extends PluginForHost {
             br.getPage(link);
             if (br.getRedirectLocation() != null) {
                 logger.info("Direct Download for Free Users");
-                this.handlePremium(downloadLink, new Account("dummy", "dummy"));
+                this.handlePremium(downloadLink, dummyAccount);
                 return;
             }
             // posturl für auswahl free7premium wird gesucht
@@ -526,7 +528,11 @@ public class Rapidshare extends PluginForHost {
             Request request = null;
 
             // long startTime = System.currentTimeMillis();
-            br = login(account, true);
+            if (account == dummyAccount) {
+                br = new Browser();
+            } else {
+                br = login(account, true);
+            }
 
             br.setFollowRedirects(false);
             br.setAcceptLanguage(ACCEPT_LANGUAGE);
@@ -894,7 +900,7 @@ public class Rapidshare extends PluginForHost {
         String api = "http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=getaccountdetails_v1&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&type=prem";
         br.getPage(api);
         String error = br.getRegex("ERROR:(.*)").getMatch(0);
-        if (error != null) { 
+        if (error != null) {
             account.setProperty("cookies", null);
             ai.setStatus(JDLocale.LF("plugins.host.rapidshare.apierror", "Rapidshare reports that %s", error.trim()));
             ai.setValid(false);
