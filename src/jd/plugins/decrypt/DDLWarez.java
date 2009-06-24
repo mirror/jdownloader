@@ -19,6 +19,7 @@ package jd.plugins.decrypt;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -183,7 +184,50 @@ public class DDLWarez extends PluginForDecrypt {
                     }
                 }
 
-                Form[] forms = br.getForms();
+                /*
+                 * at this point we should be on the final page that contains
+                 * the download links.
+                 * 
+                 * ddlwarez hides the links by executing a packed javascript
+                 * when the page gets loaded. The packed javascript writes the
+                 * forms with the final links to the page with a simple
+                 * document.write.
+                 * 
+                 * We need to unpack the script and extract those forms.
+                 */
+
+                // get the complete argument list of the p.a.c.k.e.d function
+                String argList = br.getRegex("eval\\(function\\(p,a,c,k,e,d\\)\\{.*\\}\\((.*)\\)\\)").getMatch(0);
+                if (argList == null) {
+                    logger.log(Level.SEVERE, "Couldn't extract packed js.");
+                    return null;
+                }
+                // extract the packed js and the replacement tokens from the
+                // argument list
+                Regex argSplitRegex = new Regex(argList, "\\'(.*)\\',[0-9]+,[0-9]+,\\'(.*)\\'\\.split\\(.*");
+                String packedScript = argSplitRegex.getMatch(0);
+                String tokens = argSplitRegex.getMatch(1);
+
+                if (packedScript == null || tokens == null) {
+                    logger.log(Level.SEVERE, "Couldn't extract packed js.");
+                    return null;
+                }
+                
+
+                /*
+                 * TODO packedScript muss noch umkodiert werden es kommt kaputt (�)
+                 * im browser an, da die seite zwar in ISO-8859-1 kodiert ist,
+                 * aber im header keine kodierungs informationen gesendet
+                 * werden.
+                 */
+
+                // unpack the js
+                String unpackedScript = unpack(packedScript, tokens.split("\\|"));
+                // unescape the html code
+                unpackedScript = Encoding.htmlDecode(unpackedScript);
+
+                // extract the forms from the script
+                Form[] forms = Form.getForms(unpackedScript);
                 progress.setRange(forms.length);
                 DDLWarez_Linkgrabber DDLWarez_Linkgrabbers[] = new DDLWarez_Linkgrabber[forms.length];
                 for (int i = 0; i < forms.length; ++i) {
