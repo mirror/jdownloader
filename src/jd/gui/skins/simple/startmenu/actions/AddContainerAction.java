@@ -21,8 +21,8 @@ import java.io.File;
 
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.nutils.io.JDFileFilter;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 public class AddContainerAction extends StartAction {
 
@@ -38,7 +38,7 @@ public class AddContainerAction extends StartAction {
 
     public static void addContainerDialog() {
         JDFileChooser fc = new JDFileChooser("_LOADSAVEDLC");
-        fc.setDialogTitle(JDLocale.L("gui.filechooser.loaddlc", "Load DLC file"));
+        fc.setDialogTitle(JDL.L("gui.filechooser.loaddlc", "Load DLC file"));
         fc.setFileFilter(new JDFileFilter(null, ".dlc|.rsdf|.ccf|.linkbackup", true));
         if (fc.showOpenDialog(null) == JDFileChooser.APPROVE_OPTION) {
             File ret2 = fc.getSelectedFile();

@@ -27,7 +27,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 
 public class XupIn extends PluginForHost {
 
@@ -81,7 +81,7 @@ public class XupIn extends PluginForHost {
             String page = br.loadConnection(dl.getConnection());
             if (page.contains("richtige Passwort erneut ein")) {
                 downloadLink.setProperty("pass", null);
-                throw new PluginException(LinkStatus.ERROR_RETRY, JDLocale.L("plugins.hoster.xupin.errors.passwrong", "Password wrong"));
+                throw new PluginException(LinkStatus.ERROR_RETRY, JDL.L("plugins.hoster.xupin.errors.passwrong", "Password wrong"));
             }
             throw new PluginException(LinkStatus.ERROR_FATAL);
         }

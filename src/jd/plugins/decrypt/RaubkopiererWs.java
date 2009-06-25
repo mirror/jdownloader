@@ -48,8 +48,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 public class RaubkopiererWs extends PluginForDecrypt {
@@ -126,7 +126,7 @@ public class RaubkopiererWs extends PluginForDecrypt {
                 if (!br.containsHTML("Fehler: Der Sicherheits-Code")) {
                     break;
                 } else {
-                    logger.warning(JDLocale.L("downloadlink.status.error.captcha_wrong", "Captcha wrong"));
+                    logger.warning(JDL.L("downloadlink.status.error.captcha_wrong", "Captcha wrong"));
                 }
             }
 
@@ -254,7 +254,7 @@ public class RaubkopiererWs extends PluginForDecrypt {
 
                         setLayout(new MigLayout("wrap 1"));
                         setModal(true);
-                        setTitle(JDLocale.L("plugins.decrypt.RaubkopiererWS.mirrorDialog.title", "Raubkopierer.ws::Mirrors"));
+                        setTitle(JDL.L("plugins.decrypt.RaubkopiererWS.mirrorDialog.title", "Raubkopierer.ws::Mirrors"));
                         setAlwaysOnTop(true);
 
                         addWindowListener(new WindowAdapter() {
@@ -266,7 +266,7 @@ public class RaubkopiererWs extends PluginForDecrypt {
 
                         });
 
-                        add(new JLabel(JDLocale.L("plugins.decrypt.RaubkopiererWs.mirrorDialog.mirror", "Available Mirrors:")), "split 2");
+                        add(new JLabel(JDL.L("plugins.decrypt.RaubkopiererWs.mirrorDialog.mirror", "Available Mirrors:")), "split 2");
                         add(new JSeparator(), "gaptop 3, growx, spanx");
 
                         final JCheckBox[] checkMirror = new JCheckBox[mirrors.useNum()];
@@ -284,14 +284,14 @@ public class RaubkopiererWs extends PluginForDecrypt {
                             add(checkMirror[i]);
                         }
 
-                        add(new JLabel(JDLocale.L("plugins.decrypt.RaubkopiererWs.mirrorDialog.additional", "Additional files (if available):")), "split 2");
+                        add(new JLabel(JDL.L("plugins.decrypt.RaubkopiererWs.mirrorDialog.additional", "Additional files (if available):")), "split 2");
                         add(new JSeparator(), "gaptop 3, growx, spanx");
 
-                        final JCheckBox checkNFO = new JCheckBox(JDLocale.L("plugins.decrypt.RaubkopiererWs.mirrorDialog.nfo", "NFO File"), false);
+                        final JCheckBox checkNFO = new JCheckBox(JDL.L("plugins.decrypt.RaubkopiererWs.mirrorDialog.nfo", "NFO File"), false);
                         checkNFO.setFocusPainted(false);
-                        final JCheckBox checkSample = new JCheckBox(JDLocale.L("plugins.decrypt.RaubkopiererWs.mirrorDialog.sample", "Sample Video from"), false);
+                        final JCheckBox checkSample = new JCheckBox(JDL.L("plugins.decrypt.RaubkopiererWs.mirrorDialog.sample", "Sample Video from"), false);
                         checkSample.setFocusPainted(false);
-                        final JCheckBox checkExtraFP = new JCheckBox(JDLocale.L("plugins.decrypt.RaubkopiererWs.mirrorDialog.extrapackage", "Additional package for NFO/Sample"), false);
+                        final JCheckBox checkExtraFP = new JCheckBox(JDL.L("plugins.decrypt.RaubkopiererWs.mirrorDialog.extrapackage", "Additional package for NFO/Sample"), false);
                         checkExtraFP.setFocusPainted(false);
                         checkExtraFP.setSelected(true);
                         checkExtraFP.setEnabled(false);
@@ -321,7 +321,7 @@ public class RaubkopiererWs extends PluginForDecrypt {
                         add(comboSampleMirror);
                         add(checkExtraFP);
 
-                        JButton btnOK = new JButton(JDLocale.L("gui.btn_ok", "OK"));
+                        JButton btnOK = new JButton(JDL.L("gui.btn_ok", "OK"));
                         btnOK.addActionListener(new ActionListener() {
 
                             public void actionPerformed(ActionEvent e) {
@@ -342,7 +342,7 @@ public class RaubkopiererWs extends PluginForDecrypt {
                         });
                         add(btnOK, "align center, split 2, gaptop 8");
 
-                        JButton btnAbort = new JButton(JDLocale.L("gui.btn_cancel", "Cancel"));
+                        JButton btnAbort = new JButton(JDL.L("gui.btn_cancel", "Cancel"));
                         btnAbort.addActionListener(new ActionListener() {
 
                             public void actionPerformed(ActionEvent e) {

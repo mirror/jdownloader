@@ -36,9 +36,9 @@ import javax.swing.JSeparator;
 import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
-import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 /**
@@ -82,7 +82,7 @@ public class TabProgress extends JPanel implements ActionListener, ControlListen
         this.setLayout(new MigLayout("ins 0,wrap 1", "[fill,grow]"));
 
         initGUI();
-        this.setTitle(JDLocale.LF("gui.progresspane.title", "%s module(s) running", 0));
+        this.setTitle(JDL.LF("gui.progresspane.title", "%s module(s) running", 0));
     }
 
     private void setTitle(String lf) {
@@ -177,7 +177,7 @@ public class TabProgress extends JPanel implements ActionListener, ControlListen
             } else {
                 this.setVisible(true);
             }
-            this.setTitle(JDLocale.LF("gui.progresspane.title", "%s module(s) running", "" + controllers.size()));
+            this.setTitle(JDL.LF("gui.progresspane.title", "%s module(s) running", "" + controllers.size()));
             this.revalidate();
             this.repaint();
             if (!force) updateinprogress = false;
@@ -247,9 +247,9 @@ public class TabProgress extends JPanel implements ActionListener, ControlListen
         public void update(ProgressController controller) {
             this.controller = controller;
             if (cancel != null) cancel.setEnabled(controller.isInterruptable());
-            if (cancel != null) cancel.setToolTipText(controller.isInterruptable() ? JDLocale.L("gui.progressbars.cancel.tooltip.enabled", "Interrupt this module") : JDLocale.L("gui.progressbars.cancel.tooltip.disabled", "Not possible to interrupt this module"));
+            if (cancel != null) cancel.setToolTipText(controller.isInterruptable() ? JDL.L("gui.progressbars.cancel.tooltip.enabled", "Interrupt this module") : JDL.L("gui.progressbars.cancel.tooltip.disabled", "Not possible to interrupt this module"));
             label.setIcon(controller.getIcon() == null ? JDTheme.II("gui.images.running", 16, 16) : controller.getIcon());
-            label.setToolTipText(JDLocale.L("gui.tooltip.progressicon", "This module is active"));
+            label.setToolTipText(JDL.L("gui.tooltip.progressicon", "This module is active"));
          if(controller.isIndeterminate()){
             bar.setIndeterminate(true);
          }else{
@@ -271,7 +271,7 @@ public class TabProgress extends JPanel implements ActionListener, ControlListen
             if (arg0.getSource() == this.cancel) {
                 if (controller != null) controller.fireCancelAction();
                 cancel.setIcon(JDTheme.II("gui.images.bad", 16, 16));
-                cancel.setToolTipText(JDLocale.L("gui.progressbars.cancel.tooltip.interrupted", "Termination in progress"));
+                cancel.setToolTipText(JDL.L("gui.progressbars.cancel.tooltip.interrupted", "Termination in progress"));
                 cancel = null;
             }
         }

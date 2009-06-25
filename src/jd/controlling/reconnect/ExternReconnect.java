@@ -23,8 +23,8 @@ import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 /**
  * Diese Klasse ruft ein Externes Programm auf. Anschließend wird auf eine Neue
@@ -48,10 +48,10 @@ public class ExternReconnect extends ReconnectMethod {
 
     //@Override
     public void initConfig() {
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, configuration, PROPERTY_RECONNECT_COMMAND, JDLocale.L("interaction.externreconnect.command", "Befehl (absolute Pfade verwenden)")));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, configuration, PROPERTY_RECONNECT_PARAMETER, JDLocale.L("interaction.externreconnect.parameter", "Parameter (1 Parameter/Zeile)")));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, configuration, PROPERTY_RECONNECT_COMMAND, JDL.L("interaction.externreconnect.command", "Befehl (absolute Pfade verwenden)")));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, configuration, PROPERTY_RECONNECT_PARAMETER, JDL.L("interaction.externreconnect.parameter", "Parameter (1 Parameter/Zeile)")));
 
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, configuration, PROPERTY_IP_WAIT_FOR_RETURN, JDLocale.L("interaction.externreconnect.waitForTermination", "Warten x Sekunden bis Befehl beendet ist [sek]"), -1, 600).setDefaultValue(-1));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, configuration, PROPERTY_IP_WAIT_FOR_RETURN, JDL.L("interaction.externreconnect.waitForTermination", "Warten x Sekunden bis Befehl beendet ist [sek]"), -1, 600).setDefaultValue(-1));
     }
 
     //@Override
@@ -72,7 +72,7 @@ public class ExternReconnect extends ReconnectMethod {
 
     //@Override
     public String toString() {
-        return JDLocale.L("interaction.externreconnect.toString", "Externes Reconnectprogramm aufrufen");
+        return JDL.L("interaction.externreconnect.toString", "Externes Reconnectprogramm aufrufen");
     }
 
 }

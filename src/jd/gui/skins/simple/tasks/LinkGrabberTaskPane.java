@@ -36,8 +36,8 @@ import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberFilePackage;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberTreeTableAction;
 import jd.nutils.Formatter;
-import jd.utils.JDLocale;
 import jd.utils.JDTheme;
+import jd.utils.locale.JDL;
 
 public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, LinkGrabberControllerListener {
 
@@ -92,13 +92,13 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
 
     private void initListStatGUI() {
 
-        linkgrabber = (new JLabel(JDLocale.L("gui.taskpanes.download.linkgrabber", "Packagestats")));
+        linkgrabber = (new JLabel(JDL.L("gui.taskpanes.download.linkgrabber", "Packagestats")));
         linkgrabber.setIcon(JDTheme.II("gui.images.taskpanes.linkgrabber", 16, 16));
 
-        packages = (new JLabel(JDLocale.LF("gui.taskpanes.download.linkgrabber.packages", "%s Package(s)", 0)));
-        downloadlinks = (new JLabel(JDLocale.LF("gui.taskpanes.download.linkgrabber.downloadLinks", "%s Link(s)", 0)));
-        filteredlinks = (new JLabel(JDLocale.LF("gui.taskpanes.download.linkgrabber.filteredLinks", "%s filtered Link(s)", 0)));
-        totalsize = (new JLabel(JDLocale.LF("gui.taskpanes.download.linkgrabber.size", "Total size: %s", 0)));
+        packages = (new JLabel(JDL.LF("gui.taskpanes.download.linkgrabber.packages", "%s Package(s)", 0)));
+        downloadlinks = (new JLabel(JDL.LF("gui.taskpanes.download.linkgrabber.downloadLinks", "%s Link(s)", 0)));
+        filteredlinks = (new JLabel(JDL.LF("gui.taskpanes.download.linkgrabber.filteredLinks", "%s filtered Link(s)", 0)));
+        totalsize = (new JLabel(JDL.LF("gui.taskpanes.download.linkgrabber.size", "Total size: %s", 0)));
         add(linkgrabber, D1_LABEL_ICON);
         add(packages, D2_LABEL);
         add(downloadlinks, D2_LABEL);
@@ -122,10 +122,10 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
         new GuiRunnable<Object>() {
             @Override
             public Object runSave() {
-                packages.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.packages", "%s Packages", fps.size()));
-                downloadlinks.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.downloadLinks", "%s Links", links));
-                filteredlinks.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.filteredLinks", "%s filtered Link(s)", lgi.getFILTERPACKAGE().size()));
-                totalsize.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.size", "Total size: %s", Formatter.formatReadable(tot)));
+                packages.setText(JDL.LF("gui.taskpanes.download.downloadlist.packages", "%s Packages", fps.size()));
+                downloadlinks.setText(JDL.LF("gui.taskpanes.download.downloadlist.downloadLinks", "%s Links", links));
+                filteredlinks.setText(JDL.LF("gui.taskpanes.download.downloadlist.filteredLinks", "%s filtered Link(s)", lgi.getFILTERPACKAGE().size()));
+                totalsize.setText(JDL.LF("gui.taskpanes.download.downloadlist.size", "Total size: %s", Formatter.formatReadable(tot)));
                 return null;
             }
         }.start();
@@ -133,14 +133,14 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
 
     private void initGUI() {
 
-        this.panel_add_links = (this.createButton(JDLocale.L("gui.linkgrabberv2.addlinks", "Add Links"), JDTheme.II("gui.images.add", 16, 16)));
-        this.panel_add_containers = (this.createButton(JDLocale.L("gui.linkgrabberv2.addcontainers", "Open Containers"), JDTheme.II("gui.images.load", 16, 16)));
+        this.panel_add_links = (this.createButton(JDL.L("gui.linkgrabberv2.addlinks", "Add Links"), JDTheme.II("gui.images.add", 16, 16)));
+        this.panel_add_containers = (this.createButton(JDL.L("gui.linkgrabberv2.addcontainers", "Open Containers"), JDTheme.II("gui.images.load", 16, 16)));
 
-        lg_add_all = (createButton(JDLocale.L("gui.linkgrabberv2.lg.addall", "Add all packages"), JDTheme.II("gui.images.add_all", 16, 16)));
+        lg_add_all = (createButton(JDL.L("gui.linkgrabberv2.lg.addall", "Add all packages"), JDTheme.II("gui.images.add_all", 16, 16)));
         lg_add_all.setName("addAllPackages");
         
-        lg_add_selected = (createButton(JDLocale.L("gui.linkgrabberv2.lg.addselected", "Add selected package(s)"), JDTheme.II("gui.images.add_package", 16, 16)));
-        lg_clear = (createButton(JDLocale.L("gui.linkgrabberv2.lg.clear", "Clear List"), JDTheme.II("gui.images.clear", 16, 16)));
+        lg_add_selected = (createButton(JDL.L("gui.linkgrabberv2.lg.addselected", "Add selected package(s)"), JDTheme.II("gui.images.add_package", 16, 16)));
+        lg_clear = (createButton(JDL.L("gui.linkgrabberv2.lg.clear", "Clear List"), JDTheme.II("gui.images.clear", 16, 16)));
 
         add(panel_add_links, D1_BUTTON_ICON);
         add(panel_add_containers, D1_BUTTON_ICON);
@@ -159,10 +159,10 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
     }
 
     private void initQuickConfig() {
-        JLabel config = (new JLabel(JDLocale.L("gui.taskpanes.download.linkgrabber.config", "Settings")));
+        JLabel config = (new JLabel(JDL.L("gui.taskpanes.download.linkgrabber.config", "Settings")));
         config.setIcon(JDTheme.II("gui.images.taskpanes.configuration", 16, 16));
 
-        topOrBottom = new JCheckBox(JDLocale.L("gui.taskpanes.download.linkgrabber.config.addattop", "Add at top"));
+        topOrBottom = new JCheckBox(JDL.L("gui.taskpanes.download.linkgrabber.config.addattop", "Add at top"));
         topOrBottom.setOpaque(false);
         topOrBottom.addActionListener(new ActionListener() {
 
@@ -176,7 +176,7 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
             topOrBottom.setSelected(true);
         }
 
-        startAfterAdding = new JCheckBox(JDLocale.L("gui.taskpanes.download.linkgrabber.config.startofter", "Start after adding"));
+        startAfterAdding = new JCheckBox(JDL.L("gui.taskpanes.download.linkgrabber.config.startofter", "Start after adding"));
         startAfterAdding.setOpaque(false);
         startAfterAdding.addActionListener(new ActionListener() {
 
@@ -191,9 +191,9 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
         }
         add(config, D1_LABEL_ICON);
 
-        startAfterAdding.setToolTipText(JDLocale.L("gui.tooltips.linkgrabber.startlinksafteradd", "Is selected, download starts after adding new links"));
+        startAfterAdding.setToolTipText(JDL.L("gui.tooltips.linkgrabber.startlinksafteradd", "Is selected, download starts after adding new links"));
         add(startAfterAdding, TaskPanel.D2_CHECKBOX);
-        startAfterAdding.setToolTipText(JDLocale.L("gui.tooltips.linkgrabber.topOrBottom", "if selected, new links will be added at top of your downloadlist"));
+        startAfterAdding.setToolTipText(JDL.L("gui.tooltips.linkgrabber.topOrBottom", "if selected, new links will be added at top of your downloadlist"));
 
         add(topOrBottom, TaskPanel.D2_CHECKBOX);
 

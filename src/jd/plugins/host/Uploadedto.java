@@ -31,7 +31,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 
 public class Uploadedto extends PluginForHost {
 
@@ -136,7 +136,7 @@ public class Uploadedto extends PluginForHost {
         if (!isPremium()) {
             logger.severe("Entered a Free-account");
             linkStatus.setStatus(LinkStatus.ERROR_PREMIUM);
-            linkStatus.setErrorMessage(JDLocale.L("plugins.hoster.uploadedto.errors.notpremium", "This is free account"));
+            linkStatus.setErrorMessage(JDL.L("plugins.hoster.uploadedto.errors.notpremium", "This is free account"));
             linkStatus.setValue(LinkStatus.VALUE_ID_PREMIUM_DISABLE);
             return;
         }
@@ -149,13 +149,13 @@ public class Uploadedto extends PluginForHost {
         }
         if (error != null) {
             if (error.equalsIgnoreCase("error_traffic")) {
-                linkStatus.setErrorMessage(JDLocale.L("plugins.hoster.uploadedto.errorso.premiumtrafficreached", "Traffic limit reached"));
+                linkStatus.setErrorMessage(JDL.L("plugins.hoster.uploadedto.errorso.premiumtrafficreached", "Traffic limit reached"));
                 linkStatus.addStatus(LinkStatus.ERROR_PREMIUM);
                 linkStatus.setValue(LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 return;
 
             }
-            String message = JDLocale.L("plugins.errors.uploadedto." + error, error.replaceAll("_", " "));
+            String message = JDL.L("plugins.errors.uploadedto." + error, error.replaceAll("_", " "));
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
             linkStatus.setErrorMessage("ServerError: " + message);
             return;
@@ -170,7 +170,7 @@ public class Uploadedto extends PluginForHost {
                 con.disconnect();
                 logger.severe("Endlink not found");
                 linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
-                linkStatus.setErrorMessage(JDLocale.L("plugins.hoster.uploadedto.errors.indirectlinkerror", "Indirect link error"));
+                linkStatus.setErrorMessage(JDL.L("plugins.hoster.uploadedto.errors.indirectlinkerror", "Indirect link error"));
                 return;
             }
         } else {
@@ -268,7 +268,7 @@ public class Uploadedto extends PluginForHost {
             error = new Regex(br.getURL(), "\\?view=(.*?)&id\\_a").getMatch(0);
         }
         if (error != null) {
-            String message = JDLocale.L("plugins.errors.uploadedto." + error, error.replaceAll("_", " "));
+            String message = JDL.L("plugins.errors.uploadedto." + error, error.replaceAll("_", " "));
             logger.severe("Fatal error 1");
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
             linkStatus.setErrorMessage(message);
@@ -279,7 +279,7 @@ public class Uploadedto extends PluginForHost {
         br.setFollowRedirects(false);
 
         Form form = br.getFormbyProperty("name", "download_form");
-        if (form == null || br.containsHTML("Versuch es sp")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.hoster.uploadedto.errors.serverproblem", "Server problem"), 10 * 60 * 1000l);
+        if (form == null || br.containsHTML("Versuch es sp")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.uploadedto.errors.serverproblem", "Server problem"), 10 * 60 * 1000l);
         if (form != null) {
             form.put("download_submit", "Download");
             sleep(10000l, downloadLink);

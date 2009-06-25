@@ -40,8 +40,8 @@ import jd.http.Encoding;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 /**
  * Diese abstrakte Klasse steuert den Zugriff auf weitere Plugins. Alle Plugins
@@ -71,7 +71,7 @@ public abstract class Plugin implements ActionListener {
     }
 
     public static ConversionMode showDisplayDialog(ArrayList<ConversionMode> displaymodes, String name, CryptedLink link) throws InterruptedException {
-        link.getProgressController().setStatusText(JDLocale.L("gui.linkgrabber.waitinguserio", "Waiting for user input"));
+        link.getProgressController().setStatusText(JDL.L("gui.linkgrabber.waitinguserio", "Waiting for user input"));
         synchronized (JDUtilities.userio_lock) {
             ConversionMode temp = ConvertDialog.DisplayDialog(displaymodes, name);
             link.getProgressController().setStatusText(null);
@@ -87,7 +87,7 @@ public abstract class Plugin implements ActionListener {
 
     public static String getUserInput(String message, DownloadLink link) throws PluginException, InterruptedException {
         String password = JDUtilities.getUserInput(message, link);
-        if (password == null) throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.errors.wrongpassword", "Password wrong"));
+        if (password == null) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.errors.wrongpassword", "Password wrong"));
         return password;
     }
 

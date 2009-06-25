@@ -29,7 +29,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 
 public class ProtectBoxIn extends PluginForDecrypt {
 
@@ -48,7 +48,7 @@ public class ProtectBoxIn extends PluginForDecrypt {
 
         Form form = br.getForm(0);
         Browser.download(file, br.cloneBrowser().openGetConnection("http://www.protectbox.in/captcha/imagecreate.php"));
-        Point p = UserIO.getInstance().requestClickPositionDialog(file, JDLocale.L("plugins.decrypt.stealthto.captcha.title", "Captcha"), JDLocale.L("plugins.decrypt.stealthto.captcha", "Please click on the Circle with a gap"));
+        Point p = UserIO.getInstance().requestClickPositionDialog(file, JDL.L("plugins.decrypt.stealthto.captcha.title", "Captcha"), JDL.L("plugins.decrypt.stealthto.captcha", "Please click on the Circle with a gap"));
         if (p == null) throw new DecrypterException(DecrypterException.CAPTCHA);
         form.remove("x");
         form.remove("y");

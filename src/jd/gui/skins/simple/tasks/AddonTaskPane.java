@@ -34,8 +34,8 @@ import jd.config.MenuItem;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JDUnderlinedText;
 import jd.gui.skins.simple.config.ConfigEntriesPanel;
-import jd.utils.JDLocale;
 import jd.utils.JDTheme;
+import jd.utils.locale.JDL;
 
 public class AddonTaskPane extends TaskPanel implements ActionListener {
 
@@ -102,7 +102,7 @@ public class AddonTaskPane extends TaskPanel implements ActionListener {
         }
         add(new JSeparator());
 
-        config = createButton(JDLocale.L("gui.tasks.addons.edit", "Addonmanager"), JDTheme.II("gui.images.config.addons", 16, 16));
+        config = createButton(JDL.L("gui.tasks.addons.edit", "Addonmanager"), JDTheme.II("gui.images.config.addons", 16, 16));
 
         add(config, D1_BUTTON_ICON);
 

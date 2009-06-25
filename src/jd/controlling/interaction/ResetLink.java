@@ -24,8 +24,8 @@ import jd.controlling.DownloadController;
 import jd.controlling.JDController;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 public class ResetLink extends Interaction implements Serializable {
 
@@ -59,16 +59,16 @@ public class ResetLink extends Interaction implements Serializable {
 
     // @Override
     public String getInteractionName() {
-        return JDLocale.L("interaction.resetLink.name", "Downloadlink zurücksetzen");
+        return JDL.L("interaction.resetLink.name", "Downloadlink zurücksetzen");
     }
 
     // @Override
     public void initConfig() {
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, this, PARAM_LAST_OR_ALL, new String[] { JDLocale.L("interaction.resetLink.options.all", "all Links"), JDLocale.L("interaction.resetLink.options.lastLink", "only last Link") }, JDLocale.L("interaction.resetLink.whichLink", "Welcher Link soll zurückgesetzt werden?")).setDefaultValue(1));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, this, PARAM_LAST_OR_ALL, new String[] { JDL.L("interaction.resetLink.options.all", "all Links"), JDL.L("interaction.resetLink.options.lastLink", "only last Link") }, JDL.L("interaction.resetLink.whichLink", "Welcher Link soll zurückgesetzt werden?")).setDefaultValue(1));
     }
 
     // @Override
     public String toString() {
-        return JDLocale.L("interaction.resetLink.name", "Downloadlink zurücksetzen");
+        return JDL.L("interaction.resetLink.name", "Downloadlink zurücksetzen");
     }
 }

@@ -32,7 +32,7 @@ import jd.nutils.jobber.JDRunnable;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.utils.EditDistance;
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 
 /**
  * Die klasse dient zum verpacken der Unrar binary.
@@ -141,7 +141,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
     public UnrarWrapper(DownloadLink link) {
         this.link = link;
         logger = JDLogger.getLogger();
-        config = SubConfiguration.getConfig(JDLocale.L("plugins.optional.jdunrar.name", "JD-Unrar"));
+        config = SubConfiguration.getConfig(JDL.L("plugins.optional.jdunrar.name", "JD-Unrar"));
         speed = config.getIntegerProperty("SPEED", 10000000);
         if (link == null) { throw new IllegalArgumentException("link==null"); }
         this.file = new File(link.getFileOutput());
@@ -150,7 +150,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
 
     public UnrarWrapper(DownloadLink link, File file) {
         this.link = link;
-        config = SubConfiguration.getConfig(JDLocale.L("plugins.optional.jdunrar.name", "JD-Unrar"));
+        config = SubConfiguration.getConfig(JDL.L("plugins.optional.jdunrar.name", "JD-Unrar"));
         if (link == null) { throw new IllegalArgumentException("link==null"); }
         this.file = file;
         archiveParts = new ArrayList<String>();

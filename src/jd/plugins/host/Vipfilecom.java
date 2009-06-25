@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 
 public class Vipfilecom extends PluginForHost {
 
@@ -57,7 +57,7 @@ public class Vipfilecom extends PluginForHost {
         downloadLink.setName(fileName);
         String link = Encoding.htmlDecode(br.getRegex(Pattern.compile("<a href=\"(http://vip-file\\.com/download.*?)\">", Pattern.CASE_INSENSITIVE)).getMatch(0));
         if (link == null) {
-            downloadLink.getLinkStatus().setStatusText(JDLocale.L("plugins.hoster.vipfilecom.errors.nofreedownloadlink", "No free download link for this file"));
+            downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.vipfilecom.errors.nofreedownloadlink", "No free download link for this file"));
             return AvailableStatus.TRUE;
         }
         return AvailableStatus.TRUE;
@@ -73,13 +73,13 @@ public class Vipfilecom extends PluginForHost {
         requestFileInformation(downloadLink);
         /* DownloadLink holen, 2x der Location folgen */
         String link = Encoding.htmlDecode(br.getRegex(Pattern.compile("<a href=\"(http://vip-file\\.com/download.*?)\">", Pattern.CASE_INSENSITIVE)).getMatch(0));
-        if (link == null) throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.hoster.vipfilecom.errors.nofreedownloadlink", "No free download link for this file"));
+        if (link == null) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.vipfilecom.errors.nofreedownloadlink", "No free download link for this file"));
         br.setDebug(true);
         /* SpeedHack */
         br.setFollowRedirects(false);
         br.getPage(link);
         link = br.getRedirectLocation();
-        if (!link.contains("vip-file.com")) throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.hoster.vipfilecom.errors.nofreedownloadlink", "No free download link for this file"));
+        if (!link.contains("vip-file.com")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.vipfilecom.errors.nofreedownloadlink", "No free download link for this file"));
         //link = link.replaceAll("file.com.*?/", "file.com:8080/");
         br.setFollowRedirects(true);
         br.openDownload(downloadLink, link, true, 1).startDownload();

@@ -32,8 +32,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 public class JDGrowlNotification extends PluginOptional {
 
@@ -59,7 +59,7 @@ public class JDGrowlNotification extends PluginOptional {
 
     // @Override
     public String getHost() {
-        return JDLocale.L("plugins.optional.jdgrowlnotification.name", "JDGrowlNotification");
+        return JDL.L("plugins.optional.jdgrowlnotification.name", "JDGrowlNotification");
     }
 
     // @Override
@@ -83,7 +83,7 @@ public class JDGrowlNotification extends PluginOptional {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
         MenuItem m;
 
-        menu.add(m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("addons.jdgrowlnotification.menu", "Growl Messages"), 0).setActionListener(this));
+        menu.add(m = new MenuItem(MenuItem.TOGGLE, JDL.L("addons.jdgrowlnotification.menu", "Growl Messages"), 0).setActionListener(this));
         m.setSelected(this.getPluginConfig().getBooleanProperty(PROPERTY_ENABLED, false));
 
         return menu;

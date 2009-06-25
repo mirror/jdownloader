@@ -25,8 +25,8 @@ import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.JDMouseAdapter;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.nutils.Formatter;
-import jd.utils.JDLocale;
 import jd.utils.JDTheme;
+import jd.utils.locale.JDL;
 
 public abstract class JCountdownDialog extends JDialog {
 
@@ -45,7 +45,7 @@ public abstract class JCountdownDialog extends JDialog {
     protected void initCountdown() {
         this.countDownLabel = new JLabel("no countdown");
         countDownLabel.setIcon(JDTheme.II("gui.images.cancel", 16, 16));
-        countDownLabel.setToolTipText(JDLocale.L("gui.dialog.countdown.tooltip", "This dialog closes after a certain time. Click here to stop the countdown"));
+        countDownLabel.setToolTipText(JDL.L("gui.dialog.countdown.tooltip", "This dialog closes after a certain time. Click here to stop the countdown"));
         countDownLabel.addMouseListener(new JDMouseAdapter() {
 
             @Override
@@ -55,7 +55,7 @@ public abstract class JCountdownDialog extends JDialog {
             }
 
         });
-        setTitle(JDLocale.L("gui.captchaWindow.askForInput", "Please enter..."));
+        setTitle(JDL.L("gui.captchaWindow.askForInput", "Please enter..."));
     }
 
     public void interrupt() {
@@ -93,7 +93,7 @@ public abstract class JCountdownDialog extends JDialog {
 
                         // @Override
                         public Object runSave() {
-                            countDownLabel.setText(JDLocale.LF("gui.dialogs.countdown.label", "%s sec", left));
+                            countDownLabel.setText(JDL.LF("gui.dialogs.countdown.label", "%s sec", left));
                             return null;
                         }
 

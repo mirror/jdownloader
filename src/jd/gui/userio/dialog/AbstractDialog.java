@@ -35,7 +35,7 @@ import jd.gui.skins.simple.SimpleGUI;
 import jd.nutils.JDFlags;
 import jd.nutils.JDHash;
 import jd.nutils.Screen;
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 public abstract class AbstractDialog extends JCountdownDialog implements ActionListener {
@@ -71,8 +71,8 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
         setTitle(title);
 
         this.icon = icon;
-        this.okOption = (okOption == null) ? JDLocale.L("gui.btn_ok", null) : okOption;
-        this.cancelOption = (cancelOption == null) ? JDLocale.L("gui.btn_cancel", null) : cancelOption;
+        this.okOption = (okOption == null) ? JDL.L("gui.btn_ok", null) : okOption;
+        this.cancelOption = (cancelOption == null) ? JDL.L("gui.btn_cancel", null) : cancelOption;
 
     }
 
@@ -116,7 +116,7 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
 
             dont.setHorizontalAlignment(JCheckBox.TRAILING);
 
-            add(new JLabel(JDLocale.L("gui.dialogs.dontshowthisagain", "Don't show this again")));
+            add(new JLabel(JDL.L("gui.dialogs.dontshowthisagain", "Don't show this again")));
             add(dont, "alignx right");
         }
 

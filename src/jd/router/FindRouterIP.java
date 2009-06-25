@@ -21,13 +21,13 @@ import java.net.InetAddress;
 
 import jd.controlling.ProgressController;
 import jd.gui.skins.simple.config.GUIConfigEntry;
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 
 public class FindRouterIP {
     public static String findIP(GUIConfigEntry ip) {
-        final ProgressController progress = new ProgressController(JDLocale.L("gui.config.routeripfinder.featchIP", "Search for routers hostname..."), 100);
+        final ProgressController progress = new ProgressController(JDL.L("gui.config.routeripfinder.featchIP", "Search for routers hostname..."), 100);
 
-        ip.setData(JDLocale.L("gui.config.routeripfinder.featchIP", "Search for routers hostname..."));
+        ip.setData(JDL.L("gui.config.routeripfinder.featchIP", "Search for routers hostname..."));
         progress.setStatus(60);
         GetRouterInfo rinfo = new GetRouterInfo(null);
         progress.setStatus(80);
@@ -35,12 +35,12 @@ public class FindRouterIP {
         if (ia != null) ip.setData(ia.getHostAddress());
         progress.setStatus(100);
         if (ia != null) {
-            progress.setStatusText(JDLocale.LF("gui.config.routeripfinder.ready", "Hostname found: %s", ia.getHostAddress()));
+            progress.setStatusText(JDL.LF("gui.config.routeripfinder.ready", "Hostname found: %s", ia.getHostAddress()));
             progress.finalize(3000);
             return ia.getHostAddress();
 
         } else {
-            progress.setStatusText(JDLocale.L("gui.config.routeripfinder.notfound", "Can't find your routers hostname"));
+            progress.setStatusText(JDL.L("gui.config.routeripfinder.notfound", "Can't find your routers hostname"));
             progress.finalize(3000);
             progress.setColor(Color.RED);
 

@@ -34,8 +34,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 public class RAFDownload extends DownloadInterface {
     class ChunkBuffer {
@@ -112,13 +112,13 @@ public class RAFDownload extends DownloadInterface {
             if (!new File(downloadLink.getFileOutput() + ".part").renameTo(new File(downloadLink.getFileOutput()))) {
 
                 logger.severe("Could not rename file " + new File(downloadLink.getFileOutput() + ".part") + " to " + downloadLink.getFileOutput());
-                error(LinkStatus.ERROR_LOCAL_IO, JDLocale.L("system.download.errors.couldnotrename", "Could not rename partfile"));
+                error(LinkStatus.ERROR_LOCAL_IO, JDL.L("system.download.errors.couldnotrename", "Could not rename partfile"));
 
             }
             DownloadLink sfv;
             if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_DO_CRC, false) && (sfv = downloadLink.getFilePackage().getSFV()) != null) {
                 if (sfv.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
-                    downloadLink.getLinkStatus().setStatusText(JDLocale.LF("system.download.doCRC2", "CRC-Check running(%s)", "CRC32"));
+                    downloadLink.getLinkStatus().setStatusText(JDL.LF("system.download.doCRC2", "CRC-Check running(%s)", "CRC32"));
                     downloadLink.requestGuiUpdate();
 
                     long crc = JDUtilities.getCRC(new File(downloadLink.getFileOutput()));
@@ -137,14 +137,14 @@ public class RAFDownload extends DownloadInterface {
                             }
                         }
                         if (c) {
-                            downloadLink.getLinkStatus().setStatusText(JDLocale.LF("system.download.doCRC2.success", "CRC-Check OK(%s)", "CRC32"));
+                            downloadLink.getLinkStatus().setStatusText(JDL.LF("system.download.doCRC2.success", "CRC-Check OK(%s)", "CRC32"));
                             downloadLink.requestGuiUpdate();
                         } else {
                             downloadLink.getLinkStatus().removeStatus(LinkStatus.FINISHED);
-                            downloadLink.getLinkStatus().setStatusText(JDLocale.LF("system.download.doCRC2.failed", "CRC-Check FAILED(%s)", "CRC32"));
+                            downloadLink.getLinkStatus().setStatusText(JDL.LF("system.download.doCRC2.failed", "CRC-Check FAILED(%s)", "CRC32"));
                             downloadLink.getLinkStatus().setValue(LinkStatus.VALUE_FAILED_HASH);
                             downloadLink.requestGuiUpdate();
-                            error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDLocale.LF("system.download.doCRC2.failed", "CRC-Check FAILED(%s)", "CRC32"));
+                            error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDL.LF("system.download.doCRC2.failed", "CRC-Check FAILED(%s)", "CRC32"));
 
                         }
 
@@ -175,17 +175,17 @@ public class RAFDownload extends DownloadInterface {
                 }
 
                 if (hashType != null) {
-                    downloadLink.getLinkStatus().setStatusText(JDLocale.LF("system.download.doCRC2", "CRC-Check running(%s)", hashType));
+                    downloadLink.getLinkStatus().setStatusText(JDL.LF("system.download.doCRC2", "CRC-Check running(%s)", hashType));
                     downloadLink.requestGuiUpdate();
                     if (localHash.equalsIgnoreCase(linkHash)) {
-                        downloadLink.getLinkStatus().setStatusText(JDLocale.LF("system.download.doCRC2.success", "CRC-Check OK(%s)", hashType));
+                        downloadLink.getLinkStatus().setStatusText(JDL.LF("system.download.doCRC2.success", "CRC-Check OK(%s)", hashType));
                         downloadLink.requestGuiUpdate();
                     } else {
                         downloadLink.getLinkStatus().removeStatus(LinkStatus.FINISHED);
-                        downloadLink.getLinkStatus().setStatusText(JDLocale.LF("system.download.doCRC2.failed", "CRC-Check FAILED(%s)", hashType));
+                        downloadLink.getLinkStatus().setStatusText(JDL.LF("system.download.doCRC2.failed", "CRC-Check FAILED(%s)", hashType));
                         downloadLink.getLinkStatus().setValue(LinkStatus.VALUE_FAILED_HASH);
                         downloadLink.requestGuiUpdate();
-                        error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDLocale.LF("system.download.doCRC2.failed", "CRC-Check FAILED(%s)", hashType));
+                        error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDL.LF("system.download.doCRC2.failed", "CRC-Check FAILED(%s)", hashType));
                     }
 
                 }

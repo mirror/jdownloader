@@ -55,8 +55,8 @@ import jd.nutils.io.JDIO;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, DownloadControllerListener, LinkCheckListener {
@@ -113,7 +113,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
             // @Override
             public Object runSave() {
                 JDCollapser.getInstance().setContentPanel(filePackageInfo);
-                JDCollapser.getInstance().setTitle(JDLocale.L("gui.linkgrabber.packagetab.title", "FilePackage"));
+                JDCollapser.getInstance().setTitle(JDL.L("gui.linkgrabber.packagetab.title", "FilePackage"));
                 JDCollapser.getInstance().setVisible(true);
                 JDCollapser.getInstance().setCollapsed(false);
                 return null;
@@ -323,7 +323,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                         // @Override
                         public Object runSave() {
                             JDFileChooser fc = new JDFileChooser();
-                            fc.setApproveButtonText(JDLocale.L("gui.btn_ok", "OK"));
+                            fc.setApproveButtonText(JDL.L("gui.btn_ok", "OK"));
                             fc.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
                             fc.setCurrentDirectory(selected_packages2.get(0).getDownloadDirectory() != null ? new File(selected_packages2.get(0).getDownloadDirectory()) : JDUtilities.getResourceFile("downloads"));
                             if (fc.showOpenDialog(DownloadLinksPanel.this) == JDFileChooser.APPROVE_OPTION) {
@@ -340,7 +340,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                     return;
                 }
                 case TreeTableAction.EDIT_NAME: {
-                    String name = SimpleGUI.CURRENTGUI.showUserInputDialog(JDLocale.L("gui.linklist.editpackagename.message", "Neuer Paketname"), selected_packages.get(0).getName());
+                    String name = SimpleGUI.CURRENTGUI.showUserInputDialog(JDL.L("gui.linklist.editpackagename.message", "Neuer Paketname"), selected_packages.get(0).getName());
                     if (name != null) {
                         for (int i = 0; i < selected_packages.size(); i++) {
                             selected_packages.get(i).setName(name);
@@ -351,7 +351,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                 case TreeTableAction.DOWNLOAD_RESUME: {
                     for (int i = 0; i < selected_links.size(); i++) {
                         selected_links.get(i).getLinkStatus().setStatus(LinkStatus.TODO);
-                        selected_links.get(i).getLinkStatus().setStatusText(JDLocale.L("gui.linklist.status.doresume", "Warte auf Fortsetzung"));
+                        selected_links.get(i).getLinkStatus().setStatusText(JDL.L("gui.linklist.status.doresume", "Warte auf Fortsetzung"));
                     }
                     return;
                 }
@@ -395,7 +395,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                             boolean b = true;
                             if (!SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getBooleanProperty(SimpleGuiConstants.PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
                                 b = false;
-                                if (SimpleGUI.CURRENTGUI.showConfirmDialog(JDLocale.L("gui.downloadlist.reset", "Reset selected downloads?") + " (" + JDLocale.LF("gui.downloadlist.delete.size_packagev2", "%s links", links.size()) + ")")) {
+                                if (SimpleGUI.CURRENTGUI.showConfirmDialog(JDL.L("gui.downloadlist.reset", "Reset selected downloads?") + " (" + JDL.LF("gui.downloadlist.delete.size_packagev2", "%s links", links.size()) + ")")) {
                                     b = true;
                                 }
                             }
@@ -480,7 +480,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                 }
                 case TreeTableAction.NEW_PACKAGE: {
                     fp = selected_links.get(0).getFilePackage();
-                    String name = SimpleGUI.CURRENTGUI.showUserInputDialog(JDLocale.L("gui.linklist.newpackage.message", "Name of the new package"), fp.getName());
+                    String name = SimpleGUI.CURRENTGUI.showUserInputDialog(JDL.L("gui.linklist.newpackage.message", "Name of the new package"), fp.getName());
                     if (name != null) {
                         FilePackage nfp = FilePackage.getInstance();
                         nfp.setName(name);
@@ -505,7 +505,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                     return;
                 }
                 case TreeTableAction.SET_PW: {
-                    String pw = SimpleGUI.CURRENTGUI.showUserInputDialog(JDLocale.L("gui.linklist.setpw.message", "Set download password"), null);
+                    String pw = SimpleGUI.CURRENTGUI.showUserInputDialog(JDL.L("gui.linklist.setpw.message", "Set download password"), null);
                     for (int i = 0; i < selected_links.size(); i++) {
                         selected_links.get(i).setProperty("pass", pw);
                     }
@@ -515,7 +515,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                     boolean b = true;
                     if (!SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getBooleanProperty(SimpleGuiConstants.PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
                         b = false;
-                        if (SimpleGUI.CURRENTGUI.showConfirmDialog(JDLocale.L("gui.downloadlist.delete", "Ausgewählte Links wirklich entfernen?") + " (" + JDLocale.LF("gui.downloadlist.delete.size_packagev2", "%s links", selected_links.size()) + ")")) {
+                        if (SimpleGUI.CURRENTGUI.showConfirmDialog(JDL.L("gui.downloadlist.delete", "Ausgewählte Links wirklich entfernen?") + " (" + JDL.LF("gui.downloadlist.delete.size_packagev2", "%s links", selected_links.size()) + ")")) {
                             b = true;
                         }
                     }
@@ -598,7 +598,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
     public void showDownloadLinkInfo(DownloadLink downloadLink) {
         filePackageInfo.setDownloadLink(downloadLink);
         JDCollapser.getInstance().setContentPanel(filePackageInfo);
-        JDCollapser.getInstance().setTitle(JDLocale.L("gui.linkgrabber.infopanel.link.title", "Link information"));
+        JDCollapser.getInstance().setTitle(JDL.L("gui.linkgrabber.infopanel.link.title", "Link information"));
         JDCollapser.getInstance().setVisible(true);
         JDCollapser.getInstance().setCollapsed(false);
 

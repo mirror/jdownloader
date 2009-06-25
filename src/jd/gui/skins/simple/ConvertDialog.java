@@ -24,7 +24,7 @@ import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 
 /**
  * Diese Klasse zeigt dem Nutzer Auswahldialoge beim Konvertieren von FLVs an
@@ -165,15 +165,15 @@ public class ConvertDialog extends JFrame {
                 // -.-.-.-.-.-.-.-.-.-.
 
                 JPanel boxes = new JPanel();
-                JCheckBox CheckBoxKeepFormat = new JCheckBox(JDLocale.L("convert.dialog.keepformat", "Format für diese Sitzung beibehalten"));
-                JCheckBox CheckBoxForceKeep = new JCheckBox(JDLocale.L("convert.dialog.forcekeep", "Beibehalten erzwingen"));
-                JCheckBox CheckBoxTopPriority = new JCheckBox(JDLocale.L("convert.dialog.toppriority", "Diese Auswahl vorherigen immer vorziehen"));
+                JCheckBox CheckBoxKeepFormat = new JCheckBox(JDL.L("convert.dialog.keepformat", "Format für diese Sitzung beibehalten"));
+                JCheckBox CheckBoxForceKeep = new JCheckBox(JDL.L("convert.dialog.forcekeep", "Beibehalten erzwingen"));
+                JCheckBox CheckBoxTopPriority = new JCheckBox(JDL.L("convert.dialog.toppriority", "Diese Auswahl vorherigen immer vorziehen"));
 
                 CheckBoxForceKeep.setSelected(ConvertDialog.forcekeep);
                 CheckBoxKeepFormat.setSelected(ConvertDialog.hasKeeped());
 
                 if (ConvertDialog.hasKeeped()) {
-                    CheckBoxKeepFormat.setText(JDLocale.L("convert.dialog.staykeepingformat", "Formate weiterhin beibehalten"));
+                    CheckBoxKeepFormat.setText(JDL.L("convert.dialog.staykeepingformat", "Formate weiterhin beibehalten"));
                     boxes.add(CheckBoxTopPriority);
                 }
 
@@ -185,7 +185,7 @@ public class ConvertDialog extends JFrame {
                                                                                                           * die
                                                                                                           * Checkboxen
                                                                                                           */
-                JDLocale.L("convert.dialog.chooseformat", "Wähle das Dateiformat:") + " [" + name + "]", JOptionPane.QUESTION_MESSAGE, null, displaymodes.toArray(), displaymodes.get(0));
+                JDL.L("convert.dialog.chooseformat", "Wähle das Dateiformat:") + " [" + name + "]", JOptionPane.QUESTION_MESSAGE, null, displaymodes.toArray(), displaymodes.get(0));
 
                 if ((CheckBoxKeepFormat.isSelected()) || (CheckBoxForceKeep.isSelected())) {
                     ConvertDialog.setKeepformat(true);

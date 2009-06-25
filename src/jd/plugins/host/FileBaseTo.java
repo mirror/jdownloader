@@ -30,7 +30,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 
 public class FileBaseTo extends PluginForHost {
 
@@ -95,14 +95,14 @@ public class FileBaseTo extends PluginForHost {
             br.getPage(dlAction);
             if (br.containsHTML("error")) {
                 con.disconnect();
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND,JDLocale.L("plugins.hoster.filebaseto.servererror","Server error"));
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND,JDL.L("plugins.hoster.filebaseto.servererror","Server error"));
             }
             else
             {
                 con.disconnect();
                 logger.warning("Unsupported error:");
                 logger.warning(br.toString());
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT,JDLocale.L("plugins.hoster.filebaseto.unsupportederror","Unsupported error"));
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT,JDL.L("plugins.hoster.filebaseto.unsupportederror","Unsupported error"));
             }
         }
         dl.startDownload();

@@ -20,9 +20,9 @@ import java.util.logging.Logger;
 
 import jd.gui.skins.simple.SimpleGUI;
 import jd.parser.Regex;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import jd.utils.Upload;
+import jd.utils.locale.JDL;
 
 import org.schwering.irc.lib.IRCConstants;
 import org.schwering.irc.lib.IRCEventListener;
@@ -146,7 +146,7 @@ class IRCListener implements IRCEventListener {
 
                 public void run() {
 
-                    String[] data = JDUtilities.getGUI().showTwoTextFieldDialog(JDLocale.L("plugin.optional.jdchat.teamviewer.yourtvdata", "Deine Teamviewer Daten:"), "ID:", "PW:", "", "");
+                    String[] data = JDUtilities.getGUI().showTwoTextFieldDialog(JDL.L("plugin.optional.jdchat.teamviewer.yourtvdata", "Deine Teamviewer Daten:"), "ID:", "PW:", "", "");
                     if (data == null || new Regex(data[0], "^[\\s]*$").matches()) {
                         owner.sendMessage(user.name, owner.getNick() + " hat den Teamviewer Dialog geschlossen.");
                     } else {
@@ -162,7 +162,7 @@ class IRCListener implements IRCEventListener {
             new Thread(new Runnable() {
 
                 public void run() {
-                    if (JDUtilities.getGUI().showCountdownConfirmDialog(JDLocale.LF("plugin.optional.jdchat.getlog", "%s needs a log to solve your problem. Do you agree to send him the Log?", user.name), 30)) {
+                    if (JDUtilities.getGUI().showCountdownConfirmDialog(JDL.LF("plugin.optional.jdchat.getlog", "%s needs a log to solve your problem. Do you agree to send him the Log?", user.name), 30)) {
                         String url = Upload.toJDownloader(SimpleGUI.CURRENTGUI.getLogDialog().toString(), "JDChatuser:\r\n\r\n" + owner.getNick());
                         owner.sendMessage(user.name, url);
                     } else {

@@ -24,7 +24,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 
 public class PspIsosOrg extends PluginForDecrypt {
 
@@ -43,7 +43,7 @@ public class PspIsosOrg extends PluginForDecrypt {
         /* Error handling */
         if (br.containsHTML("requested document was not found") || (br.getRedirectLocation() != null && br.getRedirectLocation().contentEquals("http://pspisos.org/"))) {
             logger.warning("The requested document was not found on this server.");
-            logger.warning(JDLocale.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+            logger.warning(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
             return new ArrayList<DownloadLink>();
         }
 

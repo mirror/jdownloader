@@ -30,7 +30,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 
 public class HTTPAllgemein extends PluginForHost {
 
@@ -96,13 +96,13 @@ public class HTTPAllgemein extends PluginForHost {
                 }
                 urlConnection.disconnect();
                 basicauth = getBasicAuth(downloadLink);
-                if (basicauth == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, JDLocale.L("plugins.hoster.httplinks.errors.basicauthneeded", "BasicAuth needed"));
+                if (basicauth == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, JDL.L("plugins.hoster.httplinks.errors.basicauthneeded", "BasicAuth needed"));
                 br.getHeaders().put("Authorization", basicauth);
                 urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
                 if (urlConnection.getResponseCode() == 401) {
                     urlConnection.disconnect();
                     HTACCESSController.getInstance().remove(downloadLink.getDownloadURL());
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, JDLocale.L("plugins.hoster.httplinks.errors.basicauthneeded", "BasicAuth needed"));
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, JDL.L("plugins.hoster.httplinks.errors.basicauthneeded", "BasicAuth needed"));
                 } else {
                     HTACCESSController.getInstance().add(downloadLink.getDownloadURL(), basicauth);
                 }
@@ -152,13 +152,13 @@ public class HTTPAllgemein extends PluginForHost {
         dl = br.openDownload(downloadLink, downloadLink.getDownloadURL(), resume, chunks);
 
         if (!dl.startDownload()) {
-            if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().startsWith(JDLocale.L("download.error.message.rangeheaderparseerror", "Unexpected rangeheader format:"))) {
+            if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().startsWith(JDL.L("download.error.message.rangeheaderparseerror", "Unexpected rangeheader format:"))) {
                 if (downloadLink.getBooleanProperty("nochunk", false) == false) {
                     downloadLink.setProperty("nochunk", new Boolean(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
             }
-            if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().startsWith(JDLocale.L("download.error.message.rangeheaders", "Server does not support chunkload"))) {
+            if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload"))) {
                 if (downloadLink.getBooleanProperty("nochunkload", false) == false) {
                     downloadLink.setChunksProgress(null);
                     downloadLink.setProperty("nochunkload", new Boolean(true));
@@ -179,7 +179,7 @@ public class HTTPAllgemein extends PluginForHost {
     }
 
     private void setConfigElements() {
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_LISTCONTROLLED, (ListController) HTACCESSController.getInstance(), JDLocale.L("plugins.http.htaccess", "List of all HTAccess passwords. Each line one password.")));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_LISTCONTROLLED, (ListController) HTACCESSController.getInstance(), JDL.L("plugins.http.htaccess", "List of all HTAccess passwords. Each line one password.")));
     }
 
     // @Override

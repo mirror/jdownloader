@@ -31,7 +31,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
 
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 
 /**
  * Diese Klasse ist wie die Optionspane mit textfeld nur mit textarea
@@ -69,9 +69,9 @@ public class TextAreaDialog extends JDialog implements ActionListener {
 
         setLayout(new BorderLayout());
         setName(title);
-        btnCancel = new JButton(JDLocale.L("gui.btn_cancel", "Cancel"));
+        btnCancel = new JButton(JDL.L("gui.btn_cancel", "Cancel"));
         btnCancel.addActionListener(this);
-        btnOk = new JButton(JDLocale.L("gui.btn_ok", "OK"));
+        btnOk = new JButton(JDL.L("gui.btn_ok", "OK"));
         btnOk.addActionListener(this);
         setTitle(title);
         textArea = new JTextPane();
@@ -116,9 +116,9 @@ public class TextAreaDialog extends JDialog implements ActionListener {
 
         setLayout(new GridBagLayout());
         setName(title);
-        btnCancel = new JButton(JDLocale.L("gui.btn_cancel", "Cancel"));
+        btnCancel = new JButton(JDL.L("gui.btn_cancel", "Cancel"));
         btnCancel.addActionListener(this);
-        btnOk = new JButton(JDLocale.L("gui.btn_ok", "OK"));
+        btnOk = new JButton(JDL.L("gui.btn_ok", "OK"));
         btnOk.addActionListener(this);
         setTitle(title);
         textArea = new JTextPane();

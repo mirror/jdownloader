@@ -40,9 +40,9 @@ import jd.http.Encoding;
 import jd.nutils.OSDetector;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
-import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 /**
  * @author JD-Team
@@ -241,7 +241,7 @@ public class JDInit {
                 if (!home.canWrite()) {
                     logger.severe("INSTALL abgebrochen");
 
-                    UserIO.getInstance().requestMessageDialog(JDLocale.L("installer.error.noWriteRights", "Error. You do not have permissions to write to the dir"));
+                    UserIO.getInstance().requestMessageDialog(JDL.L("installer.error.noWriteRights", "Error. You do not have permissions to write to the dir"));
 
                     JDIO.removeDirectoryOrFile(JDUtilities.getResourceFile("config"));
                     System.exit(1);
@@ -250,7 +250,7 @@ public class JDInit {
             } else {
                 logger.severe("INSTALL abgebrochen2");
 
-                UserIO.getInstance().requestMessageDialog(JDLocale.L("installer.abortInstallation", "Error. User aborted installation."));
+                UserIO.getInstance().requestMessageDialog(JDL.L("installer.abortInstallation", "Error. User aborted installation."));
 
                 JDIO.removeDirectoryOrFile(JDUtilities.getResourceFile("config"));
                 System.exit(0);
@@ -631,22 +631,24 @@ public class JDInit {
 
     public void loadPluginOptional() {
 
-        if (JDUtilities.getJavaVersion() >= 1.6) new OptionalPluginWrapper("jdtrayicon.JDLightTray", 1.6, "trayicon", JDLocale.L("plugins.optional.trayicon.name", "Tray Icon (Minimizer)"));
-        new OptionalPluginWrapper("webinterface.JDWebinterface", 1.5, "webinterface", JDLocale.L("plugins.optional.webinterface.name", "WebInterface"));
-        new OptionalPluginWrapper("schedule.Schedule", 1.5, "scheduler", JDLocale.L("addons.schedule.name", "Schedule"));
-        new OptionalPluginWrapper("JDFolderWatch", 1.5, "folderwatch", JDLocale.L("plugins.optional.folderwatch.name", "JDFolderWatch"));
-        new OptionalPluginWrapper("JDShutdown", 1.5, "shutdown", JDLocale.L("plugins.optional.jdshutdown.name", "JDShutdown"));
-        new OptionalPluginWrapper("JDRemoteControl", 1.5, "remotecontrol", JDLocale.L("plugins.optional.remotecontrol.name", "RemoteControl"));
-        new OptionalPluginWrapper("jdchat.JDChat", 1.5, "chat", JDLocale.L("plugins.optional.jdchat.name2", "JD Support Chat"));
-        new OptionalPluginWrapper("Newsfeeds", 1.5, "newsfeed", JDLocale.L("plugins.optional.newsfeeds.pluginTitle", "Newsfeed Check"));
-        new OptionalPluginWrapper("JDInfoFileWriter", 1.5, "infofilewriter", JDLocale.L("plugins.optional.infoFileWriter.name", "Info File Writer"));
-        new OptionalPluginWrapper("langfileeditor.LangFileEditor", 1.5, "langfileditor", JDLocale.L("plugins.optional.langfileeditor.name", "Language File Editor"));
-        new OptionalPluginWrapper("jdunrar.JDUnrar", 1.5, "unrar", JDLocale.L("plugins.optional.jdunrar.name", "JD-Unrar"));
-        new OptionalPluginWrapper("hjsplit.JDHJSplit", 1.5, "hjsplit", JDLocale.L("plugins.optional.jdhjsplit.name", "JD-HJMerge"));
-        new OptionalPluginWrapper("premcol.JDPremiumCollector", 1.5, "premcol", JDLocale.L("plugins.optional.premiumcollector.name", "PremiumCollector"));
-        new OptionalPluginWrapper("JDFlashGot", 1.5, "flashgot", JDLocale.L("plugins.optional.flashgot.name", "FlashGot Integration"));
-        if (OSDetector.isMac()) new OptionalPluginWrapper("JDGrowlNotification", 1.5, "growl", JDLocale.L("plugins.optional.jdgrowlnotification.name", "JDGrowlNotification"));
-        new OptionalPluginWrapper("HTTPLiveHeaderScripter", 1.5, "livescripter", JDLocale.L("plugins.optional.httpliveheaderscripter.name", "HTTPLiveHeaderScripter"));
+
+        if (JDUtilities.getJavaVersion() >= 1.6) new OptionalPluginWrapper("jdtrayicon.JDLightTray", 1.6, "trayicon", JDL.L("plugins.optional.trayicon.name", "Tray Icon (Minimizer)"));
+        new OptionalPluginWrapper("webinterface.JDWebinterface", 1.5, "webinterface", JDL.L("plugins.optional.webinterface.name", "WebInterface"));
+        new OptionalPluginWrapper("schedule.Schedule", 1.5, "scheduler", JDL.L("addons.schedule.name", "Schedule"));
+        new OptionalPluginWrapper("JDFolderWatch", 1.5, "folderwatch", JDL.L("plugins.optional.folderwatch.name", "JDFolderWatch"));
+        new OptionalPluginWrapper("JDShutdown", 1.5, "shutdown", JDL.L("plugins.optional.jdshutdown.name", "JDShutdown"));
+        new OptionalPluginWrapper("JDRemoteControl", 1.5, "remotecontrol", JDL.L("plugins.optional.remotecontrol.name", "RemoteControl"));
+        new OptionalPluginWrapper("jdchat.JDChat", 1.5, "chat", JDL.L("plugins.optional.jdchat.name2", "JD Support Chat"));
+        new OptionalPluginWrapper("Newsfeeds", 1.5, "newsfeed", JDL.L("plugins.optional.newsfeeds.pluginTitle", "Newsfeed Check"));
+        new OptionalPluginWrapper("JDInfoFileWriter", 1.5, "infofilewriter", JDL.L("plugins.optional.infoFileWriter.name", "Info File Writer"));
+        new OptionalPluginWrapper("langfileeditor.LangFileEditor", 1.5, "langfileditor", JDL.L("plugins.optional.langfileeditor.name", "Language File Editor"));
+        new OptionalPluginWrapper("jdunrar.JDUnrar", 1.5, "unrar", JDL.L("plugins.optional.jdunrar.name", "JD-Unrar"));
+        new OptionalPluginWrapper("hjsplit.JDHJSplit", 1.5, "hjsplit", JDL.L("plugins.optional.jdhjsplit.name", "JD-HJMerge"));
+        new OptionalPluginWrapper("premcol.JDPremiumCollector", 1.5, "premcol", JDL.L("plugins.optional.premiumcollector.name", "PremiumCollector"));
+        new OptionalPluginWrapper("JDFlashGot", 1.5, "flashgot", JDL.L("plugins.optional.flashgot.name", "FlashGot Integration"));
+        if (OSDetector.isMac()) new OptionalPluginWrapper("JDGrowlNotification", 1.5, "growl", JDL.L("plugins.optional.jdgrowlnotification.name", "JDGrowlNotification"));
+        new OptionalPluginWrapper("HTTPLiveHeaderScripter", 1.5, "livescripter", JDL.L("plugins.optional.httpliveheaderscripter.name", "HTTPLiveHeaderScripter"));
+
 
     }
 

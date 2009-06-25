@@ -38,9 +38,9 @@ import jd.gui.skins.simple.tasks.LogTaskPane;
 import jd.http.Encoding;
 import jd.nutils.JDFlags;
 import jd.nutils.io.JDIO;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import jd.utils.Upload;
+import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 /**
@@ -75,7 +75,7 @@ public class LogPane extends JTabbedPanel implements ActionListener, ControlList
 
         case LogTaskPane.ACTION_SAVE:
             JDFileChooser fc = new JDFileChooser();
-            fc.setApproveButtonText(JDLocale.L("gui.btn_save", "Save"));
+            fc.setApproveButtonText(JDL.L("gui.btn_save", "Save"));
             fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
             if (fc.showOpenDialog(this) == JDFileChooser.APPROVE_OPTION) {
                 File ret = fc.getSelectedFile();
@@ -90,7 +90,7 @@ public class LogPane extends JTabbedPanel implements ActionListener, ControlList
             Level level = JDLogger.getLogger().getLevel();
 
             if (!level.equals(Level.ALL)) {
-                int status = UserIO.getInstance().requestHelpDialog(UserIO.NO_COUNTDOWN, JDLocale.L("gui.logdialog.loglevelwarning.title", "Wrong Loglevel for Uploading selected!"), JDLocale.LF("gui.logdialog.loglevelwarning", "The selected loglevel (%s) isn't preferred to upload a log! Please change it to ALL and create a new log!", level.getName()), null, "http://jdownloader.org/knowledge/wiki/support/create-a-jd-log");
+                int status = UserIO.getInstance().requestHelpDialog(UserIO.NO_COUNTDOWN, JDL.L("gui.logdialog.loglevelwarning.title", "Wrong Loglevel for Uploading selected!"), JDL.LF("gui.logdialog.loglevelwarning", "The selected loglevel (%s) isn't preferred to upload a log! Please change it to ALL and create a new log!", level.getName()), null, "http://jdownloader.org/knowledge/wiki/support/create-a-jd-log");
                 if (JDFlags.hasSomeFlags(status, UserIO.RETURN_CANCEL, UserIO.RETURN_COUNTDOWN_TIMEOUT)) return;
             }
 
@@ -101,9 +101,9 @@ public class LogPane extends JTabbedPanel implements ActionListener, ControlList
 
             if (content == null || content.length() == 0) return;
 
-            String name = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN, JDLocale.L("userio.input.title", "Please enter!"), JDLocale.L("gui.askName", "Your name?"), null, null, null, null);
+            String name = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN, JDL.L("userio.input.title", "Please enter!"), JDL.L("gui.askName", "Your name?"), null, null, null, null);
             if (name == null) return;
-            String question = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN, JDLocale.L("userio.input.title", "Please enter!"), JDLocale.L("gui.logger.askQuestion", "Please describe your Problem/Bug/Question!"), null, null, null, null);
+            String question = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN, JDL.L("userio.input.title", "Please enter!"), JDL.L("gui.logger.askQuestion", "Please describe your Problem/Bug/Question!"), null, null, null, null);
 
             if (question == null) return;
             SimpleGUI.CURRENTGUI.setWaiting(true);
@@ -116,10 +116,10 @@ public class LogPane extends JTabbedPanel implements ActionListener, ControlList
             }
             logField.append("\r\n\r\n-------------------------------------------------------------\r\n\r\n");
             if (url != null) {
-                logField.append(JDLocale.L("gui.logupload.message", "Please send this loglink to your supporter") + "\r\n");
+                logField.append(JDL.L("gui.logupload.message", "Please send this loglink to your supporter") + "\r\n");
                 this.logField.append(url);
             } else {
-                this.logField.append(JDLocale.L("gui.logDialog.warning.uploadFailed", "Upload failed"));
+                this.logField.append(JDL.L("gui.logDialog.warning.uploadFailed", "Upload failed"));
             }
             logField.append("\r\n\r\n-------------------------------------------------------------\r\n\r\n");
             SimpleGUI.CURRENTGUI.setWaiting(false);

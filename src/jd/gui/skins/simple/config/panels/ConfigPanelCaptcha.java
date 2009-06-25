@@ -34,8 +34,8 @@ import jd.config.ConfigEntry.PropertyType;
 import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import jd.gui.skins.simple.config.ConfigPanel;
 import jd.nutils.Colors;
-import jd.utils.JDLocale;
 import jd.utils.JDTheme;
+import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingx.JXTable;
@@ -72,13 +72,13 @@ public class ConfigPanelCaptcha extends ConfigPanel {
         public String getColumnName(int column) {
             switch (column) {
             case 0:
-                return JDLocale.L("gui.config.jac.column.use", "Verwenden");
+                return JDL.L("gui.config.jac.column.use", "Verwenden");
             case 1:
-                return JDLocale.L("gui.config.jac.column.plugin", "Pluginname");
+                return JDL.L("gui.config.jac.column.plugin", "Pluginname");
             case 2:
-                return JDLocale.L("gui.config.jac.column.usedmethod", "Verwendete Methode");
+                return JDL.L("gui.config.jac.column.usedmethod", "Verwendete Methode");
             case 3:
-                return JDLocale.L("gui.config.jac.column.author", "Author");
+                return JDL.L("gui.config.jac.column.author", "Author");
             }
             return super.getColumnName(column);
         }
@@ -175,9 +175,9 @@ public class ConfigPanelCaptcha extends ConfigPanel {
         }
 
         tabbed = new JTabbedPane();
-        tabbed.addTab(JDLocale.L("gui.config.panels.captcha.methodstab", "OCR methods"), new JScrollPane(table));
+        tabbed.addTab(JDL.L("gui.config.panels.captcha.methodstab", "OCR methods"), new JScrollPane(table));
         tabbed.setIconAt(0, JDTheme.II("gui.images.captcha.methods", 16, 16));
-        tabbed.addTab(JDLocale.L("gui.config.panels.captcha.advancedtab", "Advanced settings"), cep = new ConfigEntriesPanel(container));
+        tabbed.addTab(JDL.L("gui.config.panels.captcha.advancedtab", "Advanced settings"), cep = new ConfigEntriesPanel(container));
         tabbed.setIconAt(1, JDTheme.II("gui.images.config.ocr", 16, 16));
 
         setLayout(new MigLayout("ins 0,wrap 1", "[fill,grow 10]", "[fill,grow]"));
@@ -205,11 +205,11 @@ public class ConfigPanelCaptcha extends ConfigPanel {
         ConfigEntry ce2;
 
         container = new ConfigContainer();
-        container.setGroup(new ConfigGroup(JDLocale.L("gui.config.captcha.settings", "Captcha settings"), JDTheme.II("gui.images.config.ocr", 32, 32)));
-        container.addEntry(ce1 = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_CAPTCHA_JAC_DISABLE, JDLocale.L("gui.config.captcha.jac_disable", "Automatische Bilderkennung abschalten")).setDefaultValue(false));
-        container.addEntry(ce2 = new ConfigEntry(ConfigContainer.TYPE_SPINNER, SubConfiguration.getConfig("JAC"), Configuration.JAC_SHOW_TIMEOUT, JDLocale.L("gui.config.captcha.train.show_timeout", "Anzeigedauer des Eingabefensters"), 0, 600).setDefaultValue(20));
+        container.setGroup(new ConfigGroup(JDL.L("gui.config.captcha.settings", "Captcha settings"), JDTheme.II("gui.images.config.ocr", 32, 32)));
+        container.addEntry(ce1 = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_CAPTCHA_JAC_DISABLE, JDL.L("gui.config.captcha.jac_disable", "Automatische Bilderkennung abschalten")).setDefaultValue(false));
+        container.addEntry(ce2 = new ConfigEntry(ConfigContainer.TYPE_SPINNER, SubConfiguration.getConfig("JAC"), Configuration.JAC_SHOW_TIMEOUT, JDL.L("gui.config.captcha.train.show_timeout", "Anzeigedauer des Eingabefensters"), 0, 600).setDefaultValue(20));
         ce2.setEnabledCondidtion(ce1, "==", false);
-        container.addEntry(ce2 = new ConfigEntry(ConfigContainer.TYPE_SPINNER, SubConfiguration.getConfig("JAC"), Configuration.AUTOTRAIN_ERROR_LEVEL, JDLocale.L("gui.config.captcha.train.level", "Anzeigeschwelle"), 0, 100).setDefaultValue(95));
+        container.addEntry(ce2 = new ConfigEntry(ConfigContainer.TYPE_SPINNER, SubConfiguration.getConfig("JAC"), Configuration.AUTOTRAIN_ERROR_LEVEL, JDL.L("gui.config.captcha.train.level", "Anzeigeschwelle"), 0, 100).setDefaultValue(95));
 
         ce2.setEnabledCondidtion(ce1, "==", false);
     }

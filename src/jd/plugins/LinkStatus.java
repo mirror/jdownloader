@@ -23,8 +23,8 @@ import javax.swing.ImageIcon;
 
 import jd.controlling.JDLogger;
 import jd.nutils.Formatter;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 public class LinkStatus implements Serializable {
     // Controlling Zeigt an, dass der Link gerade heruntergeladen wird
@@ -168,36 +168,36 @@ public class LinkStatus implements Serializable {
     private String getDefaultErrorMessage() {
         switch (lastestStatus) {
         case LinkStatus.ERROR_RETRY:
-            return JDLocale.L("downloadlink.status.error.retry", "Unknown error, retrying");
+            return JDL.L("downloadlink.status.error.retry", "Unknown error, retrying");
         case LinkStatus.ERROR_PLUGIN_DEFEKT:
-            return JDLocale.L("downloadlink.status.error.defect", "Plugin outdated");
+            return JDL.L("downloadlink.status.error.defect", "Plugin outdated");
         case LinkStatus.ERROR_DOWNLOAD_INCOMPLETE:
-            return JDLocale.L("downloadlink.status.incomplete", "Incomplete");
+            return JDL.L("downloadlink.status.incomplete", "Incomplete");
         case LinkStatus.ERROR_AGB_NOT_SIGNED:
-            return JDLocale.L("downloadlink.status.error.agb_not_signed", "TOCs not signed");
+            return JDL.L("downloadlink.status.error.agb_not_signed", "TOCs not signed");
         case LinkStatus.ERROR_ALREADYEXISTS:
-            return JDLocale.L("downloadlink.status.error.file_exists", "File exists");
+            return JDL.L("downloadlink.status.error.file_exists", "File exists");
         case LinkStatus.ERROR_CAPTCHA:
-            return JDLocale.L("downloadlink.status.error.captcha_wrong", "Captcha wrong");
+            return JDL.L("downloadlink.status.error.captcha_wrong", "Captcha wrong");
         case LinkStatus.ERROR_DOWNLOAD_FAILED:
-            return JDLocale.L("downloadlink.status.error.downloadfailed", "Download failed");
+            return JDL.L("downloadlink.status.error.downloadfailed", "Download failed");
         case LinkStatus.ERROR_IP_BLOCKED:
-            return JDLocale.L("downloadlink.status.error.download_limit", "Download Limit reached");
+            return JDL.L("downloadlink.status.error.download_limit", "Download Limit reached");
         case LinkStatus.ERROR_FILE_NOT_FOUND:
-            return JDLocale.L("downloadlink.status.error.file_not_found", "File not found");
+            return JDL.L("downloadlink.status.error.file_not_found", "File not found");
         case LinkStatus.ERROR_POST_PROCESS:
-            return JDLocale.L("downloadlink.status.error.post_process", "Processing error");
+            return JDL.L("downloadlink.status.error.post_process", "Processing error");
         case LinkStatus.ERROR_TIMEOUT_REACHED:
         case LinkStatus.ERROR_NO_CONNECTION:
-            return JDLocale.L("downloadlink.status.error.no_connection", "No Connection");
+            return JDL.L("downloadlink.status.error.no_connection", "No Connection");
         case LinkStatus.ERROR_PREMIUM:
-            return JDLocale.L("downloadlink.status.error.premium", "Premium Error");
+            return JDL.L("downloadlink.status.error.premium", "Premium Error");
         case LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE:
-            return JDLocale.L("downloadlink.status.error.temp_unavailable", "Temp. unavailable");
+            return JDL.L("downloadlink.status.error.temp_unavailable", "Temp. unavailable");
         case LinkStatus.ERROR_FATAL:
-            return JDLocale.L("downloadlink.status.error.fatal", "Fatal Error");
+            return JDL.L("downloadlink.status.error.fatal", "Fatal Error");
         case LinkStatus.WAITING_USERIO:
-            return JDLocale.L("downloadlink.status.waitinguserio", "Waiting for user input");
+            return JDL.L("downloadlink.status.waitinguserio", "Waiting for user input");
         }
         return null;
     }
@@ -208,7 +208,7 @@ public class LinkStatus implements Serializable {
             ret = getDefaultErrorMessage();
         }
         if (ret == null) {
-            ret = JDLocale.L("downloadlink.status.error_unexpected", "Unexpected Error");
+            ret = JDL.L("downloadlink.status.error_unexpected", "Unexpected Error");
         }
         return ret;
     }
@@ -237,14 +237,14 @@ public class LinkStatus implements Serializable {
             } else if (getStatusText() != null) {
                 ret += getStatusText();
             } else {
-                ret += JDLocale.L("gui.downloadlink.errorpostprocess3", "[convert failed]");
+                ret += JDL.L("gui.downloadlink.errorpostprocess3", "[convert failed]");
             }
             return ret;
         }
         if (hasStatus(LinkStatus.FINISHED)) return this.getStatusText() != null ? "> " + this.getStatusText() : "";
 
         if (!downloadLink.isEnabled() && !hasStatus(LinkStatus.FINISHED)) {
-            if (downloadLink.isAborted()) ret += JDLocale.L("gui.downloadlink.aborted", "[interrupted]") + ": ";
+            if (downloadLink.isAborted()) ret += JDL.L("gui.downloadlink.aborted", "[interrupted]") + ": ";
             if (errorMessage != null) ret += errorMessage;
             return ret;
         }
@@ -252,14 +252,14 @@ public class LinkStatus implements Serializable {
 
         if (hasStatus(ERROR_IP_BLOCKED) && downloadLink.getPlugin().getRemainingHosterWaittime() > 0) {
             if (errorMessage == null) {
-                ret = JDLocale.LF("gui.download.waittime_status", "Wait %s min", Formatter.formatSeconds((downloadLink.getPlugin().getRemainingHosterWaittime() / 1000)));
+                ret = JDL.LF("gui.download.waittime_status", "Wait %s min", Formatter.formatSeconds((downloadLink.getPlugin().getRemainingHosterWaittime() / 1000)));
             } else {
-                ret = JDLocale.LF("gui.download.waittime_status", "Wait %s min", Formatter.formatSeconds((downloadLink.getPlugin().getRemainingHosterWaittime() / 1000))) + errorMessage;
+                ret = JDL.LF("gui.download.waittime_status", "Wait %s min", Formatter.formatSeconds((downloadLink.getPlugin().getRemainingHosterWaittime() / 1000))) + errorMessage;
 
             }
             return ret;
         }
-        if (downloadLink.getPlugin() != null && downloadLink.getPlugin().getRemainingHosterWaittime() > 0 && !downloadLink.getLinkStatus().isPluginActive()) { return JDLocale.L("gui.downloadlink.hosterwaittime", "[wait for new ip]"); }
+        if (downloadLink.getPlugin() != null && downloadLink.getPlugin().getRemainingHosterWaittime() > 0 && !downloadLink.getLinkStatus().isPluginActive()) { return JDL.L("gui.downloadlink.hosterwaittime", "[wait for new ip]"); }
 
         if (downloadLink.getDownloadInstance() == null && hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
             removeStatus(DOWNLOADINTERFACE_IN_PROGRESS);
@@ -270,7 +270,7 @@ public class LinkStatus implements Serializable {
 
             if (speed > 0) {
                 if (downloadLink.getDownloadSize() < 0) {
-                    return Formatter.formatReadable(speed) + "/s " + JDLocale.L("gui.download.filesize_unknown", "(Filesize unknown)");
+                    return Formatter.formatReadable(speed) + "/s " + JDL.L("gui.download.filesize_unknown", "(Filesize unknown)");
                 } else {
 
                     long remainingBytes = downloadLink.getDownloadSize() - downloadLink.getDownloadCurrent();
@@ -278,12 +278,12 @@ public class LinkStatus implements Serializable {
                     return "ETA " + Formatter.formatSeconds((int) eta) + " @ " + Formatter.formatReadable(speed) + "/s " + chunkString;
                 }
             } else {
-                return JDLocale.L("gui.download.create_connection", "Connecting...") + chunkString;
+                return JDL.L("gui.download.create_connection", "Connecting...") + chunkString;
 
             }
         }
 
-        if (downloadLink.isAvailabilityStatusChecked() && !downloadLink.isAvailable()) { return JDLocale.L("gui.download.onlinecheckfailed", "[Not available]"); }
+        if (downloadLink.isAvailabilityStatusChecked() && !downloadLink.isAvailable()) { return JDL.L("gui.download.onlinecheckfailed", "[Not available]"); }
         if (this.errorMessage != null) return errorMessage;
         if (statusText != null) { return statusText; }
         return "";

@@ -22,8 +22,8 @@ import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.nutils.OSDetector;
 import jd.parser.Regex;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 public class BatchReconnect extends ReconnectMethod {
 
@@ -46,17 +46,17 @@ public class BatchReconnect extends ReconnectMethod {
     //@Override
     public void initConfig() {
         ConfigEntry cfg;
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, configuration, PROPERTY_TERMINAL, JDLocale.L("interaction.batchreconnect.terminal", "Interpreter")));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, configuration, PROPERTY_TERMINAL, JDL.L("interaction.batchreconnect.terminal", "Interpreter")));
         if (OSDetector.isWindows()) {
             cfg.setDefaultValue("cmd /c");
         } else {
             cfg.setDefaultValue("/bin/bash");
         }
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, configuration, PROPERTY_BATCHTEXT, JDLocale.L("interaction.batchreconnect.batch", "Batch Script")));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, configuration, PROPERTY_BATCHTEXT, JDL.L("interaction.batchreconnect.batch", "Batch Script")));
 
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, configuration, PROPERTY_RECONNECT_EXECUTE_FOLDER, JDLocale.L("interaction.batchreconnect.executeIn", "Ausführen in (Ordner der Anwendung)")));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, configuration, PROPERTY_RECONNECT_EXECUTE_FOLDER, JDL.L("interaction.batchreconnect.executeIn", "Ausführen in (Ordner der Anwendung)")));
 
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, configuration, PROPERTY_IP_WAIT_FOR_RETURN, JDLocale.L("interaction.batchreconnect.waitForTermination", "Warten x Sekunden bis Befehl beendet ist [sek]"), -1, 600).setDefaultValue(-1));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, configuration, PROPERTY_IP_WAIT_FOR_RETURN, JDL.L("interaction.batchreconnect.waitForTermination", "Warten x Sekunden bis Befehl beendet ist [sek]"), -1, 600).setDefaultValue(-1));
       
     }
 
@@ -86,7 +86,7 @@ public class BatchReconnect extends ReconnectMethod {
 
     //@Override
     public String toString() {
-        return JDLocale.L("interaction.batchreconnect.toString", "Batch reconnect durchführen");
+        return JDL.L("interaction.batchreconnect.toString", "Batch reconnect durchführen");
     }
 
 }

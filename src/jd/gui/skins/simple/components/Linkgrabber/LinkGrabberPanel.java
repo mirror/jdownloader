@@ -55,9 +55,9 @@ import jd.nutils.jobber.Jobber;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
-import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, LinkCheckListener, ProgressControllerListener, LinkGrabberControllerListener {
@@ -129,7 +129,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
             // @Override
             public Object runSave() {
                 JDCollapser.getInstance().setContentPanel(filePackageInfo);
-                JDCollapser.getInstance().setTitle(JDLocale.L("gui.linkgrabber.packagetab.title", "File package"));
+                JDCollapser.getInstance().setTitle(JDL.L("gui.linkgrabber.packagetab.title", "File package"));
                 JDCollapser.getInstance().setVisible(true);
                 JDCollapser.getInstance().setCollapsed(false);
                 return null;
@@ -192,7 +192,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
         new GuiRunnable<Object>() {
             // @Override
             public Object runSave() {
-                SimpleGUI.CURRENTGUI.getToolBar().setEnabled(JDToolBar.ENTRY_ALL, true, JDLocale.L("gui.linkgrabber.toolbar.disabled", "Switch to downloadtask to enable buttons"));
+                SimpleGUI.CURRENTGUI.getToolBar().setEnabled(JDToolBar.ENTRY_ALL, true, JDL.L("gui.linkgrabber.toolbar.disabled", "Switch to downloadtask to enable buttons"));
                 return null;
             }
         }.start();
@@ -202,7 +202,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
         addinginprogress = true;
         new Thread() {
             public void run() {
-                Balloon.showIfHidden(JDLocale.L("gui.config.gui.linkgrabber", "LinkGrabber"), JDTheme.II("gui.images.add", 32, 32), JDLocale.LF("gui.linkgrabber.adding", "Adding %s link(s) to LinkGrabber", "" + linkList.length));
+                Balloon.showIfHidden(JDL.L("gui.config.gui.linkgrabber", "LinkGrabber"), JDTheme.II("gui.images.add", 32, 32), JDL.LF("gui.linkgrabber.adding", "Adding %s link(s) to LinkGrabber", "" + linkList.length));
                 for (DownloadLink element : linkList) {
                     if (LGINSTANCE.isDupe(element)) continue;
                     addToWaitingList(element);
@@ -232,7 +232,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
             gatherer_running = false;
             EventQueue.invokeLater(new Runnable() {
                 public void run() {
-                    pc.setStatusText(pc.getStatusText() + ": " + JDLocale.L("gui.linkgrabber.aborted", "Aborted"));
+                    pc.setStatusText(pc.getStatusText() + ": " + JDL.L("gui.linkgrabber.aborted", "Aborted"));
                     pc.finalize(5000l);
                 }
             });
@@ -264,7 +264,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
             public void run() {
                 setName("LinkGrabber");
                 gatherer_running = true;
-                pc = new ProgressController(JDLocale.L("gui.linkgrabber.pc.linkgrabber", "LinkGrabber operations pending..."));
+                pc = new ProgressController(JDL.L("gui.linkgrabber.pc.linkgrabber", "LinkGrabber operations pending..."));
                 pc.getBroadcaster().addListener(INSTANCE);
                 lc.getBroadcaster().addListener(INSTANCE);
                 pc.setRange(0);
@@ -297,7 +297,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                 for (LinkGrabberFilePackage fp : fps) {
                     links += fp.getDownloadLinks().size();
                 }
-                Balloon.showIfHidden(JDLocale.L("gui.config.gui.linkgrabber", "LinkGrabber"), JDTheme.II("gui.images.add", 32, 32), JDLocale.LF("gui.linkgrabber.finished", "Grabbed %s link(s) in %s Package(s)", "" + links, "" + fps.size()));
+                Balloon.showIfHidden(JDL.L("gui.config.gui.linkgrabber", "LinkGrabber"), JDTheme.II("gui.images.add", 32, 32), JDL.LF("gui.linkgrabber.finished", "Grabbed %s link(s) in %s Package(s)", "" + links, "" + fps.size()));
                 fps = null;
             }
         };
@@ -318,7 +318,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
         new GuiRunnable<Object>() {
             // @Override
             public Object runSave() {
-                SimpleGUI.CURRENTGUI.getToolBar().setEnabled(JDToolBar.ENTRY_CONTROL | JDToolBar.ENTRY_INTERACTION, false, JDLocale.L("gui.linkgrabber.toolbar.disabled", "Switch to downloadtask to enable buttons"));
+                SimpleGUI.CURRENTGUI.getToolBar().setEnabled(JDToolBar.ENTRY_CONTROL | JDToolBar.ENTRY_INTERACTION, false, JDL.L("gui.linkgrabber.toolbar.disabled", "Switch to downloadtask to enable buttons"));
                 return null;
             }
         }.start();
@@ -390,7 +390,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                                     // @Override
                                     public Object runSave() {
                                         JDFileChooser fc = new JDFileChooser("_LOADSAVEDLC");
-                                        fc.setDialogTitle(JDLocale.L("gui.filechooser.loaddlc", "Load DLC file"));
+                                        fc.setDialogTitle(JDL.L("gui.filechooser.loaddlc", "Load DLC file"));
                                         fc.setFileFilter(new JDFileFilter(null, ".dlc|.rsdf|.ccf|.linkbackup", true));
                                         if (fc.showOpenDialog(null) == JDFileChooser.APPROVE_OPTION) {
                                             File ret2 = fc.getSelectedFile();
@@ -531,7 +531,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                                 // @Override
                                 public Object runSave() {
                                     JDFileChooser fc = new JDFileChooser();
-                                    fc.setApproveButtonText(JDLocale.L("gui.btn_ok", "OK"));
+                                    fc.setApproveButtonText(JDL.L("gui.btn_ok", "OK"));
                                     fc.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
                                     fc.setCurrentDirectory(new File(selected_packages2.get(0).getDownloadDirectory()));
                                     if (fc.showOpenDialog(INSTANCE) == JDFileChooser.APPROVE_OPTION) {
@@ -551,7 +551,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                         case LinkGrabberTreeTableAction.NEW_PACKAGE:
                             fp = LGINSTANCE.getFPwithLink(selected_links.get(0));
                             LinkGrabberFilePackage nfp;
-                            if (name == null) name = SimpleGUI.CURRENTGUI.showUserInputDialog(JDLocale.L("gui.linklist.newpackage.message", "Name of the new package"), fp.getName());
+                            if (name == null) name = SimpleGUI.CURRENTGUI.showUserInputDialog(JDL.L("gui.linklist.newpackage.message", "Name of the new package"), fp.getName());
                             if (name != null) {
                                 nfp = new LinkGrabberFilePackage(name, LGINSTANCE);
                                 nfp.setDownloadDirectory(fp.getDownloadDirectory());
@@ -591,7 +591,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                             return;
                         }
                         case LinkGrabberTreeTableAction.SET_PW:
-                            pw = SimpleGUI.CURRENTGUI.showUserInputDialog(JDLocale.L("gui.linklist.setpw.message", "Set download password"), null);
+                            pw = SimpleGUI.CURRENTGUI.showUserInputDialog(JDL.L("gui.linklist.setpw.message", "Set download password"), null);
                             for (int i = 0; i < selected_links.size(); i++) {
                                 selected_links.get(i).setProperty("pass", pw);
                             }
@@ -719,7 +719,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
 
     public void checkAlreadyinList(DownloadLink link) {
         if (JDUtilities.getDownloadController().hasDownloadLinkwithURL(link.getDownloadURL())) {
-            link.getLinkStatus().setErrorMessage(JDLocale.L("gui.linkgrabber.alreadyindl", "Already on Download List"));
+            link.getLinkStatus().setErrorMessage(JDL.L("gui.linkgrabber.alreadyindl", "Already on Download List"));
             link.getLinkStatus().addStatus(LinkStatus.ERROR_ALREADYEXISTS);
         }
     }

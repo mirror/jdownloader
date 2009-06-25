@@ -32,7 +32,7 @@ import jd.http.URLConnectionAdapter;
 import jd.http.requests.PostRequest;
 import jd.http.requests.Request;
 import jd.nutils.jobber.JDRunnable;
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 
 public class DownloadChunk extends DownloadChunkInterface implements JDRunnable {
 
@@ -135,10 +135,10 @@ public class DownloadChunk extends DownloadChunkInterface implements JDRunnable 
             } else {
                 con = br.openGetConnection(connection.getURL() + "");
             }
-            if (!con.isOK()) { throw new BrowserException(JDLocale.L("exceptions.browserexception.chunkcopyerror.badrequest", "Unexpected chunkcopy error"), BrowserException.TYPE_BADREQUEST);
+            if (!con.isOK()) { throw new BrowserException(JDL.L("exceptions.browserexception.chunkcopyerror.badrequest", "Unexpected chunkcopy error"), BrowserException.TYPE_BADREQUEST);
 
             }
-            if (con.getHeaderField("Location") != null) { throw new BrowserException(JDLocale.L("exceptions.browserexception.redirecterror", "Unexpected chunkcopy error: Redirect"), BrowserException.TYPE_REDIRECT);
+            if (con.getHeaderField("Location") != null) { throw new BrowserException(JDL.L("exceptions.browserexception.redirecterror", "Unexpected chunkcopy error: Redirect"), BrowserException.TYPE_REDIRECT);
 
             }
 
@@ -146,17 +146,17 @@ public class DownloadChunk extends DownloadChunkInterface implements JDRunnable 
 
             long[] range = this.connection.getRange();
             System.out.println("CL " + con.getLongContentLength() + "- " + (range[1] - range[0]));
-            if (range[0] != this.getChunkStart()) { throw new BrowserException(JDLocale.L("exceptions.browserexception.rangeerror", "Chunkload error"), BrowserException.TYPE_RANGE);
+            if (range[0] != this.getChunkStart()) { throw new BrowserException(JDL.L("exceptions.browserexception.rangeerror", "Chunkload error"), BrowserException.TYPE_RANGE);
 
             }
 
-            if (getChunkEnd() > 0 && range[1] < this.getChunkEnd()) { throw new BrowserException(JDLocale.L("exceptions.browserexception.rangeerror", "Chunkload error"), BrowserException.TYPE_RANGE);
+            if (getChunkEnd() > 0 && range[1] < this.getChunkEnd()) { throw new BrowserException(JDL.L("exceptions.browserexception.rangeerror", "Chunkload error"), BrowserException.TYPE_RANGE);
 
             }
 
         }
 
-        if (!this.connection.isOK()) throw new BrowserException(JDLocale.LF("exceptions.browserexception.badrequest", "Bad Request: %s(%s)", connection.getResponseMessage(), connection.getResponseCode() + ""), BrowserException.TYPE_BADREQUEST);
+        if (!this.connection.isOK()) throw new BrowserException(JDL.LF("exceptions.browserexception.badrequest", "Bad Request: %s(%s)", connection.getResponseMessage(), connection.getResponseCode() + ""), BrowserException.TYPE_BADREQUEST);
 
         connection.setReadTimeout(TIMEOUT_READ);
         connection.setConnectTimeout(TIMEOUT_CONNECT);

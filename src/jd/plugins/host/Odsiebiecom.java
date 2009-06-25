@@ -32,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 
 public class Odsiebiecom extends PluginForHost {
 
@@ -172,7 +172,7 @@ public class Odsiebiecom extends PluginForHost {
         dl = br.openDownload(downloadLink, downloadurl, false, 1);
         if (dl.getConnection().getContentType().contains("text")) {
             dl.getConnection().disconnect();
-            throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.hoster.odsiebiecom.errors.servererror", "Server error"));
+            throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.odsiebiecom.errors.servererror", "Server error"));
         }
         downloadLink.setFinalFileName(finalfn);
         dl.startDownload();

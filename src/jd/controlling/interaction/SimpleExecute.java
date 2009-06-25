@@ -24,9 +24,9 @@ import java.io.Serializable;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.parser.Regex;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import jd.utils.Replacer;
+import jd.utils.locale.JDL;
 
 public class SimpleExecute extends Interaction implements Serializable, ActionListener {
 
@@ -70,7 +70,7 @@ public class SimpleExecute extends Interaction implements Serializable, ActionLi
 
     // @Override
     public String getInteractionName() {
-        return JDLocale.L("interaction.simpleExecute.name", "Programm/Script ausführen");
+        return JDL.L("interaction.simpleExecute.name", "Programm/Script ausführen");
     }
 
     // @Override
@@ -78,27 +78,27 @@ public class SimpleExecute extends Interaction implements Serializable, ActionLi
         ConfigEntry cfg;
         ConfigEntry conditionEntry;
 
-        ConfigContainer extended = new ConfigContainer(JDLocale.L("interaction.simpleExecute.extended", "Erweiterte Einstellungen"));
+        ConfigContainer extended = new ConfigContainer(JDL.L("interaction.simpleExecute.extended", "Erweiterte Einstellungen"));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, extended));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDLocale.L("interaction.simpleExecute.test", "Jetzt ausführen")));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDL.L("interaction.simpleExecute.test", "Jetzt ausführen")));
 
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, this, PROPERTY_COMMAND, JDLocale.L("interaction.simpleExecute.cmd", "Befehl")));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, this, PROPERTY_COMMAND, JDL.L("interaction.simpleExecute.cmd", "Befehl")));
 
-        extended.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, this, PROPERTY_PARAMETER, JDLocale.L("interaction.simpleExecute.parameter", "Parameter (1 Parameter pro Zeile)")));
+        extended.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, this, PROPERTY_PARAMETER, JDL.L("interaction.simpleExecute.parameter", "Parameter (1 Parameter pro Zeile)")));
 
-        config.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this, PROPERTY_WAIT_TERMINATION, JDLocale.L("interaction.simpleExecute.waitForTermination", "Warten bis Befehl beendet wurde")).setDefaultValue(false));
-        extended.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, this, PROPERTY_WAITTIME, JDLocale.L("interaction.simpleExecute.waittime", "Maximale Ausführzeit"), 0, 60 * 60 * 24).setDefaultValue(60));
+        config.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this, PROPERTY_WAIT_TERMINATION, JDL.L("interaction.simpleExecute.waitForTermination", "Warten bis Befehl beendet wurde")).setDefaultValue(false));
+        extended.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, this, PROPERTY_WAITTIME, JDL.L("interaction.simpleExecute.waittime", "Maximale Ausführzeit"), 0, 60 * 60 * 24).setDefaultValue(60));
         cfg.setEnabledCondidtion(conditionEntry, "==", true);
 
-        extended.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this, PROPERTY_USE_EXECUTE_IN, JDLocale.L("interaction.simpleExecute.useexecutein", "Benutzerdefiniertes 'Ausführen in'")).setDefaultValue(false));
+        extended.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this, PROPERTY_USE_EXECUTE_IN, JDL.L("interaction.simpleExecute.useexecutein", "Benutzerdefiniertes 'Ausführen in'")).setDefaultValue(false));
 
-        extended.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, this, PROPERTY_EXECUTE_IN, JDLocale.L("interaction.simpleExecute.executein", "Ausführen in (Ordner)")));
+        extended.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, this, PROPERTY_EXECUTE_IN, JDL.L("interaction.simpleExecute.executein", "Ausführen in (Ordner)")));
         cfg.setEnabledCondidtion(conditionEntry, "==", true);
     }
 
     // @Override
     public String toString() {
-        return JDLocale.L("interaction.simpleExecute.name", "Programm/Script ausführen");
+        return JDL.L("interaction.simpleExecute.name", "Programm/Script ausführen");
     }
 
 }

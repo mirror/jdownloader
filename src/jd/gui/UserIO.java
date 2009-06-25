@@ -23,7 +23,7 @@ import javax.swing.ImageIcon;
 
 import jd.config.SubConfiguration;
 import jd.gui.skins.simple.SimpleGuiConstants;
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 
 public abstract class UserIO {
 
@@ -122,7 +122,7 @@ public abstract class UserIO {
     abstract protected String showInputDialog(int flag, String title, String message, String defaultMessage, ImageIcon icon, String okOption, String cancelOption);
 
     public void requestMessageDialog(String message) {
-        requestMessageDialog(JDLocale.L("gui.dialogs.message.title", "Message"), message);
+        requestMessageDialog(JDL.L("gui.dialogs.message.title", "Message"), message);
     }
 
     public void requestMessageDialog(String title, String message) {
@@ -134,7 +134,7 @@ public abstract class UserIO {
     private ImageIcon getDefaultIcon(String text) {
         if (text.contains("?")) {
             return this.getIcon(ICON_QUESTION);
-        } else if (text.matches(JDLocale.L("userio.errorregex", ".*(error|failed).*"))) {
+        } else if (text.matches(JDL.L("userio.errorregex", ".*(error|failed).*"))) {
             return this.getIcon(ICON_ERROR);
         } else if (text.contains("!")) {
             return this.getIcon(ICON_WARNING);

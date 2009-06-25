@@ -32,7 +32,7 @@ import jd.config.Configuration;
 import jd.controlling.interaction.PackageManager;
 import jd.gui.skins.simple.config.ConfigPanel;
 import jd.update.PackageData;
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 /**
@@ -57,15 +57,15 @@ public class SubPanelOptionalInstaller extends ConfigPanel implements ActionList
         public String getColumnName(int column) {
             switch (column) {
             case 0:
-                return JDLocale.L("gui.config.packagemanager.column_name", "Paket");
+                return JDL.L("gui.config.packagemanager.column_name", "Paket");
             case 1:
-                return JDLocale.L("gui.config.packagemanager.column_category", "Kategorie");
+                return JDL.L("gui.config.packagemanager.column_category", "Kategorie");
             case 2:
-                return JDLocale.L("gui.config.packagemanager.column_latestVersion", "Akt. Version");
+                return JDL.L("gui.config.packagemanager.column_latestVersion", "Akt. Version");
             case 3:
-                return JDLocale.L("gui.config.packagemanager.column_installedVersion", "Inst. Version");
+                return JDL.L("gui.config.packagemanager.column_installedVersion", "Inst. Version");
             case 4:
-                return JDLocale.L("gui.config.packagemanager.column_select", "Auswählen");
+                return JDL.L("gui.config.packagemanager.column_select", "Auswählen");
             }
             return super.getColumnName(column);
         }
@@ -174,7 +174,7 @@ public class SubPanelOptionalInstaller extends ConfigPanel implements ActionList
             }
         }
 
-        btnReset = new JButton(JDLocale.L("gui.config.packagemanager.reset", "Addons neu herunterladen"));
+        btnReset = new JButton(JDL.L("gui.config.packagemanager.reset", "Addons neu herunterladen"));
         btnReset.addActionListener(this);
 
         setLayout(new MigLayout("ins 5,wrap 1", "[fill,grow]", "[fill,grow][]"));

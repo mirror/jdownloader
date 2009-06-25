@@ -37,9 +37,9 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 /**
  * Diese Klasse läuft in einem Thread und verteilt den Inhalt der Zwischenablage
@@ -440,9 +440,9 @@ public class DistributeData extends Thread {
                     txt += l + "\r\n";
                 logger.warning("No supported links found -> search for links in source code of all urls");
 
-                String title = JDLocale.L("gui.dialog.deepdecrypt.title", "Deep decryption?");
-                String message = JDLocale.LF("gui.dialog.deepdecrypt.message", "JDownloader has not found anything on %s\r\n-------------------------------\r\nJD now loads this page to look for further links.", txt + "");
-                int res = UserIO.getInstance().requestConfirmDialog(0, title, message, JDTheme.II("gui.images.search", 32, 32), JDLocale.L("gui.btn_continue", "Continue"), null);
+                String title = JDL.L("gui.dialog.deepdecrypt.title", "Deep decryption?");
+                String message = JDL.LF("gui.dialog.deepdecrypt.message", "JDownloader has not found anything on %s\r\n-------------------------------\r\nJD now loads this page to look for further links.", txt + "");
+                int res = UserIO.getInstance().requestConfirmDialog(0, title, message, JDTheme.II("gui.images.search", 32, 32), JDL.L("gui.btn_continue", "Continue"), null);
                 if (JDFlags.hasAllFlags(res, UserIO.RETURN_OK)) {
 
                     data = getLoadLinkString(data);
@@ -492,7 +492,7 @@ public class DistributeData extends Thread {
     private static String getLoadLinkString(String linkstring) {
         StringBuffer sb = new StringBuffer();
         String[] links = HTMLParser.getHttpLinks(linkstring, null);
-        ProgressController pc = new ProgressController(JDLocale.LF("gui.addurls.progress", "Parse %s URL(s)", links.length), links.length);
+        ProgressController pc = new ProgressController(JDL.LF("gui.addurls.progress", "Parse %s URL(s)", links.length), links.length);
         int i = 0;
 
         for (String l : links) {
@@ -500,7 +500,7 @@ public class DistributeData extends Thread {
 
             try {
                 new URL(l);
-                pc.setStatusText(JDLocale.LF("gui.addurls.progress.get", "Parse %s URL(s). Get %s links", links.length, l));
+                pc.setStatusText(JDL.LF("gui.addurls.progress.get", "Parse %s URL(s). Get %s links", links.length, l));
 
                 br.getPage(l);
 
@@ -514,7 +514,7 @@ public class DistributeData extends Thread {
             } catch (Exception e1) {
 
             }
-            pc.setStatusText(JDLocale.LF("gui.addurls.progress.found", "Parse %s URL(s). Found %s links", links.length, i));
+            pc.setStatusText(JDL.LF("gui.addurls.progress.found", "Parse %s URL(s). Found %s links", links.length, i));
             pc.increase(1);
 
         }

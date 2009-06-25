@@ -32,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 
 public class LetitBitNet extends PluginForHost {
 
@@ -102,7 +102,7 @@ public class LetitBitNet extends PluginForHost {
                 captchaurl = br.getRegex(Pattern.compile("<div\\sclass=\"cont\\sc2[^>]*>\\s+<br /><br />\\s+<img src=\"(.*?)\"", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
     
                 // formaction = forms[3].action;
-                if (captchaurl == null) throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.hoster.letitbitnet.errors.countryblock", "Letitbit forbidden downloading this file in your country"));
+                if (captchaurl == null) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.letitbitnet.errors.countryblock", "Letitbit forbidden downloading this file in your country"));
     
             } else {
                 String id = dl1.getVarsMap().get("uid");

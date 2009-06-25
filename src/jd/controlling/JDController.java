@@ -39,8 +39,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
 import jd.update.FileUpdate;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 /**
  * Im Controller wird das ganze App gesteuert. Evebnts werden deligiert.
@@ -690,7 +690,7 @@ public class JDController implements ControlListener {
                         }
                         String comment = downloadLinks.get(0).getFilePackage().getComment();
                         String password = downloadLinks.get(0).getFilePackage().getPassword();
-                        JDUtilities.getGUI().showHTMLDialog(JDLocale.L("container.message.title", "DownloadLinkContainer loaded"), String.format(html, JDIO.getFileExtension(file).toLowerCase(), JDLocale.L("container.message.title", "DownloadLinkContainer loaded"), JDLocale.L("container.message.uploaded", "Brought to you by"), uploader, JDLocale.L("container.message.created", "Created with"), app, JDLocale.L("container.message.comment", "Comment"), comment, JDLocale.L("container.message.password", "Password"), password));
+                        JDUtilities.getGUI().showHTMLDialog(JDL.L("container.message.title", "DownloadLinkContainer loaded"), String.format(html, JDIO.getFileExtension(file).toLowerCase(), JDL.L("container.message.title", "DownloadLinkContainer loaded"), JDL.L("container.message.uploaded", "Brought to you by"), uploader, JDL.L("container.message.created", "Created with"), app, JDL.L("container.message.comment", "Comment"), comment, JDL.L("container.message.password", "Password"), password));
 
                     }
                     // schickt die Links zuerst mal zum Linkgrabber
@@ -713,7 +713,7 @@ public class JDController implements ControlListener {
             if (cfg.getBooleanProperty("SHOW_INFO_AFTER_CREATE", false))
             // Nur Falls Die Meldung nicht deaktiviert wurde
             {
-                if (getUiInterface().showConfirmDialog(JDLocale.L("sys.dlc.success", "DLC encryption successfull. Run Testdecrypt now?"))) {
+                if (getUiInterface().showConfirmDialog(JDL.L("sys.dlc.success", "DLC encryption successfull. Run Testdecrypt now?"))) {
                     loadContainerFile(file);
                     return;
                 }

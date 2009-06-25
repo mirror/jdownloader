@@ -31,8 +31,8 @@ import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
-import jd.utils.JDLocale;
 import jd.utils.JDTheme;
+import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingx.renderer.DefaultTableRenderer;
@@ -154,20 +154,20 @@ public class TreeTableRenderer extends DefaultTableRenderer {
     }
 
     private void initLocale() {
-        strPluginDisabled = JDLocale.L("gui.downloadlink.plugindisabled", "[Plugin disabled]");
-        strDownloadLinkActive = JDLocale.L("gui.treetable.packagestatus.links_active", "aktiv");
-        strETA = JDLocale.L("gui.eta", "ETA");
-        strPluginError = JDLocale.L("gui.treetable.error.plugin", "Plugin error");
-        strSecondsAbrv = JDLocale.L("gui.treetable.seconds", "sec");
-        strWaitIO = JDLocale.L("gui.linkgrabber.waitinguserio", "Waiting for user input");
-        strTTPriorityS = JDLocale.L("gui.treetable.tooltip.priority-1", "Low Priority");
-        strTTPriority1 = JDLocale.L("gui.treetable.tooltip.priority1", "High Priority");
-        strTTPriority2 = JDLocale.L("gui.treetable.tooltip.priority2", "Higher Priority");
-        strTTPriority3 = JDLocale.L("gui.treetable.tooltip.priority3", "Highest Priority");
-        strTTFailed = JDLocale.L("gui.treetable.tooltip.failed", "Download failed. See logs for details. Rightclick->reset to retry");
-        strTTFinished = JDLocale.L("gui.treetable.tooltip.finished", "Download has finished successfully");
-        strTTStopMark = JDLocale.L("gui.treetable.tooltip.stopmark", "Stopmark is set. After this Link/Package, no further downloads will start");
-        strTTExtract = JDLocale.L("gui.treetable.tooltip.extract", "A post-download module(extracter,...) is running");
+        strPluginDisabled = JDL.L("gui.downloadlink.plugindisabled", "[Plugin disabled]");
+        strDownloadLinkActive = JDL.L("gui.treetable.packagestatus.links_active", "aktiv");
+        strETA = JDL.L("gui.eta", "ETA");
+        strPluginError = JDL.L("gui.treetable.error.plugin", "Plugin error");
+        strSecondsAbrv = JDL.L("gui.treetable.seconds", "sec");
+        strWaitIO = JDL.L("gui.linkgrabber.waitinguserio", "Waiting for user input");
+        strTTPriorityS = JDL.L("gui.treetable.tooltip.priority-1", "Low Priority");
+        strTTPriority1 = JDL.L("gui.treetable.tooltip.priority1", "High Priority");
+        strTTPriority2 = JDL.L("gui.treetable.tooltip.priority2", "Higher Priority");
+        strTTPriority3 = JDL.L("gui.treetable.tooltip.priority3", "Highest Priority");
+        strTTFailed = JDL.L("gui.treetable.tooltip.failed", "Download failed. See logs for details. Rightclick->reset to retry");
+        strTTFinished = JDL.L("gui.treetable.tooltip.finished", "Download has finished successfully");
+        strTTStopMark = JDL.L("gui.treetable.tooltip.stopmark", "Stopmark is set. After this Link/Package, no further downloads will start");
+        strTTExtract = JDL.L("gui.treetable.tooltip.extract", "A post-download module(extracter,...) is running");
     }
 
     // @Override

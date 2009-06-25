@@ -29,7 +29,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 
 public class RomNewsOrg extends PluginForDecrypt {
 
@@ -54,7 +54,7 @@ public class RomNewsOrg extends PluginForDecrypt {
             String cap = br.getRegex("\"image\" src=\"(.*?image.*?)\"").getMatch(0);
             Form form = br.getForm(0);
             Browser.download(file, br.cloneBrowser().openGetConnection(cap));
-            Point p = UserIO.getInstance().requestClickPositionDialog(file, JDLocale.L("plugins.decrypt.stealthto.captcha.title", "Captcha"), whattoclick);
+            Point p = UserIO.getInstance().requestClickPositionDialog(file, JDL.L("plugins.decrypt.stealthto.captcha.title", "Captcha"), whattoclick);
             if (p == null) throw new DecrypterException(DecrypterException.CAPTCHA);
             form.remove("x");
             form.remove("y");

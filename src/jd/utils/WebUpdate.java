@@ -42,6 +42,7 @@ import jd.nutils.io.JDIO;
 import jd.update.FileUpdate;
 import jd.update.PackageData;
 import jd.update.WebUpdater;
+import jd.utils.locale.JDL;
 
 public class WebUpdate implements ControlListener {
     private static Logger logger = JDLogger.getLogger();
@@ -65,7 +66,7 @@ public class WebUpdate implements ControlListener {
     }
 
     public static boolean updateUpdater() {
-        final ProgressController progress = new ProgressController(JDLocale.LF("wrapper.webupdate.updatenewupdater", "Downloading new jdupdate.jar"));
+        final ProgressController progress = new ProgressController(JDL.LF("wrapper.webupdate.updatenewupdater", "Downloading new jdupdate.jar"));
         progress.increase(1);
         Thread ttmp = new Thread() {
             public void run() {
@@ -123,7 +124,7 @@ public class WebUpdate implements ControlListener {
                                 ttmp.interrupt();
                                 logger.severe("Rename error: jdupdate.jar");
                                 progress.setColor(Color.RED);
-                                progress.setStatusText(JDLocale.LF("wrapper.webupdate.updateUpdater.error_rename", "Could not rename jdupdate.jar.tmp to jdupdate.jar"));
+                                progress.setStatusText(JDL.LF("wrapper.webupdate.updateUpdater.error_rename", "Could not rename jdupdate.jar.tmp to jdupdate.jar"));
                                 progress.finalize(5000);
                                 return false;
                             }
@@ -144,7 +145,7 @@ public class WebUpdate implements ControlListener {
         }
         ttmp.interrupt();
         progress.setColor(Color.RED);
-        progress.setStatusText(JDLocale.LF("wrapper.webupdate.updateUpdater.error_reqeust2", "Could not download new jdupdate.jar"));
+        progress.setStatusText(JDL.LF("wrapper.webupdate.updateUpdater.error_reqeust2", "Could not download new jdupdate.jar"));
         progress.finalize(5000);
         logger.info("Update of " + file.getAbsolutePath() + " failed");
         return false;
@@ -170,7 +171,7 @@ public class WebUpdate implements ControlListener {
         // JDUtilities.getSubConfig(SimpleGuiConstants.GUICONFIGNAME).getStringProperty("PLAF"));
         // cfg.save();
 
-        final ProgressController progress = new ProgressController(JDLocale.L("init.webupdate.progress.0_title", "Webupdate"), 100);
+        final ProgressController progress = new ProgressController(JDL.L("init.webupdate.progress.0_title", "Webupdate"), 100);
 
         // LASTREQUEST = System.currentTimeMillis();
         final WebUpdater updater = new WebUpdater();
@@ -215,7 +216,7 @@ public class WebUpdate implements ControlListener {
                 }
                 int org;
                 progress.setRange(org = files.size());
-                progress.setStatusText(JDLocale.L("init.webupdate.progress.1_title", "Update Check"));
+                progress.setStatusText(JDL.L("init.webupdate.progress.1_title", "Update Check"));
                 if (files.size() > 0 || packages.size() > 0) {
                     progress.setStatus(org - (files.size() + packages.size()));
                     logger.finer("Files to update: " + files);
@@ -234,14 +235,14 @@ public class WebUpdate implements ControlListener {
 
                             if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, false)) {
 
-                                int answer = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, JDLocale.L("init.webupdate.auto.countdowndialog", "Automatic update."), JDLocale.LF("system.dialogs.update.message", "<font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\">%s update(s)  and %s package(s) or addon(s) available. Install now?</font>", files.size(), packages.size()), JDTheme.II("gui.splash.update", 32, 32), null, null);
+                                int answer = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, JDL.L("init.webupdate.auto.countdowndialog", "Automatic update."), JDL.LF("system.dialogs.update.message", "<font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\">%s update(s)  and %s package(s) or addon(s) available. Install now?</font>", files.size(), packages.size()), JDTheme.II("gui.splash.update", 32, 32), null, null);
 
                                 if (JDFlags.hasAllFlags(answer, UserIO.RETURN_OK)) {
                                     doUpdate();
                                 }
                             } else {
                                 try {
-                                    int answer = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, JDLocale.L("system.dialogs.update", "Updates available"), JDLocale.LF("system.dialogs.update.message", "<font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\">%s update(s)  and %s package(s) or addon(s) available. Install now?</font>", files.size(), packages.size()), JDTheme.II("gui.splash.update", 32, 32), null, null);
+                                    int answer = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, JDL.L("system.dialogs.update", "Updates available"), JDL.LF("system.dialogs.update.message", "<font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\">%s update(s)  and %s package(s) or addon(s) available. Install now?</font>", files.size(), packages.size()), JDTheme.II("gui.splash.update", 32, 32), null, null);
 
                                     if (JDFlags.hasAllFlags(answer, UserIO.RETURN_OK)) {
                                         doUpdate();

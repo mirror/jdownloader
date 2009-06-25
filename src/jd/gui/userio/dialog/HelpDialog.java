@@ -10,8 +10,8 @@ import javax.swing.JTextPane;
 
 import jd.controlling.JDLogger;
 import jd.gui.skins.simple.components.JLinkButton;
-import jd.utils.JDLocale;
 import jd.utils.JDTheme;
+import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 public class HelpDialog extends AbstractDialog {
@@ -42,7 +42,7 @@ public class HelpDialog extends AbstractDialog {
         htmlArea.setText(message);
         htmlArea.setOpaque(false);
 
-        JButton help = new JButton(helpMessage == null ? JDLocale.L("gui.btn_help", "Help") : helpMessage);
+        JButton help = new JButton(helpMessage == null ? JDL.L("gui.btn_help", "Help") : helpMessage);
         help.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {

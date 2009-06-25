@@ -28,8 +28,8 @@ import jd.config.MenuItem;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.plugins.PluginOptional;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 @SuppressWarnings("unchecked")
 public class JDFolderWatch extends PluginOptional {
@@ -65,9 +65,9 @@ public class JDFolderWatch extends PluginOptional {
         subConfig = SubConfiguration.getConfig("FOLDERWATCH");
         added = (ArrayList<String>) subConfig.getProperty("ADDED");
         ConfigEntry cfg;
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, subConfig, "FOLDER", JDLocale.L("plugins.optional.folderwatch.folder", "Ordner:")));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, subConfig, "FOLDER", JDL.L("plugins.optional.folderwatch.folder", "Ordner:")));
         cfg.setDefaultValue(JDUtilities.getConfiguration().getDefaultDownloadDirectory());
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, "WAITTIME", JDLocale.L("plugins.optional.folderwatch.checkintervall", "Checkintervall [min]"), 1, 60));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, "WAITTIME", JDL.L("plugins.optional.folderwatch.checkintervall", "Checkintervall [min]"), 1, 60));
         cfg.setDefaultValue("5");
     }
 
@@ -132,15 +132,15 @@ public class JDFolderWatch extends PluginOptional {
     // @Override
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
-        menu.add(new MenuItem(JDLocale.L("plugins.optional.folderwatch.menu.startstop", "Start/Stop"), 0).setActionListener(this));
-        menu.add(new MenuItem(JDLocale.L("plugins.optional.folderwatch.menu.check", "Check"), 0).setActionListener(this));
-        menu.add(new MenuItem(JDLocale.L("plugins.optional.folderwatch.menu.reset", "Reset"), 0).setActionListener(this));
+        menu.add(new MenuItem(JDL.L("plugins.optional.folderwatch.menu.startstop", "Start/Stop"), 0).setActionListener(this));
+        menu.add(new MenuItem(JDL.L("plugins.optional.folderwatch.menu.check", "Check"), 0).setActionListener(this));
+        menu.add(new MenuItem(JDL.L("plugins.optional.folderwatch.menu.reset", "Reset"), 0).setActionListener(this));
         return menu;
     }
 
     // @Override
     public String getHost() {
-        return JDLocale.L("plugins.optional.folderwatch.name", "JDFolderWatch");
+        return JDL.L("plugins.optional.folderwatch.name", "JDFolderWatch");
     }
 
     // @Override

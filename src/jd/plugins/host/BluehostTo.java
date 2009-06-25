@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 
 public class BluehostTo extends PluginForHost {
 
@@ -102,7 +102,7 @@ public class BluehostTo extends PluginForHost {
         String page = br.getPage("http://bluehost.to/fileinfo/urls=" + downloadLink.getDownloadURL());
         String[] dat = page.split("\\, ");
         int time = Integer.parseInt(dat[4]);
-        if (time > 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.hoster.bluehostto.time", "BH free only allowed from 0 PM to 10 AM"), time * 1000l);
+        if (time > 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.bluehostto.time", "BH free only allowed from 0 PM to 10 AM"), time * 1000l);
         br.setDebug(true);
         br.getPage(downloadLink.getDownloadURL());
         this.sleep(2000, downloadLink);

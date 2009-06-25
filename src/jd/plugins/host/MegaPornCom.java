@@ -42,8 +42,8 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 public class MegaPornCom extends PluginForHost {
 
@@ -166,7 +166,7 @@ public class MegaPornCom extends PluginForHost {
                 if (form != null && form.containsHTML("filepassword")) {
                     link.setProperty("pass", null);
                     if (usedGlobal) PASSWORD = null;
-                    throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.errors.wrongpassword", "Password wrong"));
+                    throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.errors.wrongpassword", "Password wrong"));
                 } else {
                     link.setProperty("pass", passCode);
                     PASSWORD = passCode;
@@ -394,7 +394,7 @@ public class MegaPornCom extends PluginForHost {
                 if (form != null && form.containsHTML("filepassword")) {
                     link.setProperty("pass", null);
                     if (usedGlobal) PASSWORD = null;
-                    throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.errors.wrongpassword", "Password wrong"));
+                    throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.errors.wrongpassword", "Password wrong"));
                 } else {
                     link.setProperty("pass", passCode);
                     PASSWORD = passCode;
@@ -432,7 +432,7 @@ public class MegaPornCom extends PluginForHost {
         if (form != null && form.containsHTML("captchacode")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
 
         // waitForNext(link);
-        link.getLinkStatus().setStatusText(JDLocale.L("plugins.host.megaupload.waitforstart", "Waiting for start..."));
+        link.getLinkStatus().setStatusText(JDL.L("plugins.host.megaupload.waitforstart", "Waiting for start..."));
         link.requestGuiUpdate();
 
         String url = br.getRegex("id=\"downloadlink\">.*?<a href=\"(.*?)\"").getMatch(0);
@@ -471,7 +471,7 @@ public class MegaPornCom extends PluginForHost {
                 return;
             } catch (IOException e2) {
                 downloadLink.setProperty("pass", null);
-                throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.errors.wrongpassword", "Password wrong"));
+                throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.errors.wrongpassword", "Password wrong"));
             }
         }
     }
@@ -557,9 +557,9 @@ public class MegaPornCom extends PluginForHost {
 
     private void setConfigElements() {
         String[] ports = new String[] { "80", "800", "1723" };
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, JDUtilities.getConfiguration(), MU_PARAM_PORT, ports, JDLocale.L("plugins.host.megaupload.ports", "Use this port:")).setDefaultValue("80"));
-        String[] captchmodes = new String[] { JDLocale.L("plugins.host.megaupload.captchamode_auto", "auto"), JDLocale.L("plugins.host.megaupload.captchamode_no_reconnect", "avoid reconnects"), JDLocale.L("plugins.host.megaupload.captchamode_no_captcha", "avoid captchas") };
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, this.getPluginConfig(), CAPTCHA_MODE, captchmodes, JDLocale.L("plugins.host.megaupload.captchamode.title", "Captcha mode:")).setDefaultValue(JDLocale.L("plugins.host.megaupload.captchamode_auto", "auto")));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, JDUtilities.getConfiguration(), MU_PARAM_PORT, ports, JDL.L("plugins.host.megaupload.ports", "Use this port:")).setDefaultValue("80"));
+        String[] captchmodes = new String[] { JDL.L("plugins.host.megaupload.captchamode_auto", "auto"), JDL.L("plugins.host.megaupload.captchamode_no_reconnect", "avoid reconnects"), JDL.L("plugins.host.megaupload.captchamode_no_captcha", "avoid captchas") };
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, this.getPluginConfig(), CAPTCHA_MODE, captchmodes, JDL.L("plugins.host.megaupload.captchamode.title", "Captcha mode:")).setDefaultValue(JDL.L("plugins.host.megaupload.captchamode_auto", "auto")));
     }
 
 }

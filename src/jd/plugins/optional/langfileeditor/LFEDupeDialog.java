@@ -10,7 +10,7 @@ import javax.swing.JScrollPane;
 import javax.swing.table.AbstractTableModel;
 
 import jd.nutils.Screen;
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 
 import org.jdesktop.swingx.JXTable;
 
@@ -26,7 +26,7 @@ public class LFEDupeDialog extends JDialog {
         super(owner);
 
         setModal(true);
-        setTitle(JDLocale.L("plugins.optional.langfileeditor.duplicatedEntries", "Duplicated Entries") + " [" + dupes.size() + "]");
+        setTitle(JDL.L("plugins.optional.langfileeditor.duplicatedEntries", "Duplicated Entries") + " [" + dupes.size() + "]");
         setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 
         MyDupeTableModel internalTableModel = new MyDupeTableModel(dupes);
@@ -56,7 +56,7 @@ public class LFEDupeDialog extends JDialog {
         private ArrayList<String> keys;
 
         public MyDupeTableModel(HashMap<String, ArrayList<String>> data) {
-            columnNames = new String[] { "*", JDLocale.L("plugins.optional.langfileeditor.string", "String"), JDLocale.L("plugins.optional.langfileeditor.keys", "Keys") };
+            columnNames = new String[] { "*", JDL.L("plugins.optional.langfileeditor.string", "String"), JDL.L("plugins.optional.langfileeditor.keys", "Keys") };
             tableData = data;
             keys = new ArrayList<String>(data.keySet());
         }

@@ -46,8 +46,8 @@ import jd.plugins.optional.hjsplit.jaxe.JAxeJoiner;
 import jd.plugins.optional.hjsplit.jaxe.JoinerFactory;
 import jd.plugins.optional.hjsplit.jaxe.ProgressEvent;
 import jd.plugins.optional.hjsplit.jaxe.ProgressEventListener;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 public class JDHJSplit extends PluginOptional implements ControlListener {
 
@@ -117,7 +117,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
             if (event.getSource() instanceof DownloadLink) {
                 link = (DownloadLink) event.getSource();
 
-                items.add(m = new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.jdhjsplit.linkmenu.merge", "Merge"), 1000).setActionListener(this));
+                items.add(m = new MenuItem(MenuItem.NORMAL, JDL.L("plugins.optional.jdhjsplit.linkmenu.merge", "Merge"), 1000).setActionListener(this));
                 m.setEnabled(false);
                 if (link.getLinkStatus().hasStatus(LinkStatus.FINISHED) && this.isStartVolume(new File(link.getFileOutput()))) m.setEnabled(true);
                 if (new File(link.getFileOutput()).exists() && link.getName().matches(".*rar$")) m.setEnabled(true);
@@ -126,7 +126,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
 
             } else {
                 FilePackage fp = (FilePackage) event.getSource();
-                items.add(m = new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.jdhjsplit.linkmenu.package.merge", "Merge package"), 1001).setActionListener(this));
+                items.add(m = new MenuItem(MenuItem.NORMAL, JDL.L("plugins.optional.jdhjsplit.linkmenu.package.merge", "Merge package"), 1001).setActionListener(this));
                 m.setProperty("PACKAGE", fp);
             }
             break;
@@ -138,10 +138,10 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
         MenuItem m;
 
-        menu.add(m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.optional.hjsplit.menu.toggle", "Activate"), 1).setActionListener(this));
+        menu.add(m = new MenuItem(MenuItem.TOGGLE, JDL.L("plugins.optional.hjsplit.menu.toggle", "Activate"), 1).setActionListener(this));
         m.setSelected(this.getPluginConfig().getBooleanProperty("ACTIVATED", true));
 
-        menu.add(new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.hjsplit.menu.extract.singlefils", "Merge archive(s)"), 21).setActionListener(this));
+        menu.add(new MenuItem(MenuItem.NORMAL, JDL.L("plugins.optional.hjsplit.menu.extract.singlefils", "Merge archive(s)"), 21).setActionListener(this));
 
         return menu;
     }
@@ -173,7 +173,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
 
                 // @Override
                 public String getDescription() {
-                    return JDLocale.L("plugins.optional.hjsplit.filefilter", "HJSPLIT-Startvolumes");
+                    return JDL.L("plugins.optional.hjsplit.filefilter", "HJSPLIT-Startvolumes");
                 }
 
             };
@@ -521,7 +521,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
 
     // @Override
     public String getHost() {
-        return JDLocale.L("plugins.optional.jdhjsplit.name", "JD-HJMerge");
+        return JDL.L("plugins.optional.jdhjsplit.name", "JD-HJMerge");
     }
 
     // @Override
@@ -544,9 +544,9 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
         SubConfiguration subConfig = getPluginConfig();
         ConfigEntry ce;
 
-        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, CONFIG_KEY_REMOVE_MERGED, JDLocale.L("gui.config.hjsplit.remove_merged", "Delete archive after merging")));
+        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, CONFIG_KEY_REMOVE_MERGED, JDL.L("gui.config.hjsplit.remove_merged", "Delete archive after merging")));
         ce.setDefaultValue(true);
-        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, CONFIG_KEY_OVERWRITE, JDLocale.L("gui.config.hjsplit.overwrite", "Overwrite existing files")));
+        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, CONFIG_KEY_OVERWRITE, JDL.L("gui.config.hjsplit.overwrite", "Overwrite existing files")));
         ce.setDefaultValue(true);
     }
 

@@ -70,9 +70,9 @@ import jd.nutils.Formatter;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.PluginForHost;
-import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingx.JXCollapsiblePane;
@@ -192,7 +192,7 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
 
         setLayout(new MigLayout("ins ", "[fill,grow]", "[fill,grow]"));
         panel.setLayout(new MigLayout(" ins 0, wrap 2", "[grow, fill][grow, fill]", "[fill]"));
-        panel.add(Factory.createHeader(JDLocale.L("plugins.premium.accounts", "Accounts"), JDTheme.II("gui.images.accounts", 32, 32)), "spanx");
+        panel.add(Factory.createHeader(JDL.L("plugins.premium.accounts", "Accounts"), JDTheme.II("gui.images.accounts", 32, 32)), "spanx");
 
         add(panel);
         // sp.setBorder(null);
@@ -203,7 +203,7 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
             accs.add(p);
         }
 
-        add = createButton(JDLocale.L("plugins.premium.add", "Add new account"), JDTheme.II("gui.images.add", 16, 16));
+        add = createButton(JDL.L("plugins.premium.add", "Add new account"), JDTheme.II("gui.images.add", 16, 16));
         add.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent arg0) {
@@ -229,7 +229,7 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
         });
 
         final String premiumUrl = host.getBuyPremiumUrl();
-        JButton buy = createButton(JDLocale.L("plugins.premium.premiumbutton", "Get Premium Account"), JDTheme.II("gui.images.buy", 16, 16));
+        JButton buy = createButton(JDL.L("plugins.premium.premiumbutton", "Get Premium Account"), JDTheme.II("gui.images.buy", 16, 16));
         buy.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent arg0) {
@@ -243,7 +243,7 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
             }
 
         });
-        panel.add(Factory.createHeader(JDLocale.L("plugins.premium.options", "Premium options"), JDTheme.II("gui.images.vip", 32, 32)), "spanx");
+        panel.add(Factory.createHeader(JDL.L("plugins.premium.options", "Premium options"), JDTheme.II("gui.images.vip", 32, 32)), "spanx");
         panel.add(add, "alignx left,gapleft 30");
         panel.add(freeTrafficChart, "spany 2,height " + PIE_HEIGHT + "!");
         panel.add(buy, "alignx left,aligny top,gapleft 30");
@@ -314,10 +314,10 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
             }
 
             if (premiumActivated) {
-                chkEnable.setText(JDLocale.LF("plugins.config.premium.accountnum", "<html><b>Premium Account #%s</b></html>", nr));
+                chkEnable.setText(JDL.LF("plugins.config.premium.accountnum", "<html><b>Premium Account #%s</b></html>", nr));
                 chkEnable.setForeground(INACTIVE);
             } else {
-                chkEnable.setText(JDLocale.L("plugins.config.premium.globaldeactiv", "<html><b>Global disabled</b></html>"));
+                chkEnable.setText(JDL.L("plugins.config.premium.globaldeactiv", "<html><b>Global disabled</b></html>"));
                 chkEnable.setForeground(INACTIVE);
             }
 
@@ -327,13 +327,13 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
             chkEnable.setBorderPainted(false);
             add(chkEnable, "alignx left");
 
-            add(btnCheck = new JButton(JDLocale.L("plugins.config.premium.test.show", "Show Details")), "split 3,spanx 3");
+            add(btnCheck = new JButton(JDL.L("plugins.config.premium.test.show", "Show Details")), "split 3,spanx 3");
             btnCheck.addActionListener(this);
             btnCheck.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
             add(btnDelete = new JButton(JDTheme.II("gui.images.undo", 16, 16)), "shrinkx");
             btnDelete.addActionListener(this);
             btnDelete.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-            btnDelete.setToolTipText(JDLocale.L("plugins.config.premium.delete", "Remove this account"));
+            btnDelete.setToolTipText(JDL.L("plugins.config.premium.delete", "Remove this account"));
 
             add(txtStatus = new JTextField(""), "spanx, pushx, growx,gapleft 20");
             txtStatus.setBorder(null);
@@ -341,12 +341,12 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
             txtStatus.setOpaque(false);
             txtStatus.setEditable(false);
 
-            add(lblUsername = new JLabel(JDLocale.L("plugins.config.premium.user", "Premium User")), "newline,alignx right");
+            add(lblUsername = new JLabel(JDL.L("plugins.config.premium.user", "Premium User")), "newline,alignx right");
             add(txtUsername = new JDTextField(""), "spanx 1, growx");
 
             txtUsername.addFocusListener(this);
 
-            add(lblPassword = new JLabel(JDLocale.L("plugins.config.premium.password", "Password")), "alignx right,gapleft 15");
+            add(lblPassword = new JLabel(JDL.L("plugins.config.premium.password", "Password")), "alignx right,gapleft 15");
 
             add(txtPassword = new JDPasswordField(), "growx");
             txtPassword.addFocusListener(this);
@@ -454,7 +454,7 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
                             setEnabled(false);
                             return;
                         } else if (ai.isExpired()) {
-                            txtStatus.setText(JDLocale.L("gui.premiumpanel.expired", "This Account is expired"));
+                            txtStatus.setText(JDL.L("gui.premiumpanel.expired", "This Account is expired"));
                             setEnabled(false);
                             return;
                         }
@@ -469,7 +469,7 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
                         if (ai.getTrafficMax() <= 0) {
                             bar.setValue(1);
                             bar.setMaximum(1);
-                            bar.setString(JDLocale.L("gui.premiumpanel.bartext.unlimited", "< ∞ >"));
+                            bar.setString(JDL.L("gui.premiumpanel.bartext.unlimited", "< ∞ >"));
                         } else {
                             bar.setMaximum(Math.max(1, ai.getTrafficMax()));
                             bar.setValue(ai.getTrafficLeft());
@@ -478,42 +478,42 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
                         details.add(bar, "cell 0 0,spany,aligny top, height n:40:n, growy,width 30!");
 
                         if (ai.getValidUntil() > -1) {
-                            details.add(new JLabel(JDLocale.L("gui.premiumpanel.text.valid", "Valid until")), "");
+                            details.add(new JLabel(JDL.L("gui.premiumpanel.text.valid", "Valid until")), "");
                             details.add(getTextField(formater.format(new Date(ai.getValidUntil()))), "");
                         }
 
                         if (ai.getAccountBalance() > -1) {
-                            details.add(new JLabel(JDLocale.L("gui.premiumpanel.text.balance", "Balance")), "");
+                            details.add(new JLabel(JDL.L("gui.premiumpanel.text.balance", "Balance")), "");
                             details.add(getTextField(String.valueOf(ai.getAccountBalance() / 100) + " €"), "");
                         }
                         if (ai.getFilesNum() > -1) {
-                            details.add(new JLabel(JDLocale.L("gui.premiumpanel.text.files", "Files stored")), "");
+                            details.add(new JLabel(JDL.L("gui.premiumpanel.text.files", "Files stored")), "");
                             details.add(getTextField(String.valueOf(ai.getFilesNum())), "");
                         }
                         if (ai.getUsedSpace() > -1) {
-                            details.add(new JLabel(JDLocale.L("gui.premiumpanel.text.space", "Used Space")), "");
+                            details.add(new JLabel(JDL.L("gui.premiumpanel.text.space", "Used Space")), "");
                             details.add(getTextField(Formatter.formatReadable(ai.getUsedSpace())), "");
                         }
                         if (ai.getPremiumPoints() > -1) {
-                            details.add(new JLabel(JDLocale.L("gui.premiumpanel.text.points", "Points")), "");
+                            details.add(new JLabel(JDL.L("gui.premiumpanel.text.points", "Points")), "");
                             details.add(getTextField(String.valueOf(ai.getPremiumPoints())), "");
                         }
                         if (ai.getTrafficShareLeft() > -1) {
-                            details.add(new JLabel(JDLocale.L("gui.premiumpanel.text.trafficshare", "Trafficshare left")), "");
+                            details.add(new JLabel(JDL.L("gui.premiumpanel.text.trafficshare", "Trafficshare left")), "");
                             details.add(getTextField(Formatter.formatReadable(ai.getTrafficShareLeft())), "");
                         }
                         if (ai.getTrafficLeft() > -1) {
-                            details.add(new JLabel(JDLocale.L("gui.premiumpanel.text.traffic", "Traffic left")), "aligny top");
+                            details.add(new JLabel(JDL.L("gui.premiumpanel.text.traffic", "Traffic left")), "aligny top");
                             details.add(getTextField(Formatter.formatReadable(ai.getTrafficLeft())), "aligny top");
 
                         }
                         info.setCollapsed(false);
-                        btnCheck.setText(JDLocale.L("plugins.config.premium.test.hide", "Hide Details"));
+                        btnCheck.setText(JDL.L("plugins.config.premium.test.hide", "Hide Details"));
                     } catch (Exception e2) {
                         JDLogger.exception(e2);
                     }
                 } else {
-                    btnCheck.setText(JDLocale.L("plugins.config.premium.test.show", "Show Details"));
+                    btnCheck.setText(JDL.L("plugins.config.premium.test.show", "Show Details"));
                     info.setCollapsed(true);
 
                 }
@@ -570,7 +570,7 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
                 }
             }
 
-            if (collectTraffic > 0) freeTrafficChart.addEntity(new ChartAPIEntity(JDLocale.L("plugins.config.premium.chartapi.maxTraffic", "Max. Traffic to collect") + " [" + Math.round(((collectTraffic.floatValue() / 1024 / 1024 / 1024) * 100) / 100.0) + " GB]", collectTraffic, new Color(150, 150, 150)));
+            if (collectTraffic > 0) freeTrafficChart.addEntity(new ChartAPIEntity(JDL.L("plugins.config.premium.chartapi.maxTraffic", "Max. Traffic to collect") + " [" + Math.round(((collectTraffic.floatValue() / 1024 / 1024 / 1024) * 100) / 100.0) + " GB]", collectTraffic, new Color(150, 150, 150)));
             freeTrafficChart.fetchImage();
         }
 
@@ -624,11 +624,11 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
                 public Object runSave() {
                     for (AccountPanel ap : accs) {
                         if (premiumActivated) {
-                            ap.getLabel().setText(JDLocale.LF("plugins.config.premium.accountnum", "<html><b>Premium Account #%s</b></html>", ap.getID()));
+                            ap.getLabel().setText(JDL.LF("plugins.config.premium.accountnum", "<html><b>Premium Account #%s</b></html>", ap.getID()));
                             ap.getLabel().setForeground(INACTIVE);
                             if (ap.getAccount() != null) ap.getLabel().setForeground((ap.getAccount().isEnabled()) ? ACTIVE : INACTIVE);
                         } else {
-                            ap.getLabel().setText(JDLocale.L("plugins.config.premium.globaldeactiv", "<html><b>Global disabled</b></html>"));
+                            ap.getLabel().setText(JDL.L("plugins.config.premium.globaldeactiv", "<html><b>Global disabled</b></html>"));
                             ap.getLabel().setForeground(INACTIVE);
                         }
 

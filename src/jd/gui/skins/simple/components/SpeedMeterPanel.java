@@ -45,8 +45,8 @@ import jd.config.SubConfiguration;
 import jd.controlling.JDController;
 import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.nutils.Formatter;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 public class SpeedMeterPanel extends JPanel implements ActionListener, MouseListener {
 
@@ -185,9 +185,9 @@ public class SpeedMeterPanel extends JPanel implements ActionListener, MouseList
             g2.setColor(Color.RED);
             g2.drawLine(0, limitpx, width, limitpx);
             if (limitpx > height / 2) {
-                g2.drawString((JDUtilities.getController().isPaused() ? JDLocale.L("gui.speedmeter.pause", "pause") + " " : "") + Formatter.formatReadable(limit) + "/s", 5, limitpx - 4);
+                g2.drawString((JDUtilities.getController().isPaused() ? JDL.L("gui.speedmeter.pause", "pause") + " " : "") + Formatter.formatReadable(limit) + "/s", 5, limitpx - 4);
             } else {
-                g2.drawString((JDUtilities.getController().isPaused() ? JDLocale.L("gui.speedmeter.pause", "pause") + " " : "") + Formatter.formatReadable(limit) + "/s", 5, limitpx + 12);
+                g2.drawString((JDUtilities.getController().isPaused() ? JDL.L("gui.speedmeter.pause", "pause") + " " : "") + Formatter.formatReadable(limit) + "/s", 5, limitpx + 12);
             }
         } else {
             g2.setColor(fontCol);
@@ -248,7 +248,7 @@ public class SpeedMeterPanel extends JPanel implements ActionListener, MouseList
     public void mouseClicked(MouseEvent e) {
         if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
             if (JDController.getInstance().getDownloadStatus() != JDController.DOWNLOAD_RUNNING) return;
-            JMenuItem mi = new JMenuItem(show ? JDLocale.L("gui.speedmeter.hide", "Hide Speedmeter") : JDLocale.L("gui.speedmeter.show", "Show Speedmeter"));
+            JMenuItem mi = new JMenuItem(show ? JDL.L("gui.speedmeter.hide", "Hide Speedmeter") : JDL.L("gui.speedmeter.show", "Show Speedmeter"));
             mi.addActionListener(this);
 
             JPopupMenu popup = new JPopupMenu();

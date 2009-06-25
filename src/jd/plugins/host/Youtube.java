@@ -28,8 +28,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.utils.JDLocale;
 import jd.utils.JDMediaConvert;
+import jd.utils.locale.JDL;
 
 public class Youtube extends PluginForHost {
 
@@ -136,7 +136,7 @@ public class Youtube extends PluginForHost {
             ai.setValid(false);
             return ai;
         }
-        ai.setStatus(JDLocale.L("plugins.hoster.youtube.accountok", "Account is OK."));
+        ai.setStatus(JDL.L("plugins.hoster.youtube.accountok", "Account is OK."));
         ai.setValidUntil(-1);
         ai.setValid(true);
 

@@ -28,8 +28,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 public class BestMovies extends PluginForDecrypt {
 
@@ -63,7 +63,7 @@ public class BestMovies extends PluginForDecrypt {
                 String time[] = new Regex(captchaCode, "(\\d+)[\\.\\:\\-\\,](\\d+)").getRow(0);
 
                 if (time == null) {
-                    JDUtilities.getGUI().showCountdownConfirmDialog(JDLocale.L("jd.plugins.decrypt.BestMovies.CaptchaInputWrong", "Wrong Input, please enter time like this: 4:30"), 20);
+                    JDUtilities.getGUI().showCountdownConfirmDialog(JDL.L("jd.plugins.decrypt.BestMovies.CaptchaInputWrong", "Wrong Input, please enter time like this: 4:30"), 20);
                     logger.severe("Wrong User Input, Please enter time like this: 4:30");
                     throw new DecrypterException(DecrypterException.CAPTCHA);
                 }

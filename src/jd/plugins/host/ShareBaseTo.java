@@ -32,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 
 public class ShareBaseTo extends PluginForHost {
 
@@ -106,7 +106,7 @@ public class ShareBaseTo extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("werden derzeit Wartungsarbeiten vorgenommen")) {
             logger.severe("ShareBaseTo Error: Maintenance");
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.hoster.sharebaseto.errors.maintenance", "Maintenance works in progress"), 30 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.sharebaseto.errors.maintenance", "Maintenance works in progress"), 30 * 60 * 1000l);
         }
 
         if (!br.containsHTML("favorite")) {
@@ -117,7 +117,7 @@ public class ShareBaseTo extends PluginForHost {
         dl = br.openDownload(downloadLink, br.getForm(1));
         if (dl.getConnection() == null) {
             logger.severe("ServerError");
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.hoster.sharebaseto.errors.servicenotavailable", "Service not available"), 10 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.sharebaseto.errors.servicenotavailable", "Service not available"), 10 * 60 * 1000l);
         }
         dl.startDownload();
     }
@@ -139,10 +139,10 @@ public class ShareBaseTo extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 1000l);
         } else if (br.containsHTML("werden derzeit Wartungsarbeiten vorgenommen")) {
             logger.severe("ShareBaseTo Error: Maintenance");
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.hoster.sharebaseto.errors.maintenance", "Maintenance works in progress"), 30 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.sharebaseto.errors.maintenance", "Maintenance works in progress"), 30 * 60 * 1000l);
         } else if (br.containsHTML("Sorry, es laden derzeit")) {
             logger.severe("ShareBaseTo Error: Too many Users");
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.hoster.sharebaseto.errors.toomanyusers", "Too many users"), 5 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.sharebaseto.errors.toomanyusers", "Too many users"), 5 * 60 * 1000l);
         }
         String[] wait = br.getRegex("Du musst noch <strong>(\\d*?)min (\\d*?)sec</strong> warten").getRow(0);
         if (wait != null) {
@@ -153,7 +153,7 @@ public class ShareBaseTo extends PluginForHost {
         dl = br.openDownload(downloadLink, br.getRedirectLocation(), true, 0);
         if (dl.getConnection() == null) {
             logger.severe("ServerError");
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.hoster.sharebaseto.errors.servicenotavailable", "Service not available"), 10 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.sharebaseto.errors.servicenotavailable", "Service not available"), 10 * 60 * 1000l);
         }
         dl.startDownload();
     }

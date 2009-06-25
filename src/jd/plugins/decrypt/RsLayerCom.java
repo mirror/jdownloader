@@ -30,8 +30,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 public class RsLayerCom extends PluginForDecrypt {
 
@@ -81,11 +81,11 @@ public class RsLayerCom extends PluginForDecrypt {
                     br.submitForm(captchaForm);
 
                     if (br.containsHTML("Sicherheitscode<br />war nicht korrekt")) {
-                        logger.info(JDLocale.L("plugins.decrypt.general.captchaCodeWrong", "Captcha Code falsch"));
+                        logger.info(JDL.L("plugins.decrypt.general.captchaCodeWrong", "Captcha Code falsch"));
                         continue;
                     }
                     if (br.containsHTML("Gültigkeit für den<br> Sicherheitscode<br>ist abgelaufen")) {
-                        logger.info(JDLocale.L("plugins.decrypt.rslayer.captchaExpired", "Sicherheitscode abgelaufen"));
+                        logger.info(JDL.L("plugins.decrypt.rslayer.captchaExpired", "Sicherheitscode abgelaufen"));
                         continue;
                     }
                 } else {

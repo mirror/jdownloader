@@ -36,9 +36,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
-import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 /**
  * In dieser Klasse wird der Download parallel zum Hauptthread gestartet
@@ -119,7 +119,7 @@ public class SingleDownloadController extends Thread {
     private void handlePlugin() {
         try {
             this.startTime = System.currentTimeMillis();
-            linkStatus.setStatusText(JDLocale.L("gui.download.create_connection", "Connecting..."));
+            linkStatus.setStatusText(JDL.L("gui.download.create_connection", "Connecting..."));
             System.out.println("PreDupeChecked: no mirror found!");
             fireControlEvent(ControlEvent.CONTROL_PLUGIN_ACTIVE, currentPlugin);
             DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
@@ -128,30 +128,30 @@ public class SingleDownloadController extends Thread {
                 currentPlugin.handle(downloadLink);
             } catch (UnknownHostException e) {
                 linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                linkStatus.setErrorMessage(JDLocale.L("plugins.errors.nointernetconn", "No Internet connection?"));
+                linkStatus.setErrorMessage(JDL.L("plugins.errors.nointernetconn", "No Internet connection?"));
                 linkStatus.setValue(5 * 60 * 1000l);
             } catch (SocketTimeoutException e) {
                 linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                linkStatus.setErrorMessage(JDLocale.L("plugins.errors.hosteroffline", "Hoster offline?"));
+                linkStatus.setErrorMessage(JDL.L("plugins.errors.hosteroffline", "Hoster offline?"));
                 linkStatus.setValue(10 * 60 * 1000l);
             } catch (SocketException e) {
                 linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                linkStatus.setErrorMessage(JDLocale.L("plugins.errors.disconnect", "Disconnect?"));
+                linkStatus.setErrorMessage(JDL.L("plugins.errors.disconnect", "Disconnect?"));
                 linkStatus.setValue(5 * 60 * 1000l);
             } catch (InterruptedException e) {
                 logger.finest("Hoster Plugin Version: " + downloadLink.getPlugin().getVersion());
                 linkStatus.addStatus(LinkStatus.ERROR_FATAL);
-                linkStatus.setErrorMessage(JDLocale.L("plugins.errors.error", "Error: ") + JDUtilities.convertExceptionReadable(e));
+                linkStatus.setErrorMessage(JDL.L("plugins.errors.error", "Error: ") + JDUtilities.convertExceptionReadable(e));
             } catch (NullPointerException e) {
                 logger.finest("Hoster Plugin Version: " + downloadLink.getPlugin().getVersion());
                 JDLogger.exception(e);
                 linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
-                linkStatus.setErrorMessage(JDLocale.L("plugins.errors.error", "Error: ") + JDUtilities.convertExceptionReadable(e));
+                linkStatus.setErrorMessage(JDL.L("plugins.errors.error", "Error: ") + JDUtilities.convertExceptionReadable(e));
             } catch (Exception e) {
                 logger.finest("Hoster Plugin Version: " + downloadLink.getPlugin().getVersion());
                 JDLogger.exception(e);
                 linkStatus.addStatus(LinkStatus.ERROR_FATAL);
-                linkStatus.setErrorMessage(JDLocale.L("plugins.errors.error", "Error: ") + JDUtilities.convertExceptionReadable(e));
+                linkStatus.setErrorMessage(JDL.L("plugins.errors.error", "Error: ") + JDUtilities.convertExceptionReadable(e));
             }
 
             if (isAborted()) {
@@ -179,7 +179,7 @@ public class SingleDownloadController extends Thread {
                 onErrorAGBNotSigned(downloadLink, currentPlugin);
                 break;
             case LinkStatus.ERROR_FILE_NOT_FOUND:
-                Balloon.showIfHidden(JDLocale.L("ballon.download.error.title", "Error"), JDTheme.II("gui.images.bad", 32, 32), JDLocale.LF("ballon.download.fnf.message", "<b>%s<b><hr>File not found", downloadLink.getName() + " (" + Formatter.formatReadable(downloadLink.getDownloadSize()) + ")"));
+                Balloon.showIfHidden(JDL.L("ballon.download.error.title", "Error"), JDTheme.II("gui.images.bad", 32, 32), JDL.LF("ballon.download.fnf.message", "<b>%s<b><hr>File not found", downloadLink.getName() + " (" + Formatter.formatReadable(downloadLink.getDownloadSize()) + ")"));
 
                 onErrorFileNotFound(downloadLink, currentPlugin);
                 break;
@@ -187,7 +187,7 @@ public class SingleDownloadController extends Thread {
                 onErrorLinkBlock(downloadLink, currentPlugin);
                 break;
             case LinkStatus.ERROR_FATAL:
-                Balloon.showIfHidden(JDLocale.L("ballon.download.error.title", "Error"), JDTheme.II("gui.images.bad", 32, 32), JDLocale.LF("ballon.download.fatalerror.message", "<b>%s<b><hr>Fatal Plugin Error", downloadLink.getHost()));
+                Balloon.showIfHidden(JDL.L("ballon.download.error.title", "Error"), JDTheme.II("gui.images.bad", 32, 32), JDL.LF("ballon.download.fatalerror.message", "<b>%s<b><hr>Fatal Plugin Error", downloadLink.getHost()));
 
                 onErrorFatal(downloadLink, currentPlugin);
                 break;
@@ -206,18 +206,18 @@ public class SingleDownloadController extends Thread {
 
             case LinkStatus.ERROR_DOWNLOAD_FAILED:
                 onErrorChunkloadFailed(downloadLink, currentPlugin);
-                Balloon.showIfHidden(JDLocale.L("ballon.download.error.title", "Error"), JDTheme.II("gui.images.bad", 32, 32), JDLocale.LF("ballon.download.failed.message", "<b>%s<b><hr>failed", downloadLink.getName() + " (" + Formatter.formatReadable(downloadLink.getDownloadSize()) + ")"));
+                Balloon.showIfHidden(JDL.L("ballon.download.error.title", "Error"), JDTheme.II("gui.images.bad", 32, 32), JDL.LF("ballon.download.failed.message", "<b>%s<b><hr>failed", downloadLink.getName() + " (" + Formatter.formatReadable(downloadLink.getDownloadSize()) + ")"));
 
                 break;
 
             case LinkStatus.ERROR_PLUGIN_DEFEKT:
                 onErrorPluginDefect(downloadLink, currentPlugin);
-                Balloon.showIfHidden(JDLocale.L("ballon.download.error.title", "Error"), JDTheme.II("gui.images.bad", 32, 32), JDLocale.LF("ballon.download.plugindefect.message", "<b>%s<b><hr>Plugin defect", downloadLink.getHost()));
+                Balloon.showIfHidden(JDL.L("ballon.download.error.title", "Error"), JDTheme.II("gui.images.bad", 32, 32), JDL.LF("ballon.download.plugindefect.message", "<b>%s<b><hr>Plugin defect", downloadLink.getHost()));
 
                 break;
             case LinkStatus.ERROR_NO_CONNECTION:
             case LinkStatus.ERROR_TIMEOUT_REACHED:
-                Balloon.showIfHidden(JDLocale.L("ballon.download.error.title", "Error"), JDTheme.II("gui.images.bad", 32, 32), JDLocale.LF("ballon.download.connectionlost.message", "<b>%s<b><hr>Connection lost", downloadLink.getHost()));
+                Balloon.showIfHidden(JDL.L("ballon.download.error.title", "Error"), JDTheme.II("gui.images.bad", 32, 32), JDL.LF("ballon.download.connectionlost.message", "<b>%s<b><hr>Connection lost", downloadLink.getHost()));
 
                 onErrorNoConnection(downloadLink, currentPlugin);
                 break;
@@ -251,7 +251,7 @@ public class SingleDownloadController extends Thread {
         // wird in diesem Fall die zuletzt geladene browserseite aufgerufen.
         logger.finest(currentPlugin2.getBrowser() + "");
         downloadLink2.getLinkStatus().addStatus(LinkStatus.ERROR_FATAL);
-        downloadLink2.getLinkStatus().setErrorMessage(JDLocale.L("controller.status.pluindefekt", "Plugin out of date"));
+        downloadLink2.getLinkStatus().setErrorMessage(JDL.L("controller.status.pluindefekt", "Plugin out of date"));
         downloadLink.requestGuiUpdate();
 
     }
@@ -261,7 +261,7 @@ public class SingleDownloadController extends Thread {
     }
 
     private void onDownloadFinishedSuccessFull(DownloadLink downloadLink) {
-        if ((System.currentTimeMillis() - startTime) > 30000) Balloon.showIfHidden(JDLocale.L("ballon.download.successfull.title", "Download"), JDTheme.II("gui.images.ok", 32, 32), JDLocale.LF("ballon.download.successfull.message", "<b>%s<b><hr>finished successfully", downloadLink.getName() + " (" + Formatter.formatReadable(downloadLink.getDownloadSize()) + ")"));
+        if ((System.currentTimeMillis() - startTime) > 30000) Balloon.showIfHidden(JDL.L("ballon.download.successfull.title", "Download"), JDTheme.II("gui.images.ok", 32, 32), JDL.LF("ballon.download.successfull.message", "<b>%s<b><hr>finished successfully", downloadLink.getName() + " (" + Formatter.formatReadable(downloadLink.getDownloadSize()) + ")"));
         downloadLink.setProperty(DownloadLink.STATIC_OUTPUTFILE, downloadLink.getFileOutput());
         if (downloadLink.getLinkType() == DownloadLink.LINKTYPE_JDU) {
             new PackageManager().onDownloadedPackage(downloadLink);
@@ -278,7 +278,7 @@ public class SingleDownloadController extends Thread {
     }
 
     private void onErrorAGBNotSigned(DownloadLink downloadLink2, PluginForHost plugin) throws InterruptedException {
-        downloadLink2.getLinkStatus().setStatusText(JDLocale.L("controller.status.agb_tos", "TOS haven't been accepted."));
+        downloadLink2.getLinkStatus().setStatusText(JDL.L("controller.status.agb_tos", "TOS haven't been accepted."));
         if (!plugin.isAGBChecked()) {
             synchronized (JDUtilities.userio_lock) {
                 if (!plugin.isAGBChecked()) {
@@ -345,7 +345,7 @@ public class SingleDownloadController extends Thread {
     private void onErrorChunkloadFailed(DownloadLink downloadLink, PluginForHost plugin) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         if (linkStatus.getErrorMessage() == null) {
-            linkStatus.setErrorMessage(JDLocale.L("plugins.error.downloadfailed", "Download failed"));
+            linkStatus.setErrorMessage(JDL.L("plugins.error.downloadfailed", "Download failed"));
         }
         if (linkStatus.getValue() != LinkStatus.VALUE_FAILED_HASH) {
             try {
@@ -364,14 +364,14 @@ public class SingleDownloadController extends Thread {
     private void onErrorFileExists(DownloadLink downloadLink, PluginForHost plugin) {
         LinkStatus status = downloadLink.getLinkStatus();
         if (SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_FILE_EXISTS) == 1) {
-            status.setErrorMessage(JDLocale.L("controller.status.fileexists.skip", "File already exists."));
+            status.setErrorMessage(JDL.L("controller.status.fileexists.skip", "File already exists."));
             downloadLink.setEnabled(false);
         } else {
             if (new File(downloadLink.getFileOutput()).delete()) {
                 status.reset();
             } else {
                 status.addStatus(LinkStatus.ERROR_FATAL);
-                status.setErrorMessage(JDLocale.L("controller.status.fileexists.overwritefailed", "Überschreiben fehlgeschlagen ") + downloadLink.getFileOutput());
+                status.setErrorMessage(JDL.L("controller.status.fileexists.overwritefailed", "Überschreiben fehlgeschlagen ") + downloadLink.getFileOutput());
             }
         }
         DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
@@ -400,7 +400,7 @@ public class SingleDownloadController extends Thread {
         linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
         linkStatus.setWaitTime(milliSeconds);
         if (linkStatus.getErrorMessage() == null) {
-            linkStatus.setErrorMessage(JDLocale.L("controller.status.connectionproblems", "Connection lost."));
+            linkStatus.setErrorMessage(JDL.L("controller.status.connectionproblems", "Connection lost."));
         }
     }
 
@@ -439,7 +439,7 @@ public class SingleDownloadController extends Thread {
     private void onErrorTemporarilyUnavailable(DownloadLink downloadLink, PluginForHost plugin) {
         logger.warning("Error occurred: Temporarily unavailably: PLease wait " + downloadLink.getLinkStatus().getValue() + " ms for a retry");
         LinkStatus status = downloadLink.getLinkStatus();
-        if (status.getErrorMessage() == null) status.setErrorMessage(JDLocale.L("controller.status.tempUnavailable", "kurzzeitig nicht verfügbar"));
+        if (status.getErrorMessage() == null) status.setErrorMessage(JDL.L("controller.status.tempUnavailable", "kurzzeitig nicht verfügbar"));
 
         /*
          * Value<=0 bedeutet das der link dauerhauft deaktiviert bleiben soll.
@@ -468,7 +468,7 @@ public class SingleDownloadController extends Thread {
         long milliSeconds = downloadLink.getLinkStatus().getValue();
 
         if (milliSeconds <= 0) {
-            logger.severe(JDLocale.L("plugins.errors.pluginerror", "Plugin error. Please inform Support"));
+            logger.severe(JDL.L("plugins.errors.pluginerror", "Plugin error. Please inform Support"));
             milliSeconds = 3600000l;
         }
         status.setWaitTime(milliSeconds);
@@ -495,8 +495,8 @@ public class SingleDownloadController extends Thread {
             currentPlugin = plugin = downloadLink.getPlugin();
             fireControlEvent(new ControlEvent(currentPlugin, ControlEvent.CONTROL_PLUGIN_ACTIVE, this));
             if (downloadLink.getDownloadURL() == null) {
-                downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.containererror", "Container Error"));
-                downloadLink.getLinkStatus().setErrorMessage(JDLocale.L("controller.status.containererror", "Container Error"));
+                downloadLink.getLinkStatus().setStatusText(JDL.L("controller.status.containererror", "Container Error"));
+                downloadLink.getLinkStatus().setErrorMessage(JDL.L("controller.status.containererror", "Container Error"));
                 downloadLink.setEnabled(false);
                 fireControlEvent(new ControlEvent(currentPlugin, ControlEvent.CONTROL_PLUGIN_INACTIVE, this));
                 Interaction.handleInteraction(Interaction.INTERACTION_DOWNLOAD_FAILED, this);

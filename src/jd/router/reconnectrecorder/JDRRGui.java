@@ -38,9 +38,9 @@ import jd.gui.skins.simple.components.JLinkButton;
 import jd.nutils.JDFlags;
 import jd.nutils.Screen;
 import jd.parser.Regex;
-import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 public class JDRRGui extends JDialog implements ActionListener {
@@ -69,10 +69,10 @@ public class JDRRGui extends JDialog implements ActionListener {
 
         routerip = new JTextField(RouterIP);
 
-        btnCancel = new JButton(JDLocale.L("gui.btn_cancel", "Abbrechen"));
+        btnCancel = new JButton(JDL.L("gui.btn_cancel", "Abbrechen"));
         btnCancel.addActionListener(this);
 
-        btnStart = new JButton(JDLocale.L("gui.btn_start", "Start"));
+        btnStart = new JButton(JDL.L("gui.btn_start", "Start"));
         btnStart.addActionListener(this);
 
         rawmode = new JCheckBox("RawMode?");
@@ -82,11 +82,11 @@ public class JDRRGui extends JDialog implements ActionListener {
         infolable.setEditable(false);
         infolable.setContentType("text/html");
         infolable.addHyperlinkListener(JLinkButton.getHyperlinkListener());
-        infolable.setText(JDLocale.L("gui.config.jdrr.infolable", "<span color=\"#4682B4\">Überprüfe die IP-Adresse des Routers und drück auf Start,<br>ein Browserfenster mit der Startseite des Routers öffnet sich,<br>nach dem Reconnect drückst du auf Stop und speicherst.<br>Mehr Informationen gibt es </span><a href=\"http://wiki.jdownloader.org/index.php?title=Recorder\">hier</a>"));
+        infolable.setText(JDL.L("gui.config.jdrr.infolable", "<span color=\"#4682B4\">Überprüfe die IP-Adresse des Routers und drück auf Start,<br>ein Browserfenster mit der Startseite des Routers öffnet sich,<br>nach dem Reconnect drückst du auf Stop und speicherst.<br>Mehr Informationen gibt es </span><a href=\"http://wiki.jdownloader.org/index.php?title=Recorder\">hier</a>"));
 
-        this.setTitle(JDLocale.L("gui.config.jdrr.title", "Reconnect Recorder"));
+        this.setTitle(JDL.L("gui.config.jdrr.title", "Reconnect Recorder"));
         this.setLayout(new MigLayout("wrap 1", "[center]"));
-        this.add(new JLabel(JDLocale.L("gui.fengshuiconfig.routerip", "RouterIP") + ":"), "split 3");
+        this.add(new JLabel(JDL.L("gui.fengshuiconfig.routerip", "RouterIP") + ":"), "split 3");
         this.add(routerip, "growx");
         this.add(rawmode);
         this.add(infolable, "growx");
@@ -97,7 +97,7 @@ public class JDRRGui extends JDialog implements ActionListener {
     }
 
     private void save() {
-        int ret = UserIO.getInstance().requestConfirmDialog(0, JDLocale.L("gui.config.jdrr.success", "Success!"), JDLocale.L("gui.config.jdrr.savereconnect", "Der Reconnect war erfolgreich möchten sie jetzt speichern?"), UserIO.getInstance().getIcon(UserIO.ICON_QUESTION), JDLocale.L("gui.btn_yes", "Ja"), JDLocale.L("gui.btn_no", "Nein"));
+        int ret = UserIO.getInstance().requestConfirmDialog(0, JDL.L("gui.config.jdrr.success", "Success!"), JDL.L("gui.config.jdrr.savereconnect", "Der Reconnect war erfolgreich möchten sie jetzt speichern?"), UserIO.getInstance().getIcon(UserIO.ICON_QUESTION), JDL.L("gui.btn_yes", "Ja"), JDL.L("gui.btn_no", "Nein"));
         if (JDFlags.hasSomeFlags(ret, UserIO.RETURN_OK, UserIO.RETURN_COUNTDOWN_TIMEOUT)) {
 
             Configuration configuration = JDUtilities.getConfiguration();
@@ -114,7 +114,7 @@ public class JDRRGui extends JDialog implements ActionListener {
                 configuration.setProperty(Configuration.PARAM_HTTPSEND_USER, user);
                 configuration.setProperty(Configuration.PARAM_HTTPSEND_PASS, pass);
             }
-            btnCancel.setText(JDLocale.L("gui.config.jdrr.close", "Schließen"));
+            btnCancel.setText(JDL.L("gui.config.jdrr.close", "Schließen"));
             configuration.setProperty(Configuration.PARAM_HTTPSEND_IP, routerip.getText().trim());
             configuration.setProperty(Configuration.PARAM_HTTPSEND_REQUESTS, methode);
             configuration.setProperty(Configuration.PARAM_HTTPSEND_ROUTERNAME, "Reconnect Recorder Methode");
@@ -175,7 +175,7 @@ public class JDRRGui extends JDialog implements ActionListener {
             super();
             setModal(true);
             setLayout(new MigLayout("wrap 1", "[center, grow, fill]"));
-            btnStop = new JButton(JDLocale.L("gui.btn_abort", "Abort"));
+            btnStop = new JButton(JDL.L("gui.btn_abort", "Abort"));
             btnStop.addActionListener(this);
             statusicon = new RRStatus();
             this.add(statusicon, "w 32!, h 32!");
@@ -194,7 +194,7 @@ public class JDRRGui extends JDialog implements ActionListener {
             new Thread() {
                 public void run() {
                     statusicon.setStatus(0);
-                    this.setName(JDLocale.L("gui.config.jdrr.popup.title", "JDRRPopup"));
+                    this.setName(JDL.L("gui.config.jdrr.popup.title", "JDRRPopup"));
                     reconnect_timer = 0;
                     while (JDRR.running) {
                         try {
@@ -269,7 +269,7 @@ public class JDRRGui extends JDialog implements ActionListener {
                         save();
                     } else {
                         // save(); /*zu debugzwecken*/
-                        JDUtilities.getGUI().showMessageDialog(JDLocale.L("gui.config.jdrr.reconnectfaild", "Reconnect failed"));
+                        JDUtilities.getGUI().showMessageDialog(JDL.L("gui.config.jdrr.reconnectfaild", "Reconnect failed"));
                     }
 
                     dispose();

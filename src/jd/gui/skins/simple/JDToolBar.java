@@ -40,10 +40,10 @@ import jd.event.ControlListener;
 import jd.gui.skins.simple.components.SpeedMeterPanel;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberFilePackage;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberPanel;
-import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.WebUpdate;
+import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 public class JDToolBar extends JToolBar implements ControlListener {
@@ -183,7 +183,7 @@ public class JDToolBar extends JToolBar implements ControlListener {
         });
 
         add(update = new JButton(JDTheme.II("gui.images.update", 24, 24)), BUTTON_CONSTRAINTS);
-        update.setToolTipText(JDLocale.L("gui.menu.action.update.desc", "Check for new updates"));
+        update.setToolTipText(JDL.L("gui.menu.action.update.desc", "Check for new updates"));
         update.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 new Thread() {
@@ -198,17 +198,17 @@ public class JDToolBar extends JToolBar implements ControlListener {
     private void initQuickConfig() {
         /* Clipboard */
         add(clipboard = new JToggleButton(), BUTTON_CONSTRAINTS);
-        clipboard.setToolTipText(JDLocale.L("gui.menu.action.clipboard.desc", null));
+        clipboard.setToolTipText(JDL.L("gui.menu.action.clipboard.desc", null));
         clipboard.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 ClipboardHandler.getClipboard().setEnabled(clipboard.isSelected());
             }
         });
-        clipboard.setName(JDLocale.L("quickhelp.toolbar.clipboard", "Toolbar clipboard observer"));
+        clipboard.setName(JDL.L("quickhelp.toolbar.clipboard", "Toolbar clipboard observer"));
 
         /* reconnect */
         add(reconnect = new JToggleButton(JDTheme.II("gui.images.reconnect_disabled", 24, 24)), BUTTON_CONSTRAINTS);
-        reconnect.setName(JDLocale.L("quickhelp.toolbar.reconnect", "Reconnect Toolbar"));
+        reconnect.setName(JDL.L("quickhelp.toolbar.reconnect", "Reconnect Toolbar"));
         reconnect.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 Reconnecter.toggleReconnect();
@@ -230,14 +230,14 @@ public class JDToolBar extends JToolBar implements ControlListener {
     private void updateReconnectButtons() {
         if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_LATEST_RECONNECT_RESULT, true)) {
             reconnectButton.setIcon(JDTheme.II("gui.images.reconnect_warning", 24, 24));
-            reconnectButton.setToolTipText(JDLocale.L("gui.menu.action.reconnect.notconfigured.tooltip", "Your Reconnect is not configured correct"));
+            reconnectButton.setToolTipText(JDL.L("gui.menu.action.reconnect.notconfigured.tooltip", "Your Reconnect is not configured correct"));
             reconnect.setEnabled(true);
-            reconnect.setToolTipText(JDLocale.L("gui.menu.action.reconnect.notconfigured.tooltip", "Your Reconnect is not configured correct"));
+            reconnect.setToolTipText(JDL.L("gui.menu.action.reconnect.notconfigured.tooltip", "Your Reconnect is not configured correct"));
         } else {
-            reconnectButton.setToolTipText(JDLocale.L("gui.menu.action.reconnectman.desc", "Manual reconnect. Get a new IP by resetting your internet connection"));
+            reconnectButton.setToolTipText(JDL.L("gui.menu.action.reconnectman.desc", "Manual reconnect. Get a new IP by resetting your internet connection"));
             reconnectButton.setIcon(JDTheme.II("gui.images.reconnect", 24, 24));
             reconnect.setEnabled(true);
-            reconnect.setToolTipText(JDLocale.L("gui.menu.action.reconnectauto.desc", "Auto reconnect. Get a new IP by resetting your internet connection"));
+            reconnect.setToolTipText(JDL.L("gui.menu.action.reconnectauto.desc", "Auto reconnect. Get a new IP by resetting your internet connection"));
         }
     }
 
@@ -252,12 +252,12 @@ public class JDToolBar extends JToolBar implements ControlListener {
     }
 
     private void updatePauseButton() {
-        pauseButton.setToolTipText(JDLocale.LF("gui.menu.action.break2.desc", "Pause downloads. Limits global speed to %s kb/s", SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_PAUSE_SPEED, 10) + ""));
+        pauseButton.setToolTipText(JDL.LF("gui.menu.action.break2.desc", "Pause downloads. Limits global speed to %s kb/s", SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_PAUSE_SPEED, 10) + ""));
     }
 
     private void initController() {
         add(playButton = new JButton(JDTheme.II("gui.images.next", 24, 24)), BUTTON_CONSTRAINTS);
-        playButton.setToolTipText(JDLocale.L("gui.menu.action.start.desc", null));
+        playButton.setToolTipText(JDL.L("gui.menu.action.start.desc", null));
         playButton.setName("playButton");
         playButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -292,14 +292,14 @@ public class JDToolBar extends JToolBar implements ControlListener {
         });
 
         add(stopButton = new JButton(JDTheme.II("gui.images.stop", 24, 24)), BUTTON_CONSTRAINTS);
-        stopButton.setToolTipText(JDLocale.L("gui.menu.action.stop.desc", null));
+        stopButton.setToolTipText(JDL.L("gui.menu.action.stop.desc", null));
         stopButton.setName("stopButton");
         stopButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 new Thread() {
                     public void run() {
                         setPause(false);
-                        final ProgressController pc = new ProgressController(JDLocale.L("gui.downloadstop", "Stopping current downloads..."));
+                        final ProgressController pc = new ProgressController(JDL.L("gui.downloadstop", "Stopping current downloads..."));
                         Thread test = new Thread() {
                             public void run() {
                                 while (true) {

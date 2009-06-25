@@ -45,9 +45,9 @@ import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.config.ConfigPanel;
 import jd.nutils.Colors;
-import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingx.JXTable;
@@ -75,15 +75,15 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         public String getColumnName(int column) {
             switch (column) {
             case 0:
-                return JDLocale.L("gui.column_host", "Host");
+                return JDL.L("gui.column_host", "Host");
             case 1:
-                return JDLocale.L("gui.column_version", "Version");
+                return JDL.L("gui.column_version", "Version");
             case 2:
-                return JDLocale.L("gui.column_agbChecked", "akzeptieren");
+                return JDL.L("gui.column_agbChecked", "akzeptieren");
             case 3:
-                return JDLocale.L("gui.column_usePlugin", "verwenden");
+                return JDL.L("gui.column_usePlugin", "verwenden");
             case 4:
-                return JDLocale.L("gui.column_agb", "AGB");
+                return JDL.L("gui.column_agb", "AGB");
             }
             return super.getColumnName(column);
         }
@@ -103,7 +103,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
             case 3:
                 return pluginsForHost.get(rowIndex).usePlugin();
             case 4:
-                JLinkButton ret = new JLinkButton(new AbstractAction(JDLocale.L("gui.config.plugin.host.readAGB", "AGB")) {
+                JLinkButton ret = new JLinkButton(new AbstractAction(JDL.L("gui.config.plugin.host.readAGB", "AGB")) {
 
                     private static final long serialVersionUID = 5915595466511261075L;
 
@@ -132,7 +132,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         public void setValueAt(Object value, int row, int col) {
             if (col == 2) {
                 if ((Boolean) value) {
-                    String msg = JDLocale.L("gui.config.plugin.host.desc", "Das JD Team übernimmt keine Verantwortung für die Einhaltung der AGB <br> der Hoster. Bitte lesen Sie die AGB aufmerksam und aktivieren Sie das Plugin nur,\r\nfalls Sie sich mit diesen Einverstanden erklären!\r\nDie Reihenfolge der Plugins bestimmt die Prioritäten der automatischen Mirrorauswahl\n\rBevorzugte Hoster sollten oben stehen!") + "\r\n\r\n" + JDLocale.LF("gui.config.plugin.abg_confirm", "Ich habe die AGB/TOS/FAQ von %s gelesen und erkläre mich damit einverstanden!", pluginsForHost.get(row).getHost());
+                    String msg = JDL.L("gui.config.plugin.host.desc", "Das JD Team übernimmt keine Verantwortung für die Einhaltung der AGB <br> der Hoster. Bitte lesen Sie die AGB aufmerksam und aktivieren Sie das Plugin nur,\r\nfalls Sie sich mit diesen Einverstanden erklären!\r\nDie Reihenfolge der Plugins bestimmt die Prioritäten der automatischen Mirrorauswahl\n\rBevorzugte Hoster sollten oben stehen!") + "\r\n\r\n" + JDL.LF("gui.config.plugin.abg_confirm", "Ich habe die AGB/TOS/FAQ von %s gelesen und erkläre mich damit einverstanden!", pluginsForHost.get(row).getHost());
                     if (JOptionPane.showConfirmDialog(SimpleGUI.CURRENTGUI, msg) == JOptionPane.OK_OPTION) {
                         pluginsForHost.get(row).setAGBChecked((Boolean) value);
                     }
@@ -251,11 +251,11 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
             }
         }
 
-        btnEdit = new JButton(JDLocale.L("gui.btn_settings", "Einstellungen"));
+        btnEdit = new JButton(JDL.L("gui.btn_settings", "Einstellungen"));
         btnEdit.setEnabled(false);
         btnEdit.addActionListener(this);
 
-        btnLoad = new JButton(JDLocale.L("gui.config.plugin.host.btn_load", "Load Plugin"));
+        btnLoad = new JButton(JDL.L("gui.config.plugin.host.btn_load", "Load Plugin"));
         btnLoad.setEnabled(false);
         btnLoad.addActionListener(this);
 

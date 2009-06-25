@@ -38,9 +38,9 @@ import jd.gui.skins.simple.components.multiprogressbar.MultiProgressBar;
 import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 public class FilePackageInfo extends JTabbedPanel implements ActionListener {
@@ -133,8 +133,8 @@ public class FilePackageInfo extends JTabbedPanel implements ActionListener {
 
     private void buildGui() {
         tabbedPane = new JTabbedPane();
-        tabbedPane.add(createFilePackageInfo(), JDLocale.L("gui.fileinfopanel.packagetab", "Package"));
-        tabbedPane.add(createLinkInfo(), JDLocale.L("gui.fileinfopanel.link", "Downloadlink"));
+        tabbedPane.add(createFilePackageInfo(), JDL.L("gui.fileinfopanel.packagetab", "Package"));
+        tabbedPane.add(createLinkInfo(), JDL.L("gui.fileinfopanel.link", "Downloadlink"));
         this.setLayout(new MigLayout("", "[grow]", "[]"));
         this.add(tabbedPane, "grow");
     }
@@ -155,12 +155,12 @@ public class FilePackageInfo extends JTabbedPanel implements ActionListener {
         txtComment = new JDTextField(true);
         addChangeListener(txtComment);
 
-        chbExtract = new JCheckBox(JDLocale.L("gui.fileinfopanel.packagetab.chb.extractAfterdownload", "Extract"));
+        chbExtract = new JCheckBox(JDL.L("gui.fileinfopanel.packagetab.chb.extractAfterdownload", "Extract"));
         chbExtract.setSelected(true);
         chbExtract.setHorizontalTextPosition(SwingConstants.LEFT);
         chbExtract.addActionListener(this);
 
-        chbUseSubdirectory = new JCheckBox(JDLocale.L("gui.linkgrabber.packagetab.chb.useSubdirectory", "Use Subdirectory"));
+        chbUseSubdirectory = new JCheckBox(JDL.L("gui.linkgrabber.packagetab.chb.useSubdirectory", "Use Subdirectory"));
         chbUseSubdirectory.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false));
         chbUseSubdirectory.setHorizontalTextPosition(SwingConstants.LEFT);
         chbUseSubdirectory.addActionListener(this);
@@ -169,15 +169,15 @@ public class FilePackageInfo extends JTabbedPanel implements ActionListener {
         panel = new JPanel();
         panel.setLayout(new MigLayout("ins 10, wrap 3", "[]10[grow,fill][]", "[]5[]5[]5[]"));
         panel.add(progressBarFilePackage, "spanx,growx,pushx");
-        panel.add(new JLabel(JDLocale.L("gui.fileinfopanel.packagetab.lbl.name", "Paketname")));
+        panel.add(new JLabel(JDL.L("gui.fileinfopanel.packagetab.lbl.name", "Paketname")));
         panel.add(txtName, "span 2,growx,spanx");
-        panel.add(new JLabel(JDLocale.L("gui.fileinfopanel.packagetab.lbl.saveto", "Speichern unter")));
+        panel.add(new JLabel(JDL.L("gui.fileinfopanel.packagetab.lbl.saveto", "Speichern unter")));
         panel.add(brwSaveTo.getInput(), "gapright 10,shrinkx");
         panel.add(brwSaveTo.getButton(), "pushx,growx");
-        panel.add(new JLabel(JDLocale.L("gui.fileinfopanel.packagetab.lbl.password", "Archivpasswort")));
+        panel.add(new JLabel(JDL.L("gui.fileinfopanel.packagetab.lbl.password", "Archivpasswort")));
         panel.add(txtPassword, " gapright 10, growx");
         panel.add(chbExtract, "alignx right");
-        panel.add(new JLabel(JDLocale.L("gui.fileinfopanel.packagetab.lbl.comment", "Kommentar")));
+        panel.add(new JLabel(JDL.L("gui.fileinfopanel.packagetab.lbl.comment", "Kommentar")));
         panel.add(txtComment, "gapright 10, growx");
         panel.add(chbUseSubdirectory, "alignx right");
         return panel;
@@ -209,23 +209,23 @@ public class FilePackageInfo extends JTabbedPanel implements ActionListener {
         panel.setLayout(new MigLayout("ins 10, wrap 3", "[]10[grow,fill][]", "[]5[]5[]5[]"));
         panel.add(hosterlabel = new JLabel(JDTheme.II("gui.images.sort", 16, 16)), "split 2");
         panel.add(typeicon = new JLabel(JDTheme.II("gui.images.sort", 16, 16)), "");
-        typeicon.setText(JDLocale.L("gui.fileinfopanel.linktab.chunks", "Chunks"));
+        typeicon.setText(JDL.L("gui.fileinfopanel.linktab.chunks", "Chunks"));
         panel.add(progressBarDownloadLink, "spanx,growx,pushx");
-        panel.add(eta = new JLabel(JDLocale.LF("gui.fileinfopanel.linktab.eta", "ETA: %s mm:ss", "0")));
-        panel.add(speed = new JLabel(JDLocale.LF("gui.fileinfopanel.linktab.speed", "Speed: %s/s", "0 kb")), "skip,alignx right");
-        panel.add(new JLabel(JDLocale.L("gui.fileinfopanel.linktab.saveto", "Save to")));
+        panel.add(eta = new JLabel(JDL.LF("gui.fileinfopanel.linktab.eta", "ETA: %s mm:ss", "0")));
+        panel.add(speed = new JLabel(JDL.LF("gui.fileinfopanel.linktab.speed", "Speed: %s/s", "0 kb")), "skip,alignx right");
+        panel.add(new JLabel(JDL.L("gui.fileinfopanel.linktab.saveto", "Save to")));
         panel.add(txtpathlabel = new JDTextField(true), "growx, span 2");
         txtpathlabel.setEditable(false);
-        panel.add(new JLabel(JDLocale.L("gui.fileinfopanel.linktab.url", "URL")));
+        panel.add(new JLabel(JDL.L("gui.fileinfopanel.linktab.url", "URL")));
         panel.add(txtURL = new JDTextField(true), "growx, span 2");
         txtURL.setEditable(false);
-        panel.add(new JLabel(JDLocale.L("gui.fileinfopanel.linktab.filesize", "Filesize")));
+        panel.add(new JLabel(JDL.L("gui.fileinfopanel.linktab.filesize", "Filesize")));
         panel.add(txtSize = new JDTextField(true), "growx, span 2");
         txtSize.setEditable(false);
-        panel.add(new JLabel(JDLocale.L("gui.fileinfopanel.linktab.comment", "Comment")));
+        panel.add(new JLabel(JDL.L("gui.fileinfopanel.linktab.comment", "Comment")));
         panel.add(txtCommentDl = new JDTextField(true), "growx, span 2");
         txtCommentDl.setEditable(false);
-        panel.add(new JLabel(JDLocale.L("gui.fileinfopanel.linktab.password", "Password")));
+        panel.add(new JLabel(JDL.L("gui.fileinfopanel.linktab.password", "Password")));
         panel.add(txtPasswordDl = new JDTextField(true), "growx, span 2");
         txtPasswordDl.setEditable(false);
 
@@ -304,8 +304,8 @@ public class FilePackageInfo extends JTabbedPanel implements ActionListener {
                             eta.setVisible(false);
                             speed.setVisible(false);
                         } else {
-                            eta.setText(JDLocale.LF("gui.fileinfopanel.linktab.eta", "ETA: %s mm:ss", Formatter.formatSeconds((downloadLink.getDownloadSize() - downloadLink.getDownloadCurrent()) / downloadLink.getDownloadSpeed())));
-                            speed.setText(JDLocale.LF("gui.fileinfopanel.linktab.speed", "Speed: %s/s", Formatter.formatReadable(Math.max(0, downloadLink.getDownloadSpeed()))));
+                            eta.setText(JDL.LF("gui.fileinfopanel.linktab.eta", "ETA: %s mm:ss", Formatter.formatSeconds((downloadLink.getDownloadSize() - downloadLink.getDownloadCurrent()) / downloadLink.getDownloadSpeed())));
+                            speed.setText(JDL.LF("gui.fileinfopanel.linktab.speed", "Speed: %s/s", Formatter.formatReadable(Math.max(0, downloadLink.getDownloadSpeed()))));
                             speed.setVisible(true);
                             eta.setVisible(true);
                         }

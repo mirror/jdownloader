@@ -21,8 +21,8 @@ import java.awt.event.ActionListener;
 import java.io.Serializable;
 import java.util.ArrayList;
 
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 /**
  * Diese Klasse speichert die GUI-Dialog Informationen. Jede GUI kann diese
@@ -117,7 +117,7 @@ public class ConfigContainer implements Serializable {
     private ConfigGroup group;
 
     public ConfigContainer() {
-        this(JDLocale.L("config.container.defaultname", "Allgemein"));
+        this(JDL.L("config.container.defaultname", "Allgemein"));
     }
 
     public ConfigContainer(String title) {

@@ -45,9 +45,9 @@ import jd.gui.skins.simple.config.ConfigPanel;
 import jd.gui.skins.simple.config.subpanels.SubPanelCLRReconnect;
 import jd.gui.skins.simple.config.subpanels.SubPanelLiveHeaderReconnect;
 import jd.nutils.Formatter;
-import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 public class ConfigPanelReconnect extends ConfigPanel implements ActionListener {
@@ -95,10 +95,10 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
 
             JDLogger.addHeader("Reconnect Testing");
 
-            final ProgressController progress = new ProgressController(JDLocale.L("gui.warning.reconnect.pleaseWait", "Bitte Warten...Reconnect läuft"), 100);
+            final ProgressController progress = new ProgressController(JDL.L("gui.warning.reconnect.pleaseWait", "Bitte Warten...Reconnect läuft"), 100);
 
             logger.info("Start Reconnect");
-            message.setText(JDLocale.L("gui.warning.reconnect.running", "running..."));
+            message.setText(JDL.L("gui.warning.reconnect.running", "running..."));
             message.setEnabled(true);
             beforeIP.setText(currentip.getText());
             beforeIP.setEnabled(true);
@@ -136,17 +136,17 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
                 @Override
                 public void run() {
                     if (Reconnecter.doManualReconnect()) {
-                        progress.setStatusText(JDLocale.L("gui.warning.reconnectSuccess", "Reconnect successfull"));
+                        progress.setStatusText(JDL.L("gui.warning.reconnectSuccess", "Reconnect successfull"));
 
-                        message.setText(JDLocale.L("gui.warning.reconnectSuccess", "Reconnect successfull"));
+                        message.setText(JDL.L("gui.warning.reconnectSuccess", "Reconnect successfull"));
                         success.setIcon(JDTheme.II("gui.images.selected", 32, 32));
                         success.setEnabled(true);
                         currentip.setText(JDUtilities.getIPAddress(null));
                     } else {
-                        progress.setStatusText(JDLocale.L("gui.warning.reconnectFailed", "Reconnect failed!"));
+                        progress.setStatusText(JDL.L("gui.warning.reconnectFailed", "Reconnect failed!"));
                         progress.setColor(Color.RED);
 
-                        message.setText(JDLocale.L("gui.warning.reconnectFailed", "Reconnect failed!"));
+                        message.setText(JDL.L("gui.warning.reconnectFailed", "Reconnect failed!"));
                         success.setIcon(JDTheme.II("gui.images.unselected", 32, 32));
                         success.setEnabled(true);
                         currentip.setText(JDUtilities.getIPAddress(null));
@@ -181,30 +181,30 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
         addCLR();
         // tabbed.setSelectedIndex(configuration.getIntegerProperty(
         // ReconnectMethod.PARAM_RECONNECT_TYPE, ReconnectMethod.LIVEHEADER));
-        method.add(Factory.createHeader(new ConfigGroup(JDLocale.L("gui.config.reconnect.test", "Showcase"), JDTheme.II("gui.images.config.network_local", 32, 32))), "spanx,gaptop 15,gapleft 20,gapright 15");
+        method.add(Factory.createHeader(new ConfigGroup(JDL.L("gui.config.reconnect.test", "Showcase"), JDTheme.II("gui.images.config.network_local", 32, 32))), "spanx,gaptop 15,gapleft 20,gapright 15");
         JPanel p = new JPanel(new MigLayout(" ins 0,wrap 7", "[]5[fill]5[align right]20[align right]20[align right]20[align right]20[align right]", "[][]"));
         method.add(p, "spanx,gapright 20,gapleft 54");
-        btn = new JButton(JDLocale.L("gui.config.reconnect.showcase.reconnect", "Change IP"));
+        btn = new JButton(JDL.L("gui.config.reconnect.showcase.reconnect", "Change IP"));
         btn.addActionListener(this);
         p.add(btn, "spany, aligny top");
         p.add(new JPanel(), "height 32!,spany,alignx left,pushx");
 
-        p.add(timeLabel = new JLabel(JDLocale.L("gui.config.reconnect.showcase.time", "Reconnect duration")));
+        p.add(timeLabel = new JLabel(JDL.L("gui.config.reconnect.showcase.time", "Reconnect duration")));
         p.add(time = new JLabel("---"));
 
         timeLabel.setEnabled(false);
         time.setEnabled(false);
-        p.add(new JLabel(JDLocale.L("gui.config.reconnect.showcase.currentip", "Your current IP")));
+        p.add(new JLabel(JDL.L("gui.config.reconnect.showcase.currentip", "Your current IP")));
         p.add(currentip = new JLabel("---"));
 
         success = new JLabel(JDTheme.II("gui.images.selected", 32, 32));
         success.setEnabled(false);
         p.add(success, "spany,alignx right");
 
-        p.add(message = new JLabel(JDLocale.L("gui.config.reconnect.showcase.message.none", "Not tested yet")), "spanx 2");
+        p.add(message = new JLabel(JDL.L("gui.config.reconnect.showcase.message.none", "Not tested yet")), "spanx 2");
         message.setEnabled(false);
 
-        p.add(beforeIPLabel = new JLabel(JDLocale.L("gui.config.reconnect.showcase.lastip", "Ip before reconnect")));
+        p.add(beforeIPLabel = new JLabel(JDL.L("gui.config.reconnect.showcase.lastip", "Ip before reconnect")));
         p.add(beforeIP = new JLabel("---"));
         beforeIPLabel.setEnabled(false);
         beforeIP.setEnabled(false);
@@ -217,8 +217,8 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
             }
         }.start();
 
-        maintabbed.addTab(JDLocale.L("gui.config.reconnect.methodtab", "Reconnect method"), JDTheme.II("gui.images.config.network_local", 16, 16), method);
-        maintabbed.addTab(JDLocale.L("gui.config.reconnect.settingstab", "Advanced Settings"), JDTheme.II("gui.images.reconnect_settings", 16, 16), cep = new ConfigEntriesPanel(container));
+        maintabbed.addTab(JDL.L("gui.config.reconnect.methodtab", "Reconnect method"), JDTheme.II("gui.images.config.network_local", 16, 16), method);
+        maintabbed.addTab(JDL.L("gui.config.reconnect.settingstab", "Advanced Settings"), JDTheme.II("gui.images.reconnect_settings", 16, 16), cep = new ConfigEntriesPanel(container));
         setLayout(new MigLayout("ins 0,wrap 1", "[fill,grow 10]", "[fill,grow]"));
         // panel.add();
         add(maintabbed);
@@ -229,11 +229,11 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
 
         container = new ConfigContainer();
 
-        ConfigGroup group = new ConfigGroup(JDLocale.L("gui.config.reconnect.shared", "General Reconnect Settings"), JDTheme.II("gui.images.reconnect_settings", 32, 32));
+        ConfigGroup group = new ConfigGroup(JDL.L("gui.config.reconnect.shared", "General Reconnect Settings"), JDTheme.II("gui.images.reconnect_settings", 32, 32));
         container.setGroup(group);
-        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), ReconnectMethod.PARAM_IPCHECKWAITTIME, JDLocale.L("reconnect.waitTimeToFirstIPCheck", "Wartezeit bis zum ersten IP-Check [sek]"), 0, 600).setDefaultValue(5));
-        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), ReconnectMethod.PARAM_RETRIES, JDLocale.L("reconnect.retries", "Max. Wiederholungen (-1 = unendlich)"), -1, 20).setDefaultValue(5));
-        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), ReconnectMethod.PARAM_WAITFORIPCHANGE, JDLocale.L("reconnect.waitForIp", "Auf neue IP warten [sek]"), 0, 600).setDefaultValue(20));
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), ReconnectMethod.PARAM_IPCHECKWAITTIME, JDL.L("reconnect.waitTimeToFirstIPCheck", "Wartezeit bis zum ersten IP-Check [sek]"), 0, 600).setDefaultValue(5));
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), ReconnectMethod.PARAM_RETRIES, JDL.L("reconnect.retries", "Max. Wiederholungen (-1 = unendlich)"), -1, 20).setDefaultValue(5));
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), ReconnectMethod.PARAM_WAITFORIPCHANGE, JDL.L("reconnect.waitForIp", "Auf neue IP warten [sek]"), 0, 600).setDefaultValue(20));
 
     }
 
@@ -243,28 +243,28 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
     }
 
     private void addCLR() {
-        String name = JDLocale.L("modules.reconnect.types.clr", "CLR Script");
+        String name = JDL.L("modules.reconnect.types.clr", "CLR Script");
 
         tabbed.addTab(name, new SubPanelCLRReconnect(configuration));
 
     }
 
     private void addBatch() {
-        String name = JDLocale.L("modules.reconnect.types.batch", "Batch");
+        String name = JDL.L("modules.reconnect.types.batch", "Batch");
 
         tabbed.addTab(name, new ConfigEntriesPanel(new BatchReconnect().getConfig()));
 
     }
 
     private void addExtern() {
-        String name = JDLocale.L("modules.reconnect.types.extern", "Extern");
+        String name = JDL.L("modules.reconnect.types.extern", "Extern");
 
         tabbed.addTab(name, new ConfigEntriesPanel(new ExternReconnect().getConfig()));
 
     }
 
     private void addLiveheader() {
-        String name = JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl");
+        String name = JDL.L("modules.reconnect.types.liveheader", "LiveHeader/Curl");
 
         tabbed.addTab(name, new SubPanelLiveHeaderReconnect(configuration, new HTTPLiveHeader()));
 

@@ -59,9 +59,9 @@ import jd.nutils.Colors;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
-import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 import org.jdesktop.swingx.JXTreeTable;
 import org.jdesktop.swingx.decorator.HighlightPredicate;
@@ -107,7 +107,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         getTableHeader().setReorderingAllowed(false);
         getTableHeader().setResizingAllowed(true);
         // this.setExpandsSelectedPaths(true);
-        prioDescs = new String[] { JDLocale.L("gui.treetable.tooltip.priority-1", "Low Priority"), JDLocale.L("gui.treetable.tooltip.priority0", "No Priority"), JDLocale.L("gui.treetable.tooltip.priority1", "High Priority"), JDLocale.L("gui.treetable.tooltip.priority2", "Higher Priority"), JDLocale.L("gui.treetable.tooltip.priority3", "Highest Priority") };
+        prioDescs = new String[] { JDL.L("gui.treetable.tooltip.priority-1", "Low Priority"), JDL.L("gui.treetable.tooltip.priority0", "No Priority"), JDL.L("gui.treetable.tooltip.priority1", "High Priority"), JDL.L("gui.treetable.tooltip.priority2", "Higher Priority"), JDL.L("gui.treetable.tooltip.priority3", "Highest Priority") };
         setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
         setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         setColumnControlVisible(true);
@@ -368,7 +368,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
     public void keyReleased(KeyEvent e) {
         if (e.getKeyCode() == KeyEvent.VK_DELETE) {
             ArrayList<DownloadLink> alllinks = getAllSelectedDownloadLinks();
-            TreeTableAction test = new TreeTableAction(panel, JDTheme.II("gui.images.delete", 16, 16), JDLocale.L("gui.table.contextmenu.delete", "entfernen") + " (" + alllinks.size() + ")", TreeTableAction.DELETE, new Property("links", alllinks));
+            TreeTableAction test = new TreeTableAction(panel, JDTheme.II("gui.images.delete", 16, 16), JDL.L("gui.table.contextmenu.delete", "entfernen") + " (" + alllinks.size() + ")", TreeTableAction.DELETE, new Property("links", alllinks));
             test.actionPerformed(new ActionEvent(test, 0, ""));
         }
     }
@@ -379,7 +379,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
     public void mouseClicked(MouseEvent e) {
         if (e.getSource() == this.getTableHeader()) {
             int col = getRealcolumnAtPoint(e.getX());
-            TreeTableAction test = new TreeTableAction(panel, JDTheme.II("gui.images.sort", 16, 16), JDLocale.L("gui.table.contextmenu.packagesort", "Paket sortieren"), TreeTableAction.SORT_ALL, new Property("col", col));
+            TreeTableAction test = new TreeTableAction(panel, JDTheme.II("gui.images.sort", 16, 16), JDL.L("gui.table.contextmenu.packagesort", "Paket sortieren"), TreeTableAction.SORT_ALL, new Property("col", col));
             test.actionPerformed(new ActionEvent(test, 0, ""));
             return;
         }
@@ -448,50 +448,50 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
             JPopupMenu popup = new JPopupMenu();
 
             if (obj instanceof FilePackage || obj instanceof DownloadLink) {
-                popup.add(tmp = new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.images.stopsign", 16, 16), JDLocale.L("gui.table.contextmenu.stopmark", "Stop sign"), TreeTableAction.STOP_MARK, new Property("item", obj))));
+                popup.add(tmp = new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.images.stopsign", 16, 16), JDL.L("gui.table.contextmenu.stopmark", "Stop sign"), TreeTableAction.STOP_MARK, new Property("item", obj))));
                 if (DownloadWatchDog.getInstance().isStopMark(obj)) tmp.setIcon(tmp.getDisabledIcon());
-                popup.add(new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.images.delete", 16, 16), JDLocale.L("gui.table.contextmenu.delete", "entfernen") + " (" + alllinks.size() + ")", TreeTableAction.DELETE, new Property("links", alllinks))));
+                popup.add(new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.images.delete", 16, 16), JDL.L("gui.table.contextmenu.delete", "entfernen") + " (" + alllinks.size() + ")", TreeTableAction.DELETE, new Property("links", alllinks))));
 
                 popup.add(new JSeparator());
             }
 
             popup.add(createExtrasMenu(obj));
             if (obj instanceof FilePackage) {
-                popup.add(new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.images.package_opened", 16, 16), JDLocale.L("gui.table.contextmenu.downloadDir", "Zielordner öffnen"), TreeTableAction.DOWNLOAD_DIR, new Property("folder", new File(((FilePackage) obj).getDownloadDirectory())))));
-                popup.add(new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.images.sort", 16, 16), JDLocale.L("gui.table.contextmenu.packagesort", "Paket sortieren") + " (" + sfp.size() + "), (" + this.getModel().getColumnName(col) + ")", TreeTableAction.SORT, new Property("col", col))));
-                popup.add(new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.images.edit", 16, 16), JDLocale.L("gui.table.contextmenu.editpackagename", "Paketname ändern") + " (" + sfp.size() + ")", TreeTableAction.EDIT_NAME, new Property("packages", sfp))));
-                popup.add(tmp = new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.images.save", 16, 16), JDLocale.L("gui.table.contextmenu.editdownloadDir", "Zielordner ändern") + " (" + sfp.size() + ")", TreeTableAction.EDIT_DIR, new Property("packages", sfp))));
+                popup.add(new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.images.package_opened", 16, 16), JDL.L("gui.table.contextmenu.downloadDir", "Zielordner öffnen"), TreeTableAction.DOWNLOAD_DIR, new Property("folder", new File(((FilePackage) obj).getDownloadDirectory())))));
+                popup.add(new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.images.sort", 16, 16), JDL.L("gui.table.contextmenu.packagesort", "Paket sortieren") + " (" + sfp.size() + "), (" + this.getModel().getColumnName(col) + ")", TreeTableAction.SORT, new Property("col", col))));
+                popup.add(new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.images.edit", 16, 16), JDL.L("gui.table.contextmenu.editpackagename", "Paketname ändern") + " (" + sfp.size() + ")", TreeTableAction.EDIT_NAME, new Property("packages", sfp))));
+                popup.add(tmp = new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.images.save", 16, 16), JDL.L("gui.table.contextmenu.editdownloadDir", "Zielordner ändern") + " (" + sfp.size() + ")", TreeTableAction.EDIT_DIR, new Property("packages", sfp))));
 
                 popup.add(new JSeparator());
             }
             if (obj instanceof DownloadLink) {
-                popup.add(new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.images.package_opened", 16, 16), JDLocale.L("gui.table.contextmenu.downloadDir", "Zielordner öffnen"), TreeTableAction.DOWNLOAD_DIR, new Property("folder", new File(((DownloadLink) obj).getFileOutput()).getParentFile()))));
-                popup.add(tmp = new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.images.browse", 16, 16), JDLocale.L("gui.table.contextmenu.browseLink", "im Browser öffnen"), TreeTableAction.DOWNLOAD_BROWSE_LINK, new Property("downloadlink", obj))));
+                popup.add(new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.images.package_opened", 16, 16), JDL.L("gui.table.contextmenu.downloadDir", "Zielordner öffnen"), TreeTableAction.DOWNLOAD_DIR, new Property("folder", new File(((DownloadLink) obj).getFileOutput()).getParentFile()))));
+                popup.add(tmp = new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.images.browse", 16, 16), JDL.L("gui.table.contextmenu.browseLink", "im Browser öffnen"), TreeTableAction.DOWNLOAD_BROWSE_LINK, new Property("downloadlink", obj))));
                 if (((DownloadLink) obj).getLinkType() != DownloadLink.LINKTYPE_NORMAL) tmp.setEnabled(false);
             }
             if (obj instanceof FilePackage || obj instanceof DownloadLink) {
-                popup.add(new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.images.dlc", 16, 16), JDLocale.L("gui.table.contextmenu.dlc", "DLC erstellen") + " (" + alllinks.size() + ")", TreeTableAction.DOWNLOAD_DLC, new Property("links", alllinks))));
+                popup.add(new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.images.dlc", 16, 16), JDL.L("gui.table.contextmenu.dlc", "DLC erstellen") + " (" + alllinks.size() + ")", TreeTableAction.DOWNLOAD_DLC, new Property("links", alllinks))));
                 popup.add(buildpriomenu(alllinks));
-                popup.add(new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.icons.copy", 16, 16), JDLocale.L("gui.table.contextmenu.copyPassword", "Copy Password") + " (" + alllinks.size() + ")", TreeTableAction.DOWNLOAD_COPY_PASSWORD, new Property("links", alllinks))));
-                popup.add(tmp = new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.icons.cut", 16, 16), JDLocale.L("gui.table.contextmenu.copyLink", "Copy URL") + " (" + allnoncon.size() + ")", TreeTableAction.DOWNLOAD_COPY_URL, new Property("links", allnoncon))));
+                popup.add(new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.icons.copy", 16, 16), JDL.L("gui.table.contextmenu.copyPassword", "Copy Password") + " (" + alllinks.size() + ")", TreeTableAction.DOWNLOAD_COPY_PASSWORD, new Property("links", alllinks))));
+                popup.add(tmp = new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.icons.cut", 16, 16), JDL.L("gui.table.contextmenu.copyLink", "Copy URL") + " (" + allnoncon.size() + ")", TreeTableAction.DOWNLOAD_COPY_URL, new Property("links", allnoncon))));
                 if (allnoncon.size() == 0) tmp.setEnabled(false);
-                popup.add(new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.images.config.network_local", 16, 16), JDLocale.L("gui.table.contextmenu.check", "Check OnlineStatus") + " (" + alllinks.size() + ")", TreeTableAction.CHECK, new Property("links", alllinks))));
-                popup.add(new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.images.newpackage", 16, 16), JDLocale.L("gui.table.contextmenu.newpackage", "In neues Paket verschieben") + " (" + alllinks.size() + ")", TreeTableAction.NEW_PACKAGE, new Property("links", alllinks))));
-                popup.add(new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.images.password", 16, 16), JDLocale.L("gui.table.contextmenu.setdlpw", "Set download password") + " (" + alllinks.size() + ")", TreeTableAction.SET_PW, new Property("links", alllinks))));
+                popup.add(new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.images.config.network_local", 16, 16), JDL.L("gui.table.contextmenu.check", "Check OnlineStatus") + " (" + alllinks.size() + ")", TreeTableAction.CHECK, new Property("links", alllinks))));
+                popup.add(new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.images.newpackage", 16, 16), JDL.L("gui.table.contextmenu.newpackage", "In neues Paket verschieben") + " (" + alllinks.size() + ")", TreeTableAction.NEW_PACKAGE, new Property("links", alllinks))));
+                popup.add(new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.images.password", 16, 16), JDL.L("gui.table.contextmenu.setdlpw", "Set download password") + " (" + alllinks.size() + ")", TreeTableAction.SET_PW, new Property("links", alllinks))));
                 popup.add(new JSeparator());
                 HashMap<String, Object> prop = new HashMap<String, Object>();
                 prop.put("links", alllinks);
                 prop.put("boolean", true);
-                popup.add(tmp = new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.images.ok", 16, 16), JDLocale.L("gui.table.contextmenu.enable", "aktivieren") + " (" + links_disabled + ")", TreeTableAction.DE_ACTIVATE, new Property("infos", prop))));
+                popup.add(tmp = new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.images.ok", 16, 16), JDL.L("gui.table.contextmenu.enable", "aktivieren") + " (" + links_disabled + ")", TreeTableAction.DE_ACTIVATE, new Property("infos", prop))));
                 if (links_disabled == 0) tmp.setEnabled(false);
                 prop = new HashMap<String, Object>();
                 prop.put("links", alllinks);
                 prop.put("boolean", false);
-                popup.add(tmp = new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.images.bad", 16, 16), JDLocale.L("gui.table.contextmenu.disable", "deaktivieren") + " (" + links_enabled + ")", TreeTableAction.DE_ACTIVATE, new Property("infos", prop))));
+                popup.add(tmp = new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.images.bad", 16, 16), JDL.L("gui.table.contextmenu.disable", "deaktivieren") + " (" + links_enabled + ")", TreeTableAction.DE_ACTIVATE, new Property("infos", prop))));
                 if (links_enabled == 0) tmp.setEnabled(false);
-                popup.add(tmp = new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.images.resume", 16, 16), JDLocale.L("gui.table.contextmenu.resume", "fortsetzen") + " (" + resumlinks.size() + ")", TreeTableAction.DOWNLOAD_RESUME, new Property("links", resumlinks))));
+                popup.add(tmp = new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.images.resume", 16, 16), JDL.L("gui.table.contextmenu.resume", "fortsetzen") + " (" + resumlinks.size() + ")", TreeTableAction.DOWNLOAD_RESUME, new Property("links", resumlinks))));
                 if (resumlinks.size() == 0) tmp.setEnabled(false);
-                popup.add(new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.images.reset", 16, 16), JDLocale.L("gui.table.contextmenu.reset", "zurücksetzen") + " (" + alllinks.size() + ")", TreeTableAction.DOWNLOAD_RESET, new Property("links", alllinks))));
+                popup.add(new JMenuItem(new TreeTableAction(panel, JDTheme.II("gui.images.reset", 16, 16), JDL.L("gui.table.contextmenu.reset", "zurücksetzen") + " (" + alllinks.size() + ")", TreeTableAction.DOWNLOAD_RESET, new Property("links", alllinks))));
             }
             if (popup.getComponentCount() != 0) popup.show(this, point.x, point.y);
         }
@@ -499,7 +499,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
 
     private JMenu buildpriomenu(ArrayList<DownloadLink> links) {
         JMenuItem tmp;
-        JMenu prioPopup = new JMenu(JDLocale.L("gui.table.contextmenu.priority", "Priority") + " (" + links.size() + ")");
+        JMenu prioPopup = new JMenu(JDL.L("gui.table.contextmenu.priority", "Priority") + " (" + links.size() + ")");
         Integer prio = null;
         if (links.size() == 1) prio = links.get(0).getPriority();
         prioPopup.setIcon(JDTheme.II("gui.images.priority0", 16, 16));
@@ -520,7 +520,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
     }
 
     private JMenu createExtrasMenu(Object obj) {
-        JMenu pluginPopup = new JMenu(JDLocale.L("gui.table.contextmenu.extrasSubmenu", "Extras"));
+        JMenu pluginPopup = new JMenu(JDL.L("gui.table.contextmenu.extrasSubmenu", "Extras"));
         ArrayList<MenuItem> entries = new ArrayList<MenuItem>();
         if (obj instanceof FilePackage) {
             JDUtilities.getController().fireControlEventDirect(new ControlEvent((FilePackage) obj, ControlEvent.CONTROL_LINKLIST_CONTEXT_MENU, entries));

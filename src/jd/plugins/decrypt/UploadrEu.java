@@ -25,7 +25,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 
 public class UploadrEu extends PluginForDecrypt {
 
@@ -60,7 +60,7 @@ public class UploadrEu extends PluginForDecrypt {
                     Form passcap = br.getFormbyProperty("name", "captcha");
                     if (passcap == null) br.getForm(0);
                     if (br.containsHTML("Ordnerpasswort:")) {
-                        passwordstring = getUserInput(JDLocale.L("plugins.hoster.general.passwordProtectedInput", "Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:"), param.getDecrypterPassword(), param);
+                        passwordstring = getUserInput(JDL.L("plugins.hoster.general.passwordProtectedInput", "Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:"), param.getDecrypterPassword(), param);
                         password = true;
                     }
 
@@ -78,7 +78,7 @@ public class UploadrEu extends PluginForDecrypt {
 
                     br.submitForm(passcap);
                     if (!br.containsHTML("Eingabe falsch!")) break;
-                    if (i == 4) { throw new DecrypterException(JDLocale.L("plugins.decrypter.uploadreu.badpassorcaptcha", "You entered bad password or captcha code 5 times. Please review your data.")); }
+                    if (i == 4) { throw new DecrypterException(JDL.L("plugins.decrypter.uploadreu.badpassorcaptcha", "You entered bad password or captcha code 5 times. Please review your data.")); }
                     br.getPage(parameter);
 
                 }

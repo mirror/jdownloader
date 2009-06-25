@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 
 public class UploadlineCom extends PluginForHost {
 
@@ -135,7 +135,7 @@ public class UploadlineCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(No such file)|(No such user exist)|(Link expired)|(File Not Found)|(Error happened)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("available for Premium users only")) {
-            logger.warning(JDLocale.L("plugins.host.uploadlinecom.premiumonly", "Uploadline.com: Files over 1 Gb are available for Premium users only"));
+            logger.warning(JDL.L("plugins.host.uploadlinecom.premiumonly", "Uploadline.com: Files over 1 Gb are available for Premium users only"));
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "See log");
         }
         if (br.getForm(0) == null) {

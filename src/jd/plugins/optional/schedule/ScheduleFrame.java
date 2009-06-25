@@ -34,8 +34,8 @@ import javax.swing.Timer;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.nutils.Formatter;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 public class ScheduleFrame extends JPanel implements ActionListener {
@@ -72,7 +72,7 @@ public class ScheduleFrame extends JPanel implements ActionListener {
 
         date_model = new SpinnerDateModel();
 
-        start = new JButton(JDLocale.L("addons.schedule.menu.start", "Start"));
+        start = new JButton(JDL.L("addons.schedule.menu.start", "Start"));
         start.setBorderPainted(false);
         start.setFocusPainted(false);
 
@@ -98,32 +98,32 @@ public class ScheduleFrame extends JPanel implements ActionListener {
         reconnect = new JCheckBox();
         reconnect.setSelected(settings.isReconnect());
 
-        status = new JLabel(JDLocale.L("addons.schedule.menu.running", " Not Running!"));
+        status = new JLabel(JDL.L("addons.schedule.menu.running", " Not Running!"));
 
         stop_start = new JCheckBox();
         stop_start.setSelected(settings.isStartStop());
 
         this.setLayout(new MigLayout("wrap 2"));
 
-        this.add(new JLabel(JDLocale.L("addons.schedule.menu.maxdl", " max. Downloads")));
+        this.add(new JLabel(JDL.L("addons.schedule.menu.maxdl", " max. Downloads")));
         this.add(maxdls, COMPONENT_WIDTH);
 
-        this.add(new JLabel(JDLocale.L("addons.schedule.menu.maxspeed", " max. DownloadSpeed")));
+        this.add(new JLabel(JDL.L("addons.schedule.menu.maxspeed", " max. DownloadSpeed")));
         this.add(maxspeed, COMPONENT_WIDTH);
 
-        this.add(new JLabel(JDLocale.L("addons.schedule.menu.premium", "Premium")));
+        this.add(new JLabel(JDL.L("addons.schedule.menu.premium", "Premium")));
         this.add(premium, COMPONENT_WIDTH);
 
-        this.add(new JLabel(JDLocale.L("addons.schedule.menu.reconnect", " Reconnect ?")));
+        this.add(new JLabel(JDL.L("addons.schedule.menu.reconnect", " Reconnect ?")));
         this.add(reconnect, COMPONENT_WIDTH);
 
-        this.add(new JLabel(JDLocale.L("addons.schedule.menu.start_stop", " Start/Stop DL ?")));
+        this.add(new JLabel(JDL.L("addons.schedule.menu.start_stop", " Start/Stop DL ?")));
         this.add(stop_start, COMPONENT_WIDTH);
 
-        this.add(new JLabel(JDLocale.L("addons.schedule.menu.time", " Select Time:")));
+        this.add(new JLabel(JDL.L("addons.schedule.menu.time", " Select Time:")));
         this.add(time, COMPONENT_WIDTH);
 
-        this.add(new JLabel(JDLocale.L("addons.schedule.menu.redo", " Redo in h:")));
+        this.add(new JLabel(JDL.L("addons.schedule.menu.redo", " Redo in h:")));
         this.add(repeat, COMPONENT_WIDTH);
 
         label = new JLabel(name = settings.getName());
@@ -142,21 +142,21 @@ public class ScheduleFrame extends JPanel implements ActionListener {
         if (e.getSource() == start) {
             if (var > 0) {
                 if (t.isRunning() == false || c.isRunning() == false) {
-                    start.setText(JDLocale.L("addons.schedule.menu.stop", "Stop"));
+                    start.setText(JDL.L("addons.schedule.menu.stop", "Stop"));
                     t.setInitialDelay(var);
                     t.start();
                     c.start();
-                    status.setText(JDLocale.L("addons.schedule.menu.started", "Started!"));
+                    status.setText(JDL.L("addons.schedule.menu.started", "Started!"));
                     time.setEnabled(false);
                 } else {
-                    start.setText(JDLocale.L("addons.schedule.menu.start", "Start"));
+                    start.setText(JDL.L("addons.schedule.menu.start", "Start"));
                     t.stop();
                     c.stop();
-                    status.setText(JDLocale.L("gui.btn_cancel", " Aborted!"));
+                    status.setText(JDL.L("gui.btn_cancel", " Aborted!"));
                     time.setEnabled(true);
                 }
             } else {
-                status.setText(JDLocale.L("addons.schedule.menu.p_time", " Select positive time!"));
+                status.setText(JDL.L("addons.schedule.menu.p_time", " Select positive time!"));
             }
         } else if (e.getSource() == t) {
 
@@ -180,14 +180,14 @@ public class ScheduleFrame extends JPanel implements ActionListener {
                 t.setInitialDelay(var);
                 t.start();
             } else {
-                start.setText(JDLocale.L("addons.schedule.menu.start", "Start"));
+                start.setText(JDL.L("addons.schedule.menu.start", "Start"));
                 c.stop();
-                status.setText(JDLocale.L("addons.schedule.menu.finished", " Finished!"));
+                status.setText(JDL.L("addons.schedule.menu.finished", " Finished!"));
                 time.setEnabled(true);
             }
         } else if (e.getSource() == c) {
             String remainString = Formatter.formatSeconds(var / 1000);
-            String remain = JDLocale.L("addons.schedule.menu.remain", "Remaining:") + " " + remainString;
+            String remain = JDL.L("addons.schedule.menu.remain", "Remaining:") + " " + remainString;
             status.setText(remain);
         }
 

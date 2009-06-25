@@ -36,7 +36,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.RAFDownload;
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 
 public class RapidShareDe extends PluginForHost {
 
@@ -77,7 +77,7 @@ public class RapidShareDe extends PluginForHost {
             } catch (Exception es) {
                 logger.severe("kann wartezeit nicht setzen");
                 linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
-                linkStatus.setErrorMessage(JDLocale.L("plugins.hoster.rapidsharede.errors.cannotsetwaittime", "Wait time could not be set"));
+                linkStatus.setErrorMessage(JDL.L("plugins.hoster.rapidsharede.errors.cannotsetwaittime", "Wait time could not be set"));
                 return;
             }
         }
@@ -136,9 +136,9 @@ public class RapidShareDe extends PluginForHost {
         r.getCookies().add(new Cookie(getHost(), "user", user + "-" + formatPass));
 
         String page = r.load();
-        if (page.contains("Premium-Cookie nicht gefunden")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, JDLocale.L("plugins.hoster.rapidsharede.errors.accountbad", "Account not found or password wrong"), LinkStatus.VALUE_ID_PREMIUM_DISABLE); }
+        if (page.contains("Premium-Cookie nicht gefunden")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, JDL.L("plugins.hoster.rapidsharede.errors.accountbad", "Account not found or password wrong"), LinkStatus.VALUE_ID_PREMIUM_DISABLE); }
         String error = new Regex(page, "alert\\(\"(.*)\"\\)<\\/script>").getMatch(0);
-        if (error != null) { throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.hoster.rapidshareDE.errors." + JDHash.getMD5(error), error)); }
+        if (error != null) { throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.rapidshareDE.errors." + JDHash.getMD5(error), error)); }
         String url = new Regex(page, "\\:<\\/b> <a href\\=\"([^\"].*)\">.*?.rapidshare.de").getMatch(0);
 
         URLConnectionAdapter urlConnection;

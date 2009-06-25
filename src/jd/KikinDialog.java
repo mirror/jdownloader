@@ -38,8 +38,8 @@ import jd.gui.userio.dialog.AbstractDialog;
 import jd.http.Browser;
 import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 public class KikinDialog extends AbstractDialog {
@@ -49,7 +49,7 @@ public class KikinDialog extends AbstractDialog {
     private JTextPane textField;
 
     public KikinDialog() {
-        super(UserIO.NO_COUNTDOWN, JDLocale.L("gui.installer.kikin.title", "Kikin Installer"), null, JDLocale.L("gui.installer.kikin.ok", "Continue"), JDLocale.L("gui.installer.kikin.cancel", "Cancel"));
+        super(UserIO.NO_COUNTDOWN, JDL.L("gui.installer.kikin.title", "Kikin Installer"), null, JDL.L("gui.installer.kikin.ok", "Continue"), JDL.L("gui.installer.kikin.cancel", "Cancel"));
 
         init();
     }
@@ -65,7 +65,7 @@ public class KikinDialog extends AbstractDialog {
         JPanel p = new JPanel(new MigLayout("ins 5,wrap 2"));
 
         JLabel lbl;
-        p.add(lbl = new JLabel(JDLocale.L("gui.installer.kikin.message", "Free! Personalize your search experience")), "alignx left, aligny bottom");
+        p.add(lbl = new JLabel(JDL.L("gui.installer.kikin.message", "Free! Personalize your search experience")), "alignx left, aligny bottom");
         Font f = lbl.getFont();
 
         // bold
@@ -73,7 +73,7 @@ public class KikinDialog extends AbstractDialog {
 
         p.add(new JLabel(JDImage.getImageIcon(JDUtilities.getResourceFile("tools/Windows/kikin/kikin.png"))), "alignx right,aligny top");
         p.add(new JSeparator(), "spanx,growx,pushx");
-        if (JDLocale.getLocale() == "german") {
+        if (JDL.getLocale().getLanguageCode().equals("de")) {
             label = new JLabel(JDImage.getImageIcon(JDUtilities.getResourceFile("tools/Windows/kikin/ins_de.png")));
         } else {
             label = new JLabel(JDImage.getImageIcon(JDUtilities.getResourceFile("tools/Windows/kikin/ins_en.png")));
@@ -91,7 +91,7 @@ public class KikinDialog extends AbstractDialog {
                     btnOK.setToolTipText(null);
                 } else {
                     btnOK.setEnabled(false);
-                    btnOK.setToolTipText(JDLocale.L("gui.installer.kikin.tooltip", "Please read and accept the conditions"));
+                    btnOK.setToolTipText(JDL.L("gui.installer.kikin.tooltip", "Please read and accept the conditions"));
                 }
 
             }
@@ -105,7 +105,7 @@ public class KikinDialog extends AbstractDialog {
 
         textField.setOpaque(false);
 
-        textField.setText("<style type='text/css'> body {        font-family: Geneva, Arial, Helvetica, sans-serif; font-size:9px;}</style>" + JDLocale.L("gui.installer.kikin.agree", "<b><a href=\"http://jdownloader.org/kikin\">What is Kikin?</a> <br/>Best Parts? kikin is free and works automatically.<br>I agree to the kikin <a href=\"http://www.kikin.com/terms-of-service\">Terms of Service</a> and <a href=\"http://www.kikin.com/privacy-policy\">Privacy Policy</a></b>"));
+        textField.setText("<style type='text/css'> body {        font-family: Geneva, Arial, Helvetica, sans-serif; font-size:9px;}</style>" + JDL.L("gui.installer.kikin.agree", "<b><a href=\"http://jdownloader.org/kikin\">What is Kikin?</a> <br/>Best Parts? kikin is free and works automatically.<br>I agree to the kikin <a href=\"http://www.kikin.com/terms-of-service\">Terms of Service</a> and <a href=\"http://www.kikin.com/privacy-policy\">Privacy Policy</a></b>"));
         textField.setEditable(false);
         textField.addHyperlinkListener(new HyperlinkListener() {
 
@@ -129,7 +129,7 @@ public class KikinDialog extends AbstractDialog {
         pp.add(new JSeparator(), "spanx,growx,pushx");
         cp.add(pp, "growx,pushx");
         btnOK.setEnabled(false);
-        btnOK.setToolTipText(JDLocale.L("gui.installer.kikin.tooltip", "Please read and accept the conditions"));
+        btnOK.setToolTipText(JDL.L("gui.installer.kikin.tooltip", "Please read and accept the conditions"));
         btnOK.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {

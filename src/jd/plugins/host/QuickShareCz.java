@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 
 public class QuickShareCz extends PluginForHost {
 
@@ -77,8 +77,8 @@ public class QuickShareCz extends PluginForHost {
         URLConnectionAdapter con = dl.getConnection();
         if (con.getContentType().contains("text")) {
             String herror = br.getURL();
-            if (herror.contains("chyba/1")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDLocale.L("plugins.hoster.QuickShareCz.alreadyloading", "This IP is already downloading"), 2 *60 * 1000);
-            if (herror.contains("chyba/2")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.hoster.QuickShareCz.nofreeslots", "No free slots available"), 60 * 1000);
+            if (herror.contains("chyba/1")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.QuickShareCz.alreadyloading", "This IP is already downloading"), 2 *60 * 1000);
+            if (herror.contains("chyba/2")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.QuickShareCz.nofreeslots", "No free slots available"), 60 * 1000);
         }
         else dl.startDownload();
        

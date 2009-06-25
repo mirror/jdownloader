@@ -33,6 +33,7 @@ import jd.gui.userio.dialog.ContainerDialog;
 import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
 import jd.nutils.io.JDIO;
+import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 public class JDFileReg {
@@ -79,7 +80,7 @@ public class JDFileReg {
                     JDLogger.getLogger().info("Installed Click'n'Load and associated .*dlc,.*ccf,.*rsdf and .*jd with JDownloader. Uninstall with " + JDUtilities.getResourceFile("tools/windows/uninstall.reg"));
                 } else {
 
-                    UserIO.getInstance().requestConfirmDialog(UserIO.NO_CANCEL_OPTION, JDLocale.L("gui.cnl.install.error.title", "Click'n'Load Installation"), JDLocale.LF("gui.cnl.install.error.message", "Installation of CLick'n'Load failed. Try these alternatives:\r\n * Start JDownloader as Admin.\r\n * Try to execute %s manually.\r\n * Open Configuration->General->Click'n'load-> [Install].\r\nFor details, visit http://jdownloader.org/click-n-load.", JDUtilities.getResourceFile("tmp/installcnl.reg").getAbsolutePath()), JDTheme.II("gui.clicknload", 48, 48), null, null);
+                    UserIO.getInstance().requestConfirmDialog(UserIO.NO_CANCEL_OPTION, JDL.L("gui.cnl.install.error.title", "Click'n'Load Installation"), JDL.LF("gui.cnl.install.error.message", "Installation of CLick'n'Load failed. Try these alternatives:\r\n * Start JDownloader as Admin.\r\n * Try to execute %s manually.\r\n * Open Configuration->General->Click'n'load-> [Install].\r\nFor details, visit http://jdownloader.org/click-n-load.", JDUtilities.getResourceFile("tmp/installcnl.reg").getAbsolutePath()), JDTheme.II("gui.clicknload", 48, 48), null, null);
 
                     JDLogger.getLogger().severe("Installation of CLick'n'Load failed. Please try to start JDownloader as Admin. For details, visit http://jdownloader.org/click-n-load. Try to execute " + JDUtilities.getResourceFile("tmp/installcnl.reg").getAbsolutePath() + " manually");
                 }
@@ -101,7 +102,7 @@ public class JDFileReg {
             public Object runSave() {
                 JPanel c = new JPanel(new MigLayout("ins 10,wrap 1", "[grow,fill]", "[][][grow,fill]"));
 
-                JLabel lbl = new JLabel(JDLocale.L("installer.gui.message", "After Installation, JDownloader will update to the latest version."));
+                JLabel lbl = new JLabel(JDL.L("installer.gui.message", "After Installation, JDownloader will update to the latest version."));
 
                 if (OSDetector.isWindows()) {
                     JDUtilities.getResourceFile("downloads");
@@ -118,12 +119,12 @@ public class JDFileReg {
 
                 JTextArea txt;
                 c.add(txt = new JTextArea(), "growy,pushy");
-                txt.setText(JDLocale.L("gui.cnl.install.text", "Click'n'load is a very comfortable way to add links to JDownloader. \r\nTo install Click'n'Load, JDownloader has to set some registry entries. \r\nYou might have to confirm some Windows messages to continue."));
+                txt.setText(JDL.L("gui.cnl.install.text", "Click'n'load is a very comfortable way to add links to JDownloader. \r\nTo install Click'n'Load, JDownloader has to set some registry entries. \r\nYou might have to confirm some Windows messages to continue."));
                 txt.setLineWrap(true);
                 txt.setBorder(null);
                 txt.setOpaque(false);
 
-                new ContainerDialog(UserIO.NO_COUNTDOWN, JDLocale.L("gui.cnl.install.title", "Click'n'Load Installation"), c, null, null) {
+                new ContainerDialog(UserIO.NO_COUNTDOWN, JDL.L("gui.cnl.install.title", "Click'n'Load Installation"), c, null, null) {
                     /**
                      * 
                      */

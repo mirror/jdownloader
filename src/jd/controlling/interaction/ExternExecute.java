@@ -23,9 +23,9 @@ import java.io.Serializable;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.parser.Regex;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import jd.utils.Replacer;
+import jd.utils.locale.JDL;
 
 public class ExternExecute extends Interaction implements Serializable, ActionListener {
 
@@ -61,26 +61,26 @@ public class ExternExecute extends Interaction implements Serializable, ActionLi
 
     //@Override
     public String getInteractionName() {
-        return JDLocale.L("interaction.externExecute.name", "Extern Execute");
+        return JDL.L("interaction.externExecute.name", "Extern Execute");
     }
 
     //@Override
     public void initConfig() {
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDLocale.L("interaction.externExecute.test", "Programm aufrufen")));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDL.L("interaction.externExecute.test", "Programm aufrufen")));
 
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, this, "VARS", Replacer.getKeyList(), JDLocale.L("interaction.externExecute.variables", "Available variables")));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, this, "VARS", Replacer.getKeyList(), JDL.L("interaction.externExecute.variables", "Available variables")));
 
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this, PROPERTY_DISABLED, JDLocale.L("interaction.externExecute.disable", "Event deaktiviert")).setDefaultValue(false));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, this, PROPERTY_COMMAND, JDLocale.L("interaction.externExecute.cmd", "Befehl (absolute Pfade verwenden)")));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this, PROPERTY_DISABLED, JDL.L("interaction.externExecute.disable", "Event deaktiviert")).setDefaultValue(false));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, this, PROPERTY_COMMAND, JDL.L("interaction.externExecute.cmd", "Befehl (absolute Pfade verwenden)")));
 
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, this, PROPERTY_PARAMETER, JDLocale.L("interaction.externExecute.parameter", "Parameter (1 Parameter pro Zeile)")));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, this, PROPERTY_PARAMETER, JDL.L("interaction.externExecute.parameter", "Parameter (1 Parameter pro Zeile)")));
 
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, this, PROPERTY_EXECUTE_FOLDER, JDLocale.L("interaction.externExecute.executeIn", "Ausführen in (Ordner der Anwendung)")));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, this, PROPERTY_WAIT_FOR_RETURN, JDLocale.L("interaction.externExecute.waitForTermination", "Warten x Sekunden bis Befehl beendet ist [sek](-1 für unendlich)"), -1, 1800).setDefaultValue(0));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, this, PROPERTY_EXECUTE_FOLDER, JDL.L("interaction.externExecute.executeIn", "Ausführen in (Ordner der Anwendung)")));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, this, PROPERTY_WAIT_FOR_RETURN, JDL.L("interaction.externExecute.waitForTermination", "Warten x Sekunden bis Befehl beendet ist [sek](-1 für unendlich)"), -1, 1800).setDefaultValue(0));
     }
 
     //@Override
     public String toString() {
-        return JDLocale.L("interaction.externExecute.toString", "Externes Programm aufrufen");
+        return JDL.L("interaction.externExecute.toString", "Externes Programm aufrufen");
     }
 }

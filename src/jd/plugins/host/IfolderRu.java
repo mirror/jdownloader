@@ -27,7 +27,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 
 public class IfolderRu extends PluginForHost {
 
@@ -68,7 +68,7 @@ public class IfolderRu extends PluginForHost {
 
         String watchAd = br.getRegex("http://ints\\.ifolder\\.ru/ints/\\?(.*?)\"").getMatch(0);
         if (watchAd != null) {
-            downloadLink.getLinkStatus().setStatusText(JDLocale.L("plugins.hoster.ifolderru.errors.ticketwait", "Waiting for ticket"));
+            downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.ifolderru.errors.ticketwait", "Waiting for ticket"));
             watchAd = "http://ints.ifolder.ru/ints/?".concat(watchAd);
             br.getPage(watchAd);
             watchAd = br.getRegex("<font size=\"\\+1\"><a href=(.*?)>").getMatch(0);
@@ -112,7 +112,7 @@ public class IfolderRu extends PluginForHost {
             }
         }
         if (!do_download) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("downloadlink.status.error.captcha_wrong", "Captcha wrong"));
+            throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("downloadlink.status.error.captcha_wrong", "Captcha wrong"));
         } else
             dl.startDownload();
     }

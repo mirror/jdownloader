@@ -47,7 +47,7 @@ import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import jd.gui.skins.simple.config.ConfigPanel;
 import jd.gui.skins.simple.config.ConfigurationPopup;
 import jd.nutils.Screen;
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 public class ConfigPanelEventmanager extends ConfigPanel implements ActionListener, MouseListener {
@@ -69,11 +69,11 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
         public String getColumnName(int column) {
             switch (column) {
             case 0:
-                return JDLocale.L("gui.config.eventmanager.column.action", "Aktion");
+                return JDL.L("gui.config.eventmanager.column.action", "Aktion");
             case 1:
-                return JDLocale.L("gui.config.eventmanager.column.trigger", "Trigger");
+                return JDL.L("gui.config.eventmanager.column.trigger", "Trigger");
             case 2:
-                return JDLocale.L("gui.config.eventmanager.column.triggerDesc", "Triggerbeschreibung");
+                return JDL.L("gui.config.eventmanager.column.triggerDesc", "Triggerbeschreibung");
             }
             return super.getColumnName(column);
         }
@@ -136,10 +136,10 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
     public void actionPerformed(ActionEvent e) {
 
         if (e.getSource() == btnAdd) {
-            InteractionTrigger event = (InteractionTrigger) JOptionPane.showInputDialog(this, JDLocale.L("gui.config.eventmanager.new.selectTrigger.title", "Trigger auswählen"), JDLocale.L("gui.config.eventmanager.new.selectTrigger.desc", "Wann soll eine Aktion ausgeführt werden?"), JOptionPane.QUESTION_MESSAGE, null, InteractionTrigger.getAllTrigger(), null);
+            InteractionTrigger event = (InteractionTrigger) JOptionPane.showInputDialog(this, JDL.L("gui.config.eventmanager.new.selectTrigger.title", "Trigger auswählen"), JDL.L("gui.config.eventmanager.new.selectTrigger.desc", "Wann soll eine Aktion ausgeführt werden?"), JOptionPane.QUESTION_MESSAGE, null, InteractionTrigger.getAllTrigger(), null);
             if (event == null) return;
 
-            Interaction interaction = (Interaction) JOptionPane.showInputDialog(this, JDLocale.LF("gui.config.eventmanager.new.selectAction.title", "Aktion auswählen für '%s'", event.getName()), JDLocale.L("gui.config.eventmanager.new.selectAction.desc", "Welche Aktion soll ausgeführt werden?"), JOptionPane.QUESTION_MESSAGE, null, Interaction.getInteractionList(), null);
+            Interaction interaction = (Interaction) JOptionPane.showInputDialog(this, JDL.LF("gui.config.eventmanager.new.selectAction.title", "Aktion auswählen für '%s'", event.getName()), JDL.L("gui.config.eventmanager.new.selectAction.desc", "Welche Aktion soll ausgeführt werden?"), JOptionPane.QUESTION_MESSAGE, null, Interaction.getInteractionList(), null);
             if (interaction == null) return;
 
             interaction.setTrigger(event);
@@ -155,7 +155,7 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
             int newRow = Math.min(index, interactions.size() - 1);
             table.getSelectionModel().setSelectionInterval(newRow, newRow);
         } else if (e.getSource() == btnTrigger) {
-            InteractionTrigger event = (InteractionTrigger) JOptionPane.showInputDialog(this, JDLocale.L("gui.config.eventmanager.new.selectTrigger.title", "Trigger auswählen"), JDLocale.L("gui.config.eventmanager.new.selectTrigger.desc", "Wann soll eine Aktion ausgeführt werden?"), JOptionPane.QUESTION_MESSAGE, null, InteractionTrigger.getAllTrigger(), currentInteraction.getTrigger());
+            InteractionTrigger event = (InteractionTrigger) JOptionPane.showInputDialog(this, JDL.L("gui.config.eventmanager.new.selectTrigger.title", "Trigger auswählen"), JDL.L("gui.config.eventmanager.new.selectTrigger.desc", "Wann soll eine Aktion ausgeführt werden?"), JOptionPane.QUESTION_MESSAGE, null, InteractionTrigger.getAllTrigger(), currentInteraction.getTrigger());
             if (event == null) return;
 
             currentInteraction.setTrigger(event);
@@ -172,7 +172,7 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
         ConfigPanel config = new ConfigEntriesPanel(currentInteraction.getConfig());
 
         JPanel tpanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 5));
-        tpanel.add(btnTrigger = new JButton(JDLocale.L("gui.config.eventmanager.trigger.btn", "Trigger ändern")));
+        tpanel.add(btnTrigger = new JButton(JDL.L("gui.config.eventmanager.trigger.btn", "Trigger ändern")));
         tpanel.add(new JLabel(currentInteraction.getTrigger().toString()));
 
         btnTrigger.addActionListener(this);
@@ -218,13 +218,13 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
             }
         }
 
-        btnAdd = new JButton(JDLocale.L("gui.config.eventmanager.btn_add", "+"));
+        btnAdd = new JButton(JDL.L("gui.config.eventmanager.btn_add", "+"));
         btnAdd.addActionListener(this);
 
-        btnRemove = new JButton(JDLocale.L("gui.config.eventmanager.btn_remove", "-"));
+        btnRemove = new JButton(JDL.L("gui.config.eventmanager.btn_remove", "-"));
         btnRemove.addActionListener(this);
 
-        btnEdit = new JButton(JDLocale.L("gui.btn_settings", "Einstellungen"));
+        btnEdit = new JButton(JDL.L("gui.btn_settings", "Einstellungen"));
         btnEdit.addActionListener(this);
         btnEdit.setEnabled(false);
 

@@ -36,7 +36,7 @@ import jd.config.MenuItem;
 import jd.gui.skins.simple.JTabbedPanel;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.plugins.PluginOptional;
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 public class Schedule extends PluginOptional {
@@ -108,14 +108,14 @@ public class Schedule extends PluginOptional {
         list.setPreferredSize(size);
         list.setMaximumSize(size);
 
-        show = new JButton(JDLocale.L("addons.schedule.menu.edit", "Edit"));
+        show = new JButton(JDL.L("addons.schedule.menu.edit", "Edit"));
         show.addActionListener(this);
         show.setEnabled(schedules.size() > 0);
 
-        add = new JButton(JDLocale.L("addons.schedule.menu.add", "Add"));
+        add = new JButton(JDL.L("addons.schedule.menu.add", "Add"));
         add.addActionListener(this);
 
-        remove = new JButton(JDLocale.L("addons.schedule.menu.remove", "Remove"));
+        remove = new JButton(JDL.L("addons.schedule.menu.remove", "Remove"));
         remove.addActionListener(this);
         remove.setEnabled(schedules.size() > 0);
 
@@ -149,7 +149,7 @@ public class Schedule extends PluginOptional {
             initGUI();
             SimpleGUI.CURRENTGUI.getContentPane().display(tabbedPanel);
         } else if (e.getSource() == add) {
-            schedules.add(new ScheduleFrame(new ScheduleFrameSettings(JDLocale.L("addons.schedule.menu.schedule", "Schedule") + " " + (schedules.size() + 1), true)));
+            schedules.add(new ScheduleFrame(new ScheduleFrameSettings(JDL.L("addons.schedule.menu.schedule", "Schedule") + " " + (schedules.size() + 1), true)));
             reloadList();
             list.setSelectedIndex(schedules.size() - 1);
             SwingUtilities.updateComponentTreeUI(aPanel);
@@ -161,13 +161,13 @@ public class Schedule extends PluginOptional {
             renameLabels();
             SwingUtilities.updateComponentTreeUI(aPanel);
         } else if (e.getSource() == show) {
-            if (show.getText().equals(JDLocale.L("addons.schedule.menu.edit", "Edit"))) {
-                show.setText(JDLocale.L("addons.schedule.menu.close", "Close"));
+            if (show.getText().equals(JDL.L("addons.schedule.menu.edit", "Edit"))) {
+                show.setText(JDL.L("addons.schedule.menu.close", "Close"));
                 setCenterPanel(schedules.get(list.getSelectedIndex()));
                 status.stop();
                 changeControls(false);
             } else {
-                show.setText(JDLocale.L("addons.schedule.menu.edit", "Edit"));
+                show.setText(JDL.L("addons.schedule.menu.edit", "Edit"));
                 setCenterPanel(null);
                 status.start();
                 changeControls(true);
@@ -179,7 +179,7 @@ public class Schedule extends PluginOptional {
             JPanel infoPanel = new JPanel(new GridLayout(size, 1, 10, 10));
             for (int i = 0; i < size; ++i) {
                 ScheduleFrame s = schedules.get(i);
-                infoPanel.add(new JLabel(JDLocale.L("addons.schedule.menu.schedule", "Schedule") + " " + (i + 1) + " " + JDLocale.L("addons.schedule.menu.status", "Status") + ": " + s.getStatusLabel().getText()));
+                infoPanel.add(new JLabel(JDL.L("addons.schedule.menu.schedule", "Schedule") + " " + (i + 1) + " " + JDL.L("addons.schedule.menu.status", "Status") + ": " + s.getStatusLabel().getText()));
             }
             setCenterPanel(infoPanel);
             SwingUtilities.updateComponentTreeUI(aPanel);
@@ -200,10 +200,10 @@ public class Schedule extends PluginOptional {
         int size = schedules.size();
 
         if (size == 0) {
-            listData.add(JDLocale.L("addons.schedule.menu.create", "Create"));
+            listData.add(JDL.L("addons.schedule.menu.create", "Create"));
         } else {
             for (int i = 1; i <= size; ++i) {
-                listData.add(JDLocale.L("addons.schedule.menu.schedule", "Schedule") + " " + i);
+                listData.add(JDL.L("addons.schedule.menu.schedule", "Schedule") + " " + i);
             }
         }
     }
@@ -237,7 +237,7 @@ public class Schedule extends PluginOptional {
 
     // @Override
     public String getHost() {
-        return JDLocale.L("addons.schedule.name", "Schedule");
+        return JDL.L("addons.schedule.name", "Schedule");
     }
 
     // @Override

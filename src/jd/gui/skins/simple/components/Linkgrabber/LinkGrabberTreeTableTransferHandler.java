@@ -39,9 +39,9 @@ import jd.controlling.LinkGrabberController;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 public class LinkGrabberTreeTableTransferHandler extends TransferHandler {
     private static final long serialVersionUID = 2560352681437669412L;
@@ -133,7 +133,7 @@ public class LinkGrabberTreeTableTransferHandler extends TransferHandler {
                 if (current.getLastPathComponent() instanceof LinkGrabberFilePackage) {
                     /* Links in Package */
                     String Name = ((LinkGrabberFilePackage) current.getLastPathComponent()).getName();
-                    popup.add(m = new JMenuItem(JDLocale.LF("gui.table.draganddrop.insertinpackagestart", "In Paket '%s' am Anfang einfügen", Name)));
+                    popup.add(m = new JMenuItem(JDL.LF("gui.table.draganddrop.insertinpackagestart", "In Paket '%s' am Anfang einfügen", Name)));
                     m.setIcon(JDTheme.II("gui.images.go_top", 16, 16));
                     m.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
@@ -146,7 +146,7 @@ public class LinkGrabberTreeTableTransferHandler extends TransferHandler {
                         }
                     });
 
-                    popup.add(m = new JMenuItem(JDLocale.LF("gui.table.draganddrop.insertinpackageend", "In Paket '%s' am Ende einfügen", Name)));
+                    popup.add(m = new JMenuItem(JDL.LF("gui.table.draganddrop.insertinpackageend", "In Paket '%s' am Ende einfügen", Name)));
                     m.setIcon(JDTheme.II("gui.images.go_bottom", 16, 16));
                     m.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
@@ -162,7 +162,7 @@ public class LinkGrabberTreeTableTransferHandler extends TransferHandler {
                 } else if (current.getLastPathComponent() instanceof DownloadLink) {
                     /* Links in Links */
                     String name = ((DownloadLink) current.getLastPathComponent()).getName();
-                    popup.add(m = new JMenuItem(JDLocale.LF("gui.table.draganddrop.before", "Vor '%s' ablegen", name)));
+                    popup.add(m = new JMenuItem(JDL.LF("gui.table.draganddrop.before", "Vor '%s' ablegen", name)));
                     m.setIcon(JDTheme.II("gui.images.go_top", 16, 16));
                     m.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
@@ -175,7 +175,7 @@ public class LinkGrabberTreeTableTransferHandler extends TransferHandler {
                         }
                     });
 
-                    popup.add(m = new JMenuItem(JDLocale.LF("gui.table.draganddrop.after", "Nach '%s' ablegen", name)));
+                    popup.add(m = new JMenuItem(JDL.LF("gui.table.draganddrop.after", "Nach '%s' ablegen", name)));
                     m.setIcon(JDTheme.II("gui.images.go_bottom", 16, 16));
                     m.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
@@ -203,7 +203,7 @@ public class LinkGrabberTreeTableTransferHandler extends TransferHandler {
                 } else
                     return false;
 
-                popup.add(m = new JMenuItem(JDLocale.LF("gui.table.draganddrop.movepackagebefore", "Vor Paket '%s' einfügen", name)));
+                popup.add(m = new JMenuItem(JDL.LF("gui.table.draganddrop.movepackagebefore", "Vor Paket '%s' einfügen", name)));
                 m.setIcon(JDTheme.II("gui.images.go_top", 16, 16));
                 m.addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
@@ -216,7 +216,7 @@ public class LinkGrabberTreeTableTransferHandler extends TransferHandler {
 
                 });
 
-                popup.add(m = new JMenuItem(JDLocale.LF("gui.table.draganddrop.movepackageend", "Nach Paket '%s' einfügen", name)));
+                popup.add(m = new JMenuItem(JDL.LF("gui.table.draganddrop.movepackageend", "Nach Paket '%s' einfügen", name)));
                 m.setIcon(JDTheme.II("gui.images.go_bottom", 16, 16));
                 m.addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
@@ -233,7 +233,7 @@ public class LinkGrabberTreeTableTransferHandler extends TransferHandler {
                 return false;
             }
         }
-        popup.add(m = new JMenuItem(JDLocale.L("gui.btn_cancel", "Abbrechen")));
+        popup.add(m = new JMenuItem(JDL.L("gui.btn_cancel", "Abbrechen")));
         m.setIcon(JDTheme.II("gui.images.unselected", 16, 16));
         popup.show(treeTable, point.x, point.y);
         return true;

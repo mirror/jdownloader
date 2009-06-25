@@ -79,6 +79,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
 import jd.update.WebUpdater;
+import jd.utils.locale.JDL;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
@@ -318,7 +319,7 @@ public class JDUtilities {
     }
 
     public static String getUserInput(String message, String defaultmessage, CryptedLink link) throws InterruptedException {
-        link.getProgressController().setStatusText(JDLocale.L("gui.linkgrabber.waitinguserio", "Waiting for user input"));
+        link.getProgressController().setStatusText(JDL.L("gui.linkgrabber.waitinguserio", "Waiting for user input"));
         String password = getUserInput(message, defaultmessage);
         link.getProgressController().setStatusText(null);
         return password;
@@ -326,7 +327,7 @@ public class JDUtilities {
 
     public static String getUserInput(String message, String defaultmessage) throws InterruptedException {
         synchronized (userio_lock) {
-            if (message == null) message = JDLocale.L("gui.linkgrabber.password", "Password?");
+            if (message == null) message = JDL.L("gui.linkgrabber.password", "Password?");
             if (defaultmessage == null) defaultmessage = "";
             String password = JDUtilities.getGUI().showCountdownUserInputDialog(message, defaultmessage);
             return password;
@@ -578,7 +579,7 @@ public class JDUtilities {
         ret.append(JDUtilities.getRevision());
         if (JDUtilities.getController() != null && JDUtilities.getController().getWaitingUpdates() != null && JDUtilities.getController().getWaitingUpdates().size() > 0) {
             ret.append(' ');
-            ret.append(JDLocale.L("gui.mainframe.title.updatemessage", "-->UPDATES VERFÜGBAR:"));
+            ret.append(JDL.L("gui.mainframe.title.updatemessage", "-->UPDATES VERFÜGBAR:"));
             ret.append(' ');
             ret.append(JDUtilities.getController().getWaitingUpdates().size());
         }

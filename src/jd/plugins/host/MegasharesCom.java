@@ -37,7 +37,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 
 /*TODO: Support für andere Linkcards(bestimmte Anzahl Downloads,unlimited usw) einbauen*/
 
@@ -194,7 +194,7 @@ public class MegasharesCom extends PluginForHost {
             }
             int i = 0;
             while ((i++) < 5) {
-                pass = Plugin.getUserInput(JDLocale.LF("plugins.hoster.passquestion", "Link '%s' is passwordprotected. Enter password:", link.getName()), link);
+                pass = Plugin.getUserInput(JDL.LF("plugins.hoster.passquestion", "Link '%s' is passwordprotected. Enter password:", link.getName()), link);
                 if (pass != null) {
                     form.put("passText", pass);
                     br.submitForm(form);
@@ -225,15 +225,15 @@ public class MegasharesCom extends PluginForHost {
             loadpage(downloadLink.getDownloadURL());
         }
         if (br.containsHTML("You already have the maximum")) {
-            downloadLink.getLinkStatus().setStatusText(JDLocale.L("plugins.hoster.megasharescom.errors.alreadyloading", "Cannot check, because aready loading file"));
+            downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.megasharescom.errors.alreadyloading", "Cannot check, because aready loading file"));
             return AvailableStatus.UNCHECKABLE;
         }
         if (br.containsHTML("All download slots for this link are currently filled")) {
-            downloadLink.getLinkStatus().setStatusText(JDLocale.L("plugins.hoster.megasharescom.errors.allslotsfilled", "Cannot check, because all slots filled"));
+            downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.megasharescom.errors.allslotsfilled", "Cannot check, because all slots filled"));
             return AvailableStatus.UNCHECKABLE;
         }
         if (br.containsHTML("This link requires a password")) {
-            downloadLink.getLinkStatus().setStatusText(JDLocale.L("plugins.hoster.megasharescom.errors.passwordprotected", "Password protected download"));
+            downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.megasharescom.errors.passwordprotected", "Password protected download"));
             return AvailableStatus.UNCHECKABLE;
         }
         String dsize = br.getRegex("<dt>Filename:.*?<strong>.*?</strong>.*?size:(.*?)</dt>").getMatch(0);

@@ -43,10 +43,10 @@ import jd.gui.skins.simple.Factory;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.startmenu.actions.AddContainerAction;
 import jd.gui.skins.simple.startmenu.actions.AddUrlAction;
-import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.WebUpdate;
+import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 public class TrayIconPopup extends JWindow implements MouseListener, MouseMotionListener, ChangeListener, ActionListener {
@@ -97,26 +97,26 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
 
         switch (JDUtilities.getController().getDownloadStatus()) {
         case JDController.DOWNLOAD_NOT_RUNNING:
-            addMenuEntry(ACTION_START, "gui.images.next", JDLocale.L("plugins.trayicon.popup.menu.start", "Download starten"));
-            addDisabledMenuEntry("gui.images.break", JDLocale.L("plugins.trayicon.popup.menu.pause2", "Download pausieren"));
+            addMenuEntry(ACTION_START, "gui.images.next", JDL.L("plugins.trayicon.popup.menu.start", "Download starten"));
+            addDisabledMenuEntry("gui.images.break", JDL.L("plugins.trayicon.popup.menu.pause2", "Download pausieren"));
             break;
         case JDController.DOWNLOAD_RUNNING:
-            addMenuEntry(ACTION_STOP, "gui.images.stop", JDLocale.L("plugins.trayicon.popup.menu.stop", "Download anhalten"));
-            addMenuEntry(ACTION_PAUSE, "gui.images.break", JDLocale.L("plugins.trayicon.popup.menu.pause2", "Download pausieren"));
+            addMenuEntry(ACTION_STOP, "gui.images.stop", JDL.L("plugins.trayicon.popup.menu.stop", "Download anhalten"));
+            addMenuEntry(ACTION_PAUSE, "gui.images.break", JDL.L("plugins.trayicon.popup.menu.pause2", "Download pausieren"));
             break;
         default:
-            addDisabledMenuEntry("gui.images.next", JDLocale.L("plugins.trayicon.popup.menu.start", "Download starten"));
-            addDisabledMenuEntry("gui.images.break", JDLocale.L("plugins.trayicon.popup.menu.pause2", "Download pausieren"));
+            addDisabledMenuEntry("gui.images.next", JDL.L("plugins.trayicon.popup.menu.start", "Download starten"));
+            addDisabledMenuEntry("gui.images.break", JDL.L("plugins.trayicon.popup.menu.pause2", "Download pausieren"));
         }
 
-        addMenuEntry(ACTION_ADD, "gui.images.add", JDLocale.L("plugins.trayicon.popup.menu.add", "Downloads hinzufügen"));
-        addMenuEntry(ACTION_LOAD, "gui.images.load", JDLocale.L("plugins.trayicon.popup.menu.load", "Container laden"));
-        addMenuEntry(ACTION_UPDATE, "gui.images.update_manager", JDLocale.L("plugins.trayicon.popup.menu.update", "JD aktualisieren"));
-        addMenuEntry(ACTION_RECONNECT, "gui.images.reconnect", JDLocale.L("plugins.trayicon.popup.menu.reconnect", "Reconnect durchführen"));
-        addMenuEntry(ACTION_TOGGLE_PREMIUM, getPremiumImage(), JDLocale.L("plugins.trayicon.popup.menu.togglePremium", "Premium an/aus"));
-        addMenuEntry(ACTION_TOGGLE_CLIPBOARD, getClipBoardImage(), JDLocale.L("plugins.trayicon.popup.menu.toggleClipboard", "Zwischenablage an/aus"));
-        addMenuEntry(ACTION_TOGGLE_RECONNECT, getReconnectImage(), JDLocale.L("plugins.trayicon.popup.menu.toggleReconnect", "Reconnect an/aus"));
-        addMenuEntry(ACTION_EXIT, "gui.images.exit", JDLocale.L("plugins.trayicon.popup.menu.exit", "Beenden"));
+        addMenuEntry(ACTION_ADD, "gui.images.add", JDL.L("plugins.trayicon.popup.menu.add", "Downloads hinzufügen"));
+        addMenuEntry(ACTION_LOAD, "gui.images.load", JDL.L("plugins.trayicon.popup.menu.load", "Container laden"));
+        addMenuEntry(ACTION_UPDATE, "gui.images.update_manager", JDL.L("plugins.trayicon.popup.menu.update", "JD aktualisieren"));
+        addMenuEntry(ACTION_RECONNECT, "gui.images.reconnect", JDL.L("plugins.trayicon.popup.menu.reconnect", "Reconnect durchführen"));
+        addMenuEntry(ACTION_TOGGLE_PREMIUM, getPremiumImage(), JDL.L("plugins.trayicon.popup.menu.togglePremium", "Premium an/aus"));
+        addMenuEntry(ACTION_TOGGLE_CLIPBOARD, getClipBoardImage(), JDL.L("plugins.trayicon.popup.menu.toggleClipboard", "Zwischenablage an/aus"));
+        addMenuEntry(ACTION_TOGGLE_RECONNECT, getReconnectImage(), JDL.L("plugins.trayicon.popup.menu.toggleReconnect", "Reconnect an/aus"));
+        addMenuEntry(ACTION_EXIT, "gui.images.exit", JDL.L("plugins.trayicon.popup.menu.exit", "Beenden"));
     }
 
     private void initBottomPanel() {
@@ -124,19 +124,19 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
 
         spMax = new JSpinner();
         spMax.setModel(new SpinnerNumberModel(maxspeed, 0, Integer.MAX_VALUE, 50));
-        spMax.setToolTipText(JDLocale.L("gui.tooltip.statusbar.speedlimiter", "Geschwindigkeitsbegrenzung festlegen (KB/s) [0:unendlich]"));
+        spMax.setToolTipText(JDL.L("gui.tooltip.statusbar.speedlimiter", "Geschwindigkeitsbegrenzung festlegen (KB/s) [0:unendlich]"));
         spMax.addChangeListener(this);
 
         spMaxDls = new JSpinner();
         spMaxDls.setModel(new SpinnerNumberModel(SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2), 1, 20, 1));
-        spMaxDls.setToolTipText(JDLocale.L("gui.tooltip.statusbar.simultan_downloads", "Max. gleichzeitige Downloads"));
+        spMaxDls.setToolTipText(JDL.L("gui.tooltip.statusbar.simultan_downloads", "Max. gleichzeitige Downloads"));
         spMaxDls.addChangeListener(this);
 
         bottomPanel = new JPanel(new MigLayout("ins 0, wrap 2", "[]5[]", "[]2[]"));
         bottomPanel.setOpaque(false);
-        bottomPanel.add(new JLabel(JDLocale.L("plugins.trayicon.popup.bottom.speed", "Geschwindigkeitsbegrenzung")));
+        bottomPanel.add(new JLabel(JDL.L("plugins.trayicon.popup.bottom.speed", "Geschwindigkeitsbegrenzung")));
         bottomPanel.add(spMax, "w 60!, h 20!");
-        bottomPanel.add(new JLabel(JDLocale.L("plugins.trayicon.popup.bottom.simDls", "Gleichzeitige Downloads")));
+        bottomPanel.add(new JLabel(JDL.L("plugins.trayicon.popup.bottom.simDls", "Gleichzeitige Downloads")));
         bottomPanel.add(spMaxDls, "w 60!, h 20!");
     }
 

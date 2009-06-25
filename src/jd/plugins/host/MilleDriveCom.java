@@ -26,7 +26,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 
 public class MilleDriveCom extends PluginForHost {
 
@@ -52,7 +52,7 @@ public class MilleDriveCom extends PluginForHost {
             br.getPage(firstlink);
         }
         if (br.containsHTML("URL does not exist") || br.containsHTML("404 not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("/wait_encode.png") || br.containsHTML("This video is still being encoded")) downloadLink.getLinkStatus().setStatusText(JDLocale.L("plugin.hoster.milledrive.com.stillencoding","This video is still being encoded"));
+        if (br.containsHTML("/wait_encode.png") || br.containsHTML("This video is still being encoded")) downloadLink.getLinkStatus().setStatusText(JDL.L("plugin.hoster.milledrive.com.stillencoding","This video is still being encoded"));
         String filename, filesize;
         if (!firstlink.contains("/files/")) // for videos & music links
         {
@@ -79,7 +79,7 @@ public class MilleDriveCom extends PluginForHost {
     //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (br.containsHTML("/wait_encode.png") || br.containsHTML("This video is still being encoded")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE,JDLocale.L("plugin.hoster.milledrive.com.stillencoding","This video is still being encoded"),15*60*1000);
+        if (br.containsHTML("/wait_encode.png") || br.containsHTML("This video is still being encoded")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE,JDL.L("plugin.hoster.milledrive.com.stillencoding","This video is still being encoded"),15*60*1000);
         String directlink = br.getRegex("file:\"(.*?)\"").getMatch(0);
         if (directlink == null) {
             String firstlink = downloadLink.getDownloadURL();

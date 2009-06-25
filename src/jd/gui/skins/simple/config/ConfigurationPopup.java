@@ -31,7 +31,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 /**
@@ -63,13 +63,13 @@ public class ConfigurationPopup extends JDialog implements ActionListener {
         super(parent);
         this.panel = panel;
 
-        this.setTitle(JDLocale.L("gui.config.popup.title", "Konfiguration"));
+        this.setTitle(JDL.L("gui.config.popup.title", "Konfiguration"));
         this.setModal(true);
         this.setLayout(new GridBagLayout());
 
-        btnSave = new JButton(JDLocale.L("gui.btn_ok", "OK"));
+        btnSave = new JButton(JDL.L("gui.btn_ok", "OK"));
         btnSave.addActionListener(this);
-        btnCancel = new JButton(JDLocale.L("gui.btn_cancel", "Abbrechen"));
+        btnCancel = new JButton(JDL.L("gui.btn_cancel", "Abbrechen"));
         btnCancel.addActionListener(this);
 
         Container bpanel = new JPanel(new MigLayout("", "[grow][]"));

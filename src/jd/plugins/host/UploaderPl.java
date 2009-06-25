@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 
 public class UploaderPl extends PluginForHost {
 
@@ -98,14 +98,14 @@ public class UploaderPl extends PluginForHost {
             return ai;
         }
         if (!isPremium()) {
-            ai.setStatus(JDLocale.L("plugins.hoster.UploaderPl.freememberacc", "Free registered user account"));
+            ai.setStatus(JDL.L("plugins.hoster.UploaderPl.freememberacc", "Free registered user account"));
             ai.setValid(true);
             return ai;
         }
         String expired = br.getRegex("<b>Expired\\?</b></td>\\s*<td[^>]*>(.*?) <a href").getMatch(0);
         if (!expired.equalsIgnoreCase("No")) {
             ai.setValid(false);
-            ai.setStatus(JDLocale.L("plugins.hoster.UploaderPl.accountexpired", "Account expired"));
+            ai.setStatus(JDL.L("plugins.hoster.UploaderPl.accountexpired", "Account expired"));
             return ai;
         }
         String expires = br.getRegex("<b>Package Expire Date</b></td>\\s*<td[^>]*>(.*?)</td>").getMatch(0);

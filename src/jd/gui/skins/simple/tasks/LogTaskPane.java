@@ -22,8 +22,8 @@ import java.awt.event.ActionListener;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 
-import jd.utils.JDLocale;
 import jd.utils.JDTheme;
+import jd.utils.locale.JDL;
 
 public class LogTaskPane extends TaskPanel implements ActionListener {
 
@@ -43,8 +43,8 @@ public class LogTaskPane extends TaskPanel implements ActionListener {
     }
 
     private void initGui() {
-        save = this.createButton(JDLocale.L("gui.taskpanels.log.save", "Save as"), JDTheme.II("gui.images.save", 16, 16));
-        upload = this.createButton(JDLocale.L("gui.taskpanels.log.upload", "Upload log"), JDTheme.II("gui.images.upload", 16, 16));
+        save = this.createButton(JDL.L("gui.taskpanels.log.save", "Save as"), JDTheme.II("gui.images.save", 16, 16));
+        upload = this.createButton(JDL.L("gui.taskpanels.log.upload", "Upload log"), JDTheme.II("gui.images.upload", 16, 16));
         add(save, D1_BUTTON_ICON);
         add(upload, D1_BUTTON_ICON);
     

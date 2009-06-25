@@ -20,8 +20,8 @@ import java.awt.event.ActionEvent;
 
 import jd.controlling.DownloadController;
 import jd.gui.skins.simple.Balloon;
-import jd.utils.JDLocale;
 import jd.utils.JDTheme;
+import jd.utils.locale.JDL;
 
 public class BackupAction extends StartAction {
     /**
@@ -41,7 +41,7 @@ public class BackupAction extends StartAction {
             public void run() {
                 inprogress = true;
                 DownloadController.getInstance().backupDownloadLinksSync();
-                Balloon.show(JDLocale.L("gui.balloon.backup.title","Backup"), JDTheme.II("gui.images.save", 32, 32), JDLocale.LF("gui.backup.finished", "Linklist successfully backuped!"));
+                Balloon.show(JDL.L("gui.balloon.backup.title","Backup"), JDTheme.II("gui.images.save", 32, 32), JDL.LF("gui.backup.finished", "Linklist successfully backuped!"));
                 inprogress = false;
             }
         }.start();

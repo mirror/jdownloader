@@ -31,9 +31,9 @@ import jd.event.JDEvent;
 import jd.gui.skins.simple.Balloon;
 import jd.plugins.Account;
 import jd.plugins.PluginForHost;
-import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 class AccountControllerBroadcaster extends JDBroadcaster<AccountControllerListener, AccountControllerEvent> {
 
@@ -283,7 +283,7 @@ public class AccountController extends SubConfiguration implements ActionListene
         case AccountControllerEvent.ACCOUNT_ADDED:
             JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true);
             JDUtilities.getConfiguration().save();
-            Balloon.show(JDLocale.L("gui.ballon.accountmanager.title", "Accountmanager"), JDTheme.II("gui.images.add", 32, 32), JDLocale.LF("gui.ballon.addaccount", "Added Account: %s(%s)", event.getHost(), event.getAccount().getUser()));
+            Balloon.show(JDL.L("gui.ballon.accountmanager.title", "Accountmanager"), JDTheme.II("gui.images.add", 32, 32), JDL.LF("gui.ballon.addaccount", "Added Account: %s(%s)", event.getHost(), event.getAccount().getUser()));
             saveAsync();
             break;
         case AccountControllerEvent.ACCOUNT_REMOVED:
@@ -351,7 +351,7 @@ public class AccountController extends SubConfiguration implements ActionListene
             if (ret != null && !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) {
                 if (System.currentTimeMillis() - lastballoon > ballooninterval) {
                     lastballoon = System.currentTimeMillis();
-                    Balloon.show(JDLocale.L("gui.ballon.accountmanager.title", "Accountmanager"), JDTheme.II("gui.images.accounts", 32, 32), JDLocale.L("gui.accountcontroller.globpremdisabled", "Premiumaccounts are globally disabled!<br/>Click <a href='http://jdownloader.org/knowledge/wiki/gui/premiummenu'>here</a> for help."));
+                    Balloon.show(JDL.L("gui.ballon.accountmanager.title", "Accountmanager"), JDTheme.II("gui.images.accounts", 32, 32), JDL.L("gui.accountcontroller.globpremdisabled", "Premiumaccounts are globally disabled!<br/>Click <a href='http://jdownloader.org/knowledge/wiki/gui/premiummenu'>here</a> for help."));
                 }
                 ret = null;
             }

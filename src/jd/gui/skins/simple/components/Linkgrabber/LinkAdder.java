@@ -37,8 +37,8 @@ import jd.gui.skins.simple.JTabbedPanel;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.parser.html.HTMLParser;
-import jd.utils.JDLocale;
 import jd.utils.JDTheme;
+import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 public class LinkAdder extends JTabbedPanel {
@@ -54,7 +54,7 @@ public class LinkAdder extends JTabbedPanel {
     public LinkAdder() {
         super(new MigLayout("ins 0 0 8 8,wrap 1", "[]", "[][fill,grow][]"));
 
-        add(Factory.createHeader(JDLocale.L("gui.linkgrabber.adder.links", "Add links"), JDTheme.II("gui.images.add", 32, 32)), "pushx,growx");
+        add(Factory.createHeader(JDL.L("gui.linkgrabber.adder.links", "Add links"), JDTheme.II("gui.images.add", 32, 32)), "pushx,growx");
         add(new JScrollPane(text = new JTextArea()), "pushx,growx");
 
         reset();
@@ -64,26 +64,26 @@ public class LinkAdder extends JTabbedPanel {
 
             public void changedUpdate(DocumentEvent e) {
                 String[] links = HTMLParser.getHttpLinks(text.getText(), null);
-                lbl.setText(JDLocale.LF("gui.linkgrabber.adder.links.status", "...contains %s link(s)", links.length));
+                lbl.setText(JDL.LF("gui.linkgrabber.adder.links.status", "...contains %s link(s)", links.length));
             }
 
             public void insertUpdate(DocumentEvent e) {
                 String[] links = HTMLParser.getHttpLinks(text.getText(), null);
-                lbl.setText(JDLocale.LF("gui.linkgrabber.adder.links.status", "...contains %s link(s)", links.length));
+                lbl.setText(JDL.LF("gui.linkgrabber.adder.links.status", "...contains %s link(s)", links.length));
 
             }
 
             public void removeUpdate(DocumentEvent e) {
                 String[] links = HTMLParser.getHttpLinks(text.getText(), null);
-                lbl.setText(JDLocale.LF("gui.linkgrabber.adder.links.status", "...contains %s link(s)", links.length));
+                lbl.setText(JDL.LF("gui.linkgrabber.adder.links.status", "...contains %s link(s)", links.length));
 
             }
 
         });
-        add(lbl = new JLabel(JDLocale.LF("gui.linkgrabber.adder.links.status", "...contains %s link(s)", 0)), "alignx left, split 3,growx");
+        add(lbl = new JLabel(JDL.LF("gui.linkgrabber.adder.links.status", "...contains %s link(s)", 0)), "alignx left, split 3,growx");
         JButton bt;
 
-        add(bt = new JButton(JDLocale.L("gui.linkgrabber.adder.links.cancel", "Cancel"), JDTheme.II("gui.images.abort", 16, 16)), "alignx right");
+        add(bt = new JButton(JDL.L("gui.linkgrabber.adder.links.cancel", "Cancel"), JDTheme.II("gui.images.abort", 16, 16)), "alignx right");
         bt.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
@@ -95,7 +95,7 @@ public class LinkAdder extends JTabbedPanel {
             }
 
         });
-        add(bt = new JButton(JDLocale.L("gui.linkgrabber.adder.links.confirm", "Continue"), JDTheme.II("gui.images.add", 16, 16)), "alignx right");
+        add(bt = new JButton(JDL.L("gui.linkgrabber.adder.links.confirm", "Continue"), JDTheme.II("gui.images.add", 16, 16)), "alignx right");
         bt.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
@@ -120,7 +120,7 @@ public class LinkAdder extends JTabbedPanel {
     }
 
     public void reset() {
-        text.setText(JDLocale.L("gui.linkgrabber.adder.links.default", "Insert any text containing links here. This textfield grabs all links out of your clipboard"));
+        text.setText(JDL.L("gui.linkgrabber.adder.links.default", "Insert any text containing links here. This textfield grabs all links out of your clipboard"));
     }
 
     private void setClipboard(boolean b) {

@@ -36,7 +36,7 @@ import jd.OptionalPluginWrapper;
 import jd.config.Configuration;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.config.ConfigPanel;
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 /**
@@ -61,15 +61,15 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
         public String getColumnName(int column) {
             switch (column) {
             case 0:
-                return JDLocale.L("gui.column_status", "Aktivieren");
+                return JDL.L("gui.column_status", "Aktivieren");
             case 1:
-                return JDLocale.L("gui.column_plugin", "Plugin");
+                return JDL.L("gui.column_plugin", "Plugin");
             case 2:
-                return JDLocale.L("gui.column_version", "Version");
+                return JDL.L("gui.column_version", "Version");
             case 3:
-                return JDLocale.L("gui.column_coder", "Ersteller");
+                return JDL.L("gui.column_coder", "Ersteller");
             case 4:
-                return JDLocale.L("gui.column_needs", "Needs");
+                return JDL.L("gui.column_needs", "Needs");
             }
             return super.getColumnName(column);
         }
@@ -178,7 +178,7 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
             }
         }
 
-        btnEdit = new JButton(JDLocale.L("gui.btn_settings", "Einstellungen"));
+        btnEdit = new JButton(JDL.L("gui.btn_settings", "Einstellungen"));
         btnEdit.setEnabled(false);
         btnEdit.addActionListener(this);
 

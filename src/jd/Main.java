@@ -57,6 +57,8 @@ import jd.controlling.JDLogger;
 import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.PackageManager;
 import jd.event.ControlEvent;
+import jd.event.MessageEvent;
+import jd.event.MessageListener;
 import jd.gui.UserIO;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.JDEventQueue;
@@ -66,15 +68,19 @@ import jd.gui.userio.SimpleUserIO;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.OSDetector;
+import jd.nutils.svn.Subversion;
 import jd.update.FileUpdate;
 import jd.update.WebUpdater;
 import jd.utils.CheckJava;
-import jd.utils.JDGeoCode;
-import jd.utils.JDLocale;
+
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.MacOSController;
 import jd.utils.WebUpdate;
+import jd.utils.locale.JDL;
+
+import org.tmatesoft.svn.core.SVNException;
+import org.tmatesoft.svn.core.wc.SVNRevision;
 
 /**
  * @author JD-Team
@@ -155,10 +161,49 @@ public class Main {
                 JDInitFlags.SWITCH_DEBUG = true;
                 Browser.setVerbose(true);
                 LOGGER.info("Browser DEBUG Modus aktiv");
+            } else if (p.equalsIgnoreCase("-nodevupdate")) {
+                JDInitFlags.NO_DEV_UPDATE = true;
+
             } else if (p.equalsIgnoreCase("-trdebug")) {
+
+                JDL.DEBUG = true;
+
                 LOGGER.info("Translation DEBUG Modus aktiv");
             } else if (p.equalsIgnoreCase("-rfb")) {
                 JDInitFlags.SWITCH_RETURNED_FROM_UPDATE = true;
+            }
+        }
+
+        if (!JDInitFlags.NO_DEV_UPDATE && JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL) {
+            try {
+                System.out.println("Update ressources at  " + JDUtilities.getJDHomeDirectoryFromEnvironment());
+                Subversion svn = new Subversion("svn://svn.jdownloader.org/jdownloader/trunk/ressourcen/jd/");
+                svn.getBroadcaster().addListener(new MessageListener() {
+
+                    public void onMessage(MessageEvent event) {
+                        System.out.println(event.getMessage());
+
+                    }
+
+                });
+                svn.update(new File(JDUtilities.getJDHomeDirectoryFromEnvironment(),"jd"), SVNRevision.HEAD);
+            
+            
+                 svn = new Subversion("svn://svn.jdownloader.org/jdownloader/trunk/ressourcen/tools/");
+                svn.getBroadcaster().addListener(new MessageListener() {
+
+                    public void onMessage(MessageEvent event) {
+                        System.out.println(event.getMessage());
+
+                    }
+
+                });
+                svn.update(new File(JDUtilities.getJDHomeDirectoryFromEnvironment(),"tools"), SVNRevision.HEAD);
+            
+            
+            } catch (SVNException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
             }
         }
         UserIO.setInstance(SimpleUserIO.getInstance());
@@ -354,7 +399,7 @@ public class Main {
             System.exit(0);
         }
         if (JDUtilities.getJavaVersion() < 1.6 && !OSDetector.isMac()) {
-            int returnValue = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_CANCEL_OPTION, JDLocale.LF("gui.javacheck.newerjavaavailable.title", "Outdated Javaversion found: %s!", JDUtilities.getJavaVersion()), JDLocale.L("gui.javacheck.newerjavaavailable.msg", "Although JDownloader runs on your javaversion, we advise to install the latest java updates. \r\nJDownloader will run more stable, faster, and will look better. \r\n\r\nVisit http://jdownloader.org/download."), JDTheme.II("gui.images.warning", 32, 32), null, null);
+            int returnValue = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_CANCEL_OPTION, JDL.LF("gui.javacheck.newerjavaavailable.title", "Outdated Javaversion found: %s!", JDUtilities.getJavaVersion()), JDL.L("gui.javacheck.newerjavaavailable.msg", "Although JDownloader runs on your javaversion, we advise to install the latest java updates. \r\nJDownloader will run more stable, faster, and will look better. \r\n\r\nVisit http://jdownloader.org/download."), JDTheme.II("gui.images.warning", 32, 32), null, null);
             if ((returnValue & UserIO.RETURN_SKIPPED_BY_DONT_SHOW) == 0) {
                 try {
                     JLinkButton.openURL("http://jdownloader.org/download/index?updatejava=1");
@@ -402,13 +447,7 @@ public class Main {
         LOGGER.info("init Configuration");
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_PROGRESS, new String("Once upon a time...")));
 
-        String old = SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getStringProperty("LOCALE", null);
-        if (old != null) {
-            SubConfiguration.getConfig(JDLocale.CONFIG).setProperty(JDLocale.LOCALE_ID, old);
-            SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).setProperty("LOCALE", null);
-            SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).save();
-            SubConfiguration.getConfig(JDLocale.CONFIG).save();
-        }
+       
         if (init.loadConfiguration() == null) {
 
             UserIO.getInstance().requestMessageDialog("JDownloader cannot create the config files. Make sure, that JD_HOME/config/ exists and is writeable");
@@ -423,7 +462,7 @@ public class Main {
         LOGGER.info("init Controller");
 
         LOGGER.info("init Webupdate");
-        JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_PROGRESS, JDLocale.L("gui.splash.progress.webupdate", "Check updates")));
+        JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_PROGRESS, JDL.L("gui.splash.progress.webupdate", "Check updates")));
 
         new WebUpdate().doWebupdate(true, false);
         try {
@@ -433,14 +472,14 @@ public class Main {
         }
         WebUpdate.DynamicPluginsFinished();
         LOGGER.info("init plugins");
-        JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_PROGRESS, JDLocale.L("gui.splash.progress.initplugins", "Init plugins")));
+        JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_PROGRESS, JDL.L("gui.splash.progress.initplugins", "Init plugins")));
 
         init.initPlugins();
 
         Locale.setDefault(Locale.ENGLISH);
 
         LOGGER.info("init gui");
-        JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_PROGRESS, JDLocale.L("gui.splash.progress.paintgui", "Paint user interface")));
+        JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_PROGRESS, JDL.L("gui.splash.progress.paintgui", "Paint user interface")));
         new GuiRunnable<Object>() {
             // @Override
             public Object runSave() {
@@ -449,7 +488,7 @@ public class Main {
             }
         }.waitForEDT();
         LOGGER.info("init downloadqueue");
-        JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_PROGRESS, JDLocale.L("gui.splash.progress.controller", "Start controller")));
+        JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_PROGRESS, JDL.L("gui.splash.progress.controller", "Start controller")));
         init.initControllers();
 
         LOGGER.info("Initialisation finished");
@@ -480,6 +519,9 @@ public class Main {
         }
 
         new PackageManager().interact(this);
+        /*
+         * Keeps the home working directory for developers up2date
+         */
 
     }
 

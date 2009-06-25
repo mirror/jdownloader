@@ -32,7 +32,7 @@ import javax.swing.WindowConstants;
 
 import jd.gui.skins.simple.SimpleGuiUtils;
 import jd.gui.skins.simple.listener.LocationListener;
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 
 /**
  * Diese Klasse ist wie die Optionspane mit textfeld nur mit zwei textfeldern
@@ -66,9 +66,9 @@ public class TwoTextFieldDialog extends JDialog implements ActionListener {
         setModal(false);
         setLayout(new GridBagLayout());
         setName(title);
-        btnCancel = new JButton(JDLocale.L("gui.btn_cancel", "Cancel"));
+        btnCancel = new JButton(JDL.L("gui.btn_cancel", "Cancel"));
         btnCancel.addActionListener(this);
-        btnOk = new JButton(JDLocale.L("gui.btn_ok", "OK"));
+        btnOk = new JButton(JDL.L("gui.btn_ok", "OK"));
         btnOk.addActionListener(this);
         setTitle(title);
         textField = new JTextField(defField1);

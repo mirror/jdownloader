@@ -37,7 +37,7 @@ import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.userio.dialog.AbstractDialog;
 import jd.http.Browser;
 import jd.nutils.JDImage;
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 public class AboutDialog extends AbstractDialog {
@@ -46,7 +46,7 @@ public class AboutDialog extends AbstractDialog {
     private JList list;
 
     public AboutDialog() {
-        super(UserIO.NO_COUNTDOWN | UserIO.NO_OK_OPTION | UserIO.NO_CANCEL_OPTION, JDLocale.L("gui.about.title", "About JDownloader"), null, null, null);
+        super(UserIO.NO_COUNTDOWN | UserIO.NO_OK_OPTION | UserIO.NO_CANCEL_OPTION, JDL.L("gui.about.title", "About JDownloader"), null, null, null);
 
         init();
     }
@@ -59,7 +59,7 @@ public class AboutDialog extends AbstractDialog {
         JPanel p = new JPanel(new MigLayout("ins 0,wrap 2", "", "[shrink]"));
         p.setBackground(Color.WHITE);
         cp.setBackground(Color.WHITE);
-        p.add(new JLabel(JDLocale.L("gui.about.message", "JDownloader - Hall of Fame")), "alignx left, aligny bottom");
+        p.add(new JLabel(JDL.L("gui.about.message", "JDownloader - Hall of Fame")), "alignx left, aligny bottom");
         p.add(new JLabel(JDImage.getScaledImageIcon(JDImage.getImage("logo/jd_logo_54_54"), 54, 54)), "alignx right");
         p.add(new JSeparator(), "spanx,growx,pushx");
         cp.add(p, "");
@@ -77,7 +77,7 @@ public class AboutDialog extends AbstractDialog {
             public void run() {
                 try {
                     Browser br = new Browser();
-                    final String txt = br.getPage(JDLocale.L("gui.dialog.about.sourceurl", "http://service.jdownloader.org/html/about_en.html"));
+                    final String txt = br.getPage(JDL.L("gui.dialog.about.sourceurl", "http://service.jdownloader.org/html/about_en.html"));
                     SwingUtilities.invokeLater(new Runnable() {
                         public void run() {
                             textField.setText(txt);
@@ -106,9 +106,9 @@ public class AboutDialog extends AbstractDialog {
         lbl.setEnabled(false);
         this.getContentPane().setBackground(Color.WHITE);
 
-        cp.add(new JLinkButton(JDLocale.L("gui.dialog.about.homepage", "Homepage"), JDLocale.L("gui.dialog.about.homeurl", "http://www.jdownloader.org/home?lng=en")), "alignx right, aligny bottom");
-        cp.add(new JLinkButton(JDLocale.L("gui.dialog.about.forum", "Support board"), JDLocale.L("gui.dialog.about.forumurl", "http://board.jdownloader.org")), "alignx right, aligny bottom");
-        cp.add(new JLinkButton(JDLocale.L("gui.dialog.about.chat", "Chat"), JDLocale.L("gui.dialog.about.chaturl", "http://www.jdownloader.org/support?lng=en")), "alignx right, aligny bottom");
+        cp.add(new JLinkButton(JDL.L("gui.dialog.about.homepage", "Homepage"), JDL.L("gui.dialog.about.homeurl", "http://www.jdownloader.org/home?lng=en")), "alignx right, aligny bottom");
+        cp.add(new JLinkButton(JDL.L("gui.dialog.about.forum", "Support board"), JDL.L("gui.dialog.about.forumurl", "http://board.jdownloader.org")), "alignx right, aligny bottom");
+        cp.add(new JLinkButton(JDL.L("gui.dialog.about.chat", "Chat"), JDL.L("gui.dialog.about.chaturl", "http://www.jdownloader.org/support?lng=en")), "alignx right, aligny bottom");
         return cp;
     }
 

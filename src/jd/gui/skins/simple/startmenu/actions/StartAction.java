@@ -23,8 +23,8 @@ import javax.swing.AbstractAction;
 import javax.swing.KeyStroke;
 
 import jd.controlling.JDLogger;
-import jd.utils.JDLocale;
 import jd.utils.JDTheme;
+import jd.utils.locale.JDL;
 
 public abstract class StartAction extends AbstractAction {
 
@@ -34,9 +34,9 @@ public abstract class StartAction extends AbstractAction {
         super();
 
         setIcon(iconkey);
-        setName(JDLocale.L("gui.menu." + menukey + ".name", menukey));
-        setMnemonic(JDLocale.L("gui.menu." + menukey + ".mnem", "-"), JDLocale.L("gui.menu." + menukey + ".name", menukey));
-        setAccelerator(JDLocale.L("gui.menu." + menukey + ".accel", "-"));
+        setName(JDL.L("gui.menu." + menukey + ".name", menukey));
+        setMnemonic(JDL.L("gui.menu." + menukey + ".mnem", "-"), JDL.L("gui.menu." + menukey + ".name", menukey));
+        setAccelerator(JDL.L("gui.menu." + menukey + ".accel", "-"));
     }
 
     protected void setIcon(String key) {

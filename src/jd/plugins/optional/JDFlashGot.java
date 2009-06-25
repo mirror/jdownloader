@@ -19,8 +19,8 @@ import jd.nutils.nativeintegration.LocaleBrowser;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginOptional;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 class FlashGotRequestHandler implements Handler {
     String jdpath = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/JDownloader.jar";
@@ -96,7 +96,7 @@ public class JDFlashGot extends PluginOptional {
     }
 
     public String getHost() {
-        return JDLocale.L("plugins.optional.flashgot.name", "FlashGot Integration");
+        return JDL.L("plugins.optional.flashgot.name", "FlashGot Integration");
     }
 
     public void initpanel() {
@@ -106,7 +106,7 @@ public class JDFlashGot extends PluginOptional {
                 LocaleBrowser.openinFirefox("http://flashgot.net/getit");
             }
 
-        }, JDLocale.L("gui.config.general.cnl.install", "Install")));
+        }, JDL.L("gui.config.general.cnl.install", "Install")));
     }
 
 }

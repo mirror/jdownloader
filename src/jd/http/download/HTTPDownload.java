@@ -30,8 +30,8 @@ import jd.http.requests.Request;
 import jd.nutils.Threader;
 import jd.nutils.Threader.Worker;
 import jd.nutils.jobber.JDRunnable;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 public class HTTPDownload extends DownloadInterface {
     /**
@@ -339,7 +339,7 @@ public class HTTPDownload extends DownloadInterface {
      * @throws BrowserException
      */
     private void clean() throws BrowserException {
-        if (!new File(getOutputFile().getAbsolutePath() + ".part").renameTo(getOutputFile())) { throw new BrowserException(JDLocale.L("exceptions.browserexception.couldnotrenam", "Could not rename getOutputFile()"), BrowserException.TYPE_LOCAL_IO);
+        if (!new File(getOutputFile().getAbsolutePath() + ".part").renameTo(getOutputFile())) { throw new BrowserException(JDL.L("exceptions.browserexception.couldnotrenam", "Could not rename getOutputFile()"), BrowserException.TYPE_LOCAL_IO);
 
         }
         if (!new File(getOutputFile().getAbsolutePath() + ".jdp").delete()) {
@@ -353,7 +353,7 @@ public class HTTPDownload extends DownloadInterface {
     }
 
     private void initOutputChannel() throws FileNotFoundException, BrowserException {
-        if (getOutputFile().exists()) { throw new BrowserException(JDLocale.L("exceptions.browserexception.alreadyexists", "getOutputFile() already exists"), BrowserException.TYPE_LOCAL_IO);
+        if (getOutputFile().exists()) { throw new BrowserException(JDL.L("exceptions.browserexception.alreadyexists", "getOutputFile() already exists"), BrowserException.TYPE_LOCAL_IO);
 
         }
 

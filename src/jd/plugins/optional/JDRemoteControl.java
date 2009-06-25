@@ -50,9 +50,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginOptional;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import jd.utils.WebUpdate;
+import jd.utils.locale.JDL;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -481,10 +481,10 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             if (enablePlugin) {
                 server = new HttpServer(subConfig.getIntegerProperty(PARAM_PORT, 10025), new Serverhandler());
                 server.start();
-                JDUtilities.getGUI().showMessageDialog(getHost() + " " + JDLocale.L("plugins.optional.remotecontrol.startedonport", "started on port") + " " + subConfig.getIntegerProperty(PARAM_PORT, 10025) + "\n http://127.0.0.1:" + subConfig.getIntegerProperty(PARAM_PORT, 10025) + JDLocale.L("plugins.optional.remotecontrol.help", "/help for Developer Information."));
+                JDUtilities.getGUI().showMessageDialog(getHost() + " " + JDL.L("plugins.optional.remotecontrol.startedonport", "started on port") + " " + subConfig.getIntegerProperty(PARAM_PORT, 10025) + "\n http://127.0.0.1:" + subConfig.getIntegerProperty(PARAM_PORT, 10025) + JDL.L("plugins.optional.remotecontrol.help", "/help for Developer Information."));
             } else {
                 if (server != null) server.sstop();
-                JDUtilities.getGUI().showMessageDialog(getHost() + " " + JDLocale.L("plugins.optional.remotecontrol.stopped", "stopped."));
+                JDUtilities.getGUI().showMessageDialog(getHost() + " " + JDL.L("plugins.optional.remotecontrol.stopped", "stopped."));
             }
         } catch (Exception ex) {
             JDLogger.exception(ex);
@@ -495,14 +495,14 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
 
         MenuItem m;
-        menu.add(m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.optional.remotecontrol.activate", "Aktivieren"), 0).setActionListener(this));
+        menu.add(m = new MenuItem(MenuItem.TOGGLE, JDL.L("plugins.optional.remotecontrol.activate", "Aktivieren"), 0).setActionListener(this));
         m.setSelected(subConfig.getBooleanProperty(PARAM_ENABLED, true));
 
         return menu;
     }
 
     public String getHost() {
-        return JDLocale.L("plugins.optional.remotecontrol.name", "RemoteControl");
+        return JDL.L("plugins.optional.remotecontrol.name", "RemoteControl");
     }
 
     public String getRequirements() {
@@ -522,7 +522,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
 
     private void initConfig() {
         ConfigEntry cfg;
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, PARAM_PORT, JDLocale.L("plugins.optional.RemoteControl.port", "Port:"), 1000, 65500));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, PARAM_PORT, JDL.L("plugins.optional.RemoteControl.port", "Port:"), 1000, 65500));
         cfg.setDefaultValue(10025);
     }
 

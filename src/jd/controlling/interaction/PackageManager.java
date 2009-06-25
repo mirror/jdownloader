@@ -33,9 +33,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.update.PackageData;
 import jd.update.WebUpdater;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import jd.utils.WebUpdate;
+import jd.utils.locale.JDL;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -55,16 +55,16 @@ public class PackageManager extends Interaction implements Serializable {
         for (PackageData pa : getPackageData()) {
             if (pa.isInstalled()) {
                 if (pa.getInstalledVersion() != Integer.parseInt(pa.getStringProperty("version"))) {
-                    error.append(JDLocale.LF("system.update.error.message.infolink", "%s v.%s <a href='%s'>INFO</a><br/>", pa.getStringProperty("name"), pa.getStringProperty("version"), pa.getStringProperty("infourl")));
+                    error.append(JDL.LF("system.update.error.message.infolink", "%s v.%s <a href='%s'>INFO</a><br/>", pa.getStringProperty("name"), pa.getStringProperty("version"), pa.getStringProperty("infourl")));
                 } else {
-                    links.append(JDLocale.LF("system.update.success.message.infolink", "%s v.%s <a href='%s'>INFO</a><br/>", pa.getStringProperty("name"), pa.getStringProperty("version"), pa.getStringProperty("infourl")));
+                    links.append(JDL.LF("system.update.success.message.infolink", "%s v.%s <a href='%s'>INFO</a><br/>", pa.getStringProperty("name"), pa.getStringProperty("version"), pa.getStringProperty("infourl")));
                 }
                 pa.setInstalled(false);
             }
         }
 
-        if (links.length() > 0) JDUtilities.getGUI().showCountdownConfirmDialog(JDLocale.LF("system.update.success.message", "Installed new updates<hr>%s", links.toString()), 15);
-        if (error.length() > 0) JDUtilities.getGUI().showCountdownConfirmDialog(JDLocale.LF("system.update.error.message", "Installing updates FAILED for this packages:<hr>%s", links.toString()), 15);
+        if (links.length() > 0) JDUtilities.getGUI().showCountdownConfirmDialog(JDL.LF("system.update.success.message", "Installed new updates<hr>%s", links.toString()), 15);
+        if (error.length() > 0) JDUtilities.getGUI().showCountdownConfirmDialog(JDL.LF("system.update.error.message", "Installing updates FAILED for this packages:<hr>%s", links.toString()), 15);
     }
 
     // @Override
@@ -74,7 +74,7 @@ public class PackageManager extends Interaction implements Serializable {
         SubConfiguration config = WebUpdater.getConfig("JDU");
         boolean oldUpdatePackage = false;
 
-        String fpName = JDLocale.L("modules.packagemanager.packagename", "JD-Update");
+        String fpName = JDL.L("modules.packagemanager.packagename", "JD-Update");
         String fpDir = JDUtilities.getResourceFile("packages").getAbsolutePath();
 
         FilePackage fp = null;
@@ -132,7 +132,7 @@ public class PackageManager extends Interaction implements Serializable {
 
     // @Override
     public String getInteractionName() {
-        return JDLocale.L("interaction.packagemanager.name", "Pakete aktualisieren");
+        return JDL.L("interaction.packagemanager.name", "Pakete aktualisieren");
     }
 
     public ArrayList<PackageData> getPackageData() {
@@ -276,7 +276,7 @@ public class PackageManager extends Interaction implements Serializable {
                                 list.append(pa.getStringProperty("version"));
                                 list.append(new char[] { '<', 'b', 'r', '/', '>' });
                             }
-                            String message = JDLocale.LF("modules.packagemanager.downloadednewpackage.title2", "<p>Updates loaded. A JD restart is required.<br/> RESTART NOW?<hr>%s</p>", list.toString());
+                            String message = JDL.LF("modules.packagemanager.downloadednewpackage.title2", "<p>Updates loaded. A JD restart is required.<br/> RESTART NOW?<hr>%s</p>", list.toString());
                             boolean ret = JDUtilities.getGUI().showCountdownConfirmDialog(message, 15);
                             if (ret) {
                                 new WebUpdate().doWebupdate(true,true);
@@ -298,6 +298,6 @@ public class PackageManager extends Interaction implements Serializable {
 
     // @Override
     public String toString() {
-        return JDLocale.L("interaction.packagemanager.name", "Pakete aktualisieren");
+        return JDL.L("interaction.packagemanager.name", "Pakete aktualisieren");
     }
 }

@@ -32,8 +32,8 @@ import jd.gui.skins.simple.JTabbedPanel;
 import jd.gui.skins.simple.components.ComboBrowseFile;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.JDTextField;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 public class LinkGrabberFilePackageInfo extends JTabbedPanel implements ActionListener {
@@ -130,29 +130,29 @@ public class LinkGrabberFilePackageInfo extends JTabbedPanel implements ActionLi
         txtComment = new JDTextField(true);
         addChangeListener(txtComment);
 
-        chbExtract = new JCheckBox(JDLocale.L("gui.linkgrabber.packagetab.chb.extractAfterdownload", "Extract"));
+        chbExtract = new JCheckBox(JDL.L("gui.linkgrabber.packagetab.chb.extractAfterdownload", "Extract"));
         chbExtract.setSelected(true);
         chbExtract.setHorizontalTextPosition(SwingConstants.LEFT);
         chbExtract.addActionListener(this);
 
-        chbUseSubdirectory = new JCheckBox(JDLocale.L("gui.linkgrabber.packagetab.chb.useSubdirectory", "Use Subdirectory"));
+        chbUseSubdirectory = new JCheckBox(JDL.L("gui.linkgrabber.packagetab.chb.useSubdirectory", "Use Subdirectory"));
         chbUseSubdirectory.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false));
         chbUseSubdirectory.setHorizontalTextPosition(SwingConstants.LEFT);
         chbUseSubdirectory.addActionListener(this);
 
         this.setLayout(new MigLayout("ins 10, wrap 3", "[]10[grow,fill][]", "[]5[]5[]5[]"));
 
-        this.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.name", "Paketname")));
+        this.add(new JLabel(JDL.L("gui.linkgrabber.packagetab.lbl.name", "Paketname")));
         this.add(txtName, "span 2");
-        this.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.saveto", "Speichern unter")));
+        this.add(new JLabel(JDL.L("gui.linkgrabber.packagetab.lbl.saveto", "Speichern unter")));
         this.add(brwSaveTo.getInput(), "gapright 10, growx");
         this.add(brwSaveTo.getButton(), "pushx,growx");
 
-        this.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.password", "Archivpasswort")), "newline");
+        this.add(new JLabel(JDL.L("gui.linkgrabber.packagetab.lbl.password", "Archivpasswort")), "newline");
 
         this.add(txtPassword, " gapright 10, growx");
         this.add(chbExtract, "alignx right");
-        this.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.comment", "Kommentar")));
+        this.add(new JLabel(JDL.L("gui.linkgrabber.packagetab.lbl.comment", "Kommentar")));
         this.add(txtComment, "gapright 10, growx");
         this.add(chbUseSubdirectory, "alignx right");
 

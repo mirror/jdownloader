@@ -62,9 +62,10 @@ import jd.nutils.OSDetector;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.plugins.PluginOptional;
-import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
+import jd.utils.locale.JDLocale;
 import net.miginfocom.swing.MigLayout;
 
 import org.schwering.irc.lib.IRCConnection;
@@ -106,6 +107,7 @@ public class JDChat extends PluginOptional implements ControlListener {
     public static final String STYLE_SYSTEM_MESSAGE = "system";
     private static final int TEXT_BUFFER = 1024 * 600;
     public static final String USERLIST_STYLE = JDIO.getLocalFile(JDUtilities.getResourceFile("plugins/jdchat/userliststyles.css"));
+    private static final String CHANNEL_LNG = "CHANNEL_LNG2";
 
     public static int getAddonInterfaceVersion() {
         return 3;
@@ -636,7 +638,7 @@ public class JDChat extends PluginOptional implements ControlListener {
 
             for (String next : map.keySet()) {
                 if (map.get(next).equals(dest)) {
-                    String tmp = JDLocale.translate(next, msg);
+                    String tmp = JDL.translate(next, msg);
                     if (!tmp.equalsIgnoreCase(msg)) {
                         tmp += "(" + msg + ")";
                         msg = tmp;
@@ -754,7 +756,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
         MenuItem m;
 
-        menu.add(m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.optional.jdchat.menu.windowstatus", "Chatwindow"), 0).setActionListener(this));
+        menu.add(m = new MenuItem(MenuItem.TOGGLE, JDL.L("plugins.optional.jdchat.menu.windowstatus", "Chatwindow"), 0).setActionListener(this));
         if (frame == null || !frame.isVisible()) {
             m.setSelected(false);
         } else {
@@ -791,14 +793,17 @@ public class JDChat extends PluginOptional implements ControlListener {
 
     public String getNickname() {
 
-        String loc = System.getProperty("user.country");
+        String loc = JDL.getCountryCodeByIP();
+        
         if (loc == null) {
-            loc = JDLocale.getLocale().substring(0, 3);
+            loc = System.getProperty("user.country");
+        }else{
+            loc=loc.toLowerCase();
         }
         String def = "JD-[" + loc + "]_" + ("" + System.currentTimeMillis()).substring(6);
         nick = subConfig.getStringProperty(PARAM_NICK);
         if (nick == null || nick.equalsIgnoreCase("")) {
-            nick = JDUtilities.getGUI().showUserInputDialog(JDLocale.L("plugins.optional.jdchat.enternick", "Your wished nickname?"));
+            nick = JDUtilities.getGUI().showUserInputDialog(JDL.L("plugins.optional.jdchat.enternick", "Your wished nickname?"));
             if ((nick != null) && (!nick.equalsIgnoreCase(""))) {
                 nick += "[" + loc + "]";
             }
@@ -817,7 +822,7 @@ public class JDChat extends PluginOptional implements ControlListener {
 
     // @Override
     public String getHost() {
-        return JDLocale.L("plugins.optional.jdchat.name2", "JD Support Chat");
+        return JDL.L("plugins.optional.jdchat.name2", "JD Support Chat");
     }
 
     // @Override
@@ -848,43 +853,43 @@ public class JDChat extends PluginOptional implements ControlListener {
 
     private void initConfigEntries() {
         ConfigEntry cfg;
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, PARAM_NICK, JDLocale.L("plugins.optional.jdchat.user", "Nickname")));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, PARAM_NICK, JDL.L("plugins.optional.jdchat.user", "Nickname")));
 
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, subConfig, PARAM_PERFORM, JDLocale.L("plugins.optional.jdchat.performonstart", "Perform commands after connection estabilished")));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, subConfig, PARAM_PERFORM, JDL.L("plugins.optional.jdchat.performonstart", "Perform commands after connection estabilished")));
 
-        ConfigContainer lngse = new ConfigContainer(JDLocale.L("plugins.optional.jdchat.locale", "Language settings"));
+        ConfigContainer lngse = new ConfigContainer(JDL.L("plugins.optional.jdchat.locale", "Language settings"));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CONTAINER, lngse));
 
-        lngse.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PARAM_DOAUTOTRANSLAT, JDLocale.L("plugins.optional.jdchat.doautotranslate", "Translate Chat")));
+        lngse.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PARAM_DOAUTOTRANSLAT, JDL.L("plugins.optional.jdchat.doautotranslate", "Translate Chat")));
 
         cfg.setDefaultValue(false);
         ConfigEntry conditionEntry = cfg;
 
         map = new HashMap<String, String>();
-        map.put("ar", JDLocale.L("locale.lngs.arabic", "Arabic"));
-        map.put("bg", JDLocale.L("locale.lngs.bulgarian", "Bulgarian"));
-        map.put("zh-CN", JDLocale.L("locale.lngs.chinese_simplified_", "Chinese (Simplified)"));
-        map.put("zh-TW", JDLocale.L("locale.lngs.chinese_traditional_", "Chinese (Traditional)"));
-        map.put("hr", JDLocale.L("locale.lngs.croatian", "Croatian"));
-        map.put("cs", JDLocale.L("locale.lngs.czech", "Czech"));
-        map.put("da", JDLocale.L("locale.lngs.danish", "Danish"));
-        map.put("nl", JDLocale.L("locale.lngs.dutch", "Dutch"));
-        map.put("en", JDLocale.L("locale.lngs.english", "English"));
-        map.put("fi", JDLocale.L("locale.lngs.finnish", "Finnish"));
-        map.put("fr", JDLocale.L("locale.lngs.french", "French"));
-        map.put("de", JDLocale.L("locale.lngs.german", "German"));
-        map.put("el", JDLocale.L("locale.lngs.greek", "Greek"));
-        map.put("hi", JDLocale.L("locale.lngs.hindi", "Hindi"));
-        map.put("it", JDLocale.L("locale.lngs.italian", "Italian"));
-        map.put("ja", JDLocale.L("locale.lngs.japanese", "Japanese"));
-        map.put("ko", JDLocale.L("locale.lngs.korean", "Korean"));
-        map.put("no", JDLocale.L("locale.lngs.norwegian", "Norwegian"));
-        map.put("pl", JDLocale.L("locale.lngs.polish", "Polish"));
-        map.put("pt", JDLocale.L("locale.lngs.portuguese", "Portuguese"));
-        map.put("ro", JDLocale.L("locale.lngs.romanian", "Romanian"));
-        map.put("ru", JDLocale.L("locale.lngs.russian", "Russian"));
-        map.put("es", JDLocale.L("locale.lngs.spanish", "Spanish"));
-        map.put("sv", JDLocale.L("locale.lngs.swedish", "Swedish"));
+        map.put("ar", JDL.L("locale.lngs.arabic", "Arabic"));
+        map.put("bg", JDL.L("locale.lngs.bulgarian", "Bulgarian"));
+        map.put("zh-CN", JDL.L("locale.lngs.chinese_simplified_", "Chinese (Simplified)"));
+        map.put("zh-TW", JDL.L("locale.lngs.chinese_traditional_", "Chinese (Traditional)"));
+        map.put("hr", JDL.L("locale.lngs.croatian", "Croatian"));
+        map.put("cs", JDL.L("locale.lngs.czech", "Czech"));
+        map.put("da", JDL.L("locale.lngs.danish", "Danish"));
+        map.put("nl", JDL.L("locale.lngs.dutch", "Dutch"));
+        map.put("en", JDL.L("locale.lngs.english", "English"));
+        map.put("fi", JDL.L("locale.lngs.finnish", "Finnish"));
+        map.put("fr", JDL.L("locale.lngs.french", "French"));
+        map.put("de", JDL.L("locale.lngs.german", "German"));
+        map.put("el", JDL.L("locale.lngs.greek", "Greek"));
+        map.put("hi", JDL.L("locale.lngs.hindi", "Hindi"));
+        map.put("it", JDL.L("locale.lngs.italian", "Italian"));
+        map.put("ja", JDL.L("locale.lngs.japanese", "Japanese"));
+        map.put("ko", JDL.L("locale.lngs.korean", "Korean"));
+        map.put("no", JDL.L("locale.lngs.norwegian", "Norwegian"));
+        map.put("pl", JDL.L("locale.lngs.polish", "Polish"));
+        map.put("pt", JDL.L("locale.lngs.portuguese", "Portuguese"));
+        map.put("ro", JDL.L("locale.lngs.romanian", "Romanian"));
+        map.put("ru", JDL.L("locale.lngs.russian", "Russian"));
+        map.put("es", JDL.L("locale.lngs.spanish", "Spanish"));
+        map.put("sv", JDL.L("locale.lngs.swedish", "Swedish"));
 
         ArrayList<String> ar = new ArrayList<String>();
 
@@ -892,13 +897,13 @@ public class JDChat extends PluginOptional implements ControlListener {
             ar.add(map.get(string));
         }
 
-        lngse.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, PARAM_NATIVELANGUAGE, ar.toArray(new String[] {}), JDLocale.L("interaction.jdchat.native", "to: ")));
+        lngse.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, PARAM_NATIVELANGUAGE, ar.toArray(new String[] {}), JDL.L("interaction.jdchat.native", "to: ")));
         cfg.setEnabledCondidtion(conditionEntry, "==", true);
 
-        lngse.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PARAM_DOAUTOTRANSLATSELF, JDLocale.L("plugins.optional.jdchat.doautotranslateself", "Translate everything I say")));
+        lngse.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PARAM_DOAUTOTRANSLATSELF, JDL.L("plugins.optional.jdchat.doautotranslateself", "Translate everything I say")));
         conditionEntry.setDefaultValue(false);
 
-        lngse.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, PARAM_DESLANGUAGE, ar.toArray(new String[] {}), JDLocale.L("interaction.jdchat.deslanguage", "to: ")));
+        lngse.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, PARAM_DESLANGUAGE, ar.toArray(new String[] {}), JDL.L("interaction.jdchat.deslanguage", "to: ")));
         cfg.setEnabledCondidtion(conditionEntry, "==", true);
 
     }
@@ -1038,7 +1043,7 @@ public class JDChat extends PluginOptional implements ControlListener {
             }
 
         });
-        lang = new JComboBox(new String[] { "english", "german", "spanish", "turkish" });
+        lang = new JComboBox(new String[] { JDL.getInstance("en").toString(), JDL.getInstance("de").toString(), JDL.getInstance("es").toString(), JDL.getInstance("tr").toString() });
         lang.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
@@ -1048,7 +1053,7 @@ public class JDChat extends PluginOptional implements ControlListener {
             }
 
         });
-        lang.setSelectedItem(this.getPluginConfig().getStringProperty("CHANNEL_LNG", "english"));
+        lang.setSelectedItem(this.getPluginConfig().getStringProperty(CHANNEL_LNG, JDL.getInstance("en").toString()));
         textArea.setContentType("text/html");
         textArea.setEditable(false);
 
@@ -1120,19 +1125,18 @@ public class JDChat extends PluginOptional implements ControlListener {
     }
 
     private void initChannel() {
-        String id = SubConfiguration.getConfig(JDLocale.CONFIG).getStringProperty(JDLocale.LOCALE_ID, JDLocale.isGerman() ? "german" : "english");
-
-        String lng = "english";
-        if (id.contains("spanish")) {
-            lng = "spanish";
-        } else if (id.contains("turkish")) {
-            lng = "turkish";
+        JDLocale id = JDL.getLocale();
+        String lng = JDL.getInstance("en").toString();
+        if (id.getLanguageCode().equals("es")) {
+            lng = JDL.getInstance("es").toString();
+        } else if (id.getLanguageCode().equals("tr")) {
+            lng = JDL.getInstance("tr").toString();
         }
-        lng = this.getPluginConfig().getStringProperty("CHANNEL_LNG", lng);
+        lng = this.getPluginConfig().getStringProperty(CHANNEL_LNG, JDL.getInstance("en").toString());
         String newChannel = null;
-        if (lng.equals("spanish")) {
+        if (lng.equals(JDL.getInstance("es").toString())) {
             newChannel = "#jdownloader[es]";
-        } else if (lng.equals("turkish")) {
+        } else if (lng.equals(JDL.getInstance("tr").toString())) {
             newChannel = "#jdownloader[tr]";
         } else {
             newChannel = "#jdownloader";
@@ -1207,9 +1211,9 @@ public class JDChat extends PluginOptional implements ControlListener {
 
             for (String next : map.keySet()) {
                 if (map.get(next).equals(dest)) {
-                    trim = JDLocale.translate(next, trim);
+                    trim = JDL.translate(next, trim);
 
-                    String tmp = JDLocale.translate(next, trim);
+                    String tmp = JDL.translate(next, trim);
                     if (!tmp.equalsIgnoreCase(trim)) {
                         tmp += "(" + trim + ")";
                         trim = tmp;
@@ -1314,7 +1318,7 @@ public class JDChat extends PluginOptional implements ControlListener {
                     return;
                 }
                 String t;
-                t = JDLocale.translate(tofrom[0], tofrom[1], Utils.prepareMsg(rest.substring(end).trim()));
+                t = JDL.translate(tofrom[0], tofrom[1], Utils.prepareMsg(rest.substring(end).trim()));
                 lastCommand = "/translate " + rest.substring(0, end).trim() + " ";
                 textField.setText(t);
             } else if (Regex.matches(cmd, CMD_TOPIC)) {
@@ -1361,7 +1365,7 @@ public class JDChat extends PluginOptional implements ControlListener {
     public void setEnabled(boolean b) {
         if (b) {
             initGUI();
-            tp = new JDChatTaskPane(JDLocale.L("plugins.optional.jdChat.gui.title2", "JD Support Chat"), JDTheme.II("gui.images.config.tip", 24, 24));
+            tp = new JDChatTaskPane(JDL.L("plugins.optional.jdChat.gui.title2", "JD Support Chat"), JDTheme.II("gui.images.config.tip", 24, 24));
             SimpleGUI.CURRENTGUI.getTaskPane().add(tp);
             tp.addActionListener(new ActionListener() {
 

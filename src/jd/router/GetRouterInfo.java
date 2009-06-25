@@ -58,8 +58,8 @@ import jd.nutils.JDFlags;
 import jd.nutils.OSDetector;
 import jd.nutils.Threader;
 import jd.nutils.jobber.JDRunnable;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 public class GetRouterInfo {
 
@@ -198,7 +198,7 @@ public class GetRouterInfo {
         }
         try {
 
-            setProgressText(JDLocale.L("gui.config.routeripfinder.status.tryingtofindrouterip", "Trying to find the router IP address..."));
+            setProgressText(JDL.L("gui.config.routeripfinder.status.tryingtofindrouterip", "Trying to find the router IP address..."));
             String _255 = "(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)";
             String exIP = "(?:" + _255 + "\\.){3}" + _255;
             Pattern pat = Pattern.compile("^\\s*(?:0\\.0\\.0\\.0\\s*){1,2}(" + exIP + ").*");
@@ -231,7 +231,7 @@ public class GetRouterInfo {
                     while (matcher.find()) {
                         String hostname = matcher.group(1).trim();
                         if (!hostname.matches("[\\s]*\\*[\\s]*")) {
-                            setProgressText(JDLocale.L("gui.config.routeripfinder.status.testing", "Testing") + " " + hostname + " ...");
+                            setProgressText(JDL.L("gui.config.routeripfinder.status.testing", "Testing") + " " + hostname + " ...");
                             try {
                                 InetAddress ia = InetAddress.getByName(hostname);
                                 if (ia.isReachable(1500)) {
@@ -258,7 +258,7 @@ public class GetRouterInfo {
                     while (matcher.find()) {
                         String hostname = matcher.group(1).trim();
                         if (!hostname.matches("[\\s]*\\*[\\s]*")) {
-                            setProgressText(JDLocale.L("gui.config.routeripfinder.status.testing", "Testing") + " " + hostname + " ...");
+                            setProgressText(JDL.L("gui.config.routeripfinder.status.testing", "Testing") + " " + hostname + " ...");
                             try {
                                 InetAddress ia = InetAddress.getByName(hostname);
                                 if (ia.isReachable(1500)) {
@@ -398,7 +398,7 @@ public class GetRouterInfo {
                 public void go() throws Exception {
 
                     final String hostname = hosts.get(d);
-                    setProgressText(JDLocale.L("gui.config.routeripfinder.status.testing", "Testing") + " " + hostname + " ...");
+                    setProgressText(JDL.L("gui.config.routeripfinder.status.testing", "Testing") + " " + hostname + " ...");
                     try {
                         InetAddress ia = InetAddress.getByName(hostname);
                         if (ia.isReachable(1500)) {
@@ -461,7 +461,7 @@ public class GetRouterInfo {
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_REQUESTS_CLR, info2.getKey().getReconnectMethodeClr());
             } else
                 continue;
-            setProgressText(JDLocale.L("gui.config.routeripfinder.status.testingrouter", "Testing router") + " " + info2.getKey().getRouterName() + " ...");
+            setProgressText(JDL.L("gui.config.routeripfinder.status.testingrouter", "Testing router") + " " + info2.getKey().getRouterName() + " ...");
             setProgress(i++ * 100 / size);
 
             JDUtilities.getConfiguration().save();
@@ -477,7 +477,7 @@ public class GetRouterInfo {
     }
 
     public Vector<RInfo> getRouterInfos() {
-        setProgressText(JDLocale.L("gui.config.routeripfinder.status.collectingrouterinfo", "Collecting router informations..."));
+        setProgressText(JDL.L("gui.config.routeripfinder.status.collectingrouterinfo", "Collecting router informations..."));
         final RInfo infos = RouterInfoCollector.getRInfo(RouterInfoCollector.RInfo_ROUTERSEARCH);
         setProgress(25);
         infos.setReconnectMethode(null);
@@ -547,7 +547,7 @@ public class GetRouterInfo {
                 he.put("HTMLTagCount", "" + infos.countHtmlTags());
                 ArrayList<RInfo> ra;
                 try {
-                    setProgressText(JDLocale.L("gui.config.routeripfinder.status.downloadlingsimilarmethods", "Downloading similar router methods..."));
+                    setProgressText(JDL.L("gui.config.routeripfinder.status.downloadlingsimilarmethods", "Downloading similar router methods..."));
                     setProgress(45);
                     String st = br.postPage("http://service.jdownloader.org/routerdb/getRouters.php", he);
                     setProgress(70);
@@ -561,7 +561,7 @@ public class GetRouterInfo {
                     return;
                 }
                 if (ra != null) {
-                    setProgressText(JDLocale.L("gui.config.routeripfinder.status.sortingmethods", "Sorting router methods..."));
+                    setProgressText(JDL.L("gui.config.routeripfinder.status.sortingmethods", "Sorting router methods..."));
                     for (RInfo info : ra) {
                         if (info.isHaveUpnpReconnect()) upnp++;
 
@@ -596,7 +596,7 @@ public class GetRouterInfo {
                 }
                 routers = (HashMap<RInfo, Integer>) sortByIntegrety(routers);
                 if (upnp > 0) {
-                    setProgressText(JDLocale.L("gui.config.routeripfinder.status.searchingforupnp", "Searching for UPnP..."));
+                    setProgressText(JDL.L("gui.config.routeripfinder.status.searchingforupnp", "Searching for UPnP..."));
                     while (isalv.isAlv) {
                         try {
                             wait();
@@ -633,7 +633,7 @@ public class GetRouterInfo {
     @SuppressWarnings("unchecked")
     public RInfo getRouterData() {
 
-        setProgressText(JDLocale.L("gui.config.routeripfinder.status.collectingrouterinfo", "Collecting router information..."));
+        setProgressText(JDL.L("gui.config.routeripfinder.status.collectingrouterinfo", "Collecting router information..."));
 
         final RInfo infos = RouterInfoCollector.getRInfo(RouterInfoCollector.RInfo_ROUTERSEARCH);
         infos.setReconnectMethode(null);
@@ -700,7 +700,7 @@ public class GetRouterInfo {
                     he.put("HTMLTagCount", "" + infos.countHtmlTags());
                     ArrayList<RInfo> ra;
                     try {
-                        setProgressText(JDLocale.L("gui.config.routeripfinder.status.downloadlingsimilarmethods", "Downloading similar router methods..."));
+                        setProgressText(JDL.L("gui.config.routeripfinder.status.downloadlingsimilarmethods", "Downloading similar router methods..."));
                         String st = br.postPage("http://service.jdownloader.org/routerdb/getRouters.php", he);
                         // String st =
                         // br.postPage("http://localhost/router/getRouters.php",
@@ -711,7 +711,7 @@ public class GetRouterInfo {
                     } catch (Exception e) {
                         return;
                     }
-                    setProgressText(JDLocale.L("gui.config.routeripfinder.status.sortingmethods", "Sorting router methods..."));
+                    setProgressText(JDL.L("gui.config.routeripfinder.status.sortingmethods", "Sorting router methods..."));
                     for (RInfo info : ra) {
                         // System.out.println(info.getReconnectMethode());
                         if (info.isHaveUpnpReconnect()) upnp++;
@@ -772,11 +772,11 @@ public class GetRouterInfo {
                         if (isalv.meths == null) {
 
                             UserIO.setCountdownTime(600);
-                            int ret = UserIO.getInstance().requestConfirmDialog(0, null, JDLocale.LF("gui.config.liveHeader.warning.upnpinactive", "Bitte aktivieren sie fals vorhanden Upnp in den Netzwerkeinstellungen ihres Routers <br><a href=\"http://%s\">zum Router</a><br><a href=\"http://wiki.jdownloader.org/index.php?title=Router_Upnp\">Wikiartikel: Upnp Routern</a><br>drücken sie Ok wenn sie Upnp aktiviert haben oder abbrechen wenn sie fortfahren wollen!", infos.getRouterHost()), UserIO.getInstance().getIcon(UserIO.ICON_WARNING), null, null);
+                            int ret = UserIO.getInstance().requestConfirmDialog(0, null, JDL.LF("gui.config.liveHeader.warning.upnpinactive", "Bitte aktivieren sie fals vorhanden Upnp in den Netzwerkeinstellungen ihres Routers <br><a href=\"http://%s\">zum Router</a><br><a href=\"http://wiki.jdownloader.org/index.php?title=Router_Upnp\">Wikiartikel: Upnp Routern</a><br>drücken sie Ok wenn sie Upnp aktiviert haben oder abbrechen wenn sie fortfahren wollen!", infos.getRouterHost()), UserIO.getInstance().getIcon(UserIO.ICON_WARNING), null, null);
                             UserIO.setCountdownTime(null);
                             if (JDFlags.hasAllFlags(ret, UserIO.RETURN_OK)) {
                                 try {
-                                    setProgressText(JDLocale.L("gui.config.routeripfinder.status.testingupnp", "Testing UPnP..."));
+                                    setProgressText(JDL.L("gui.config.routeripfinder.status.testingupnp", "Testing UPnP..."));
                                     for (int i = 0; i < 30 && !cancel; i++) {
                                         setProgress(i++ * 100 / 30);
                                         UPnPInfo upnpd = new UPnPInfo(InetAddress.getByName(infos.getRouterHost()), 10000);
@@ -870,7 +870,7 @@ public class GetRouterInfo {
 
     public static void autoConfig(final Object pass, final Object user, final Object ip, final Object routerScript) {
 
-        final ProgressDialog progress = new ProgressDialog(SimpleGUI.CURRENTGUI, JDLocale.L("gui.config.liveHeader.progress.message", "jDownloader sucht nach Ihren Routereinstellungen"), null, false, true);
+        final ProgressDialog progress = new ProgressDialog(SimpleGUI.CURRENTGUI, JDL.L("gui.config.liveHeader.progress.message", "jDownloader sucht nach Ihren Routereinstellungen"), null, false, true);
         final GetRouterInfo routerInfo = new GetRouterInfo(progress);
         final Thread th = new Thread() {
             // @Override
@@ -898,7 +898,7 @@ public class GetRouterInfo {
                 if (data == null) {
                     progress.setVisible(false);
                     progress.dispose();
-                    JDUtilities.getGUI().showMessageDialog(JDLocale.L("gui.config.liveHeader.warning.notFound", "jDownloader konnte ihre Routereinstellung nicht automatisch ermitteln."));
+                    JDUtilities.getGUI().showMessageDialog(JDL.L("gui.config.liveHeader.warning.notFound", "jDownloader konnte ihre Routereinstellung nicht automatisch ermitteln."));
                     return;
                 }
                 if (routerScript != null && routerScript instanceof GUIConfigEntry) {
@@ -909,7 +909,7 @@ public class GetRouterInfo {
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_ROUTERNAME, data.getRouterName());
                 progress.setVisible(false);
                 progress.dispose();
-                JDUtilities.getGUI().showMessageDialog(JDLocale.L("gui.config.liveHeader.warning.yourRouter", "Sie haben einen") + " " + data.getRouterName());
+                JDUtilities.getGUI().showMessageDialog(JDL.L("gui.config.liveHeader.warning.yourRouter", "Sie haben einen") + " " + data.getRouterName());
 
             }
         };

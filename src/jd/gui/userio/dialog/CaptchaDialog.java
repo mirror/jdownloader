@@ -36,8 +36,8 @@ import jd.controlling.CaptchaController;
 import jd.gui.UserIO;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.nutils.Screen;
-import jd.utils.JDLocale;
 import jd.utils.JDTheme;
+import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingworker.SwingWorker;
@@ -101,10 +101,10 @@ public class CaptchaDialog extends JCountdownDialog implements ActionListener, K
         textField.addKeyListener(this);
 
         textField.setText(this.defaultValue);
-        btnOK = new JButton(JDLocale.L("gui.btn_ok", "OK"));
+        btnOK = new JButton(JDL.L("gui.btn_ok", "OK"));
         btnOK.addActionListener(this);
 
-        btnBAD = new JButton(JDLocale.L("gui.btn_cancel", "Cancel"));
+        btnBAD = new JButton(JDL.L("gui.btn_cancel", "Cancel"));
         btnBAD.addActionListener(this);
 
         this.getRootPane().setDefaultButton(btnOK);
@@ -198,7 +198,7 @@ public class CaptchaDialog extends JCountdownDialog implements ActionListener, K
             jacWorker.cancel(true);
             jacWorker = null;
         }
-        setTitle(JDLocale.L("gui.captchaWindow.askForInput", "Please enter..."));
+        setTitle(JDL.L("gui.captchaWindow.askForInput", "Please enter..."));
     }
 
     public void keyReleased(KeyEvent e) {

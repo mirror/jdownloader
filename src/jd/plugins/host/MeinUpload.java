@@ -34,8 +34,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 public class MeinUpload extends PluginForHost {
 
@@ -52,7 +52,7 @@ public class MeinUpload extends PluginForHost {
         requestFileInformation(downloadLink);
         if (br.getRedirectLocation() != null) {
             String error = br.getRegex("code=(.*)").getMatch(0);
-            throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.host.meinupload.error." + error, error));
+            throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.host.meinupload.error." + error, error));
         }
         handleFree0(downloadLink);
     }
@@ -109,7 +109,7 @@ public class MeinUpload extends PluginForHost {
         }
         if (dl.getConnection().getContentType().equalsIgnoreCase("text/html")) {
             dl.getConnection().disconnect();
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.host.meinupload.serverdefect", "Serivce not available"), 10 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.host.meinupload.serverdefect", "Serivce not available"), 10 * 60 * 1000l);
         }
         dl.startDownload();
     }
@@ -190,7 +190,7 @@ public class MeinUpload extends PluginForHost {
         dl = br.openDownload(downloadLink, url, true, 0);
         if (dl.getConnection().getContentType().equalsIgnoreCase("text/html")) {
             dl.getConnection().disconnect();
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.hoster.meinupload.errors.serverdefect", "Serivce not available"), 10 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.meinupload.errors.serverdefect", "Serivce not available"), 10 * 60 * 1000l);
         }
         dl.startDownload();
     }

@@ -28,7 +28,7 @@ import jd.gui.skins.simple.components.JLinkButton;
 import jd.nutils.Formatter;
 import jd.nutils.Screen;
 import jd.plugins.DownloadLink;
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 /**
@@ -69,22 +69,22 @@ public class AgbDialog extends JDialog implements ActionListener {
         setLayout(new MigLayout("wrap 1", "[center]", ""));
         getRootPane().setDefaultButton(btnOK);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-        setTitle(JDLocale.L("gui.dialogs.agb_tos.title", "Allgemeine Geschäftsbedingungen nicht akzeptiert"));
+        setTitle(JDL.L("gui.dialogs.agb_tos.title", "Allgemeine Geschäftsbedingungen nicht akzeptiert"));
 
-        JLabel labelInfo = new JLabel(JDLocale.LF("gui.dialogs.agb_tos.description", "Die Allgemeinen Geschäftsbedingungen (AGB) von %s wurden nicht gelesen und akzeptiert.", downloadLink.getPlugin().getHost()));
+        JLabel labelInfo = new JLabel(JDL.LF("gui.dialogs.agb_tos.description", "Die Allgemeinen Geschäftsbedingungen (AGB) von %s wurden nicht gelesen und akzeptiert.", downloadLink.getPlugin().getHost()));
 
-        JLinkButton linkAgb = new JLinkButton(JDLocale.LF("gui.dialogs.agb_tos.readAgb", "%s AGB lesen", downloadLink.getPlugin().getHost()), downloadLink.getPlugin().getAGBLink());
+        JLinkButton linkAgb = new JLinkButton(JDL.LF("gui.dialogs.agb_tos.readAgb", "%s AGB lesen", downloadLink.getPlugin().getHost()), downloadLink.getPlugin().getAGBLink());
         linkAgb.addActionListener(this);
         linkAgb.setFocusable(false);
 
-        checkAgbAccepted = new JCheckBox(JDLocale.L("gui.dialogs.agb_tos.agbAccepted", "Ich bin mit den Allgemeinen Geschäftsbedingungen einverstanden"));
+        checkAgbAccepted = new JCheckBox(JDL.L("gui.dialogs.agb_tos.agbAccepted", "Ich bin mit den Allgemeinen Geschäftsbedingungen einverstanden"));
         checkAgbAccepted.addActionListener(this);
         checkAgbAccepted.setFocusable(false);
 
-        btnOK = new JButton(JDLocale.L("gui.btn_ok", "OK"));
+        btnOK = new JButton(JDL.L("gui.btn_ok", "OK"));
         btnOK.addActionListener(this);
 
-        btnCancel = new JButton(JDLocale.L("gui.btn_cancel", "Abbrechen"));
+        btnCancel = new JButton(JDL.L("gui.btn_cancel", "Abbrechen"));
         btnCancel.addActionListener(this);
         btnCancel.setFocusable(false);
 
@@ -102,7 +102,7 @@ public class AgbDialog extends JDialog implements ActionListener {
 
                 while (--c >= 0) {
                     if (countdownThread == null) return;
-                    setTitle(JDLocale.L("gui.dialogs.agb_tos.title", "Allgemeine Geschäftsbedingungen nicht akzeptiert") + " [" + Formatter.formatSeconds(c) + "]");
+                    setTitle(JDL.L("gui.dialogs.agb_tos.title", "Allgemeine Geschäftsbedingungen nicht akzeptiert") + " [" + Formatter.formatSeconds(c) + "]");
 
                     try {
                         Thread.sleep(1000);
@@ -140,7 +140,7 @@ public class AgbDialog extends JDialog implements ActionListener {
             countdownThread.interrupt();
         }
         countdownThread = null;
-        setTitle(JDLocale.L("gui.dialogs.agb_tos.title", "Allgemeine Geschäftsbedingungen nicht akzeptiert"));
+        setTitle(JDL.L("gui.dialogs.agb_tos.title", "Allgemeine Geschäftsbedingungen nicht akzeptiert"));
     }
 
 }

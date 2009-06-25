@@ -36,8 +36,8 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.nutils.Screen;
-import jd.utils.JDLocale;
 import jd.utils.JDTheme;
+import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 public class ClickPositionDialog extends JCountdownDialog implements ActionListener, MouseListener {
@@ -76,7 +76,7 @@ public class ClickPositionDialog extends JCountdownDialog implements ActionListe
             imageIcon = JDTheme.II("gui.images.config.ocr");
         }
 
-        btnBAD = new JButton(JDLocale.L("gui.btn_cancel", "Cancel"));
+        btnBAD = new JButton(JDL.L("gui.btn_cancel", "Cancel"));
         btnBAD.addActionListener(this);
 
         JLabel captcha = new JLabel(imageIcon);

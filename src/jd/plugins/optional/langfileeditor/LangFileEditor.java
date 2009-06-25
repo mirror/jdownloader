@@ -24,7 +24,7 @@ import jd.config.MenuItem;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.SingletonPanel;
 import jd.plugins.PluginOptional;
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 
 /**
  * Editor for jDownloader language files. Gets JDLocale.L() and JDLocale.LF()
@@ -84,7 +84,7 @@ public class LangFileEditor extends PluginOptional {
 
     // @Override
     public String getHost() {
-        return JDLocale.L("plugins.optional.langfileeditor.name", "Language File Editor");
+        return JDL.L("plugins.optional.langfileeditor.name", "Language File Editor");
     }
 
     // @Override

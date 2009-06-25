@@ -26,8 +26,8 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
 
-import jd.utils.JDLocale;
 import jd.utils.JDTheme;
+import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 public class JDCollapser extends JPanel {
@@ -57,7 +57,7 @@ public class JDCollapser extends JPanel {
         bt.setBorder(null);
         bt.setOpaque(false);
         bt.setBorderPainted(false);
-        bt.setToolTipText(JDLocale.L("gui.tooltips.infocollapser", "Click to close and save"));
+        bt.setToolTipText(JDL.L("gui.tooltips.infocollapser", "Click to close and save"));
         bt.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {

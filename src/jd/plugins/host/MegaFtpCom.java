@@ -24,7 +24,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 
 public class MegaFtpCom extends PluginForHost {
 
@@ -81,7 +81,7 @@ public class MegaFtpCom extends PluginForHost {
             form = br.getFormbyProperty("name", "pswcheck");
             if (form != null && br.containsHTML("Invalid Password")) {
                 link.setProperty("pass", null);
-                throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.errors.wrongpassword", "Password wrong"));
+                throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.errors.wrongpassword", "Password wrong"));
             } else {
                 link.setProperty("pass", passCode);
             }

@@ -35,8 +35,8 @@ import jd.nutils.JDFlags;
 import jd.plugins.Plugin;
 import jd.update.FileUpdate;
 import jd.update.WebUpdater;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 public class PluginWrapper implements Comparable<PluginWrapper> {
 
@@ -113,7 +113,7 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
                 // HashMap<String, Vector<String>> list = WebUpdater.PLUGIN_LIST
                 // != null ? WebUpdater.PLUGIN_LIST : new HashMap<String,
                 // Vector<String>>();
-                ProgressController progress = new ProgressController(JDLocale.LF("wrapper.webupdate.updateFile", "Update plugin %s", getClassName()), filelist.size() + 1);
+                ProgressController progress = new ProgressController(JDL.LF("wrapper.webupdate.updateFile", "Update plugin %s", getClassName()), filelist.size() + 1);
                 progress.increase(1);
                 for (FileUpdate entry : filelist) {
                     String plg = entry.getLocalPath();
@@ -154,11 +154,11 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
     }
 
     public Object getVersion() {
-        return loadedPlugin != null ? loadedPlugin.getVersion() : JDLocale.L("plugin.system.notloaded", "idle");
+        return loadedPlugin != null ? loadedPlugin.getVersion() : JDL.L("plugin.system.notloaded", "idle");
     }
 
     public Object getCoder() {
-        return loadedPlugin != null ? loadedPlugin.getCoder() : JDLocale.L("plugin.system.notloaded", "idle");
+        return loadedPlugin != null ? loadedPlugin.getCoder() : JDL.L("plugin.system.notloaded", "idle");
     }
 
     public boolean usePlugin() {

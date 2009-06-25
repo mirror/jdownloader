@@ -30,8 +30,8 @@ import jd.gui.skins.simple.config.ConfigPanel;
 import jd.gui.skins.simple.config.subpanels.SubPanelOptionalInstaller;
 import jd.gui.skins.simple.config.subpanels.SubPanelPluginsOptional;
 import jd.update.WebUpdater;
-import jd.utils.JDLocale;
 import jd.utils.JDTheme;
+import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 /**
@@ -76,8 +76,8 @@ public class ConfigPanelAddons extends ConfigPanel {
             }
 
         });
-        tabbed.addTab(JDLocale.L("gui.config.addons.settings.tab", "Settings"), JDTheme.II("gui.splash.controller", 16, 16), sppo = new SubPanelPluginsOptional(configuration));
-        tabbed.addTab(JDLocale.L("gui.config.addons.install.tab", "Installation & updates"), JDTheme.II("gui.images.taskpanes.download", 16, 16), spr = new SubPanelOptionalInstaller(configuration));
+        tabbed.addTab(JDL.L("gui.config.addons.settings.tab", "Settings"), JDTheme.II("gui.splash.controller", 16, 16), sppo = new SubPanelPluginsOptional(configuration));
+        tabbed.addTab(JDL.L("gui.config.addons.install.tab", "Installation & updates"), JDTheme.II("gui.images.taskpanes.download", 16, 16), spr = new SubPanelOptionalInstaller(configuration));
         setLayout(new MigLayout("ins 0", "[fill,grow]", "[fill,grow]"));
         add(panel);
     }

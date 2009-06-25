@@ -29,7 +29,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 
 public class Speedy_ShareCom extends PluginForHost {
 
@@ -70,7 +70,7 @@ public class Speedy_ShareCom extends PluginForHost {
         postdata = postdata + "&id=" + Encoding.urlEncode(submitvalues.get("id"));
         postdata = postdata + "&fname=" + Encoding.urlEncode(submitvalues.get("fname"));
         if (br.containsHTML("type=\"password\" name=\"password\"")) {
-            String password = Plugin.getUserInput(JDLocale.L("plugins.hoster.speedysharecom.password", "Enter Password:"), downloadLink);
+            String password = Plugin.getUserInput(JDL.L("plugins.hoster.speedysharecom.password", "Enter Password:"), downloadLink);
             if (password != null && !password.equals("")) {
                 postdata = postdata + "&password=" + Encoding.urlEncode(password);
             }

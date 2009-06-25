@@ -29,8 +29,8 @@ import jd.controlling.LinkGrabberController;
 import jd.event.JDBroadcaster;
 import jd.nutils.io.JDIO;
 import jd.plugins.DownloadLink;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 class LinkGrabberFilePackageBroadcaster extends JDBroadcaster<LinkGrabberFilePackageListener, LinkGrabberFilePackageEvent> {
 
@@ -74,7 +74,7 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
 
     public LinkGrabberFilePackage() {
         downloadDirectory = JDUtilities.getConfiguration().getDefaultDownloadDirectory();
-        name = JDUtilities.removeEndingPoints(JDLocale.L("controller.packages.defaultname", "various"));
+        name = JDUtilities.removeEndingPoints(JDL.L("controller.packages.defaultname", "various"));
         useSubDir = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false);
         for (OptionalPluginWrapper wrapper : OptionalPluginWrapper.getOptionalWrapper()) {
             if (wrapper.isEnabled() && wrapper.getPlugin() != null && wrapper.getPlugin().getClass().getName().endsWith("JDUnrar")) {
@@ -371,7 +371,7 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
 
     public void setName(String name) {
         if (name == null || name.length() == 0) {
-            this.name = JDUtilities.removeEndingPoints(JDLocale.L("controller.packages.defaultname", "various"));
+            this.name = JDUtilities.removeEndingPoints(JDL.L("controller.packages.defaultname", "various"));
         } else
             this.name = JDUtilities.removeEndingPoints(JDIO.validateFileandPathName(name));
         broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));

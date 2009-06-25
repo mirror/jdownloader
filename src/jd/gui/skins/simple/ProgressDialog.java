@@ -26,7 +26,7 @@ import javax.swing.JLabel;
 import javax.swing.JProgressBar;
 
 import jd.nutils.Screen;
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 public class ProgressDialog extends JDialog implements ActionListener {
@@ -48,7 +48,7 @@ public class ProgressDialog extends JDialog implements ActionListener {
         setModal(true);
         setLayout(new MigLayout("wrap 1", "[center]"));
         setAlwaysOnTop(true);
-        setTitle(JDLocale.L("gui.dialogs.progress.title", "Fortschritt...bitte warten"));
+        setTitle(JDL.L("gui.dialogs.progress.title", "Fortschritt...bitte warten"));
         setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
 
         thread = ob;
@@ -58,13 +58,13 @@ public class ProgressDialog extends JDialog implements ActionListener {
         this.add(lblMessage, "growx");
         this.add(progress, "growx");
         if (ok) {
-            btnOK = new JButton(JDLocale.L("gui.btn_ok", "OK"));
+            btnOK = new JButton(JDL.L("gui.btn_ok", "OK"));
             btnOK.addActionListener(this);
             getRootPane().setDefaultButton(btnOK);
             this.add(btnOK, cancel ? "split 2" : "");
         }
         if (cancel) {
-            btnNotOK = new JButton(JDLocale.L("gui.btn_cancel", "Abbrechen"));
+            btnNotOK = new JButton(JDL.L("gui.btn_cancel", "Abbrechen"));
             btnNotOK.addActionListener(this);
             this.add(btnNotOK);
         }

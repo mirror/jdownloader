@@ -36,8 +36,8 @@ import jd.gui.UserIO;
 import jd.nutils.JDFlags;
 import jd.nutils.OSDetector;
 import jd.plugins.PluginOptional;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 public class JDShutdown extends PluginOptional {
 
@@ -63,9 +63,9 @@ public class JDShutdown extends PluginOptional {
         if (e.getSource() == menuItem) {
             menuItem.setSelected(!menuItem.isSelected());
             if (menuItem.isSelected()) {
-                UserIO.getInstance().requestMessageDialog(JDLocale.L("addons.jdshutdown.statusmessage.enabled", "Das System wird nach dem Download heruntergefahren."));
+                UserIO.getInstance().requestMessageDialog(JDL.L("addons.jdshutdown.statusmessage.enabled", "Das System wird nach dem Download heruntergefahren."));
             } else {
-                UserIO.getInstance().requestMessageDialog(JDLocale.L("addons.jdshutdown.statusmessage.disabled", "Das System wird nach dem Download NICHT heruntergefahren."));
+                UserIO.getInstance().requestMessageDialog(JDL.L("addons.jdshutdown.statusmessage.disabled", "Das System wird nach dem Download NICHT heruntergefahren."));
             }
         }
     }
@@ -93,14 +93,14 @@ public class JDShutdown extends PluginOptional {
     // @Override
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
-        if (menuItem == null) menuItem = new MenuItem(MenuItem.TOGGLE, JDLocale.L("addons.jdshutdown.menu", "Shutdown after downloads finished"), 0).setActionListener(this);
+        if (menuItem == null) menuItem = new MenuItem(MenuItem.TOGGLE, JDL.L("addons.jdshutdown.menu", "Shutdown after downloads finished"), 0).setActionListener(this);
         menu.add(menuItem);
         return menu;
     }
 
     // @Override
     public String getHost() {
-        return JDLocale.L("plugins.optional.jdshutdown.name", "JDShutdown");
+        return JDL.L("plugins.optional.jdshutdown.name", "JDShutdown");
     }
 
     // @Override
@@ -206,9 +206,9 @@ public class JDShutdown extends PluginOptional {
             }
 
             logger.info("Shutting down now");
-            String message = JDLocale.L("interaction.shutdown.dialog.msg", "<h2><font color=\"red\">Achtung ihr Betriebssystem wird heruntergefahren!</font></h2>");
+            String message = JDL.L("interaction.shutdown.dialog.msg", "<h2><font color=\"red\">Achtung ihr Betriebssystem wird heruntergefahren!</font></h2>");
             UserIO.setCountdownTime(count);
-            int ret = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, JDLocale.L("interaction.shutdown.dialog.title", "Shutdown"), message, UserIO.getInstance().getIcon(UserIO.ICON_WARNING), null, null);
+            int ret = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, JDL.L("interaction.shutdown.dialog.title", "Shutdown"), message, UserIO.getInstance().getIcon(UserIO.ICON_WARNING), null, null);
             UserIO.setCountdownTime(null);
             logger.info("Return code: "+ret);
             if (JDFlags.hasSomeFlags(ret, UserIO.RETURN_OK,UserIO.RETURN_COUNTDOWN_TIMEOUT)) {
@@ -305,11 +305,11 @@ public class JDShutdown extends PluginOptional {
     public void initConfig() {
         SubConfiguration subConfig = getPluginConfig();
         ConfigEntry ce;
-        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, CONFIG_STANDBY, JDLocale.L("gui.config.jdshutdown.standby", "Standby (Nur einige OS)")));
+        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, CONFIG_STANDBY, JDL.L("gui.config.jdshutdown.standby", "Standby (Nur einige OS)")));
         ce.setDefaultValue(false);
-        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, CONFIG_HIBERNATE, JDLocale.L("gui.config.jdshutdown.hibernate", "Ruhezustand/Hibernate (Nur einige OS)")));
+        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, CONFIG_HIBERNATE, JDL.L("gui.config.jdshutdown.hibernate", "Ruhezustand/Hibernate (Nur einige OS)")));
         ce.setDefaultValue(false);
-        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, CONFIG_FORCESHUTDOWN, JDLocale.L("gui.config.jdshutdown.forceshutdown", "Herunterfahren erzwingen (Nur einige OS)")));
+        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, CONFIG_FORCESHUTDOWN, JDL.L("gui.config.jdshutdown.forceshutdown", "Herunterfahren erzwingen (Nur einige OS)")));
         ce.setDefaultValue(false);
     }
 }

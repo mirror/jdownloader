@@ -26,7 +26,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 
 public class HostUjeNet extends PluginForHost {
 
@@ -68,7 +68,7 @@ public class HostUjeNet extends PluginForHost {
         br.submitForm(captchaForm);
         String link = null;
         link = br.getRedirectLocation();
-        if (link == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA, JDLocale.L("downloadlink.status.error.captcha_wrong", "Captcha wrong"));
+        if (link == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA, JDL.L("downloadlink.status.error.captcha_wrong", "Captcha wrong"));
         dl = br.openDownload(downloadLink, link, false, 1);
         dl.startDownload();
     }

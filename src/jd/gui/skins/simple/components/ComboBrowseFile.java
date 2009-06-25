@@ -30,7 +30,7 @@ import javax.swing.JPanel;
 import javax.swing.filechooser.FileFilter;
 
 import jd.config.SubConfiguration;
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 public class ComboBrowseFile extends JPanel implements ActionListener {
@@ -174,7 +174,7 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
         cmboInput.addActionListener(this);
         if (cmboInput.getItemCount() > 0) cmboInput.setSelectedIndex(0);
 
-        btnBrowse = new JButton(JDLocale.L("gui.btn_select", "Auswählen"));
+        btnBrowse = new JButton(JDL.L("gui.btn_select", "Auswählen"));
         btnBrowse.addActionListener(this);
 
         this.add(cmboInput, "grow");

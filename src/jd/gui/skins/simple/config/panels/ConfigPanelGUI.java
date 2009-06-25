@@ -38,9 +38,10 @@ import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import jd.gui.skins.simple.config.ConfigPanel;
 import jd.nutils.OSDetector;
 import jd.nutils.nativeintegration.LocaleBrowser;
-import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
+import jd.utils.locale.JDLocale;
 import net.miginfocom.swing.MigLayout;
 
 public class ConfigPanelGUI extends ConfigPanel {
@@ -71,17 +72,17 @@ public class ConfigPanelGUI extends ConfigPanel {
         ConfigEntry ce;
         /* LANGUAGE */
 
-        ConfigContainer look = new ConfigContainer(JDLocale.L("gui.config.gui.look.tab", "Anzeige & Bedienung"));
+        ConfigContainer look = new ConfigContainer(JDL.L("gui.config.gui.look.tab", "Anzeige & Bedienung"));
 
         /* LOOK */
 
-        ConfigGroup lookGroup = new ConfigGroup(JDLocale.L("gui.config.gui.view", "Look"), JDTheme.II("gui.images.config.gui", 32, 32));
+        ConfigGroup lookGroup = new ConfigGroup(JDL.L("gui.config.gui.view", "Look"), JDTheme.II("gui.images.config.gui", 32, 32));
 
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, look));
-        look.addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.LF("gui.config.gui.languageFileInfo2", "Current Language File: %s", SubConfiguration.getConfig(JDLocale.CONFIG).getStringProperty(JDLocale.LOCALE_ID, Locale.getDefault().toString()))).setGroup(lookGroup));
+        look.addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, JDL.LF("gui.config.gui.languageFileInfo2", "Current Language File: %s", JDL.getLocale().toString())).setGroup(lookGroup));
 
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, SubConfiguration.getConfig(JDLocale.CONFIG), JDLocale.LOCALE_ID, JDLocale.getLocaleIDs().toArray(new JDLocale[]{}), JDLocale.L("gui.config.gui.language", "Language")).setGroup(lookGroup));
-        ce.setDefaultValue(Locale.getDefault());
+        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, SubConfiguration.getConfig(JDL.CONFIG), JDL.LOCALE_ID, JDL.getLocaleIDs().toArray(new JDLocale[]{}), JDL.L("gui.config.gui.language", "Language")).setGroup(lookGroup));
+        ce.setDefaultValue(JDL.DEFAULT_LOCALE);
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
 
         ArrayList<String> themeIDs = JDTheme.getThemeIDs();
@@ -91,54 +92,54 @@ public class ConfigPanelGUI extends ConfigPanel {
             subConfig.setProperty(SimpleGuiConstants.PARAM_THEME, themeIDs.get(0));
             subConfig.save();
         } else {
-            look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, SimpleGuiConstants.PARAM_THEME, themeIDs.toArray(new String[] {}), JDLocale.L("gui.config.gui.theme", "Theme")).setGroup(lookGroup));
+            look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, SimpleGuiConstants.PARAM_THEME, themeIDs.toArray(new String[] {}), JDL.L("gui.config.gui.theme", "Theme")).setGroup(lookGroup));
             ce.setDefaultValue("default");
             ce.setPropertyType(PropertyType.NEEDS_RESTART);
         }
         if (JDLookAndFeelManager.getSupportedLookAndFeels().length > 1) {
-            look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, JDLookAndFeelManager.PARAM_PLAF, JDLookAndFeelManager.getSupportedLookAndFeels(), JDLocale.L("gui.config.gui.plaf", "Style(benötigt JD-Neustart)")).setGroup(lookGroup));
+            look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, JDLookAndFeelManager.PARAM_PLAF, JDLookAndFeelManager.getSupportedLookAndFeels(), JDL.L("gui.config.gui.plaf", "Style(benötigt JD-Neustart)")).setGroup(lookGroup));
             ce.setDefaultValue(JDLookAndFeelManager.getPlaf());
             ce.setPropertyType(PropertyType.NEEDS_RESTART);
         }
 
         /* FEEL */
-        ConfigGroup feel = new ConfigGroup(JDLocale.L("gui.config.gui.feel", "Feel"), JDTheme.II("gui.images.configuration", 32, 32));
-        look.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, SimpleGuiConstants.PARAM_INPUTTIMEOUT, JDLocale.L("gui.config.gui.inputtimeout", "Timeout for InputWindows"), 0, 600).setDefaultValue(20).setGroup(feel));
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.PARAM_SHOW_SPLASH, JDLocale.L("gui.config.gui.showSplash", "Splashscreen beim starten zeigen")).setGroup(feel));
+        ConfigGroup feel = new ConfigGroup(JDL.L("gui.config.gui.feel", "Feel"), JDTheme.II("gui.images.configuration", 32, 32));
+        look.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, SimpleGuiConstants.PARAM_INPUTTIMEOUT, JDL.L("gui.config.gui.inputtimeout", "Timeout for InputWindows"), 0, 600).setDefaultValue(20).setGroup(feel));
+        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.PARAM_SHOW_SPLASH, JDL.L("gui.config.gui.showSplash", "Splashscreen beim starten zeigen")).setGroup(feel));
         ce.setDefaultValue(true);
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.PARAM_LINKGRABBER_CLIPBOARD_OBSERVER, JDLocale.L("gui.config.gui.disable.linkgrabberclipboard", "Linkgrabber Clipboard observer")).setGroup(feel));
+        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.PARAM_LINKGRABBER_CLIPBOARD_OBSERVER, JDL.L("gui.config.gui.disable.linkgrabberclipboard", "Linkgrabber Clipboard observer")).setGroup(feel));
         ce.setDefaultValue(true);
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.PARAM_SHOW_BALLOON, JDLocale.L("gui.config.gui.showBalloon", "Show Balloon infos")).setGroup(feel));
+        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.PARAM_SHOW_BALLOON, JDL.L("gui.config.gui.showBalloon", "Show Balloon infos")).setGroup(feel));
         ce.setDefaultValue(true);
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.PARAM_DISABLE_CONFIRM_DIALOGS, JDLocale.L("gui.config.gui.disabledialogs", "Bestätigungsdialoge abschalten")).setGroup(feel));
+        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.PARAM_DISABLE_CONFIRM_DIALOGS, JDL.L("gui.config.gui.disabledialogs", "Bestätigungsdialoge abschalten")).setGroup(feel));
         ce.setDefaultValue(false);
-        ConfigGroup perf = new ConfigGroup(JDLocale.L("gui.config.gui.performance", "Performance"), JDTheme.II("gui.images.performance", 32, 32));
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.ANIMATION_ENABLED, JDLocale.L("gui.config.gui.animationenabled", "Enable extended effects.")).setGroup(perf));
+        ConfigGroup perf = new ConfigGroup(JDL.L("gui.config.gui.performance", "Performance"), JDTheme.II("gui.images.performance", 32, 32));
+        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.ANIMATION_ENABLED, JDL.L("gui.config.gui.animationenabled", "Enable extended effects.")).setGroup(perf));
         ce.setDefaultValue(false);
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.DECORATION_ENABLED, JDLocale.L("gui.config.gui.decoration", "Enable Windowdecoration")).setGroup(perf));
+        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.DECORATION_ENABLED, JDL.L("gui.config.gui.decoration", "Enable Windowdecoration")).setGroup(perf));
         ce.setDefaultValue(true);
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
         // Extended Tab
-        ConfigContainer ext = new ConfigContainer(JDLocale.L("gui.config.gui.ext", "Advanced"));
+        ConfigContainer ext = new ConfigContainer(JDL.L("gui.config.gui.ext", "Advanced"));
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, ext));
 
-        ext.setGroup(new ConfigGroup(JDLocale.L("gui.config.gui.container", "Container (RSDF,DLC,CCF,..)"), JDTheme.II("gui.images.container", 32, 32)));
+        ext.setGroup(new ConfigGroup(JDL.L("gui.config.gui.container", "Container (RSDF,DLC,CCF,..)"), JDTheme.II("gui.images.container", 32, 32)));
 
-        ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getConfiguration(), Configuration.PARAM_RELOADCONTAINER, JDLocale.L("gui.config.reloadContainer", "Heruntergeladene Container einlesen")));
+        ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getConfiguration(), Configuration.PARAM_RELOADCONTAINER, JDL.L("gui.config.reloadContainer", "Heruntergeladene Container einlesen")));
         ce.setDefaultValue(true);
 
-        ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, SubConfiguration.getConfig("GUI"), Configuration.PARAM_SHOW_CONTAINER_ONLOAD_OVERVIEW, JDLocale.L("gui.config.showContainerOnLoadInfo", "Detailierte Containerinformationen beim Öffnen anzeigen")));
+        ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, SubConfiguration.getConfig("GUI"), Configuration.PARAM_SHOW_CONTAINER_ONLOAD_OVERVIEW, JDL.L("gui.config.showContainerOnLoadInfo", "Detailierte Containerinformationen beim Öffnen anzeigen")));
         ce.setDefaultValue(false);
 
         /* Speedmeter */
-        ConfigGroup speedmeter = new ConfigGroup(JDLocale.L("gui.config.gui.speedmeter", "Speedmeter"), JDTheme.II("gui.images.download", 32, 32));
+        ConfigGroup speedmeter = new ConfigGroup(JDL.L("gui.config.gui.speedmeter", "Speedmeter"), JDTheme.II("gui.images.download", 32, 32));
 
-        ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.PARAM_SHOW_SPEEDMETER, JDLocale.L("gui.config.gui.show_speed_graph", "Display speedmeter graph")).setGroup(speedmeter));
+        ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.PARAM_SHOW_SPEEDMETER, JDL.L("gui.config.gui.show_speed_graph", "Display speedmeter graph")).setGroup(speedmeter));
         ce.setDefaultValue(true);
         ConfigEntry cond = ce;
 
-        ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, SimpleGuiConstants.PARAM_SHOW_SPEEDMETER_WINDOWSIZE, JDLocale.L("gui.config.gui.show_speed_graph_window", "Speedmeter Time period (sec)"), 10, 60 * 60 * 12).setGroup(speedmeter));
+        ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, SimpleGuiConstants.PARAM_SHOW_SPEEDMETER_WINDOWSIZE, JDL.L("gui.config.gui.show_speed_graph_window", "Speedmeter Time period (sec)"), 10, 60 * 60 * 12).setGroup(speedmeter));
         ce.setDefaultValue(60);
         ce.setEnabledCondidtion(cond, "==", true);
 
@@ -151,17 +152,17 @@ public class ConfigPanelGUI extends ConfigPanel {
         // ce.setDefaultValue(true);
         // ce.setPropertyType(PropertyType.NEEDS_RESTART);
         // if (!OSDetector.isWindows()) ce.setEnabled(false);
-        ConfigContainer lg = new ConfigContainer(JDLocale.L("gui.config.gui.linggrabber", "Linkgrabber"));
+        ConfigContainer lg = new ConfigContainer(JDL.L("gui.config.gui.linggrabber", "Linkgrabber"));
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, lg));
 
-        lg.setGroup(new ConfigGroup(JDLocale.L("gui.config.gui.linggrabber", "General Linkgrabber Settings"), JDTheme.II("gui.images.taskpanes.linkgrabber", 32, 32)));
+        lg.setGroup(new ConfigGroup(JDL.L("gui.config.gui.linggrabber", "General Linkgrabber Settings"), JDTheme.II("gui.images.taskpanes.linkgrabber", 32, 32)));
 
-        lg.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, SubConfiguration.getConfig(LinkGrabberController.CONFIG), LinkGrabberController.PARAM_ONLINECHECK, JDLocale.L("gui.config.linkgrabber.onlincheck", "Check linkinfo and onlinestatus")));
+        lg.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, SubConfiguration.getConfig(LinkGrabberController.CONFIG), LinkGrabberController.PARAM_ONLINECHECK, JDL.L("gui.config.linkgrabber.onlincheck", "Check linkinfo and onlinestatus")));
         ce.setDefaultValue(true);
 
-        lg.setGroup(new ConfigGroup(JDLocale.L("gui.config.gui.linggrabber.ignorelist", "Linkfilter"), JDTheme.II("gui.images.filter", 32, 32)));
+        lg.setGroup(new ConfigGroup(JDL.L("gui.config.gui.linggrabber.ignorelist", "Linkfilter"), JDTheme.II("gui.images.filter", 32, 32)));
 
-        lg.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, SubConfiguration.getConfig(LinkGrabberController.CONFIG), LinkGrabberController.IGNORE_LIST, JDLocale.L("gui.config.linkgrabber.iognorelist", "The linkfilter is used to filter links based on regular expressions.")));
+        lg.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, SubConfiguration.getConfig(LinkGrabberController.CONFIG), LinkGrabberController.IGNORE_LIST, JDL.L("gui.config.linkgrabber.iognorelist", "The linkfilter is used to filter links based on regular expressions.")));
         ce.setDefaultValue("#Ignorefiletype 'olo':\r\n\r\n.+?\\.olo\r\n\r\n#Ignore hoster 'examplehost.com':\r\n\r\n.*?examplehost\\.com.*?");
 
         // Browser Tab
@@ -194,30 +195,30 @@ public class ConfigPanelGUI extends ConfigPanel {
         // subConfig.save();
         // }
 
-        ConfigContainer browser = new ConfigContainer(JDLocale.L("gui.config.gui.Browser", "Browser"));
+        ConfigContainer browser = new ConfigContainer(JDL.L("gui.config.gui.Browser", "Browser"));
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, browser));
 
         browser.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
 
             public void actionPerformed(ActionEvent arg0) {
-                if (SimpleGUI.CURRENTGUI.showConfirmDialog(JDLocale.L("gui.config.gui.testbrowser.message", "JDownloader now tries to open http://jdownloader.org in your browser."))) {
+                if (SimpleGUI.CURRENTGUI.showConfirmDialog(JDL.L("gui.config.gui.testbrowser.message", "JDownloader now tries to open http://jdownloader.org in your browser."))) {
                     try {
                         save();
 
                         JLinkButton.openURL("http://jdownloader.org");
                     } catch (Exception e) {
                         JDLogger.exception(e);
-                        SimpleGUI.CURRENTGUI.showMessageDialog(JDLocale.LF("gui.config.gui.testbrowser.error", "Browser launcher failed: %s", e.getLocalizedMessage()));
+                        SimpleGUI.CURRENTGUI.showMessageDialog(JDL.LF("gui.config.gui.testbrowser.error", "Browser launcher failed: %s", e.getLocalizedMessage()));
                     }
                 }
 
             }
-        }, JDLocale.L("gui.config.gui.testbrowser", "Test browser")));
+        }, JDL.L("gui.config.gui.testbrowser", "Test browser")));
 
-        ConfigEntry conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.PARAM_CUSTOM_BROWSER_USE, JDLocale.L("gui.config.gui.use_custom_browser", "Use custom browser"));
+        ConfigEntry conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.PARAM_CUSTOM_BROWSER_USE, JDL.L("gui.config.gui.use_custom_browser", "Use custom browser"));
         conditionEntry.setDefaultValue(false);
 
-        browser.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, SimpleGuiConstants.PARAM_BROWSER, LocaleBrowser.getBrowserList(), JDLocale.L("gui.config.gui.Browser", "Browser")));
+        browser.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, SimpleGuiConstants.PARAM_BROWSER, LocaleBrowser.getBrowserList(), JDL.L("gui.config.gui.Browser", "Browser")));
         if (LocaleBrowser.getBrowserList().length > 0) {
             ce.setDefaultValue(LocaleBrowser.getBrowserList()[0]);
         }
@@ -225,7 +226,7 @@ public class ConfigPanelGUI extends ConfigPanel {
 
         browser.addEntry(conditionEntry);
 
-        browser.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, SimpleGuiConstants.PARAM_CUSTOM_BROWSER, JDLocale.L("gui.config.gui.custom_browser", "Browserpath")));
+        browser.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, SimpleGuiConstants.PARAM_CUSTOM_BROWSER, JDL.L("gui.config.gui.custom_browser", "Browserpath")));
 
         String parameter = null;
         String path = null;
@@ -264,7 +265,7 @@ public class ConfigPanelGUI extends ConfigPanel {
         ce.setDefaultValue(path);
         ce.setEnabledCondidtion(conditionEntry, "==", true);
 
-        browser.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, subConfig, SimpleGuiConstants.PARAM_CUSTOM_BROWSER_PARAM, JDLocale.L("gui.config.gui.custom_browser_param", "Parameter %url (one parameter per line)")));
+        browser.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, subConfig, SimpleGuiConstants.PARAM_CUSTOM_BROWSER_PARAM, JDL.L("gui.config.gui.custom_browser_param", "Parameter %url (one parameter per line)")));
         ce.setDefaultValue(parameter);
         ce.setEnabledCondidtion(conditionEntry, "==", true);
         this.setLayout(new MigLayout("ins 0", "[fill,grow]", "[fill,grow]"));

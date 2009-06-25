@@ -33,7 +33,7 @@ import javax.swing.JComponent;
 
 import jd.http.Encoding;
 import jd.nutils.Colors;
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 
 /**
  * Die ChartAPI greift auf die Google Chart API zurück Sie funktioniert nur mit
@@ -209,7 +209,7 @@ public abstract class ChartAPI extends JComponent {
         }
 
         g.drawImage(image, 0, 0, null);
-        g.drawString(JDLocale.LF("plugins.config.premium.chartapi.caption.error", "%s Chart is loading or not available", caption), 0, 10);
+        g.drawString(JDL.LF("plugins.config.premium.chartapi.caption.error", "%s Chart is loading or not available", caption), 0, 10);
     }
 
     public abstract String createDataString();

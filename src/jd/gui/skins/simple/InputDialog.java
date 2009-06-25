@@ -30,7 +30,7 @@ import javax.swing.WindowConstants;
 import jd.config.SubConfiguration;
 import jd.nutils.Formatter;
 import jd.nutils.Screen;
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 public class InputDialog extends JDialog implements ActionListener, KeyListener {
@@ -107,10 +107,10 @@ public class InputDialog extends JDialog implements ActionListener, KeyListener 
         if (def != null) textField.setText(def);
         textField.selectAll();
 
-        btnOK = new JButton(JDLocale.L("gui.btn_ok", "OK"));
+        btnOK = new JButton(JDL.L("gui.btn_ok", "OK"));
         btnOK.addActionListener(this);
 
-        btnBAD = new JButton(JDLocale.L("gui.btn_cancel", "Cancel"));
+        btnBAD = new JButton(JDL.L("gui.btn_cancel", "Cancel"));
         btnBAD.addActionListener(this);
 
         this.getRootPane().setDefaultButton(btnOK);
@@ -162,7 +162,7 @@ public class InputDialog extends JDialog implements ActionListener, KeyListener 
             countdownThread.interrupt();
         }
         countdownThread = null;
-        setTitle(JDLocale.L("gui.captchaWindow.askForInput", "Bitte eingeben!"));
+        setTitle(JDL.L("gui.captchaWindow.askForInput", "Bitte eingeben!"));
     }
 
     public void keyReleased(KeyEvent e) {

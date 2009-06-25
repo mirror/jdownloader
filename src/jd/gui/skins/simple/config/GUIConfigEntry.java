@@ -53,7 +53,7 @@ import jd.gui.skins.simple.components.JDTextArea;
 import jd.gui.skins.simple.components.JDTextField;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.config.subpanels.PremiumPanel;
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 
 /**
  * Diese Klasse fasst ein label / input Paar zusammen und macht das lesen und
@@ -274,7 +274,7 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
         }
 
         if (configEntry.getHelptags() != null) {
-            String tooltip = JDLocale.LF("gui.tooltips.quickhelp", "Quickhelp available: %s (ctrl+shift+CLICK)", configEntry.getHelptags());
+            String tooltip = JDL.LF("gui.tooltips.quickhelp", "Quickhelp available: %s (ctrl+shift+CLICK)", configEntry.getHelptags());
             if (decoration != null) {
                 decoration.setName(configEntry.getHelptags());
                 decoration.setToolTipText(tooltip);

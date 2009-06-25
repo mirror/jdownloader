@@ -28,8 +28,8 @@ import jd.config.ConfigEntry;
 import jd.config.MenuItem;
 import jd.config.SubConfiguration;
 import jd.plugins.PluginOptional;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 public class JDWebinterface extends PluginOptional {
     static public JDWebinterface instance;    
@@ -51,21 +51,21 @@ public class JDWebinterface extends PluginOptional {
         instance = this;
         SubConfiguration subConfig = SubConfiguration.getConfig("WEBINTERFACE");
         ConfigEntry cfg;
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_REFRESH, JDLocale.L("plugins.optional.webinterface.refresh", "AutoRefresh")));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_REFRESH, JDL.L("plugins.optional.webinterface.refresh", "AutoRefresh")));
         cfg.setDefaultValue(true);
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, PROPERTY_REFRESH_INTERVAL, JDLocale.L("plugins.optional.webinterface.refresh_interval", "Refresh Interval"), 5, 60));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, PROPERTY_REFRESH_INTERVAL, JDL.L("plugins.optional.webinterface.refresh_interval", "Refresh Interval"), 5, 60));
         cfg.setStep(1);
         cfg.setDefaultValue(5);
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, PROPERTY_PORT, JDLocale.L("plugins.optional.webinterface.port", "Port"), 1024, 65000));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, PROPERTY_PORT, JDL.L("plugins.optional.webinterface.port", "Port"), 1024, 65000));
         cfg.setStep(1);
         cfg.setDefaultValue(8765);
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_LOGIN, JDLocale.L("plugins.optional.webinterface.needlogin", "Need User Authentication")));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_LOGIN, JDL.L("plugins.optional.webinterface.needlogin", "Need User Authentication")));
         cfg.setDefaultValue(true);
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_HTTPS, JDLocale.L("plugins.optional.webinterface.https", "Use HTTPS")));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_HTTPS, JDL.L("plugins.optional.webinterface.https", "Use HTTPS")));
         cfg.setDefaultValue(false);
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, PROPERTY_USER, JDLocale.L("plugins.optional.webinterface.loginname", "Login Name")));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, PROPERTY_USER, JDL.L("plugins.optional.webinterface.loginname", "Login Name")));
         cfg.setDefaultValue("JD");
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, subConfig, PROPERTY_PASS, JDLocale.L("plugins.optional.webinterface.loginpass", "Login Pass")));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, subConfig, PROPERTY_PASS, JDL.L("plugins.optional.webinterface.loginpass", "Login Pass")));
         cfg.setDefaultValue("JD");
     }
 
@@ -86,7 +86,7 @@ public class JDWebinterface extends PluginOptional {
 
     //@Override
     public String getHost() {
-        return JDLocale.L("plugins.optional.webinterface.name", "WebInterface");
+        return JDL.L("plugins.optional.webinterface.name", "WebInterface");
     }
 
     //@Override

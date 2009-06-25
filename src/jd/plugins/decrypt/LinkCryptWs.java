@@ -31,8 +31,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 public class LinkCryptWs extends PluginForDecrypt {
 
@@ -62,7 +62,7 @@ public class LinkCryptWs extends PluginForDecrypt {
                 File file = this.getLocalCaptchaFile();
                 Form form = br.getForm(0);
                 Browser.download(file, br.cloneBrowser().openGetConnection("http://linkcrypt.ws/captx.php"));
-                Point p = UserIO.getInstance().requestClickPositionDialog(file, JDLocale.L("plugins.decrypt.stealthto.captcha.title", "Captcha"), JDLocale.L("plugins.decrypt.stealthto.captcha", "Please click on the Circle with a gap"));
+                Point p = UserIO.getInstance().requestClickPositionDialog(file, JDL.L("plugins.decrypt.stealthto.captcha.title", "Captcha"), JDL.L("plugins.decrypt.stealthto.captcha", "Please click on the Circle with a gap"));
                 if (p == null) throw new DecrypterException(DecrypterException.CAPTCHA);
                 form.put("x", p.x + "");
                 form.put("y", p.y + "");

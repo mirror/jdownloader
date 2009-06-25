@@ -23,6 +23,7 @@ import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
+import jd.utils.locale.JDL;
 
 /**
  * Diese Klasse stellt Methoden zur Verfügung um in einen String mit
@@ -49,23 +50,23 @@ public class Replacer {
 
     private static void initKeys() {
         KEYS = new ArrayList<String[]>();
-        KEYS.add(new String[] { "LAST_FINISHED_PACKAGE.PASSWORD", JDLocale.L("replacer.password", "Last finished package: Password") });
-        KEYS.add(new String[] { "LAST_FINISHED_PACKAGE.FILELIST", JDLocale.L("replacer.filelist", "Last finished package: Filelist") });
-        KEYS.add(new String[] { "LAST_FINISHED_PACKAGE.PACKAGENAME", JDLocale.L("replacer.packagename", "Last finished package: Packagename") });
-        KEYS.add(new String[] { "LAST_FINISHED_PACKAGE.COMMENT", JDLocale.L("replacer.comment", "Last finished package: Comment") });
-        KEYS.add(new String[] { "LAST_FINISHED_PACKAGE.DOWNLOAD_DIRECTORY", JDLocale.L("replacer.downloaddirectory", "Last finished package: Download Directory") });
-        KEYS.add(new String[] { "LAST_FINISHED_FILE.DOWNLOAD_PATH", JDLocale.L("replacer.filepath", "Last finished File: Filepath") });
-        KEYS.add(new String[] { "LAST_FINISHED_FILE.INFOSTRING", JDLocale.L("replacer.informationstring", "Last finished File: Plugin given informationstring") });
-        KEYS.add(new String[] { "LAST_FINISHED_FILE.HOST", JDLocale.L("replacer.hoster", "Last finished File: Hoster") });
-        KEYS.add(new String[] { "LAST_FINISHED_FILE.NAME", JDLocale.L("replacer.filename", "Last finished File: Filename") });
-        KEYS.add(new String[] { "LAST_FINISHED_FILE.FILESIZE", JDLocale.L("replacer.filesize", "Last finished File: Filesize") });
-        KEYS.add(new String[] { "LAST_FINISHED_FILE.AVAILABLE", JDLocale.L("replacer.available", "Last finished File: is Available (Yes,No)") });
-        KEYS.add(new String[] { "SYSTEM.IP", JDLocale.L("replacer.ipaddress", "Current IP Address") });
-        KEYS.add(new String[] { "SYSTEM.DATE", JDLocale.L("replacer.date", "Current Date") });
-        KEYS.add(new String[] { "SYSTEM.TIME", JDLocale.L("replacer.time", "Current Time") });
-        KEYS.add(new String[] { "SYSTEM.JAVA_VERSION", JDLocale.L("replacer.javaversion", "Used Java Version") });
-        KEYS.add(new String[] { "JD.REVISION", JDLocale.L("replacer.jdversion", "jDownloader: Revision/Version") });
-        KEYS.add(new String[] { "JD.HOME_DIR", JDLocale.L("replacer.jdhomedirectory", "jDownloader: Homedirectory/Installdirectory") });
+        KEYS.add(new String[] { "LAST_FINISHED_PACKAGE.PASSWORD", JDL.L("replacer.password", "Last finished package: Password") });
+        KEYS.add(new String[] { "LAST_FINISHED_PACKAGE.FILELIST", JDL.L("replacer.filelist", "Last finished package: Filelist") });
+        KEYS.add(new String[] { "LAST_FINISHED_PACKAGE.PACKAGENAME", JDL.L("replacer.packagename", "Last finished package: Packagename") });
+        KEYS.add(new String[] { "LAST_FINISHED_PACKAGE.COMMENT", JDL.L("replacer.comment", "Last finished package: Comment") });
+        KEYS.add(new String[] { "LAST_FINISHED_PACKAGE.DOWNLOAD_DIRECTORY", JDL.L("replacer.downloaddirectory", "Last finished package: Download Directory") });
+        KEYS.add(new String[] { "LAST_FINISHED_FILE.DOWNLOAD_PATH", JDL.L("replacer.filepath", "Last finished File: Filepath") });
+        KEYS.add(new String[] { "LAST_FINISHED_FILE.INFOSTRING", JDL.L("replacer.informationstring", "Last finished File: Plugin given informationstring") });
+        KEYS.add(new String[] { "LAST_FINISHED_FILE.HOST", JDL.L("replacer.hoster", "Last finished File: Hoster") });
+        KEYS.add(new String[] { "LAST_FINISHED_FILE.NAME", JDL.L("replacer.filename", "Last finished File: Filename") });
+        KEYS.add(new String[] { "LAST_FINISHED_FILE.FILESIZE", JDL.L("replacer.filesize", "Last finished File: Filesize") });
+        KEYS.add(new String[] { "LAST_FINISHED_FILE.AVAILABLE", JDL.L("replacer.available", "Last finished File: is Available (Yes,No)") });
+        KEYS.add(new String[] { "SYSTEM.IP", JDL.L("replacer.ipaddress", "Current IP Address") });
+        KEYS.add(new String[] { "SYSTEM.DATE", JDL.L("replacer.date", "Current Date") });
+        KEYS.add(new String[] { "SYSTEM.TIME", JDL.L("replacer.time", "Current Time") });
+        KEYS.add(new String[] { "SYSTEM.JAVA_VERSION", JDL.L("replacer.javaversion", "Used Java Version") });
+        KEYS.add(new String[] { "JD.REVISION", JDL.L("replacer.jdversion", "jDownloader: Revision/Version") });
+        KEYS.add(new String[] { "JD.HOME_DIR", JDL.L("replacer.jdhomedirectory", "jDownloader: Homedirectory/Installdirectory") });
     }
 
     public static String getReplacement(String key) {

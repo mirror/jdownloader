@@ -49,9 +49,10 @@ import jd.nutils.OSDetector;
 import jd.nutils.nativeintegration.LocaleBrowser;
 import jd.utils.JDFileReg;
 import jd.utils.JDGeoCode;
-import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
+import jd.utils.locale.JDLocale;
 import net.miginfocom.swing.MigLayout;
 
 /**
@@ -74,11 +75,11 @@ public class Installer {
     private String languageCode;
 
     public Installer() {
-        countryCode = JDLocale.getCountryCodeByIP();
+        countryCode = JDL.getCountryCodeByIP();
 
         languageCode = countryCode.toLowerCase();
 
-        SubConfiguration.getConfig(JDLocale.CONFIG).setProperty(JDLocale.LOCALE_ID, null);
+        SubConfiguration.getConfig(JDL.CONFIG).setProperty(JDL.LOCALE_ID, null);
 
         showConfig();
 
@@ -97,7 +98,7 @@ public class Installer {
             public Object runSave() {
                 JPanel c = new JPanel(new MigLayout("ins 10,wrap 1", "[grow,fill]", "[][][grow,fill]"));
 
-                JLabel lbl = new JLabel(JDLocale.L("installer.gui.message", "After Installation, JDownloader will update to the latest version."));
+                JLabel lbl = new JLabel(JDL.L("installer.gui.message", "After Installation, JDownloader will update to the latest version."));
 
                 if (OSDetector.isWindows()) {
                     JDUtilities.getResourceFile("downloads");
@@ -112,11 +113,11 @@ public class Installer {
                 c.add(new JLabel(JDImage.getScaledImageIcon(JDImage.getImage("logo/jd_logo_54_54"), 32, 32)), "alignx right");
                 c.add(new JSeparator(), "pushx,growx,gapbottom 5");
 
-                c.add(lbl = new JLabel(JDLocale.L("installer.firefox.message", "Do you want to integrate JDownloader to Firefox?")), "growy,pushy");
+                c.add(lbl = new JLabel(JDL.L("installer.firefox.message", "Do you want to integrate JDownloader to Firefox?")), "growy,pushy");
                 lbl.setVerticalAlignment(SwingConstants.TOP);
                 lbl.setHorizontalAlignment(SwingConstants.LEFT);
 
-                new ContainerDialog(UserIO.NO_COUNTDOWN, JDLocale.L("installer.firefox.title", "Install firefox integration?"), c, null, null) {
+                new ContainerDialog(UserIO.NO_COUNTDOWN, JDL.L("installer.firefox.title", "Install firefox integration?"), c, null, null) {
                     /**
                      * 
                      */
@@ -144,7 +145,7 @@ public class Installer {
         JDUtilities.getConfiguration().save();
 
         if (OSDetector.isWindows()) {
-            String lng = JDLocale.getCountryCodeByIP();
+            String lng = JDL.getCountryCodeByIP();
             if (lng.equalsIgnoreCase("de") || lng.equalsIgnoreCase("us")) {
                 new GuiRunnable<Object>() {
 
@@ -168,10 +169,31 @@ public class Installer {
 
             @Override
             public Object runSave() {
+                String def = null;
+                for (JDLocale id : JDL.getLocaleIDs()) {
+                    if (id.getCountryCode() != null && id.getCountryCode().equalsIgnoreCase(languageCode)) {
+                        def = languageCode;
+                        break;
+                    }
+                }
+                if (def == null) {
+                    for (JDLocale id : JDL.getLocaleIDs()) {
+                        if (id.getLanguageCode().equalsIgnoreCase(languageCode)) {
+                            def = languageCode;
+                            break;
+                        }
+                    }
+                }
+                if (def == null) def = "en";
+                JDLocale sel = (JDLocale) SubConfiguration.getConfig(JDL.CONFIG).getProperty(JDL.LOCALE_ID, JDL.getInstance(def));
+                
+                JDL.setLocale(sel);
+                
+                
                 JPanel p = getInstallerPanel();
                 JPanel content = new JPanel(new MigLayout("ins 0,wrap 1", "[grow,fill]"));
                 p.add(content);
-                content.add(Factory.createHeader(JDLocale.L("gui.config.gui.language", "Language"), JDTheme.II("gui.splash.languages", 24, 24)), "growx,pushx");
+                content.add(Factory.createHeader(JDL.L("gui.config.gui.language", "Language"), JDTheme.II("gui.splash.languages", 24, 24)), "growx,pushx");
                 final JList list;
                 content.add(new JScrollPane(list = new JList(new AbstractListModel() {
                     /**
@@ -182,7 +204,7 @@ public class Installer {
 
                     private ArrayList<JDLocale> getIds() {
                         if (ids == null) {
-                            ids = JDLocale.getLocaleIDs();
+                            ids = JDL.getLocaleIDs();
                         }
 
                         return ids;
@@ -202,38 +224,20 @@ public class Installer {
                 list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
                 if (error) list.setEnabled(false);
 
-                String def = null;
-                for (JDLocale id : JDLocale.getLocaleIDs()) {
-                    if (id.getCountryCode() != null && id.getCountryCode().equalsIgnoreCase(languageCode)) {
-                        def = languageCode;
-                        break;
-                    }
-                }
-                if (def == null) {
-                    for (JDLocale id : JDLocale.getLocaleIDs()) {
-                        if (id.getLanguageCode().equalsIgnoreCase(languageCode)) {
-                            def = languageCode;
-                            break;
-                        }
-                    }
-                }
-                if (def == null) def = "en";
-                list.setSelectedValue(SubConfiguration.getConfig(JDLocale.CONFIG).getStringProperty(JDLocale.LOCALE_ID, def), true);
+              
+                list.setSelectedValue(sel, true);
                 list.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
 
                     public void valueChanged(ListSelectionEvent e) {
-                        String lng = list.getSelectedValue().toString();
-
-                        String code = JDGeoCode.longToShort(lng);
-                        SubConfiguration.getConfig(JDLocale.CONFIG).setProperty(JDLocale.LOCALE_ID, code);
-                        JDLocale.setLocale(SubConfiguration.getConfig(JDLocale.CONFIG).getStringProperty(JDLocale.LOCALE_ID, "en"));
-                        SubConfiguration.getConfig(JDLocale.CONFIG).save();
+                        JDL.setConfigLocale((JDLocale)list.getSelectedValue());
+                        JDL.setLocale(JDL.getConfigLocale());
+                        SubConfiguration.getConfig(JDL.CONFIG).save();
                         dialog.dispose();
                         showConfig();
                     }
 
                 });
-                content.add(Factory.createHeader(JDLocale.L("gui.config.general.downloaddirectory", "Download directory"), JDTheme.II("gui.images.taskpanes.download", 24, 24)), " growx,pushx,gaptop 10");
+                content.add(Factory.createHeader(JDL.L("gui.config.general.downloaddirectory", "Download directory"), JDTheme.II("gui.images.taskpanes.download", 24, 24)), " growx,pushx,gaptop 10");
 
                 final BrowseFile br;
                 content.add(br = new BrowseFile(), "growx,pushx,gapleft 40,gapright 10");
@@ -250,7 +254,7 @@ public class Installer {
                 } else {
                     br.setCurrentPath(JDUtilities.getResourceFile("downloads"));
                 }
-                new ContainerDialog(UserIO.NO_COUNTDOWN, JDLocale.L("installer.gui.title", "JDownloader Installation"), p, null, null) {
+                new ContainerDialog(UserIO.NO_COUNTDOWN, JDL.L("installer.gui.title", "JDownloader Installation"), p, null, null) {
                     /**
                      * 
                      */
@@ -288,13 +292,13 @@ public class Installer {
     public JPanel getInstallerPanel() {
         JPanel c = new JPanel(new MigLayout("ins 10,wrap 1", "[grow,fill]", "[][grow,fill]"));
 
-        JLabel lbl = new JLabel(JDLocale.L("installer.gui.message", "After Installation, JDownloader will update to the latest version."));
+        JLabel lbl = new JLabel(JDL.L("installer.gui.message", "After Installation, JDownloader will update to the latest version."));
 
         if (OSDetector.getOSID() == OSDetector.OS_WINDOWS_VISTA) {
             String dir = JDUtilities.getResourceFile("downloads").getAbsolutePath().substring(3).toLowerCase();
 
             if (dir.startsWith("programme\\") || dir.startsWith("program files\\")) {
-                lbl.setText(JDLocale.LF("installer.vistaDir.warning", "Warning! JD is installed in %s. This causes errors.", JDUtilities.getResourceFile("downloads")));
+                lbl.setText(JDL.LF("installer.vistaDir.warning", "Warning! JD is installed in %s. This causes errors.", JDUtilities.getResourceFile("downloads")));
                 lbl.setForeground(Color.RED);
                 lbl.setBackground(Color.RED);
                 error = true;
@@ -307,7 +311,13 @@ public class Installer {
         f = f.deriveFont(f.getStyle() ^ Font.BOLD);
 
         lbl.setFont(f);
+        try{
         c.add(new JLabel(JDImage.getScaledImageIcon(JDImage.getImage("logo/jd_logo_54_54"), 32, 32)), "alignx right");
+       
+        }catch(Exception e){
+            
+            System.err.println("DEVELOPER WARNING! Please copy trunk/ressourcen/jd  to home/.jd_home/jd");
+        }
         // c.add(new JSeparator(), "pushx,growx,gapbottom 5");
         return c;
     }

@@ -25,8 +25,8 @@ import java.util.logging.Logger;
 import jd.controlling.JDLogger;
 import jd.nutils.OSDetector;
 import jd.nutils.io.JDIO;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -100,7 +100,7 @@ public class JACMethod implements Comparable<JACMethod> {
 
                 String extern = JDUtilities.getAttribute(childNode, "type");
                 if (extern != null && extern.equalsIgnoreCase("extern")) {
-                    author = JDLocale.L("gui.config.jac.extern", "Externe Methode");
+                    author = JDL.L("gui.config.jac.extern", "Externe Methode");
                 } else {
                     author = JDUtilities.getAttribute(childNode, "author");
                 }

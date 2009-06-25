@@ -22,8 +22,8 @@ import java.awt.event.ActionListener;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 
-import jd.utils.JDLocale;
 import jd.utils.JDTheme;
+import jd.utils.locale.JDL;
 
 public class JDSeparator extends JButton implements ActionListener {
 
@@ -38,8 +38,8 @@ public class JDSeparator extends JButton implements ActionListener {
     private ImageIcon right;
 
     public JDSeparator() {
-        leftToolTip = JDLocale.L("gui.tooltips.jdseparator", "Close sidebar");
-        rightToolTip = JDLocale.L("gui.tooltips.jdseparator.open", "Open sidebar");
+        leftToolTip = JDL.L("gui.tooltips.jdseparator", "Close sidebar");
+        rightToolTip = JDL.L("gui.tooltips.jdseparator.open", "Open sidebar");
 
         left = JDTheme.II("gui.images.minimize.left", 5, 10);
         right = JDTheme.II("gui.images.minimize.right", 5, 10);

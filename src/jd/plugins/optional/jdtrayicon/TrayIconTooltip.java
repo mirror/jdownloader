@@ -33,8 +33,8 @@ import jd.controlling.DownloadInformations;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.components.DownloadView.JDProgressBar;
 import jd.nutils.Formatter;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 public class TrayIconTooltip extends JWindow {
@@ -63,19 +63,19 @@ public class TrayIconTooltip extends JWindow {
         toolPanel.setBackground(new Color(0xb9cee9));
         toolPanel.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, toolPanel.getBackground().darker()));
 
-        toolPanel.add(new JLabel(JDLocale.L("plugins.optional.trayIcon.downloads", "Downloads:")), "spanx 2");
-        toolPanel.add(new JLabel(JDLocale.L("plugins.optional.trayIcon.dl.running", "Running:")), "gapleft 10");
+        toolPanel.add(new JLabel(JDL.L("plugins.optional.trayIcon.downloads", "Downloads:")), "spanx 2");
+        toolPanel.add(new JLabel(JDL.L("plugins.optional.trayIcon.dl.running", "Running:")), "gapleft 10");
         toolPanel.add(lblDlRunning = new JLabel(""));
-        toolPanel.add(new JLabel(JDLocale.L("plugins.optional.trayIcon.dl.finished", "Finished:")), "gapleft 10");
+        toolPanel.add(new JLabel(JDL.L("plugins.optional.trayIcon.dl.finished", "Finished:")), "gapleft 10");
         toolPanel.add(lblDlFinished = new JLabel(""));
-        toolPanel.add(new JLabel(JDLocale.L("plugins.optional.trayIcon.dl.total", "Total:")), "gapleft 10");
+        toolPanel.add(new JLabel(JDL.L("plugins.optional.trayIcon.dl.total", "Total:")), "gapleft 10");
         toolPanel.add(lblDlTotal = new JLabel(""));
-        toolPanel.add(new JLabel(JDLocale.L("plugins.optional.trayIcon.speed", "Speed:")));
+        toolPanel.add(new JLabel(JDL.L("plugins.optional.trayIcon.speed", "Speed:")));
         toolPanel.add(lblSpeed = new JLabel(""));
-        toolPanel.add(new JLabel(JDLocale.L("plugins.optional.trayIcon.progress", "Progress: ")));
+        toolPanel.add(new JLabel(JDL.L("plugins.optional.trayIcon.progress", "Progress: ")));
         toolPanel.add(lblProgress = new JLabel(""));
         toolPanel.add(prgTotal = new JDProgressBar(), "spanx 2");
-        toolPanel.add(new JLabel(JDLocale.L("plugins.optional.trayIcon.eta", "ETA:")));
+        toolPanel.add(new JLabel(JDL.L("plugins.optional.trayIcon.eta", "ETA:")));
         toolPanel.add(lblETA = new JLabel(""));
         this.setVisible(false);
         this.setAlwaysOnTop(true);

@@ -25,7 +25,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 
 public class UrlCutCom extends PluginForDecrypt {
 
@@ -46,14 +46,14 @@ public class UrlCutCom extends PluginForDecrypt {
             {
             br.getPage(page);
             String linkid = br.getRegex("name=u value=\"(.*?)\"").getMatch(0);
-            String passwordstring = getUserInput(JDLocale.L("plugins.hoster.general.passwordProtectedInput", "Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:"), param.getDecrypterPassword(), param);
+            String passwordstring = getUserInput(JDL.L("plugins.hoster.general.passwordProtectedInput", "Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:"), param.getDecrypterPassword(), param);
             br.postPage("http://urlcut.com/password.cgi", "u="+linkid+"&p="+Encoding.urlEncode(passwordstring));
             page = null;
             page = br.getRedirectLocation();
             br.getPage(page);
             page = br.getRedirectLocation();
             if (!page.contains("/password.html")) break; 
-            if (i == 4) throw new DecrypterException(JDLocale.L("plugins.decrypter.urtcutcom.badpassword", "You have entered bad password 5 times. Please review your data."));
+            if (i == 4) throw new DecrypterException(JDL.L("plugins.decrypter.urtcutcom.badpassword", "You have entered bad password 5 times. Please review your data."));
             }
             decryptedLinks.add(createDownloadlink(page));
         }

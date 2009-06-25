@@ -52,8 +52,8 @@ import jd.nutils.JDImage;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.DownloadInterface;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 /**
  * Dies ist die Oberklasse für alle Plugins, die von einem Anbieter Dateien
@@ -99,7 +99,7 @@ public abstract class PluginForHost extends Plugin {
         String status = link.getLinkStatus().getStatusText();
         try {
             link.getLinkStatus().addStatus(LinkStatus.WAITING_USERIO);
-            link.getLinkStatus().setStatusText(JDLocale.L("gui.downloadview.statustext.jac", "Captcha recognition"));
+            link.getLinkStatus().setStatusText(JDL.L("gui.downloadview.statustext.jac", "Captcha recognition"));
             try {
                 BufferedImage img = ImageIO.read(file);
                 link.getLinkStatus().setStatusIcon(JDImage.getScaledImageIcon(img, 16, 16));
@@ -162,7 +162,7 @@ public abstract class PluginForHost extends Plugin {
         int free;
         while ((free = this.getMaxConnections() - getCurrentConnections()) <= 0) {
             Thread.sleep(1000);
-            downloadLink.getLinkStatus().setStatusText(JDLocale.LF("download.system.waitForconnection", "Cur. %s/%s connections...waiting", getCurrentConnections() + "", this.getMaxConnections() + ""));
+            downloadLink.getLinkStatus().setStatusText(JDL.LF("download.system.waitForconnection", "Cur. %s/%s connections...waiting", getCurrentConnections() + "", this.getMaxConnections() + ""));
             downloadLink.requestGuiUpdate();
         }
         return free;
@@ -217,15 +217,15 @@ public abstract class PluginForHost extends Plugin {
             if (ret.isExpired()) {
                 account.setEnabled(false);
                 account.setProperty(AccountInfo.PARAM_INSTANCE, null);
-                String shortWarn = JDLocale.LF("gui.shortwarn.accountdisabled.expired", "Account %s(%s) got disabled(expired)", this.getHost(), account.getUser());
+                String shortWarn = JDL.LF("gui.shortwarn.accountdisabled.expired", "Account %s(%s) got disabled(expired)", this.getHost(), account.getUser());
 
-                if (JDController.getInstance().getUiInterface() != null) JDController.getInstance().getUiInterface().displayMiniWarning(JDLocale.L("gui.ballon.accountmanager.title", "Accountmanager"), shortWarn);
+                if (JDController.getInstance().getUiInterface() != null) JDController.getInstance().getUiInterface().displayMiniWarning(JDL.L("gui.ballon.accountmanager.title", "Accountmanager"), shortWarn);
             } else if (!ret.isValid()) {
                 account.setEnabled(false);
                 account.setProperty(AccountInfo.PARAM_INSTANCE, null);
-                String shortWarn = JDLocale.LF("gui.shortwarn.accountdisabled.invalid", "Account %s(%s) got disabled(invalid)", this.getHost(), account.getUser());
+                String shortWarn = JDL.LF("gui.shortwarn.accountdisabled.invalid", "Account %s(%s) got disabled(invalid)", this.getHost(), account.getUser());
 
-                if (JDController.getInstance().getUiInterface() != null) JDController.getInstance().getUiInterface().displayMiniWarning(JDLocale.L("gui.ballon.accountmanager.title", "Accountmanager"), shortWarn);
+                if (JDController.getInstance().getUiInterface() != null) JDController.getInstance().getUiInterface().displayMiniWarning(JDL.L("gui.ballon.accountmanager.title", "Accountmanager"), shortWarn);
             }
 
             account.setProperty(AccountInfo.PARAM_INSTANCE, ret);
@@ -233,7 +233,7 @@ public abstract class PluginForHost extends Plugin {
         } catch (PluginException e) {
             account.setEnabled(false);
             account.setProperty(AccountInfo.PARAM_INSTANCE, null);
-            String shortWarn = JDLocale.LF("gui.shortwarn.accountdisabled", "Account %s(%s) got disabled: %s", this.getHost(), account.getUser(), e.getMessage());
+            String shortWarn = JDL.LF("gui.shortwarn.accountdisabled", "Account %s(%s) got disabled: %s", this.getHost(), account.getUser(), e.getMessage());
 
             if (JDController.getInstance().getUiInterface() != null) JDController.getInstance().getUiInterface().displayMiniWarning(shortWarn, shortWarn);
             throw e;
@@ -259,9 +259,9 @@ public abstract class PluginForHost extends Plugin {
         ArrayList<MenuItem> menuList = new ArrayList<MenuItem>();
         if (!this.enablePremium) return null;
         MenuItem account;
-        MenuItem m = new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.menu.configs", "Configuration"), 1);
+        MenuItem m = new MenuItem(MenuItem.NORMAL, JDL.L("plugins.menu.configs", "Configuration"), 1);
         m.setActionListener(this);
-        MenuItem premium = new MenuItem(MenuItem.CONTAINER, JDLocale.L("plugins.menu.accounts", "Accounts"), 0);
+        MenuItem premium = new MenuItem(MenuItem.CONTAINER, JDL.L("plugins.menu.accounts", "Accounts"), 0);
         menuList.add(m);
         ArrayList<Account> accounts = getPremiumAccounts();
 
@@ -278,12 +278,12 @@ public abstract class PluginForHost extends Plugin {
 
                     if (a.getUser() == null || a.getUser().trim().length() == 0) continue;
                     account = new MenuItem(MenuItem.CONTAINER, i++ + ". " + a.getUser(), 0);
-                    m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.menu.enable_premium", "Aktivieren"), 100 + c - 1);
+                    m = new MenuItem(MenuItem.TOGGLE, JDL.L("plugins.menu.enable_premium", "Aktivieren"), 100 + c - 1);
                     m.setSelected(a.isEnabled());
                     m.setActionListener(this);
                     account.addMenuItem(m);
 
-                    m = new MenuItem(JDLocale.L("plugins.menu.premiumInfo", "Accountinformationen abrufen"), 200 + c - 1);
+                    m = new MenuItem(JDL.L("plugins.menu.premiumInfo", "Accountinformationen abrufen"), 200 + c - 1);
                     m.setActionListener(this);
                     account.addMenuItem(m);
                     premium.addMenuItem(account);
@@ -297,7 +297,7 @@ public abstract class PluginForHost extends Plugin {
         if (premium.getSize() != 0) {
             menuList.add(premium);
         } else {
-            menuList.add(m = new MenuItem(JDLocale.L("plugins.menu.noaccounts", "Add account"), 2));
+            menuList.add(m = new MenuItem(JDL.L("plugins.menu.noaccounts", "Add account"), 2));
             m.setActionListener(this);
         }
 
@@ -318,7 +318,7 @@ public abstract class PluginForHost extends Plugin {
         enablePremium = true;
         ConfigEntry cfg;
 
-        ConfigContainer premiumConfig = new ConfigContainer(JDLocale.L("plugins.hoster.premiumtab", "Premium Einstellungen"));
+        ConfigContainer premiumConfig = new ConfigContainer(JDL.L("plugins.hoster.premiumtab", "Premium Einstellungen"));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CONTAINER, premiumConfig));
 
         premiumConfig.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_PREMIUMPANEL, null, this.getHost(), 0));
@@ -470,7 +470,7 @@ public abstract class PluginForHost extends Plugin {
 
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         link.getLinkStatus().addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        link.getLinkStatus().setErrorMessage(JDLocale.L("plugins.hoster.nopremiumsupport", "Plugin has no handlePremium Method!"));
+        link.getLinkStatus().setErrorMessage(JDL.L("plugins.hoster.nopremiumsupport", "Plugin has no handlePremium Method!"));
     }
 
     public boolean isResumable() {
@@ -536,7 +536,7 @@ public abstract class PluginForHost extends Plugin {
                     logger.severe("Premium Account " + account.getUser() + ":" + downloadLink.getLinkStatus().getLongErrorMessage());
                 }
             } else {
-                account.setStatus(JDLocale.L("plugins.hoster.premium.status_ok", "Account is ok"));
+                account.setStatus(JDL.L("plugins.hoster.premium.status_ok", "Account is ok"));
             }
         } else {
             if (t > 0) {
@@ -646,7 +646,7 @@ public abstract class PluginForHost extends Plugin {
         try {
             while (i > 0 && downloadLink.getDownloadLinkController() != null && !downloadLink.getDownloadLinkController().isAborted()) {
                 i -= 1000;
-                downloadLink.getLinkStatus().setStatusText(message + JDLocale.LF("gui.downloadlink.status.wait", "wait %s min", Formatter.formatSeconds(i / 1000)));
+                downloadLink.getLinkStatus().setStatusText(message + JDL.LF("gui.downloadlink.status.wait", "wait %s min", Formatter.formatSeconds(i / 1000)));
                 downloadLink.requestGuiUpdate();
                 Thread.sleep(1000);
             }

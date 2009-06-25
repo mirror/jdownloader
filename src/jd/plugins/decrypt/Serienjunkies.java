@@ -59,9 +59,9 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 public class Serienjunkies extends PluginForDecrypt {
@@ -77,7 +77,7 @@ public class Serienjunkies extends PluginForDecrypt {
     private static final int sCatNoThing = 0;
 
     private static int[] useScat = new int[] { 0, 0 };
-    private static String[] mirrorManagement = new String[] { JDLocale.L("plugins.decrypt.serienjunkies.usePremiumLinks", "use premiumlinks if possible"), JDLocale.L("plugins.decrypt.serienjunkies.automaticMirrorManagment", "automatic mirror managment"), JDLocale.L("plugins.decrypt.serienjunkies.noMirrorManagment", "no mirror managment"), JDLocale.L("plugins.decrypt.serienjunkies.RsComOnly", "nur Rapidshare.com"), JDLocale.L("plugins.decrypt.serienjunkies.RsDeOnly", "nur Rapidshare.de"), JDLocale.L("plugins.decrypt.serienjunkies.NetloadOnly", "nur Netload.in"), JDLocale.L("plugins.decrypt.serienjunkies.UlOnly", "nur Uploaded.to"), JDLocale.L("plugins.decrypt.serienjunkies.FFOnly", "nur FileFactory.com") };
+    private static String[] mirrorManagement = new String[] { JDL.L("plugins.decrypt.serienjunkies.usePremiumLinks", "use premiumlinks if possible"), JDL.L("plugins.decrypt.serienjunkies.automaticMirrorManagment", "automatic mirror managment"), JDL.L("plugins.decrypt.serienjunkies.noMirrorManagment", "no mirror managment"), JDL.L("plugins.decrypt.serienjunkies.RsComOnly", "nur Rapidshare.com"), JDL.L("plugins.decrypt.serienjunkies.RsDeOnly", "nur Rapidshare.de"), JDL.L("plugins.decrypt.serienjunkies.NetloadOnly", "nur Netload.in"), JDL.L("plugins.decrypt.serienjunkies.UlOnly", "nur Uploaded.to"), JDL.L("plugins.decrypt.serienjunkies.FFOnly", "nur FileFactory.com") };
 
     private static String mirror = mirrorManagement[0];
     private final Pattern patternCaptcha = Pattern.compile("(?s)<FORM ACTION=\".*?\" METHOD=\"post\".*?<INPUT TYPE=\"HIDDEN\" NAME=\"s\" VALUE=\"(.*?)\">.*?<IMG SRC=\"([^\"]*)\"");
@@ -168,7 +168,7 @@ public class Serienjunkies extends PluginForDecrypt {
                     if (con.getLongContentLength() < 1000) {
                         con.disconnect();
                         logger.info("Sj Downloadlimit(decryptlimit) reached. Wait for reconnect(max 2 min)");
-                        progress.setStatusText(JDLocale.L("plugins.decrypt.serienjunkies.progress.decryptlimit", "SJ Downloadlimit(decryptlimit) reached. Wait for reconnect(max 2 min)"));
+                        progress.setStatusText(JDL.L("plugins.decrypt.serienjunkies.progress.decryptlimit", "SJ Downloadlimit(decryptlimit) reached. Wait for reconnect(max 2 min)"));
                         new Thread(new Runnable() {
                             public void run() {
                                 for (int i = 0; i < 100; i++) {
@@ -186,7 +186,7 @@ public class Serienjunkies extends PluginForDecrypt {
                             rc = false;
                             progress.setColor(Color.red);
                             progress.setStatus(0);
-                            progress.setStatusText(JDLocale.L("plugins.decrypt.serienjunkies.progress.downloadlimit", "Error: SerienJunkies Downloadlimit"));
+                            progress.setStatusText(JDL.L("plugins.decrypt.serienjunkies.progress.downloadlimit", "Error: SerienJunkies Downloadlimit"));
                             for (int i = 0; i < 100; i++) {
                                 try {
                                     Thread.sleep(100);
@@ -239,7 +239,7 @@ public class Serienjunkies extends PluginForDecrypt {
             Form[] forms = br3.getForms();
             final ArrayList<Thread> threads = new ArrayList<Thread>();
             final Browser[] br2 = new Browser[] { br3.cloneBrowser(), br3.cloneBrowser(), br3.cloneBrowser(), br3.cloneBrowser() };
-            progress.setStatusText(JDLocale.L("plugins.decrypt.serienjunkies.progress.getLinks", "get links"));
+            progress.setStatusText(JDL.L("plugins.decrypt.serienjunkies.progress.getLinks", "get links"));
             progress.setStatus(0);
 
             ArrayList<String> actions = new ArrayList<String>();
@@ -443,7 +443,7 @@ public class Serienjunkies extends PluginForDecrypt {
             }
             if (br3.containsHTML("Download-Limit")) {
                 logger.info("Sj Downloadlimit(decryptlimit) reached. Wait for reconnect(max 2 min)");
-                progress.setStatusText(JDLocale.L("plugins.decrypt.serienjunkies.progress.decryptlimit", "SJ Downloadlimit(decryptlimit) reached. Wait for reconnect(max 2 min)"));
+                progress.setStatusText(JDL.L("plugins.decrypt.serienjunkies.progress.decryptlimit", "SJ Downloadlimit(decryptlimit) reached. Wait for reconnect(max 2 min)"));
                 new Thread(new Runnable() {
                     public void run() {
                         for (int i = 0; i < 100; i++) {
@@ -470,7 +470,7 @@ public class Serienjunkies extends PluginForDecrypt {
                     rc = false;
                     progress.setColor(Color.red);
                     progress.setStatus(0);
-                    progress.setStatusText(JDLocale.L("plugins.decrypt.serienjunkies.progress.downloadlimit", "Error: SerienJunkies Downloadlimit"));
+                    progress.setStatusText(JDL.L("plugins.decrypt.serienjunkies.progress.downloadlimit", "Error: SerienJunkies Downloadlimit"));
                     for (int i = 0; i < 100; i++) {
                         try {
                             Thread.sleep(100);
@@ -966,7 +966,7 @@ public class Serienjunkies extends PluginForDecrypt {
                         if (finaldls.size() > 0) {
                             try {
                                 DownloadLink[] linksar = finaldls.toArray(new DownloadLink[finaldls.size()]);
-                                progress.setStatusText(JDLocale.L("plugins.decrypt.serienjunkies.progress.checkLinks", "check links"));
+                                progress.setStatusText(JDL.L("plugins.decrypt.serienjunkies.progress.checkLinks", "check links"));
                                 progress.setStatus(0);
                                 int inc = 100 / linksar.length;
                                 linksar[0].getPlugin().checkLinks(linksar);
@@ -1008,7 +1008,7 @@ public class Serienjunkies extends PluginForDecrypt {
                                     if (finaldls.size() > 0) {
                                         try {
                                             DownloadLink[] linksar = finaldls.toArray(new DownloadLink[finaldls.size()]);
-                                            progress.setStatusText(JDLocale.L("plugins.decrypt.serienjunkies.progress.checkMirror", "check mirror"));
+                                            progress.setStatusText(JDL.L("plugins.decrypt.serienjunkies.progress.checkMirror", "check mirror"));
                                             progress.setStatus(0);
                                             int inc = 100 / linksar.length;
                                             linksar[0].getPlugin().checkLinks(linksar);
@@ -1107,14 +1107,14 @@ public class Serienjunkies extends PluginForDecrypt {
 
         private void initGUI() {
             SerienjunkiesMeth[] meths = new SerienjunkiesMeth[3];
-            meths[0] = new SerienjunkiesMeth(JDLocale.L("plugins.SerienJunkies.CatDialog.sCatNoThing", "Kategorie nicht hinzufügen"), sCatNoThing);
-            meths[1] = new SerienjunkiesMeth(JDLocale.L("plugins.SerienJunkies.CatDialog.sCatGrabb", "Alle Serien in dieser Kategorie hinzufügen"), sCatGrabb);
-            meths[2] = new SerienjunkiesMeth(JDLocale.L("plugins.SerienJunkies.CatDialog.sCatNewestDownload", "Den neusten Download dieser Kategorie hinzufügen"), sCatNewestDownload);
+            meths[0] = new SerienjunkiesMeth(JDL.L("plugins.SerienJunkies.CatDialog.sCatNoThing", "Kategorie nicht hinzufügen"), sCatNoThing);
+            meths[1] = new SerienjunkiesMeth(JDL.L("plugins.SerienJunkies.CatDialog.sCatGrabb", "Alle Serien in dieser Kategorie hinzufügen"), sCatGrabb);
+            meths[2] = new SerienjunkiesMeth(JDL.L("plugins.SerienJunkies.CatDialog.sCatNewestDownload", "Den neusten Download dieser Kategorie hinzufügen"), sCatNewestDownload);
 
             final JComboBox methods = new JComboBox(meths);
             final JComboBox settings = new JComboBox(mirrorManagement);
-            final JCheckBox checkScat = new JCheckBox(JDLocale.L("plugins.SerienJunkies.CatDialog.sCatSave", "Einstellungen für diese Sitzung beibehalten?"));
-            JButton btnOK = new JButton(JDLocale.L("gui.btn_ok", "OK"));
+            final JCheckBox checkScat = new JCheckBox(JDL.L("plugins.SerienJunkies.CatDialog.sCatSave", "Einstellungen für diese Sitzung beibehalten?"));
+            JButton btnOK = new JButton(JDL.L("gui.btn_ok", "OK"));
             btnOK.addActionListener(new ActionListener() {
 
                 public void actionPerformed(ActionEvent e) {
@@ -1124,7 +1124,7 @@ public class Serienjunkies extends PluginForDecrypt {
                 }
 
             });
-            JButton btnCancel = new JButton(JDLocale.L("gui.btn_cancel", "Cancel"));
+            JButton btnCancel = new JButton(JDL.L("gui.btn_cancel", "Cancel"));
             btnCancel.addActionListener(new ActionListener() {
 
                 public void actionPerformed(ActionEvent e) {
@@ -1136,7 +1136,7 @@ public class Serienjunkies extends PluginForDecrypt {
 
             setLayout(new MigLayout("wrap 1"));
             setModal(true);
-            setTitle(JDLocale.L("plugins.SerienJunkies.CatDialog.title", "SerienJunkies ::CAT::"));
+            setTitle(JDL.L("plugins.SerienJunkies.CatDialog.title", "SerienJunkies ::CAT::"));
             setAlwaysOnTop(true);
             addWindowListener(new WindowAdapter() {
 
@@ -1146,9 +1146,9 @@ public class Serienjunkies extends PluginForDecrypt {
                 }
 
             });
-            add(new JLabel(JDLocale.L("plugins.SerienJunkies.CatDialog.action", "Wählen sie eine Aktion aus:")));
+            add(new JLabel(JDL.L("plugins.SerienJunkies.CatDialog.action", "Wählen sie eine Aktion aus:")));
             add(methods);
-            add(new JLabel(JDLocale.L("plugins.SerienJunkies.CatDialog.mirror", "Wählen sie eine Mirrorverwalung:")));
+            add(new JLabel(JDL.L("plugins.SerienJunkies.CatDialog.mirror", "Wählen sie eine Mirrorverwalung:")));
             add(settings);
             add(checkScat);
             add(btnOK, "split 2, center");
@@ -1187,7 +1187,7 @@ public class Serienjunkies extends PluginForDecrypt {
         }
 
         private void initGUI() {
-            JLabel m_title = new JLabel(JDLocale.L("plugin.serienjunkies.manager.dllinks", "Unerwünschte Links einfach löschen"));
+            JLabel m_title = new JLabel(JDL.L("plugin.serienjunkies.manager.dllinks", "Unerwünschte Links einfach löschen"));
             m_title.setIcon(new ImageIcon(JDImage.getImage(JDTheme.V("gui.images.config.addons"))));
 
             final SerienjunkiesTM m_tablemodel = new SerienjunkiesTM(dls);
@@ -1209,7 +1209,7 @@ public class Serienjunkies extends PluginForDecrypt {
                 }
             }
 
-            JButton deleteButton = new JButton(JDLocale.L("gui.component.textarea.context.delete", "Löschen"));
+            JButton deleteButton = new JButton(JDL.L("gui.component.textarea.context.delete", "Löschen"));
             deleteButton.addActionListener(new ActionListener() {
 
                 public void actionPerformed(ActionEvent e) {
@@ -1224,7 +1224,7 @@ public class Serienjunkies extends PluginForDecrypt {
 
             });
 
-            final JButton insertButton = new JButton(JDLocale.L("gui.component.textarea.context.paste", "Einfügen"));
+            final JButton insertButton = new JButton(JDL.L("gui.component.textarea.context.paste", "Einfügen"));
             insertButton.addActionListener(new ActionListener() {
 
                 public void actionPerformed(ActionEvent e) {
@@ -1233,7 +1233,7 @@ public class Serienjunkies extends PluginForDecrypt {
 
             });
 
-            final JButton closeButton = new JButton(JDLocale.L("gui.btn_cancel", "Cancel"));
+            final JButton closeButton = new JButton(JDL.L("gui.btn_cancel", "Cancel"));
             closeButton.addActionListener(new ActionListener() {
 
                 public void actionPerformed(ActionEvent e) {
@@ -1254,7 +1254,7 @@ public class Serienjunkies extends PluginForDecrypt {
                 }
 
             });
-            setTitle(JDLocale.L("plugin.serienjunkies.manager.title", "SerienJunkies Linkverwaltung"));
+            setTitle(JDL.L("plugin.serienjunkies.manager.title", "SerienJunkies Linkverwaltung"));
             setModal(true);
             setLayout(new MigLayout("ins 5", "[left, grow][right]"));
             add(m_title, "left, wrap");
@@ -1271,7 +1271,7 @@ public class Serienjunkies extends PluginForDecrypt {
 
             private static final long serialVersionUID = 5068062216039834333L;
 
-            private String m_columns[] = { JDLocale.L("gui.packageinfo.name", "Name"), JDLocale.L("gui.treetable.header_3.hoster", "Anbieter"), JDLocale.L("gui.linkgrabber.packagetab.table.column.size", "Größe") };
+            private String m_columns[] = { JDL.L("gui.packageinfo.name", "Name"), JDL.L("gui.treetable.header_3.hoster", "Anbieter"), JDL.L("gui.linkgrabber.packagetab.table.column.size", "Größe") };
 
             private ArrayList<SerienjunkiesLinks> dls;
 

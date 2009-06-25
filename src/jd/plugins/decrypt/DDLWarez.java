@@ -36,7 +36,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 
 public class DDLWarez extends PluginForDecrypt {
     static class DDLWarez_Linkgrabber extends Thread {
@@ -160,7 +160,7 @@ public class DDLWarez extends PluginForDecrypt {
                                     ipf.setValue(captchaText);
                                 else {
                                     String text = form.getHtmlCode().replaceAll("<.*?>", "").trim();
-                                    String res = UserIO.getInstance().requestInputDialog(0, JDLocale.L("plugins.decrypt.ddlwarez.humanverification", "DDL-Warez Human Verification"), new Regex(Encoding.deepHtmlDecode(HTMLEntities.unhtmlAngleBrackets(text)), "[A-Za-z0-9_äÄöÖüÜß\\s\\,\\.]+[^A-Za-z0-9_äÄöÖüÜß\\,\\.]+\\s(\\S+)").getMatch(0), null, UserIO.getInstance().getIcon(UserIO.ICON_QUESTION), null, null);
+                                    String res = UserIO.getInstance().requestInputDialog(0, JDL.L("plugins.decrypt.ddlwarez.humanverification", "DDL-Warez Human Verification"), new Regex(Encoding.deepHtmlDecode(HTMLEntities.unhtmlAngleBrackets(text)), "[A-Za-z0-9_äÄöÖüÜß\\s\\,\\.]+[^A-Za-z0-9_äÄöÖüÜß\\,\\.]+\\s(\\S+)").getMatch(0), null, UserIO.getInstance().getIcon(UserIO.ICON_QUESTION), null, null);
                                     if (res == null) throw new DecrypterException(DecrypterException.CAPTCHA);
                                     captchaText = res;
                                     ipf.setValue(captchaText);

@@ -30,8 +30,8 @@ import jd.config.Property;
 import jd.controlling.DownloadController;
 import jd.event.JDBroadcaster;
 import jd.nutils.io.JDIO;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 class FilePackageBroadcaster extends JDBroadcaster<FilePackageListener, FilePackageEvent> {
 
@@ -66,7 +66,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
     public static FilePackage getDefaultFilePackage() {
         if (FP == null) {
             FP = new FilePackage();
-            FP.setName(JDLocale.L("controller.packages.defaultname", "various"));
+            FP.setName(JDL.L("controller.packages.defaultname", "various"));
         }
         return FP;
     }

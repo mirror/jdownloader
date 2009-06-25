@@ -26,7 +26,7 @@ import jd.http.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 
 public class LinkBankeu extends PluginForDecrypt {
     private static final String CHECK_MIRRORS = "CHECK_MIRRORS";
@@ -66,6 +66,6 @@ public class LinkBankeu extends PluginForDecrypt {
      * TODO: Umbauen!
      */
     private void setConfigElements() {
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CHECK_MIRRORS, JDLocale.L("plugins.decrypt.linkbankeu", "Check Mirror Links")).setDefaultValue(false));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CHECK_MIRRORS, JDL.L("plugins.decrypt.linkbankeu", "Check Mirror Links")).setDefaultValue(false));
     }
 }

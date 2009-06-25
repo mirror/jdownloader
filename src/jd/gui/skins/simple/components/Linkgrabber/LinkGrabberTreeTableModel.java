@@ -20,7 +20,7 @@ import java.util.ArrayList;
 
 import jd.controlling.LinkGrabberController;
 import jd.plugins.DownloadLink;
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 
 import org.jdesktop.swingx.tree.TreeModelSupport;
 import org.jdesktop.swingx.treetable.AbstractTreeTableModel;
@@ -34,7 +34,7 @@ public class LinkGrabberTreeTableModel extends AbstractTreeTableModel {
     public static final int COL_STATUS = 4;
 
     /** table column names */
-    static protected String[] COLUMN_NAMES = { "hidden", JDLocale.L("gui.linkgrabber.header.packagesfiles", "Pakete/Dateien"), JDLocale.L("gui.treetable.header.size", "Größe"), JDLocale.L("gui.treetable.header_3.hoster", "Anbieter"), JDLocale.L("gui.treetable.header_4.status", "Status") };
+    static protected String[] COLUMN_NAMES = { "hidden", JDL.L("gui.linkgrabber.header.packagesfiles", "Pakete/Dateien"), JDL.L("gui.treetable.header.size", "Größe"), JDL.L("gui.treetable.header_3.hoster", "Anbieter"), JDL.L("gui.treetable.header_4.status", "Status") };
 
     private LinkGrabberController lgi;
 

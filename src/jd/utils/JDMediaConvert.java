@@ -22,6 +22,7 @@ import java.util.logging.Logger;
 import jd.controlling.ProgressController;
 import jd.gui.skins.simple.ConvertDialog.ConversionMode;
 import jd.plugins.DownloadLink;
+import jd.utils.locale.JDL;
 import de.savemytube.flv.FLV;
 
 public class JDMediaConvert {
@@ -40,8 +41,8 @@ public class JDMediaConvert {
             return true;
         }
 
-        ProgressController progress = new ProgressController(JDLocale.L("convert.progress.convertingto", "Konvertiere zu") + " " + OutType.toString(), 3);
-        downloadlink.getLinkStatus().setStatusText(JDLocale.L("convert.progress.convertingto", "Konvertiere zu") + " " + OutType.toString());
+        ProgressController progress = new ProgressController(JDL.L("convert.progress.convertingto", "Konvertiere zu") + " " + OutType.toString(), 3);
+        downloadlink.getLinkStatus().setStatusText(JDL.L("convert.progress.convertingto", "Konvertiere zu") + " " + OutType.toString());
         progress.increase(1);
         switch (InType) {
         case VIDEOFLV:
@@ -75,13 +76,13 @@ public class JDMediaConvert {
                 return true;
             default:
                 logger.warning("Don't know how to convert " + InType.GetText() + " to " + OutType.GetText());
-                downloadlink.getLinkStatus().setErrorMessage(JDLocale.L("convert.progress.unknownintype", "Unbekanntes Format"));
+                downloadlink.getLinkStatus().setErrorMessage(JDL.L("convert.progress.unknownintype", "Unbekanntes Format"));
                 progress.finalize();
                 return false;
             }
         default:
             logger.warning("Don't know how to convert " + InType.GetText() + " to " + OutType.GetText());
-            downloadlink.getLinkStatus().setErrorMessage(JDLocale.L("convert.progress.unknownintype", "Unbekanntes Format"));
+            downloadlink.getLinkStatus().setErrorMessage(JDL.L("convert.progress.unknownintype", "Unbekanntes Format"));
             progress.finalize();
             return false;
         }

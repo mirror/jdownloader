@@ -41,9 +41,9 @@ import jd.nutils.OSDetector;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.plugins.download.DownloadInterface;
-import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 /**
  * Hier werden alle notwendigen Informationen zu einem einzelnen Download
@@ -677,12 +677,12 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         linkStatus = new LinkStatus(this);
         if (new File(this.getFileOutput()).exists()) {
             if (!new File(this.getFileOutput()).delete()) {
-                logger.severe(JDLocale.L("system.download.errors.couldnotoverwrite", "Could not overwrite existing file"));
+                logger.severe(JDL.L("system.download.errors.couldnotoverwrite", "Could not overwrite existing file"));
             }
         }
         if (new File(this.getFileOutput() + ".part").exists()) {
             if (!new File(this.getFileOutput() + ".part").delete()) {
-                logger.severe(JDLocale.L("system.download.errors.couldnotoverwrite", "Could not overwrite existing file"));
+                logger.severe(JDL.L("system.download.errors.couldnotoverwrite", "Could not overwrite existing file"));
             }
         }
         finalFileName = null;

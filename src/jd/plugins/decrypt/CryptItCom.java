@@ -33,8 +33,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 public class CryptItCom extends PluginForDecrypt {
 
@@ -59,7 +59,7 @@ public class CryptItCom extends PluginForDecrypt {
         if (con.getContentType().indexOf("text/html") >= 0) {
             logger.info(br.loadConnection(con));
             if (br.containsHTML(PATTERN_PW)) {
-                String pass = getUserInput(JDLocale.L("plugins.hoster.general.passwordProtectedInput", "Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:"), param.getDecrypterPassword(), param);
+                String pass = getUserInput(JDL.L("plugins.hoster.general.passwordProtectedInput", "Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:"), param.getDecrypterPassword(), param);
                 String postData = "a=pw&pw=" + Encoding.urlEncode(pass);
                 br.postPage(parameter, postData);
                 if (br.containsHTML(PATTERN_PW)) {
@@ -139,7 +139,7 @@ public class CryptItCom extends PluginForDecrypt {
                 pass = param.getDecrypterPassword();
                 for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
                     if (pass == null) {
-                        pass = getUserInput(JDLocale.L("plugins.decrypt.cryptitcom.password", "Ordner ist Passwortgeschützt. Passwort angeben:"), param.getDecrypterPassword(), param);
+                        pass = getUserInput(JDL.L("plugins.decrypt.cryptitcom.password", "Ordner ist Passwortgeschützt. Passwort angeben:"), param.getDecrypterPassword(), param);
                     }
                     String post = "a=pw&pw=" + Encoding.urlEncode(pass);
                     br.setFollowRedirects(true);

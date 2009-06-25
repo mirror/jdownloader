@@ -29,7 +29,7 @@ import javax.swing.JLabel;
 
 import jd.captcha.utils.Utilities;
 import jd.gui.skins.simple.components.BrowseFile;
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 public class JACController {
@@ -41,9 +41,9 @@ public class JACController {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLayout(new MigLayout("wrap 2"));
         if (isTrain) {
-            frame.setTitle(JDLocale.L("train.chooser.title", "jDownloader :: TrainAll"));
+            frame.setTitle(JDL.L("train.chooser.title", "jDownloader :: TrainAll"));
         } else {
-            frame.setTitle(JDLocale.L("showcaptcha.chooser.title", "jDownloader :: Show Captcha"));
+            frame.setTitle(JDL.L("showcaptcha.chooser.title", "jDownloader :: Show Captcha"));
         }
         frame.setAlwaysOnTop(true);
         frame.setLocation(20, 20);
@@ -63,9 +63,9 @@ public class JACController {
 
         String chooserText = "";
         if (isTrain) {
-            chooserText = JDLocale.L("train.choose.folder", "Wählen sie einen Ordner aus");
+            chooserText = JDL.L("train.choose.folder", "Wählen sie einen Ordner aus");
         } else {
-            chooserText = JDLocale.L("showcaptcha.choose.file", "Wählen sie eine Bilddatei aus");
+            chooserText = JDL.L("showcaptcha.choose.file", "Wählen sie eine Bilddatei aus");
         }
         
         
@@ -81,14 +81,14 @@ public class JACController {
         // fdsfds dsf fdgfdsg  JDLocale.L("showcaptcha.choose.tester3", "Wählen sie eine Bilddatei aus");
         
         
-        JDLocale.L("showcaptcha.choose.tester3",
+        JDL.L("showcaptcha.choose.tester3",
                 
         "Wählen sie eine Bilddatei aus;}");
-        frame.add(new JLabel(JDLocale.L("train.method", "Wählen sie eine Methode aus:")));
+        frame.add(new JLabel(JDL.L("train.method", "Wählen sie eine Methode aus:")));
         frame.add(methods, "growx, spanx");
         frame.add(new JLabel(chooserText));
         frame.add(chooser, "growx, spanx");
-        JButton btnOK = new JButton(JDLocale.L("gui.btn_ok", "OK"));
+        JButton btnOK = new JButton(JDL.L("gui.btn_ok", "OK"));
         btnOK.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {

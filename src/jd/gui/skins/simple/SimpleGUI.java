@@ -105,9 +105,9 @@ import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
-import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingworker.SwingWorker;
@@ -255,7 +255,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
         setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
         // initActions();
         // initMenuBar();
-        JDLocale.initLocalisation();
+        JDL.initLocalisation();
 
         buildUI();
 
@@ -296,7 +296,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
         }.start();
 
         startbutton = new JLabel(new ImageIcon(mainMenuIcon));
-        startbutton.setToolTipText(JDLocale.L("gui.menu.tooltip", "Click here to open main menu"));
+        startbutton.setToolTipText(JDL.L("gui.menu.tooltip", "Click here to open main menu"));
         startbutton.addMouseListener(new JDMouseAdapter() {
 
             public void mouseEntered(MouseEvent e) {
@@ -558,7 +558,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
     }
 
     private void addAddonTask() {
-        addonTaskPanel = new AddonTaskPane(JDLocale.L("gui.taskpanes.addons", "Addons"), JDTheme.II("gui.images.taskpanes.addons", 24, 24));
+        addonTaskPanel = new AddonTaskPane(JDL.L("gui.taskpanes.addons", "Addons"), JDTheme.II("gui.images.taskpanes.addons", 24, 24));
         taskPane.add(addonTaskPanel);
     }
 
@@ -568,8 +568,8 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
 
     private void addLogTask() {
 
-        LogTaskPane logTask = new LogTaskPane(JDLocale.L("gui.taskpanes.log", "Log"), JDTheme.II("gui.images.terminal", 24, 24));
-        logTask.setName(JDLocale.L("quickhelp.lopgtaskpane", "Log Taskpane"));
+        LogTaskPane logTask = new LogTaskPane(JDL.L("gui.taskpanes.log", "Log"), JDTheme.II("gui.images.terminal", 24, 24));
+        logTask.setName(JDL.L("quickhelp.lopgtaskpane", "Log Taskpane"));
         logPanel = new SingletonPanel(LogPane.class);
         logTask.addPanel(logPanel);
         logTask.addActionListener(new ActionListener() {
@@ -586,7 +586,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
     }
 
     private void addConfigTask() {
-        cfgTskPane = new ConfigTaskPane(JDLocale.L("gui.taskpanes.configuration", "Configuration"), JDTheme.II("gui.images.taskpanes.configuration", 24, 24));
+        cfgTskPane = new ConfigTaskPane(JDL.L("gui.taskpanes.configuration", "Configuration"), JDTheme.II("gui.images.taskpanes.configuration", 24, 24));
 
         Object[] configConstructorObjects = new Object[] { JDUtilities.getConfiguration() };
 
@@ -621,7 +621,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
                     }
 
                     if (restart) {
-                        if (JDUtilities.getGUI().showConfirmDialog(JDLocale.L("gui.config.save.restart", "Your changes need a restart of JDownloader to take effect.\r\nRestart now?"), JDLocale.L("gui.config.save.restart.title", "JDownloader restart requested"))) {
+                        if (JDUtilities.getGUI().showConfirmDialog(JDL.L("gui.config.save.restart", "Your changes need a restart of JDownloader to take effect.\r\nRestart now?"), JDL.L("gui.config.save.restart.title", "JDownloader restart requested"))) {
                             JDUtilities.restartJD();
                         }
                     }
@@ -655,8 +655,8 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
 
     private void addLinkgrabberTask() {
         linkGrabber = LinkGrabberPanel.getLinkGrabber();
-        lgTaskPane = new LinkGrabberTaskPane(JDLocale.L("gui.taskpanes.linkgrabber", "LinkGrabber"), JDTheme.II("gui.images.taskpanes.linkgrabber", 24, 24));
-        lgTaskPane.setName(JDLocale.L("quickhelp.linkgrabbertaskpane", "Linkgrabber Taskpane"));
+        lgTaskPane = new LinkGrabberTaskPane(JDL.L("gui.taskpanes.linkgrabber", "LinkGrabber"), JDTheme.II("gui.images.taskpanes.linkgrabber", 24, 24));
+        lgTaskPane.setName(JDL.L("quickhelp.linkgrabbertaskpane", "Linkgrabber Taskpane"));
         LinkAdder linkadder = new LinkAdder();
 
         lgTaskPane.addPanel(new SingletonPanel(linkadder));
@@ -701,8 +701,8 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
 
     private void addDownloadTask() {
 
-        dlTskPane = new DownloadTaskPane(JDLocale.L("gui.taskpanes.download", "Download"), JDTheme.II("gui.images.taskpanes.download", 24, 24));
-        dlTskPane.setName(JDLocale.L("quickhelp.downloadtaskpane", "Download Taskpane"));
+        dlTskPane = new DownloadTaskPane(JDL.L("gui.taskpanes.download", "Download"), JDTheme.II("gui.images.taskpanes.download", 24, 24));
+        dlTskPane.setName(JDL.L("quickhelp.downloadtaskpane", "Download Taskpane"));
         // dlTskPane.add(toolBar);
         // // toolBar.setFocusable(false);
         // // toolBar.setBorderPainted(true);
@@ -738,7 +738,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
                         new Thread() {
                             public void run() {
                                 this.setName("Autostart counter");
-                                final ProgressController pc = new ProgressController(JDLocale.L("gui.autostart", "Autostart downloads in few secounds..."));
+                                final ProgressController pc = new ProgressController(JDL.L("gui.autostart", "Autostart downloads in few secounds..."));
                                 pc.getBroadcaster().addListener(new ProgressControllerListener() {
                                     public void onProgressControllerEvent(ProgressControllerEvent event) {
                                         pc.setStatusText("Autostart aborted!");
@@ -780,10 +780,10 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
 
                     break;
                 case ControlEvent.CONTROL_DOWNLOAD_START:
-                    Balloon.showIfHidden(JDLocale.L("ballon.download.title", "Download"), JDTheme.II("gui.images.next", 32, 32), JDLocale.L("ballon.download.finished.started", "Download started"));
+                    Balloon.showIfHidden(JDL.L("ballon.download.title", "Download"), JDTheme.II("gui.images.next", 32, 32), JDL.L("ballon.download.finished.started", "Download started"));
                     break;
                 case ControlEvent.CONTROL_DOWNLOAD_STOP:
-                    Balloon.showIfHidden(JDLocale.L("ballon.download.title", "Download"), JDTheme.II("gui.images.next", 32, 32), JDLocale.L("ballon.download.finished.stopped", "Download stopped"));
+                    Balloon.showIfHidden(JDL.L("ballon.download.title", "Download"), JDTheme.II("gui.images.next", 32, 32), JDL.L("ballon.download.finished.stopped", "Download stopped"));
                     break;
                 }
             }
@@ -797,7 +797,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
     public void doManualReconnect() {
         new GuiRunnable<Object>() {
             public Object runSave() {
-                if (JOptionPane.showConfirmDialog(SimpleGUI.this, JDLocale.L("gui.reconnect.confirm", "Wollen Sie sicher eine neue Verbindung aufbauen?"), "", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+                if (JOptionPane.showConfirmDialog(SimpleGUI.this, JDL.L("gui.reconnect.confirm", "Wollen Sie sicher eine neue Verbindung aufbauen?"), "", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
                     new Thread(new Runnable() {
                         public void run() {
                             Reconnecter.doManualReconnect();
@@ -810,7 +810,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
     }
 
     public String showCountdownUserInputDialog(final String message, final String def) {
-        return UserIO.getInstance().requestInputDialog(0, JDLocale.L("gui.userio.input.title", "Please enter!"), message, def, JDTheme.II("gui.images.config.tip", 32, 32), null, null);
+        return UserIO.getInstance().requestInputDialog(0, JDL.L("gui.userio.input.title", "Please enter!"), message, def, JDTheme.II("gui.images.config.tip", 32, 32), null, null);
 
     }
 
@@ -846,7 +846,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
     }
 
     public boolean showConfirmDialog(String message) {
-        return showConfirmDialog(message, JDLocale.L("userio.countdownconfirm", "Please confirm"));
+        return showConfirmDialog(message, JDL.L("userio.countdownconfirm", "Please confirm"));
     }
 
     public boolean showConfirmDialog(String string, String title) {
@@ -861,7 +861,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
         int flags = 0;
         if (string.contains("<") && string.contains(">")) flags |= UserIO.STYLE_HTML;
         try {
-            return JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(flags, JDLocale.L("userio.countdownconfirm", "Please confirm"), string, JDTheme.II("gui.images.config.eventmanager", 32, 32), null, null), UserIO.RETURN_OK);
+            return JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(flags, JDL.L("userio.countdownconfirm", "Please confirm"), string, JDTheme.II("gui.images.config.eventmanager", 32, 32), null, null), UserIO.RETURN_OK);
         } finally {
             UserIO.setCountdownTime(cd);
         }
@@ -958,7 +958,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
                     // JDCollapser.getInstance().setIcon(container.getGroup().
                     // getIcon());
                 } else {
-                    JDCollapser.getInstance().setTitle(JDLocale.L("gui.panels.collapsibleconfig", "Settings"));
+                    JDCollapser.getInstance().setTitle(JDL.L("gui.panels.collapsibleconfig", "Settings"));
                     JDCollapser.getInstance().setIcon(JDTheme.II("gui.images.config.addons", 24, 24));
                 }
 
@@ -974,7 +974,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
         if (!OSDetector.isMac()) {
             boolean doIt;
             if (!SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
-                doIt = showConfirmDialog(JDLocale.L("sys.ask.rlyclose", "Wollen Sie jDownloader wirklich schließen?"));
+                doIt = showConfirmDialog(JDL.L("sys.ask.rlyclose", "Wollen Sie jDownloader wirklich schließen?"));
             } else {
                 doIt = true;
             }
@@ -1024,29 +1024,29 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
                 } catch (Exception e) {
                     account.setEnabled(false);
                     JDLogger.exception(e);
-                    SimpleGUI.this.showMessageDialog(JDLocale.LF("gui.accountcheck.pluginerror", "Plugin %s may be defect. Inform support!", pluginForHost.getPluginID()));
+                    SimpleGUI.this.showMessageDialog(JDL.LF("gui.accountcheck.pluginerror", "Plugin %s may be defect. Inform support!", pluginForHost.getPluginID()));
                     return null;
                 }
                 if (ai == null) {
-                    SimpleGUI.this.showMessageDialog(JDLocale.LF("plugins.host.premium.info.error", "The %s plugin does not support the Accountinfo feature yet.", pluginForHost.getHost()));
+                    SimpleGUI.this.showMessageDialog(JDL.LF("plugins.host.premium.info.error", "The %s plugin does not support the Accountinfo feature yet.", pluginForHost.getHost()));
                     return null;
                 }
                 if (!ai.isValid()) {
                     account.setEnabled(false);
-                    SimpleGUI.this.showMessageDialog(JDLocale.LF("plugins.host.premium.info.notValid", "The account for '%s' isn't valid! Please check username and password!\r\n%s", account.getUser(), ai.getStatus() != null ? ai.getStatus() : ""));
+                    SimpleGUI.this.showMessageDialog(JDL.LF("plugins.host.premium.info.notValid", "The account for '%s' isn't valid! Please check username and password!\r\n%s", account.getUser(), ai.getStatus() != null ? ai.getStatus() : ""));
                     return null;
                 }
                 if (ai.isExpired()) {
                     account.setEnabled(false);
-                    SimpleGUI.this.showMessageDialog(JDLocale.LF("plugins.host.premium.info.expired", "The account for '%s' is expired! Please extend the account or buy a new one!\r\n%s", account.getUser(), ai.getStatus() != null ? ai.getStatus() : ""));
+                    SimpleGUI.this.showMessageDialog(JDL.LF("plugins.host.premium.info.expired", "The account for '%s' is expired! Please extend the account or buy a new one!\r\n%s", account.getUser(), ai.getStatus() != null ? ai.getStatus() : ""));
                     return null;
                 }
 
-                String def = JDLocale.LF("plugins.host.premium.info.title", "Accountinformation from %s for %s", account.getUser(), pluginForHost.getHost());
-                String[] label = new String[] { JDLocale.L("plugins.host.premium.info.validUntil", "Valid until"), JDLocale.L("plugins.host.premium.info.trafficLeft", "Traffic left"), JDLocale.L("plugins.host.premium.info.files", "Files"), JDLocale.L("plugins.host.premium.info.premiumpoints", "PremiumPoints"), JDLocale.L("plugins.host.premium.info.usedSpace", "Used Space"), JDLocale.L("plugins.host.premium.info.cash", "Cash"), JDLocale.L("plugins.host.premium.info.trafficShareLeft", "Traffic Share left"), JDLocale.L("plugins.host.premium.info.status", "Info") };
+                String def = JDL.LF("plugins.host.premium.info.title", "Accountinformation from %s for %s", account.getUser(), pluginForHost.getHost());
+                String[] label = new String[] { JDL.L("plugins.host.premium.info.validUntil", "Valid until"), JDL.L("plugins.host.premium.info.trafficLeft", "Traffic left"), JDL.L("plugins.host.premium.info.files", "Files"), JDL.L("plugins.host.premium.info.premiumpoints", "PremiumPoints"), JDL.L("plugins.host.premium.info.usedSpace", "Used Space"), JDL.L("plugins.host.premium.info.cash", "Cash"), JDL.L("plugins.host.premium.info.trafficShareLeft", "Traffic Share left"), JDL.L("plugins.host.premium.info.status", "Info") };
 
                 DateFormat formater = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM);
-                String validUntil = (ai.isExpired() ? JDLocale.L("plugins.host.premium.info.expiredInfo", "[expired]") + " " : "") + formater.format(new Date(ai.getValidUntil())) + "";
+                String validUntil = (ai.isExpired() ? JDL.L("plugins.host.premium.info.expiredInfo", "[expired]") + " " : "") + formater.format(new Date(ai.getValidUntil())) + "";
                 if (ai.getValidUntil() == -1) validUntil = null;
                 String premiumPoints = ai.getPremiumPoints() + ((ai.getNewPremiumPoints() > 0) ? " [+" + ai.getNewPremiumPoints() + "]" : "");
                 String[] data = new String[] { validUntil, Formatter.formatReadable(ai.getTrafficLeft()), ai.getFilesNum() + "", premiumPoints, Formatter.formatReadable(ai.getUsedSpace()), ai.getAccountBalance() < 0 ? null : (ai.getAccountBalance() / 100.0) + " €", Formatter.formatReadable(ai.getTrafficShareLeft()), ai.getStatus() };
@@ -1064,9 +1064,9 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
                         tf.setEditable(false);
                         tf.setOpaque(false);
 
-                        if (label[j].equals(JDLocale.L("plugins.host.premium.info.trafficLeft", "Traffic left"))) {
+                        if (label[j].equals(JDL.L("plugins.host.premium.info.trafficLeft", "Traffic left"))) {
                             PieChartAPI freeTrafficChart = new PieChartAPI("", 150, 60);
-                            freeTrafficChart.addEntity(new ChartAPIEntity(JDLocale.L("plugins.host.premium.info.freeTraffic", "Free"), ai.getTrafficLeft(), new Color(50, 200, 50)));
+                            freeTrafficChart.addEntity(new ChartAPIEntity(JDL.L("plugins.host.premium.info.freeTraffic", "Free"), ai.getTrafficLeft(), new Color(50, 200, 50)));
                             freeTrafficChart.addEntity(new ChartAPIEntity("", ai.getTrafficMax() - ai.getTrafficLeft(), new Color(150, 150, 150)));
                             freeTrafficChart.fetchImage();
 
@@ -1087,7 +1087,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
     }
 
     public static void showChangelogDialog() {
-        int status = UserIO.getInstance().requestHelpDialog(UserIO.NO_CANCEL_OPTION, JDLocale.LF("system.update.message.title", "Updated to version %s", JDUtilities.getRevision()), JDLocale.L("system.update.message", "Update successfull"), JDLocale.L("system.update.showchangelogv2", "What's new?"), "http://jdownloader.org/changes/index");
+        int status = UserIO.getInstance().requestHelpDialog(UserIO.NO_CANCEL_OPTION, JDL.LF("system.update.message.title", "Updated to version %s", JDUtilities.getRevision()), JDL.L("system.update.message", "Update successfull"), JDL.L("system.update.showchangelogv2", "What's new?"), "http://jdownloader.org/changes/index");
         if (JDFlags.hasAllFlags(status, UserIO.RETURN_OK) && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_AUTO_SHOW_CHANGELOG, true)) {
             try {
                 JLinkButton.openURL("http://jdownloader.org/changes/index");
@@ -1144,7 +1144,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
     }
 
     public String[] showLoginDialog(String title, String defaultUser, String defaultPassword, String error) {
-        JXLoginDialog d = new JXLoginDialog(this, JDLocale.L("gui.dialogs.login.title", "Login required"), true);
+        JXLoginDialog d = new JXLoginDialog(this, JDL.L("gui.dialogs.login.title", "Login required"), true);
         if (defaultPassword != null) d.getPanel().setPassword(defaultPassword.toCharArray());
         d.getPanel().setUserName(defaultUser);
         d.getPanel().setErrorMessage(error);

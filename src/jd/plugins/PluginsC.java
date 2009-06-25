@@ -32,9 +32,9 @@ import jd.event.ControlEvent;
 import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import jd.utils.WebUpdate;
+import jd.utils.locale.JDL;
 
 /**
  * Dies ist die Oberklasse für alle Plugins, die Containerdateien nutzen können
@@ -104,7 +104,7 @@ public abstract class PluginsC extends Plugin {
         progress.addToMax(dlU.size());
         for (String string : dlU) {
             progress.increase(1);
-            progress.setStatusText(JDLocale.LF("plugins.container.decrypt", "Decrypt link %s", i));
+            progress.setStatusText(JDL.LF("plugins.container.decrypt", "Decrypt link %s", i));
 
             DistributeData distributeData = new DistributeData(string);
             ArrayList<DownloadLink> links = distributeData.findLinks();
@@ -364,17 +364,17 @@ public abstract class PluginsC extends Plugin {
             if (progress != null) {
                 progress.finalize();
             }
-            progress = new ProgressController(JDLocale.L("plugins.container.open", "Open Container"), 10);
+            progress = new ProgressController(JDL.L("plugins.container.open", "Open Container"), 10);
             progress.increase(1);
             if (bs != null) k = bs;
             doDecryption(filename);
             progress.increase(1);
 
-            progress.setStatusText(JDLocale.LF("plugins.container.found", "Prozess %s links", cls.size()));
+            progress.setStatusText(JDL.LF("plugins.container.found", "Prozess %s links", cls.size()));
             logger.info(filename + " Parse");
             if (cls != null && dlU != null) {
                 decryptLinkProtectorLinks();
-                progress.setStatusText(JDLocale.LF("plugins.container.exit", "Finished. Found %s links", cls.size()));
+                progress.setStatusText(JDL.LF("plugins.container.exit", "Finished. Found %s links", cls.size()));
                 Iterator<DownloadLink> it = cls.iterator();
                 while (it.hasNext()) {
                     it.next().setLinkType(DownloadLink.LINKTYPE_CONTAINER);
@@ -390,11 +390,11 @@ public abstract class PluginsC extends Plugin {
             }
             if (this.containerStatus == null) {
                 progress.setColor(Color.RED);
-                progress.setStatusText(JDLocale.LF("plugins.container.exit.error", "Container error: %s", "Container not found!"));
+                progress.setStatusText(JDL.LF("plugins.container.exit.error", "Container error: %s", "Container not found!"));
                 progress.finalize(500);
             } else if (!this.containerStatus.hasStatus(ContainerStatus.STATUS_FINISHED)) {
                 progress.setColor(Color.RED);
-                progress.setStatusText(JDLocale.LF("plugins.container.exit.error", "Container error: %s", containerStatus.getStatusText()));
+                progress.setStatusText(JDL.LF("plugins.container.exit.error", "Container error: %s", containerStatus.getStatusText()));
                 progress.finalize(5000);
                 new WebUpdate().doWebupdate(false,false);
             } else {

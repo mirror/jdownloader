@@ -25,9 +25,9 @@ import jd.config.Configuration;
 import jd.gui.UserIO;
 import jd.gui.skins.simple.Factory;
 import jd.nutils.JDFlags;
-import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 public class PremiumMenu extends JStartMenu implements ActionListener {
 
@@ -42,7 +42,7 @@ public class PremiumMenu extends JStartMenu implements ActionListener {
     }
 
     private void updateMenu() {
-        premium = new JCheckBoxMenuItem(JDLocale.L("gui.menu.action.premium.desc", "Enable Premiumusage globally"));
+        premium = new JCheckBoxMenuItem(JDL.L("gui.menu.action.premium.desc", "Enable Premiumusage globally"));
         premium.addActionListener(this);
         premium.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true));
         this.add(premium);
@@ -54,7 +54,7 @@ public class PremiumMenu extends JStartMenu implements ActionListener {
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == premium) {
             if (!premium.isSelected()) {
-                int answer = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_COUNTDOWN, JDLocale.L("dialogs.premiumstatus.global.title", "Disable Premium?"), JDLocale.L("dialogs.premiumstatus.global.message", "Do you really want to disable all premium accounts?"), JDTheme.II("gui.images.warning", 32, 32), JDLocale.L("gui.btn_yes", "Yes"), JDLocale.L("gui.btn_no", "No"));
+                int answer = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_COUNTDOWN, JDL.L("dialogs.premiumstatus.global.title", "Disable Premium?"), JDL.L("dialogs.premiumstatus.global.message", "Do you really want to disable all premium accounts?"), JDTheme.II("gui.images.warning", 32, 32), JDL.L("gui.btn_yes", "Yes"), JDL.L("gui.btn_no", "No"));
                 if (JDFlags.hasAllFlags(answer, UserIO.RETURN_CANCEL) && !JDFlags.hasAllFlags(answer, UserIO.RETURN_SKIPPED_BY_DONT_SHOW)) {
                     premium.setSelected(true);
                     return;

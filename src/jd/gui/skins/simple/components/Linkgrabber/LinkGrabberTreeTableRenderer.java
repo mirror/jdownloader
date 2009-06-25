@@ -26,9 +26,9 @@ import javax.swing.border.Border;
 
 import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
-import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 import org.jdesktop.swingx.renderer.DefaultTableRenderer;
 import org.jdesktop.swingx.renderer.JRendererLabel;
@@ -87,10 +87,10 @@ public class LinkGrabberTreeTableRenderer extends DefaultTableRenderer {
     }
 
     private void initLocale() {
-        strOnline = JDLocale.L("linkgrabber.onlinestatus.online", "online");
-        strOffline = JDLocale.L("linkgrabber.onlinestatus.offline", "offline");
-        strUnchecked = JDLocale.L("linkgrabber.onlinestatus.unchecked", "not checked");
-        strUnCheckable = JDLocale.L("linkgrabber.onlinestatus.uncheckable", "temp. uncheckable");
+        strOnline = JDL.L("linkgrabber.onlinestatus.online", "online");
+        strOffline = JDL.L("linkgrabber.onlinestatus.offline", "offline");
+        strUnchecked = JDL.L("linkgrabber.onlinestatus.unchecked", "not checked");
+        strUnCheckable = JDL.L("linkgrabber.onlinestatus.uncheckable", "temp. uncheckable");
     }
 
     private void initIcons() {
@@ -246,7 +246,7 @@ public class LinkGrabberTreeTableRenderer extends DefaultTableRenderer {
             int failedCount = fp.countFailedLinks(false);
             int size = fp.getDownloadLinks().size();
             if (failedCount > 0) {
-                value = JDLocale.LF("gui.linkgrabber.packageofflinepercent", "%s offline", JDUtilities.getPercent(failedCount, size));
+                value = JDL.LF("gui.linkgrabber.packageofflinepercent", "%s offline", JDUtilities.getPercent(failedCount, size));
             } else {
                 value = "";
             }

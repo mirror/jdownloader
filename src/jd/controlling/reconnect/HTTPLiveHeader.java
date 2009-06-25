@@ -39,8 +39,8 @@ import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.utils.CLRLoader;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
@@ -128,7 +128,7 @@ public class HTTPLiveHeader extends ReconnectMethod {
             NodeList steps = root.getChildNodes();
             progress.addToMax(steps.getLength());
             for (int step = 0; step < steps.getLength(); step++) {
-                progress.setStatusText(JDLocale.L("interaction.liveHeader.progress.3_step", "(STEP)HTTPLiveHeader :") + step);
+                progress.setStatusText(JDL.L("interaction.liveHeader.progress.3_step", "(STEP)HTTPLiveHeader :") + step);
                 progress.increase(1);
                 Node current = steps.item(step);
 
@@ -143,7 +143,7 @@ public class HTTPLiveHeader extends ReconnectMethod {
                 for (int toDoStep = 0; toDoStep < toDos.getLength(); toDoStep++) {
                     Node toDo = toDos.item(toDoStep);
 
-                    progress.setStatusText(JDLocale.LF("interaction.liveHeader.progress.4_step", "(%s)HTTPLiveHeader", toDo.getNodeName()));
+                    progress.setStatusText(JDL.LF("interaction.liveHeader.progress.4_step", "(%s)HTTPLiveHeader", toDo.getNodeName()));
 
                     if (toDo.getNodeName().equalsIgnoreCase("DEFINE")) {
 
@@ -492,7 +492,7 @@ public class HTTPLiveHeader extends ReconnectMethod {
 
     // @Override
     public String toString() {
-        return JDLocale.L("interaction.liveHeader.name", "HTTP Live Header");
+        return JDL.L("interaction.liveHeader.name", "HTTP Live Header");
     }
 
 }

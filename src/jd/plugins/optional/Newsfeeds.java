@@ -54,9 +54,9 @@ import jd.nutils.Screen;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.plugins.PluginOptional;
-import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 public class Newsfeeds extends PluginOptional implements ListSelectionListener {
 
@@ -84,7 +84,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
 
             setModal(true);
             setLayout(new BorderLayout(5, 5));
-            setTitle(JDLocale.L("plugins.optional.newsfeeds.addAboDialogTitle", "Add Subscription"));
+            setTitle(JDL.L("plugins.optional.newsfeeds.addAboDialogTitle", "Add Subscription"));
             getRootPane().setDefaultButton(btnOK);
 
             feedList = new JList();
@@ -93,12 +93,12 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
 
             JScrollPane feedScrollPane = new JScrollPane(feedList);
 
-            JLabel chooseFeedLabel = new JLabel(JDLocale.L("plugins.optional.newsfeeds.addAboDialogSelectFeed", "Please select Feed") + ":");
-            JLabel keywordLabeld = new JLabel(JDLocale.L("plugins.optional.newsfeeds.addAboDialogKeyword", "Keyword") + ":");
+            JLabel chooseFeedLabel = new JLabel(JDL.L("plugins.optional.newsfeeds.addAboDialogSelectFeed", "Please select Feed") + ":");
+            JLabel keywordLabeld = new JLabel(JDL.L("plugins.optional.newsfeeds.addAboDialogKeyword", "Keyword") + ":");
 
-            btnOK = new JButton(JDLocale.L("gui.btn_add", "Add"));
+            btnOK = new JButton(JDL.L("gui.btn_add", "Add"));
             btnOK.addActionListener(this);
-            btnCancel = new JButton(JDLocale.L("gui.btn_cancel", "Cancel"));
+            btnCancel = new JButton(JDL.L("gui.btn_cancel", "Cancel"));
             btnCancel.addActionListener(this);
 
             JPanel main = new JPanel(new BorderLayout(5, 5));
@@ -171,12 +171,12 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
 
             setModal(true);
             setLayout(new BorderLayout(5, 5));
-            setTitle(JDLocale.L("plugins.optional.newsfeeds.addFeedDialogTitle", "Add Feed"));
+            setTitle(JDL.L("plugins.optional.newsfeeds.addFeedDialogTitle", "Add Feed"));
             getRootPane().setDefaultButton(btnOK);
 
-            btnOK = new JButton(JDLocale.L("gui.btn_add", "Add"));
+            btnOK = new JButton(JDL.L("gui.btn_add", "Add"));
             btnOK.addActionListener(this);
-            btnCancel = new JButton(JDLocale.L("gui.btn_cancel", "Cancel"));
+            btnCancel = new JButton(JDL.L("gui.btn_cancel", "Cancel"));
             btnCancel.addActionListener(this);
 
             JPanel main = new JPanel(new BorderLayout(5, 5));
@@ -377,9 +377,9 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
 
         if (!SubConfiguration.getConfig("ADDONS_NEWSFEEDS").getBooleanProperty(PROPERTY_ENABLED, false)) {
 
-            menu.add(new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.newsfeeds.manageFeeds", "Manage Feeds"), 0).setActionListener(this));
-            menu.add(new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.newsfeeds.manageDownloadSubscriptions", "Manage Download Subscriptions"), 1).setActionListener(this));
-            menu.add(new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.newsfeeds.getLatestSubscribedDownloads", "Get latest subscribed Downloads"), 2).setActionListener(this));
+            menu.add(new MenuItem(MenuItem.NORMAL, JDL.L("plugins.optional.newsfeeds.manageFeeds", "Manage Feeds"), 0).setActionListener(this));
+            menu.add(new MenuItem(MenuItem.NORMAL, JDL.L("plugins.optional.newsfeeds.manageDownloadSubscriptions", "Manage Download Subscriptions"), 1).setActionListener(this));
+            menu.add(new MenuItem(MenuItem.NORMAL, JDL.L("plugins.optional.newsfeeds.getLatestSubscribedDownloads", "Get latest subscribed Downloads"), 2).setActionListener(this));
         }
 
         return menu;
@@ -442,7 +442,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
     }
 
     public String getHost() {
-        return JDLocale.L("plugins.optional.newsfeeds.pluginTitle", "Newsfeed Check");
+        return JDL.L("plugins.optional.newsfeeds.pluginTitle", "Newsfeed Check");
     }
 
     // GUIs
@@ -537,7 +537,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
         if (feedList.getSelectedIndex() != -1) {
 
             list.removeAll();
-            statusLabelManageFeeds.setText(JDLocale.L("plugins.optional.newsfeeds.loading", "Loading..."));
+            statusLabelManageFeeds.setText(JDL.L("plugins.optional.newsfeeds.loading", "Loading..."));
 
             Thread thread = new Thread(new Runnable() {
                 public void run() {
@@ -578,7 +578,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
         if (abos.size() > 0) {
 
             subscribedList.removeAll();
-            statusLabelGetSubscribed.setText(JDLocale.L("plugins.optional.newsfeeds.loading", "Loading..."));
+            statusLabelGetSubscribed.setText(JDL.L("plugins.optional.newsfeeds.loading", "Loading..."));
 
             Thread thread = new Thread(new Runnable() {
                 public void run() {
@@ -604,7 +604,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
                     if (entriesGetSubscribed.size() > 0) {
                         statusLabelGetSubscribed.setText("");
                     } else {
-                        statusLabelGetSubscribed.setText(JDLocale.L("plugins.optional.newsfeeds.nowSubscribedFound", "No subscribed Downloads were found."));
+                        statusLabelGetSubscribed.setText(JDL.L("plugins.optional.newsfeeds.nowSubscribedFound", "No subscribed Downloads were found."));
                     }
                 }
             });
@@ -617,10 +617,10 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
         subscribedList = new JList();
         subscribedList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 
-        btnDownload2 = new JButton(JDLocale.L("plugins.optional.newsfeeds.downloadSelected", "Download Selected"));
+        btnDownload2 = new JButton(JDL.L("plugins.optional.newsfeeds.downloadSelected", "Download Selected"));
         btnDownload2.addActionListener(this);
 
-        statusLabelGetSubscribed = new JLabel(JDLocale.L("plugins.optional.newsfeeds.pleaseCreateSubscription", "Please create Download Subscriptions."));
+        statusLabelGetSubscribed = new JLabel(JDL.L("plugins.optional.newsfeeds.pleaseCreateSubscription", "Please create Download Subscriptions."));
 
         JPanel buttons = new JPanel(new BorderLayout(5, 5));
         buttons.add(btnDownload2, BorderLayout.LINE_END);
@@ -641,7 +641,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
         subscribedList.setSelectedIndices(indices);
 
         frame = new JFrame();
-        frame.setTitle(JDLocale.L("plugins.optional.newsfeeds.getLatestSubscribedDownloads", "Get latest subscribed Downloads"));
+        frame.setTitle(JDL.L("plugins.optional.newsfeeds.getLatestSubscribedDownloads", "Get latest subscribed Downloads"));
         frame.setIconImage(JDImage.getImage(JDTheme.V("gui.images.jd_logo")));
         frame.setPreferredSize(new Dimension(300, 200));
         frame.setName("ADDON_NEWSFEED_3");
@@ -678,7 +678,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
         if (abos.size() > 0) aboList.setSelectedIndex(0);
 
         frame = new JFrame();
-        frame.setTitle(JDLocale.L("plugins.optional.newsfeeds.manageDownloadSubscriptions", "Manage Download Subscriptions"));
+        frame.setTitle(JDL.L("plugins.optional.newsfeeds.manageDownloadSubscriptions", "Manage Download Subscriptions"));
         frame.setIconImage(JDImage.getImage(JDTheme.V("gui.images.jd_logo")));
         frame.setPreferredSize(new Dimension(300, 200));
         frame.setName("ADDON_NEWSFEED_2");
@@ -699,14 +699,14 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
         feedList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         feedList.addListSelectionListener(this);
 
-        btnDownload = new JButton(JDLocale.L("plugins.optional.newsfeeds.downloadSelected", "Download Selected"));
+        btnDownload = new JButton(JDL.L("plugins.optional.newsfeeds.downloadSelected", "Download Selected"));
         btnDownload.addActionListener(this);
         btnAddFeed = new JButton(" + ");
         btnAddFeed.addActionListener(this);
         btnDeleteFeed = new JButton("  -  ");
         btnDeleteFeed.addActionListener(this);
 
-        statusLabelManageFeeds = new JLabel(JDLocale.L("plugins.optional.newsfeeds.pleaseAddFeed", "Please add Feeds."));
+        statusLabelManageFeeds = new JLabel(JDL.L("plugins.optional.newsfeeds.pleaseAddFeed", "Please add Feeds."));
 
         filterText = new JTextField();
         filterText.addActionListener(this);
@@ -740,7 +740,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
         loadFeeds();
 
         frame = new JFrame();
-        frame.setTitle(JDLocale.L("plugins.optional.newsfeeds.manageFeeds", "Manage Feeds"));
+        frame.setTitle(JDL.L("plugins.optional.newsfeeds.manageFeeds", "Manage Feeds"));
         frame.setIconImage(JDImage.getImage(JDTheme.V("gui.images.jd_logo")));
         frame.setPreferredSize(new Dimension(700, 500));
         frame.setName("ADDON_NEWSFEED_1");

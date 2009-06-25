@@ -29,9 +29,9 @@ import jd.event.ControlListener;
 import jd.gui.skins.simple.ContentPanel;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.config.ConfigPanel;
-import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 public class ConfigTaskPane extends TaskPanel implements ActionListener, ControlListener {
 
@@ -64,15 +64,15 @@ public class ConfigTaskPane extends TaskPanel implements ActionListener, Control
     }
 
     private void initGUI() {
-        this.general = (this.createButton(JDLocale.L("gui.config.tabLables.general", "general"), JDTheme.II("gui.images.config.home", 16, 16)));
-        this.download = (this.createButton(JDLocale.L("gui.config.tabLables.download", "download"), JDTheme.II("gui.images.config.network_local", 16, 16)));
-        this.gui = (this.createButton(JDLocale.L("gui.config.tabLables.gui", "gui"), JDTheme.II("gui.images.config.gui", 16, 16)));
-        this.reconnect = (this.createButton(JDLocale.L("gui.config.tabLables.reconnect", "reconnect"), JDTheme.II("gui.images.config.reconnect", 16, 16)));
-        this.captcha = (this.createButton(JDLocale.L("gui.config.tabLables.jac", "jac"), JDTheme.II("gui.images.config.ocr", 16, 16)));
-        this.host = (this.createButton(JDLocale.L("gui.config.tabLables.hostPlugin", "hostPlugin"), JDTheme.II("gui.images.config.host", 16, 16)));
-        this.addons = (this.createButton(JDLocale.L("gui.config.tabLables.addons", "addons"), JDTheme.II("gui.images.config.packagemanager", 16, 16)));
-        this.eventmanager = (this.createButton(JDLocale.L("gui.config.tabLables.eventManager", "eventManager"), JDTheme.II("gui.images.config.eventmanager", 16, 16)));
-        this.sav = (this.createButton(JDLocale.L("gui.task.config.save", "Save changes"), JDTheme.II("gui.images.save", 16, 16)));
+        this.general = (this.createButton(JDL.L("gui.config.tabLables.general", "general"), JDTheme.II("gui.images.config.home", 16, 16)));
+        this.download = (this.createButton(JDL.L("gui.config.tabLables.download", "download"), JDTheme.II("gui.images.config.network_local", 16, 16)));
+        this.gui = (this.createButton(JDL.L("gui.config.tabLables.gui", "gui"), JDTheme.II("gui.images.config.gui", 16, 16)));
+        this.reconnect = (this.createButton(JDL.L("gui.config.tabLables.reconnect", "reconnect"), JDTheme.II("gui.images.config.reconnect", 16, 16)));
+        this.captcha = (this.createButton(JDL.L("gui.config.tabLables.jac", "jac"), JDTheme.II("gui.images.config.ocr", 16, 16)));
+        this.host = (this.createButton(JDL.L("gui.config.tabLables.hostPlugin", "hostPlugin"), JDTheme.II("gui.images.config.host", 16, 16)));
+        this.addons = (this.createButton(JDL.L("gui.config.tabLables.addons", "addons"), JDTheme.II("gui.images.config.packagemanager", 16, 16)));
+        this.eventmanager = (this.createButton(JDL.L("gui.config.tabLables.eventManager", "eventManager"), JDTheme.II("gui.images.config.eventmanager", 16, 16)));
+        this.sav = (this.createButton(JDL.L("gui.task.config.save", "Save changes"), JDTheme.II("gui.images.save", 16, 16)));
 
         add(general, D1_BUTTON_ICON);
         add(download, D1_BUTTON_ICON);
@@ -83,14 +83,14 @@ public class ConfigTaskPane extends TaskPanel implements ActionListener, Control
         add(addons, D1_BUTTON_ICON);
         add(eventmanager, D1_BUTTON_ICON);
 
-        general.setName(JDLocale.L("quickhelp.config.general","configuration general"));
-        download.setName(JDLocale.L("quickhelp.config.download","configuration download"));
-        gui.setName(JDLocale.L("quickhelp.config.gui","configuration gui"));
-        reconnect.setName(JDLocale.L("quickhelp.config.reconnect","configuration reconnect"));
-        host.setName(JDLocale.L("quickhelp.config.host","configuration host"));
-        captcha.setName(JDLocale.L("quickhelp.config.captcha","configuration captcha"));
-        addons.setName(JDLocale.L("quickhelp.config.addons","configuration addons"));
-        eventmanager.setName(JDLocale.L("quickhelp.config.eventmanager","configuration eventmanager"));
+        general.setName(JDL.L("quickhelp.config.general","configuration general"));
+        download.setName(JDL.L("quickhelp.config.download","configuration download"));
+        gui.setName(JDL.L("quickhelp.config.gui","configuration gui"));
+        reconnect.setName(JDL.L("quickhelp.config.reconnect","configuration reconnect"));
+        host.setName(JDL.L("quickhelp.config.host","configuration host"));
+        captcha.setName(JDL.L("quickhelp.config.captcha","configuration captcha"));
+        addons.setName(JDL.L("quickhelp.config.addons","configuration addons"));
+        eventmanager.setName(JDL.L("quickhelp.config.eventmanager","configuration eventmanager"));
         add(new JSeparator());
 
         add(sav, D1_BUTTON_ICON);

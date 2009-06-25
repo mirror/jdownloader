@@ -21,8 +21,8 @@ import java.util.ArrayList;
 import jd.controlling.JDLogger;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 import org.jdesktop.swingx.tree.TreeModelSupport;
 import org.jdesktop.swingx.treetable.AbstractTreeTableModel;
@@ -40,7 +40,7 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
     public static final int COL_STATUS = 3;
 
     /** table column names */
-    static protected String[] COLUMN_NAMES = { "hidden", JDLocale.L("gui.treetable.header_1.tree", "F"), JDLocale.L("gui.treetable.header_3.hoster", "Anbieter"), JDLocale.L("gui.treetable.header_4.status", "Status"), JDLocale.L("gui.treetable.header_5.progress", "Fortschritt") };
+    static protected String[] COLUMN_NAMES = { "hidden", JDL.L("gui.treetable.header_1.tree", "F"), JDL.L("gui.treetable.header_3.hoster", "Anbieter"), JDL.L("gui.treetable.header_4.status", "Status"), JDL.L("gui.treetable.header_5.progress", "Fortschritt") };
 
     public DownloadTreeTableModel() {
         super("root");

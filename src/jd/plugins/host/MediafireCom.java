@@ -27,7 +27,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
@@ -108,7 +108,7 @@ public class MediafireCom extends PluginForHost {
                     form = br.getFormbyProperty("name", "form_password");
                     if (form != null && !br.containsHTML("cu\\('[a-z0-9]*'")) {
                         link.setProperty("pass", null);
-                        throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.errors.wrongpassword", "Password wrong"));
+                        throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.errors.wrongpassword", "Password wrong"));
                     } else {
                         link.setProperty("pass", passCode);
                     }

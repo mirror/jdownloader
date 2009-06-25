@@ -32,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 
 public class BadongoCom extends PluginForHost {
 
@@ -59,8 +59,8 @@ public class BadongoCom extends PluginForHost {
                 if (pwForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
                 String pass = downloadLink.getDecrypterPassword();
                 if (pass == null) {
-                    String passDlgMsg = JDLocale.L("plugins.hoster.general.enterpassword", "Enter password:");
-                    if (i > 0) passDlgMsg = JDLocale.L("plugins.hoster.general.reenterpassword", "Wrong password. Please re-enter:");
+                    String passDlgMsg = JDL.L("plugins.hoster.general.enterpassword", "Enter password:");
+                    if (i > 0) passDlgMsg = JDL.L("plugins.hoster.general.reenterpassword", "Wrong password. Please re-enter:");
                     pass = getUserInput(passDlgMsg, downloadLink);
                     if (pass == null) continue;
                 }
@@ -72,7 +72,7 @@ public class BadongoCom extends PluginForHost {
                 }
             }
             if (downloadLink.getDecrypterPassword() == null) {
-                logger.severe(JDLocale.L("plugins.errors.wrongpassword", "Password wrong"));
+                logger.severe(JDL.L("plugins.errors.wrongpassword", "Password wrong"));
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         }

@@ -40,8 +40,8 @@ import jd.nutils.Formatter;
 import jd.nutils.jobber.JDRunnable;
 import jd.nutils.jobber.Jobber;
 import jd.parser.Regex;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 /**
  * Dies ist die Oberklasse für alle Plugins, die Links entschlüsseln können
@@ -96,7 +96,7 @@ public abstract class PluginForDecrypt extends Plugin {
         String before = link.getProgressController().getStatusText();
         while (i > 0) {
             i -= 1000;
-            link.getProgressController().setStatusText(before + " " + JDLocale.LF("gui.downloadlink.status.wait", "wait %s min", Formatter.formatSeconds(i / 1000)));
+            link.getProgressController().setStatusText(before + " " + JDL.LF("gui.downloadlink.status.wait", "wait %s min", Formatter.formatSeconds(i / 1000)));
             Thread.sleep(1000);
         }
         link.getProgressController().setStatusText(before);
@@ -243,7 +243,7 @@ public abstract class PluginForDecrypt extends Plugin {
      * @throws DecrypterException
      */
     protected String getCaptchaCode(String method, File file, int flag, CryptedLink link, String defaultValue, String explain) throws DecrypterException {
-        if(link.getProgressController()!=null)link.getProgressController().setStatusText(JDLocale.LF("gui.linkgrabber.waitinguserio", "Waiting for user input: %s", method));
+        if(link.getProgressController()!=null)link.getProgressController().setStatusText(JDL.LF("gui.linkgrabber.waitinguserio", "Waiting for user input: %s", method));
         String cc = new CaptchaController(method, file, defaultValue, explain).getCode(flag);
         if(link.getProgressController()!=null)link.getProgressController().setStatusText(null);
         if (cc == null) throw new DecrypterException(DecrypterException.CAPTCHA);
@@ -255,7 +255,7 @@ public abstract class PluginForDecrypt extends Plugin {
         if (this.isClickNLoadEnabled() && OPEN_CLICK_N_LOAD >= 0 && OPEN_CLICK_N_LOAD <= 25) {
             synchronized (JDUtilities.userio_lock) {
                 if (OPEN_CLICK_N_LOAD < 0) return;
-                boolean open = JDUtilities.getGUI().showConfirmDialog(JDLocale.LF("gui.plugins.decrypt.askclicknload", "The decrypter %s seems to be outdated, but supports Click'n'Load. Open the website now?", this.getHost()));
+                boolean open = JDUtilities.getGUI().showConfirmDialog(JDL.LF("gui.plugins.decrypt.askclicknload", "The decrypter %s seems to be outdated, but supports Click'n'Load. Open the website now?", this.getHost()));
                 if (open) {
                     try {
 

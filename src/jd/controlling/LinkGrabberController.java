@@ -35,8 +35,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 class LinkGrabberControllerBroadcaster extends JDBroadcaster<LinkGrabberControllerListener, LinkGrabberControllerEvent> {
 
@@ -103,13 +103,13 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
 
         });
 
-        FP_UNSORTED = new LinkGrabberFilePackage(JDLocale.L("gui.linkgrabber.package.unsorted", "various"), this);
-        FP_UNCHECKED = new LinkGrabberFilePackage(JDLocale.L("gui.linkgrabber.package.unchecked", "unchecked"), this);
-        FP_UNCHECKABLE = new LinkGrabberFilePackage(JDLocale.L("gui.linkgrabber.package.uncheckable", "uncheckable"), this);
+        FP_UNSORTED = new LinkGrabberFilePackage(JDL.L("gui.linkgrabber.package.unsorted", "various"), this);
+        FP_UNCHECKED = new LinkGrabberFilePackage(JDL.L("gui.linkgrabber.package.unchecked", "unchecked"), this);
+        FP_UNCHECKABLE = new LinkGrabberFilePackage(JDL.L("gui.linkgrabber.package.uncheckable", "uncheckable"), this);
         FP_UNCHECKABLE.setIgnore(true);
-        FP_OFFLINE = new LinkGrabberFilePackage(JDLocale.L("gui.linkgrabber.package.offline", "offline"), this);
+        FP_OFFLINE = new LinkGrabberFilePackage(JDL.L("gui.linkgrabber.package.offline", "offline"), this);
         FP_OFFLINE.setIgnore(true);
-        FP_FILTERED = new LinkGrabberFilePackage(JDLocale.L("gui.linkgrabber.package.filtered", "filtered"));
+        FP_FILTERED = new LinkGrabberFilePackage(JDL.L("gui.linkgrabber.package.filtered", "filtered"));
         FP_FILTERED.setIgnore(true);
     }
 

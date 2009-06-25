@@ -51,9 +51,9 @@ import jd.nutils.JDFlags;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.PluginForHost;
-import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 public class PremiumStatus extends JPanel implements AccountControllerListener, ActionListener, MouseListener {
@@ -82,17 +82,17 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
     public PremiumStatus() {
         super();
         bars = new PremiumBar[BARCOUNT];
-        lbl = new JLabel(JDLocale.L("gui.statusbar.premiumloadlabel", "< Add Accounts"));
-        setName(JDLocale.L("quickhelp.premiumstatusbar", "Premium statusbar"));
+        lbl = new JLabel(JDL.L("gui.statusbar.premiumloadlabel", "< Add Accounts"));
+        setName(JDL.L("quickhelp.premiumstatusbar", "Premium statusbar"));
         this.setLayout(new MigLayout("ins 0", "", "[center]"));
         premium = new JToggleButton();
-        premium.setToolTipText(JDLocale.L("gui.menu.action.premium.desc", "Enable Premiumusage globally"));
+        premium.setToolTipText(JDL.L("gui.menu.action.premium.desc", "Enable Premiumusage globally"));
 
         premium.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
                 if (!premium.isSelected()) {
-                    int answer = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_COUNTDOWN, JDLocale.L("dialogs.premiumstatus.global.title", "Disable Premium?"), JDLocale.L("dialogs.premiumstatus.global.message", "Do you really want to disable all premium accounts?"), JDTheme.II("gui.images.warning", 32, 32), JDLocale.L("gui.btn_yes", "Yes"), JDLocale.L("gui.btn_no", "No"));
+                    int answer = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_COUNTDOWN, JDL.L("dialogs.premiumstatus.global.title", "Disable Premium?"), JDL.L("dialogs.premiumstatus.global.message", "Do you really want to disable all premium accounts?"), JDTheme.II("gui.images.warning", 32, 32), JDL.L("gui.btn_yes", "Yes"), JDL.L("gui.btn_no", "No"));
                     if (JDFlags.hasAllFlags(answer, UserIO.RETURN_CANCEL) && !JDFlags.hasAllFlags(answer, UserIO.RETURN_SKIPPED_BY_DONT_SHOW)) {
                         premium.setSelected(true);
                         return;
@@ -297,15 +297,15 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
                         if (left == 0 || workingaccs == 0) {
                             bars[i].setMaximum(10);
                             bars[i].setValue(0);
-                            bars[i].setToolTipText(JDLocale.LF("gui.premiumstatus.expired_traffic.tooltip", "%s - %s account(s) -- At the moment no premium traffic is available.", host, list.size()));
+                            bars[i].setToolTipText(JDL.LF("gui.premiumstatus.expired_traffic.tooltip", "%s - %s account(s) -- At the moment no premium traffic is available.", host, list.size()));
                         } else if (left > 0) {
                             bars[i].setMaximum(max);
                             bars[i].setValue(left);
-                            bars[i].setToolTipText(JDLocale.LF("gui.premiumstatus.traffic.tooltip", "%s - %s account(s) -- You can download up to %s today.", host, list.size(), Formatter.formatReadable(left)));
+                            bars[i].setToolTipText(JDL.LF("gui.premiumstatus.traffic.tooltip", "%s - %s account(s) -- You can download up to %s today.", host, list.size(), Formatter.formatReadable(left)));
                         } else {
                             bars[i].setMaximum(10);
                             bars[i].setValue(10);
-                            bars[i].setToolTipText(JDLocale.LF("gui.premiumstatus.unlimited_traffic.tooltip", "%s -- Unlimited traffic! You can download as much as you want to.", host));
+                            bars[i].setToolTipText(JDL.LF("gui.premiumstatus.unlimited_traffic.tooltip", "%s -- Unlimited traffic! You can download as much as you want to.", host));
                         }
                         i++;
                         if (i >= BARCOUNT) break;

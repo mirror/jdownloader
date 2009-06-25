@@ -64,8 +64,8 @@ import jd.gui.skins.simple.components.PieChartAPI;
 import jd.gui.skins.simple.components.TwoTextFieldDialog;
 import jd.nutils.io.JDFileFilter;
 import jd.nutils.svn.Subversion;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingx.JXTable;
@@ -140,7 +140,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
 
     public LFEGui() {
         subConfig = SubConfiguration.getConfig("ADDONS_LANGFILEEDITOR");
-        fileFilter = new JDFileFilter(JDLocale.L(LOCALE_PREFIX + "fileFilter2", "JD Language File (*.loc) or Folder with Sourcefiles"), ".loc", true);
+        fileFilter = new JDFileFilter(JDL.L(LOCALE_PREFIX + "fileFilter2", "JD Language File (*.loc) or Folder with Sourcefiles"), ".loc", true);
         // String lfeHome =
         // JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() +
         // "/plugins/lfe/";
@@ -194,9 +194,9 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
 //        cmboFile.addActionListener(this);
 
         keyChart = new PieChartAPI("", 225, 50);
-        keyChart.addEntity(entDone = new ChartAPIEntity(JDLocale.L(LOCALE_PREFIX + "keychart.done", "Done"), 0, colorDone));
-        keyChart.addEntity(entMissing = new ChartAPIEntity(JDLocale.L(LOCALE_PREFIX + "keychart.missing", "Missing"), 0, colorMissing));
-        keyChart.addEntity(entOld = new ChartAPIEntity(JDLocale.L(LOCALE_PREFIX + "keychart.old", "Old"), 0, colorOld));
+        keyChart.addEntity(entDone = new ChartAPIEntity(JDL.L(LOCALE_PREFIX + "keychart.done", "Done"), 0, colorDone));
+        keyChart.addEntity(entMissing = new ChartAPIEntity(JDL.L(LOCALE_PREFIX + "keychart.missing", "Missing"), 0, colorMissing));
+        keyChart.addEntity(entOld = new ChartAPIEntity(JDL.L(LOCALE_PREFIX + "keychart.old", "Old"), 0, colorOld));
 
         this.setLayout(new MigLayout("wrap 3", "[][grow, fill][]", "[][grow, fill][]"));
         this.add(buildMenu(), "span 3, growx, spanx");
@@ -259,24 +259,24 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         }
 
         entDone.setData(data.size() - numMissing - numOld);
-        entDone.setCaption(JDLocale.L(LOCALE_PREFIX + "keychart.done", "Done") + " [" + entDone.getData() + "]");
+        entDone.setCaption(JDL.L(LOCALE_PREFIX + "keychart.done", "Done") + " [" + entDone.getData() + "]");
         entMissing.setData(numMissing);
-        entMissing.setCaption(JDLocale.L(LOCALE_PREFIX + "keychart.missing", "Missing") + " [" + entMissing.getData() + "]");
+        entMissing.setCaption(JDL.L(LOCALE_PREFIX + "keychart.missing", "Missing") + " [" + entMissing.getData() + "]");
         entOld.setData(numOld);
-        entOld.setCaption(JDLocale.L(LOCALE_PREFIX + "keychart.old", "Old") + " [" + entOld.getData() + "]");
+        entOld.setCaption(JDL.L(LOCALE_PREFIX + "keychart.old", "Old") + " [" + entOld.getData() + "]");
         keyChart.fetchImage();
     }
 
     private JMenuBar buildMenu() {
         // File Menü
-        mnuFile = new JMenu(JDLocale.L(LOCALE_PREFIX + "file", "File"));
+        mnuFile = new JMenu(JDL.L(LOCALE_PREFIX + "file", "File"));
 
-        mnuFile.add(mnuNew = new JMenuItem(JDLocale.L(LOCALE_PREFIX + "new", "New")));
+        mnuFile.add(mnuNew = new JMenuItem(JDL.L(LOCALE_PREFIX + "new", "New")));
         mnuFile.addSeparator();
-        mnuFile.add(mnuSave = new JMenuItem(JDLocale.L(LOCALE_PREFIX + "save", "Save")));
-        mnuFile.add(mnuSaveAs = new JMenuItem(JDLocale.L(LOCALE_PREFIX + "saveAs", "Save As")));
+        mnuFile.add(mnuSave = new JMenuItem(JDL.L(LOCALE_PREFIX + "save", "Save")));
+        mnuFile.add(mnuSaveAs = new JMenuItem(JDL.L(LOCALE_PREFIX + "saveAs", "Save As")));
         mnuFile.addSeparator();
-        mnuFile.add(mnuReload = new JMenuItem(JDLocale.L(LOCALE_PREFIX + "reload", "Reload")));
+        mnuFile.add(mnuReload = new JMenuItem(JDL.L(LOCALE_PREFIX + "reload", "Reload")));
 
         mnuNew.addActionListener(this);
         mnuSave.addActionListener(this);
@@ -292,28 +292,28 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         mnuReload.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, KeyEvent.CTRL_DOWN_MASK));
 
         // SVN Menü
-        mnuSVN = new JMenu(JDLocale.L(LOCALE_PREFIX + "SVN", "SVN"));
+        mnuSVN = new JMenu(JDL.L(LOCALE_PREFIX + "SVN", "SVN"));
 
-        mnuSVN.add(mnuSVNSettings = new JMenuItem(JDLocale.L(LOCALE_PREFIX + "svn.settings", "SVN Settings")));
+        mnuSVN.add(mnuSVNSettings = new JMenuItem(JDL.L(LOCALE_PREFIX + "svn.settings", "SVN Settings")));
         mnuSVN.addSeparator();
-        mnuSVN.add(mnuSVNCheckOutNow = new JMenuItem(JDLocale.L(LOCALE_PREFIX + "svn.checkOut", "CheckOut SVN now (This may take several seconds ...)")));
+        mnuSVN.add(mnuSVNCheckOutNow = new JMenuItem(JDL.L(LOCALE_PREFIX + "svn.checkOut", "CheckOut SVN now (This may take several seconds ...)")));
 
         mnuSVNSettings.addActionListener(this);
         mnuSVNCheckOutNow.addActionListener(this);
 
         // Key Menü
-        mnuKey = new JMenu(JDLocale.L(LOCALE_PREFIX + "key", "Key"));
+        mnuKey = new JMenu(JDL.L(LOCALE_PREFIX + "key", "Key"));
         mnuKey.setEnabled(false);
 
-        mnuKey.add(mnuAdd = new JMenuItem(JDLocale.L(LOCALE_PREFIX + "addKey", "Add Key")));
-        mnuKey.add(mnuDelete = new JMenuItem(JDLocale.L(LOCALE_PREFIX + "deleteKeys", "Delete Key(s)")));
-        mnuKey.add(mnuClear = new JMenuItem(JDLocale.L(LOCALE_PREFIX + "clearValues", "Clear Value(s)")));
+        mnuKey.add(mnuAdd = new JMenuItem(JDL.L(LOCALE_PREFIX + "addKey", "Add Key")));
+        mnuKey.add(mnuDelete = new JMenuItem(JDL.L(LOCALE_PREFIX + "deleteKeys", "Delete Key(s)")));
+        mnuKey.add(mnuClear = new JMenuItem(JDL.L(LOCALE_PREFIX + "clearValues", "Clear Value(s)")));
         mnuKey.addSeparator();
-        mnuKey.add(mnuAdopt = new JMenuItem(JDLocale.L(LOCALE_PREFIX + "adoptDefaults", "Adopt Default(s)")));
-        mnuKey.add(mnuAdoptMissing = new JMenuItem(JDLocale.L(LOCALE_PREFIX + "adoptDefaults.missing", "Adopt Defaults of Missing Entries")));
+        mnuKey.add(mnuAdopt = new JMenuItem(JDL.L(LOCALE_PREFIX + "adoptDefaults", "Adopt Default(s)")));
+        mnuKey.add(mnuAdoptMissing = new JMenuItem(JDL.L(LOCALE_PREFIX + "adoptDefaults.missing", "Adopt Defaults of Missing Entries")));
         mnuKey.addSeparator();
-        mnuKey.add(mnuTranslate = new JMenuItem(JDLocale.L(LOCALE_PREFIX + "translate", "Translate with Google")));
-        mnuKey.add(mnuTranslateMissing = new JMenuItem(JDLocale.L(LOCALE_PREFIX + "translate.missing", "Translate Missing Entries with Google")));
+        mnuKey.add(mnuTranslate = new JMenuItem(JDL.L(LOCALE_PREFIX + "translate", "Translate with Google")));
+        mnuKey.add(mnuTranslateMissing = new JMenuItem(JDL.L(LOCALE_PREFIX + "translate.missing", "Translate Missing Entries with Google")));
 
         mnuAdd.addActionListener(this);
         mnuDelete.addActionListener(this);
@@ -326,24 +326,24 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         mnuDelete.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0));
 
         // Entries Menü
-        mnuEntries = new JMenu(JDLocale.L(LOCALE_PREFIX + "entries", "Entries"));
+        mnuEntries = new JMenu(JDL.L(LOCALE_PREFIX + "entries", "Entries"));
         mnuEntries.setEnabled(false);
 
-        mnuEntries.add(mnuShowMissing = new JCheckBoxMenuItem(JDLocale.L(LOCALE_PREFIX + "showMissing", "Show Missing Entries")));
-        mnuEntries.add(mnuColorizeMissing = new JCheckBoxMenuItem(JDLocale.L(LOCALE_PREFIX + "colorizeMissing", "Colorize Missing Entries")));
-        mnuEntries.add(mnuPickMissingColor = new JMenuItem(JDLocale.L(LOCALE_PREFIX + "pickMissingColor", "Pick Color for Missing Entries")));
+        mnuEntries.add(mnuShowMissing = new JCheckBoxMenuItem(JDL.L(LOCALE_PREFIX + "showMissing", "Show Missing Entries")));
+        mnuEntries.add(mnuColorizeMissing = new JCheckBoxMenuItem(JDL.L(LOCALE_PREFIX + "colorizeMissing", "Colorize Missing Entries")));
+        mnuEntries.add(mnuPickMissingColor = new JMenuItem(JDL.L(LOCALE_PREFIX + "pickMissingColor", "Pick Color for Missing Entries")));
         mnuEntries.addSeparator();
-        mnuEntries.add(mnuShowOld = new JCheckBoxMenuItem(JDLocale.L(LOCALE_PREFIX + "showOld", "Show Old Entries")));
-        mnuEntries.add(mnuColorizeOld = new JCheckBoxMenuItem(JDLocale.L(LOCALE_PREFIX + "colorizeOld", "Colorize Old Entries")));
-        mnuEntries.add(mnuPickOldColor = new JMenuItem(JDLocale.L(LOCALE_PREFIX + "pickOldColor", "Pick Color for Old Entries")));
+        mnuEntries.add(mnuShowOld = new JCheckBoxMenuItem(JDL.L(LOCALE_PREFIX + "showOld", "Show Old Entries")));
+        mnuEntries.add(mnuColorizeOld = new JCheckBoxMenuItem(JDL.L(LOCALE_PREFIX + "colorizeOld", "Colorize Old Entries")));
+        mnuEntries.add(mnuPickOldColor = new JMenuItem(JDL.L(LOCALE_PREFIX + "pickOldColor", "Pick Color for Old Entries")));
         mnuEntries.addSeparator();
-        mnuEntries.add(mnuShowDone = new JCheckBoxMenuItem(JDLocale.L(LOCALE_PREFIX + "showDone", "Show Done Entries")));
-        mnuEntries.add(mnuColorizeDone = new JCheckBoxMenuItem(JDLocale.L(LOCALE_PREFIX + "colorizeDone", "Colorize Done Entries")));
-        mnuEntries.add(mnuPickDoneColor = new JMenuItem(JDLocale.L(LOCALE_PREFIX + "pickDoneColor", "Pick Color for Done Entries")));
+        mnuEntries.add(mnuShowDone = new JCheckBoxMenuItem(JDL.L(LOCALE_PREFIX + "showDone", "Show Done Entries")));
+        mnuEntries.add(mnuColorizeDone = new JCheckBoxMenuItem(JDL.L(LOCALE_PREFIX + "colorizeDone", "Colorize Done Entries")));
+        mnuEntries.add(mnuPickDoneColor = new JMenuItem(JDL.L(LOCALE_PREFIX + "pickDoneColor", "Pick Color for Done Entries")));
         mnuEntries.addSeparator();
-        mnuEntries.add(mnuShowDupes = new JMenuItem(JDLocale.L(LOCALE_PREFIX + "showDupes", "Show Dupes")));
+        mnuEntries.add(mnuShowDupes = new JMenuItem(JDL.L(LOCALE_PREFIX + "showDupes", "Show Dupes")));
         mnuEntries.addSeparator();
-        mnuEntries.add(mnuOpenSearchDialog = new JMenuItem(JDLocale.L(LOCALE_PREFIX + "openSearchDialog", "Open Search Dialog")));
+        mnuEntries.add(mnuOpenSearchDialog = new JMenuItem(JDL.L(LOCALE_PREFIX + "openSearchDialog", "Open Search Dialog")));
 
         mnuShowMissing.setSelected(showMissing);
         mnuColorizeMissing.setSelected(colorizeMissing);
@@ -384,11 +384,11 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         // Context Menü
         mnuContextPopup = new JPopupMenu();
 
-        mnuContextPopup.add(mnuContextDelete = new JMenuItem(JDLocale.L(LOCALE_PREFIX + "deleteKeys", "Delete Key(s)")));
-        mnuContextPopup.add(mnuContextClear = new JMenuItem(JDLocale.L(LOCALE_PREFIX + "clearValues", "Clear Value(s)")));
+        mnuContextPopup.add(mnuContextDelete = new JMenuItem(JDL.L(LOCALE_PREFIX + "deleteKeys", "Delete Key(s)")));
+        mnuContextPopup.add(mnuContextClear = new JMenuItem(JDL.L(LOCALE_PREFIX + "clearValues", "Clear Value(s)")));
         mnuContextPopup.addSeparator();
-        mnuContextPopup.add(mnuContextAdopt = new JMenuItem(JDLocale.L(LOCALE_PREFIX + "adoptDefaults", "Adopt Default(s)")));
-        mnuContextPopup.add(mnuContextTranslate = new JMenuItem(JDLocale.L(LOCALE_PREFIX + "translate", "Translate with Google")));
+        mnuContextPopup.add(mnuContextAdopt = new JMenuItem(JDL.L(LOCALE_PREFIX + "adoptDefaults", "Adopt Default(s)")));
+        mnuContextPopup.add(mnuContextTranslate = new JMenuItem(JDL.L(LOCALE_PREFIX + "translate", "Translate with Google")));
 
         mnuContextDelete.addActionListener(this);
         mnuContextClear.addActionListener(this);
@@ -469,12 +469,12 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
 
         } else if (e.getSource() == mnuAdd) {
 
-            String[] result = TwoTextFieldDialog.showDialog(SimpleGUI.CURRENTGUI, JDLocale.L(LOCALE_PREFIX + "addKey.title", "Add new key"), JDLocale.L(LOCALE_PREFIX + "addKey.message1", "Type in the name of the key:"), JDLocale.L(LOCALE_PREFIX + "addKey.message2", "Type in the translated message of the key:"), "", "");
+            String[] result = TwoTextFieldDialog.showDialog(SimpleGUI.CURRENTGUI, JDL.L(LOCALE_PREFIX + "addKey.title", "Add new key"), JDL.L(LOCALE_PREFIX + "addKey.message1", "Type in the name of the key:"), JDL.L(LOCALE_PREFIX + "addKey.message2", "Type in the translated message of the key:"), "", "");
             if (result[0].equals("")) return;
             result[0] = result[0].toLowerCase();
             for (KeyInfo ki : data) {
                 if (ki.getKey().equals(result[0])) {
-                    UserIO.getInstance().requestMessageDialog(JDLocale.LF(LOCALE_PREFIX + "addKey.error.message", "The key '%s' is already in use!", result[0]));
+                    UserIO.getInstance().requestMessageDialog(JDL.LF(LOCALE_PREFIX + "addKey.error.message", "The key '%s' is already in use!", result[0]));
                     return;
                 }
             }
@@ -572,7 +572,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
 
         } else if (e.getSource() == mnuPickMissingColor) {
 
-            Color newColor = JColorChooser.showDialog(this, JDLocale.L(LOCALE_PREFIX + "pickMissingColor", "Pick Color for Missing Entries"), colorMissing);
+            Color newColor = JColorChooser.showDialog(this, JDL.L(LOCALE_PREFIX + "pickMissingColor", "Pick Color for Missing Entries"), colorMissing);
             if (newColor != null) {
                 colorMissing = newColor;
                 subConfig.setProperty(PROPERTY_MISSING_COLOR, colorMissing);
@@ -585,7 +585,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
 
         } else if (e.getSource() == mnuPickOldColor) {
 
-            Color newColor = JColorChooser.showDialog(this, JDLocale.L(LOCALE_PREFIX + "pickOldColor", "Pick Color for Old Entries"), colorOld);
+            Color newColor = JColorChooser.showDialog(this, JDL.L(LOCALE_PREFIX + "pickOldColor", "Pick Color for Old Entries"), colorOld);
             if (newColor != null) {
                 colorOld = newColor;
                 subConfig.setProperty(PROPERTY_OLD_COLOR, colorOld);
@@ -598,7 +598,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
 
         } else if (e.getSource() == mnuPickDoneColor) {
 
-            Color newColor = JColorChooser.showDialog(this, JDLocale.L(LOCALE_PREFIX + "pickDoneColor", "Pick Color for Done Entries"), colorDone);
+            Color newColor = JColorChooser.showDialog(this, JDL.L(LOCALE_PREFIX + "pickDoneColor", "Pick Color for Done Entries"), colorDone);
             if (newColor != null) {
                 colorDone = newColor;
                 subConfig.setProperty(PROPERTY_DONE_COLOR, colorDone);
@@ -641,10 +641,10 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
             ConfigEntry ce, conditionEntry;
             ConfigContainer container = new ConfigContainer();
 
-            container.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_SVN_ACCESS_ANONYMOUS, JDLocale.L(LOCALE_PREFIX + "svn.access.anonymous2", "Anonymous SVN Access (You can't commit your changes without a SVN account!)")).setDefaultValue(true));
-            container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, PROPERTY_SVN_ACCESS_USER, JDLocale.L(LOCALE_PREFIX + "svn.access.user", "SVN Username")));
+            container.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_SVN_ACCESS_ANONYMOUS, JDL.L(LOCALE_PREFIX + "svn.access.anonymous2", "Anonymous SVN Access (You can't commit your changes without a SVN account!)")).setDefaultValue(true));
+            container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, PROPERTY_SVN_ACCESS_USER, JDL.L(LOCALE_PREFIX + "svn.access.user", "SVN Username")));
             ce.setEnabledCondidtion(conditionEntry, "==", false);
-            container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, subConfig, PROPERTY_SVN_ACCESS_PASS, JDLocale.L(LOCALE_PREFIX + "svn.access.pass", "SVN Password")));
+            container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, subConfig, PROPERTY_SVN_ACCESS_PASS, JDL.L(LOCALE_PREFIX + "svn.access.pass", "SVN Password")));
             ce.setEnabledCondidtion(conditionEntry, "==", false);
             container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
             container.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
@@ -655,7 +655,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
 
                 }
 
-            }, JDLocale.L(LOCALE_PREFIX + "svn.checkOut", "CheckOut SVN now (This may take several seconds ...)")));
+            }, JDL.L(LOCALE_PREFIX + "svn.checkOut", "CheckOut SVN now (This may take several seconds ...)")));
             SimpleGUI.displayConfig(container, 0);
 
         } else if (e.getSource() == mnuSVNCheckOutNow) {
@@ -670,7 +670,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
 
     private boolean saveChanges() {
         if (changed) {
-            int res = JOptionPane.showConfirmDialog(this, JDLocale.L(LOCALE_PREFIX + "changed.message", "Language File changed! Save changes?"), JDLocale.L(LOCALE_PREFIX + "changed.title", "Save changes?"), JOptionPane.YES_NO_CANCEL_OPTION);
+            int res = JOptionPane.showConfirmDialog(this, JDL.L(LOCALE_PREFIX + "changed.message", "Language File changed! Save changes?"), JDL.L(LOCALE_PREFIX + "changed.title", "Save changes?"), JOptionPane.YES_NO_CANCEL_OPTION);
             if (res == JOptionPane.CANCEL_OPTION) {
               
                 return false;
@@ -703,7 +703,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         if (!dirLanguages.exists()) dirLanguages.mkdirs();
         if (!dirWorkingCopy.exists()) dirWorkingCopy.mkdirs();
 
-        final ProgressController progress = new ProgressController(JDLocale.L(LOCALE_PREFIX + "svn.updating", "Updating SVN: Please wait"));
+        final ProgressController progress = new ProgressController(JDL.L(LOCALE_PREFIX + "svn.updating", "Updating SVN: Please wait"));
         progress.setIndeterminate(true);
         try {
             Subversion svn;
@@ -718,7 +718,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
             svn.getBroadcaster().addListener(new MessageListener() {
 
                 public void onMessage(MessageEvent event) {
-                    progress.setStatusText(JDLocale.L(LOCALE_PREFIX + "svn.updating", "Updating SVN: Please wait") + ": " + event.getMessage().replace(dirWorkingCopy.getParentFile().getAbsolutePath(), ""));
+                    progress.setStatusText(JDL.L(LOCALE_PREFIX + "svn.updating", "Updating SVN: Please wait") + ": " + event.getMessage().replace(dirWorkingCopy.getParentFile().getAbsolutePath(), ""));
 
                 }
 
@@ -728,21 +728,21 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
             } catch (Exception e) {
 
                 JDLogger.exception(e);
-                UserIO.getInstance().requestMessageDialog(JDLocale.L(LOCALE_PREFIX + "error.title", "Error occured"), JDLocale.LF(LOCALE_PREFIX + "error.updatesource.message", "Error while updating source:\r\n %s", JDLogger.getStackTrace(e)));
+                UserIO.getInstance().requestMessageDialog(JDL.L(LOCALE_PREFIX + "error.title", "Error occured"), JDL.LF(LOCALE_PREFIX + "error.updatesource.message", "Error while updating source:\r\n %s", JDLogger.getStackTrace(e)));
             }
             try {
                 svnLanguageDir.update(dirLanguages, null);
             } catch (Exception e) {
                 JDLogger.exception(e);
-                UserIO.getInstance().requestMessageDialog(JDLocale.L(LOCALE_PREFIX + "error.title", "Error occured"), JDLocale.LF(LOCALE_PREFIX + "error.updatelanguages.message", "Error while updating languages:\r\n %s", JDLogger.getStackTrace(e)));
+                UserIO.getInstance().requestMessageDialog(JDL.L(LOCALE_PREFIX + "error.title", "Error occured"), JDL.LF(LOCALE_PREFIX + "error.updatelanguages.message", "Error while updating languages:\r\n %s", JDLogger.getStackTrace(e)));
 
             }
-            progress.setStatusText(JDLocale.L(LOCALE_PREFIX + "svn.updating.ready", "Updating SVN: Complete"));
+            progress.setStatusText(JDL.L(LOCALE_PREFIX + "svn.updating.ready", "Updating SVN: Complete"));
             progress.finalize(2 * 1000l);
         } catch (SVNException e) {
             JDLogger.exception(e);
             progress.setColor(Color.RED);
-            progress.setStatusText(JDLocale.L(LOCALE_PREFIX + "svn.updating.error", "Updating SVN: Error!"));
+            progress.setStatusText(JDL.L(LOCALE_PREFIX + "svn.updating.error", "Updating SVN: Error!"));
             progress.finalize(5 * 1000l);
         }
         updatingInProgress = false;
@@ -759,7 +759,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
     private String getLanguageKey() {
         if (lngKey == null) {
             String[] localeKeys = new String[] { "da", "de", "fi", "fr", "el", "hi", "it", "ja", "ko", "hr", "nl", "no", "pl", "pt", "ro", "ru", "sv", "es", "cs", "en", "ar" };
-            Object newKey = JOptionPane.showInputDialog(this, JDLocale.L("plugins.optional.langfileeditor.translatedialog.message", "Choose Languagekey:"), JDLocale.L("plugins.optional.langfileeditor.translatedialog.title", "Languagekey"), JOptionPane.QUESTION_MESSAGE, null, localeKeys, null);
+            Object newKey = JOptionPane.showInputDialog(this, JDL.L("plugins.optional.langfileeditor.translatedialog.message", "Choose Languagekey:"), JDL.L("plugins.optional.langfileeditor.translatedialog.title", "Languagekey"), JOptionPane.QUESTION_MESSAGE, null, localeKeys, null);
             lngKey = (newKey == null) ? null : newKey.toString();
         }
         return lngKey;
@@ -768,7 +768,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
     private void translateRow(int row) {
         String def = tableModel.getValueAt(row, 1);
         if (!def.equals("")) {
-            String res = JDLocale.translate(lngKey, def);
+            String res = JDL.translate(lngKey, def);
             if (res != null) tableModel.setValueAt(res, row, 2);
         }
     }
@@ -825,13 +825,13 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
             File noUpdateFile = new File(file.getAbsolutePath() + ".noupdate");
             if (!noUpdateFile.exists()) noUpdateFile.createNewFile();
         } catch (Exception e) {
-            UserIO.getInstance().requestMessageDialog(JDLocale.LF(LOCALE_PREFIX + "save.error.message", "An error occured while writing the LanguageFile:\n%s", e.getMessage()));
+            UserIO.getInstance().requestMessageDialog(JDL.LF(LOCALE_PREFIX + "save.error.message", "An error occured while writing the LanguageFile:\n%s", e.getMessage()));
             return;
         }
 
 //        if (languageFile.getAbsolutePath() != cmboFile.getText()) cmboFile.setCurrentPath(languageFile);
         changed = false;
-        UserIO.getInstance().requestMessageDialog(JDLocale.L(LOCALE_PREFIX + "save.success.message", "LanguageFile saved successfully!"));
+        UserIO.getInstance().requestMessageDialog(JDL.L(LOCALE_PREFIX + "save.success.message", "LanguageFile saved successfully!"));
     }
 
     private void initLocaleDataComplete() {
@@ -925,12 +925,12 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
 
     private void getSourceEntriesFromFolder() {
 
-        ProgressController progress = new ProgressController(JDLocale.L(LOCALE_PREFIX + "analyzingSource1", "Analyzing Source Folder"));
+        ProgressController progress = new ProgressController(JDL.L(LOCALE_PREFIX + "analyzingSource1", "Analyzing Source Folder"));
         progress.setIndeterminate(true);
         sourceParser = new SrcParser(this.dirWorkingCopy);
         sourceParser.getBroadcaster().addListener(progress);
         sourceParser.parse();
-        progress.setStatusText(JDLocale.L(LOCALE_PREFIX + "analyzingSource.ready", "Analyzing Source Folder: Complete"));
+        progress.setStatusText(JDL.L(LOCALE_PREFIX + "analyzingSource.ready", "Analyzing Source Folder: Complete"));
         progress.finalize(2 * 1000l);
     }
 
@@ -1075,7 +1075,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
 
         private static final long serialVersionUID = -5434313385327397539L;
 
-        private String[] columnNames = { JDLocale.L(LOCALE_PREFIX + "key", "Key"), JDLocale.L(LOCALE_PREFIX + "sourceValue", "Default Value"), JDLocale.L(LOCALE_PREFIX + "languageFileValue", "Language File Value") };
+        private String[] columnNames = { JDL.L(LOCALE_PREFIX + "key", "Key"), JDL.L(LOCALE_PREFIX + "sourceValue", "Default Value"), JDL.L(LOCALE_PREFIX + "languageFileValue", "Language File Value") };
 
         public int getColumnCount() {
             return columnNames.length;
@@ -1131,7 +1131,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
 
     @Override
     public void onHide() {
-        if (changed && JOptionPane.showConfirmDialog(this, JDLocale.L(LOCALE_PREFIX + "changed.message", "Language File changed! Save changes?"), JDLocale.L(LOCALE_PREFIX + "changed.title", "Save changes?"), JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+        if (changed && JOptionPane.showConfirmDialog(this, JDL.L(LOCALE_PREFIX + "changed.message", "Language File changed! Save changes?"), JDL.L(LOCALE_PREFIX + "changed.title", "Save changes?"), JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
             saveLanguageFile(languageFile);
         }
     }

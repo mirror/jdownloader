@@ -25,7 +25,7 @@ import javax.swing.JFileChooser;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 public class BrowseFile extends JPanel implements ActionListener {
@@ -137,7 +137,7 @@ public class BrowseFile extends JPanel implements ActionListener {
         txtInput = new JTextField();
         txtInput.setEditable(editable);
         txtInput.addActionListener(this);
-        btnBrowse = new JButton(JDLocale.L("gui.btn_select", "Browse"));
+        btnBrowse = new JButton(JDL.L("gui.btn_select", "Browse"));
         btnBrowse.addActionListener(this);
 
         add(txtInput);

@@ -37,9 +37,9 @@ import jd.nutils.io.JDIO;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import jd.utils.Replacer;
+import jd.utils.locale.JDL;
 
 public class JDInfoFileWriter extends PluginOptional implements ControlListener {
 
@@ -88,7 +88,7 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
 
     // @Override
     public String getHost() {
-        return JDLocale.L("plugins.optional.infoFileWriter.name", "Info File Writer");
+        return JDL.L("plugins.optional.infoFileWriter.name", "Info File Writer");
     }
 
     // @Override
@@ -108,13 +108,13 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
     }
 
     public void initConfig() {
-        config.addEntry(cmbVars = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, "VARS", Replacer.getKeyList(), JDLocale.L("plugins.optional.infoFileWriter.variables", "Available variables")));
+        config.addEntry(cmbVars = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, "VARS", Replacer.getKeyList(), JDL.L("plugins.optional.infoFileWriter.variables", "Available variables")));
 
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDLocale.L("plugins.optional.infoFileWriter.insertKey", "Insert selected Key into the Content")));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDL.L("plugins.optional.infoFileWriter.insertKey", "Insert selected Key into the Content")));
 
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, PARAM_FILENAME, JDLocale.L("plugins.optional.infoFileWriter.filename", "Filename:")).setDefaultValue(FILENAME_DEFAULT));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, PARAM_FILENAME, JDL.L("plugins.optional.infoFileWriter.filename", "Filename:")).setDefaultValue(FILENAME_DEFAULT));
 
-        config.addEntry(txtInfo = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, subConfig, PARAM_INFO_STRING, JDLocale.L("plugins.optional.infoFileWriter.content", "Content:")).setDefaultValue(INFO_STRING_DEFAULT));
+        config.addEntry(txtInfo = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, subConfig, PARAM_INFO_STRING, JDL.L("plugins.optional.infoFileWriter.content", "Content:")).setDefaultValue(INFO_STRING_DEFAULT));
     }
 
     // @Override

@@ -33,13 +33,13 @@ import jd.http.Browser;
 import jd.nutils.Threader;
 import jd.nutils.jobber.JDRunnable;
 import jd.parser.Regex;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 public class RouterInfoCollector {
     public final static String PROPERTY_SHOW_ROUTERINFO_DIALOG = "PROPERTY_SHOW_ROUTERINFO_DIALOG";
-    public final static String RECONNECTTYPE_LIVE_HEADER = JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl");
-    public final static String RECONNECTTYPE_CLR = JDLocale.L("modules.reconnect.types.clr", "CLR Script");
+    public final static String RECONNECTTYPE_LIVE_HEADER = JDL.L("modules.reconnect.types.liveheader", "LiveHeader/Curl");
+    public final static String RECONNECTTYPE_CLR = JDL.L("modules.reconnect.types.clr", "CLR Script");
     protected static String reconnectMethode = null;
     protected static String reconnectMethodeClr = null;
     public final static int RInfo_UPNP = 1 << 1;

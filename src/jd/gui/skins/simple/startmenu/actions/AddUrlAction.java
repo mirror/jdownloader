@@ -23,8 +23,8 @@ import java.awt.event.ActionEvent;
 import jd.controlling.DistributeData;
 import jd.gui.UserIO;
 import jd.parser.html.HTMLParser;
-import jd.utils.JDLocale;
 import jd.utils.JDTheme;
+import jd.utils.locale.JDL;
 
 public class AddUrlAction extends StartAction {
 
@@ -49,7 +49,7 @@ public class AddUrlAction extends StartAction {
 
         }
 
-        String link = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN | UserIO.STYLE_LARGE, JDLocale.L("gui.dialog.addurl.title", "Add URL(s)"), JDLocale.L("gui.dialog.addurl.message", "Add a URL(s). JDownloader will load and parse them for further links."), def, JDTheme.II("gui.images.taskpanes.linkgrabber", 32, 32), JDLocale.L("gui.dialog.addurl.okoption_parse", "Parse URL(s)"), null);
+        String link = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN | UserIO.STYLE_LARGE, JDL.L("gui.dialog.addurl.title", "Add URL(s)"), JDL.L("gui.dialog.addurl.message", "Add a URL(s). JDownloader will load and parse them for further links."), def, JDTheme.II("gui.images.taskpanes.linkgrabber", 32, 32), JDL.L("gui.dialog.addurl.okoption_parse", "Parse URL(s)"), null);
         if (link == null || link.length() == 0) return;
         new DistributeData(link, false).start();
     }

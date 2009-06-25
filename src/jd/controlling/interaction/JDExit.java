@@ -20,8 +20,8 @@ import java.io.Serializable;
 
 import jd.gui.UserIO;
 import jd.nutils.JDFlags;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 /**
  * Diese Interaktion beendet den JDownloader.
@@ -35,7 +35,7 @@ public class JDExit extends Interaction implements Serializable {
     @Override
     public boolean doInteraction(Object arg) {
         logger.info("Starting Exit");
-        int ret = UserIO.getInstance().requestConfirmDialog(0, JDLocale.L("interaction.jdexit.title", "JD will close itself!"), JDLocale.L("interaction.jdexit.message2", "JD will close itself if you do not abort!"), UserIO.getInstance().getIcon(UserIO.ICON_WARNING), null, null);
+        int ret = UserIO.getInstance().requestConfirmDialog(0, JDL.L("interaction.jdexit.title", "JD will close itself!"), JDL.L("interaction.jdexit.message2", "JD will close itself if you do not abort!"), UserIO.getInstance().getIcon(UserIO.ICON_WARNING), null, null);
         if (JDFlags.hasSomeFlags(ret, UserIO.RETURN_OK, UserIO.RETURN_COUNTDOWN_TIMEOUT)) {
             JDUtilities.getController().exit();
         }
@@ -44,7 +44,7 @@ public class JDExit extends Interaction implements Serializable {
 
     @Override
     public String getInteractionName() {
-        return JDLocale.L("interaction.jdexit.name", "JD Beenden");
+        return JDL.L("interaction.jdexit.name", "JD Beenden");
     }
 
     @Override
@@ -53,7 +53,7 @@ public class JDExit extends Interaction implements Serializable {
 
     @Override
     public String toString() {
-        return JDLocale.L("interaction.jdexit.name", "JD Beenden");
+        return JDL.L("interaction.jdexit.name", "JD Beenden");
     }
 
 }

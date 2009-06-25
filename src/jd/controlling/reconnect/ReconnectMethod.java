@@ -22,8 +22,8 @@ import jd.config.ConfigContainer;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 public abstract class ReconnectMethod {
 
@@ -53,7 +53,7 @@ public abstract class ReconnectMethod {
     public final boolean doReconnect() {
         retries++;
         ProgressController progress = new ProgressController(this.toString(), 10);
-        progress.setStatusText(JDLocale.L("reconnect.progress.1_retries", "Reconnect #") + retries);
+        progress.setStatusText(JDL.L("reconnect.progress.1_retries", "Reconnect #") + retries);
 
         int waittime = JDUtilities.getConfiguration().getIntegerProperty(PARAM_IPCHECKWAITTIME, 0);
         int maxretries = JDUtilities.getConfiguration().getIntegerProperty(PARAM_RETRIES, 0);
@@ -63,7 +63,7 @@ public abstract class ReconnectMethod {
         String preIp = JDUtilities.getIPAddress(null);
 
         progress.increase(1);
-        progress.setStatusText(JDLocale.L("reconnect.progress.2_oldIP", "Reconnect Old IP:") + preIp);
+        progress.setStatusText(JDL.L("reconnect.progress.2_oldIP", "Reconnect Old IP:") + preIp);
         if (!runCommands(progress)) {
             logger.severe("An error occured while processing the reconnect ... Terminating");
             return false;
@@ -74,7 +74,7 @@ public abstract class ReconnectMethod {
         } catch (InterruptedException e) {
         }
         String afterIP = JDUtilities.getIPAddress(null);
-        progress.setStatusText(JDLocale.LF("reconnect.progress.3_ipcheck", "Reconnect New IP: %s / %s", afterIP, preIp));
+        progress.setStatusText(JDL.LF("reconnect.progress.3_ipcheck", "Reconnect New IP: %s / %s", afterIP, preIp));
         long endTime = System.currentTimeMillis() + waitForIp * 1000;
         logger.info("Wait " + waitForIp + " sec for new ip");
         while (System.currentTimeMillis() <= endTime && (afterIP.equals(preIp) || afterIP.equals("offline"))) {
@@ -84,7 +84,7 @@ public abstract class ReconnectMethod {
             } catch (InterruptedException e) {
             }
             afterIP = JDUtilities.getIPAddress(null);
-            progress.setStatusText(JDLocale.LF("reconnect.progress.3_ipcheck", "Reconnect New IP: %s / %s", afterIP, preIp));
+            progress.setStatusText(JDL.LF("reconnect.progress.3_ipcheck", "Reconnect New IP: %s / %s", afterIP, preIp));
         }
 
         logger.finer("IP before: " + preIp + " after: " + afterIP);
@@ -98,7 +98,7 @@ public abstract class ReconnectMethod {
                 } catch (InterruptedException e) {
                 }
                 afterIP = JDUtilities.getIPAddress(null);
-                progress.setStatusText(JDLocale.LF("reconnect.progress.3_ipcheck", "Reconnect New IP: %s / %s", preIp, afterIP));
+                progress.setStatusText(JDL.LF("reconnect.progress.3_ipcheck", "Reconnect New IP: %s / %s", preIp, afterIP));
             }
         }
 
@@ -107,7 +107,7 @@ public abstract class ReconnectMethod {
             /* nun IP validieren */
             if (!JDUtilities.validateIP(afterIP)) {
                 logger.warning("IP " + afterIP + " was filtered by mask: " + SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_MASK, "\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).)" + "{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b"));
-                JDUtilities.getGUI().displayMiniWarning(JDLocale.L("reconnect.ipfiltered.warning.title", "Wrong IP!"), JDLocale.LF("reconnect.ipfiltered.warning.short", "Die IP %s wurde als nicht erlaubt identifiziert", afterIP));
+                JDUtilities.getGUI().displayMiniWarning(JDL.L("reconnect.ipfiltered.warning.title", "Wrong IP!"), JDL.LF("reconnect.ipfiltered.warning.short", "Die IP %s wurde als nicht erlaubt identifiziert", afterIP));
                 afterIP = "offline";
             } else {
                 progress.finalize();

@@ -26,9 +26,9 @@ import jd.controlling.DownloadInformations;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.components.DownloadView.JDProgressBar;
 import jd.nutils.Formatter;
-import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 public class DownloadTaskPane extends TaskPanel {
 
@@ -78,16 +78,16 @@ public class DownloadTaskPane extends TaskPanel {
             public Object runSave() {
                 dlc.getDownloadStatus(ds);
                 speedm = JDUtilities.getController().getSpeedMeter();
-                packages.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.packages", "%s Packages", ds.getPackagesCount()));
-                downloadlinks.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.downloadLinks", "%s Links", ds.getDownloadCount()));
-                totalsize.setText(JDLocale.LF("gui.taskpanes.download.downloadlist.size", "Total size: %s", Formatter.formatReadable(ds.getTotalDownloadSize())));
+                packages.setText(JDL.LF("gui.taskpanes.download.downloadlist.packages", "%s Packages", ds.getPackagesCount()));
+                downloadlinks.setText(JDL.LF("gui.taskpanes.download.downloadlist.downloadLinks", "%s Links", ds.getDownloadCount()));
+                totalsize.setText(JDL.LF("gui.taskpanes.download.downloadlist.size", "Total size: %s", Formatter.formatReadable(ds.getTotalDownloadSize())));
                 progress.setMaximum(ds.getTotalDownloadSize());
                 progress.setValue(ds.getCurrentDownloadSize());
                 progress.setToolTipText(Math.round((ds.getCurrentDownloadSize() * 10000.0) / ds.getTotalDownloadSize()) / 100.0 + "%");
                 if (speedm > 1024) {
-                    speed.setText(JDLocale.LF("gui.taskpanes.download.progress.speed", "Speed: %s", Formatter.formatReadable(speedm) + "/s"));
+                    speed.setText(JDL.LF("gui.taskpanes.download.progress.speed", "Speed: %s", Formatter.formatReadable(speedm) + "/s"));
                     long etanum = speedm == 0 ? 0 : (ds.getTotalDownloadSize() - ds.getCurrentDownloadSize()) / speedm;
-                    eta.setText(JDLocale.LF("gui.taskpanes.download.progress.eta", "ETA: %s", Formatter.formatSeconds(etanum)));
+                    eta.setText(JDL.LF("gui.taskpanes.download.progress.eta", "ETA: %s", Formatter.formatSeconds(etanum)));
                 } else {
                     eta.setText("");
                     speed.setText("");
@@ -98,17 +98,17 @@ public class DownloadTaskPane extends TaskPanel {
     }
 
     private void initGUI() {
-        downloadlist = new JLabel(JDLocale.L("gui.taskpanes.download.downloadlist", "Downloadlist"));
+        downloadlist = new JLabel(JDL.L("gui.taskpanes.download.downloadlist", "Downloadlist"));
         downloadlist.setIcon(JDTheme.II("gui.splash.dllist", 16, 16));
-        packages = new JLabel(JDLocale.LF("gui.taskpanes.download.downloadlist.packages", "%s Package(s)", 0));
-        downloadlinks = new JLabel(JDLocale.LF("gui.taskpanes.download.downloadlist.downloadLinks", "%s Link(s)", 0));
-        totalsize = new JLabel(JDLocale.LF("gui.taskpanes.download.downloadlist.size", "Total size: %s", 0));
-        progresslabel = new JLabel(JDLocale.L("gui.taskpanes.download.progress", "Total progress"));
+        packages = new JLabel(JDL.LF("gui.taskpanes.download.downloadlist.packages", "%s Package(s)", 0));
+        downloadlinks = new JLabel(JDL.LF("gui.taskpanes.download.downloadlist.downloadLinks", "%s Link(s)", 0));
+        totalsize = new JLabel(JDL.LF("gui.taskpanes.download.downloadlist.size", "Total size: %s", 0));
+        progresslabel = new JLabel(JDL.L("gui.taskpanes.download.progress", "Total progress"));
         progresslabel.setIcon(JDTheme.II("gui.images.progress", 16, 16));
         progress = new JDProgressBar();
         progress.setStringPainted(false);
-        speed = new JLabel(JDLocale.LF("gui.taskpanes.download.progress.speed", "Speed: %s", 0));
-        eta = new JLabel(JDLocale.LF("gui.taskpanes.download.progress.eta", "ETA: %s", 0));
+        speed = new JLabel(JDL.LF("gui.taskpanes.download.progress.speed", "Speed: %s", 0));
+        eta = new JLabel(JDL.LF("gui.taskpanes.download.progress.eta", "ETA: %s", 0));
 
         add(downloadlist, D1_LABEL_ICON);
         add(packages, D2_LABEL);

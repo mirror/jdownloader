@@ -25,7 +25,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 
 public class SoGoodNet extends PluginForDecrypt {
 
@@ -44,7 +44,7 @@ public class SoGoodNet extends PluginForDecrypt {
             boolean okay = true;
             for (int i = 0; i < 4; i++) {
 
-                String pass = getUserInput(JDLocale.L("plugins.hoster.general.passwordProtectedInput", "Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:"), param.getDecrypterPassword(), param);
+                String pass = getUserInput(JDL.L("plugins.hoster.general.passwordProtectedInput", "Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:"), param.getDecrypterPassword(), param);
                 String postData = "pass=" + Encoding.urlEncode(pass);
                 br.postPage(parameter, postData);
                 if (br.containsHTML("Wrong password!")) {

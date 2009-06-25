@@ -28,8 +28,8 @@ import jd.gui.skins.simple.JDMenu;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.startmenu.actions.AddonConfiguration;
 import jd.plugins.Plugin;
-import jd.utils.JDLocale;
 import jd.utils.JDTheme;
+import jd.utils.locale.JDL;
 
 public class AddonsMenu extends JStartMenu {
 
@@ -59,7 +59,7 @@ public class AddonsMenu extends JStartMenu {
             if (mis != null) {
                 if (plg.getPlugin().getConfig() != null && plg.getPlugin().getConfig().getEntries().size() > 0) {
                     MenuItem mi;
-                    mis.add(0, mi = new MenuItem(JDLocale.LF("gui.startmenu.addons.config2", "%s's settings", plg.getHost()), -10000));
+                    mis.add(0, mi = new MenuItem(JDL.LF("gui.startmenu.addons.config2", "%s's settings", plg.getHost()), -10000));
                     mi.setProperty("PLUGIN", plg.getPlugin());
                     mi.setIcon(JDTheme.II(plg.getPlugin().getIconKey(), 16, 16));
                     mi.setActionListener(new ActionListener() {

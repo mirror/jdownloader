@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 
 public class FileFactory extends PluginForHost {
 
@@ -238,8 +238,8 @@ public class FileFactory extends PluginForHost {
             return AvailableStatus.FALSE;
         } else {
             if (br.containsHTML("there are currently no free download slots")) {
-                downloadLink.getLinkStatus().setErrorMessage(JDLocale.L("plugins.hoster.filefactorycom.errors.nofreeslots", "No slots free available"));
-                downloadLink.getLinkStatus().setStatusText(JDLocale.L("plugins.hoster.filefactorycom.errors.nofreeslots", "No slots free available"));
+                downloadLink.getLinkStatus().setErrorMessage(JDL.L("plugins.hoster.filefactorycom.errors.nofreeslots", "No slots free available"));
+                downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.filefactorycom.errors.nofreeslots", "No slots free available"));
             } else {
                 if (br.containsHTML("File Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 String fileName = br.getRegex("<title>(.*?) - FileFactory</title>").getMatch(0);

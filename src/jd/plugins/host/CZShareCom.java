@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 
 public class CZShareCom extends PluginForHost {
 
@@ -49,7 +49,7 @@ public class CZShareCom extends PluginForHost {
         String dlurl = downloadLink.getStringProperty("dlurl", null);
         if (captchaurl == null) {
             requestFileInformation(downloadLink);
-            if (!br.containsHTML("value=\"FREE download\"")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.hoster.CZShareCom.nofreeslots", "No free slots available"), 60 * 1000);
+            if (!br.containsHTML("value=\"FREE download\"")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.CZShareCom.nofreeslots", "No free slots available"), 60 * 1000);
             Form down = br.getFormBySubmitvalue("FREE+download");
             if (down == null) br.getFormbyProperty("action", Encoding.urlEncode("http://czshare.com/trust_me.php"));
             if (down == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
@@ -112,7 +112,7 @@ public class CZShareCom extends PluginForHost {
         br.getPage("http://czshare.com/profi/platnost.php");
         if (br.containsHTML("Nemáte žádný platný kredit")) {
             ai.setValid(false);
-            ai.setStatus(JDLocale.L("plugins.hoster.CZShareCom.nocreditleft", "No traffic credit left"));
+            ai.setStatus(JDL.L("plugins.hoster.CZShareCom.nocreditleft", "No traffic credit left"));
             return ai;
         }
         String trafficleft = br.getRegex("Platnost do</td>[^d]*d>(.*?)</td>").getMatch(0);

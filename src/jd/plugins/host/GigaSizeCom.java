@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 
 public class GigaSizeCom extends PluginForHost {
 
@@ -155,7 +155,7 @@ public class GigaSizeCom extends PluginForHost {
         setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("Download-Slots sind besetzt")) {
-            downloadLink.getLinkStatus().setStatusText(JDLocale.L("plugins.hoster.gigasizecom.errors.alreadyloading", "Cannot check, because already loading file"));
+            downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.gigasizecom.errors.alreadyloading", "Cannot check, because already loading file"));
             return AvailableStatus.TRUE;
         }
         String[] dat = br.getRegex("strong>Name</strong>: <b>(.*?)</b></p>.*?<p>Gr.*? <span>(.*?)</span>").getRow(0);

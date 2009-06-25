@@ -32,8 +32,8 @@ import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 public class Reconnecter {
 
@@ -47,7 +47,7 @@ public class Reconnecter {
         boolean newState = !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true);
         JDUtilities.getConfiguration().setProperty(Configuration.PARAM_ALLOW_RECONNECT, newState);
         JDUtilities.getConfiguration().save();
-        if (!newState) JDUtilities.getGUI().displayMiniWarning(JDLocale.L("gui.warning.reconnect.hasbeendisabled", "Reconnect deaktiviert!"), JDLocale.L("gui.warning.reconnect.hasbeendisabled.tooltip", "Um erfolgreich einen Reconnect durchführen zu können muss diese Funktion wieder aktiviert werden."));
+        if (!newState) JDUtilities.getGUI().displayMiniWarning(JDL.L("gui.warning.reconnect.hasbeendisabled", "Reconnect deaktiviert!"), JDL.L("gui.warning.reconnect.hasbeendisabled.tooltip", "Um erfolgreich einen Reconnect durchführen zu können muss diese Funktion wieder aktiviert werden."));
     }
 
     private static boolean checkExternalIPChange() {
@@ -220,7 +220,7 @@ public class Reconnecter {
 
     public static boolean waitForNewIP(long i) {
         hasWaittimeLinks = true;
-        final ProgressController progress = new ProgressController(JDLocale.LF("gui.reconnect.progress.status", "Reconnect running: %s m:s", "0:00s"), 2);
+        final ProgressController progress = new ProgressController(JDL.LF("gui.reconnect.progress.status", "Reconnect running: %s m:s", "0:00s"), 2);
         if (i > 0) {
             i += System.currentTimeMillis();
         }
@@ -231,7 +231,7 @@ public class Reconnecter {
             @Override
             public void run() {
                 while (true) {
-                    progress.setStatusText(JDLocale.LF("gui.reconnect.progress.status", "Reconnect running: %s m:s", Formatter.formatSeconds((System.currentTimeMillis() - startTime) / 1000)));
+                    progress.setStatusText(JDL.LF("gui.reconnect.progress.status", "Reconnect running: %s m:s", Formatter.formatSeconds((System.currentTimeMillis() - startTime) / 1000)));
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
@@ -254,9 +254,9 @@ public class Reconnecter {
 
         if (!ret) {
             progress.setColor(Color.RED);
-            progress.setStatusText(JDLocale.L("gui.reconnect.progress.status.failed", "Reconnect failed"));
+            progress.setStatusText(JDL.L("gui.reconnect.progress.status.failed", "Reconnect failed"));
         } else {
-            progress.setStatusText(JDLocale.L("gui.reconnect.progress.status.success", "Reconnect successfull"));
+            progress.setStatusText(JDL.L("gui.reconnect.progress.status.success", "Reconnect successfull"));
         }
         hasWaittimeLinks = false;
         progress.finalize(4000);

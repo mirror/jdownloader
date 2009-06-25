@@ -27,7 +27,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.utils.JDLocale;
+import jd.utils.locale.JDL;
 
 public class ZidduCom extends PluginForHost {
 
@@ -59,7 +59,7 @@ public class ZidduCom extends PluginForHost {
          */
         if (!dl.getConnection().isContentDisposition()) {
         	dl.getConnection().disconnect();
-        	throw new PluginException(LinkStatus.ERROR_CAPTCHA, JDLocale.L("downloadlink.status.error.captcha_wrong", "Captcha wrong"));
+        	throw new PluginException(LinkStatus.ERROR_CAPTCHA, JDL.L("downloadlink.status.error.captcha_wrong", "Captcha wrong"));
         }
         dl.startDownload();
     }
