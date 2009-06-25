@@ -618,6 +618,7 @@ public class JDInit {
         new HostPluginWrapper("ulozto.net", "UlozToNet", "http://[\\w\\.]*?(ulozto\\.net|uloz\\.to)/.+");
         new HostPluginWrapper("FisierulMeu.Ro", "FisierulMeuRo", "http://[\\w\\.]*?fisierulmeu\\.ro/.+/.+\\.html");
         new HostPluginWrapper("Dump.Ro", "DumpRo", "http://[\\w\\.]*?dump\\.ro/[0-9A-Za-z/\\-\\.\\?\\=\\&]+");
+        new HostPluginWrapper("furk.net", "FurkNet", "http(s)://[\\w\\.]*?furk\\.net/.+[/0-9a-zA-Z]+.html");
 
         // Hoster from Extern
         new HostPluginWrapper("iFolder.ru", "IfolderRu", "http://[\\-\\w\\.]*?ifolder\\.ru/\\d+");
