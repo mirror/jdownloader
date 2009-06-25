@@ -50,9 +50,9 @@ public class FilePackageInfo extends JTabbedPanel implements ActionListener {
     private ComboBrowseFile brwSaveTo;
 
     private JDTextField txtComment;
-
+    private JDTextField txtCommentDl;
     private JDTextField txtName;
-
+    private JDTextField txtPasswordDl;
     private JDTextField txtPassword;
 
     private JCheckBox chbExtract;
@@ -87,7 +87,7 @@ public class FilePackageInfo extends JTabbedPanel implements ActionListener {
 
     private JLabel speed;
 
-    private JLabel lblSize;
+    private JDTextField txtSize;
 
     private JDTextField txtURL;
 
@@ -227,8 +227,15 @@ public class FilePackageInfo extends JTabbedPanel implements ActionListener {
         panel.add(txtURL = new JDTextField(true), "growx, span 2");
         txtURL.setEditable(false);
         panel.add(new JLabel(JDLocale.L("gui.fileinfopanel.linktab.filesize", "Filesize")));
-        panel.add(lblSize = new JLabel(""), "growx, span 2");
-
+        panel.add(txtSize = new JDTextField(true), "growx, span 2");
+        txtSize.setEditable(false);
+        panel.add(new JLabel(JDLocale.L("gui.fileinfopanel.linktab.comment", "Comment")));
+        panel.add(txtCommentDl = new JDTextField(true), "growx, span 2");
+        txtCommentDl.setEditable(false);
+        panel.add(new JLabel(JDLocale.L("gui.fileinfopanel.linktab.password", "Password")));
+        panel.add(txtPasswordDl = new JDTextField(true), "growx, span 2");
+        txtPasswordDl.setEditable(false);
+      
         return panel;
     }
 
@@ -289,6 +296,16 @@ public class FilePackageInfo extends JTabbedPanel implements ActionListener {
                             FilePackageInfo.this.progressBarDownloadLink.setMaximums(new long[] { 10 });
                             FilePackageInfo.this.progressBarDownloadLink.setValues(new long[] { 0 });
                         }
+                        if (downloadLink.getSourcePluginComment() != null && downloadLink.getSourcePluginComment().trim().length() > 0) {
+                            txtCommentDl.setText(downloadLink.getSourcePluginComment());
+                        } else {
+                            txtCommentDl.setText(downloadLink.getFilePackage().getComment());
+                        }
+                        if (downloadLink.getSourcePluginPasswordList() != null && downloadLink.getSourcePluginPasswordList().size() > 0) {
+                            txtPasswordDl.setText(downloadLink.getSourcePluginPasswordList() + "");
+                        } else {
+                            txtPasswordDl.setText(downloadLink.getFilePackage().getPassword());
+                        }
 
                         if (downloadLink.getDownloadSpeed() <= 0) {
                             eta.setVisible(false);
@@ -344,7 +361,7 @@ public class FilePackageInfo extends JTabbedPanel implements ActionListener {
 
             hosterlabel.setToolTipText(downloadLink.getHost());
             typeicon.setToolTipText(downloadLink.getHost());
-            this.lblSize.setText(Formatter.formatReadable(downloadLink.getDownloadSize()));
+            this.txtSize.setText(Formatter.formatReadable(downloadLink.getDownloadSize()));
             if (downloadLink.getLinkType() == DownloadLink.LINKTYPE_NORMAL) {
                 this.txtURL.setText(downloadLink.getBrowserUrl());
             } else {
