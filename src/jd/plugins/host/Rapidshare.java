@@ -17,11 +17,8 @@
 package jd.plugins.host;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
@@ -46,7 +43,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.RAFDownload;
-import jd.utils.JDUtilities;
 import jd.utils.SnifferException;
 import jd.utils.Sniffy;
 import jd.utils.locale.JDL;
@@ -498,29 +494,6 @@ public class Rapidshare extends PluginForHost {
     // @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         try {
-            if (account.getBooleanProperty("PREMCOLLECTOR", false)) {
-
-                br.postPage("https://ssl.rapidshare.com/cgi-bin/premiumzone.cgi", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&showlogs=1");
-                SimpleDateFormat df = new SimpleDateFormat("E, dd. MMM yyyy", Locale.ENGLISH);
-                String pattern = "<td>" + df.format(new Date()) + "</td><td>" + "(.*?)" + "</td><td>\\d+ KB</td></tr>";
-                String myip = JDUtilities.getLatestIP();
-                String[] matches = br.getRegex(pattern).getColumn(0);
-                ArrayList<String> uips = new ArrayList<String>();
-                uips.add(new Regex(myip, "(.*?\\.)\\.*").getMatch(0));
-                for (String ip : matches) {
-                    ip = new Regex(ip, "(.*?\\.)\\.*").getMatch(0);
-                    if (!uips.contains(ip)) {
-                        uips.add(ip);
-                    }
-                }
-                if (uips.size() > 2) {
-                    logger.severe("Premaccount disabled due to fraud protection");
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Premaccount disabled due to fraud protection", LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE);
-
-                }
-
-            }
-
             if (downloadLink.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
                 if (Sniffy.hasSniffer()) throw new SnifferException();
             }

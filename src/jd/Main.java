@@ -72,7 +72,6 @@ import jd.nutils.svn.Subversion;
 import jd.update.FileUpdate;
 import jd.update.WebUpdater;
 import jd.utils.CheckJava;
-
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.MacOSController;
@@ -163,11 +162,8 @@ public class Main {
                 LOGGER.info("Browser DEBUG Modus aktiv");
             } else if (p.equalsIgnoreCase("-nodevupdate")) {
                 JDInitFlags.NO_DEV_UPDATE = true;
-
             } else if (p.equalsIgnoreCase("-trdebug")) {
-
                 JDL.DEBUG = true;
-
                 LOGGER.info("Translation DEBUG Modus aktiv");
             } else if (p.equalsIgnoreCase("-rfb")) {
                 JDInitFlags.SWITCH_RETURNED_FROM_UPDATE = true;

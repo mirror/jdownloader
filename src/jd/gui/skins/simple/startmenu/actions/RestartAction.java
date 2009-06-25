@@ -33,13 +33,7 @@ public class RestartAction extends StartAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        boolean doIt = true;
-        if (!SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
-            doIt = SimpleGUI.CURRENTGUI.showConfirmDialog(JDL.L("sys.ask.rlyrestart", "Wollen Sie jDownloader wirklich neustarten?"));
-        } else {
-            doIt = true;
-        }
-        if (doIt) {
+        if (SimpleGUI.CURRENTGUI.showConfirmDialog(JDL.L("sys.ask.rlyrestart", "Wollen Sie jDownloader wirklich neustarten?"))) {
             SimpleGUI.CURRENTGUI.getContentPane().getRightPanel().onHide();
             SimpleGuiUtils.saveLastLocation(SimpleGUI.CURRENTGUI, null);
             SimpleGuiUtils.saveLastDimension(SimpleGUI.CURRENTGUI, null);

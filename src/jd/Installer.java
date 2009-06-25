@@ -48,7 +48,6 @@ import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
 import jd.nutils.nativeintegration.LocaleBrowser;
 import jd.utils.JDFileReg;
-import jd.utils.JDGeoCode;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;

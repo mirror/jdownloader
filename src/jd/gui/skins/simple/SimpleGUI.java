@@ -972,19 +972,12 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
 
     public void closeWindow() {
         if (!OSDetector.isMac()) {
-            boolean doIt;
-            if (!SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
-                doIt = showConfirmDialog(JDL.L("sys.ask.rlyclose", "Wollen Sie jDownloader wirklich schließen?"));
-            } else {
-                doIt = true;
-            }
-            if (doIt) {
+            if (showConfirmDialog(JDL.L("sys.ask.rlyclose", "Wollen Sie jDownloader wirklich schließen?"))) {
                 contentPanel.getRightPanel().onHide();
                 SimpleGuiUtils.saveLastLocation(this, null);
                 SimpleGuiUtils.saveLastDimension(this, null);
                 SimpleGuiConstants.GUI_CONFIG.save();
                 JDUtilities.getController().exit();
-
             }
         } else {
             this.setVisible(false);

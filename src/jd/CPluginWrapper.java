@@ -37,7 +37,6 @@ public class CPluginWrapper extends PluginWrapper {
 
     public CPluginWrapper(String host, String className, String patternSupported) {
         this(host, host, "jd.plugins.a.", className, patternSupported, 0);
-        if (loadPlugin() != null) C_WRAPPER.add(this);
     }
 
     public PluginsC getPlugin() {
