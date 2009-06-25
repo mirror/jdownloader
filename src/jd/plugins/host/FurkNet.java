@@ -1,6 +1,7 @@
 package jd.plugins.host;
 
 import jd.PluginWrapper;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
@@ -32,8 +33,15 @@ public class FurkNet extends PluginForHost {
         form.remove(null);
         br.setFollowRedirects(false);
         dl = br.openDownload(link, form, false, 1);
+        URLConnectionAdapter con = dl.getConnection();
+        if (!con.isContentDisposition()) {
+            br.followConnection();
+            if (br.containsHTML("Slots limit for free downloads")) {
+                con.disconnect();
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60000);
+            }
+        }
         dl.startDownload();
-
     }
 
     @Override
@@ -45,8 +53,7 @@ public class FurkNet extends PluginForHost {
         String filesize = br.getRegex("<li>File size: <b>(.*?)</b></li>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         parameter.setName(filename.trim());
-        if(filesize != null)
-            parameter.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
+        if (filesize != null) parameter.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
         return AvailableStatus.TRUE;
     }
 
@@ -67,6 +74,7 @@ public class FurkNet extends PluginForHost {
         return getVersion("$Revision$");
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
