@@ -17,7 +17,6 @@
 package jd.plugins.host;
 
 import java.io.IOException;
-import java.util.Iterator;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
@@ -68,13 +67,12 @@ public class BiggeruploadCom extends PluginForHost {
             for (String[] letter : letters) {
                 capMap.put(Integer.parseInt(letter[0]), letter[1]);
             }
-            String code = "";
-            Iterator<Integer> it = capMap.keySet().iterator();
-            while (it.hasNext()) {
-                code += capMap.get(it.next());
+            StringBuilder code = new StringBuilder();
+            for (String value : capMap.values()) {
+                code.append(value);
             }
 
-            form.put("code", code);
+            form.put("code", code.toString());
             form.setAction(downloadLink.getDownloadURL());
             // Ticket Time
             int tt = Integer.parseInt(br.getRegex("countdown\">(\\d+)</span>").getMatch(0));

@@ -22,7 +22,6 @@ import java.util.TreeMap;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
-import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
@@ -31,9 +30,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-public class SixGigaCom extends PluginForHost {
+public class UploadcellCom extends PluginForHost {
 
-    public SixGigaCom(PluginWrapper wrapper) {
+    public UploadcellCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -41,8 +40,12 @@ public class SixGigaCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
-
-        if (br.containsHTML("You have reached")) {
+        br.setDebug(true);
+        Form form = br.getForm(0);
+        form.setAction(downloadLink.getDownloadURL());
+        form.remove("method_premium");
+        br.submitForm(form);
+        if (br.containsHTML("You have to wait")) {
             int minutes = 0, seconds = 0, hours = 0;
             String tmphrs = br.getRegex("\\s+(\\d+)\\s+hours?").getMatch(0);
             if (tmphrs != null) hours = Integer.parseInt(tmphrs);
@@ -53,7 +56,7 @@ public class SixGigaCom extends PluginForHost {
             int waittime = ((3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
         } else {
-            Form form = br.getFormbyProperty("name", "F1");
+            form = br.getFormbyProperty("name", "F1");
             if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             /* "Captcha Method" */
             String[][] letters = br.getRegex("<span style='position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;'>(\\d)</span>").getMatches();
@@ -66,28 +69,28 @@ public class SixGigaCom extends PluginForHost {
             for (String value : capMap.values()) {
                 code.append(value);
             }
-
             form.put("code", code.toString());
             form.setAction(downloadLink.getDownloadURL());
             // Ticket Time
             int tt = Integer.parseInt(br.getRegex("countdown\">(\\d+)</span>").getMatch(0));
             sleep(tt * 1001, downloadLink);
             br.submitForm(form);
-            URLConnectionAdapter con2 = br.getHttpConnection();
             String dllink = br.getRedirectLocation();
-            if (con2.getContentType().contains("html")) {
-                String error = br.getRegex("class=\"err\">(.*?)</font>").getMatch(0);
-                if (error != null) {
-                    logger.warning(error);
-                    con2.disconnect();
-                    if (error.equalsIgnoreCase("Wrong captcha") || error.equalsIgnoreCase("Expired session")) {
-                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, error, 10000);
-                    }
+
+            String error = br.getRegex("class=\"err\">(.*?)</font>").getMatch(0);
+            if (error != null) {
+                logger.warning(error);
+                if (error.equalsIgnoreCase("Wrong captcha") || error.equalsIgnoreCase("Expired session")) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                } else if (error.contains("for last 1 days")) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 24 * 60 * 60 * 1000);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, error, 10000);
                 }
-                if (br.containsHTML("Download Link Generated")) dllink = br.getRegex("padding:7px;\">\\s+<a\\s+href=\"(.*?)\">").getMatch(0);
             }
+            if (br.containsHTML("Download Link Generated")) dllink = br.getRegex("padding:7px;\">\\s+<a\\s+href=\"(.*?)\">").getMatch(0);
+
+            br.setFollowRedirects(true);
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             dl = br.openDownload(downloadLink, dllink, false, 1);
             dl.startDownload();
@@ -96,24 +99,24 @@ public class SixGigaCom extends PluginForHost {
 
     // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 10;
+        return 2;
     }
 
     // @Override
     public String getAGBLink() {
-        return "http://6giga.com/tos.html";
+        return "http://uploadcell.com/tos.html";
     }
 
     // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setCookie("http://www.6giga.com/", "lang", "english");
+        br.setCookie("http://uploadcell.com/", "lang", "english");
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("No such file")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = Encoding.htmlDecode(br.getRegex("Filename:</b></td><td\\s+nowrap>(.*?)</b>").getMatch(0));
-        String filesize = br.getRegex("Size:</b></td><td>(.*?)\\s+<small>").getMatch(0);
+        if (br.containsHTML("No such (file|user)|File Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = Encoding.htmlDecode(br.getRegex("<h2>Download File(.*?)</h2>").getMatch(0));
+        String filesize = br.getRegex("</font>\\s*\\((.*?)\\)</font>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setName(filename);
+        downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
     }

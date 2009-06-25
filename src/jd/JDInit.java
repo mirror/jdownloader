@@ -462,7 +462,7 @@ public class JDInit {
         new DecryptPluginWrapper("shrunkin.com", "ShrunkinCom", "http://[\\w\\.]*?shrunkin\\.com/.+");
         new DecryptPluginWrapper("go4Down.net", "GoFourDownNet", "http://[\\w\\.]*?(short\\.)?go4down\\.(com|net)/(short/)\\d+");
         new DecryptPluginWrapper("sogood.net", "SoGoodNet", "http://[\\w\\.]*?sogood\\.net/.+");
-        new DecryptPluginWrapper("audiobeats.net", "AudioBeatsNet","http://[\\w\\.]*?audiobeats\\.net/app/(parties|livesets|artists)/show/[0-9a-zA-z-]+");
+        new DecryptPluginWrapper("audiobeats.net", "AudioBeatsNet", "http://[\\w\\.]*?audiobeats\\.net/app/(parties|livesets|artists)/show/[0-9a-zA-z-]+");
         // Decrypter from Extern
         new DecryptPluginWrapper("rapidlibrary.com", "RapidLibrary", "http://rapidlibrary\\.com/download_file_i\\.php\\?.+");
     }
@@ -583,6 +583,7 @@ public class JDInit {
         new HostPluginWrapper("Bagruj.cz", "BagrujCz", "http://[\\w\\.]*?bagruj\\.cz/.*");
         new HostPluginWrapper("Uploadline.com", "UploadlineCom", "http://[\\w\\.]*?uploadline\\.com/\\d+/.+");
         new HostPluginWrapper("Biggerupload.com", "BiggeruploadCom", "http://[\\w\\.]*?biggerupload\\.com/[\\w]+/?.*");
+        new HostPluginWrapper("Uploadcell.com", "UploadcellCom", "http://[\\w\\.]*?uploadcell\\.com/[a-zA-Z0-9]/?[\\S]*");
         new HostPluginWrapper("Ziddu.com", "ZidduCom", "http://[\\w\\.]*?ziddu\\.com/((download(file)?/\\d+/.+)|(download\\.php\\?uid=.+))");
         new HostPluginWrapper("UpMusic.in", "UpMusicIn", "http://[\\w\\.]*?upmusic\\.in/[a-z0-9]+.*?");
         new HostPluginWrapper("SuperShare.pl", "SuperSharePl", "http://[\\w\\.]*?supershare\\.pl/\\?d=[A-F0-9]+");
