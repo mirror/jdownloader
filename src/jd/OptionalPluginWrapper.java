@@ -37,7 +37,7 @@ public class OptionalPluginWrapper extends PluginWrapper {
     private String name;
 
     public OptionalPluginWrapper(String string, double d, String id, String name) {
-        super(string, "jd.plugins.optional." + string, null, 0);
+        super(string, "jd.plugins.optional.", string, null, 0);
         this.id = id;
         this.version = d;
         this.name = name;
@@ -72,7 +72,7 @@ public class OptionalPluginWrapper extends PluginWrapper {
 
     // @Override
     public PluginOptional getPlugin() {
-        if (!OPTIONAL_WRAPPER.contains(this)) return null;        
+        if (!OPTIONAL_WRAPPER.contains(this)) return null;
         if (loadedPlugin == null) loadPlugin();
         return (PluginOptional) loadedPlugin;
     }

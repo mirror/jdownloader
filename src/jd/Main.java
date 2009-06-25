@@ -69,6 +69,7 @@ import jd.nutils.OSDetector;
 import jd.update.FileUpdate;
 import jd.update.WebUpdater;
 import jd.utils.CheckJava;
+import jd.utils.JDGeoCode;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -155,7 +156,6 @@ public class Main {
                 Browser.setVerbose(true);
                 LOGGER.info("Browser DEBUG Modus aktiv");
             } else if (p.equalsIgnoreCase("-trdebug")) {
-                JDLocale.DEBUG = true;
                 LOGGER.info("Translation DEBUG Modus aktiv");
             } else if (p.equalsIgnoreCase("-rfb")) {
                 JDInitFlags.SWITCH_RETURNED_FROM_UPDATE = true;
@@ -470,8 +470,7 @@ public class Main {
         LOGGER.info("Revision: " + JDUtilities.getJDTitle());
         LOGGER.finer("Runtype: " + JDUtilities.getRunType());
 
-        init.checkUpdate();
-
+        init.checkUpdate();        
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_INIT_COMPLETE, null));
 
         try {

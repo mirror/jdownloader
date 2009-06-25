@@ -508,10 +508,19 @@ public abstract class Request {
         rd = new BufferedReader(isr);
         String line;
         StringBuilder htmlCode = new StringBuilder();
-        while ((line = rd.readLine()) != null) {
-            htmlCode.append(line + "\r\n");
+        /* workaround for premature eof */
+        try {
+            while ((line = rd.readLine()) != null) {
+                htmlCode.append(line + "\r\n");
+            }
+        } catch (IOException e) {
+            if (!e.toString().contains("Premature")) throw e;
+        } finally {
+            try {
+                rd.close();
+            } catch (Exception e) {
+            }
         }
-        rd.close();
         return htmlCode.toString();
     }
 

@@ -27,16 +27,20 @@ public class DecryptPluginWrapper extends PluginWrapper {
         return DECRYPT_WRAPPER;
     }
 
-    public DecryptPluginWrapper(String host, String className, String patternSupported, int flags) {
-        super(host, "jd.plugins.decrypt." + className, patternSupported, flags);
+    public DecryptPluginWrapper(String host, String classNamePrefix, String className, String patternSupported, int flags) {
+        super(host, classNamePrefix, className, patternSupported, flags);
         DECRYPT_WRAPPER.add(this);
     }
 
     public DecryptPluginWrapper(String host, String className, String patternSupported) {
-        this(host, className, patternSupported, 0);
+        this(host, "jd.plugins.decrypt.", className, patternSupported, 0);
     }
 
-    //@Override
+    public DecryptPluginWrapper(String host, String className, String patternSupported, int flags) {
+        this(host, "jd.plugins.decrypt.", className, patternSupported, flags);
+    }
+
+    // @Override
     public PluginForDecrypt getPlugin() {
         return (PluginForDecrypt) super.getPlugin();
     }

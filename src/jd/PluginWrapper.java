@@ -50,20 +50,26 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
     protected Plugin loadedPlugin = null;
     private boolean acceptOnlyURIs = true;
     private boolean alwaysenabled = false;
+    private int flags;
     private static URLClassLoader CL;
     private static final HashMap<String, PluginWrapper> WRAPPER = new HashMap<String, PluginWrapper>();
 
-    public PluginWrapper(String host, String className, String pattern, int flags) {
-
+    public PluginWrapper(String host, String classNamePrefix, String className, String pattern, int flags) {
+        String classn = (classNamePrefix == null ? "" : classNamePrefix) + className;
         if (pattern != null) {
             this.pattern = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
         }
         this.host = host.toLowerCase();
-        this.className = className;
+        this.className = classn;
+        this.flags = flags;
         if (JDFlags.hasSomeFlags(flags, LOAD_ON_INIT)) this.getPlugin();
         if (JDFlags.hasSomeFlags(flags, ALWAYS_ENABLED)) this.alwaysenabled = true;
         if (JDFlags.hasSomeFlags(flags, ACCEPTONLYSURLSFALSE)) this.acceptOnlyURIs = false;
-        WRAPPER.put(className, this);
+        WRAPPER.put(classn, this);
+    }
+
+    public int getFlags() {
+        return flags;
     }
 
     public Pattern getPattern() {

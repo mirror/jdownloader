@@ -30,13 +30,17 @@ public class HostPluginWrapper extends PluginWrapper {
 
     private static final String AGB_CHECKED = "AGB_CHECKED";
 
-    public HostPluginWrapper(String host, String className, String patternSupported, int flags) {
-        super(host, "jd.plugins.host." + className, patternSupported, flags);
+    public HostPluginWrapper(String host, String classNamePrefix, String className, String patternSupported, int flags) {
+        super(host, classNamePrefix, className, patternSupported, flags);
         HOST_WRAPPER.add(this);
     }
 
     public HostPluginWrapper(String host, String className, String patternSupported) {
-        this(host, className, patternSupported, 0);
+        this(host, "jd.plugins.host.", className, patternSupported, 0);
+    }
+
+    public HostPluginWrapper(String host, String className, String patternSupported, int flags) {
+        this(host, "jd.plugins.host.", className, patternSupported, flags);
     }
 
     @Override

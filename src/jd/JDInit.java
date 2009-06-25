@@ -642,7 +642,7 @@ public class JDInit {
         new OptionalPluginWrapper("langfileeditor.LangFileEditor", 1.5, "langfileditor", JDLocale.L("plugins.optional.langfileeditor.name", "Language File Editor"));
         new OptionalPluginWrapper("jdunrar.JDUnrar", 1.5, "unrar", JDLocale.L("plugins.optional.jdunrar.name", "JD-Unrar"));
         new OptionalPluginWrapper("hjsplit.JDHJSplit", 1.5, "hjsplit", JDLocale.L("plugins.optional.jdhjsplit.name", "JD-HJMerge"));
-        new OptionalPluginWrapper("JDPremiumCollector", 1.5, "premcol", JDLocale.L("plugins.optional.premiumcollector.name", "PremiumCollector"));
+        new OptionalPluginWrapper("premcol.JDPremiumCollector", 1.5, "premcol", JDLocale.L("plugins.optional.premiumcollector.name", "PremiumCollector"));
         new OptionalPluginWrapper("JDFlashGot", 1.5, "flashgot", JDLocale.L("plugins.optional.flashgot.name", "FlashGot Integration"));
         if (OSDetector.isMac()) new OptionalPluginWrapper("JDGrowlNotification", 1.5, "growl", JDLocale.L("plugins.optional.jdgrowlnotification.name", "JDGrowlNotification"));
         new OptionalPluginWrapper("HTTPLiveHeaderScripter", 1.5, "livescripter", JDLocale.L("plugins.optional.httpliveheaderscripter.name", "HTTPLiveHeaderScripter"));
