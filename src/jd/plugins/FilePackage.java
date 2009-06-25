@@ -106,6 +106,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
 
     private String ListHoster = null;
 
+    @Deprecated
     private Vector<DownloadLink> downloadLinks;
 
     public void addListener(FilePackageListener l) {
@@ -694,7 +695,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
         }
     }
 
-    public void handle_DownloadLinkEvent(DownloadLinkEvent event) {
+    public void onDownloadLinkEvent(DownloadLinkEvent event) {
         switch (event.getID()) {
         case DownloadLinkEvent.DISABLED:
             synchronized (links_Disabled) {

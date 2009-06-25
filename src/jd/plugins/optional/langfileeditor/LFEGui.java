@@ -37,7 +37,6 @@ import java.util.HashMap;
 
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JColorChooser;
-import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
@@ -60,7 +59,6 @@ import jd.gui.UserIO;
 import jd.gui.skins.simple.JTabbedPanel;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.ChartAPIEntity;
-import jd.gui.skins.simple.components.ComboBrowseFile;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.PieChartAPI;
 import jd.gui.skins.simple.components.TwoTextFieldDialog;
@@ -200,7 +198,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         keyChart.addEntity(entMissing = new ChartAPIEntity(JDLocale.L(LOCALE_PREFIX + "keychart.missing", "Missing"), 0, colorMissing));
         keyChart.addEntity(entOld = new ChartAPIEntity(JDLocale.L(LOCALE_PREFIX + "keychart.old", "Old"), 0, colorOld));
 
-        this.setLayout(new MigLayout("wrap 3", "[][grow, fill][]", "[][][grow, fill]"));
+        this.setLayout(new MigLayout("wrap 3", "[][grow, fill][]", "[][grow, fill][]"));
         this.add(buildMenu(), "span 3, growx, spanx");
         // this.add(new JLabel(JDLocale.L(LOCALE_PREFIX + "source",
         // "Source:")));
@@ -760,7 +758,9 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
 
     private String getLanguageKey() {
         if (lngKey == null) {
-            lngKey = LFELngKeyDialog.showDialog(SimpleGUI.CURRENTGUI, lngKey);
+            String[] localeKeys = new String[] { "da", "de", "fi", "fr", "el", "hi", "it", "ja", "ko", "hr", "nl", "no", "pl", "pt", "ro", "ru", "sv", "es", "cs", "en", "ar" };
+            Object newKey = JOptionPane.showInputDialog(this, JDLocale.L("plugins.optional.langfileeditor.translatedialog.message", "Choose Languagekey:"), JDLocale.L("plugins.optional.langfileeditor.translatedialog.title", "Languagekey"), JOptionPane.QUESTION_MESSAGE, null, localeKeys, null);
+            lngKey = (newKey == null) ? null : newKey.toString();
         }
         return lngKey;
     }

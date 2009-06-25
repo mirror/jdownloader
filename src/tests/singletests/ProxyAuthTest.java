@@ -1,6 +1,6 @@
 package tests.singletests;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 
 import java.net.InetSocketAddress;

@@ -56,7 +56,7 @@ class DownloadLinkBroadcaster extends JDBroadcaster<DownloadLinkListener, Downlo
 
     // @Override
     protected void fireEvent(DownloadLinkListener listener, DownloadLinkEvent event) {
-        listener.handle_DownloadLinkEvent(event);
+        listener.onDownloadLinkEvent(event);
     }
 
 }

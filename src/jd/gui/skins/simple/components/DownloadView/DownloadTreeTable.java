@@ -17,7 +17,6 @@
 package jd.gui.skins.simple.components.DownloadView;
 
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.LinearGradientPaint;
 import java.awt.Point;
 import java.awt.MultipleGradientPaint.CycleMethod;

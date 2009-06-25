@@ -3,14 +3,10 @@ package jd;
 import java.io.IOException;
 
 import jd.http.Browser;
-import jd.http.JDProxy;
-import jd.nutils.svn.Subversion;
 
 import org.tmatesoft.svn.core.SVNException;
 
 public class Tester {
-
-    private static Subversion svn;
 
     public static void main(String[] args) throws SVNException, IOException {
 
