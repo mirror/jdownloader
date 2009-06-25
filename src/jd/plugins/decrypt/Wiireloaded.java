@@ -72,7 +72,6 @@ public class Wiireloaded extends PluginForDecrypt {
         logger.finer("ids found" + ids.length);
         progress.addToMax(ids.length);
         Browser brc = br.cloneBrowser();
-        brc.setDebug(true);
         for (String element : ids) {
             for (int retry = 1; retry < 5; retry++) {
                 brc.getPage("http://wii-reloaded.ath.cx/protect/hastesosiehtsaus.php?i=" + element);

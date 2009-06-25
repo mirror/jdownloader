@@ -41,7 +41,6 @@ public class FurkNet extends PluginForHost {
         this.setBrowserExclusive();
         br.getPage(parameter.getDownloadURL());
         if (br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        logger.fine(br.toString());
         String filename = br.getRegex("value=\"Premium Download\" onclick=\"document\\.location.href='/registration\\?pfile=(.*?)'\" />").getMatch(0);
         String filesize = br.getRegex("<li>File size: <b>(.*?)</b></li>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
