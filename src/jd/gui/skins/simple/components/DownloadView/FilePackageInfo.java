@@ -140,26 +140,21 @@ public class FilePackageInfo extends JTabbedPanel implements ActionListener {
     }
 
     private JPanel createFilePackageInfo() {
-        txtName = new JDTextField();
-        txtName.setAutoSelect(true);
-
+        txtName = new JDTextField(true);
         addChangeListener(txtName);
-        txtName.setBackground(null);
+
         brwSaveTo = new ComboBrowseFile("DownloadSaveTo");
         brwSaveTo.setEditable(true);
         brwSaveTo.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
         brwSaveTo.setText(JDUtilities.getConfiguration().getDefaultDownloadDirectory());
         brwSaveTo.addActionListener(this);
 
-        brwSaveTo.getInput().setBackground(null);
-        txtPassword = new JDTextField();
+        txtPassword = new JDTextField(true);
         addChangeListener(txtPassword);
 
-        txtComment = new JDTextField();
+        txtComment = new JDTextField(true);
         addChangeListener(txtComment);
 
-        txtComment.setBackground(null);
-        txtPassword.setBackground(null);
         chbExtract = new JCheckBox(JDLocale.L("gui.fileinfopanel.packagetab.chb.extractAfterdownload", "Extract"));
         chbExtract.setSelected(true);
         chbExtract.setHorizontalTextPosition(SwingConstants.LEFT);
@@ -209,8 +204,6 @@ public class FilePackageInfo extends JTabbedPanel implements ActionListener {
     }
 
     private JPanel createLinkInfo() {
-        txtpathlabel = new JDTextField();
-        txtpathlabel.setEditable(false);
         progressBarDownloadLink = new MultiProgressBar();
         panel = new JPanel();
         panel.setLayout(new MigLayout("ins 10, wrap 3", "[]10[grow,fill][]", "[]5[]5[]5[]"));
@@ -220,9 +213,9 @@ public class FilePackageInfo extends JTabbedPanel implements ActionListener {
         panel.add(progressBarDownloadLink, "spanx,growx,pushx");
         panel.add(eta = new JLabel(JDLocale.LF("gui.fileinfopanel.linktab.eta", "ETA: %s mm:ss", "0")));
         panel.add(speed = new JLabel(JDLocale.LF("gui.fileinfopanel.linktab.speed", "Speed: %s/s", "0 kb")), "skip,alignx right");
-
         panel.add(new JLabel(JDLocale.L("gui.fileinfopanel.linktab.saveto", "Save to")));
-        panel.add(txtpathlabel, "growx, span 2");
+        panel.add(txtpathlabel = new JDTextField(true), "growx, span 2");
+        txtpathlabel.setEditable(false);
         panel.add(new JLabel(JDLocale.L("gui.fileinfopanel.linktab.url", "URL")));
         panel.add(txtURL = new JDTextField(true), "growx, span 2");
         txtURL.setEditable(false);
@@ -235,7 +228,7 @@ public class FilePackageInfo extends JTabbedPanel implements ActionListener {
         panel.add(new JLabel(JDLocale.L("gui.fileinfopanel.linktab.password", "Password")));
         panel.add(txtPasswordDl = new JDTextField(true), "growx, span 2");
         txtPasswordDl.setEditable(false);
-      
+
         return panel;
     }
 

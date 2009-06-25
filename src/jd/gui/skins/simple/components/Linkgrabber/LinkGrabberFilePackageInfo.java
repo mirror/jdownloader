@@ -56,7 +56,6 @@ public class LinkGrabberFilePackageInfo extends JTabbedPanel implements ActionLi
 
     private boolean notifyUpdate = true;
 
-
     public LinkGrabberFilePackageInfo() {
         buildGui();
         fp = null;
@@ -116,8 +115,7 @@ public class LinkGrabberFilePackageInfo extends JTabbedPanel implements ActionLi
     }
 
     private void buildGui() {
-        txtName = new JDTextField();
-        txtName.setAutoSelect(true);
+        txtName = new JDTextField(true);
         addChangeListener(txtName);
 
         brwSaveTo = new ComboBrowseFile("DownloadSaveTo");
@@ -126,13 +124,11 @@ public class LinkGrabberFilePackageInfo extends JTabbedPanel implements ActionLi
         brwSaveTo.setText(JDUtilities.getConfiguration().getDefaultDownloadDirectory());
         brwSaveTo.addActionListener(this);
 
-        txtPassword = new JDTextField();
-        txtPassword.addActionListener(this);
-        txtComment = new JDTextField();
-        txtComment.addActionListener(this);
+        txtPassword = new JDTextField(true);
         addChangeListener(txtPassword);
+
+        txtComment = new JDTextField(true);
         addChangeListener(txtComment);
-        
 
         chbExtract = new JCheckBox(JDLocale.L("gui.linkgrabber.packagetab.chb.extractAfterdownload", "Extract"));
         chbExtract.setSelected(true);
@@ -151,18 +147,15 @@ public class LinkGrabberFilePackageInfo extends JTabbedPanel implements ActionLi
         this.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.saveto", "Speichern unter")));
         this.add(brwSaveTo.getInput(), "gapright 10, growx");
         this.add(brwSaveTo.getButton(), "pushx,growx");
-        
-   
-        
-        this.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.password", "Archivpasswort")),"newline");
-        
-   
+
+        this.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.password", "Archivpasswort")), "newline");
+
         this.add(txtPassword, " gapright 10, growx");
         this.add(chbExtract, "alignx right");
         this.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.comment", "Kommentar")));
         this.add(txtComment, "gapright 10, growx");
         this.add(chbUseSubdirectory, "alignx right");
-       
+
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -179,7 +172,7 @@ public class LinkGrabberFilePackageInfo extends JTabbedPanel implements ActionLi
             fp.setExtractAfterDownload(chbExtract.isSelected());
         } else if (e.getSource() == chbUseSubdirectory) {
             fp.setUseSubDir(chbUseSubdirectory.isSelected());
-        } 
+        }
         DownloadController.getInstance().fireDownloadLinkUpdate(fp.get(0));
     }
 

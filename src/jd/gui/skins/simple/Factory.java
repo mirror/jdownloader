@@ -85,7 +85,7 @@ public class Factory {
         bt.setBorderPainted(false);
         bt.setHorizontalAlignment(JButton.LEFT);
         if (listener != null) bt.addActionListener(listener);
-        bt.addMouseListener(new JDUnderlinedText());
+        bt.addMouseListener(new JDUnderlinedText(bt));
         return bt;
     }
 

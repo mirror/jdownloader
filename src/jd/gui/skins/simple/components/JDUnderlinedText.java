@@ -27,28 +27,28 @@ import jd.gui.skins.simple.JDMouseAdapter;
 
 public class JDUnderlinedText extends JDMouseAdapter {
 
+    private final JComponent comp;
+
     private Font originalFont;
 
-    @SuppressWarnings("unchecked")
-    // @Override
-    public void mouseEntered(MouseEvent evt) {
-        if (!(evt.getSource() instanceof JComponent)) return;
-        JComponent src = (JComponent) evt.getSource();
-
-        originalFont = src.getFont();
-        if (src.isEnabled()) {
-            Map attributes = originalFont.getAttributes();
-            attributes.put(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
-            src.setFont(originalFont.deriveFont(attributes));
-        }
-
+    public JDUnderlinedText(JComponent comp) {
+        this.comp = comp;
     }
 
-    // @Override
+    @SuppressWarnings("unchecked")
+    @Override
+    public void mouseEntered(MouseEvent evt) {
+        originalFont = comp.getFont();
+        if (comp.isEnabled()) {
+            Map attributes = originalFont.getAttributes();
+            attributes.put(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
+            comp.setFont(originalFont.deriveFont(attributes));
+        }
+    }
+
+    @Override
     public void mouseExited(MouseEvent evt) {
-        if (!(evt.getSource() instanceof JComponent)) return;
-        JComponent src = (JComponent) evt.getSource();
-        src.setFont(originalFont);
+        comp.setFont(originalFont);
     }
 
 }

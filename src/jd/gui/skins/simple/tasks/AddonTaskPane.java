@@ -129,7 +129,7 @@ public class AddonTaskPane extends TaskPanel implements ActionListener {
                 SimpleGUI.CURRENTGUI.getContentPane().display(new ConfigEntriesPanel(cfg));
             }
         }
-        if (e.getSource() == config) {            
+        if (e.getSource() == config) {
             SimpleGUI.CURRENTGUI.getContentPane().display(SimpleGUI.CURRENTGUI.getCfgTskPane().getPanel(ConfigTaskPane.ACTION_ADDONS));
             isAction = true;
         }
@@ -194,7 +194,7 @@ public class AddonTaskPane extends TaskPanel implements ActionListener {
 
             ch.setFocusPainted(false);
             ch.setBorderPainted(false);
-            ch.addMouseListener(new JDUnderlinedText());
+            ch.addMouseListener(new JDUnderlinedText(ch));
             ch.addActionListener(new ActionListener() {
 
                 public void actionPerformed(ActionEvent arg0) {
