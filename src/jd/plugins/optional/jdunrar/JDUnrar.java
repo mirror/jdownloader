@@ -346,12 +346,14 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         link.getLinkStatus().removeStatus(LinkStatus.ERROR_POST_PROCESS);
         link.getLinkStatus().setErrorMessage(null);
         File dl = this.getExtractToPath(link);
+        
+        UnrarWrapper wrapper = new UnrarWrapper(link);
+        
         if (link.getHost().equals(DUMMY_HOSTER)) {
             ProgressController progress = new ProgressController(JDLocale.LF("plugins.optional.jdunrar.progress.extractfile", "Extract %s", link.getFileOutput()), 100);
-            link.setProperty("PROGRESSCONTROLLER", progress);
+            wrapper.setProgressController(progress);
         }
-        UnrarWrapper wrapper = new UnrarWrapper(link);
-
+        
         wrapper.addUnrarListener(this);
         wrapper.setExtractTo(dl);
 
@@ -880,13 +882,13 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
     public void onUnrarEvent(int id, UnrarWrapper wrapper) {
         LinkStatus ls = wrapper.getDownloadLink().getLinkStatus();
         // Falls der link entfernt wird während dem entpacken
-        if (wrapper.getDownloadLink().getFilePackage() == FilePackage.getDefaultFilePackage() && wrapper.getDownloadLink().getProperty("PROGRESSCONTROLLER") == null) {
+        if (wrapper.getDownloadLink().getFilePackage() == FilePackage.getDefaultFilePackage() && wrapper.getProgressController() == null) {
             logger.warning("LINK GOT REMOVED_: " + wrapper.getDownloadLink());
             ProgressController progress = new ProgressController(JDLocale.LF("plugins.optional.jdunrar.progress.extractfile", "Extract %s", wrapper.getDownloadLink().getFileOutput()), 100);
-            wrapper.getDownloadLink().setProperty("PROGRESSCONTROLLER", progress);
+            wrapper.setProgressController(progress);
         }
 
-        if (wrapper.getDownloadLink().getProperty("PROGRESSCONTROLLER") != null) {
+        if (wrapper.getProgressController() != null) {
             onUnrarDummyEvent(id, wrapper);
             return;
         }
@@ -1127,7 +1129,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
      * @param wrapper
      */
     private void onUnrarDummyEvent(int id, UnrarWrapper wrapper) {
-        ProgressController pc = (ProgressController) wrapper.getDownloadLink().getProperty("PROGRESSCONTROLLER");
+        ProgressController pc = wrapper.getProgressController();
         // int min;
         switch (id) {
         case JDUnrarConstants.INVALID_BINARY:
@@ -1346,8 +1348,8 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         // progress.get(wrapper).finalize(3000l);
         // wrapper.getDownloadLink().getLinkStatus().setStatusText(null);
         wrapper.getDownloadLink().setPluginProgress(null);
-        if (wrapper.getDownloadLink().getProperty("PROGRESSCONTROLLER") != null) {
-            ((ProgressController) wrapper.getDownloadLink().getProperty("PROGRESSCONTROLLER")).finalize(8000);
+        if (wrapper.getProgressController() != null) {
+            wrapper.getProgressController().finalize(8000);
         }
 
     }

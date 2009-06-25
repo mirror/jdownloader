@@ -24,6 +24,7 @@ import java.util.regex.Pattern;
 
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
+import jd.controlling.ProgressController;
 import jd.nutils.DynByteBuffer;
 import jd.nutils.Executer;
 import jd.nutils.ProcessListener;
@@ -135,6 +136,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
     private int exitCode;
     private boolean gotInterrupted;
     private Logger logger;
+    private ProgressController progressController;
 
     public UnrarWrapper(DownloadLink link) {
         this.link = link;
@@ -830,6 +832,11 @@ public class UnrarWrapper extends Thread implements JDRunnable {
     public String getPassword() {
         return password;
     }
+    
+
+    public ProgressController getProgressController() {
+        return progressController;
+    }
 
     public long getTotalSize() {
         return this.totalSize;
@@ -867,6 +874,10 @@ public class UnrarWrapper extends Thread implements JDRunnable {
 
     public void setPassword(String pass) {
         this.password = pass;
+    }
+
+    public void setProgressController(ProgressController progress) {
+        progressController = progress;
     }
 
     public class ExtractListener implements ProcessListener {
