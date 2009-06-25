@@ -204,7 +204,7 @@ public class Installer {
 
                 String def = null;
                 for (JDLocale id : JDLocale.getLocaleIDs()) {
-                    if (id.getCountryCode().equalsIgnoreCase(languageCode)) {
+                    if (id.getCountryCode() != null && id.getCountryCode().equalsIgnoreCase(languageCode)) {
                         def = languageCode;
                         break;
                     }
