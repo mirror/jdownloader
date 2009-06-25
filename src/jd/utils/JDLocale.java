@@ -41,7 +41,7 @@ public class JDLocale {
 
     private static HashMap<Integer, String> defaultData = null;
 
-    private static final String DEFAULTLANGUAGE = "english";
+    private static final String DEFAULTLANGUAGE = "en";
 
     public static final String CONFIG = "LOCALE";
 

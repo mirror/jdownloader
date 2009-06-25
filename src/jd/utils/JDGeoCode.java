@@ -42,14 +42,19 @@ public class JDGeoCode {
         String[] split = lngCode.split("\\-");
         if (split.length == 1) {
             languagecode = lngCode.toLowerCase();
-
+            if (languagecode.trim().length() != 2) return null;
             return new String[] { lngCode, null, null };
         } else if (split.length == 2) {
 
             boolean h = COUNTRIES.containsKey(split[1].toUpperCase());
+
+            if (split[0].trim().length() != 2) return null;
             return new String[] { split[0].toLowerCase(), h ? split[1].toUpperCase() : null, h ? null : split[1] };
         } else {
             split = lngCode.split("\\-");
+
+            if (split[0].trim().length() != 2) return null;
+            if (split[1].trim().length() != 2) return null;
             return new String[] { split[0].toLowerCase(), split[1].toUpperCase(), split[2] };
         }
     }

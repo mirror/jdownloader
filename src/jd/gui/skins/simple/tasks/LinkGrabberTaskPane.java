@@ -137,6 +137,8 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
         this.panel_add_containers = (this.createButton(JDLocale.L("gui.linkgrabberv2.addcontainers", "Open Containers"), JDTheme.II("gui.images.load", 16, 16)));
 
         lg_add_all = (createButton(JDLocale.L("gui.linkgrabberv2.lg.addall", "Add all packages"), JDTheme.II("gui.images.add_all", 16, 16)));
+        lg_add_all.setName("addAllPackages");
+        
         lg_add_selected = (createButton(JDLocale.L("gui.linkgrabberv2.lg.addselected", "Add selected package(s)"), JDTheme.II("gui.images.add_package", 16, 16)));
         lg_clear = (createButton(JDLocale.L("gui.linkgrabberv2.lg.clear", "Clear List"), JDTheme.II("gui.images.clear", 16, 16)));
 

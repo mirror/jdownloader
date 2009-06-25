@@ -19,6 +19,12 @@ public class JDGeoCodeTest {
         String lng;
         String[] res;
         String longLng,reshort;
+        
+        /* malformed */
+        lng = "english";
+        res = JDGeoCode.parseLanguageCode(lng);
+        assertFalse("Result error for " + lng, res != null);
+   
         /* language and country aand extension */
         lng = "en-GB-2";
         res = JDGeoCode.parseLanguageCode(lng);
