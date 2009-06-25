@@ -205,7 +205,7 @@ public class JAntiCaptcha {
         w.setText(0, i + 1, "Erkennung: " + Utilities.getPercent(correctLetters, totalLetters) + "%");
         w.setText(4, i + 1, "Richtig: " + correctLetters);
         w.setText(5, i + 1, "Falsch: " + (totalLetters - correctLetters));
-        JOptionPane.showMessageDialog(new JFrame(),"Erkennung: " + correctLetters + "/" + totalLetters + " = " + Utilities.getPercent(correctLetters, totalLetters) + "%");
+        JOptionPane.showMessageDialog(new JFrame(), "Erkennung: " + correctLetters + "/" + totalLetters + " = " + Utilities.getPercent(correctLetters, totalLetters) + "%");
     }
 
     /**
@@ -710,7 +710,7 @@ public class JAntiCaptcha {
         w.setVisible(true);
     }
 
-    private String getCodeFromFileName(String name, String captchaHash) {
+    private String getCodeFromFileName(String name) {
         String[] matches = new Regex(name, "captcha_(.*?)_code(.*?)\\.(.*?)").getRow(0);
         if (matches != null && matches.length > 0) return matches[1];
 
@@ -805,14 +805,6 @@ public class JAntiCaptcha {
             } else if (childNode.getNodeName().equals("format")) {
                 try {
                     setLetterNum(Integer.parseInt(JDUtilities.getAttribute(childNode, "letterNum")));
-                } catch (Exception e) {
-                }
-                try {
-                    setLetterMinNum(Integer.parseInt(JDUtilities.getAttribute(childNode, "minLetterNum")));
-                } catch (Exception e) {
-                }
-                try {
-                    setLetterMaxNum(Integer.parseInt(JDUtilities.getAttribute(childNode, "maxLetterNum")));
                 } catch (Exception e) {
                 }
 
@@ -1543,14 +1535,6 @@ public class JAntiCaptcha {
         this.imageType = imageType;
     }
 
-    private void setLetterMaxNum(int parseInt) {
-        // TODO ?
-    }
-
-    private void setLetterMinNum(int parseInt) {
-        // TODO ?
-    }
-
     /**
      * @param letterNum
      *            the letterNum to set
@@ -1560,19 +1544,6 @@ public class JAntiCaptcha {
             logger.finer("SET PARAMETER: [letterNum] = " + letterNum);
         }
         this.letterNum = letterNum;
-    }
-
-    /**
-     * @param methodPath
-     * @param methodName
-     */
-    public void setMethod(String methodPath, String methodName) {
-        if (Utilities.isLoggerActive()) {
-            logger.finer("SET PARAMETER: [method] = " + methodDirName);
-        }
-
-        methodDirName = methodName;
-
     }
 
     /**
@@ -1968,7 +1939,7 @@ public class JAntiCaptcha {
             // return -1;
             //
             // }
-            if (getCodeFromFileName(captchafile.getName(), captchaHash) == null) {
+            if (getCodeFromFileName(captchafile.getName()) == null) {
                 code = JOptionPane.showInputDialog("Bitte Captcha Code eingeben (Press enter to confirm " + guess, guess);
                 if (code != null && code.equals(guess)) {
                     code = "";
@@ -1980,7 +1951,7 @@ public class JAntiCaptcha {
                 }
 
             } else {
-                code = getCodeFromFileName(captchafile.getName(), captchaHash);
+                code = getCodeFromFileName(captchafile.getName());
                 if (Utilities.isLoggerActive()) {
                     logger.warning("captcha code für " + captchaHash + " verwendet: " + code);
                 }

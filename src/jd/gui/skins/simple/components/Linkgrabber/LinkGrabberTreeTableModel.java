@@ -38,11 +38,8 @@ public class LinkGrabberTreeTableModel extends AbstractTreeTableModel {
 
     private LinkGrabberController lgi;
 
-    // private LinkGrabberPanel panel;
-
-    public LinkGrabberTreeTableModel(LinkGrabberPanel treeTable) {
+    public LinkGrabberTreeTableModel() {
         super("root");
-        // panel = treeTable;
         lgi = LinkGrabberController.getInstance();
     }
 

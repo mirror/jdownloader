@@ -171,7 +171,7 @@ public class Main {
                 Browser.setVerbose(true);
             }
             if (p.equalsIgnoreCase("-trdebug")) {
-                JDLocale.DEBUG=true;
+                JDLocale.DEBUG = true;
                 LOGGER.info("Translation DEBUG Modus aktiv");
             }
             if (p.equalsIgnoreCase("-rfb")) {
@@ -264,7 +264,7 @@ public class Main {
                         params.add(message);
                         counter--;
                         if (counter == 0) {
-                            String[] args = (String[]) params.toArray(new String[params.size()]);
+                            String[] args = params.toArray(new String[params.size()]);
                             ParameterManager.processParameters(args);
                             counter = -1;
                             params = new Vector<String>();
@@ -428,14 +428,14 @@ public class Main {
             LOGGER.setLevel(Level.ALL);
         } else {
             JDLogger.removeConsoleHandler();
-        }        
+        }
         init.removeFiles();
         LOGGER.info("init Controller");
-   
+
         LOGGER.info("init Webupdate");
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_PROGRESS, JDLocale.L("gui.splash.progress.webupdate", "Check updates")));
 
-        new WebUpdate().doWebupdate(true,false);
+        new WebUpdate().doWebupdate(true, false);
         try {
             loadDynamics();
         } catch (Exception e1) {
@@ -504,7 +504,7 @@ public class Main {
         URLClassLoader classLoader = new URLClassLoader(new URL[] { JDUtilities.getJDHomeDirectoryFromEnvironment().toURI().toURL(), JDUtilities.getResourceFile("java").toURI().toURL() }, Thread.currentThread().getContextClassLoader());
         if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL) {
             /* dynamics aus eclipse heraus laden */
-          
+
             Enumeration<URL> resources = classLoader.getResources("jd/dynamics/");
             ArrayList<String> dynamics = new ArrayList<String>();
             while (resources.hasMoreElements()) {
@@ -516,9 +516,9 @@ public class Main {
                     }
                 }
             }
-            if (dynamics == null || dynamics.size() == 0) return;
+            if (dynamics.size() == 0) return;
             for (String dynamic : dynamics) {
-                if (!dynamic.contains("$") && !classes.contains("/jd/dynamics/" + dynamic)&&!dynamic.equalsIgnoreCase("DynamicPluginInterface.class")) {
+                if (!dynamic.contains("$") && !classes.contains("/jd/dynamics/" + dynamic) && !dynamic.equalsIgnoreCase("DynamicPluginInterface.class")) {
                     System.out.println("Plugins: " + dynamic);
                     classes.add("/jd/dynamics/" + dynamic);
                 }
@@ -529,14 +529,14 @@ public class Main {
             if (WebUpdater.PLUGIN_LIST == null) return;
             for (Entry<String, FileUpdate> entry : WebUpdater.PLUGIN_LIST.entrySet()) {
                 System.out.println("Plugins: " + entry.getKey());
-                if (entry.getKey().startsWith("/jd/dynamics/")&&!entry.getKey().contains("DynamicPluginInterface")) {
-                    JDLogger.getLogger().finest("Found dynamic: "+entry.getKey());
+                if (entry.getKey().startsWith("/jd/dynamics/") && !entry.getKey().contains("DynamicPluginInterface")) {
+                    JDLogger.getLogger().finest("Found dynamic: " + entry.getKey());
                     if (!entry.getValue().equals()) {
-                        
+
                         if (!new WebUpdater().updateUpdatefile(entry.getValue())) {
                             JDLogger.getLogger().warning("Could not update " + entry.getValue());
                             continue;
-                        }else{
+                        } else {
                             JDLogger.getLogger().finest("Update OK!");
                         }
                     }
@@ -547,7 +547,7 @@ public class Main {
         for (String clazz : classes) {
             try {
                 Class<?> plgClass;
-                JDLogger.getLogger().finest("Init Dynamic "+clazz);
+                JDLogger.getLogger().finest("Init Dynamic " + clazz);
                 plgClass = classLoader.loadClass(clazz.replace("/", ".").replace(".class", "").substring(1));
                 if (plgClass == null) {
                     JDLogger.getLogger().info("Could not load " + clazz);

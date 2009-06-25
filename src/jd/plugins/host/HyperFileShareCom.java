@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 
 public class HyperFileShareCom extends PluginForHost {
 
-    public HyperFileShareCom (PluginWrapper wrapper) {
+    public HyperFileShareCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -50,10 +50,10 @@ public class HyperFileShareCom extends PluginForHost {
         if (br.containsHTML("Download URL is incorrect") || br.containsHTML("Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<b class=\"green\">Download (.*?)</b>").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>Download (.*?)</title>").getMatch(0);
-        String size = br.getRegex("size:</td>\\s+<td><b>(\\d+)</b>").getMatch(0) + "B";
+        String size = br.getRegex("size:</td>\\s+<td><b>(\\d+)</b>").getMatch(0);
         if (filename == null || size == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
-        downloadLink.setDownloadSize(Regex.getSize(size));
+        downloadLink.setDownloadSize(Regex.getSize(size + "B"));
         return AvailableStatus.TRUE;
     }
 

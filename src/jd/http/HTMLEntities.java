@@ -65,10 +65,10 @@ public class HTMLEntities {
      */
     private static final Hashtable<String, Integer> unhtmlentities_map = new Hashtable<String, Integer>();
 
-    //==========================================================================
+    // ==========================================================================
     // ====
     // METHODS
-    //==========================================================================
+    // ==========================================================================
     // ====
 
     /**
@@ -138,12 +138,12 @@ public class HTMLEntities {
 
         for (int i = 0; i < str.length(); ++i) {
             char ch = str.charAt(i);
-            String entity = htmlentities_map.get(new Integer((int) ch)); // get
+            String entity = htmlentities_map.get(new Integer(ch)); // get
             // equivalent
             // html
             // entity
             if (entity == null) { // if entity has not been found
-                if ((int) ch > 128) { // check if is an extended character
+                if (ch > 128) { // check if is an extended character
                     buf.append("&#" + (int) ch + ";"); // convert extended
                     // character
                 } else {

@@ -183,11 +183,8 @@ public class JDSimpleWebserverResponseCreator {
 
     /**
      * Set a redirect
-     * 
-     * @param url
-     *            url to redirect to
      */
-    public void setRedirect(String url) {
+    public void setRedirect() {
         headers.append("HTTP/1.1 307 Temporary Redirect\n");
         headers.append("Location: /\n");
     }
@@ -228,7 +225,7 @@ public class JDSimpleWebserverResponseCreator {
                     }
                 }
                 raf.close();
-            } finally {                
+            } finally {
                 try {
                     raf.close();
                 } catch (Exception e) {

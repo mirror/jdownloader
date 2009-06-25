@@ -100,7 +100,7 @@ public class JDUtilities {
     private static HashMap<String, PluginsC> containerPlugins = new HashMap<String, PluginsC>();
 
     /**
-     * Der DownloadController 
+     * Der DownloadController
      */
     private static JDController controller = null;
 
@@ -587,7 +587,7 @@ public class JDUtilities {
 
     public static String getPercent(long downloadCurrent, long downloadMax) {
         DecimalFormat c = new DecimalFormat("0.00");
-        return c.format(100.0 * downloadCurrent / (double) downloadMax) + "%";
+        return c.format(100.0 * downloadCurrent / downloadMax) + "%";
     }
 
     /**
@@ -694,7 +694,7 @@ public class JDUtilities {
         boolean useconc = false;
         boolean minheap = false;
         boolean maxheap = false;
-System.out.println("RESTART NOW");
+        System.out.println("RESTART NOW");
         for (String h : lst) {
             if (h.contains("Xmx")) {
                 xmxset = true;
@@ -729,7 +729,6 @@ System.out.println("RESTART NOW");
         System.arraycopy(jdArgs, 0, finalArgs, javaArgs.length, jdArgs.length);
 
         if (!OSDetector.isMac()) {
-      
 
             JDLogger.getLogger().info(JDUtilities.runCommand("java", finalArgs, getResourceFile(".").getAbsolutePath(), 0));
         } else {

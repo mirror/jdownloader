@@ -447,13 +447,13 @@ public class HTTPDownload extends DownloadInterface {
         this.chunks = new Threader();
         chunks.getBroadcaster().addListener(chunks.new WorkerListener() {
 
-            //@Override
+            // @Override
             public void onThreadException(Threader th, JDRunnable job, Exception e) {
                 System.err.println(job);
                 JDLogger.exception(e);
             }
 
-            //@Override
+            // @Override
             public void onThreadFinished(Threader th, JDRunnable job) {
                 try {
                     updateActiveChunkCount(-1);
@@ -483,7 +483,7 @@ public class HTTPDownload extends DownloadInterface {
 
             }
 
-            //@Override
+            // @Override
             public void onThreadStarts(Threader threader, JDRunnable runnable) {
                 updateActiveChunkCount(+1);
                 fireEvent(new DownloadEvent(DownloadEvent.PROGRESS_CHUNK_STARTED, HTTPDownload.this, (DownloadChunk) runnable));
@@ -637,14 +637,14 @@ public class HTTPDownload extends DownloadInterface {
         return this.orgRequest;
     }
 
-    public long getChunkBandwidth(DownloadChunk downloadChunk) {
+    public long getChunkBandwidth() {
         if (this.bandwidthLimit <= 0) return -1;
         return Math.max(1, bandwidthLimit / this.getActiveChunks() + bandwidthLimit);
 
     }
 
     protected void onBufferWritten(DownloadChunk downloadChunk) {
-        fireEvent(new DownloadEvent(DownloadEvent.PROGRESS_CHUNK_BUFFERWRITTEN, this, (DownloadChunk) downloadChunk));
+        fireEvent(new DownloadEvent(DownloadEvent.PROGRESS_CHUNK_BUFFERWRITTEN, this, downloadChunk));
         updateDownloadProgress();
     }
 
@@ -658,7 +658,7 @@ public class HTTPDownload extends DownloadInterface {
         return speed;
     }
 
-    //@Override
+    // @Override
     public long getBandwidthLimit() {
         // TODO Auto-generated method stub
         return this.bandwidthLimit;

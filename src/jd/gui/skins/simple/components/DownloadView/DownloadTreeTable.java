@@ -523,7 +523,7 @@ public class DownloadTreeTable extends JXTreeTable implements TreeExpansionListe
         JMenu pluginPopup = new JMenu(JDLocale.L("gui.table.contextmenu.extrasSubmenu", "Extras"));
         ArrayList<MenuItem> entries = new ArrayList<MenuItem>();
         if (obj instanceof FilePackage) {
-            JDUtilities.getController().fireControlEventDirect(new ControlEvent(((FilePackage) obj), ControlEvent.CONTROL_LINKLIST_CONTEXT_MENU, entries));
+            JDUtilities.getController().fireControlEventDirect(new ControlEvent((FilePackage) obj, ControlEvent.CONTROL_LINKLIST_CONTEXT_MENU, entries));
         } else if (obj instanceof DownloadLink) {
             JDUtilities.getController().fireControlEventDirect(new ControlEvent((DownloadLink) obj, ControlEvent.CONTROL_LINKLIST_CONTEXT_MENU, entries));
         } else {

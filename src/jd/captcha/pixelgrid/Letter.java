@@ -634,7 +634,7 @@ public class Letter extends PixelGrid {
 
         for (int x = 0; x < newWidth; x++) {
             for (int y = 0; y < newHeight; y++) {
-                PixelGrid.setPixelValue(x, y, newGrid, getMaxPixelValue(), owner);
+                PixelGrid.setPixelValue(x, y, newGrid, getMaxPixelValue());
 
             }
         }
@@ -645,7 +645,7 @@ public class Letter extends PixelGrid {
                 if (isElement(getPixelValue(x, y), avg)) {
                     int newX = (int) Math.floor(x / faktor);
                     int newY = (int) Math.floor(y / faktor);
-                    PixelGrid.setPixelValue(newX, newY, newGrid, 0, owner);
+                    PixelGrid.setPixelValue(newX, newY, newGrid, 0);
 
                 }
 

@@ -35,19 +35,19 @@ public class MaxUploadEu extends PluginForHost {
         this.setStartIntervall(100l);
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://www.maxupload.eu/en/terms";
     }
-    
+
     public String fileno;
 
-    //@Override
+    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
-        fileno = new Regex(downloadLink.getDownloadURL(),"maxupload.eu/../(\\d+)").getMatch(0);
+        fileno = new Regex(downloadLink.getDownloadURL(), "maxupload.eu/../(\\d+)").getMatch(0);
         if (fileno == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        br.getPage("http://www.maxupload.eu/en/"+fileno);
+        br.getPage("http://www.maxupload.eu/en/" + fileno);
         String filename = br.getRegex("class=\"fname\"><strong>(.*?)</strong>").getMatch(0);
         String filesize = br.getRegex("size:</span> (.*?)<br").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -56,44 +56,44 @@ public class MaxUploadEu extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         String getlink;
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
         getlink = br.getRegex("a rel=\"nofollow\" href=\"(.*?)\"").getMatch(0);
         if (getlink == null) getlink = "http://www.maxupload.eu/download.php?id=" + fileno;
-        if (getlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.setFollowRedirects(true);
-        // this.sleep(3000, downloadLink); // uncomment when they introduce waittime
+        // this.sleep(3000, downloadLink); // uncomment when they introduce
+        // waittime
         dl = br.openDownload(downloadLink, getlink, false, 1);
         URLConnectionAdapter con = dl.getConnection();
         if (!con.isOK()) {
             con.disconnect();
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE); 
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
         }
         dl.startDownload();
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 }

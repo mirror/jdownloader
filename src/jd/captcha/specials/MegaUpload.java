@@ -16,27 +16,13 @@
 
 package jd.captcha.specials;
 
-import java.awt.Image;
-import java.awt.image.RenderedImage;
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
-
-import javax.imageio.ImageIO;
 
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.LetterComperator;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
-import jd.controlling.JDLogger;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.Colors;
-import jd.nutils.JDHash;
-import jd.nutils.zip.Zip;
-import jd.parser.html.Form;
-import jd.utils.JDUtilities;
 
 /**
  * 
@@ -124,109 +110,6 @@ public class MegaUpload {
 
     public static Letter[] letterFilter(Letter[] org, JAntiCaptcha jac) {
         return org;
-    }
-
-    public static void saveBoders(File file) throws IOException {
-        String methodsPath = JDUtilities.getResourceFile("jd/captcha/methods").getAbsolutePath();
-        String hoster = "megaupload.com";
-
-        JAntiCaptcha jac = new JAntiCaptcha(methodsPath, hoster);
-        Image captchaImage = ImageIO.read(file);
-
-        Captcha captcha = Captcha.getCaptcha(captchaImage, jac);
-
-        getBorders(captcha);
-        try {
-            file = JDUtilities.getResourceFile("caps/mu/borders/" + System.currentTimeMillis() + ".png");
-            file.mkdirs();
-            ImageIO.write((RenderedImage) captcha.getImage(1), "png", file);
-
-            System.out.println(file);
-        } catch (IOException e1) {
-            JDLogger.exception(e1);
-        }
-    }
-
-    public static void main(String args[]) throws IOException {
-        if (true) {
-            go();
-        }
-
-        if (false) {
-            int i = 0;
-            HashMap<String, File> map = new HashMap<String, File>();
-            File dir = JDUtilities.getResourceFile("caps/megaupload.com/captchas/");
-            for (File f : dir.listFiles()) {
-
-                map.put(JDHash.getMD5(f), f);
-            }
-            int ii = 0;
-            int zips = 0;
-            while (true) {
-                i++;
-                File file = downloadCaptcha();
-                String hash = JDHash.getMD5(file);
-
-                if (map.containsKey(hash)) {
-                    ii++;
-
-                    System.out.println("Rem " + ii);
-                    file.delete();
-                } else {
-                    map.put(hash, file);
-
-                    saveBoders(file);
-                }
-                System.out.println("List: " + JDUtilities.getResourceFile("caps/mu/borders").listFiles().length);
-                if (JDUtilities.getResourceFile("caps/mu/borders").listFiles().length >= 10) {
-                    System.out.println("ZIPPY");
-                    Zip zip = new Zip(JDUtilities.getResourceFile("caps/mu/borders"), JDUtilities.getResourceFile("caps/mu/mu_caps_" + System.currentTimeMillis() + ".zip"));
-
-                    try {
-                        zip.zip();
-
-                        for (File cap : JDUtilities.getResourceFile("caps/mu/borders").listFiles()) {
-                            System.out.println("DEL " + cap + " : " + cap.delete());
-                        }
-                        System.out.println("List: " + JDUtilities.getResourceFile("caps/mu/borders").listFiles().length);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }
-
-    }
-
-    private static File downloadCaptcha() throws IOException {
-        Browser br = new Browser();
-        br.setCookie("http://megaupload.com", "l", "en");
-        br.getPage("http://www.megaupload.com/?d=ML38NV20");
-        Form form = br.getForm(0);
-        if (form == null) {
-
-            System.exit(1);
-
-        }
-        String captcha = form.getRegex("Enter this.*?src=\"(.*?gencap.*?)\"").getMatch(0);
-
-        br.getHeaders().put("Accept", "image/png,image/*;q=0.8,*/*;q=0.5");
-        URLConnectionAdapter con = br.openGetConnection(captcha);
-        File file = JDUtilities.getResourceFile("caps/megaupload.com/captchas/caps_" + System.currentTimeMillis() + ".png");
-        Browser.download(file, con);
-        return file;
-    }
-
-    private static void go() throws IOException {
-        String methodsPath = JDUtilities.getResourceFile("jd/captcha/methods").getAbsolutePath();
-        String hoster = "megaupload.com";
-
-        final JAntiCaptcha jac = new JAntiCaptcha(methodsPath, hoster);
-
-        File f = downloadCaptcha();
-
-        System.out.println(f + "");
-        jac.showPreparedCaptcha(f);
     }
 
 }

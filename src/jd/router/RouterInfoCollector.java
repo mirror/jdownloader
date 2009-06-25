@@ -179,7 +179,7 @@ public class RouterInfoCollector {
                             }
                             boolean bs = false;
                             for (Iterator<String> iterator = b.getValue().iterator(); iterator.hasNext();) {
-                                String type = (String) iterator.next();
+                                String type = iterator.next();
                                 if (bs) {
                                     pageHeader.append(';');
                                 }

@@ -68,7 +68,6 @@ import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
 import org.schwering.irc.lib.IRCConnection;
-import org.schwering.irc.lib.IRCUser;
 
 public class JDChat extends PluginOptional implements ControlListener {
     private static final long AWAY_TIMEOUT = 15 * 60 * 1000;
@@ -1168,7 +1167,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         if (conn != null) conn.close();
     }
 
-    public void onMode(IRCUser u, char op, char mod, String arg) {
+    public void onMode(char op, char mod, String arg) {
         switch (mod) {
         case 'o':
             if (op == '+') {

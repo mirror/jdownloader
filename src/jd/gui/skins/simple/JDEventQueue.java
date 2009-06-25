@@ -226,7 +226,7 @@ public class JDEventQueue extends EventQueue {
                     if (source instanceof JTabbedPane) {
                         source2 = ((JTabbedPane) source).getSelectedComponent();
                     }
-                    if (source == null || source2 == source || source2 == null) break;
+                    if (source == null || source2 == null || source2 == source) break;
                     source = source2;
                     point.x -= source.getLocation().x;
                     point.y -= source.getLocation().y;

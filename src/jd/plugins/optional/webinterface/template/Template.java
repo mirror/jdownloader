@@ -119,7 +119,7 @@ public class Template {
             }
             Hashtable<String, Object> h2 = new Hashtable<String, Object>();
             for (Enumeration<String> e2 = h.keys(); e2.hasMoreElements();) {
-                String key = (String) e2.nextElement();
+                String key = e2.nextElement();
                 Object value = h.get(key);
                 String value_type = value.getClass().getName();
                 Util.debug_print("to lower case: " + key + "(" + value_type + ")");
@@ -582,7 +582,7 @@ public class Template {
                 Util.debug_print("closing tag");
                 if (!type.equals(e.Type())) { throw new EmptyStackException(); }
 
-                e = (Element) elements.pop();
+                e = elements.pop();
             } else {
                 Element t = parser.getElement(p);
                 e.add(t);
@@ -654,7 +654,7 @@ public class Template {
             filehandle = (Reader) value;
             Util.debug_print("filehandle");
         } else {
-            throw new IllegalArgumentException((String) key);
+            throw new IllegalArgumentException(key);
         }
     }
 
@@ -677,7 +677,7 @@ public class Template {
         if (elements.empty()) {
             e = __template__;
         } else {
-            e = (Element) elements.pop();
+            e = elements.pop();
         }
 
         max_includes--;
@@ -701,7 +701,7 @@ public class Template {
         if (elements.empty()) {
             e = __template__;
         } else {
-            e = (Element) elements.pop();
+            e = elements.pop();
         }
 
         max_includes--;

@@ -149,11 +149,11 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
     // @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() instanceof MenuItem) {
-            menuitemActionPerformed(e, (MenuItem) e.getSource());
+            menuitemActionPerformed((MenuItem) e.getSource());
         }
     }
 
-    private void menuitemActionPerformed(ActionEvent e, MenuItem source) {
+    private void menuitemActionPerformed(MenuItem source) {
         SubConfiguration cfg = this.getPluginConfig();
         switch (source.getActionID()) {
         case 1:

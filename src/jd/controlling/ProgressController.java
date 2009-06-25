@@ -108,7 +108,7 @@ public class ProgressController implements MessageListener {
     }
 
     public void decrease(long i) {
-        setStatus(currentValue - 1);
+        setStatus(currentValue - i);
     }
 
     // @Override

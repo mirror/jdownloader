@@ -71,7 +71,7 @@ public class Browser {
     private static JDProxy GLOBAL_PROXY = null;
 
     public static void setGlobalProxy(JDProxy p) {
-        JDLogger.getLogger().info("Use global proxy: "+p);
+        JDLogger.getLogger().info("Use global proxy: " + p);
         GLOBAL_PROXY = p;
     }
 
@@ -231,7 +231,7 @@ public class Browser {
     private static final Authenticator AUTHENTICATOR = new Authenticator() {
         protected PasswordAuthentication getPasswordAuthentication() {
             Browser br = Browser.getAssignedBrowserInstance(this.getRequestingURL());
-            return br.getPasswordAuthentication(this.getRequestingURL(), this.getRequestingHost(), this.getRequestingPort());
+            return br.getPasswordAuthentication(this.getRequestingHost(), this.getRequestingPort());
 
         }
     };
@@ -931,7 +931,7 @@ public class Browser {
             ret = Request.read(con);
         }
 
-        if (isVerbose()) JDLogger.getLogger().finest("\r\n" + ret+"\r\n");
+        if (isVerbose()) JDLogger.getLogger().finest("\r\n" + ret + "\r\n");
 
         return ret;
 
@@ -1330,7 +1330,7 @@ public class Browser {
     }
 
     public void setProxy(JDProxy proxy) {
-        JDLogger.getLogger().info("Use local proxy: "+proxy);
+        JDLogger.getLogger().info("Use local proxy: " + proxy);
         if (proxy == null) {
             System.err.println("Browser:No proxy");
             this.proxy = null;
@@ -1365,7 +1365,7 @@ public class Browser {
      * @param host
      * @return
      */
-    public PasswordAuthentication getPasswordAuthentication(URL url, String host, int port) {
+    public PasswordAuthentication getPasswordAuthentication(String host, int port) {
         if (port <= 0) port = 80;
         String[] auth = this.getAuth(host + ":" + port);
         if (auth == null) return null;
@@ -1391,11 +1391,11 @@ public class Browser {
             int port = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PROXY_PORT, 8080);
             String user = SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_USER, "");
             String pass = SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_PASS, "");
-if(host.trim().equals("")){
-    JDLogger.getLogger().warning("Proxy disabled. No host");
-    SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.USE_PROXY,false);
-    return;
-}
+            if (host.trim().equals("")) {
+                JDLogger.getLogger().warning("Proxy disabled. No host");
+                SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.USE_PROXY, false);
+                return;
+            }
 
             JDProxy pr = new JDProxy(Proxy.Type.HTTP, host, port);
 
@@ -1416,9 +1416,9 @@ if(host.trim().equals("")){
             String pass = SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_PASS_SOCKS, "");
             String host = SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.SOCKS_HOST, "");
             int port = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.SOCKS_PORT, 1080);
-            if(host.trim().equals("")){
+            if (host.trim().equals("")) {
                 JDLogger.getLogger().warning("Socks Proxy disabled. No host");
-                SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.USE_SOCKS,false);
+                SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.USE_SOCKS, false);
                 return;
             }
             JDProxy pr = new JDProxy(Proxy.Type.SOCKS, host, port);

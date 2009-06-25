@@ -92,7 +92,7 @@ class IRCListener implements IRCEventListener {
         // mp.getLine());
 
         for (int i = 1; i <= mp.getCount(); i++) {
-            owner.onMode(u, mp.getOperatorAt(i), mp.getModeAt(i), mp.getArgAt(i));
+            owner.onMode(mp.getOperatorAt(i), mp.getModeAt(i), mp.getArgAt(i));
         }
 
         owner.addToText(null, JDChat.STYLE_SYSTEM_MESSAGE, u.getNick() + " sets mode: " + mp.getLine());

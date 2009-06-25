@@ -275,7 +275,7 @@ public class Captcha extends PixelGrid {
                     // if (Math.abs(mask.getPixelValue(x, y) - getPixelValue(x,
                     // y)) < dif) {
 
-                    PixelGrid.setPixelValue(x, y, newgrid, getMaxPixelValue(), owner);
+                    PixelGrid.setPixelValue(x, y, newgrid, getMaxPixelValue());
 
                 } else {
                     newgrid[x][y] = grid[x][y];
@@ -307,7 +307,7 @@ public class Captcha extends PixelGrid {
                     // if (Math.abs(mask.getPixelValue(x, y) - getPixelValue(x,
                     // y)) < dif) {
 
-                    PixelGrid.setPixelValue(x, y, newgrid, getMaxPixelValue(), owner);
+                    PixelGrid.setPixelValue(x, y, newgrid, getMaxPixelValue());
 
                 } else {
                     newgrid[x][y] = grid[x][y];
@@ -344,7 +344,7 @@ public class Captcha extends PixelGrid {
             for (int y = 0; y < getHeight(); y++) {
                 if (mask.getPixelValue(x, y) < 100) {
 
-                    PixelGrid.setPixelValue(x, y, newgrid, getAverage(x, y, width, height, mask), owner);
+                    PixelGrid.setPixelValue(x, y, newgrid, getAverage(x, y, width, height, mask));
 
                 } else {
                     newgrid[x][y] = grid[x][y];
@@ -370,9 +370,9 @@ public class Captcha extends PixelGrid {
 
         for (int x = 0; x < getWidth(); x++) {
             for (int y = 0; y < getHeight(); y++) {
-                if (PixelGrid.getPixelValue(x, y, tmp.grid, owner) > owner.getJas().getDouble("getBlackPercent") * getMaxPixelValue()) {
+                if (PixelGrid.getPixelValue(x, y, tmp.grid) > owner.getJas().getDouble("getBlackPercent") * getMaxPixelValue()) {
 
-                    int newPixelValue = Colors.mixColors(getPixelValue(x, y), PixelGrid.getPixelValue(x, y, tmp.grid, owner));
+                    int newPixelValue = Colors.mixColors(getPixelValue(x, y), PixelGrid.getPixelValue(x, y, tmp.grid));
                     setPixelValue(x, y, newPixelValue);
                 }
             }
@@ -1139,7 +1139,7 @@ public class Captcha extends PixelGrid {
         lastletterX = 0;
         int letters = 0;
         for (int letterId = 0; letterId < letterNum; letterId++) {
-            ret[letterId] = getNextLetter(letterId);
+            ret[letterId] = getNextLetter();
 
             if (ret[letterId] == null && !owner.jas.getBoolean("autoLetterNum")) {
                 if (owner.getJas().getGaps() != null) {
@@ -1182,7 +1182,7 @@ public class Captcha extends PixelGrid {
      *            Id des Letters (0-letterNum-1)
      * @return Letter gefundener Letter
      */
-    private Letter getNextLetter(int letterId) {
+    private Letter getNextLetter() {
         Letter ret = createLetter();
 
         int[][] letterGrid = new int[getWidth()][getHeight()];
@@ -1382,7 +1382,7 @@ public class Captcha extends PixelGrid {
 
         for (int x = 0; x < newWidth; x++) {
             for (int y = 0; y < newHeight; y++) {
-                PixelGrid.setPixelValue(x, y, newGrid, getMaxPixelValue(), owner);
+                PixelGrid.setPixelValue(x, y, newGrid, getMaxPixelValue());
             }
         }
         for (int x = 0; x < getWidth(); x++) {
@@ -1391,7 +1391,7 @@ public class Captcha extends PixelGrid {
                 if (isElement(getPixelValue(x, y), avg)) {
                     int newX = (int) Math.round(x / faktor);
                     int newY = (int) Math.round(y / faktor);
-                    PixelGrid.setPixelValue(newX, newY, newGrid, 0, owner);
+                    PixelGrid.setPixelValue(newX, newY, newGrid, 0);
 
                 }
 
@@ -1781,14 +1781,14 @@ public class Captcha extends PixelGrid {
 
                 if (mode == 1) {
                     if (v > tollerance) {
-                        PixelGrid.setPixelValue(x, y, newgrid, getMaxPixelValue(), owner);
+                        PixelGrid.setPixelValue(x, y, newgrid, getMaxPixelValue());
                     } else {
                         newgrid[x][y] = grid[x][y];
                     }
 
                 } else {
                     if (v < tollerance) {
-                        PixelGrid.setPixelValue(x, y, newgrid, getMaxPixelValue(), owner);
+                        PixelGrid.setPixelValue(x, y, newgrid, getMaxPixelValue());
                     } else {
                         newgrid[x][y] = grid[x][y];
                     }

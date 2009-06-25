@@ -33,7 +33,6 @@ import jd.plugins.DownloadLink;
 import jd.utils.EditDistance;
 import jd.utils.JDLocale;
 
-
 /**
  * Die klasse dient zum verpacken der Unrar binary.
  * 
@@ -457,7 +456,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
 
         if (smallestFile.getSize() < 2097152) {
             int c = 0;
-            
+
             for (String pass : this.passwordList) {
                 crackProgress = ((c++) * 100) / passwordList.length;
                 fireEvent(JDUnrarConstants.WRAPPER_PASSWORT_CRACKING);
@@ -551,7 +550,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
                 buff.flip();
                 for (int i = 0; i < buff.limit(); i++) {
                     byte f = buff.get();
-                    String s = Integer.toHexString((int) f);
+                    String s = Integer.toHexString(f);
                     s = (s.length() < 2 ? "0" + s : s);
                     s = s.substring(s.length() - 2);
                     sigger.append(s);
@@ -796,7 +795,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
     public long getExtractedSize() {
         long size = 0;
         for (ArchivFile af : files) {
-            size += af.getSize() * ((double) af.getPercent() / 100.0);
+            size += af.getSize() * (af.getPercent() / 100.0);
         }
         return size;
     }

@@ -92,7 +92,7 @@ public class CaptchaController {
                 }
             }
 
-            if (vp > (double) SubConfiguration.getConfig("JAC").getIntegerProperty(Configuration.AUTOTRAIN_ERROR_LEVEL, 95)) {
+            if (vp > SubConfiguration.getConfig("JAC").getIntegerProperty(Configuration.AUTOTRAIN_ERROR_LEVEL, 95)) {
                 if ((flag & UserIO.NO_USER_INTERACTION) > 0) return captchaCode;
                 return UserIO.getInstance().requestCaptchaDialog(flag | UserIO.NO_JAC, methodname, captchafile, captchaCode, null);
             } else {

@@ -142,16 +142,9 @@ public abstract class TaskPanel extends JXTaskPane implements MouseListener, Pro
     }
 
     public void broadcastEvent(final ActionEvent e) {
-        // new Thread() {
-        // public void run() {
-        //              
-
-        for (ActionListener listener : (ActionListener[]) listenerList.getListeners(ActionListener.class)) {
+        for (ActionListener listener : listenerList.getListeners(ActionListener.class)) {
             listener.actionPerformed(e);
         }
-
-        // }
-        // }.start();
     }
 
     /**
@@ -162,7 +155,7 @@ public abstract class TaskPanel extends JXTaskPane implements MouseListener, Pro
      *         if no listeners have been added
      */
     public ActionListener[] getActionListeners() {
-        return (ActionListener[]) (listenerList.getListeners(ActionListener.class));
+        return listenerList.getListeners(ActionListener.class);
     }
 
     public void mouseClicked(MouseEvent e) {

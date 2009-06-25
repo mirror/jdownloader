@@ -28,9 +28,9 @@ public class FurkNet extends PluginForHost {
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("Slots limit for free downloads")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         Form form = br.getForm(0);
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         form.remove(null);
         br.setFollowRedirects(false);
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         dl = br.openDownload(link, form, false, 1);
         dl.startDownload();
 

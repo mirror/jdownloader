@@ -148,7 +148,7 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
         this.packed();
         this.toFront();
         this.setMinimumSize(this.getPreferredSize());
-        if(DEFAULT_DIMENSION!=null)this.setSize(DEFAULT_DIMENSION);
+        if (DEFAULT_DIMENSION != null) this.setSize(DEFAULT_DIMENSION);
         if (SimpleGUI.CURRENTGUI == null) {
             this.setLocation(Screen.getCenterOfComponent(null, this));
         } else if (SimpleGUI.CURRENTGUI.getExtendedState() == JFrame.ICONIFIED || !SimpleGUI.CURRENTGUI.isVisible() || !SimpleGUI.CURRENTGUI.isActive()) {
@@ -200,7 +200,7 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
             if (dont.isSelected()) {
                 returnValue = b ? UserIO.RETURN_OK | UserIO.RETURN_DONT_SHOW_AGAIN : UserIO.RETURN_CANCEL | UserIO.RETURN_DONT_SHOW_AGAIN;
                 SubConfiguration cfg = SubConfiguration.getConfig(DIALOGS_CONFIG);
-                cfg.setProperty("DONT_SHOW_AGAIN_" + JDHash.getMD5(this.toString()), (Integer) returnValue);
+                cfg.setProperty("DONT_SHOW_AGAIN_" + JDHash.getMD5(this.toString()), returnValue);
                 cfg.save();
                 // System.out.println(cfg+toString()+" This save" +
                 // "DONT_SHOW_AGAIN_" + JDHash.getMD5(this.toString()) + " " +

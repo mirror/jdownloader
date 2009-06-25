@@ -232,7 +232,7 @@ public class DownloadChunk extends DownloadChunkInterface implements JDRunnable 
                     }
                 }
                 loadUntil = System.currentTimeMillis() + 250;
-                limit = owner.getChunkBandwidth(this);
+                limit = owner.getChunkBandwidth();
                 if (limit > 0) {
                     // System.out.println("limi " + limit);
                     limit /= 4;

@@ -503,10 +503,6 @@ public class PixelObject implements Comparable<PixelObject> {
 
     }
 
-    public void setColor(int pixelValue) {
-
-    }
-
     /**
      * Setzt den Kontrast für die fitColor funktion
      * 

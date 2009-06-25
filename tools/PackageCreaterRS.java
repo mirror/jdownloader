@@ -92,7 +92,7 @@ public class PackageCreaterRS {
             do {
                 filename = name + "_" + df.format(dt) + "_v" + i + ".jdu";
                 i++;
-            } while (filename == null || new File(srcDir, filename).exists());
+            } while (new File(srcDir, filename).exists());
 
             Zip zip = new Zip(files, new File(srcDir, filename));
             zip.setExcludeFilter(Pattern.compile("\\.svn", Pattern.CASE_INSENSITIVE));
@@ -141,7 +141,7 @@ public class PackageCreaterRS {
                         // "Kategorie für: " + name)+"</category>");
                         // sb.append("<name>"+JOptionPane.showInputDialog(frame,
                         // "Name für: " + name)+"</name>");
-                        //sb.append("<version>"+JOptionPane.showInputDialog(frame
+                        // sb.append("<version>"+JOptionPane.showInputDialog(frame
                         // ,
                         // "Version für: " + name)+"</version>");
                         // sb.append("<url>"+url+"</url>");
@@ -165,7 +165,7 @@ public class PackageCreaterRS {
             do {
                 filename = name + "_" + df.format(dt) + "_v" + i + " (LIGHT).jdu";
                 i++;
-            } while (filename == null || new File(srcDir, filename).exists());
+            } while (new File(srcDir, filename).exists());
             zip = new Zip(files, new File(srcDir, filename));
             zip.setExcludeFilter(Pattern.compile("\\.svn", Pattern.CASE_INSENSITIVE));
 

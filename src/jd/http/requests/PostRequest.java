@@ -117,7 +117,7 @@ public class PostRequest extends Request {
     }
 
     public void addAll(HashMap<String, String> post) {
-
+        // TODO: Implementieren
     }
 
     public void addAll(ArrayList<RequestVariable> post) {

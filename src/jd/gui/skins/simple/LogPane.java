@@ -22,7 +22,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
-import java.util.logging.Logger;
 
 import javax.swing.JFileChooser;
 import javax.swing.JScrollPane;
@@ -59,11 +58,8 @@ public class LogPane extends JTabbedPanel implements ActionListener, ControlList
 
     /**
      * Primary Constructor
-     * 
-     * @param logger
-     *            The connected Logger
      */
-    public LogPane(Logger logger) {
+    public LogPane() {
         this.setName("LOGDIALOG");
         this.setLayout(new MigLayout("ins 3", "[fill,grow]", "[fill,grow]"));
 

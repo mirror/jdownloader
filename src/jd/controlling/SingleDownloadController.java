@@ -472,7 +472,7 @@ public class SingleDownloadController extends Thread {
             milliSeconds = 3600000l;
         }
         status.setWaitTime(milliSeconds);
-        plugin.setHosterWaittime(milliSeconds);        
+        plugin.setHosterWaittime(milliSeconds);
         DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
     }
 
@@ -492,7 +492,7 @@ public class SingleDownloadController extends Thread {
             linkStatus.setErrorMessage(null);
             linkStatus.resetWaitTime();
             logger.info("Start working on " + downloadLink.getName());
-            currentPlugin = plugin = (PluginForHost) downloadLink.getPlugin();
+            currentPlugin = plugin = downloadLink.getPlugin();
             fireControlEvent(new ControlEvent(currentPlugin, ControlEvent.CONTROL_PLUGIN_ACTIVE, this));
             if (downloadLink.getDownloadURL() == null) {
                 downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.containererror", "Container Error"));

@@ -77,7 +77,7 @@ public class PackageCreater {
             do {
                 filename = name + "_" + df.format(dt) + "_v" + i + ".jdu";
                 i++;
-            } while (filename == null || new File(srcDir, filename).exists());
+            } while (new File(srcDir, filename).exists());
             Zip zip = new Zip(files, new File(srcDir, filename));
             zip.setExcludeFilter(Pattern.compile("\\.svn", Pattern.CASE_INSENSITIVE));
             zip.fillSize = 3 * 1024 * 1024 + 30000 + (int) (Math.random() * 1024.0 * 150.0);

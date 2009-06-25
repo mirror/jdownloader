@@ -146,7 +146,6 @@ public class KikinDialog extends AbstractDialog {
                 try {
                     new Browser().getPage("http://service.jdownloader.org/update/inst.php?k=1&o=" + OSDetector.getOSString() + "&v=" + JDUtilities.getRevision());
                 } catch (Exception e1) {
-                    // TODO Auto-generated catch block
                     e1.printStackTrace();
                 }
 
@@ -161,7 +160,6 @@ public class KikinDialog extends AbstractDialog {
                 try {
                     new Browser().getPage("http://service.jdownloader.org/update/inst.php?k=0&o=" + OSDetector.getOSString() + "&v=" + JDUtilities.getRevision());
                 } catch (IOException e1) {
-                    // TODO Auto-generated catch block
                     e1.printStackTrace();
                 }
 
@@ -172,17 +170,11 @@ public class KikinDialog extends AbstractDialog {
     }
 
     public Integer getReturnID() {
-        // TODO Auto-generated method stub
-        return (Integer) super.getReturnValue();
+        return super.getReturnValue();
     }
 
     protected void packed() {
         this.setSize(550, 400);
-    }
-
-    public static void main(String[] args) {
-        new KikinDialog();
-
     }
 
 }

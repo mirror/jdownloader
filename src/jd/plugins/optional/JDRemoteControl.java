@@ -191,7 +191,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 Property config = JDUtilities.getConfiguration();
                 response.addContent("<pre>");
                 if (request.getParameters().containsKey("sub")) {
-                    config = SubConfiguration.getConfig(((String) request.getParameters().get("sub")).toUpperCase());
+                    config = SubConfiguration.getConfig(request.getParameters().get("sub").toUpperCase());
                 }
                 for (Entry<String, Object> next : config.getProperties().entrySet()) {
                     response.addContent(next.getKey() + " = " + next.getValue() + "\r\n");
@@ -300,7 +300,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                     SubConfiguration.getConfig("WEBUPDATE").setProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false);
                 }
 
-                new WebUpdate().doWebupdate(true,true);
+                new WebUpdate().doWebupdate(true, true);
 
                 response.addContent("Do Webupdate...");
             } else if (request.getRequestUrl().equals("/action/reconnect")) {

@@ -120,8 +120,8 @@ public class SplashScreen implements ActionListener, ControlListener {
         Rectangle v = ge.getDefaultScreenDevice().getDefaultConfiguration().getBounds();
         int screenWidth = (int) v.getWidth();
         int screenHeight = (int) v.getHeight();
-        x = (int) (screenWidth / 2 - image.getWidth(null) / 2);
-        y = (int) (screenHeight / 2 - image.getHeight(null) / 2);
+        x = screenWidth / 2 - image.getWidth(null) / 2;
+        y = screenHeight / 2 - image.getHeight(null) / 2;
         w = image.getWidth(null);
         h = image.getHeight(null);
         initGui();

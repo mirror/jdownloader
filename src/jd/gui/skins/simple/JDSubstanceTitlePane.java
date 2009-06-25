@@ -22,7 +22,6 @@ import java.awt.FontMetrics;
 import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.Image;
 import java.awt.Window;
 
 import javax.swing.JMenuBar;
@@ -43,12 +42,12 @@ import org.jvnet.substance.utils.SubstanceTitlePane;
 public class JDSubstanceTitlePane extends SubstanceTitlePane {
 
     private static final long serialVersionUID = -2571143182567635859L;
-    // private SubstanceColorScheme scheme;
- 
 
-    public JDSubstanceTitlePane(JRootPane root, SubstanceRootPaneUI ui, Image logo) {
+    // private SubstanceColorScheme scheme;
+
+    public JDSubstanceTitlePane(JRootPane root, SubstanceRootPaneUI ui) {
         super(root, ui);
-      
+
         // final JRootPane rootPane = this.getRootPane();
 
         // SubstanceSkin skin = SubstanceCoreUtilities.getSkin(rootPane);
@@ -95,7 +94,7 @@ public class JDSubstanceTitlePane extends SubstanceTitlePane {
         super.paintComponent(g);
 
         if (!(this.getWindow() instanceof Frame)) return;
-    
+
         final JRootPane rootPane = this.getRootPane();
 
         int width = this.getWidth();
@@ -144,12 +143,13 @@ public class JDSubstanceTitlePane extends SubstanceTitlePane {
 
         GhostPaintingUtils.paintGhostImages(this, graphics);
 
-//        graphics.drawImage(logo, JDToolBar.LEFTGAP, height - (JDToolBar.IMGSIZE - JDToolBar.DISPLAY), JDToolBar.IMGSIZE + JDToolBar.LEFTGAP, height, 0, 0, JDToolBar.IMGSIZE, JDToolBar.IMGSIZE - JDToolBar.DISPLAY, null);
+        // graphics.drawImage(logo, JDToolBar.LEFTGAP, height -
+        // (JDToolBar.IMGSIZE - JDToolBar.DISPLAY), JDToolBar.IMGSIZE +
+        // JDToolBar.LEFTGAP, height, 0, 0, JDToolBar.IMGSIZE, JDToolBar.IMGSIZE
+        // - JDToolBar.DISPLAY, null);
         // long end = System.nanoTime();
         // System.out.println(end - start);
         graphics.dispose();
     }
-
-  
 
 }

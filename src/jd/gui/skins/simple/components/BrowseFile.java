@@ -46,12 +46,7 @@ public class BrowseFile extends JPanel implements ActionListener {
 
     public BrowseFile() {
         super();
-        initGUI(0);
-    }
-
-    public BrowseFile(int width) {
-        super();
-        initGUI(width);
+        initGUI();
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -136,7 +131,7 @@ public class BrowseFile extends JPanel implements ActionListener {
         return txtInput.getText();
     }
 
-    private void initGUI(int width) {
+    private void initGUI() {
 
         setLayout(new MigLayout("ins 0", "[grow 100,fill,160:null:null]3[grow 30,fill]"));
         txtInput = new JTextField();

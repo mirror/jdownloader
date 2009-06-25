@@ -218,7 +218,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
             this.noTitlePane = true;
         }
 
-        if (isSubstance()) this.getRootPane().setUI(new JDSubstanceUI(mainMenuIcon));
+        if (isSubstance()) this.getRootPane().setUI(new JDSubstanceUI());
 
         toolBar = new JDToolBar(noTitlePane);
 
@@ -430,7 +430,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
 
             mainMenuIcon = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_54_54_trans"), 54, 54);
             mainMenuIconRollOver = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_54_54"), 54, 54);
-            this.getRootPane().setUI(new JDSubstanceUI(mainMenuIcon));
+            this.getRootPane().setUI(new JDSubstanceUI());
 
             JDController.getInstance().addControlListener(new ConfigPropertyListener(SimpleGuiConstants.ANIMATION_ENABLED) {
 
@@ -570,7 +570,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
 
         LogTaskPane logTask = new LogTaskPane(JDLocale.L("gui.taskpanes.log", "Log"), JDTheme.II("gui.images.terminal", 24, 24));
         logTask.setName(JDLocale.L("quickhelp.lopgtaskpane", "Log Taskpane"));
-        logPanel = new SingletonPanel(LogPane.class, new Object[] { logger });
+        logPanel = new SingletonPanel(LogPane.class);
         logTask.addPanel(logPanel);
         logTask.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {

@@ -345,7 +345,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
         if (!subConfig.getBooleanProperty(PROPERTY_TOOLTIP, true)) return;
         if (trayIconPopup != null && trayIconPopup.isVisible()) return;
 
-        trayIconTooltip.show(e, ((TrayMouseAdapter) e.getSource()).getEstimatedTopLeft(), this.trayIcon);
+        trayIconTooltip.show(((TrayMouseAdapter) e.getSource()).getEstimatedTopLeft(), this.trayIcon);
 
     }
 }

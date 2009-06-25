@@ -1451,7 +1451,7 @@ abstract public class DownloadInterface {
         case LinkStatus.ERROR_LINK_IN_PROGRESS:
         case LinkStatus.ERROR_DOWNLOAD_FAILED:
             fatalErrorOccured = true;
-            terminate(id);
+            terminate();
 
         }
 
@@ -1863,10 +1863,8 @@ abstract public class DownloadInterface {
 
     /**
      * Bricht den Download komplett ab.
-     * 
-     * @param id
      */
-    private void terminate(int id) {
+    private void terminate() {
         logger.severe("A critical Downloaderror occured. Terminate...");
         synchronized (chunks) {
             Iterator<Chunk> it = chunks.iterator();

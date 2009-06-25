@@ -35,10 +35,6 @@ public class User implements Comparable<Object> {
     public int rank = RANK_DEFAULT;
 
     public User(String name) {
-        this(name, null);
-    }
-
-    public User(String name, String color) {
         if (name.startsWith("@")) {
             rank = RANK_OP;
             name = name.substring(1);
@@ -99,7 +95,7 @@ public class User implements Comparable<Object> {
 
     }
 
-    //@Override
+    // @Override
     public String toString() {
         switch (rank) {
         case RANK_OP:

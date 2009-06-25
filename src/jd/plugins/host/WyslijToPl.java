@@ -35,12 +35,12 @@ public class WyslijToPl extends PluginForHost {
         this.setStartIntervall(5000l);
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://wyslijto.pl/rules";
     }
 
-    //@Override
+    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -54,18 +54,17 @@ public class WyslijToPl extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String fileid = new Regex(downloadLink.getDownloadURL(), "([^/]+)$").getMatch(0);
         br.getPage("http://www.wyslijto.pl/files/download/" + fileid);
         String linkurl = "http://www.wyslijto.pl/download/" + fileid;
-        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.setFollowRedirects(true);
         // this.sleep(60000, downloadLink); // uncomment when they find a better
         // way to force wait time
@@ -74,22 +73,22 @@ public class WyslijToPl extends PluginForHost {
 
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void resetDownloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
-        
+
     }
 }

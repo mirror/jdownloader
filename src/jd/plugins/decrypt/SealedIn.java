@@ -86,9 +86,9 @@ public class SealedIn extends PluginForDecrypt {
 
         if (do_continue || f == null) {
             /* Container */
-            if (!getContainer(page, parameter, "dlc", decryptedLinks)) {
-                if (!getContainer(page, parameter, "ccf", decryptedLinks)) {
-                    getContainer(page, parameter, "rsdf", decryptedLinks);
+            if (!getContainer(page, "dlc", decryptedLinks)) {
+                if (!getContainer(page, "ccf", decryptedLinks)) {
+                    getContainer(page, "rsdf", decryptedLinks);
                 }
             }
             /* No Container */
@@ -119,7 +119,7 @@ public class SealedIn extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private boolean getContainer(String page, String cryptedLink, String containerFormat, ArrayList<DownloadLink> decryptedLinks) throws IOException {
+    private boolean getContainer(String page, String containerFormat, ArrayList<DownloadLink> decryptedLinks) throws IOException {
         String container_link = new Regex(page, "href=\"(" + containerFormat + "/[a-z0-9]+)\"").getMatch(0);
         if (container_link != null) {
             File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + "." + containerFormat);

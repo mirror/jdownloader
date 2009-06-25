@@ -21,7 +21,6 @@ import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.Toolkit;
 import java.awt.TrayIcon;
-import java.awt.event.MouseEvent;
 
 import javax.swing.BorderFactory;
 import javax.swing.JLabel;
@@ -85,7 +84,7 @@ public class TrayIconTooltip extends JWindow {
 
     }
 
-    public void show(MouseEvent e, Point point, TrayIcon trayIcon) {
+    public void show(Point point, TrayIcon trayIcon) {
         this.trayIcon = trayIcon;
         this.estimatedTopLeft = point;
         if (trayInfo != null) trayInfo.interrupt();

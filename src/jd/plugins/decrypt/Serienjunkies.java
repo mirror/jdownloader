@@ -1059,8 +1059,6 @@ public class Serienjunkies extends PluginForDecrypt {
 
         private final String host;
 
-        private final long size;
-
         private final String readableSize;
 
         private final String link;
@@ -1070,7 +1068,6 @@ public class Serienjunkies extends PluginForDecrypt {
         public SerienjunkiesLinks(String name, String host, long size, String link, String[] mirrors) {
             this.name = name;
             this.host = host;
-            this.size = size;
             this.readableSize = Formatter.formatReadable(size);
             this.link = link;
             this.mirrors = mirrors;
@@ -1082,10 +1079,6 @@ public class Serienjunkies extends PluginForDecrypt {
 
         public String getHost() {
             return host;
-        }
-
-        public long getSize() {
-            return size;
         }
 
         public String getReadableSize() {

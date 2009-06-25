@@ -267,11 +267,11 @@ public class HTTPLiveHeader extends ReconnectMethod {
                     if (toDo.getNodeName().equalsIgnoreCase("WAIT")) {
                         NamedNodeMap attributes = toDo.getAttributes();
                         Node item = attributes.getNamedItem("seconds");
-                        logger.finer("Wait " + item.getNodeValue() + " seconds");
                         if (item == null) {
                             logger.severe("A Wait Step needs a Waittimeattribute: e.g.: <WAIT seconds=\"15\"/>");
                             return false;
                         }
+                        logger.finer("Wait " + item.getNodeValue() + " seconds");
                         int seconds = Formatter.filterInt(item.getNodeValue());
                         Thread.sleep(seconds * 1000);
                     }
@@ -394,7 +394,7 @@ public class HTTPLiveHeader extends ReconnectMethod {
                     br.getPage(http + host + path);
                 } else if (requestType.equalsIgnoreCase("POST")) {
                     String poster = post.toString().trim();
-                  
+
                     br.postPageRaw(http + host + path, poster);
                 } else if (requestType.equalsIgnoreCase("AUTH")) {
                     logger.finer("Convert AUTH->GET");

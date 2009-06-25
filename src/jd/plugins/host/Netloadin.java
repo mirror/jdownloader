@@ -426,7 +426,7 @@ public class Netloadin extends PluginForHost {
                 return AvailableStatus.TRUE;
             }
 
-            if (entries == null || entries.length < 3) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (entries.length < 3) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
             downloadLink.setFinalFileName(entries[1]);
             fileStatusText = entries[2];

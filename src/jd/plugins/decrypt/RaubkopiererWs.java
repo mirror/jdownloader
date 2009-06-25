@@ -147,17 +147,11 @@ public class RaubkopiererWs extends PluginForDecrypt {
              * mirror-loop if got links from container
              */
             if (br.containsHTML("/container/(dlc|ccf|rsdf)_files/")) {
-                if (!getContainer(br.toString(), parameter, "dlc", decryptedLinks)) {
-                    if (!getContainer(br.toString(), parameter, "ccf", decryptedLinks)) {
-                        if (!getContainer(br.toString(), parameter, "rsdf", decryptedLinks)) {
-                            ;
-                        } else {
-                            continue;
-                        }
-                    } else {
-                        continue;
-                    }
-                } else {
+                if (getContainer(br.toString(), "dlc", decryptedLinks)) {
+                    continue;
+                } else if (getContainer(br.toString(), "ccf", decryptedLinks)) {
+                    continue;
+                } else if (getContainer(br.toString(), "rsdf", decryptedLinks)) {
                     continue;
                 }
             }
@@ -175,7 +169,7 @@ public class RaubkopiererWs extends PluginForDecrypt {
                 partcount = parts.length;
                 int percent = progress.getPercent();
                 progress.setRange(parts.length * mirrors.useNum());
-                progress.setStatus((long) Math.round(progress.getMax() * ((double) percent / 10000)));
+                progress.setStatus(Math.round(progress.getMax() * ((double) percent / 10000)));
                 for (String part : parts) {
                     br.getPage(part.replace("goto", "frame"));
                     DownloadLink dlink = createDownloadlink(br.getRedirectLocation());
@@ -219,7 +213,7 @@ public class RaubkopiererWs extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private boolean getContainer(String page, String cryptedLink, String containerFormat, ArrayList<DownloadLink> decryptedLinks) throws IOException {
+    private boolean getContainer(String page, String containerFormat, ArrayList<DownloadLink> decryptedLinks) throws IOException {
         String container_link = new Regex(page, "href=\"(/container/" + containerFormat + "_files/.+?\\." + containerFormat + ")\"").getMatch(0);
         if (container_link != null) {
             File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + "." + containerFormat);
@@ -383,9 +377,6 @@ public class RaubkopiererWs extends PluginForDecrypt {
                 this.name = name;
                 this.use = use;
                 this.useForSample = useForSample;
-            }
-
-            public SingleMirror() {
             }
 
             public String getKey() {

@@ -189,10 +189,8 @@ public class JLinkButton extends JButton {
             exec.waitTimeout();
             if (exec.getException() != null) { throw exec.getException(); }
         } else {
-            if (url != null) {
-                String browser = SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getStringProperty(SimpleGuiConstants.PARAM_BROWSER, null);
-                LocaleBrowser.openURL(browser, url);
-            }
+            String browser = SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getStringProperty(SimpleGuiConstants.PARAM_BROWSER, null);
+            LocaleBrowser.openURL(browser, url);
         }
     }
 

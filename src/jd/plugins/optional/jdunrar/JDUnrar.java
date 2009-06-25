@@ -456,11 +456,11 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() instanceof MenuItem) {
-            actionPerformedOnMenuItem(e, (MenuItem) e.getSource());
+            actionPerformedOnMenuItem((MenuItem) e.getSource());
         }
     }
 
-    private void actionPerformedOnMenuItem(ActionEvent e, MenuItem source) {
+    private void actionPerformedOnMenuItem(MenuItem source) {
         SubConfiguration cfg = this.getPluginConfig();
         DownloadLink link;
         switch (source.getActionID()) {

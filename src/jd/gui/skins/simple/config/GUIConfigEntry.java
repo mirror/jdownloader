@@ -91,7 +91,6 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
     public GUIConfigEntry(ConfigEntry cfg) {
         configEntry = cfg;
         cfg.setGuiListener(this);
-        this.addPropertyChangeListener(cfg);
 
         input = new JComponent[1];
 
@@ -206,8 +205,8 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
             }
 
             ((JComboBox) input[0]).addActionListener(this);
-            if(configEntry.getPropertyInstance().getProperty(configEntry.getPropertyName()) instanceof String){
-                
+            if (configEntry.getPropertyInstance().getProperty(configEntry.getPropertyName()) instanceof String) {
+
                 for (int i = 0; i < configEntry.getList().length; i++) {
 
                     if (configEntry.getList()[i].toString().equals(configEntry.getPropertyInstance().getStringProperty(configEntry.getPropertyName()))) {
@@ -215,16 +214,16 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
 
                         break;
                     }
-                }   
-            }else{
-            for (int i = 0; i < configEntry.getList().length; i++) {
-
-                if (configEntry.getList()[i].equals(configEntry.getPropertyInstance().getProperty(configEntry.getPropertyName()))) {
-                    ((JComboBox) input[0]).setSelectedIndex(i);
-
-                    break;
                 }
-            }
+            } else {
+                for (int i = 0; i < configEntry.getList().length; i++) {
+
+                    if (configEntry.getList()[i].equals(configEntry.getPropertyInstance().getProperty(configEntry.getPropertyName()))) {
+                        ((JComboBox) input[0]).setSelectedIndex(i);
+
+                        break;
+                    }
+                }
             }
             input[0].setEnabled(configEntry.isEnabled());
             // org.jvnet.substance.skin.BusinessBlueSteelSkin
@@ -289,9 +288,6 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
         }
         // this.firePropertyChange(getConfigEntry().getPropertyName(), null,
         // getText());
-    }
-
-    private void addPropertyChangeListener(ConfigEntry cfg) {
     }
 
     public JComponent[] getInput() {

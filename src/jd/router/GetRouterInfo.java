@@ -586,7 +586,7 @@ public class GetRouterInfo {
                 HashMap<String, RInfo> methodes = new HashMap<String, RInfo>();
                 Iterator<Entry<RInfo, Integer>> inter = routers.entrySet().iterator();
                 while (inter.hasNext()) {
-                    Map.Entry<jd.router.RInfo, java.lang.Integer> entry = (Map.Entry<jd.router.RInfo, java.lang.Integer>) inter.next();
+                    Map.Entry<RInfo, Integer> entry = inter.next();
                     RInfo meth = methodes.get(entry.getKey().getReconnectMethode());
                     if (meth != null) {
                         meth.setIntegrety(meth.getIntegrety() + entry.getKey().getIntegrety());
@@ -736,7 +736,7 @@ public class GetRouterInfo {
                     HashMap<String, RInfo> methodes = new HashMap<String, RInfo>();
                     Iterator<Entry<RInfo, Integer>> inter = routers.entrySet().iterator();
                     while (inter.hasNext()) {
-                        Map.Entry<jd.router.RInfo, java.lang.Integer> entry = (Map.Entry<jd.router.RInfo, java.lang.Integer>) inter.next();
+                        Map.Entry<RInfo, Integer> entry = inter.next();
                         RInfo meth = methodes.get(entry.getKey().getReconnectMethode());
                         if (meth != null) {
                             meth.setIntegrety(meth.getIntegrety() + entry.getKey().getIntegrety());
@@ -883,9 +883,9 @@ public class GetRouterInfo {
                     username = (String) ((GUIConfigEntry) user).getText();
                     ipadresse = (String) ((GUIConfigEntry) ip).getText();
                 } else if (pass instanceof JTextField) {
-                    pw = (String) ((JTextField) pass).getText();
-                    username = (String) ((JTextField) user).getText();
-                    ipadresse = (String) ((JTextField) ip).getText();
+                    pw = ((JTextField) pass).getText();
+                    username = ((JTextField) user).getText();
+                    ipadresse = ((JTextField) ip).getText();
                 }
                 if (ipadresse != null && !ipadresse.matches("\\s*")) JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_IP, ipadresse);
                 if (username != null && !username.matches("[\\s]*")) {

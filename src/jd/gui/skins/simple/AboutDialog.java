@@ -150,14 +150,12 @@ public class AboutDialog extends AbstractDialog {
         devs.add(new DevEntry("Sna696", "-", "Italian Translation"));
         devs.add(new DevEntry("Giandena", "-", "Italian Translation"));
         devs.add(new DevEntry("nguyenkimvy", "-", "Vietnamese Translation"));
-        
-        
 
         return devs.toArray(new DevEntry[] {});
     }
 
     public Integer getReturnID() {
-        return (Integer) super.getReturnValue();
+        return super.getReturnValue();
     }
 
     private class DevEntry implements Comparable<DevEntry> {

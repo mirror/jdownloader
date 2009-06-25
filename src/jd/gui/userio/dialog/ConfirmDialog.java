@@ -64,8 +64,7 @@ public class ConfirmDialog extends AbstractDialog {
     }
 
     public Integer getReturnID() {
-        // TODO Auto-generated method stub
-        return (Integer) super.getReturnValue();
+        return super.getReturnValue();
     }
 
 }

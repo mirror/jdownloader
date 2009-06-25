@@ -152,7 +152,7 @@ public class JDRRGui extends JDialog implements ActionListener {
                 } catch (Exception e1) {
                     JDLogger.exception(e1);
                 }
-                final JDRRInfoPopup popup = new JDRRInfoPopup(ip_before);
+                final JDRRInfoPopup popup = new JDRRInfoPopup();
                 popup.startCheck();
                 SwingUtilities.invokeLater(new Runnable() {
                     public void run() {
@@ -171,7 +171,7 @@ public class JDRRGui extends JDialog implements ActionListener {
         private long reconnect_timer = 0;
         private RRStatus statusicon;
 
-        public JDRRInfoPopup(String ipbefore) {
+        public JDRRInfoPopup() {
             super();
             setModal(true);
             setLayout(new MigLayout("wrap 1", "[center, grow, fill]"));

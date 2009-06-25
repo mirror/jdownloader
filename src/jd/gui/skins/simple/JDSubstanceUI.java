@@ -16,8 +16,6 @@
 
 package jd.gui.skins.simple;
 
-import java.awt.Image;
-
 import javax.swing.JComponent;
 import javax.swing.JRootPane;
 
@@ -26,17 +24,14 @@ import org.jvnet.substance.SubstanceRootPaneUI;
 public class JDSubstanceUI extends SubstanceRootPaneUI {
 
     private JDSubstanceTitlePane titlePane;
- 
 
-    public JDSubstanceUI(Image mainMenuIcon) {
-       
+    public JDSubstanceUI() {
+
     }
 
     protected JComponent createTitlePane(JRootPane root) {
-        return titlePane = new JDSubstanceTitlePane(root, this, null);
+        return titlePane = new JDSubstanceTitlePane(root, this);
     }
-
-
 
     public void setToolTipText(String string) {
         if (titlePane != null) titlePane.setToolTipText(string);
