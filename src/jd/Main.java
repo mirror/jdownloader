@@ -88,43 +88,29 @@ public class Main {
 
     public static String getCaptcha(String path, String host) {
 
-        boolean hasMethod = JACMethod.hasMethod(host);
-
-        if (hasMethod) {
+        if (JACMethod.hasMethod(host)) {
 
             File file;
 
             if (path.contains("http://")) {
                 try {
+                    file = new File(System.getProperty("user.dir"), "jac_captcha.img");
+
                     Browser br = new Browser();
-                    URLConnectionAdapter httpConnection;
-                    httpConnection = br.openGetConnection(path);
+                    URLConnectionAdapter httpConnection = br.openGetConnection(path);
+                    if (httpConnection.getLongContentLength() <= 0) return "Could not download captcha image";
 
-                    if (httpConnection.getLongContentLength() == -1 || httpConnection.getLongContentLength() == 0) return "Could not download captcha image";
-
-                    String seperator = "/";
-
-                    if (OSDetector.getOSString().toLowerCase().contains("win") || OSDetector.getOSString().toLowerCase().contains("nt")) {
-                        seperator = "\\";
-                    }
-
-                    String filepath = System.getProperty("user.dir") + seperator + "jac_captcha.img";
-                    file = new File(filepath);
-
-                    br.downloadConnection(file, httpConnection);
+                    Browser.download(file, httpConnection);
                 } catch (IOException e) {
                     return "Downloaderror";
                 }
-
             } else {
-
                 file = new File(path);
-                if (!file.exists()) { return "File does not exist"; }
-
+                if (!file.exists()) return "File does not exist";
             }
 
-            JFrame jf = new JFrame();
             try {
+                JFrame jf = new JFrame();
                 Image captchaImage = ImageIO.read(file);
                 MediaTracker mediaTracker = new MediaTracker(jf);
                 mediaTracker.addImage(captchaImage, 0);
@@ -135,16 +121,14 @@ public class Main {
                 JAntiCaptcha jac = new JAntiCaptcha(JDUtilities.getJACMethodsDirectory(), host);
                 Captcha captcha = jac.createCaptcha(captchaImage);
                 String captchaCode = jac.checkCaptcha(captcha);
-                file.delete();
+                if (path.contains("http://")) file.delete();
 
                 return captchaCode;
             } catch (Exception e) {
                 return e.getStackTrace().toString();
             }
         } else {
-
             return "jDownloader has no method for " + host;
-
         }
 
     }
@@ -165,16 +149,15 @@ public class Main {
         for (String p : args) {
             if (p.equalsIgnoreCase("-debug")) {
                 JDInitFlags.SWITCH_DEBUG = true;
-            }
-            if (p.equalsIgnoreCase("-brdebug")) {
+                LOGGER.info("DEBUG Modus aktiv");
+            } else if (p.equalsIgnoreCase("-brdebug")) {
                 JDInitFlags.SWITCH_DEBUG = true;
                 Browser.setVerbose(true);
-            }
-            if (p.equalsIgnoreCase("-trdebug")) {
+                LOGGER.info("Browser DEBUG Modus aktiv");
+            } else if (p.equalsIgnoreCase("-trdebug")) {
                 JDLocale.DEBUG = true;
                 LOGGER.info("Translation DEBUG Modus aktiv");
-            }
-            if (p.equalsIgnoreCase("-rfb")) {
+            } else if (p.equalsIgnoreCase("-rfb")) {
                 JDInitFlags.SWITCH_RETURNED_FROM_UPDATE = true;
             }
         }
@@ -185,14 +168,21 @@ public class Main {
         for (int i = 0; i < args.length; i++) {
 
             if (args[i].equalsIgnoreCase("-branch")) {
+                SubConfiguration webConfig = WebUpdater.getConfig("WEBUPDATE");
                 if (args[i + 1].equalsIgnoreCase("reset")) {
-                    WebUpdater.getConfig("WEBUPDATE").setProperty("BRANCH", null);
-                    LOGGER.info("Switching back to default JDownloader branch");
+                    webConfig.setProperty("BRANCH", null);
+                    if (webConfig.hasChanges()) {
+                        webConfig.save();
+                        LOGGER.info("Switching back to default JDownloader branch");
+                    }
                 } else {
-                    WebUpdater.getConfig("WEBUPDATE").setProperty("BRANCH", args[i + 1]);
-                    LOGGER.info("Switching to " + args[i + 1] + " JDownloader branch");
+                    webConfig.setProperty("BRANCH", args[i + 1]);
+                    if (webConfig.hasChanges()) {
+                        webConfig.save();
+                        LOGGER.info("Switching to " + args[i + 1] + " JDownloader branch");
+                    }
                 }
-                WebUpdater.getConfig("WEBUPDATE").save();
+
                 i++;
             } else if (args[i].equals("-prot")) {
 
@@ -219,7 +209,7 @@ public class Main {
 
                     LOGGER.setLevel(Level.OFF);
                     String captchaValue = Main.getCaptcha(args[i + 1], args[i + 2]);
-                    System.out.println("" + captchaValue);
+                    System.out.println(captchaValue);
                     System.exit(0);
 
                 } else {

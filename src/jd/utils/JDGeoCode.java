@@ -1,7 +1,6 @@
 package jd.utils;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map.Entry;
 
 import jd.parser.Regex;
@@ -37,11 +36,9 @@ public class JDGeoCode {
      * @return
      */
     public static String[] parseLanguageCode(String lngCode) {
-        int length = lngCode.length();
-        String languagecode;
         String[] split = lngCode.split("\\-");
         if (split.length == 1) {
-            languagecode = lngCode.toLowerCase();
+            String languagecode = lngCode.toLowerCase();
             if (languagecode.trim().length() != 2) return null;
             return new String[] { lngCode, null, null };
         } else if (split.length == 2) {
@@ -527,13 +524,12 @@ public class JDGeoCode {
 
     public final static HashMap<String, String> EXTENSIONS = new HashMap<String, String>();
     static {
-
         EXTENSIONS.put("hans", "simplified");
         EXTENSIONS.put("hant", "traditional");
     }
 
     /**
-     * TRansforms a lng-country-ext code into its longer form
+     * Transforms a lng-country-ext code into its longer form
      * 
      * @param string
      * @return
@@ -584,7 +580,6 @@ public class JDGeoCode {
 
             if (countryCode != null) {
                 return getLanguageCode(row[0].trim()) + "-" + countryCode;
-
             } else {
                 return getLanguageCode(row[0].trim()) + "-" + getExtensionCode(row[1].trim());
             }
@@ -596,13 +591,11 @@ public class JDGeoCode {
     /**
      * Returns the languagecode for a native or english languagename
      * 
-     * @param string
+     * @param name
      * @return
      */
     public static String getLanguageCode(String name) {
-        Entry<String, String[]> next;
-        for (Iterator<Entry<String, String[]>> it = LANGUAGES.entrySet().iterator(); it.hasNext();) {
-            next = it.next();
+        for (Entry<String, String[]> next : LANGUAGES.entrySet()) {
             if (next.getValue()[0].equalsIgnoreCase(name) || next.getValue()[1].equalsIgnoreCase(name)) return next.getKey();
         }
         return null;
@@ -611,13 +604,11 @@ public class JDGeoCode {
     /**
      * Returns the extension code for the extensionname
      * 
-     * @param string
+     * @param name
      * @return
      */
     public static String getExtensionCode(String name) {
-        Entry<String, String> next;
-        for (Iterator<Entry<String, String>> it = EXTENSIONS.entrySet().iterator(); it.hasNext();) {
-            next = it.next();
+        for (Entry<String, String> next : EXTENSIONS.entrySet()) {
             if (next.getValue().equalsIgnoreCase(name)) return next.getKey();
         }
         return name;
@@ -630,9 +621,7 @@ public class JDGeoCode {
      * @return
      */
     public static String getCountryCode(String name) {
-        Entry<String, String> next;
-        for (Iterator<Entry<String, String>> it = COUNTRIES.entrySet().iterator(); it.hasNext();) {
-            next = it.next();
+        for (Entry<String, String> next : COUNTRIES.entrySet()) {
             if (next.getValue().equalsIgnoreCase(name)) return next.getKey();
         }
         return null;
