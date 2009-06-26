@@ -223,10 +223,10 @@ public class WebUpdate implements ControlListener {
                     logger.finer("JDUs to update: " + packages.size());
                     int i = 0;
                     while (JD_INIT_COMPLETE == false) {
-                        try {
+                        try {                            
+                            logger.severe("Waiting on JD-Init-Complete since " + i + " secs!");
                             Thread.sleep(1000);
                             i++;
-                            logger.severe("Waiting on JD-Init-Complete since " + i + " secs!");
                         } catch (InterruptedException e) {
                         }
                     }

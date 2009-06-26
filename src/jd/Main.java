@@ -474,8 +474,12 @@ public class Main {
 
         Locale.setDefault(Locale.ENGLISH);
 
+        LOGGER.info("init downloadqueue");
+        JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_PROGRESS, JDL.L("gui.splash.progress.controller", "Start controller")));
+        init.initControllers();
         LOGGER.info("init gui");
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_PROGRESS, JDL.L("gui.splash.progress.paintgui", "Paint user interface")));
+
         new GuiRunnable<Object>() {
             // @Override
             public Object runSave() {
@@ -483,9 +487,6 @@ public class Main {
                 return null;
             }
         }.waitForEDT();
-        LOGGER.info("init downloadqueue");
-        JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_PROGRESS, JDL.L("gui.splash.progress.controller", "Start controller")));
-        init.initControllers();
 
         LOGGER.info("Initialisation finished");
         controller.setInitStatus(JDController.INIT_STATUS_COMPLETE);
