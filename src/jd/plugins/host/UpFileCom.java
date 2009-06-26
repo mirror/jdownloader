@@ -31,69 +31,62 @@ public class UpFileCom extends PluginForHost {
 
     public UpFileCom(PluginWrapper wrapper) {
         super(wrapper);
-        // this.setStartIntervall(5000l);
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://up-file.com/page/terms.php";
     }
 
-    //@Override
+    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
-        br.setCookie("http://up-file.com", "lang", "en");
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("requested file is not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<h1><span[^>]*>(.*?)</span>").getMatch(0);
-        String filesize = br.getRegex("</span>\\s+<span[^>]*>\\[\\s(.*?)\\s\\]").getMatch(0);
+        if (br.containsHTML("Das von Ihnen angefordete File ist nicht gefunden")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<h1><span>Filename::</span>(.*?)</h1>").getMatch(0);
+        String filesize = br.getRegex("<h1><span>Filegre::</span>(.*?)</h1>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
         return AvailableStatus.TRUE;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        br.setFollowRedirects(true);
-        if (br.containsHTML("Wait for your turn")) {
-            String waittime = br.getRegex("your\\sturn&nbsp;&nbsp;<span\\sid=\"errt\"[^>]*>(.*?)</span>").getMatch(0);
-            int waittimen = 0;
-            waittimen = Integer.valueOf(waittime).intValue();
-            if (waittimen == 0) waittimen = 60;
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittimen * 1001l);
-        } else if (br.containsHTML("Downloading is in process from your IP-Address")) {
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 1001l);
-        } else {
-            Form dlf = br.getFormbyProperty("id", "Premium");
-            if (dlf == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-            dl = br.openDownload(downloadLink, dlf, false, 1);
-            dl.startDownload();
-        }
+        br.setFollowRedirects(false);
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("Das Herunterladen von Ihrer IP-Adresse findet schon statt")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+        Form[] form = br.getForms();
+        br.submitForm(form[7]);
+        String dllink;
+        dllink = br.getRedirectLocation();
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        dl = br.openDownload(downloadLink, dllink, false, 1);
+        dl.startDownload();
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void resetDownloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
-        
+
     }
 }
