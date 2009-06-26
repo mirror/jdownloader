@@ -599,7 +599,7 @@ public class JDInit {
         new HostPluginWrapper("Uptal.com", "UptalCom", "http://[\\w\\.]*?uptal\\.com/\\?d=[A-Fa-f0-9]+");
         new HostPluginWrapper("IFile.it", "IFileIt", "http://[\\w\\.]*?ifile\\.it/[\\w]+/?");
         new HostPluginWrapper("Mihd.net", "IFileIt", "http://[\\w\\.]*?mihd\\.net/[\\w]+/?");
-        new HostPluginWrapper("BitRoad.net", "BitRoadNet", "http://[\\w\\.]*?bitroad\\.net/download/[A-Fa-f0-9]+");
+        new HostPluginWrapper("BitRoad.net", "BitRoadNet", "http://[\\w\\.]*?(bitroad\\.net|filemashine\\.com)/download/[A-Fa-f0-9]+");
         new HostPluginWrapper("FriendlyFiles.net", "BitRoadNet", "http://[\\w\\.]*?friendlyfiles\\.net/download/[A-Fa-f0-9]+");
         new HostPluginWrapper("MaxUpload.eu", "MaxUploadEu", "http://[\\w\\.]*?maxupload\\.eu/../\\d+");
         new HostPluginWrapper("NetGull.com", "NetGullCom", "http://[\\w\\.]*?netgull\\.com/\\?d=[0-9a-fA-F]+");
