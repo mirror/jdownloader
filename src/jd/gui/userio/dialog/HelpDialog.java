@@ -25,7 +25,7 @@ public class HelpDialog extends AbstractDialog {
     private String url;
 
     public HelpDialog(int flag, String title, String message, String helpMessage, String url) {
-        super(flag, title, JDTheme.II("gui.images.config.tip"), null, null);
+        super(flag, title, JDTheme.II("gui.images.config.tip", 32, 32), null, null);
         this.message = message;
         this.helpMessage = helpMessage;
         this.url = url;

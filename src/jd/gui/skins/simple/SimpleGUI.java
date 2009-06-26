@@ -69,10 +69,8 @@ import jd.gui.JDLookAndFeelManager;
 import jd.gui.UIInterface;
 import jd.gui.UserIO;
 import jd.gui.skins.simple.components.ChartAPIEntity;
-import jd.gui.skins.simple.components.JDTextField;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.components.PieChartAPI;
-import jd.gui.skins.simple.components.TextAreaDialog;
 import jd.gui.skins.simple.components.DownloadView.DownloadLinksPanel;
 import jd.gui.skins.simple.components.Linkgrabber.LinkAdder;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberPanel;
@@ -876,18 +874,6 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
         }.start();
     }
 
-    public String showTextAreaDialog(final String title, final String question, final String def) {
-
-        GuiRunnable<String> run = new GuiRunnable<String>() {
-            // @Override
-            public String runSave() {
-                return TextAreaDialog.showDialog(SimpleGUI.this, title, question, def);
-            }
-        };
-        return run.getReturnValue();
-
-    }
-
     public String showUserInputDialog(String string) {
         return showUserInputDialog(string, "");
     }
@@ -900,38 +886,12 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
         return UserIO.getInstance().requestInputDialog(0, JDL.L("gui.userio.input.title", "Please enter!"), message, def, JDTheme.II("gui.images.config.tip", 32, 32), null, null);
     }
 
-    public String[] showTextAreaDialog(final String title, final String questionOne, final String questionTwo, final String defaultOne, final String defaultTwo) {
-
-        GuiRunnable<String[]> run = new GuiRunnable<String[]>() {
-            // @Override
-            public String[] runSave() {
-                return TextAreaDialog.showDialog(SimpleGUI.this, title, questionOne, questionTwo, defaultOne, defaultTwo);
-            }
-        };
-        return run.getReturnValue();
-
+    public String showTextAreaDialog(String title, String message, String def) {
+        return UserIO.getInstance().requestTextAreaDialog(title, message, def);
     }
 
-    public String[] showTwoTextFieldDialog(final String title, final String questionOne, final String questionTwo, final String defaultOne, final String defaultTwo) {
-
-        GuiRunnable<String[]> run = new GuiRunnable<String[]>() {
-            // @Override
-            public String[] runSave() {
-                JDTextField txtFieldOne = new JDTextField(defaultOne);
-                JDTextField txtFieldTwo = new JDTextField(defaultTwo);
-
-                JPanel panel = new JPanel(new MigLayout("ins 0, wrap 1", "[grow, fill]", "[]5[]10[]5[]"));
-                panel.add(new JLabel(questionOne));
-                panel.add(txtFieldOne);
-                panel.add(new JLabel(questionTwo));
-                panel.add(txtFieldTwo);
-
-                if (JDFlags.hasAllFlags(new ContainerDialog(UserIO.NO_COUNTDOWN, title, panel, null, null).getReturnValue(), UserIO.RETURN_OK)) return new String[] { txtFieldOne.getText(), txtFieldTwo.getText() };
-                return null;
-            }
-        };
-        return run.getReturnValue();
-
+    public String[] showTwoTextFieldDialog(String title, String messageOne, String messageTwo, String defOne, String defTwo) {
+        return UserIO.getInstance().requestTwoTextFieldDialog(title, messageOne, defOne, messageTwo, defTwo);
     }
 
     public static void displayConfig(final ConfigContainer container, final int i) {

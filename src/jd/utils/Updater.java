@@ -35,7 +35,7 @@ import javax.swing.JOptionPane;
 
 import jd.config.CFGConfig;
 import jd.controlling.JDLogger;
-import jd.gui.skins.simple.components.TextAreaDialog;
+import jd.gui.userio.SimpleUserIO;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.nutils.JDHash;
@@ -56,9 +56,9 @@ public class Updater {
 
     public static StringBuilder SERVERLIST = new StringBuilder();
     static {
-//        SERVERLIST.append("-1:http://update4ex.jdownloader.org/branches/%BRANCH%/\r\n");
+        // SERVERLIST.append("-1:http://update4ex.jdownloader.org/branches/%BRANCH%/\r\n");
 
-//        SERVERLIST.append("-1:http://jdupdate.bluehost.to/branches/%BRANCH%/\r\n");
+        // SERVERLIST.append("-1:http://jdupdate.bluehost.to/branches/%BRANCH%/\r\n");
         SERVERLIST.append("-1:http://update1.jdownloader.org/%BRANCH%/\r\n");
         SERVERLIST.append("-1:http://update2.jdownloader.org/%BRANCH%/\r\n");
         SERVERLIST.append("-1:http://update0.jdownloader.org/%BRANCH%/\r\n");
@@ -88,7 +88,7 @@ public class Updater {
         upd.moveJars(getCFG("dist_dir"));
         // // // System.out.println("STATUS: FINISHED");
         upd.cleanUp();
-        //upd.filter("DBBackup.*.class");
+        // upd.filter("DBBackup.*.class");
         upd.createBranch(JOptionPane.showInputDialog(upd.frame, "branchname"));
 
         ArrayList<File> list = upd.getFileList();
@@ -104,7 +104,7 @@ public class Updater {
         upd.uploadHashList();
         // upd.refreshUpdateJar();
         // upd.spread(list);
-//         upd.incFTPSpread(upd.branch);
+        // upd.incFTPSpread(upd.branch);
 
         System.exit(0);
     }
@@ -113,7 +113,7 @@ public class Updater {
         ArrayList<File> list = getLocalFileList(this.updateDir, true);
 
         for (File f : list) {
-            if (!new Regex(f.getAbsolutePath(),filter).matches()) {
+            if (!new Regex(f.getAbsolutePath(), filter).matches()) {
                 f.delete();
                 System.out.println("Filter: remove " + f);
             } else {
@@ -243,7 +243,7 @@ public class Updater {
 
         for (String path : outdated) {
             if (new File(this.workingDir, path).exists()) {
-              
+
                 JDIO.removeDirectoryOrFile(new File(this.workingDir, path));
                 System.err.println(" CLEAN UP: " + new File(this.workingDir, path).getAbsolutePath());
             }
@@ -812,7 +812,7 @@ public class Updater {
 
         }
         if (true) {
-            String removeFiles = TextAreaDialog.showDialog(frame, "Files to remove", "These " + i + " files were found localy, but not in the remotehashlist. The will be removed if you don't delete them.", sb + "");
+            String removeFiles = SimpleUserIO.getInstance().requestTextAreaDialog("Files to remove", "These " + i + " files were found localy, but not in the remotehashlist. The will be removed if you don't delete them.", sb.toString());
             if (removeFiles != null) {
                 for (String line : Regex.getLines(removeFiles)) {
                     File del = new File(line.trim());

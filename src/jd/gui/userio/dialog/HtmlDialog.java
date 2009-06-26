@@ -13,7 +13,7 @@ public class HtmlDialog extends AbstractDialog {
     private String message;
 
     public HtmlDialog(int flag, String title, String message) {
-        super(flag, title, JDTheme.II("gui.images.config.tip"), null, null);
+        super(flag, title, JDTheme.II("gui.images.config.tip", 32, 32), null, null);
         this.message = message;
         init();
     }

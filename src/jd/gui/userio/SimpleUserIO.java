@@ -29,6 +29,9 @@ import jd.gui.userio.dialog.ConfirmDialog;
 import jd.gui.userio.dialog.HelpDialog;
 import jd.gui.userio.dialog.HtmlDialog;
 import jd.gui.userio.dialog.InputDialog;
+import jd.gui.userio.dialog.TextAreaDialog;
+import jd.gui.userio.dialog.TwoTextFieldDialog;
+import jd.nutils.JDFlags;
 import jd.utils.JDTheme;
 
 public class SimpleUserIO extends UserIO {
@@ -92,10 +95,6 @@ public class SimpleUserIO extends UserIO {
         }.getReturnValue();
     }
 
-    public static void main(String args[]) {
-        UserIO.setInstance(SimpleUserIO.getInstance());
-    }
-
     @Override
     protected int showConfirmDialog(final int flag, final String title, final String message, final ImageIcon icon, final String okOption, final String cancelOption) {
         if ((flag & UserIO.NO_USER_INTERACTION) > 0) return 0;
@@ -123,6 +122,34 @@ public class SimpleUserIO extends UserIO {
     }
 
     @Override
+    protected String showTextAreaDialog(final String title, final String message, final String def) {
+        return new GuiRunnable<String>() {
+
+            @Override
+            public String runSave() {
+                TextAreaDialog dialog = new TextAreaDialog(title, message, def);
+                if (JDFlags.hasAllFlags(dialog.getReturnValue(), UserIO.RETURN_OK)) return dialog.getResult();
+                return null;
+            }
+
+        }.getReturnValue();
+    }
+
+    @Override
+    protected String[] showTwoTextFieldDialog(final String title, final String messageOne, final String defOne, final String messageTwo, final String defTwo) {
+        return new GuiRunnable<String[]>() {
+
+            @Override
+            public String[] runSave() {
+                TwoTextFieldDialog dialog = new TwoTextFieldDialog(title, messageOne, defOne, messageTwo, defTwo);
+                if (JDFlags.hasAllFlags(dialog.getReturnValue(), UserIO.RETURN_OK)) return dialog.getResult();
+                return null;
+            }
+
+        }.getReturnValue();
+    }
+
+    @Override
     public ImageIcon getIcon(int iconInfo) {
         switch (iconInfo) {
         case UserIO.ICON_ERROR:
@@ -135,4 +162,5 @@ public class SimpleUserIO extends UserIO {
             return JDTheme.II("gui.images.config.tip", 32, 32);
         }
     }
+
 }

@@ -121,6 +121,26 @@ public abstract class UserIO {
 
     abstract protected String showInputDialog(int flag, String title, String message, String defaultMessage, ImageIcon icon, String okOption, String cancelOption);
 
+    public String requestTextAreaDialog(String title, String message, String def) {
+
+        synchronized (INSTANCE) {
+            return showTextAreaDialog(title, message, def);
+        }
+
+    }
+
+    abstract protected String showTextAreaDialog(String title, String message, String def);
+
+    public String[] requestTwoTextFieldDialog(String title, String messageOne, String defOne, String messageTwo, String defTwo) {
+
+        synchronized (INSTANCE) {
+            return showTwoTextFieldDialog(title, messageOne, defOne, messageTwo, defTwo);
+        }
+
+    }
+
+    abstract protected String[] showTwoTextFieldDialog(String title, String messageOne, String defOne, String messageTwo, String defTwo);
+
     public void requestMessageDialog(String message) {
         requestMessageDialog(JDL.L("gui.dialogs.message.title", "Message"), message);
     }
