@@ -340,6 +340,7 @@ public class Megauploadcom extends PluginForHost {
 
     private boolean getSingleFileInformation(DownloadLink l) {
         try {
+            br.setCookie("http://megaupload.com", "l", "en");
             br.getPage(l.getDownloadURL());
             if (br.containsHTML("The file has been deleted because it was violating")) {
                 l.getLinkStatus().setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -353,12 +354,12 @@ public class Megauploadcom extends PluginForHost {
                 l.setAvailableStatus(AvailableStatus.FALSE);
                 return false;
             }
-            if (br.containsHTML("Dieser Link ist leider nicht")) {
-                l.getLinkStatus().setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                l.getLinkStatus().setStatusText("Link invalid");
-                l.setAvailableStatus(AvailableStatus.FALSE);
-                return false;
-            }
+//            if (br.containsHTML("Dieser Link ist leider nicht")) {
+//                l.getLinkStatus().setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+//                l.getLinkStatus().setStatusText("Link invalid");
+//                l.setAvailableStatus(AvailableStatus.FALSE);
+//                return false;
+//            }
 
             String filename = br.getRegex("<font style=.*?>Dateiname:</font> <font style=.*?>(.*?)</font><br>").getMatch(0).trim();
             String filesize = br.getRegex("<font style=.*?>Dateigr.*?:</font> <font style=.*?>(.*?)</font>").getMatch(0).trim();
