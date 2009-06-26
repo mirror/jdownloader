@@ -34,6 +34,7 @@ public class StorageTo extends PluginForHost {
         String dllink;
         dllink = br.getRegex("'link' : '(.*?)',").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        link.setFinalFileName(null);
         dl = br.openDownload(link, dllink, false, 1);
         dl.startDownload();
 
