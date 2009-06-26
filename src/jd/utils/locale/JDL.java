@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map.Entry;
 
@@ -58,7 +57,7 @@ public class JDL {
 
     public static final String LOCALE_ID = "LOCALE4";
 
-    public static final JDLocale DEFAULT_LOCALE = getInstance("en");
+    public static final JDLocale DEFAULT_LOCALE = JDL.getInstance("en");
 
     private static File localeFile;
 
@@ -70,7 +69,6 @@ public class JDL {
      * @return
      */
     public static String getCountryCodeByIP() {
-
         if (COUNTRY_CODE != null) return COUNTRY_CODE;
 
         if ((COUNTRY_CODE = SubConfiguration.getConfig(JDL.CONFIG).getStringProperty("DEFAULTLANGUAGE", null)) != null) { return COUNTRY_CODE; }
@@ -88,7 +86,6 @@ public class JDL {
                 SubConfiguration.getConfig(JDL.CONFIG).save();
             }
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
 
@@ -118,8 +115,7 @@ public class JDL {
     public static String[] getKeysFor(String text) {
         ArrayList<Integer> bestKeys = new ArrayList<Integer>();
         int bestValue = Integer.MAX_VALUE;
-        for (Iterator<Entry<Integer, String>> it = data.entrySet().iterator(); it.hasNext();) {
-            Entry<Integer, String> next = it.next();
+        for (Entry<Integer, String> next : data.entrySet()) {
             int dist = EditDistance.getLevenshteinDistance(text, next.getValue());
 
             if (dist < bestValue) {
@@ -130,7 +126,6 @@ public class JDL {
                 bestKeys.add(next.getKey());
                 bestValue = dist;
             }
-
         }
         if (bestKeys.size() == 0) return null;
         String[] ret = new String[bestKeys.size()];
@@ -145,23 +140,23 @@ public class JDL {
     }
 
     /**
-     * GIbt den configwert für Locale zurück
+     * Gibt den configwert für Locale zurück
      * 
      * @return
      */
     public static JDLocale getConfigLocale() {
-        return (JDLocale) SubConfiguration.getConfig(JDL.CONFIG).getProperty(JDL.LOCALE_ID, JDL.DEFAULT_LOCALE);
+        return SubConfiguration.getConfig(JDL.CONFIG).getGenericProperty(JDL.LOCALE_ID, JDL.DEFAULT_LOCALE);
     }
+
     /**
      * saves defaultlocal
      */
     public static void setConfigLocale(JDLocale l) {
-       SubConfiguration.getConfig(JDL.CONFIG).setProperty(JDL.LOCALE_ID,l);
-       SubConfiguration.getConfig(JDL.CONFIG).save();
+        SubConfiguration.getConfig(JDL.CONFIG).setProperty(JDL.LOCALE_ID, l);
+        SubConfiguration.getConfig(JDL.CONFIG).save();
     }
 
     public static JDLocale getLocale() {
-
         return localeID;
     }
 
@@ -258,7 +253,7 @@ public class JDL {
     }
 
     /**
-     * Wrapper für String.format(JDLocale.L(..),args)
+     * Wrapper für String.format(JDL.L(..),args)
      * 
      * @param key
      * @param def
@@ -327,7 +322,7 @@ public class JDL {
     }
 
     public static void setLocale(JDLocale lID) {
-if(lID==null)return;
+        if (lID == null) return;
         localeID = lID;
         System.out.println("Loaded language: " + lID);
         localeFile = JDUtilities.getResourceFile(LANGUAGES_DIR + localeID.getLngGeoCode() + ".loc");

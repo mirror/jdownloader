@@ -38,7 +38,6 @@ import javax.swing.ImageIcon;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JRootPane;
@@ -797,7 +796,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
     public void doManualReconnect() {
         new GuiRunnable<Object>() {
             public Object runSave() {
-                if (JOptionPane.showConfirmDialog(SimpleGUI.this, JDL.L("gui.reconnect.confirm", "Wollen Sie sicher eine neue Verbindung aufbauen?"), "", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+                if (showConfirmDialog(JDL.L("gui.reconnect.confirm", "Wollen Sie sicher eine neue Verbindung aufbauen?"))) {
                     new Thread(new Runnable() {
                         public void run() {
                             Reconnecter.doManualReconnect();
@@ -807,11 +806,6 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
                 return null;
             }
         }.start();
-    }
-
-    public String showCountdownUserInputDialog(final String message, final String def) {
-        return UserIO.getInstance().requestInputDialog(0, JDL.L("gui.userio.input.title", "Please enter!"), message, def, JDTheme.II("gui.images.config.tip", 32, 32), null, null);
-
     }
 
     /**
@@ -855,36 +849,31 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
         return JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(flags, title, string, null, null, null), UserIO.RETURN_OK);
     }
 
-    public boolean showCountdownConfirmDialog(final String string, final int sec) {
-        int cd = UserIO.getCountdownTime();
+    public boolean showCountdownConfirmDialog(String string, int sec) {
         UserIO.setCountdownTime(sec);
         int flags = 0;
         if (string.contains("<") && string.contains(">")) flags |= UserIO.STYLE_HTML;
         try {
             return JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(flags, JDL.L("userio.countdownconfirm", "Please confirm"), string, JDTheme.II("gui.images.config.eventmanager", 32, 32), null, null), UserIO.RETURN_OK);
         } finally {
-            UserIO.setCountdownTime(cd);
+            UserIO.setCountdownTime(null);
         }
     }
 
-    public boolean showHTMLDialog(final String title, final String htmlQuestion) {
+    public boolean showHTMLDialog(String title, String htmlQuestion) {
         return JDFlags.hasAllFlags(UserIO.getInstance().requestHtmlDialog(UserIO.NO_COUNTDOWN, title, htmlQuestion), UserIO.RETURN_OK);
     }
 
     public void showMessageDialog(final String string) {
-        // logger.info("MessageDialog");
-
         new GuiRunnable<Object>() {
 
             // @Override
             public Object runSave() {
-
                 UserIO.getInstance().requestMessageDialog(string);
                 return null;
             }
 
         }.start();
-
     }
 
     public String showTextAreaDialog(final String title, final String question, final String def) {
@@ -899,20 +888,16 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
 
     }
 
-    public String showUserInputDialog(final String string) {
-
+    public String showUserInputDialog(String string) {
         return showUserInputDialog(string, "");
     }
 
-    public String showUserInputDialog(final String string, final String def) {
-        GuiRunnable<String> run = new GuiRunnable<String>() {
-            // @Override
-            public String runSave() {
-                return JOptionPane.showInputDialog(SimpleGUI.this, string, def);
-            }
-        };
-        return run.getReturnValue();
+    public String showUserInputDialog(String string, String def) {
+        return UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN, JDL.L("gui.userio.input.title", "Please enter!"), string, def, JDTheme.II("gui.images.config.tip", 32, 32), null, null);
+    }
 
+    public String showCountdownUserInputDialog(String message, String def) {
+        return UserIO.getInstance().requestInputDialog(0, JDL.L("gui.userio.input.title", "Please enter!"), message, def, JDTheme.II("gui.images.config.tip", 32, 32), null, null);
     }
 
     public String[] showTextAreaDialog(final String title, final String questionOne, final String questionTwo, final String defaultOne, final String defaultTwo) {
