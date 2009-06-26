@@ -33,6 +33,7 @@ import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.Request;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -243,7 +244,16 @@ public class Megauploadcom extends PluginForHost {
     // @Override
     public boolean checkLinks(DownloadLink[] urls) {
         if (urls == null) return false;
-
+        /*
+         * use single file checks for small lists
+         */
+        if (urls.length <= 5) {
+            boolean ret = true;
+            for (DownloadLink l : urls) {
+                ret &= getSingleFileInformation(l);
+            }
+            return ret;
+        }
         HashMap<String, String> map = new HashMap<String, String>();
         int i = 0;
         String id;
@@ -326,6 +336,43 @@ public class Megauploadcom extends PluginForHost {
             return false;
         }
         return true;
+    }
+
+    private boolean getSingleFileInformation(DownloadLink l) {
+        try {
+            br.getPage(l.getDownloadURL());
+            if (br.containsHTML("The file has been deleted because it was violating")) {
+                l.getLinkStatus().setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+                l.getLinkStatus().setStatusText("Link abused or invalid");
+                l.setAvailableStatus(AvailableStatus.FALSE);
+                return false;
+            }
+            if (br.containsHTML("Invalid link")) {
+                l.getLinkStatus().setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+                l.getLinkStatus().setStatusText("Link invalid");
+                l.setAvailableStatus(AvailableStatus.FALSE);
+                return false;
+            }
+            if (br.containsHTML("Dieser Link ist leider nicht")) {
+                l.getLinkStatus().setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+                l.getLinkStatus().setStatusText("Link invalid");
+                l.setAvailableStatus(AvailableStatus.FALSE);
+                return false;
+            }
+
+            String filename = br.getRegex("<font style=.*?>Dateiname:</font> <font style=.*?>(.*?)</font><br>").getMatch(0).trim();
+            String filesize = br.getRegex("<font style=.*?>Dateigr.*?:</font> <font style=.*?>(.*?)</font>").getMatch(0).trim();
+            l.setDownloadSize(Regex.getSize(filesize));
+            l.setFinalFileName(filename);
+            l.setAvailable(true);
+
+            return true;
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+            return false;
+        }
+
     }
 
     // @Override
@@ -503,6 +550,9 @@ public class Megauploadcom extends PluginForHost {
         user = null;
         br.setCookie("http://megaupload.com", "l", "en");
         requestFileInformation(parameter);
+        if (!parameter.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        
+        parameter=null;
         handleFree0(parameter, null);
     }
 

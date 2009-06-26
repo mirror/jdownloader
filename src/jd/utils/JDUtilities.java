@@ -492,6 +492,8 @@ public class JDUtilities {
      * 
      * @return URLClassLoader
      */
+    
+    
     public static JDClassLoader getJDClassLoader() {
         if (jdClassLoader == null) {
             File homeDir = JDUtilities.getJDHomeDirectoryFromEnvironment();

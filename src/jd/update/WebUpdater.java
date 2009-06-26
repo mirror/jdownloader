@@ -183,7 +183,7 @@ public class WebUpdater implements Serializable {
                 entry = new FileUpdate(m[0], m[1]);
             }
             sum.add((byte) entry.getRemoteHash().charAt(0));
-            System.out.println("" + entry.getLocalPath());
+          
             if (entry.getLocalPath().endsWith(".class")) {
                 plugins.put(entry.getLocalPath(), entry);
             }
@@ -418,7 +418,7 @@ public class WebUpdater implements Serializable {
     }
 
     public void log(String buf) {
-        System.out.println(buf);
+    
         Date dt = new Date();
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
         if (logger != null) {

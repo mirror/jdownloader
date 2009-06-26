@@ -244,8 +244,15 @@ public class LinkStatus implements Serializable {
         if (hasStatus(LinkStatus.FINISHED)) return this.getStatusText() != null ? "> " + this.getStatusText() : "";
 
         if (!downloadLink.isEnabled() && !hasStatus(LinkStatus.FINISHED)) {
-            if (downloadLink.isAborted()) ret += JDL.L("gui.downloadlink.aborted", "[interrupted]") + ": ";
-            if (errorMessage != null) ret += errorMessage;
+            if (downloadLink.isAborted() && (statusText == null || statusText.trim().length() == 0)){
+                ret += JDL.L("gui.downloadlink.aborted", "[interrupted]") + " ";
+            }else if(downloadLink.isAborted()){
+                ret+=statusText;
+            }
+            if (errorMessage != null) {
+                if (ret.length() > 0) ret += ": ";
+                ret += errorMessage;
+            }
             return ret;
         }
         if (isFailed()) { return getLongErrorMessage(); }

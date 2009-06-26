@@ -292,6 +292,8 @@ public class JDL {
     }
 
     public static void parseLanguageFile(File file, HashMap<Integer, String> data) {
+        
+        JDLogger.getLogger().info("parse lng file "+file);
         data.clear();
 
         if (file == null || !file.exists()) {
@@ -321,7 +323,7 @@ public class JDL {
         } catch (IOException e) {
             JDLogger.exception(e);
         }
-
+        JDLogger.getLogger().info("parse lng file end "+file);
     }
 
     public static void setLocale(JDLocale lID) {
