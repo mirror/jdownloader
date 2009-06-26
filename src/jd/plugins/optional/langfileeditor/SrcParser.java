@@ -65,14 +65,14 @@ public class SrcParser {
         this.currentFile = file;
         broadcaster.fireEvent(new MessageEvent(this, PARSE_NEW_FILE, "Parse " + file.getAbsolutePath()));
 
-        // find all lines containing JDLocale calls
+        // find all lines containing JDL calls
         currentContent = JDIO.getLocalFile(file);
         prepareContent();
         currentContent = Pattern.compile("\\/\\*(.*?)\\*\\/", Pattern.DOTALL).matcher(currentContent).replaceAll("[[/*.....*/]]");
         currentContent = Pattern.compile("[^:]//(.*?)[\n|\r]", Pattern.DOTALL).matcher(currentContent).replaceAll("[[\\.....]]");
 
-        // TODO: Hiermit wird auch JDLocale.LOCALEID gemachted ...
-        String[] matches = new Regex(currentContent, "([^;^{^}]*JDLocale\\.L.*?\\(.*?\\)[^;^{^}]*)").getColumn(0);
+        // TODO: Hiermit wird auch JDL.LOCALEID gemachted ...
+        String[] matches = new Regex(currentContent, "([^;^{^}]*JDL\\.LF?\\s*?\\(.*?\\)[^;^{^}]*)").getColumn(0);
 
         for (String match : matches) {
             // splitting all calls.
@@ -87,14 +87,14 @@ public class SrcParser {
             String menukey = new Regex(currentContent, "super\\(\"(.*?)\",\\s*\".*?\"\\);").getMatch(0);
             if (menukey != null) {
                 currentContent = currentContent.replaceFirst("super\\(\"(.*?)\",\\s*\".*?\"\\);", "[[...]]");
-                currentContent += "\r\nJDLocale.L(\"gui.menu." + menukey + ".name\",\"" + menukey + "\");";
-                currentContent += "\r\nJDLocale.L(\"gui.menu." + menukey + ".mnem\",\"-\");";
-                currentContent += "\r\nJDLocale.L(\"gui.menu." + menukey + ".accel\",\"-\");";
+                currentContent += "\r\nJDL.L(\"gui.menu." + menukey + ".name\",\"" + menukey + "\");";
+                currentContent += "\r\nJDL.L(\"gui.menu." + menukey + ".mnem\",\"-\");";
+                currentContent += "\r\nJDL.L(\"gui.menu." + menukey + ".accel\",\"-\");";
             }
         } else if (this.currentContent.contains("jd.gui.skins.simple.startmenu;")) {
             String menukey = new Regex(currentContent, "super\\(\"(.*?)\",\\s*\".*?\"\\);").getMatch(0);
             currentContent = currentContent.replaceFirst("super\\(\"(.*?)\",\\s*\".*?\"\\);", "[[...]]");
-            currentContent += "\r\nJDLocale.L(\"" + menukey + "\",\"" + menukey + "\");";
+            currentContent += "\r\nJDL.L(\"" + menukey + "\",\"" + menukey + "\");";
 
         }
 
@@ -123,7 +123,7 @@ public class SrcParser {
     }
 
     private void parseCodeLine(String match) {
-        String[] calls = match.split("JDLocale");
+        String[] calls = match.split("JDL");
         String pat_string = "\"(.*?)(?<!\\\\)\"";
 
         LngEntry entry;

@@ -33,6 +33,7 @@ import java.util.zip.ZipEntry;
 
 import jd.controlling.JDLogger;
 import jd.nutils.io.JDFileFilter;
+import jd.utils.JDUtilities;
 
 /**
  * Diese Klasse steuert das Nachladen weiterer Klassen und Ressourcen. (Aus dem
@@ -87,7 +88,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
 
                     try {
                         if (!files[i].getAbsolutePath().endsWith("webupdater.jar") || !files[i].getAbsolutePath().endsWith("jdupdate.jar")) {
-                            if (!comp(getSig(files[i].getAbsolutePath()))) {
+                            if (JDUtilities.getRunType()==JDUtilities.RUNTYPE_LOCAL_JARED&&!comp(getSig(files[i].getAbsolutePath()))) {
                                 logger.severe("Not loaded due to sig violation: " + files[i]);
                                 continue;
                             }
@@ -119,7 +120,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
                         if (!files[i].getAbsolutePath().endsWith("webupdater.jar") && !files[i].getAbsolutePath().endsWith("jdupdate.jar")) {
                             if (!comp(getSig(files[i].getAbsolutePath()))) {
                                 logger.severe("Not loaded due to sig violation: " + files[i]);
-                                continue;
+                               continue;
                             }
                             if (names.contains(files[i].getName())) {
                                 logger.severe("Duplicate Jars found: " + files[i].getAbsolutePath());

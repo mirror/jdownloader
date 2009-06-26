@@ -134,7 +134,14 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
                 progress.finalize();
             }
             logger.finer("load plugin: " + getClassName());
-            Class<?> plgClass = CL.loadClass(getClassName());
+            
+            Class<?> plgClass;
+            
+            try{
+                plgClass= CL.loadClass(getClassName());
+            }catch(ClassNotFoundException e){
+                plgClass=JDUtilities.getJDClassLoader().loadClass(getClassName());
+            }
 
             if (plgClass == null) {
                 logger.info("PLUGIN NOT FOUND!");
