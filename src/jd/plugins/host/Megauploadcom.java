@@ -341,7 +341,7 @@ public class Megauploadcom extends PluginForHost {
     private boolean getSingleFileInformation(DownloadLink l) {
         try {
             br.setCookie("http://megaupload.com", "l", "en");
-            br.getPage(l.getDownloadURL());
+            br.getPage("http://megaupload.com/?d=" + getDownloadID(l));
             if (br.containsHTML("The file has been deleted because it was violating")) {
                 l.getLinkStatus().setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                 l.getLinkStatus().setStatusText("Link abused or invalid");
@@ -354,23 +354,19 @@ public class Megauploadcom extends PluginForHost {
                 l.setAvailableStatus(AvailableStatus.FALSE);
                 return false;
             }
-//            if (br.containsHTML("Dieser Link ist leider nicht")) {
-//                l.getLinkStatus().setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-//                l.getLinkStatus().setStatusText("Link invalid");
-//                l.setAvailableStatus(AvailableStatus.FALSE);
-//                return false;
-//            }
 
-            String filename = br.getRegex("<font style=.*?>Dateiname:</font> <font style=.*?>(.*?)</font><br>").getMatch(0).trim();
-            String filesize = br.getRegex("<font style=.*?>Dateigr.*?:</font> <font style=.*?>(.*?)</font>").getMatch(0).trim();
-            l.setDownloadSize(Regex.getSize(filesize));
-            l.setFinalFileName(filename);
-            l.setAvailable(true);
-
+            String filename = br.getRegex("<font style=.*?>Filename:</font> <font style=.*?>(.*?)</font><br>").getMatch(0).trim();
+            String filesize = br.getRegex("<font style=.*?>File size:</font> <font style=.*?>(.*?)</font>").getMatch(0).trim();
+            if (filename == null || filesize == null) {
+                l.setAvailable(false);
+            } else {
+                l.setDownloadSize(Regex.getSize(filesize));
+                l.setFinalFileName(filename);
+                l.setAvailable(true);
+            }
             return true;
         } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            l.setAvailable(false);
             return false;
         }
 
@@ -552,8 +548,8 @@ public class Megauploadcom extends PluginForHost {
         br.setCookie("http://megaupload.com", "l", "en");
         requestFileInformation(parameter);
         if (!parameter.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        
-        parameter=null;
+
+        parameter = null;
         handleFree0(parameter, null);
     }
 
