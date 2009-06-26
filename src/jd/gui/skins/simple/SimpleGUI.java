@@ -863,15 +863,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
     }
 
     public void showMessageDialog(final String string) {
-        new GuiRunnable<Object>() {
-
-            // @Override
-            public Object runSave() {
-                UserIO.getInstance().requestMessageDialog(string);
-                return null;
-            }
-
-        }.start();
+        UserIO.getInstance().requestMessageDialog(string);
     }
 
     public String showUserInputDialog(String string) {

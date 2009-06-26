@@ -474,7 +474,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         } else if (e.getSource() == mnuAdd) {
 
             String[] result = SimpleGUI.CURRENTGUI.showTwoTextFieldDialog(JDL.L(LOCALE_PREFIX + "addKey.title", "Add new key"), JDL.L(LOCALE_PREFIX + "addKey.message1", "Type in the name of the key:"), JDL.L(LOCALE_PREFIX + "addKey.message2", "Type in the translated message of the key:"), "", "");
-            if (result[0].equals("")) return;
+            if (result == null || result[0].equals("")) return;
             result[0] = result[0].toLowerCase();
             for (KeyInfo ki : data) {
                 if (ki.getKey().equals(result[0])) {
