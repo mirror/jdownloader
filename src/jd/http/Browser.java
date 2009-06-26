@@ -231,6 +231,10 @@ public class Browser {
     private static final Authenticator AUTHENTICATOR = new Authenticator() {
         protected PasswordAuthentication getPasswordAuthentication() {
             Browser br = Browser.getAssignedBrowserInstance(this.getRequestingURL());
+            if(br==null){
+                JDLogger.getLogger().warning("Browser Auth Error!");
+                return null;
+            }
             return br.getPasswordAuthentication(this.getRequestingHost(), this.getRequestingPort());
 
         }
