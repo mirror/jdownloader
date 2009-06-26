@@ -61,7 +61,7 @@ public class GigaSizeCom extends PluginForHost {
         return br.getRegex("<div class=\"logged pu\"><em class=\"png\">").matches();
     }
 
-    //@Override
+    // @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         this.setBrowserExclusive();
@@ -89,7 +89,7 @@ public class GigaSizeCom extends PluginForHost {
         return ai;
     }
 
-    //@Override
+    // @Override
     public void handlePremium(DownloadLink parameter, Account account) throws Exception {
         requestFileInformation(parameter);
         login(account);
@@ -117,7 +117,7 @@ public class GigaSizeCom extends PluginForHost {
         dl.startDownload();
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink parameter) throws Exception {
         requestFileInformation(parameter);
         handleFree0(parameter);
@@ -139,18 +139,25 @@ public class GigaSizeCom extends PluginForHost {
         String captchaCode = getCaptchaCode("http://www.gigasize.com/randomImage.php", downloadLink);
         captchaForm.put("txtNumber", captchaCode);
         br.submitForm(captchaForm);
+        if (br.containsHTML("YOU HAVE REACHED")) {
+            String temp = br.getRegex("Please retry after\\s(\\d+)\\sMinuten").getMatch(0);
+            if (temp != null) {
+                int waitTime = Integer.parseInt(temp) + 1;
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitTime * 60 * 1000);
+            }
+        }
         Form download = br.getFormbyProperty("id", "formDownload");
         dl = br.openDownload(downloadLink, download, true, 1);
         if (!dl.getConnection().isContentDisposition()) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
         dl.startDownload();
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return AGB_LINK;
     }
 
-    //@Override
+    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
@@ -165,35 +172,35 @@ public class GigaSizeCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return simultanpremium;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public int getTimegapBetweenConnections() {
         return 800;
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void resetDownloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 
