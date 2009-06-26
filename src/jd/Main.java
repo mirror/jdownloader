@@ -457,15 +457,8 @@ public class Main {
         LOGGER.info("init Webupdate");
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_PROGRESS, JDL.L("gui.splash.progress.webupdate", "Check updates")));
         LOGGER.info("update start");
-        new Thread("Updatequeue") {
-
-            public void run() {
-                try {
-                    Thread.sleep(20000);
-                } catch (InterruptedException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
+   
+           
                 new WebUpdate().doWebupdate(true, false);
 
                 try {
@@ -475,8 +468,7 @@ public class Main {
                 }
                 WebUpdate.DynamicPluginsFinished();
 
-            }
-        }.start();
+       
         LOGGER.info("update end");
         LOGGER.info("init plugins");
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_PROGRESS, JDL.L("gui.splash.progress.initplugins", "Init plugins")));
