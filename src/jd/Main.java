@@ -182,10 +182,9 @@ public class Main {
                     }
 
                 });
-                svn.update(new File(JDUtilities.getJDHomeDirectoryFromEnvironment(),"jd"), SVNRevision.HEAD);
-            
-            
-                 svn = new Subversion("svn://svn.jdownloader.org/jdownloader/trunk/ressourcen/tools/");
+                svn.update(new File(JDUtilities.getJDHomeDirectoryFromEnvironment(), "jd"), SVNRevision.HEAD);
+
+                svn = new Subversion("svn://svn.jdownloader.org/jdownloader/trunk/ressourcen/tools/");
                 svn.getBroadcaster().addListener(new MessageListener() {
 
                     public void onMessage(MessageEvent event) {
@@ -194,9 +193,8 @@ public class Main {
                     }
 
                 });
-                svn.update(new File(JDUtilities.getJDHomeDirectoryFromEnvironment(),"tools"), SVNRevision.HEAD);
-            
-            
+                svn.update(new File(JDUtilities.getJDHomeDirectoryFromEnvironment(), "tools"), SVNRevision.HEAD);
+
             } catch (SVNException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
@@ -443,7 +441,6 @@ public class Main {
         LOGGER.info("init Configuration");
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_PROGRESS, new String("Once upon a time...")));
 
-       
         if (init.loadConfiguration() == null) {
 
             UserIO.getInstance().requestMessageDialog("JDownloader cannot create the config files. Make sure, that JD_HOME/config/ exists and is writeable");
@@ -459,14 +456,28 @@ public class Main {
 
         LOGGER.info("init Webupdate");
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_PROGRESS, JDL.L("gui.splash.progress.webupdate", "Check updates")));
+        LOGGER.info("update start");
+        new Thread("Updatequeue") {
 
-        new WebUpdate().doWebupdate(true, false);
-        try {
-            loadDynamics();
-        } catch (Exception e1) {
-            JDLogger.exception(Level.FINEST, e1);
-        }
-        WebUpdate.DynamicPluginsFinished();
+            public void run() {
+                try {
+                    Thread.sleep(20000);
+                } catch (InterruptedException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+                new WebUpdate().doWebupdate(true, false);
+
+                try {
+                    loadDynamics();
+                } catch (Exception e1) {
+                    JDLogger.exception(Level.FINEST, e1);
+                }
+                WebUpdate.DynamicPluginsFinished();
+
+            }
+        }.start();
+        LOGGER.info("update end");
         LOGGER.info("init plugins");
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_PROGRESS, JDL.L("gui.splash.progress.initplugins", "Init plugins")));
 
@@ -505,7 +516,7 @@ public class Main {
         LOGGER.info("Revision: " + JDUtilities.getJDTitle());
         LOGGER.finer("Runtype: " + JDUtilities.getRunType());
 
-        init.checkUpdate();        
+        init.checkUpdate();
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_INIT_COMPLETE, null));
 
         try {
