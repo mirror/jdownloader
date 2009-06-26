@@ -456,18 +456,16 @@ public class Main {
         LOGGER.info("init Webupdate");
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_PROGRESS, JDL.L("gui.splash.progress.webupdate", "Check updates")));
         LOGGER.info("update start");
-   
-           
-                new WebUpdate().doWebupdate(true, false);
 
-                try {
-                    loadDynamics();
-                } catch (Exception e1) {
-                    JDLogger.exception(Level.FINEST, e1);
-                }
-                WebUpdate.DynamicPluginsFinished();
+        new WebUpdate().doWebupdate(true, false);
 
-       
+        try {
+            loadDynamics();
+        } catch (Exception e1) {
+            JDLogger.exception(Level.FINEST, e1);
+        }
+        WebUpdate.DynamicPluginsFinished();
+
         LOGGER.info("update end");
         LOGGER.info("init plugins");
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_PROGRESS, JDL.L("gui.splash.progress.initplugins", "Init plugins")));

@@ -47,7 +47,7 @@ import jd.utils.locale.JDL;
 public class WebUpdate implements ControlListener {
     private static Logger logger = JDLogger.getLogger();
     private static boolean JD_INIT_COMPLETE = false;
-    
+
     private static boolean DYNAMIC_PLUGINS_FINISHED = false;
     private static boolean LISTENER_ADDED = false;
     private static boolean UPDATE_IN_PROGRESS = false;
@@ -221,8 +221,8 @@ public class WebUpdate implements ControlListener {
                     progress.setStatus(org - (files.size() + packages.size()));
                     logger.finer("Files to update: " + files);
                     logger.finer("JDUs to update: " + packages.size());
+                    int i = 0;
                     while (JD_INIT_COMPLETE == false) {
-                        int i = 0;
                         try {
                             Thread.sleep(1000);
                             i++;
@@ -273,9 +273,8 @@ public class WebUpdate implements ControlListener {
                     } catch (InterruptedException e) {
                     }
                 }
-
+                int i = 0;
                 while (DYNAMIC_PLUGINS_FINISHED == false) {
-                    int i = 0;
                     try {
                         Thread.sleep(1000);
                         i++;
@@ -291,7 +290,7 @@ public class WebUpdate implements ControlListener {
                     return;
                 }
                 if (JDUtilities.getController() != null) JDUtilities.getController().prepareShutdown();
-                
+
                 JDIO.writeLocalFile(JDUtilities.getResourceFile("webcheck.tmp"), new Date().toString() + "\r\n(Revision" + JDUtilities.getRevision() + ")");
                 logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "jdupdate.jar", "/restart", "/rt" + JDUtilities.getRunType() }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
                 UPDATE_IN_PROGRESS = false;
