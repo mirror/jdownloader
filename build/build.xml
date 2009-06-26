@@ -9,7 +9,7 @@
 
 	<target name="compile">
 		<mkdir dir="${cls}" />
-		<javac srcdir="${src}" destdir="${cls}" encoding="UTF-8" source="1.5" target="1.5"/>
+		<javac srcdir="${src}" destdir="${cls}" encoding="UTF-8" source="1.5" target="1.5" />
 	</target>
 
 	<target name="jar">
@@ -26,7 +26,7 @@
 				<exclude name="jd/http/**" />
 				<exclude name="jd/captcha/**" />
 				<exclude name="jd/gui/**" />
-				<exclude name="it/**" />				
+				<exclude name="it/**" />
 				<exclude name="jd/plugins/host/**" />
 				<exclude name="jd/dynamics/**" />
 				<exclude name="jd/plugins/decrypt/**" />
@@ -79,7 +79,7 @@
 				<include name="jd/captcha/**" />
 				<exclude name="jd/captcha/methods/**" />
 			</fileset>
-		
+
 		</jar>
 
 		<jar jarfile="${dist}/libs/JDUtils.jar" manifest="Manifest.MF">
@@ -128,7 +128,7 @@
 				<exclude name="jd/http/**" />
 				<exclude name="jd/captcha/**" />
 				<exclude name="jd/gui/**" />
-				<exclude name="it/**" />				
+				<exclude name="it/**" />
 				<exclude name="jd/plugins/host/**" />
 				<exclude name="jd/plugins/decrypt/**" />
 				<exclude name="jd/captcha/methods/**" />
@@ -181,11 +181,11 @@
 			</fileset>
 		</jar>
 
-		<mkdir dir="${dist}/pluginressourcen/117__JDHttpLiveScripter/plugins" /> 
-		<jar jarfile="${dist}/pluginressourcen/117__JDHttpLiveScripter/plugins/JDHTTPLiveHeaderScripter.jar" manifest="Manifest.MF"> 
-			<fileset dir="${cls}"> 
-				<include name="jd/plugins/optional/HTTPLiveHeaderScripter*" /> 
-			</fileset> 
+		<mkdir dir="${dist}/pluginressourcen/117__JDHttpLiveScripter/plugins" />
+		<jar jarfile="${dist}/pluginressourcen/117__JDHttpLiveScripter/plugins/JDHTTPLiveHeaderScripter.jar" manifest="Manifest.MF">
+			<fileset dir="${cls}">
+				<include name="jd/plugins/optional/HTTPLiveHeaderScripter*" />
+			</fileset>
 		</jar>
 
 		<mkdir dir="${dist}/pluginressourcen/119__JDNewsfeed/plugins" />
@@ -226,7 +226,7 @@
 		<mkdir dir="${dist}/pluginressourcen/125__JDPremiumCollect/plugins" />
 		<jar jarfile="${dist}/pluginressourcen/125__JDPremiumCollect/plugins/JDPremiumCollect.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
-				<include name="jd/plugins/optional/JDPremiumCollector*" />
+				<include name="jd/plugins/optional/premcol/**" />
 			</fileset>
 		</jar>
 
@@ -283,7 +283,7 @@
 
 	<target name="dlcEnabledBuild" depends="standardBuild,cryptContainer,sign">
 	</target>
-	
+
 	<target name="signedBuild" depends="standardBuild,sign">
 	</target>
 
