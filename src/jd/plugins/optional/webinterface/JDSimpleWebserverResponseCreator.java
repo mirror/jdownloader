@@ -52,7 +52,7 @@ public class JDSimpleWebserverResponseCreator {
     public JDSimpleWebserverResponseCreator() {
         headers = new StringBuilder();
         body = new StringBuilder();
-        contentType = "text/html";
+        contentType = "text/html ;charset=UTF-8";
     }
 
     /*
@@ -174,7 +174,7 @@ public class JDSimpleWebserverResponseCreator {
             } else if (bytes != null) {
                 headers.append(bytes.length);
             } else {
-                headers.append(body.toString().getBytes(Executer.CODEPAGE).length);
+                headers.append(body.toString().getBytes("UTF-8").length);
             }
             headers.append("\r\n");
         } catch (Exception e) {
@@ -199,7 +199,7 @@ public class JDSimpleWebserverResponseCreator {
      */
     public void writeToStream(OutputStream outputStream) throws IOException {
         headers.append("\r\n");
-        outputStream.write(headers.toString().getBytes(Executer.CODEPAGE));
+        outputStream.write(headers.toString().getBytes("UTF-8"));
         if (this.filepath != null) {
             RandomAccessFile raf = null;
             long served = 0;
@@ -235,7 +235,7 @@ public class JDSimpleWebserverResponseCreator {
         if (bytes != null) {
             outputStream.write(bytes);
         } else {
-            outputStream.write(body.toString().getBytes(Executer.CODEPAGE));
+            outputStream.write(body.toString().getBytes("UTF-8"));
         }
     }
 }

@@ -59,7 +59,7 @@ public class Megauploadcom extends PluginForHost {
     public Megauploadcom(PluginWrapper wrapper) {
         super(wrapper);
 
-        this.enablePremium("http://megaupload.com/premium/en/");
+        this.enablePremium("http://www.megaupload.com/premium/en/");
         setConfigElements();
     }
 
@@ -137,7 +137,7 @@ public class Megauploadcom extends PluginForHost {
         String url = null;
 
         br.setFollowRedirects(false);
-        br.getPage("http://megaupload.com/?d=" + getDownloadID(link));
+        br.getPage("http://www.megaupload.com/?d=" + getDownloadID(link));
 
         if (br.containsHTML("Unfortunately, the link you have clicked is not available")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
 
@@ -219,24 +219,22 @@ public class Megauploadcom extends PluginForHost {
 
     // @Override
     public String getAGBLink() {
-        return "http://megaupload.com/terms/";
+        return "http://www.megaupload.com/terms/";
     }
 
     public void login(Account account) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setCookie("http://megaupload.com", "l", "en");
-        if (account.getUser().trim().equalsIgnoreCase("cookie")) {
-            br.setCookie("http://megaupload.com", "user", account.getPass());
+        br.setCookie("http://www.megaupload.com", "l", "en");
+        if (account.getUser().trim().equalsIgnoreCase("cookie")) {            
             br.setCookie("http://www.megaupload.com", "user", account.getPass());
             br.setDebug(true);
-            br.getPage("http://megaupload.com/");
+            br.getPage("http://www.megaupload.com/");
         } else {
-            br.setCookie("http://megaupload.com", "l", "en");
-            br.getPage("http://megaupload.com/?c=login");
-            br.postPage("http://megaupload.com/?c=login", "login=1&redir=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+            br.setCookie("http://www.megaupload.com", "l", "en");
+            br.getPage("http://www.megaupload.com/?c=login");
+            br.postPage("http://www.megaupload.com/?c=login", "login=1&redir=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
         }
-        user = br.getCookie("http://megaupload.com", "user");
-        br.setCookie("http://megaupload.com", "user", user);
+        user = br.getCookie("http://www.megaupload.com", "user");        
         br.setCookie("http://www.megaupload.com", "user", user);
         if (user == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
     }
@@ -312,7 +310,7 @@ public class Megauploadcom extends PluginForHost {
 
         try {
 
-            String[] Dls = br.postPage("http://megaupload.com/mgr_linkcheck.php", map).split("&?(?=id[\\d]+=)");
+            String[] Dls = br.postPage("http://www.megaupload.com/mgr_linkcheck.php", map).split("&?(?=id[\\d]+=)");
             br.getHeaders().clear();
             br.getHeaders().setDominant(false);
             for (i = 1; i < Dls.length; i++) {
@@ -340,8 +338,8 @@ public class Megauploadcom extends PluginForHost {
 
     private boolean getSingleFileInformation(DownloadLink l) {
         try {
-            br.setCookie("http://megaupload.com", "l", "en");
-            br.getPage("http://megaupload.com/?d=" + getDownloadID(l));
+            br.setCookie("http://www.megaupload.com", "l", "en");
+            br.getPage("http://www.megaupload.com/?d=" + getDownloadID(l));
             if (br.containsHTML("The file has been deleted because it was violating")) {
                 l.getLinkStatus().setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                 l.getLinkStatus().setStatusText("Link abused or invalid");
@@ -387,7 +385,7 @@ public class Megauploadcom extends PluginForHost {
     public void handleFree1(DownloadLink link, Account account) throws Exception {
         this.setBrowserExclusive();
         initHeaders(br);
-        br.setCookie("http://megaupload.com", "l", "en");
+        br.setCookie("http://www.megaupload.com", "l", "en");
         if (account != null) {
             login(account);
         }
@@ -397,7 +395,7 @@ public class Megauploadcom extends PluginForHost {
 
         while (captchTries-- >= 0) {
 
-            br.getPage("http://megaupload.com/?d=" + getDownloadID(link));
+            br.getPage("http://www.megaupload.com/?d=" + getDownloadID(link));
             String red = br.getRegex("document\\.location='(.*?)'").getMatch(0);
             if (red != null) {
                 logger.severe("YOur IP got banned");
@@ -518,9 +516,9 @@ public class Megauploadcom extends PluginForHost {
         br.getHeaders().put("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)");
 
         if (user != null) {
-            getRedirect("http://megaupload.com/mgr_dl.php?d=" + dlID + "&u=" + user, link);
+            getRedirect("http://www.megaupload.com/mgr_dl.php?d=" + dlID + "&u=" + user, link);
         } else {
-            getRedirect("http://megaupload.com/mgr_dl.php?d=" + dlID, link);
+            getRedirect("http://www.megaupload.com/mgr_dl.php?d=" + dlID, link);
         }
         if (br.getRedirectLocation() == null || br.getRedirectLocation().toUpperCase().contains(dlID)) {
             if (this.getPluginConfig().getIntegerProperty(CAPTCHA_MODE, 0) != 2) {
@@ -545,7 +543,7 @@ public class Megauploadcom extends PluginForHost {
     // @Override
     public void handleFree(DownloadLink parameter) throws Exception {
         user = null;
-        br.setCookie("http://megaupload.com", "l", "en");
+        br.setCookie("http://www.megaupload.com", "l", "en");
         requestFileInformation(parameter);
         if (!parameter.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
