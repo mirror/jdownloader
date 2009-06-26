@@ -69,10 +69,10 @@ import jd.gui.JDLookAndFeelManager;
 import jd.gui.UIInterface;
 import jd.gui.UserIO;
 import jd.gui.skins.simple.components.ChartAPIEntity;
+import jd.gui.skins.simple.components.JDTextField;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.components.PieChartAPI;
 import jd.gui.skins.simple.components.TextAreaDialog;
-import jd.gui.skins.simple.components.TwoTextFieldDialog;
 import jd.gui.skins.simple.components.DownloadView.DownloadLinksPanel;
 import jd.gui.skins.simple.components.Linkgrabber.LinkAdder;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberPanel;
@@ -917,7 +917,17 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
         GuiRunnable<String[]> run = new GuiRunnable<String[]>() {
             // @Override
             public String[] runSave() {
-                return TwoTextFieldDialog.showDialog(SimpleGUI.this, title, questionOne, questionTwo, defaultOne, defaultTwo);
+                JDTextField txtFieldOne = new JDTextField(defaultOne);
+                JDTextField txtFieldTwo = new JDTextField(defaultTwo);
+
+                JPanel panel = new JPanel(new MigLayout("ins 0, wrap 1", "[grow, fill]", "[]5[]10[]5[]"));
+                panel.add(new JLabel(questionOne));
+                panel.add(txtFieldOne);
+                panel.add(new JLabel(questionTwo));
+                panel.add(txtFieldTwo);
+
+                if (JDFlags.hasAllFlags(new ContainerDialog(UserIO.NO_COUNTDOWN, title, panel, null, null).getReturnValue(), UserIO.RETURN_OK)) return new String[] { txtFieldOne.getText(), txtFieldTwo.getText() };
+                return null;
             }
         };
         return run.getReturnValue();

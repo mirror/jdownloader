@@ -196,7 +196,6 @@ public class Main {
                 svn.update(new File(JDUtilities.getJDHomeDirectoryFromEnvironment(), "tools"), SVNRevision.HEAD);
 
             } catch (SVNException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
         }

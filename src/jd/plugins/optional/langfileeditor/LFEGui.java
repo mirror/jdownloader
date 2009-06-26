@@ -61,7 +61,6 @@ import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.ChartAPIEntity;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.PieChartAPI;
-import jd.gui.skins.simple.components.TwoTextFieldDialog;
 import jd.nutils.io.JDFileFilter;
 import jd.nutils.svn.Subversion;
 import jd.utils.JDUtilities;
@@ -107,7 +106,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
     private JXTable table;
     private MyTableModel tableModel;
     private File languageFile;
-//    private ComboBrowseFile cmboFile;
+    // private ComboBrowseFile cmboFile;
     private PieChartAPI keyChart;
     private ChartAPIEntity entDone, entMissing, entOld;
     private JMenu mnuFile, mnuSVN, mnuKey, mnuEntries;
@@ -188,10 +187,10 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         // cmboSource.setFileFilter(fileFilter);
         // cmboSource.addActionListener(this);
 
-//        cmboFile = new ComboBrowseFile("LANGFILEEDITOR_FILE");
-//        cmboFile.setFileSelectionMode(JDFileChooser.FILES_ONLY);
-//        cmboFile.setFileFilter(fileFilter);
-//        cmboFile.addActionListener(this);
+        // cmboFile = new ComboBrowseFile("LANGFILEEDITOR_FILE");
+        // cmboFile.setFileSelectionMode(JDFileChooser.FILES_ONLY);
+        // cmboFile.setFileFilter(fileFilter);
+        // cmboFile.addActionListener(this);
 
         keyChart = new PieChartAPI("", 225, 50);
         keyChart.addEntity(entDone = new ChartAPIEntity(JDL.L(LOCALE_PREFIX + "keychart.done", "Done"), 0, colorDone));
@@ -204,14 +203,14 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         // "Source:")));
         // this.add(cmboSource, "growx");
 
-//        this.add(new JLabel(JDLocale.L(LOCALE_PREFIX + "languageFile", "Language File:")));
-//        this.add(cmboFile, "growx");
+        // this.add(new JLabel(JDLocale.L(LOCALE_PREFIX + "languageFile",
+        // "Language File:")));
+        // this.add(cmboFile, "growx");
 
-      
         this.add(new JScrollPane(table), "span 3, grow, span");
         this.add(keyChart, "spany 1, w 225!, h 50!");
         // sourceFile = cmboSource.getCurrentPath();
-//        languageFile = cmboFile.getCurrentPath();
+        // languageFile = cmboFile.getCurrentPath();
 
         new Thread(new Runnable() {
 
@@ -411,24 +410,29 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         // }
         //
         // } else
-//        if (e.getSource() == cmboFile) {
+        // if (e.getSource() == cmboFile) {
 
-//            File languageFile = cmboFile.getCurrentPath();
-//            if (languageFile == this.languageFile) return;
-//
-//            if (!languageFile.getAbsolutePath().startsWith(this.dirLanguages.getAbsolutePath())) {
-//                UserIO.getInstance().requestMessageDialog(JDLocale.LF(LOCALE_PREFIX + "wrongLanguageFile", "With the selected LanguageFile you are unable to let the LanguageFileEditor commit your changes to the SVN! Please change to a LanguageFile from the folder %s", dirLanguages.getAbsolutePath()));
-//            }
-//
-//            if (!saveChanges(this.languageFile, false, languageFile)) return;
-//
-//            if (languageFile != this.languageFile && languageFile != null) {
-//                this.languageFile = languageFile;
-//                initLocaleData();
-//            }
+        // File languageFile = cmboFile.getCurrentPath();
+        // if (languageFile == this.languageFile) return;
+        //
+        // if
+        // (!languageFile.getAbsolutePath().startsWith(this.dirLanguages.getAbsolutePath()))
+        // {
+        // UserIO.getInstance().requestMessageDialog(JDLocale.LF(LOCALE_PREFIX +
+        // "wrongLanguageFile",
+        // "With the selected LanguageFile you are unable to let the LanguageFileEditor commit your changes to the SVN! Please change to a LanguageFile from the folder %s",
+        // dirLanguages.getAbsolutePath()));
+        // }
+        //
+        // if (!saveChanges(this.languageFile, false, languageFile)) return;
+        //
+        // if (languageFile != this.languageFile && languageFile != null) {
+        // this.languageFile = languageFile;
+        // initLocaleData();
+        // }
 
-//        } else 
-            if (e.getSource() == mnuNew) {
+        // } else
+        if (e.getSource() == mnuNew) {
 
             if (!saveChanges()) return;
 
@@ -446,7 +450,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
                         JDLogger.exception(e1);
                     }
                 }
-//                cmboFile.setCurrentPath(languageFile);
+                // cmboFile.setCurrentPath(languageFile);
 
                 initLocaleDataComplete();
             }
@@ -469,7 +473,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
 
         } else if (e.getSource() == mnuAdd) {
 
-            String[] result = TwoTextFieldDialog.showDialog(SimpleGUI.CURRENTGUI, JDL.L(LOCALE_PREFIX + "addKey.title", "Add new key"), JDL.L(LOCALE_PREFIX + "addKey.message1", "Type in the name of the key:"), JDL.L(LOCALE_PREFIX + "addKey.message2", "Type in the translated message of the key:"), "", "");
+            String[] result = SimpleGUI.CURRENTGUI.showTwoTextFieldDialog(JDL.L(LOCALE_PREFIX + "addKey.title", "Add new key"), JDL.L(LOCALE_PREFIX + "addKey.message1", "Type in the name of the key:"), JDL.L(LOCALE_PREFIX + "addKey.message2", "Type in the translated message of the key:"), "", "");
             if (result[0].equals("")) return;
             result[0] = result[0].toLowerCase();
             for (KeyInfo ki : data) {
@@ -666,17 +670,15 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
 
     }
 
-  
-
     private boolean saveChanges() {
         if (changed) {
             int res = JOptionPane.showConfirmDialog(this, JDL.L(LOCALE_PREFIX + "changed.message", "Language File changed! Save changes?"), JDL.L(LOCALE_PREFIX + "changed.title", "Save changes?"), JOptionPane.YES_NO_CANCEL_OPTION);
             if (res == JOptionPane.CANCEL_OPTION) {
-              
+
                 return false;
             } else if (res == JOptionPane.YES_OPTION) {
                 saveLanguageFile(languageFile);
-               
+
             } else {
                 changed = false;
             }
@@ -829,7 +831,8 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
             return;
         }
 
-//        if (languageFile.getAbsolutePath() != cmboFile.getText()) cmboFile.setCurrentPath(languageFile);
+        // if (languageFile.getAbsolutePath() != cmboFile.getText())
+        // cmboFile.setCurrentPath(languageFile);
         changed = false;
         UserIO.getInstance().requestMessageDialog(JDL.L(LOCALE_PREFIX + "save.success.message", "LanguageFile saved successfully!"));
     }
