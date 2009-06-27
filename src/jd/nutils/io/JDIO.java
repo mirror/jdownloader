@@ -33,6 +33,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.channels.FileChannel;
+import java.util.ArrayList;
 import java.util.Vector;
 
 import javax.swing.JFileChooser;
@@ -384,5 +385,26 @@ public class JDIO {
 
         return dir.delete();
     }
+/**
+ * RUns recursive throu the dir (directory) and list all files.
+ * returns null if dir is a file.
+ * @param dir
+ * @return
+ */
+    public static ArrayList<File> listFiles(File dir) {
+        if(!dir.isDirectory())return null;
+        ArrayList<File> ret= new ArrayList<File>();
+        
+        for(File f: dir.listFiles()){
+            if(f.isDirectory()){
+                ret.addAll(listFiles(f));
+            }else{
+                ret.add(f);
+            }
+        }
+        return ret;
+        
+    }
+
 
 }

@@ -68,7 +68,7 @@ public class PackageManager extends Interaction implements Serializable {
     }
 
     // @Override
-    public boolean doInteraction(Object arg) {       
+    public boolean doInteraction(Object arg) {
         checkNewInstalled();
 
         SubConfiguration config = WebUpdater.getConfig("JDU");
@@ -276,10 +276,12 @@ public class PackageManager extends Interaction implements Serializable {
                                 list.append(pa.getStringProperty("version"));
                                 list.append(new char[] { '<', 'b', 'r', '/', '>' });
                             }
+                            JDUtilities.getResourceFile("update").mkdirs();
+                            jd.update.Main.installAddons(JDUtilities.getResourceFile("update"));
                             String message = JDL.LF("modules.packagemanager.downloadednewpackage.title2", "<p>Updates loaded. A JD restart is required.<br/> RESTART NOW?<hr>%s</p>", list.toString());
                             boolean ret = JDUtilities.getGUI().showCountdownConfirmDialog(message, 15);
                             if (ret) {
-                                new WebUpdate().doWebupdate(true,true);
+                                new WebUpdate().doUpdateCheck(true, true);
                             }
                         }
 

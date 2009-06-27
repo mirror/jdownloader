@@ -246,6 +246,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
         } else {
             this.setIconImage(list.get(3));
         }
+       
 
         // this.setIconImage(JDImage.getImage("empty"));
         setTitle(JDUtilities.getJDTitle());

@@ -188,7 +188,7 @@ public class JDToolBar extends JToolBar implements ControlListener {
             public void actionPerformed(ActionEvent e) {
                 new Thread() {
                     public void run() {
-                        new WebUpdate().doWebupdate(true, true);
+                        new WebUpdate().doUpdateCheck(true, true);
                     }
                 }.start();
             }

@@ -4,7 +4,7 @@
 	<property name="cls" value="bin" />
 	<property name="dist" value="dist" />
 	<property name="res" value="ressourcen" />
-	<property name="keystore" value="J:\jDownloader.keystore" />
+	<property name="keystore" value="G:\jDownloader.keystore" />
 	<property name="class-path" value="libs/JUnique.jar libs/JDGUI.jar libs/JDHttp.jar libs/JAntiCaptcha.jar libs/JDUtils.jar libs/BrowserLauncher2.jar libs/clink170.jar libs/cobra.jar libs/hsqldb.jar libs/htmlcleaner2_0.jar libs/irclib.jar libs/js.jar libs/looks.jar libs/mail.jar libs/miglayout.jar libs/savemytube.jar libs/substance-swingx.jar libs/substance.jar libs/svnkit.jar libs/swingworker.jar libs/swingx.jar libs/ui.jar" />
 
 	<target name="compile">
@@ -114,7 +114,24 @@
 		</jar>
 		<delete file="Manifest.MF" failonerror="false" />
 	</target>
-
+	<target name="jarRestarter">
+		<!--Restarter-->
+		<manifest file="Manifest.MF">
+			<attribute name="Created-By" value="coalado" />
+			<attribute name="Main-Class" value="jd.update.Restarter" />
+		</manifest>
+		<jar jarfile="${dist}/tinyupdate.jar" manifest="Manifest.MF">
+			<fileset dir="${cls}">
+				<include name="jd/update/Restarter*.class" />	
+				<include name="jd/nutils/OSDetector*.class" />		
+				<include name="jd/nutils/DynByteBuff*.class" />		
+				
+				<include name="jd/nutils/Executer*.class" />				
+			</fileset>
+		
+		</jar>
+		<delete file="Manifest.MF" failonerror="false" />
+	</target>
 	<target name="jarHostService">
 		<!--HostService-->
 		<manifest file="Manifest.MF">
@@ -275,7 +292,7 @@
 		<move file="${dist}/JDownloader_obfuscated.jar" tofile="${dist}/JDownloader.jar" />
 	</target>
 
-	<target name="standardBuild" depends="compile,jar,jarOptionals,jarWebupdater,jarHostService">
+	<target name="standardBuild" depends="compile,jar,jarOptionals,jarWebupdater,jarHostService,jarRestarter">
 	</target>
 
 	<target name="hostservice" depends="compile,jar,jarHostService">

@@ -23,9 +23,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.logging.Logger;
-
-import jd.controlling.JDLogger;
 
 public class Executer extends Thread {
     public static final String CODEPAGE = OSDetector.isWindows() ? "ISO-8859-1" : "UTF-8";
@@ -82,14 +79,14 @@ public class Executer extends Thread {
                         try {
                             line = new String(dynbuf.getLast(num), codepage).trim();
                         } catch (UnsupportedEncodingException e) {
-                            JDLogger.exception(e);
+                            e.printStackTrace();
                             line = new String(dynbuf.getLast(num)).trim();
 
                         }
                         if (line.length() > 0) {
                             if (isDebug()) {
 
-                                logger.finest(this + ": " + line + "");
+                                System.out.println(this + ": " + line + "");
                                 // logger.finest(this + ": " +
                                 // JDHexUtils.getHexString(dynbuf.getLast(num))
                                 // + "");
@@ -102,7 +99,7 @@ public class Executer extends Thread {
                     }
                 }
             } catch (IOException e) {
-                JDLogger.exception(e);
+                e.printStackTrace();
             } catch (InterruptedException e) {
                 // JDLogger.exception(e);
             }
@@ -149,7 +146,7 @@ public class Executer extends Thread {
     public static int LISTENER_STDSTREAM = 1 << 1;
 
     private String command;
-    private Logger logger = jd.controlling.JDLogger.getLogger();
+
     private ArrayList<String> parameter;
     private String runIn;
     private DynByteBuffer inputStreamBuffer;
@@ -216,7 +213,7 @@ public class Executer extends Thread {
     // @Override
     public void run() {
         if (command == null || command.trim().length() == 0) {
-            logger.severe("Execute Parameter error: No Command");
+            System.out.println("Execute Parameter error: No Command");
             return;
         }
 
@@ -229,7 +226,7 @@ public class Executer extends Thread {
                 out.append(p);
                 out.append(' ');
             }
-            logger.finest("Execute: " + out + " in " + runIn);
+            System.out.println("Execute: " + out + " in " + runIn);
         }
         ProcessBuilder pb = new ProcessBuilder(params.toArray(new String[] {}));
         if (runIn != null && runIn.length() > 0) {
@@ -241,7 +238,7 @@ public class Executer extends Thread {
                     // File(params.get(0)).getParentFile());
                     pb.directory(new File(params.get(0)).getParentFile());
                 } else {
-                    logger.severe("Working directory " + runIn + " does not exist!");
+                    System.out.println("Working directory " + runIn + " does not exist!");
                 }
             }
         }
@@ -303,7 +300,7 @@ public class Executer extends Thread {
             this.exception = e1;
             return;
         } catch (InterruptedException e) {
-            JDLogger.exception(e);
+            e.printStackTrace();
             this.exception = e;
         }
     }
@@ -333,11 +330,11 @@ public class Executer extends Thread {
         try {
             outputStream.write(data.getBytes());
             outputStream.write("\n".getBytes());
-            if (isDebug()) logger.finest("Out>" + data);
+            if (isDebug()) System.out.println("Out>" + data);
             outputStream.flush();
         } catch (IOException e) {
             // TODO Auto-generated catch block
-            JDLogger.exception(e);
+            e.printStackTrace();
         }
     }
 
@@ -367,7 +364,7 @@ public class Executer extends Thread {
                 Thread.sleep(50);
             } catch (InterruptedException e) {
 
-                JDLogger.exception(e);
+                e.printStackTrace();
             }
 
         }

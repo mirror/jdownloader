@@ -68,6 +68,7 @@ import jd.gui.userio.SimpleUserIO;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.OSDetector;
+import jd.nutils.io.JDIO;
 import jd.nutils.svn.Subversion;
 import jd.update.FileUpdate;
 import jd.update.WebUpdater;
@@ -173,27 +174,10 @@ public class Main {
         if (!JDInitFlags.NO_DEV_UPDATE && JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL) {
             try {
                 System.out.println("Update ressources at  " + JDUtilities.getJDHomeDirectoryFromEnvironment());
-                Subversion svn = new Subversion("svn://svn.jdownloader.org/jdownloader/trunk/ressourcen/jd/");
-                svn.getBroadcaster().addListener(new MessageListener() {
-
-                    public void onMessage(MessageEvent event) {
-                        System.out.println(event.getMessage());
-
-                    }
-
-                });
-                svn.update(new File(JDUtilities.getJDHomeDirectoryFromEnvironment(), "jd"), SVNRevision.HEAD);
-
-                svn = new Subversion("svn://svn.jdownloader.org/jdownloader/trunk/ressourcen/tools/");
-                svn.getBroadcaster().addListener(new MessageListener() {
-
-                    public void onMessage(MessageEvent event) {
-                        System.out.println(event.getMessage());
-
-                    }
-
-                });
-                svn.update(new File(JDUtilities.getJDHomeDirectoryFromEnvironment(), "tools"), SVNRevision.HEAD);
+        
+                updateSVN("svn://svn.jdownloader.org/jdownloader/trunk/ressourcen/jd/","jd");
+                updateSVN("svn://svn.jdownloader.org/jdownloader/trunk/ressourcen/tools/","tools");
+               
 
             } catch (SVNException e) {
                 e.printStackTrace();
@@ -350,6 +334,35 @@ public class Main {
         }
     }
 
+    private static void updateSVN(String svnadr, String path) throws SVNException {
+        Subversion svn = new Subversion(svnadr);
+
+        File dir = new File(JDUtilities.getJDHomeDirectoryFromEnvironment(), path);
+        try {
+            svn.cleanUp(dir, true);
+        } catch (SVNException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        svn.getBroadcaster().addListener(new MessageListener() {
+
+            public void onMessage(MessageEvent event) {
+                System.out.println(event.getMessage());
+
+            }
+
+        });
+        
+        try {
+        svn.revert(dir);
+        }catch(Exception e){
+            e.printStackTrace();
+            JDIO.removeDirectoryOrFile(dir);
+            svn.update(dir, SVNRevision.HEAD);
+        }
+
+    }
+
     private static void start(final String args[]) {
         if (!JDInitFlags.STOP && !JDInitFlags.ENOUGH_MEMORY) {
             JDUtilities.restartJD();
@@ -455,18 +468,7 @@ public class Main {
 
         LOGGER.info("init Webupdate");
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_PROGRESS, JDL.L("gui.splash.progress.webupdate", "Check updates")));
-        LOGGER.info("update start");
 
-        new WebUpdate().doWebupdate(true, false);
-
-        try {
-            loadDynamics();
-        } catch (Exception e1) {
-            JDLogger.exception(Level.FINEST, e1);
-        }
-        WebUpdate.DynamicPluginsFinished();
-
-        LOGGER.info("update end");
         LOGGER.info("init plugins");
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_PROGRESS, JDL.L("gui.splash.progress.initplugins", "Init plugins")));
 
@@ -519,7 +521,18 @@ public class Main {
         /*
          * Keeps the home working directory for developers up2date
          */
+        LOGGER.info("update start");
 
+        new WebUpdate().doUpdateCheck(true, false);
+
+        try {
+            loadDynamics();
+        } catch (Exception e1) {
+            JDLogger.exception(Level.FINEST, e1);
+        }
+        WebUpdate.DynamicPluginsFinished();
+
+        LOGGER.info("update end");
     }
 
     /**
@@ -554,7 +567,7 @@ public class Main {
         } else {
             /* dynamics in der public laden */
             JDLogger.getLogger().finest("Run dynamics");
-            if (WebUpdater.PLUGIN_LIST == null) return;
+            if (WebUpdater.getPluginList() == null) return;
             for (Entry<String, FileUpdate> entry : WebUpdater.PLUGIN_LIST.entrySet()) {
                 System.out.println("Plugins: " + entry.getKey());
                 if (entry.getKey().startsWith("/jd/dynamics/") && !entry.getKey().contains("DynamicPluginInterface")) {

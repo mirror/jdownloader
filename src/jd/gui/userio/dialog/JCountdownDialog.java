@@ -19,11 +19,11 @@ package jd.gui.userio.dialog;
 import java.awt.event.MouseEvent;
 
 import javax.swing.JDialog;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.JDMouseAdapter;
-import jd.gui.skins.simple.SimpleGUI;
 import jd.nutils.Formatter;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
@@ -37,8 +37,9 @@ public abstract class JCountdownDialog extends JDialog {
 
     protected JLabel countDownLabel;
 
-    public JCountdownDialog(SimpleGUI currentgui) {
+    public JCountdownDialog(JFrame currentgui) {
         super(currentgui);
+   
         initCountdown();
     }
 

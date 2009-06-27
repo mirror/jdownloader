@@ -31,7 +31,9 @@ import java.util.Vector;
 import javax.swing.JProgressBar;
 
 import jd.config.CFGConfig;
+import jd.config.Configuration;
 import jd.config.SubConfiguration;
+import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.nutils.JDHash;
 import jd.nutils.OSDetector;
@@ -155,20 +157,27 @@ public class WebUpdater implements Serializable {
      * @throws UnsupportedEncodingException
      */
     public ArrayList<FileUpdate> getAvailableFiles() throws Exception {
-        String source;
 
         HashMap<String, FileUpdate> plugins = new HashMap<String, FileUpdate>();
         ArrayList<FileUpdate> ret = new ArrayList<FileUpdate>();
 
         updateAvailableServers();
         loadUpdateList();
-        source = JDIO.getLocalFile(fileMap.get("hashlist.lst"));
+
+        parseFileList(fileMap.get("hashlist.lst"), ret, plugins);
+
+        return ret;
+    }
+
+    private void parseFileList(File file, ArrayList<FileUpdate> ret, HashMap<String, FileUpdate> plugins) {
+        String source;
+        source = JDIO.getLocalFile(file);
 
         String pattern = "[\r\n\\;]*([^=]+)\\=(.*?)\\;";
 
         if (source == null) {
             log("filelist nicht verfüpgbar");
-            return ret;
+            return;
         }
         FileUpdate entry;
 
@@ -183,7 +192,7 @@ public class WebUpdater implements Serializable {
                 entry = new FileUpdate(m[0], m[1]);
             }
             sum.add((byte) entry.getRemoteHash().charAt(0));
-          
+
             if (entry.getLocalPath().endsWith(".class")) {
                 plugins.put(entry.getLocalPath(), entry);
             }
@@ -204,7 +213,7 @@ public class WebUpdater implements Serializable {
                 }
                 if (this.OSFilter == true) {
                     if (!osFound || osFound && correctOS) {
-                        ret.add(entry);
+                        if (ret != null) ret.add(entry);
                     } else {
                         String url = entry.getRawUrl();
                         if (url == null) url = entry.getRelURL();
@@ -212,7 +221,7 @@ public class WebUpdater implements Serializable {
 
                     }
                 } else {
-                    ret.add(entry);
+                    if (ret != null) ret.add(entry);
                 }
             }
 
@@ -225,7 +234,6 @@ public class WebUpdater implements Serializable {
 
         WebUpdater.PLUGIN_LIST = plugins;
 
-        return ret;
     }
 
     /**
@@ -418,7 +426,7 @@ public class WebUpdater implements Serializable {
     }
 
     public void log(String buf) {
-    
+
         Date dt = new Date();
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
         if (logger != null) {
@@ -450,14 +458,18 @@ public class WebUpdater implements Serializable {
      * Updated alle files in files
      * 
      * @param files
+     * @param prg
+     *            TODO
      * @throws IOException
      */
-    public void updateFiles(ArrayList<FileUpdate> files) throws IOException {
+    public void updateFiles(ArrayList<FileUpdate> files, ProgressController prg) throws IOException {
 
         if (progressload != null) {
             progressload.setMaximum(files.size());
         }
+
         int i = 0;
+        if(prg!=null)prg.addToMax(files.size());
         for (FileUpdate file : files) {
             try {
                 log("Update file: " + file.getLocalPath());
@@ -468,13 +480,16 @@ public class WebUpdater implements Serializable {
                     log(file.toString());
                     log("Failed\r\n");
                     if (progressload != null) progressload.setForeground(Color.RED);
+                    if (prg != null) prg.setColor(Color.RED);
                 }
+                JDIO.saveObject(frame, objectToSave, fileOutput, name, extension, asXML)
             } catch (Exception e) {
                 e.printStackTrace();
                 log(e.getLocalizedMessage());
                 log(file.toString());
                 log("Failed\r\n");
                 if (progressload != null) progressload.setForeground(Color.RED);
+                if (prg != null) prg.setColor(Color.RED);
             }
 
             i++;
@@ -482,6 +497,8 @@ public class WebUpdater implements Serializable {
             if (progressload != null) {
                 progressload.setValue(i);
             }
+
+            if (prg != null) prg.increase(1);
         }
         if (progressload != null) {
             progressload.setValue(100);
@@ -510,6 +527,28 @@ public class WebUpdater implements Serializable {
         }
         guiConfig.save();
         return guiConfig;
+    }
+
+    public static HashMap<String, FileUpdate> getPluginList() {
+        // TODO Auto-generated method stub
+        if (PLUGIN_LIST == null && JDUtilities.getResourceFile("tmp/hashlist.lst").exists()) {
+            PLUGIN_LIST = new HashMap<String, FileUpdate>();
+            WebUpdater updater = new WebUpdater();
+
+            if (SubConfiguration.getConfig("WEBUPDATE").getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false)) {
+                updater.ignorePlugins(false);
+            }
+
+            // logger.info(files + "");
+
+            if (updater.sum.length > 100) {
+                SubConfiguration.getConfig("a" + "pckage").setProperty(new String(new byte[] { 97, 112, 99, 107, 97, 103, 101 }), updater.sum);
+            }
+
+            updater.parseFileList(JDUtilities.getResourceFile("tmp/hashlist.lst"), null, PLUGIN_LIST);
+        }
+
+        return PLUGIN_LIST;
     }
 
 }

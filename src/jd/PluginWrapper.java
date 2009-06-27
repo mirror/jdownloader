@@ -65,6 +65,9 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
         if (JDFlags.hasSomeFlags(flags, LOAD_ON_INIT)) this.getPlugin();
         if (JDFlags.hasSomeFlags(flags, ALWAYS_ENABLED)) this.alwaysenabled = true;
         if (JDFlags.hasSomeFlags(flags, ACCEPTONLYSURLSFALSE)) this.acceptOnlyURIs = false;
+        
+        
+        System.out.println(classn);
         WRAPPER.put(classn, this);
     }
 
@@ -102,7 +105,7 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
         try {
 
             if (CL == null) CL = new URLClassLoader(new URL[] { JDUtilities.getJDHomeDirectoryFromEnvironment().toURI().toURL(), JDUtilities.getResourceFile("java").toURI().toURL() }, Thread.currentThread().getContextClassLoader());
-            if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED && WebUpdater.PLUGIN_LIST != null) {
+            if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED && WebUpdater.getPluginList() != null) {
 
                 ArrayList<FileUpdate> filelist = new ArrayList<FileUpdate>();
                 for (Entry<String, FileUpdate> entry : WebUpdater.PLUGIN_LIST.entrySet()) {
@@ -227,7 +230,10 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
     public String getConfigName() {
         return getHost();
     }
-
+    public static PluginWrapper getWrapper(String clazz) {
+        // TODO Auto-generated method stub
+        return WRAPPER.get(clazz);
+    }
     public static Plugin getNewInstance(String className) {
         if (!WRAPPER.containsKey(className)) {
             try {

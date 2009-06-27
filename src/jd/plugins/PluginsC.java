@@ -396,7 +396,7 @@ public abstract class PluginsC extends Plugin {
                 progress.setColor(Color.RED);
                 progress.setStatusText(JDL.LF("plugins.container.exit.error", "Container error: %s", containerStatus.getStatusText()));
                 progress.finalize(5000);
-                new WebUpdate().doWebupdate(false,false);
+                new WebUpdate().doUpdateCheck(false,false);
             } else {
                 progress.finalize();
             }

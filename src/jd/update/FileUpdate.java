@@ -76,11 +76,11 @@ public class FileUpdate {
 
     public boolean exists() {
 
-        if (workingDir != null) {
-            return getLocalFile().exists();
-        } else {
-            return JDUtilities.getResourceFile(getLocalPath()).exists();
-        }
+        // if (workingDir != null) {
+        return getLocalFile().exists() || this.getLocalTmpFile().exists();
+        // } else {
+        // return JDUtilities.getResourceFile(getLocalPath()).exists();
+        // }
 
     }
 
@@ -92,7 +92,7 @@ public class FileUpdate {
     }
 
     private String getLocalHash() {
-
+        if (this.getLocalTmpFile().exists()) return JDHash.getMD5(getLocalTmpFile());
         return JDHash.getMD5(getLocalFile());
 
     }
@@ -148,58 +148,66 @@ public class FileUpdate {
                     tmpFile = JDUtilities.getResourceFile(getLocalPath() + ".tmp");
                 }
                 tmpFile.delete();
-                if (url.contains("?")) {
-                    url += "&r=" + System.currentTimeMillis();
+
+                if (this.getLocalTmpFile().exists() && JDHash.getMD5(this.getLocalTmpFile()).equals(hash)) {
+                    this.getLocalTmpFile().renameTo(tmpFile);
                 } else {
-                    url += "?r=" + System.currentTimeMillis();
-                }
-                log(result, "Downloadsource: " + url + "\r\n");
-                startTime = System.currentTimeMillis();
-                URLConnectionAdapter con = null;
-                int response = -1;
-                try {
-                    con = br.openGetConnection(url);
-                    endTime = System.currentTimeMillis();
-                    response = con.getResponseCode();
-                    currentServer.setRequestTime(endTime - startTime);
+                    this.getLocalTmpFile().delete();
 
-                } catch (Exception e) {
-                    log(result, "Error. Connection error\r\n");
-                    currentServer.setRequestTime(100000l);
-                    try {
-                        con.disconnect();
-                    } catch (Exception e1) {
+                    if (url.contains("?")) {
+                        url += "&r=" + System.currentTimeMillis();
+                    } else {
+                        url += "?r=" + System.currentTimeMillis();
                     }
-                    continue;
-                }
+                    log(result, "Downloadsource: " + url + "\r\n");
+                    startTime = System.currentTimeMillis();
+                    URLConnectionAdapter con = null;
+                    int response = -1;
+                    try {
+                        con = br.openGetConnection(url);
+                        endTime = System.currentTimeMillis();
+                        response = con.getResponseCode();
+                        currentServer.setRequestTime(endTime - startTime);
 
-                if (response != 200) {
-                    log(result, "Error. Connection error " + response + "\r\n");
-                    currentServer.setRequestTime(500000l);
+                    } catch (Exception e) {
+                        log(result, "Error. Connection error\r\n");
+                        currentServer.setRequestTime(100000l);
+                        try {
+                            con.disconnect();
+                        } catch (Exception e1) {
+                        }
+                        continue;
+                    }
+
+                    if (response != 200) {
+                        log(result, "Error. Connection error " + response + "\r\n");
+                        currentServer.setRequestTime(500000l);
+                        try {
+                            con.disconnect();
+                        } catch (Exception e) {
+                        }
+                        continue;
+
+                    }
+
+                    try {
+                        Browser.download(tmpFile, con);
+                    } catch (Exception e) {
+                        log(result, "Error. Connection broke\r\n");
+                        currentServer.setRequestTime(100000l);
+                        try {
+                            con.disconnect();
+                        } catch (Exception e1) {
+                        }
+                        continue;
+                    }
                     try {
                         con.disconnect();
                     } catch (Exception e) {
                     }
-                    continue;
+                    log(result, currentServer + " requesttimeAVG=" + currentServer.getRequestTime() + "\r\n");
 
                 }
-
-                try {
-                    Browser.download(tmpFile, con);
-                } catch (Exception e) {
-                    log(result, "Error. Connection broke\r\n");
-                    currentServer.setRequestTime(100000l);
-                    try {
-                        con.disconnect();
-                    } catch (Exception e1) {
-                    }
-                    continue;
-                }
-                try {
-                    con.disconnect();
-                } catch (Exception e) {
-                }
-                log(result, currentServer + " requesttimeAVG=" + currentServer.getRequestTime() + "\r\n");
                 String downloadedHash = JDHash.getMD5(tmpFile);
                 if (downloadedHash.equalsIgnoreCase(hash)) {
                     log(result, "Hash OK\r\n");
@@ -208,7 +216,11 @@ public class FileUpdate {
                     if (ret) {
                         return ret;
                     } else {
-                        log(result, "Error. Rename failed\r\n");
+                        getLocalTmpFile().getParentFile().mkdirs();
+                        ret = tmpFile.renameTo(getLocalTmpFile());
+                        if (!ret) {
+                            log(result, "Error. Rename failed\r\n");
+                        }
                     }
                 } else {
                     log(result, "Hash Failed\r\n");
@@ -228,6 +240,15 @@ public class FileUpdate {
             }
         }
         return false;
+
+    }
+
+    private File getLocalTmpFile() {
+        if (workingDir != null) {
+            return new File(new File(workingDir, "update") + getLocalPath());
+        } else {
+            return new File(JDUtilities.getResourceFile("update") + getLocalPath());
+        }
 
     }
 
@@ -267,6 +288,13 @@ public class FileUpdate {
         this.currentServer = serv;
         serverList.remove(serv);
         return mergeUrl(serv.getPath(), url);
+    }
+
+    public boolean needsRestart() {
+        String hash=JDHash.getMD5(getLocalTmpFile());
+        if(hash==null)return false;
+        if(hash.equalsIgnoreCase(hash))return true;
+        return false;
     }
 
 }

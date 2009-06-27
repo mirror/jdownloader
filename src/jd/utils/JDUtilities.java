@@ -72,6 +72,7 @@ import jd.http.Browser;
 import jd.nutils.Executer;
 import jd.nutils.Formatter;
 import jd.nutils.OSDetector;
+import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -492,8 +493,7 @@ public class JDUtilities {
      * 
      * @return URLClassLoader
      */
-    
-    
+
     public static JDClassLoader getJDClassLoader() {
         if (jdClassLoader == null) {
             File homeDir = JDUtilities.getJDHomeDirectoryFromEnvironment();
@@ -731,11 +731,23 @@ public class JDUtilities {
         System.arraycopy(javaArgs, 0, finalArgs, 0, javaArgs.length);
         System.arraycopy(jdArgs, 0, finalArgs, javaArgs.length, jdArgs.length);
 
-        if (!OSDetector.isMac()) {
+        ArrayList<File> restartfiles = JDIO.listFiles(JDUtilities.getResourceFile("update"));
+        if (restartfiles != null && restartfiles.size() > 0) {
+            if (!OSDetector.isMac()) {
+                JDLogger.getLogger().info(JDUtilities.runCommand("java", new String[] { "-jar", "tools/tinyupdate.jar", "-restart", "-mac" }, getResourceFile(".").getAbsolutePath(), 0));
+            } else {
+                JDLogger.getLogger().info(JDUtilities.runCommand("java", new String[] { "-jar", "tools/tinyupdate.jar", "-restart" }, getResourceFile(".").getAbsolutePath(), 0));
 
-            JDLogger.getLogger().info(JDUtilities.runCommand("java", finalArgs, getResourceFile(".").getAbsolutePath(), 0));
+            }
+
         } else {
-            JDLogger.getLogger().info(JDUtilities.runCommand("open", new String[] { "-n", "jDownloader.app" }, JDUtilities.getResourceFile(".").getParentFile().getParentFile().getParentFile().getParentFile().getAbsolutePath(), 0));
+
+            if (!OSDetector.isMac()) {
+
+                JDLogger.getLogger().info(JDUtilities.runCommand("java", finalArgs, getResourceFile(".").getAbsolutePath(), 0));
+            } else {
+                JDLogger.getLogger().info(JDUtilities.runCommand("open", new String[] { "-n", "jDownloader.app" }, JDUtilities.getResourceFile(".").getParentFile().getParentFile().getParentFile().getParentFile().getAbsolutePath(), 0));
+            }
         }
         System.out.println("EXIT NOW");
         System.exit(0);

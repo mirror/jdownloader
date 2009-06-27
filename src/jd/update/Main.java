@@ -63,7 +63,7 @@ public class Main {
     private static JProgressBar progressload;
 
     private static void log(StringBuilder log, String string) {
-        log.append(string);
+        if(log!=null)log.append(string);
         System.out.println(string);
 
     }
@@ -156,10 +156,10 @@ public class Main {
                 updater.filterAvailableUpdates(files);
 
                 JDUpdateUtils.backupDataBase();
-                updater.updateFiles(files);
+                updater.updateFiles(files, null);
             }
 
-            if (!clone) installAddons();
+            if (!clone) installAddons(JDUtilities.getResourceFile("."));
             Main.trace(updater.getLogger().toString());
             Main.trace("End Webupdate");
 
@@ -187,7 +187,7 @@ public class Main {
         }
     }
 
-    private static void installAddons() {
+    public static void installAddons(File root) {
         SubConfiguration jdus = WebUpdater.getConfig("JDU");
         ArrayList<PackageData> data = jdus.getGenericProperty("PACKAGEDATA", new ArrayList<PackageData>());
 
@@ -197,7 +197,7 @@ public class Main {
 
             Main.log(log, "Install: " + zip + System.getProperty("line.separator") + System.getProperty("line.separator"));
 
-            UnZip u = new UnZip(zip, JDUtilities.getResourceFile("."));
+            UnZip u = new UnZip(zip, root);
             File[] efiles;
             try {
                 efiles = u.extract();

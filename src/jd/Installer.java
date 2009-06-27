@@ -124,7 +124,7 @@ public class Installer {
 
                     protected void packed() {
                         dialog = this;
-                        this.setIconImage(JDImage.getImage("logo/jd_logo_54_54"));
+                       
                         this.setSize(550, 400);
                     }
 

@@ -876,7 +876,7 @@ public class Updater {
             ArrayList<FileUpdate> update = (ArrayList<FileUpdate>) remoteFileList.clone();
             webupdater.filterAvailableUpdates(update);
             System.out.println("UPdate: " + update);
-            webupdater.updateFiles(update);
+            webupdater.updateFiles(update, null);
         } catch (Exception e) {
             JDLogger.exception(e);
             remoteFileList = new ArrayList<FileUpdate>();
