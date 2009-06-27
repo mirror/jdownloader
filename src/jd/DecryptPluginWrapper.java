@@ -33,11 +33,11 @@ public class DecryptPluginWrapper extends PluginWrapper {
     }
 
     public DecryptPluginWrapper(String host, String className, String patternSupported) {
-        this(host, "jd.plugins.decrypt.", className, patternSupported, 0);
+        this(host, "jd.plugins.decrypter.", className, patternSupported, 0);
     }
 
     public DecryptPluginWrapper(String host, String className, String patternSupported, int flags) {
-        this(host, "jd.plugins.decrypt.", className, patternSupported, flags);
+        this(host, "jd.plugins.decrypter.", className, patternSupported, flags);
     }
 
     // @Override

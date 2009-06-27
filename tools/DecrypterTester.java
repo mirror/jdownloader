@@ -16,7 +16,7 @@ import jd.utils.JDUtilities;
 
 public class DecrypterTester {
 
-    private final String decrypter_prefix = "jd.plugins.decrypt.";
+    private final String decrypter_prefix = "jd.plugins.decrypter.";
 
     private final String decrypter_classname = null;
 

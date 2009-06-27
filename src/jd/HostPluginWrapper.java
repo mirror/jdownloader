@@ -36,11 +36,11 @@ public class HostPluginWrapper extends PluginWrapper {
     }
 
     public HostPluginWrapper(String host, String className, String patternSupported) {
-        this(host, "jd.plugins.host.", className, patternSupported, 0);
+        this(host, "jd.plugins.hoster.", className, patternSupported, 0);
     }
 
     public HostPluginWrapper(String host, String className, String patternSupported, int flags) {
-        this(host, "jd.plugins.host.", className, patternSupported, flags);
+        this(host, "jd.plugins.hoster.", className, patternSupported, flags);
     }
 
     @Override
