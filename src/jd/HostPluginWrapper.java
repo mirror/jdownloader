@@ -60,7 +60,7 @@ public class HostPluginWrapper extends PluginWrapper {
     public boolean isPremiumEnabled() {
         return this.isLoaded() && this.getPlugin().isPremiumEnabled();
     }
-
+ 
     @Override
     public int compareTo(PluginWrapper pw) {
         if (!(pw instanceof HostPluginWrapper)) return super.compareTo(pw);
