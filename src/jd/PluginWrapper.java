@@ -145,7 +145,7 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
             }catch(ClassNotFoundException e){
                 plgClass=JDUtilities.getJDClassLoader().loadClass(getClassName());
             }
-
+           
             if (plgClass == null) {
                 logger.info("PLUGIN NOT FOUND!");
                 return null;

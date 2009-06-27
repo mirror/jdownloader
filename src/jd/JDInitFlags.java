@@ -24,6 +24,5 @@ public class JDInitFlags {
     public static boolean SHOW_SPLASH=true;
     public static boolean SWITCH_NEW_INSTANCE=false;
     public static boolean STOP=false;
-    public static boolean NO_DEV_UPDATE=false;
-
+ 
 }

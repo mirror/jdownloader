@@ -482,7 +482,7 @@ public class WebUpdater implements Serializable {
                     if (progressload != null) progressload.setForeground(Color.RED);
                     if (prg != null) prg.setColor(Color.RED);
                 }
-                JDIO.saveObject(frame, objectToSave, fileOutput, name, extension, asXML)
+            
             } catch (Exception e) {
                 e.printStackTrace();
                 log(e.getLocalizedMessage());

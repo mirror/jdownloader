@@ -186,7 +186,7 @@ public final class JavaScript {
 
     }
 
-    private void runPage() throws SAXException, IOException {
+    public void runPage() throws SAXException, IOException {
         if (cx != null && scope != null) return;
         if (br == null) return;
         String data = br.toString();
@@ -241,6 +241,8 @@ public final class JavaScript {
 
     public String runJavaScript() throws SAXException, IOException {
         runPage();
+        
+        
         Object result = cx.evaluateString(scope, javaScript, "<cmd>", 1, null);
         String ret = Context.toString(result);
         return ret;

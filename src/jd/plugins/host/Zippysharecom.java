@@ -22,6 +22,8 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.RandomUserAgent;
+import jd.parser.Document;
+import jd.parser.JavaScript;
 import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
@@ -68,6 +70,8 @@ public class Zippysharecom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
+        
+
         String page = Encoding.urlDecode(br.toString(), true);
         String[] links = HTMLParser.getHttpLinks(page, null);
         boolean found = false;

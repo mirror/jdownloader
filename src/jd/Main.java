@@ -57,8 +57,6 @@ import jd.controlling.JDLogger;
 import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.PackageManager;
 import jd.event.ControlEvent;
-import jd.event.MessageEvent;
-import jd.event.MessageListener;
 import jd.gui.UserIO;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.JDEventQueue;
@@ -68,8 +66,6 @@ import jd.gui.userio.SimpleUserIO;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.OSDetector;
-import jd.nutils.io.JDIO;
-import jd.nutils.svn.Subversion;
 import jd.update.FileUpdate;
 import jd.update.WebUpdater;
 import jd.utils.CheckJava;
@@ -78,9 +74,6 @@ import jd.utils.JDUtilities;
 import jd.utils.MacOSController;
 import jd.utils.WebUpdate;
 import jd.utils.locale.JDL;
-
-import org.tmatesoft.svn.core.SVNException;
-import org.tmatesoft.svn.core.wc.SVNRevision;
 
 /**
  * @author JD-Team
@@ -161,8 +154,7 @@ public class Main {
                 JDInitFlags.SWITCH_DEBUG = true;
                 Browser.setVerbose(true);
                 LOGGER.info("Browser DEBUG Modus aktiv");
-            } else if (p.equalsIgnoreCase("-nodevupdate")) {
-                JDInitFlags.NO_DEV_UPDATE = true;
+
             } else if (p.equalsIgnoreCase("-trdebug")) {
                 JDL.DEBUG = true;
                 LOGGER.info("Translation DEBUG Modus aktiv");
@@ -171,18 +163,6 @@ public class Main {
             }
         }
 
-        if (!JDInitFlags.NO_DEV_UPDATE && JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL) {
-            try {
-                System.out.println("Update ressources at  " + JDUtilities.getJDHomeDirectoryFromEnvironment());
-        
-                updateSVN("svn://svn.jdownloader.org/jdownloader/trunk/ressourcen/jd/","jd");
-                updateSVN("svn://svn.jdownloader.org/jdownloader/trunk/ressourcen/tools/","tools");
-               
-
-            } catch (SVNException e) {
-                e.printStackTrace();
-            }
-        }
         UserIO.setInstance(SimpleUserIO.getInstance());
         preInitChecks();
         JDUtilities.setJDargs(args);
@@ -332,35 +312,6 @@ public class Main {
             }
             System.exit(0);
         }
-    }
-
-    private static void updateSVN(String svnadr, String path) throws SVNException {
-        Subversion svn = new Subversion(svnadr);
-
-        File dir = new File(JDUtilities.getJDHomeDirectoryFromEnvironment(), path);
-        try {
-            svn.cleanUp(dir, true);
-        } catch (SVNException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        svn.getBroadcaster().addListener(new MessageListener() {
-
-            public void onMessage(MessageEvent event) {
-                System.out.println(event.getMessage());
-
-            }
-
-        });
-        
-        try {
-        svn.revert(dir);
-        }catch(Exception e){
-            e.printStackTrace();
-            JDIO.removeDirectoryOrFile(dir);
-            svn.update(dir, SVNRevision.HEAD);
-        }
-
     }
 
     private static void start(final String args[]) {
