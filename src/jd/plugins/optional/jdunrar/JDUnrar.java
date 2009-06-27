@@ -29,8 +29,11 @@ import javax.swing.filechooser.FileFilter;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.ConfigPropertyListener;
 import jd.config.MenuItem;
+import jd.config.Property;
 import jd.config.SubConfiguration;
+import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.ListController;
 import jd.controlling.PasswordListController;
@@ -346,14 +349,14 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         link.getLinkStatus().removeStatus(LinkStatus.ERROR_POST_PROCESS);
         link.getLinkStatus().setErrorMessage(null);
         File dl = this.getExtractToPath(link);
-        
+
         UnrarWrapper wrapper = new UnrarWrapper(link);
-        
+
         if (link.getHost().equals(DUMMY_HOSTER)) {
             ProgressController progress = new ProgressController(JDL.LF("plugins.optional.jdunrar.progress.extractfile", "Extract %s", link.getFileOutput()), 100);
             wrapper.setProgressController(progress);
         }
-        
+
         wrapper.addUnrarListener(this);
         wrapper.setExtractTo(dl);
 
@@ -663,6 +666,21 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         if (hash == null) {
             config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, JDL.L("gui.config.unrar.cmd", "UnRAR command")));
             ce.setDefaultValue("please install unrar");
+            JDController.getInstance().addControlListener(new ConfigPropertyListener(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND) {
+                @Override
+                public void onPropertyChanged(Property source, final String key) {
+                    if (key == JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND) {
+                        String path = getPluginConfig().getStringProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, null);
+                        if (path != null && isUnrarCommandValid(path)) {
+                            getPluginConfig().setProperty(JDUnrarConstants.UNRAR_HASH, JDHash.getMD5(new File(path)));
+                            getPluginConfig().save();
+                        } else {
+                            getPluginConfig().setProperty(JDUnrarConstants.UNRAR_HASH, null);
+                            getPluginConfig().save();
+                        }
+                    }
+                }
+            });
         }
 
         config.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDUnrarConstants.CONFIG_KEY_USE_EXTRACT_PATH, JDL.L("gui.config.unrar.use_extractto", "Use customized extract path")));
@@ -775,16 +793,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         String hash = this.getPluginConfig().getStringProperty(JDUnrarConstants.UNRAR_HASH, null);
         if (hash != null && hash.length() == 32 && path != null && path.length() != 0) {
             String curhash = JDHash.getMD5(new File(path));
-            if (curhash != null) {
-                if (curhash.equalsIgnoreCase(hash)) {
-                    return true;
-                } else {
-                    this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, path);
-                    this.getPluginConfig().setProperty(JDUnrarConstants.UNRAR_HASH, curhash);
-                    this.getPluginConfig().save();
-                    return true;
-                }
-            }
+            if (curhash != null && curhash.equalsIgnoreCase(hash)) return true;
         } else {
             path = null;
             hash = null;
@@ -793,70 +802,55 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             if (OSDetector.isWindows()) {
                 path = JDUtilities.getResourceFile("tools\\windows\\unrarw32\\unrar.exe").getAbsolutePath();
                 this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, path);
-                this.getPluginConfig().setProperty(JDUnrarConstants.UNRAR_HASH, JDHash.getMD5(path));
+                this.getPluginConfig().setProperty(JDUnrarConstants.UNRAR_HASH, JDHash.getMD5(new File(path)));
                 this.getPluginConfig().save();
                 return true;
-            } else {
-                if (OSDetector.isLinux()) {
-                    path = JDUtilities.getResourceFile("tools/linux/unrar/unrar").getAbsolutePath();
-                    chmodUnrar(path);
-                    if (isUnrarCommandValid(path)) {
-                        this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, path);
-                        this.getPluginConfig().setProperty(JDUnrarConstants.UNRAR_HASH, JDHash.getMD5(path));
-                        this.getPluginConfig().save();
-                        return true;
-                    }
-                }
-                if (OSDetector.isMac()) {
-                    path = JDUtilities.getResourceFile("tools/mac/unrar2/unrar").getAbsolutePath();
-                    chmodUnrar(path);
-                    if (isUnrarCommandValid(path)) {
-                        this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, path);
-                        this.getPluginConfig().setProperty(JDUnrarConstants.UNRAR_HASH, JDHash.getMD5(path));
-                        this.getPluginConfig().save();
-                        return true;
-                    }
-                }
-                if (isUnrarCommandValid("unrar")) {
-                    path = "unrar";
-                    this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, path);
-                    this.getPluginConfig().setProperty(JDUnrarConstants.UNRAR_HASH, JDHash.getMD5(path));
-                    this.getPluginConfig().save();
-                    return true;
-                }
-                if (isUnrarCommandValid("rar")) {
-                    path = "rar";
-                    this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, path);
-                    this.getPluginConfig().setProperty(JDUnrarConstants.UNRAR_HASH, JDHash.getMD5(path));
-                    this.getPluginConfig().save();
-                    return true;
-                }
-                try {
-                    String[] charset = System.getenv("PATH").split(":");
-                    for (String element : charset) {
-                        File fi = new File(element, "unrar");
-                        File fi2 = new File(element, "rar");
-                        if (fi.isFile() && isUnrarCommandValid(fi.getAbsolutePath())) {
-                            path = fi.getAbsolutePath();
-                            this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, path);
-                            this.getPluginConfig().setProperty(JDUnrarConstants.UNRAR_HASH, JDHash.getMD5(path));
-                            this.getPluginConfig().save();
-                            return true;
-                        } else if (fi2.isFile() && isUnrarCommandValid(fi2.getAbsolutePath())) {
-                            path = fi2.getAbsolutePath();
-                            this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, path);
-                            this.getPluginConfig().setProperty(JDUnrarConstants.UNRAR_HASH, JDHash.getMD5(path));
-                            this.getPluginConfig().save();
-                            return true;
-                        }
-                    }
-                } catch (Throwable e) {
-                }
-                this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, null);
-                this.getPluginConfig().setProperty(JDUnrarConstants.UNRAR_HASH, null);
-                this.getPluginConfig().save();
-                return false;
             }
+            if (OSDetector.isLinux()) {
+                path = JDUtilities.getResourceFile("tools/linux/unrar/unrar").getAbsolutePath();
+                chmodUnrar(path);
+                if (isUnrarCommandValid(path)) {
+                    this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, path);
+                    this.getPluginConfig().setProperty(JDUnrarConstants.UNRAR_HASH, JDHash.getMD5(new File(path)));
+                    this.getPluginConfig().save();
+                    return true;
+                }
+            }
+            if (OSDetector.isMac()) {
+                path = JDUtilities.getResourceFile("tools/mac/unrar2/unrar").getAbsolutePath();
+                chmodUnrar(path);
+                if (isUnrarCommandValid(path)) {
+                    this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, path);
+                    this.getPluginConfig().setProperty(JDUnrarConstants.UNRAR_HASH, JDHash.getMD5(new File(path)));
+                    this.getPluginConfig().save();
+                    return true;
+                }
+            }
+            try {
+                String[] charset = System.getenv("PATH").split(":");
+                for (String element : charset) {
+                    File fi = new File(element, "unrar");
+                    File fi2 = new File(element, "rar");
+                    if (fi.isFile() && isUnrarCommandValid(fi.getAbsolutePath())) {
+                        path = fi.getAbsolutePath();
+                        this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, path);
+                        this.getPluginConfig().setProperty(JDUnrarConstants.UNRAR_HASH, JDHash.getMD5(new File(path)));
+                        this.getPluginConfig().save();
+                        return true;
+                    } else if (fi2.isFile() && isUnrarCommandValid(fi2.getAbsolutePath())) {
+                        path = fi2.getAbsolutePath();
+                        this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, path);
+                        this.getPluginConfig().setProperty(JDUnrarConstants.UNRAR_HASH, JDHash.getMD5(new File(path)));
+                        this.getPluginConfig().save();
+                        return true;
+                    }
+                }
+            } catch (Throwable e) {
+            }
+            this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, null);
+            this.getPluginConfig().setProperty(JDUnrarConstants.UNRAR_HASH, null);
+            this.getPluginConfig().save();
+            return false;
         }
         this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, null);
         this.getPluginConfig().setProperty(JDUnrarConstants.UNRAR_HASH, null);

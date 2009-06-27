@@ -586,25 +586,29 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
 
         @Override
         public void cut() {
-            StringSelection stringSelection = new StringSelection(String.valueOf(this.getSelectedText()));
-            Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-            clipboard.setContents(stringSelection, this);
+            if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL) {
+                StringSelection stringSelection = new StringSelection(String.valueOf(this.getSelectedText()));
+                Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+                clipboard.setContents(stringSelection, this);
 
-            String text = String.valueOf(this.getPassword());
-            int position = this.getSelectionStart();
-            String s1 = text.substring(0, position);
-            String s2 = text.substring(this.getSelectionEnd(), text.length());
-            this.setText(s1 + s2);
+                String text = String.valueOf(this.getPassword());
+                int position = this.getSelectionStart();
+                String s1 = text.substring(0, position);
+                String s2 = text.substring(this.getSelectionEnd(), text.length());
+                this.setText(s1 + s2);
 
-            this.setSelectionStart(position);
-            this.setSelectionEnd(position);
+                this.setSelectionStart(position);
+                this.setSelectionEnd(position);
+            }
         }
 
         @Override
         public void copy() {
-            StringSelection stringSelection = new StringSelection(String.valueOf(this.getSelectedText()));
-            Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-            clipboard.setContents(stringSelection, this);
+            if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL) {
+                StringSelection stringSelection = new StringSelection(String.valueOf(this.getSelectedText()));
+                Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+                clipboard.setContents(stringSelection, this);
+            }
         }
 
         public void lostOwnership(Clipboard arg0, Transferable arg1) {
