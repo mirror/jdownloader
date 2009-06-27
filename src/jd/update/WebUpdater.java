@@ -21,9 +21,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
@@ -34,6 +32,9 @@ import jd.config.CFGConfig;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
+import jd.event.JDBroadcaster;
+import jd.event.MessageEvent;
+import jd.event.MessageListener;
 import jd.http.Browser;
 import jd.nutils.JDHash;
 import jd.nutils.OSDetector;
@@ -50,52 +51,61 @@ import jd.utils.JDUtilities;
  */
 public class WebUpdater implements Serializable {
 
-    private static final long serialVersionUID = 1946622313175234371L;
-    private static final String UPDATE_ZIP_LOCAL_PATH = "tmp/update.zip";
-
+    private static HashMap<String, File> fileMap;
     public static HashMap<String, FileUpdate> PLUGIN_LIST = null;
 
-    private boolean ignorePlugins = true;
+    private static final long serialVersionUID = 1946622313175234371L;
+
     public static final String[] UPDATE_MIRROR = new String[] { "http://update0.jdownloader.org/", "http://update0.jdownloader.org/", "http://update1.jdownloader.org/", "http://update2.jdownloader.org/", };
-    private StringBuilder logger;
+    private static final String UPDATE_ZIP_LOCAL_PATH = "tmp/update.zip";
+    private static final int NEW_FILE = 0;
+    private static final int UPDATE_FILE = 1;
+    private static final int DO_UPDATE_FILE = 2;
+    private static final int DO_UPDATE_SUCCESS = 3;
+    private static final int DO_UPDATE_FAILED = 4;
 
-    private boolean OSFilter = true;
-
-    private JProgressBar progressload = null;
-
-    private Integer errors = 0;
-
-    public byte[] sum;
-
-    private Browser br;
-    private File workingdir;
-    private String[] branches;
-
-    public File getWorkingdir() {
-        return workingdir;
+    /**
+     * Funktion übertragt alle werte aus den alten Config files in die datenbank
+     * 
+     * @param string
+     * @return
+     */
+    public static SubConfiguration getConfig(String string) {
+        SubConfiguration guiConfig = SubConfiguration.getConfig(string);
+        CFGConfig gui = CFGConfig.getConfig(string);
+        if (gui.getProperties().size() != 0) {
+            guiConfig.getProperties().putAll(gui.getProperties());
+            gui.getProperties().clear();
+            gui.save();
+        }
+        guiConfig.save();
+        return guiConfig;
     }
-
-    public void setWorkingdir(File workingdir) {
-        this.workingdir = workingdir;
-    }
-
-    private static HashMap<String, File> fileMap;
 
     public static HashMap<String, File> getFileMap() {
         return fileMap;
     }
 
-    /**
-     * @param path
-     *            (Dir Pfad zum Updateserver)
-     */
-    public WebUpdater() {
-        randomizeMirrors();
-        logger = new StringBuilder();
-        this.br = new Browser();
-        br.setReadTimeout(20 * 1000);
-        br.setConnectTimeout(10 * 1000);
-        errors = 0;
+    public static HashMap<String, FileUpdate> getPluginList() {
+        // TODO Auto-generated method stub
+        if (PLUGIN_LIST == null && JDUtilities.getResourceFile("tmp/hashlist.lst").exists()) {
+            PLUGIN_LIST = new HashMap<String, FileUpdate>();
+            WebUpdater updater = new WebUpdater();
+
+            if (SubConfiguration.getConfig("WEBUPDATE").getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false)) {
+                updater.ignorePlugins(false);
+            }
+
+            // logger.info(files + "");
+
+            if (updater.sum.length > 100) {
+                SubConfiguration.getConfig("a" + "pckage").setProperty(new String(new byte[] { 97, 112, 99, 107, 97, 103, 101 }), updater.sum);
+            }
+
+            updater.parseFileList(JDUtilities.getResourceFile("tmp/hashlist.lst"), null, PLUGIN_LIST);
+        }
+
+        return PLUGIN_LIST;
     }
 
     public static void randomizeMirrors() {
@@ -110,16 +120,51 @@ public class WebUpdater implements Serializable {
 
     }
 
-    public int getErrors() {
-        synchronized (errors) {
-            return errors;
-        }
+    private Browser br;
+
+    private String[] branches;
+    private Integer errors = 0;
+    private boolean ignorePlugins = true;
+
+    private StringBuilder logger;
+
+    private boolean OSFilter = true;
+
+    private JProgressBar progressload = null;
+
+    public byte[] sum;
+
+    private File workingdir;
+    private JDBroadcaster<MessageListener, MessageEvent> broadcaster;
+
+    /**
+     * @param path
+     *            (Dir Pfad zum Updateserver)
+     */
+    public WebUpdater() {
+        randomizeMirrors();
+        logger = new StringBuilder();
+        this.br = new Browser();
+        br.setReadTimeout(20 * 1000);
+        br.setConnectTimeout(10 * 1000);
+        errors = 0;
+        initBroadcaster();
     }
 
-    public void resetErrors() {
-        synchronized (errors) {
-            errors = 0;
-        }
+    private void initBroadcaster() {
+        this.broadcaster = new JDBroadcaster<MessageListener, MessageEvent>() {
+
+            @Override
+            protected void fireEvent(MessageListener listener, MessageEvent event) {
+                listener.onMessage(event);
+
+            }
+
+        };
+    }
+
+    public JDBroadcaster<MessageListener, MessageEvent> getBroadcaster() {
+        return broadcaster;
     }
 
     /**
@@ -134,16 +179,18 @@ public class WebUpdater implements Serializable {
             FileUpdate file = it.next();
 
             if (!file.exists()) {
-                log("New file. " + file.getLocalPath());
+                broadcaster.fireEvent(new MessageEvent(this, NEW_FILE, "New file. " + file.getLocalPath()));
                 continue;
             }
 
             if (!file.equals()) {
-                log("UPDATE AV. " + file.getLocalPath());
+
+                broadcaster.fireEvent(new MessageEvent(this, UPDATE_FILE, "UPDATE AV. " + file.getLocalPath()));
+
                 continue;
             }
             if (new File(file.getLocalFile(), ".noupdate").exists()) {
-                log("User excluded. " + file.getLocalPath());
+                System.out.println("User excluded. " + file.getLocalPath());
             }
             it.remove();
         }
@@ -169,71 +216,31 @@ public class WebUpdater implements Serializable {
         return ret;
     }
 
-    private void parseFileList(File file, ArrayList<FileUpdate> ret, HashMap<String, FileUpdate> plugins) {
-        String source;
-        source = JDIO.getLocalFile(file);
-
-        String pattern = "[\r\n\\;]*([^=]+)\\=(.*?)\\;";
-
-        if (source == null) {
-            log("filelist nicht verfüpgbar");
-            return;
+    @SuppressWarnings("unchecked")
+    private ArrayList<Server> getAvailableServers() {
+        if (Main.clone) return Main.clonePrefix;
+        try {
+            return (ArrayList<Server>) WebUpdater.getConfig("WEBUPDATE").getProperty("SERVERLIST");
+        } catch (Exception e) {
+            WebUpdater.getConfig("WEBUPDATE").setProperty("SERVERLIST", new ArrayList<Server>());
+            return (ArrayList<Server>) WebUpdater.getConfig("WEBUPDATE").getProperty("SERVERLIST");
         }
-        FileUpdate entry;
+    }
 
-        String[] os = new String[] { "windows", "mac", "linux" };
-        String[][] matches = new Regex(source, pattern).getMatches();
-        ArrayList<Byte> sum = new ArrayList<Byte>();
-        for (String[] m : matches) {
+    /**
+     * Returns the current branch
+     * 
+     * @return
+     */
+    public String getBranch() {
+        String latestBranch = getLatestBranch();
 
-            if (this.workingdir != null) {
-                entry = new FileUpdate(m[0], m[1], workingdir);
-            } else {
-                entry = new FileUpdate(m[0], m[1]);
-            }
-            sum.add((byte) entry.getRemoteHash().charAt(0));
-
-            if (entry.getLocalPath().endsWith(".class")) {
-                plugins.put(entry.getLocalPath(), entry);
-            }
-
-            if (!entry.getLocalPath().endsWith(".class") || !this.ignorePlugins) {
-                boolean osFound = false;
-                boolean correctOS = false;
-                for (String element : os) {
-                    String url = entry.getRawUrl();
-                    if (url == null) url = entry.getRelURL();
-                    if (url.toLowerCase().indexOf(element) >= 0) {
-                        osFound = true;
-                        if (OSDetector.getOSString().toLowerCase().indexOf(element) >= 0) {
-                            correctOS = true;
-                        }
-                    }
-
-                }
-                if (this.OSFilter == true) {
-                    if (!osFound || osFound && correctOS) {
-                        if (ret != null) ret.add(entry);
-                    } else {
-                        String url = entry.getRawUrl();
-                        if (url == null) url = entry.getRelURL();
-                        log("OS Filter: " + url);
-
-                    }
-                } else {
-                    if (ret != null) ret.add(entry);
-                }
-            }
-
-        }
-        this.sum = new byte[sum.size()];
-        int ii = 0;
-        for (int i = sum.size() - 1; i >= 0; i--) {
-            this.sum[ii++] = sum.get(i);
-        }
-
-        WebUpdater.PLUGIN_LIST = plugins;
-
+        String ret = WebUpdater.getConfig("WEBUPDATE").getStringProperty("BRANCH");
+        if (ret == null) ret = latestBranch;
+        WebUpdater.getConfig("WEBUPDATE").setProperty("BRANCHINUSE", ret);
+        WebUpdater.getConfig("WEBUPDATE").save();
+        if (ret == null || ret.contains("%") || ret.contains(" ")) { return null; }
+        return ret;
     }
 
     /**
@@ -264,21 +271,67 @@ public class WebUpdater implements Serializable {
         return branches;
     }
 
-    public boolean isIgnorePlugins() {
-        return ignorePlugins;
+    public int getErrors() {
+        synchronized (errors) {
+            return errors;
+        }
     }
 
-    public void setIgnorePlugins(boolean ignorePlugins) {
-        this.ignorePlugins = ignorePlugins;
+    /**
+     * loads branches.lst and returns the latest branch
+     * 
+     * @return
+     */
+    private synchronized String getLatestBranch() {
+        if (branches == null) {
+            this.getBranches();
+        }
+        if (branches == null || branches.length == 0) return null;
+
+        return branches[0];
+    }
+
+    private String getListPath(int trycount) {
+        if (getBranch() == null) return null;
+        return UPDATE_MIRROR[trycount % UPDATE_MIRROR.length] + getBranch() + "_server.list";
+    }
+
+    public StringBuilder getLogger() {
+        return logger;
+    }
+
+    public boolean getOSFilter() {
+        return this.OSFilter;
+    }
+
+    public File getWorkingdir() {
+        return workingdir;
+    }
+
+    private String getZipMD5(int trycount) {
+
+        return UPDATE_MIRROR[trycount % UPDATE_MIRROR.length] + getBranch() + "_update.md5";
     }
 
     private String getZipUrl(int trycount) {
         return UPDATE_MIRROR[trycount % UPDATE_MIRROR.length] + getBranch() + "_update.zip";
     }
 
-    private String getZipMD5(int trycount) {
-
-        return UPDATE_MIRROR[trycount % UPDATE_MIRROR.length] + getBranch() + "_update.md5";
+    /**
+     * By defauklt, the webupdater does NOT Update plugins
+     * (hoster,decrypter,...) set this flag to false if you want to do a full
+     * update
+     * 
+     * @param b
+     */
+    public void ignorePlugins(boolean b) {
+        this.ignorePlugins = b;
+    }
+public String toString(){
+    return "Updater";
+}
+    public boolean isIgnorePlugins() {
+        return ignorePlugins;
     }
 
     private void loadUpdateList() throws Exception {
@@ -312,46 +365,108 @@ public class WebUpdater implements Serializable {
         throw new Exception("could not load Updatelist");
     }
 
-    private String getListPath(int trycount) {
-        if (getBranch() == null) return null;
-        return UPDATE_MIRROR[trycount % UPDATE_MIRROR.length] + getBranch() + "_server.list";
-    }
+    private void parseFileList(File file, ArrayList<FileUpdate> ret, HashMap<String, FileUpdate> plugins) {
+        String source;
+        source = JDIO.getLocalFile(file);
 
-    /**
-     * Returns the current branch
-     * 
-     * @return
-     */
-    public String getBranch() {
-        String latestBranch = getLatestBranch();
+        String pattern = "[\r\n\\;]*([^=]+)\\=(.*?)\\;";
 
-        String ret = WebUpdater.getConfig("WEBUPDATE").getStringProperty("BRANCH");
-        if (ret == null) ret = latestBranch;
-        WebUpdater.getConfig("WEBUPDATE").setProperty("BRANCHINUSE", ret);
-        WebUpdater.getConfig("WEBUPDATE").save();
-        if (ret == null || ret.contains("%") || ret.contains(" ")) { return null; }
-        return ret;
-    }
-
-    /**
-     * loads branches.lst and returns the latest branch
-     * 
-     * @return
-     */
-    private synchronized String getLatestBranch() {
-        if (branches == null) {
-            this.getBranches();
+        if (source == null) {
+            System.out.println("filelist nicht verfüpgbar");
+            return;
         }
-        if (branches == null || branches.length == 0) return null;
+        FileUpdate entry;
 
-        return branches[0];
+        String[] os = new String[] { "windows", "mac", "linux" };
+        String[][] matches = new Regex(source, pattern).getMatches();
+        ArrayList<Byte> sum = new ArrayList<Byte>();
+        for (String[] m : matches) {
+
+            if (this.workingdir != null) {
+                entry = new FileUpdate(m[0], m[1], workingdir);
+            } else {
+                entry = new FileUpdate(m[0], m[1]);
+            }
+
+            entry.getBroadcaster().addAllListener(broadcaster.getListener());
+
+            sum.add((byte) entry.getRemoteHash().charAt(0));
+
+            if (entry.getLocalPath().endsWith(".class")) {
+                plugins.put(entry.getLocalPath(), entry);
+            }
+
+            if (!entry.getLocalPath().endsWith(".class") || !this.ignorePlugins) {
+                boolean osFound = false;
+                boolean correctOS = false;
+                for (String element : os) {
+                    String url = entry.getRawUrl();
+                    if (url == null) url = entry.getRelURL();
+                    if (url.toLowerCase().indexOf(element) >= 0) {
+                        osFound = true;
+                        if (OSDetector.getOSString().toLowerCase().indexOf(element) >= 0) {
+                            correctOS = true;
+                        }
+                    }
+
+                }
+                if (this.OSFilter == true) {
+                    if (!osFound || osFound && correctOS) {
+                        if (ret != null) ret.add(entry);
+                    } else {
+                        String url = entry.getRawUrl();
+                        if (url == null) url = entry.getRelURL();
+                        System.out.println("OS Filter: " + url);
+
+                    }
+                } else {
+                    if (ret != null) ret.add(entry);
+                }
+            }
+
+        }
+        this.sum = new byte[sum.size()];
+        int ii = 0;
+        for (int i = sum.size() - 1; i >= 0; i--) {
+            this.sum[ii++] = sum.get(i);
+        }
+
+        WebUpdater.PLUGIN_LIST = plugins;
+
+    }
+
+    public void resetErrors() {
+        synchronized (errors) {
+            errors = 0;
+        }
+    }
+
+    public void setDownloadProgress(JProgressBar progresslist) {
+        progressload = progresslist;
+    }
+
+    public void setIgnorePlugins(boolean ignorePlugins) {
+        this.ignorePlugins = ignorePlugins;
+    }
+
+    public void setLogger(StringBuilder log) {
+        logger = log;
+    }
+
+    public void setOSFilter(boolean filter) {
+        this.OSFilter = filter;
+    }
+
+    public void setWorkingdir(File workingdir) {
+        this.workingdir = workingdir;
     }
 
     private ArrayList<Server> updateAvailableServers() {
         boolean fnf = true;
         for (int trycount = 0; trycount < 10; trycount++) {
             try {
-                log("Update Downloadmirrors");
+                broadcaster.fireEvent(new MessageEvent(this, 0, "Update Downloadmirrors"));
+
                 String path = getListPath(trycount);
                 if (path == null) continue;
                 br.getPage(path + "?t=" + System.currentTimeMillis());
@@ -378,7 +493,8 @@ public class WebUpdater implements Serializable {
                     } else {
                         s.setPercent((s.getPercent() * 100) / total);
                     }
-                    log("Updateserver: " + s);
+                    broadcaster.fireEvent(new MessageEvent(this, 0, "Updateserver: " + s));
+
                 }
                 if (servers.size() > 0) {
                     WebUpdater.getConfig("WEBUPDATE").setProperty("SERVERLIST", servers);
@@ -394,7 +510,7 @@ public class WebUpdater implements Serializable {
             }
         }
         if (fnf && WebUpdater.getConfig("WEBUPDATE").getStringProperty("BRANCH") != null) {
-            log("Branch " + WebUpdater.getConfig("WEBUPDATE").getStringProperty("BRANCH") + " is not available any more. Reset to default");
+            System.err.println("Branch " + WebUpdater.getConfig("WEBUPDATE").getStringProperty("BRANCH") + " is not available any more. Reset to default");
             WebUpdater.getConfig("WEBUPDATE").setProperty("BRANCH", null);
             WebUpdater.getConfig("WEBUPDATE").save();
             return updateAvailableServers();
@@ -402,54 +518,12 @@ public class WebUpdater implements Serializable {
         return getAvailableServers();
     }
 
-    @SuppressWarnings("unchecked")
-    private ArrayList<Server> getAvailableServers() {
-        if (Main.clone) return Main.clonePrefix;
-        try {
-            return (ArrayList<Server>) WebUpdater.getConfig("WEBUPDATE").getProperty("SERVERLIST");
-        } catch (Exception e) {
-            WebUpdater.getConfig("WEBUPDATE").setProperty("SERVERLIST", new ArrayList<Server>());
-            return (ArrayList<Server>) WebUpdater.getConfig("WEBUPDATE").getProperty("SERVERLIST");
-        }
-    }
-
-    public StringBuilder getLogger() {
-        return logger;
-    }
-
-    public boolean getOSFilter() {
-        return this.OSFilter;
-    }
-
-    public void ignorePlugins(boolean b) {
-        this.ignorePlugins = b;
-    }
-
-    public void log(String buf) {
-
-        Date dt = new Date();
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
-        if (logger != null) {
-            logger.append(df.format(dt) + ":" + buf + System.getProperty("line.separator"));
-        }
-    }
-
-    public void setDownloadProgress(JProgressBar progresslist) {
-        progressload = progresslist;
-    }
-
-    public void setLogger(StringBuilder log) {
-        logger = log;
-    }
-
-    public void setOSFilter(boolean filter) {
-        this.OSFilter = filter;
-    }
-
     public void updateFile(Vector<String> file) throws IOException {
 
         String[] tmp = file.elementAt(0).split("\\?");
-        log("Webupdater: download " + tmp[1] + " to " + JDUtilities.getResourceFile(tmp[0]).getAbsolutePath());
+
+        broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_FILE, "Webupdater: download " + tmp[1] + " to " + JDUtilities.getResourceFile(tmp[0]).getAbsolutePath()));
+
         Browser.download(JDUtilities.getResourceFile(tmp[0]), tmp[0]);
 
     }
@@ -469,25 +543,25 @@ public class WebUpdater implements Serializable {
         }
 
         int i = 0;
-        if(prg!=null)prg.addToMax(files.size());
+        if (prg != null) prg.addToMax(files.size());
         for (FileUpdate file : files) {
             try {
-                log("Update file: " + file.getLocalPath());
+                broadcaster.fireEvent(new MessageEvent(this, 0, "Update file: " + file.getLocalPath()));
                 if (updateUpdatefile(file)) {
-                    log(file.toString());
-                    log("Successfull\r\n");
+                    broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_SUCCESS, file.toString()));
+                    broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_SUCCESS, "Successfull\r\n"));
                 } else {
-                    log(file.toString());
-                    log("Failed\r\n");
+                    broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_FAILED, file.toString()));
+                    broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_FAILED, "Failed\r\n"));
                     if (progressload != null) progressload.setForeground(Color.RED);
                     if (prg != null) prg.setColor(Color.RED);
                 }
-            
+
             } catch (Exception e) {
                 e.printStackTrace();
-                log(e.getLocalizedMessage());
-                log(file.toString());
-                log("Failed\r\n");
+                broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_FAILED, e.getLocalizedMessage()));
+                broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_FAILED, file.toString()));
+                broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_FAILED, "Failed\r\n"));
                 if (progressload != null) progressload.setForeground(Color.RED);
                 if (prg != null) prg.setColor(Color.RED);
             }
@@ -509,46 +583,6 @@ public class WebUpdater implements Serializable {
         if (file.update(getAvailableServers())) return true;
         errors++;
         return false;
-    }
-
-    /**
-     * Funktion übertragt alle werte aus den alten Config files in die datenbank
-     * 
-     * @param string
-     * @return
-     */
-    public static SubConfiguration getConfig(String string) {
-        SubConfiguration guiConfig = SubConfiguration.getConfig(string);
-        CFGConfig gui = CFGConfig.getConfig(string);
-        if (gui.getProperties().size() != 0) {
-            guiConfig.getProperties().putAll(gui.getProperties());
-            gui.getProperties().clear();
-            gui.save();
-        }
-        guiConfig.save();
-        return guiConfig;
-    }
-
-    public static HashMap<String, FileUpdate> getPluginList() {
-        // TODO Auto-generated method stub
-        if (PLUGIN_LIST == null && JDUtilities.getResourceFile("tmp/hashlist.lst").exists()) {
-            PLUGIN_LIST = new HashMap<String, FileUpdate>();
-            WebUpdater updater = new WebUpdater();
-
-            if (SubConfiguration.getConfig("WEBUPDATE").getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false)) {
-                updater.ignorePlugins(false);
-            }
-
-            // logger.info(files + "");
-
-            if (updater.sum.length > 100) {
-                SubConfiguration.getConfig("a" + "pckage").setProperty(new String(new byte[] { 97, 112, 99, 107, 97, 103, 101 }), updater.sum);
-            }
-
-            updater.parseFileList(JDUtilities.getResourceFile("tmp/hashlist.lst"), null, PLUGIN_LIST);
-        }
-
-        return PLUGIN_LIST;
     }
 
 }

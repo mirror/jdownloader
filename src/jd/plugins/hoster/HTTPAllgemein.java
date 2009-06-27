@@ -16,6 +16,8 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -48,7 +50,9 @@ public class HTTPAllgemein extends PluginForHost {
 
     // @Override
     public String getFileInformationString(DownloadLink parameter) {
+    
         return "(" + contentType + ")" + parameter.getName();
+       
     }
 
     private String getBasicAuth(DownloadLink link) {

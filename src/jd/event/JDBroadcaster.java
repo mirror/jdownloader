@@ -63,4 +63,15 @@ public abstract class JDBroadcaster<T extends EventListener, TT extends JDEvent>
     public void removeListener(T listener) {
         if (!removeList.contains(listener)) removeList.add(listener);
     }
+
+    public Vector<T> getListener() {
+        // TODO Auto-generated method stub
+        return callList;
+    }
+
+    public void addAllListener(Vector<T> listener) {
+        for (T l : listener)
+            this.addListener(l);
+
+    }
 }

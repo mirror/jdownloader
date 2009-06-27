@@ -20,6 +20,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import jd.event.JDBroadcaster;
+import jd.event.MessageEvent;
+import jd.event.MessageListener;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
@@ -28,15 +31,20 @@ import jd.utils.JDUtilities;
 
 public class FileUpdate {
 
+    private static final int DOWNLOAD_SOURCE = 1;
+    private static final int ERROR = 2;
+    private static final int SERVER_STATS = 3;
+    private static final int SUCCESS = 4;
     private String localPath;
     private String url;
     private String hash;
     private ArrayList<Server> serverList;
-    private StringBuilder result;
+
     private Server currentServer;
 
     private String relURL;
     private File workingDir;
+    private JDBroadcaster<MessageListener, MessageEvent> broadcaster;
 
     public FileUpdate(String serverString, String hash) {
         this.hash = hash;
@@ -50,12 +58,32 @@ public class FileUpdate {
             localPath = dat[0];
             this.url = dat[1];
         }
+        initBroadcaster();
     }
 
     public FileUpdate(String serverString, String hash, File workingdir) {
         this(serverString, hash);
         this.workingDir = workingdir;
         relURL = serverString;
+        initBroadcaster();
+    }
+
+    private void initBroadcaster() {
+        this.broadcaster = new JDBroadcaster<MessageListener, MessageEvent>() {
+
+            @Override
+            protected void fireEvent(MessageListener listener, MessageEvent event) {
+                listener.onMessage(event);
+
+            }
+
+        };
+    }
+public String toString(){
+    return localPath;
+}
+    public JDBroadcaster<MessageListener, MessageEvent> getBroadcaster() {
+        return broadcaster;
     }
 
     public String getRelURL() {
@@ -115,11 +143,6 @@ public class FileUpdate {
         return serverList.size() > 0;
     }
 
-    public String toString() {
-        if (result == null) return this.getLocalFile().getAbsolutePath();
-        return result.toString();
-    }
-
     /**
      * verwendet alle server bis die datei gefunden wurde
      * 
@@ -127,14 +150,14 @@ public class FileUpdate {
      * @throws IOException
      */
     public boolean update(ArrayList<Server> availableServers) {
-        this.result = new StringBuilder();
+
         Browser br = new Browser();
         br.setReadTimeout(20 * 1000);
         br.setConnectTimeout(10 * 1000);
         long startTime, endTime;
         for (int retry = 0; retry < 3; retry++) {
             if (availableServers == null || availableServers.size() == 0) {
-                log(result, "no downloadsource available!");
+                System.err.println("no downloadsource available!");
                 return false;
             }
             reset(availableServers);
@@ -159,7 +182,9 @@ public class FileUpdate {
                     } else {
                         url += "?r=" + System.currentTimeMillis();
                     }
-                    log(result, "Downloadsource: " + url + "\r\n");
+
+                    broadcaster.fireEvent(new MessageEvent(this, DOWNLOAD_SOURCE, "Downloadsource: " + url));
+
                     startTime = System.currentTimeMillis();
                     URLConnectionAdapter con = null;
                     int response = -1;
@@ -170,7 +195,7 @@ public class FileUpdate {
                         currentServer.setRequestTime(endTime - startTime);
 
                     } catch (Exception e) {
-                        log(result, "Error. Connection error\r\n");
+                        broadcaster.fireEvent(new MessageEvent(this, ERROR, "Error. Connection error"));
                         currentServer.setRequestTime(100000l);
                         try {
                             con.disconnect();
@@ -180,7 +205,7 @@ public class FileUpdate {
                     }
 
                     if (response != 200) {
-                        log(result, "Error. Connection error " + response + "\r\n");
+                        broadcaster.fireEvent(new MessageEvent(this, ERROR, "Error. Connection error " + response + ""));
                         currentServer.setRequestTime(500000l);
                         try {
                             con.disconnect();
@@ -193,7 +218,7 @@ public class FileUpdate {
                     try {
                         Browser.download(tmpFile, con);
                     } catch (Exception e) {
-                        log(result, "Error. Connection broke\r\n");
+                        broadcaster.fireEvent(new MessageEvent(this, ERROR, "Error. Connection broken"));
                         currentServer.setRequestTime(100000l);
                         try {
                             con.disconnect();
@@ -205,12 +230,12 @@ public class FileUpdate {
                         con.disconnect();
                     } catch (Exception e) {
                     }
-                    log(result, currentServer + " requesttimeAVG=" + currentServer.getRequestTime() + "\r\n");
+                    broadcaster.fireEvent(new MessageEvent(this, SERVER_STATS, currentServer + " requesttimeAVG=" + currentServer.getRequestTime() + ""));
 
                 }
                 String downloadedHash = JDHash.getMD5(tmpFile);
                 if (downloadedHash.equalsIgnoreCase(hash)) {
-                    log(result, "Hash OK\r\n");
+                    broadcaster.fireEvent(new MessageEvent(this, SUCCESS, "Hash OK"));
                     this.getLocalFile().delete();
                     boolean ret = tmpFile.renameTo(getLocalFile());
                     if (ret) {
@@ -219,15 +244,17 @@ public class FileUpdate {
                         getLocalTmpFile().getParentFile().mkdirs();
                         ret = tmpFile.renameTo(getLocalTmpFile());
                         if (!ret) {
-                            log(result, "Error. Rename failed\r\n");
+                            broadcaster.fireEvent(new MessageEvent(this, ERROR, "Error. Rename failed"));
+                        }else{
+                            return ret;
                         }
                     }
                 } else {
-                    log(result, "Hash Failed\r\n");
+                    broadcaster.fireEvent(new MessageEvent(this, ERROR, "Hash Failed"));
                     if (hasServer()) {
-                        log(result, "Error. Retry\r\n");
+                        broadcaster.fireEvent(new MessageEvent(this, ERROR, "Error. Retry"));
                     } else {
-                        log(result, "Error. Updateserver down\r\n");
+                        broadcaster.fireEvent(new MessageEvent(this, ERROR, "Error. Updateserver down"));
                     }
                     tmpFile.delete();
                     continue;
@@ -249,12 +276,6 @@ public class FileUpdate {
         } else {
             return new File(JDUtilities.getResourceFile("update") + getLocalPath());
         }
-
-    }
-
-    private void log(StringBuilder result2, String string) {
-        result2.append(string);
-        System.out.println(string.trim());
 
     }
 
@@ -291,9 +312,9 @@ public class FileUpdate {
     }
 
     public boolean needsRestart() {
-        String hash=JDHash.getMD5(getLocalTmpFile());
-        if(hash==null)return false;
-        if(hash.equalsIgnoreCase(hash))return true;
+        String hash = JDHash.getMD5(getLocalTmpFile());
+        if (hash == null) return false;
+        if (hash.equalsIgnoreCase(hash)) return true;
         return false;
     }
 

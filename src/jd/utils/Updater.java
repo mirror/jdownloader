@@ -484,7 +484,7 @@ public class Updater {
     }
 
     private String createAddonList() throws Exception {
-        File file = new File(getCFG("addon_dir"));
+        File file = new File(getCFG("addon_dir2"));
         StringBuilder sb = new StringBuilder();
         uploadaddons = JOptionPane.showConfirmDialog(frame, "Upload addons?") == JOptionPane.OK_OPTION;
 
@@ -535,7 +535,7 @@ public class Updater {
             }
 
         });
-        Subversion svn = new Subversion("https://www.syncom.org/svn/jdownloader/");
+        Subversion svn = new Subversion("svn://svn.jdownloader.org/jdownloader");
         SVNDirEntry svnInfo = svn.getRepository().info("/trunk/ressourcen/pluginressourcen/" + addon.getName(), svn.latestRevision());
 
         File des = File.createTempFile("test", ".jdu");
@@ -671,11 +671,11 @@ public class Updater {
         if (cfg == null) return;
         pluginsDir = new File(cfg);
         File file;
-        JDIO.removeDirectoryOrFile(file = new File(this.updateDir, "jd/plugins/host"));
-        copyDirectory(new File(pluginsDir, "host"), file);
+        JDIO.removeDirectoryOrFile(file = new File(this.updateDir, "jd/plugins/hoster"));
+        copyDirectory(new File(pluginsDir, "hoster"), file);
         System.out.println("Updated BIN->" + file);
-        JDIO.removeDirectoryOrFile(file = new File(this.updateDir, "jd/plugins/decrypt"));
-        copyDirectory(new File(pluginsDir, "decrypt"), file);
+        JDIO.removeDirectoryOrFile(file = new File(this.updateDir, "jd/plugins/decrypter"));
+        copyDirectory(new File(pluginsDir, "decrypter"), file);
         System.out.println("Updated BIN->" + file);
 
         JDIO.removeDirectoryOrFile(file = new File(this.updateDir, "jd/dynamics"));
