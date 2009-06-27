@@ -3,19 +3,18 @@ package jd.update;
 import java.io.File;
 
 import jd.nutils.Executer;
+import jd.nutils.OSDetector;
 
 public class Restarter {
 
     private static boolean RESTART = false;
-    private static boolean MAC = false;
-
+  
     /**
      * @param args
      */
     public static void main(String[] args) {
         for (String arg : args) {
             if (arg.equalsIgnoreCase("-restart")) RESTART = true;
-            if (arg.equalsIgnoreCase("-mac")) MAC = true;
         }
 
         String master = new File("JDownloader.jar").getAbsolutePath();
@@ -31,7 +30,7 @@ public class Restarter {
         move(new File("update"));
 
         if (RESTART) {
-            if (MAC) {
+            if (OSDetector.isMac()) {
                 Executer exec = new Executer("open");
                 exec.addParameters(new String[] { "-n", "jDownloader.app" });
                 exec.setRunin(new File(".").getAbsolutePath());

@@ -733,8 +733,8 @@ public class JDUtilities {
 
         ArrayList<File> restartfiles = JDIO.listFiles(JDUtilities.getResourceFile("update"));
         if (restartfiles != null && restartfiles.size() > 0) {
-            if (!OSDetector.isMac()) {
-                JDLogger.getLogger().info(JDUtilities.runCommand("java", new String[] { "-jar", "tools/tinyupdate.jar", "-restart", "-mac" }, getResourceFile(".").getAbsolutePath(), 0));
+            if (OSDetector.isMac()) {
+                JDLogger.getLogger().info(JDUtilities.runCommand("java", new String[] { "-jar", "tools/tinyupdate.jar", "-restart", }, getResourceFile(".").getAbsolutePath(), 0));
             } else {
                 JDLogger.getLogger().info(JDUtilities.runCommand("java", new String[] { "-jar", "tools/tinyupdate.jar", "-restart" }, getResourceFile(".").getAbsolutePath(), 0));
 
