@@ -465,6 +465,7 @@ public class JDInit {
         new DecryptPluginWrapper("sogood.net", "SoGoodNet", "http://[\\w\\.]*?sogood\\.net/.+");
         new DecryptPluginWrapper("audiobeats.net", "AudioBeatsNet", "http://[\\w\\.]*?audiobeats\\.net/app/(parties|livesets|artists)/show/[0-9a-zA-Z]+");
         new DecryptPluginWrapper("Duckload.com", "DuckLoadCom", "http://[\\w\\.]*?(duckload\\.com|youload\\.to)/(?!download)[a-zA-Z0-9]+");
+        new DecryptPluginWrapper("cryptbox.cc", "CryptBoxCC", "http://[\\w\\.]*?.cryptbox\\.cc/ordner/[0-9a-zA-z]+");
         // Decrypter from Extern
         new DecryptPluginWrapper("rapidlibrary.com", "RapidLibrary", "http://rapidlibrary\\.com/download_file_i\\.php\\?.+");
     }
