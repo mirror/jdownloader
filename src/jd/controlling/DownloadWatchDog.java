@@ -492,7 +492,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                                 removes.clear();
                             }
 
-                            Reconnecter.doReconnectIfRequested();
+                            Reconnecter.doReconnectIfRequested(false);
                             if (inProgress > 0) {
                                 fps = dlc.getPackages();
 

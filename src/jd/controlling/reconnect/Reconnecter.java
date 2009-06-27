@@ -139,8 +139,9 @@ public class Reconnecter {
         return (hasWaittimeLinks && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true) && SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty("PARAM_DOWNLOAD_PREFER_RECONNECT", true) && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_LATEST_RECONNECT_RESULT, true));
     }
 
-    public static boolean doReconnectIfRequested() {
+    public static boolean doReconnectIfRequested(boolean bypassrcvalidation) {
         if (IS_RECONNECTREQUESTING) return false;
+        if (!bypassrcvalidation && !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_LATEST_RECONNECT_RESULT, true)) return false;
         /* falls nen Linkcheck läuft, kein Reconnect */
         if (LinkCheck.getLinkChecker().isRunning()) return false;
         if (JDUtilities.getController().getForbiddenReconnectDownloadNum() > 0) {
@@ -192,6 +193,10 @@ public class Reconnecter {
                 } catch (Exception e) {
                     logger.finest("Reconnect failed.");
                 }
+                if (ret == false) {
+                    ProgressController progress = new ProgressController(JDL.L("jd.controlling.reconnect.Reconnector.progress.failed", "Reconnect failed! Please check your reconnect Settings and try a Manual Reconnect!"), 100);
+                    progress.finalize(10000l);
+                }
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_LATEST_RECONNECT_RESULT, ret);
                 JDUtilities.getConfiguration().save();
             }
@@ -242,7 +247,7 @@ public class Reconnecter {
             }
         };
         timer.start();
-        while (!(ret = Reconnecter.doReconnectIfRequested()) && (System.currentTimeMillis() < i || i <= 0)) {
+        while (!(ret = Reconnecter.doReconnectIfRequested(true)) && (System.currentTimeMillis() < i || i <= 0)) {
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {

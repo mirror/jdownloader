@@ -79,6 +79,7 @@ public class DistributeData extends Thread {
     private String orgData;
 
     private boolean filterNormalHTTP = false;
+    private ArrayList<String> foundPasswords;
 
     /**
      * Erstellt einen neuen Thread mit dem Text, der verteilt werden soll. Die
@@ -91,6 +92,7 @@ public class DistributeData extends Thread {
         super("JD-DistributeData");
         this.data = new String(data);
         this.disableDeepEmergencyScan = true;
+        foundPasswords = new ArrayList<String>();
     }
 
     public DistributeData(String data, boolean disableDeepEmergencyScan) {
@@ -245,7 +247,7 @@ public class DistributeData extends Thread {
      * @return Link-ArrayList
      */
     public ArrayList<DownloadLink> findLinks() {
-        ArrayList<String> foundPasswords = HTMLParser.findPasswords(data);
+        foundPasswords.addAll(HTMLParser.findPasswords(data));
         data = HTMLEntities.unhtmlentities(data);
         data = data.replaceAll("jd://", "http://");
         ArrayList<DownloadLink> ret = findLinksIntern();

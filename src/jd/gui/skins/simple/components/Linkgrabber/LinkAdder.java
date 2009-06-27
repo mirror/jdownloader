@@ -50,6 +50,7 @@ public class LinkAdder extends JTabbedPanel {
     private Thread clipboardObserver;
     private JLabel lbl;
     private boolean watchclipboard = false;
+    private String old = null;
 
     public LinkAdder() {
         super(new MigLayout("ins 0 0 8 8,wrap 1", "[]", "[][fill,grow][]"));
@@ -129,7 +130,6 @@ public class LinkAdder extends JTabbedPanel {
             if (clipboardObserver != null && clipboardObserver.isAlive()) return;
             clipboardObserver = new Thread() {
                 public void run() {
-                    String old = null;
                     while (true && watchclipboard) {
                         try {
                             String newText = (String) Toolkit.getDefaultToolkit().getSystemClipboard().getData(DataFlavor.stringFlavor);
