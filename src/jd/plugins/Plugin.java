@@ -305,10 +305,12 @@ public abstract class Plugin implements ActionListener {
                 break;
             }
         }
-        if (filename != null) filename = filename.trim();
-        if (filename.startsWith("\"")) {
-            logger.info("Using Workaround for broken filename header!");
-            filename = filename.substring(1);
+        if (filename != null) {
+            filename = filename.trim();
+            if (filename.startsWith("\"")) {
+                logger.info("Using Workaround for broken filename header!");
+                filename = filename.substring(1);
+            }
         }
         if (filename == null) logger.severe("Content-Disposition: could not parse header: " + orgheader);
         return filename;

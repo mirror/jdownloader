@@ -448,7 +448,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
         return ret.toString();
     }
 
-    private String cleanFileName(String name) {
+    public static String cleanFileName(String name) {
         /** remove rar extensions */
 
         name = getNameMatch(name, "(.*)\\.part[0]*[1].rar$");
@@ -468,21 +468,22 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
 
         int lastPoint = name.lastIndexOf(".");
         if (lastPoint <= 0) lastPoint = name.lastIndexOf("_");
-        if (lastPoint <= 0) return name;
-        String extension = name.substring(name.length() - lastPoint + 1);
-        if (extension.length() > 0 && lastPoint > 0) {
-            name = name.substring(0, lastPoint);
+        if (lastPoint > 0) {
+            String extension = name.substring(name.length() - lastPoint + 1);
+            if (extension.length() < 3) {
+                name = name.substring(0, lastPoint);
+            }
         }
         return JDUtilities.removeEndingPoints(name);
     }
 
-    private String getNameMatch(String name, String pattern) {
+    private static String getNameMatch(String name, String pattern) {
         String match = new Regex(name, pattern).getMatch(0);
         if (match != null) return match;
         return name;
     }
 
-    private int comparepackages(String a, String b) {
+    private static int comparepackages(String a, String b) {
         int c = 0;
         String aa = a.toLowerCase();
         String bb = b.toLowerCase();

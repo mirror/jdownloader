@@ -141,7 +141,6 @@ public class Reconnecter {
 
     public static boolean doReconnectIfRequested(boolean bypassrcvalidation) {
         if (IS_RECONNECTREQUESTING) return false;
-        if (!bypassrcvalidation && !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_LATEST_RECONNECT_RESULT, true)) return false;
         /* falls nen Linkcheck läuft, kein Reconnect */
         if (LinkCheck.getLinkChecker().isRunning()) return false;
         if (JDUtilities.getController().getForbiddenReconnectDownloadNum() > 0) {
@@ -151,7 +150,7 @@ public class Reconnecter {
         IS_RECONNECTREQUESTING = true;
         boolean ret = false;
         try {
-            ret = doReconnectIfRequestedInternal();
+            ret = doReconnectIfRequestedInternal(bypassrcvalidation);
             if (ret) {
                 Reconnecter.resetAllLinks();
                 Interaction.handleInteraction(Interaction.INTERACTION_AFTER_RECONNECT, JDUtilities.getController());
@@ -163,7 +162,7 @@ public class Reconnecter {
         return ret;
     }
 
-    public static boolean doReconnectIfRequestedInternal() {
+    public static boolean doReconnectIfRequestedInternal(boolean bypassrcvalidation) {
         boolean ret = false;
         /* überhaupt ein reconnect angefragt? */
         if (hasWaittimeLinks) {
@@ -183,22 +182,24 @@ public class Reconnecter {
 
             } else {
                 /* auto reconnect ist AN */
-                try {
-                    ret = Reconnecter.doReconnect();
-                    if (ret) {
-                        logger.info("Reconnect successfully!");
-                    } else {
-                        logger.info("Reconnect failed!");
+                if (!bypassrcvalidation && !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_LATEST_RECONNECT_RESULT, true)) {
+                    try {
+                        ret = Reconnecter.doReconnect();
+                        if (ret) {
+                            logger.info("Reconnect successfully!");
+                        } else {
+                            logger.info("Reconnect failed!");
+                        }
+                    } catch (Exception e) {
+                        logger.finest("Reconnect failed.");
                     }
-                } catch (Exception e) {
-                    logger.finest("Reconnect failed.");
+                    if (ret == false) {
+                        ProgressController progress = new ProgressController(JDL.L("jd.controlling.reconnect.Reconnector.progress.failed", "Reconnect failed! Please check your reconnect Settings and try a Manual Reconnect!"), 100);
+                        progress.finalize(10000l);
+                    }
+                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_LATEST_RECONNECT_RESULT, ret);
+                    JDUtilities.getConfiguration().save();
                 }
-                if (ret == false) {
-                    ProgressController progress = new ProgressController(JDL.L("jd.controlling.reconnect.Reconnector.progress.failed", "Reconnect failed! Please check your reconnect Settings and try a Manual Reconnect!"), 100);
-                    progress.finalize(10000l);
-                }
-                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_LATEST_RECONNECT_RESULT, ret);
-                JDUtilities.getConfiguration().save();
             }
         }
         return ret;

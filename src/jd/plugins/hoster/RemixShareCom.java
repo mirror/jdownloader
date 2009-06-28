@@ -69,20 +69,28 @@ public class RemixShareCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
-        
+
         if (br.containsHTML("Download password")) {
             Form pw = br.getFormbyProperty("name", "pass");
-            pw.put("passwd", Plugin.getUserInput("Password?", downloadLink));
+            String pass = downloadLink.getStringProperty("pass", null);
+            if (pass == null) pass = Plugin.getUserInput("Password?", downloadLink);
+            pw.put("passwd", pass);
             br.submitForm(pw);
             br.getPage(br.getRedirectLocation());
-            if (br.containsHTML("Incorrect password entered")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.errors.wrongpassword", "Password wrong"));
+            if (br.containsHTML("Incorrect password entered")) {
+                downloadLink.setProperty("pass", null);
+                throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.errors.wrongpassword", "Password wrong"));
+            } else {
+                downloadLink.setProperty("pass", pass);
+            }
         }
-        
+
         Form down = br.getFormbyProperty("name", "downform");
         // this.sleep(12000, downloadLink); // uncomment when they find a better
         // way to force wait time
         br.submitForm(down);
         // br.openGetConnection(downloadLink.getDownloadURL());
+        br.setFollowRedirects(true);
         dl = br.openDownload(downloadLink, br.getRedirectLocation(), false, 1);
         dl.startDownload();
 

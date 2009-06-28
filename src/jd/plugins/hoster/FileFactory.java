@@ -36,14 +36,11 @@ import jd.utils.locale.JDL;
 public class FileFactory extends PluginForHost {
 
     private static Pattern baseLink = Pattern.compile("action=\"(\\/dlf.*).\\ ", Pattern.CASE_INSENSITIVE);
-    private static final String DOWNLOAD_LIMIT = "(Thank you for waiting|exceeded the download limit)";
 
     private static final String FILESIZE = "<span>(.*? (B|KB|MB)) file";
 
     private static final String NO_SLOT = "no free download slots";
     private static final String NOT_AVAILABLE = "class=\"box error\"";
-    private static final String PATTERN_DOWNLOADING_TOO_MANY_FILES = "currently downloading too many files at once";
-    private static final String WAIT_TIME = "have exceeded the download limit for free users.*Please wait ([0-9]+).*to download more files";
 
     private static final String LOGIN_ERROR = "The email or password you have entered is incorrect";
 
@@ -63,6 +60,7 @@ public class FileFactory extends PluginForHost {
 
     // @Override
     public void handleFree(DownloadLink parameter) throws Exception {
+        requestFileInformation(parameter);
         try {
             handleFree0(parameter);
         } catch (InterruptedException e2) {
@@ -84,7 +82,6 @@ public class FileFactory extends PluginForHost {
     }
 
     public void handleFree0(DownloadLink parameter) throws Exception {
-
         br.setFollowRedirects(true);
         br.getPage(parameter.getDownloadURL());
         if (br.containsHTML("there are currently no free download slots")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 3 * 60 * 1000l); }
@@ -100,46 +97,24 @@ public class FileFactory extends PluginForHost {
 
         // Datei Downloadlink filtern
         String downloadUrl = Encoding.htmlDecode(br.getRegex(patternForDownloadlink).getMatch(0));
-        long waittime=31000l;
-        
-        try{
-            waittime= Long.parseLong(br.getRegex("<p id=\"countdown\">(\\d+?)</p>").getMatch(0))*1000l;
-        }catch(Exception e){
+        long waittime = 31000l;
+
+        try {
+            waittime = Long.parseLong(br.getRegex("<p id=\"countdown\">(\\d+?)</p>").getMatch(0)) * 1000l;
+        } catch (Exception e) {
             e.printStackTrace();
         }
-        if(waittime>60000l){
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime);
-        }
-        waittime+=1000;
+        if (waittime > 60000l) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime); }
+        waittime += 1000;
         sleep(waittime, parameter);
         dl = br.openDownload(parameter, downloadUrl);
 
         // Prüft ob content disposition header da sind
-        if (dl.getConnection().isContentDisposition()) {
-//            long cu = parameter.getDownloadCurrent();
-            dl.startDownload();
-//            long loaded = parameter.getDownloadCurrent() - cu;
-//            if (loaded > 30 * 1024 * 1024l) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 1000l * 60);
-        }else{
+        if (dl.getConnection().isContentDisposition()) {            
+            dl.startDownload();            
+        } else {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        }
-//        else {
-//            // Falls nicht wird die html seite geladen
-//            br.followConnection();
-//            if (br.containsHTML(DOWNLOAD_LIMIT)) {
-//                logger.info("Traffic Limit for Free User reached");
-//                if (br.containsHTML("seconds")) {
-//                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(br.getRegex(WAIT_TIME).getMatch(0)) * 60 * 1000l);
-//                } else if (br.containsHTML("minutes")) {
-//                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(br.getRegex(WAIT_TIME).getMatch(0)) * 1000l);
-//                } else {
-//                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-//                }
-//            } else if (br.containsHTML(PATTERN_DOWNLOADING_TOO_MANY_FILES)) {
-//                logger.info("You are downloading too many files at the same time. Wait 10 seconds(or reconnect) and retry afterwards");
-//                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 1000l);
-//            }
-//        }
+        }        
 
     }
 
@@ -191,17 +166,12 @@ public class FileFactory extends PluginForHost {
     // @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
-
         login(account);
-
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
-
         dl = br.openDownload(downloadLink, br.getRedirectLocation(), true, 0);
-
-        if (dl.getConnection().getHeaderField("Content-Disposition") == null) {
+        if (dl.getConnection().isContentDisposition()) {
             br.followConnection();
-
             if (br.containsHTML(NOT_AVAILABLE)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (br.containsHTML(SERVER_DOWN)) {
@@ -229,12 +199,13 @@ public class FileFactory extends PluginForHost {
 
     // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+        this.setBrowserExclusive();
         br.setFollowRedirects(true);
         for (int i = 0; i < 4; i++) {
             try {
                 Thread.sleep(200);
             } catch (Exception e) {
-                return AvailableStatus.FALSE;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             try {
                 br.getPage(downloadLink.getDownloadURL());
@@ -244,11 +215,9 @@ public class FileFactory extends PluginForHost {
             }
         }
         if (br.containsHTML(NOT_AVAILABLE) && !br.containsHTML("there are currently no free download slots")) {
-            br.setFollowRedirects(false);
-            return AvailableStatus.FALSE;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML(SERVER_DOWN)) {
-            br.setFollowRedirects(false);
-            return AvailableStatus.FALSE;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else {
             if (br.containsHTML("there are currently no free download slots")) {
                 downloadLink.getLinkStatus().setErrorMessage(JDL.L("plugins.hoster.filefactorycom.errors.nofreeslots", "No slots free available"));
@@ -260,7 +229,6 @@ public class FileFactory extends PluginForHost {
                 if (fileName == null || fileSize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 downloadLink.setName(fileName.trim());
                 downloadLink.setDownloadSize(Regex.getSize(fileSize));
-
             }
 
         }
