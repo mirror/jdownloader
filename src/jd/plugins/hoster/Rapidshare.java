@@ -31,6 +31,7 @@ import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.HTMLEntities;
 import jd.http.URLConnectionAdapter;
+import jd.http.Browser.BrowserException;
 import jd.http.requests.Request;
 import jd.nutils.JDHash;
 import jd.parser.Regex;
@@ -221,6 +222,8 @@ public class Rapidshare extends PluginForHost {
                     namelist.append("," + getName(u.getDownloadURL()));
                 }
                 String req = "http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=checkfiles_v1&files=" + idlist.toString().substring(1) + "&filenames=" + namelist.toString().substring(1) + "&incmd5=1";
+
+                queryAPI(null, req);
                 br.getPage(req);
 
                 if (br.containsHTML("access flood")) {
@@ -287,6 +290,33 @@ public class Rapidshare extends PluginForHost {
             }
             return false;
         }
+    }
+/**
+ * requests the API url req. if the http ip is blocked (UK-BT isp returns 500 or 502 error) https is used.
+ * @param br
+ * @param req
+ * @throws IOException
+ */
+    private void queryAPI(Browser br, String req) throws IOException {
+        if (br == null) br = this.br;
+        try {
+            br.getPage(req);
+        } catch (BrowserException e) {
+            if (e.getConnection() != null && !req.startsWith("https")) {
+                switch (e.getConnection().getResponseCode()) {
+                case 500:
+                case 502:
+                    req = "https" + req.substring(4);
+                    br.getPage(req);
+                    break;
+                default:
+                    throw e;
+                }
+            } else {
+                throw e;
+            }
+        }
+
     }
 
     private String getName(String downloadURL) {
@@ -818,7 +848,7 @@ public class Rapidshare extends PluginForHost {
                 if (cookies.get("enc") != null && cookies.get("enc").length() != 0) {
                     logger.finer("Cookie Login");
                     for (Entry<String, String> cookie : cookies.entrySet()) {
-                        br.setCookie("http://rapidshare.com", cookie.getKey(), cookie.getValue());                        
+                        br.setCookie("http://rapidshare.com", cookie.getKey(), cookie.getValue());
                     }
                     return br;
                 } else {
@@ -826,10 +856,10 @@ public class Rapidshare extends PluginForHost {
                 }
             }
             String req = "http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=getaccountdetails_v1&withcookie=1&type=prem&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
-            br.getPage(req);
+            queryAPI(br,req);
             try {
                 Thread.sleep(2000);
-            } catch (InterruptedException e) {                
+            } catch (InterruptedException e) {
                 return br;
             }
             if (br.containsHTML("Login failed")) {
@@ -846,12 +876,12 @@ public class Rapidshare extends PluginForHost {
                 String cookie = br.getRegex("cookie=([A-Z0-9]+)").getMatch(0);
                 br.setCookie("http://rapidshare.com", "enc", cookie);
             }
-            String cookie =br.getCookie("http://rapidshare.com", "enc");
-            if (cookie==null){
+            String cookie = br.getCookie("http://rapidshare.com", "enc");
+            if (cookie == null) {
                 account.setProperty("cookies", null);
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
             }
-            HashMap<String, String> map = new HashMap<String, String>();                
+            HashMap<String, String> map = new HashMap<String, String>();
             map.put("enc", cookie);
             account.setProperty("cookies", map);
             return br;
@@ -862,7 +892,7 @@ public class Rapidshare extends PluginForHost {
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         String api = "http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=getaccountdetails_v1&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&type=prem";
-        br.getPage(api);
+        queryAPI(br,api);
         String error = br.getRegex("ERROR:(.*)").getMatch(0);
         if (error != null) {
             account.setProperty("cookies", null);
@@ -872,7 +902,7 @@ public class Rapidshare extends PluginForHost {
         }
         String[][] matches = br.getRegex("(\\w+)=([^\r^\n]+)").getMatches();
         HashMap<String, String> data = getMap(matches);
-
+ai=ai;
         ai.setTrafficLeft((long) (Long.parseLong(data.get("premkbleft")) / 1000.0) * 1024l * 1024l);
         ai.setTrafficMax(25 * 1024 * 1024 * 1024l);
         ai.setFilesNum(Long.parseLong(data.get("curfiles")));
