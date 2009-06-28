@@ -21,7 +21,6 @@ import java.io.OutputStream;
 import java.io.RandomAccessFile;
 
 import jd.http.Encoding;
-import jd.nutils.Executer;
 
 public class JDSimpleWebserverResponseCreator {
 

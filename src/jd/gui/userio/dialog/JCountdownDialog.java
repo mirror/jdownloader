@@ -16,7 +16,9 @@
 
 package jd.gui.userio.dialog;
 
+import java.awt.Image;
 import java.awt.event.MouseEvent;
+import java.util.List;
 
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -26,6 +28,7 @@ import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.JDMouseAdapter;
 import jd.nutils.Formatter;
 import jd.utils.JDTheme;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 public abstract class JCountdownDialog extends JDialog {
@@ -39,7 +42,7 @@ public abstract class JCountdownDialog extends JDialog {
 
     public JCountdownDialog(JFrame currentgui) {
         super(currentgui);
-   
+
         initCountdown();
     }
 
@@ -121,4 +124,19 @@ public abstract class JCountdownDialog extends JDialog {
         countdownThread.start();
 
     }
+
+    /**
+     * Wrapper für Java 1.5 (Mac User)
+     */
+    public void setIconImage(Image image) {
+        if (JDUtilities.getJavaVersion() >= 1.6) super.setIconImage(image);
+    }
+
+    /**
+     * Wrapper für Java 1.5 (Mac User)
+     */
+    public void setIconImages(List<? extends Image> icons) {
+        if (JDUtilities.getJavaVersion() >= 1.6) super.setIconImages(icons);
+    }
+
 }

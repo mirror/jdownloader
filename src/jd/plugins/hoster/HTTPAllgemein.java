@@ -16,8 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.File;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;

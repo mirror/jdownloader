@@ -22,8 +22,6 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.RandomUserAgent;
-import jd.parser.Document;
-import jd.parser.JavaScript;
 import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
