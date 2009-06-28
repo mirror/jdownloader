@@ -260,6 +260,15 @@
 				<include name="jd/plugins/optional/jdtrayicon/**" />
 			</fileset>
 		</jar>
+		
+		
+		<mkdir dir="${dist}/pluginressourcen/129__FlashGot/plugins" />
+		<jar jarfile="${dist}/pluginressourcen/129__FlashGot/plugins/JDFlashGot.jar" manifest="Manifest.MF">
+			<fileset dir="${cls}">
+				<include name="jd/plugins/optional/JDFlashGot*" />
+				<include name="jd/plugins/optional/FlashGotRequestHandler*" />
+			</fileset>
+		</jar>
 	</target>
 
 	<target name="sign">

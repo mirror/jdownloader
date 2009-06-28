@@ -58,7 +58,7 @@ public class Restarter {
             } else {
 
                 String n = new File("update").getAbsolutePath();
-                File newFile = new File(f.getAbsolutePath().replace(n, "").substring(1));
+                File newFile = new File(f.getAbsolutePath().replace(n, "").substring(1)).getAbsoluteFile();
                 System.out.println(newFile.getAbsolutePath());
                 newFile.delete();
                 newFile.getParentFile().mkdirs();

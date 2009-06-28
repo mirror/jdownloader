@@ -725,7 +725,7 @@ public class JDUtilities {
         }
         jargs.add("-jar");
         jargs.add("JDownloader.jar");
-
+    
         String[] javaArgs = jargs.toArray(new String[jargs.size()]);
         String[] finalArgs = new String[jdArgs.length + javaArgs.length];
         System.arraycopy(javaArgs, 0, finalArgs, 0, javaArgs.length);
@@ -734,7 +734,10 @@ public class JDUtilities {
         ArrayList<File> restartfiles = JDIO.listFiles(JDUtilities.getResourceFile("update"));
         if (restartfiles != null && restartfiles.size() > 0) {
             if (OSDetector.isMac()) {
-                JDLogger.getLogger().info(JDUtilities.runCommand("java", new String[] { "-jar", "tools/tinyupdate.jar", "-restart", }, getResourceFile(".").getAbsolutePath(), 0));
+                JDLogger.getLogger().info(JDUtilities.runCommand("java", new String[] { "-jar", "tools/tinyupdate.jar", "-restart" }, getResourceFile(".").getAbsolutePath(), 0));
+            } else if (OSDetector.isWindows()) {
+                JDLogger.getLogger().info(JDUtilities.runCommand("java", new String[] { "-jar", "tools/tinyupdate.jar", "-restart"}, getResourceFile(".").getAbsolutePath(), 0));
+
             } else {
                 JDLogger.getLogger().info(JDUtilities.runCommand("java", new String[] { "-jar", "tools/tinyupdate.jar", "-restart" }, getResourceFile(".").getAbsolutePath(), 0));
 
@@ -742,11 +745,15 @@ public class JDUtilities {
 
         } else {
 
-            if (!OSDetector.isMac()) {
-
-                JDLogger.getLogger().info(JDUtilities.runCommand("java", finalArgs, getResourceFile(".").getAbsolutePath(), 0));
-            } else {
+            if (OSDetector.isMac()) {
                 JDLogger.getLogger().info(JDUtilities.runCommand("open", new String[] { "-n", "jDownloader.app" }, JDUtilities.getResourceFile(".").getParentFile().getParentFile().getParentFile().getParentFile().getAbsolutePath(), 0));
+
+            } else if (OSDetector.isWindows()) {
+                JDLogger.getLogger().info(JDUtilities.runCommand("java", finalArgs, getResourceFile(".").getAbsolutePath(), 0));
+
+            } else {
+                JDLogger.getLogger().info(JDUtilities.runCommand("java", finalArgs, getResourceFile(".").getAbsolutePath(), 0));
+
             }
         }
         System.out.println("EXIT NOW");
