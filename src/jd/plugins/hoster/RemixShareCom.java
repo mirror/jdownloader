@@ -25,9 +25,11 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.locale.JDL;
 
 public class RemixShareCom extends PluginForHost {
 
@@ -66,8 +68,17 @@ public class RemixShareCom extends PluginForHost {
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        Form down = br.getFormbyProperty("name", "downform");
         br.setFollowRedirects(false);
+        
+        if (br.containsHTML("Download password")) {
+            Form pw = br.getFormbyProperty("name", "pass");
+            pw.put("passwd", Plugin.getUserInput("Password?", downloadLink));
+            br.submitForm(pw);
+            br.getPage(br.getRedirectLocation());
+            if (br.containsHTML("Incorrect password entered")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.errors.wrongpassword", "Password wrong"));
+        }
+        
+        Form down = br.getFormbyProperty("name", "downform");
         // this.sleep(12000, downloadLink); // uncomment when they find a better
         // way to force wait time
         br.submitForm(down);
