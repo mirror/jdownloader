@@ -61,11 +61,29 @@ public class Browser {
     public class BrowserException extends IOException {
 
         private static final long serialVersionUID = 1509988898224037320L;
+        private URLConnectionAdapter connection;
 
         public BrowserException(String string) {
             super(string);
 
         }
+
+        public BrowserException(String message, URLConnectionAdapter con) {
+            this(message);
+            connection = con;
+        }
+/**
+ * Returns the connection adapter that caused the browserexception
+ * @return
+ */
+        public URLConnectionAdapter getConnection() {
+            return connection;
+        }
+
+        public void setConnection(URLConnectionAdapter connection) {
+            this.connection = connection;
+        }
+
     }
 
     private static JDProxy GLOBAL_PROXY = null;
@@ -231,7 +249,7 @@ public class Browser {
     private static final Authenticator AUTHENTICATOR = new Authenticator() {
         protected PasswordAuthentication getPasswordAuthentication() {
             Browser br = Browser.getAssignedBrowserInstance(this.getRequestingURL());
-            if(br==null){
+            if (br == null) {
                 JDLogger.getLogger().warning("Browser Auth Error!");
                 return null;
             }
@@ -928,13 +946,20 @@ public class Browser {
      */
     public String loadConnection(URLConnectionAdapter con) throws IOException {
         String ret = null;
-        if (con == null) {
-            checkContentLengthLimit(request);
-            ret = request.read();
-        } else {
-            ret = Request.read(con);
+        try {
+            if (con == null) {
+                checkContentLengthLimit(request);
+                ret = request.read();
+                con = request.getHttpConnection();
+            } else {
+                ret = Request.read(con);
+            }
+        } catch (IOException e) {
+            BrowserException ee = new BrowserException(e.getMessage(), con);
+            ee.initCause(e);
+            con.disconnect();
+            throw ee;
         }
-
         if (isVerbose()) JDLogger.getLogger().finest("\r\n" + ret + "\r\n");
 
         return ret;

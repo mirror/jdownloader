@@ -34,6 +34,7 @@ public class Restarter {
                 Executer exec = new Executer("open");
                 exec.addParameters(new String[] { "-n", "jDownloader.app" });
                 exec.setRunin(new File(".").getAbsolutePath());
+                exec.setWaitTimeout(0);
                 exec.start();
 
             } else {
@@ -41,10 +42,12 @@ public class Restarter {
                 Executer exec = new Executer("java");
                 exec.addParameters(new String[] { "-jar", "-Xmx512m", "JDownloader.jar", "-rtfu2" });
                 exec.setRunin(new File(".").getAbsolutePath());
+                exec.setWaitTimeout(0);
                 exec.start();
 
             }
         }
+        System.exit(0);
 
     }
 

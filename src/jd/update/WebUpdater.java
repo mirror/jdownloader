@@ -51,18 +51,18 @@ import jd.utils.JDUtilities;
  */
 public class WebUpdater implements Serializable {
 
+    private static final int DO_UPDATE_FAILED = 4;
+    private static final int DO_UPDATE_FILE = 2;
+
+    private static final int DO_UPDATE_SUCCESS = 3;
+
     private static HashMap<String, File> fileMap;
+    private static final int NEW_FILE = 0;
     public static HashMap<String, FileUpdate> PLUGIN_LIST = null;
-
     private static final long serialVersionUID = 1946622313175234371L;
-
+    private static final int UPDATE_FILE = 1;
     public static final String[] UPDATE_MIRROR = new String[] { "http://update0.jdownloader.org/", "http://update0.jdownloader.org/", "http://update1.jdownloader.org/", "http://update2.jdownloader.org/", };
     private static final String UPDATE_ZIP_LOCAL_PATH = "tmp/update.zip";
-    private static final int NEW_FILE = 0;
-    private static final int UPDATE_FILE = 1;
-    private static final int DO_UPDATE_FILE = 2;
-    private static final int DO_UPDATE_SUCCESS = 3;
-    private static final int DO_UPDATE_FAILED = 4;
 
     /**
      * Funktion übertragt alle werte aus den alten Config files in die datenbank
@@ -96,12 +96,6 @@ public class WebUpdater implements Serializable {
                 updater.ignorePlugins(false);
             }
 
-            // logger.info(files + "");
-
-            if (updater.sum.length > 100) {
-                SubConfiguration.getConfig("a" + "pckage").setProperty(new String(new byte[] { 97, 112, 99, 107, 97, 103, 101 }), updater.sum);
-            }
-
             updater.parseFileList(JDUtilities.getResourceFile("tmp/hashlist.lst"), null, PLUGIN_LIST);
         }
 
@@ -123,7 +117,9 @@ public class WebUpdater implements Serializable {
     private Browser br;
 
     private String[] branches;
+    private JDBroadcaster<MessageListener, MessageEvent> broadcaster;
     private Integer errors = 0;
+
     private boolean ignorePlugins = true;
 
     private StringBuilder logger;
@@ -133,9 +129,7 @@ public class WebUpdater implements Serializable {
     private JProgressBar progressload = null;
 
     public byte[] sum;
-
     private File workingdir;
-    private JDBroadcaster<MessageListener, MessageEvent> broadcaster;
 
     /**
      * @param path
@@ -149,22 +143,6 @@ public class WebUpdater implements Serializable {
         br.setConnectTimeout(10 * 1000);
         errors = 0;
         initBroadcaster();
-    }
-
-    private void initBroadcaster() {
-        this.broadcaster = new JDBroadcaster<MessageListener, MessageEvent>() {
-
-            @Override
-            protected void fireEvent(MessageListener listener, MessageEvent event) {
-                listener.onMessage(event);
-
-            }
-
-        };
-    }
-
-    public JDBroadcaster<MessageListener, MessageEvent> getBroadcaster() {
-        return broadcaster;
     }
 
     /**
@@ -271,6 +249,10 @@ public class WebUpdater implements Serializable {
         return branches;
     }
 
+    public JDBroadcaster<MessageListener, MessageEvent> getBroadcaster() {
+        return broadcaster;
+    }
+
     public int getErrors() {
         synchronized (errors) {
             return errors;
@@ -327,13 +309,21 @@ public class WebUpdater implements Serializable {
     public void ignorePlugins(boolean b) {
         this.ignorePlugins = b;
     }
-public String toString(){
-    return "Updater";
-}
-    public boolean isIgnorePlugins() {
-        return ignorePlugins;
-    }
 
+    private void initBroadcaster() {
+        this.broadcaster = new JDBroadcaster<MessageListener, MessageEvent>() {
+
+            @Override
+            protected void fireEvent(MessageListener listener, MessageEvent event) {
+                listener.onMessage(event);
+
+            }
+
+        };
+    }
+public boolean isIgnorePlugins() {
+    return ignorePlugins;
+}
     private void loadUpdateList() throws Exception {
         for (int trycount = 0; trycount < 10; trycount++) {
             try {
@@ -459,6 +449,10 @@ public String toString(){
 
     public void setWorkingdir(File workingdir) {
         this.workingdir = workingdir;
+    }
+
+    public String toString(){
+        return "Updater";
     }
 
     private ArrayList<Server> updateAvailableServers() {

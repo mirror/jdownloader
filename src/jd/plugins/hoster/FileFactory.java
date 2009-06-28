@@ -100,33 +100,46 @@ public class FileFactory extends PluginForHost {
 
         // Datei Downloadlink filtern
         String downloadUrl = Encoding.htmlDecode(br.getRegex(patternForDownloadlink).getMatch(0));
-
-        sleep(31000, parameter);
+        long waittime=31000l;
+        
+        try{
+            waittime= Long.parseLong(br.getRegex("<p id=\"countdown\">(\\d+?)</p>").getMatch(0))*1000l;
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+        if(waittime>60000l){
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime);
+        }
+        waittime+=1000;
+        sleep(waittime, parameter);
         dl = br.openDownload(parameter, downloadUrl);
 
         // Prüft ob content disposition header da sind
         if (dl.getConnection().isContentDisposition()) {
-            long cu = parameter.getDownloadCurrent();
+//            long cu = parameter.getDownloadCurrent();
             dl.startDownload();
-            long loaded = parameter.getDownloadCurrent() - cu;
-            if (loaded > 30 * 1024 * 1024l) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 1000l * 60);
-        } else {
-            // Falls nicht wird die html seite geladen
-            br.followConnection();
-            if (br.containsHTML(DOWNLOAD_LIMIT)) {
-                logger.info("Traffic Limit for Free User reached");
-                if (br.containsHTML("seconds")) {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(br.getRegex(WAIT_TIME).getMatch(0)) * 60 * 1000l);
-                } else if (br.containsHTML("minutes")) {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(br.getRegex(WAIT_TIME).getMatch(0)) * 1000l);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-                }
-            } else if (br.containsHTML(PATTERN_DOWNLOADING_TOO_MANY_FILES)) {
-                logger.info("You are downloading too many files at the same time. Wait 10 seconds(or reconnect) and retry afterwards");
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 1000l);
-            }
+//            long loaded = parameter.getDownloadCurrent() - cu;
+//            if (loaded > 30 * 1024 * 1024l) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 1000l * 60);
+        }else{
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
+//        else {
+//            // Falls nicht wird die html seite geladen
+//            br.followConnection();
+//            if (br.containsHTML(DOWNLOAD_LIMIT)) {
+//                logger.info("Traffic Limit for Free User reached");
+//                if (br.containsHTML("seconds")) {
+//                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(br.getRegex(WAIT_TIME).getMatch(0)) * 60 * 1000l);
+//                } else if (br.containsHTML("minutes")) {
+//                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(br.getRegex(WAIT_TIME).getMatch(0)) * 1000l);
+//                } else {
+//                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+//                }
+//            } else if (br.containsHTML(PATTERN_DOWNLOADING_TOO_MANY_FILES)) {
+//                logger.info("You are downloading too many files at the same time. Wait 10 seconds(or reconnect) and retry afterwards");
+//                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 1000l);
+//            }
+//        }
 
     }
 

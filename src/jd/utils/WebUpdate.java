@@ -37,6 +37,7 @@ import jd.controlling.interaction.PackageManager;
 import jd.event.MessageEvent;
 import jd.event.MessageListener;
 import jd.gui.UserIO;
+import jd.gui.skins.simple.Balloon;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDFlags;
@@ -160,7 +161,12 @@ public class WebUpdate {
      * deaktiviert hat
      */
     public synchronized void doUpdateCheck(final boolean guiCall, final boolean forceguiCall) {
-
+        if(UPDATE_IN_PROGRESS){
+            logger.info("UPdate is already running");
+            Balloon.show(JDL.L("jd.utils.webupdate.ballon.title","Update"), UserIO.getInstance().getIcon(UserIO.ICON_WARNING), JDL.L("jd.utils.webupdate.ballon.message.updateinprogress","There is already an update in progress."));
+            return;
+        }
+        UPDATE_IN_PROGRESS=true;
         final ProgressController progress = new ProgressController(JDL.L("init.webupdate.progress.0_title", "Webupdate"), 100);
 
         final WebUpdater updater = new WebUpdater();
@@ -168,7 +174,7 @@ public class WebUpdate {
         updater.getBroadcaster().addListener(messageListener = new MessageListener() {
 
             public void onMessage(MessageEvent event) {
-                progress.setStatusText(event.getSource() + ": " + event.getMessage());
+                progress.setStatusText(event.getSource().toString().replaceAll("jd/plugins/decrypt", "Decrypt Plugin") + ": " + event.getMessage());
 
             }
 
@@ -189,6 +195,7 @@ public class WebUpdate {
             progress.setColor(Color.RED);
             progress.setStatusText("Update failed");
             progress.finalize(15000l);
+            UPDATE_IN_PROGRESS=false;
             return;
         }
         boolean pluginRestartRequired = false;
@@ -201,7 +208,7 @@ public class WebUpdate {
                 FileUpdate f = it.next().getValue();
 
                 if (!f.equals()) {
-                    updater.updateUpdatefile(f);
+                 
 
                     String clazz = new Regex(f.getLocalFile().getAbsoluteFile(), "(jd[/\\\\].*?)\\.class").getMatch(0);
 
@@ -237,12 +244,14 @@ public class WebUpdate {
                 if (!guiCall) {
                     progress.finalize();
                     if (doPluginRestart) JDUtilities.restartJD();
+                    UPDATE_IN_PROGRESS=false;
                     return;
                 }
                 if (!forceguiCall && SubConfiguration.getConfig("WEBUPDATE").getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false)) {
                     logger.severe("Webupdater disabled");
                     progress.finalize();
                     if (doPluginRestart) JDUtilities.restartJD();
+                    UPDATE_IN_PROGRESS=false;
                     return;
                 }
                 PackageManager pm = new PackageManager();
@@ -251,6 +260,7 @@ public class WebUpdate {
                     logger.severe("Webupdater offline or nothing to update");
                     progress.finalize();
                     if (doPluginRestart) JDUtilities.restartJD();
+                    UPDATE_IN_PROGRESS=false;
                     return;
                 }
                 int org;
@@ -292,10 +302,10 @@ public class WebUpdate {
     }
 
     private static void doUpdate(final WebUpdater updater, final ArrayList<FileUpdate> files, final boolean doPluginRestart) {
-        if (UPDATE_IN_PROGRESS == true) return;
+ 
         new Thread() {
             public void run() {
-                UPDATE_IN_PROGRESS = true;
+                
 
                 int i = 0;
                 while (DYNAMIC_PLUGINS_FINISHED == false) {
@@ -327,7 +337,7 @@ public class WebUpdate {
                     updater.getBroadcaster().addListener(new MessageListener() {
 
                         public void onMessage(MessageEvent event) {
-                            pc.setStatusText(event.getSource() + ": " + event.getMessage());
+                            pc.setStatusText(event.getSource().toString().replaceAll("jd/plugins/decrypt", "Decrypt Plugin") + ": " + event.getMessage());
 
                         }
 
