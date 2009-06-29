@@ -16,6 +16,8 @@
 
 package jd.plugins.hoster;
 
+import java.io.IOException;
+
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -31,37 +33,31 @@ public class ZShareNet extends PluginForHost {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://www.zshare.net/TOS.html";
     }
 
-    //@Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) {
-        try {
-            br.setCookiesExclusive(true);
-            br.setFollowRedirects(true);
-            br.clearCookies(getHost());
-            br.getPage(downloadLink.getDownloadURL().replaceFirst("zshare.net/(download|video|audio|flash)", "zshare.net/image"));
-            if (br.containsHTML("File Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            String[] fileInfo = br.getRegex("File Name: .*?<font color=\".666666\">(.*?)</font>.*?Image Size: <font color=\".666666\">(.*?)</font></td>").getRow(0);
-            if (fileInfo[0] == null || fileInfo[1] == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            downloadLink.setName(fileInfo[0]);
-            downloadLink.setDownloadSize(Regex.getSize(fileInfo[1].replaceAll(",", "")));
-            // Datei ist noch verfuegbar
-            return AvailableStatus.TRUE;
-        } catch (Exception e) {
-        }
-        downloadLink.setAvailable(false);
-        return AvailableStatus.FALSE;
+    // @Override
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage(downloadLink.getDownloadURL().replaceFirst("zshare.net/(download|video|audio|flash)", "zshare.net/image"));
+        if (br.containsHTML("File Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String[] fileInfo = br.getRegex("File Name: .*?<font color=\".666666\">(.*?)</font>.*?Image Size: <font color=\".666666\">(.*?)</font>").getRow(0);
+        if (fileInfo[0] == null || fileInfo[1] == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        downloadLink.setName(fileInfo[0]);
+        downloadLink.setDownloadSize(Regex.getSize(fileInfo[1].replaceAll(",", "")));
+        // Datei ist noch verfuegbar
+        return AvailableStatus.TRUE;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
@@ -87,20 +83,20 @@ public class ZShareNet extends PluginForHost {
         dl.startDownload();
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void resetDownloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

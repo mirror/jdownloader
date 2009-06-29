@@ -33,7 +33,6 @@ import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.Request;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -252,19 +251,14 @@ public class Megauploadcom extends PluginForHost {
         if (user == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
     }
 
-    // @Override
-    public boolean checkLinks(DownloadLink[] urls) {
+    public boolean checkLinks(DownloadLink urls[]) {
+        if (urls == null || urls.length == 0) return false;
         this.setBrowserExclusive();
-        if (urls == null) return false;
-        /*
-         * use single file checks for small lists
-         */
-        if (urls.length <= 5) {
-            boolean ret = true;
-            for (DownloadLink l : urls) {
-                ret &= getSingleFileInformation(l);
-            }
-            return ret;
+        if (urls.length == 1 && urls[0].getFinalFileName() != null) {
+            // SingleFileCheck before Download, bypass api only if api check
+            // already done
+            websiteFileCheck(urls[0]);
+            return true;
         }
         HashMap<String, String> map = new HashMap<String, String>();
         int i = 0;
@@ -323,7 +317,6 @@ public class Megauploadcom extends PluginForHost {
         br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
 
         try {
-
             String[] Dls = br.postPage("http://www.megaupload.com/mgr_linkcheck.php", map).split("&?(?=id[\\d]+=)");
             br.getHeaders().clear();
             br.getHeaders().setDominant(false);
@@ -341,6 +334,9 @@ public class Megauploadcom extends PluginForHost {
                     } else {
                         downloadLink.setAvailable(false);
                     }
+                    if (Dls.length < 6) {
+                        websiteFileCheck(downloadLink);
+                    }
                 } catch (Exception e) {
                 }
             }
@@ -350,8 +346,10 @@ public class Megauploadcom extends PluginForHost {
         return true;
     }
 
-    private boolean getSingleFileInformation(DownloadLink l) {
+    private boolean websiteFileCheck(DownloadLink l) {
         try {
+            Browser br = new Browser();
+            br.setCookiesExclusive(true);
             br.setCookie("http://www.megaupload.com", "l", "en");
             br.getPage("http://www.megaupload.com/?d=" + getDownloadID(l));
             if (br.containsHTML("The file has been deleted because it was violating")) {
@@ -372,16 +370,13 @@ public class Megauploadcom extends PluginForHost {
             if (filename == null || filesize == null) {
                 l.setAvailable(false);
             } else {
-                l.setDownloadSize(Regex.getSize(filesize));
-                l.setFinalFileName(filename);
                 l.setAvailable(true);
             }
             return true;
-        } catch (IOException e) {
+        } catch (Exception e) {
             l.setAvailable(false);
             return false;
         }
-
     }
 
     // @Override
