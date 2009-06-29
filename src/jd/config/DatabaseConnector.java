@@ -248,9 +248,7 @@ public class DatabaseConnector implements Serializable {
                         ret.add(conf);
                      
                     }
-                } catch (Exception e) {
-
-                    e.printStackTrace();
+                } catch (Exception e) {                   
 
                 }
             }

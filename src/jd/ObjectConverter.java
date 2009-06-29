@@ -37,12 +37,14 @@ public class ObjectConverter {
         String[] ret = new Regex(new String(ba.toByteArray()), "(<java .*?>)(.*?)(</java>)").getRow(0);
         this.pre = ret[0];
         this.post = ret[2];
-        return ret[1];
+        ret[1]=ret[1].replace(" ", "   ");
+        return ret[1].trim();
     }
 
     public Object toObject(String in) throws Exception {
         Object objectLoaded = null;
-        ByteArrayInputStream ba = new ByteArrayInputStream((pre + in + post).getBytes());
+        String str = (pre + in + post);
+        ByteArrayInputStream ba = new ByteArrayInputStream(str.getBytes());
         XMLDecoder xmlDecoder = new XMLDecoder(ba);
         xmlDecoder.setExceptionListener(new ExceptionListener() {
 

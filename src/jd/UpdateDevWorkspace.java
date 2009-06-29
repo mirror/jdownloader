@@ -48,8 +48,12 @@ public class UpdateDevWorkspace {
         });
 
         try {
+
+            svn.update(dir, SVNRevision.HEAD);
             svn.revert(dir);
+            
         } catch (Exception e) {
+
             e.printStackTrace();
             JDIO.removeDirectoryOrFile(dir);
             svn.update(dir, SVNRevision.HEAD);
