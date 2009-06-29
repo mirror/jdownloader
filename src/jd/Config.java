@@ -172,8 +172,17 @@ public class Config {
         table.setAutoStartEditOnKeyStroke(false);
 
           add = new JButton(JDTheme.II("gui.images.add", 24, 24));
-         edit = new JButton(JDTheme.II("gui.images.edit", 24, 24));
+         edit = new JButton(JDTheme.II("gui.images.findandreplace", 24, 24));
          remove = new JButton(JDTheme.II("gui.images.delete", 24, 24));
+         add.setOpaque(false);
+         add.setBorderPainted(false);
+         add.setContentAreaFilled(false);
+         edit.setOpaque(false);
+         edit.setBorderPainted(false);
+         edit.setContentAreaFilled(false);
+         remove.setOpaque(false);
+         remove.setBorderPainted(false);
+         remove.setContentAreaFilled(false);
         frame.add(configSelection, "split 4");
         frame.add(add,"alignx right");
         frame.add(remove,"alignx right");
