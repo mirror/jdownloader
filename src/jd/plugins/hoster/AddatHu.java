@@ -41,17 +41,18 @@ public class AddatHu extends PluginForHost {
         return "TnS";
     }
 
-    private void correctUrl(DownloadLink link) {
+    private String getFreePageLink(DownloadLink link) {
         String url = link.getDownloadURL();
-        if (!url.toLowerCase().endsWith(".html")) link.setUrlDownload(link.getDownloadURL() + ".html");
+        Regex regex = new Regex(url, ".*addat.hu/(.*)/");
+        String id = regex.getMatch(0);
+        return "http://addat.hu/" + id + "/freedownload";
     }
 
     // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException {
-        correctUrl(downloadLink);
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
-        br.getPage(downloadLink.getDownloadURL());
+        br.getPage( getFreePageLink(downloadLink) );
         String[] dat = br.getRegex("<b>http://addat.hu/.*/(.*).html</b> \\((.*)\\)").getRow(0);
         long length = Regex.getSize(dat[1].trim());
         downloadLink.setDownloadSize(length);
@@ -98,5 +99,4 @@ public class AddatHu extends PluginForHost {
     // @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
