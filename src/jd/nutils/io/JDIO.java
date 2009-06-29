@@ -385,26 +385,27 @@ public class JDIO {
 
         return dir.delete();
     }
-/**
- * RUns recursive throu the dir (directory) and list all files.
- * returns null if dir is a file.
- * @param dir
- * @return
- */
+
+    /**
+     * Runs recursive through the dir (directory) and list all files. returns
+     * null if dir is a file.
+     * 
+     * @param dir
+     * @return
+     */
     public static ArrayList<File> listFiles(File dir) {
-        if(!dir.isDirectory())return null;
-        ArrayList<File> ret= new ArrayList<File>();
-        
-        for(File f: dir.listFiles()){
-            if(f.isDirectory()){
+        if (!dir.isDirectory()) return null;
+        ArrayList<File> ret = new ArrayList<File>();
+
+        for (File f : dir.listFiles()) {
+            if (f.isDirectory()) {
                 ret.addAll(listFiles(f));
-            }else{
+            } else {
                 ret.add(f);
             }
         }
         return ret;
-        
-    }
 
+    }
 
 }

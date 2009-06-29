@@ -1927,43 +1927,26 @@ public class JAntiCaptcha {
         if (Utilities.isLoggerActive()) {
             logger.info("Decoded Captcha: " + guess + " Vality: " + captcha.getValityPercent());
         }
-        if (captcha.getValityPercent() >= 0 || true) {
 
-            // if (guess == null) {
-            // File file = getResourceFile("detectionErrors2/" +
-            // (Utilities.getTimer()) + "_" + captchafile.getName());
-            // file.getParentFile().mkdirs();
-            // captchafile.renameTo(file);
-            // if(Utilities.isLoggerActive())logger.severe("Letter erkennung
-            // fehlgeschlagen");
-            // return -1;
-            //
-            // }
-            if (getCodeFromFileName(captchafile.getName()) == null) {
-                code = JOptionPane.showInputDialog("Bitte Captcha Code eingeben (Press enter to confirm " + guess, guess);
-                if (code != null && code.equals(guess)) {
-                    code = "";
-                } else if (code == null) {
-                    boolean doIt = JOptionPane.showConfirmDialog(new JFrame(), "Ja (yes) = beenden (close) \t Nein (no) = nächstes Captcha (next captcha)") == JOptionPane.OK_OPTION;
-                    if (doIt) {
-                        System.exit(0);
-                    }
+        if (getCodeFromFileName(captchafile.getName()) == null) {
+            code = JOptionPane.showInputDialog("Bitte Captcha Code eingeben (Press enter to confirm " + guess, guess);
+            if (code != null && code.equals(guess)) {
+                code = "";
+            } else if (code == null) {
+                boolean doIt = JOptionPane.showConfirmDialog(new JFrame(), "Ja (yes) = beenden (close) \t Nein (no) = nächstes Captcha (next captcha)") == JOptionPane.OK_OPTION;
+                if (doIt) {
+                    System.exit(0);
                 }
-
-            } else {
-                code = getCodeFromFileName(captchafile.getName());
-                if (Utilities.isLoggerActive()) {
-                    logger.warning("captcha code für " + captchaHash + " verwendet: " + code);
-                }
-
             }
 
         } else {
+            code = getCodeFromFileName(captchafile.getName());
             if (Utilities.isLoggerActive()) {
-                logger.info("100% ERkennung.. automatisch übernommen");
-                // code = guess;
+                logger.warning("captcha code für " + captchaHash + " verwendet: " + code);
             }
+
         }
+
         if (code == null) {
             File file = getResourceFile("detectionErrors3/" + System.currentTimeMillis() + "_" + captchafile.getName());
             file.getParentFile().mkdirs();

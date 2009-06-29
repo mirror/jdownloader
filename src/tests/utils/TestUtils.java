@@ -1,7 +1,5 @@
-package tests.utils;
-
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2008  JD-Team support@jdownloader.org
+//    Copyright (C) 2009  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -15,6 +13,8 @@ package tests.utils;
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+package tests.utils;
 
 import javax.swing.JFrame;
 
@@ -157,7 +157,7 @@ public abstract class TestUtils {
             }
         }.waitForEDT();
 
-//        SimpleGUI.CURRENTGUI.setVisible(false);
+        // SimpleGUI.CURRENTGUI.setVisible(false);
     }
 
     public static void initControllers() {
