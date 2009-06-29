@@ -80,6 +80,7 @@ gui.images.logout = default/system-log-out
 gui.images.reconnect_selection = default/reconnect_select
 gui.images.reconnect_settings = default/reconnect_cfg
 gui.splash = splash
+gui.images.edit=edit-find-replace
 gui.images.search = default/system-search
 gui.images.undo = default/edit-undo
 gui.images.container = default/package-x-generic

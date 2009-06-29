@@ -71,10 +71,12 @@ public class Updater {
      * @throws Exception
      */
     public static void main(String[] args) throws Exception {
+String branch=null;
 
+branch="Sweet16";
         Updater upd = new Updater();
 
-        WebUpdater.getConfig("WEBUPDATE").setProperty("BRANCH", "NIGHTLY");
+     if(branch!=null)   WebUpdater.getConfig("WEBUPDATE").setProperty("BRANCH", branch);
         WebUpdater.getConfig("WEBUPDATE").save();
         System.out.println("STATUS: Webupdate");
         upd.webupdate();
@@ -89,7 +91,9 @@ public class Updater {
         // // // System.out.println("STATUS: FINISHED");
         upd.cleanUp();
         // upd.filter("DBBackup.*.class");
-        upd.createBranch(JOptionPane.showInputDialog(upd.frame, "branchname"));
+        
+        if(branch==null)branch=JOptionPane.showInputDialog(upd.frame, "branchname");
+        upd.createBranch(branch);
 
         ArrayList<File> list = upd.getFileList();
         // //

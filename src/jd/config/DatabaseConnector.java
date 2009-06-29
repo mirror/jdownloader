@@ -28,6 +28,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -230,6 +231,37 @@ public class DatabaseConnector implements Serializable {
     }
 
     /**
+     * Returns all Subconfigurations
+     * 
+     * @return
+     */
+    public ArrayList<SubConfiguration> getSubConfigurationKeys() {
+        ArrayList<SubConfiguration> ret = new ArrayList<SubConfiguration>();
+        ResultSet rs;
+        try {
+            rs = con.createStatement().executeQuery("SELECT * FROM config");
+
+            while (rs.next()) {
+                try {
+                    SubConfiguration conf = SubConfiguration.getConfig((String) rs.getObject(1));
+                    if (conf.getProperties().size() > 0) {
+                        ret.add(conf);
+                     
+                    }
+                } catch (Exception e) {
+
+                    e.printStackTrace();
+
+                }
+            }
+        } catch (SQLException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return ret;
+    }
+
+    /**
      * Saves a configuration into the database
      */
     public void saveConfiguration(String name, Object data) {
@@ -316,4 +348,5 @@ public class DatabaseConnector implements Serializable {
     public Connection getDatabaseConnection() {
         return con;
     }
+
 }

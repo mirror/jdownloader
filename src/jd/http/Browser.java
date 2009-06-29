@@ -72,10 +72,12 @@ public class Browser {
             this(message);
             connection = con;
         }
-/**
- * Returns the connection adapter that caused the browserexception
- * @return
- */
+
+        /**
+         * Returns the connection adapter that caused the browserexception
+         * 
+         * @return
+         */
         public URLConnectionAdapter getConnection() {
             return connection;
         }
@@ -951,14 +953,14 @@ public class Browser {
                 checkContentLengthLimit(request);
                 con = request.getHttpConnection();
                 ret = request.read();
-            
+
             } else {
                 ret = Request.read(con);
             }
         } catch (IOException e) {
             BrowserException ee = new BrowserException(e.getMessage(), con);
             ee.initCause(e);
-          if(con!=null)  con.disconnect();
+            if (con != null) con.disconnect();
             throw ee;
         }
         if (isVerbose()) JDLogger.getLogger().finest("\r\n" + ret + "\r\n");

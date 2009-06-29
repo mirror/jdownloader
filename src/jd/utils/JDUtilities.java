@@ -813,11 +813,13 @@ public class JDUtilities {
     }
 
     public static String objectToXml(Object obj) throws IOException {
+        
         ByteArrayOutputStream ba;
         DataOutputStream out = new DataOutputStream(ba = new ByteArrayOutputStream());
         XMLEncoder xmlEncoder = new XMLEncoder(out);
         xmlEncoder.writeObject(obj);
         xmlEncoder.close();
+       
         out.close();
         return new String(ba.toByteArray());
     }

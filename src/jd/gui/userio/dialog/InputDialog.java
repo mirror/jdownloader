@@ -74,16 +74,26 @@ public class InputDialog extends AbstractDialog implements KeyListener, MouseLis
 
             JScrollPane sp;
             contentpane.add(sp = new JScrollPane(input), "height 20:60:n,pushy,growy");
-            sp.setBounds(0, 0, 450, 600);
-            sp.setMaximumSize(new Dimension(450, 600));
+            if (AbstractDialog.getDEFAULT_DIMENSION() != null) {
+                sp.setBounds(0, 0, (int) AbstractDialog.getDEFAULT_DIMENSION().getWidth(), (int) AbstractDialog.getDEFAULT_DIMENSION().getHeight());
+                sp.setMaximumSize(AbstractDialog.getDEFAULT_DIMENSION());
+            } else {
+                sp.setBounds(0, 0, 450, 600);
+                sp.setMaximumSize(new Dimension(450, 600));
+            }
         } else {
             input = new JTextField();
             input.setBorder(BorderFactory.createEtchedBorder());
             input.setText(this.defaultMessage);
             input.addKeyListener(this);
             input.addMouseListener(this);
-            input.setBounds(0, 0, 450, 600);
-            input.setMaximumSize(new Dimension(450, 600));
+            if (AbstractDialog.getDEFAULT_DIMENSION() != null) {
+                input.setBounds(0, 0, (int) AbstractDialog.getDEFAULT_DIMENSION().getWidth(), (int) AbstractDialog.getDEFAULT_DIMENSION().getHeight());
+                input.setMaximumSize(AbstractDialog.getDEFAULT_DIMENSION());
+            } else {
+                input.setBounds(0, 0, 450, 600);
+                input.setMaximumSize(new Dimension(450, 600));
+            }
             contentpane.add(input, "pushy,growy, width n:n:450");
         }
         return contentpane;

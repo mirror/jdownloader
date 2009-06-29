@@ -224,6 +224,10 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
 
     }
 
+    public static Dimension getDEFAULT_DIMENSION() {
+        return DEFAULT_DIMENSION;
+    }
+
     /**
      * Dumme JFRame from which dialogs can inherit the icon. workaround for 1.5
      * 

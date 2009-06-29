@@ -48,7 +48,7 @@ public class Configuration extends SubConfiguration implements Serializable {
     public static final String PARAM_DOWNLOAD_DIRECTORY = "DOWNLOAD_DIRECTORY";
 
     public static final String PARAM_DOWNLOAD_MAX_CHUNKS = "DOWNLOAD_MAX_CHUNKS";
-    
+
     public static final String PARAM_DOWNLOAD_PAUSE_SPEED = "PAUSE_SPEED";
 
     public static final String PARAM_DOWNLOAD_MAX_SIMULTAN = "DOWNLOAD_MAX_SIMULTAN";
@@ -140,6 +140,8 @@ public class Configuration extends SubConfiguration implements Serializable {
 
     public static final String PARAM_LATEST_RECONNECT_RESULT = "LATEST_RECONNECT_RESULT";
 
+    public static final String NAME = "jdownloaderconfig";
+
     /**
      * Konstruktor für ein Configuration Object
      */
@@ -150,8 +152,13 @@ public class Configuration extends SubConfiguration implements Serializable {
         return JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, JDUtilities.getResourceFile("downloads").getAbsolutePath());
     }
 
+    public String toString() {
+        return Configuration.NAME;
+
+    }
+
     public void save() {
-        JDUtilities.getDatabaseConnector().saveConfiguration("jdownloaderconfig", this);
+        JDUtilities.getDatabaseConnector().saveConfiguration(Configuration.NAME, this);
         changes = false;
     }
 

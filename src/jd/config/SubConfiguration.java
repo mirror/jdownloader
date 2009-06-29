@@ -79,11 +79,15 @@ public class SubConfiguration extends Property implements Serializable {
 
     }
 
-    public void save() {        
+    public void save() {
         this.fireEventPreSave();
         JDUtilities.getDatabaseConnector().saveConfiguration(name, this.getProperties());
         this.fireEventPostSave();
-        changes=false;
+        changes = false;
+    }
+
+    public String toString() {
+        return name;
     }
 
     public synchronized static SubConfiguration getConfig(String name) {
@@ -107,16 +111,16 @@ public class SubConfiguration extends Property implements Serializable {
         }
 
     }
-/**
- * Gets a Subconfiguration for this class
- * @param object
- * @return
- */
+
+    /**
+     * Gets a Subconfiguration for this class
+     * 
+     * @param object
+     * @return
+     */
     public static SubConfiguration getConfig(Object object) {
 
         return getConfig(object.getClass().getSimpleName());
     }
-
-
 
 }

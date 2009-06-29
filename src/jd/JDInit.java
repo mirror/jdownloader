@@ -166,7 +166,7 @@ public class JDInit {
     }
 
     public Configuration loadConfiguration() {
-        Object obj = JDUtilities.getDatabaseConnector().getData("jdownloaderconfig");
+        Object obj = JDUtilities.getDatabaseConnector().getData(Configuration.NAME);
 
         if (obj == null) {
             System.out.println("Fresh install?");
@@ -207,7 +207,7 @@ public class JDInit {
             jd.controlling.JDLogger.getLogger().setLevel(configuration.getGenericProperty(Configuration.PARAM_LOGGER_LEVEL, Level.WARNING));
             JDTheme.setTheme(SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getStringProperty(SimpleGuiConstants.PARAM_THEME, "default"));
 
-            JDUtilities.getDatabaseConnector().saveConfiguration("jdownloaderconfig", JDUtilities.getConfiguration());
+            JDUtilities.getDatabaseConnector().saveConfiguration(Configuration.NAME, JDUtilities.getConfiguration());
             installerVisible = true;
             JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_FINISH));
             /**

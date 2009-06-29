@@ -154,7 +154,10 @@ public class Main {
                 JDInitFlags.SWITCH_DEBUG = true;
                 Browser.setVerbose(true);
                 LOGGER.info("Browser DEBUG Modus aktiv");
+            } else if (p.equalsIgnoreCase("-config")) {
+                new Config();
 
+                return;
             } else if (p.equalsIgnoreCase("-trdebug")) {
                 JDL.DEBUG = true;
                 LOGGER.info("Translation DEBUG Modus aktiv");
