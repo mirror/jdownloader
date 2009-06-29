@@ -221,10 +221,9 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
 
     public static void setDefaultDimension(Dimension dimension) {
         DEFAULT_DIMENSION = dimension;
-
     }
 
-    public static Dimension getDEFAULT_DIMENSION() {
+    public static Dimension getDefaultDimension() {
         return DEFAULT_DIMENSION;
     }
 

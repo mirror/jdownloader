@@ -32,10 +32,6 @@ public class Restarter {
     private static boolean RESTART = false;
     private static Logger logger;
 
-    /**
-     * @param args
-     */
-
     public static String getStackTrace(Throwable thrown) {
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
@@ -61,13 +57,11 @@ public class Restarter {
                 if (arg.equalsIgnoreCase("-restart")) RESTART = true;
             }
 
-            String master = new File("JDownloader.jar").getAbsolutePath();
             while (new File("JDownloader.jar").exists() && !new File("JDownloader.jar").canWrite()) {
                 logger.severe("Wait for jdownloader terminating");
                 try {
                     Thread.sleep(500);
                 } catch (InterruptedException e) {
-                    // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
             }
@@ -111,28 +105,27 @@ public class Restarter {
                 String n = new File("update").getAbsolutePath();
                 File newFile = new File(f.getAbsolutePath().replace(n, "").substring(1)).getAbsoluteFile();
                 logger.severe(newFile.getAbsolutePath());
-               
-               
+
                 int waittime = 10000;
-                while (newFile.exists()&&! newFile.delete() && !WAIT_FOR_JDOWNLOADER_TERM) {
+                while (newFile.exists() && !newFile.delete() && !WAIT_FOR_JDOWNLOADER_TERM) {
                     WAIT_FOR_JDOWNLOADER_TERM = true;
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
-                        // TODO Auto-generated catch block
                         e.printStackTrace();
                     }
                     waittime -= 1000;
                     if (waittime < 0) {
                         logger.severe("COULD NOT DELETE");
-                       continue main;
+                        continue main;
                     }
                     logger.severe("WAIT FOR DELETE");
 
-                }     logger.severe("DELETE OLD OK");
+                }
+                logger.severe("DELETE OLD OK");
                 newFile.getParentFile().mkdirs();
-                
-                logger.severe("RENAME :"+f.renameTo(newFile));
+
+                logger.severe("RENAME :" + f.renameTo(newFile));
                 if (f.getParentFile().list().length == 0) f.getParentFile().delete();
             }
         }
