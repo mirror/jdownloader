@@ -949,15 +949,16 @@ public class Browser {
         try {
             if (con == null) {
                 checkContentLengthLimit(request);
-                ret = request.read();
                 con = request.getHttpConnection();
+                ret = request.read();
+            
             } else {
                 ret = Request.read(con);
             }
         } catch (IOException e) {
             BrowserException ee = new BrowserException(e.getMessage(), con);
             ee.initCause(e);
-            con.disconnect();
+          if(con!=null)  con.disconnect();
             throw ee;
         }
         if (isVerbose()) JDLogger.getLogger().finest("\r\n" + ret + "\r\n");
