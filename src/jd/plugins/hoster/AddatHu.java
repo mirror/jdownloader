@@ -41,6 +41,13 @@ public class AddatHu extends PluginForHost {
         return "TnS";
     }
 
+    public void correctDownloadLink(DownloadLink link) {
+        String url = link.getDownloadURL();
+        Regex regex = new Regex(url, ".*addat.hu/(.*)/");
+        String id = regex.getMatch(0);
+        link.setUrlDownload("http://addat.hu/" + id + "/freedownload");
+    }
+
     private String getFreePageLink(DownloadLink link) {
         String url = link.getDownloadURL();
         Regex regex = new Regex(url, ".*addat.hu/(.*)/");
@@ -52,7 +59,7 @@ public class AddatHu extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException {
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
-        br.getPage( getFreePageLink(downloadLink) );
+        br.getPage(getFreePageLink(downloadLink));
         String[] dat = br.getRegex("<b>http://addat.hu/.*/(.*).html</b> \\((.*)\\)").getRow(0);
         long length = Regex.getSize(dat[1].trim());
         downloadLink.setDownloadSize(length);
