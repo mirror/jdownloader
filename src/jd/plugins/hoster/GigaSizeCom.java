@@ -140,7 +140,7 @@ public class GigaSizeCom extends PluginForHost {
         captchaForm.put("txtNumber", captchaCode);
         br.submitForm(captchaForm);
         if (br.containsHTML("YOU HAVE REACHED")) {
-            String temp = br.getRegex("Please retry after\\s(\\d+)\\sMinuten").getMatch(0);
+            String temp = br.getRegex("Please retry after\\s(\\d+)\\sMinu").getMatch(0);
             if (temp != null) {
                 int waitTime = Integer.parseInt(temp) + 1;
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitTime * 60 * 1000);
