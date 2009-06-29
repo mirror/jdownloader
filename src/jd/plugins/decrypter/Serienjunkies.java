@@ -248,8 +248,9 @@ public class Serienjunkies extends PluginForDecrypt {
                     actions.add(form.getAction());
                 }
             }
-            final int inc = 100 / actions.size();
+          
             for (int i = 0; i < actions.size(); i++) {
+                final int inc = 100 / actions.size();
                 try {
                     final String action = actions.get(i);
                     final int bd = i % 4;
