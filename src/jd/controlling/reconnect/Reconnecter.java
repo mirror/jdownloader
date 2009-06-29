@@ -182,7 +182,7 @@ public class Reconnecter {
 
             } else {
                 /* auto reconnect ist AN */
-                if (!bypassrcvalidation && !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_LATEST_RECONNECT_RESULT, true)) {
+                if (bypassrcvalidation || JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_LATEST_RECONNECT_RESULT, true)) {
                     try {
                         ret = Reconnecter.doReconnect();
                         if (ret) {
