@@ -52,7 +52,7 @@ public class PluginPattern {
         for (String pattern : listType1) {
             completePattern.append("|(" + pattern.replaceAll("\\.", "\\\\.") + "/\\d{4}/\\d{2}/\\d{2}/.+)");
         }
-        String[] listType2 = { "hoerbuch.in", "xxx-blog.org" };
+        String[] listType2 = { "hoerbuch.in", "xxx-blog.org", "serien-blog.com" };
         for (String pattern : listType2) {
             completePattern.append("|(" + pattern.replaceAll("\\.", "\\\\.") + "/blog\\.php\\?id=[\\d]+)");
         }

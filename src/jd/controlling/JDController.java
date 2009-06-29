@@ -566,7 +566,7 @@ public class JDController implements ControlListener {
                         downloadLinks = links;
                         break;
                     }
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     JDLogger.exception(e);
                 }
             }
