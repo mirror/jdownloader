@@ -45,7 +45,6 @@ public class HotShareNet extends PluginForHost {
         this.setBrowserExclusive();
         br.setCookie("http://www.hotshare.net/", "language", "english");
         br.getPage(downloadLink.getDownloadURL().replaceAll("video", "file").replaceAll("audio", "file"));
-        System.out.print(br);
         String filename = br.getRegex(Pattern.compile("<h1 class=\"top_title_downloading\"><strong>(.*?)</strong> </h1>")).getMatch(0);
         String filesize = br.getRegex(Pattern.compile("<span class=\"arrow1\">Size: <b>(.*?)</b></span> ")).getMatch(0);
         if (filesize == null || filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
