@@ -47,7 +47,7 @@ public class JDImage {
 
     public static ImageIcon iconToImage(Icon icon) {
         if (icon == null) return null;
-        if (icon instanceof ImageIcon && false) {
+        if (false && icon instanceof ImageIcon) {
             return ((ImageIcon) icon);
         } else {
             int w = icon.getIconWidth();
@@ -64,7 +64,7 @@ public class JDImage {
     }
 
     public static ImageIcon getFileIcon(String ext) {
-        String id = "ext_" + ext + "";
+        String id = "ext_" + ext;
         ImageIcon ret = IMAGE_ICON_CACHE.get(id);
         if (ret != null) return ret;
 
@@ -173,16 +173,16 @@ public class JDImage {
     }
 
     public static ImageIcon getImageIcon(String string) {
-        ImageIcon ret;
-        if ((ret = IMAGE_ICON_CACHE.get(string)) != null) { return ret; }
+        ImageIcon ret = IMAGE_ICON_CACHE.get(string);
+        if (ret != null) return ret;
         ret = new ImageIcon(getImage(string));
         IMAGE_ICON_CACHE.put(string, ret);
         return ret;
     }
 
     public static ImageIcon getImageIcon(File pat) {
-        ImageIcon ret;
-        if ((ret = IMAGE_ICON_CACHE.get(pat.getAbsolutePath())) != null) { return ret; }
+        ImageIcon ret = IMAGE_ICON_CACHE.get(pat.getAbsolutePath());
+        if (ret != null) return ret;
         ret = new ImageIcon(getImage(pat));
         IMAGE_ICON_CACHE.put(pat.getAbsolutePath(), ret);
         return ret;

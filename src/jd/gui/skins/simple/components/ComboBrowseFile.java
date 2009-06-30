@@ -21,6 +21,7 @@ import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Vector;
 
 import javax.swing.JButton;
@@ -37,7 +38,7 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
 
     private static final long serialVersionUID = -3852915099917640687L;
 
-    Vector<ActionListener> listenerList = new Vector<ActionListener>();
+    private ArrayList<ActionListener> listenerList = new ArrayList<ActionListener>();
 
     private String approveButtonText;
 

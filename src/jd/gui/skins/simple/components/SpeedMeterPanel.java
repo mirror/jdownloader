@@ -83,6 +83,7 @@ public class SpeedMeterPanel extends JPanel implements ActionListener, MouseList
                 } else if (key == SimpleGuiConstants.PARAM_SHOW_SPEEDMETER) {
                     show = SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.PARAM_SHOW_SPEEDMETER, true);
                     setBorder(show ? BorderFactory.createEtchedBorder() : null);
+                    if (show && th == null) start();
                 }
             }
 

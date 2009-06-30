@@ -23,10 +23,9 @@ import javax.swing.JFileChooser;
 import jd.utils.JDUtilities;
 
 /**
+ * Ein Wrapper um JFileChooser
  * 
  * @author JD-Team
- * 
- *         Ein Wrapper um JFileChooser
  */
 public class JDFileChooser extends JFileChooser {
 
@@ -34,8 +33,7 @@ public class JDFileChooser extends JFileChooser {
     private String fcID;
 
     public JDFileChooser() {
-        super();
-        setCurrentDirectory(JDUtilities.getCurrentWorkingDirectory(null));
+        this(null);
     }
 
     /**
