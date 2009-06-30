@@ -19,24 +19,19 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.controlling.ProgressController;
 import jd.http.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 public class LinkBankeu extends PluginForDecrypt {
-    private static final String CHECK_MIRRORS = "CHECK_MIRRORS";
 
     public LinkBankeu(PluginWrapper wrapper) {
         super(wrapper);
-        setConfigElements();
     }
 
-    //@Override
+    @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -48,24 +43,18 @@ public class LinkBankeu extends PluginForDecrypt {
             br.getPage("http://www.linkbank.eu/posli.php?match=" + element[0] + "&id=" + element[1]);
             decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
         }
-        if (getPluginConfig().getBooleanProperty(CHECK_MIRRORS, false) == true) {
-            for (String element : mirrors) {
-                decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(element)));
-            }
+
+        // Mirrors überprüfen
+        for (String element : mirrors) {
+            decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(element)));
         }
 
         return decryptedLinks;
     }
 
-    //@Override
+    @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }
 
-    /**
-     * TODO: Umbauen!
-     */
-    private void setConfigElements() {
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CHECK_MIRRORS, JDL.L("plugins.decrypt.linkbankeu", "Check Mirror Links")).setDefaultValue(false));
-    }
 }

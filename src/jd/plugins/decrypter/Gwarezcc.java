@@ -21,8 +21,6 @@ import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -31,7 +29,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 public class Gwarezcc extends PluginForDecrypt {
 
@@ -41,19 +38,14 @@ public class Gwarezcc extends PluginForDecrypt {
     private static final Pattern patternLink_Details_Mirror_Parts = Pattern.compile("http://[\\w\\.]*?gwarez\\.cc/mirror/\\d+/parts/game/\\d+/", Pattern.CASE_INSENSITIVE);
     private static final Pattern patternLink_Download_DLC = Pattern.compile("http://[\\w\\.]*?gwarez\\.cc/download/dlc/\\d+/", Pattern.CASE_INSENSITIVE);
 
-    private static final String PREFER_DLC = "PREFER_DLC";
-
     public Gwarezcc(PluginWrapper wrapper) {
         super(wrapper);
-        setConfigElements();
     }
 
-    // @Override
+    @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-
-        boolean dlc_found = false;
 
         if (parameter.matches(patternLink_Details_Mirror_Check.pattern())) {
             /* weiterleiten zur Mirror Parts Seite */
@@ -65,18 +57,12 @@ public class Gwarezcc extends PluginForDecrypt {
             br.getPage(parameter);
             String downloadid = new Regex(parameter, "\\/(\\d+)").getMatch(0);
 
-            if (getPluginConfig().getBooleanProperty(PREFER_DLC, false) == true) {
-                /* DLC Suchen */
-                String dlc[] = br.getRegex(Pattern.compile("<img src=\"gfx/icons/dl\\.png\" style=\"vertical-align\\:bottom\\;\"> <a href=\"download/dlc/" + downloadid + "/\" onmouseover", Pattern.CASE_INSENSITIVE)).getColumn(-1);
-                if (dlc.length == 1) {
-                    decryptedLinks.add(createDownloadlink("http://www.gwarez.cc/download/dlc/" + downloadid + "/"));
-                    dlc_found = true;
-                } else {
-                    logger.severe("Please Update Gwarez Plugin(DLC Pattern)");
-                }
-            }
-
-            if (dlc_found == false) {
+            /* DLC Suchen */
+            String dlc[] = br.getRegex(Pattern.compile("<img src=\"gfx/icons/dl\\.png\" style=\"vertical-align\\:bottom\\;\"> <a href=\"download/dlc/" + downloadid + "/\" onmouseover", Pattern.CASE_INSENSITIVE)).getColumn(-1);
+            if (dlc.length == 1) {
+                decryptedLinks.add(createDownloadlink("http://www.gwarez.cc/download/dlc/" + downloadid + "/"));
+            } else {
+                logger.severe("Please Update Gwarez Plugin(DLC Pattern)");
                 /* Mirrors suchen (Verschlüsselt) */
                 String mirror_pages[] = br.getRegex(Pattern.compile("<a href=\"mirror/(\\d+)/checked/game/" + downloadid + "/", Pattern.CASE_INSENSITIVE)).getColumn(0);
                 for (String mirror_page : mirror_pages) {
@@ -97,8 +83,8 @@ public class Gwarezcc extends PluginForDecrypt {
             // "<a href=\"redirect\\.php\\?to=([^\"]*?)\"",
             // Pattern.CASE_INSENSITIVE)).getColumn(0);
 
-            Form[] forms = br.getForms();      
-            
+            Form[] forms = br.getForms();
+
             /* Passwort suchen */
             br.getPage("http://gwarez.cc/" + downloadid + "#details");
             String password = br.getRegex(Pattern.compile("<strong>Passwort:</strong>.*?<td align=.*?listdetail2.*?>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
@@ -112,7 +98,7 @@ public class Gwarezcc extends PluginForDecrypt {
             for (Form form : forms) {
                 /* Parts decrypten und adden */
                 if (form.getAction().trim().startsWith("redirect")) {
-                    brc=br.cloneBrowser();
+                    brc = br.cloneBrowser();
                     brc.submitForm(form);
 
                     String linkString = null;
@@ -180,16 +166,9 @@ public class Gwarezcc extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    // @Override
+    @Override
     public String getVersion() {
         return getVersion("$Revision$");
-    }
-
-    /**
-     * TODO: Umbauen!
-     */
-    private void setConfigElements() {
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_DLC, JDL.L("plugins.decrypt.gwarezcc.preferdlc", "Prefer DLC Container")).setDefaultValue(false));
     }
 
 }
