@@ -96,7 +96,7 @@ public class Megauploadcom extends PluginForHost {
     }
 
     public boolean isPremium() throws IOException {
-        br.getPage("http://" + wwwWorkaround + ".megaupload.com/?c=account");
+        br.getPage("http://" + wwwWorkaround + "megaupload.com/?c=account");
         String type = br.getRegex(Pattern.compile("<TD>Account type:</TD>.*?<TD><b>(.*?)</b>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (type == null || type.equalsIgnoreCase("regular")) return false;
         return true;
