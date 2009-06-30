@@ -19,7 +19,7 @@ package jd.controlling;
 import java.nio.ByteBuffer;
 
 public class ByteBufferEntry {
-    private ByteBuffer buffer = null;
+    public ByteBuffer buffer = null;
     private int size = 0;
     private boolean unused = true;
 
@@ -35,6 +35,7 @@ public class ByteBufferEntry {
     private ByteBufferEntry(int size) {
         this.size = size;
         buffer = ByteBuffer.allocateDirect(size);
+        System.out.println("buffer is direct " + buffer.isDirect());
         clear();
     }
 
@@ -42,17 +43,19 @@ public class ByteBufferEntry {
         return buffer.capacity();
     }
 
-    public ByteBuffer getBuffer() {
-        return buffer;
-    }
-
     public void clear() {
         buffer.clear();
         buffer.limit(size);
     }
 
+    public void clear(int size) {
+        this.size = size;
+        buffer.clear();
+        buffer.limit(size);
+    }
+
     public int size() {
-        return buffer.limit();
+        return size;
     }
 
     public void limit(int size) {

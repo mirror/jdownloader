@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.Channels;
 import java.nio.channels.ClosedByInterruptException;
@@ -76,8 +77,7 @@ abstract public class DownloadInterface {
 
         private long blockStart = 0;
 
-        ByteBufferEntry buffer = null;
-        ByteBufferEntry miniBuffer = null;
+        protected ByteBufferEntry buffer = null;
 
         private double bufferTimeFaktor = 1.0d;
 
@@ -292,7 +292,6 @@ abstract public class DownloadInterface {
                 }
 
                 source = Channels.newChannel(inputStream);
-
                 buffer.clear();
 
                 long deltaTime;
@@ -302,8 +301,7 @@ abstract public class DownloadInterface {
                 long miniblock = 0;
                 long tempBuff = 0;
                 long addWait = 0;
-                miniBuffer = ByteBufferEntry.getByteBufferEntry(1024 * 10);
-                miniBuffer.clear();
+                ByteBuffer bufferInternBuffer = buffer.buffer;
                 int ti = 0;
                 blockStart = System.currentTimeMillis();
 
@@ -312,28 +310,21 @@ abstract public class DownloadInterface {
                     ti = getTimeInterval();
                     timer = System.currentTimeMillis();
                     if (speedDebug) {
-                        logger.finer("load Block buffer: " + buffer.getBuffer().hasRemaining() + "/" + buffer.getBuffer().capacity() + " interval: " + ti);
+                        logger.finer("load Block buffer: " + bufferInternBuffer.hasRemaining() + "/" + bufferInternBuffer.capacity() + " interval: " + ti);
                     }
-                    // boolean a1 = buffer.hasRemaining();
-                    // boolean a2 = isExternalyAborted();
-                    // long a4 = (System.currentTimeMillis() - timer);
-                    // boolean a3 = ((System.currentTimeMillis() - timer) < ti);
-                    //
 
-                    while (buffer.getBuffer().hasRemaining() && !isExternalyAborted() && System.currentTimeMillis() - timer < ti) {
+                    /* Anfangslimit für Speedregulierung */
+                    bufferInternBuffer.limit(10240);
+                    while ((bytes < buffer.size()) && !isExternalyAborted() && (System.currentTimeMillis() - timer < ti)) {
 
-                        // PrÃŒft ob bytes zum Lesen anliegen.
-
-                        // kann den connectiontimeout nicht auswerten
-
+                        /* stückchenweise vergrößern des buffers */
+                        if (bufferInternBuffer.position() + 10240 < buffer.size()) {
+                            bufferInternBuffer.limit((bufferInternBuffer.position() + 10240));
+                        } else {
+                            bufferInternBuffer.limit(buffer.size());
+                        }
                         try {
-                            miniBuffer.clear();
-                            if (miniBuffer.getBuffer().remaining() > buffer.getBuffer().remaining()) {
-                                miniBuffer.limit(buffer.getBuffer().remaining());
-                            }
-                            miniblock = source.read(miniBuffer.getBuffer());
-                            miniBuffer.getBuffer().flip();
-                            buffer.getBuffer().put(miniBuffer.getBuffer());
+                            miniblock = source.read(bufferInternBuffer);
                         } catch (SocketException e2) {
                             if (!isExternalyAborted()) throw e2;
                             miniblock = -1;
@@ -380,9 +371,9 @@ abstract public class DownloadInterface {
                         logger.finer("desired: " + desiredBps + " - loaded: " + (System.currentTimeMillis() - timer) + " - " + bytes);
                     }
 
-                    buffer.getBuffer().flip();
+                    bufferInternBuffer.flip();
                     if (speedDebug) {
-                        logger.finer("write bytes");
+                        logger.finer("write bytes" + bytes);
                     }
 
                     writeBytes(this);
@@ -419,13 +410,12 @@ abstract public class DownloadInterface {
                     bufferSize = Math.max(128, tempBuff);
                     try {
                         /* max 2gb buffer */
-                        if ((int) bufferSize > buffer.size()) {
+                        if ((int) bufferSize > buffer.capacity()) {
                             buffer.setUnused();
                             buffer = ByteBufferEntry.getByteBufferEntry((int) bufferSize);
-                            buffer.clear();
+                            bufferInternBuffer = buffer.buffer;
                         } else {
-                            buffer.clear();
-                            buffer.limit((int) bufferSize);
+                            buffer.clear((int) bufferSize);
                         }
 
                     } catch (Exception e) {
@@ -499,7 +489,6 @@ abstract public class DownloadInterface {
                 addException(e);
             } finally {
                 if (buffer != null) buffer.setUnused();
-                if (miniBuffer != null) miniBuffer.setUnused();
             }
 
             try {
@@ -666,7 +655,7 @@ abstract public class DownloadInterface {
          */
         public long getWritePosition() throws Exception {
             long c = getCurrentBytesPosition();
-            long l = buffer.getBuffer().limit();
+            long l = buffer.buffer.limit();
             return c - l;
         }
 
@@ -1886,7 +1875,6 @@ abstract public class DownloadInterface {
             }
         }
         downloadLink.addSpeedValue(speed);
-
     }
 
     // public void abort() {
