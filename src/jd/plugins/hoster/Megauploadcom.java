@@ -33,6 +33,7 @@ import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.URLConnectionAdapter;
+import jd.http.Browser.BrowserException;
 import jd.http.requests.Request;
 import jd.parser.html.Form;
 import jd.plugins.Account;
@@ -89,14 +90,16 @@ public class Megauploadcom extends PluginForHost {
             try {
                 tbr.getPage("http://www.megaupload.com");
                 wwwWorkaround = "www.";
-            } catch (IOException e) {
-                if (e instanceof UnknownHostException) {
+            } catch (BrowserException e) {
+                if (e.getException() != null && e.getException() instanceof UnknownHostException) {
                     logger.info("Using Workaround for Megaupload DNS Problem!");
                     wwwWorkaround = "";
                 } else {
                     e.printStackTrace();
                     wwwWorkaround = "";
                 }
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
     }

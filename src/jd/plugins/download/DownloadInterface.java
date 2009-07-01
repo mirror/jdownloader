@@ -111,6 +111,8 @@ abstract public class DownloadInterface {
 
         private boolean connectionclosed = false;
 
+        private boolean addedtoStartedChunks = false;
+
         /**
          * Die Connection wird entsprechend der start und endbytes neu
          * aufgebaut.
@@ -131,6 +133,13 @@ abstract public class DownloadInterface {
         private void addChunkBytesLoaded(long limit) {
             chunkBytesLoaded += limit;
 
+        }
+
+        private void setChunkStartet() {
+            /* Chunk kann nur einmal gestartet werden */
+            if (addedtoStartedChunks) return;
+            addChunksStarted(+1);
+            addedtoStartedChunks = true;
         }
 
         /**
@@ -751,7 +760,7 @@ abstract public class DownloadInterface {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
                     // TODO Auto-generated catch block
-                    //e.printStackTrace();
+                    // e.printStackTrace();
                     break;
                 }
                 if (this.isExternalyAborted()) break;
@@ -764,7 +773,6 @@ abstract public class DownloadInterface {
         }
 
         public void run0() {
-            boolean addedtoStartedChunks = false;
             try {
                 logger.finer("Start Chunk " + getID() + " : " + startByte + " - " + endByte);
                 if (startByte >= endByte && endByte > 0 || startByte >= getFileSize() && endByte > 0) {
@@ -929,8 +937,7 @@ abstract public class DownloadInterface {
                     userInterrupt = true;
                 }
                 addChunksDownloading(+1);
-                addChunksStarted(+1);
-                addedtoStartedChunks = true;
+                setChunkStartet();
                 download();
                 bytesPerSecond = 0;
                 desiredBps = 0;
@@ -941,7 +948,7 @@ abstract public class DownloadInterface {
                 }
                 logger.finer("Chunk finished " + chunks.indexOf(this) + " " + getBytesLoaded() + " bytes");
             } finally {
-                if (!addedtoStartedChunks) addChunksStarted(+1);
+                setChunkStartet();
             }
         }
 
@@ -1371,8 +1378,8 @@ abstract public class DownloadInterface {
         exceptions.add(e);
     }
 
-    public synchronized void addToChunksInProgress(long i) {        
-        chunksInProgress += i;        
+    public synchronized void addToChunksInProgress(long i) {
+        chunksInProgress += i;
     }
 
     protected synchronized void addToTotalLinkBytesLoaded(long block) {
@@ -1915,7 +1922,7 @@ abstract public class DownloadInterface {
                 if (waitFlag) {
                     try {
                         this.wait(interval);
-                    } catch (Exception e) {                       
+                    } catch (Exception e) {
                         // logger.log(Level.SEVERE,"Exception occurred",e);
                         Iterator<Chunk> it = chunks.iterator();
                         while (it.hasNext()) {
