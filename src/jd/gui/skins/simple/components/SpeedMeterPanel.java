@@ -83,7 +83,6 @@ public class SpeedMeterPanel extends JPanel implements ActionListener, MouseList
                 } else if (key == SimpleGuiConstants.PARAM_SHOW_SPEEDMETER) {
                     show = SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.PARAM_SHOW_SPEEDMETER, true);
                     setBorder(show ? BorderFactory.createEtchedBorder() : null);
-                    if (show && th == null) start();
                 }
             }
 
@@ -92,7 +91,6 @@ public class SpeedMeterPanel extends JPanel implements ActionListener, MouseList
     }
 
     public void start() {
-        if (!show) return;
         if (th != null) return;
         th = new Thread() {
 
@@ -115,7 +113,7 @@ public class SpeedMeterPanel extends JPanel implements ActionListener, MouseList
         };
         th.start();
 
-        fadeIn();
+        if (show) fadeIn();
     }
 
     public void stop() {
@@ -124,7 +122,8 @@ public class SpeedMeterPanel extends JPanel implements ActionListener, MouseList
             th.interrupt();
             th = null;
         }
-        fadeOut();
+
+        if (show) fadeOut();
     }
 
     public synchronized void update() {

@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map.Entry;
 
 import javax.swing.DefaultComboBoxModel;
@@ -87,11 +86,10 @@ public class Config {
     }
 
     @SuppressWarnings("unchecked")
-    private void createMap(HashMap hashMap, ArrayList<String> keys, ArrayList<Object> values, String pre) {
-        for (Iterator<Entry> it = hashMap.entrySet().iterator(); it.hasNext();) {
-            Entry next = it.next();
+    private void createMap(HashMap<?, ?> hashMap, ArrayList<String> keys, ArrayList<Object> values, String pre) {
+        for (Entry<?, ?> next : hashMap.entrySet()) {
             String key = pre.length() > 0 ? pre + "/" + next.getKey() : next.getKey() + "";
-            if (next.getValue() instanceof HashMap) {
+            if (next.getValue() instanceof HashMap<?, ?>) {
                 keys.add(key);
                 values.add(next.getValue());
                 createMap((HashMap) next.getValue(), keys, values, key);
@@ -142,14 +140,12 @@ public class Config {
 
             public void valueChanged(ListSelectionEvent e) {
                 int row = table.getSelectedRow();
-                Object key = tableModel.getValueAt(row, 0);
                 Object value = tableModel.getValueAt(row, 1);
                 try {
                     new ObjectConverter().toString(value);
                     edit.setEnabled(true);
                     remove.setEnabled(true);
                 } catch (Exception e1) {
-                    // TODO Auto-generated catch block
                     e1.printStackTrace();
                     edit.setEnabled(false);
                     remove.setEnabled(false);
@@ -187,7 +183,7 @@ public class Config {
                             if (i < configKeys.length - 1) {
                                 Object next = props.get(k);
 
-                                if (next instanceof HashMap) {
+                                if (next instanceof HashMap<?, ?>) {
                                     System.out.println("sub Hashmap " + k);
                                     props = (HashMap) next;
                                 } else {
@@ -236,7 +232,7 @@ public class Config {
 
                             for (String k : configKeys) {
                                 Object next = props.get(k);
-                                if (next instanceof HashMap) {
+                                if (next instanceof HashMap<?, ?>) {
                                     System.out.println("sub Hashmap " + k);
                                     props = (HashMap) next;
                                 } else {
@@ -256,7 +252,6 @@ public class Config {
 
                     }
                 } catch (Exception e1) {
-                    // TODO Auto-generated catch block
                     e1.printStackTrace();
                 }
 
@@ -270,7 +265,6 @@ public class Config {
             public void actionPerformed(ActionEvent e) {
                 int row = table.getSelectedRow();
                 Object key = tableModel.getValueAt(row, 0);
-                Object value = tableModel.getValueAt(row, 1);
                 String[] keys = key.toString().split("/");
                 if (keys[keys.length - 1].equals("null")) {
                     keys[keys.length - 1] = null;
@@ -285,7 +279,7 @@ public class Config {
 
                     for (String k : keys) {
                         Object next = props.get(k);
-                        if (next instanceof HashMap) {
+                        if (next instanceof HashMap<?, ?>) {
                             System.out.println("sub Hashmap " + k);
                             props = (HashMap) next;
                         } else if (k != keys[keys.length - 1]) {
@@ -360,17 +354,6 @@ public class Config {
 
             }
             return "";
-        }
-
-        private Entry<String, Object> getEntry(int row, int col) {
-            Iterator<Entry<String, Object>> it = currentConfig.getProperties().entrySet().iterator();
-            Entry<String, Object> ret = null;
-            while (it.hasNext()) {
-                ret = it.next();
-
-            }
-            return ret;
-
         }
 
         public Class<?> getColumnClass(int c) {
