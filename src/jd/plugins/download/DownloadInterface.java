@@ -234,9 +234,9 @@ abstract public class DownloadInterface {
                     con = br.openGetConnection(connection.getURL() + "");
                 }
                 if (!con.isOK()) {
-                    if (con.getResponseCode() != 416){
+                    if (con.getResponseCode() != 416) {
                         error(LinkStatus.ERROR_DOWNLOAD_FAILED, "Server: " + con.getResponseMessage());
-                    }else{
+                    } else {
                         logger.warning("HTTP 416, maybe finished last chunk?");
                     }
                     return null;
@@ -740,103 +740,157 @@ abstract public class DownloadInterface {
             plugin.setCurrentConnections(plugin.getCurrentConnections() - 1);
             addToChunksInProgress(-1);
 
-            boolean allConnected = true;
-            synchronized (DownloadInterface.this.chunks) {
-                for (Chunk chunk : DownloadInterface.this.chunks) {
-                    if (chunk.connection == null || !chunk.connection.isConnected()) {
-                        allConnected = false;
-                        break;
-                    }
+            while (true) {
+                /*
+                 * schließt die erste connection erst wenn alle andren gestartet
+                 * wurden
+                 */
+                if (chunksStarted == chunkNum) break;
+
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                    break;
                 }
-            }
-            if (connection != null && allConnected) {
-                this.connection.disconnect();
+                if (this.isExternalyAborted()) break;
             }
 
-            if (connection != null && this.isExternalyAborted()) {
+            if (connection != null && connection.isConnected()) {
                 this.connection.disconnect();
             }
             onChunkFinished();
         }
 
         public void run0() {
+            boolean addedtoStartedChunks = false;
+            try {
+                logger.finer("Start Chunk " + getID() + " : " + startByte + " - " + endByte);
+                if (startByte >= endByte && endByte > 0 || startByte >= getFileSize() && endByte > 0) {
+                    // Korrektur Byte
+                    // logger.severe("correct -1 byte");
+                    // addToTotalLinkBytesLoaded(-1);
+                    return;
+                }
 
-            logger.finer("Start Chunk " + getID() + " : " + startByte + " - " + endByte);
-            if (startByte >= endByte && endByte > 0 || startByte >= getFileSize() && endByte > 0) {
-                // Korrektur Byte
-                // logger.severe("correct -1 byte");
-                // addToTotalLinkBytesLoaded(-1);
-                return;
-            }
+                if (chunkNum > 1) {
+                    // if (getPreBytes(this) > 0) {
+                    // loadPreBytes();
+                    // if (speedDebug) {
+                    // logger.finer("After prebytes: " + startByte + " - " +
+                    // endByte);
+                    // }
+                    // }
+                    connection = copyConnection(connection);
 
-            if (chunkNum > 1) {
-                // if (getPreBytes(this) > 0) {
-                // loadPreBytes();
-                // if (speedDebug) {
-                // logger.finer("After prebytes: " + startByte + " - " +
-                // endByte);
-                // }
-                // }
-                connection = copyConnection(connection);
+                    if (connection == null) {
 
-                if (connection == null) {
+                        // workaround für fertigen endchunk
+                        if (startByte >= fileSize && fileSize > 0) {
 
-                    // workaround für fertigen endchunk
-                    if (startByte >= fileSize && fileSize > 0) {
-
-                        downloadLink.getLinkStatus().removeStatus(LinkStatus.ERROR_DOWNLOAD_FAILED);
-                        logger.finer("Is no error. Last chunk is just already finished");
+                            downloadLink.getLinkStatus().removeStatus(LinkStatus.ERROR_DOWNLOAD_FAILED);
+                            logger.finer("Is no error. Last chunk is just already finished");
+                            return;
+                        }
+                        error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDL.L("download.error.message.connectioncopyerror", "Could not clone the connection"));
+                        logger.severe("ERROR Chunk (connection copy failed) " + chunks.indexOf(this));
                         return;
                     }
-                    error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDL.L("download.error.message.connectioncopyerror", "Could not clone the connection"));
-                    logger.severe("ERROR Chunk (connection copy failed) " + chunks.indexOf(this));
-                    return;
-                }
 
-            } else if (startByte > 0) {
-                connection = copyConnection(connection);
+                } else if (startByte > 0) {
+                    connection = copyConnection(connection);
 
-                if (connection == null) {
-                    error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDL.L("download.error.message.connectioncopyerror", "Could not clone the connection"));
-                    logger.severe("ERROR Chunk (connection copy failed) " + chunks.indexOf(this));
-                    return;
-                }
+                    if (connection == null) {
+                        error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDL.L("download.error.message.connectioncopyerror", "Could not clone the connection"));
+                        logger.severe("ERROR Chunk (connection copy failed) " + chunks.indexOf(this));
+                        return;
+                    }
 
-                if (startByte > 0 && (connection.getHeaderField("Content-Range") == null || connection.getHeaderField("Content-Range").length() == 0)) {
-                    error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDL.L("download.error.message.rangeheaders", "Server does not support chunkload"));
-                    logger.severe("ERROR Chunk (no range header response)" + chunks.indexOf(this));
-                    // logger.finest(connection.toString());
-                    return;
-
-                }
-            }
-
-            // Content-Range=[133333332-199999999/200000000]}
-            if (startByte > 0) {
-                String[][] range = new Regex(connection.getHeaderField("Content-Range"), ".*?(\\d+).*?-.*?(\\d+).*?/.*?(\\d+)").getMatches();
-                if (speedDebug) {
-                    logger.finer("Range Header " + connection.getHeaderField("Content-Range"));
-                }
-
-                if (range == null && chunkNum > 1) {
-                    if (dl.fakeContentRangeHeader()) {
-                        logger.severe("Using fakeContentRangeHeader");
+                    if (startByte > 0 && (connection.getHeaderField("Content-Range") == null || connection.getHeaderField("Content-Range").length() == 0)) {
+                        error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDL.L("download.error.message.rangeheaders", "Server does not support chunkload"));
+                        logger.severe("ERROR Chunk (no range header response)" + chunks.indexOf(this));
                         // logger.finest(connection.toString());
-                        String[][] fixrange = new Regex(connection.getRequestProperty("Range"), ".*?(\\d+).*?-.*?(\\d+)?").getMatches();
+                        return;
 
-                        long gotSB = Formatter.filterLong(fixrange[0][0]);
-                        long gotEB;
-                        if (fixrange[0][1] == null) {
-                            gotEB = Formatter.filterLong(fixrange[0][0]) + connection.getLongContentLength() - 1;
+                    }
+                }
+
+                // Content-Range=[133333332-199999999/200000000]}
+                if (startByte > 0) {
+                    String[][] range = new Regex(connection.getHeaderField("Content-Range"), ".*?(\\d+).*?-.*?(\\d+).*?/.*?(\\d+)").getMatches();
+                    if (speedDebug) {
+                        logger.finer("Range Header " + connection.getHeaderField("Content-Range"));
+                    }
+
+                    if (range == null && chunkNum > 1) {
+                        if (dl.fakeContentRangeHeader()) {
+                            logger.severe("Using fakeContentRangeHeader");
+                            // logger.finest(connection.toString());
+                            String[][] fixrange = new Regex(connection.getRequestProperty("Range"), ".*?(\\d+).*?-.*?(\\d+)?").getMatches();
+
+                            long gotSB = Formatter.filterLong(fixrange[0][0]);
+                            long gotEB;
+                            if (fixrange[0][1] == null) {
+                                gotEB = Formatter.filterLong(fixrange[0][0]) + connection.getLongContentLength() - 1;
+                            } else {
+                                gotEB = Formatter.filterLong(fixrange[0][1]);
+                            }
+                            if (gotSB != startByte) {
+                                logger.severe("Range Conflict " + gotSB + " - " + gotEB + " wished start: " + 0);
+                            }
+
+                            if (endByte <= 0) {
+                                endByte = gotEB - 1;
+                            }
+                            if (gotEB == endByte) {
+                                logger.finer("ServerType: RETURN Rangeend-1");
+                            } else if (gotEB == endByte + 1) {
+                                logger.finer("ServerType: RETURN exact rangeend");
+                            }
+                            if (gotEB < endByte) {
+                                logger.severe("Range Conflict");
+                            }
+                            if (gotEB > endByte + 1) {
+                                logger.warning("Possible RangeConflict or Servermisconfiguration. wished endByte: " + endByte + " got: " + gotEB);
+                            }
+
+                            if (chunks.indexOf(this) == chunkNum - 1) {
+                                logger.severe("Use Workaround for wrong last range!");
+                                endByte = Math.max(endByte, gotEB);
+                            } else {
+                                endByte = Math.min(endByte, gotEB);
+                            }
+
+                            if (gotSB == gotEB) {
+                                // schon fertig
+                                return;
+                            }
+
+                            if (speedDebug) {
+                                logger.finer("Resulting Range" + startByte + " - " + endByte);
+                            }
                         } else {
-                            gotEB = Formatter.filterLong(fixrange[0][1]);
+                            if (connection.getLongContentLength() == startByte) {
+                                // schon fertig
+                                return;
+                            }
+                            error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDL.L("download.error.message.rangeheaderparseerror", "Unexpected rangeheader format:") + connection.getHeaderField("Content-Range"));
+                            logger.severe("ERROR Chunk (range header parse error)" + chunks.indexOf(this) + connection.getHeaderField("Content-Range") + ": " + connection.getHeaderField("Content-Range"));
+                            // logger.finest(connection.toString());
+                            return;
                         }
+                    } else if (range != null) {
+                        long gotSB = Formatter.filterLong(range[0][0]);
+                        long gotEB = Formatter.filterLong(range[0][1]);
+                        long gotS = Formatter.filterLong(range[0][2]);
                         if (gotSB != startByte) {
-                            logger.severe("Range Conflict " + gotSB + " - " + gotEB + " wished start: " + 0);
+                            logger.severe("Range Conflict " + range[0][0] + " - " + range[0][1] + " wished start: " + 0);
+                            // logger.finest(connection.toString());
                         }
 
                         if (endByte <= 0) {
-                            endByte = gotEB - 1;
+                            endByte = gotS - 1;
                         }
                         if (gotEB == endByte) {
                             logger.finer("ServerType: RETURN Rangeend-1");
@@ -844,97 +898,51 @@ abstract public class DownloadInterface {
                             logger.finer("ServerType: RETURN exact rangeend");
                         }
                         if (gotEB < endByte) {
-                            logger.severe("Range Conflict");
+                            logger.severe("Range Conflict " + range[0] + " - " + range[1] + " wishedend: " + endByte);
+                            // logger.finest(connection.toString());
                         }
                         if (gotEB > endByte + 1) {
                             logger.warning("Possible RangeConflict or Servermisconfiguration. wished endByte: " + endByte + " got: " + gotEB);
+                            // logger.finest(connection.toString());
                         }
 
-                        if (chunks.indexOf(this) == chunkNum - 1) {
-                            logger.severe("Use Workaround for wrong last range!");
-                            endByte = Math.max(endByte, gotEB);
-                        } else {
-                            endByte = Math.min(endByte, gotEB);
-                        }
-
-                        if (gotSB == gotEB) {
-                            // schon fertig
-                            return;
-                        }
+                        endByte = Math.min(endByte, gotEB);
 
                         if (speedDebug) {
                             logger.finer("Resulting Range" + startByte + " - " + endByte);
                         }
                     } else {
-                        if (connection.getLongContentLength() == startByte) {
-                            // schon fertig
-                            return;
+                        endByte = connection.getLongContentLength() - 1;
+                        if (speedDebug) {
+                            logger.finer("Endbyte set to " + endByte);
                         }
-                        error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDL.L("download.error.message.rangeheaderparseerror", "Unexpected rangeheader format:") + connection.getHeaderField("Content-Range"));
-                        logger.severe("ERROR Chunk (range header parse error)" + chunks.indexOf(this) + connection.getHeaderField("Content-Range") + ": " + connection.getHeaderField("Content-Range"));
-                        // logger.finest(connection.toString());
-                        return;
                     }
-                } else if (range != null) {
-                    long gotSB = Formatter.filterLong(range[0][0]);
-                    long gotEB = Formatter.filterLong(range[0][1]);
-                    long gotS = Formatter.filterLong(range[0][2]);
-                    if (gotSB != startByte) {
-                        logger.severe("Range Conflict " + range[0][0] + " - " + range[0][1] + " wished start: " + 0);
-                        // logger.finest(connection.toString());
-                    }
-
-                    if (endByte <= 0) {
-                        endByte = gotS - 1;
-                    }
-                    if (gotEB == endByte) {
-                        logger.finer("ServerType: RETURN Rangeend-1");
-                    } else if (gotEB == endByte + 1) {
-                        logger.finer("ServerType: RETURN exact rangeend");
-                    }
-                    if (gotEB < endByte) {
-                        logger.severe("Range Conflict " + range[0] + " - " + range[1] + " wishedend: " + endByte);
-                        // logger.finest(connection.toString());
-                    }
-                    if (gotEB > endByte + 1) {
-                        logger.warning("Possible RangeConflict or Servermisconfiguration. wished endByte: " + endByte + " got: " + gotEB);
-                        // logger.finest(connection.toString());
-                    }
-
-                    endByte = Math.min(endByte, gotEB);
-
-                    if (speedDebug) {
-                        logger.finer("Resulting Range" + startByte + " - " + endByte);
-                    }
-                } else {
+                }
+                if (endByte <= 0) {
                     endByte = connection.getLongContentLength() - 1;
                     if (speedDebug) {
                         logger.finer("Endbyte set to " + endByte);
                     }
                 }
-            }
-            if (endByte <= 0) {
-                endByte = connection.getLongContentLength() - 1;
-                if (speedDebug) {
-                    logger.finer("Endbyte set to " + endByte);
+
+                if (isInterrupted() || downloadLink.isAborted()) {
+                    userInterrupt = true;
                 }
+                addChunksDownloading(+1);
+                addChunksStarted(+1);
+                addedtoStartedChunks = true;
+                download();
+                bytesPerSecond = 0;
+                desiredBps = 0;
+                addChunksDownloading(-1);
+
+                if (isInterrupted() || downloadLink.isAborted()) {
+                    logger.severe("ABBORTED BY USER");
+                }
+                logger.finer("Chunk finished " + chunks.indexOf(this) + " " + getBytesLoaded() + " bytes");
+            } finally {
+                if (!addedtoStartedChunks) addChunksStarted(+1);
             }
-
-            if (isInterrupted() || downloadLink.isAborted()) {
-                userInterrupt = true;
-            }
-            addChunksDownloading(+1);
-
-            download();
-            bytesPerSecond = 0;
-            desiredBps = 0;
-            addChunksDownloading(-1);
-
-            if (isInterrupted() || downloadLink.isAborted()) {
-                logger.severe("ABBORTED BY USER");
-            }
-            logger.finer("Chunk finished " + chunks.indexOf(this) + " " + getBytesLoaded() + " bytes");
-
         }
 
         /**
@@ -972,6 +980,10 @@ abstract public class DownloadInterface {
             }
             try {
                 source.close();
+            } catch (Exception e) {
+            }
+            try {
+                if (connection != null && connection.isConnected()) connection.disconnect();
             } catch (Exception e) {
             }
             logger.info("Closed connection before closing file");
@@ -1043,6 +1055,8 @@ abstract public class DownloadInterface {
 
     private boolean firstChunkRangeless;
 
+    private int chunksStarted = 0;
+
     // public DownloadInterface(PluginForHost plugin, DownloadLink downloadLink,
     // HTTPConnection urlConnection) {
     // this(plugin, downloadLink);
@@ -1066,6 +1080,11 @@ abstract public class DownloadInterface {
 
     public void setFilenameFix(boolean b) {
         this.fixWrongContentDispositionHeader = b;
+    }
+
+    public synchronized void addChunksStarted(int i) {
+        chunksStarted += i;
+
     }
 
     public boolean fixFilename() {
@@ -1343,7 +1362,6 @@ abstract public class DownloadInterface {
     protected synchronized void addChunksDownloading(long i) {
 
         chunksDownloading += i;
-
     }
 
     protected void addException(Exception e) {
@@ -1353,9 +1371,8 @@ abstract public class DownloadInterface {
         exceptions.add(e);
     }
 
-    public synchronized void addToChunksInProgress(long i) {
-        chunksInProgress += i;
-
+    public synchronized void addToChunksInProgress(long i) {        
+        chunksInProgress += i;        
     }
 
     protected synchronized void addToTotalLinkBytesLoaded(long block) {
@@ -1822,6 +1839,7 @@ abstract public class DownloadInterface {
         // }
         try {
             linkStatus.addStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
+            this.chunksStarted = 0;
             setupChunks();
             waitForChunks();
             onChunksReady();
@@ -1897,7 +1915,7 @@ abstract public class DownloadInterface {
                 if (waitFlag) {
                     try {
                         this.wait(interval);
-                    } catch (Exception e) {
+                    } catch (Exception e) {                       
                         // logger.log(Level.SEVERE,"Exception occurred",e);
                         Iterator<Chunk> it = chunks.iterator();
                         while (it.hasNext()) {

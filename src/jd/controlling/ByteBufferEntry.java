@@ -34,8 +34,7 @@ public class ByteBufferEntry {
 
     private ByteBufferEntry(int size) {
         this.size = size;
-        buffer = ByteBuffer.allocateDirect(size);
-        System.out.println("buffer is direct " + buffer.isDirect());
+        buffer = ByteBuffer.allocateDirect(size);        
         clear();
     }
 
