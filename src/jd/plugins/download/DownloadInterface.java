@@ -234,7 +234,11 @@ abstract public class DownloadInterface {
                     con = br.openGetConnection(connection.getURL() + "");
                 }
                 if (!con.isOK()) {
-                    error(LinkStatus.ERROR_DOWNLOAD_FAILED, "Server: " + con.getResponseMessage());
+                    if (con.getResponseCode() != 416){
+                        error(LinkStatus.ERROR_DOWNLOAD_FAILED, "Server: " + con.getResponseMessage());
+                    }else{
+                        logger.warning("HTTP 416, maybe finished last chunk?");
+                    }
                     return null;
                 }
                 if (con.getHeaderField("Location") != null) {
@@ -314,7 +318,9 @@ abstract public class DownloadInterface {
                     }
 
                     /* Anfangslimit für Speedregulierung */
-                    bufferInternBuffer.limit(10240);
+                    if (bufferInternBuffer.capacity() > 10240) {
+                        bufferInternBuffer.limit(10240);
+                    }
                     while ((bytes < buffer.size()) && !isExternalyAborted() && (System.currentTimeMillis() - timer < ti)) {
 
                         /* stückchenweise vergrößern des buffers */
@@ -776,7 +782,7 @@ abstract public class DownloadInterface {
                 if (connection == null) {
 
                     // workaround für fertigen endchunk
-                    if (startByte >= fileSize && fileSize > 0 && downloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_DOWNLOAD_FAILED)) {
+                    if (startByte >= fileSize && fileSize > 0) {
 
                         downloadLink.getLinkStatus().removeStatus(LinkStatus.ERROR_DOWNLOAD_FAILED);
                         logger.finer("Is no error. Last chunk is just already finished");
