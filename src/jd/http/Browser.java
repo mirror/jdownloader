@@ -62,15 +62,30 @@ public class Browser {
 
         private static final long serialVersionUID = 1509988898224037320L;
         private URLConnectionAdapter connection;
+        private Exception e = null;
 
         public BrowserException(String string) {
             super(string);
+        }
 
+        public BrowserException(String string, Exception e) {
+            this(string);
+            this.e = e;
         }
 
         public BrowserException(String message, URLConnectionAdapter con) {
             this(message);
             connection = con;
+        }
+
+        public BrowserException(String message, URLConnectionAdapter con, Exception e) {
+            this(message, con);
+            this.e = e;
+        }
+
+        public BrowserException closeConnection() {
+            if (connection != null && connection.isConnected()) connection.disconnect();
+            return this;
         }
 
         /**
@@ -82,8 +97,8 @@ public class Browser {
             return connection;
         }
 
-        public void setConnection(URLConnectionAdapter connection) {
-            this.connection = connection;
+        public Exception getException() {
+            return e;
         }
 
     }
@@ -419,7 +434,7 @@ public class Browser {
         if (request == null || request.getHttpConnection() == null || request.getHttpConnection().getHeaderField("Content-Length") == null) return;
         if (Long.parseLong(request.getHttpConnection().getHeaderField("Content-Length")) > limit) {
             JDLogger.getLogger().severe(request.printHeaders());
-            throw new BrowserException("Content-length too big");
+            throw new BrowserException("Content-length too big", request.getHttpConnection());
         }
     }
 
@@ -957,11 +972,10 @@ public class Browser {
             } else {
                 ret = Request.read(con);
             }
+        } catch (BrowserException e) {
+            throw e;
         } catch (IOException e) {
-            BrowserException ee = new BrowserException(e.getMessage(), con);
-            ee.initCause(e);
-            if (con != null) con.disconnect();
-            throw ee;
+            throw new BrowserException(e.getMessage(), con, e).closeConnection();
         }
         if (isVerbose()) JDLogger.getLogger().finest("\r\n" + ret + "\r\n");
 
@@ -1242,7 +1256,7 @@ public class Browser {
                         continue;
                     }
                 }
-                if (maxRedirects <= 0) { throw new BrowserException("Redirectloop"); }
+                if (maxRedirects <= 0) { throw new BrowserException("Redirectloop", this.getHttpConnection()); }
 
             }
         }
@@ -1269,7 +1283,7 @@ public class Browser {
                         continue;
                     }
                 }
-                if (maxRedirects <= 0) { throw new BrowserException("Redirectloop"); }
+                if (maxRedirects <= 0) { throw new BrowserException("Redirectloop", this.getHttpConnection()); }
             }
         }
         if (downloadLink.getPlugin().getBrowser() == this) {
@@ -1296,7 +1310,7 @@ public class Browser {
                         continue;
                     }
                 }
-                if (maxRedirects <= 0) { throw new BrowserException("Redirectloop"); }
+                if (maxRedirects <= 0) { throw new BrowserException("Redirectloop", this.getHttpConnection()); }
 
             }
         }
@@ -1324,7 +1338,7 @@ public class Browser {
                         continue;
                     }
                 }
-                if (maxRedirects <= 0) { throw new BrowserException("Redirectloop"); }
+                if (maxRedirects <= 0) { throw new BrowserException("Redirectloop", this.getHttpConnection()); }
 
             }
         }
@@ -1352,7 +1366,7 @@ public class Browser {
                         continue;
                     }
                 }
-                if (maxRedirects <= 0) { throw new BrowserException("Redirectloop"); }
+                if (maxRedirects <= 0) { throw new BrowserException("Redirectloop", this.getHttpConnection()); }
             }
         }
         if (downloadLink.getPlugin().getBrowser() == this) {

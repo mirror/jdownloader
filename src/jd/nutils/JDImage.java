@@ -47,7 +47,7 @@ public class JDImage {
 
     public static ImageIcon iconToImage(Icon icon) {
         if (icon == null) return null;
-        if (false && icon instanceof ImageIcon) {
+        if (icon instanceof ImageIcon) {
             return ((ImageIcon) icon);
         } else {
             int w = icon.getIconWidth();

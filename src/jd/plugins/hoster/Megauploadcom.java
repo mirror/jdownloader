@@ -89,12 +89,14 @@ public class Megauploadcom extends PluginForHost {
             try {
                 tbr.getPage("http://www.megaupload.com");
                 wwwWorkaround = "www.";
-            } catch (UnknownHostException e) {                
-                logger.info("Using Workaround for Megaupload DNS Problem!");
-                wwwWorkaround = "";
-            } catch (Exception e) {
-                e.printStackTrace();
-                wwwWorkaround = "";
+            } catch (IOException e) {
+                if (e instanceof UnknownHostException) {
+                    logger.info("Using Workaround for Megaupload DNS Problem!");
+                    wwwWorkaround = "";
+                } else {
+                    e.printStackTrace();
+                    wwwWorkaround = "";
+                }
             }
         }
     }

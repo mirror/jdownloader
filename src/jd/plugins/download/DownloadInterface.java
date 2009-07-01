@@ -751,7 +751,7 @@ abstract public class DownloadInterface {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
                     // TODO Auto-generated catch block
-                    e.printStackTrace();
+                    //e.printStackTrace();
                     break;
                 }
                 if (this.isExternalyAborted()) break;
