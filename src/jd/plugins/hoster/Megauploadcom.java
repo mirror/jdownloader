@@ -91,6 +91,8 @@ public class Megauploadcom extends PluginForHost {
                 logger.info("Using Workaround for Megaupload DNS Problem!");
                 wwwWorkaround = "";
             } catch (Exception e) {
+                e.printStackTrace();
+                wwwWorkaround = "";
             }
         }
     }
