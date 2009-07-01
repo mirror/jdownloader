@@ -66,7 +66,6 @@ public class Config {
     private void sort() {
         Collections.sort(configs, new Comparator<SubConfiguration>() {
 
-           
             public int compare(SubConfiguration o1, SubConfiguration o2) {
 
                 return o1.toString().compareToIgnoreCase(o2.toString());
@@ -114,7 +113,6 @@ public class Config {
         configSelection.setEditable(true);
         configSelection.addActionListener(new ActionListener() {
 
-         
             public void actionPerformed(ActionEvent e) {
                 if (configSelection.getSelectedItem() instanceof String) {
                     SubConfiguration conf;
@@ -142,7 +140,6 @@ public class Config {
 
         table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
 
-           
             public void valueChanged(ListSelectionEvent e) {
                 int row = table.getSelectedRow();
                 Object key = tableModel.getValueAt(row, 0);
@@ -164,7 +161,6 @@ public class Config {
         add = new JButton(JDTheme.II("gui.images.add", 24, 24));
         add.addActionListener(new ActionListener() {
 
-           
             public void actionPerformed(ActionEvent e) {
                 String key = SimpleUserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN, "Enter Key", "Enter your key use / deliminator to create new sub-maps", "NEW_KEY", null, "Create Entry", "Cancel");
                 if (key == null) { return; }
@@ -217,7 +213,6 @@ public class Config {
         edit.setEnabled(false);
         edit.addActionListener(new ActionListener() {
 
-           
             public void actionPerformed(ActionEvent e) {
                 int row = table.getSelectedRow();
                 Object key = tableModel.getValueAt(row, 0);
@@ -272,7 +267,6 @@ public class Config {
         remove.setEnabled(false);
         remove.addActionListener(new ActionListener() {
 
-           
             public void actionPerformed(ActionEvent e) {
                 int row = table.getSelectedRow();
                 Object key = tableModel.getValueAt(row, 0);
@@ -327,6 +321,7 @@ public class Config {
         frame.add(new JScrollPane(table));
         frame.setVisible(true);
         frame.pack();
+        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
     }
 
@@ -378,17 +373,14 @@ public class Config {
 
         }
 
-       
         public Class<?> getColumnClass(int c) {
             return String.class;
         }
 
-       
         public boolean isCellEditable(int row, int col) {
             return col == 5;
         }
 
-       
         public void setValueAt(Object value, int row, int col) {
             if (col == 2) {
 

@@ -171,6 +171,39 @@ public class JDLookAndFeelManager implements Serializable, JDLabelContainer {
             JDLogger.exception(e);
         }
     }
+    public static void installSynthetica() {
+//        de.javasoft.plaf.synthetica.SyntheticaStandardLookAndFeel
+        String pkg = "de/javasoft/plaf/synthetica";
+        URL res = JDUtilities.getJDClassLoader().getResource(pkg);
+        String url = new Regex(res, "(.*)\\!.*").getMatch(0);
+        url = url.substring(4);
+        try {
+            File file = new File(new URL(url).toURI());
+           
+            JarInputStream jarFile = new JarInputStream(new FileInputStream(file));
+            JarEntry e;
+            while ((e = jarFile.getNextJarEntry()) != null) {
+                if (e.getName().startsWith(pkg)) {
+                    String laf = new Regex(e.getName(), "de/javasoft/plaf/synthetica/(.*?)LookAndFeel\\.class").getMatch(0);
+                
+                    
+                    if (laf != null) {
+
+                        UIManager.installLookAndFeel(laf, "de.javasoft.plaf.synthetica." + laf + "LookAndFeel");
+                    }
+                }
+
+            }
+//            de.javasoft.plaf.synthetica.SyntheticaSkyMetallicLookAndFeel
+//            de.javasoft.plaf.synthetica.SyntheticaWhiteVisionLookAndFeel
+            
+            UIManager.installLookAndFeel("SkyMetallic", "de.javasoft.plaf.synthetica.SyntheticaSkyMetallicLookAndFeel");
+            UIManager.installLookAndFeel("WhiteVision", "de.javasoft.plaf.synthetica.SyntheticaWhiteVisionLookAndFeel");
+            UIManager.installLookAndFeel("SyntheticaBlackMoon", "de.javasoft.plaf.synthetica.SyntheticaBlackMoonLookAndFeel");
+        } catch (Exception e) {
+            JDLogger.exception(e);
+        }
+    }
 
     public static void setUIManager() {
         if (uiInitated) return;
@@ -178,6 +211,8 @@ public class JDLookAndFeelManager implements Serializable, JDLabelContainer {
 
         installJGoodies();
         if (JDUtilities.getJavaVersion() >= 1.6) installSubstance();
+        installSynthetica();
+     
 
         try {
             JDLogger.getLogger().info("Use Look & Feel: " + getPlaf().getClassName());
