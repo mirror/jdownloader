@@ -25,8 +25,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+@HostPlugin(name = "archiv.to", urls = "http://[\\w\\.]*?archiv\\.to/\\?Module\\=Details&HashID\\=.*", flags = 0)
 public class ArchivTo extends PluginForHost {
 
     public ArchivTo(PluginWrapper wrapper) {

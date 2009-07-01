@@ -41,10 +41,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+@HostPlugin(name = "megaporn.com", urls = "http://[\\w\\.]*?(megaporn)\\.com/.*?(\\?|&)d=[\\w]+", flags = 2)
 public class MegaPornCom extends PluginForHost {
 
     private static final String MU_PARAM_PORT = "MU_PARAM_PORT";

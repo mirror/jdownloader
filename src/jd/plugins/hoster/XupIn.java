@@ -26,9 +26,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
+@HostPlugin(name = "xup.in", urls = "http://[\\w\\.]*?xup\\.in/dl,\\d+/?.+?", flags = 0)
 public class XupIn extends PluginForHost {
 
     private static final String AGB_LINK = "http://www.xup.in/terms/";

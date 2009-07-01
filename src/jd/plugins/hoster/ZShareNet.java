@@ -25,8 +25,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+@HostPlugin(name = "zshare.net", urls = "hhttp://[\\w\\.]*?zshare\\.net/(download|video|image|audio|flash)/.*", flags = 0)
 public class ZShareNet extends PluginForHost {
 
     public ZShareNet(PluginWrapper wrapper) {

@@ -26,8 +26,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+@HostPlugin(name = "shareplace.com", urls = "http://[\\w\\.]*?shareplace\\.com/\\?[\\w]+(/.*?)?", flags = 0)
 public class Shareplacecom extends PluginForHost {
 
     private String url;

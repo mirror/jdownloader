@@ -27,8 +27,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+@HostPlugin(name = "wrzuta.pl", urls = "http://[\\w\\.]*?wrzuta\\.pl/(audio|film|obraz)/\\w+.+", flags = 0)
 public class WrzutaPl extends PluginForHost {
 
     private String filetype = null;

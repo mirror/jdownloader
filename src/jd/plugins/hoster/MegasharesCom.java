@@ -36,11 +36,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 /*TODO: Support für andere Linkcards(bestimmte Anzahl Downloads,unlimited usw) einbauen*/
 
+@HostPlugin(name = "megashares.com", urls = "http://[\\w\\.]*?(d[0-9]{2}\\.)?megashares\\.com/(.*\\?d[0-9]{2}=[0-9a-f]{7}|.*?dl/[0-9a-f]+/)", flags = 2)
 public class MegasharesCom extends PluginForHost {
 
     public MegasharesCom(PluginWrapper wrapper) {

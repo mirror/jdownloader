@@ -28,8 +28,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+@HostPlugin(name = "savefile.ro", urls = "http://[\\w\\.]*?savefile\\.ro/[\\w]+/?", flags = 0)
 public class SavefileRo extends PluginForHost {
 
     public SavefileRo(PluginWrapper wrapper) {

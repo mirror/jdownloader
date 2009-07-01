@@ -26,9 +26,11 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
+@HostPlugin(name = "ifolder.ru", urls = "http://[\\-\\w\\.]*?ifolder\\.ru/\\d+", flags = 0)
 public class IfolderRu extends PluginForHost {
 
     public IfolderRu(PluginWrapper wrapper) {

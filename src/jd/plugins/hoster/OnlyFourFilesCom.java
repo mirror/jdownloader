@@ -28,8 +28,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+@HostPlugin(name = "only4files.com", urls = "http://[\\w\\.]*?only4files\\.com/[\\w]+/.*", flags = 0)
 public class OnlyFourFilesCom extends PluginForHost {
 
     public OnlyFourFilesCom(PluginWrapper wrapper) {

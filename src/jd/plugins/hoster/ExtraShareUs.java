@@ -23,8 +23,10 @@ import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+@HostPlugin(name = "extrashare.us", urls = "http://[\\w\\.]*?extrashare.us/file/.+/.+", flags = 0)
 public class ExtraShareUs extends PluginForHost {
 
     public ExtraShareUs(PluginWrapper wrapper) {

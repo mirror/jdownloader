@@ -22,8 +22,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+@HostPlugin(name = "usershare.net", urls = "http://[\\w\\.]*?usershare\\.net/[0-9a-zA-Z.]+", flags = 0)
 public class Usershare extends PluginForHost {
 
     public Usershare(PluginWrapper wrapper) {

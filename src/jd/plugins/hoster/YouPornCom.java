@@ -22,8 +22,10 @@ import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+@HostPlugin(name = "youporn.com", urls = "http://download\\.youporn\\.com/download/\\d+.*", flags = 0)
 public class YouPornCom extends PluginForHost {
 
     public YouPornCom(PluginWrapper wrapper) {

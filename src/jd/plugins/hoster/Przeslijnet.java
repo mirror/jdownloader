@@ -25,8 +25,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+@HostPlugin(name = "przeslij.net", urls = "http://www[\\d]?\\.przeslij\\.net/download\\.php\\?file=(.*)", flags = 0)
 public class Przeslijnet extends PluginForHost {
 
     public Przeslijnet(PluginWrapper wrapper) {

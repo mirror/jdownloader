@@ -26,9 +26,11 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
+@HostPlugin(name = "ziddu.com", urls = "hhttp://[\\w\\.]*?ziddu\\.com/((download(file)?/\\d+/.+)|(download\\.php\\?uid=.+))", flags = 0)
 public class ZidduCom extends PluginForHost {
 
     public ZidduCom(PluginWrapper wrapper) {

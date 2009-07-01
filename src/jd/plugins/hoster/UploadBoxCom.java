@@ -23,8 +23,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+@HostPlugin(name = "uploadbox.com", urls = "http://[\\w\\.]*?uploadbox\\.com/.*?files/[0-9a-zA-Z]+", flags = 0)
 public class UploadBoxCom extends PluginForHost {
 
     public UploadBoxCom(PluginWrapper wrapper) {

@@ -27,10 +27,12 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDMediaConvert;
 import jd.utils.locale.JDL;
 
+@HostPlugin(name = "youtube.com", urls = "http://[\\w\\.]*?youtube\\.com/get_video\\?video_id=.+&t=.+(&fmt=\\d+)?", flags = 2)
 public class Youtube extends PluginForHost {
 
     public Youtube(PluginWrapper wrapper) {

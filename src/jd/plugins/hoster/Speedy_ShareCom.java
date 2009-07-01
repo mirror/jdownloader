@@ -28,9 +28,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
+@HostPlugin(name = "speedy-share.com", urls = "http://[\\w\\.]*?speedy\\-share\\.com/[\\w]+/(.*)", flags = 0)
 public class Speedy_ShareCom extends PluginForHost {
 
     private String postdata;

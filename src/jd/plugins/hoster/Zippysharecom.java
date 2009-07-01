@@ -28,8 +28,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+@HostPlugin(name = "zippyshare.com", urls = "http://www\\d{0,}\\.zippyshare\\.com/(v/\\d+/file\\.html|.*?key=\\d+)", flags = 0)
 public class Zippysharecom extends PluginForHost {
 
     public Zippysharecom(PluginWrapper wrapper) {

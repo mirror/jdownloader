@@ -26,8 +26,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+@HostPlugin(name = "leteckaposta.cz", urls = "http://[\\w\\.]*?leteckaposta\\.cz/[0-9]+.", flags = 0)
 public class LeteckaPostaCz extends PluginForHost {
 
     public LeteckaPostaCz(PluginWrapper wrapper) {

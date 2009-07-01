@@ -28,8 +28,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+@HostPlugin(name = "sharearound.com", urls = "http://[\\w\\.]*?sharearound\\.com/[\\w]+/.*", flags = 0)
 public class SharearoundCom extends PluginForHost {
 
     public SharearoundCom(PluginWrapper wrapper) {

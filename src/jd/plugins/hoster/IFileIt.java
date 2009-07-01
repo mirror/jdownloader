@@ -26,8 +26,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+@HostPlugin(name = "ifile.it", urls = "http://[\\w\\.]*?ifile\\.it/[\\w]+/?", flags = 0)
 public class IFileIt extends PluginForHost {
 
     public IFileIt(PluginWrapper wrapper) {

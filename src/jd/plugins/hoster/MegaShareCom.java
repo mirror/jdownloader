@@ -24,8 +24,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+@HostPlugin(name = "megashare.com", urls = "http://files.filefront\\.com/[^\\s]+/;\\d+(;/fileinfo.html|;)", flags = 0)
 public class MegaShareCom extends PluginForHost {
 
     public MegaShareCom(PluginWrapper wrapper) {

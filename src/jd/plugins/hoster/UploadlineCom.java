@@ -29,9 +29,11 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
+@HostPlugin(name = "uploadline.com", urls = "http://[\\w\\.]*?uploadline\\.com/\\d+/.+", flags = 0)
 public class UploadlineCom extends PluginForHost {
 
     public UploadlineCom(PluginWrapper wrapper) {

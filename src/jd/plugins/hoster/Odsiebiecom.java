@@ -31,9 +31,11 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
+@HostPlugin(name = "odsiebie.com", urls = "http://[\\w\\.]*?odsiebie\\.com/(pokaz|pobierz)/\\d+---[\\w]+", flags = 2)
 public class Odsiebiecom extends PluginForHost {
 
     public Odsiebiecom(PluginWrapper wrapper) {

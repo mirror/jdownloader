@@ -27,8 +27,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+@HostPlugin(name = "zomgupload.com", urls = "http://[\\w\\.]*?zomgupload\\.com/.+[/0-9a-zA-Z]+.html", flags = 0)
 public class ZomgUploadCom extends PluginForHost {
 
     public ZomgUploadCom(PluginWrapper wrapper) {

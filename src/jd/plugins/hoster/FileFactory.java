@@ -30,9 +30,11 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
+@HostPlugin(name = "filefactory.com", urls = "http://[\\w\\.]*?rapidshare\\.com/files/[\\d]{3,9}/?.+", flags = 2)
 public class FileFactory extends PluginForHost {
 
     private static Pattern baseLink = Pattern.compile("action=\"(\\/dlf.*).\\ ", Pattern.CASE_INSENSITIVE);

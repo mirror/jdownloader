@@ -27,9 +27,11 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDMediaConvert;
 
+@HostPlugin(name = "spiegel.de", urls = "http://video\\.spiegel\\.de/flash/.+?\\.flv|http://video\\.promobil2spiegel\\.netbiscuits\\.com/.+?\\.(3gp|mp4)|http://www.spiegel.de/img/.+?(\\.\\w+)", flags = 0)
 public class SpiegelDe extends PluginForHost {
 
     private static final String AGB_LINK = "http://www.spiegel.de/agb";

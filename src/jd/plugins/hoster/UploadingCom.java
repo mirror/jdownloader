@@ -32,9 +32,11 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
+@HostPlugin(name = "uploading.com", urls = "http://[\\w\\.]*?uploading\\.com/files/\\w+/.+", flags = 2)
 public class UploadingCom extends PluginForHost {
     private static int simultanpremium = 1;
 

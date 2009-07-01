@@ -26,8 +26,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+@HostPlugin(name = "filefactory.pl", urls = "http://[\\w\\.]*?filefactory\\.pl/showfile-\\d+.+", flags = 0)
 public class FileFactoryPl extends PluginForHost {
 
     public FileFactoryPl(PluginWrapper wrapper) {

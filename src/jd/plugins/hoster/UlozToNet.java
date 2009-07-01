@@ -25,8 +25,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+@HostPlugin(name = "ulozto.net", urls = "http://[\\w\\.]*?(ulozto\\.net|uloz\\.to)/.+", flags = 0)
 public class UlozToNet extends PluginForHost {
 
     public UlozToNet(PluginWrapper wrapper) {

@@ -26,8 +26,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+@HostPlugin(name = "wrzucaj.com", urls = "http://[\\w\\.]*?wrzucaj\\.com/\\d+", flags = 0)
 public class WrzucajCom extends PluginForHost {
 
     public WrzucajCom(PluginWrapper wrapper) {

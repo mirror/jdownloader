@@ -27,8 +27,10 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+@HostPlugin(name = "r-b-a.de", urls = "http://www[\\d]?\\.przeslij\\.net/download\\.php\\?file=(.*)", flags = 0)
 public class RbaDe extends PluginForHost {
 
     private static final String AGB_LINK = "http://www.r-b-a.de/index.php?ID=3003";

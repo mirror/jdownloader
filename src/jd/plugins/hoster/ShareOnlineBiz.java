@@ -30,12 +30,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
 
+@HostPlugin(name = "share-online.biz", urls = "http://[\\w\\.]*?share\\-online\\.biz/download.php\\?id\\=[\\w]+", flags = 2)
 public class ShareOnlineBiz extends PluginForHost {
 
     public ShareOnlineBiz(PluginWrapper wrapper) {

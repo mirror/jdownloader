@@ -26,12 +26,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
 
+@HostPlugin(name = "mediafire.com", urls = "http://[\\w\\.]*?mediafire\\.com/(download\\.php\\?.+|\\?.+|file/.+)", flags = 0)
 public class MediafireCom extends PluginForHost {
 
     static private final String offlinelink = "tos_aup_violation";

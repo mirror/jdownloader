@@ -28,9 +28,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
+@HostPlugin(name = "jamendo.com", urls = "http://[\\w\\.]*?jamendo\\.com/.*.*/?(track|download/album)/\\d+", flags = 0)
 public class JamendoCom extends PluginForHost {
 
     private static String PREFER_HIGHQUALITY = "PREFER_HIGHQUALITY";

@@ -21,8 +21,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+@HostPlugin(name = "myupload.dk", urls = "http://[\\w\\.]*?myupload\\.dk/showfile/[0-9a-fA-F]+", flags = 0)
 public class MyuploadDK extends PluginForHost {
 
     public MyuploadDK(PluginWrapper wrapper) {

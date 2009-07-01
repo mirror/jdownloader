@@ -26,12 +26,14 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 /**
  * @author zdolny fixes by djuzi
  */
+@HostPlugin(name = "linkfile.de", urls = "http://[\\w\\.]*?linkfile.de/download-[\\w]+\\.php", flags = 0)
 public class LinkFileDe extends PluginForHost {
 
     public LinkFileDe(PluginWrapper wrapper) {

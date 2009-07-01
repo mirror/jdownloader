@@ -25,9 +25,11 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
+@HostPlugin(name = "hostuje.net", urls = "http://[\\w\\.]*?zomgupload\\.com/.+[/0-9a-zA-Z]+.html", flags = 0)
 public class HostUjeNet extends PluginForHost {
 
     public HostUjeNet(PluginWrapper wrapper) {

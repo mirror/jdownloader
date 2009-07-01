@@ -28,8 +28,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+@HostPlugin(name = "uploadcell.com", urls = "http://[w.]*?biggerupload.com/[w]+/?.*", flags = 0)
 public class UploadcellCom extends PluginForHost {
 
     public UploadcellCom(PluginWrapper wrapper) {

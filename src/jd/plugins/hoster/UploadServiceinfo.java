@@ -28,8 +28,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+@HostPlugin(name = "uploadservice.info", urls = "http://[\\w\\.]*?uploadservice\\.info/file/[\\w]+\\.html", flags = 0)
 public class UploadServiceinfo extends PluginForHost {
 
     public UploadServiceinfo(PluginWrapper wrapper) {

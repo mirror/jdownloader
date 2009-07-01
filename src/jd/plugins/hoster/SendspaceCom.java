@@ -30,12 +30,14 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
 
+@HostPlugin(name = "sendspace.com", urls = "http://[\\w\\.]*?sendspace\\.com/file/[0-9a-zA-Z]+", flags = 2)
 public class SendspaceCom extends PluginForHost {
 
     public SendspaceCom(PluginWrapper wrapper) {

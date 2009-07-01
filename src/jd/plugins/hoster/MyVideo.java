@@ -20,9 +20,11 @@ import jd.PluginWrapper;
 import jd.gui.skins.simple.ConvertDialog.ConversionMode;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDMediaConvert;
 
+@HostPlugin(name = "myvideo.de", urls = "http://[\\w\\.]*?myvideo.*?/.*?/\\d+\\.flv", flags = 0)
 public class MyVideo extends PluginForHost {
     static private final String AGB = "http://www.myvideo.de/news.php?rubrik=jjghf&p=hm8";
 

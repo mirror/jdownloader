@@ -27,9 +27,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
+@HostPlugin(name = "2shared.com", urls = "http://[\\w\\.]*?2shared\\.com/file/\\d+/[\\w]+", flags = 0)
 public class TwoSharedCom extends PluginForHost {
 
     public TwoSharedCom(PluginWrapper wrapper) {

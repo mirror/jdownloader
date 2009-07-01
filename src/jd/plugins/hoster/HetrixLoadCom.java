@@ -25,8 +25,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+@HostPlugin(name = "hetrixload.com", urls = "http://[\\w\\.]*?hetrixload\\.com/files/[A-Za-z0-9]+/.+\\.html", flags = 0)
 public class HetrixLoadCom extends PluginForHost {
 
     public HetrixLoadCom(PluginWrapper wrapper) {

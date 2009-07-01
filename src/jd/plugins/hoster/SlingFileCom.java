@@ -25,8 +25,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+@HostPlugin(name = "slingfile.com", urls = "http://[\\w\\.]*?slingfile\\.com/(file|audio|video)/.+", flags = 0)
 public class SlingFileCom extends PluginForHost {
 
     public SlingFileCom(PluginWrapper wrapper) {

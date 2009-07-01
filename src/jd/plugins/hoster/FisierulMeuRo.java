@@ -25,8 +25,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+@HostPlugin(name = "fisierulmeu.ro", urls = "http://[\\w\\.]*?fisierulmeu\\.ro/.+/.+\\.html", flags = 0)
 public class FisierulMeuRo extends PluginForHost {
 
     public FisierulMeuRo(PluginWrapper wrapper) {

@@ -25,8 +25,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+@HostPlugin(name = "fileflyer.com", urls = "http://[\\w\\.]*?fileflyer\\.com/view/[\\w]", flags = 0)
 public class FileFlyerCom extends PluginForHost {
 
     public FileFlyerCom(PluginWrapper wrapper) {

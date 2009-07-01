@@ -31,9 +31,11 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
+@HostPlugin(name = "badongo.com", urls = "(http://[w.]*?meinupload.com/{1,}dl/.+/.+)|(http://[w.]*?meinupload.com/?d=.*)|http://[w.]*?mein-upload.com/[w]+(.html|/)", flags = 2)
 public class BadongoCom extends PluginForHost {
 
     public BadongoCom(PluginWrapper wrapper) {

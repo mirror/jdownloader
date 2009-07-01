@@ -27,8 +27,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+@HostPlugin(name = "speedyshare.com", urls = "http://[\\w\\.]*?speedyshare\\.com/[0-9]+.*", flags = 0)
 public class SpeedyShareCom extends PluginForHost {
 
     public SpeedyShareCom(PluginWrapper wrapper) {

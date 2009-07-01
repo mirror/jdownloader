@@ -34,10 +34,12 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.RAFDownload;
 import jd.utils.locale.JDL;
 
+@HostPlugin(name = "rapidshare.de", urls = "http://[w.]*?rapidshare.de/files/[d]{3,9}/.*", flags = 2)
 public class RapidShareDe extends PluginForHost {
 
     public RapidShareDe(PluginWrapper wrapper) {

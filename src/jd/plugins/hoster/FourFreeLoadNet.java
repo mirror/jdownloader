@@ -33,8 +33,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+@HostPlugin(name = "4freeload.net", urls = "http://[\\w\\.]*?4freeload\\.net/download\\.php\\?id=[A-Fa-f0-9]+", flags = 2)
 public class FourFreeLoadNet extends PluginForHost {
 
     public FourFreeLoadNet(PluginWrapper wrapper) {

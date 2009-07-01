@@ -28,8 +28,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+@HostPlugin(name = "xshareware.com", urls = "http://[\\w\\.]*?xshareware\\.com/[\\w]+/.*", flags = 0)
 public class XsharewareCom extends PluginForHost {
 
     public XsharewareCom(PluginWrapper wrapper) {

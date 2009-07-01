@@ -26,8 +26,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+@HostPlugin(name = "pliczek.net", urls = "http://[\\w\\.]*?pliczek\\.net/index\\.php\\?p=\\d+", flags = 0)
 public class PliczekNet extends PluginForHost {
 
     public PliczekNet(PluginWrapper wrapper) {

@@ -25,8 +25,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+@HostPlugin(name = "self-load.com", urls = "http://[\\w\\.]*?self-load\\.com/\\d+/.+", flags = 0)
 public class SelfLoadCom extends PluginForHost {
     // Info: Hoster übergibt weder korrekten Dateinamen
     // (selbst wählbar über die aufrufende Url)

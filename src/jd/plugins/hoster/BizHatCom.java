@@ -25,8 +25,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+@HostPlugin(name = "bizhat.com", urls = "http://[\\w\\.]*?uploads\\.bizhat\\.com/file/[0-9]+", flags = 0)
 public class BizHatCom extends PluginForHost {
 
     public BizHatCom(PluginWrapper wrapper) {

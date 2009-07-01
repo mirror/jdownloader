@@ -22,8 +22,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+@HostPlugin(name = "vimeo.com", urls = "http://[\\w\\.]*?vimeo\\.com/[0-9]+", flags = 0)
 public class VimeoCom extends PluginForHost {
     static private final String AGB = "http://www.vimeo.com/terms";
     private String clipData;

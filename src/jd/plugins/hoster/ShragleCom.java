@@ -31,8 +31,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+@HostPlugin(name = "shragle.com", urls = "http://[\\w\\.]*?shragle\\.(com|de)/files/[\\w]+/.*", flags = 2)
 public class ShragleCom extends PluginForHost {
 
     static String apikey = "078e5ca290d728fd874121030efb4a0d";

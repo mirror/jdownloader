@@ -24,8 +24,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+@HostPlugin(name = "fastshare.org", urls = "http://[\\w\\.]*?fastshare\\.org/download/(.*)", flags = 0)
 public class FastShareorg extends PluginForHost {
 
     public FastShareorg(PluginWrapper wrapper) {

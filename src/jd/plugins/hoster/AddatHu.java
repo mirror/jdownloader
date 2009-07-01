@@ -23,8 +23,10 @@ import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+@HostPlugin(name = "addat.hu", urls = "http://[\\w\\.]*?addat.hu/.+/.+", flags = 0)
 public class AddatHu extends PluginForHost {
 
     public AddatHu(PluginWrapper wrapper) {

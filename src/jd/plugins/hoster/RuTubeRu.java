@@ -26,8 +26,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+@HostPlugin(name = "rutube.ru", urls = "http://[\\w\\.]*?rutube\\.ru/tracks/\\d+\\.html", flags = 0)
 public class RuTubeRu extends PluginForHost {
 
     public RuTubeRu(PluginWrapper wrapper) {

@@ -26,8 +26,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+@HostPlugin(name = "plikos.pl", urls = "http://[\\w\\.]*?plikos\\.pl/\\w+/.+", flags = 0)
 public class PlikosPl extends PluginForHost {
 
     public PlikosPl(PluginWrapper wrapper) {

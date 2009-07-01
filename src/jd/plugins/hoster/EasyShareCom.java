@@ -32,8 +32,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+@HostPlugin(name = "easy-share.com", urls = "http://[\\w\\d\\.]*?easy-share\\.com/\\d{6}.*", flags = 2)
 public class EasyShareCom extends PluginForHost {
 
     public EasyShareCom(PluginWrapper wrapper) {

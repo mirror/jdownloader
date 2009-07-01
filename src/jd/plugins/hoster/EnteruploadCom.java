@@ -27,8 +27,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+@HostPlugin(name = "enterupload.com", urls = "http://[\\w\\.]*?fileload\\.us/[\\w]+/?", flags = 0)
 public class EnteruploadCom extends PluginForHost {
 
     public EnteruploadCom(PluginWrapper wrapper) {

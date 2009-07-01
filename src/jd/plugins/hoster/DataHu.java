@@ -30,8 +30,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+@HostPlugin(name = "data.hu", urls = "http://[\\w\\.]*?data.hu/get/.+/.+", flags = 2)
 public class DataHu extends PluginForHost {
 
     public DataHu(PluginWrapper wrapper) {

@@ -29,9 +29,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
+@HostPlugin(name = "http links", urls = "https?viajd://[\\d\\w\\.:\\-@]*/.*", flags = 0)
 public class HTTPAllgemein extends PluginForHost {
 
     private String contentType;

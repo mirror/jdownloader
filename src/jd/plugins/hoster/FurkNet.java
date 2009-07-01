@@ -24,8 +24,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+@HostPlugin(name = "furk.net", urls = "http(s)://[\\w\\.]*?furk\\.net/.+[/0-9a-zA-Z]+.html", flags = 0)
 public class FurkNet extends PluginForHost {
 
     public FurkNet(PluginWrapper wrapper) {

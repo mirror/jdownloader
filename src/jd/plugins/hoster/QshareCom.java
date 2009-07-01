@@ -31,8 +31,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+@HostPlugin(name = "qshare.com", urls = "http://[\\w\\.]*?qshare\\.com/get/[0-9]{1,20}/.*", flags = 2)
 public class QshareCom extends PluginForHost {
     public QshareCom(PluginWrapper wrapper) {
         super(wrapper);

@@ -25,8 +25,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+@HostPlugin(name = "dataup.de", urls = "http://[\\w\\.]*?dataup\\.de/\\d+/(.*)", flags = 0)
 public class Dataupde extends PluginForHost {
     public Dataupde(PluginWrapper wrapper) {
         super(wrapper);

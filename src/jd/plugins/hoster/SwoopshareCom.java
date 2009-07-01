@@ -22,8 +22,10 @@ import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+@HostPlugin(name = "swoopshare.com", urls = "http://[\\w\\.]*?swoopshare\\.com/file/.*", flags = 0)
 public class SwoopshareCom extends PluginForHost {
 
     public SwoopshareCom(PluginWrapper wrapper) {

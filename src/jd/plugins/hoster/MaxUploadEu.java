@@ -26,8 +26,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+@HostPlugin(name = "maxupload.eu", urls = "http://[\\w\\.]*?maxupload\\.eu/../\\d+", flags = 0)
 public class MaxUploadEu extends PluginForHost {
 
     public MaxUploadEu(PluginWrapper wrapper) {

@@ -23,8 +23,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+@HostPlugin(name = "duckload.com", urls = "http://[\\w\\.]*?(duckload\\.com|youload\\.to)/download/\\d+/.+", flags = 0)
 public class DuckLoad extends PluginForHost {
 
     public DuckLoad(PluginWrapper wrapper) {

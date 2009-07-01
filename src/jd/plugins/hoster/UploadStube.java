@@ -24,8 +24,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+@HostPlugin(name = "uploadstube.de", urls = "http://[\\w\\.]*?uploadstube\\.de/download\\.php\\?file=.*", flags = 0)
 public class UploadStube extends PluginForHost {
 
     public UploadStube(PluginWrapper wrapper) {

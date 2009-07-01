@@ -33,8 +33,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+@HostPlugin(name = "mooshare.net", urls = "http://[\\w\\.]*?mooshare\\.net/files/\\d+/.*?\\.html", flags = 2)
 public class Moosharenet extends PluginForHost {
 
     public Moosharenet(PluginWrapper wrapper) {
