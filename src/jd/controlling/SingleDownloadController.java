@@ -30,6 +30,7 @@ import jd.event.ControlEvent;
 import jd.gui.skins.simple.AgbDialog;
 import jd.gui.skins.simple.Balloon;
 import jd.gui.skins.simple.GuiRunnable;
+import jd.http.Browser.BrowserException;
 import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -125,7 +126,17 @@ public class SingleDownloadController extends Thread {
             DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
             currentPlugin.init();
             try {
-                currentPlugin.handle(downloadLink);
+                try {
+                    currentPlugin.handle(downloadLink);
+                } catch (BrowserException e) {
+                    /* damit browserexceptions korrekt weitergereicht werden */
+                    e.closeConnection();
+                    if (e.getException() != null) {
+                        throw e.getException();
+                    } else {
+                        throw e;
+                    }
+                }
             } catch (UnknownHostException e) {
                 linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                 linkStatus.setErrorMessage(JDL.L("plugins.errors.nointernetconn", "No Internet connection?"));

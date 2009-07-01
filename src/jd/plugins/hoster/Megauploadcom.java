@@ -88,18 +88,19 @@ public class Megauploadcom extends PluginForHost {
             if (wwwWorkaround != null) return;
             Browser tbr = new Browser();
             try {
+                tbr.setConnectTimeout(10000);
+                tbr.setReadTimeout(10000);
                 tbr.getPage("http://www.megaupload.com");
                 wwwWorkaround = "www.";
             } catch (BrowserException e) {
                 if (e.getException() != null && e.getException() instanceof UnknownHostException) {
                     logger.info("Using Workaround for Megaupload DNS Problem!");
                     wwwWorkaround = "";
-                } else {
-                    e.printStackTrace();
-                    wwwWorkaround = "";
+                    return;
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+            } finally {
+                if (wwwWorkaround == null) wwwWorkaround = "";
             }
         }
     }
