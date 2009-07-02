@@ -22,7 +22,6 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 
-import jd.PluginPattern;
 import jd.config.ConfigPropertyListener;
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -35,6 +34,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.hoster.HTTPAllgemein;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -464,7 +464,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
         name = getNameMatch(name, "(?is).*\\.7z\\.[\\d]+$");
         name = getNameMatch(name, "(.*)\\.a.$");
 
-        name = getNameMatch(name, "(.*)(\\.|_)[\\d]+($|" + PluginPattern.ENDINGS + "$)");
+        name = getNameMatch(name, "(.*)(\\.|_)[\\d]+($|" + HTTPAllgemein.ENDINGS + "$)");
 
         int lastPoint = name.lastIndexOf(".");
         if (lastPoint <= 0) lastPoint = name.lastIndexOf("_");

@@ -31,7 +31,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(name = "load.to", urls = "http://(\\w*\\.)?load\\.to/[\\?d=]?[\\w]+.*", flags = 0)
+@HostPlugin(names = { "load.to"}, urls ={ "http://(\\w*\\.)?load\\.to/[\\?d=]?[\\w]+.*"}, flags = {0})
 public class LoadTo extends PluginForHost {
 
     public LoadTo(PluginWrapper wrapper) {

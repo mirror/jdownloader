@@ -35,7 +35,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(name = "sharebase.to", urls = "http://[\\w\\.]*?sharebase\\.(de|to)/files/[\\w]+\\.html", flags = 2)
+@HostPlugin(names = { "sharebase.to"}, urls ={ "http://[\\w\\.]*?sharebase\\.(de|to)/files/[\\w]+\\.html"}, flags = {2})
 public class ShareBaseTo extends PluginForHost {
 
     public ShareBaseTo(PluginWrapper wrapper) {

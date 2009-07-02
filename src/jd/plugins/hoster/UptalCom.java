@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(name = "uptal.com", urls = "http://[\\w\\.]*?uptal\\.com/\\?d=[A-Fa-f0-9]+", flags = 0)
+@HostPlugin(names = { "uptal.com"}, urls ={ "http://[\\w\\.]*?uptal\\.com/\\?d=[A-Fa-f0-9]+"}, flags = {0})
 public class UptalCom extends PluginForHost {
 
     public UptalCom(PluginWrapper wrapper) {

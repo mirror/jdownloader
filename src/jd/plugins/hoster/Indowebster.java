@@ -27,7 +27,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(name = "indowebster.com", urls = "http://[\\w\\.]*?indowebster\\.com/[^\\s]+\\.html", flags = 0)
+@HostPlugin(names = { "indowebster.com"}, urls ={ "http://[\\w\\.]*?indowebster\\.com/[^\\s]+\\.html"}, flags = {0})
 public class Indowebster extends PluginForHost {
 
     public Indowebster(PluginWrapper wrapper) {

@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(name = "savefile.com", urls = "http://[\\w\\.]*?savefile\\.com/files/[0-9]+", flags = 0)
+@HostPlugin(names = { "savefile.com"}, urls ={ "http://[\\w\\.]*?savefile\\.com/files/[0-9]+"}, flags = {0})
 public class SavefileCom extends PluginForHost {
 
     public SavefileCom(PluginWrapper wrapper) {

@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(name = "wyslijto.pl", urls = "http://[\\w\\.]*?wyslijto\\.pl/(download|files/download|files/pre_download|plik)/\\w+", flags = 0)
+@HostPlugin(names = { "wyslijto.pl"}, urls ={ "http://[\\w\\.]*?wyslijto\\.pl/(download|files/download|files/pre_download|plik)/\\w+"}, flags = {0})
 public class WyslijToPl extends PluginForHost {
 
     public WyslijToPl(PluginWrapper wrapper) {

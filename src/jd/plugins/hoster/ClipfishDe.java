@@ -26,7 +26,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDMediaConvert;
 
-@HostPlugin(name = "clipfish.de", urls = "http://[\\w\\.]*?pg\\d+\\.clipfish\\.de/media/.+?\\.flv", flags = 0)
+@HostPlugin(names = { "clipfish.de"}, urls ={ "http://[\\w\\.]*?pg\\d+\\.clipfish\\.de/media/.+?\\.flv"}, flags = {0})
 public class ClipfishDe extends PluginForHost {
     public ClipfishDe(PluginWrapper wrapper) {
         super(wrapper);

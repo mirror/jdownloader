@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(name = "upmusic.in", urls = "http://[\\w\\.]*?upmusic\\.in/[a-z0-9]+.*?", flags = 0)
+@HostPlugin(names = { "upmusic.in"}, urls ={ "http://[\\w\\.]*?upmusic\\.in/[a-z0-9]+.*?"}, flags = {0})
 public class UpMusicIn extends PluginForHost {
 
     public UpMusicIn(PluginWrapper wrapper) {

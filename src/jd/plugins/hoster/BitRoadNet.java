@@ -28,7 +28,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(name = "bitroad.net", urls = "http://[\\w\\.]*?(bitroad\\.net|filemashine\\.com)/download/[A-Fa-f0-9]+", flags = 0)
+@HostPlugin(names = { "bitroad.net"}, urls ={ "http://[\\w\\.]*?(bitroad\\.net|filemashine\\.com)/download/[A-Fa-f0-9]+"}, flags = {0})
 public class BitRoadNet extends PluginForHost {
 
     public BitRoadNet(PluginWrapper wrapper) {

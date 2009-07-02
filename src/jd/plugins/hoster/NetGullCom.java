@@ -31,7 +31,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(name = "netgull.com", urls = "http://[\\w\\.]*?netgull\\.com/\\?d=[0-9a-fA-F]+", flags = 0)
+@HostPlugin(names = { "netgull.com"}, urls ={ "http://[\\w\\.]*?netgull\\.com/\\?d=[0-9a-fA-F]+"}, flags = {0})
 public class NetGullCom extends PluginForHost {
 
     public NetGullCom(PluginWrapper wrapper) {

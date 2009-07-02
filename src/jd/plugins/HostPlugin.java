@@ -8,7 +8,7 @@ import java.lang.annotation.Target;
 @Retention( value = RetentionPolicy.RUNTIME ) 
 @Target( value = ElementType.TYPE ) 
 public @interface HostPlugin {
-    String name();
-    String urls();
-    int flags() default 0;
+    String[] names();
+    String[] urls();
+    int[] flags();
 }

@@ -32,7 +32,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(name = "gigasize.com", urls = "http://[\\w\\.]*?gigasize\\.com/get\\.php.*", flags = 2)
+@HostPlugin(names = { "gigasize.com"}, urls ={ "http://[\\w\\.]*?gigasize\\.com/get\\.php.*"}, flags = {2})
 public class GigaSizeCom extends PluginForHost {
 
     private static final String AGB_LINK = "http://www.gigasize.com/page.php?p=terms";

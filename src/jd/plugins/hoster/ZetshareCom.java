@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(name = "zetshare.com", urls = "http://[\\w\\.]*?zetshare\\.com/(download/|url/)?download\\.php\\?file=[0-9a-zA-Z]+", flags = 0)
+@HostPlugin(names = { "zetshare.com"}, urls ={ "http://[\\w\\.]*?zetshare\\.com/(download/|url/)?download\\.php\\?file=[0-9a-zA-Z]+"}, flags = {0})
 public class ZetshareCom extends PluginForHost {
 
     public ZetshareCom(PluginWrapper wrapper) {

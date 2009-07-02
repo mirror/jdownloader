@@ -27,7 +27,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(name = "supershare.pl", urls = "http://[\\w\\.]*?supershare\\.pl/\\?d=[A-F0-9]+", flags = 0)
+@HostPlugin(names = { "supershare.pl"}, urls ={ "http://[\\w\\.]*?supershare\\.pl/\\?d=[A-F0-9]+"}, flags = {0})
 public class SuperSharePl extends PluginForHost {
 
     public SuperSharePl(PluginWrapper wrapper) {

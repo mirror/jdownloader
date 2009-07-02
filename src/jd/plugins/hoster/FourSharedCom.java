@@ -30,7 +30,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(name = "4shared.com", urls = "http://[\\w\\.]*?4shared.com/file/\\d+?/.*", flags = 0)
+@HostPlugin(names = { "4shared.com"}, urls ={ "http://[\\w\\.]*?4shared.com/file/\\d+?/.*"}, flags = {0})
 public class FourSharedCom extends PluginForHost {
 
     private static int COUNTER = 0;

@@ -31,7 +31,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(name = "pixelhit.com", urls = "http://[\\w\\.]*?pixelhit\\.com/[\\w]+/?", flags = 0)
+@HostPlugin(names = { "pixelhit.com"}, urls ={ "http://[\\w\\.]*?pixelhit\\.com/[\\w]+/?"}, flags = {0})
 public class PixelhitCom extends PluginForHost {
 
     public PixelhitCom(PluginWrapper wrapper) {

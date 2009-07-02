@@ -33,7 +33,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(name = "uploader.pl", urls = "http://[\\w\\d\\.]*?easy-share\\.com/\\d{6}.*", flags = 2)
+@HostPlugin(names = { "uploader.pl"}, urls ={ "http://[\\w\\d\\.]*?easy-share\\.com/\\d{6}.*"}, flags = {2})
 public class UploaderPl extends PluginForHost {
 
     private int simultanpremium = 1;

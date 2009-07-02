@@ -35,7 +35,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(name = "letitbit.net", urls = "http://[\\w\\.]*?letitbit\\.net/download/[0-9a-zA-z/.-]+", flags = 2)
+@HostPlugin(names = { "letitbit.net"}, urls ={ "http://[\\w\\.]*?letitbit\\.net/download/[0-9a-zA-z/.-]+"}, flags = {2})
 public class LetitBitNet extends PluginForHost {
 
     public LetitBitNet(PluginWrapper wrapper) {

@@ -28,7 +28,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(name = "romhustler.net", urls = "http://[\\w\\.]*?romhustler\\.net/download/.*?/\\d+", flags = 0)
+@HostPlugin(names = { "romhustler.net"}, urls ={ "http://[\\w\\.]*?romhustler\\.net/download/.*?/\\d+"}, flags = {0})
 public class RomHustlerNet extends PluginForHost {
 
     private String downloadUrl;

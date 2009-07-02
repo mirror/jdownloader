@@ -37,7 +37,7 @@ import jd.utils.locale.JDL;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
 
-@HostPlugin(name = "sendspace.com", urls = "http://[\\w\\.]*?sendspace\\.com/file/[0-9a-zA-Z]+", flags = 2)
+@HostPlugin(names = { "sendspace.com"}, urls ={ "http://[\\w\\.]*?sendspace\\.com/file/[0-9a-zA-Z]+"}, flags = {2})
 public class SendspaceCom extends PluginForHost {
 
     public SendspaceCom(PluginWrapper wrapper) {

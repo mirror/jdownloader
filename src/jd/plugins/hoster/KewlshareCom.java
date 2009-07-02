@@ -28,7 +28,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(name = "kewlshare.com", urls = "http://[\\w\\.]*?kewlshare\\.com/dl/[\\w]+/.*", flags = 0)
+@HostPlugin(names = { "kewlshare.com"}, urls ={ "http://[\\w\\.]*?kewlshare\\.com/dl/[\\w]+/.*"}, flags = {0})
 public class KewlshareCom extends PluginForHost {
 
     public KewlshareCom(PluginWrapper wrapper) {

@@ -31,7 +31,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(name = "hotfile.com", urls = "http://[\\w\\.]*?hotfile\\.com/dl/\\d+/[0-9a-zA-Z]+/", flags = 2)
+@HostPlugin(names = { "hotfile.com"}, urls ={ "http://[\\w\\.]*?hotfile\\.com/dl/\\d+/[0-9a-zA-Z]+/"}, flags = {2})
 public class HotFileCom extends PluginForHost {
 
     public HotFileCom(PluginWrapper wrapper) {

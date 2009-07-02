@@ -22,7 +22,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(name = "roms.zophar.net", urls = "hhttp://www[\\d]?\\.przeslij\\.net/download\\.php\\?file=(.*)", flags = 0)
+@HostPlugin(names = { "roms.zophar.net"}, urls ={ "hhttp://www[\\d]?\\.przeslij\\.net/download\\.php\\?file=(.*)"}, flags = {0})
 public class RomsZopharNet extends PluginForHost {
 
     public RomsZopharNet(PluginWrapper wrapper) {

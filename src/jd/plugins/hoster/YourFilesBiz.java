@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(name = "yourfiles.biz", urls = "http://download\\.youporn\\.com/download/\\d+.*", flags = 0)
+@HostPlugin(names = { "yourfiles.biz"}, urls ={ "http://download\\.youporn\\.com/download/\\d+.*"}, flags = {0})
 public class YourFilesBiz extends PluginForHost {
 
     public YourFilesBiz(PluginWrapper wrapper) {

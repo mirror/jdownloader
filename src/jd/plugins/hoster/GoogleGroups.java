@@ -31,7 +31,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(name = "googlegroups.com", urls = "http://[\\w\\.]*?googlegroups.com/web/.*", flags = 0)
+@HostPlugin(names = { "googlegroups.com"}, urls ={ "http://[\\w\\.]*?googlegroups.com/web/.*"}, flags = {0})
 public class GoogleGroups extends PluginForHost {
 
     public GoogleGroups(PluginWrapper wrapper) {

@@ -33,7 +33,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(name = "share-now.net", urls = "http://[\\w\\.]*?share-now\\.net/{1,}files/\\d+-(.*?)\\.html", flags = 0)
+@HostPlugin(names = { "share-now.net"}, urls ={ "http://[\\w\\.]*?share-now\\.net/{1,}files/\\d+-(.*?)\\.html"}, flags = {0})
 public class ShareNownet extends PluginForHost {
 
     public ShareNownet(PluginWrapper wrapper) {

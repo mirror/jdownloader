@@ -29,7 +29,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(name = "milledrive.com", urls = "http://[\\w\\.]*?milledrive\\.com/(music|files|videos|files/video|files/music)/\\d+/.*", flags = 0)
+@HostPlugin(names = { "milledrive.com"}, urls ={ "http://[\\w\\.]*?milledrive\\.com/(music|files|videos|files/video|files/music)/\\d+/.*"}, flags = {0})
 public class MilleDriveCom extends PluginForHost {
 
     public MilleDriveCom(PluginWrapper wrapper) {

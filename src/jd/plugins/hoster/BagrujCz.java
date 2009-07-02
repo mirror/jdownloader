@@ -31,7 +31,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(name = "bagruj.cz", urls = "http://[\\w\\.]*?bagruj\\.cz/.*", flags = 0)
+@HostPlugin(names = { "bagruj.cz"}, urls ={ "http://[\\w\\.]*?bagruj\\.cz/.*"}, flags = {0})
 public class BagrujCz extends PluginForHost {
 
     public BagrujCz(PluginWrapper wrapper) {

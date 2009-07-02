@@ -38,7 +38,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@HostPlugin(name = "meinupload.com", urls = "(http://[\\w\\.]*?meinupload\\.com/{1,}dl/.+/.+)|(http://[\\w\\.]*?meinupload\\.com/\\?d=.*)|http://[\\w\\.]*?mein-upload\\.com/[\\w]+(\\.html|/)", flags = 2)
+@HostPlugin(names = { "meinupload.com"}, urls ={ "(http://[\\w\\.]*?meinupload\\.com/{1,}dl/.+/.+)|(http://[\\w\\.]*?meinupload\\.com/\\?d=.*)|http://[\\w\\.]*?mein-upload\\.com/[\\w]+(\\.html|/)"}, flags = {2})
 public class MeinUpload extends PluginForHost {
 
     private static final String AGB_LINK = "http://meinupload.com/tos.html";

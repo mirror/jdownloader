@@ -27,7 +27,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(name = "filefront.com", urls = "http://files.filefront\\.com/[^\\s]+/;\\d+(;/fileinfo.html|;)", flags = 0)
+@HostPlugin(names = { "filefront.com"}, urls ={ "http://files.filefront\\.com/[^\\s]+/;\\d+(;/fileinfo.html|;)"}, flags = {0})
 public class FileFrontCom extends PluginForHost {
 
     public FileFrontCom(PluginWrapper wrapper) {

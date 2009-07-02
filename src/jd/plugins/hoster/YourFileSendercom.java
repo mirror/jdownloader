@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(name = "yourfilesender.com", urls = "http://[\\w\\.]*?yourfilesender\\.com/v/\\d+/(.*?\\.html)", flags = 0)
+@HostPlugin(names = { "yourfilesender.com"}, urls ={ "http://[\\w\\.]*?yourfilesender\\.com/v/\\d+/(.*?\\.html)"}, flags = {0})
 public class YourFileSendercom extends PluginForHost {
 
     public YourFileSendercom(PluginWrapper wrapper) {

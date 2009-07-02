@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(name = "imagefap.com", urls = "http://[\\w\\.]*?imagefap.com/image.php\\?id=.*(&pgid=.*&gid=.*&page=.*)?", flags = 0)
+@HostPlugin(names = { "imagefap.com"}, urls ={ "http://[\\w\\.]*?imagefap.com/image.php\\?id=.*(&pgid=.*&gid=.*&page=.*)?"}, flags = {0})
 public class ImageFap extends PluginForHost {
 
     public ImageFap(PluginWrapper wrapper) {

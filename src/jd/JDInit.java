@@ -536,9 +536,13 @@ public class JDInit {
                 try {
                     if(c.getAnnotations().length > 0) {
                         HostPlugin help = (HostPlugin) c.getAnnotations()[0];
-                        new HostPluginWrapper(help.name(), c.getSimpleName(), help.urls(), help.flags());
+                    
+                        for(int i=0; i<help.names().length;i++){
+                            new HostPluginWrapper(help.names()[i], c.getSimpleName(), help.urls()[i], help.flags()[i]);  
+                        }
+                        
                     }
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     e.printStackTrace();
                 }
             }
