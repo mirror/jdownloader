@@ -917,7 +917,7 @@ public class JDUtilities {
             try {
                 dbconnect = new DatabaseConnector(); 
             } catch (Exception e) {
-                // TODO Auto-generated catch block
+                // TODO Auto-generated catch block 
                 JDLogger.exception(e);
                 String configpath = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/config/";
                 Logger logger = JDLogger.getLogger();
