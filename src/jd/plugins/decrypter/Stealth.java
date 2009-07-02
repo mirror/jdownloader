@@ -90,17 +90,12 @@ public class Stealth extends PluginForDecrypt {
             clone.submitForm(form);
 
             File container = JDUtilities.getResourceFile("container/stealth.to_" + System.currentTimeMillis() + ".dlc");
-            ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
-        
-                Browser.download(container, br.openGetConnection("http://sql.stealth.to/dlc.php?name=" + stealthID));
-                links = JDUtilities.getController().getContainerLinks(container);
-        
+
+            Browser.download(container, br.openGetConnection("http://sql.stealth.to/dlc.php?name=" + stealthID));
+            ArrayList<DownloadLink> links = JDUtilities.getController().getContainerLinks(container);
+
             if (links.size() > 0) {
-                for (DownloadLink link : links) {
-                    decryptedLinks.add(link);
-
-                }
-
+                decryptedLinks.addAll(links);
             } else {
                 logger.log(Level.WARNING, "Cannot decrypt download links file ['" + container.getName() + "']");
             }
