@@ -493,6 +493,7 @@ public abstract class Request {
             /* default encoding ist ISO-8859-1, falls nicht anders angegeben */
             isr = new InputStreamReader(is, "ISO-8859-1");
         } else {
+            cs = cs.toUpperCase();
             try {
                 isr = new InputStreamReader(is, cs);
             } catch (Exception e) {
