@@ -17,6 +17,7 @@
 package jd.gui.skins.simple.components.DownloadView;
 
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.LinearGradientPaint;
 import java.awt.Point;
 import java.awt.Rectangle;
@@ -65,7 +66,9 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.jdesktop.swingx.JXTable;
+import org.jdesktop.swingx.decorator.ComponentAdapter;
 import org.jdesktop.swingx.decorator.HighlightPredicate;
+import org.jdesktop.swingx.decorator.Highlighter;
 import org.jdesktop.swingx.decorator.PainterHighlighter;
 import org.jdesktop.swingx.painter.MattePainter;
 import org.jdesktop.swingx.painter.Painter;
@@ -95,6 +98,9 @@ public class DownloadTable extends JXTable implements MouseListener, MouseMotion
         cellRenderer = new TableRenderer(this);
         this.panel = panel;
         this.model = Model;
+        this.setShowGrid(false);
+        this.setShowHorizontalLines(false);
+        this.setShowVerticalLines(false);
         createColumns();
         getTableHeader().setReorderingAllowed(false);
         getTableHeader().setResizingAllowed(true);
@@ -111,6 +117,8 @@ public class DownloadTable extends JXTable implements MouseListener, MouseMotion
         addMouseListener(this);
         addKeyListener(this);
         addMouseMotionListener(this);
+
+        this.setSortable(false);
         this.getTableHeader().addMouseListener(this);
         UIManager.put("Table.focusCellHighlightBorder", null);
 
@@ -127,11 +135,11 @@ public class DownloadTable extends JXTable implements MouseListener, MouseMotion
         ToolTipManager.sharedInstance().unregisterComponent(this);
         ToolTipManager.sharedInstance().unregisterComponent(this.getTableHeader());
 
-        this.setHighlighters();
+        this.setHighlighters(new Highlighter[] {});
         addDisabledHighlighter();
         addPostErrorHighlighter();
         addWaitHighlighter();
-        addHighlighter(new PainterHighlighter(HighlightPredicate.IS_FOLDER, getFolderPainter(this)));
+        addPackageHighlighter();
     }
 
     public static Painter<?> getFolderPainter(JXTable table) {
@@ -151,6 +159,17 @@ public class DownloadTable extends JXTable implements MouseListener, MouseMotion
             return new MattePainter(JDTheme.C("gui.color.downloadlist.package", "4c4c4c", 150));
         }
 
+    }
+
+    private void addPackageHighlighter() {
+        addHighlighter(new PainterHighlighter(new HighlightPredicate() {
+            public boolean isHighlighted(Component renderer, ComponentAdapter adapter) {
+                if (adapter.row == -1) return false;
+                Object element = model.getValueAt(adapter.row, 0);
+                if (element != null && element instanceof FilePackage) { return true; }
+                return false;
+            }
+        }, DownloadTable.getFolderPainter(this)));
     }
 
     private void createColumns() {

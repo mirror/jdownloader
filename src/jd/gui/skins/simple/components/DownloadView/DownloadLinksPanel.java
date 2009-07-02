@@ -514,6 +514,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
 
     private void sort(final int col) {
         lastSort = !lastSort;
+        System.out.println("sorting " + lastSort);
         ArrayList<FilePackage> packages = JDUtilities.getDownloadController().getPackages();
         synchronized (packages) {
 
@@ -527,13 +528,13 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                         bb = a;
                     }
                     switch (col) {
-                    case 1:
+                    case 0:
                         return aa.getName().compareToIgnoreCase(bb.getName());
-                    case 2:
+                    case 1:
                         return aa.getHoster().compareToIgnoreCase(bb.getHoster());
-                    case 3:
+                    case 2:
                         return aa.getRemainingLinks() > bb.getRemainingLinks() ? 1 : -1;
-                    case 4:
+                    case 3:
                         return aa.getPercent() > bb.getPercent() ? 1 : -1;
                     default:
                         return -1;

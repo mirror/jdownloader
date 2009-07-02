@@ -41,6 +41,7 @@ public class DownloadJTableModel extends AbstractTableModel {
     }
 
     public void refreshmodel() {
+        System.out.println("refresh model");
         synchronized (DownloadController.ControllerLock) {
             synchronized (DownloadController.getInstance().getPackages()) {
                 synchronized (downloadlist) {

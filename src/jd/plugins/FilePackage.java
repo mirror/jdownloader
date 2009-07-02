@@ -584,16 +584,16 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
                         bb = b;
                     }
                     switch (col) {
-                    case 1:
+                    case 0:
                         return aa.getName().compareToIgnoreCase(bb.getName());
-                    case 2:
+                    case 1:
                         return aa.getHost().compareToIgnoreCase(bb.getHost());
-                    case 3:
+                    case 2:
                         if (aa.isAvailabilityStatusChecked() && bb.isAvailabilityStatusChecked()) {
                             return (aa.isAvailable() && !bb.isAvailable()) ? 1 : -1;
                         } else
                             return -1;
-                    case 4:
+                    case 3:
                         return aa.getPercent() < bb.getPercent() ? 1 : -1;
                     default:
                         return -1;

@@ -94,11 +94,15 @@ public class LinkGrabberTable extends JXTable implements MouseListener, MouseMot
         cellRenderer = new LinkGrabberTableRenderer(this);
         model = treeModel;
         createColumns();
+        this.setShowGrid(false);
+        this.setShowHorizontalLines(false);
+        this.setShowVerticalLines(false);
         getTableHeader().setReorderingAllowed(false);
         getTableHeader().setResizingAllowed(true);
         setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
         setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         setEditable(false);
+        this.setSortable(false);
         setAutoscrolls(false);
         setColumnControlVisible(true);
         setColumnControl(new JColumnControlButton(this));
