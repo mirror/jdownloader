@@ -64,18 +64,19 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
     private final int NO_JOB = -1;
     public final static int REFRESH_ALL_DATA_CHANGED = 1;
     public final static int REFRESH_DATA_AND_STRUCTURE_CHANGED = 0;
+    public final static int REFRESH_DATA_AND_STRUCTURE_CHANGED_FAST = 10;
     public static final int REFRESH_SPECIFIED_LINKS = 2;
 
     private final static int UPDATE_TIMING = 250;
 
     private int job_ID = REFRESH_DATA_AND_STRUCTURE_CHANGED;
-    private ArrayList<DownloadLink> job_links = new ArrayList<DownloadLink>();
+    private ArrayList<Object> job_objs = new ArrayList<Object>();
 
     private boolean lastSort = true;
 
     protected Logger logger = jd.controlling.JDLogger.getLogger();
 
-    private DownloadTreeTable internalTreeTable;
+    private DownloadTable internalTable;
 
     private Timer Update_Async;
 
@@ -87,10 +88,12 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
 
     private boolean tablerefreshinprogress = false;
 
+    private JScrollPane scrollPane;
+
     public DownloadLinksPanel() {
         super(new MigLayout("ins 0, wrap 1", "[grow, fill]", "[grow, fill]"));
-        internalTreeTable = new DownloadTreeTable(new DownloadTreeTableModel(), this);
-        JScrollPane scrollPane = new JScrollPane(internalTreeTable);
+        internalTable = new DownloadTable(new DownloadJTableModel(), this);
+        scrollPane = new JScrollPane(internalTable);
         filePackageInfo = new FilePackageInfo();
         this.add(scrollPane, "cell 0 0");
         JDUtilities.getDownloadController().addListener(this);
@@ -129,24 +132,23 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
         }.start();
     }
 
-    public void fireTableChanged(int id, ArrayList<DownloadLink> links) {
-        if (tablerefreshinprogress) return;
-        final ArrayList<DownloadLink> links2 = new ArrayList<DownloadLink>(links);
+    public void fireTableChanged(int id, ArrayList<Object> objs) {
+        if (tablerefreshinprogress && id != REFRESH_DATA_AND_STRUCTURE_CHANGED_FAST) return;
+        final ArrayList<Object> objs2 = new ArrayList<Object>(objs);
         final int id2 = id;
         new Thread() {
             public void run() {
-                tablerefreshinprogress = true;
-                synchronized (DownloadController.ControllerLock) {
-                    synchronized (JDUtilities.getController().getPackages()) {
-                        try {
-                            internalTreeTable.fireTableChanged(id2, links2);
-                        } catch (Exception e) {
-                            logger.severe("TreeTable Exception, complete refresh!");
-                            updateTableTask(REFRESH_DATA_AND_STRUCTURE_CHANGED, null);
-                        }
-                    }
-                    tablerefreshinprogress = false;
+                if (id2 != REFRESH_DATA_AND_STRUCTURE_CHANGED_FAST) tablerefreshinprogress = true;
+                if (id2 == REFRESH_DATA_AND_STRUCTURE_CHANGED || id2 == REFRESH_DATA_AND_STRUCTURE_CHANGED_FAST) internalTable.getTableModel().refreshmodel();
+                try {
+                    internalTable.fireTableChanged(id2, objs2);
+                } catch (Exception e) {
+                    logger.severe("TreeTable Exception, complete refresh!");
+                    updateTableTask(REFRESH_DATA_AND_STRUCTURE_CHANGED, null);
                 }
+
+                if (id2 != REFRESH_DATA_AND_STRUCTURE_CHANGED_FAST) tablerefreshinprogress = false;
+                return;
             }
         }.start();
     }
@@ -158,8 +160,8 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
         fireTableTask();
         Update_Async.restart();
         JDUtilities.getDownloadController().addListener(this);
-        internalTreeTable.removeKeyListener(internalTreeTable);
-        internalTreeTable.addKeyListener(internalTreeTable);
+        internalTable.removeKeyListener(internalTable);
+        internalTable.addKeyListener(internalTable);
     }
 
     // @Override
@@ -167,23 +169,29 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
         visible = false;
         JDUtilities.getDownloadController().removeListener(this);
         Update_Async.stop();
-        internalTreeTable.removeKeyListener(internalTreeTable);
+        internalTable.removeKeyListener(internalTable);
     }
 
     @SuppressWarnings("unchecked")
-    private void updateTableTask(int id, Object Param) {
+    public void updateTableTask(int id, Object Param) {
         if (!visible) {
             Update_Async.stop();
             return;
         }
         boolean changed = false;
         Update_Async.stop();
-        synchronized (job_links) {
+        if (id == REFRESH_DATA_AND_STRUCTURE_CHANGED_FAST) {
+            this.job_ID = REFRESH_DATA_AND_STRUCTURE_CHANGED_FAST;
+            fireTableTask();
+            Update_Async.restart();
+            return;
+        }
+        synchronized (job_objs) {
             switch (id) {
             case REFRESH_DATA_AND_STRUCTURE_CHANGED: {
                 changed = true;
                 this.job_ID = REFRESH_DATA_AND_STRUCTURE_CHANGED;
-                this.job_links.clear();
+                this.job_objs.clear();
                 break;
             }
             case REFRESH_ALL_DATA_CHANGED: {
@@ -195,7 +203,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                 case REFRESH_SPECIFIED_LINKS:
                     changed = true;
                     this.job_ID = REFRESH_ALL_DATA_CHANGED;
-                    this.job_links.clear();
+                    this.job_objs.clear();
                     break;
                 }
                 break;
@@ -209,22 +217,23 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                 case REFRESH_SPECIFIED_LINKS:
                     this.job_ID = REFRESH_SPECIFIED_LINKS;
                     if (Param instanceof DownloadLink) {
-                        if (!job_links.contains(Param)) {
+                        if (!job_objs.contains(Param)) {
                             changed = true;
-                            job_links.add((DownloadLink) Param);
+                            job_objs.add(Param);
+                        }
+                        if (!job_objs.contains(((DownloadLink) Param).getFilePackage())) {
+                            changed = true;
+                            job_objs.add(((DownloadLink) Param).getFilePackage());
                         }
                     } else if (Param instanceof ArrayList) {
                         for (DownloadLink dl : (ArrayList<DownloadLink>) Param) {
-                            if (!job_links.contains(dl)) {
+                            if (!job_objs.contains(dl)) {
                                 changed = true;
-                                job_links.add(dl);
+                                job_objs.add(dl);
                             }
-                        }
-                    } else if (Param instanceof ArrayList) {
-                        for (DownloadLink dl : (ArrayList<DownloadLink>) Param) {
-                            if (!job_links.contains(dl)) {
+                            if (!job_objs.contains(dl.getFilePackage())) {
                                 changed = true;
-                                job_links.add(dl);
+                                job_objs.add(dl.getFilePackage());
                             }
                         }
                     }
@@ -241,10 +250,10 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
 
     private void fireTableTask() {
         last_async_update = System.currentTimeMillis();
-        synchronized (job_links) {
-            if (visible && job_ID != NO_JOB) fireTableChanged(this.job_ID, this.job_links);
+        synchronized (job_objs) {
+            if (visible && job_ID != NO_JOB) fireTableChanged(this.job_ID, this.job_objs);
             this.job_ID = this.NO_JOB;
-            this.job_links.clear();
+            this.job_objs.clear();
         }
     }
 
@@ -270,55 +279,55 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                 int col = 0;
                 if (e.getSource() instanceof JMenuItem) {
                     switch (e.getID()) {
-                    case TreeTableAction.EDIT_NAME:
-                    case TreeTableAction.EDIT_DIR:
-                        selected_packages = (ArrayList<FilePackage>) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("packages");
+                    case TableAction.EDIT_NAME:
+                    case TableAction.EDIT_DIR:
+                        selected_packages = (ArrayList<FilePackage>) ((TableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("packages");
                         break;
-                    case TreeTableAction.SORT:
-                        col = (Integer) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("col");
-                        selected_packages = new ArrayList<FilePackage>(DownloadLinksPanel.this.internalTreeTable.getSelectedFilePackages());
+                    case TableAction.SORT:
+                        col = (Integer) ((TableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("col");
+                        selected_packages = new ArrayList<FilePackage>(DownloadLinksPanel.this.internalTable.getSelectedFilePackages());
                         break;
-                    case TreeTableAction.DOWNLOAD_PRIO:
-                    case TreeTableAction.DE_ACTIVATE:
-                        prop = (HashMap<String, Object>) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("infos");
+                    case TableAction.DOWNLOAD_PRIO:
+                    case TableAction.DE_ACTIVATE:
+                        prop = (HashMap<String, Object>) ((TableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("infos");
                         selected_links = (ArrayList<DownloadLink>) prop.get("links");
                         break;
-                    case TreeTableAction.DELETE:
-                    case TreeTableAction.SET_PW:
-                    case TreeTableAction.NEW_PACKAGE:
-                    case TreeTableAction.CHECK:
-                    case TreeTableAction.DOWNLOAD_COPY_URL:
-                    case TreeTableAction.DOWNLOAD_COPY_PASSWORD:
-                    case TreeTableAction.DOWNLOAD_RESET:
-                    case TreeTableAction.DOWNLOAD_DLC:
-                    case TreeTableAction.DOWNLOAD_RESUME:
-                        selected_links = (ArrayList<DownloadLink>) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("links");
+                    case TableAction.DELETE:
+                    case TableAction.SET_PW:
+                    case TableAction.NEW_PACKAGE:
+                    case TableAction.CHECK:
+                    case TableAction.DOWNLOAD_COPY_URL:
+                    case TableAction.DOWNLOAD_COPY_PASSWORD:
+                    case TableAction.DOWNLOAD_RESET:
+                    case TableAction.DOWNLOAD_DLC:
+                    case TableAction.DOWNLOAD_RESUME:
+                        selected_links = (ArrayList<DownloadLink>) ((TableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("links");
                         break;
-                    case TreeTableAction.DOWNLOAD_DIR:
-                        folder = (File) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("folder");
+                    case TableAction.DOWNLOAD_DIR:
+                        folder = (File) ((TableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("folder");
                         break;
-                    case TreeTableAction.DOWNLOAD_BROWSE_LINK:
-                        link = (DownloadLink) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("downloadlink");
+                    case TableAction.DOWNLOAD_BROWSE_LINK:
+                        link = (DownloadLink) ((TableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("downloadlink");
                         break;
-                    case TreeTableAction.STOP_MARK:
-                        obj = ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("item");
+                    case TableAction.STOP_MARK:
+                        obj = ((TableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("item");
                         break;
                     }
-                } else if (e.getSource() instanceof TreeTableAction) {
+                } else if (e.getSource() instanceof TableAction) {
                     switch (e.getID()) {
-                    case TreeTableAction.SORT_ALL:
-                        col = (Integer) ((TreeTableAction) e.getSource()).getProperty().getProperty("col");
+                    case TableAction.SORT_ALL:
+                        col = (Integer) ((TableAction) e.getSource()).getProperty().getProperty("col");
                         break;
-                    case TreeTableAction.DELETE:
-                        selected_links = (ArrayList<DownloadLink>) ((TreeTableAction) e.getSource()).getProperty().getProperty("links");
+                    case TableAction.DELETE:
+                        selected_links = (ArrayList<DownloadLink>) ((TableAction) e.getSource()).getProperty().getProperty("links");
                         break;
                     }
                 }
                 switch (e.getID()) {
-                case TreeTableAction.STOP_MARK:
+                case TableAction.STOP_MARK:
                     DownloadWatchDog.getInstance().toggleStopMark(obj);
                     break;
-                case TreeTableAction.EDIT_DIR:
+                case TableAction.EDIT_DIR:
                     final ArrayList<FilePackage> selected_packages2 = new ArrayList<FilePackage>(selected_packages);
                     new GuiRunnable<Object>() {
                         // @Override
@@ -339,7 +348,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                         }
                     }.start();
                     break;
-                case TreeTableAction.EDIT_NAME:
+                case TableAction.EDIT_NAME:
                     String name = SimpleGUI.CURRENTGUI.showUserInputDialog(JDL.L("gui.linklist.editpackagename.message", "Neuer Paketname"), selected_packages.get(0).getName());
                     if (name != null) {
                         for (int i = 0; i < selected_packages.size(); i++) {
@@ -347,13 +356,13 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                         }
                     }
                     break;
-                case TreeTableAction.DOWNLOAD_RESUME:
+                case TableAction.DOWNLOAD_RESUME:
                     for (int i = 0; i < selected_links.size(); i++) {
                         selected_links.get(i).getLinkStatus().setStatus(LinkStatus.TODO);
                         selected_links.get(i).getLinkStatus().setStatusText(JDL.L("gui.linklist.status.doresume", "Warte auf Fortsetzung"));
                     }
                     break;
-                case TreeTableAction.DOWNLOAD_BROWSE_LINK:
+                case TableAction.DOWNLOAD_BROWSE_LINK:
                     if (link.getLinkType() == DownloadLink.LINKTYPE_NORMAL) {
                         try {
                             JLinkButton.openURL(link.getBrowserUrl());
@@ -362,10 +371,10 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                         }
                     }
                     break;
-                case TreeTableAction.DOWNLOAD_DIR:
+                case TableAction.DOWNLOAD_DIR:
                     JDUtilities.openExplorer(folder);
                     break;
-                case TreeTableAction.DOWNLOAD_DLC:
+                case TableAction.DOWNLOAD_DLC:
                     GuiRunnable<File> temp = new GuiRunnable<File>() {
                         // @Override
                         public File runSave() {
@@ -382,7 +391,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                     }
                     JDUtilities.getController().saveDLC(ret, selected_links);
                     break;
-                case TreeTableAction.DOWNLOAD_RESET:
+                case TableAction.DOWNLOAD_RESET:
                     final ArrayList<DownloadLink> links = selected_links;
                     new Thread() {
                         public void run() {
@@ -396,7 +405,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                         }
                     }.start();
                     break;
-                case TreeTableAction.DOWNLOAD_COPY_PASSWORD:
+                case TableAction.DOWNLOAD_COPY_PASSWORD:
                     for (int i = 0; i < selected_links.size(); i++) {
                         String pw = selected_links.get(i).getFilePackage().getPassword();
                         if (!List.contains(pw)) {
@@ -415,7 +424,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                     ClipboardHandler.getClipboard().setOldData(string);
                     Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(string), null);
                     break;
-                case TreeTableAction.DOWNLOAD_COPY_URL:
+                case TableAction.DOWNLOAD_COPY_URL:
                     for (int i = 0; i < selected_links.size(); i++) {
                         if (selected_links.get(i).getLinkType() == DownloadLink.LINKTYPE_NORMAL) {
                             String url = selected_links.get(i).getBrowserUrl();
@@ -429,36 +438,36 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                     ClipboardHandler.getClipboard().setOldData(string);
                     Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(string), null);
                     break;
-                case TreeTableAction.DOWNLOAD_PRIO:
+                case TableAction.DOWNLOAD_PRIO:
                     int prio = (Integer) prop.get("prio");
                     for (int i = 0; i < selected_links.size(); i++) {
                         selected_links.get(i).setPriority(prio);
                     }
                     DownloadController.getInstance().fireDownloadLinkUpdate(selected_links);
                     break;
-                case TreeTableAction.CHECK:
+                case TableAction.CHECK:
                     LinkCheck.getLinkChecker().checkLinks(selected_links);
                     LinkCheck.getLinkChecker().getBroadcaster().addListener(DownloadLinksPanel.this);
                     break;
-                case TreeTableAction.SORT_ALL:
+                case TableAction.SORT_ALL:
                     if (DownloadController.getInstance().size() == 1) {
                         DownloadController.getInstance().getPackages().get(0).sort(col);
                     } else
                         sort(col);
                     break;
-                case TreeTableAction.SORT:
+                case TableAction.SORT:
                     for (int i = 0; i < selected_packages.size(); i++) {
                         selected_packages.get(i).sort(col);
                     }
                     break;
-                case TreeTableAction.DE_ACTIVATE:
+                case TableAction.DE_ACTIVATE:
                     boolean b = (Boolean) prop.get("boolean");
                     for (int i = 0; i < selected_links.size(); i++) {
                         selected_links.get(i).setEnabled(b);
                     }
                     JDUtilities.getDownloadController().fireStructureUpdate();
                     break;
-                case TreeTableAction.NEW_PACKAGE:
+                case TableAction.NEW_PACKAGE:
                     fp = selected_links.get(0).getFilePackage();
                     string = SimpleGUI.CURRENTGUI.showUserInputDialog(JDL.L("gui.linklist.newpackage.message", "Name of the new package"), fp.getName());
                     if (string != null) {
@@ -483,13 +492,13 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                         }
                     }
                     break;
-                case TreeTableAction.SET_PW:
+                case TableAction.SET_PW:
                     String pw = SimpleGUI.CURRENTGUI.showUserInputDialog(JDL.L("gui.linklist.setpw.message", "Set download password"), null);
                     for (int i = 0; i < selected_links.size(); i++) {
                         selected_links.get(i).setProperty("pass", pw);
                     }
                     break;
-                case TreeTableAction.DELETE:
+                case TableAction.DELETE:
                     if (SimpleGUI.CURRENTGUI.showConfirmDialog(JDL.L("gui.downloadlist.delete", "Ausgewählte Links wirklich entfernen?") + " (" + JDL.LF("gui.downloadlist.delete.size_packagev2", "%s links", selected_links.size()) + ")")) {
                         for (int i = 0; i < selected_links.size(); i++) {
                             selected_links.get(i).setEnabled(false);
@@ -572,5 +581,9 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
         JDCollapser.getInstance().setVisible(true);
         JDCollapser.getInstance().setCollapsed(false);
 
+    }
+
+    public JScrollPane getScrollPane() {
+        return scrollPane;
     }
 }

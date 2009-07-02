@@ -34,7 +34,7 @@ import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberFilePackage;
-import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberTreeTableAction;
+import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberTableAction;
 import jd.nutils.Formatter;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
@@ -202,25 +202,25 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
     public void actionPerformed(ActionEvent e) {
 
         if (e.getSource() == panel_add_links) {
-            this.broadcastEvent(new ActionEvent(this, LinkGrabberTreeTableAction.GUI_ADD, null));
+            this.broadcastEvent(new ActionEvent(this, LinkGrabberTableAction.GUI_ADD, null));
             return;
         }
 
         if (e.getSource() == panel_add_containers) {
-            this.broadcastEvent(new ActionEvent(this, LinkGrabberTreeTableAction.GUI_LOAD, null));
+            this.broadcastEvent(new ActionEvent(this, LinkGrabberTableAction.GUI_LOAD, null));
             return;
         }
 
         if (e.getSource() == lg_add_all) {
-            this.broadcastEvent(new ActionEvent(this, LinkGrabberTreeTableAction.ADD_ALL, null));
+            this.broadcastEvent(new ActionEvent(this, LinkGrabberTableAction.ADD_ALL, null));
             return;
         }
         if (e.getSource() == lg_add_selected) {
-            this.broadcastEvent(new ActionEvent(this, LinkGrabberTreeTableAction.ADD_SELECTED_PACKAGES, null));
+            this.broadcastEvent(new ActionEvent(this, LinkGrabberTableAction.ADD_SELECTED_PACKAGES, null));
             return;
         }
         if (e.getSource() == lg_clear) {
-            this.broadcastEvent(new ActionEvent(this, LinkGrabberTreeTableAction.CLEAR, null));
+            this.broadcastEvent(new ActionEvent(this, LinkGrabberTableAction.CLEAR, null));
             return;
         }
     }

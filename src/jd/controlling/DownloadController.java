@@ -615,6 +615,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
         case DownloadControllerEvent.ADD_FILEPACKAGE:
         case DownloadControllerEvent.REMOVE_FILPACKAGE:
             fireStructureUpdate();
+            break;
         case DownloadControllerEvent.REFRESH_STRUCTURE:
             this.saveDownloadLinksAsync();
             break;

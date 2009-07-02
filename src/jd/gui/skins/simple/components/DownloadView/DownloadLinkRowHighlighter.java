@@ -20,12 +20,10 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.LinearGradientPaint;
 
-import javax.swing.tree.TreePath;
-
 import jd.plugins.DownloadLink;
 import jd.utils.JDUtilities;
 
-import org.jdesktop.swingx.JXTreeTable;
+import org.jdesktop.swingx.JXTable;
 import org.jdesktop.swingx.decorator.ComponentAdapter;
 import org.jdesktop.swingx.decorator.HighlightPredicate;
 import org.jdesktop.swingx.decorator.PainterHighlighter;
@@ -34,16 +32,15 @@ import org.jdesktop.swingx.painter.Painter;
 
 public abstract class DownloadLinkRowHighlighter extends PainterHighlighter {
 
-    protected JXTreeTable table;
+    protected JXTable table;
 
-    public DownloadLinkRowHighlighter(JXTreeTable table, Color colora) {
+    public DownloadLinkRowHighlighter(JXTable table, Color colora) {
         this(table, new Color(colora.getRed(), colora.getGreen(), colora.getBlue(), 40), new Color(colora.getRed(), colora.getGreen(), colora.getBlue(), 200));
 
     }
 
-    public DownloadLinkRowHighlighter(JXTreeTable table, Color colora, Color colorb) {
+    public DownloadLinkRowHighlighter(JXTable table, Color colora, Color colorb) {
         super();
-
         this.setPainter(getGradientPainter(colora, colorb));
         this.table = table;
         this.setHighlightPredicate(getPredicate());
@@ -52,12 +49,9 @@ public abstract class DownloadLinkRowHighlighter extends PainterHighlighter {
     protected HighlightPredicate getPredicate() {
         return new HighlightPredicate() {
             public boolean isHighlighted(Component renderer, ComponentAdapter adapter) {
-                TreePath path = table.getPathForRow(adapter.row);
-                Object element;
-                if (path != null) {
-                    element = path.getLastPathComponent();
-                    if (element instanceof DownloadLink) { return doHighlight((DownloadLink) element); }
-                }
+                if (adapter.row == -1) return false;
+                Object element = table.getModel().getValueAt(adapter.row, 0);
+                if (element != null && element instanceof DownloadLink) { return doHighlight((DownloadLink) element); }
                 return false;
             }
         };
@@ -65,15 +59,15 @@ public abstract class DownloadLinkRowHighlighter extends PainterHighlighter {
 
     public Painter<?> getGradientPainter(Color colora, Color colorb) {
         int height = 20;
-if(JDUtilities.getJavaVersion()>=1.6){
-    LinearGradientPaint gradientPaint = new LinearGradientPaint(1, 0, 1, height, new float[] { 0.0f, 1.0f }, new Color[] { colora, colorb });
+        if (JDUtilities.getJavaVersion() >= 1.6) {
+            LinearGradientPaint gradientPaint = new LinearGradientPaint(1, 0, 1, height, new float[] { 0.0f, 1.0f }, new Color[] { colora, colorb });
 
-    return new MattePainter(gradientPaint);
-}else{
+            return new MattePainter(gradientPaint);
+        } else {
 
-    return new MattePainter(colora);  
-}
-     
+            return new MattePainter(colora);
+        }
+
     }
 
     public abstract boolean doHighlight(DownloadLink link);

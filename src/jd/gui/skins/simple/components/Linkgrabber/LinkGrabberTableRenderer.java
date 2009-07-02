@@ -33,7 +33,7 @@ import jd.utils.locale.JDL;
 import org.jdesktop.swingx.renderer.DefaultTableRenderer;
 import org.jdesktop.swingx.renderer.JRendererLabel;
 
-public class LinkGrabberTreeTableRenderer extends DefaultTableRenderer {
+public class LinkGrabberTableRenderer extends DefaultTableRenderer {
 
     private static final long serialVersionUID = -3912572910439565199L;
 
@@ -43,7 +43,7 @@ public class LinkGrabberTreeTableRenderer extends DefaultTableRenderer {
 
     private LinkGrabberFilePackage fp;
 
-    private LinkGrabberTreeTable table;
+    private LinkGrabberTable table;
 
     private ImageIcon icon_fp_closed;
 
@@ -78,7 +78,7 @@ public class LinkGrabberTreeTableRenderer extends DefaultTableRenderer {
 
     private String strUnCheckable;
 
-    public LinkGrabberTreeTableRenderer(LinkGrabberTreeTable linkgrabberTreeTable) {
+    public LinkGrabberTableRenderer(LinkGrabberTable linkgrabberTreeTable) {
 
         table = linkgrabberTreeTable;
         leftGap = BorderFactory.createEmptyBorder(0, 30, 0, 0);
@@ -125,7 +125,7 @@ public class LinkGrabberTreeTableRenderer extends DefaultTableRenderer {
     private Component getDownloadLinkCell(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         dLink = (DownloadLink) value;
         switch (column) {
-        case LinkGrabberTreeTableModel.COL_PACK_FILE:
+        case LinkGrabberJTableModel.COL_PACK_FILE:
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             if (dLink.isAvailabilityStatusChecked() && !dLink.isAvailable()) {
                 ((JRendererLabel) co).setIcon(this.imgFileFailed);
@@ -136,10 +136,10 @@ public class LinkGrabberTreeTableRenderer extends DefaultTableRenderer {
             ((JRendererLabel) co).setText(dLink.getName());
             ((JRendererLabel) co).setBorder(leftGap);
             return co;
-        case LinkGrabberTreeTableModel.COL_SIZE:
+        case LinkGrabberJTableModel.COL_SIZE:
             value = dLink.getDownloadSize() > 0 ? Formatter.formatReadable(dLink.getDownloadSize()) : "~";
             break;
-        case LinkGrabberTreeTableModel.COL_HOSTER:
+        case LinkGrabberJTableModel.COL_HOSTER:
 
             if (dLink.getPlugin().hasHosterIcon()) {
                 co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
@@ -159,7 +159,7 @@ public class LinkGrabberTreeTableRenderer extends DefaultTableRenderer {
             }
 
             break;
-        case LinkGrabberTreeTableModel.COL_STATUS:
+        case LinkGrabberJTableModel.COL_STATUS:
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             clearSB();
             if (!dLink.isAvailabilityStatusChecked()) {
@@ -224,25 +224,25 @@ public class LinkGrabberTreeTableRenderer extends DefaultTableRenderer {
     private Component getFilePackageV2Cell(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         fp = (LinkGrabberFilePackage) value;
         switch (column) {
-        case LinkGrabberTreeTableModel.COL_PACK_FILE:
+        case LinkGrabberJTableModel.COL_PACK_FILE:
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             ((JRendererLabel) co).setText(fp.getName());
             if (fp.countFailedLinks(false) > 0) {
-                ((JRendererLabel) co).setIcon(!fp.getBooleanProperty(LinkGrabberTreeTable.PROPERTY_EXPANDED, false) ? icon_fp_closed_error : icon_fp_open_error);
+                ((JRendererLabel) co).setIcon(!fp.getBooleanProperty(LinkGrabberTable.PROPERTY_EXPANDED, false) ? icon_fp_closed_error : icon_fp_open_error);
 
             } else {
-                ((JRendererLabel) co).setIcon(!fp.getBooleanProperty(LinkGrabberTreeTable.PROPERTY_EXPANDED, false) ? icon_fp_closed : icon_fp_open);
+                ((JRendererLabel) co).setIcon(!fp.getBooleanProperty(LinkGrabberTable.PROPERTY_EXPANDED, false) ? icon_fp_closed : icon_fp_open);
             }
             ((JRendererLabel) co).setBorder(null);
             return co;
-        case LinkGrabberTreeTableModel.COL_SIZE:
+        case LinkGrabberJTableModel.COL_SIZE:
             value = fp.getDownloadSize(false) > 0 ? Formatter.formatReadable(fp.getDownloadSize(false)) : "~";
             break;
-        case LinkGrabberTreeTableModel.COL_HOSTER:
+        case LinkGrabberJTableModel.COL_HOSTER:
             value = fp.getHoster();
 
             break;
-        case LinkGrabberTreeTableModel.COL_STATUS:
+        case LinkGrabberJTableModel.COL_STATUS:
             int failedCount = fp.countFailedLinks(false);
             int size = fp.getDownloadLinks().size();
             if (failedCount > 0) {

@@ -39,7 +39,7 @@ import org.jdesktop.swingx.renderer.DefaultTableRenderer;
 import org.jdesktop.swingx.renderer.JRendererLabel;
 import org.jdesktop.swingx.table.TableColumnExt;
 
-public class TreeTableRenderer extends DefaultTableRenderer {
+public class TableRenderer extends DefaultTableRenderer {
 
     private static final long serialVersionUID = -3912572910439565199L;
 
@@ -55,7 +55,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
 
     private JDProgressBar progress;
 
-    private DownloadTreeTable table;
+    private DownloadTable table;
 
     private ImageIcon icon_fp_closed;
 
@@ -125,7 +125,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
 
     private static Color COL_PROGRESS_NORMAL = null;
 
-    public TreeTableRenderer(DownloadTreeTable downloadTreeTable) {
+    public TableRenderer(DownloadTable downloadTreeTable) {
         initIcons();
         initLocale();
         table = downloadTreeTable;
@@ -216,7 +216,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
     private Component getDownloadLinkCell(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         dLink = (DownloadLink) value;
         switch (column) {
-        case DownloadTreeTableModel.COL_PART:
+        case DownloadJTableModel.COL_PART:
 
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             clearSB();
@@ -233,7 +233,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
             ((JRendererLabel) co).setBorder(leftGap);
 
             return co;
-        case DownloadTreeTableModel.COL_HOSTER:
+        case DownloadJTableModel.COL_HOSTER:
 
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 
@@ -262,7 +262,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
             // ().getHosterIcon(),16,16));
             return co;
 
-        case DownloadTreeTableModel.COL_PROGRESS:
+        case DownloadJTableModel.COL_PROGRESS:
 
             if (dLink.getPlugin() == null) {
                 co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
@@ -378,7 +378,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
             progress.setForeground(COL_PROGRESS_NORMAL);
             return progress;
 
-        case DownloadTreeTableModel.COL_STATUS:
+        case DownloadJTableModel.COL_STATUS:
 
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 
@@ -483,14 +483,14 @@ public class TreeTableRenderer extends DefaultTableRenderer {
     private Component getFilePackageCell(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         fp = (FilePackage) value;
         switch (column) {
-        case DownloadTreeTableModel.COL_PART:
+        case DownloadJTableModel.COL_PART:
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             ((JRendererLabel) co).setText(fp.getName());
             if (fp.getLinksFailed() > 0) {
-                ((JRendererLabel) co).setIcon(!fp.getBooleanProperty(DownloadTreeTable.PROPERTY_EXPANDED, false) ? icon_fp_closed_error : icon_fp_open_error);
+                ((JRendererLabel) co).setIcon(!fp.getBooleanProperty(DownloadTable.PROPERTY_EXPANDED, false) ? icon_fp_closed_error : icon_fp_open_error);
 
             } else {
-                ((JRendererLabel) co).setIcon(!fp.getBooleanProperty(DownloadTreeTable.PROPERTY_EXPANDED, false) ? icon_fp_closed : icon_fp_open);
+                ((JRendererLabel) co).setIcon(!fp.getBooleanProperty(DownloadTable.PROPERTY_EXPANDED, false) ? icon_fp_closed : icon_fp_open);
 
             }
 
@@ -498,12 +498,12 @@ public class TreeTableRenderer extends DefaultTableRenderer {
             // ((JComponent) co).setToolTipText(null);
             return co;
 
-        case DownloadTreeTableModel.COL_HOSTER:
+        case DownloadJTableModel.COL_HOSTER:
             value = fp.getHoster();
 
             break;
 
-        case DownloadTreeTableModel.COL_PROGRESS:
+        case DownloadJTableModel.COL_PROGRESS:
 
             if (fp.isFinished()) {
                 progress.setMaximum(100);
@@ -536,7 +536,7 @@ public class TreeTableRenderer extends DefaultTableRenderer {
             progress.setForeground(COL_PROGRESS_NORMAL);
             return progress;
 
-        case DownloadTreeTableModel.COL_STATUS:
+        case DownloadJTableModel.COL_STATUS:
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             this.statuspanel.setBackground(co.getBackground());
             statuspanel.setPainter(((JRendererLabel) co).getPainter());

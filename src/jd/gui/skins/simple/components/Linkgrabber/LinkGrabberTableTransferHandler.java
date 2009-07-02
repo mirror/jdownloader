@@ -32,8 +32,6 @@ import javax.swing.JPopupMenu;
 import javax.swing.JTable;
 import javax.swing.SwingUtilities;
 import javax.swing.TransferHandler;
-import javax.swing.tree.TreePath;
-
 import jd.controlling.DownloadController;
 import jd.controlling.LinkGrabberController;
 import jd.gui.skins.simple.SimpleGUI;
@@ -43,7 +41,7 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-public class LinkGrabberTreeTableTransferHandler extends TransferHandler {
+public class LinkGrabberTableTransferHandler extends TransferHandler {
     private static final long serialVersionUID = 2560352681437669412L;
     private static final int DRAG_LINKS = 1;
     private static final int DRAG_PACKAGES = 2;
@@ -52,11 +50,11 @@ public class LinkGrabberTreeTableTransferHandler extends TransferHandler {
     private int draggingType = 0;
 
     public boolean isDragging = false;
-    private LinkGrabberTreeTable treeTable;
+    private LinkGrabberTable table;
     private LinkGrabberController LGINSTANCE;
 
-    public LinkGrabberTreeTableTransferHandler(LinkGrabberTreeTable linkgrabberTreeTable) {
-        treeTable = linkgrabberTreeTable;
+    public LinkGrabberTableTransferHandler(LinkGrabberTable linkgrabberTreeTable) {
+        table = linkgrabberTreeTable;
         LGINSTANCE = LinkGrabberController.getInstance();
     }
 
@@ -66,18 +64,19 @@ public class LinkGrabberTreeTableTransferHandler extends TransferHandler {
         if (isDragging) {
             if (draggingObjects == null) return false;
             int row = ((JTable.DropLocation) info.getDropLocation()).getRow();
-            TreePath current = treeTable.getPathForRow(row);
+            if (row == -1) return false;
+            Object current = table.getModel().getValueAt(row, 0);
             if (current == null) return false;
             switch (draggingType) {
             case DRAG_LINKS:
                 ArrayList<DownloadLink> downloadLinks = (ArrayList<DownloadLink>) draggingObjects;
-                if (current.getLastPathComponent() instanceof DownloadLink && downloadLinks.contains(current.getLastPathComponent())) return false;
+                if (current instanceof DownloadLink && downloadLinks.contains(current)) return false;
                 break;
             case DRAG_PACKAGES:
                 ArrayList<LinkGrabberFilePackage> packages = (ArrayList<LinkGrabberFilePackage>) draggingObjects;
-                if (current.getLastPathComponent() instanceof LinkGrabberFilePackage && packages.contains(current.getLastPathComponent())) return false;
-                if (current.getLastPathComponent() instanceof DownloadLink) {
-                    LinkGrabberFilePackage fp = LGINSTANCE.getFPwithLink(((DownloadLink) current.getLastPathComponent()));
+                if (current instanceof LinkGrabberFilePackage && packages.contains(current)) return false;
+                if (current instanceof DownloadLink) {
+                    LinkGrabberFilePackage fp = LGINSTANCE.getFPwithLink(((DownloadLink) current));
                     if (fp != null && packages.contains(fp)) return false;
                 }
                 break;
@@ -96,13 +95,18 @@ public class LinkGrabberTreeTableTransferHandler extends TransferHandler {
     protected Transferable createTransferable(JComponent c) {
         isDragging = true;
         String url = "http://www.jdownloader.org";
-        ArrayList<LinkGrabberFilePackage> packages = treeTable.getSelectedFilePackages();
-        ArrayList<DownloadLink> downloadLinks = treeTable.getSelectedDownloadLinks();
+        ArrayList<LinkGrabberFilePackage> packages = table.getSelectedFilePackages();
+        ArrayList<DownloadLink> downloadLinks = table.getSelectedDownloadLinks();
         Point p = SimpleGUI.CURRENTGUI.getMousePosition();
-        p = SwingUtilities.convertPoint(SimpleGUI.CURRENTGUI, p, treeTable);
-        int row = treeTable.rowAtPoint(p);
-        TreePath current = treeTable.getPathForRow(row);
-        if (current.getLastPathComponent() instanceof LinkGrabberFilePackage) {
+        p = SwingUtilities.convertPoint(SimpleGUI.CURRENTGUI, p, table);
+        int row = table.rowAtPoint(p);
+        if (row == -1) {
+            isDragging = false;
+            return null;
+        }
+        Object current = table.getModel().getValueAt(row, 0);
+        if (current == null) return new StringSelection(url);
+        if (current instanceof LinkGrabberFilePackage) {
             this.draggingObjects = packages;
             this.draggingType = DRAG_PACKAGES;
         } else {
@@ -121,7 +125,7 @@ public class LinkGrabberTreeTableTransferHandler extends TransferHandler {
     @SuppressWarnings("unchecked")
     private boolean drop(int row, Point point) {
         if (!isDragging) return false;
-        final TreePath current = treeTable.getPathForRow(row);
+        final Object current = table.getModel().getValueAt(row, 0);
         if (current == null) return false;
         JPopupMenu popup = new JPopupMenu();
         JMenuItem m;
@@ -130,16 +134,16 @@ public class LinkGrabberTreeTableTransferHandler extends TransferHandler {
             case DRAG_LINKS:
                 final ArrayList<DownloadLink> downloadLinks = (ArrayList<DownloadLink>) draggingObjects;
 
-                if (current.getLastPathComponent() instanceof LinkGrabberFilePackage) {
+                if (current instanceof LinkGrabberFilePackage) {
                     /* Links in Package */
-                    String Name = ((LinkGrabberFilePackage) current.getLastPathComponent()).getName();
+                    String Name = ((LinkGrabberFilePackage) current).getName();
                     popup.add(m = new JMenuItem(JDL.LF("gui.table.draganddrop.insertinpackagestart", "In Paket '%s' am Anfang einfügen", Name)));
                     m.setIcon(JDTheme.II("gui.images.go_top", 16, 16));
                     m.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
                             synchronized (LinkGrabberController.ControllerLock) {
                                 synchronized (LinkGrabberController.getInstance().getPackages()) {
-                                    LinkGrabberFilePackage fp = ((LinkGrabberFilePackage) current.getLastPathComponent());
+                                    LinkGrabberFilePackage fp = ((LinkGrabberFilePackage) current);
                                     fp.addAllAt(downloadLinks, 0);
                                 }
                             }
@@ -152,24 +156,24 @@ public class LinkGrabberTreeTableTransferHandler extends TransferHandler {
                         public void actionPerformed(ActionEvent e) {
                             synchronized (LinkGrabberController.ControllerLock) {
                                 synchronized (LinkGrabberController.getInstance().getPackages()) {
-                                    LinkGrabberFilePackage fp = ((LinkGrabberFilePackage) current.getLastPathComponent());
+                                    LinkGrabberFilePackage fp = ((LinkGrabberFilePackage) current);
                                     fp.addAllAt(downloadLinks, fp.size());
                                 }
                             }
                         }
                     });
 
-                } else if (current.getLastPathComponent() instanceof DownloadLink) {
+                } else if (current instanceof DownloadLink) {
                     /* Links in Links */
-                    String name = ((DownloadLink) current.getLastPathComponent()).getName();
+                    String name = ((DownloadLink) current).getName();
                     popup.add(m = new JMenuItem(JDL.LF("gui.table.draganddrop.before", "Vor '%s' ablegen", name)));
                     m.setIcon(JDTheme.II("gui.images.go_top", 16, 16));
                     m.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
                             synchronized (LinkGrabberController.ControllerLock) {
                                 synchronized (LinkGrabberController.getInstance().getPackages()) {
-                                    LinkGrabberFilePackage fp = LGINSTANCE.getFPwithLink(((DownloadLink) current.getLastPathComponent()));
-                                    if (fp != null) fp.addAllAt(downloadLinks, fp.indexOf((DownloadLink) current.getLastPathComponent()));
+                                    LinkGrabberFilePackage fp = LGINSTANCE.getFPwithLink(((DownloadLink) current));
+                                    if (fp != null) fp.addAllAt(downloadLinks, fp.indexOf((DownloadLink) current));
                                 }
                             }
                         }
@@ -181,8 +185,8 @@ public class LinkGrabberTreeTableTransferHandler extends TransferHandler {
                         public void actionPerformed(ActionEvent e) {
                             synchronized (LinkGrabberController.ControllerLock) {
                                 synchronized (LinkGrabberController.getInstance().getPackages()) {
-                                    LinkGrabberFilePackage fp = LGINSTANCE.getFPwithLink(((DownloadLink) current.getLastPathComponent()));
-                                    if (fp != null) fp.addAllAt(downloadLinks, fp.indexOf((DownloadLink) current.getLastPathComponent()) + 1);
+                                    LinkGrabberFilePackage fp = LGINSTANCE.getFPwithLink(((DownloadLink) current));
+                                    if (fp != null) fp.addAllAt(downloadLinks, fp.indexOf((DownloadLink) current) + 1);
                                 }
                             }
                         }
@@ -193,12 +197,12 @@ public class LinkGrabberTreeTableTransferHandler extends TransferHandler {
                 final ArrayList<LinkGrabberFilePackage> packages = (ArrayList<LinkGrabberFilePackage>) draggingObjects;
                 final LinkGrabberFilePackage fp;
                 final String name;
-                if (current.getLastPathComponent() instanceof LinkGrabberFilePackage) {
-                    name = ((LinkGrabberFilePackage) current.getLastPathComponent()).getName();
-                    fp = ((LinkGrabberFilePackage) current.getLastPathComponent());
-                } else if (current.getLastPathComponent() instanceof DownloadLink) {
-                    name = ((DownloadLink) current.getLastPathComponent()).getFilePackage().getName();
-                    fp = LGINSTANCE.getFPwithLink(((DownloadLink) current.getLastPathComponent()));
+                if (current instanceof LinkGrabberFilePackage) {
+                    name = ((LinkGrabberFilePackage) current).getName();
+                    fp = ((LinkGrabberFilePackage) current);
+                } else if (current instanceof DownloadLink) {
+                    name = ((DownloadLink) current).getFilePackage().getName();
+                    fp = LGINSTANCE.getFPwithLink(((DownloadLink) current));
                     if (fp == null) return false;
                 } else
                     return false;
@@ -235,7 +239,7 @@ public class LinkGrabberTreeTableTransferHandler extends TransferHandler {
         }
         popup.add(m = new JMenuItem(JDL.L("gui.btn_cancel", "Abbrechen")));
         m.setIcon(JDTheme.II("gui.images.unselected", 16, 16));
-        popup.show(treeTable, point.x, point.y);
+        popup.show(table, point.x, point.y);
         return true;
     }
 

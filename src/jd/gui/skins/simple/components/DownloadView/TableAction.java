@@ -24,7 +24,7 @@ import javax.swing.ImageIcon;
 
 import jd.config.Property;
 
-public class TreeTableAction extends AbstractAction {
+public class TableAction extends AbstractAction {
 
     public static final int SORT = 103;
     public static final int SORT_ALL = 1031;
@@ -53,11 +53,11 @@ public class TreeTableAction extends AbstractAction {
     private Property property;
     private String ressourceName;
 
-    public TreeTableAction(ActionListener actionListener, String ressourceName, int actionID) {
+    public TableAction(ActionListener actionListener, String ressourceName, int actionID) {
         this(actionListener, null, ressourceName, actionID, null);
     }
 
-    public TreeTableAction(ActionListener actionListener, ImageIcon imageIcon, String ressourceName, int actionID, Property property) {
+    public TableAction(ActionListener actionListener, ImageIcon imageIcon, String ressourceName, int actionID, Property property) {
         super();
         this.ressourceName = ressourceName;
         this.actionID = actionID;

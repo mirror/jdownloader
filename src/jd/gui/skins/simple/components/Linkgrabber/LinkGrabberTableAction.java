@@ -24,7 +24,7 @@ import javax.swing.ImageIcon;
 
 import jd.config.Property;
 
-public class LinkGrabberTreeTableAction extends AbstractAction {
+public class LinkGrabberTableAction extends AbstractAction {
 
     private static final long serialVersionUID = 1220090161204767583L;
     public static final int NEW_PACKAGE = 100;
@@ -54,11 +54,11 @@ public class LinkGrabberTreeTableAction extends AbstractAction {
     private Property property;
     private String ressourceName;
 
-    public LinkGrabberTreeTableAction(ActionListener actionListener, ImageIcon icon, String ressourceName, int actionID) {
+    public LinkGrabberTableAction(ActionListener actionListener, ImageIcon icon, String ressourceName, int actionID) {
         this(actionListener, icon, ressourceName, actionID, null);
     }
 
-    public LinkGrabberTreeTableAction(ActionListener actionListener, ImageIcon icon, String ressourceName, int actionID, Property property) {
+    public LinkGrabberTableAction(ActionListener actionListener, ImageIcon icon, String ressourceName, int actionID, Property property) {
 
         super();
         this.ressourceName = ressourceName;

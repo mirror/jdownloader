@@ -74,7 +74,7 @@ import jd.gui.skins.simple.components.PieChartAPI;
 import jd.gui.skins.simple.components.DownloadView.DownloadLinksPanel;
 import jd.gui.skins.simple.components.Linkgrabber.LinkAdder;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberPanel;
-import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberTreeTableAction;
+import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberTableAction;
 import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import jd.gui.skins.simple.config.ConfigPanel;
 import jd.gui.skins.simple.config.panels.ConfigPanelAddons;
@@ -246,7 +246,6 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
         } else {
             this.setIconImage(list.get(3));
         }
-       
 
         // this.setIconImage(JDImage.getImage("empty"));
         setTitle(JDUtilities.getJDTitle());
@@ -684,7 +683,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
                         lgTaskPane.setPanelID(0);
                     }
                     break;
-                case LinkGrabberTreeTableAction.GUI_ADD:
+                case LinkGrabberTableAction.GUI_ADD:
                     lgTaskPane.setPanelID(0);
                     return;
                 }
