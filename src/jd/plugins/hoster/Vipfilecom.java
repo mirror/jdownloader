@@ -32,7 +32,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(name = "vip-file.com", urls = "http://[\\w\\.]*?vip-file\\.com/download/[\\w]+/(.*?)\\.html", flags = 2)
+@HostPlugin(name = "vip-file.com", urls = "http://[\\w\\.]*?vip-file\\.com/download/[\\w\\.]+/(.*?)\\.html", flags = 2)
 public class Vipfilecom extends PluginForHost {
 
     public Vipfilecom(PluginWrapper wrapper) {
