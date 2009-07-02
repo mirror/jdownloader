@@ -563,7 +563,7 @@ public class JDInit {
         new OptionalPluginWrapper("jdunrar.JDUnrar", 1.5, "unrar", JDL.L("plugins.optional.jdunrar.name", "JD-Unrar"));
         new OptionalPluginWrapper("hjsplit.JDHJSplit", 1.5, "hjsplit", JDL.L("plugins.optional.jdhjsplit.name", "JD-HJMerge"));
         new OptionalPluginWrapper("premcol.JDPremiumCollector", 1.5, "premcol", JDL.L("plugins.optional.premiumcollector.name", "PremiumCollector"));
-        new OptionalPluginWrapper("JDFlashGot", 1.5, "flashgot", JDL.L("plugins.optional.flashgot.name", "FlashGot Integration"));
+        new OptionalPluginWrapper("interfaces.JDFlashGot", 1.5, "flashgot", JDL.L("plugins.optional.flashgot.name", "FlashGot Integration"));
         if (OSDetector.isMac()) new OptionalPluginWrapper("JDGrowlNotification", 1.5, "growl", JDL.L("plugins.optional.jdgrowlnotification.name", "JDGrowlNotification"));
         new OptionalPluginWrapper("HTTPLiveHeaderScripter", 1.5, "livescripter", JDL.L("plugins.optional.httpliveheaderscripter.name", "HTTPLiveHeaderScripter"));
 
