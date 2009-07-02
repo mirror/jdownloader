@@ -16,24 +16,20 @@
 
 package jd.plugins.decrypter;
 
-import java.awt.Point;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.regex.Pattern;
+import java.util.logging.Level;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.gui.UserIO;
 import jd.http.Browser;
-import jd.http.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 public class Stealth extends PluginForDecrypt {
 
@@ -43,111 +39,102 @@ public class Stealth extends PluginForDecrypt {
 
     // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception, DecrypterException {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-        this.setBrowserExclusive();
-        br.setDebug(true);
-        String id = new Regex(parameter, Pattern.compile("\\?id\\=([a-zA-Z0-9]+)")).getMatch(0);
-        if (id != null) {
-            File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".rsdf");
-            ArrayList<DownloadLink> dl_links;
-            try {
-                Browser.download(container, br.openGetConnection("http://stealth.to/?go=rsdf&id=" + id));
-                dl_links = (JDUtilities.getController().getContainerLinks(container));
-            } catch (Exception e) {
-                dl_links = new ArrayList<DownloadLink>();
-            }
-            for (DownloadLink dl_link : dl_links) {
-                decryptedLinks.add(dl_link);
-            }
-            container.delete();
-            if (decryptedLinks.size() == 0) {
-                container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
-                dl_links = new ArrayList<DownloadLink>();
+    	ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>(0);
+    	String url = param.toString();
+    	
+    	this.setBrowserExclusive();
+    	br.setDebug(true);
+    	br.setFollowRedirects(true);
+    	br.getPage(url);
+    	
+    	if (br.containsHTML("Sicherheitsabfrage")) {
+    		if (logger.isLoggable(Level.FINE)) logger.fine("The current page is captcha protected, getting captcha ID...");
+    		
+    		String recaptchaID = br.getRegex("<script type=\"text/javascript\" src=\"http://api.recaptcha.net/challenge\\?k=(.*?)\">").getMatch(0);
+        	if (recaptchaID != null) {
+        		int index = recaptchaID.indexOf("&");
+            	if (index > 0) {
+            		recaptchaID = recaptchaID.substring(0, index);
+            	}
+            	
+            	if (logger.isLoggable(Level.FINE)) logger.fine("The current recaptcha ID is '" + recaptchaID + "'");
+
+        		String stealthID;
+        		int idx = url.indexOf("=");
+        		if (idx > 0) {
+        			stealthID = url.substring(idx + 1, url.length());
+        		} else {
+        			stealthID = url.substring(url.lastIndexOf("/") + 1);
+        		}
+        		
+        		if (logger.isLoggable(Level.FINE)) logger.fine("The current stealth ID is '" + stealthID + "'");
+        		
+        		Browser clone = br.cloneBrowser();
+        		
+        		Form[] forms = br.getForms();
+        		Form form = null;
+        		for (Form currentForm : forms) {
+        			if (currentForm.getAction().endsWith(stealthID)) {
+        				form = currentForm;
+        				break;
+        			}
+        		}
+        		
+    			Browser xs = clone.cloneBrowser();
+    			xs.getPage("http://api.recaptcha.net/challenge?k=" + recaptchaID);
+                
+                String challenge = xs.getRegex("challenge : '(.*?)',").getMatch(0);
+                String server = xs.getRegex("server : '(.*?)',").getMatch(0);
+                File captchaFile = this.getLocalCaptchaFile();
+                Browser.download(captchaFile, xs.openGetConnection(server + "image?c=" + challenge));
+                
+                String code = getCaptchaCode(captchaFile, param);
+                
+                form.put("recaptcha_challenge_field", challenge);
+                form.put("recaptcha_response_field", code);
+                form.setMethod(MethodType.GET);
+    		
+                clone.getHeaders().put("Referer", url.replaceFirst("\\?id=", "folder/"));
+                clone.submitForm(form);
+                
+                File container = JDUtilities.getResourceFile("container/stealth.to_" + System.currentTimeMillis() + ".dlc");
+                ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
                 try {
-                    Browser.download(container, br.openGetConnection("http://stealth.to/?go=dlc&id=" + id));
-                    dl_links = (JDUtilities.getController().getContainerLinks(container));
+                    Browser.download(container, br.openGetConnection("http://sql.stealth.to/dlc.php?name=" + stealthID));
+                    links = JDUtilities.getController().getContainerLinks(container);
                 } catch (Exception e) {
-                    dl_links = new ArrayList<DownloadLink>();
+                	if (logger.isLoggable(Level.WARNING)) logger.log(Level.WARNING, "Exception - '" + e.getMessage() + "'");
+                    if (logger.isLoggable(Level.FINE)) logger.log(Level.FINE, "Exception - '" + e.getMessage() + "'", e);
                 }
-                for (DownloadLink dl_link : dl_links) {
-                    decryptedLinks.add(dl_link);
-                }
-                container.delete();
-            }
-        }
-
-        if (decryptedLinks.size() == 0) {
-            br.getPage(parameter);
-            boolean valid = true;
-            for (int i = 0; i < 5; ++i) {
-                if (br.containsHTML("captcha_img.php")) {
-                    valid = false;
-                    /* alte Captcha Seite */
-                    String sessid = new Regex(br.getRequest().getCookieString(), "PHPSESSID=([a-zA-Z0-9]*)").getMatch(0);
-                    if (sessid == null) {
-                        logger.severe("Error sessionid: " + br.getRequest().getCookieString());
-                        return null;
+                
+                if (links.size() > 0) {
+                	for (DownloadLink link : links) {
+                        decryptedLinks.add(link);
                     }
-                    logger.finest("Captcha Protected");
-                    String captchaAdress = "http://stealth.to/captcha_img.php?PHPSESSID=" + sessid;
-                    String code = getCaptchaCode(captchaAdress, param);
-                    Form form = br.getForm(0);
-                    form.put("txtCode", code);
-                    br.submitForm(form);
-                } else if (br.containsHTML("libs/captcha.php")) {
-                    /* Neue Captcha Seite */
-                    valid = false;
-                    logger.finest("Captcha Protected");
-                    String code = getCaptchaCode("http://stealth.to/libs/captcha.php", param);
-                    Form form = br.getForm(0);
-                    form.put("code", code);
-                    br.submitForm(form);
-                } else if (br.containsHTML("libs/crosshair.php")) {
-                    /* Neue Crosshair Seite */
-                    valid = false;
-                    logger.finest("Captcha Protected");
-                    File file = this.getLocalCaptchaFile();
-                    Form form = br.getForm(0);
-                    Browser.download(file, br.cloneBrowser().openGetConnection("http://stealth.to/libs/crosshair.php"));
-                    Point p = UserIO.getInstance().requestClickPositionDialog(file, JDL.L("plugins.decrypt.stealthto.captcha.title", "Captcha"), JDL.L("plugins.decrypt.stealthto.captcha", "Please click on the Circle with a gap"));
-                    if (p == null) throw new DecrypterException(DecrypterException.CAPTCHA);
-                    form.put("button.x", p.x + "");
-                    form.put("button.y", p.y + "");
-                    br.submitForm(form);
-
                 } else {
-                    valid = true;
-                    break;
+                	if (logger.isLoggable(Level.WARNING)) logger.log(Level.WARNING, "Cannot decrypt download links file ['" 
+                			+ container.getName() + "']");
                 }
-            }
-            if (valid == false) throw new DecrypterException(DecrypterException.CAPTCHA);
-            /* Alte Links Seite */
-            String[] links = br.getRegex("popup.php\\?id=(\\d+?)\"\\,'dl'").getColumn(0);
-            if (links.length > 0) {
-                progress.setRange(links.length);
-                for (String element : links) {
-                    decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(new Regex(br.cloneBrowser().getPage("http://stealth.to/popup.php?id=" + element), Pattern.compile("frame src=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0))));
-                    progress.increase(1);
-                }
-            }
-            /* Neue Links Seite */
-            String[][] links2 = br.getRegex("download\\('(\\d+)', '(\\d+)'\\);\"></td>").getMatches();
-            Browser brc;
-            if (links2.length > 0) {
-                for (String[] element : links2) {
-                    brc = br.cloneBrowser();
-                    brc.postPage("http://stealth.to/index.php?go=download&id=" + element[0], "");
-                    String link = brc.getRegex("(.*?)\\|\\|\\|").getMatch(0);
-                    if (!link.contains("/?")) link = link.replaceAll("\\?", "/\\?");
-                    link = "http://" + link;
-                    decryptedLinks.add(createDownloadlink(link));
-                }
-            }
-        }
-        return decryptedLinks;
+                
+                container.delete();
+        		
+        		if (decryptedLinks.size() > 0) {
+        			if (logger.isLoggable(Level.INFO)) logger.info("There were " + decryptedLinks.size() 
+        					+ " links obtained from the URL '" + url + "'");
+            	} else {
+            		if (logger.isLoggable(Level.WARNING)) logger.warning("There were no links obtained for the URL '" + url + "'");
+            	}
+        	} else {
+        		if (logger.isLoggable(Level.WARNING)) logger.warning("Cannot obtain recaptcha ID, returning " +
+        				"an empty list of download links...");
+        	}
+    	} else  if (br.containsHTML("Passwortabfrage")) {
+    		if (logger.isLoggable(Level.FINE)) logger.fine("The current page is password protected - to be implemented");
+    	}
+    	
+    	return decryptedLinks;
     }
-
+    
     // @Override
     public String getVersion() {
         return getVersion("$Revision$");
