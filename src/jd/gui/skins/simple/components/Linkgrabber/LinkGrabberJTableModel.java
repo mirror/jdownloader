@@ -28,7 +28,7 @@ public class LinkGrabberJTableModel extends AbstractTableModel {
         refreshmodel();
     }
 
-    @Override
+
     public int getRowCount() {
         return addlist.size();
     }
@@ -57,7 +57,8 @@ public class LinkGrabberJTableModel extends AbstractTableModel {
         }
     }
 
-    @Override
+ 
+
     public Object getValueAt(int rowIndex, int columnIndex) {
         try {
             return addlist.get(rowIndex);

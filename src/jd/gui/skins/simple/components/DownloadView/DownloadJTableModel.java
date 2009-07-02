@@ -28,7 +28,8 @@ public class DownloadJTableModel extends AbstractTableModel {
         refreshmodel();
     }
 
-    @Override
+ 
+
     public int getRowCount() {
         return downloadlist.size();
     }
@@ -57,7 +58,8 @@ public class DownloadJTableModel extends AbstractTableModel {
         }
     }
 
-    @Override
+  
+
     public Object getValueAt(int rowIndex, int columnIndex) {
         try {
             return downloadlist.get(rowIndex);
