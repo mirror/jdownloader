@@ -23,6 +23,7 @@ import java.util.logging.Level;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.requests.Request;
 import jd.parser.html.Form;
 import jd.parser.html.Form.MethodType;
 import jd.plugins.CryptedLink;
@@ -39,99 +40,87 @@ public class Stealth extends PluginForDecrypt {
 
     // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception, DecrypterException {
-    	ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>(0);
-    	String url = param.toString();
-    	
-    	this.setBrowserExclusive();
-    	br.setDebug(true);
-    	br.setFollowRedirects(true);
-    	br.getPage(url);
-    	
-    	if (br.containsHTML("Sicherheitsabfrage")) {
-    		logger.fine("The current page is captcha protected, getting captcha ID...");
-    		
-    		String recaptchaID = br.getRegex("<script type=\"text/javascript\" src=\"http://api.recaptcha.net/challenge\\?k=(.*?)\">").getMatch(0);
-        	if (recaptchaID != null) {
-        		int index = recaptchaID.indexOf("&");
-            	if (index > 0) {
-            		recaptchaID = recaptchaID.substring(0, index);
-            	}
-            	
-            	logger.fine("The current recaptcha ID is '" + recaptchaID + "'");
 
-        		String stealthID;
-        		int idx = url.indexOf("=");
-        		if (idx > 0) {
-        			stealthID = url.substring(idx + 1, url.length());
-        		} else {
-        			stealthID = url.substring(url.lastIndexOf("/") + 1);
-        		}
-        		
-        		logger.fine("The current stealth ID is '" + stealthID + "'");
-        		
-        		Browser clone = br.cloneBrowser();
-        		
-        		Form[] forms = br.getForms();
-        		Form form = null;
-        		for (Form currentForm : forms) {
-        			if (currentForm.getAction().endsWith(stealthID)) {
-        				form = currentForm;
-        				break;
-        			}
-        		}
-        		
-    			Browser xs = clone.cloneBrowser();
-    			xs.getPage("http://api.recaptcha.net/challenge?k=" + recaptchaID);
-                
-                String challenge = xs.getRegex("challenge : '(.*?)',").getMatch(0);
-                String server = xs.getRegex("server : '(.*?)',").getMatch(0);
-                File captchaFile = this.getLocalCaptchaFile();
-                Browser.download(captchaFile, xs.openGetConnection(server + "image?c=" + challenge));
-                
-                String code = getCaptchaCode(captchaFile, param);
-                
-                form.put("recaptcha_challenge_field", challenge);
-                form.put("recaptcha_response_field", code);
-                form.setMethod(MethodType.GET);
-    		
-                clone.getHeaders().put("Referer", url.replaceFirst("\\?id=", "folder/"));
-                clone.submitForm(form);
-                
-                File container = JDUtilities.getResourceFile("container/stealth.to_" + System.currentTimeMillis() + ".dlc");
-                ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
-                try {
-                    Browser.download(container, br.openGetConnection("http://sql.stealth.to/dlc.php?name=" + stealthID));
-                    links = JDUtilities.getController().getContainerLinks(container);
-                } catch (Exception e) {
-                	logger.log(Level.WARNING, "Exception - '" + e.getMessage() + "'");
-                    logger.log(Level.FINE, "Exception - '" + e.getMessage() + "'", e);
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>(0);
+        String url = param.toString();
+
+        this.setBrowserExclusive();
+        br.setDebug(true);
+        br.setFollowRedirects(true);
+        br.getPage(url);
+
+        if (br.containsHTML("Sicherheitsabfrage")) {
+            logger.fine("The current page is captcha protected, getting captcha ID...");
+
+            String recaptchaID = br.getRegex("<script type=\"text/javascript\" src=\"http://api.recaptcha.net/challenge\\?(.*?)\">").getMatch(0);
+            // trim() will throw Nullointer. which will be caught internally in
+            // end up in an Decrypter out of date error
+            recaptchaID = Request.parseQuery(recaptchaID).get("k").trim();
+            logger.fine("The current recaptcha ID is '" + recaptchaID + "'");
+
+            String stealthID;
+            int idx = url.indexOf("=");
+            if (idx > 0) {
+                stealthID = url.substring(idx + 1, url.length());
+            } else {
+                stealthID = url.substring(url.lastIndexOf("/") + 1);
+            }
+
+            logger.fine("The current stealth ID is '" + stealthID + "'");
+
+            Browser clone = br.cloneBrowser();
+
+            Form form = br.getFormBySubmitvalue("Ordner+%C3%B6ffnen");
+
+            Browser xs = clone.cloneBrowser();
+            xs.getPage("http://api.recaptcha.net/challenge?k=" + recaptchaID);
+
+            String challenge = xs.getRegex("challenge : '(.*?)',").getMatch(0);
+            String server = xs.getRegex("server : '(.*?)',").getMatch(0);
+            File captchaFile = this.getLocalCaptchaFile();
+            Browser.download(captchaFile, xs.openGetConnection(server + "image?c=" + challenge));
+
+            String code = getCaptchaCode(captchaFile, param);
+
+            form.put("recaptcha_challenge_field", challenge);
+            form.put("recaptcha_response_field", code);
+            form.setMethod(MethodType.GET);
+
+            clone.getHeaders().put("Referer", url.replaceFirst("\\?id=", "folder/"));
+            clone.submitForm(form);
+
+            File container = JDUtilities.getResourceFile("container/stealth.to_" + System.currentTimeMillis() + ".dlc");
+            ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+        
+                Browser.download(container, br.openGetConnection("http://sql.stealth.to/dlc.php?name=" + stealthID));
+                links = JDUtilities.getController().getContainerLinks(container);
+        
+            if (links.size() > 0) {
+                for (DownloadLink link : links) {
+                    decryptedLinks.add(link);
+
                 }
-                
-                if (links.size() > 0) {
-                	for (DownloadLink link : links) {
-                        decryptedLinks.add(link);
-                    }
-                } else {
-                	logger.log(Level.WARNING, "Cannot decrypt download links file ['" + container.getName() + "']");
-                }
-                
-                container.delete();
-        		
-        		if (decryptedLinks.size() > 0) {
-        			logger.info("There were " + decryptedLinks.size() + " links obtained from the URL '" + url + "'");
-            	} else {
-            		logger.warning("There were no links obtained for the URL '" + url + "'");
-            	}
-        	} else {
-        		logger.warning("Cannot obtain recaptcha ID, returning " + "an empty list of download links...");
-        	}
-    	} else  if (br.containsHTML("Passwortabfrage")) {
-    		logger.fine("The current page is password protected - to be implemented");
-    	}
-    	
-    	return decryptedLinks;
+
+            } else {
+                logger.log(Level.WARNING, "Cannot decrypt download links file ['" + container.getName() + "']");
+            }
+
+            container.delete();
+
+            if (decryptedLinks.size() > 0) {
+                logger.info("There were " + decryptedLinks.size() + " links obtained from the URL '" + url + "'");
+            } else {
+                logger.warning("There were no links obtained for the URL '" + url + "'");
+            }
+
+        } else if (br.containsHTML("Passwortabfrage")) {
+            logger.fine("The current page is password protected - to be implemented");
+        }
+
+        return decryptedLinks;
+
     }
-    
+
     // @Override
     public String getVersion() {
         return getVersion("$Revision$");
