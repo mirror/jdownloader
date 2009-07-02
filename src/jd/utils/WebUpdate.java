@@ -43,6 +43,7 @@ import jd.nutils.JDFlags;
 import jd.nutils.JDHash;
 import jd.parser.Regex;
 import jd.update.FileUpdate;
+import jd.update.JDUpdateUtils;
 import jd.update.PackageData;
 import jd.update.WebUpdater;
 import jd.utils.locale.JDL;
@@ -173,7 +174,7 @@ public class WebUpdate {
         updater.getBroadcaster().addListener(messageListener = new MessageListener() {
 
             public void onMessage(MessageEvent event) {
-                progress.setStatusText(event.getSource().toString().replaceAll("jd/plugins/decrypt", "Decrypt Plugin") + ": " + event.getMessage());
+                progress.setStatusText(event.getSource().toString().replaceAll("jd/plugins/decrypt", "Decrypt Plugin").replaceAll(".class", "") + ": " + event.getMessage());
 
             }
 
@@ -317,7 +318,7 @@ public class WebUpdate {
 
                     DownloadController dlc = DownloadController.getInstance();
                     if (dlc != null) {
-                        dlc.backupDownloadLinksSync();
+                        JDUpdateUtils.backupDataBase();
                     } else {
                         logger.severe("Could not backup. downloadcontroller=null");
                     }
@@ -335,7 +336,7 @@ public class WebUpdate {
                         updater.getBroadcaster().addListener(new MessageListener() {
 
                             public void onMessage(MessageEvent event) {
-                                pc.setStatusText(event.getSource().toString().replaceAll("jd/plugins/decrypt", "Decrypt Plugin") + ": " + event.getMessage());
+                                pc.setStatusText(event.getSource().toString().replaceAll("jd/plugins/decrypt", "Decrypt Plugin").replaceAll(".class", "") + ": " + event.getMessage());
 
                             }
 

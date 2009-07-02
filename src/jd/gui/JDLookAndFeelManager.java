@@ -211,7 +211,7 @@ public class JDLookAndFeelManager implements Serializable, JDLabelContainer {
 
         installJGoodies();
         if (JDUtilities.getJavaVersion() >= 1.6) installSubstance();
-        installSynthetica();
+//        installSynthetica();
      
 
         try {

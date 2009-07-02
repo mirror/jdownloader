@@ -20,6 +20,7 @@ import java.awt.event.ActionEvent;
 
 import jd.controlling.DownloadController;
 import jd.gui.skins.simple.Balloon;
+import jd.update.JDUpdateUtils;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
@@ -40,7 +41,7 @@ public class BackupAction extends StartAction {
         new Thread() {
             public void run() {
                 inprogress = true;
-                DownloadController.getInstance().backupDownloadLinksSync();
+                JDUpdateUtils.backupDataBase();
                 Balloon.show(JDL.L("gui.balloon.backup.title","Backup"), JDTheme.II("gui.images.save", 32, 32), JDL.LF("gui.backup.finished", "Linklist successfully backuped!"));
                 inprogress = false;
             }

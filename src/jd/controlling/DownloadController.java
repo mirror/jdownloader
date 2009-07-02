@@ -31,7 +31,7 @@ import jd.Main;
 import jd.config.Configuration;
 import jd.event.JDBroadcaster;
 import jd.nutils.io.JDIO;
-import jd.plugins.BackupLink;
+
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.FilePackageEvent;
@@ -114,7 +114,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
 
     private boolean saveinprogress;
 
-    private boolean backupinprogress = false;
+
 
     public synchronized static DownloadController getInstance() {
         /* darf erst nachdem der JDController init wurde, aufgerufen werden */
@@ -216,57 +216,47 @@ public class DownloadController implements FilePackageListener, DownloadControll
         }
     }
 
-    public void backupDownloadLinksAsync() {
-        if (backupinprogress) return;
-        backupinprogress = true;
-        new Thread() {
-            public void run() {
-                this.setName("DownloadController: Backuping");
-                backupDownloadLinksSync();
-                backupinprogress = false;
-            }
-        }.start();
-    }
 
-    public void backupDownloadLinksSync() {
-        synchronized (packages) {
-            ArrayList<DownloadLink> links = getAllDownloadLinks();
-            Iterator<DownloadLink> it = links.iterator();
-            ArrayList<BackupLink> ret = new ArrayList<BackupLink>();
-            while (it.hasNext()) {
-                DownloadLink next = it.next();
-                BackupLink bl;
-                if (next.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
-                    bl = (new BackupLink(JDUtilities.getResourceFile(next.getContainerFile()), next.getContainerIndex(), next.getContainer()));
 
-                } else {
-                    bl = (new BackupLink(next.getDownloadURL()));
-                }
-                bl.setProperty("downloaddirectory", next.getFilePackage().getDownloadDirectory());
-                bl.setProperty("packagename", next.getFilePackage().getName());
-                bl.setProperty("plugin", next.getPlugin().getClass().getSimpleName());
-                bl.setProperty("name", new File(next.getFileOutput()).getName());
-                bl.setProperty("properties", next.getProperties());
-                bl.setProperty("enabled", next.isEnabled());
-
-                ret.add(bl);
-            }
-            if (ret.size() == 0) return;
-            File file = JDUtilities.getResourceFile("backup/links.linkbackup");
-            if (file.exists()) {
-                File old = JDUtilities.getResourceFile("backup/links_" + file.lastModified() + ".linkbackup");
-
-                file.getParentFile().mkdirs();
-                if (file.exists()) {
-                    file.renameTo(old);
-                }
-                file.delete();
-            } else {
-                file.getParentFile().mkdirs();
-            }
-            JDIO.saveObject(null, ret, file, "links.linkbackup", "linkbackup", false);
-        }
-    }
+//    public void backupDownloadLinksSync() {
+//        synchronized (packages) {
+//            ArrayList<DownloadLink> links = getAllDownloadLinks();
+//            Iterator<DownloadLink> it = links.iterator();
+//            ArrayList<BackupLink> ret = new ArrayList<BackupLink>();
+//            while (it.hasNext()) {
+//                DownloadLink next = it.next();
+//                BackupLink bl;
+//                if (next.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
+//                    bl = (new BackupLink(JDUtilities.getResourceFile(next.getContainerFile()), next.getContainerIndex(), next.getContainer()));
+//
+//                } else {
+//                    bl = (new BackupLink(next.getDownloadURL()));
+//                }
+//                bl.setProperty("downloaddirectory", next.getFilePackage().getDownloadDirectory());
+//                bl.setProperty("packagename", next.getFilePackage().getName());
+//                bl.setProperty("plugin", next.getPlugin().getClass().getSimpleName());
+//                bl.setProperty("name", new File(next.getFileOutput()).getName());
+//                bl.setProperty("properties", next.getProperties());
+//                bl.setProperty("enabled", next.isEnabled());
+//
+//                ret.add(bl);
+//            }
+//            if (ret.size() == 0) return;
+//            File file = JDUtilities.getResourceFile("backup/links.linkbackup");
+//            if (file.exists()) {
+//                File old = JDUtilities.getResourceFile("backup/links_" + file.lastModified() + ".linkbackup");
+//
+//                file.getParentFile().mkdirs();
+//                if (file.exists()) {
+//                    file.renameTo(old);
+//                }
+//                file.delete();
+//            } else {
+//                file.getParentFile().mkdirs();
+//            }
+//            JDIO.saveObject(null, ret, file, "links.linkbackup", "linkbackup", false);
+//        }
+//    }
 
     /**
      * Lädt eine LinkListe
