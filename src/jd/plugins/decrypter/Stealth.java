@@ -48,7 +48,7 @@ public class Stealth extends PluginForDecrypt {
     	br.getPage(url);
     	
     	if (br.containsHTML("Sicherheitsabfrage")) {
-    		if (logger.isLoggable(Level.FINE)) logger.fine("The current page is captcha protected, getting captcha ID...");
+    		logger.fine("The current page is captcha protected, getting captcha ID...");
     		
     		String recaptchaID = br.getRegex("<script type=\"text/javascript\" src=\"http://api.recaptcha.net/challenge\\?k=(.*?)\">").getMatch(0);
         	if (recaptchaID != null) {
@@ -57,7 +57,7 @@ public class Stealth extends PluginForDecrypt {
             		recaptchaID = recaptchaID.substring(0, index);
             	}
             	
-            	if (logger.isLoggable(Level.FINE)) logger.fine("The current recaptcha ID is '" + recaptchaID + "'");
+            	logger.fine("The current recaptcha ID is '" + recaptchaID + "'");
 
         		String stealthID;
         		int idx = url.indexOf("=");
@@ -67,7 +67,7 @@ public class Stealth extends PluginForDecrypt {
         			stealthID = url.substring(url.lastIndexOf("/") + 1);
         		}
         		
-        		if (logger.isLoggable(Level.FINE)) logger.fine("The current stealth ID is '" + stealthID + "'");
+        		logger.fine("The current stealth ID is '" + stealthID + "'");
         		
         		Browser clone = br.cloneBrowser();
         		
@@ -103,8 +103,8 @@ public class Stealth extends PluginForDecrypt {
                     Browser.download(container, br.openGetConnection("http://sql.stealth.to/dlc.php?name=" + stealthID));
                     links = JDUtilities.getController().getContainerLinks(container);
                 } catch (Exception e) {
-                	if (logger.isLoggable(Level.WARNING)) logger.log(Level.WARNING, "Exception - '" + e.getMessage() + "'");
-                    if (logger.isLoggable(Level.FINE)) logger.log(Level.FINE, "Exception - '" + e.getMessage() + "'", e);
+                	logger.log(Level.WARNING, "Exception - '" + e.getMessage() + "'");
+                    logger.log(Level.FINE, "Exception - '" + e.getMessage() + "'", e);
                 }
                 
                 if (links.size() > 0) {
@@ -112,24 +112,21 @@ public class Stealth extends PluginForDecrypt {
                         decryptedLinks.add(link);
                     }
                 } else {
-                	if (logger.isLoggable(Level.WARNING)) logger.log(Level.WARNING, "Cannot decrypt download links file ['" 
-                			+ container.getName() + "']");
+                	logger.log(Level.WARNING, "Cannot decrypt download links file ['" + container.getName() + "']");
                 }
                 
                 container.delete();
         		
         		if (decryptedLinks.size() > 0) {
-        			if (logger.isLoggable(Level.INFO)) logger.info("There were " + decryptedLinks.size() 
-        					+ " links obtained from the URL '" + url + "'");
+        			logger.info("There were " + decryptedLinks.size() + " links obtained from the URL '" + url + "'");
             	} else {
-            		if (logger.isLoggable(Level.WARNING)) logger.warning("There were no links obtained for the URL '" + url + "'");
+            		logger.warning("There were no links obtained for the URL '" + url + "'");
             	}
         	} else {
-        		if (logger.isLoggable(Level.WARNING)) logger.warning("Cannot obtain recaptcha ID, returning " +
-        				"an empty list of download links...");
+        		logger.warning("Cannot obtain recaptcha ID, returning " + "an empty list of download links...");
         	}
     	} else  if (br.containsHTML("Passwortabfrage")) {
-    		if (logger.isLoggable(Level.FINE)) logger.fine("The current page is password protected - to be implemented");
+    		logger.fine("The current page is password protected - to be implemented");
     	}
     	
     	return decryptedLinks;
