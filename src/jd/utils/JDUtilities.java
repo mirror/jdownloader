@@ -915,7 +915,7 @@ public class JDUtilities {
         if (dbconnect == null) {
 
             try {
-                dbconnect = new DatabaseConnector();
+                dbconnect = new DatabaseConnector(); 
             } catch (Exception e) {
                 // TODO Auto-generated catch block
                 JDLogger.exception(e);

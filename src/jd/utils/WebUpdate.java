@@ -178,9 +178,9 @@ public class WebUpdate {
             }
 
         });
-        if (SubConfiguration.getConfig("WEBUPDATE").getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false)) {
+//        if (SubConfiguration.getConfig("WEBUPDATE").getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false)) {
             updater.ignorePlugins(false);
-        }
+//        }
         logger.finer("Checking for available updates");
         // logger.info(files + "");
 

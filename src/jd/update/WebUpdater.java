@@ -92,9 +92,9 @@ public class WebUpdater implements Serializable {
             PLUGIN_LIST = new HashMap<String, FileUpdate>();
             WebUpdater updater = new WebUpdater();
 
-            if (SubConfiguration.getConfig("WEBUPDATE").getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false)) {
+//            if (SubConfiguration.getConfig("WEBUPDATE").getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false)) {
                 updater.ignorePlugins(false);
-            }
+//            }
 
             updater.parseFileList(JDUtilities.getResourceFile("tmp/hashlist.lst"), null, PLUGIN_LIST);
         }
