@@ -2,6 +2,8 @@ package jd.plugins.optional.interfaces;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
@@ -16,6 +18,7 @@ import jd.nutils.httpserver.Handler;
 import jd.nutils.httpserver.HttpServer;
 import jd.nutils.httpserver.Request;
 import jd.nutils.httpserver.Response;
+import jd.nutils.io.JDIO;
 import jd.nutils.nativeintegration.LocaleBrowser;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -33,33 +36,62 @@ class FlashGotRequestHandler implements Handler {
         namespace = splitPath[0];
 
         if (namespace.equalsIgnoreCase("flash")) {
-            if (splitPath.length>1&&splitPath[1].equalsIgnoreCase("add")) {
+            if (splitPath.length > 1 && splitPath[1].equalsIgnoreCase("add")) {
 
                 /* parse the post data */
                 String urls[] = Regex.getLines(Encoding.htmlDecode(request.getParameters().get("urls")));
                 String desc[] = Regex.getLines(Encoding.htmlDecode(request.getParameters().get("descriptions")));
                 String passwords[] = Regex.getLines(Encoding.htmlDecode(request.getParameters().get("passwords")));
-                for(String p:passwords)PasswordListController.getInstance().addPassword(p);
+                for (String p : passwords)
+                    PasswordListController.getInstance().addPassword(p);
                 String referer = request.getParameter("referer");
                 if (urls.length != 0) {
                     ArrayList<DownloadLink> links = new DistributeData(Encoding.htmlDecode(request.getParameters().get("urls"))).findLinks();
                     SimpleGUI.CURRENTGUI.addLinksToGrabber(links, false);
                     response.addContent("success\r\n");
-                  
-                }else{
+
+                } else {
                     response.addContent("failed\r\n");
                 }
-            }else{
-                response.addContent(JDUtilities.getJDTitle()+"\r\n"); 
+            } else if (splitPath.length > 1 && splitPath[1].equalsIgnoreCase("addcrypted")) {
+
+                /* parse the post data */
+                String dlc = Encoding.htmlDecode(request.getParameters().get("crypted")).trim().replace(" ", "+");
+                File tmp;
+                try {
+                    JDUtilities.getResourceFile("tmp").mkdirs();
+                    tmp = File.createTempFile("jd_", ".dlc", JDUtilities.getResourceFile("tmp"));
+
+                    JDIO.saveToFile(tmp, dlc.getBytes());
+                    ArrayList<DownloadLink> links = JDUtilities.getController().getContainerLinks(tmp);
+
+                    SimpleGUI.CURRENTGUI.addLinksToGrabber(links, false);
+                    response.addContent("success\r\n");
+                } catch (IOException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
                 }
-          //
+            } else {
+                response.addContent(JDUtilities.getJDTitle() + "\r\n");
+            }
+            //
 
         } else if (request.getRequestUrl().equalsIgnoreCase("/crossdomain.xml")) {
             response.addContent("<?xml version=\"1.0\"?>\r\n");
             response.addContent("<!DOCTYPE cross-domain-policy SYSTEM \"http://www.macromedia.com/xml/dtds/cross-domain-policy.dtd\">\r\n");
             response.addContent("<cross-domain-policy>\r\n");
-            response.addContent("<allow-access-from domain=\"*\" />\r\n");
-         
+            response.addContent("<allow-access-from domain=\"jdownloader.org\" />\r\n");        
+            response.addContent("<allow-access-from domain=\"jdownloader.net\" />\r\n");
+            response.addContent("<allow-access-from domain=\"jdownloader.net:8081\" />\r\n");
+            response.addContent("<allow-access-from domain=\"*.jdownloader.org\" />\r\n");        
+            response.addContent("<allow-access-from domain=\"*.jdownloader.net\" />\r\n");
+            response.addContent("<allow-access-from domain=\"*.jdownloader.net:8081\" />\r\n");
+            response.addContent("<allow-access-from domain=\"*.jdownloader.org\" />\r\n");
+            response.addContent("<allow-access-from domain=\"*.jdownloader.net\" />\r\n");
+            response.addContent("<allow-access-from domain=\"linksave.in\" />\r\n");
+            response.addContent("<allow-access-from domain=\"relink.us\" />\r\n");
+            response.addContent("<allow-access-from domain=\"*.linksave.in\" />\r\n");
+            response.addContent("<allow-access-from domain=\"*.relink.us\" />\r\n");
             response.addContent("</cross-domain-policy>\r\n");
 
         } else {
@@ -98,7 +130,7 @@ public class JDFlashGot extends PluginOptional {
         return 3;
     }
 
-    @Override
+    // @Override
     public boolean initAddon() {
         logger.info("FlashGot API initialized");
         try {
@@ -114,7 +146,7 @@ public class JDFlashGot extends PluginOptional {
         return "gui.images.addons.flashgot";
     }
 
-    @Override
+    // @Override
     public void onExit() {
         try {
             if (server != null) server.sstop();
@@ -123,12 +155,12 @@ public class JDFlashGot extends PluginOptional {
         server = null;
     }
 
-    @Override
+    // @Override
     public ArrayList<MenuItem> createMenuitems() {
         return null;
     }
 
-    @Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision: 6033 $");
     }
