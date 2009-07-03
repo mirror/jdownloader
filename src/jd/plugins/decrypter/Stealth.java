@@ -31,6 +31,7 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 public class Stealth extends PluginForDecrypt {
 
@@ -43,76 +44,93 @@ public class Stealth extends PluginForDecrypt {
 
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>(0);
         String url = param.toString();
-
+        String stealthID;
+        int idx = url.indexOf("=");
+        if (idx > 0) {
+            stealthID = url.substring(idx + 1, url.length());
+        } else {
+            stealthID = url.substring(url.lastIndexOf("/") + 1);
+        }
         this.setBrowserExclusive();
         br.setDebug(true);
         br.setFollowRedirects(true);
         br.getPage(url);
+        if (br.containsHTML("besucherpass.png")) {
 
+            Form form = br.getFormBySubmitvalue("Weiter");
+            form.put("access_pass", getUserInput(JDL.LF("jd.plugins.decrypter.stealth.askpassword", "Downloadpassword required for %s", param.getCryptedUrl()), param));
+            br.submitForm(form);
+
+        }
         if (br.containsHTML("Sicherheitsabfrage")) {
             logger.fine("The current page is captcha protected, getting captcha ID...");
+            int max = 3;
+            while (max-- >= 0) {
+                String recaptchaID = br.getRegex("<script type=\"text/javascript\" src=\"http://api.recaptcha.net/challenge\\?(.*?)\">").getMatch(0);
+                // trim() will throw Nullointer. which will be caught internally
+                // in
+                // end up in an Decrypter out of date error
+                recaptchaID = Request.parseQuery(recaptchaID).get("k").trim();
+                logger.fine("The current recaptcha ID is '" + recaptchaID + "'");
 
-            String recaptchaID = br.getRegex("<script type=\"text/javascript\" src=\"http://api.recaptcha.net/challenge\\?(.*?)\">").getMatch(0);
-            // trim() will throw Nullointer. which will be caught internally in
-            // end up in an Decrypter out of date error
-            recaptchaID = Request.parseQuery(recaptchaID).get("k").trim();
-            logger.fine("The current recaptcha ID is '" + recaptchaID + "'");
+                logger.fine("The current stealth ID is '" + stealthID + "'");
 
-            String stealthID;
-            int idx = url.indexOf("=");
-            if (idx > 0) {
-                stealthID = url.substring(idx + 1, url.length());
-            } else {
-                stealthID = url.substring(url.lastIndexOf("/") + 1);
+                Browser clone = br.cloneBrowser();
+
+                Form form = br.getFormBySubmitvalue("Ordner+%C3%B6ffnen");
+
+                Browser xs = clone.cloneBrowser();
+                xs.getPage("http://api.recaptcha.net/challenge?k=" + recaptchaID);
+
+                String challenge = xs.getRegex("challenge : '(.*?)',").getMatch(0);
+                String server = xs.getRegex("server : '(.*?)',").getMatch(0);
+                File captchaFile = this.getLocalCaptchaFile();
+                Browser.download(captchaFile, xs.openGetConnection(server + "image?c=" + challenge));
+
+                String code = getCaptchaCode(captchaFile, param);
+
+                form.put("recaptcha_challenge_field", challenge);
+                form.put("recaptcha_response_field", code);
+                form.setMethod(MethodType.GET);
+
+                clone.getHeaders().put("Referer", url.replaceFirst("\\?id=", "folder/"));
+                clone.submitForm(form);
+                if (clone.containsHTML("incorrect-captcha-sol")) {
+                    if (max == 0) {
+
+                        logger.warning("Captcha error");
+                        return null;
+                    } else {
+                        continue;
+                    }
+                }
+                break;
             }
 
-            logger.fine("The current stealth ID is '" + stealthID + "'");
+        } 
 
-            Browser clone = br.cloneBrowser();
+        File container = JDUtilities.getResourceFile("container/stealth.to_" + System.currentTimeMillis() + ".dlc");
 
-            Form form = br.getFormBySubmitvalue("Ordner+%C3%B6ffnen");
+        Browser.download(container, br.openGetConnection("http://sql.stealth.to/dlc.php?name=" + stealthID));
+        ArrayList<DownloadLink> links = JDUtilities.getController().getContainerLinks(container);
 
-            Browser xs = clone.cloneBrowser();
-            xs.getPage("http://api.recaptcha.net/challenge?k=" + recaptchaID);
-
-            String challenge = xs.getRegex("challenge : '(.*?)',").getMatch(0);
-            String server = xs.getRegex("server : '(.*?)',").getMatch(0);
-            File captchaFile = this.getLocalCaptchaFile();
-            Browser.download(captchaFile, xs.openGetConnection(server + "image?c=" + challenge));
-
-            String code = getCaptchaCode(captchaFile, param);
-
-            form.put("recaptcha_challenge_field", challenge);
-            form.put("recaptcha_response_field", code);
-            form.setMethod(MethodType.GET);
-
-            clone.getHeaders().put("Referer", url.replaceFirst("\\?id=", "folder/"));
-            clone.submitForm(form);
-
-            File container = JDUtilities.getResourceFile("container/stealth.to_" + System.currentTimeMillis() + ".dlc");
-
-            Browser.download(container, br.openGetConnection("http://sql.stealth.to/dlc.php?name=" + stealthID));
-            ArrayList<DownloadLink> links = JDUtilities.getController().getContainerLinks(container);
-
-            if (links.size() > 0) {
-                decryptedLinks.addAll(links);
-            } else {
-                logger.log(Level.WARNING, "Cannot decrypt download links file ['" + container.getName() + "']");
-            }
-
-            container.delete();
-
-            if (decryptedLinks.size() > 0) {
-                logger.info("There were " + decryptedLinks.size() + " links obtained from the URL '" + url + "'");
-            } else {
-                logger.warning("There were no links obtained for the URL '" + url + "'");
-            }
-
-        } else if (br.containsHTML("Passwortabfrage")) {
-            logger.fine("The current page is password protected - to be implemented");
+        if (links.size() > 0) {
+            decryptedLinks.addAll(links);
+        } else {
+            logger.log(Level.WARNING, "Cannot decrypt download links file ['" + container.getName() + "']");
+            return decryptedLinks;
         }
 
+        container.delete();
+
+        if (decryptedLinks.size() > 0) {
+            logger.info("There were " + decryptedLinks.size() + " links obtained from the URL '" + url + "'");
+        } else {
+            logger.warning("There were no links obtained for the URL '" + url + "'");
+        }
         return decryptedLinks;
+
+  
 
     }
 

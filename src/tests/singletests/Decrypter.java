@@ -38,6 +38,7 @@ public class Decrypter {
 
     @Before
     public void setUp() {
+    
         TestUtils.mainInit();
         TestUtils.initDecrypter();
         TestUtils.initHosts();

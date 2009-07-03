@@ -17,14 +17,17 @@
 package tests.utils;
 
 import java.util.HashMap;
+import java.util.logging.Level;
 
 import javax.swing.JFrame;
 
 import jd.DecryptPluginWrapper;
 import jd.JDInit;
+import jd.Main;
 import jd.OptionalPluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.JDController;
+import jd.controlling.JDLogger;
 import jd.controlling.interaction.Interaction;
 import jd.event.ControlEvent;
 import jd.gui.UserIO;
@@ -37,12 +40,17 @@ import jd.parser.html.Form;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.MacOSController;
+import jd.utils.WebUpdate;
 
 public abstract class TestUtils {
 
     private static JFrame FRAME;
 
     private static JDInit jdi;
+
+    private static String WIKI_USER;
+
+    private static String WIKI_PASS;
 
     /**
      * Returns a stored property or asks to enter it
@@ -79,11 +87,13 @@ public abstract class TestUtils {
     }
 
     public static void initJD() {
-        mainInit();
-        initAllPlugins();
-        initGUI();
-        initControllers();
-        finishInit();
+        TestUtils.mainInit();
+        TestUtils.initGUI();
+        TestUtils.initDecrypter();
+        TestUtils.initContainer();
+        TestUtils.initHosts();
+        TestUtils.finishInit();
+        // JDLogger.getLogger().setLevel(Level.ALL);
     }
 
     public static void log(String msg) {
@@ -123,7 +133,7 @@ public abstract class TestUtils {
             UserIO.getInstance().requestMessageDialog("JDownloader cannot create the config files. Make sure, that JD_HOME/config/ exists and is writeable");
         }
 
-        new JDController();
+        JDUtilities.setController(JDController.getInstance());
     }
 
     public static void initDecrypter() {
@@ -156,6 +166,7 @@ public abstract class TestUtils {
         new GuiRunnable<Object>() {
             @Override
             public Object runSave() {
+                UserIO.setInstance(SimpleUserIO.getInstance());
                 jdi.initGUI(JDUtilities.getController());
                 return null;
             }
@@ -169,18 +180,26 @@ public abstract class TestUtils {
     }
 
     public static void finishInit() {
+      
+        try {
+           Main.loadDynamics();
+        } catch (Exception e1) {
+            JDLogger.exception(Level.FINEST, e1);
+        }
+        new WebUpdate().doUpdateCheck(true, false);
         JDUtilities.getController().setInitStatus(JDController.INIT_STATUS_COMPLETE);
         JDUtilities.getController().fireControlEvent(new ControlEvent(new Object(), ControlEvent.CONTROL_INIT_COMPLETE, null));
     }
-/**
- * Returns a hashmap of examplelinks. See  http://jdownloader.net:8081/knowledge/wiki/development/intern/testlinks/
- * 
- * Musthave:
- * NORMAL_DOWNLOADLINK_1
- * FNF_DOWNLOADLINK_1
- * @param string
- * @return
- */
+
+    /**
+     * Returns a hashmap of examplelinks. See
+     * http://jdownloader.net:8081/knowledge/wiki/development/intern/testlinks/
+     * 
+     * Musthave: NORMAL_DOWNLOADLINK_1 FNF_DOWNLOADLINK_1
+     * 
+     * @param string
+     * @return
+     */
     public static HashMap<String, String> getHosterLinks(String string) {
         HashMap<String, String> ret = new HashMap<String, String>();
         try {
@@ -193,8 +212,12 @@ public abstract class TestUtils {
             br.getPage(login);
 
             Form form = br.getForm(2);
-            form.put("u", getStringProperty("JD_WIKI_USER"));
-            form.put("p", getStringProperty("JD_WIKI_PASS"));
+            if (WIKI_USER == null) {
+                WIKI_USER = getStringProperty("JD_WIKI_USER");
+                WIKI_PASS = getStringProperty("JD_WIKI_PASS");
+            }
+            form.put("u", WIKI_USER);
+            form.put("p", WIKI_PASS);
             br.submitForm(form);
             String[][] matches = br.getRegex("<div class=\"li\"> <a href=\"(.*?)\" class=\"urlextern\" target=\"_blank\" title=\".*?\"  rel=\"nofollow\">(.*?)</a>").getMatches();
             if (matches == null) return ret;
@@ -203,7 +226,7 @@ public abstract class TestUtils {
                     ret.put(m[1].trim(), m[0].trim());
                 }
             }
-          
+
         } catch (Exception e) {
             e.printStackTrace();
 
@@ -211,4 +234,66 @@ public abstract class TestUtils {
         return ret;
 
     }
+/**
+ * 
+
+    *
+      NORMAL_DECRYPTERLINK_1
+
+    *
+      DLC_DECRYPTER_LINK_1
+
+    *
+      PASSWORD_PROTECTED_1:12345
+    *
+      PASSWORD_PROTECTED_2:12345
+
+    *
+      CAPTCHA_DECRYPTER_1
+    *
+      FOLDER_DECRYPTER_1
+
+
+ * @param string
+ * @return
+ */
+    public static  HashMap<String, String> getDecrypterLinks(String string) {
+        HashMap<String, String> ret = new HashMap<String, String>();
+        try {
+
+            Browser br = new Browser();
+            br.setFollowRedirects(true);
+            br.setDebug(true);
+            br.getPage("http://jdownloader.net:8081/knowledge/wiki/development/intern/testlinks/decrypter/" + string + "?lng=en");
+            String login = br.getRegex("(http://jdownloader.net:8081/knowledge/wiki/development/intern/testlinks/decrypter/" + string + "\\?do=login\\&amp\\;sectok=.*?)\"").getMatch(0);
+            br.getPage(login);
+
+            Form form = br.getForm(2);
+            if (WIKI_USER == null) {
+                WIKI_USER = getStringProperty("JD_WIKI_USER");
+                WIKI_PASS = getStringProperty("JD_WIKI_PASS");
+            }
+            form.put("u", WIKI_USER);
+            form.put("p", WIKI_PASS);
+            br.submitForm(form);
+            String[][] matches = br.getRegex("<div class=\"li\"> <a href=\"(.*?)\" class=\"urlextern\" target=\"_blank\" title=\".*?\"  rel=\"nofollow\">(.*?)</a>").getMatches();
+            if (matches == null) return ret;
+            for (String[] m : matches) {
+                if (!m[0].trim().equalsIgnoreCase("http://decryptlink")) {
+                    ret.put(m[1].trim(), m[0].trim());
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+
+        }
+        return ret;
+
+    }
+
+public static void initContainer() {
+    jdi.loadCPlugins();
+    
+}
 }

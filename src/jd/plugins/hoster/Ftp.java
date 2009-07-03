@@ -83,14 +83,13 @@ public class Ftp extends PluginForHost {
                 public void onDownloadProgress(FtpEvent event) {
                     downloadLink.setDownloadCurrent(event.getProgress());
 
-                  
                     if (System.currentTimeMillis() - lastTime > 250) {
-                        
+
                         downloadLink.getSpeedMeter().addSpeedValue((int) ((1000 * (event.getProgress() - last)) / (System.currentTimeMillis() - lastTime)));
                         downloadLink.requestGuiUpdate();
                         last = event.getProgress();
                         lastTime = System.currentTimeMillis();
-                  
+                        downloadLink.setChunksProgress(new long[] { last });
                     }
                 }
 
@@ -121,7 +120,7 @@ public class Ftp extends PluginForHost {
             if (downloadLink.getSha1Hash() != null && !downloadLink.getSha1Hash().equalsIgnoreCase(JDHash.getSHA1(tmp))) { throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, " CRC error"); }
 
             if (!tmp.renameTo(new File(downloadLink.getFileOutput()))) { throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, " Rename failed. file exists?"); }
-       downloadLink.getLinkStatus().addStatus(LinkStatus.FINISHED);
+            downloadLink.getLinkStatus().addStatus(LinkStatus.FINISHED);
         } finally {
 
             ftp.disconnect();

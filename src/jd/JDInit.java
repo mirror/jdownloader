@@ -141,6 +141,7 @@ public class JDInit {
     public UIInterface initGUI(JDController controller) {
 
         UIInterface uiInterface = SimpleGUI.createGUI();
+ 
         controller.setUiInterface(uiInterface);
         controller.addControlListener(uiInterface);
         return uiInterface;
