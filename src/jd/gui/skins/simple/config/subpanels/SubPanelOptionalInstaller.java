@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 
 import javax.swing.JButton;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
@@ -30,8 +31,10 @@ import javax.swing.table.TableColumn;
 
 import jd.config.Configuration;
 import jd.controlling.interaction.PackageManager;
+import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.config.ConfigPanel;
 import jd.update.PackageData;
+import jd.update.WebUpdater;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
@@ -57,15 +60,15 @@ public class SubPanelOptionalInstaller extends ConfigPanel implements ActionList
         public String getColumnName(int column) {
             switch (column) {
             case 0:
-                return JDL.L("gui.config.packagemanager.column_name", "Paket");
-            case 1:
-                return JDL.L("gui.config.packagemanager.column_category", "Kategorie");
-            case 2:
-                return JDL.L("gui.config.packagemanager.column_latestVersion", "Akt. Version");
-            case 3:
-                return JDL.L("gui.config.packagemanager.column_installedVersion", "Inst. Version");
-            case 4:
                 return JDL.L("gui.config.packagemanager.column_select", "Auswählen");
+            case 1:
+                return JDL.L("gui.config.packagemanager.column_name", "Paket");
+            case 2:
+                return JDL.L("gui.config.packagemanager.column_category", "Kategorie");
+            case 3:
+                return JDL.L("gui.config.packagemanager.column_latestVersion", "Akt. Version");
+            case 4:
+                return JDL.L("gui.config.packagemanager.column_installedVersion", "Inst. Version");
             }
             return super.getColumnName(column);
         }
@@ -80,15 +83,15 @@ public class SubPanelOptionalInstaller extends ConfigPanel implements ActionList
 
                 switch (columnIndex) {
                 case 0:
-                    return element.getStringProperty("name");
-                case 1:
-                    return element.getStringProperty("category");
-                case 2:
-                    return element.getStringProperty("version");
-                case 3:
-                    return String.valueOf(element.getInstalledVersion());
-                case 4:
                     return element.isSelected();
+                case 1:
+                    return element.getStringProperty("name");
+                case 2:
+                    return element.getStringProperty("category");
+                case 3:
+                    return element.getStringProperty("version");
+                case 4:
+                    return String.valueOf(element.getInstalledVersion());
                 }
             } catch (Exception e) {
 
@@ -98,12 +101,12 @@ public class SubPanelOptionalInstaller extends ConfigPanel implements ActionList
 
         @Override
         public boolean isCellEditable(int rowIndex, int columnIndex) {
-            return columnIndex == 4;
+            return columnIndex == 0;
         }
 
         @Override
         public void setValueAt(Object value, int row, int col) {
-            if (col == 4) {
+            if (col == 0) {
                 PackageData element = packageData.get(row);
                 element.setSelected(!element.isSelected());
             }
@@ -113,6 +116,8 @@ public class SubPanelOptionalInstaller extends ConfigPanel implements ActionList
     private static final long serialVersionUID = 1L;
 
     private JButton btnReset;
+    
+    private JButton btnInstall;
 
     private ArrayList<PackageData> packageData = new ArrayList<PackageData>();
 
@@ -135,6 +140,16 @@ public class SubPanelOptionalInstaller extends ConfigPanel implements ActionList
             }
             tableModel.fireTableDataChanged();
         }
+        if(e.getSource() == btnInstall) {
+        	installaddons();
+        	tableModel.fireTableDataChanged();
+        	SimpleGUI.CURRENTGUI.getTaskPane().switcher(SimpleGUI.CURRENTGUI.getDlTskPane());
+        }
+    }
+    
+    private void installaddons() {
+        WebUpdater.getConfig("JDU").save();
+        new PackageManager().interact(this);
     }
 
     @Override
@@ -152,34 +167,41 @@ public class SubPanelOptionalInstaller extends ConfigPanel implements ActionList
             column = table.getColumnModel().getColumn(c);
             switch (c) {
             case 0:
-                column.setPreferredWidth(250);
-                break;
-            case 1:
-                column.setPreferredWidth(100);
-                column.setMaxWidth(150);
-                break;
-            case 2:
-                column.setPreferredWidth(80);
-                column.setMaxWidth(100);
-                break;
-            case 3:
-                column.setPreferredWidth(80);
-                column.setMaxWidth(100);
-                break;
-            case 4:
                 column.setPreferredWidth(70);
                 column.setMaxWidth(70);
                 column.setMinWidth(70);
+                break;
+            case 1:
+                column.setPreferredWidth(250);
+                break;
+            case 2:
+            	column.setPreferredWidth(100);
+            	column.setMaxWidth(150);
+                
+                break;
+            case 3:
+            	column.setPreferredWidth(80);
+            	column.setMaxWidth(100);
+                break;
+            case 4:
+                column.setPreferredWidth(80);
+                column.setMaxWidth(100);
                 break;
             }
         }
 
         btnReset = new JButton(JDL.L("gui.config.packagemanager.reset", "Addons neu herunterladen"));
         btnReset.addActionListener(this);
+        
+        btnInstall = new JButton(JDL.L("gui.config.general.cnl.install", "Install"));
+        btnInstall.addActionListener(this);
 
         setLayout(new MigLayout("ins 5,wrap 1", "[fill,grow]", "[fill,grow][]"));
         add(new JScrollPane(table));
-        add(btnReset, "w pref!, dock south");
+        JPanel pane = new JPanel();
+        pane.add(btnInstall);
+        pane.add(btnReset);
+        add(pane, "w pref!, dock south");
     }
 
     @Override
@@ -189,5 +211,4 @@ public class SubPanelOptionalInstaller extends ConfigPanel implements ActionList
     @Override
     public void save() {
     }
-
 }

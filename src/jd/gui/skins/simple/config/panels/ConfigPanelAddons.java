@@ -70,11 +70,7 @@ public class ConfigPanelAddons extends ConfigPanel {
         tabbed.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
         tabbed.setTabPlacement(SwingConstants.TOP);
         tabbed.addChangeListener(new ChangeListener() {
-
-            public void stateChanged(ChangeEvent e) {
-
-            }
-
+            public void stateChanged(ChangeEvent e) {}
         });
         tabbed.addTab(JDL.L("gui.config.addons.settings.tab", "Settings"), JDTheme.II("gui.splash.controller", 16, 16), sppo = new SubPanelPluginsOptional(configuration));
         tabbed.addTab(JDL.L("gui.config.addons.install.tab", "Installation & updates"), JDTheme.II("gui.images.taskpanes.download", 16, 16), spr = new SubPanelOptionalInstaller(configuration));
@@ -89,17 +85,12 @@ public class ConfigPanelAddons extends ConfigPanel {
 
     @Override
     public void save() {
-
         sppo.save();
         spr.save();
-        WebUpdater.getConfig("JDU").save();
-        new PackageManager().interact(this);
     }
 
     @Override
     public PropertyType hasChanges() {
-
         return PropertyType.getMax(super.hasChanges(), sppo.hasChanges(), spr.hasChanges());
     }
-
 }
