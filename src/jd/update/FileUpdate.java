@@ -79,11 +79,13 @@ public class FileUpdate {
 
         };
     }
-public String toString(){
-    return localPath;
-}
+
+
     public JDBroadcaster<MessageListener, MessageEvent> getBroadcaster() {
         return broadcaster;
+    }
+    public String toString() {
+        return localPath;
     }
 
     public String getRelURL() {
@@ -245,7 +247,7 @@ public String toString(){
                         ret = tmpFile.renameTo(getLocalTmpFile());
                         if (!ret) {
                             broadcaster.fireEvent(new MessageEvent(this, ERROR, "Error. Rename failed"));
-                        }else{
+                        } else {
                             return ret;
                         }
                     }

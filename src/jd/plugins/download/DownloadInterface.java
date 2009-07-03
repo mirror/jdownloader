@@ -1365,8 +1365,11 @@ abstract public class DownloadInterface {
         }
 
     }
-
-    protected synchronized void addChunksDownloading(long i) {
+/**
+ * Public for dummy mode
+ * @param i
+ */
+    public synchronized void addChunksDownloading(long i) {
 
         chunksDownloading += i;
     }
@@ -1981,6 +1984,7 @@ abstract public class DownloadInterface {
      */
     public void setFirstChunkRangeless(boolean b) {
         firstChunkRangeless = b;
+       
     }
 
     public boolean isFirstChunkRangeless() {

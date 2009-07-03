@@ -202,7 +202,11 @@ public class Form extends Property {
         } else if (!ret.matches("https?://.*")) {
             if (baseurl == null) { return null; }
             if (ret.charAt(0) == '/') {
-                ret = "http://" + baseurl.getHost() + ret;
+                if (baseurl.getPort() > 0 && baseurl.getPort() != 80) {
+                    ret = "http://" + baseurl.getHost() + ":" + baseurl.getPort() + ret;
+                } else {
+                    ret = "http://" + baseurl.getHost() + ret;
+                }
             } else if (ret.charAt(0) == '&') {
                 String base = baseurl.toString();
                 if (base.matches("http://.*/.*")) {

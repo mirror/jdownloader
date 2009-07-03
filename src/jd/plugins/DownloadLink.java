@@ -36,6 +36,7 @@ import jd.controlling.JDLogger;
 import jd.controlling.SingleDownloadController;
 import jd.controlling.SpeedMeter;
 import jd.event.JDBroadcaster;
+import jd.nutils.Formatter;
 import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
 import jd.nutils.io.JDIO;
@@ -174,6 +175,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     private int priority = 0;
 
     private transient ImageIcon icon;
+
+    private long requestTime;
 
     /**
      * Erzeugt einen neuen DownloadLink
@@ -577,7 +580,15 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
         for (int retry = 0; retry < 5; retry++) {
             try {
+                long startTime=System.currentTimeMillis();
                 availableStatus = getPlugin().requestFileInformation(this);
+                startTime=System.currentTimeMillis()-startTime;
+                if(getLinkStatus().getStatusText()==null||getLinkStatus().getStatusText().trim().length()==0){
+                  this.requestTime=startTime;
+                getLinkStatus().setStatusText(JDL.LF("jd.plugins.downloadlink.statustext.requesttime","Requesttime: %s",Formatter.formatMilliseconds(startTime)));
+                }
+                
+                
                 try {
                     getPlugin().getBrowser().getHttpConnection().disconnect();
                 } catch (Exception e) {
@@ -620,6 +631,17 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         }
         if (availableStatus == null) availableStatus = AvailableStatus.UNCHECKABLE;
         return availableStatus;
+    }
+/**
+ * 
+ * @return requesttime. TIme the downloadlink took for it's latest request. Usually set by linkgrabber
+ */
+    public long getRequestTime() {
+        return requestTime;
+    }
+
+    public void setRequestTime(long requestTime) {
+        this.requestTime = requestTime;
     }
 
     public void setAvailableStatus(AvailableStatus availableStatus) {

@@ -104,7 +104,7 @@ public class JDFolderWatch extends PluginOptional {
             String[] help = folder.list();
 
             for (String element : help) {
-                if (element.toLowerCase().endsWith(".dlc") || element.toLowerCase().endsWith(".ccf") || element.toLowerCase().endsWith(".rsdf")) {
+                if (element.toLowerCase().endsWith(".metalink") || element.toLowerCase().endsWith(".dlc") || element.toLowerCase().endsWith(".ccf") || element.toLowerCase().endsWith(".rsdf")) {
                     dabei = false;
                     File container = new File(folder, element);
                     try {

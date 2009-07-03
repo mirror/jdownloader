@@ -26,11 +26,14 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.InterruptedIOException;
 import java.io.OutputStreamWriter;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.URL;
 import java.util.StringTokenizer;
 
+import jd.event.JDBroadcaster;
 import jd.parser.Regex;
 
 /**
@@ -47,11 +50,29 @@ public class SimpleFTP {
     private BufferedWriter writer = null;
     private String dir = "/";
     private String host;
+    private JDBroadcaster<FtpListener, FtpEvent> broadcaster;
+
+    public JDBroadcaster<FtpListener, FtpEvent> getBroadcaster() {
+        return broadcaster;
+    }
 
     /**
      * Create an instance of SimpleFTP.
      */
     public SimpleFTP() {
+        initBroadcaster();
+    }
+
+    private void initBroadcaster() {
+        this.broadcaster = new JDBroadcaster<FtpListener, FtpEvent>() {
+
+            @Override
+            protected void fireEvent(FtpListener listener, FtpEvent event) {
+                if (event.getID() == FtpEvent.DOWNLOAD_PROGRESS) listener.onDownloadProgress(event);
+
+            }
+
+        };
     }
 
     /**
@@ -265,22 +286,6 @@ public class SimpleFTP {
             }
         }
         throw new IOException("SimpleFTP received bad data link information: " + response);
-    }
-
-    public static void main(String[] args) throws Exception {
-        SimpleFTP ftp = new SimpleFTP();
-        ftp.connect("jdupdate.bluehost.to", 2100, "**", "****");
-        ftp.bin();
-
-        ftp.mkdir("/testa/testb/testc");
-        ftp.cwd("/testa/testb/");
-
-        ftp.mkdir("testd/teste");
-        ftp.mkdir("/testa/testxxx");
-        ftp.mkdir("/testa/testxxx/");
-        ftp.cwd("/testa/testxxx/");
-        ftp.mkdir("/testa/testxxx/");
-        ftp.mkdir("/testa/testxxx/aaa");
     }
 
     /**
@@ -502,6 +507,7 @@ public class SimpleFTP {
     }
 
     public void download(String filename, File file) throws IOException {
+
         InetSocketAddress pasv = pasv();
 
         sendLine("RETR " + filename);
@@ -514,8 +520,18 @@ public class SimpleFTP {
         if (!response.startsWith("150")) { throw new IOException("Unexpected Response: " + response); }
         byte[] buffer = new byte[4096];
         int bytesRead = 0;
+        long counter = 0;
         while ((bytesRead = input.read(buffer)) != -1) {
+            if (Thread.currentThread().isInterrupted()){
+                out.flush();
+                out.close();
+                input.close();
+                response = readLine();
+                throw new InterruptedIOException();
+            }
+            counter += bytesRead;
             out.write(buffer, 0, bytesRead);
+            broadcaster.fireEvent(new FtpEvent(this, FtpEvent.DOWNLOAD_PROGRESS, counter));
 
         }
 
@@ -533,6 +549,85 @@ public class SimpleFTP {
         ftp.bin();
         ftp.cwd(filepath);
         ftp.download(name, file);
+
+    }
+
+    /**
+     * returns permissionmask, ?, user?, group?, size?, date, name
+     * 
+     * @return
+     * @throws IOException
+     */
+    public String[][] list() throws IOException {
+        InetSocketAddress pasv = pasv();
+
+        sendLine("LIST");
+
+        Socket dataSocket = new Socket(pasv.getHostName(), pasv.getPort());
+
+        BufferedReader input = new BufferedReader(new InputStreamReader(dataSocket.getInputStream(), "UTF8"));
+
+        // DataOutputStream out = new DataOutputStream(new
+        // FileOutputStream(file));
+        //
+
+        StringBuilder sb = new StringBuilder();
+        String response = readLine();
+        if (!response.startsWith("150")) { throw new IOException("Unexpected Response: " + response); }
+        char[] buffer = new char[4096];
+        int bytesRead = 0;
+        while ((bytesRead = input.read(buffer)) != -1) {
+
+            sb.append(buffer, 0, bytesRead);
+
+        }
+
+        input.close();
+        response = readLine();
+        // if (!response.startsWith("226")) { throw new
+        // IOException("Download failed: " + response); }
+        // return null;
+
+        String[][] matches = new Regex(sb.toString(), "(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+\\s+\\S+\\s+\\S+)\\s+([^\r^\n]+)").getMatches();
+        return matches;
+    }
+
+    /**
+     * permissionmask, ?, user?, group?, size?, date, name
+     * 
+     * @param path
+     * @return
+     * @throws IOException
+     */
+    public String[] getFileInfo(String path) throws IOException {
+        String name = path.substring(path.lastIndexOf("/") + 1);
+        path = path.substring(0, path.lastIndexOf("/"));
+
+        this.cwd(path);
+        for (String[] file : list()) {
+            if (file[6].equals(name)) return file;
+
+        }
+        return null;
+    }
+
+    /**
+     * COnnect to the url.does not change directory
+     * 
+     * @param url
+     * @throws IOException
+     */
+    public void connect(URL url) throws IOException {
+        String host = url.getHost();
+        int port = url.getPort();
+        if (port <= 0) port = 21;
+        if (url.getUserInfo() != null) {
+            String[] auth = url.getUserInfo().split(":");
+            connect(host, port, auth[0], auth[1]);
+        } else {
+
+            connect(host, port);
+        }
 
     }
 

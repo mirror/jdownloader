@@ -62,11 +62,13 @@ public class JDFileReg {
             StringBuilder sb = new StringBuilder();
             sb.append(createRegisterWinFileExt("jd"));
             sb.append(createRegisterWinFileExt("dlc"));
+            sb.append(createRegisterWinFileExt("metalink"));
             sb.append(createRegisterWinFileExt("ccf"));
             sb.append(createRegisterWinFileExt("rsdf"));
             sb.append(createRegisterWinProtocol("jd"));
             sb.append(createRegisterWinProtocol("jdlist"));
             sb.append(createRegisterWinProtocol("dlc"));
+            sb.append(createRegisterWinProtocol("metalink"));   
             sb.append(createRegisterWinProtocol("ccf"));
             sb.append(createRegisterWinProtocol("rsdf"));
             AbstractDialog.setDefaultDimension(new Dimension(550, 400));

@@ -16,6 +16,8 @@
 
 package tests.utils;
 
+import java.util.HashMap;
+
 import javax.swing.JFrame;
 
 import jd.DecryptPluginWrapper;
@@ -29,7 +31,9 @@ import jd.gui.UserIO;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.userio.SimpleUserIO;
+import jd.http.Browser;
 import jd.nutils.OSDetector;
+import jd.parser.html.Form;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.MacOSController;
@@ -167,5 +171,44 @@ public abstract class TestUtils {
     public static void finishInit() {
         JDUtilities.getController().setInitStatus(JDController.INIT_STATUS_COMPLETE);
         JDUtilities.getController().fireControlEvent(new ControlEvent(new Object(), ControlEvent.CONTROL_INIT_COMPLETE, null));
+    }
+/**
+ * Returns a hashmap of examplelinks. See  http://jdownloader.net:8081/knowledge/wiki/development/intern/testlinks/
+ * 
+ * Musthave:
+ * NORMAL_DOWNLOADLINK_1
+ * FNF_DOWNLOADLINK_1
+ * @param string
+ * @return
+ */
+    public static HashMap<String, String> getHosterLinks(String string) {
+        HashMap<String, String> ret = new HashMap<String, String>();
+        try {
+
+            Browser br = new Browser();
+            br.setFollowRedirects(true);
+            br.setDebug(true);
+            br.getPage("http://jdownloader.net:8081/knowledge/wiki/development/intern/testlinks/hoster/" + string + "?lng=en");
+            String login = br.getRegex("(http://jdownloader.net:8081/knowledge/wiki/development/intern/testlinks/hoster/" + string + "\\?do=login\\&amp\\;sectok=.*?)\"").getMatch(0);
+            br.getPage(login);
+
+            Form form = br.getForm(2);
+            form.put("u", getStringProperty("JD_WIKI_USER"));
+            form.put("p", getStringProperty("JD_WIKI_PASS"));
+            br.submitForm(form);
+            String[][] matches = br.getRegex("<div class=\"li\"> <a href=\"(.*?)\" class=\"urlextern\" target=\"_blank\" title=\".*?\"  rel=\"nofollow\">(.*?)</a>").getMatches();
+            if (matches == null) return ret;
+            for (String[] m : matches) {
+                if (!m[0].trim().equalsIgnoreCase("http://downloadlink")) {
+                    ret.put(m[1].trim(), m[0].trim());
+                }
+            }
+          
+        } catch (Exception e) {
+            e.printStackTrace();
+
+        }
+        return ret;
+
     }
 }

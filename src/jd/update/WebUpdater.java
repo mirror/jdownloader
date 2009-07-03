@@ -540,7 +540,7 @@ public boolean isIgnorePlugins() {
         if (prg != null) prg.addToMax(files.size());
         for (FileUpdate file : files) {
             try {
-                broadcaster.fireEvent(new MessageEvent(this, 0, "Update file: " + file.getLocalPath()));
+                broadcaster.fireEvent(new MessageEvent(this, 0, "Update file: " + WebUpdater.formatPathReadable(file.getLocalPath())));
                 if (updateUpdatefile(file)) {
                     broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_SUCCESS, file.toString()));
                     broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_SUCCESS, "Successfull\r\n"));
@@ -571,6 +571,11 @@ public boolean isIgnorePlugins() {
         if (progressload != null) {
             progressload.setValue(100);
         }
+    }
+
+    private static String formatPathReadable(String localPath) {
+        localPath=localPath.replace(".class", "-plugin");
+        return localPath;
     }
 
     public boolean updateUpdatefile(FileUpdate file) {

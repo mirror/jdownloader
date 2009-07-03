@@ -24,6 +24,7 @@ import jd.controlling.HTACCESSController;
 import jd.controlling.ListController;
 import jd.http.Encoding;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.Formatter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -34,7 +35,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(names = { "http links","JDUdateLoader"}, urls ={ "https?viajd://[\\d\\w\\.:\\-@]*/.*?\\.(otrkey|ac3|3gp|7zip|7z|aiff|aif|aifc|au|avi|bin|bz2|ccf|cue|divx|dlc|doc|docx|dot|exe|flv|gif|gz|iso|java|jpg|jpeg|mkv|mp2|mp3|mp4|mov|movie|mpe|mpeg|mpg|msi|msu|nfo|png|pdf|ppt|pptx|pps|ppz|pot|qt|rmvb|rar|r\\d+|\\d+|rsdf|rtf|snd|sfv|tar|tif|tiff|viv|vivo|wav|wmv|xla|xls|zip|ts|load)","https?viajd://[\\d\\w\\.:\\-@]*/.*?\\.jdu"}, flags = {0,HostPluginWrapper.ALWAYS_ENABLED})
+@HostPlugin(names = { "http links","JDUdateLoader"}, urls ={ "https?viajd://[\\d\\w\\.:\\-@]*/.*\\.(otrkey|ac3|3gp|7zip|7z|aiff|aif|aifc|au|avi|bin|bz2|ccf|cue|divx|dlc|doc|docx|dot|exe|flv|gif|gz|iso|java|jpg|jpeg|mkv|mp2|mp3|mp4|mov|movie|mpe|mpeg|mpg|msi|msu|nfo|png|pdf|ppt|pptx|pps|ppz|pot|qt|rmvb|rar|r\\d+|\\d+|rsdf|rtf|snd|sfv|tar|tif|tiff|viv|vivo|wav|wmv|xla|xls|zip|ts|load)","https?viajd://[\\d\\w\\.:\\-@]*/.*\\.jdu"}, flags = {0,HostPluginWrapper.ALWAYS_ENABLED})
 
 public class HTTPAllgemein extends PluginForHost {
 
@@ -84,6 +85,8 @@ public class HTTPAllgemein extends PluginForHost {
 
     // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException {
+     
+      
         this.setBrowserExclusive();
         String basicauth = HTACCESSController.getInstance().get(downloadLink.getDownloadURL());
         if (basicauth == null) {
@@ -94,6 +97,7 @@ public class HTTPAllgemein extends PluginForHost {
             br.getHeaders().put("Authorization", basicauth);
         }
         br.setFollowRedirects(true);
+     
         URLConnectionAdapter urlConnection = null;
         try {
             urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
@@ -131,6 +135,7 @@ public class HTTPAllgemein extends PluginForHost {
             if (urlConnection != null && urlConnection.isConnected() == true) urlConnection.disconnect();
         }
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        
     }
 
     // @Override

@@ -222,6 +222,10 @@ public class HTTPConnection extends sun.net.www.protocol.http.HttpURLConnection 
             sb.append(next.getKey());
             sb.append(new char[] { ':', ' ' });
             sb.append(v);
+            if(next.getKey().equalsIgnoreCase("host")){
+              sb.append(':');
+              sb.append(this.getURL().getPort());
+            }
             sb.append(new char[] { '\r', '\n' });
         }
         sb.append(new char[] { '\r', '\n' });

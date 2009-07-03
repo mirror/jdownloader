@@ -272,10 +272,11 @@ public class JDInit {
     }
 
     public void loadCPlugins() {
-        new CPluginWrapper("linkbackup", "B", ".+\\.linkbackup");
+     
         new CPluginWrapper("ccf", "C", ".+\\.ccf");
         new CPluginWrapper("rsdf", "R", ".+\\.rsdf");
         new CPluginWrapper("dlc", "D", ".+\\.dlc");
+        new CPluginWrapper("metalink", "MetaLink", ".+\\.metalink");
     }
 
     public void loadPluginForDecrypt() {
@@ -345,6 +346,7 @@ public class JDInit {
         new DecryptPluginWrapper("redirect.musicalmente.info", "MusicalmenteInfo", "http://[\\w\\.]*?redirect\\.musicalmente\\.info/.+");
         new DecryptPluginWrapper("music-base.ws", "MusicBaseWs", "http://[\\w\\.]*?music-base\\.ws/dl\\.php.*?c=[\\w]+");
         new DecryptPluginWrapper("myref.de", "MyRef", "http://[\\w\\.]*?myref\\.de(/){0,1}\\?\\d{0,10}");
+        new DecryptPluginWrapper("metalinker.org", "MetaLink", "http://[\\d\\w\\.:\\-@]*/.*?\\.metalink");
         new DecryptPluginWrapper("myup.cc", "Myupcc", "http://[\\w\\.]*?myup\\.cc/link-[\\w]+\\.html");
         new DecryptPluginWrapper("myvideo.de", "MyvideoDe", "http://[\\w\\.]*?myvideo\\.de/watch/[0-9]+/");
         new DecryptPluginWrapper("netfolder.in", "NetfolderIn", "http://[\\w\\.]*?netfolder\\.in/folder\\.php\\?folder_id\\=[\\w]{7}|http://[\\w\\.]*?netfolder\\.in/[\\w]{7}/.*?");
