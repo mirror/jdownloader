@@ -169,14 +169,16 @@ public class DDLWarez extends PluginForDecrypt {
                             }
                         }
                     }
-
-                    br.submitForm(form);
-                    form = br.getForm(1);
-                    if (form.getAction().contains("crypt.php")) {
-                        form.put("submit", Encoding.urlEncode("zu den Links..."));
-                        this.sleep(10 * 1000l, param);
+                    //only one countdown can be processed at a time: Leider ist es nicht möglich zwei Countdows zur selben Zeit offen zu haben.
+                    synchronized (__lock) {
                         br.submitForm(form);
                         form = br.getForm(1);
+                        if (form.getAction().contains("crypt.php")) {
+                            form.put("submit", Encoding.urlEncode("zu den Links..."));
+                            this.sleep(10 * 1000l, param);
+                            br.submitForm(form);
+                            form = br.getForm(1);
+                        }
                     }
                     if (form != null && !form.getAction().contains("get_file.php") && !form.getAction().contains("goref.php")) {
                         captchaText = null;
@@ -375,4 +377,6 @@ public class DDLWarez extends PluginForDecrypt {
         else
             return createKey(number / seed, seed) + String.valueOf((char) (number % seed + offset));
     }
+
+    private static Object __lock = new Object();
 }
