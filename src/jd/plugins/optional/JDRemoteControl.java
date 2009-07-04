@@ -49,6 +49,7 @@ import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
 import jd.utils.JDUtilities;
 import jd.utils.WebUpdate;
@@ -56,7 +57,7 @@ import jd.utils.locale.JDL;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-
+@OptionalPlugin(rev="$Revision$", id="remotecontrol",interfaceversion=4)
 public class JDRemoteControl extends PluginOptional implements ControlListener {
 
     private static final String PARAM_PORT = "PORT";
@@ -464,9 +465,6 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
 
     }
 
-    public static int getAddonInterfaceVersion() {
-        return 3;
-    }
 
     private DecimalFormat f = new DecimalFormat("#0.00");
 
@@ -501,17 +499,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
         return menu;
     }
 
-    public String getHost() {
-        return JDL.L("plugins.optional.remotecontrol.name", "RemoteControl");
-    }
 
-    public String getRequirements() {
-        return "JRE 1.5+";
-    }
-
-    public String getVersion() {
-        return getVersion("$Revision$");
-    }
 
     public boolean initAddon() {
         logger.info("RemoteControl OK");

@@ -211,10 +211,10 @@ public class WebUpdate {
 
                     String clazz = new Regex(f.getLocalFile().getAbsoluteFile(), "(jd[/\\\\].*?)\\.class").getMatch(0);
 
-                    System.out.println("Class " + clazz + " - " + f.getLocalFile().getAbsolutePath());
+                 
                     if (clazz != null) {
                         clazz = clazz.replaceAll("[/\\\\]", ".");
-                        System.out.println("Class " + clazz + " - " + f.getLocalFile().getAbsolutePath());
+                       
                         PluginWrapper wrapper;
                         if (f.getLocalFile().getAbsolutePath().contains(".decrypt")) {
                             wrapper = DecryptPluginWrapper.getWrapper(clazz);

@@ -30,16 +30,15 @@ import jd.nutils.Executer;
 import jd.nutils.OSDetector;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
+import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
+@OptionalPlugin(rev="$Revision$", id="growl",interfaceversion=4,windows=false,linux=false)
 public class JDGrowlNotification extends PluginOptional {
 
-    public static int getAddonInterfaceVersion() {
-        return 3;
-    }
+
 
     public JDGrowlNotification(PluginWrapper wrapper) {
         super(wrapper);
@@ -47,20 +46,10 @@ public class JDGrowlNotification extends PluginOptional {
 
     private static final String PROPERTY_ENABLED = "PROPERTY_ENABLED";
 
-    // @Override
-    public String getRequirements() {
-        return "JRE 1.5+";
-    }
 
-    // @Override
-    public String getVersion() {
-        return getVersion("$Revision$");
-    }
 
-    // @Override
-    public String getHost() {
-        return JDL.L("plugins.optional.jdgrowlnotification.name", "JDGrowlNotification");
-    }
+ 
+
 
     // @Override
     public boolean initAddon() {

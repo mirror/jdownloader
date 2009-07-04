@@ -48,6 +48,8 @@ import jd.nutils.OSDetector;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.plugins.HostPlugin;
+import jd.plugins.OptionalPlugin;
+import jd.plugins.PluginOptional;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -514,8 +516,9 @@ public class JDInit {
     }
 
     /**
-     * Returns a classloader to load plugins (class files);
-     * Depending on runtype (dev or local jared) a different classoader is used to load plugins either from installdirectory or from rundirectory
+     * Returns a classloader to load plugins (class files); Depending on runtype
+     * (dev or local jared) a different classoader is used to load plugins
+     * either from installdirectory or from rundirectory
      * 
      * @return
      */
@@ -563,11 +566,10 @@ public class JDInit {
 
     public void loadPluginForHost() {
 
-        System.out.println("DO");
         try {
             for (Class<?> c : getClasses("jd.plugins.hoster")) {
                 try {
-                    System.out.println(c);
+
                     if (c.getAnnotations().length > 0) {
                         HostPlugin help = (HostPlugin) c.getAnnotations()[0];
 
@@ -586,23 +588,70 @@ public class JDInit {
     }
 
     public void loadPluginOptional() {
+        System.out.println("DO");
+        try {
+            for (Class<?> c : getClasses("jd.plugins.optional")) {
+                try {
 
-        if (JDUtilities.getJavaVersion() >= 1.6) new OptionalPluginWrapper("jdtrayicon.JDLightTray", 1.6, "trayicon", JDL.L("plugins.optional.trayicon.name", "Tray Icon (Minimizer)"));
-        new OptionalPluginWrapper("webinterface.JDWebinterface", 1.5, "webinterface", JDL.L("plugins.optional.webinterface.name", "WebInterface"));
-        new OptionalPluginWrapper("schedule.Schedule", 1.5, "scheduler", JDL.L("addons.schedule.name", "Schedule"));
-        new OptionalPluginWrapper("JDFolderWatch", 1.5, "folderwatch", JDL.L("plugins.optional.folderwatch.name", "JDFolderWatch"));
-        new OptionalPluginWrapper("JDShutdown", 1.5, "shutdown", JDL.L("plugins.optional.jdshutdown.name", "JDShutdown"));
-        new OptionalPluginWrapper("JDRemoteControl", 1.5, "remotecontrol", JDL.L("plugins.optional.remotecontrol.name", "RemoteControl"));
-        new OptionalPluginWrapper("jdchat.JDChat", 1.5, "chat", JDL.L("plugins.optional.jdchat.name2", "JD Support Chat"));
-        new OptionalPluginWrapper("Newsfeeds", 1.5, "newsfeed", JDL.L("plugins.optional.newsfeeds.pluginTitle", "Newsfeed Check"));
-        new OptionalPluginWrapper("JDInfoFileWriter", 1.5, "infofilewriter", JDL.L("plugins.optional.infoFileWriter.name", "Info File Writer"));
-        new OptionalPluginWrapper("langfileeditor.LangFileEditor", 1.5, "langfileditor", JDL.L("plugins.optional.langfileeditor.name", "Language File Editor"));
-        new OptionalPluginWrapper("jdunrar.JDUnrar", 1.5, "unrar", JDL.L("plugins.optional.jdunrar.name", "JD-Unrar"));
-        new OptionalPluginWrapper("hjsplit.JDHJSplit", 1.5, "hjsplit", JDL.L("plugins.optional.jdhjsplit.name", "JD-HJMerge"));
-        new OptionalPluginWrapper("premcol.JDPremiumCollector", 1.5, "premcol", JDL.L("plugins.optional.premiumcollector.name", "PremiumCollector"));
-        new OptionalPluginWrapper("interfaces.JDFlashGot", 1.5, "flashgot", JDL.L("plugins.optional.flashgot.name", "FlashGot Integration"));
-        if (OSDetector.isMac()) new OptionalPluginWrapper("JDGrowlNotification", 1.5, "growl", JDL.L("plugins.optional.jdgrowlnotification.name", "JDGrowlNotification"));
-        new OptionalPluginWrapper("HTTPLiveHeaderScripter", 1.5, "livescripter", JDL.L("plugins.optional.httpliveheaderscripter.name", "HTTPLiveHeaderScripter"));
+                    if (c.getAnnotations().length > 0) {
+                        OptionalPlugin help = (OptionalPlugin) c.getAnnotations()[0];
+                        System.out.println(help);
+
+                        if ((help.windows() && OSDetector.isWindows()) || (help.linux() && OSDetector.isLinux()) || (help.mac() && OSDetector.isMac())) {
+                            if (JDUtilities.getJavaVersion() >= help.minJVM() && PluginOptional.ADDON_INTERFACE_VERSION == help.interfaceversion()) {
+                                System.out.println("Load Plugin!");
+                                new OptionalPluginWrapper(c, help);
+                            }
+                        }
+
+                    }
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        // if (JDUtilities.getJavaVersion() >= 1.6) new
+        // OptionalPluginWrapper("jdtrayicon.JDLightTray", 1.6, "trayicon",
+        // JDL.L("plugins.optional.trayicon.name", "Tray Icon (Minimizer)"));
+        // new OptionalPluginWrapper("webinterface.JDWebinterface", 1.5,
+        // "webinterface", JDL.L("plugins.optional.webinterface.name",
+        // "WebInterface"));
+        // new OptionalPluginWrapper("schedule.Schedule", 1.5, "scheduler",
+        // JDL.L("addons.schedule.name", "Schedule"));
+        // new OptionalPluginWrapper("JDFolderWatch", 1.5, "folderwatch",
+        // JDL.L("plugins.optional.folderwatch.name", "JDFolderWatch"));
+        // new OptionalPluginWrapper("JDShutdown", 1.5, "shutdown",
+        // JDL.L("plugins.optional.jdshutdown.name", "JDShutdown"));
+        // new OptionalPluginWrapper("JDRemoteControl", 1.5, "remotecontrol",
+        // JDL.L("plugins.optional.remotecontrol.name", "RemoteControl"));
+        // new OptionalPluginWrapper("jdchat.JDChat", 1.5, "chat",
+        // JDL.L("plugins.optional.jdchat.name2", "JD Support Chat"));
+        // new OptionalPluginWrapper("Newsfeeds", 1.5, "newsfeed",
+        // JDL.L("plugins.optional.newsfeeds.pluginTitle", "Newsfeed Check"));
+        // new OptionalPluginWrapper("JDInfoFileWriter", 1.5, "infofilewriter",
+        // JDL.L("plugins.optional.infoFileWriter.name", "Info File Writer"));
+        // new OptionalPluginWrapper("langfileeditor.LangFileEditor", 1.5,
+        // "langfileditor", JDL.L("plugins.optional.langfileeditor.name",
+        // "Language File Editor"));
+        // new OptionalPluginWrapper("jdunrar.JDUnrar", 1.5, "unrar",
+        // JDL.L("plugins.optional.jdunrar.name", "JD-Unrar"));
+        // new OptionalPluginWrapper("hjsplit.JDHJSplit", 1.5, "hjsplit",
+        // JDL.L("plugins.optional.jdhjsplit.name", "JD-HJMerge"));
+        // new OptionalPluginWrapper("premcol.JDPremiumCollector", 1.5,
+        // "premcol", JDL.L("plugins.optional.premiumcollector.name",
+        // "PremiumCollector"));
+        // new OptionalPluginWrapper("interfaces.JDExternInterface", 1.5,
+        // "flashgot", JDL.L("plugins.optional.flashgot.name",
+        // "FlashGot Integration"));
+        // if (OSDetector.isMac()) new
+        // OptionalPluginWrapper("JDGrowlNotification", 1.5, "growl",
+        // JDL.L("plugins.optional.jdgrowlnotification.name",
+        // "JDGrowlNotification"));
+        // new OptionalPluginWrapper("HTTPLiveHeaderScripter", 1.5,
+        // "livescripter", JDL.L("plugins.optional.httpliveheaderscripter.name",
+        // "HTTPLiveHeaderScripter"));
 
     }
 

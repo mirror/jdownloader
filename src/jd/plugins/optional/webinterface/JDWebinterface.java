@@ -27,10 +27,11 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.MenuItem;
 import jd.config.SubConfiguration;
+import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
+@OptionalPlugin(rev="$Revision$", id="webinterface",interfaceversion=4)
 public class JDWebinterface extends PluginOptional {
     static public JDWebinterface instance;    
     static final String PROPERTY_HTTPS = "PARAM_HTTPS";
@@ -42,9 +43,7 @@ public class JDWebinterface extends PluginOptional {
 
     static final String PROPERTY_USER = "PARAM_USER";
 
-    public static int getAddonInterfaceVersion() {
-        return 3;
-    }
+
 
     public JDWebinterface(PluginWrapper wrapper) {
         super(wrapper);
@@ -84,20 +83,8 @@ public class JDWebinterface extends PluginOptional {
         return "jiaz";
     }
 
-    //@Override
-    public String getHost() {
-        return JDL.L("plugins.optional.webinterface.name", "WebInterface");
-    }
 
-    //@Override
-    public String getRequirements() {
-        return "JRE 1.5+";
-    }
 
-    //@Override
-    public String getVersion() {
-        return getVersion("$Revision$");
-    }
 
     static public int getRefreshRate() {
         SubConfiguration subConfig = SubConfiguration.getConfig("WEBINTERFACE");

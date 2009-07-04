@@ -35,10 +35,11 @@ import jd.event.ControlEvent;
 import jd.gui.UserIO;
 import jd.nutils.JDFlags;
 import jd.nutils.OSDetector;
+import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
+@OptionalPlugin(rev="$Revision$", id="shutdown",interfaceversion=4)
 public class JDShutdown extends PluginOptional {
 
     private static final int count = 60;
@@ -47,9 +48,6 @@ public class JDShutdown extends PluginOptional {
     private static final String CONFIG_FORCESHUTDOWN = "FORCE";
     private static Thread shutdown = null;
 
-    public static int getAddonInterfaceVersion() {
-        return 3;
-    }
 
     private MenuItem menuItem;
 
@@ -96,21 +94,6 @@ public class JDShutdown extends PluginOptional {
         if (menuItem == null) menuItem = new MenuItem(MenuItem.TOGGLE, JDL.L("addons.jdshutdown.menu", "Shutdown after downloads finished"), 0).setActionListener(this);
         menu.add(menuItem);
         return menu;
-    }
-
-    // @Override
-    public String getHost() {
-        return JDL.L("plugins.optional.jdshutdown.name", "JDShutdown");
-    }
-
-    // @Override
-    public String getRequirements() {
-        return "JRE 1.5+";
-    }
-
-    // @Override
-    public String getVersion() {
-        return getVersion("$Revision$");
     }
 
     // @Override

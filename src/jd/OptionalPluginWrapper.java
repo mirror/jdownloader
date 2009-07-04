@@ -17,12 +17,13 @@
 package jd;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 
 import jd.controlling.JDLogger;
+import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 public class OptionalPluginWrapper extends PluginWrapper {
 
@@ -35,27 +36,27 @@ public class OptionalPluginWrapper extends PluginWrapper {
     private double version;
     private String id;
     private String name;
+    private String revision;
 
-    public OptionalPluginWrapper(String string, double d, String id, String name) {
-        super(string, "jd.plugins.optional.", string, null, 0);
-        this.id = id;
-        this.version = d;
-        this.name = name;
+    // public OptionalPluginWrapper(String string, double d, String id, String
+    // name) {
+    public OptionalPluginWrapper(Class<?> c, OptionalPlugin help) {
 
-        JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
+        super(c.getName(), null, c.getName(), null, 0);
+        this.id = help.id();
+        revision = help.rev();
+        this.version = help.minJVM();
+        this.name = JDL.L(c.getName(), c.getSimpleName());
 
         try {
-            Class<?> cl;
-            if ((cl = jdClassLoader.loadClass(this.getClassName())) != null) {
-                logger.finer("OPTIONAL loaded " + string + " : " + cl);
-                OPTIONAL_WRAPPER.add(this);
 
-                if (this.isEnabled()) {
-                    this.getPlugin();
-                }
-            } else {
-                logger.finer("OPTIONAL NOT loaded " + string + " : " + cl);
+            logger.finer("OPTIONAL loaded " + help);
+            OPTIONAL_WRAPPER.add(this);
+
+            if (this.isEnabled()) {
+                this.getPlugin();
             }
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -68,6 +69,13 @@ public class OptionalPluginWrapper extends PluginWrapper {
 
     public String getHost() {
         return name;
+    }
+/**
+ * returns the addon's version (revision)
+ */
+    public String getVersion() {
+        // TODO
+        return revision;
     }
 
     // @Override
@@ -98,17 +106,10 @@ public class OptionalPluginWrapper extends PluginWrapper {
 
             try {
 
-                Method f = plgClass.getMethod("getAddonInterfaceVersion", new Class[] {});
+                this.loadedPlugin = (PluginOptional) con.newInstance(new Object[] { this });
+                logger.finer("Successfully loaded " + this.getClassName());
+                return (PluginOptional) loadedPlugin;
 
-                int id = (Integer) f.invoke(null, new Object[] {});
-
-                if (id != PluginOptional.ADDON_INTERFACE_VERSION) {
-                    logger.severe("Addon " + this.getClassName() + " is outdated and incompatible. Please update(Packagemanager) :Addon:" + id + " : Interface: " + PluginOptional.ADDON_INTERFACE_VERSION);
-                } else {
-                    this.loadedPlugin = (PluginOptional) con.newInstance(new Object[] { this });
-                    logger.finer("Successfully loaded " + this.getClassName());
-                    return (PluginOptional) loadedPlugin;
-                }
             } catch (Exception e) {
                 JDLogger.exception(e);
                 logger.severe("Addon " + this.getClassName() + " is outdated and incompatible. Please update(Packagemanager) :" + e.getLocalizedMessage());

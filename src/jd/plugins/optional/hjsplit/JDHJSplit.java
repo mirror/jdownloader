@@ -40,6 +40,7 @@ import jd.nutils.jobber.Jobber;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
 import jd.plugins.optional.hjsplit.jaxe.JAxeJoiner;
@@ -48,7 +49,7 @@ import jd.plugins.optional.hjsplit.jaxe.ProgressEvent;
 import jd.plugins.optional.hjsplit.jaxe.ProgressEventListener;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
+@OptionalPlugin(rev="$Revision$", id="hjsplit",interfaceversion=4)
 public class JDHJSplit extends PluginOptional implements ControlListener {
 
     private static final String CONFIG_KEY_REMOVE_MERGED = "REMOVE_MERGED";
@@ -61,9 +62,6 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
     // Wird als reihe für anstehende extracthjobs verwendet
     private Jobber queue;
 
-    public static int getAddonInterfaceVersion() {
-        return 3;
-    }
 
     public JDHJSplit(PluginWrapper wrapper) {
         super(wrapper);
@@ -519,20 +517,6 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
         return link;
     }
 
-    // @Override
-    public String getHost() {
-        return JDL.L("plugins.optional.jdhjsplit.name", "JD-HJMerge");
-    }
-
-    // @Override
-    public String getRequirements() {
-        return "JRE 1.5+";
-    }
-
-    // @Override
-    public String getVersion() {
-        return getVersion("$Revision$");
-    }
 
     // @Override
     public boolean initAddon() {

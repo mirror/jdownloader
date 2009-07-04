@@ -23,9 +23,10 @@ import jd.PluginWrapper;
 import jd.config.MenuItem;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.SingletonPanel;
+import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
 import jd.utils.locale.JDL;
-
+@OptionalPlugin(rev="$Revision$", id="langfileditor",interfaceversion=4)
 /**
  * Editor for jDownloader language files. Gets JDLocale.L() and JDLocale.LF()
  * entries from source and compares them to the keypairs in the language file.
@@ -49,10 +50,6 @@ public class LangFileEditor extends PluginOptional {
         }
     }
 
-    // @Override
-    public String getRequirements() {
-        return "JRE 1.5+";
-    }
 
     // @Override
     public boolean initAddon() {
@@ -82,18 +79,8 @@ public class LangFileEditor extends PluginOptional {
         return "gui.splash.languages";
     }
 
-    // @Override
-    public String getHost() {
-        return JDL.L("plugins.optional.langfileeditor.name", "Language File Editor");
-    }
 
-    // @Override
-    public String getVersion() {
-        return getVersion("$Revision$");
-    }
 
-    public static int getAddonInterfaceVersion() {
-        return 3;
-    }
+
 
 }

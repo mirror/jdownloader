@@ -52,20 +52,18 @@ import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
 import jd.plugins.PluginProgress;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
+@OptionalPlugin(rev="$Revision$", id="unrar",interfaceversion=4)
 public class JDUnrar extends PluginOptional implements ControlListener, UnrarListener {
 
     private static final String DUMMY_HOSTER = "dum.my";
 
-    public static int getAddonInterfaceVersion() {
-        return 3;
-    }
 
     /**
      * Wird als reihe für anstehende extracthjobs verwendet
@@ -201,39 +199,6 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
     }
 
-    // /**
-    // * prüft die Warteschlange ob nun archive komplett sind und entpackt
-    // werden
-    // * können.
-    // *
-    // */
-    // private void checkWaitQueue() {
-    // synchronized (waitQueue) {
-    // for (int i = waitQueue.size() - 1; i >= 0; i--) {
-    // if (archiveIsComplete(waitQueue.get(i))) {
-    // this.addToQueue(waitQueue.remove(i));
-    // this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_WAITLIST,
-    // queue);
-    // }
-    // }
-    // }
-    //
-    // }
-
-    // /**
-    // * Fügt downloadlinks, bei denen der startart zwar schon geladen ist, aber
-    // * die folgeparts noch nicht zu einer wartequeue
-    // *
-    // * @param link
-    // */
-    // private void addToWaitQueue(DownloadLink link) {
-    // synchronized (waitQueue) {
-    // waitQueue.add(link);
-    // this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_WAITLIST,
-    // waitQueue);
-    // this.getPluginConfig();
-    // }
-    // }
 
     /**
      * Prüft im zugehörigem Filepackage, ob noch downloadlinks vom archiv
@@ -637,20 +602,8 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
     }
 
-    // @Override
-    public String getHost() {
-        return JDL.L("plugins.optional.jdunrar.name", "JD-Unrar");
-    }
 
-    // @Override
-    public String getRequirements() {
-        return "JRE 1.5+";
-    }
 
-    // @Override
-    public String getVersion() {
-        return getVersion("$Revision$");
-    }
 
     // @Override
     public boolean initAddon() {
@@ -1356,4 +1309,6 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             return null;
         }
     }
+
+
 }

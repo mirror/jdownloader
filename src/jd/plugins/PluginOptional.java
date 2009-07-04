@@ -18,6 +18,7 @@ package jd.plugins;
 
 import java.util.regex.Pattern;
 
+import jd.OptionalPluginWrapper;
 import jd.PluginWrapper;
 import jd.controlling.JDLogger;
 import jd.event.ControlEvent;
@@ -29,7 +30,7 @@ public abstract class PluginOptional extends Plugin implements ControlListener {
         super(wrapper);
     }
 
-    public static final int ADDON_INTERFACE_VERSION = 3;
+    public static final int ADDON_INTERFACE_VERSION = 4;
 
     public void controlEvent(ControlEvent event) {
 
@@ -64,5 +65,11 @@ public abstract class PluginOptional extends Plugin implements ControlListener {
 
     public Object interact(String command, Object parameter) {
         return null;
+    }
+
+    @Override
+    public String getVersion() {
+        // TODO Auto-generated method stub
+        return ((OptionalPluginWrapper) (this.getWrapper())).getVersion();
     }
 }

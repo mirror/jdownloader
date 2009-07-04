@@ -45,10 +45,11 @@ import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
+import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
+@OptionalPlugin(rev="$Revision$", id="trayicon",interfaceversion=4, minJVM=1.5)
 public class JDLightTray extends PluginOptional implements MouseListener, MouseMotionListener, WindowListener {
 
     private SubConfiguration subConfig = null;
@@ -73,9 +74,6 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
 
     private TrayIconTooltip trayIconTooltip;
 
-    public static int getAddonInterfaceVersion() {
-        return 3;
-    }
 
     public JDLightTray(PluginWrapper wrapper) {
         super(wrapper);
@@ -88,20 +86,6 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
         return null;
     }
 
-    // @Override
-    public String getHost() {
-        return JDL.L("plugins.optional.trayicon.name", "Tray Icon (Minimizer)");
-    }
-
-    // @Override
-    public String getRequirements() {
-        return "JRE 1.6+";
-    }
-
-    // @Override
-    public String getVersion() {
-        return getVersion("$Revision$");
-    }
 
     // @Override
     public boolean initAddon() {

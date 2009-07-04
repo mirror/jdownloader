@@ -27,10 +27,11 @@ import jd.config.Configuration;
 import jd.config.MenuItem;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
+import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
+@OptionalPlugin(rev="$Revision$", id="folderwatch",interfaceversion=4)
 @SuppressWarnings("unchecked")
 public class JDFolderWatch extends PluginOptional {
     public class check extends Thread {
@@ -48,9 +49,6 @@ public class JDFolderWatch extends PluginOptional {
         };
     }
 
-    public static int getAddonInterfaceVersion() {
-        return 3;
-    }
 
     private SubConfiguration subConfig = null;
     private ArrayList<String> added = null;
@@ -138,20 +136,7 @@ public class JDFolderWatch extends PluginOptional {
         return menu;
     }
 
-    // @Override
-    public String getHost() {
-        return JDL.L("plugins.optional.folderwatch.name", "JDFolderWatch");
-    }
 
-    // @Override
-    public String getRequirements() {
-        return "JRE 1.5+";
-    }
-
-    // @Override
-    public String getVersion() {
-        return getVersion("$Revision$");
-    }
 
     private int getWaittime() {
         return subConfig.getIntegerProperty("WAITTIME", 5) * 60000;

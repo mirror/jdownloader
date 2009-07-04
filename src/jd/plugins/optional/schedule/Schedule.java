@@ -35,10 +35,11 @@ import jd.PluginWrapper;
 import jd.config.MenuItem;
 import jd.gui.skins.simple.JTabbedPanel;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
-
+@OptionalPlugin(rev="$Revision$", id="scheduler",interfaceversion=4)
 public class Schedule extends PluginOptional {
 
     private static final String PROPERTY_SCHEDULES = "PROPERTY_SCHEDULES_V2";
@@ -219,9 +220,7 @@ public class Schedule extends PluginOptional {
         if (newPanel != null) aPanel.add(newPanel, BorderLayout.CENTER);
     }
 
-    public static int getAddonInterfaceVersion() {
-        return 3;
-    }
+ 
 
     // @Override
     public ArrayList<MenuItem> createMenuitems() {
@@ -235,20 +234,6 @@ public class Schedule extends PluginOptional {
         return "JD-Team / Tudels";
     }
 
-    // @Override
-    public String getHost() {
-        return JDL.L("addons.schedule.name", "Schedule");
-    }
-
-    // @Override
-    public String getRequirements() {
-        return "JRE 1.5+";
-    }
-
-    // @Override
-    public String getVersion() {
-        return getVersion("$Revision$");
-    }
 
     // @Override
     public boolean initAddon() {

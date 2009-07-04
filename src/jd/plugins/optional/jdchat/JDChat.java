@@ -61,6 +61,7 @@ import jd.gui.skins.simple.tasks.TaskPanel;
 import jd.nutils.OSDetector;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
+import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -69,7 +70,7 @@ import jd.utils.locale.JDLocale;
 import net.miginfocom.swing.MigLayout;
 
 import org.schwering.irc.lib.IRCConnection;
-
+@OptionalPlugin(rev="$Revision$", id="chat",interfaceversion=4)
 public class JDChat extends PluginOptional implements ControlListener {
     private static final long AWAY_TIMEOUT = 15 * 60 * 1000;
     private static String CHANNEL = "#jDownloader";
@@ -109,9 +110,8 @@ public class JDChat extends PluginOptional implements ControlListener {
     public static final String USERLIST_STYLE = JDIO.getLocalFile(JDUtilities.getResourceFile("plugins/jdchat/userliststyles.css"));
     private static final String CHANNEL_LNG = "CHANNEL_LNG2";
 
-    public static int getAddonInterfaceVersion() {
-        return 3;
-    }
+
+
 
     private boolean changed;
 
@@ -820,15 +820,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         return nick;
     }
 
-    // @Override
-    public String getHost() {
-        return JDL.L("plugins.optional.jdchat.name2", "JD Support Chat");
-    }
 
-    // @Override
-    public String getRequirements() {
-        return "JRE 1.5+";
-    }
 
     public User getUser(String name) {
         for (User next : NAMES) {
@@ -838,10 +830,6 @@ public class JDChat extends PluginOptional implements ControlListener {
         return null;
     }
 
-    // @Override
-    public String getVersion() {
-        return getVersion("$Revision$");
-    }
 
     // @Override
     public boolean initAddon() {

@@ -35,12 +35,13 @@ import jd.gui.skins.simple.components.JDTextArea;
 import jd.gui.skins.simple.config.GUIConfigEntry;
 import jd.nutils.io.JDIO;
 import jd.plugins.DownloadLink;
+import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
 import jd.utils.JDUtilities;
 import jd.utils.Replacer;
 import jd.utils.locale.JDL;
-
+@OptionalPlugin(rev="$Revision$", id="infofilewriter",interfaceversion=4)
 public class JDInfoFileWriter extends PluginOptional implements ControlListener {
 
     private static final String FILENAME_DEFAULT = "%LAST_FINISHED_PACKAGE.DOWNLOAD_DIRECTORY%/%LAST_FINISHED_PACKAGE.PACKAGENAME%.info";
@@ -57,10 +58,7 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
 
     private ConfigEntry txtInfo;
 
-    public static int getAddonInterfaceVersion() {
-        return 3;
-    }
-
+ 
     private SubConfiguration subConfig = null;
 
     public JDInfoFileWriter(PluginWrapper wrapper) {
@@ -86,20 +84,6 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
         return null;
     }
 
-    // @Override
-    public String getHost() {
-        return JDL.L("plugins.optional.infoFileWriter.name", "Info File Writer");
-    }
-
-    // @Override
-    public String getRequirements() {
-        return "JRE 1.5+";
-    }
-
-    // @Override
-    public String getVersion() {
-        return getVersion("$Revision$");
-    }
 
     // @Override
     public boolean initAddon() {
