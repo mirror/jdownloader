@@ -32,7 +32,6 @@ import jd.config.SubConfiguration;
 import jd.controlling.DownloadController;
 import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
-import jd.controlling.interaction.PackageManager;
 import jd.event.MessageEvent;
 import jd.event.MessageListener;
 import jd.gui.UserIO;
@@ -44,7 +43,6 @@ import jd.nutils.JDHash;
 import jd.parser.Regex;
 import jd.update.FileUpdate;
 import jd.update.JDUpdateUtils;
-import jd.update.PackageData;
 import jd.update.WebUpdater;
 import jd.utils.locale.JDL;
 
@@ -174,14 +172,16 @@ public class WebUpdate {
         updater.getBroadcaster().addListener(messageListener = new MessageListener() {
 
             public void onMessage(MessageEvent event) {
-                progress.setStatusText(event.getSource()+": "+event.getMessage());
+                progress.setStatusText(event.getSource() + ": " + event.getMessage());
 
             }
 
         });
-//        if (SubConfiguration.getConfig("WEBUPDATE").getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false)) {
-            updater.ignorePlugins(false);
-//        }
+        // if
+        // (SubConfiguration.getConfig("WEBUPDATE").getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE,
+        // false)) {
+        updater.ignorePlugins(false);
+        // }
         logger.finer("Checking for available updates");
         // logger.info(files + "");
 
@@ -211,10 +211,9 @@ public class WebUpdate {
 
                     String clazz = new Regex(f.getLocalFile().getAbsoluteFile(), "(jd[/\\\\].*?)\\.class").getMatch(0);
 
-                 
                     if (clazz != null) {
                         clazz = clazz.replaceAll("[/\\\\]", ".");
-                       
+
                         PluginWrapper wrapper;
                         if (f.getLocalFile().getAbsolutePath().contains(".decrypt")) {
                             wrapper = DecryptPluginWrapper.getWrapper(clazz);
@@ -253,9 +252,8 @@ public class WebUpdate {
                     UPDATE_IN_PROGRESS = false;
                     return;
                 }
-              
-                
-                if (files.size() == 0 ) {
+
+                if (files.size() == 0) {
                     logger.severe("Webupdater offline or nothing to update");
                     progress.finalize();
                     if (doPluginRestart) JDUtilities.restartJD();
@@ -268,7 +266,6 @@ public class WebUpdate {
                 if (files.size() > 0) {
                     progress.setStatus(org - (files.size()));
                     logger.finer("Files to update: " + files);
-                
 
                     if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, false)) {
 
@@ -336,7 +333,7 @@ public class WebUpdate {
                         updater.getBroadcaster().addListener(new MessageListener() {
 
                             public void onMessage(MessageEvent event) {
-                               pc.setStatusText(event.getSource().toString() + ": " + event.getMessage());
+                                pc.setStatusText(event.getSource().toString() + ": " + event.getMessage());
 
                             }
 
