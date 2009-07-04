@@ -354,19 +354,15 @@ branch="NIGHTLY";
         copyFile(new File(jars, "JDownloader.jar"), new File(updateDir, "JDownloader.jar"));
         copyFile(new File(jars, "tinyupdate.jar"), new File(updateDir, "tools/tinyupdate.jar"));
         copyFile(new File(jars.getParentFile(), "ressourcen\\outdated.dat"), new File(updateDir, "outdated.dat"));
-        copyDirectory(new File(jars.getParentFile(), "ressourcen\\pluginressourcen\\128__JDTray"), this.updateDir);
-        copyDirectory(new File(jars.getParentFile(), "ressourcen\\pluginressourcen\\127__JDHJMerge"), this.updateDir);
-        copyDirectory(new File(jars.getParentFile(), "ressourcen\\pluginressourcen\\123__JDUnrar"), this.updateDir);
-        copyDirectory(new File(jars.getParentFile(), "ressourcen\\pluginressourcen\\106__JDShutdown"), this.updateDir);
-        copyDirectory(new File(jars.getParentFile(), "ressourcen\\pluginressourcen\\100__JDChat"), this.updateDir);
-        copyDirectory(new File(jars.getParentFile(), "ressourcen\\pluginressourcen\\129__FlashGot"), this.updateDir);
         
-        copyDirectory(new File(jars, "pluginressourcen\\128__JDTray"), this.updateDir);
-        copyDirectory(new File(jars, "pluginressourcen\\127__JDHJMerge"), this.updateDir);
-        copyDirectory(new File(jars, "pluginressourcen\\123__JDUnrar"), this.updateDir);
-        copyDirectory(new File(jars, "pluginressourcen\\106__JDShutdown"), this.updateDir);
-        copyDirectory(new File(jars, "pluginressourcen\\100__JDChat"), this.updateDir);
-        copyDirectory(new File(jars, "pluginressourcen\\129__FlashGot"), this.updateDir);
+        for( File f:new File(jars.getParentFile(), "ressourcen\\pluginressourcen").listFiles()){
+            copyDirectory(f, this.updateDir);
+        }
+   
+        for( File f:new File(jars, "pluginressourcen").listFiles()){
+            copyDirectory(f, this.updateDir);
+        }
+
         
         copyDirectory(new File(jars.getParentFile(), "ressourcen\\jd"), new File(this.updateDir, "jd"));
         copyDirectory(new File(jars.getParentFile(), "ressourcen\\tools"), new File(this.updateDir, "tools"));

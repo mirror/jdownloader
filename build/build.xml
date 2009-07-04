@@ -205,12 +205,6 @@
 			</fileset>
 		</jar>
 
-		<mkdir dir="${dist}/pluginressourcen/119__JDNewsfeed/plugins" />
-		<jar jarfile="${dist}/pluginressourcen/119__JDNewsfeed/plugins/JDNewsfeeds.jar" manifest="Manifest.MF">
-			<fileset dir="${cls}">
-				<include name="jd/plugins/optional/Newsfeeds*" />
-			</fileset>
-		</jar>
 
 		<mkdir dir="${dist}/pluginressourcen/120__JDLangFileEditor/plugins" />
 		<jar jarfile="${dist}/pluginressourcen/120__JDLangFileEditor/plugins/JDLangFileEditor.jar" manifest="Manifest.MF">
@@ -240,12 +234,7 @@
 			</fileset>
 		</jar>
 
-		<mkdir dir="${dist}/pluginressourcen/125__JDPremiumCollect/plugins" />
-		<jar jarfile="${dist}/pluginressourcen/125__JDPremiumCollect/plugins/JDPremiumCollect.jar" manifest="Manifest.MF">
-			<fileset dir="${cls}">
-				<include name="jd/plugins/optional/premcol/**" />
-			</fileset>
-		</jar>
+	
 
 		<mkdir dir="${dist}/pluginressourcen/127__JDHJMerge/plugins" />
 		<jar jarfile="${dist}/pluginressourcen/127__JDHJMerge/plugins/JDHJMerge.jar" manifest="Manifest.MF">
@@ -262,11 +251,11 @@
 		</jar>
 		
 		
-		<mkdir dir="${dist}/pluginressourcen/129__FlashGot/plugins" />
-		<jar jarfile="${dist}/pluginressourcen/129__FlashGot/plugins/JDFlashGot.jar" manifest="Manifest.MF">
+		<mkdir dir="${dist}/pluginressourcen/129__ExternInterface/plugins" />
+		<jar jarfile="${dist}/pluginressourcen/129__ExternInterface/plugins/JDExternInterface.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
-				<include name="jd/plugins/optional/JDFlashGot*" />
-				<include name="jd/plugins/optional/FlashGotRequestHandler*" />
+				<include name="jd/plugins/optional/interfaces/**" />
+			
 			</fileset>
 		</jar>
 	</target>
