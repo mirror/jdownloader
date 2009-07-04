@@ -25,7 +25,6 @@ import java.util.logging.Logger;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.interaction.Interaction;
-import jd.controlling.interaction.PackageManager;
 import jd.event.ControlEvent;
 import jd.gui.skins.simple.AgbDialog;
 import jd.gui.skins.simple.Balloon;
@@ -274,7 +273,7 @@ public class SingleDownloadController extends Thread {
     private void onDownloadFinishedSuccessFull(DownloadLink downloadLink) {
         if ((System.currentTimeMillis() - startTime) > 30000) Balloon.showIfHidden(JDL.L("ballon.download.successfull.title", "Download"), JDTheme.II("gui.images.ok", 32, 32), JDL.LF("ballon.download.successfull.message", "<b>%s<b><hr>finished successfully", downloadLink.getName() + " (" + Formatter.formatReadable(downloadLink.getDownloadSize()) + ")"));
         downloadLink.setProperty(DownloadLink.STATIC_OUTPUTFILE, downloadLink.getFileOutput());
-     
+
         DownloadController.getInstance().fireDownloadLinkUpdate(downloadLink);
         Interaction.handleInteraction(Interaction.INTERACTION_SINGLE_DOWNLOAD_FINISHED, downloadLink);
         if (JDUtilities.getController().isContainerFile(new File(downloadLink.getFileOutput()))) {

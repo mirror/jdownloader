@@ -49,7 +49,7 @@ public class OptionalPluginWrapper extends PluginWrapper {
         revision = Formatter.getRevision(help.rev());
         this.version = help.minJVM();
         this.name = JDL.L(c.getName(), c.getSimpleName());
-this.annotation=help;
+        this.annotation = help;
 
         try {
 
@@ -73,9 +73,10 @@ this.annotation=help;
     public String getHost() {
         return name;
     }
-/**
- * returns the addon's version (revision)
- */
+
+    /**
+     * returns the addon's version (revision)
+     */
     public String getVersion() {
         // TODO
         return revision;

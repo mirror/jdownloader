@@ -55,7 +55,6 @@ import jd.controlling.DynamicPluginInterface;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.interaction.Interaction;
-import jd.controlling.interaction.PackageManager;
 import jd.event.ControlEvent;
 import jd.gui.UserIO;
 import jd.gui.skins.simple.GuiRunnable;
@@ -471,7 +470,6 @@ public class Main {
             JDLogger.exception(e);
         }
 
-      
         /*
          * Keeps the home working directory for developers up2date
          */
