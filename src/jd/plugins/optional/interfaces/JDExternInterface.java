@@ -24,7 +24,7 @@ import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
+ 
 @OptionalPlugin(rev = "$Revision: 4328$", id = "externinterface", interfaceversion = 4)
 public class JDExternInterface extends PluginOptional {
 
