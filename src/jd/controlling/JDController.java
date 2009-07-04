@@ -52,7 +52,7 @@ import jd.utils.locale.JDL;
 public class JDController implements ControlListener {
 
     public static JDController getInstance() {
-        if(INSTANCE==null)new JDController();
+        if (INSTANCE == null) new JDController();
         return INSTANCE;
     }
 
@@ -311,7 +311,7 @@ public class JDController implements ControlListener {
             }
 
             // Prüfen ob der Link entfernt werden soll
-            if (lastDownloadFinished.getLinkStatus().hasStatus(LinkStatus.FINISHED) && JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION) == 0) {
+            if (lastDownloadFinished.getLinkStatus().isFinished() && JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION) == 0) {
                 lastDownloadFinished.getFilePackage().remove(lastDownloadFinished);
 
             }
@@ -835,31 +835,21 @@ public class JDController implements ControlListener {
         return al;
     }
 
-    public DownloadLink getDownloadLinkByFileOutput(File file, Integer Linkstatus) {
-        // synchronized (packages) {
-        ArrayList<FilePackage> packages = JDUtilities.getDownloadController().getPackages();
+    public DownloadLink getDownloadLinkByFileOutput(File file, Integer Linkstatus) {        
+        ArrayList<DownloadLink> links = JDUtilities.getDownloadController().getAllDownloadLinks();
         try {
-            Iterator<FilePackage> iterator = packages.iterator();
-            FilePackage fp = null;
-            DownloadLink nextDownloadLink;
-            while (iterator.hasNext()) {
-                fp = iterator.next();
-                Iterator<DownloadLink> it2 = fp.getDownloadLinkList().iterator();
-                while (it2.hasNext()) {
-                    nextDownloadLink = it2.next();
-                    if (new File(nextDownloadLink.getFileOutput()).getAbsoluteFile().equals(file.getAbsoluteFile())) {
-                        if (Linkstatus != null) {
-                            if (nextDownloadLink.getLinkStatus().hasStatus(Linkstatus)) return nextDownloadLink;
-                        } else
-                            return nextDownloadLink;
-                    }
+            for (DownloadLink nextDownloadLink : links) {
+                if (new File(nextDownloadLink.getFileOutput()).getAbsoluteFile().equals(file.getAbsoluteFile())) {
+                    if (Linkstatus != null) {
+                        if (nextDownloadLink.getLinkStatus().hasStatus(Linkstatus)) return nextDownloadLink;
+                    } else
+                        return nextDownloadLink;
                 }
             }
         } catch (Exception e) {
             JDLogger.exception(e);
         }
         return null;
-
     }
 
     public ArrayList<DownloadLink> getDownloadLinksByNamePattern(String matcher) {

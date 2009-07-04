@@ -197,7 +197,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
             for (FilePackage filePackage : fps) {
                 links = filePackage.getDownloadLinkList();
                 for (int i = 0; i < links.size(); i++) {
-                    if (!links.get(i).getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
+                    if (!links.get(i).getLinkStatus().isFinished()) {
                         links.get(i).getLinkStatus().setStatusText(null);
                         links.get(i).setAborted(false);
                         links.get(i).getLinkStatus().setStatus(LinkStatus.TODO);

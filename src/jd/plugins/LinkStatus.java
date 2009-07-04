@@ -244,10 +244,10 @@ public class LinkStatus implements Serializable {
         if (hasStatus(LinkStatus.FINISHED)) return this.getStatusText() != null ? "> " + this.getStatusText() : "";
 
         if (!downloadLink.isEnabled() && !hasStatus(LinkStatus.FINISHED)) {
-            if (downloadLink.isAborted() && (statusText == null || statusText.trim().length() == 0)){
+            if (downloadLink.isAborted() && (statusText == null || statusText.trim().length() == 0)) {
                 ret += JDL.L("gui.downloadlink.aborted", "[interrupted]") + " ";
-            }else if(downloadLink.isAborted()){
-                ret+=statusText;
+            } else if (downloadLink.isAborted()) {
+                ret += statusText;
             }
             if (errorMessage != null) {
                 if (ret.length() > 0) ret += ": ";
@@ -319,7 +319,7 @@ public class LinkStatus implements Serializable {
     }
 
     public boolean isFailed() {
-        return !hasOnlyStatus(FINISHED | ERROR_IP_BLOCKED | TODO | PLUGIN_ACTIVE | PLUGIN_IN_PROGRESS | DOWNLOADINTERFACE_IN_PROGRESS | WAITING_USERIO);
+        return !hasOnlyStatus(FINISHED | ERROR_ALREADYEXISTS | ERROR_IP_BLOCKED | TODO | PLUGIN_ACTIVE | PLUGIN_IN_PROGRESS | DOWNLOADINTERFACE_IN_PROGRESS | WAITING_USERIO);
     }
 
     public boolean isPluginActive() {
@@ -491,5 +491,9 @@ public class LinkStatus implements Serializable {
 
     public ImageIcon getStatusIcon() {
         return statusIcon;
+    }
+
+    public boolean isFinished() {
+        return hasStatus(ERROR_ALREADYEXISTS) || hasStatus(FINISHED);
     }
 }

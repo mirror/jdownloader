@@ -960,20 +960,34 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             // ": " + "CRC Failure");
             // progress.get(wrapper).setColor(Color.RED);
             list = this.getArchiveList(wrapper.getDownloadLink());
-            list.add(null);
+            try {
+                if (wrapper.getCurrentFile() != null) {
+                    logger.info("Delete " + wrapper.getCurrentFile().getFile() + " because it was not extracted successfully!");
+                    wrapper.getCurrentFile().getFile().delete();
+                }
+            } catch (Exception e) {
+            }
             DownloadLink crc = null;
             if (wrapper.getCurrentVolume() > 0) {
                 crc = list.size() >= wrapper.getCurrentVolume() ? list.get(wrapper.getCurrentVolume() - 1) : null;
             }
             if (crc != null) {
-                // crc.reset();
-                crc.getLinkStatus().removeStatus(LinkStatus.FINISHED);
-                crc.getLinkStatus().addStatus(LinkStatus.ERROR_DOWNLOAD_FAILED);
-                crc.getLinkStatus().setValue(LinkStatus.VALUE_FAILED_HASH);
-                crc.getLinkStatus().setErrorMessage(JDL.LF("plugins.optional.jdunrar.crcerrorin", "Extract: failed (CRC in %s)", crc.getName()));
-
-                crc.requestGuiUpdate();
-
+                for (DownloadLink link : list) {
+                    if (link == null) {
+                        continue;
+                    }
+                    if (link == crc) {
+                        link.getLinkStatus().removeStatus(LinkStatus.FINISHED);
+                        link.getLinkStatus().removeStatus(LinkStatus.ERROR_ALREADYEXISTS);
+                        link.getLinkStatus().addStatus(LinkStatus.ERROR_DOWNLOAD_FAILED);
+                        link.getLinkStatus().setValue(LinkStatus.VALUE_FAILED_HASH);
+                        link.getLinkStatus().setErrorMessage(JDL.LF("plugins.optional.jdunrar.crcerrorin", "Extract: failed (CRC in %s)", crc.getName()));
+                    } else {
+                        link.getLinkStatus().addStatus(LinkStatus.ERROR_POST_PROCESS);
+                        link.getLinkStatus().setErrorMessage("Extract failed");
+                    }
+                    link.requestGuiUpdate();
+                }
             } else {
                 for (DownloadLink link : list) {
                     if (link == null) continue;
@@ -1254,7 +1268,8 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
                 while ((file = new File(new File(downloadLink.getFileOutput()).getParentFile(), name + ".part" + Formatter.fillString(i + "", "0", "", nums) + ".rar")).exists() || JDUtilities.getController().getDownloadLinkByFileOutput(file, LinkStatus.FINISHED) != null) {
                     DownloadLink dl = JDUtilities.getController().getDownloadLinkByFileOutput(file, LinkStatus.FINISHED);
                     if (dl == null) dl = JDUtilities.getController().getDownloadLinkByFileOutput(file, LinkStatus.ERROR_ALREADYEXISTS);
-                    ret.add(dl);
+                    if (dl == null) dl = JDUtilities.getController().getDownloadLinkByFileOutput(file, null);
+                    if (dl != null) ret.add(dl);
                     i++;
                 }
                 break;
@@ -1276,7 +1291,8 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
                     while ((file = new File(new File(downloadLink.getFileOutput()).getParentFile(), name + ".r" + Formatter.fillString(i + "", "0", "", nums))).exists() || JDUtilities.getController().getDownloadLinkByFileOutput(file, LinkStatus.FINISHED) != null) {
                         DownloadLink dl = JDUtilities.getController().getDownloadLinkByFileOutput(file, LinkStatus.FINISHED);
                         if (dl == null) dl = JDUtilities.getController().getDownloadLinkByFileOutput(file, LinkStatus.ERROR_ALREADYEXISTS);
-                        ret.add(dl);
+                        if (dl == null) dl = JDUtilities.getController().getDownloadLinkByFileOutput(file, null);
+                        if (dl != null) ret.add(dl);
                         i++;
                     }
                 }

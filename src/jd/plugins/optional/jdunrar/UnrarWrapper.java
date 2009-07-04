@@ -112,10 +112,6 @@ public class UnrarWrapper extends Thread implements JDRunnable {
     private long totalSize;
     private ArchivFile currentlyWorkingOn;
 
-    public ArchivFile getCurrentlyWorkingOn() {
-        return currentlyWorkingOn;
-    }
-
     public void setCurrentlyWorkingOn(ArchivFile currentlyWorkingOn) {
         this.currentlyWorkingOn = currentlyWorkingOn;
     }
@@ -832,7 +828,6 @@ public class UnrarWrapper extends Thread implements JDRunnable {
     public String getPassword() {
         return password;
     }
-    
 
     public ProgressController getProgressController() {
         return progressController;
