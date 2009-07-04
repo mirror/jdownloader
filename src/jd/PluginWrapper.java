@@ -67,7 +67,6 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
         if (JDFlags.hasSomeFlags(flags, ACCEPTONLYSURLSFALSE)) this.acceptOnlyURIs = false;
         
         
-        System.out.println(classn);
         WRAPPER.put(classn, this);
     }
 

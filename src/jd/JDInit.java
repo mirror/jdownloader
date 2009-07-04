@@ -499,18 +499,19 @@ public class JDInit {
      * @throws ClassNotFoundException
      * @throws IOException
      */
-    public static List<Class<?>> getClasses(String packageName) throws ClassNotFoundException, IOException {
-        ClassLoader classLoader = getPluginClassLoader();
+    public static List<Class<?>> getClasses(String packageName, ClassLoader classLoader) throws ClassNotFoundException, IOException {
+        System.out.println("Get classes for " + packageName + " in " + classLoader);
         String path = packageName.replace('.', '/');
         Enumeration<URL> resources = classLoader.getResources(path);
         List<File> dirs = new ArrayList<File>();
         while (resources.hasMoreElements()) {
             URL resource = resources.nextElement();
+            System.out.println("Ressource: " + resource);
             dirs.add(new File(resource.getFile()));
         }
         List<Class<?>> classes = new ArrayList<Class<?>>();
         for (File directory : dirs) {
-            classes.addAll(findClasses(directory, packageName));
+            classes.addAll(findClasses(directory, packageName, classLoader));
         }
         return classes;
     }
@@ -524,10 +525,10 @@ public class JDInit {
      */
     private static ClassLoader getPluginClassLoader() {
         if (CL == null) try {
-            URL[] u;
+
             if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED) {
 
-                CL = new URLClassLoader(u = new URL[] { JDUtilities.getJDHomeDirectoryFromEnvironment().toURI().toURL(), JDUtilities.getResourceFile("java").toURI().toURL() }, Thread.currentThread().getContextClassLoader());
+                CL = new URLClassLoader(new URL[] { JDUtilities.getJDHomeDirectoryFromEnvironment().toURI().toURL(), JDUtilities.getResourceFile("java").toURI().toURL() }, Thread.currentThread().getContextClassLoader());
             } else {
                 CL = Thread.currentThread().getContextClassLoader();
 
@@ -547,18 +548,20 @@ public class JDInit {
      * @author DZone Snippts Section. http://snippets.dzone.com/posts/show/4831
      * @param directory
      * @param packageName
+     * @param x
      * @return
      * @throws ClassNotFoundException
      */
-    private static List<Class<?>> findClasses(File directory, String packageName) throws ClassNotFoundException {
+    private static List<Class<?>> findClasses(File directory, String packageName, ClassLoader classLoader) throws ClassNotFoundException {
         List<Class<?>> classes = new ArrayList<Class<?>>();
+        System.out.println("Find classes in " + directory + " : " + packageName);
         File[] files = directory.listFiles();
         for (File file : files) {
             if (file.isDirectory()) {
-                classes.addAll(findClasses(file, packageName + "." + file.getName()));
+                classes.addAll(findClasses(file, packageName + "." + file.getName(), classLoader));
             } else if (file.getName().endsWith(".class")) {
-
-                classes.add(getPluginClassLoader().loadClass(packageName + '.' + file.getName().substring(0, file.getName().length() - 6)));
+                System.out.println("   class " + packageName + '.' + file.getName().substring(0, file.getName().length() - 6));
+                classes.add(classLoader.loadClass(packageName + '.' + file.getName().substring(0, file.getName().length() - 6)));
             }
         }
         return classes;
@@ -567,10 +570,10 @@ public class JDInit {
     public void loadPluginForHost() {
 
         try {
-            for (Class<?> c : getClasses("jd.plugins.hoster")) {
+            for (Class<?> c : getClasses("jd.plugins.hoster", getPluginClassLoader())) {
                 try {
-
-                    if (c.getAnnotations().length > 0) {
+                    System.out.println("Try to load " + c);
+                    if (c != null && c.getAnnotations().length > 0) {
                         HostPlugin help = (HostPlugin) c.getAnnotations()[0];
 
                         for (int i = 0; i < help.names().length; i++) {
@@ -590,7 +593,7 @@ public class JDInit {
     public void loadPluginOptional() {
         System.out.println("DO");
         try {
-            for (Class<?> c : getClasses("jd.plugins.optional")) {
+            for (Class<?> c : getClasses("jd.plugins.optional", JDUtilities.getJDClassLoader())) {
                 try {
 
                     if (c.getAnnotations().length > 0) {

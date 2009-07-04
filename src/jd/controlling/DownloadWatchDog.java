@@ -444,10 +444,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                                 for (int i = 0; i < links.size(); i++) {
                                     link = links.get(i);
                                     linkStatus = link.getLinkStatus();
-                                    if (!link.isEnabled() && link.getLinkType() == DownloadLink.LINKTYPE_JDU && linkStatus.getTotalWaitTime() <= 0) {
-                                        removes.add(link);
-                                        continue;
-                                    }
+                              
                                     // Link mit Temp Unavailable in der Queue
                                     if (link.isEnabled() && linkStatus.hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) && !linkStatus.hasStatus(LinkStatus.PLUGIN_IN_PROGRESS)) {
                                         if (linkStatus.getRemainingWaittime() == 0) {

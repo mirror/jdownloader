@@ -548,10 +548,10 @@ public class WebUpdater implements Serializable {
                 broadcaster.fireEvent(new MessageEvent(this, 0, JDL.LF("jd.update.webupdater.updatefiles", "Update %s", WebUpdater.formatPathReadable(file.getLocalPath()))));
                 if (updateUpdatefile(file)) {
                     broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_SUCCESS, WebUpdater.formatPathReadable(file.toString())));
-                    broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_SUCCESS, JDL.LF("jd.update.webupdater.updatefiles.success", "Successfull")));
+                    broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_SUCCESS, JDL.L("jd.update.webupdater.updatefiles.success", "Successfull")));
                 } else {
                     broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_FAILED, WebUpdater.formatPathReadable(file.toString())));
-                    broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_FAILED, JDL.LF("jd.update.webupdater.updatefiles.failed", "Failed")));
+                    broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_FAILED, JDL.L("jd.update.webupdater.updatefiles.failed", "Failed")));
                     if (progressload != null) progressload.setForeground(Color.RED);
                     if (prg != null) prg.setColor(Color.RED);
                 }
@@ -560,7 +560,7 @@ public class WebUpdater implements Serializable {
                 e.printStackTrace();
                 broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_FAILED, e.getLocalizedMessage()));
                 broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_FAILED, WebUpdater.formatPathReadable(file.toString())));
-                broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_FAILED, JDL.LF("jd.update.webupdater.updatefiles.failed", "Failed")));
+                broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_FAILED, JDL.L("jd.update.webupdater.updatefiles.failed", "Failed")));
                 if (progressload != null) progressload.setForeground(Color.RED);
                 if (prg != null) prg.setColor(Color.RED);
             }

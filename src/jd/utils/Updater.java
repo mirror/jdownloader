@@ -257,7 +257,7 @@ branch="NIGHTLY";
             }
         }
 
-        String[] rest = new String[] { "libs/svnkit.jar"
+        String[] rest = new String[] {/* "libs/svnkit.jar"*/
 
         };
         for (String path : rest) {
