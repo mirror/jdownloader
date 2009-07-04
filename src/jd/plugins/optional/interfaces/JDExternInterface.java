@@ -49,9 +49,7 @@ public class JDExternInterface extends PluginOptional {
         return false;
     }
 
-    public String getIconKey() {
-        return "gui.images.addons.externinterface";
-    }
+
 
     // @Override
     public void onExit() {
