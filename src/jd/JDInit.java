@@ -582,7 +582,7 @@ public class JDInit {
                     e.printStackTrace();
                 }
             }
-        } catch (Exception e) {
+        } catch (Throwable e) {
             e.printStackTrace();
         }
     }
@@ -609,7 +609,7 @@ public class JDInit {
                     e.printStackTrace();
                 }
             }
-        } catch (Exception e) {
+        } catch (Throwable e) {
             e.printStackTrace();
         }
         // if (JDUtilities.getJavaVersion() >= 1.6) new

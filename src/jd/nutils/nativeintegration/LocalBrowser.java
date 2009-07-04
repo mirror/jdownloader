@@ -32,12 +32,12 @@ import edu.stanford.ejalbert.BrowserLauncher;
 import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
 import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
 
-abstract public class LocaleBrowser implements Serializable {
+abstract public class LocalBrowser implements Serializable {
     /**
      * 
      */
     private static final long serialVersionUID = 7153058016440180347L;
-    private static LocaleBrowser[] BROWSERLIST = null;
+    private static LocalBrowser[] BROWSERLIST = null;
     private String name;
 
     public String getName() {
@@ -52,19 +52,19 @@ abstract public class LocaleBrowser implements Serializable {
         this.name = name;
     }
 
-    private LocaleBrowser(String name) {
+    private LocalBrowser(String name) {
         this.name = name;
     }
 
-    public synchronized static LocaleBrowser[] getBrowserList() {
+    public synchronized static LocalBrowser[] getBrowserList() {
         if (BROWSERLIST != null) return BROWSERLIST;
-        ArrayList<LocaleBrowser> ret = new ArrayList<LocaleBrowser>();
+        ArrayList<LocalBrowser> ret = new ArrayList<LocalBrowser>();
         BrowserLauncher launcher;
         try {
             launcher = new BrowserLauncher();
 
             for (Object o : launcher.getBrowserList()) {
-                ret.add(new LocaleBrowser(o.toString()) {
+                ret.add(new LocalBrowser(o.toString()) {
                     /**
                      * 
                      */
@@ -86,7 +86,7 @@ abstract public class LocaleBrowser implements Serializable {
         }
 
         if (OSDetector.isMac()) {
-            ret.add(new LocaleBrowser("MAC Default") {
+            ret.add(new LocalBrowser("MAC Default") {
                 /**
                  * 
                  */
@@ -101,7 +101,7 @@ abstract public class LocaleBrowser implements Serializable {
             });
 
             if (new File("/Applications/Firefox.app").exists()) {
-                ret.add(new LocaleBrowser("Firefox") {
+                ret.add(new LocalBrowser("Firefox") {
                     /**
                      * 
                      */
@@ -122,7 +122,7 @@ abstract public class LocaleBrowser implements Serializable {
 
             } else {
 
-                ret.add(new LocaleBrowser("Firefox") {
+                ret.add(new LocalBrowser("Firefox") {
                     /**
                      * 
                      */
@@ -150,7 +150,7 @@ abstract public class LocaleBrowser implements Serializable {
             exec.start();
             exec.waitTimeout();
             if (exec.getException() == null) {
-                ret.add(new LocaleBrowser("Firefox") {
+                ret.add(new LocalBrowser("Firefox") {
                     /**
                      * 
                      */
@@ -174,7 +174,7 @@ abstract public class LocaleBrowser implements Serializable {
         }
 
         if (OSDetector.isWindows()) {
-            ret.add(new LocaleBrowser("Win Default") {
+            ret.add(new LocalBrowser("Win Default") {
                 /**
                  * 
                  */
@@ -197,7 +197,7 @@ abstract public class LocaleBrowser implements Serializable {
          */
         if (ret.size() == 0) {
 
-            ret.add(new LocaleBrowser("Java Browser") {
+            ret.add(new LocalBrowser("Java Browser") {
                 /**
                  * 
                  */
@@ -223,7 +223,7 @@ abstract public class LocaleBrowser implements Serializable {
             });
 
         }
-        BROWSERLIST = ret.toArray(new LocaleBrowser[] {});
+        BROWSERLIST = ret.toArray(new LocalBrowser[] {});
         return BROWSERLIST;
 
     }
@@ -238,10 +238,10 @@ abstract public class LocaleBrowser implements Serializable {
     public static void openURL(String browser, URL url) throws Exception {
 
         if (url == null) return;
-        LocaleBrowser[] browsers = getBrowserList();
+        LocalBrowser[] browsers = getBrowserList();
         if (browsers == null || browsers.length == 0) return;
         if (browser != null) {
-            for (LocaleBrowser b : browsers) {
+            for (LocalBrowser b : browsers) {
                 if (browser.equalsIgnoreCase(b.toString())) {
                     b.openURL(url);
                     return;
@@ -252,7 +252,7 @@ abstract public class LocaleBrowser implements Serializable {
     }
 
     public static void openDefaultURL(URL url) throws Exception {
-        LocaleBrowser[] browsers = getBrowserList();
+        LocalBrowser[] browsers = getBrowserList();
         if (browsers == null || browsers.length == 0) return;
         browsers[0].openURL(url);
     }

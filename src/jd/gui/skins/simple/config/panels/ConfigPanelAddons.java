@@ -46,9 +46,9 @@ public class ConfigPanelAddons extends ConfigPanel {
 
     private SubPanelPluginsOptional sppo;
 
-    private SubPanelOptionalInstaller spr;
+//    private SubPanelOptionalInstaller spr;
 
-    private JTabbedPane tabbed;
+//    private JTabbedPane tabbed;
 
     public ConfigPanelAddons(Configuration configuration) {
         super();
@@ -65,15 +65,15 @@ public class ConfigPanelAddons extends ConfigPanel {
     @Override
     public void initPanel() {
         panel.setLayout(new MigLayout("ins 0", "[fill,grow]", "[fill,grow]"));
-        panel.add(tabbed = new JTabbedPane(), "spanx");
-        tabbed.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
-        tabbed.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
-        tabbed.setTabPlacement(SwingConstants.TOP);
-        tabbed.addChangeListener(new ChangeListener() {
-            public void stateChanged(ChangeEvent e) {}
-        });
-        tabbed.addTab(JDL.L("gui.config.addons.settings.tab", "Settings"), JDTheme.II("gui.splash.controller", 16, 16), sppo = new SubPanelPluginsOptional(configuration));
-        tabbed.addTab(JDL.L("gui.config.addons.install.tab", "Installation & updates"), JDTheme.II("gui.images.taskpanes.download", 16, 16), spr = new SubPanelOptionalInstaller(configuration));
+        panel.add(sppo = new SubPanelPluginsOptional(configuration), "spanx");
+//        tabbed.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
+//        tabbed.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
+//        tabbed.setTabPlacement(SwingConstants.TOP);
+//        tabbed.addChangeListener(new ChangeListener() {
+//            public void stateChanged(ChangeEvent e) {}
+//        });
+//        tabbed.addTab(JDL.L("gui.config.addons.settings.tab", "Settings"), JDTheme.II("gui.splash.controller", 16, 16), sppo = new SubPanelPluginsOptional(configuration));
+//        tabbed.addTab(JDL.L("gui.config.addons.install.tab", "Installation & updates"), JDTheme.II("gui.images.taskpanes.download", 16, 16), spr = new SubPanelOptionalInstaller(configuration));
         setLayout(new MigLayout("ins 0", "[fill,grow]", "[fill,grow]"));
         add(panel);
     }
@@ -86,11 +86,11 @@ public class ConfigPanelAddons extends ConfigPanel {
     @Override
     public void save() {
         sppo.save();
-        spr.save();
+//        spr.save();
     }
 
     @Override
     public PropertyType hasChanges() {
-        return PropertyType.getMax(super.hasChanges(), sppo.hasChanges(), spr.hasChanges());
+        return PropertyType.getMax(super.hasChanges(), sppo.hasChanges());
     }
 }

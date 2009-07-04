@@ -46,7 +46,7 @@ import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.nutils.Executer;
-import jd.nutils.nativeintegration.LocaleBrowser;
+import jd.nutils.nativeintegration.LocalBrowser;
 import jd.parser.Regex;
 
 class BasicLinkButtonUI extends MetalButtonUI {
@@ -190,7 +190,7 @@ public class JLinkButton extends JButton {
             if (exec.getException() != null) { throw exec.getException(); }
         } else {
             String browser = SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getStringProperty(SimpleGuiConstants.PARAM_BROWSER, null);
-            LocaleBrowser.openURL(browser, url);
+            LocalBrowser.openURL(browser, url);
         }
     }
 

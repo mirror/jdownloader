@@ -49,7 +49,7 @@ import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-@OptionalPlugin(rev="$Revision$", id="trayicon",interfaceversion=4, minJVM=1.5)
+@OptionalPlugin(rev="$Revision$",defaultEnabled=true, id="trayicon",interfaceversion=4, minJVM=1.5)
 public class JDLightTray extends PluginOptional implements MouseListener, MouseMotionListener, WindowListener {
 
     private SubConfiguration subConfig = null;

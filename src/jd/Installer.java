@@ -46,7 +46,7 @@ import jd.gui.userio.dialog.ContainerDialog;
 import jd.nutils.JDFlags;
 import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
-import jd.nutils.nativeintegration.LocaleBrowser;
+import jd.nutils.nativeintegration.LocalBrowser;
 import jd.utils.JDFileReg;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -285,7 +285,7 @@ public class Installer {
     }
 
     public static void installFirefoxaddon() {
-        LocaleBrowser.openinFirefox(JDUtilities.getResourceFile("tools/jdownff.xpi").getAbsolutePath());
+        LocalBrowser.openinFirefox(JDUtilities.getResourceFile("tools/jdownff.xpi").getAbsolutePath());
     }
 
     public JPanel getInstallerPanel() {

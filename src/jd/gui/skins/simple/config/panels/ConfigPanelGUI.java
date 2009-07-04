@@ -36,7 +36,7 @@ import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import jd.gui.skins.simple.config.ConfigPanel;
 import jd.nutils.OSDetector;
-import jd.nutils.nativeintegration.LocaleBrowser;
+import jd.nutils.nativeintegration.LocalBrowser;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -215,9 +215,9 @@ public class ConfigPanelGUI extends ConfigPanel {
         ConfigEntry conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.PARAM_CUSTOM_BROWSER_USE, JDL.L("gui.config.gui.use_custom_browser", "Use custom browser"));
         conditionEntry.setDefaultValue(false);
 
-        browser.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, SimpleGuiConstants.PARAM_BROWSER, LocaleBrowser.getBrowserList(), JDL.L("gui.config.gui.Browser", "Browser")));
-        if (LocaleBrowser.getBrowserList().length > 0) {
-            ce.setDefaultValue(LocaleBrowser.getBrowserList()[0]);
+        browser.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, SimpleGuiConstants.PARAM_BROWSER, LocalBrowser.getBrowserList(), JDL.L("gui.config.gui.Browser", "Browser")));
+        if (LocalBrowser.getBrowserList().length > 0) {
+            ce.setDefaultValue(LocalBrowser.getBrowserList()[0]);
         }
         ce.setEnabledCondidtion(conditionEntry, "==", false);
 

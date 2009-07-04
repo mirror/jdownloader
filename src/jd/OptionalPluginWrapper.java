@@ -37,6 +37,7 @@ public class OptionalPluginWrapper extends PluginWrapper {
     private String id;
     private String name;
     private String revision;
+    private OptionalPlugin annotation;
 
     // public OptionalPluginWrapper(String string, double d, String id, String
     // name) {
@@ -47,6 +48,7 @@ public class OptionalPluginWrapper extends PluginWrapper {
         revision = help.rev();
         this.version = help.minJVM();
         this.name = JDL.L(c.getName(), c.getSimpleName());
+this.annotation=help;
 
         try {
 
@@ -133,6 +135,6 @@ public class OptionalPluginWrapper extends PluginWrapper {
     }
 
     public boolean isEnabled() {
-        return JDUtilities.getConfiguration().getBooleanProperty(getConfigParamKey(), true);
+        return JDUtilities.getConfiguration().getBooleanProperty(getConfigParamKey(), annotation.defaultEnabled());
     }
 }

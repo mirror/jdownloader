@@ -59,7 +59,7 @@ import jd.plugins.PluginProgress;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-@OptionalPlugin(rev="$Revision$", id="unrar",interfaceversion=4)
+@OptionalPlugin(rev="$Revision$",defaultEnabled=true, id="unrar",interfaceversion=4)
 public class JDUnrar extends PluginOptional implements ControlListener, UnrarListener {
 
     private static final String DUMMY_HOSTER = "dum.my";

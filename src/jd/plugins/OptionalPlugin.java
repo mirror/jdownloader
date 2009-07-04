@@ -10,6 +10,7 @@ import java.lang.annotation.Target;
 public @interface OptionalPlugin {
     String id();
     int interfaceversion();
+    boolean defaultEnabled() default false;
     boolean linux() default true; 
     boolean windows() default true; 
     boolean mac() default true; 
