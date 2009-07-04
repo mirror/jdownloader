@@ -159,7 +159,7 @@ public class Main {
                 updater.updateFiles(files, null);
             }
 
-            if (!clone) installAddons(JDUtilities.getResourceFile("."));
+//            if (!clone) installAddons(JDUtilities.getResourceFile("."));
             Main.trace(updater.getLogger().toString());
             Main.trace("End Webupdate");
 
@@ -187,72 +187,72 @@ public class Main {
         }
     }
 
-    public static void installAddons(File root) {
-        SubConfiguration jdus = WebUpdater.getConfig("JDU");
-        ArrayList<PackageData> data = jdus.getGenericProperty("PACKAGEDATA", new ArrayList<PackageData>());
-
-        for (PackageData pa : data) {
-            if (!pa.isDownloaded()) continue;
-            File zip = new File(pa.getStringProperty("LOCALPATH"));
-
-            Main.log(log, "Install: " + zip + System.getProperty("line.separator") + System.getProperty("line.separator"));
-
-            UnZip u = new UnZip(zip, root);
-            File[] efiles;
-            try {
-                efiles = u.extract();
-                if (efiles != null) {
-
-                    for (File element : efiles) {
-                        Main.log(log, "       extracted: " + element + System.getProperty("line.separator"));
-                        if (element.getAbsolutePath().endsWith("readme.html")) {
-                            pa.setProperty("README", element.getAbsolutePath());
-
-                        }
-                    }
-                    pa.setInstalled(true);
-                    pa.setUpdating(false);
-                    pa.setDownloaded(false);
-                    pa.setInstalledVersion(Integer.parseInt(pa.getStringProperty("version")));
-
-                    Main.log(log, "Installation successfull: " + zip + System.getProperty("line.separator"));
-
-                    System.out.println("Delete " + zip.delete());
-                    zip.deleteOnExit();
-
-                }
-            } catch (Exception e) {
-
-                e.printStackTrace();
-
-                StackTraceElement[] trace = e.getStackTrace();
-                for (int i = 0; i < trace.length; i++)
-                    Main.log(log, "\tat " + trace[i] + "\r\n");
-
-                zip.delete();
-                zip.deleteOnExit();
-
-                pa.setInstalled(true);
-                pa.setUpdating(false);
-                pa.setDownloaded(false);
-
-            }
-
-        }
-        jdus.save();
-        File afile[] = (JDUtilities.getResourceFile("packages")).listFiles();
-        if (afile != null) {
-            for (int l = 0; l < afile.length; l++) {
-                File jdu = afile[l];
-                if (jdu.getName().toLowerCase().endsWith("jdu")) {
-                    jdu.delete();
-                    jdu.deleteOnExit();
-                    log(log, (new StringBuilder("delete: ")).append(jdu).toString());
-                }
-            }
-        }
-
-    }
+//    public static void installAddons(File root) {
+//        SubConfiguration jdus = WebUpdater.getConfig("JDU");
+//        ArrayList<PackageData> data = jdus.getGenericProperty("PACKAGEDATA", new ArrayList<PackageData>());
+//
+//        for (PackageData pa : data) {
+//            if (!pa.isDownloaded()) continue;
+//            File zip = new File(pa.getStringProperty("LOCALPATH"));
+//
+//            Main.log(log, "Install: " + zip + System.getProperty("line.separator") + System.getProperty("line.separator"));
+//
+//            UnZip u = new UnZip(zip, root);
+//            File[] efiles;
+//            try {
+//                efiles = u.extract();
+//                if (efiles != null) {
+//
+//                    for (File element : efiles) {
+//                        Main.log(log, "       extracted: " + element + System.getProperty("line.separator"));
+//                        if (element.getAbsolutePath().endsWith("readme.html")) {
+//                            pa.setProperty("README", element.getAbsolutePath());
+//
+//                        }
+//                    }
+//                    pa.setInstalled(true);
+//                    pa.setUpdating(false);
+//                    pa.setDownloaded(false);
+//                    pa.setInstalledVersion(Integer.parseInt(pa.getStringProperty("version")));
+//
+//                    Main.log(log, "Installation successfull: " + zip + System.getProperty("line.separator"));
+//
+//                    System.out.println("Delete " + zip.delete());
+//                    zip.deleteOnExit();
+//
+//                }
+//            } catch (Exception e) {
+//
+//                e.printStackTrace();
+//
+//                StackTraceElement[] trace = e.getStackTrace();
+//                for (int i = 0; i < trace.length; i++)
+//                    Main.log(log, "\tat " + trace[i] + "\r\n");
+//
+//                zip.delete();
+//                zip.deleteOnExit();
+//
+//                pa.setInstalled(true);
+//                pa.setUpdating(false);
+//                pa.setDownloaded(false);
+//
+//            }
+//
+//        }
+//        jdus.save();
+//        File afile[] = (JDUtilities.getResourceFile("packages")).listFiles();
+//        if (afile != null) {
+//            for (int l = 0; l < afile.length; l++) {
+//                File jdu = afile[l];
+//                if (jdu.getName().toLowerCase().endsWith("jdu")) {
+//                    jdu.delete();
+//                    jdu.deleteOnExit();
+//                    log(log, (new StringBuilder("delete: ")).append(jdu).toString());
+//                }
+//            }
+//        }
+//
+//    }
 
     private static void checkUpdateMessage() throws IOException {
         try {

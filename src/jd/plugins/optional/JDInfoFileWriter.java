@@ -41,7 +41,8 @@ import jd.plugins.PluginOptional;
 import jd.utils.JDUtilities;
 import jd.utils.Replacer;
 import jd.utils.locale.JDL;
-@OptionalPlugin(rev="$Revision$", id="infofilewriter",interfaceversion=4)
+
+@OptionalPlugin(rev = "$Revision$", id = "infofilewriter", interfaceversion = 4)
 public class JDInfoFileWriter extends PluginOptional implements ControlListener {
 
     private static final String FILENAME_DEFAULT = "%LAST_FINISHED_PACKAGE.DOWNLOAD_DIRECTORY%/%LAST_FINISHED_PACKAGE.PACKAGENAME%.info";
@@ -58,7 +59,6 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
 
     private ConfigEntry txtInfo;
 
- 
     private SubConfiguration subConfig = null;
 
     public JDInfoFileWriter(PluginWrapper wrapper) {
@@ -72,7 +72,7 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
         super.controlEvent(event);
         if (event.getID() == ControlEvent.CONTROL_PLUGIN_INACTIVE && event.getSource() instanceof PluginForHost) {
             // Nur Hostpluginevents auswerten
-            DownloadLink lastDownloadFinished = ((SingleDownloadController) event.getParameter()).getDownloadLink();            
+            DownloadLink lastDownloadFinished = ((SingleDownloadController) event.getParameter()).getDownloadLink();
             if (lastDownloadFinished.getFilePackage().getRemainingLinks() == 0) {
                 writeInfoFile();
             }
@@ -83,7 +83,6 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
     public ArrayList<MenuItem> createMenuitems() {
         return null;
     }
-
 
     // @Override
     public boolean initAddon() {

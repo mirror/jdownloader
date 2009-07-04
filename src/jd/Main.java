@@ -471,7 +471,7 @@ public class Main {
             JDLogger.exception(e);
         }
 
-        new PackageManager().interact(this);
+      
         /*
          * Keeps the home working directory for developers up2date
          */

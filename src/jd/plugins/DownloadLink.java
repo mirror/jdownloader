@@ -71,7 +71,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     public static final int LINKTYPE_CONTAINER = 1;
 
-    public static final int LINKTYPE_JDU = 2;
+//    public static final int LINKTYPE_JDU = 2;
 
     public static final int LINKTYPE_NORMAL = 0;
 

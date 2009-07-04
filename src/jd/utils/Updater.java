@@ -480,8 +480,9 @@ branch="NIGHTLY";
             System.out.println(br.postPage("http://update1.jdownloader.org/unlock.php?pass=" + getCFG("updateHashPW") + "&branch=" + branch, "server=" + SERVERLIST.toString().replaceAll("\\%BRANCH\\%", branch)));
             map.put("pass", getCFG("updateHashPW"));
             // map = map;
-            String addonlist = createAddonList();
-            map.put("addonlist", Encoding.urlEncode(addonlist));
+//            String addonlist = createAddonList();
+//            map.put("addonlist", Encoding.urlEncode(addonlist));
+            map.put("addonlist", "");
             br.postPage("http://update1.jdownloader.org/updateHashList.php?pass=" + getCFG("updateHashPW") + "&branch=" + branch, map);
             System.out.println(br + "");
             // br = br;
@@ -491,47 +492,47 @@ branch="NIGHTLY";
         }
     }
 
-    private String createAddonList() throws Exception {
-        File file = new File(getCFG("addon_dir2"));
-        StringBuilder sb = new StringBuilder();
-        uploadaddons = JOptionPane.showConfirmDialog(frame, "Upload addons?") == JOptionPane.OK_OPTION;
-
-        if (!uploadaddons) {
-
-            if (new File(this.workingDir, "addonlist.lst").exists()) {
-                return JDIO.getLocalFile(new File(this.workingDir, "addonlist.lst"));
-            } else {
-                return "";
-            }
-
-        }
-        sb.append("<packages>\r\n");
-        for (File addon : file.listFiles()) {
-
-            if (new File(addon, "info.txt").exists()) {
-
-                Properties info = new Properties();
-                FileInputStream stream;
-                try {
-                    stream = new FileInputStream(new File(addon, "info.txt"));
-                    info.load(stream);
-                    stream.close();
-                } catch (Exception e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
-
-                if (info.getProperty("disabled") == null || !info.getProperty("disabled").equalsIgnoreCase("false")) {
-                    addAddon(sb, addon, info);
-                }
-            }
-        }
-
-        sb.append("</packages>");
-        JDIO.writeLocalFile(new File(this.workingDir, "addonlist.lst"), sb.toString());
-        System.out.println(sb);
-        return sb.toString();
-    }
+//    private String createAddonList() throws Exception {
+//        File file = new File(getCFG("addon_dir2"));
+//        StringBuilder sb = new StringBuilder();
+//        uploadaddons = JOptionPane.showConfirmDialog(frame, "Upload addons?") == JOptionPane.OK_OPTION;
+//
+//        if (!uploadaddons) {
+//
+//            if (new File(this.workingDir, "addonlist.lst").exists()) {
+//                return JDIO.getLocalFile(new File(this.workingDir, "addonlist.lst"));
+//            } else {
+//                return "";
+//            }
+//
+//        }
+//        sb.append("<packages>\r\n");
+//        for (File addon : file.listFiles()) {
+//
+//            if (new File(addon, "info.txt").exists()) {
+//
+//                Properties info = new Properties();
+//                FileInputStream stream;
+//                try {
+//                    stream = new FileInputStream(new File(addon, "info.txt"));
+//                    info.load(stream);
+//                    stream.close();
+//                } catch (Exception e) {
+//                    // TODO Auto-generated catch block
+//                    e.printStackTrace();
+//                }
+//
+//                if (info.getProperty("disabled") == null || !info.getProperty("disabled").equalsIgnoreCase("false")) {
+//                    addAddon(sb, addon, info);
+//                }
+//            }
+//        }
+//
+//        sb.append("</packages>");
+//        JDIO.writeLocalFile(new File(this.workingDir, "addonlist.lst"), sb.toString());
+//        System.out.println(sb);
+//        return sb.toString();
+//    }
 
     private void addAddon(StringBuilder sb, File addon, Properties info) throws Exception {
 

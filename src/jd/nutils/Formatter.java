@@ -153,4 +153,20 @@ public class Formatter {
         return DATE_FORMAT.format(new Date(time)).substring(0, 29);
     }
 
+    /**
+     * Extracts the Revision from rev. $Revision: 6506 $
+     * 
+     * @param rev
+     * @return
+     */
+    public static String getRevision(String rev) {
+        try {
+            int start = rev.indexOf("Revision: ") + 10;
+
+            return rev.substring(start, rev.indexOf(" ", start + 1));
+        } catch (Exception e) {
+            return "-1";
+        }
+    }
+
 }

@@ -16,22 +16,10 @@
 
 package jd.gui.skins.simple.config.panels;
 
-import java.awt.ComponentOrientation;
-
-import javax.swing.JTabbedPane;
-import javax.swing.SwingConstants;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
-
 import jd.config.Configuration;
 import jd.config.ConfigEntry.PropertyType;
-import jd.controlling.interaction.PackageManager;
 import jd.gui.skins.simple.config.ConfigPanel;
-import jd.gui.skins.simple.config.subpanels.SubPanelOptionalInstaller;
 import jd.gui.skins.simple.config.subpanels.SubPanelPluginsOptional;
-import jd.update.WebUpdater;
-import jd.utils.JDTheme;
-import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 /**
@@ -46,9 +34,9 @@ public class ConfigPanelAddons extends ConfigPanel {
 
     private SubPanelPluginsOptional sppo;
 
-//    private SubPanelOptionalInstaller spr;
+    // private SubPanelOptionalInstaller spr;
 
-//    private JTabbedPane tabbed;
+    // private JTabbedPane tabbed;
 
     public ConfigPanelAddons(Configuration configuration) {
         super();
@@ -66,14 +54,19 @@ public class ConfigPanelAddons extends ConfigPanel {
     public void initPanel() {
         panel.setLayout(new MigLayout("ins 0", "[fill,grow]", "[fill,grow]"));
         panel.add(sppo = new SubPanelPluginsOptional(configuration), "spanx");
-//        tabbed.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
-//        tabbed.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
-//        tabbed.setTabPlacement(SwingConstants.TOP);
-//        tabbed.addChangeListener(new ChangeListener() {
-//            public void stateChanged(ChangeEvent e) {}
-//        });
-//        tabbed.addTab(JDL.L("gui.config.addons.settings.tab", "Settings"), JDTheme.II("gui.splash.controller", 16, 16), sppo = new SubPanelPluginsOptional(configuration));
-//        tabbed.addTab(JDL.L("gui.config.addons.install.tab", "Installation & updates"), JDTheme.II("gui.images.taskpanes.download", 16, 16), spr = new SubPanelOptionalInstaller(configuration));
+        // tabbed.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
+        // tabbed.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
+        // tabbed.setTabPlacement(SwingConstants.TOP);
+        // tabbed.addChangeListener(new ChangeListener() {
+        // public void stateChanged(ChangeEvent e) {}
+        // });
+        // tabbed.addTab(JDL.L("gui.config.addons.settings.tab", "Settings"),
+        // JDTheme.II("gui.splash.controller", 16, 16), sppo = new
+        // SubPanelPluginsOptional(configuration));
+        // tabbed.addTab(JDL.L("gui.config.addons.install.tab",
+        // "Installation & updates"),
+        // JDTheme.II("gui.images.taskpanes.download", 16, 16), spr = new
+        // SubPanelOptionalInstaller(configuration));
         setLayout(new MigLayout("ins 0", "[fill,grow]", "[fill,grow]"));
         add(panel);
     }
@@ -86,7 +79,7 @@ public class ConfigPanelAddons extends ConfigPanel {
     @Override
     public void save() {
         sppo.save();
-//        spr.save();
+        // spr.save();
     }
 
     @Override

@@ -174,7 +174,7 @@ public class WebUpdate {
         updater.getBroadcaster().addListener(messageListener = new MessageListener() {
 
             public void onMessage(MessageEvent event) {
-                progress.setStatusText(event.getSource().toString().replaceAll("jd/plugins/decrypt", "Decrypt Plugin").replaceAll(".class", "") + ": " + event.getMessage());
+                progress.setStatusText(event.getSource()+": "+event.getMessage());
 
             }
 
@@ -253,9 +253,9 @@ public class WebUpdate {
                     UPDATE_IN_PROGRESS = false;
                     return;
                 }
-                PackageManager pm = new PackageManager();
-                final ArrayList<PackageData> packages = pm.getDownloadedPackages();
-                if (files.size() == 0 && packages.size() == 0) {
+              
+                
+                if (files.size() == 0 ) {
                     logger.severe("Webupdater offline or nothing to update");
                     progress.finalize();
                     if (doPluginRestart) JDUtilities.restartJD();
@@ -265,14 +265,14 @@ public class WebUpdate {
                 int org;
                 progress.setRange(org = files.size());
                 progress.setStatusText(JDL.L("init.webupdate.progress.1_title", "Update Check"));
-                if (files.size() > 0 || packages.size() > 0) {
-                    progress.setStatus(org - (files.size() + packages.size()));
+                if (files.size() > 0) {
+                    progress.setStatus(org - (files.size()));
                     logger.finer("Files to update: " + files);
-                    logger.finer("JDUs to update: " + packages.size());
+                
 
                     if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, false)) {
 
-                        int answer = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, JDL.L("init.webupdate.auto.countdowndialog", "Automatic update."), JDL.LF("system.dialogs.update.message", "<font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\">%s update(s)  and %s package(s) or addon(s) available. Install now?</font>", files.size(), packages.size()), JDTheme.II("gui.splash.update", 32, 32), null, null);
+                        int answer = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, JDL.L("init.webupdate.auto.countdowndialog2", "Automatic update."), JDL.LF("jd.utils.webupdate.message", "<font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\">%s update(s) available. Install now?</font>", files.size()), JDTheme.II("gui.splash.update", 32, 32), null, null);
 
                         if (JDFlags.hasAllFlags(answer, UserIO.RETURN_OK)) {
                             doUpdate(updater, files, doPluginRestart);
@@ -281,7 +281,7 @@ public class WebUpdate {
                         }
                     } else {
                         try {
-                            int answer = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, JDL.L("system.dialogs.update", "Updates available"), JDL.LF("system.dialogs.update.message", "<font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\">%s update(s)  and %s package(s) or addon(s) available. Install now?</font>", files.size(), packages.size()), JDTheme.II("gui.splash.update", 32, 32), null, null);
+                            int answer = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, JDL.L("system.dialogs.update", "Updates available"), JDL.LF("jd.utils.webupdate.message", "<font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\">%s update(s) available. Install now?</font>", files.size()), JDTheme.II("gui.splash.update", 32, 32), null, null);
 
                             if (JDFlags.hasAllFlags(answer, UserIO.RETURN_OK)) {
                                 doUpdate(updater, files, doPluginRestart);
@@ -336,7 +336,7 @@ public class WebUpdate {
                         updater.getBroadcaster().addListener(new MessageListener() {
 
                             public void onMessage(MessageEvent event) {
-                                pc.setStatusText(event.getSource().toString().replaceAll("jd/plugins/decrypt", "Decrypt Plugin").replaceAll(".class", "") + ": " + event.getMessage());
+                               pc.setStatusText(event.getSource().toString() + ": " + event.getMessage());
 
                             }
 

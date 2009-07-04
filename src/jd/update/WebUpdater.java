@@ -29,7 +29,6 @@ import java.util.Vector;
 import javax.swing.JProgressBar;
 
 import jd.config.CFGConfig;
-import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.event.JDBroadcaster;
@@ -42,6 +41,7 @@ import jd.nutils.io.JDIO;
 import jd.nutils.zip.UnZip;
 import jd.parser.Regex;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 /**
  * Webupdater lädt pfad und hash infos von einem server und vergleicht sie mit
@@ -92,9 +92,11 @@ public class WebUpdater implements Serializable {
             PLUGIN_LIST = new HashMap<String, FileUpdate>();
             WebUpdater updater = new WebUpdater();
 
-//            if (SubConfiguration.getConfig("WEBUPDATE").getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false)) {
-                updater.ignorePlugins(false);
-//            }
+            // if
+            // (SubConfiguration.getConfig("WEBUPDATE").getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE,
+            // false)) {
+            updater.ignorePlugins(false);
+            // }
 
             updater.parseFileList(JDUtilities.getResourceFile("tmp/hashlist.lst"), null, PLUGIN_LIST);
         }
@@ -155,22 +157,23 @@ public class WebUpdater implements Serializable {
 
         for (Iterator<FileUpdate> it = files.iterator(); it.hasNext();) {
             FileUpdate file = it.next();
-
-            if (!file.exists()) {
-                broadcaster.fireEvent(new MessageEvent(this, NEW_FILE, "New file. " + file.getLocalPath()));
-                continue;
-            }
-
-            if (!file.equals()) {
-
-                broadcaster.fireEvent(new MessageEvent(this, UPDATE_FILE, "UPDATE AV. " + file.getLocalPath()));
-
-                continue;
-            }
             if (new File(file.getLocalFile(), ".noupdate").exists()) {
                 System.out.println("User excluded. " + file.getLocalPath());
+                it.remove();
+            } else {
+                if (!file.exists()) {
+                    broadcaster.fireEvent(new MessageEvent(this, NEW_FILE, JDL.LF("jd.update.webupdater.filteravailableupdates.newfile", "New: %s", WebUpdater.formatPathReadable(file.getLocalPath()))));
+                    continue;
+                } else if (!file.equals()) {
+
+                    broadcaster.fireEvent(new MessageEvent(this, UPDATE_FILE, JDL.LF("jd.update.webupdater.filteravailableupdates.newfile", "Update: %s", WebUpdater.formatPathReadable(file.getLocalPath()))));
+
+                    continue;
+                } else {
+                    it.remove();
+                }
             }
-            it.remove();
+
         }
 
     }
@@ -321,9 +324,11 @@ public class WebUpdater implements Serializable {
 
         };
     }
-public boolean isIgnorePlugins() {
-    return ignorePlugins;
-}
+
+    public boolean isIgnorePlugins() {
+        return ignorePlugins;
+    }
+
     private void loadUpdateList() throws Exception {
         for (int trycount = 0; trycount < 10; trycount++) {
             try {
@@ -451,7 +456,7 @@ public boolean isIgnorePlugins() {
         this.workingdir = workingdir;
     }
 
-    public String toString(){
+    public String toString() {
         return "Updater";
     }
 
@@ -459,7 +464,7 @@ public boolean isIgnorePlugins() {
         boolean fnf = true;
         for (int trycount = 0; trycount < 10; trycount++) {
             try {
-                broadcaster.fireEvent(new MessageEvent(this, 0, "Update Downloadmirrors"));
+                broadcaster.fireEvent(new MessageEvent(this, 0, JDL.L("jd.update.webupdater.updateavailavleservers","Update Downloadmirrors")));
 
                 String path = getListPath(trycount);
                 if (path == null) continue;
@@ -487,7 +492,7 @@ public boolean isIgnorePlugins() {
                     } else {
                         s.setPercent((s.getPercent() * 100) / total);
                     }
-                    broadcaster.fireEvent(new MessageEvent(this, 0, "Updateserver: " + s));
+                    broadcaster.fireEvent(new MessageEvent(this, 0,  JDL.LF("jd.update.webupdater.updateavailavleservers.server","Updateserver: %s" , s)));
 
                 }
                 if (servers.size() > 0) {
@@ -516,7 +521,7 @@ public boolean isIgnorePlugins() {
 
         String[] tmp = file.elementAt(0).split("\\?");
 
-        broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_FILE, "Webupdater: download " + tmp[1] + " to " + JDUtilities.getResourceFile(tmp[0]).getAbsolutePath()));
+        broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_FILE, JDL.LF("updatefile", "Download %s to %s", WebUpdater.formatPathReadable(tmp[1]), WebUpdater.formatPathReadable(JDUtilities.getResourceFile(tmp[0]).getAbsolutePath()))));
 
         Browser.download(JDUtilities.getResourceFile(tmp[0]), tmp[0]);
 
@@ -540,13 +545,13 @@ public boolean isIgnorePlugins() {
         if (prg != null) prg.addToMax(files.size());
         for (FileUpdate file : files) {
             try {
-                broadcaster.fireEvent(new MessageEvent(this, 0, "Update file: " + WebUpdater.formatPathReadable(file.getLocalPath())));
+                broadcaster.fireEvent(new MessageEvent(this, 0, JDL.LF("jd.update.webupdater.updatefiles", "Update %s", WebUpdater.formatPathReadable(file.getLocalPath()))));
                 if (updateUpdatefile(file)) {
-                    broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_SUCCESS, file.toString()));
-                    broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_SUCCESS, "Successfull\r\n"));
+                    broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_SUCCESS, WebUpdater.formatPathReadable(file.toString())));
+                    broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_SUCCESS, JDL.LF("jd.update.webupdater.updatefiles.success", "Successfull")));
                 } else {
-                    broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_FAILED, file.toString()));
-                    broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_FAILED, "Failed\r\n"));
+                    broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_FAILED, WebUpdater.formatPathReadable(file.toString())));
+                    broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_FAILED, JDL.LF("jd.update.webupdater.updatefiles.failed", "Failed")));
                     if (progressload != null) progressload.setForeground(Color.RED);
                     if (prg != null) prg.setColor(Color.RED);
                 }
@@ -554,8 +559,8 @@ public boolean isIgnorePlugins() {
             } catch (Exception e) {
                 e.printStackTrace();
                 broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_FAILED, e.getLocalizedMessage()));
-                broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_FAILED, file.toString()));
-                broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_FAILED, "Failed\r\n"));
+                broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_FAILED, WebUpdater.formatPathReadable(file.toString())));
+                broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_FAILED, JDL.LF("jd.update.webupdater.updatefiles.failed", "Failed")));
                 if (progressload != null) progressload.setForeground(Color.RED);
                 if (prg != null) prg.setColor(Color.RED);
             }
@@ -573,8 +578,10 @@ public boolean isIgnorePlugins() {
         }
     }
 
-    private static String formatPathReadable(String localPath) {
-        localPath=localPath.replace(".class", "-plugin");
+    public static String formatPathReadable(String localPath) {
+        localPath = localPath.replace(".class", "-Plugin");
+        localPath = localPath.replace(".jar", "-Module");
+        localPath = localPath.replace("plugins/decrypter/.*", "Decrypter-Plugin");
         return localPath;
     }
 

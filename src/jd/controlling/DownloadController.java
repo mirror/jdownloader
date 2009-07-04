@@ -287,10 +287,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
                 it = fp.getDownloadLinkList().iterator();
                 while (it.hasNext()) {
                     localLink = it.next();
-                    if (localLink.getLinkType() == DownloadLink.LINKTYPE_JDU && (localLink.getProperty("JDU") == null || !(localLink.getProperty("JDU") instanceof PackageData))) {
-                        iterator.remove();
-                        continue;
-                    }
+                
                     if (!localLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                         tmp2 = localLink.getLinkStatus().getErrorMessage();
                         localLink.getLinkStatus().reset();
@@ -361,10 +358,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
                 it = fp.getDownloadLinkList().iterator();
                 while (it.hasNext()) {
                     localLink = it.next();
-                    if (localLink.getLinkType() == DownloadLink.LINKTYPE_JDU && (localLink.getProperty("JDU") == null || !(localLink.getProperty("JDU") instanceof PackageData))) {
-                        convert.remove(fp);
-                        continue;
-                    }
+               
                     if (!localLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                         tmp1 = localLink.getLinkStatus().getStatusText();
                         tmp2 = localLink.getLinkStatus().getErrorMessage();

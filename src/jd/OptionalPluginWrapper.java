@@ -20,6 +20,7 @@ import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 
 import jd.controlling.JDLogger;
+import jd.nutils.Formatter;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
 import jd.utils.JDUtilities;
@@ -45,7 +46,7 @@ public class OptionalPluginWrapper extends PluginWrapper {
 
         super(c.getName(), null, c.getName(), null, 0);
         this.id = help.id();
-        revision = help.rev();
+        revision = Formatter.getRevision(help.rev());
         this.version = help.minJVM();
         this.name = JDL.L(c.getName(), c.getSimpleName());
 this.annotation=help;
