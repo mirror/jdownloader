@@ -43,6 +43,35 @@ import jd.utils.MacOSController;
 import jd.utils.WebUpdate;
 
 public abstract class TestUtils {
+/**
+ * Normal  usual downloadlink
+ */
+    public static final String HOSTER_LINKTYPE_NORMAL = "NORMAL_DOWNLOADLINK_";
+    /**
+     * File not found downloadlink. invalid URL. NOT ABUSED!
+     */
+    public static final String HOSTER_LINKTYPE_FNF= "FNF_DOWNLOADLINK_";
+    /**
+     * Very very tiny download. just a few kb or less
+     */
+    public static final String HOSTER_LINKTYPE_TINY = "TINY_DOWNLOADLINK_";
+    /**
+     * Bigger than normaldownloadlinks
+     */
+    public static final String HOSTER_LINKTYPE_OVERSIZE = "OVERSIZE_DOWNLOADLINK_";
+    /**
+     * Link abused
+     */
+    public static final String HOSTER_LINKTYPE_ABUSED = "ABUSED_DOWNLOADLINK_";
+    /**
+     * Serverside error
+     */
+    public static final String HOSTER_LINKTYPE_ERROR_HARDWARE= "HARDWARE_ERROR_DOWNLOADLINK_";
+    /**
+     * Tempora. unavailable
+     */
+    public static final String HOSTER_LINKTYPE_ERROR_TEMP = "TEM_ERROR_DOWNLOADLINK_";
+    
 
     private static JFrame FRAME;
 
@@ -96,8 +125,9 @@ public abstract class TestUtils {
         // JDLogger.getLogger().setLevel(Level.ALL);
     }
 
-    public static void log(String msg) {
+    public static String log(String msg) {
         System.out.println(new Exception().getStackTrace()[1].toString() + " : " + msg);
+        return new Exception().getStackTrace()[1].toString() + " : " + msg;
     }
 
     public static void mainInit() {

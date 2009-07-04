@@ -39,6 +39,7 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.HosterInfo;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
@@ -490,7 +491,17 @@ public class Rapidshare extends PluginForHost {
         }
 
     }
-
+    public HosterInfo getHosterInfo() {
+        // TODO Auto-generated method stub
+        HosterInfo ret = new HosterInfo(this.getHost());
+        ret.setFreeMaxWaittime(60*2*1000);
+        ret.setFreeIPBlockWaittime(15*60*1000);
+        ret.setFreeResumable(false);
+        ret.setFreeParalellDownloads(1);
+        ret.setFreeChunks(1);
+        ret.setFreeMaxSpeed(200*1024);
+        return ret;
+    }
     // @Override
     public String getSessionInfo() {
         if (selectedServer != null) return " @ " + selectedServer;

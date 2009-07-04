@@ -21,7 +21,10 @@ import java.util.ArrayList;
 import java.util.Vector;
 import java.util.logging.Logger;
 
+import javax.swing.JButton;
 import javax.swing.JComponent;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
@@ -49,6 +52,10 @@ public abstract class ConfigPanel extends JTabbedPanel {
     private ConfigGroup currentGroup;
 
     protected boolean viewport = true;
+
+    private JMenuBar menuBar;
+
+    private int latestGroupID;
 
     public ConfigPanel() {
         this.setLayout(new MigLayout("ins 0 0 0 0", "[fill,grow]", "[fill,grow]"));
@@ -125,6 +132,7 @@ public abstract class ConfigPanel extends JTabbedPanel {
             if (currentGroup != group) {
 
                 panel.add(Factory.createHeader(group), "spanx");
+              latestGroupID=  panel.getComponentCount();
                 currentGroup = group;
             }
             if (entry.getDecoration() != null) {
@@ -139,6 +147,21 @@ public abstract class ConfigPanel extends JTabbedPanel {
             for (JComponent c : entry.getInput()) {
 
                 switch (entry.getConfigEntry().getType()) {
+                case ConfigContainer.TYPE_BUTTON:
+                    if (menuBar == null) {
+                        menuBar = new JMenuBar();
+                        panel.add(menuBar, "cell 0 "+latestGroupID+",spanx,growx,pushx");
+                    }
+                    JButton bt = (JButton) entry.getInput()[0];
+                    JMenuItem mnuFile = new JMenuItem(bt.getName());
+                    menuBar.add(mnuFile);
+                    // panel.add(new JScrollPane(c),
+                    // "spanx,gapleft 35,gapright 20");
+                    // panel.add(new JScrollPane(c), "spanx,gapright " +
+                    // getGapRight() + ",growy,pushy,gapleft " + getGapLeft());
+
+                    break;
+
                 case ConfigContainer.TYPE_TEXTAREA:
                     viewport = false;
                     // panel.add(new JScrollPane(c),

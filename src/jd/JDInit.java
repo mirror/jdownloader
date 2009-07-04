@@ -62,7 +62,7 @@ public class JDInit {
 
     private static Logger logger = jd.controlling.JDLogger.getLogger();
 
-    private static URLClassLoader CL;
+    private static ClassLoader CL;
 
     private boolean installerVisible = false;
 
@@ -141,7 +141,7 @@ public class JDInit {
     public UIInterface initGUI(JDController controller) {
 
         UIInterface uiInterface = SimpleGUI.createGUI();
- 
+
         controller.setUiInterface(uiInterface);
         controller.addControlListener(uiInterface);
         return uiInterface;
@@ -273,7 +273,7 @@ public class JDInit {
     }
 
     public void loadCPlugins() {
-     
+
         new CPluginWrapper("ccf", "C", ".+\\.ccf");
         new CPluginWrapper("rsdf", "R", ".+\\.rsdf");
         new CPluginWrapper("dlc", "D", ".+\\.dlc");
@@ -320,7 +320,7 @@ public class JDInit {
         new DecryptPluginWrapper("gwarez.cc", "Gwarezcc", "http://[\\w\\.]*?gwarez\\.cc/(\\d+|mirror/\\d+/checked/game/\\d+/|mirror/\\d+/parts/game/\\d+/|download/dlc/\\d+/)");
         new DecryptPluginWrapper("Hider.ath.cx", "HiderAthCx", "http://[\\w\\.]*?hider\\.ath\\.cx/\\d+");
         new DecryptPluginWrapper("hideurl.biz", "Hideurlbiz", "http://[\\w\\.]*?hideurl\\.biz/[\\w]+");
-     
+
         new DecryptPluginWrapper("hubupload.com", "Hubuploadcom", "http://[\\w\\.]*?hubupload\\.com/files/[\\w]+/[\\w]+/(.*)");
         new DecryptPluginWrapper("iload.to", "ILoadTo", "http://iload\\.to/go/\\d+/|http://iload\\.to/(view|title|release)/.*?/");
         new DecryptPluginWrapper("imagefap.com", "ImagefapCom", "http://[\\w\\.]*?imagefap\\.com/(gallery\\.php\\?gid=.+|gallery/.+)");
@@ -483,11 +483,10 @@ public class JDInit {
         new DecryptPluginWrapper("gazup.com", "GazUpCom", "http://[\\w\\.]*?.gazup\\.com/.+");
         new DecryptPluginWrapper("anonym.to", "AnonymTo", "http://[\\w\\.]*?anonym\\.to/\\?.+");
         // Decrypter from Extern
-       
-     
+
         new DecryptPluginWrapper("rapidlibrary.com", "RapidLibrary", "http://rapidlibrary\\.com/download_file_i\\.php\\?.+");
     }
-    
+
     /**
      * Scans all classes accessible from the context class loader which belong
      * to the given package and subpackages.
@@ -499,7 +498,7 @@ public class JDInit {
      * @throws IOException
      */
     public static List<Class<?>> getClasses(String packageName) throws ClassNotFoundException, IOException {
-        ClassLoader classLoader =getPluginClassLoader();
+        ClassLoader classLoader = getPluginClassLoader();
         String path = packageName.replace('.', '/');
         Enumeration<URL> resources = classLoader.getResources(path);
         List<File> dirs = new ArrayList<File>();
@@ -513,18 +512,28 @@ public class JDInit {
         }
         return classes;
     }
-/**
- * Returns a classloader to load plugins (class files);
- * @return
- */
+
+    /**
+     * Returns a classloader to load plugins (class files);
+     * Depending on runtype (dev or local jared) a different classoader is used to load plugins either from installdirectory or from rundirectory
+     * 
+     * @return
+     */
     private static ClassLoader getPluginClassLoader() {
-        if(CL==null) try {
-            CL=new URLClassLoader(new URL[] { JDUtilities.getJDHomeDirectoryFromEnvironment().toURI().toURL(), JDUtilities.getResourceFile("java").toURI().toURL() }, Thread.currentThread().getContextClassLoader());
+        if (CL == null) try {
+            URL[] u;
+            if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED) {
+
+                CL = new URLClassLoader(u = new URL[] { JDUtilities.getJDHomeDirectoryFromEnvironment().toURI().toURL(), JDUtilities.getResourceFile("java").toURI().toURL() }, Thread.currentThread().getContextClassLoader());
+            } else {
+                CL = Thread.currentThread().getContextClassLoader();
+
+            }
         } catch (MalformedURLException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        
+
         return CL;
     }
 
@@ -545,25 +554,27 @@ public class JDInit {
             if (file.isDirectory()) {
                 classes.addAll(findClasses(file, packageName + "." + file.getName()));
             } else if (file.getName().endsWith(".class")) {
-              
-                classes.add( getPluginClassLoader().loadClass(packageName + '.' + file.getName().substring(0, file.getName().length() - 6)));
+
+                classes.add(getPluginClassLoader().loadClass(packageName + '.' + file.getName().substring(0, file.getName().length() - 6)));
             }
         }
         return classes;
     }
 
     public void loadPluginForHost() {
+
+        System.out.println("DO");
         try {
-            for(Class<?> c : getClasses("jd.plugins.hoster")) {
+            for (Class<?> c : getClasses("jd.plugins.hoster")) {
                 try {
                     System.out.println(c);
-                    if(c.getAnnotations().length > 0) {
+                    if (c.getAnnotations().length > 0) {
                         HostPlugin help = (HostPlugin) c.getAnnotations()[0];
-                    
-                        for(int i=0; i<help.names().length;i++){
-                            new HostPluginWrapper(help.names()[i], c.getSimpleName(), help.urls()[i], help.flags()[i]);  
+
+                        for (int i = 0; i < help.names().length; i++) {
+                            new HostPluginWrapper(help.names()[i], c.getSimpleName(), help.urls()[i], help.flags()[i]);
                         }
-                        
+
                     }
                 } catch (Throwable e) {
                     e.printStackTrace();
@@ -575,7 +586,6 @@ public class JDInit {
     }
 
     public void loadPluginOptional() {
-
 
         if (JDUtilities.getJavaVersion() >= 1.6) new OptionalPluginWrapper("jdtrayicon.JDLightTray", 1.6, "trayicon", JDL.L("plugins.optional.trayicon.name", "Tray Icon (Minimizer)"));
         new OptionalPluginWrapper("webinterface.JDWebinterface", 1.5, "webinterface", JDL.L("plugins.optional.webinterface.name", "WebInterface"));
@@ -593,7 +603,6 @@ public class JDInit {
         new OptionalPluginWrapper("interfaces.JDFlashGot", 1.5, "flashgot", JDL.L("plugins.optional.flashgot.name", "FlashGot Integration"));
         if (OSDetector.isMac()) new OptionalPluginWrapper("JDGrowlNotification", 1.5, "growl", JDL.L("plugins.optional.jdgrowlnotification.name", "JDGrowlNotification"));
         new OptionalPluginWrapper("HTTPLiveHeaderScripter", 1.5, "livescripter", JDL.L("plugins.optional.httpliveheaderscripter.name", "HTTPLiveHeaderScripter"));
-
 
     }
 

@@ -48,15 +48,16 @@ public class Ftp extends PluginForHost {
     // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         SimpleFTP ftp = new SimpleFTP();
-        URL url = new URL(downloadLink.getDownloadURL());
-        ftp.connect(url);
+        try {
+            URL url = new URL(downloadLink.getDownloadURL());
+            ftp.connect(url);
 
-        String[] list = ftp.getFileInfo(url.getPath());
-        if (list == null) return AvailableStatus.FALSE;
-        downloadLink.setDownloadSize(Long.parseLong(list[4]));
-
-        ftp.disconnect();
-
+            String[] list = ftp.getFileInfo(url.getPath());
+            if (list == null) return AvailableStatus.FALSE;
+            downloadLink.setDownloadSize(Long.parseLong(list[4]));
+        } finally {
+            ftp.disconnect();
+        }
         return AvailableStatus.TRUE;
     }
 

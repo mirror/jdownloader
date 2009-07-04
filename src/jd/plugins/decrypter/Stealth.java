@@ -29,6 +29,7 @@ import jd.parser.html.Form.MethodType;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -107,14 +108,22 @@ public class Stealth extends PluginForDecrypt {
                 break;
             }
 
-        } 
+        }
 
         File container = JDUtilities.getResourceFile("container/stealth.to_" + System.currentTimeMillis() + ".dlc");
 
+        String name = br.getRegex("<span class=\"Name\">(.*?)</span>").getMatch(0);
+        String pass = br.getRegex("<span class=\".*?\">Passwort: (.*?)</span>").getMatch(0);
+        FilePackage fp = FilePackage.getInstance();
+
+        fp.setName(name);
+        fp.setPassword(pass);
+  
         Browser.download(container, br.openGetConnection("http://sql.stealth.to/dlc.php?name=" + stealthID));
         ArrayList<DownloadLink> links = JDUtilities.getController().getContainerLinks(container);
 
-        if (links.size() > 0) {
+        if (links!=null&&links.size() > 0) {
+            for(DownloadLink l:links)l.setFilePackage(fp);
             decryptedLinks.addAll(links);
         } else {
             logger.log(Level.WARNING, "Cannot decrypt download links file ['" + container.getName() + "']");
@@ -129,8 +138,6 @@ public class Stealth extends PluginForDecrypt {
             logger.warning("There were no links obtained for the URL '" + url + "'");
         }
         return decryptedLinks;
-
-  
 
     }
 

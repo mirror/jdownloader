@@ -753,4 +753,9 @@ public abstract class PluginForHost extends Plugin {
         return image;
 
     }
+
+    public HosterInfo getHosterInfo() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 }

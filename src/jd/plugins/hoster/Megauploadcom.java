@@ -416,7 +416,8 @@ public class Megauploadcom extends PluginForHost {
     // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         checkWWWWorkaround();
-        downloadLink.setAvailable(this.checkLinks(new DownloadLink[] { downloadLink }));
+        this.checkLinks(new DownloadLink[] { downloadLink });
+       
         if (!downloadLink.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         return downloadLink.getAvailableStatus();
     }
