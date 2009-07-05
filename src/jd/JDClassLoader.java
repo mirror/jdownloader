@@ -279,7 +279,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
 
             urls.add(tmp);
         }
-        if (urls.size() > 0) { return urls.elements(); }
+//        if (urls.size() > 0) { return urls.elements(); }
         if (jars != null) {
             JarEntry entry;
             for (JarFile element : jars) {

@@ -17,6 +17,7 @@
 package jd;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -24,6 +25,8 @@ import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.jar.JarEntry;
+import java.util.jar.JarInputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -182,12 +185,12 @@ public class JDInit {
         Object obj = JDUtilities.getDatabaseConnector().getData(Configuration.NAME);
 
         if (obj == null) {
-            System.out.println("Fresh install?");
+            logger.finest("Fresh install?");
             // File file = JDUtilities.getResourceFile(JDUtilities.CONFIG_PATH);
             // if (file.exists()) {
             // logger.info("Wrapping jdownloader.config");
             // obj = JDIO.loadObject(null, file, Configuration.saveAsXML);
-            // System.out.println(obj.getClass().getName());
+            // logger.finest(obj.getClass().getName());
             // JDUtilities.getDatabaseConnector().saveConfiguration(
             // "jdownloaderconfig",
             // obj);
@@ -500,19 +503,18 @@ public class JDInit {
      * @throws IOException
      */
     public static List<Class<?>> getClasses(String packageName, ClassLoader classLoader) throws ClassNotFoundException, IOException {
-        System.out.println("Get classes for " + packageName + " in " + classLoader);
+        logger.finest("Get classes for " + packageName + " in " + classLoader);
         String path = packageName.replace('.', '/');
         Enumeration<URL> resources = classLoader.getResources(path);
-        List<File> dirs = new ArrayList<File>();
+
+        List<Class<?>> classes = new ArrayList<Class<?>>();
         while (resources.hasMoreElements()) {
             URL resource = resources.nextElement();
-            System.out.println("Ressource: " + resource);
-            dirs.add(new File(resource.getFile()));
+            logger.finest("Ressource: " + resource);
+            classes.addAll(findPlugins(resource, packageName, classLoader));
+
         }
-        List<Class<?>> classes = new ArrayList<Class<?>>();
-        for (File directory : dirs) {
-            classes.addAll(findClasses(directory, packageName, classLoader));
-        }
+
         return classes;
     }
 
@@ -552,16 +554,55 @@ public class JDInit {
      * @return
      * @throws ClassNotFoundException
      */
-    private static List<Class<?>> findClasses(File directory, String packageName, ClassLoader classLoader) throws ClassNotFoundException {
+    private static List<Class<?>> findPlugins(URL directory, String packageName, ClassLoader classLoader) throws ClassNotFoundException {
         List<Class<?>> classes = new ArrayList<Class<?>>();
-        System.out.println("Find classes in " + directory + " : " + packageName);
-        File[] files = directory.listFiles();
-        for (File file : files) {
-            if (file.isDirectory()) {
-                classes.addAll(findClasses(file, packageName + "." + file.getName(), classLoader));
-            } else if (file.getName().endsWith(".class")) {
-                System.out.println("   class " + packageName + '.' + file.getName().substring(0, file.getName().length() - 6));
-                classes.add(classLoader.loadClass(packageName + '.' + file.getName().substring(0, file.getName().length() - 6)));
+        logger.finest("Find classes in " + directory + " : " + packageName);
+        File[] files = new File(directory.getFile()).listFiles();
+
+        if (files == null) {
+            try {
+                // it's a jar
+                logger.finest("");
+                String path = directory.toString().substring(4);
+                // split path | intern path
+                String[] splitted = path.split("!");
+
+                splitted[1] = splitted[1].substring(1);
+                File file = new File(new URL(splitted[0]).toURI());
+
+                JarInputStream jarFile = new JarInputStream(new FileInputStream(file));
+                JarEntry e;
+
+                while ((e = jarFile.getNextJarEntry()) != null) {
+                    if (e.getName().startsWith(splitted[1])) {
+                      
+                        
+                        Class<?> c;
+                        classes.add(c=classLoader.loadClass(e.getName().substring(0, e.getName().length() - 6).replace("/", ".")));
+                        logger.finest(directory+    "Jarclass "+c);
+                    }
+
+                }
+
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
+
+        } else {
+            for (File file : files) {
+                if (file.isDirectory()) {
+                    try {
+                        classes.addAll(findPlugins(file.toURI().toURL(), packageName + "." + file.getName(), classLoader));
+                    } catch (MalformedURLException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
+                } else if (file.getName().endsWith(".class")) {
+               
+                    Class<?> c;
+                    classes.add(c=classLoader.loadClass(packageName + '.' + file.getName().substring(0, file.getName().length() - 6)));
+                    logger.finest(directory+" - class: "+c);
+                }
             }
         }
         return classes;
@@ -572,7 +613,7 @@ public class JDInit {
         try {
             for (Class<?> c : getClasses("jd.plugins.hoster", getPluginClassLoader())) {
                 try {
-                    System.out.println("Try to load " + c);
+                    logger.finest("Try to load " + c);
                     if (c != null && c.getAnnotations().length > 0) {
                         HostPlugin help = (HostPlugin) c.getAnnotations()[0];
 
@@ -591,18 +632,18 @@ public class JDInit {
     }
 
     public void loadPluginOptional() {
-        System.out.println("DO");
+        logger.finest("DO");
         try {
             for (Class<?> c : getClasses("jd.plugins.optional", JDUtilities.getJDClassLoader())) {
                 try {
 
                     if (c.getAnnotations().length > 0) {
                         OptionalPlugin help = (OptionalPlugin) c.getAnnotations()[0];
-                        System.out.println(help);
+                   
 
                         if ((help.windows() && OSDetector.isWindows()) || (help.linux() && OSDetector.isLinux()) || (help.mac() && OSDetector.isMac())) {
                             if (JDUtilities.getJavaVersion() >= help.minJVM() && PluginOptional.ADDON_INTERFACE_VERSION == help.interfaceversion()) {
-                                System.out.println("Load Plugin!");
+                                logger.finest("Init PluginWrapper!");
                                 new OptionalPluginWrapper(c, help);
                             }
                         }
