@@ -37,7 +37,6 @@ import jd.config.CFGConfig;
 import jd.controlling.JDLogger;
 import jd.gui.userio.SimpleUserIO;
 import jd.http.Browser;
-import jd.http.Encoding;
 import jd.nutils.JDHash;
 import jd.nutils.SimpleFTP;
 import jd.nutils.io.JDIO;
@@ -71,12 +70,12 @@ public class Updater {
      * @throws Exception
      */
     public static void main(String[] args) throws Exception {
-String branch=null;
+        String branch = null;
 
-branch="NIGHTLY";
+        branch = "NIGHTLY";
         Updater upd = new Updater();
 
-     if(branch!=null)   WebUpdater.getConfig("WEBUPDATE").setProperty("BRANCH", branch);
+        if (branch != null) WebUpdater.getConfig("WEBUPDATE").setProperty("BRANCH", branch);
         WebUpdater.getConfig("WEBUPDATE").save();
         System.out.println("STATUS: Webupdate");
         upd.webupdate();
@@ -91,8 +90,8 @@ branch="NIGHTLY";
         // // // System.out.println("STATUS: FINISHED");
         upd.cleanUp();
         // upd.filter("DBBackup.*.class");
-        
-        if(branch==null)branch=JOptionPane.showInputDialog(upd.frame, "branchname");
+
+        if (branch == null) branch = JOptionPane.showInputDialog(upd.frame, "branchname");
         upd.createBranch(branch);
 
         ArrayList<File> list = upd.getFileList();
@@ -257,7 +256,7 @@ branch="NIGHTLY";
             }
         }
 
-        String[] rest = new String[] {/* "libs/svnkit.jar"*/
+        String[] rest = new String[] {/* "libs/svnkit.jar" */
 
         };
         for (String path : rest) {
@@ -351,19 +350,33 @@ branch="NIGHTLY";
     private void moveJars(String string) throws IOException {
         jars = new File(string);
         copyDirectory(new File(jars, "libs"), new File(this.updateDir, "libs"));
+        String hash = JDHash.getMD5(new File(this.workingDir, "JDownloader.jar"));
         copyFile(new File(jars, "JDownloader.jar"), new File(updateDir, "JDownloader.jar"));
+        if (!JDHash.getMD5(new File(updateDir, "JDownloader.jar")).equals(hash)) {
+            Subversion svn;
+            try {
+                svn = new Subversion("svn://svn.jdownloader.org/jdownloader");
+                long head = svn.latestRevision();
+
+                new File(updateDir, "config").mkdirs();
+                JDIO.saveToFile(new File(updateDir, "config/version.cfg"), (head + "").getBytes());
+
+            } catch (SVNException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        }
         copyFile(new File(jars, "tinyupdate.jar"), new File(updateDir, "tools/tinyupdate.jar"));
         copyFile(new File(jars.getParentFile(), "ressourcen\\outdated.dat"), new File(updateDir, "outdated.dat"));
-        
-        for( File f:new File(jars.getParentFile(), "ressourcen\\pluginressourcen").listFiles()){
-            copyDirectory(f, this.updateDir);
-        }
-   
-        for( File f:new File(jars, "pluginressourcen").listFiles()){
+
+        for (File f : new File(jars.getParentFile(), "ressourcen\\pluginressourcen").listFiles()) {
             copyDirectory(f, this.updateDir);
         }
 
-        
+        for (File f : new File(jars, "pluginressourcen").listFiles()) {
+            copyDirectory(f, this.updateDir);
+        }
+
         copyDirectory(new File(jars.getParentFile(), "ressourcen\\jd"), new File(this.updateDir, "jd"));
         copyDirectory(new File(jars.getParentFile(), "ressourcen\\tools"), new File(this.updateDir, "tools"));
         copyDirectory(new File(jars.getParentFile(), "ressourcen\\libs"), new File(this.updateDir, "libs"));
@@ -476,8 +489,8 @@ branch="NIGHTLY";
             System.out.println(br.postPage("http://update1.jdownloader.org/unlock.php?pass=" + getCFG("updateHashPW") + "&branch=" + branch, "server=" + SERVERLIST.toString().replaceAll("\\%BRANCH\\%", branch)));
             map.put("pass", getCFG("updateHashPW"));
             // map = map;
-//            String addonlist = createAddonList();
-//            map.put("addonlist", Encoding.urlEncode(addonlist));
+            // String addonlist = createAddonList();
+            // map.put("addonlist", Encoding.urlEncode(addonlist));
             map.put("addonlist", "");
             br.postPage("http://update1.jdownloader.org/updateHashList.php?pass=" + getCFG("updateHashPW") + "&branch=" + branch, map);
             System.out.println(br + "");
@@ -488,47 +501,50 @@ branch="NIGHTLY";
         }
     }
 
-//    private String createAddonList() throws Exception {
-//        File file = new File(getCFG("addon_dir2"));
-//        StringBuilder sb = new StringBuilder();
-//        uploadaddons = JOptionPane.showConfirmDialog(frame, "Upload addons?") == JOptionPane.OK_OPTION;
-//
-//        if (!uploadaddons) {
-//
-//            if (new File(this.workingDir, "addonlist.lst").exists()) {
-//                return JDIO.getLocalFile(new File(this.workingDir, "addonlist.lst"));
-//            } else {
-//                return "";
-//            }
-//
-//        }
-//        sb.append("<packages>\r\n");
-//        for (File addon : file.listFiles()) {
-//
-//            if (new File(addon, "info.txt").exists()) {
-//
-//                Properties info = new Properties();
-//                FileInputStream stream;
-//                try {
-//                    stream = new FileInputStream(new File(addon, "info.txt"));
-//                    info.load(stream);
-//                    stream.close();
-//                } catch (Exception e) {
-//                    // TODO Auto-generated catch block
-//                    e.printStackTrace();
-//                }
-//
-//                if (info.getProperty("disabled") == null || !info.getProperty("disabled").equalsIgnoreCase("false")) {
-//                    addAddon(sb, addon, info);
-//                }
-//            }
-//        }
-//
-//        sb.append("</packages>");
-//        JDIO.writeLocalFile(new File(this.workingDir, "addonlist.lst"), sb.toString());
-//        System.out.println(sb);
-//        return sb.toString();
-//    }
+    // private String createAddonList() throws Exception {
+    // File file = new File(getCFG("addon_dir2"));
+    // StringBuilder sb = new StringBuilder();
+    // uploadaddons = JOptionPane.showConfirmDialog(frame, "Upload addons?") ==
+    // JOptionPane.OK_OPTION;
+    //
+    // if (!uploadaddons) {
+    //
+    // if (new File(this.workingDir, "addonlist.lst").exists()) {
+    // return JDIO.getLocalFile(new File(this.workingDir, "addonlist.lst"));
+    // } else {
+    // return "";
+    // }
+    //
+    // }
+    // sb.append("<packages>\r\n");
+    // for (File addon : file.listFiles()) {
+    //
+    // if (new File(addon, "info.txt").exists()) {
+    //
+    // Properties info = new Properties();
+    // FileInputStream stream;
+    // try {
+    // stream = new FileInputStream(new File(addon, "info.txt"));
+    // info.load(stream);
+    // stream.close();
+    // } catch (Exception e) {
+    // // TODO Auto-generated catch block
+    // e.printStackTrace();
+    // }
+    //
+    // if (info.getProperty("disabled") == null ||
+    // !info.getProperty("disabled").equalsIgnoreCase("false")) {
+    // addAddon(sb, addon, info);
+    // }
+    // }
+    // }
+    //
+    // sb.append("</packages>");
+    // JDIO.writeLocalFile(new File(this.workingDir, "addonlist.lst"),
+    // sb.toString());
+    // System.out.println(sb);
+    // return sb.toString();
+    // }
 
     private void addAddon(StringBuilder sb, File addon, Properties info) throws Exception {
 

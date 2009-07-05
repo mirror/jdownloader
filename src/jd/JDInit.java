@@ -636,7 +636,7 @@ public class JDInit {
         try {
             for (Class<?> c : getClasses("jd.plugins.optional", JDUtilities.getJDClassLoader())) {
                 try {
-
+System.out.println("PPPP"+c);
                     if (c.getAnnotations().length > 0) {
                         OptionalPlugin help = (OptionalPlugin) c.getAnnotations()[0];
                    

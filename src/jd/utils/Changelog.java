@@ -31,18 +31,20 @@ import org.tmatesoft.svn.core.SVNLogEntryPath;
 
 public class Changelog {
 
+    private static final String SVN_SRC = "svn://svn.jdownloader.org/jdownloader/trunk/src";
+
     /**
      * @param args
      * @throws SVNException
      */
     public static void main(String[] args) throws SVNException {
-        new Changelog().load();
+//        new Changelog().getChangelog();
 
     }
 
     private void load() throws SVNException {
 
-        Subversion svn = new Subversion("https://www.syncom.org/svn/jdownloader/trunk/src/");
+        Subversion svn = new Subversion(SVN_SRC);
         ArrayList<SVNLogEntry> entries = svn.getChangeset(6111, 6193);
         HashMap<String, Change> map = new HashMap<String, Change>();
         for (SVNLogEntry logEntry : entries) {

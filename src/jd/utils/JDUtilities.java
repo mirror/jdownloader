@@ -655,7 +655,16 @@ public class JDUtilities {
      */
     public static String getRevision() {
         if (REVISION != null) return REVISION;
-        double r = Double.parseDouble(getVersion("$Revision$")) / 1000.0;
+        int rev = -1;
+        try {
+            rev = Formatter.filterInt(JDIO.getLocalFile(JDUtilities.getResourceFile("config/version.cfg")));
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
+
+        int rev2 = Integer.parseInt(getVersion("$Revision$"));
+
+        double r = Math.max(rev2, rev) / 1000.0;
         return REVISION = new DecimalFormat("0.000").format(r).replace(",", ".");
     }
 
@@ -725,7 +734,7 @@ public class JDUtilities {
         }
         jargs.add("-jar");
         jargs.add("JDownloader.jar");
-    
+
         String[] javaArgs = jargs.toArray(new String[jargs.size()]);
         String[] finalArgs = new String[jdArgs.length + javaArgs.length];
         System.arraycopy(javaArgs, 0, finalArgs, 0, javaArgs.length);
@@ -736,7 +745,7 @@ public class JDUtilities {
             if (OSDetector.isMac()) {
                 JDLogger.getLogger().info(JDUtilities.runCommand("java", new String[] { "-jar", "tools/tinyupdate.jar", "-restart" }, getResourceFile(".").getAbsolutePath(), 0));
             } else if (OSDetector.isWindows()) {
-                JDLogger.getLogger().info(JDUtilities.runCommand("java", new String[] { "-jar", "tools/tinyupdate.jar", "-restart"}, getResourceFile(".").getAbsolutePath(), 0));
+                JDLogger.getLogger().info(JDUtilities.runCommand("java", new String[] { "-jar", "tools/tinyupdate.jar", "-restart" }, getResourceFile(".").getAbsolutePath(), 0));
 
             } else {
                 JDLogger.getLogger().info(JDUtilities.runCommand("java", new String[] { "-jar", "tools/tinyupdate.jar", "-restart" }, getResourceFile(".").getAbsolutePath(), 0));
@@ -813,13 +822,13 @@ public class JDUtilities {
     }
 
     public static String objectToXml(Object obj) throws IOException {
-        
+
         ByteArrayOutputStream ba;
         DataOutputStream out = new DataOutputStream(ba = new ByteArrayOutputStream());
         XMLEncoder xmlEncoder = new XMLEncoder(out);
         xmlEncoder.writeObject(obj);
         xmlEncoder.close();
-       
+
         out.close();
         return new String(ba.toByteArray());
     }
@@ -915,9 +924,9 @@ public class JDUtilities {
         if (dbconnect == null) {
 
             try {
-                dbconnect = new DatabaseConnector(); 
+                dbconnect = new DatabaseConnector();
             } catch (Exception e) {
-                // TODO Auto-generated catch block 
+                // TODO Auto-generated catch block
                 JDLogger.exception(e);
                 String configpath = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/config/";
                 Logger logger = JDLogger.getLogger();
@@ -1051,6 +1060,5 @@ public class JDUtilities {
         if (att == null || att.getNamedItem(key) == null) { return null; }
         return att.getNamedItem(key).getNodeValue();
     }
-
 
 }
