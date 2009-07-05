@@ -28,7 +28,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(names = { "bitroad.net"}, urls ={ "http://[\\w\\.]*?(bitroad\\.net|filemashine\\.com|friendlyfiles\\.net|vip4sms\\.com)/download/[A-Fa-f0-9]+"}, flags = {0})
+@HostPlugin(names = { "bitroad.net" }, urls = { "http://[\\w\\.]*?(bitroad\\.net|filemashine\\.com|friendlyfiles\\.net|vip4sms\\.com)/download/[A-Fa-f0-9]+" }, flags = { 0 })
 public class BitRoadNet extends PluginForHost {
 
     public BitRoadNet(PluginWrapper wrapper) {
@@ -45,6 +45,7 @@ public class BitRoadNet extends PluginForHost {
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
         br.getPage(downloadLink.getDownloadURL());
+        if (!br.containsHTML("Free, in one stream, without a possibility to revive a downloading.")) throw new PluginException(LinkStatus.ERROR_PREMIUM);
         if (br.containsHTML("file is not found") || br.containsHTML("Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("name=\"name\" value=\"(.*?)\"").getMatch(0);
         String size = br.getRegex("<h1>.*\\[\\s(.*?)\\s\\]</h1>").getMatch(0);
@@ -63,7 +64,7 @@ public class BitRoadNet extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
-        if (br.containsHTML("Downloading is in process from your IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED,10*60*1001);
+        if (br.containsHTML("Downloading is in process from your IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1001);
         Form dl1 = br.getFormbyProperty("id", "Premium");
         if (dl1 == null) dl1 = br.getFormbyProperty("name", "Premium");
         if (dl1 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
