@@ -24,7 +24,6 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
-import java.io.IOException;
 import java.util.ArrayList;
 
 import javax.swing.JFrame;
@@ -47,14 +46,16 @@ public class MultiProgressBar extends JPanel {
         this.setBorder(b);
     }
 
-    public static void main(String args[]) throws IOException {
+    public static void main(String[] args) {
         MultiProgressBar pm = new MultiProgressBar();
+        pm.setMaximums(10, 20, 30, 10, 20, 15, 5, 25);
+        pm.setValues(3, 12, 11, 4, 19, 10, 1, 22);
+//        pm.setValues(10, 20, 30, 10, 20, 15, 5, 25);
 
-        pm.setMaximums(10, 20, 30, 10, 20);
-        pm.setValues(3, 12, 11, 4, 19);
         JFrame f = new JFrame();
         f.setLayout(new MigLayout("ins 10"));
-        f.add(pm);
+        f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        f.add(pm, "w 400!");
         f.pack();
         f.setVisible(true);
     }
@@ -84,10 +85,10 @@ public class MultiProgressBar extends JPanel {
         ProgressEntry e;
         for (int i = 0; i < entries.size(); i++) {
             e = entries.get(i);
-
+            Color col = new Color(50, 255 - ((205 / (entries.size() + 1)) * i), 50);
             Rectangle rec = new Rectangle(scale(e.getPosition(), faktor), 0, scale(e.getValue(), faktor), height);
 
-            ((Graphics2D) g).setPaint(new GradientPaint(width / 2, 0, col1, width / 2, height, col2.darker()));
+            ((Graphics2D) g).setPaint(new GradientPaint(width / 2, 0, col, width / 2, height, col2.darker()));
             g2.fill(rec);
             ((Graphics2D) g).setPaint(Color.black);
             g2.drawLine(scale(e.getPosition(), faktor), 0, scale(e.getPosition(), faktor), height);
@@ -113,7 +114,6 @@ public class MultiProgressBar extends JPanel {
                     entries.add(new ProgressEntry(0));
                 }
                 entries.get(i).setValue(values[i]);
-
             }
         }
         update();

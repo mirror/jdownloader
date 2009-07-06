@@ -21,7 +21,6 @@ import java.awt.event.ActionListener;
 import java.io.Serializable;
 import java.util.ArrayList;
 
-import jd.controlling.ListController;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -101,7 +100,8 @@ public class ConfigContainer implements Serializable {
     public static final int TYPE_PREMIUMPANEL = 14;
 
     /**
-     * ConfigElement ist ein Textbereich, welcher von einem eigenen Controller verwaltet wird (siehe PasswordListController und HTAccessController)
+     * ConfigElement ist ein Textbereich, welcher von einem eigenen Controller
+     * verwaltet wird (siehe PasswordListController und HTAccessController)
      * public ConfigEntry(int type, ListController controller, String label)
      */
     public static final int TYPE_LISTCONTROLLED = 110;

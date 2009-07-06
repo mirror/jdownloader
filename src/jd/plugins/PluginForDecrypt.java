@@ -19,7 +19,6 @@ package jd.plugins;
 import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.UnknownHostException;
@@ -243,9 +242,9 @@ public abstract class PluginForDecrypt extends Plugin {
      * @throws DecrypterException
      */
     protected String getCaptchaCode(String method, File file, int flag, CryptedLink link, String defaultValue, String explain) throws DecrypterException {
-        if(link.getProgressController()!=null)link.getProgressController().setStatusText(JDL.LF("gui.linkgrabber.waitinguserio", "Waiting for user input: %s", method));
+        if (link.getProgressController() != null) link.getProgressController().setStatusText(JDL.LF("gui.linkgrabber.waitinguserio", "Waiting for user input: %s", method));
         String cc = new CaptchaController(method, file, defaultValue, explain).getCode(flag);
-        if(link.getProgressController()!=null)link.getProgressController().setStatusText(null);
+        if (link.getProgressController() != null) link.getProgressController().setStatusText(null);
         if (cc == null) throw new DecrypterException(DecrypterException.CAPTCHA);
         return cc;
     }
@@ -391,7 +390,5 @@ public abstract class PluginForDecrypt extends Plugin {
             return "";
         }
     }
-
-  
 
 }
