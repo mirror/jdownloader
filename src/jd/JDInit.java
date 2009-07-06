@@ -173,7 +173,7 @@ public class JDInit {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            JDLogger.exception(e);
         }
     }
 
@@ -537,7 +537,7 @@ public class JDInit {
             }
         } catch (MalformedURLException e) {
             // TODO Auto-generated catch block
-            e.printStackTrace();
+            JDLogger.exception(e);
         }
 
         return CL;
@@ -587,7 +587,7 @@ public class JDInit {
                 }
 
             } catch (Throwable e) {
-                e.printStackTrace();
+                JDLogger.exception(e);
             }
 
         } else {
@@ -599,7 +599,7 @@ public class JDInit {
                         classes.addAll(findPlugins(file.toURI().toURL(), packageName + "." + file.getName(), classLoader));
                     } catch (MalformedURLException e) {
                         // TODO Auto-generated catch block
-                        e.printStackTrace();
+                        JDLogger.exception(e);
                     }
                 } else if (file.getName().endsWith(".class")) {
 
@@ -631,11 +631,11 @@ public class JDInit {
 
                     }
                 } catch (Throwable e) {
-                    e.printStackTrace();
+                    JDLogger.exception(e);
                 }
             }
         } catch (Throwable e) {
-            e.printStackTrace();
+            JDLogger.exception(e);
         }
     }
 
@@ -664,11 +664,11 @@ public class JDInit {
 
                     }
                 } catch (Throwable e) {
-                    e.printStackTrace();
+                    JDLogger.exception(e);
                 }
             }
         } catch (Throwable e) {
-            e.printStackTrace();
+            JDLogger.exception(e);
         }
         // if (JDUtilities.getJavaVersion() >= 1.6) new
         // OptionalPluginWrapper("jdtrayicon.JDLightTray", 1.6, "trayicon",

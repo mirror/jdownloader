@@ -907,14 +907,14 @@ public class Updater {
 
     /** checks if file f is oart of the hashlist */
     private boolean containsFile(File f) {
-
         for (FileUpdate fu : remoteFileList) {
             String remote = fu.getLocalFile().getAbsolutePath();
             String local = f.getAbsolutePath();
             if (f.isDirectory()) {
                 if (remote.startsWith(local)) { return true; }
             } else {
-                if (remote.equals(local) && JDHash.getMD5(f).equalsIgnoreCase(fu.getRemoteHash())) { return true; }
+              
+                if (f.exists()&&remote.equals(local) && JDHash.getMD5(f).equalsIgnoreCase(fu.getRemoteHash())) { return true; }
             }
 
         }
