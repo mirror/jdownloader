@@ -25,13 +25,13 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "hotfile.com"}, urls ={ "http://[\\w\\.]*?hotfile\\.com/dl/\\d+/[0-9a-zA-Z]+/"}, flags = {2})
+@HostPlugin(revision = "$Revision", interfaceVersion = 1, names = { "hotfile.com" }, urls = { "http://[\\w\\.]*?hotfile\\.com/dl/\\d+/[0-9a-zA-Z]+/" }, flags = { 2 })
 public class HotFileCom extends PluginForHost {
 
     public HotFileCom(PluginWrapper wrapper) {
@@ -108,29 +108,29 @@ public class HotFileCom extends PluginForHost {
     // @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
+     
+
         if (br.containsHTML("You are currently downloading")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
-        if (br.getRegex("Choose.*?value=\"&nbsp;Free&nbsp;\" style=\"width:.*?\" onclick=\"starttimer\\(\\);").matches()) {
-            String waittime = br.getRegex("starttimer\\(\\).*?timerend=.*?\\+(\\d+);").getMatch(0);
-            if (waittime == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-            this.sleep(Long.parseLong(waittime.trim()), link);
-        } else if (br.containsHTML("starthtimer\\(\\)")) {
+        if (br.containsHTML("starthtimer\\(\\)")) {
             String waittime = br.getRegex("starthtimer\\(\\).*?timerend=.*?\\+(\\d+);").getMatch(0);
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(waittime.trim()));
+            if (Long.parseLong(waittime.trim()) > 0) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(waittime.trim())); }
         }
-        Form form = br.getForm(1);
+        Form[] forms = br.getForms();
+        Form form = forms[1];
+
+        this.sleep(30000l, link);
         br.submitForm(form);
-        
-        //captcha
-        if(!br.containsHTML("Click here to download"))
-        {
-        form = br.getForm(1);
-        String captchaUrl ="http://www.hotfile.com"+br.getRegex("<img src=\"(/captcha.php.*?)\">").getMatch(0);
-        String captchaCode = getCaptchaCode(captchaUrl, link);
-        form.put("captcha", captchaCode);
-        br.submitForm(form);
-        if(!br.containsHTML("Click here to download"))throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+
+        // captcha
+        if (!br.containsHTML("Click here to download")) {
+            form = br.getForm(1);
+            String captchaUrl = "http://www.hotfile.com" + br.getRegex("<img src=\"(/captcha.php.*?)\">").getMatch(0);
+            String captchaCode = getCaptchaCode(captchaUrl, link);
+            form.put("captcha", captchaCode);
+            br.submitForm(form);
+            if (!br.containsHTML("Click here to download")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
-        
+
         String dl_url = br.getRegex("<h3 style='margin-top: 20px'><a href=\"(.*?)\">Click here to download</a>").getMatch(0);
         if (dl_url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.setFollowRedirects(true);
