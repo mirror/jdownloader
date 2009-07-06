@@ -134,7 +134,7 @@ public class TableRenderer extends DefaultTableRenderer {
         progress.setStringPainted(true);
         progress.setOpaque(true);
         COL_PROGRESS_NORMAL = progress.getForeground();
-        statuspanel = new StatusLabel(new MigLayout("ins 0,debug", "[]0[fill,grow,align right]"));
+        statuspanel = new StatusLabel(new MigLayout("ins 0", "[]0[fill,grow,align right]"));
     }
 
     private void initIcons() {

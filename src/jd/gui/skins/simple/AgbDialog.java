@@ -17,16 +17,16 @@
 package jd.gui.skins.simple;
 
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 
-import javax.swing.JButton;
 import javax.swing.JCheckBox;
-import javax.swing.JDialog;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
+import javax.swing.JPanel;
 
+import jd.gui.UserIO;
 import jd.gui.skins.simple.components.JLinkButton;
-import jd.nutils.Formatter;
-import jd.nutils.Screen;
+import jd.gui.userio.dialog.AbstractDialog;
+import jd.nutils.JDFlags;
 import jd.plugins.DownloadLink;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
@@ -35,22 +35,9 @@ import net.miginfocom.swing.MigLayout;
  * Dieser Dialog wird angezeigt, wenn ein Download mit einem Plugin getätigt
  * wird, dessen Agbs noch nicht akzeptiert wurden
  * 
- * @author eXecuTe
+ * @author JD-Team
  */
-
-public class AgbDialog extends JDialog implements ActionListener {
-
-    private static final long serialVersionUID = 1L;
-
-    private JButton btnCancel;
-
-    private JButton btnOK;
-
-    private JCheckBox checkAgbAccepted;
-
-    private DownloadLink downloadLink;
-
-    private Thread countdownThread;
+public class AgbDialog extends AbstractDialog {
 
     /**
      * Zeigt einen Dialog, in dem man die Hoster AGB akzeptieren kann
@@ -58,22 +45,44 @@ public class AgbDialog extends JDialog implements ActionListener {
      * @param downloadLink
      *            abzuarbeitender Link
      */
+    public static void showDialog(DownloadLink downloadLink) {
+        AgbDialog dialog = new AgbDialog(downloadLink);
+        if (JDFlags.hasAllFlags(dialog.getReturnValue(), UserIO.RETURN_OK) && dialog.isAccepted()) {
+            downloadLink.getPlugin().setAGBChecked(true);
+            downloadLink.getLinkStatus().reset();
+        }
+    }
 
-    public AgbDialog(DownloadLink downloadLink, final int countdown) {
-        super();
+    private static final long serialVersionUID = -1466993330568207945L;
 
+    private JLinkButton linkAgb;
+
+    private JCheckBox checkAgbAccepted;
+
+    private DownloadLink downloadLink;
+
+    private AgbDialog(DownloadLink downloadLink) {
+        super(0, JDL.L("gui.dialogs.agb_tos.title", "Allgemeine Geschäftsbedingungen nicht akzeptiert"), UserIO.getInstance().getIcon(UserIO.ICON_QUESTION), null, null);
         this.downloadLink = downloadLink;
+        init();
+    }
 
-        setModal(true);
-        // gapleft push
-        setLayout(new MigLayout("wrap 1", "[center]", ""));
-        getRootPane().setDefaultButton(btnOK);
-        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-        setTitle(JDL.L("gui.dialogs.agb_tos.title", "Allgemeine Geschäftsbedingungen nicht akzeptiert"));
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        if (e.getSource() == linkAgb || e.getSource() == checkAgbAccepted) {
+            interrupt();
+        } else {
+            super.actionPerformed(e);
+        }
+    }
+
+    @Override
+    public JComponent contentInit() {
+        JPanel panel = new JPanel(new MigLayout("wrap 1", "[fill,grow,center]"));
 
         JLabel labelInfo = new JLabel(JDL.LF("gui.dialogs.agb_tos.description", "Die Allgemeinen Geschäftsbedingungen (AGB) von %s wurden nicht gelesen und akzeptiert.", downloadLink.getPlugin().getHost()));
 
-        JLinkButton linkAgb = new JLinkButton(JDL.LF("gui.dialogs.agb_tos.readAgb", "%s AGB lesen", downloadLink.getPlugin().getHost()), downloadLink.getPlugin().getAGBLink());
+        linkAgb = new JLinkButton(JDL.LF("gui.dialogs.agb_tos.readAgb", "%s AGB lesen", downloadLink.getPlugin().getHost()), downloadLink.getPlugin().getAGBLink());
         linkAgb.addActionListener(this);
         linkAgb.setFocusable(false);
 
@@ -81,66 +90,15 @@ public class AgbDialog extends JDialog implements ActionListener {
         checkAgbAccepted.addActionListener(this);
         checkAgbAccepted.setFocusable(false);
 
-        btnOK = new JButton(JDL.L("gui.btn_ok", "OK"));
-        btnOK.addActionListener(this);
+        panel.add(labelInfo);
+        panel.add(linkAgb);
+        panel.add(checkAgbAccepted);
 
-        btnCancel = new JButton(JDL.L("gui.btn_cancel", "Abbrechen"));
-        btnCancel.addActionListener(this);
-        btnCancel.setFocusable(false);
-
-        add(labelInfo);
-        add(linkAgb);
-        add(checkAgbAccepted);
-        add(btnOK, "split 2");
-        add(btnCancel);
-
-        countdownThread = new Thread() {
-
-            // @Override
-            public void run() {
-                int c = countdown;
-
-                while (--c >= 0) {
-                    if (countdownThread == null) return;
-                    setTitle(JDL.L("gui.dialogs.agb_tos.title", "Allgemeine Geschäftsbedingungen nicht akzeptiert") + " [" + Formatter.formatSeconds(c) + "]");
-
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                    }
-                    if (!isVisible()) return;
-
-                }
-                dispose();
-            }
-
-        };
-        countdownThread.start();
-
-        pack();
-        setResizable(false);
-        setLocation(Screen.getCenterOfComponent(null, this));
-        setVisible(true);
-
+        return panel;
     }
 
-    public void actionPerformed(ActionEvent e) {
-
-        if (e.getSource() == btnOK) {
-            downloadLink.getPlugin().setAGBChecked(checkAgbAccepted.isSelected());
-            if (checkAgbAccepted.isSelected()) {
-                downloadLink.getLinkStatus().reset();
-            }
-            dispose();
-        } else if (e.getSource() == btnCancel) {
-            dispose();
-        }
-
-        if (countdownThread != null && countdownThread.isAlive()) {
-            countdownThread.interrupt();
-        }
-        countdownThread = null;
-        setTitle(JDL.L("gui.dialogs.agb_tos.title", "Allgemeine Geschäftsbedingungen nicht akzeptiert"));
+    private boolean isAccepted() {
+        return checkAgbAccepted.isSelected();
     }
 
 }

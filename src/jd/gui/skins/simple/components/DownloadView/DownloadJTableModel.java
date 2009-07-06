@@ -11,24 +11,19 @@ import jd.utils.locale.JDL;
 
 public class DownloadJTableModel extends AbstractTableModel {
 
-    public static final int COL_HOSTER = 1;
-
+    private static final long serialVersionUID = 1L;
     public static final int COL_PART = 0;
-
+    public static final int COL_HOSTER = 1;
+    public static final int COL_STATUS = 2;
     public static final int COL_PROGRESS = 3;
 
-    public static final int COL_STATUS = 2;
-    private static final long serialVersionUID = 1L;
-
-    final static protected String[] COLUMN_NAMES = { JDL.L("gui.treetable.header_1.tree", "F"), JDL.L("gui.treetable.header_3.hoster", "Anbieter"), JDL.L("gui.treetable.header_4.status", "Status"), JDL.L("gui.treetable.header_5.progress", "Fortschritt") };
-    static ArrayList<Object> downloadlist = new ArrayList<Object>();
+    private static final String[] COLUMN_NAMES = { JDL.L("gui.treetable.header_1.tree", "F"), JDL.L("gui.treetable.header_3.hoster", "Anbieter"), JDL.L("gui.treetable.header_4.status", "Status"), JDL.L("gui.treetable.header_5.progress", "Fortschritt") };
+    private ArrayList<Object> downloadlist = new ArrayList<Object>();
 
     public DownloadJTableModel() {
         super();
         refreshmodel();
     }
-
- 
 
     public int getRowCount() {
         return downloadlist.size();
@@ -41,7 +36,6 @@ public class DownloadJTableModel extends AbstractTableModel {
     }
 
     public void refreshmodel() {
-        System.out.println("refresh model");
         synchronized (DownloadController.ControllerLock) {
             synchronized (DownloadController.getInstance().getPackages()) {
                 synchronized (downloadlist) {
@@ -58,8 +52,6 @@ public class DownloadJTableModel extends AbstractTableModel {
             }
         }
     }
-
-  
 
     public Object getValueAt(int rowIndex, int columnIndex) {
         try {

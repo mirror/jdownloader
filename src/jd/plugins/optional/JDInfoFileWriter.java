@@ -93,7 +93,7 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
     public void initConfig() {
         config.addEntry(cmbVars = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, "VARS", Replacer.getKeyList(), JDL.L("plugins.optional.infoFileWriter.variables", "Available variables")));
 
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDL.L("plugins.optional.infoFileWriter.insertKeys.hort", "Insert"),JDL.L("plugins.optional.infoFileWriter.insertKey", "Insert selected Key into the Content"),null));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDL.L("plugins.optional.infoFileWriter.insertKey.short", "Insert"), JDL.L("plugins.optional.infoFileWriter.insertKey", "Insert selected Key into the Content"), null));
 
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, PARAM_FILENAME, JDL.L("plugins.optional.infoFileWriter.filename", "Filename:")).setDefaultValue(FILENAME_DEFAULT));
 

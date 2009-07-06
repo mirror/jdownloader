@@ -309,9 +309,8 @@ public class SingleDownloadController extends Thread {
     private void showAGBDialog(final DownloadLink downloadLink2) {
         new GuiRunnable<Object>() {
             public Object runSave() {
-                new AgbDialog(downloadLink2, 30);
+                AgbDialog.showDialog(downloadLink2);
                 return null;
-
             }
         }.waitForEDT();
     }
