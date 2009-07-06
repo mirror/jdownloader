@@ -256,8 +256,8 @@ public abstract class PluginForHost extends Plugin {
     // @Override
     public ArrayList<MenuItem> createMenuitems() {
 
-        ArrayList<MenuItem> menuList = new ArrayList<MenuItem>();
         if (!this.enablePremium) return null;
+        ArrayList<MenuItem> menuList = new ArrayList<MenuItem>();
         MenuItem account;
         MenuItem m = new MenuItem(MenuItem.NORMAL, JDL.L("plugins.menu.configs", "Configuration"), 1);
         m.setActionListener(this);
@@ -699,7 +699,7 @@ public abstract class PluginForHost extends Plugin {
         return "";
     }
 
-    public final boolean hasHosterIcon() {
+    public boolean hasHosterIcon() {
         return hosterIcon != null || JDImage.getImage("hosterlogos/" + getHost()) != null;
     }
 

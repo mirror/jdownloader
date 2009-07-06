@@ -222,9 +222,12 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
                                 if (ai == null) {
                                     int to = helpPlugin.getBrowser().getConnectTimeout();
                                     helpPlugin.getBrowser().setConnectTimeout(5000);
-
-                                    ai = helpPlugin.getAccountInformation(a);
-
+                                    try {
+                                        ai = helpPlugin.getAccountInformation(a);
+                                    } catch (Exception e) {
+                                        helpPlugin.getBrowser().setConnectTimeout(to);
+                                        continue;
+                                    }
                                     helpPlugin.getBrowser().setConnectTimeout(to);
                                 }
                                 if (ai == null) continue;
@@ -366,6 +369,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
         if (updateinprogress) return;
         new Thread() {
             public void run() {
+                if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) return;
                 this.setName("PremiumStatus: update");
                 updateinprogress = true;
                 if (!updating) updatePremium();
