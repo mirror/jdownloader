@@ -488,6 +488,8 @@ public class JDInit {
         new DecryptPluginWrapper("depositfiles.com", "DepositFilesCom", "http://?[\\w\\.]*?.depositfiles\\.com/([a-z]+/folders/|folders/).*");
         new DecryptPluginWrapper("gazup.com", "GazUpCom", "http://[\\w\\.]*?.gazup\\.com/.+");
         new DecryptPluginWrapper("anonym.to", "AnonymTo", "http://[\\w\\.]*?anonym\\.to/\\?.+");
+        new DecryptPluginWrapper("qooy.com", "QooyCom", "http://[\\w\\.]*?qooy\\.com/files/[0-9A-Z]+/[0-9a-zA-z.]+");
+        
         // Decrypter from Extern
 
         new DecryptPluginWrapper("rapidlibrary.com", "RapidLibrary", "http://rapidlibrary\\.com/download_file_i\\.php\\?.+");
