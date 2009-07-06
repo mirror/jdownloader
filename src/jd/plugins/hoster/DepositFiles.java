@@ -39,7 +39,7 @@ import jd.utils.locale.JDL;
 
 import com.sun.org.apache.xerces.internal.impl.xpath.regex.ParseException;
 
-@HostPlugin(names = { "depositfiles.com"}, urls ={ "http://[\\w\\.]*?depositfiles\\.com(/\\w{1,3})?/files/[\\w]+"}, flags = {2})
+@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "depositfiles.com"}, urls ={ "http://[\\w\\.]*?depositfiles\\.com(/\\w{1,3})?/files/[\\w]+"}, flags = {2})
 public class DepositFiles extends PluginForHost {
 
     private static final String DOWNLOAD_NOTALLOWED = "Entschuldigung aber im Moment koennen Sie nur diesen Downloadmodus anwenden";

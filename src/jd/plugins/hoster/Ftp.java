@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.RAFDownload;
 
-@HostPlugin(names = { "ftp" }, urls = { "ftp://.+/.+" }, flags = { 0 })
+@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "ftp" }, urls = { "ftp://.+/.+" }, flags = { 0 })
 public class Ftp extends PluginForHost {
 
     public Ftp(PluginWrapper wrapper) {

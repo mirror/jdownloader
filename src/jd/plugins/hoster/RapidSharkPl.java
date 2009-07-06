@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(names = { "rapidshark.pl"}, urls ={ "http://[\\w\\.]*?rapidshark\\.pl/.*?[\\w]+/?"}, flags = {0})
+@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "rapidshark.pl"}, urls ={ "http://[\\w\\.]*?rapidshark\\.pl/.*?[\\w]+/?"}, flags = {0})
 public class RapidSharkPl extends PluginForHost {
 
     public RapidSharkPl(PluginWrapper wrapper) {

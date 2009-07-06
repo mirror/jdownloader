@@ -31,7 +31,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(names = { "adrive.com"}, urls ={ "http://[\\w\\.].*?adrive\\.com/public/[0-9a-zA-Z]+.*"}, flags = {0})
+@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "adrive.com"}, urls ={ "http://[\\w\\.].*?adrive\\.com/public/[0-9a-zA-Z]+.*"}, flags = {0})
 public class AdriveCom extends PluginForHost {
 
     public AdriveCom(PluginWrapper wrapper) {

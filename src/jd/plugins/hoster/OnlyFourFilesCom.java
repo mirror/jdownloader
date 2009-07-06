@@ -31,7 +31,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(names = { "only4files.com"}, urls ={ "http://[\\w\\.]*?only4files\\.com/[\\w]+/.*"}, flags = {0})
+@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "only4files.com"}, urls ={ "http://[\\w\\.]*?only4files\\.com/[\\w]+/.*"}, flags = {0})
 public class OnlyFourFilesCom extends PluginForHost {
 
     public OnlyFourFilesCom(PluginWrapper wrapper) {

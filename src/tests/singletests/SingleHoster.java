@@ -50,7 +50,7 @@ public class SingleHoster {
         TestUtils.initHosts();
         TestUtils.finishInit();
         // JDLogger.getLogger().setLevel(Level.ALL);
-        links = TestUtils.getHosterLinks("netload.in");
+        links = TestUtils.getHosterLinks("hotfile.com");
     }
 
     @Test

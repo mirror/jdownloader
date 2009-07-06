@@ -31,7 +31,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(names = { "2shared.com"}, urls ={ "http://[\\w\\.]*?2shared\\.com/file/\\d+/[\\w]+"}, flags = {0})
+@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "2shared.com"}, urls ={ "http://[\\w\\.]*?2shared\\.com/file/\\d+/[\\w]+"}, flags = {0})
 public class TwoSharedCom extends PluginForHost {
 
     public TwoSharedCom(PluginWrapper wrapper) {

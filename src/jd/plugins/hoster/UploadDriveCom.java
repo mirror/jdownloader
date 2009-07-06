@@ -28,7 +28,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(names = { "upload-drive.com"}, urls ={ "http://[\\w\\.]*?upload-drive\\.com/\\d+/.+"}, flags = {0})
+@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "upload-drive.com"}, urls ={ "http://[\\w\\.]*?upload-drive\\.com/\\d+/.+"}, flags = {0})
 public class UploadDriveCom extends PluginForHost {
 
     public UploadDriveCom(PluginWrapper wrapper) {

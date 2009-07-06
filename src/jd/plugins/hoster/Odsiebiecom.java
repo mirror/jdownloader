@@ -35,7 +35,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(names = { "odsiebie.com"}, urls ={ "http://[\\w\\.]*?odsiebie\\.com/(pokaz|pobierz)/\\d+---[\\w]+"}, flags = {2})
+@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "odsiebie.com"}, urls ={ "http://[\\w\\.]*?odsiebie\\.com/(pokaz|pobierz)/\\d+---[\\w]+"}, flags = {2})
 public class Odsiebiecom extends PluginForHost {
 
     public Odsiebiecom(PluginWrapper wrapper) {

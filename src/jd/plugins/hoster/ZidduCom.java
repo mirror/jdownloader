@@ -30,7 +30,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(names = { "ziddu.com"}, urls ={ "http://[\\w\\.]*?ziddu\\.com/((download(file)?/\\d+/.+)|(download\\.php\\?uid=.+))"}, flags = {0})
+@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "ziddu.com"}, urls ={ "http://[\\w\\.]*?ziddu\\.com/((download(file)?/\\d+/.+)|(download\\.php\\?uid=.+))"}, flags = {0})
 public class ZidduCom extends PluginForHost {
 
     public ZidduCom(PluginWrapper wrapper) {

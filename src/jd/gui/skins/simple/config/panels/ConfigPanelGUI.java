@@ -210,7 +210,7 @@ public class ConfigPanelGUI extends ConfigPanel {
                 }
 
             }
-        }, JDL.L("gui.config.gui.testbrowser", "Test browser")));
+        }, JDL.L("gui.config.gui.testbrowser.short", "Start browser"),JDL.L("gui.config.gui.testbrowser.long", "Test starting your browser"),JDTheme.II("gui.images.config.host", 16, 16)));
 
         ConfigEntry conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.PARAM_CUSTOM_BROWSER_USE, JDL.L("gui.config.gui.use_custom_browser", "Use custom browser"));
         conditionEntry.setDefaultValue(false);

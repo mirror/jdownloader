@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(names = { "freakshare.net"}, urls ={ "http://[\\w\\.]*?freakshare\\.net/file(s/|/)[\\w]+/(.*)"}, flags = {0})
+@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "freakshare.net"}, urls ={ "http://[\\w\\.]*?freakshare\\.net/file(s/|/)[\\w]+/(.*)"}, flags = {0})
 public class Freaksharenet extends PluginForHost {
 
     public Freaksharenet(PluginWrapper wrapper) {

@@ -27,7 +27,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(names = { "hyperfileshare.com"}, urls ={ "http://[\\w\\.]*?hyperfileshare\\.com/(d/|download\\.php\\?code=)[a-fA-F0-9]+"}, flags = {0})
+@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "hyperfileshare.com"}, urls ={ "http://[\\w\\.]*?hyperfileshare\\.com/(d/|download\\.php\\?code=)[a-fA-F0-9]+"}, flags = {0})
 public class HyperFileShareCom extends PluginForHost {
 
     public HyperFileShareCom(PluginWrapper wrapper) {

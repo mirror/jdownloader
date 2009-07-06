@@ -34,7 +34,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(names = { "filehostme.com"}, urls ={ "http://[\\w\\.]*?filehostme\\.com/[\\w]+\\.html"}, flags = {2})
+@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "filehostme.com"}, urls ={ "http://[\\w\\.]*?filehostme\\.com/[\\w]+\\.html"}, flags = {2})
 public class FileHostMecom extends PluginForHost {
 
     public FileHostMecom(PluginWrapper wrapper) {

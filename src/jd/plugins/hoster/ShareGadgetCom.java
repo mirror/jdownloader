@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(names = { "sharegadget.com"}, urls ={ "http://[\\w\\.]*?sharegadget\\.com/[0-9]+."}, flags = {0})
+@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "sharegadget.com"}, urls ={ "http://[\\w\\.]*?sharegadget\\.com/[0-9]+."}, flags = {0})
 public class ShareGadgetCom extends PluginForHost {
 
     public ShareGadgetCom(PluginWrapper wrapper) {

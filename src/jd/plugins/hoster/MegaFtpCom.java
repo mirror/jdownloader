@@ -27,7 +27,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(names = { "megaftp.com"}, urls ={ "http://[\\w\\.]*?megaftp\\.com/[0-9]+"}, flags = {0})
+@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "megaftp.com"}, urls ={ "http://[\\w\\.]*?megaftp\\.com/[0-9]+"}, flags = {0})
 public class MegaFtpCom extends PluginForHost {
 
     public MegaFtpCom(PluginWrapper wrapper) {

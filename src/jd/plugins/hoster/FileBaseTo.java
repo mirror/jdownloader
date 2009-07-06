@@ -25,15 +25,15 @@ import jd.http.Encoding;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(names = { "filebase.to"}, urls ={ "http://[\\w\\.]*?filebase\\.to/files/\\d{1,}/.*"}, flags = {0})
+@HostPlugin(revision = "$Revision", interfaceVersion = 1, names = { "filebase.to" }, urls = { "http://[\\w\\.]*?filebase\\.to/files/\\d{1,}/.*" }, flags = { 0 })
 public class FileBaseTo extends PluginForHost {
 
     public FileBaseTo(PluginWrapper wrapper) {
@@ -81,33 +81,33 @@ public class FileBaseTo extends PluginForHost {
         }
 
         String dlAction = br.getRegex("<form action=\"(http.*?)\"").getMatch(0);
-        if (dlAction != null) 
-        {
-            dl = br.openDownload(downloadLink, dlAction, "wait=" + Encoding.urlEncode("Download - " + downloadLink.getName()));
-        }
-        else
-        {
-            dlAction = br.getRegex("value=\"(http.*?/download/ticket.*?)\"").getMatch(0);
-            if (dlAction == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-            dl = br.openDownload(downloadLink, dlAction);
-        }
-        br.setDebug(true);
-        URLConnectionAdapter con = dl.getConnection();
-        if (con.getContentType().contains("html")) {
-            br.getPage(dlAction);
-            if (br.containsHTML("error")) {
-                con.disconnect();
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND,JDL.L("plugins.hoster.filebaseto.servererror","Server error"));
+        try {
+            if (dlAction != null) {
+                dl = br.openDownload(downloadLink, dlAction, "wait=" + Encoding.urlEncode("Download - " + downloadLink.getName()));
+            } else {
+                dlAction = br.getRegex("value=\"(http.*?/download/ticket.*?)\"").getMatch(0);
+                if (dlAction == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                dl = br.openDownload(downloadLink, dlAction);
             }
-            else
-            {
-                con.disconnect();
-                logger.warning("Unsupported error:");
-                logger.warning(br.toString());
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT,JDL.L("plugins.hoster.filebaseto.unsupportederror","Unsupported error"));
+            br.setDebug(true);
+            URLConnectionAdapter con = dl.getConnection();
+            if (con.getContentType().contains("html")) {
+                br.getPage(dlAction);
+                if (br.containsHTML("error")) {
+                    con.disconnect();
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, JDL.L("plugins.hoster.filebaseto.servererror", "Server error"));
+                } else {
+                    con.disconnect();
+                    logger.warning("Unsupported error:");
+                    logger.warning(br.toString());
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT, JDL.L("plugins.hoster.filebaseto.unsupportederror", "Unsupported error"));
+                }
             }
+            dl.startDownload();
+        } catch (IOException e) {
+
+            if (e.getCause() instanceof NullPointerException) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("jd.plugins.hoster.filebaseto.serversideerror", "Server Error. Retry later"),10*60*1000l); }
         }
-        dl.startDownload();
     }
 
     // @Override

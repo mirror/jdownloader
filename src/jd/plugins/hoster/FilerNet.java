@@ -39,7 +39,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(names = { "filer.net"}, urls ={ "http://[\\w\\.]*?filer.net/(file[\\d]+|get|dl)/.*"}, flags = {2})
+@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "filer.net"}, urls ={ "http://[\\w\\.]*?filer.net/(file[\\d]+|get|dl)/.*"}, flags = {2})
 public class FilerNet extends PluginForHost {
 
     private static final Pattern PATTERN_MATCHER_ERROR = Pattern.compile("errors", Pattern.CASE_INSENSITIVE);

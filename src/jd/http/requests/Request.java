@@ -222,8 +222,11 @@ public abstract class Request {
         requested = true;
         openConnection();
         postRequest(httpConnection);
-
-        collectCookiesFromConnection();
+        try {
+            collectCookiesFromConnection();
+        } catch (NullPointerException e) {
+            throw new IOException("Malformed url?", e);
+        }
         // while (followRedirects && httpConnection.getHeaderField("Location")
         // != null ) {
         // followCounter++;

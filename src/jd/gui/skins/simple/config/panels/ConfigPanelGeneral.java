@@ -63,24 +63,27 @@ public class ConfigPanelGeneral extends ConfigPanel {
         addGUIConfigEntry(new GUIConfigEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, SubConfiguration.getConfig("WEBUPDATE"), Configuration.PARAM_WEBUPDATE_DISABLE, JDL.L("gui.config.general.webupdate.disable", "Update nur manuell durchführen")).setDefaultValue(false).setGroup(update)));
         addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_WEBUPDATE_AUTO_RESTART, JDL.L("gui.config.general.webupdate.auto", "automatisch, ohne Nachfrage ausführen")).setDefaultValue(false).setEnabledCondidtion(conditionEntry, "==", false).setGroup(update)));
         addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_WEBUPDATE_AUTO_SHOW_CHANGELOG, JDL.L("gui.config.general.changelog.auto", "Open Changelog after update")).setDefaultValue(true).setGroup(update)));
-        ConfigGroup cnl = new ConfigGroup(JDL.L("gui.config.general.cnl", "Click'n'Load"), JDTheme.II("gui.clicknload", 32, 32));
 
-        addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
+        if (OSDetector.isWindows()) {
+            ConfigGroup cnl = new ConfigGroup(JDL.L("gui.config.general.cnl", "Click'n'Load"), JDTheme.II("gui.clicknload", 32, 32));
 
-            public void actionPerformed(ActionEvent e) {
-                SubConfiguration.getConfig("CNL2").setProperty("INSTALLED", false);
-                JDFileReg.registerFileExts();
-            }
+            addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
 
-        }, JDL.L("gui.config.general.cnl.install", "Install")).setDefaultValue(false).setGroup(cnl).setEnabled(OSDetector.isWindows())));
-        addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    SubConfiguration.getConfig("CNL2").setProperty("INSTALLED", false);
+                    JDFileReg.registerFileExts();
+                }
 
-            public void actionPerformed(ActionEvent e) {
-                JDFileReg.unregisterFileExts();
-            }
+            }, JDL.L("gui.config.general.cnl.install", "Install now"), JDL.L("gui.config.general.cnl.install.long", "Install Click'n'load (req. admin)"), JDTheme.II("gui.images.install", 16, 16)).setDefaultValue(false).setGroup(cnl).setEnabled(OSDetector.isWindows())));
+            addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
 
-        }, JDL.L("gui.config.general.cnl.uninstall", "uninstall")).setDefaultValue(false).setGroup(cnl).setEnabled(OSDetector.isWindows())));
+                public void actionPerformed(ActionEvent e) {
+                    JDFileReg.unregisterFileExts();
+                }
 
+            }, JDL.L("gui.config.general.cnl.uninstall", "Uninstall now"), JDL.L("gui.config.general.cnl.uninstall.long", "Uninstall Click'n'load (req. admin)"), JDTheme.II("gui.images.uninstall", 16, 16)).setDefaultValue(false).setGroup(cnl).setEnabled(OSDetector.isWindows())));
+
+        }
         this.add(panel);
     }
 

@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(names = { "dl.free.fr"}, urls ={ "http://[\\w\\.]*?dl\\.free\\.fr/(getfile\\.pl\\?file=/[\\w]+|[\\w]+/?)"}, flags = {0})
+@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "dl.free.fr"}, urls ={ "http://[\\w\\.]*?dl\\.free\\.fr/(getfile\\.pl\\?file=/[\\w]+|[\\w]+/?)"}, flags = {0})
 public class DlFreeFr extends PluginForHost {
 
     public DlFreeFr(PluginWrapper wrapper) {

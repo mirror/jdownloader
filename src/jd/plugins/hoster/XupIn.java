@@ -30,7 +30,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(names = { "xup.in"}, urls ={ "http://[\\w\\.]*?xup\\.in/dl,\\d+/?.+?"}, flags = {0})
+@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "xup.in"}, urls ={ "http://[\\w\\.]*?xup\\.in/dl,\\d+/?.+?"}, flags = {0})
 public class XupIn extends PluginForHost {
 
     private static final String AGB_LINK = "http://www.xup.in/terms/";

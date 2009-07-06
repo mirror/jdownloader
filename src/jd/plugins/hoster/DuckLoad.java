@@ -26,7 +26,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(names = { "duckload.com"}, urls ={ "http://[\\w\\.]*?(duckload\\.com|youload\\.to)/download/\\d+/.+"}, flags = {0})
+@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "duckload.com"}, urls ={ "http://[\\w\\.]*?(duckload\\.com|youload\\.to)/download/\\d+/.+"}, flags = {0})
 public class DuckLoad extends PluginForHost {
 
     public DuckLoad(PluginWrapper wrapper) {

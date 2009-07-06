@@ -31,7 +31,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(names = { "hotfile.com"}, urls ={ "http://[\\w\\.]*?hotfile\\.com/dl/\\d+/[0-9a-zA-Z]+/"}, flags = {2})
+@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "hotfile.com"}, urls ={ "http://[\\w\\.]*?hotfile\\.com/dl/\\d+/[0-9a-zA-Z]+/"}, flags = {2})
 public class HotFileCom extends PluginForHost {
 
     public HotFileCom(PluginWrapper wrapper) {
@@ -97,8 +97,8 @@ public class HotFileCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
         br.getPage(parameter.getDownloadURL());
-        String filename = br.getRegex("Downloading(.*?)\\([^\\s]*\\)</h2>").getMatch(0);
-        String filesize = br.getRegex("Downloading.*?\\(([^\\s]*)\\)</h2>").getMatch(0);
+        String filename = br.getRegex("Downloading <b>(.+?)</b>").getMatch(0);
+        String filesize = br.getRegex("<span class=\"size\">(.*?)</span>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         parameter.setName(filename.trim());
         parameter.setDownloadSize(Regex.getSize(filesize.trim()));

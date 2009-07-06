@@ -28,7 +28,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(names = { "archiv.to"}, urls ={ "http://[\\w\\.]*?archiv\\.to/\\?Module\\=Details&HashID\\=.*"}, flags = {0})
+@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "archiv.to"}, urls ={ "http://[\\w\\.]*?archiv\\.to/\\?Module\\=Details&HashID\\=.*"}, flags = {0})
 public class ArchivTo extends PluginForHost {
 
     public ArchivTo(PluginWrapper wrapper) {

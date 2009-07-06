@@ -31,7 +31,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(names = { "filestore.to"}, urls ={ "http://[\\w\\.]*?filestore\\.to/\\?d=[\\w]+"}, flags = {0})
+@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "filestore.to"}, urls ={ "http://[\\w\\.]*?filestore\\.to/\\?d=[\\w]+"}, flags = {0})
 public class FilestoreTo extends PluginForHost {
 
     public FilestoreTo(PluginWrapper wrapper) {

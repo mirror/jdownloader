@@ -31,7 +31,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(names = { "filelobster.com"}, urls ={ "http://[\\w\\.]*?filelobster\\.com/[\\w]+/?"}, flags = {0})
+@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "filelobster.com"}, urls ={ "http://[\\w\\.]*?filelobster\\.com/[\\w]+/?"}, flags = {0})
 public class FilelobsterCom extends PluginForHost {
 
     public FilelobsterCom(PluginWrapper wrapper) {

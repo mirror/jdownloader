@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(names = { "dump.ro"}, urls ={ "http://[\\w\\.]*?dump\\.ro/[0-9A-Za-z/\\-\\.\\?\\=\\&]+"}, flags = {0})
+@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "dump.ro"}, urls ={ "http://[\\w\\.]*?dump\\.ro/[0-9A-Za-z/\\-\\.\\?\\=\\&]+"}, flags = {0})
 public class DumpRo extends PluginForHost {
 
     public DumpRo(PluginWrapper wrapper) {

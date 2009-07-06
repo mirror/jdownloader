@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(names = { "wrzucaj.com"}, urls ={ "http://[\\w\\.]*?wrzucaj\\.com/\\d+"}, flags = {0})
+@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "wrzucaj.com"}, urls ={ "http://[\\w\\.]*?wrzucaj\\.com/\\d+"}, flags = {0})
 public class WrzucajCom extends PluginForHost {
 
     public WrzucajCom(PluginWrapper wrapper) {

@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(names = { "pliczek.net"}, urls ={ "http://[\\w\\.]*?pliczek\\.net/index\\.php\\?p=\\d+"}, flags = {0})
+@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "pliczek.net"}, urls ={ "http://[\\w\\.]*?pliczek\\.net/index\\.php\\?p=\\d+"}, flags = {0})
 public class PliczekNet extends PluginForHost {
 
     public PliczekNet(PluginWrapper wrapper) {

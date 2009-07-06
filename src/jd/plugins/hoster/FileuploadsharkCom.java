@@ -31,7 +31,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(names = { "fileuploadshark.com"}, urls ={ "http://[\\w\\.]*?fileuploadshark\\.com/[\\w]+/?"}, flags = {0})
+@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "fileuploadshark.com"}, urls ={ "http://[\\w\\.]*?fileuploadshark\\.com/[\\w]+/?"}, flags = {0})
 public class FileuploadsharkCom extends PluginForHost {
 
     public FileuploadsharkCom(PluginWrapper wrapper) {

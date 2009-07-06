@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(names = { "hostplik.com"}, urls ={ "http://[\\w\\.]*?hostplik\\.com/\\d+.*"}, flags = {0})
+@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "hostplik.com"}, urls ={ "http://[\\w\\.]*?hostplik\\.com/\\d+.*"}, flags = {0})
 public class HostPlikCom extends PluginForHost {
 
     public HostPlikCom(PluginWrapper wrapper) {

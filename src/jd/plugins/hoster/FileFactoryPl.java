@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(names = { "filefactory.pl"}, urls ={ "http://[\\w\\.]*?filefactory\\.pl/showfile-\\d+.+"}, flags = {0})
+@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "filefactory.pl"}, urls ={ "http://[\\w\\.]*?filefactory\\.pl/showfile-\\d+.+"}, flags = {0})
 public class FileFactoryPl extends PluginForHost {
 
     public FileFactoryPl(PluginWrapper wrapper) {

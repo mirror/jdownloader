@@ -31,7 +31,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(names = { "sharearound.com"}, urls ={ "http://[\\w\\.]*?sharearound\\.com/[\\w]+/.*"}, flags = {0})
+@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "sharearound.com"}, urls ={ "http://[\\w\\.]*?sharearound\\.com/[\\w]+/.*"}, flags = {0})
 public class SharearoundCom extends PluginForHost {
 
     public SharearoundCom(PluginWrapper wrapper) {

@@ -558,11 +558,12 @@ public class JDInit {
         List<Class<?>> classes = new ArrayList<Class<?>>();
         logger.finest("Find classes in " + directory + " : " + packageName);
         File[] files = new File(directory.getFile()).listFiles();
-
+        logger.finest("tofile "+directory.getFile());
+        logger.finest("list "+files);
         if (files == null) {
             try {
                 // it's a jar
-                logger.finest("");
+                logger.finest("jar!");
                 String path = directory.toString().substring(4);
                 // split path | intern path
                 String[] splitted = path.split("!");
@@ -575,11 +576,12 @@ public class JDInit {
 
                 while ((e = jarFile.getNextJarEntry()) != null) {
                     if (e.getName().startsWith(splitted[1])) {
-                      
-                        
-                        Class<?> c;
-                        classes.add(c=classLoader.loadClass(e.getName().substring(0, e.getName().length() - 6).replace("/", ".")));
-                        logger.finest(directory+    "Jarclass "+c);
+
+                        Class<?> c = classLoader.loadClass(e.getName().substring(0, e.getName().length() - 6).replace("/", "."));
+                        if (c != null) {
+                            classes.add(c);
+                            logger.finest(directory + "Jarclass " + c);
+                        }
                     }
 
                 }
@@ -590,7 +592,9 @@ public class JDInit {
 
         } else {
             for (File file : files) {
+                logger.finest("file "+file);
                 if (file.isDirectory()) {
+                    logger.finest("isdir "+file);
                     try {
                         classes.addAll(findPlugins(file.toURI().toURL(), packageName + "." + file.getName(), classLoader));
                     } catch (MalformedURLException e) {
@@ -598,10 +602,10 @@ public class JDInit {
                         e.printStackTrace();
                     }
                 } else if (file.getName().endsWith(".class")) {
-               
+
                     Class<?> c;
-                    classes.add(c=classLoader.loadClass(packageName + '.' + file.getName().substring(0, file.getName().length() - 6)));
-                    logger.finest(directory+" - class: "+c);
+                    classes.add(c = classLoader.loadClass(packageName + '.' + file.getName().substring(0, file.getName().length() - 6)));
+                    logger.finest(directory + " - class: " + c);
                 }
             }
         }
@@ -617,6 +621,10 @@ public class JDInit {
                     if (c != null && c.getAnnotations().length > 0) {
                         HostPlugin help = (HostPlugin) c.getAnnotations()[0];
 
+                        if (help.interfaceVersion() != HostPlugin.INTERFACE_VERSION) {
+                            logger.warning("Outdated Plugin found: " + help);
+
+                        }
                         for (int i = 0; i < help.names().length; i++) {
                             new HostPluginWrapper(help.names()[i], c.getSimpleName(), help.urls()[i], help.flags()[i]);
                         }
@@ -633,18 +641,24 @@ public class JDInit {
 
     public void loadPluginOptional() {
         logger.finest("DO");
+
+        ArrayList<String> list = new ArrayList<String>();
         try {
             for (Class<?> c : getClasses("jd.plugins.optional", JDUtilities.getJDClassLoader())) {
                 try {
-System.out.println("PPPP"+c);
+
+                    if (list.contains(c.getName())) {
+                        System.out.println("Already loaded:" + c);
+                        continue;
+                    }
                     if (c.getAnnotations().length > 0) {
                         OptionalPlugin help = (OptionalPlugin) c.getAnnotations()[0];
-                   
 
                         if ((help.windows() && OSDetector.isWindows()) || (help.linux() && OSDetector.isLinux()) || (help.mac() && OSDetector.isMac())) {
                             if (JDUtilities.getJavaVersion() >= help.minJVM() && PluginOptional.ADDON_INTERFACE_VERSION == help.interfaceversion()) {
                                 logger.finest("Init PluginWrapper!");
                                 new OptionalPluginWrapper(c, help);
+                                list.add(c.getName());
                             }
                         }
 

@@ -32,7 +32,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(names = { "axifile.com"}, urls ={ "http://[\\w\\.]*?axifile\\.com/\\?\\d+"}, flags = {0})
+@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "axifile.com"}, urls ={ "http://[\\w\\.]*?axifile\\.com/\\?\\d+"}, flags = {0})
 public class AxiFileCom extends PluginForHost {
     /*
      * TODO: PW support, problem: filename und filesize sind ohne pw nicht zu

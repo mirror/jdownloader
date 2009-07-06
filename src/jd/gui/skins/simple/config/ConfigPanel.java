@@ -17,16 +17,11 @@
 package jd.gui.skins.simple.config;
 
 import java.awt.Graphics;
-import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import javax.swing.JButton;
 import javax.swing.JComponent;
-import javax.swing.JMenu;
-import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
@@ -39,7 +34,6 @@ import jd.config.ConfigEntry.PropertyType;
 import jd.gui.skins.simple.Factory;
 import jd.gui.skins.simple.JTabbedPanel;
 import jd.gui.skins.simple.SimpleGUI;
-import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 public abstract class ConfigPanel extends JTabbedPanel {
@@ -55,10 +49,10 @@ public abstract class ConfigPanel extends JTabbedPanel {
     private ConfigGroup currentGroup;
 
     protected boolean viewport = true;
-
-    private JMenuBar menuBar;
-
-    private JMenu groupMenu;
+    //
+    // private JMenuBar menuBar;
+    //
+    // private JMenu groupMenu;
 
     private JPanel header;
 
@@ -67,11 +61,11 @@ public abstract class ConfigPanel extends JTabbedPanel {
         panel = new JPanel();
         panel.setLayout(new MigLayout("ins 0 10 10 10,wrap 2", "[fill,grow 10]10[fill,grow]"));
 
-        if (menuBar == null) {
-            menuBar = new JMenuBar();
-            panel.add(menuBar, "spanx,growx,pushx,hidemode 3");
-            menuBar.setVisible(false);
-        }
+        // if (menuBar == null) {
+        // menuBar = new JMenuBar();
+        // panel.add(menuBar, "spanx,growx,pushx,hidemode 3");
+        // menuBar.setVisible(false);
+        // }
     }
 
     @Override
@@ -102,42 +96,39 @@ public abstract class ConfigPanel extends JTabbedPanel {
 
             if (currentGroup != null) {
                 panel.add(new JSeparator(), "spanx,gapbottom 15,gaptop 15");
-                groupMenu = null;
+                // groupMenu = null;
                 // Regression!!!???
                 currentGroup = null;
             }
-            if (groupMenu == null) {
-                menuBar.add(groupMenu = new JMenu(JDL.L("jd.gui.skins.simple.config.configpanel.menu.default", "Actions")));
-                groupMenu.setEnabled(false);
-            }
+            // if (groupMenu == null) {
+            // menuBar.add(groupMenu = new
+            // JMenu(JDL.L("jd.gui.skins.simple.config.configpanel.menu.default",
+            // "Actions")));
+            // groupMenu.setEnabled(false);
+            // }
             if (entry.getDecoration() != null) {
-                if ((entry.getConfigEntry().getType() == ConfigContainer.TYPE_TEXTAREA) || (entry.getConfigEntry().getType() == ConfigContainer.TYPE_LISTCONTROLLED)) {
+             
+                
+                switch (entry.getConfigEntry().getType()) {
+//                case ConfigContainer.TYPE_BUTTON:
+//                    panel.add(entry.getDecoration(), "spany " + entry.getInput().length + (entry.getInput().length == 0 ? ",spanx" : ""));
+//                     break;
+                case ConfigContainer.TYPE_TEXTAREA:
+                case ConfigContainer.TYPE_LISTCONTROLLED:
                     panel.add(entry.getDecoration(), "spany " + entry.getInput().length + ",spanx, gapright " + getGapRight());
 
-                } else {
+                    break;
+                default:
                     panel.add(entry.getDecoration(), "spany " + entry.getInput().length + (entry.getInput().length == 0 ? ",spanx" : ""));
+                    
                 }
             }
 
             for (JComponent c : entry.getInput()) {
                 switch (entry.getConfigEntry().getType()) {
                 case ConfigContainer.TYPE_BUTTON:
-                    menuBar.setVisible(true);
-                    groupMenu.setEnabled(true);
-                    JButton bt = (JButton) entry.getInput()[0];
-                    JMenuItem mnuFile = new JMenuItem(bt.getName());
-                    mnuFile.setEnabled(bt.isEnabled());
-                    mnuFile.setIcon(bt.getIcon());
-                    for (ActionListener a : bt.getActionListeners())
-                        mnuFile.addActionListener(a);
-                    groupMenu.add(mnuFile);
-                    // panel.add(new JScrollPane(c),
-                    // "spanx,gapleft 35,gapright 20");
-                    // panel.add(new JScrollPane(c), "spanx,gapright " +
-                    // getGapRight() + ",growy,pushy,gapleft " + getGapLeft());
-
-                    break;
-
+                    panel.add(c, entry.getDecoration() == null ? "spanx,gapright " + getGapRight() : "width n:n:160,gapright " + getGapRight());
+                    
                 case ConfigContainer.TYPE_TEXTAREA:
                 case ConfigContainer.TYPE_LISTCONTROLLED:
                     panel.add(new JScrollPane(c), "spanx,gapright " + getGapRight() + ",growy,pushy");
@@ -169,16 +160,22 @@ public abstract class ConfigPanel extends JTabbedPanel {
 
                 panel.add(header = Factory.createHeader(group), "spanx,hidemode 3");
                 header.setVisible(false);
-                menuBar.add(groupMenu = new JMenu(group.getName()));
-                groupMenu.setEnabled(false);
+                // menuBar.add(groupMenu = new JMenu(group.getName()));
+                // groupMenu.setEnabled(false);
 
                 currentGroup = group;
             }
             if (entry.getDecoration() != null) {
-                if (entry.getConfigEntry().getType() == ConfigContainer.TYPE_TEXTAREA) {
+                switch (entry.getConfigEntry().getType()) {
+//                case ConfigContainer.TYPE_BUTTON:
+//                    panel.add(entry.getDecoration(), "gapleft " + getGapLeft() + ",spany " + entry.getInput().length + (entry.getInput().length == 0 ? ",spanx" : ""));
+//                     break;
+                case ConfigContainer.TYPE_TEXTAREA:
+                case ConfigContainer.TYPE_LISTCONTROLLED:
                     panel.add(entry.getDecoration(), "gapleft " + getGapLeft() + ",spany " + entry.getInput().length + ",spanx");
 
-                } else {
+                    break;
+                default:
                     panel.add(entry.getDecoration(), "gapleft " + getGapLeft() + ",spany " + entry.getInput().length + (entry.getInput().length == 0 ? ",spanx" : ""));
                 }
             }
@@ -186,22 +183,10 @@ public abstract class ConfigPanel extends JTabbedPanel {
             for (JComponent c : entry.getInput()) {
 
                 switch (entry.getConfigEntry().getType()) {
-                case ConfigContainer.TYPE_BUTTON:
-                    menuBar.setVisible(true);
-                    groupMenu.setEnabled(true);
-                    JButton bt = (JButton) entry.getInput()[0];
-                    JMenuItem mnuFile = new JMenuItem(bt.getName());
-                    mnuFile.setEnabled(bt.isEnabled());
-                    for (ActionListener a : bt.getActionListeners())
-                        mnuFile.addActionListener(a);
-                    mnuFile.setIcon(bt.getIcon());
-                    groupMenu.add(mnuFile);
-                    // panel.add(new JScrollPane(c),
-                    // "spanx,gapleft 35,gapright 20");
-                    // panel.add(new JScrollPane(c), "spanx,gapright " +
-                    // getGapRight() + ",growy,pushy,gapleft " + getGapLeft());
-
-                    break;
+                 case ConfigContainer.TYPE_BUTTON:
+                     panel.add(c, entry.getDecoration() == null ? "spanx,gapright " + this.getGapRight() + ",gapleft " + this.getGapLeft() : "width n:n:160,gapright " + this.getGapRight());
+                     header.setVisible(true);
+                 break;
 
                 case ConfigContainer.TYPE_TEXTAREA:
                     viewport = false;

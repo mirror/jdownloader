@@ -36,7 +36,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(names = { "mooshare.net"}, urls ={ "http://[\\w\\.]*?mooshare\\.net/files/\\d+/.*?\\.html"}, flags = {2})
+@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "mooshare.net"}, urls ={ "http://[\\w\\.]*?mooshare\\.net/files/\\d+/.*?\\.html"}, flags = {2})
 public class Moosharenet extends PluginForHost {
 
     public Moosharenet(PluginWrapper wrapper) {

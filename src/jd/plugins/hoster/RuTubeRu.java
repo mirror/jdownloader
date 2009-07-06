@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(names = { "rutube.ru"}, urls ={ "http://[\\w\\.]*?rutube\\.ru/tracks/\\d+\\.html"}, flags = {0})
+@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "rutube.ru"}, urls ={ "http://[\\w\\.]*?rutube\\.ru/tracks/\\d+\\.html"}, flags = {0})
 public class RuTubeRu extends PluginForHost {
 
     public RuTubeRu(PluginWrapper wrapper) {

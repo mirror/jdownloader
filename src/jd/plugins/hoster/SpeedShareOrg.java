@@ -31,7 +31,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
 
-@HostPlugin(names = { "speedshare.org"}, urls ={ "http://[\\w\\.]*?speedshare\\.org/download\\.php\\?id=[\\w]+"}, flags = {0})
+@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "speedshare.org"}, urls ={ "http://[\\w\\.]*?speedshare\\.org/download\\.php\\?id=[\\w]+"}, flags = {0})
 public class SpeedShareOrg extends PluginForHost {
 
     private String url;

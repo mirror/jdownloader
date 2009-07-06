@@ -28,7 +28,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(names = { "dataup.de"}, urls ={ "http://[\\w\\.]*?dataup\\.de/\\d+/(.*)"}, flags = {0})
+@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "dataup.de"}, urls ={ "http://[\\w\\.]*?dataup\\.de/\\d+/(.*)"}, flags = {0})
 public class Dataupde extends PluginForHost {
     public Dataupde(PluginWrapper wrapper) {
         super(wrapper);

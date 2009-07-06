@@ -28,7 +28,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(names = { "hotshare.net"}, urls ={ "http://[\\w\\.]*?hotshare\\.net/(.+/)?(file|audio|video)/.+"}, flags = {0})
+@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "hotshare.net"}, urls ={ "http://[\\w\\.]*?hotshare\\.net/(.+/)?(file|audio|video)/.+"}, flags = {0})
 public class HotShareNet extends PluginForHost {
 
     public HotShareNet(PluginWrapper wrapper) {

@@ -25,6 +25,8 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.Vector;
 
+import javax.swing.ImageIcon;
+
 import jd.controlling.ListController;
 
 public class ConfigEntry implements Serializable, PropertyChangeListener {
@@ -102,6 +104,24 @@ public class ConfigEntry implements Serializable, PropertyChangeListener {
 
     private boolean changes;
     private ListController controller;
+    private ImageIcon imageIcon;
+    public ImageIcon getImageIcon() {
+        return imageIcon;
+    }
+
+    public void setImageIcon(ImageIcon imageIcon) {
+        this.imageIcon = imageIcon;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    private String description;
 
     public PropertyType getPropertyType() {
         return propertyType;
@@ -131,10 +151,12 @@ public class ConfigEntry implements Serializable, PropertyChangeListener {
      * @param label
      *            Label für die Komponente
      */
-    public ConfigEntry(int type, ActionListener listener, String label) {
+    public ConfigEntry(int type, ActionListener listener, String label, String description, ImageIcon icon) {
 
         this.type = type;
         this.label = label;
+        this.imageIcon=icon;
+        this.description=description;
         actionListener = listener;
         enabled = true;
     }

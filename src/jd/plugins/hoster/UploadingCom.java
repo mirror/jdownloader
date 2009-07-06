@@ -36,7 +36,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(names = { "uploading.com"}, urls ={ "http://[\\w\\.]*?uploading\\.com/files/\\w+/.+"}, flags = {2})
+@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "uploading.com"}, urls ={ "http://[\\w\\.]*?uploading\\.com/files/\\w+/.+"}, flags = {2})
 public class UploadingCom extends PluginForHost {
     private static int simultanpremium = 1;
 

@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(names = { "data.hu"}, urls ={ "http://[\\w\\.]*?data.hu/get/.+/.+"}, flags = {2})
+@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "data.hu"}, urls ={ "http://[\\w\\.]*?data.hu/get/.+/.+"}, flags = {2})
 public class DataHu extends PluginForHost {
 
     public DataHu(PluginWrapper wrapper) {

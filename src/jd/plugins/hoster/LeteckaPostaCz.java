@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(names = { "leteckaposta.cz"}, urls ={ "http://[\\w\\.]*?leteckaposta\\.cz/[0-9]+."}, flags = {0})
+@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "leteckaposta.cz"}, urls ={ "http://[\\w\\.]*?leteckaposta\\.cz/[0-9]+."}, flags = {0})
 public class LeteckaPostaCz extends PluginForHost {
 
     public LeteckaPostaCz(PluginWrapper wrapper) {
