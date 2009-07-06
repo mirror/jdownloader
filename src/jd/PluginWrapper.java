@@ -65,8 +65,7 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
         if (JDFlags.hasSomeFlags(flags, LOAD_ON_INIT)) this.getPlugin();
         if (JDFlags.hasSomeFlags(flags, ALWAYS_ENABLED)) this.alwaysenabled = true;
         if (JDFlags.hasSomeFlags(flags, ACCEPTONLYSURLSFALSE)) this.acceptOnlyURIs = false;
-        
-        
+
         WRAPPER.put(classn, this);
     }
 
@@ -136,15 +135,15 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
                 progress.finalize();
             }
             logger.finer("load plugin: " + getClassName());
-            
+
             Class<?> plgClass;
-            
-            try{
-                plgClass= CL.loadClass(getClassName());
-            }catch(ClassNotFoundException e){
-                plgClass=JDUtilities.getJDClassLoader().loadClass(getClassName());
+
+            try {
+                plgClass = CL.loadClass(getClassName());
+            } catch (ClassNotFoundException e) {
+                plgClass = JDUtilities.getJDClassLoader().loadClass(getClassName());
             }
-           
+
             if (plgClass == null) {
                 logger.info("PLUGIN NOT FOUND!");
                 return null;
@@ -219,7 +218,7 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
     }
 
     public boolean hasConfig() {
-        return isLoaded() && getPlugin().getConfig().getEntries().size() != 0;
+        return isLoaded() && !getPlugin().getConfig().getEntries().isEmpty();
     }
 
     public int compareTo(PluginWrapper plg) {
@@ -229,10 +228,11 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
     public String getConfigName() {
         return getHost();
     }
+
     public static PluginWrapper getWrapper(String clazz) {
-        // TODO Auto-generated method stub
         return WRAPPER.get(clazz);
     }
+
     public static Plugin getNewInstance(String className) {
         if (!WRAPPER.containsKey(className)) {
             try {
@@ -244,4 +244,5 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
         }
         return WRAPPER.get(className).getNewPluginInstance();
     }
+
 }

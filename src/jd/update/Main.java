@@ -41,7 +41,6 @@ import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
-import jd.nutils.zip.UnZip;
 import jd.utils.JDUtilities;
 
 import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;

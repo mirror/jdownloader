@@ -50,7 +50,6 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
-import jd.OptionalPluginWrapper;
 import jd.PluginWrapper;
 import jd.config.MenuItem;
 import jd.controlling.reconnect.HTTPLiveHeader;
@@ -62,7 +61,6 @@ import jd.http.Encoding;
 import jd.nutils.io.JDFileFilter;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
-import jd.plugins.HostPlugin;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
 import jd.utils.JDTheme;
@@ -73,17 +71,11 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-
-
-@OptionalPlugin(rev="$Revision$", id="livescripter",interfaceversion=4)
-
-// new OptionalPluginWrapper("webinterface.JDWebinterface", 1.5, "webinterface", JDL.L("plugins.optional.webinterface.name", "WebInterface"));
-
+@OptionalPlugin(rev = "$Revision$", id = "livescripter", interfaceversion = 4)
 public class HTTPLiveHeaderScripter extends PluginOptional {
     public HTTPLiveHeaderScripter(PluginWrapper wrapper) {
         super(wrapper);
     }
-
 
     private JTabbedPanel tabbedPanel;
 
@@ -288,7 +280,6 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
 
         return menu;
     }
-
 
     public boolean initAddon() {
         return true;

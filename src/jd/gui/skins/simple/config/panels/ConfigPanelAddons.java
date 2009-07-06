@@ -16,31 +16,123 @@
 
 package jd.gui.skins.simple.config.panels;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.util.ArrayList;
+import java.util.Collections;
+
+import javax.swing.JButton;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.ListSelectionModel;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.table.AbstractTableModel;
+
+import jd.OptionalPluginWrapper;
 import jd.config.Configuration;
-import jd.config.ConfigEntry.PropertyType;
+import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.config.ConfigPanel;
-import jd.gui.skins.simple.config.subpanels.SubPanelPluginsOptional;
+import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 /**
  * @author JD-Team
  * 
  */
-public class ConfigPanelAddons extends ConfigPanel {
+public class ConfigPanelAddons extends ConfigPanel implements ActionListener, MouseListener {
+
+    private class InternalTableModel extends AbstractTableModel {
+
+        private static final long serialVersionUID = 1155282457354673850L;
+
+        @Override
+        public Class<?> getColumnClass(int columnIndex) {
+            return getValueAt(0, columnIndex).getClass();
+        }
+
+        public int getColumnCount() {
+            return 5;
+        }
+
+        @Override
+        public String getColumnName(int column) {
+            switch (column) {
+            case 0:
+                return JDL.L("gui.column_status", "Aktivieren");
+            case 1:
+                return JDL.L("gui.column_plugin", "Plugin");
+            case 2:
+                return JDL.L("gui.column_version", "Version");
+            case 3:
+                return JDL.L("gui.column_coder", "Ersteller");
+            case 4:
+                return JDL.L("gui.column_needs", "Needs");
+            }
+            return super.getColumnName(column);
+        }
+
+        public int getRowCount() {
+            return pluginsOptional.size();
+        }
+
+        public Object getValueAt(int rowIndex, int columnIndex) {
+            switch (columnIndex) {
+            case 0:
+                return pluginsOptional.get(rowIndex).isEnabled();
+            case 1:
+                return pluginsOptional.get(rowIndex).getHost();
+            case 2:
+                return pluginsOptional.get(rowIndex).getVersion();
+            case 3:
+                return pluginsOptional.get(rowIndex).getCoder();
+            case 4:
+                return pluginsOptional.get(rowIndex).getJavaVersion();
+            }
+            return null;
+        }
+
+        @Override
+        public boolean isCellEditable(int rowIndex, int columnIndex) {
+            return columnIndex == 0;
+        }
+
+        @Override
+        public void setValueAt(Object value, int row, int col) {
+            if (col == 0) {
+                OptionalPluginWrapper plgWrapper = pluginsOptional.get(row);
+                configuration.setProperty(plgWrapper.getConfigParamKey(), (Boolean) value);
+                configuration.save();
+                if ((Boolean) value) {
+                    plgWrapper.getPlugin().initAddon();
+                } else {
+                    plgWrapper.getPlugin().onExit();
+                }
+                SimpleGUI.CURRENTGUI.getAddonPanel().initGUI();
+            }
+        }
+
+    }
 
     private static final long serialVersionUID = 4145243293360008779L;
 
+    private JButton btnEdit;
+
     private Configuration configuration;
 
-    private SubPanelPluginsOptional sppo;
+    private ArrayList<OptionalPluginWrapper> pluginsOptional;
 
-    // private SubPanelOptionalInstaller spr;
+    private JTable table;
 
-    // private JTabbedPane tabbed;
+    private InternalTableModel tableModel;
 
     public ConfigPanelAddons(Configuration configuration) {
         super();
         this.configuration = configuration;
+        pluginsOptional = OptionalPluginWrapper.getOptionalWrapper();
+        Collections.sort(pluginsOptional);
         initPanel();
         load();
     }
@@ -52,38 +144,60 @@ public class ConfigPanelAddons extends ConfigPanel {
 
     @Override
     public void initPanel() {
-        panel.setLayout(new MigLayout("ins 0", "[fill,grow]", "[fill,grow]"));
-        panel.add(sppo = new SubPanelPluginsOptional(configuration), "spanx");
-        // tabbed.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
-        // tabbed.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
-        // tabbed.setTabPlacement(SwingConstants.TOP);
-        // tabbed.addChangeListener(new ChangeListener() {
-        // public void stateChanged(ChangeEvent e) {}
-        // });
-        // tabbed.addTab(JDL.L("gui.config.addons.settings.tab", "Settings"),
-        // JDTheme.II("gui.splash.controller", 16, 16), sppo = new
-        // SubPanelPluginsOptional(configuration));
-        // tabbed.addTab(JDL.L("gui.config.addons.install.tab",
-        // "Installation & updates"),
-        // JDTheme.II("gui.images.taskpanes.download", 16, 16), spr = new
-        // SubPanelOptionalInstaller(configuration));
-        setLayout(new MigLayout("ins 0", "[fill,grow]", "[fill,grow]"));
-        add(panel);
+        tableModel = new InternalTableModel();
+        table = new JTable(tableModel);
+        table.addMouseListener(this);
+        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            public void valueChanged(ListSelectionEvent e) {
+                btnEdit.setEnabled(table.getSelectedRow() >= 0 && pluginsOptional.get(table.getSelectedRow()).hasConfig());
+            }
+        });
+        table.getColumnModel().getColumn(0).setMaxWidth(80);
+
+        btnEdit = new JButton(JDL.L("gui.btn_settings", "Einstellungen"));
+        btnEdit.setEnabled(false);
+        btnEdit.addActionListener(this);
+
+        setLayout(new MigLayout("ins 5,wrap 1", "[fill,grow]", "[fill,grow][]"));
+        add(new JScrollPane(table));
+        add(btnEdit, "w pref!");
+    }
+
+    private void editEntry() {
+        SimpleGUI.displayConfig(pluginsOptional.get(table.getSelectedRow()).getPlugin().getConfig(), 0);
+    }
+
+    public void actionPerformed(ActionEvent e) {
+        if (e.getSource() == btnEdit) {
+            editEntry();
+        }
+    }
+
+    public void mouseClicked(MouseEvent e) {
+        if (e.getClickCount() > 1 && pluginsOptional.get(table.getSelectedRow()).hasConfig()) {
+            editEntry();
+        }
+    }
+
+    public void mouseEntered(MouseEvent e) {
+    }
+
+    public void mouseExited(MouseEvent e) {
+    }
+
+    public void mousePressed(MouseEvent e) {
+    }
+
+    public void mouseReleased(MouseEvent e) {
     }
 
     @Override
     public void load() {
-        loadConfigEntries();
     }
 
     @Override
     public void save() {
-        sppo.save();
-        // spr.save();
     }
 
-    @Override
-    public PropertyType hasChanges() {
-        return PropertyType.getMax(super.hasChanges(), sppo.hasChanges());
-    }
 }

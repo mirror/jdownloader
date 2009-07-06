@@ -265,7 +265,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
         setLayout(new MigLayout("ins 5,wrap 1", "[fill,grow]", "[fill,grow][]"));
         add(new JScrollPane(table));
-        add(bpanel, "w pref!, dock south");
+        add(bpanel, "w pref!");
     }
 
     @Override

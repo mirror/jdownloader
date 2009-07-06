@@ -149,11 +149,8 @@ public class MetaLink extends PluginForDecrypt {
                 }
                 decryptedLinks.add(downloadLink);
             } else if (path.equalsIgnoreCase(".metalink.files.file.verification.pieces.hash")) {
-                /** define chunk hashes.....TODO */
+                /** define chunk hashes..... TODO */
 
-            } else {
-
-                path = path;
             }
             path = path.substring(0, path.length() - qName.length() - 1);
             text.reset();

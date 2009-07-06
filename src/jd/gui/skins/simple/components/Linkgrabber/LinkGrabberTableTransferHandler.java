@@ -32,6 +32,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.JTable;
 import javax.swing.SwingUtilities;
 import javax.swing.TransferHandler;
+
 import jd.controlling.DownloadController;
 import jd.controlling.LinkGrabberController;
 import jd.gui.skins.simple.SimpleGUI;

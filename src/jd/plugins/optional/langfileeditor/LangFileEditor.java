@@ -25,8 +25,8 @@ import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.SingletonPanel;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
-import jd.utils.locale.JDL;
-@OptionalPlugin(rev="$Revision$", id="langfileditor",interfaceversion=4)
+
+@OptionalPlugin(rev = "$Revision$", id = "langfileditor", interfaceversion = 4)
 /**
  * Editor for jDownloader language files. Gets JDLocale.L() and JDLocale.LF()
  * entries from source and compares them to the keypairs in the language file.
@@ -49,7 +49,6 @@ public class LangFileEditor extends PluginOptional {
             SimpleGUI.CURRENTGUI.getContentPane().display(lfe.getPanel());
         }
     }
-
 
     // @Override
     public boolean initAddon() {
@@ -78,9 +77,5 @@ public class LangFileEditor extends PluginOptional {
     public String getIconKey() {
         return "gui.splash.languages";
     }
-
-
-
-
 
 }

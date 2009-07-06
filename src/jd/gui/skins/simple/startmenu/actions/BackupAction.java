@@ -18,7 +18,6 @@ package jd.gui.skins.simple.startmenu.actions;
 
 import java.awt.event.ActionEvent;
 
-import jd.controlling.DownloadController;
 import jd.gui.skins.simple.Balloon;
 import jd.update.JDUpdateUtils;
 import jd.utils.JDTheme;
