@@ -258,6 +258,14 @@
 			
 			</fileset>
 		</jar>
+		
+		<mkdir dir="${dist}/pluginressourcen/130__JDPremium/plugins" />
+			<jar jarfile="${dist}/pluginressourcen/130__JDPremium/plugins/JDPremium.jar" manifest="Manifest.MF">
+				<fileset dir="${cls}">
+					<include name="jd/plugins/optional/premcol/**" />
+				
+				</fileset>
+			</jar>
 	</target>
 
 	<target name="sign">

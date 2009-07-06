@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
@@ -511,7 +512,11 @@ public class JDInit {
         while (resources.hasMoreElements()) {
             URL resource = resources.nextElement();
             logger.finest("Ressource: " + resource);
+            try{
             classes.addAll(findPlugins(resource, packageName, classLoader));
+            }catch(Exception e){
+                JDLogger.exception(e);
+            }
 
         }
 
@@ -553,12 +558,20 @@ public class JDInit {
      * @param x
      * @return
      * @throws ClassNotFoundException
+     * @throws URISyntaxException 
      */
-    private static List<Class<?>> findPlugins(URL directory, String packageName, ClassLoader classLoader) throws ClassNotFoundException {
+    private static List<Class<?>> findPlugins(URL directory, String packageName, ClassLoader classLoader) throws ClassNotFoundException, URISyntaxException {
         List<Class<?>> classes = new ArrayList<Class<?>>();
         logger.finest("Find classes in " + directory + " : " + packageName);
-        File[] files = new File(directory.getFile()).listFiles();
-        logger.finest("tofile "+directory.getFile());
+        File[] files=null;
+        logger.finest("path  "+directory.toURI().getPath());
+        
+        try{
+        files= new File(directory.toURI().getPath()).listFiles();
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+        logger.finest("tofile "+directory.toURI().getPath());
         logger.finest("list "+files);
         if (files == null) {
             try {

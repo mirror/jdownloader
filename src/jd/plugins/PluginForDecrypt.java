@@ -386,8 +386,8 @@ public abstract class PluginForDecrypt extends Plugin {
     public String getLinkName() {
         if (curcryptedLink == null) return "";
         try {
-            return new URL(curcryptedLink.toString()).getFile();
-        } catch (MalformedURLException e) {
+            return new URL(curcryptedLink.toString()).toURI().getPath();
+        } catch (Exception e) {
             return "";
         }
     }

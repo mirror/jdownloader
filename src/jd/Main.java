@@ -492,7 +492,7 @@ public class Main {
      * 
      * @throws IOException
      */
-    public static void loadDynamics() throws IOException {
+    public static void loadDynamics() throws Exception {
         ArrayList<String> classes = new ArrayList<String>();
         URLClassLoader classLoader = new URLClassLoader(new URL[] { JDUtilities.getJDHomeDirectoryFromEnvironment().toURI().toURL(), JDUtilities.getResourceFile("java").toURI().toURL() }, Thread.currentThread().getContextClassLoader());
         if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL) {
@@ -502,11 +502,13 @@ public class Main {
             ArrayList<String> dynamics = new ArrayList<String>();
             while (resources.hasMoreElements()) {
                 URL resource = resources.nextElement();
-                String[] files = new File(resource.getFile()).list();
+                if(resource.toURI().getPath()!=null){
+                String[] files = new File(resource.toURI().getPath()).list();
                 if (files != null) {
                     for (String file : files) {
                         dynamics.add(new File(file).getName());
                     }
+                }
                 }
             }
             if (dynamics.size() == 0) return;
