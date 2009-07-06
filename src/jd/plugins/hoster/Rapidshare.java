@@ -53,7 +53,7 @@ import jd.utils.locale.JDL;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
 
-@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "rapidshare.com"}, urls ={ "http://[\\w\\.]*?rapidshare\\.com/files/[\\d]{3,9}/?.+"}, flags = {2})
+@HostPlugin(revision = "$Revision", interfaceVersion = 1, names = { "rapidshare.com" }, urls = { "http://[\\w\\.]*?rapidshare\\.com/files/[\\d]{3,9}/?.+" }, flags = { 2 })
 public class Rapidshare extends PluginForHost {
 
     private static final Pattern PATTERM_MATCHER_ALREADY_LOADING = Pattern.compile("(Warten Sie bitte, bis der Download abgeschlossen ist)", Pattern.CASE_INSENSITIVE);
@@ -491,17 +491,19 @@ public class Rapidshare extends PluginForHost {
         }
 
     }
+
     public HosterInfo getHosterInfo() {
         // TODO Auto-generated method stub
         HosterInfo ret = new HosterInfo(this.getHost());
-        ret.setFreeMaxWaittime(60*2*1000);
-        ret.setFreeIPBlockWaittime(15*60*1000);
+        ret.setFreeMaxWaittime(60 * 2 * 1000);
+        ret.setFreeIPBlockWaittime(15 * 60 * 1000);
         ret.setFreeResumable(false);
         ret.setFreeParalellDownloads(1);
         ret.setFreeChunks(1);
-        ret.setFreeMaxSpeed(200*1024);
+        ret.setFreeMaxSpeed(200 * 1024);
         return ret;
     }
+
     // @Override
     public String getSessionInfo() {
         if (selectedServer != null) return " @ " + selectedServer;
@@ -915,22 +917,22 @@ public class Rapidshare extends PluginForHost {
             ai.setValid(false);
             return ai;
         }
-        String[][] matches = br.getRegex("(\\w+)=([^\r^\n]+)").getMatches();
-        HashMap<String, String> data = getMap(matches);
-        ai.setTrafficLeft((long) (Long.parseLong(data.get("premkbleft")) / 1000.0) * 1024l * 1024l);
-        ai.setTrafficMax(25 * 1024 * 1024 * 1024l);
-        ai.setFilesNum(Long.parseLong(data.get("curfiles")));
-        ai.setPremiumPoints(Long.parseLong(data.get("points")));
-        ai.setNewPremiumPoints(Long.parseLong(data.get("prempoints")));
-        ai.setUsedSpace(Long.parseLong(data.get("curspace")));
-        ai.setTrafficShareLeft((long) (Long.parseLong(data.get("bodkb")) / 1000.0) * 1024l * 1024l);
-
-        ai.setValidUntil(Long.parseLong(data.get("validuntil")) * 1000);
-
-        if (ai.getValidUntil() < System.currentTimeMillis()) {
-            ai.setExpired(true);
+        try {
+            String[][] matches = br.getRegex("(\\w+)=([^\r^\n]+)").getMatches();
+            HashMap<String, String> data = getMap(matches);
+            ai.setTrafficLeft((long) (Long.parseLong(data.get("premkbleft")) / 1000.0) * 1024l * 1024l);
+            ai.setTrafficMax(25 * 1024 * 1024 * 1024l);
+            ai.setFilesNum(Long.parseLong(data.get("curfiles")));
+            ai.setPremiumPoints(Long.parseLong(data.get("points")));
+            ai.setUsedSpace(Long.parseLong(data.get("curspace")));
+            ai.setTrafficShareLeft((long) (Long.parseLong(data.get("bodkb")) / 1000.0) * 1024l * 1024l);
+            ai.setValidUntil(Long.parseLong(data.get("validuntil")) * 1000);
+            if (ai.getValidUntil() < System.currentTimeMillis()) {
+                ai.setExpired(true);
+            }
+        } catch (Exception e) {
+            logger.severe("RS-API change detected, please inform support!");
         }
-
         account.setProperty("accountinfo", ai);
 
         return ai;
