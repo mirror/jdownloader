@@ -113,7 +113,7 @@ public class LinkGrabberTableRenderer extends DefaultTableRenderer {
         hasFocus = false;
         column = this.table.getColumn(column).getModelIndex();
         if (value instanceof LinkGrabberFilePackage) {
-            return getFilePackageV2Cell(table, value, isSelected, hasFocus, row, column);
+            return getFilePackageCell(table, value, isSelected, hasFocus, row, column);
         } else if (value instanceof DownloadLink) {
             return getDownloadLinkCell(table, value, isSelected, hasFocus, row, column);
         } else {
@@ -221,15 +221,14 @@ public class LinkGrabberTableRenderer extends DefaultTableRenderer {
         return co;
     }
 
-    private Component getFilePackageV2Cell(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+    private Component getFilePackageCell(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         fp = (LinkGrabberFilePackage) value;
         switch (column) {
         case LinkGrabberJTableModel.COL_PACK_FILE:
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-            ((JRendererLabel) co).setText(fp.getName());
+            ((JRendererLabel) co).setText(fp.getName() + " [" + fp.size() + "]");
             if (fp.countFailedLinks(false) > 0) {
                 ((JRendererLabel) co).setIcon(!fp.getBooleanProperty(LinkGrabberTable.PROPERTY_EXPANDED, false) ? icon_fp_closed_error : icon_fp_open_error);
-
             } else {
                 ((JRendererLabel) co).setIcon(!fp.getBooleanProperty(LinkGrabberTable.PROPERTY_EXPANDED, false) ? icon_fp_closed : icon_fp_open);
             }

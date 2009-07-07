@@ -33,7 +33,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
-import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingx.renderer.DefaultTableRenderer;
 import org.jdesktop.swingx.renderer.JRendererLabel;
@@ -95,22 +94,6 @@ public class TableRenderer extends DefaultTableRenderer {
 
     private ImageIcon imgPriority3;
 
-    private String strTTPriorityS;
-
-    private String strTTPriority1;
-
-    private String strTTPriority2;
-
-    private String strTTPriority3;
-
-    private String strTTExtract;
-
-    private String strTTStopMark;
-
-    private String strTTFinished;
-
-    private String strTTFailed;
-
     private ImageIcon imgFileFailed;
 
     private ImageIcon icon_fp_open_error;
@@ -134,7 +117,7 @@ public class TableRenderer extends DefaultTableRenderer {
         progress.setStringPainted(true);
         progress.setOpaque(true);
         COL_PROGRESS_NORMAL = progress.getForeground();
-        statuspanel = new StatusLabel(new MigLayout("ins 0", "[]0[fill,grow,align right]"));
+        statuspanel = new StatusLabel();
     }
 
     private void initIcons() {
@@ -160,14 +143,6 @@ public class TableRenderer extends DefaultTableRenderer {
         strPluginError = JDL.L("gui.treetable.error.plugin", "Plugin error");
         strSecondsAbrv = JDL.L("gui.treetable.seconds", "sec");
         strWaitIO = JDL.L("gui.linkgrabber.waitinguserio", "Waiting for user input");
-        strTTPriorityS = JDL.L("gui.treetable.tooltip.priority-1", "Low Priority");
-        strTTPriority1 = JDL.L("gui.treetable.tooltip.priority1", "High Priority");
-        strTTPriority2 = JDL.L("gui.treetable.tooltip.priority2", "Higher Priority");
-        strTTPriority3 = JDL.L("gui.treetable.tooltip.priority3", "Highest Priority");
-        strTTFailed = JDL.L("gui.treetable.tooltip.failed", "Download failed. See logs for details. Rightclick->reset to retry");
-        strTTFinished = JDL.L("gui.treetable.tooltip.finished", "Download has finished successfully");
-        strTTStopMark = JDL.L("gui.treetable.tooltip.stopmark", "Stopmark is set. After this Link/Package, no further downloads will start");
-        strTTExtract = JDL.L("gui.treetable.tooltip.extract", "A post-download module(extracter,...) is running");
     }
 
     // @Override
@@ -179,11 +154,8 @@ public class TableRenderer extends DefaultTableRenderer {
             co = getFilePackageCell(table, value, isSelected, hasFocus, row, column);
             if (!((FilePackage) value).isEnabled()) {
                 co.setEnabled(false);
-                // ((JComponent) co).setToolTipText(lblTTDisabled);
                 progress.setString("");
-
             } else {
-
                 co.setEnabled(true);
             }
 
@@ -195,11 +167,7 @@ public class TableRenderer extends DefaultTableRenderer {
                 if (co instanceof JDProgressBar) {
                     ((JDProgressBar) co).setString("");
                 }
-
-                // ((JComponent) co).setToolTipText(lblTTDisabled);
-
             } else {
-
                 co.setEnabled(true);
             }
 
@@ -220,16 +188,13 @@ public class TableRenderer extends DefaultTableRenderer {
 
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             clearSB();
-            // ((JComponent) co).setToolTipText(null);
             if (dLink.getLinkStatus().isFailed()) {
-                ((JRendererLabel) co).setIcon(this.imgFileFailed);
+                ((JRendererLabel) co).setIcon(imgFileFailed);
             } else {
                 ((JRendererLabel) co).setIcon(dLink.getIcon());
             }
 
             ((JRendererLabel) co).setText(dLink.getName());
-            // ((JRendererLabel) co).setToolTipText(dLink.getName() + " - " +
-            // dLink.getFileInfomationString());
             ((JRendererLabel) co).setBorder(leftGap);
 
             return co;
@@ -240,7 +205,6 @@ public class TableRenderer extends DefaultTableRenderer {
             clearSB();
             ((JRendererLabel) co).setBorder(null);
             if (dLink.getPlugin() == null) {
-                // ((JComponent) co).setToolTipText(null);
                 ((JRendererLabel) co).setText("plugin missing");
             } else {
                 if (dLink.getPlugin().hasHosterIcon()) {
@@ -248,32 +212,25 @@ public class TableRenderer extends DefaultTableRenderer {
                     sb.append(dLink.getPlugin().getSessionInfo());
                     ((JRendererLabel) co).setText(dLink.getPlugin().getSessionInfo());
                     ((JRendererLabel) co).setIcon(dLink.getPlugin().getHosterIcon());
-                    // ((JComponent) co).setToolTipText(sb.toString());
                 } else {
                     sb.append(dLink.getPlugin().getHost());
                     sb.append(dLink.getPlugin().getSessionInfo());
                     ((JRendererLabel) co).setText(sb.toString());
-                    // ((JComponent) co).setToolTipText(sb.toString());
                 }
 
             }
-            // ((JRendererLabel)
-            // co).setIcon(JDImage.getScaledImageIcon(dLink.getPlugin
-            // ().getHosterIcon(),16,16));
             return co;
 
         case DownloadJTableModel.COL_PROGRESS:
 
             if (dLink.getPlugin() == null) {
                 co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                // ((JComponent) co).setToolTipText(null);
                 ((JRendererLabel) co).setIcon(null);
                 ((JRendererLabel) co).setText(strPluginError);
                 ((JRendererLabel) co).setBorder(null);
                 return co;
             } else if (!dLink.getPlugin().getWrapper().usePlugin()) {
                 co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                // ((JComponent) co).setToolTipText(null);
                 ((JRendererLabel) co).setIcon(null);
                 ((JRendererLabel) co).setText(strPluginDisabled);
                 ((JRendererLabel) co).setBorder(null);
@@ -307,7 +264,6 @@ public class TableRenderer extends DefaultTableRenderer {
                     sb.append(c.format(10000 * progress.getPercentComplete() / 100.0)).append("% (").append(progress.getRealValue() / 1000).append('/').append(progress.getRealMax() / 1000).append(strSecondsAbrv).append(')');
                 }
                 progress.setString(sb.toString());
-                // progress.setToolTipText(null);
                 return progress;
             } else if (dLink.getDownloadCurrent() > 0) {
                 if (!dLink.getLinkStatus().isPluginActive()) {
@@ -353,7 +309,6 @@ public class TableRenderer extends DefaultTableRenderer {
                     }
                 }
                 progress.setMaximum(10000);
-                // progress.setToolTipText(null);
                 progress.setValue(dLink.getPercent());
                 progress.setForeground(COL_PROGRESS_NORMAL);
                 return progress;
@@ -374,7 +329,6 @@ public class TableRenderer extends DefaultTableRenderer {
             } else {
                 progress.setString(NULL_BYTE_PROGRESS);
             }
-            // progress.setToolTipText(null);
             progress.setForeground(COL_PROGRESS_NORMAL);
             return progress;
 
@@ -382,101 +336,72 @@ public class TableRenderer extends DefaultTableRenderer {
 
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 
-            this.statuspanel.setBackground(co.getBackground());
+            statuspanel.setBackground(co.getBackground());
             statuspanel.setPainter(((JRendererLabel) co).getPainter());
 
-            if (dLink.getPluginProgress() != null && dLink.getPluginProgress().getPercent() > 0.0 && dLink.getPluginProgress().getPercent() < 100.0) {
-                statuspanel.left.setText(dLink.getLinkStatus().getStatusString());
-            } else if (dLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
-                statuspanel.left.setText(dLink.getLinkStatus().getStatusString());
-            } else if (dLink.getLinkStatus().isFailed()) {
-                statuspanel.left.setText(dLink.getLinkStatus().getStatusString());
-            } else {
-                statuspanel.left.setText(dLink.getLinkStatus().getStatusString());
-            }
+//            if (dLink.getPluginProgress() != null && dLink.getPluginProgress().getPercent() > 0.0 && dLink.getPluginProgress().getPercent() < 100.0) {
+//                statuspanel.setText(dLink.getLinkStatus().getStatusString());
+//            } else if (dLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
+//                statuspanel.setText(dLink.getLinkStatus().getStatusString());
+//            } else if (dLink.getLinkStatus().isFailed()) {
+//                statuspanel.setText(dLink.getLinkStatus().getStatusString());
+//            } else {
+                statuspanel.setText(dLink.getLinkStatus().getStatusString());
+//            }
 
             counter = 0;
-            this.clearSB();
 
             if (JDController.getInstance().getWatchdog() != null && JDController.getInstance().getWatchdog().isStopMark(value)) {
-                statuspanel.rights[counter].setIcon(imgStopMark);
-                if (counter > 0) sb.append(" | ");
-                sb.append(strTTStopMark);
-
+                statuspanel.setIcon(counter, imgStopMark);
                 counter++;
             }
 
             if (dLink.getLinkStatus().getStatusIcon() != null) {
-                statuspanel.rights[counter].setIcon(dLink.getLinkStatus().getStatusIcon());
-                if (counter > 0) sb.append(" | ");
-
+                statuspanel.setIcon(counter, dLink.getLinkStatus().getStatusIcon());
                 counter++;
             } else if (dLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
-                statuspanel.rights[counter].setIcon(imgFinished);
-                if (counter > 0) sb.append(" | ");
-                sb.append(strTTFinished);
-
+                statuspanel.setIcon(counter, imgFinished);
                 counter++;
             } else if (dLink.getLinkStatus().isFailed()) {
-                statuspanel.rights[counter].setIcon(imgFailed);
-                if (counter > 0) sb.append(" | ");
-                sb.append(strTTFailed);
-
+                statuspanel.setIcon(counter, imgFailed);
                 counter++;
             }
+
             if (counter <= StatusLabel.ICONCOUNT && dLink.getPluginProgress() != null && dLink.getPluginProgress().getPercent() > 0.0 && dLink.getPluginProgress().getPercent() < 100.0) {
-                statuspanel.rights[counter].setIcon(imgExtract);
-                if (counter > 0) sb.append(" | ");
-                sb.append(strTTExtract);
-
+                statuspanel.setIcon(counter, imgExtract);
                 counter++;
             }
+
             if (counter <= StatusLabel.ICONCOUNT) {
                 switch (dLink.getPriority()) {
                 case 0:
                 default:
                     break;
                 case -1:
-                    statuspanel.rights[counter].setIcon(imgPriorityS);
-                    if (counter > 0) sb.append(" | ");
-                    sb.append(strTTPriorityS);
-
+                    statuspanel.setIcon(counter, imgPriorityS);
                     counter++;
                     break;
                 case 1:
-                    statuspanel.rights[counter].setIcon(imgPriority1);
-                    if (counter > 0) sb.append(" | ");
-                    sb.append(strTTPriority1);
-
+                    statuspanel.setIcon(counter, imgPriority1);
                     counter++;
                     break;
                 case 2:
-                    statuspanel.rights[counter].setIcon(imgPriority2);
-                    if (counter > 0) sb.append(" | ");
-                    sb.append(strTTPriority2);
-
+                    statuspanel.setIcon(counter, imgPriority2);
                     counter++;
                     break;
                 case 3:
-                    statuspanel.rights[counter].setIcon(imgPriority3);
-                    if (counter > 0) sb.append(" | ");
-                    sb.append(strTTPriority3);
-
+                    statuspanel.setIcon(counter, imgPriority3);
                     counter++;
                     break;
                 }
             }
-            // statuspanel.setToolTipText(sb.toString());
+
             statuspanel.clearIcons(counter);
             statuspanel.setBorder(null);
-            // statuspanel.left.setText("HHH");
-            // statuspanel.right.setIcon(imgPriority3);
-            // statuspanel.righter.setIcon(this.imgFinished);
             return statuspanel;
         }
         co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
         ((JRendererLabel) co).setBorder(null);
-        // ((JRendererLabel) co).setToolTipText(null);
         return co;
     }
 
@@ -485,17 +410,14 @@ public class TableRenderer extends DefaultTableRenderer {
         switch (column) {
         case DownloadJTableModel.COL_PART:
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-            ((JRendererLabel) co).setText(fp.getName());
+            ((JRendererLabel) co).setText(fp.getName() + " [" + fp.size() + "]");
             if (fp.getLinksFailed() > 0) {
                 ((JRendererLabel) co).setIcon(!fp.getBooleanProperty(DownloadTable.PROPERTY_EXPANDED, false) ? icon_fp_closed_error : icon_fp_open_error);
-
             } else {
                 ((JRendererLabel) co).setIcon(!fp.getBooleanProperty(DownloadTable.PROPERTY_EXPANDED, false) ? icon_fp_closed : icon_fp_open);
-
             }
 
             ((JRendererLabel) co).setBorder(null);
-            // ((JComponent) co).setToolTipText(null);
             return co;
 
         case DownloadJTableModel.COL_HOSTER:
@@ -532,41 +454,36 @@ public class TableRenderer extends DefaultTableRenderer {
                 }
                 progress.setString(sb.toString());
             }
-            // progress.setToolTipText(null);
             progress.setForeground(COL_PROGRESS_NORMAL);
             return progress;
 
         case DownloadJTableModel.COL_STATUS:
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-            this.statuspanel.setBackground(co.getBackground());
+            statuspanel.setBackground(co.getBackground());
             statuspanel.setPainter(((JRendererLabel) co).getPainter());
             if (fp.isFinished()) {
-                statuspanel.left.setText("");
+                statuspanel.setText("");
             } else if (fp.getTotalDownloadSpeed() > 0) {
                 clearSB();
                 sb.append('[').append(fp.getLinksInProgress()).append('/').append(fp.size()).append("] ");
                 sb.append(strETA).append(' ').append(Formatter.formatSeconds(fp.getETA())).append(" @ ").append(Formatter.formatReadable(fp.getTotalDownloadSpeed())).append("/s");
-                statuspanel.left.setText(sb.toString());
+                statuspanel.setText(sb.toString());
             } else if (fp.getLinksInProgress() > 0) {
                 clearSB();
                 sb.append(fp.getLinksInProgress()).append('/').append(fp.size()).append(' ').append(strDownloadLinkActive);
-                statuspanel.left.setText(sb.toString());
+                statuspanel.setText(sb.toString());
             } else {
-                statuspanel.left.setText("");
+                statuspanel.setText("");
             }
 
             counter = 0;
-            clearSB();
+
             if (fp.isFinished()) {
-                statuspanel.rights[counter].setIcon(this.imgFinished);
+                statuspanel.setIcon(counter, imgFinished);
                 counter++;
             } else if (JDController.getInstance().getWatchdog() != null && JDController.getInstance().getWatchdog().isStopMark(value)) {
-                statuspanel.rights[counter].setIcon(imgStopMark);
-                if (counter > 0) sb.append(" | ");
-
+                statuspanel.setIcon(counter, imgStopMark);
                 counter++;
-                sb.append(strTTStopMark);
-
             } else if (fp.getTotalDownloadSpeed() > 0) {
 
             } else if (fp.getLinksInProgress() > 0) {
@@ -575,13 +492,11 @@ public class TableRenderer extends DefaultTableRenderer {
 
             }
             statuspanel.clearIcons(counter);
-            // statuspanel.setToolTipText(sb.toString());
             statuspanel.setBorder(null);
             return statuspanel;
         }
         co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
         ((JRendererLabel) co).setBorder(null);
-        // ((JComponent) co).setToolTipText(null);
         return co;
     }
 

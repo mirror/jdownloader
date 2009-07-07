@@ -19,7 +19,7 @@ package jd.gui.skins.simple.components.DownloadView;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 
-import javax.swing.JLabel;
+import javax.swing.Icon;
 import javax.swing.JPanel;
 
 import net.miginfocom.swing.MigLayout;
@@ -39,13 +39,12 @@ public class StatusLabel extends JPanel implements PainterAware {
 
     private static final long serialVersionUID = -378709535509849986L;
     public static final int ICONCOUNT = 3;
-    public JRendererLabel left;
-    public JRendererLabel[] rights = new JRendererLabel[3];
-    public JLabel righter;
+    private JRendererLabel left;
+    private JRendererLabel[] rights = new JRendererLabel[3];
     private Painter painter;
 
-    public StatusLabel(MigLayout migLayout) {
-        super(migLayout);
+    public StatusLabel() {
+        super(new MigLayout("ins 0", "[]0[fill,grow,align right]"));
 
         add(left = new JRendererLabel());
 
@@ -56,7 +55,14 @@ public class StatusLabel extends JPanel implements PainterAware {
 
         left.setOpaque(false);
         this.setOpaque(true);
+    }
 
+    public void setText(String text) {
+        left.setText(text);
+    }
+
+    public void setIcon(int i, Icon icon) {
+        if (i < ICONCOUNT) rights[i].setIcon(icon);
     }
 
     public void setEnabled(boolean b) {
@@ -69,14 +75,12 @@ public class StatusLabel extends JPanel implements PainterAware {
      * Remember, that its always the same panel instance. so we have to reset to
      * defaults before each cellrenderer call.
      * 
-     * 
      * @param counter
      */
     public void clearIcons(int counter) {
         for (int i = counter; i < ICONCOUNT; i++) {
             rights[i].setIcon(null);
         }
-
     }
 
     public Painter getPainter() {
