@@ -80,7 +80,7 @@ public class SimpleExecute extends Interaction implements Serializable, ActionLi
 
         ConfigContainer extended = new ConfigContainer(JDL.L("interaction.simpleExecute.extended", "Erweiterte Einstellungen"));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, extended));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDL.L("interaction.simpleExecute.test", "Jetzt ausführen")));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDL.L("interaction.simpleExecute.test", "Jetzt ausführen"),JDL.L("interaction.simpleExecute.test.long", "Test program execution"),null));
 
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, this, PROPERTY_COMMAND, JDL.L("interaction.simpleExecute.cmd", "Befehl")));
 

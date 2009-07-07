@@ -66,7 +66,7 @@ public class ExternExecute extends Interaction implements Serializable, ActionLi
 
     //@Override
     public void initConfig() {
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDL.L("interaction.externExecute.test", "Programm aufrufen")));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDL.L("interaction.externExecute.test", "Programm aufrufen"),JDL.L("interaction.externExecute.test.long", "Test program execution"),null));
 
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, this, "VARS", Replacer.getKeyList(), JDL.L("interaction.externExecute.variables", "Available variables")));
 

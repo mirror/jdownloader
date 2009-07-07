@@ -571,7 +571,7 @@ public class JDInit {
         try{
         files= new File(directory.toURI().getPath()).listFiles();
         }catch(Exception e){
-            e.printStackTrace();
+            JDLogger.exception(e);;
         }
         logger.finest("tofile "+directory.toURI().getPath());
         logger.finest("list "+files);
