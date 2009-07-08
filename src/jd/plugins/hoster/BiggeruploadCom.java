@@ -32,7 +32,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "biggerupload.com"}, urls ={ "http://[\\w\\.]*?biggerupload\\.com/[\\w]+/?.*"}, flags = {0})
+@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "biggerupload.com"}, urls ={ "http://[\\w\\.]*?biggerupload\\.com/[\\w]+/?.*"}, flags = {0})
 public class BiggeruploadCom extends PluginForHost {
 
     public BiggeruploadCom(PluginWrapper wrapper) {

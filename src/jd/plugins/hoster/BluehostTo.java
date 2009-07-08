@@ -32,7 +32,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "bluehost.to"}, urls ={ "http://[\\w\\.]*?bluehost\\.to/(\\?dl=|dl=|file/).*"}, flags = {2})
+@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "bluehost.to"}, urls ={ "http://[\\w\\.]*?bluehost\\.to/(\\?dl=|dl=|file/).*"}, flags = {2})
 public class BluehostTo extends PluginForHost {
 
     public BluehostTo(PluginWrapper wrapper) {

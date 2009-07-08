@@ -32,7 +32,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "speedy-share.com"}, urls ={ "http://[\\w\\.]*?speedy\\-share\\.com/[\\w]+/(.*)"}, flags = {0})
+@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "speedy-share.com"}, urls ={ "http://[\\w\\.]*?speedy\\-share\\.com/[\\w]+/(.*)"}, flags = {0})
 public class Speedy_ShareCom extends PluginForHost {
 
     private String postdata;

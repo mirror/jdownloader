@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision", interfaceVersion = 1, names = { "filebase.to" }, urls = { "http://[\\w\\.]*?filebase\\.to/files/\\d{1,}/.*" }, flags = { 0 })
+@HostPlugin(revision = "$Revision", interfaceVersion = 2, names = { "filebase.to" }, urls = { "http://[\\w\\.]*?filebase\\.to/files/\\d{1,}/.*" }, flags = { 0 })
 public class FileBaseTo extends PluginForHost {
 
     public FileBaseTo(PluginWrapper wrapper) {

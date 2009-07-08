@@ -33,7 +33,7 @@ import jd.utils.locale.JDL;
 /**
  * @author zdolny fixes by djuzi
  */
-@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "linkfile.de"}, urls ={ "http://[\\w\\.]*?linkfile.de/download-[\\w]+\\.php"}, flags = {0})
+@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "linkfile.de"}, urls ={ "http://[\\w\\.]*?linkfile.de/download-[\\w]+\\.php"}, flags = {0})
 public class LinkFileDe extends PluginForHost {
 
     public LinkFileDe(PluginWrapper wrapper) {

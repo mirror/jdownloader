@@ -25,7 +25,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "storage.to"}, urls ={ "http://[\\w\\.]*?storage.to/get/[a-zA-Z0-9]+/[a-zA-Z0-9-_.]+"}, flags = {0})
+@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "storage.to"}, urls ={ "http://[\\w\\.]*?storage.to/get/[a-zA-Z0-9]+/[a-zA-Z0-9-_.]+"}, flags = {0})
 public class StorageTo extends PluginForHost {
 
     public StorageTo(PluginWrapper wrapper) {

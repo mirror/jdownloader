@@ -31,7 +31,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "xshareware.com"}, urls ={ "http://[\\w\\.]*?xshareware\\.com/[\\w]+/.*"}, flags = {0})
+@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "xshareware.com"}, urls ={ "http://[\\w\\.]*?xshareware\\.com/[\\w]+/.*"}, flags = {0})
 public class XsharewareCom extends PluginForHost {
 
     public XsharewareCom(PluginWrapper wrapper) {

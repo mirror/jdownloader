@@ -32,7 +32,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "przeklej.pl"}, urls ={ "http://[\\w\\.]*?przeklej\\.pl/(d/\\w+/|\\d+|plik/)[^\\s]+"}, flags = {0})
+@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "przeklej.pl"}, urls ={ "http://[\\w\\.]*?przeklej\\.pl/(d/\\w+/|\\d+|plik/)[^\\s]+"}, flags = {0})
 public class PrzeklejPl extends PluginForHost {
 
     private static final String PATTERN_PASSWORD_WRONG = "B.*?dnie podane has";

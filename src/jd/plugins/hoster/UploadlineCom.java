@@ -33,7 +33,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "uploadline.com"}, urls ={ "http://[\\w\\.]*?uploadline\\.com/\\d+/.+"}, flags = {0})
+@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "uploadline.com"}, urls ={ "http://[\\w\\.]*?uploadline\\.com/\\d+/.+"}, flags = {0})
 public class UploadlineCom extends PluginForHost {
 
     public UploadlineCom(PluginWrapper wrapper) {

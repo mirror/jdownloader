@@ -32,7 +32,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "6giga.com"}, urls ={ "http://[\\w\\.]*?6giga\\.com/."}, flags = {0})
+@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "6giga.com"}, urls ={ "http://[\\w\\.]*?6giga\\.com/."}, flags = {0})
 public class SixGigaCom extends PluginForHost {
 
     public SixGigaCom(PluginWrapper wrapper) {

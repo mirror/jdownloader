@@ -34,7 +34,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "qshare.com"}, urls ={ "http://[\\w\\.]*?qshare\\.com/get/[0-9]{1,20}/.*"}, flags = {2})
+@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "qshare.com"}, urls ={ "http://[\\w\\.]*?qshare\\.com/get/[0-9]{1,20}/.*"}, flags = {2})
 public class QshareCom extends PluginForHost {
     public QshareCom(PluginWrapper wrapper) {
         super(wrapper);

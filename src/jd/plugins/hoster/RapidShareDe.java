@@ -39,7 +39,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.RAFDownload;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "rapidshare.de"}, urls ={ "http://[w.]*?rapidshare.de/files/[d]{3,9}/.*"}, flags = {2})
+@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "rapidshare.de"}, urls ={ "http://[w.]*?rapidshare.de/files/[d]{3,9}/.*"}, flags = {2})
 public class RapidShareDe extends PluginForHost {
 
     public RapidShareDe(PluginWrapper wrapper) {

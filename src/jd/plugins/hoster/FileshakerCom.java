@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "fileshaker.com"}, urls ={ "http://[\\w\\.]*?fileshaker\\.com/.+"}, flags = {0})
+@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "fileshaker.com"}, urls ={ "http://[\\w\\.]*?fileshaker\\.com/.+"}, flags = {0})
 public class FileshakerCom extends PluginForHost {
 
     public FileshakerCom(PluginWrapper wrapper) {

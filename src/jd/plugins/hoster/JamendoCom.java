@@ -32,7 +32,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "jamendo.com"}, urls ={ "http://[\\w\\.]*?jamendo\\.com/.*.*/?(track|download/album)/\\d+"}, flags = {0})
+@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "jamendo.com"}, urls ={ "http://[\\w\\.]*?jamendo\\.com/.*.*/?(track|download/album)/\\d+"}, flags = {0})
 public class JamendoCom extends PluginForHost {
 
     private static String PREFER_HIGHQUALITY = "PREFER_HIGHQUALITY";

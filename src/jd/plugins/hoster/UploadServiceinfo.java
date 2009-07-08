@@ -31,7 +31,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "uploadservice.info"}, urls ={ "http://[\\w\\.]*?uploadservice\\.info/file/[\\w]+\\.html"}, flags = {0})
+@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "uploadservice.info"}, urls ={ "http://[\\w\\.]*?uploadservice\\.info/file/[\\w]+\\.html"}, flags = {0})
 public class UploadServiceinfo extends PluginForHost {
 
     public UploadServiceinfo(PluginWrapper wrapper) {

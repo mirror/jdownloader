@@ -32,7 +32,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDMediaConvert;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "youtube.com"}, urls ={ "http://[\\w\\.]*?youtube\\.com/get_video\\?video_id=.+&t=.+(&fmt=\\d+)?"}, flags = {2})
+@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "youtube.com"}, urls ={ "http://[\\w\\.]*?youtube\\.com/get_video\\?video_id=.+&t=.+(&fmt=\\d+)?"}, flags = {2})
 public class Youtube extends PluginForHost {
 
     public Youtube(PluginWrapper wrapper) {

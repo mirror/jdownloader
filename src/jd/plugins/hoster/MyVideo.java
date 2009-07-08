@@ -24,7 +24,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDMediaConvert;
 
-@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "myvideo.de"}, urls ={ "http://[\\w\\.]*?myvideo.*?/.*?/\\d+\\.flv"}, flags = {0})
+@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "myvideo.de"}, urls ={ "http://[\\w\\.]*?myvideo.*?/.*?/\\d+\\.flv"}, flags = {0})
 public class MyVideo extends PluginForHost {
     static private final String AGB = "http://www.myvideo.de/news.php?rubrik=jjghf&p=hm8";
 

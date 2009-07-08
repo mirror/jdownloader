@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "wrzuta.pl"}, urls ={ "http://[\\w\\.]*?wrzuta\\.pl/(audio|film|obraz)/\\w+.+"}, flags = {0})
+@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "wrzuta.pl"}, urls ={ "http://[\\w\\.]*?wrzuta\\.pl/(audio|film|obraz)/\\w+.+"}, flags = {0})
 public class WrzutaPl extends PluginForHost {
 
     private String filetype = null;

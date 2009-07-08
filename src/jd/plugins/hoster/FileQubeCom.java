@@ -27,7 +27,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "fileqube.com"}, urls ={ "http://[\\w\\.]*?fileqube\\.com/(file|shared)/[\\w]+"}, flags = {0})
+@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "fileqube.com"}, urls ={ "http://[\\w\\.]*?fileqube\\.com/(file|shared)/[\\w]+"}, flags = {0})
 public class FileQubeCom extends PluginForHost {
 
     public FileQubeCom(PluginWrapper wrapper) {

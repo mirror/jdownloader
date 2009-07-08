@@ -33,7 +33,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
 
-@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "egoshare.com"}, urls ={ "http://[\\w\\.]*?egoshare\\.com/download\\.php\\?id=[\\w]+"}, flags = {0})
+@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "egoshare.com"}, urls ={ "http://[\\w\\.]*?egoshare\\.com/download\\.php\\?id=[\\w]+"}, flags = {0})
 public class EgoshareCom extends PluginForHost {
 
     private String captchaCode;

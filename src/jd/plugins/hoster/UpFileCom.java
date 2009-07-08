@@ -28,7 +28,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "up-file.com"}, urls ={ "http://[\\w\\.]*?up-file\\.com/download/[a-z0-9]+"}, flags = {0})
+@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "up-file.com"}, urls ={ "http://[\\w\\.]*?up-file\\.com/download/[a-z0-9]+"}, flags = {0})
 public class UpFileCom extends PluginForHost {
 
     public UpFileCom(PluginWrapper wrapper) {

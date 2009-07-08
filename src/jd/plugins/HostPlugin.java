@@ -13,7 +13,7 @@ public @interface HostPlugin {
      * id if you changed the host plugin's interface. This will mark plugins
      * that do not fit as outdated.
      */
-    int INTERFACE_VERSION = 1;
+    int INTERFACE_VERSION = 2;
 
     /**
      * A list of pluginnames. A plugin may be used under various names.

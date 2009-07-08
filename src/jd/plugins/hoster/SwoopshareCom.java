@@ -25,7 +25,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "swoopshare.com"}, urls ={ "http://[\\w\\.]*?swoopshare\\.com/file/.*"}, flags = {0})
+@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "swoopshare.com"}, urls ={ "http://[\\w\\.]*?swoopshare\\.com/file/.*"}, flags = {0})
 public class SwoopshareCom extends PluginForHost {
 
     public SwoopshareCom(PluginWrapper wrapper) {

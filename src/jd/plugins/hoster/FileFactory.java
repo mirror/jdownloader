@@ -34,7 +34,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision="$Revision", interfaceVersion=1, names = { "filefactory.com"}, urls ={ "http://[\\w\\.]*?filefactory\\.com(/|//)file/[\\w]+/?"}, flags = {2})
+@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "filefactory.com"}, urls ={ "http://[\\w\\.]*?filefactory\\.com(/|//)file/[\\w]+/?"}, flags = {2})
 public class FileFactory extends PluginForHost {
 
     private static Pattern baseLink = Pattern.compile("action=\"(\\/dlf.*).\\ ", Pattern.CASE_INSENSITIVE);
