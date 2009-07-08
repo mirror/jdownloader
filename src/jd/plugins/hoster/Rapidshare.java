@@ -221,6 +221,7 @@ public class Rapidshare extends PluginForHost {
                 StringBuilder namelist = new StringBuilder();
                 checkurls.removeAll(finishedurls);
                 for (DownloadLink u : checkurls) {
+                    System.out.println(u.getDownloadURL());
                     idlist.append("," + getID(u.getDownloadURL()));
                     namelist.append("," + getName(u.getDownloadURL()));
                 }

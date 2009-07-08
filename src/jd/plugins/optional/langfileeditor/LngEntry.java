@@ -16,14 +16,16 @@
 
 package jd.plugins.optional.langfileeditor;
 
-public class LngEntry {
+import java.io.Serializable;
+
+public class LngEntry implements Serializable {
 
     private String value;
 
     private String key;
 
     public LngEntry(String key, String value) {
-        this.key = key;
+        this.key = key.toLowerCase();
         this.value = value;
     }
 

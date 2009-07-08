@@ -50,6 +50,7 @@ public class SrcParser {
             }
 
         };
+        pattern.add("sys\\.warning\\.dlcerror\\.(.+?)");
     }
 
     public JDBroadcaster<MessageListener, MessageEvent> getBroadcaster() {
@@ -68,6 +69,15 @@ public class SrcParser {
     private ArrayList<LngEntry> entries;
     private File currentFile;
     private String currentContent;
+    private ArrayList<String> pattern = new ArrayList<String>();
+
+    public ArrayList<String> getPattern() {
+        return pattern;
+    }
+
+    public void setPattern(ArrayList<String> pattern) {
+        this.pattern = pattern;
+    }
 
     public void parse() {
 
@@ -152,115 +162,21 @@ public class SrcParser {
                 String[] strings = new Regex(m, pat_string).getColumn(0);
                 m = m.replace("\r", "");
                 m = m.replace("\n", "");
-              
+
                 m = m.replaceAll(pat_string, "%%%S%%%");
 
                 m = m.replace(" ", "");
-                orgm=m;
+                orgm = m;
                 m = new Regex(m, "\\((.*?\\,.*?)[\\)\\,]").getMatch(0);
                 if (m == null) {
-//                    JDLogger.getLogger().severe("unknown: " + orgm);
+                    // JDLogger.getLogger().severe("unknown: " + orgm);
                     continue;
                 }
                 String[] parameter = m.split(",");
-             
+
                 if (orgm.startsWith(".LF")) {
-                    
+
                     if (orgm.substring(3).trim().charAt(0) != '(') {
-
-                        JDLogger.getLogger().severe("Mailformated translation value in " + currentFile + " : " + m);
-                        continue;
-                    }
-                    if (parameter.length !=2) {
-
-                        JDLogger.getLogger().severe("Mailformated translation pair (inner functions?) in " + currentFile + " : " + match);
-                        continue;
-                    }
-                    int i = 0;
-                    if (parameter[1].contains("+")) {
-                        JDLogger.getLogger().severe("Mailformated translation value in " + currentFile + " : " + match);
-                        continue;
-                    }
-
-                    /*
-                     * merge expressions
-                     */
-                    merge: while (parameter[0].contains("+")) {
-                        try {
-                            String[][] matches = new Regex(parameter[0], "(\\+(\\w+)\\+?)").getMatches();
-                            for (String[] mm : matches) {
-                                try {
-                                    String value = getValueOf(mm[1]);
-                                    parameter[0] = parameter[0].replace(mm[0], value);
-
-                                } catch (Exception e) {
-
-                                    JDLogger.getLogger().severe("Mailformated translation key in " + currentFile + " : " + match);
-                                    break main;
-                                }
-                            }
-
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                            break;
-                        }
-
-                        try {
-                            String[][] matches = new Regex(parameter[0], "(\\+?(\\w+)\\+)").getMatches();
-                            for (String[] mm : matches) {
-                                try {
-                                    String value = getValueOf(mm[1]);
-                                    parameter[0] = parameter[0].replace(mm[0], value);
-
-                                } catch (Exception e) {
-                                    JDLogger.getLogger().severe("Mailformated translation key in " + currentFile + " : " + match);
-                                    break main;
-                                }
-                            }
-
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                            break;
-                        }
-
-                    }
-                    for (int x = 0; x < parameter.length; x++) {
-
-                        while (parameter[x].contains("%%%S%%%")) {
-
-                            parameter[x] = parameter[x].replaceFirst("%%%S%%%", Matcher.quoteReplacement(strings[i++]));
-                        }
-
-                    }
-                    String error;
-                    if ((error=new Regex(parameter[0],"([\\(\\)\\{\\}\\/\\\\\\$\\&\\+\\~\\#\\\"\\!\\?]+)").getMatch(0))!=null) {
-                        
-                        int index=parameter[0].indexOf(error);
-                        if(index>=0){
-                            JDLogger.getLogger().warning(" Unsupported chars ("+parameter[0].substring(0,index)+"<< |"+parameter[0].substring(index+1)+") in key:" + currentFile + " : " + parameter[0]);
-                            
-                        }else{
-                            JDLogger.getLogger().warning(" Unsupported chars in key:" + currentFile + " : " + parameter[0]);
-                             
-                        }
-                        continue;
-                    }
-                    if (!parameter[0].contains(".")) {
-                        JDLogger.getLogger().warning(" Prob. Malformated translation key in " + currentFile + " : " + match);
-                    }
-                    if (parameter[0].contains("null")) {
-                        JDLogger.getLogger().warning(" Prob. Malformated translation key in " + currentFile + " : " + match);
-                    }
-                    entry = new LngEntry(parameter[0], parameter[1]);
-                    if (!hasEntry(entry)) {
-                        entries.add(entry);
-                        System.out.println("LF  "+Formatter.fillInteger(entries.size(), 3, "0") + " " + entry);
-                        broadcaster.fireEvent(new MessageEvent(this, PARSE_NEW_ENTRY, "LF  "+Formatter.fillInteger(entries.size(), 3, "0") + " " + entry));
-
-                    }
-                } else if (orgm.startsWith(".L")) {
-                  
-                    if (orgm.substring(2).trim().charAt(0) != '(') {
 
                         JDLogger.getLogger().severe("Mailformated translation value in " + currentFile + " : " + m);
                         continue;
@@ -307,7 +223,7 @@ public class SrcParser {
                                     parameter[0] = parameter[0].replace(mm[0], value);
 
                                 } catch (Exception e) {
-                                    JDLogger.getLogger().severe("Mailformated translation key in " + currentFile + " : " + match);
+                                    JDLogger.getLogger().severe("Mailformated translation key in 2" + currentFile + " : " + match);
                                     break main;
                                 }
                             }
@@ -326,34 +242,136 @@ public class SrcParser {
                         }
 
                     }
-                    
-                    
+                    String error;
+                    if ((error = new Regex(parameter[0], "([\\(\\)\\{\\}\\/\\\\\\$\\&\\+\\~\\#\\\"\\!\\?]+)").getMatch(0)) != null) {
+
+                        int index = parameter[0].indexOf(error);
+                        if (index >= 0) {
+                            JDLogger.getLogger().warning(" Unsupported chars (" + parameter[0].substring(0, index) + "<< |" + parameter[0].substring(index + 1) + ") in key:" + currentFile + " : " + parameter[0]);
+
+                        } else {
+                            JDLogger.getLogger().warning(" Unsupported chars in key:" + currentFile + " : " + parameter[0]);
+
+                        }
+                        continue;
+                    }
+                    if (!parameter[0].contains(".")) {
+                        JDLogger.getLogger().warning(" Prob. Malformated translation key in " + currentFile + " : " + match);
+                    }
+                    if (parameter[0].contains("null")) {
+                        JDLogger.getLogger().warning(" Prob. Malformated translation key in " + currentFile + " : " + match);
+                    }
+                    entry = new LngEntry(parameter[0], parameter[1]);
+                    if (!hasEntry(entry)) {
+                        entries.add(entry);
+                        System.out.println("LF  " + Formatter.fillInteger(entries.size(), 3, "0") + " " + entry);
+                        broadcaster.fireEvent(new MessageEvent(this, PARSE_NEW_ENTRY, "LF  " + Formatter.fillInteger(entries.size(), 3, "0") + " " + entry));
+
+                    }
+                } else if (orgm.startsWith(".L")) {
+
+                    if (orgm.substring(2).trim().charAt(0) != '(') {
+
+                        JDLogger.getLogger().severe("Mailformated translation value in " + currentFile + " : " + m);
+                        continue;
+                    }
+                    if (parameter.length != 2) {
+
+                        JDLogger.getLogger().severe("Mailformated translation pair (inner functions?) in " + currentFile + " : " + match);
+                        continue;
+                    }
+                    int i = 0;
+                    if (parameter[1].contains("+")) {
+                        JDLogger.getLogger().severe("Mailformated translation value in " + currentFile + " : " + match);
+                        continue;
+                    }
+
+                    /*
+                     * merge expressions
+                     */
+                    merge: while (parameter[0].contains("+")) {
+                        try {
+                            String[][] matches = new Regex(parameter[0], "(\\+([^%]+)\\+?)").getMatches();
+                            for (String[] mm : matches) {
+                                try {
+                                    String value = getValueOf(mm[1]);
+                                    System.out.println(mm[0]+" - "+mm[1]);
+                                    parameter[0] = parameter[0].replace(mm[0], value);
+
+                                } catch (Exception e) {
+                                    parameter[0]= parameter[0].replace(mm[0], "*");
+                                    JDLogger.getLogger().severe("Pattern match in" + currentFile + " : " + match);
+                                 
+                                }
+                            }
+
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            break;
+                        }
+
+                        try {
+                            String[][] matches = new Regex(parameter[0], "(\\+?([^%]+)\\+)").getMatches();
+                            for (String[] mm : matches) {
+                                try {
+                                    String value = getValueOf(mm[1]);
+                                    parameter[0] = parameter[0].replace(mm[0], value);
+
+                                } catch (Exception e) {
+                                    JDLogger.getLogger().severe("Mailformated translation key in 1" + currentFile + " : " + match);
+                                    break main;
+                                }
+                            }
+
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            break;
+                        }
+
+                    }
+                    for (int x = 0; x < parameter.length; x++) {
+
+                        while (parameter[x].contains("%%%S%%%")) {
+
+                            parameter[x] = parameter[x].replaceFirst("%%%S%%%", Matcher.quoteReplacement(strings[i++]));
+                        }
+
+                    }
 
                     String error;
-                    if ((error=new Regex(parameter[0],"([\\(\\)\\{\\}\\/\\\\\\$\\&\\+\\~\\#\\\"\\!\\?]+)").getMatch(0))!=null) {
-                        
-                        int index=parameter[0].indexOf(error);
-                        if(index>=0){
-                            JDLogger.getLogger().warning(" Unsupported chars ("+parameter[0].substring(0,index)+"<< |"+parameter[0].substring(index+1)+") in key:" + currentFile + " : " + parameter[0]);
-                            
-                        }else{
+                    if ((error = new Regex(parameter[0], "([\\(\\)\\{\\}\\/\\\\\\$\\&\\+\\~\\#\\\"\\!\\?]+)").getMatch(0)) != null) {
+
+                        int index = parameter[0].indexOf(error);
+                        if (index >= 0) {
+                            JDLogger.getLogger().warning(" Unsupported chars (" + parameter[0].substring(0, index) + "<< |" + parameter[0].substring(index + 1) + ") in key:" + currentFile + " : " + parameter[0]);
+
+                        } else {
                             JDLogger.getLogger().warning(" Unsupported chars in key:" + currentFile + " : " + parameter[0]);
-                             
+
                         }
                         continue;
                     }
                     if (!parameter[0].contains(".")) {
                         JDLogger.getLogger().warning(" Prob. Mailformated translation key in " + currentFile + " : " + match);
+                        break;
                     }
                     if (parameter[0].contains("null")) {
                         JDLogger.getLogger().warning(" Prob. Mailformated translation key in " + currentFile + " : " + match);
+                        break;
                     }
-                    entry = new LngEntry(parameter[0], parameter[1]);
-                    if (!hasEntry(entry)) {
-                        entries.add(entry);
-                        System.out.println("L   "+Formatter.fillInteger(entries.size(), 3, "0") + " " + entry);
-                        broadcaster.fireEvent(new MessageEvent(this, PARSE_NEW_ENTRY, "L   "+Formatter.fillInteger(entries.size(), 3, "0") + " " + entry));
 
+                    if (parameter[0].contains("*")) {
+                        String patt = parameter[0].replace(".", "\\.").replace("*", "(.+?)");
+                        if(!pattern.contains(patt))pattern.add(patt);
+                    } else {
+                        entry = new LngEntry(parameter[0], parameter[1]);
+
+                        if (!hasEntry(entry)) {
+                            entries.add(entry);
+                            System.out.println("L   " + Formatter.fillInteger(entries.size(), 3, "0") + " " + entry);
+                            broadcaster.fireEvent(new MessageEvent(this, PARSE_NEW_ENTRY, "L   " + Formatter.fillInteger(entries.size(), 3, "0") + " " + entry));
+
+                        }
                     }
                 }
 
@@ -378,5 +396,23 @@ public class SrcParser {
             if (e.getKey().equalsIgnoreCase(entry.getKey())) return true;
         }
         return false;
+    }
+
+    public void parseDefault(File file) {
+        String[] entries = Regex.getLines(JDIO.getLocalFile(file));
+
+        for (String line : entries) {
+            if (line.startsWith("#pattern: ")){
+                pattern.add(line.substring(10));
+                continue;
+                
+                
+            }
+            if (line.startsWith("#")) continue;
+            String key = line.substring(0, line.indexOf("=")).trim();
+            String value = line.substring(line.indexOf("=") + 1).trim();
+            this.entries.add(new LngEntry(key, value));
+        }
+
     }
 }

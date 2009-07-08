@@ -45,11 +45,13 @@ import org.tmatesoft.svn.core.io.ISVNReporterBaton;
 import org.tmatesoft.svn.core.io.SVNRepository;
 import org.tmatesoft.svn.core.wc.ISVNCommitParameters;
 import org.tmatesoft.svn.core.wc.ISVNEventHandler;
+import org.tmatesoft.svn.core.wc.ISVNInfoHandler;
 import org.tmatesoft.svn.core.wc.SVNClientManager;
 import org.tmatesoft.svn.core.wc.SVNCommitClient;
 import org.tmatesoft.svn.core.wc.SVNCommitPacket;
 import org.tmatesoft.svn.core.wc.SVNEvent;
 import org.tmatesoft.svn.core.wc.SVNEventAction;
+import org.tmatesoft.svn.core.wc.SVNInfo;
 import org.tmatesoft.svn.core.wc.SVNRevision;
 import org.tmatesoft.svn.core.wc.SVNStatusType;
 import org.tmatesoft.svn.core.wc.SVNUpdateClient;
@@ -58,6 +60,7 @@ import org.tmatesoft.svn.core.wc.SVNWCUtil;
 
 public class Subversion implements ISVNEventHandler {
 
+    private static final String PROPERTY_SVN_ACCESS_USER = null;
     private SVNRepository repository;
     private SVNURL svnurl;
     private String user;
@@ -177,6 +180,7 @@ public class Subversion implements ISVNEventHandler {
         file.mkdirs();
 
         SVNUpdateClient updateClient = this.getUpdateClient();
+
         updateClient.setIgnoreExternals(false);
         if (revision == null) revision = SVNRevision.HEAD;
 
@@ -243,7 +247,7 @@ public class Subversion implements ISVNEventHandler {
         return null;
     }
 
-    private SVNWCClient getWCClient() {
+    public SVNWCClient getWCClient() {
         if (wcClient == null) {
             wcClient = getClientManager().getWCClient();
             wcClient.setEventHandler(this);
@@ -256,6 +260,78 @@ public class Subversion implements ISVNEventHandler {
     public void showInfo(File wcPath, SVNRevision revision, boolean isRecursive) throws SVNException {
         if (revision == null) revision = SVNRevision.HEAD;
         getWCClient().doInfo(wcPath, revision, isRecursive, new InfoEventHandler());
+    }
+
+    public static void main(String[] args) throws SVNException {
+
+        Subversion svn = new Subversion("svn://svn.jdownloader.org/jdownloader/trunk/ressourcen/jd/languages", "", "");
+
+        File file;
+        file = new File("C:\\Users\\Coalado\\.jd_home\\tmp\\lfe\\lng\\en.loc");
+        // svn.commit(file, "");
+        svn.update(file, SVNRevision.HEAD);
+        svn.resolveConflicts(file.getParentFile(), new ResolveHandler() {
+
+            public String resolveConflict(String contents, int startMine, int endMine, int startTheirs, int endTheirs) {
+                String mine = contents.substring(startMine, endMine).trim();
+                String theirs = contents.substring(startTheirs, endTheirs).trim();
+
+                return mine;
+            }
+
+        });
+        svn.commit(file, "resolved");
+        ;
+    }
+
+    private void resolveConflicts(File file, final ResolveHandler handler) throws SVNException {
+
+        getWCClient().doInfo(file, SVNRevision.UNDEFINED, SVNRevision.WORKING, SVNDepth.getInfinityOrEmptyDepth(true), null, new ISVNInfoHandler() {
+
+            public void handleInfo(SVNInfo info) {
+                File file = info.getConflictWrkFile();
+                if (file != null) {
+
+                    try {
+                        getWCClient().doResolve(info.getFile(), SVNDepth.INFINITY, null);
+                        resolveConflictedFile(info.getFile(), handler);
+
+                        System.out.println(file);
+
+                    } catch (SVNException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
+                }
+
+            }
+
+        });
+
+        //       
+
+    }
+
+    public void resolveConflictedFile(File file, ResolveHandler handler) {
+        final String mine = "<<<<<<< .mine";
+        final String delim = "=======";
+        final String theirs = ">>>>>>> .r";
+        String txt = JDIO.getLocalFile(file);
+        while (true) {
+            int mineStart = txt.indexOf(mine);
+
+            if (mineStart < 0) break;
+            mineStart += mine.length();
+            int delimStart = txt.indexOf(delim, mineStart);
+            int theirsEnd = txt.indexOf(theirs, delimStart + delim.length());
+            while (txt.charAt(theirsEnd++) >= 48 && txt.charAt(theirsEnd) <= 57) {
+            }
+            ;
+            theirsEnd--;
+            txt = txt.substring(0, mineStart - mine.length()) + handler.resolveConflict(txt, mineStart, delimStart, delimStart + delim.length(), theirsEnd) + txt.substring(theirsEnd + theirs.length());
+        }
+        JDIO.writeLocalFile(file, txt);
+
     }
 
     @SuppressWarnings("deprecation")
@@ -421,6 +497,7 @@ public class Subversion implements ISVNEventHandler {
                  * received from the repository during an update, overlap with
                  * local changes the user has in his working copy.
                  */
+
                 pathChangeType = "C";
             } else if (contentsStatus == SVNStatusType.MERGED) {
                 /*
@@ -528,6 +605,5 @@ public class Subversion implements ISVNEventHandler {
         // TODO Auto-generated method stub
 
     }
-
 
 }

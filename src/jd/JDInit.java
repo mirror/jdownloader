@@ -567,14 +567,15 @@ public class JDInit {
     private static List<Class<?>> findPlugins(URL directory, String packageName, ClassLoader classLoader) throws ClassNotFoundException, URISyntaxException {
         List<Class<?>> classes = new ArrayList<Class<?>>();
         logger.finest("Find classes in " + directory + " : " + packageName);
-        File[] files = null;
-        logger.finest("path  " + directory.toURI().getPath());
 
-        try {
-            files = new File(directory.toURI().getPath()).listFiles();
-        } catch (Exception e) {
-            JDLogger.exception(e);
-            ;
+        File[] files=null;
+        logger.finest("path  "+directory.toURI().getPath());
+        
+        try{
+        files= new File(directory.toURI().getPath()).listFiles();
+        }catch(Exception e){
+//            JDLogger.exception(e);;
+
         }
         logger.finest("tofile " + directory.toURI().getPath());
         logger.finest("list " + files);

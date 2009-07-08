@@ -554,8 +554,8 @@ public class JDGeoCode {
         String[] p = JDGeoCode.parseLanguageCode(string);
         String language = LANGUAGES.get(p[0])[0];
         String country = COUNTRIES.get(p[1]);
-        String extension = EXTENSIONS.get(p[1]);
-
+        String extension = EXTENSIONS.get(p[2]);
+        if (extension == null) extension = p[2];
         String ret = language;
         if (country != null) {
             ret += " [" + country;

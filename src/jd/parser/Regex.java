@@ -190,6 +190,7 @@ public class Regex {
             }
             ar.add(group);
         }
+        if(ar.size()==0)return new String[][] {};
         return ar.toArray(new String[][] {});
     }
 

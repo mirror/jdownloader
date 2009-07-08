@@ -20,6 +20,8 @@ import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.MenuItem;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.SingletonPanel;
@@ -40,7 +42,23 @@ public class LangFileEditor extends PluginOptional {
 
     public LangFileEditor(PluginWrapper wrapper) {
         super(wrapper);
-        lfe = new SingletonPanel(LFEGui.class);
+        lfe = new SingletonPanel(LFEGui.class, this.getPluginConfig());
+        initConfigEntries();
+    }
+
+    private void initConfigEntries() {
+        ConfigEntry cfg;
+
+        ConfigEntry cond;
+        config.addEntry(cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), LFEGui.PROPERTY_SVN_ACCESS_ANONYMOUS, "Do not upload(SVN) changes on save").setDefaultValue(true));
+
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), LFEGui.PROPERTY_SVN_ACCESS_USER, "Upload(SVN) Username"));
+      
+        cfg.setEnabledCondidtion(cond, "==", false);
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, getPluginConfig(), LFEGui.PROPERTY_SVN_ACCESS_PASS, "Upload (SVN) Password"));
+       
+        cfg.setEnabledCondidtion(cond, "==", false);
+
     }
 
     // @Override
@@ -63,7 +81,7 @@ public class LangFileEditor extends PluginOptional {
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
 
-        menu.add(new MenuItem(MenuItem.NORMAL, getHost(), 0).setActionListener(this));
+        menu.add(new MenuItem(MenuItem.NORMAL, "Show", 0).setActionListener(this));
 
         return menu;
     }
