@@ -35,8 +35,8 @@ public class OwLy extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        br.getPage(parameter);
         br.setFollowRedirects(false);
-        System.out.println("Seite::::::::::::::\n"+br.getPage(parameter));
         String declink = br.getRegex("<iframe frameborder=\"0\"  src=\"(.*?)\"").getMatch(0);
         decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(declink)));
         return decryptedLinks;
