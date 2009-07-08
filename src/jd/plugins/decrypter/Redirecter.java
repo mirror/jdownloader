@@ -29,28 +29,22 @@ public class Redirecter extends PluginForDecrypt {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         String declink;
         // Workaround for preview.tinyurl.com Links
         parameter = parameter.replaceFirst("preview\\.tinyurl\\.com", "tinyurl\\.com");
-        if (parameter.contains("ow.ly")) {
-            br.setFollowRedirects(false);
-            br.getPage(parameter);
-            declink = br.getRegex("<iframe frameborder=\"0\"  src=\"(.*?)\"").getMatch(0);
-        } else {
-            br.getPage(parameter);
-            if ((declink = br.getRedirectLocation()) == null) {
-                return null;
-            }
-        }
+        br.getPage(parameter);
+        declink = br.getRedirectLocation();
+        if (declink == null) declink = br.getRegex("<iframe frameborder=\"0\"  src=\"(.*?)\"").getMatch(0);
+        if (declink == null) return null;
         decryptedLinks.add(createDownloadlink(declink));
         return decryptedLinks;
     }
 
-    //@Override
+    // @Override
     public String getVersion() {
         return getVersion("$Revision$");
     }

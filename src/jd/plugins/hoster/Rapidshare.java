@@ -221,7 +221,6 @@ public class Rapidshare extends PluginForHost {
                 StringBuilder namelist = new StringBuilder();
                 checkurls.removeAll(finishedurls);
                 for (DownloadLink u : checkurls) {
-                    System.out.println(u.getDownloadURL());
                     idlist.append("," + getID(u.getDownloadURL()));
                     namelist.append("," + getName(u.getDownloadURL()));
                 }
@@ -796,9 +795,9 @@ public class Rapidshare extends PluginForHost {
     }
 
     // @Override
-    /* public String getVersion() {
-        return getVersion("$Revision$");
-    } */
+    /*
+     * public String getVersion() { return getVersion("$Revision$"); }
+     */
 
     private void reportUnknownError(Object req, int id) {
         logger.severe("Unknown error(" + id + "). please add this htmlcode to your bugreport:\r\n" + req);
