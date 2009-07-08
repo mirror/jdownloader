@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -34,14 +33,20 @@ public class Redirecter extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-
+        String declink;
         // Workaround for preview.tinyurl.com Links
         parameter = parameter.replaceFirst("preview\\.tinyurl\\.com", "tinyurl\\.com");
-
-        br.getPage(parameter);
-        if (br.getRedirectLocation() == null) return null;
-        decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
-
+        if (parameter.contains("ow.ly")) {
+            br.setFollowRedirects(false);
+            br.getPage(parameter);
+            declink = br.getRegex("<iframe frameborder=\"0\"  src=\"(.*?)\"").getMatch(0);
+        } else {
+            br.getPage(parameter);
+            if ((declink = br.getRedirectLocation()) == null) {
+                return null;
+            }
+        }
+        decryptedLinks.add(createDownloadlink(declink));
         return decryptedLinks;
     }
 
