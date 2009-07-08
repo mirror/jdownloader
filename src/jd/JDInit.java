@@ -489,6 +489,7 @@ public class JDInit {
         new DecryptPluginWrapper("gazup.com", "GazUpCom", "http://[\\w\\.]*?.gazup\\.com/.+");
         new DecryptPluginWrapper("anonym.to", "AnonymTo", "http://[\\w\\.]*?anonym\\.to/\\?.+");
         new DecryptPluginWrapper("qooy.com", "QooyCom", "http://[\\w\\.]*?qooy\\.com/files/[0-9A-Z]+/[0-9a-zA-z.]+");
+        new DecryptPluginWrapper("free-url.net", "FreeUrlNet", "http://[\\w\\.]*?free-url\\.net/[0-9]+/");
         
         // Decrypter from Extern
 
