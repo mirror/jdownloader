@@ -1,4 +1,4 @@
-#Rev6547
+#Rev6550
 train.chooser.title = jDownloader :: TrainAll
 showcaptcha.chooser.title = jDownloader :: Show Captcha
 train.choose.folder = Wählen sie einen Ordner aus
@@ -435,7 +435,6 @@ convert.dialog.staykeepingformat = Formate weiterhin beibehalten
 convert.dialog.chooseformat = Wähle das Dateiformat:
 gui.captchawindow.askforinput = Bitte eingeben!
 gui.tooltips.infocollapser = Click to close and save
-t = text
 gui.quickhelp.text = Click for help: %s
 gui.textcomponent.context.cut = Ausschneiden
 gui.textcomponent.context.cut.acc = ctrl X
@@ -576,8 +575,6 @@ gui.menu.add = gui.menu.add
 gui.startmenu.addons.config2 = %s's settings
 gui.menu.addons = gui.menu.addons
 gui.menu.remove = gui.menu.remove
-null = null
-name = null
 gui.menu.premium = gui.menu.premium
 gui.menu.save = gui.menu.save
 gui.progresspane.title = %s module(s) running
@@ -1158,7 +1155,6 @@ convert.progress.convertingto = Konvertiere zu
 convert.progress.unknownintype = Unbekanntes Format
 gui.linkgrabber.password = Password?
 gui.mainframe.title.updatemessage = -->UPDATES VERFÜGBAR:
-key = def
 replacer.password = Last finished package: Password
 replacer.filelist = Last finished package: Filelist
 replacer.packagename = Last finished package: Packagename
