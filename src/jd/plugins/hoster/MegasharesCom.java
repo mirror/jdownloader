@@ -42,7 +42,7 @@ import jd.utils.locale.JDL;
 
 /*TODO: Support für andere Linkcards(bestimmte Anzahl Downloads,unlimited usw) einbauen*/
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "megashares.com"}, urls ={ "http://[\\w\\.]*?(d[0-9]{2}\\.)?megashares\\.com/(.*\\?d[0-9]{2}=[0-9a-f]{7}|.*?dl/[0-9a-f]+/)"}, flags = {2})
+@HostPlugin(revision = "$Revision", interfaceVersion = 2, names = { "megashares.com" }, urls = { "http://[\\w\\.]*?(d[0-9]{2}\\.)?megashares\\.com/(.*\\?d[0-9]{2}=[0-9a-f]{7}|.*?dl/[0-9a-f]+/)" }, flags = { 2 })
 public class MegasharesCom extends PluginForHost {
 
     public MegasharesCom(PluginWrapper wrapper) {
@@ -160,10 +160,7 @@ public class MegasharesCom extends PluginForHost {
                 linkStatus.setValue(30 * 1000l);
                 return;
             }
-            loadpage(downloadLink.getDownloadURL());
-            if (br.containsHTML("continue using Free service")) {
-                loadpage(downloadLink.getDownloadURL());
-            }
+            requestFileInformation(downloadLink);
             if (!checkPassword(downloadLink)) { return; }
         }
         // Downloadlink
@@ -223,7 +220,7 @@ public class MegasharesCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
         loadpage(downloadLink.getDownloadURL());
-        if (br.containsHTML("continue using Free service")) {
+        if (br.containsHTML("class=\"button_free\">")) {
             loadpage(downloadLink.getDownloadURL());
         }
         if (br.containsHTML("You already have the maximum")) {
@@ -239,7 +236,15 @@ public class MegasharesCom extends PluginForHost {
             return AvailableStatus.UNCHECKABLE;
         }
         String dsize = br.getRegex("<dt>Filename:.*?<strong>.*?</strong>.*?size:(.*?)</dt>").getMatch(0);
+        /*
+         * besserer match da name nicht abgeschnitten wird, aber im falle eines
+         * neuen tickets fehlt dieser tag
+         */
         String fln = br.getRegex("fln=/(.*?)\">Click here to download").getMatch(0);
+        /*
+         * notfall regex , falls grad ticket benötigt wird
+         */
+        if (fln == null) fln = br.getRegex("<dt>Filename:.*?<strong>(.*?)</strong>").getMatch(0);
         if (dsize == null || fln == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(fln.trim());
         downloadLink.setDownloadSize(Regex.getSize(dsize));
@@ -247,9 +252,9 @@ public class MegasharesCom extends PluginForHost {
     }
 
     // @Override
-    /* public String getVersion() {
-        return getVersion("$Revision$");
-    } */
+    /*
+     * public String getVersion() { return getVersion("$Revision$"); }
+     */
 
     // @Override
     public int getMaxSimultanFreeDownloadNum() {
@@ -272,7 +277,6 @@ public class MegasharesCom extends PluginForHost {
 
     // @Override
     public void resetDownloadlink(DownloadLink link) {
-        link.setProperty("pass", null);
     }
 
 }

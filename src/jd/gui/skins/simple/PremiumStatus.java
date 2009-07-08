@@ -369,10 +369,9 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
         if (updateinprogress) return;
         new Thread() {
             public void run() {
-                if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) return;
                 this.setName("PremiumStatus: update");
                 updateinprogress = true;
-                if (!updating) updatePremium();
+                if (!updating && !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) updatePremium();
                 redraw();
                 updateinprogress = false;
             }

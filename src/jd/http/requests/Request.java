@@ -17,6 +17,7 @@
 package jd.http.requests;
 
 import java.io.BufferedReader;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -517,6 +518,8 @@ public abstract class Request {
             while ((line = rd.readLine()) != null) {
                 htmlCode.append(line + "\r\n");
             }
+        } catch (EOFException e) {
+            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Try workaround for ", e);
         } catch (IOException e) {
             if (e.toString().contains("end of ZLIB") || e.toString().contains("Premature")) {
                 jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Try workaround for ", e);
