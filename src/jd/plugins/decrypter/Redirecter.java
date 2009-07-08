@@ -19,6 +19,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -36,6 +37,9 @@ public class Redirecter extends PluginForDecrypt {
         String declink;
         // Workaround for preview.tinyurl.com Links
         parameter = parameter.replaceFirst("preview\\.tinyurl\\.com", "tinyurl\\.com");
+
+        // Workaround for ponyurl.com Links
+        parameter = parameter.replace("ponyurl.com/", "ponyurl.com/forward.php?");
         br.getPage(parameter);
         declink = br.getRedirectLocation();
         if (declink == null) declink = br.getRegex("<iframe frameborder=\"0\"  src=\"(.*?)\"").getMatch(0);
