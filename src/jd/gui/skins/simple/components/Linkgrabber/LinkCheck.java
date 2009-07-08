@@ -98,10 +98,7 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
             long timer = System.currentTimeMillis();
             boolean ret = ((PluginForHost) link.getPlugin().getWrapper().getNewPluginInstance()).checkLinks(hosterList.toArray(new DownloadLink[] {}));
 
-      
             if (!ret) {
-                
-             
                 for (int i = 0; i < hosterList.size(); i++) {
                     link = hosterList.get(i);
                     if (!checkRunning) return;
@@ -112,11 +109,11 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
                     pc.increase(1);
                 }
             } else {
+                long reqtime = System.currentTimeMillis() - timer;
                 for (DownloadLink d : hosterList) {
-                    d.setRequestTime(System.currentTimeMillis() - timer);
+                    d.setRequestTime(reqtime);
                     if (d.getLinkStatus().getStatusText() == null || d.getLinkStatus().getStatusText().trim().length() == 0) {
                         d.getLinkStatus().setStatusText(JDL.LF("jd.gui.skins.simple.components.linkgrabber.linkcheck.downloadlink.statustext.requesttime", "Requesttime: %s", Formatter.formatMilliseconds(System.currentTimeMillis() - timer)));
-
                     }
                 }
                 getBroadcaster().fireEvent(new LinkCheckEvent(this, LinkCheckEvent.AFTER_CHECK, hosterList));

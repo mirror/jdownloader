@@ -321,31 +321,32 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
     public void sort(final int col) {
         lastSort = !lastSort;
         synchronized (packages) {
-            Collections.sort(packages, new Comparator<LinkGrabberFilePackage>() {
-
-                public int compare(LinkGrabberFilePackage a, LinkGrabberFilePackage b) {
-                    LinkGrabberFilePackage aa = a;
-                    LinkGrabberFilePackage bb = b;
-                    if (lastSort) {
-                        aa = b;
-                        bb = a;
-                    }
-                    switch (col) {
-                    case 0:
-                        return aa.getName().compareToIgnoreCase(bb.getName());
-                    case 1:
-                        return aa.getDownloadSize(false) > bb.getDownloadSize(false) ? 1 : -1;
-                    case 2:
-                        return aa.getHoster().compareToIgnoreCase(bb.getHoster());
-                    case 3:
-                        return aa.countFailedLinks(false) > bb.countFailedLinks(false) ? 1 : -1;
-                    default:
-                        return -1;
-                    }
-
+            if (col == 3) {
+                for (LinkGrabberFilePackage fp : packages) {
+                    fp.sort(3, lastSort);
                 }
-
-            });
+            } else {
+                Collections.sort(packages, new Comparator<LinkGrabberFilePackage>() {
+                    public int compare(LinkGrabberFilePackage a, LinkGrabberFilePackage b) {
+                        LinkGrabberFilePackage aa = a;
+                        LinkGrabberFilePackage bb = b;
+                        if (lastSort) {
+                            aa = b;
+                            bb = a;
+                        }
+                        switch (col) {
+                        case 0:
+                            return aa.getName().compareToIgnoreCase(bb.getName());
+                        case 1:
+                            return aa.getDownloadSize(false) > bb.getDownloadSize(false) ? 1 : -1;
+                        case 2:
+                            return aa.getHoster().compareToIgnoreCase(bb.getHoster());
+                        default:
+                            return -1;
+                        }
+                    }
+                });
+            }
         }
         broadcaster.fireEvent(new LinkGrabberControllerEvent(this, LinkGrabberControllerEvent.REFRESH_STRUCTURE));
     }

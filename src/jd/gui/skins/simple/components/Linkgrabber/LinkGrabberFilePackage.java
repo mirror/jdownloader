@@ -423,8 +423,8 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
                     case 2:
                         return aa.getHost().compareToIgnoreCase(bb.getHost());
                     case 3:
-                        if (aa.isAvailabilityStatusChecked() && bb.isAvailabilityStatusChecked()) {
-                            return (aa.isAvailable() && !bb.isAvailable()) ? 1 : -1;
+                        if (aa.getLinkStatus().getStatusText() != null && bb.getLinkStatus().getStatusText() != null) {
+                            return aa.getLinkStatus().getStatusText().compareToIgnoreCase(bb.getLinkStatus().getStatusText());
                         } else
                             return -1;
                     default:
