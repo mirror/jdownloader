@@ -383,6 +383,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
                     if (fp == null) {
                         fp = new LinkGrabberFilePackage(packageName, this);
                     }
+                    fp.setPassword(link.getFilePackage().getPassword());
                 }
             }
             if (fp == null) {

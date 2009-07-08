@@ -238,7 +238,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
      *         abgegeben hat
      */
     public String getComment() {
-        updateData();
+        updateData(null);
         return comment == null ? "" : comment;
     }
 
@@ -355,12 +355,11 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
      *         angegeben hat
      */
     public String getPassword() {
-        updateData();
+        updateData(null);
         return password == null ? "" : password;
     }
 
-    public synchronized void updateData() {
-
+    public synchronized void updateData(String addpw) {
         String password = this.password == null ? "" : this.password;
         StringBuilder comment = new StringBuilder(this.comment == null ? "" : this.comment);
 
@@ -392,6 +391,13 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
             cmt = cmt.substring(1);
         }
         this.comment = cmt;
+
+        if (addpw != null && addpw.length() > 0) {
+            String[] pws = JDUtilities.passwordStringToArray(addpw);
+            for (String element : pws) {
+                if (!pwList.contains(element)) pwList.add(element);
+            }
+        }
         this.password = JDUtilities.passwordArrayToString(pwList.toArray(new String[pwList.size()]));
     }
 
@@ -526,7 +532,8 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
     }
 
     public void setPassword(String password) {
-        this.password = password;
+        if (password == null || password.length() == 0) return;
+        updateData(password);
     }
 
     public int size() {

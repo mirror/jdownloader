@@ -195,7 +195,7 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
         }
     }
 
-    public synchronized void updateData() {
+    public synchronized void updateData(String addpw) {
         String password = this.password == null ? "" : this.password;
         StringBuilder comment = new StringBuilder(this.comment == null ? "" : this.comment);
 
@@ -228,6 +228,13 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
             cmt = cmt.substring(1);
         }
         this.comment = cmt;
+
+        if (addpw != null && addpw.length() > 0) {
+            String[] pws = JDUtilities.passwordStringToArray(addpw);
+            for (String element : pws) {
+                if (!pwList.contains(element)) pwList.add(element);
+            }
+        }
         this.password = JDUtilities.passwordArrayToString(pwList.toArray(new String[pwList.size()]));
     }
 
@@ -311,12 +318,12 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
     }
 
     public String getPassword() {
-        updateData();
+        updateData(null);
         return password;
     }
 
     public String getComment() {
-        updateData();
+        updateData(null);
         return comment;
     }
 
@@ -378,8 +385,8 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
     }
 
     public void setPassword(String password) {
-        if (password == null) password = "";
-        this.password = password;
+        if (password == null || password.length() == 0) return;
+        updateData(password);
         broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));
     }
 
