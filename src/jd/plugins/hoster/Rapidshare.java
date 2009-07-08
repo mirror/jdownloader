@@ -795,9 +795,9 @@ public class Rapidshare extends PluginForHost {
     }
 
     // @Override
-    public String getVersion() {
+    /* public String getVersion() {
         return getVersion("$Revision$");
-    }
+    } */
 
     private void reportUnknownError(Object req, int id) {
         logger.severe("Unknown error(" + id + "). please add this htmlcode to your bugreport:\r\n" + req);

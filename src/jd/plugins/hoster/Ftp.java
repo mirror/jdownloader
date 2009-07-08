@@ -62,9 +62,9 @@ public class Ftp extends PluginForHost {
     }
 
     // @Override
-    public String getVersion() {
+    /* /* public String getVersion() {
         return getVersion("$Revision: 6489 $");
-    }
+    } */
 
     // @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {

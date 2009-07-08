@@ -221,9 +221,9 @@ public class Uploadedto extends PluginForHost {
     }
 
     // @Override
-    public String getVersion() {
+    /* public String getVersion() {
         return getVersion("$Revision$");
-    }
+    } */
 
     public void checkPasswort(DownloadLink downloadLink) throws Exception {
         Form form = br.getForm(0);

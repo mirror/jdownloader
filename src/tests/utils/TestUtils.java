@@ -158,12 +158,12 @@ public abstract class TestUtils {
 
         jdi = new JDInit();
         jdi.init();
-
+        JDUtilities.setController(JDController.getInstance());
         if (jdi.loadConfiguration() == null) {
             UserIO.getInstance().requestMessageDialog("JDownloader cannot create the config files. Make sure, that JD_HOME/config/ exists and is writeable");
         }
 
-        JDUtilities.setController(JDController.getInstance());
+        
     }
 
     public static void initDecrypter() {

@@ -81,9 +81,9 @@ public class FourSharedCom extends PluginForHost {
     }
 
     // @Override
-    public String getVersion() {
+    /* /* public String getVersion() {
         return getVersion("$Revision$");
-    }
+    } */
 
     public static synchronized void increaseCounter() {
         COUNTER++;

@@ -641,7 +641,7 @@ public class JDInit {
 
                         }
                         for (int i = 0; i < help.names().length; i++) {
-                            new HostPluginWrapper(help.names()[i], c.getSimpleName(), help.urls()[i], help.flags()[i]);
+                            new HostPluginWrapper(help.names()[i], c.getSimpleName(), help.urls()[i], help.flags()[i],help.revision());
                         }
 
                     }

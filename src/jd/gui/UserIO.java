@@ -184,4 +184,10 @@ public abstract class UserIO {
         }
     }
 
+    public String requestInputDialog(String message) {
+        // TODO Auto-generated method stub
+        return this.requestInputDialog(0, JDL.L("jd.gui.userio.defaulttitle.input","Please enter!"), message, null, this.getDefaultIcon(message), null, null);
+    }
+
+
 }

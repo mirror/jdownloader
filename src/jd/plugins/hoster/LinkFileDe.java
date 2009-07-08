@@ -91,9 +91,9 @@ public class LinkFileDe extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    @Override
-    public String getVersion() {
+   
+    /* public String getVersion() {
         return getVersion("$Revision$");
-    }
+    } */
 
 }

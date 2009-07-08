@@ -146,9 +146,9 @@ public class HotFileCom extends PluginForHost {
     }
 
     // @Override
-    public String getVersion() {
+    /* public String getVersion() {
         return getVersion("$Revision$");
-    }
+    } */
 
     // @Override
     public void resetDownloadlink(DownloadLink link) {

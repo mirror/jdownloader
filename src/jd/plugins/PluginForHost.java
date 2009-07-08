@@ -70,7 +70,9 @@ public abstract class PluginForHost extends Plugin {
     protected String getCaptchaCode(String captchaAddress, DownloadLink downloadLink) throws IOException, PluginException {
         return getCaptchaCode(getHost(), captchaAddress, downloadLink);
     }
-
+public String getVersion(){
+    return this.wrapper.getVersion().toString();
+}
     protected String getCaptchaCode(String method, String captchaAddress, DownloadLink downloadLink) throws IOException, PluginException {
         if (captchaAddress == null) {
             logger.severe("Captcha Adresse nicht definiert");

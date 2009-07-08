@@ -64,9 +64,9 @@ public class SavefileCom extends PluginForHost {
     }
 
     //@Override
-    public String getVersion() {
+    /* public String getVersion() {
         return getVersion("$Revision$");
-    }
+    } */
 
     //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {

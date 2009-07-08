@@ -229,9 +229,9 @@ public class FilerNet extends PluginForHost {
     }
 
     // @Override
-    public String getVersion() {
+    /* /* public String getVersion() {
         return getVersion("$Revision$");
-    }
+    } */
 
     // @Override
     public int getMaxSimultanFreeDownloadNum() {

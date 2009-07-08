@@ -98,9 +98,9 @@ public class DumpRo extends PluginForHost {
         return 1;
     }
 
-    @Override
-    public String getVersion() {
+  
+    /* /* public String getVersion() {
         return getVersion("$Revision$");
-    }
+    } */
 
 }

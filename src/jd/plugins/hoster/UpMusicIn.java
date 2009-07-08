@@ -186,9 +186,9 @@ public class UpMusicIn extends PluginForHost {
     }
 
     //@Override
-    public String getVersion() {
+    /* public String getVersion() {
         return getVersion("$Revision$");
-    }
+    } */
 
     //@Override
     public void reset() {

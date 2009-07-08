@@ -65,10 +65,10 @@ public class MyuploadDK extends PluginForHost {
 
     }
 
-    public String getVersion() {
+    /* public String getVersion() {
         return getVersion("$Revision$");
 
-    }
+    } */
 
     public int getMaxSimultanFreeDownloadNum() {
         return 20;

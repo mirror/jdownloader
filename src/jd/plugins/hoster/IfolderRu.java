@@ -123,10 +123,10 @@ public class IfolderRu extends PluginForHost {
     public void reset() {
     }
 
-    @Override
-    public String getVersion() {
+   
+    /* public String getVersion() {
         return getVersion("$Revision$");
-    }
+    } */
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {

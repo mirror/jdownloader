@@ -74,9 +74,9 @@ public class Indowebster extends PluginForHost {
         // TODO Auto-generated method stub
     }
 
-    @Override
-    public String getVersion() {
+   
+    /* public String getVersion() {
         return getVersion("$Revision$");
-    }
+    } */
 
 }

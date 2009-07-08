@@ -423,9 +423,9 @@ public class Megauploadcom extends PluginForHost {
     }
 
     // @Override
-    public String getVersion() {
+    /* public String getVersion() {
         return getVersion("$Revision$");
-    }
+    } */
 
     public void handleFree1(DownloadLink link, Account account) throws Exception {
         this.setBrowserExclusive();

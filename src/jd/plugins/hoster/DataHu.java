@@ -59,9 +59,9 @@ public class DataHu extends PluginForHost {
     }
 
     //@Override
-    public String getVersion() {
+    /* /* public String getVersion() {
         return getVersion("$Revision$");
-    }
+    } */
 
     public void login(Account account) throws Exception {
         this.setBrowserExclusive();

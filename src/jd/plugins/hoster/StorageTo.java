@@ -79,9 +79,9 @@ public class StorageTo extends PluginForHost {
     }
 
     @Override
-    public String getVersion() {
+    /* public String getVersion() {
         return getVersion("$Revision$");
-    }
+    } */
 
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
