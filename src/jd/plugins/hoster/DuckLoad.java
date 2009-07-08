@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -26,7 +27,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "duckload.com"}, urls ={ "http://[\\w\\.]*?(duckload\\.com|youload\\.to)/download/\\d+/.+"}, flags = {0})
+@HostPlugin(revision = "$Revision", interfaceVersion = 2, names = { "duckload.com" }, urls = { "http://[\\w\\.]*?(duckload\\.com|youload\\.to)/(download/\\d+/.+|divx/[a-zA-Z0-9]+\\.html|[a-zA-Z0-9]+\\.html)" }, flags = { 0 })
 public class DuckLoad extends PluginForHost {
 
     public DuckLoad(PluginWrapper wrapper) {
@@ -40,18 +41,38 @@ public class DuckLoad extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink link) throws Exception {
+        boolean stream = false;
         requestFileInformation(link);
         sleep(10 * 1000l, link);
         Form form = br.getForm(0);
-        String capurl = br.getRegex("img src=\"(/design/Captcha\\.php\\?key=.*?)\"").getMatch(0);
-        String code = getCaptchaCode(capurl, link);
-        form.put("cap", code);
-        form.put("_____download.x", "0");
-        form.put("_____download.y", "0");
-        br.submitForm(form);
-        String url = br.getRedirectLocation();
         br.setDebug(true);
-        if (url != null && url.contains("error=wrongCaptcha")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        String capurl = br.getRegex("src=\"(/design/Captcha.*?\\.php\\?.*?key=.*?)\"").getMatch(0);
+        if (capurl == null) capurl = br.getRegex("src='(/design/Captcha.*?\\.php.*?key=.*?)'").getMatch(0);
+        String code = getCaptchaCode(capurl, link);
+        if (form.containsHTML("appl_code")) {
+            form = new Form();
+            form.setAction(br.getForm(0).getAction());
+            form.setMethod(MethodType.POST);
+            form.put("server", "1");
+            form.put("appl_code", code);
+            stream = true;
+        } else {
+            form.put("cap", code);
+            form.put("_____download.x", "0");
+            form.put("_____download.y", "0");
+        }
+        br.submitForm(form);
+        String url = null;
+        if (!stream) {
+            url = br.getRedirectLocation();
+            br.setDebug(true);
+            if (url != null && url.contains("error=wrongCaptcha")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        } else {
+            url = br.getRegex("src\" value=\"(http://.*?)\"").getMatch(0);
+            String filename = br.getRegex("Original Filename:</strong></td><td width=.*?>(.*?)</td>").getMatch(0);
+            if (filename != null) link.setFinalFileName(filename);
+            if (url == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
         br.setFollowRedirects(true);
         dl = br.openDownload(link, url, true, 0);
         dl.startDownload();
@@ -66,6 +87,14 @@ public class DuckLoad extends PluginForHost {
             br.getPage("http://youload.to/english.html");
         }
         br.getPage(parameter.getDownloadURL());
+        if (br.containsHTML("stream_protection_h\">Bitte Server")) {
+            /* streaming file */
+            parameter.setName("VideoStream.avi");
+            String filesize = br.getRegex("s_1\">Server.*?\\[(.*?)\\]").getMatch(0);
+            if (filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            parameter.setDownloadSize(Regex.getSize(filesize.trim()));
+            return AvailableStatus.TRUE;
+        }
         if (br.containsHTML("File was not found!")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("You want to download the file \"(.*?)\".*?!<br>").getMatch(0);
         String filesize = br.getRegex("You want to download the file \".*?\" \\((.*?)\\) !<br>").getMatch(0);
@@ -84,10 +113,9 @@ public class DuckLoad extends PluginForHost {
     }
 
     @Override
-    /* /* public String getVersion() {
-        return getVersion("$Revision$");
-    } */
-
+    /*
+     * /* public String getVersion() { return getVersion("$Revision$"); }
+     */
     public int getMaxSimultanFreeDownloadNum() {
         return getMaxSimultanDownloadNum();
     }

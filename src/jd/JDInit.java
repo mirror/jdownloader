@@ -483,14 +483,14 @@ public class JDInit {
         new DecryptPluginWrapper("go4Down.net", "GoFourDownNet", "http://[\\w\\.]*?(short\\.)?go4down\\.(com|net)/(short/)\\d+");
         new DecryptPluginWrapper("sogood.net", "SoGoodNet", "http://[\\w\\.]*?sogood\\.net/.+");
         new DecryptPluginWrapper("audiobeats.net", "AudioBeatsNet", "http://[\\w\\.]*?audiobeats\\.net/app/(parties|livesets|artists)/show/[0-9a-zA-Z]+");
-        new DecryptPluginWrapper("Duckload.com", "DuckLoadCom", "http://[\\w\\.]*?(duckload\\.com|youload\\.to)/(?!download)[a-zA-Z0-9]+");
+        new DecryptPluginWrapper("Duckload.com", "DuckLoadCom", "http://[\\w\\.]*?(duckload\\.com|youload\\.to)/(?!(download|divx))[a-zA-Z0-9]+(?!\\.html)$");
         new DecryptPluginWrapper("cryptbox.cc", "CryptBoxCC", "http://[\\w\\.]*?.cryptbox\\.cc/ordner/[0-9a-zA-z]+");
         new DecryptPluginWrapper("depositfiles.com", "DepositFilesCom", "http://?[\\w\\.]*?.depositfiles\\.com/([a-z]+/folders/|folders/).*");
         new DecryptPluginWrapper("gazup.com", "GazUpCom", "http://[\\w\\.]*?.gazup\\.com/.+");
         new DecryptPluginWrapper("anonym.to", "AnonymTo", "http://[\\w\\.]*?anonym\\.to/\\?.+");
         new DecryptPluginWrapper("qooy.com", "QooyCom", "http://[\\w\\.]*?qooy\\.com/files/[0-9A-Z]+/[0-9a-zA-z.]+");
         new DecryptPluginWrapper("free-url.net", "FreeUrlNet", "http://[\\w\\.]*?free-url\\.net/[0-9]+/");
-        
+
         // Decrypter from Extern
 
         new DecryptPluginWrapper("rapidlibrary.com", "RapidLibrary", "http://rapidlibrary\\.com/download_file_i\\.php\\?.+");
@@ -515,9 +515,9 @@ public class JDInit {
         while (resources.hasMoreElements()) {
             URL resource = resources.nextElement();
             logger.finest("Ressource: " + resource);
-            try{
-            classes.addAll(findPlugins(resource, packageName, classLoader));
-            }catch(Exception e){
+            try {
+                classes.addAll(findPlugins(resource, packageName, classLoader));
+            } catch (Exception e) {
                 JDLogger.exception(e);
             }
 
@@ -561,21 +561,22 @@ public class JDInit {
      * @param x
      * @return
      * @throws ClassNotFoundException
-     * @throws URISyntaxException 
+     * @throws URISyntaxException
      */
     private static List<Class<?>> findPlugins(URL directory, String packageName, ClassLoader classLoader) throws ClassNotFoundException, URISyntaxException {
         List<Class<?>> classes = new ArrayList<Class<?>>();
         logger.finest("Find classes in " + directory + " : " + packageName);
-        File[] files=null;
-        logger.finest("path  "+directory.toURI().getPath());
-        
-        try{
-        files= new File(directory.toURI().getPath()).listFiles();
-        }catch(Exception e){
-            JDLogger.exception(e);;
+        File[] files = null;
+        logger.finest("path  " + directory.toURI().getPath());
+
+        try {
+            files = new File(directory.toURI().getPath()).listFiles();
+        } catch (Exception e) {
+            JDLogger.exception(e);
+            ;
         }
-        logger.finest("tofile "+directory.toURI().getPath());
-        logger.finest("list "+files);
+        logger.finest("tofile " + directory.toURI().getPath());
+        logger.finest("list " + files);
         if (files == null) {
             try {
                 // it's a jar
@@ -608,9 +609,9 @@ public class JDInit {
 
         } else {
             for (File file : files) {
-                logger.finest("file "+file);
+                logger.finest("file " + file);
                 if (file.isDirectory()) {
-                    logger.finest("isdir "+file);
+                    logger.finest("isdir " + file);
                     try {
                         classes.addAll(findPlugins(file.toURI().toURL(), packageName + "." + file.getName(), classLoader));
                     } catch (MalformedURLException e) {
@@ -642,7 +643,7 @@ public class JDInit {
 
                         }
                         for (int i = 0; i < help.names().length; i++) {
-                            new HostPluginWrapper(help.names()[i], c.getSimpleName(), help.urls()[i], help.flags()[i],help.revision());
+                            new HostPluginWrapper(help.names()[i], c.getSimpleName(), help.urls()[i], help.flags()[i], help.revision());
                         }
 
                     }
