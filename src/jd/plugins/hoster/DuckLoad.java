@@ -45,7 +45,6 @@ public class DuckLoad extends PluginForHost {
         requestFileInformation(link);
         sleep(10 * 1000l, link);
         Form form = br.getForm(0);
-        br.setDebug(true);
         String capurl = br.getRegex("src=\"(/design/Captcha.*?\\.php\\?.*?key=.*?)\"").getMatch(0);
         if (capurl == null) capurl = br.getRegex("src='(/design/Captcha.*?\\.php.*?key=.*?)'").getMatch(0);
         String code = getCaptchaCode(capurl, link);
