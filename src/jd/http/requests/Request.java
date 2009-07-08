@@ -518,7 +518,10 @@ public abstract class Request {
                 htmlCode.append(line + "\r\n");
             }
         } catch (IOException e) {
-            if (!e.toString().contains("Premature")) throw e;
+            if (e.toString().contains("end of ZLIB") || e.toString().contains("Premature")) {
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Try workaround for ", e);
+            } else
+                throw e;
         } finally {
             try {
                 rd.close();
