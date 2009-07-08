@@ -554,6 +554,11 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                 this.hideFilePackageInfo();
             }
             break;
+        case DownloadControllerEvent.REMOVE_DOWNLOADLINK:
+            if (filePackageInfo.getDownloadLink() != null && filePackageInfo.getDownloadLink() == ((DownloadLink) event.getParameter())) {
+                this.hideFilePackageInfo();
+            }
+            break;
         case DownloadControllerEvent.REFRESH_STRUCTURE:
             updateTableTask(REFRESH_DATA_AND_STRUCTURE_CHANGED, null);
             break;

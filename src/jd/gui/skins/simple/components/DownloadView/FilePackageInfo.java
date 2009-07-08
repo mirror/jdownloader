@@ -337,6 +337,10 @@ public class FilePackageInfo extends JTabbedPanel implements ActionListener {
         fp = null;
     }
 
+    public DownloadLink getDownloadLink() {
+        return downloadLink;
+    }
+
     public void setDownloadLink(DownloadLink downloadLink) {
         this.tabbedPane.setEnabledAt(1, true);
         this.tabbedPane.setSelectedIndex(1);
