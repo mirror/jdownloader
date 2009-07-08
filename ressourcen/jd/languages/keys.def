@@ -1,4 +1,4 @@
-#Rev6540
+#Rev6543
 train.chooser.title = jDownloader :: TrainAll
 showcaptcha.chooser.title = jDownloader :: Show Captcha
 train.choose.folder = Wählen sie einen Ordner aus
@@ -1188,3 +1188,8 @@ init.webupdate.auto.countdowndialog2 = Automatic update.
 jd.utils.webupdate.message = <font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\">%s update(s) available. Install now?</font>
 system.dialogs.update = Updates available
 jd.utils.webupdate.progresscontroller.text = Update is running
+#pattern: gui\.menu\.(.+?)\.name
+#pattern: gui\.menu\.(.+?)\.mnem
+#pattern: gui\.menu\.(.+?)\.accel
+#pattern: plugins\.host\.rapidshare\.errors\.(.+?)
+#pattern: plugins\.hoster\.rapidshareDE\.errors\.(.+?)
