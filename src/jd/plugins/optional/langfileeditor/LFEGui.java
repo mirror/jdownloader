@@ -660,7 +660,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
                 }
 
             }, JDL.L(LOCALE_PREFIX + "svn.checkOut.short", "CheckOut"),JDL.L(LOCALE_PREFIX + "svn.checkOut", "CheckOut SVN now (This may take several seconds ...)"),null));
-            SimpleGUI.displayConfig(container, 0);
+            SimpleGUI.displayConfig(container, false);
 
         } else if (e.getSource() == mnuSVNCheckOutNow) {
 

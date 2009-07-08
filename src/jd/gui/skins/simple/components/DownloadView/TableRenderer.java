@@ -208,8 +208,6 @@ public class TableRenderer extends DefaultTableRenderer {
                 ((JRendererLabel) co).setText("plugin missing");
             } else {
                 if (dLink.getPlugin().hasHosterIcon()) {
-                    sb.append(dLink.getPlugin().getHost());
-                    sb.append(dLink.getPlugin().getSessionInfo());
                     ((JRendererLabel) co).setText(dLink.getPlugin().getSessionInfo());
                     ((JRendererLabel) co).setIcon(dLink.getPlugin().getHosterIcon());
                 } else {
@@ -217,7 +215,6 @@ public class TableRenderer extends DefaultTableRenderer {
                     sb.append(dLink.getPlugin().getSessionInfo());
                     ((JRendererLabel) co).setText(sb.toString());
                 }
-
             }
             return co;
 

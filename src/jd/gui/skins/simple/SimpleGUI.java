@@ -886,7 +886,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
         return UserIO.getInstance().requestTwoTextFieldDialog(title, messageOne, defOne, messageTwo, defTwo);
     }
 
-    public static void displayConfig(final ConfigContainer container, final int i) {
+    public static void displayConfig(final ConfigContainer container, final boolean toLastTab) {
         new GuiRunnable<Object>() {
 
             // @Override
@@ -894,7 +894,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
                 ConfigEntriesPanel cep;
 
                 JDCollapser.getInstance().setContentPanel(cep = new ConfigEntriesPanel(container));
-                if (i > 0) {
+                if (toLastTab) {
                     Component comp = cep.getComponent(0);
                     if (comp instanceof JTabbedPane) {
                         ((JTabbedPane) comp).setSelectedIndex(((JTabbedPane) comp).getTabCount() - 1);

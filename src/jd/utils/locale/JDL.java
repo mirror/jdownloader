@@ -32,6 +32,7 @@ import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.http.Browser;
 import jd.http.Encoding;
+import jd.nutils.Formatter;
 import jd.nutils.io.JDFileFilter;
 import jd.utils.EditDistance;
 import jd.utils.JDGeoCode;
@@ -206,8 +207,8 @@ public class JDL {
 
     public static String getVersion() {
         String info = JDL.L("$version$", "0.0");
-        String ret = JDUtilities.getVersion(info);
-        return (ret.equals("0.0")) ? info : ret;
+        String ret = Formatter.getRevision(info);
+        return (ret.equals("-1")) ? info : ret;
     }
 
     /**
@@ -287,8 +288,8 @@ public class JDL {
     }
 
     public static void parseLanguageFile(File file, HashMap<Integer, String> data) {
-        
-        JDLogger.getLogger().info("parse lng file "+file);
+
+        JDLogger.getLogger().info("parse lng file " + file);
         data.clear();
 
         if (file == null || !file.exists()) {
@@ -318,7 +319,7 @@ public class JDL {
         } catch (IOException e) {
             JDLogger.exception(e);
         }
-        JDLogger.getLogger().info("parse lng file end "+file);
+        JDLogger.getLogger().info("parse lng file end " + file);
     }
 
     public static void setLocale(JDLocale lID) {

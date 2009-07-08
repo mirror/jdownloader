@@ -20,7 +20,6 @@ import java.awt.Component;
 
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
-import javax.swing.JComponent;
 import javax.swing.JTable;
 import javax.swing.border.Border;
 
@@ -140,24 +139,18 @@ public class LinkGrabberTableRenderer extends DefaultTableRenderer {
             value = dLink.getDownloadSize() > 0 ? Formatter.formatReadable(dLink.getDownloadSize()) : "~";
             break;
         case LinkGrabberJTableModel.COL_HOSTER:
-
             if (dLink.getPlugin().hasHosterIcon()) {
                 co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                ((JRendererLabel) co).setText(dLink.getPlugin().getSessionInfo());
+                ((JRendererLabel) co).setIcon(dLink.getPlugin().getHosterIcon());
+                ((JRendererLabel) co).setBorder(null);
+                return co;
+            } else {
                 clearSB();
                 sb.append(dLink.getPlugin().getHost());
                 sb.append(dLink.getPlugin().getSessionInfo());
-                ((JRendererLabel) co).setText(dLink.getPlugin().getSessionInfo());
-                ((JRendererLabel) co).setIcon(dLink.getPlugin().getHosterIcon());
-                ((JComponent) co).setToolTipText(sb.toString());
-
-                ((JRendererLabel) co).setBorder(null);
-                return co;
-
-            } else {
-
-                value = dLink.getPlugin().getHost();
+                value = sb.toString();
             }
-
             break;
         case LinkGrabberJTableModel.COL_STATUS:
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);

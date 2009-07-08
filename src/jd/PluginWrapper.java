@@ -161,11 +161,11 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
         return null;
     }
 
-    public Object getVersion() {
+    public String getVersion() {
         return loadedPlugin != null ? loadedPlugin.getVersion() : JDL.L("plugin.system.notloaded", "idle");
     }
 
-    public Object getCoder() {
+    public String getCoder() {
         return loadedPlugin != null ? loadedPlugin.getCoder() : JDL.L("plugin.system.notloaded", "idle");
     }
 

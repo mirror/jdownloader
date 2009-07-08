@@ -65,7 +65,7 @@ public class AddonsMenu extends JStartMenu {
                     mi.setActionListener(new ActionListener() {
 
                         public void actionPerformed(ActionEvent e) {
-                            SimpleGUI.displayConfig(((Plugin) ((MenuItem) e.getSource()).getProperty("PLUGIN")).getConfig(), 0);
+                            SimpleGUI.displayConfig(((Plugin) ((MenuItem) e.getSource()).getProperty("PLUGIN")).getConfig(), false);
                         }
 
                     });

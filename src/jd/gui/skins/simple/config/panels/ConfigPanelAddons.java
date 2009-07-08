@@ -165,7 +165,7 @@ public class ConfigPanelAddons extends ConfigPanel implements ActionListener, Mo
     }
 
     private void editEntry() {
-        SimpleGUI.displayConfig(pluginsOptional.get(table.getSelectedRow()).getPlugin().getConfig(), 0);
+        SimpleGUI.displayConfig(pluginsOptional.get(table.getSelectedRow()).getPlugin().getConfig(), false);
     }
 
     public void actionPerformed(ActionEvent e) {

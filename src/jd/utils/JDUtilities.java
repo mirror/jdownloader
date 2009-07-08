@@ -73,7 +73,6 @@ import jd.nutils.Executer;
 import jd.nutils.Formatter;
 import jd.nutils.OSDetector;
 import jd.nutils.io.JDIO;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -662,22 +661,10 @@ public class JDUtilities {
             t.printStackTrace();
         }
 
-        int rev2 = Integer.parseInt(getVersion("$Revision$"));
+        int rev2 = Integer.parseInt(Formatter.getRevision("$Revision$"));
 
         double r = Math.max(rev2, rev) / 1000.0;
         return REVISION = new DecimalFormat("0.000").format(r).replace(",", ".");
-    }
-
-    /**
-     * Parsed den String revision und gibt die RevisionsNummer zurück
-     * 
-     * @param revision
-     * @return RevisionsNummer
-     */
-    public static String getVersion(String revision) {
-
-        String ret = new Regex(revision, "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
     }
 
     public static int getRunType() {

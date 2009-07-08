@@ -70,9 +70,11 @@ public abstract class PluginForHost extends Plugin {
     protected String getCaptchaCode(String captchaAddress, DownloadLink downloadLink) throws IOException, PluginException {
         return getCaptchaCode(getHost(), captchaAddress, downloadLink);
     }
-public String getVersion(){
-    return this.wrapper.getVersion().toString();
-}
+
+    public String getVersion() {
+        return this.wrapper.getVersion();
+    }
+
     protected String getCaptchaCode(String method, String captchaAddress, DownloadLink downloadLink) throws IOException, PluginException {
         if (captchaAddress == null) {
             logger.severe("Captcha Adresse nicht definiert");
@@ -179,11 +181,11 @@ public String getVersion(){
     // @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getID() == 1) {
-            SimpleGUI.displayConfig(config, 0);
+            SimpleGUI.displayConfig(config, false);
             return;
         }
         if (e.getID() == 2) {
-            SimpleGUI.displayConfig(config, 1);
+            SimpleGUI.displayConfig(config, true);
             return;
         }
         ArrayList<Account> accounts = getPremiumAccounts();
@@ -757,7 +759,7 @@ public String getVersion(){
     }
 
     public HosterInfo getHosterInfo() {
-        // TODO Auto-generated method stub
         return null;
     }
+
 }

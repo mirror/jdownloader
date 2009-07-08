@@ -430,7 +430,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
                             return;
                         }
                     }
-                    SimpleGUI.displayConfig(bars[i].getPlugin().getConfig(), 1);
+                    SimpleGUI.displayConfig(bars[i].getPlugin().getConfig(), true);
                 }
                 return;
             }

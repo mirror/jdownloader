@@ -22,34 +22,33 @@ import java.beans.PropertyChangeListener;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.Vector;
 
 import javax.swing.ImageIcon;
 
 import jd.controlling.ListController;
 
-public class ConfigEntry implements Serializable, PropertyChangeListener {
+public class ConfigEntry implements Serializable {
     public static enum PropertyType {
         NONE, NORMAL, NEEDS_RESTART;
 
-        public PropertyType getMax(PropertyType propertyType) {
+        public static PropertyType getMax(PropertyType... changes) {
+            ArrayList<PropertyType> sorter = new ArrayList<PropertyType>();
+            for (PropertyType type : changes) {
+                sorter.add(type);
+            }
+            Collections.sort(sorter);
+            PropertyType ret = sorter.get(sorter.size() - 1);
 
+            return ret;
+        }
+
+        public PropertyType getMax(PropertyType propertyType) {
             return getMax(propertyType, this);
         }
 
         public String toString() {
             return this.name();
-        }
-
-        public static PropertyType getMax(PropertyType... changes) {
-            ArrayList<PropertyType> sorter = new ArrayList<PropertyType>();
-            for (PropertyType type : changes)
-                sorter.add(type);
-            Collections.sort(sorter);
-            PropertyType ret = sorter.get(sorter.size() - 1);
-
-            return ret;
         }
     }
 
@@ -58,81 +57,32 @@ public class ConfigEntry implements Serializable, PropertyChangeListener {
      */
     private static final long serialVersionUID = 7422046260361380162L;
     private ActionListener actionListener;
-
+    private boolean changes;
     private String compareOperator;
     private ConfigEntry conditionEntry;
     private Object conditionValue;
     private ConfigContainer container;
+    private ListController controller;
     private Object defaultValue;
+    private String description;
     private boolean enabled = true;
     private int end;
-    private String helptags = null;
-
-    public String getHelptags() {
-        if (helptags == null) return label;
-        return helptags;
-    }
-
-    public void setHelptags(String helptags) {
-        this.helptags = helptags;
-    }
-
+    private ConfigGroup group;
     private PropertyChangeListener guiListener;
-    // private String instantHelp;
-
+    private String helptags = null;
+    private ImageIcon imageIcon;
     private String label;
-
     private Object[] list;
-
     private Vector<ConfigEntry> listener = new Vector<ConfigEntry>();
-
     private Property propertyInstance;
-
     private String propertyName;
-
+    private PropertyType propertyType = PropertyType.NORMAL;
     private int start;
-
-    // private Object newValue;
-
     private int step = 1;
-
     private int type;
 
-    private PropertyType propertyType = PropertyType.NORMAL;
-
-    private ConfigGroup group;
-
-    private boolean changes;
-    private ListController controller;
-    private ImageIcon imageIcon;
-    public ImageIcon getImageIcon() {
-        return imageIcon;
-    }
-
-    public void setImageIcon(ImageIcon imageIcon) {
-        this.imageIcon = imageIcon;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    private String description;
-
-    public PropertyType getPropertyType() {
-        return propertyType;
-    }
-
-    public void setPropertyType(PropertyType propertyType) {
-        this.propertyType = propertyType;
-    }
-
     /**
-     * KOnstruktor für Komponenten die nix brauchen. z.B. JSpearator
+     * Konstruktor für Komponenten die nix brauchen. z.B. JSpearator
      * 
      * @param type
      */
@@ -155,8 +105,8 @@ public class ConfigEntry implements Serializable, PropertyChangeListener {
 
         this.type = type;
         this.label = label;
-        this.imageIcon=icon;
-        this.description=description;
+        this.imageIcon = icon;
+        this.description = description;
         actionListener = listener;
         enabled = true;
     }
@@ -165,6 +115,21 @@ public class ConfigEntry implements Serializable, PropertyChangeListener {
         this.type = type;
         container = premiumConfig;
         enabled = true;
+    }
+
+    public ConfigEntry(int type, ListController controller, String label) {
+        this.type = type;
+        this.label = label;
+        this.controller = controller;
+        this.propertyName = "ListControlled";
+        enabled = true;
+    }
+
+    public ConfigEntry(int type, Property propertyInstance, String propertyName, int num) {
+        this.type = type;
+        this.propertyName = propertyName;
+        this.propertyInstance = propertyInstance;
+        this.end = num;
     }
 
     /**
@@ -243,14 +208,6 @@ public class ConfigEntry implements Serializable, PropertyChangeListener {
         this.end = end;
     }
 
-    public ConfigEntry(int type, ListController controller, String label) {
-        this.type = type;
-        this.label = label;
-        this.controller = controller;
-        this.propertyName = "ListControlled";
-        enabled = true;
-    }
-
     /**
      * Konstruktor für ein einfaches Label
      * 
@@ -269,7 +226,6 @@ public class ConfigEntry implements Serializable, PropertyChangeListener {
      * 
      * public ConfigEntry(int type, String label, String link) {
      */
-
     public ConfigEntry(int type, String label, String link) {
         this.type = type;
         propertyName = link;
@@ -277,28 +233,10 @@ public class ConfigEntry implements Serializable, PropertyChangeListener {
         enabled = true;
     }
 
-    public ConfigEntry(int type, Property propertyInstance, String propertyName, int num) {
-        this.type = type;
-        this.propertyName = propertyName;
-        this.propertyInstance = propertyInstance;
-        this.end = num;
-
-    }
-
-    private void addConditionListener(ConfigEntry configEntry) {
-        if (configEntry != null) {
-            listener.add(configEntry);
-
-        }
-
-    }
-
     public void addListener(ConfigEntry configEntry) {
         if (configEntry != null) {
             listener.add(configEntry);
-
         }
-
     }
 
     public ActionListener getActionListener() {
@@ -323,20 +261,32 @@ public class ConfigEntry implements Serializable, PropertyChangeListener {
 
     public Object getDefaultValue() {
         return defaultValue;
+    }
 
+    public String getDescription() {
+        return description;
     }
 
     public int getEnd() {
         return end;
     }
 
+    public ConfigGroup getGroup() {
+        return group;
+    }
+
     public PropertyChangeListener getGuiListener() {
         return guiListener;
     }
 
-    // public String getInstantHelp() {
-    // return instantHelp;
-    // }
+    public String getHelptags() {
+        if (helptags == null) return label;
+        return helptags;
+    }
+
+    public ImageIcon getImageIcon() {
+        return imageIcon;
+    }
 
     public String getLabel() {
         return label;
@@ -344,6 +294,18 @@ public class ConfigEntry implements Serializable, PropertyChangeListener {
 
     public Object[] getList() {
         return list;
+    }
+
+    public ListController getListController() {
+        if (controller == null) controller = new ListController() {
+            public String getList() {
+                return "";
+            }
+
+            public void setList(String list) {
+            }
+        };
+        return controller;
     }
 
     public Vector<ConfigEntry> getListener() {
@@ -356,6 +318,10 @@ public class ConfigEntry implements Serializable, PropertyChangeListener {
 
     public String getPropertyName() {
         return propertyName;
+    }
+
+    public PropertyType getPropertyType() {
+        return propertyType;
     }
 
     public int getStart() {
@@ -375,32 +341,24 @@ public class ConfigEntry implements Serializable, PropertyChangeListener {
         return type;
     }
 
-    public ListController getListController() {
-        if (controller == null) controller = new ListController() {
-            public String getList() {
-                return "";
-            }
-
-            public void setList(String list) {
-            }
-        };
-        return controller;
+    /** return if this configentry got changed and has to be saved */
+    public boolean hasChanges() {
+        return changes;
     }
 
     @SuppressWarnings("unchecked")
     public boolean isConditionalEnabled(PropertyChangeEvent evt) {
         if (evt.getSource() == conditionEntry) {
             if (compareOperator.equals("<")) {
-                if (conditionValue instanceof Comparable) {
+                if (conditionValue instanceof Comparable<?>) {
                     return ((Comparable) evt.getNewValue()).compareTo(conditionValue) < 0;
                 } else if (conditionValue instanceof Integer) {
                     return (Integer) conditionValue < (Integer) evt.getNewValue();
                 } else {
                     return true;
                 }
-
             } else if (compareOperator.equals(">")) {
-                if (conditionValue instanceof Comparable) {
+                if (conditionValue instanceof Comparable<?>) {
                     return ((Comparable) evt.getNewValue()).compareTo(conditionValue) > 0;
                 } else if (conditionValue instanceof Integer) {
                     return (Integer) conditionValue > (Integer) evt.getNewValue();
@@ -408,7 +366,7 @@ public class ConfigEntry implements Serializable, PropertyChangeListener {
                     return true;
                 }
             } else if (compareOperator.equals("!=")) {
-                if (conditionValue instanceof Comparable) {
+                if (conditionValue instanceof Comparable<?>) {
                     return ((Comparable) evt.getNewValue()).compareTo(conditionValue) != 0;
                 } else if (conditionValue instanceof Integer) {
                     return !((Integer) conditionValue).equals(evt.getNewValue());
@@ -416,32 +374,30 @@ public class ConfigEntry implements Serializable, PropertyChangeListener {
                     return true;
                 }
             } else {
-                if (conditionValue instanceof Comparable) {
+                if (conditionValue instanceof Comparable<?>) {
                     return ((Comparable) evt.getNewValue()).compareTo(conditionValue) == 0;
                 } else if (conditionValue instanceof Integer) {
                     return ((Integer) conditionValue).equals(evt.getNewValue());
                 } else {
                     return true;
                 }
-
             }
-
         }
         return true;
     }
 
     public boolean isEnabled() {
-
         return enabled;
-    }
-
-    public void propertyChange(PropertyChangeEvent evt) {
-
     }
 
     public ConfigEntry setActionListener(ActionListener actionListener) {
         this.actionListener = actionListener;
         return this;
+    }
+
+    /** Gets set if this config entry has changes */
+    public void setChanges(boolean b) {
+        changes = b;
     }
 
     public void setCompareOperator(String compareOperator) {
@@ -450,7 +406,7 @@ public class ConfigEntry implements Serializable, PropertyChangeListener {
 
     public void setConditionEntry(ConfigEntry conditionEntry) {
         this.conditionEntry = conditionEntry;
-        conditionEntry.addConditionListener(this);
+        conditionEntry.addListener(this);
     }
 
     public void setConditionValue(Object conditionValue) {
@@ -462,7 +418,7 @@ public class ConfigEntry implements Serializable, PropertyChangeListener {
     }
 
     /**
-     * Legtd en defaultwert fest, falls in der propertyinstanz keiner gefunden
+     * Legt den defaultwert fest, falls in der propertyinstanz keiner gefunden
      * wurde.
      * 
      * @param value
@@ -473,7 +429,10 @@ public class ConfigEntry implements Serializable, PropertyChangeListener {
     public ConfigEntry setDefaultValue(Object value) {
         defaultValue = value;
         return this;
+    }
 
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public ConfigEntry setEnabled(boolean value) {
@@ -486,7 +445,6 @@ public class ConfigEntry implements Serializable, PropertyChangeListener {
         setCompareOperator(comp);
         setConditionValue(value);
         return this;
-
     }
 
     public ConfigEntry setEnd(int end) {
@@ -494,18 +452,24 @@ public class ConfigEntry implements Serializable, PropertyChangeListener {
         return this;
     }
 
+    public ConfigEntry setGroup(ConfigGroup cg) {
+        this.group = cg;
+        return this;
+    }
+
     public void setGuiListener(PropertyChangeListener gce) {
         if (guiListener == null) {
             guiListener = gce;
         }
-
     }
 
-    // public ConfigEntry setInstantHelp(String l) {
-    // instantHelp = l;
-    // return this;
-    //
-    // }
+    public void setHelptags(String helptags) {
+        this.helptags = helptags;
+    }
+
+    public void setImageIcon(ImageIcon imageIcon) {
+        this.imageIcon = imageIcon;
+    }
 
     public ConfigEntry setLabel(String label) {
         this.label = label;
@@ -525,6 +489,10 @@ public class ConfigEntry implements Serializable, PropertyChangeListener {
     public ConfigEntry setPropertyName(String propertyName) {
         this.propertyName = propertyName;
         return this;
+    }
+
+    public void setPropertyType(PropertyType propertyType) {
+        this.propertyType = propertyType;
     }
 
     public ConfigEntry setStart(int start) {
@@ -553,34 +521,11 @@ public class ConfigEntry implements Serializable, PropertyChangeListener {
     }
 
     public void valueChanged(Object newValue) {
-        ConfigEntry next;
-        for (Iterator<ConfigEntry> it = listener.iterator(); it.hasNext();) {
-            next = it.next();
+        for (ConfigEntry next : listener) {
             if (next.getGuiListener() != null) {
                 next.getGuiListener().propertyChange(new PropertyChangeEvent(this, getPropertyName(), null, newValue));
             }
         }
-    }
-
-    public ConfigEntry setGroup(ConfigGroup cg) {
-        this.group = cg;
-        return this;
-    }
-
-    public ConfigGroup getGroup() {
-        return group;
-    }
-
-    /** Gets set if this config entry has changes */
-    public void setChanges(boolean b) {
-        changes = b;
-
-    }
-
-    /** return if this configentry got changed and has to be saved */
-    public boolean hasChanges() {
-        return changes;
-
     }
 
 }

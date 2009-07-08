@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import jd.controlling.AccountController;
 import jd.nutils.Formatter;
 import jd.plugins.PluginForHost;
-import jd.utils.locale.JDL;
 
 public class HostPluginWrapper extends PluginWrapper {
     private static final ArrayList<HostPluginWrapper> HOST_WRAPPER = new ArrayList<HostPluginWrapper>();
@@ -31,25 +30,24 @@ public class HostPluginWrapper extends PluginWrapper {
     }
 
     private static final String AGB_CHECKED = "AGB_CHECKED";
-    private String revision="idle";
+    private String revision = "idle";
 
     public HostPluginWrapper(String host, String classNamePrefix, String className, String patternSupported, int flags, String revision) {
         super(host, classNamePrefix, className, patternSupported, flags);
-        this.revision=Formatter.getRevision(revision);
+        this.revision = Formatter.getRevision(revision);
         HOST_WRAPPER.add(this);
     }
 
-  
-
- 
     public HostPluginWrapper(String host, String simpleName, String pattern, int i, String revision) {
-      this(host,"jd.plugins.hoster.",simpleName,pattern,i,revision);
-   
+        this(host, "jd.plugins.hoster.", simpleName, pattern, i, revision);
+
     }
 
-    public Object getVersion() {
+    @Override
+    public String getVersion() {
         return revision;
     }
+
     @Override
     public PluginForHost getPlugin() {
         return (PluginForHost) super.getPlugin();
@@ -67,7 +65,7 @@ public class HostPluginWrapper extends PluginWrapper {
     public boolean isPremiumEnabled() {
         return this.isLoaded() && this.getPlugin().isPremiumEnabled();
     }
- 
+
     @Override
     public int compareTo(PluginWrapper pw) {
         if (!(pw instanceof HostPluginWrapper)) return super.compareTo(pw);
@@ -99,7 +97,5 @@ public class HostPluginWrapper extends PluginWrapper {
             return 1;
         }
     }
-
- 
 
 }
