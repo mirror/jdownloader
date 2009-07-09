@@ -648,7 +648,7 @@ gui.installer.kikin.ok = Continue
 gui.installer.kikin.cancel = Cancel
 gui.installer.kikin.message = Free! Personalize your search experience
 gui.installer.kikin.tooltip = Please read and accept the conditions
-gui.installer.kikin.agree = <b><a href=\"http://jdownloader.org/kikin\">What is Kikin?</a> <br/>Best Parts? kikin is free and works automatically.<br>I agree to the kikin <a href=\"http://www.kikin.com/terms-of-service\">Terms of Service</a> and <a href=\"http://www.kikin.com/privacy-policy\">Privacy Policy</a></b>
+gui.installer.kikin.agree = <b><a href="http://jdownloader.org/kikin">What is Kikin?</a> <br/>Best Parts? kikin is free and works automatically.<br>I agree to the kikin <a href="http://www.kikin.com/terms-of-service">Terms of Service</a> and <a href="http://www.kikin.com/privacy-policy">Privacy Policy</a></b>
 gui.javacheck.newerjavaavailable.title = Outdated Javaversion found: %s!
 gui.javacheck.newerjavaavailable.msg = Although JDownloader runs on your javaversion, we advise to install the latest java updates. \r\nJDownloader will run more stable, faster, and will look better. \r\n\r\nVisit http://jdownloader.org/download.
 gui.splash.progress.webupdate = Check updates
@@ -922,7 +922,7 @@ plugins.optional.remotecontrol.port = Port:
 addons.jdshutdown.statusmessage.enabled = Das System wird nach dem Download heruntergefahren.
 addons.jdshutdown.statusmessage.disabled = Das System wird nach dem Download NICHT heruntergefahren.
 addons.jdshutdown.menu = Shutdown after downloads finished
-interaction.shutdown.dialog.msg = <h2><font color=\"red\">Achtung ihr Betriebssystem wird heruntergefahren!</font></h2>
+interaction.shutdown.dialog.msg = <h2><font color="red">Achtung ihr Betriebssystem wird heruntergefahren!</font></h2>
 interaction.shutdown.dialog.title = Shutdown
 gui.config.jdshutdown.standby = Standby (Nur einige OS)
 gui.config.jdshutdown.hibernate = Ruhezustand/Hibernate (Nur einige OS)
@@ -1105,13 +1105,13 @@ gui.config.routeripfinder.status.collectingrouterinfo = Collecting router inform
 gui.config.routeripfinder.status.downloadlingsimilarmethods = Downloading similar router methods...
 gui.config.routeripfinder.status.sortingmethods = Sorting router methods...
 gui.config.routeripfinder.status.searchingforupnp = Searching for UPnP...
-gui.config.liveheader.warning.upnpinactive = Bitte aktivieren sie fals vorhanden Upnp in den Netzwerkeinstellungen ihres Routers <br><a href=\"http://%s\">zum Router</a><br><a href=\"http://wiki.jdownloader.org/index.php?title=Router_Upnp\">Wikiartikel: Upnp Routern</a><br>drücken sie Ok wenn sie Upnp aktiviert haben oder abbrechen wenn sie fortfahren wollen!
+gui.config.liveheader.warning.upnpinactive = Bitte aktivieren sie fals vorhanden Upnp in den Netzwerkeinstellungen ihres Routers <br><a href="http://%s">zum Router</a><br><a href="http://wiki.jdownloader.org/index.php?title=Router_Upnp">Wikiartikel: Upnp Routern</a><br>drücken sie Ok wenn sie Upnp aktiviert haben oder abbrechen wenn sie fortfahren wollen!
 gui.config.routeripfinder.status.testingupnp = Testing UPnP...
 gui.config.liveheader.progress.message = jDownloader sucht nach Ihren Routereinstellungen
 gui.config.liveheader.warning.notfound = jDownloader konnte ihre Routereinstellung nicht automatisch ermitteln.
 gui.config.liveheader.warning.yourrouter = Sie haben einen
 gui.btn_start = Start
-gui.config.jdrr.infolable = <span color=\"#4682B4\">Überprüfe die IP-Adresse des Routers und drück auf Start,<br>ein Browserfenster mit der Startseite des Routers öffnet sich,<br>nach dem Reconnect drückst du auf Stop und speicherst.<br>Mehr Informationen gibt es </span><a href=\"http://wiki.jdownloader.org/index.php?title=Recorder\">hier</a>
+gui.config.jdrr.infolable = <span color="#4682B4">Überprüfe die IP-Adresse des Routers und drück auf Start,<br>ein Browserfenster mit der Startseite des Routers öffnet sich,<br>nach dem Reconnect drückst du auf Stop und speicherst.<br>Mehr Informationen gibt es </span><a href="http://wiki.jdownloader.org/index.php?title=Recorder">hier</a>
 gui.config.jdrr.title = Reconnect Recorder
 gui.fengshuiconfig.routerip = RouterIP
 gui.config.jdrr.success = Success!
@@ -1163,7 +1163,7 @@ init.webupdate.progress.0_title = Webupdate
 jd.utils.webupdate.progress.autopluginupdate = Update plugins
 init.webupdate.progress.1_title = Update Check
 init.webupdate.auto.countdowndialog2 = Automatic update.
-jd.utils.webupdate.message = <font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\">%s update(s) available. Install now?</font>
+jd.utils.webupdate.message = <font size="2" face="Verdana, Arial, Helvetica, sans-serif">%s update(s) available. Install now?</font>
 system.dialogs.update = Updates available
 jd.utils.webupdate.progresscontroller.text = Update is running
 #pattern: sys\.warning\.dlcerror\.(.+?)
