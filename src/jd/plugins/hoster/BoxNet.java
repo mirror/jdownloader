@@ -58,9 +58,7 @@ public class BoxNet extends PluginForHost {
         }
 
         if (!urlConnection.isContentDisposition()) {
-            urlConnection.disconnect();
-
-            br.getPage(parameter.getDownloadURL());
+            br.followConnection();
             if (br.containsHTML(OUT_OF_BANDWITH_MSG)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
 
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
