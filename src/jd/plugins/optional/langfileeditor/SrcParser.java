@@ -21,11 +21,13 @@ import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.ObjectConverter;
 import jd.controlling.JDLogger;
 import jd.event.JDBroadcaster;
 import jd.event.MessageEvent;
 import jd.event.MessageListener;
 import jd.nutils.Formatter;
+import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.utils.JDUtilities;
@@ -42,6 +44,7 @@ public class SrcParser {
     public SrcParser(File resourceFile) {
         this.root = resourceFile;
         this.entries = new ArrayList<LngEntry>();
+
         this.broadcaster = new JDBroadcaster<MessageListener, MessageEvent>() {
 
             @Override
@@ -87,12 +90,52 @@ public class SrcParser {
 
     }
 
+    @SuppressWarnings("unchecked")
+    /**
+     * parses an java file and writes all JDL Matches to entries and pattern. this method uses a cache to be faster
+     */
     private void parseFile(File file) {
+
         this.currentFile = file;
         broadcaster.fireEvent(new MessageEvent(this, PARSE_NEW_FILE, "Parse " + file.getAbsolutePath()));
 
         // find all lines containing JDL calls
         currentContent = JDIO.getLocalFile(file);
+        File cacheEntries = JDUtilities.getResourceFile("tmp/lfe/cache/" + JDHash.getMD5(currentContent) + ".entries");
+        File cachePattern = JDUtilities.getResourceFile("tmp/lfe/cache/" + JDHash.getMD5(currentContent) + ".pattern");
+        ArrayList<LngEntry> fileEntries = new ArrayList<LngEntry>();
+        ArrayList<String> filePattern = new ArrayList<String>();
+        if (cacheEntries.exists() && cachePattern.exists()) {
+
+
+            try {
+                fileEntries = (ArrayList<LngEntry>) JDIO.loadObject(null,cacheEntries,false);
+
+                filePattern = (ArrayList<String>) JDIO.loadObject(null,cachePattern,false);
+
+                for (LngEntry entry : fileEntries) {
+                    if (!entries.contains(entry)) {
+                        System.out.println(" CACHE: "+entry);
+                        entries.add(entry);
+                    }
+                }
+
+                for (String patt : filePattern) {
+                    if (!pattern.contains(patt)){
+                        System.out.println(" CACHE: "+patt);
+                        pattern.add(patt);
+                    }
+                }
+                return;
+            } catch (Exception e) {
+                e.printStackTrace();
+                cacheEntries.delete();
+                cachePattern.delete();
+                fileEntries = new ArrayList<LngEntry>();
+                filePattern = new ArrayList<String>();
+            }
+        }
+
         prepareContent();
         currentContent = Pattern.compile("\\/\\*(.*?)\\*\\/", Pattern.DOTALL).matcher(currentContent).replaceAll("[[/*.....*/]]");
         currentContent = Pattern.compile("[^:]//(.*?)[\n|\r]", Pattern.DOTALL).matcher(currentContent).replaceAll("[[\\.....]]");
@@ -101,10 +144,20 @@ public class SrcParser {
 
         for (String match : matches) {
             // splitting all calls.
-            parseCodeLine(match);
+            parseCodeLine(match, fileEntries, filePattern);
 
         }
 
+
+        try {
+         JDIO.saveObject(null, fileEntries, cacheEntries, null, null, false);
+         JDIO.saveObject(null, filePattern, cachePattern, null, null, false);
+        
+        } catch (Exception e) {
+         e.printStackTrace();
+            cacheEntries.delete();
+            cachePattern.delete();
+        }
     }
 
     private void prepareContent() {
@@ -147,7 +200,15 @@ public class SrcParser {
         return files;
     }
 
-    private void parseCodeLine(String match) {
+    /**
+     * Finds lngentries and patterns in this codeline. adds all to global list
+     * and to locallists fileEntries and filePattern
+     * 
+     * @param match
+     * @param fileEntries
+     * @param filePattern
+     */
+    private void parseCodeLine(String match, ArrayList<LngEntry> fileEntries, ArrayList<String> filePattern) {
         String[] calls = match.split("JDL");
         String pat_string = "\"(.*?)(?<!\\\\)\"";
 
@@ -261,11 +322,15 @@ public class SrcParser {
                         JDLogger.getLogger().warning(" Prob. Malformated translation key in " + currentFile + " : " + match);
                     }
                     entry = new LngEntry(parameter[0], parameter[1]);
-                    if (!hasEntry(entry)) {
+                    if (!entries.contains(entry)) {
                         entries.add(entry);
+
                         System.out.println("LF  " + Formatter.fillInteger(entries.size(), 3, "0") + " " + entry);
                         broadcaster.fireEvent(new MessageEvent(this, PARSE_NEW_ENTRY, "LF  " + Formatter.fillInteger(entries.size(), 3, "0") + " " + entry));
 
+                    }
+                    if (!fileEntries.contains(entry)) {
+                        fileEntries.add(entry);
                     }
                 } else if (orgm.startsWith(".L")) {
 
@@ -361,15 +426,23 @@ public class SrcParser {
 
                     if (parameter[0].contains("*")) {
                         String patt = parameter[0].replace(".", "\\.").replace("*", "(.+?)");
+
                         if (!pattern.contains(patt)) pattern.add(patt);
+                        if (!filePattern.contains(patt)) filePattern.add(patt);
+
                     } else {
                         entry = new LngEntry(parameter[0], parameter[1]);
 
-                        if (!hasEntry(entry)) {
+                        if (!entries.contains(entry)) {
                             entries.add(entry);
+
                             System.out.println("L   " + Formatter.fillInteger(entries.size(), 3, "0") + " " + entry);
                             broadcaster.fireEvent(new MessageEvent(this, PARSE_NEW_ENTRY, "L   " + Formatter.fillInteger(entries.size(), 3, "0") + " " + entry));
 
+                        }
+
+                        if (!fileEntries.contains(entry)) {
+                            fileEntries.add(entry);
                         }
                     }
                 }
@@ -388,13 +461,6 @@ public class SrcParser {
 
         return ret;
 
-    }
-
-    private boolean hasEntry(LngEntry entry) {
-        for (LngEntry e : entries) {
-            if (e.getKey().equalsIgnoreCase(entry.getKey())) return true;
-        }
-        return false;
     }
 
     public void parseDefault(File file) {

@@ -272,19 +272,22 @@ public class Subversion implements ISVNEventHandler {
         svn.update(file, SVNRevision.HEAD);
         svn.resolveConflicts(file.getParentFile(), new ResolveHandler() {
 
-            public String resolveConflict(String contents, int startMine, int endMine, int startTheirs, int endTheirs) {
+            public String resolveConflict(SVNInfo info, File file, String contents, int startMine, int endMine, int startTheirs, int endTheirs) {
+              
                 String mine = contents.substring(startMine, endMine).trim();
                 String theirs = contents.substring(startTheirs, endTheirs).trim();
 
                 return mine;
             }
 
+         
+
         });
         svn.commit(file, "resolved");
         ;
     }
 
-    private void resolveConflicts(File file, final ResolveHandler handler) throws SVNException {
+    public void resolveConflicts(File file, final ResolveHandler handler) throws SVNException {
 
         getWCClient().doInfo(file, SVNRevision.UNDEFINED, SVNRevision.WORKING, SVNDepth.getInfinityOrEmptyDepth(true), null, new ISVNInfoHandler() {
 
@@ -293,12 +296,12 @@ public class Subversion implements ISVNEventHandler {
                 if (file != null) {
 
                     try {
+                     
+                        resolveConflictedFile(info,info.getFile(), handler);
                         getWCClient().doResolve(info.getFile(), SVNDepth.INFINITY, null);
-                        resolveConflictedFile(info.getFile(), handler);
-
                         System.out.println(file);
 
-                    } catch (SVNException e) {
+                    } catch (Exception e) {
                         // TODO Auto-generated catch block
                         e.printStackTrace();
                     }
@@ -311,12 +314,36 @@ public class Subversion implements ISVNEventHandler {
         //       
 
     }
+/**
+ * Returns an ArrayLIst with Info for all files found in file.
+ * @param file
+ * @return
+ */
+    public ArrayList<SVNInfo> getInfo(File file) {
+        final ArrayList<SVNInfo> ret = new ArrayList<SVNInfo>();
+        try {
+            getWCClient().doInfo(file, SVNRevision.UNDEFINED, SVNRevision.WORKING, SVNDepth.getInfinityOrEmptyDepth(true), null, new ISVNInfoHandler() {
 
-    public void resolveConflictedFile(File file, ResolveHandler handler) {
+                public void handleInfo(SVNInfo info) {
+                    ret.add(info);
+
+                }
+
+            });
+        } catch (SVNException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return ret;
+
+    }
+
+    public void resolveConflictedFile(SVNInfo info, File file, ResolveHandler handler) throws Exception {
         final String mine = "<<<<<<< .mine";
         final String delim = "=======";
         final String theirs = ">>>>>>> .r";
         String txt = JDIO.getLocalFile(file);
+        String pre,post;
         while (true) {
             int mineStart = txt.indexOf(mine);
 
@@ -324,11 +351,20 @@ public class Subversion implements ISVNEventHandler {
             mineStart += mine.length();
             int delimStart = txt.indexOf(delim, mineStart);
             int theirsEnd = txt.indexOf(theirs, delimStart + delim.length());
-            while (txt.charAt(theirsEnd++) >= 48 && txt.charAt(theirsEnd) <= 57) {
+            int end=theirsEnd+theirs.length();
+            while (txt.charAt(end)!='\r'&&txt.charAt(end)!='\n') {
+                end++;
             }
-            ;
-            theirsEnd--;
-            txt = txt.substring(0, mineStart - mine.length()) + handler.resolveConflict(txt, mineStart, delimStart, delimStart + delim.length(), theirsEnd) + txt.substring(theirsEnd + theirs.length());
+
+        
+            pre=txt.substring(0, mineStart - mine.length());
+            post=txt.substring(end);
+            while(pre.endsWith("\r")||pre.endsWith("\n"))pre=pre.substring(0,pre.length()-1);
+            while(post.startsWith("\r")||post.startsWith("\n"))post=post.substring(1);
+            
+            String solve = handler.resolveConflict(info,file,txt, mineStart, delimStart, delimStart + delim.length(), theirsEnd);
+            if(solve==null)throw new Exception("Could not resolve");
+            txt =  pre+ "\r\n"+solve+"\r\n" + post;
         }
         JDIO.writeLocalFile(file, txt);
 

@@ -42,6 +42,10 @@ public class ObjectConverter {
     }
 
     public Object toObject(String in) throws Exception {
+        if(pre==null||post==null){
+            //dummy
+            toString(new Object());
+        }
         Object objectLoaded = null;
         String str = (pre + in + post);
         ByteArrayInputStream ba = new ByteArrayInputStream(str.getBytes());

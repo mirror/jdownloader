@@ -160,7 +160,7 @@ public class JDLookAndFeelManager implements Serializable, JDLabelContainer {
                 if (e.getName().startsWith(pkg)) {
                     String laf = new Regex(e.getName(), "org/jvnet/substance/skin/(.*?)LookAndFeel\\.class").getMatch(0);
                     if (laf != null) {
-
+                       
                         UIManager.installLookAndFeel(laf, "org.jvnet.substance.skin." + laf + "LookAndFeel");
                     }
                 }

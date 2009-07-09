@@ -54,7 +54,14 @@ public class Encoding {
         } catch (Exception e) {
             JDLogger.exception(e);
         }
-        return HTMLEntities.unhtmlentities(str);
+       str=HTMLEntities.unhtmlentities(str);
+       
+       str=HTMLEntities.unhtmlAmpersand(str);
+       str=HTMLEntities.unhtmlAngleBrackets(str);
+       str=HTMLEntities.unhtmlDoubleQuotes(str);
+       str=HTMLEntities.unhtmlQuotes(str);
+       str=HTMLEntities.unhtmlSingleQuotes(str);
+       return str;
     }
 
     public static String urlEncode(String str) {
