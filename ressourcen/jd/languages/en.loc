@@ -1,8 +1,8 @@
+
 addons.jdgrowlnotification.menu = Growl Messages
 addons.jdshutdown.menu = enabled
-addons.jdshutdown.menu_tes2t = 1113434243242111
-
-addons.jdshutdown.menu_test = 1234456767
+addons.jdshutdown.menu_tes2t = this is just a testentry
+addons.jdshutdown.menu_tes3t = 0987654321
 addons.jdshutdown.statusmessage.disabled = The System will NOT be shut down by JDownloader
 addons.jdshutdown.statusmessage.enabled = JDownloader will shut down your System after downloads finished
 addons.schedule.menu.add = Add
@@ -1257,3 +1257,4 @@ wrapper.webupdate.updatefile = Update plugin %s
 wrapper.webupdate.updatenewupdater = Downloading new jdupdate.jar
 wrapper.webupdate.updateupdater.error_rename = Could not rename jdupdate.jar.tmp to jdupdate.jar
 wrapper.webupdate.updateupdater.error_reqeust2 = Could not download new jdupdate.jar
+addons.jdshutdown.menu_test = 1234456767
