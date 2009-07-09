@@ -361,10 +361,13 @@ public class Subversion implements ISVNEventHandler {
             post=txt.substring(end);
             while(pre.endsWith("\r")||pre.endsWith("\n"))pre=pre.substring(0,pre.length()-1);
             while(post.startsWith("\r")||post.startsWith("\n"))post=post.substring(1);
-            
+            pre+="\r\n";
+            post="\r\n" + post;
+            if(pre.trim().length()==0)pre=pre.trim();
+            if(post.trim().length()==0)post=post.trim();
             String solve = handler.resolveConflict(info,file,txt, mineStart, delimStart, delimStart + delim.length(), theirsEnd);
             if(solve==null)throw new Exception("Could not resolve");
-            txt =  pre+ "\r\n"+solve+"\r\n" + post;
+            txt =  pre+ solve.trim() + post;
         }
         JDIO.writeLocalFile(file, txt);
 

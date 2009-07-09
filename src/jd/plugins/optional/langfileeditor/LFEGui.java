@@ -262,7 +262,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         mnuEntries = new JMenu(JDL.L(LOCALE_PREFIX + "entries", "Entries"));
         mnuEntries.setEnabled(false);
 
-        mnuEntries.addSeparator();
+
         mnuEntries.add(mnuShowDupes = new JMenuItem(JDL.L(LOCALE_PREFIX + "showDupes", "Show Dupes")));
         mnuEntries.addSeparator();
         mnuEntries.add(mnuOpenSearchDialog = new JMenuItem(JDL.L(LOCALE_PREFIX + "openSearchDialog", "Open Search Dialog")));
@@ -297,6 +297,12 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
                                 mi.addActionListener(new ActionListener() {
 
                                     public void actionPerformed(ActionEvent e) {
+                                        if(languageFile!=null){
+                                        int ret = UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, "Save changes?", "Save your changes to " + languageFile + "?", null, null, null);
+                                        if (JDFlags.hasAllFlags(ret, UserIO.RETURN_OK)) {
+                                            saveLanguageFile(languageFile);
+                                        }
+                                        }
                                         languageFile = new File(dirLanguages, JDGeoCode.longToShort(e.getActionCommand()) + ".loc");
                                         initLocaleData();
                                         table.setEnabled(true);
