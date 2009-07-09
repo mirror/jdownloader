@@ -607,7 +607,6 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         for (LngEntry entry : sourceParser.getEntries()) {
             key = entry.getKey();
             keyInfo = new KeyInfo(key, entry.getValue(), languageKeysFormFile.remove(key));
-            if (key.equalsIgnoreCase("$Version$")) keyInfo.setLanguage("$Revision$");
             data.add(keyInfo);
             if (!keyInfo.isMissing()) {
 
@@ -987,7 +986,6 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
 
         @Override
         public boolean isCellEditable(int row, int col) {
-            if (table.getValueAt(row, 1).toString().equalsIgnoreCase("$Version$")) return false;
             return true;
         }
 

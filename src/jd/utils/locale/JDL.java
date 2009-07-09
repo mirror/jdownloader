@@ -32,7 +32,6 @@ import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.http.Browser;
 import jd.http.Encoding;
-import jd.nutils.Formatter;
 import jd.nutils.io.JDFileFilter;
 import jd.utils.EditDistance;
 import jd.utils.JDGeoCode;
@@ -199,16 +198,6 @@ public class JDL {
         data.put(key, def);
 
         return def;
-    }
-
-    public static String getTranslater() {
-        return JDL.L("$translater$", "JD-Team");
-    }
-
-    public static String getVersion() {
-        String info = JDL.L("$version$", "0.0");
-        String ret = Formatter.getRevision(info);
-        return (ret.equals("-1")) ? info : ret;
     }
 
     /**

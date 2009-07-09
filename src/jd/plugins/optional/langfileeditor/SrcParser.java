@@ -293,7 +293,7 @@ public class SrcParser {
 
                     }
                     String error;
-                    if (!new Regex(parameter[0], "^\\$(.+?)\\$$").matches() && (error = new Regex(parameter[0], "([\\(\\)\\{\\}\\/\\\\\\$\\&\\+\\~\\#\\\"\\!\\?]+)").getMatch(0)) != null) {
+                    if ((error = new Regex(parameter[0], "([\\(\\)\\{\\}\\/\\\\\\$\\&\\+\\~\\#\\\"\\!\\?]+)").getMatch(0)) != null) {
 
                         int index = parameter[0].indexOf(error);
                         if (index >= 0) {
@@ -393,7 +393,7 @@ public class SrcParser {
                     }
 
                     String error;
-                    if (!new Regex(parameter[0], "^\\$(.+?)\\$$").matches() && (error = new Regex(parameter[0], "([\\(\\)\\{\\}\\/\\\\\\$\\&\\+\\~\\#\\\"\\!\\?]+)").getMatch(0)) != null) {
+                    if ((error = new Regex(parameter[0], "([\\(\\)\\{\\}\\/\\\\\\$\\&\\+\\~\\#\\\"\\!\\?]+)").getMatch(0)) != null) {
 
                         int index = parameter[0].indexOf(error);
                         if (index >= 0) {
