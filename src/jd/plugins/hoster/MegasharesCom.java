@@ -110,14 +110,14 @@ public class MegasharesCom extends PluginForHost {
         // Password protection
         loadpage(downloadLink.getDownloadURL());
         if (!checkPassword(downloadLink)) { return; }
-        if (br.containsHTML("All download slots for this link are currently filled")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l); }
+        if (br.containsHTML("All download slots for this link are currently filled")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
         String dlLink = br.getRegex("<div id=\"dlink\"><a href=\"(.*?)\">Click").getMatch(0);
         if (dlLink == null) throw new PluginException(LinkStatus.ERROR_FATAL);
         br.setFollowRedirects(true);
         dl = br.openDownload(downloadLink, dlLink, true, -6);
         if (!dl.getConnection().isContentDisposition()) {
             dl.getConnection().disconnect();
-            throw new PluginException(LinkStatus.ERROR_RETRY);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 5 * 60 * 1000l);
         }
         dl.startDownload();
     }
