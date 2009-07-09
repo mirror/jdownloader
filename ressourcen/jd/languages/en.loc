@@ -1256,4 +1256,3 @@ wrapper.webupdate.updatefile = Update plugin %s
 wrapper.webupdate.updatenewupdater = Downloading new jdupdate.jar
 wrapper.webupdate.updateupdater.error_rename = Could not rename jdupdate.jar.tmp to jdupdate.jar
 wrapper.webupdate.updateupdater.error_reqeust2 = Could not download new jdupdate.jar
-6593
