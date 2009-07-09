@@ -1,4 +1,5 @@
-addons.jdgrowlnotification.menu = Growl Super Messages
+
+addons.jdgrowlnotification.menu = Growl Super Messages omgigp
 addons.jdshutdown.menu = enabled
 addons.jdshutdown.statusmessage.disabled = The System will NOT be shut down by JDownloader
 addons.jdshutdown.statusmessage.enabled = JDownloader will shut down your System after downloads finished
