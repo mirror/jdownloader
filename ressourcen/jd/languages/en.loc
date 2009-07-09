@@ -1,6 +1,6 @@
 addons.jdgrowlnotification.menu = Growl Messages
 addons.jdshutdown.menu = enabled
-addons.jdshutdown.menu_tes2t = 22222211112222
+addons.jdshutdown.menu_tes2t = 00000000
 addons.jdshutdown.menu_tes3t = 0987654321
 addons.jdshutdown.menu_test = 1234456767
 addons.jdshutdown.statusmessage.disabled = The System will NOT be shut down by JDownloader
