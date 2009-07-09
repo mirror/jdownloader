@@ -24,15 +24,15 @@ import jd.http.Encoding;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDMediaConvert;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "youtube.com"}, urls ={ "http://[\\w\\.]*?youtube\\.com/get_video\\?video_id=.+&t=.+(&fmt=\\d+)?"}, flags = {2})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "http://[\\w\\.]*?youtube\\.com/get_video\\?video_id=.+&t=.+(&fmt=\\d+)?" }, flags = { 2 })
 public class Youtube extends PluginForHost {
 
     public Youtube(PluginWrapper wrapper) {
@@ -63,9 +63,9 @@ public class Youtube extends PluginForHost {
     }
 
     // @Override
-    /* public String getVersion() {
-        return getVersion("$Revision$");
-    } */
+    /*
+     * public String getVersion() { return getVersion("$Revision$"); }
+     */
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {

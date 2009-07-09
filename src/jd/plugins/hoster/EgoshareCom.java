@@ -23,17 +23,17 @@ import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "egoshare.com"}, urls ={ "http://[\\w\\.]*?egoshare\\.com/download\\.php\\?id=[\\w]+"}, flags = {0})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "egoshare.com" }, urls = { "http://[\\w\\.]*?egoshare\\.com/download\\.php\\?id=[\\w]+" }, flags = { 0 })
 public class EgoshareCom extends PluginForHost {
 
     private String captchaCode;
@@ -62,9 +62,9 @@ public class EgoshareCom extends PluginForHost {
     }
 
     // @Override
-    /* /* public String getVersion() {
-        return getVersion("$Revision$");
-    } */
+    /*
+     * /* public String getVersion() { return getVersion("$Revision$"); }
+     */
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {

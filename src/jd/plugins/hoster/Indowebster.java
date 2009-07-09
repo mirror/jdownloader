@@ -21,13 +21,13 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "indowebster.com"}, urls ={ "http://[\\w\\.]*?indowebster\\.com/[^\\s]+\\.html"}, flags = {0})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "indowebster.com" }, urls = { "http://[\\w\\.]*?indowebster\\.com/[^\\s]+\\.html" }, flags = { 0 })
 public class Indowebster extends PluginForHost {
 
     public Indowebster(PluginWrapper wrapper) {
@@ -59,7 +59,7 @@ public class Indowebster extends PluginForHost {
         String dl_url = br.getRegex("<div id=\"buttonz\" align=\"center\"> <a href=\"(.*?)\"").getMatch(0);
         if (dl_url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.setDebug(true);
-        br.setFollowRedirects(true);        
+        br.setFollowRedirects(true);
         dl = br.openDownload(link, dl_url, true, 1);
         dl.startDownload();
     }
@@ -74,9 +74,8 @@ public class Indowebster extends PluginForHost {
         // TODO Auto-generated method stub
     }
 
-   
-    /* public String getVersion() {
-        return getVersion("$Revision$");
-    } */
+    /*
+     * public String getVersion() { return getVersion("$Revision$"); }
+     */
 
 }

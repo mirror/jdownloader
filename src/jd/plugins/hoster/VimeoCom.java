@@ -19,13 +19,13 @@ package jd.plugins.hoster;
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "vimeo.com"}, urls ={ "http://[\\w\\.]*?vimeo\\.com/[0-9]+"}, flags = {0})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vimeo.com" }, urls = { "http://[\\w\\.]*?vimeo\\.com/[0-9]+" }, flags = { 0 })
 public class VimeoCom extends PluginForHost {
     static private final String AGB = "http://www.vimeo.com/terms";
     private String clipData;
@@ -35,12 +35,12 @@ public class VimeoCom extends PluginForHost {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return AGB;
     }
 
-    //@Override
+    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
 
@@ -60,7 +60,7 @@ public class VimeoCom extends PluginForHost {
         br.openGetConnection(finalURL);
         downloadLink.setDownloadSize(br.getRequest().getContentLength());
         if (title == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        downloadLink.setName(title);        
+        downloadLink.setName(title);
 
         return AvailableStatus.TRUE;
     }
@@ -69,12 +69,12 @@ public class VimeoCom extends PluginForHost {
         return new Regex(this.clipData, "<" + tag + ">(.*?)</" + tag + ">").getMatch(0);
     }
 
-    //@Override
-    /* public String getVersion() {
-        return getVersion("$Revision$");
-    } */
+    // @Override
+    /*
+     * public String getVersion() { return getVersion("$Revision$"); }
+     */
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         br.setDebug(true);
         requestFileInformation(downloadLink);
@@ -82,21 +82,21 @@ public class VimeoCom extends PluginForHost {
 
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         /* TODO: Wert nachprüfen */
         return 20;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void resetDownloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

@@ -23,13 +23,13 @@ import jd.http.Encoding;
 import jd.http.URLConnectionAdapter;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "freakshare.net"}, urls ={ "http://[\\w\\.]*?freakshare\\.net/file(s/|/)[\\w]+/(.*)"}, flags = {0})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freakshare.net" }, urls = { "http://[\\w\\.]*?freakshare\\.net/file(s/|/)[\\w]+/(.*)" }, flags = { 0 })
 public class Freaksharenet extends PluginForHost {
 
     public Freaksharenet(PluginWrapper wrapper) {
@@ -37,12 +37,12 @@ public class Freaksharenet extends PluginForHost {
         this.setStartIntervall(100l);
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://freakshare.net/?x=faq";
     }
 
-    //@Override
+    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
@@ -55,42 +55,42 @@ public class Freaksharenet extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    //@Override
-    /* /* public String getVersion() {
-        return getVersion("$Revision$");
-    } */
+    // @Override
+    /*
+     * /* public String getVersion() { return getVersion("$Revision$"); }
+     */
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        
-        if (br.containsHTML("You can Download only 1 File in")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10*60*1001);
+
+        if (br.containsHTML("You can Download only 1 File in")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1001);
         Form form = br.getForm(1);
         sleep(50 * 1000l, downloadLink);
         br.submitForm(form);
         form = br.getForm(0);
         dl = br.openDownload(downloadLink, form, false, 1);
-        
+
         URLConnectionAdapter con = dl.getConnection();
-        if (con.getContentType().contains("text")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30*60*1001);
+        if (con.getContentType().contains("text")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1001);
         dl.startDownload();
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void resetDownloadlink(DownloadLink link) {
-        
+
     }
 }

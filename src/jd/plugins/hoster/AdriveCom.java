@@ -24,26 +24,26 @@ import jd.http.Encoding;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "adrive.com"}, urls ={ "http://[\\w\\.].*?adrive\\.com/public/[0-9a-zA-Z]+.*"}, flags = {0})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adrive.com" }, urls = { "http://[\\w\\.].*?adrive\\.com/public/[0-9a-zA-Z]+.*" }, flags = { 0 })
 public class AdriveCom extends PluginForHost {
 
     public AdriveCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://www.adrive.com/terms";
     }
 
-    //@Override
+    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
@@ -61,17 +61,18 @@ public class AdriveCom extends PluginForHost {
             }
         }
         downloadLink.setFinalFileName(AdriveCom.getFileNameFormHeader(con));
-        downloadLink.setDownloadSize(con.getLongContentLength());        
+        downloadLink.setDownloadSize(con.getLongContentLength());
         con.disconnect();
         return AvailableStatus.TRUE;
     }
 
-    //@Override
-    /*  /* /* public String getVersion() {
-        return getVersion("$Revision$");
-    } */  
+    // @Override
+    /*
+     * /* /* public String getVersion() { return
+     * getVersion("$Revision$"); }
+     */
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
@@ -96,22 +97,22 @@ public class AdriveCom extends PluginForHost {
         dl.startDownload();
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void resetDownloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
-        
+
     }
 }

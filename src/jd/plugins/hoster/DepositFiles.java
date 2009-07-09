@@ -29,17 +29,17 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import com.sun.org.apache.xerces.internal.impl.xpath.regex.ParseException;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "depositfiles.com"}, urls ={ "http://[\\w\\.]*?depositfiles\\.com(/\\w{1,3})?/files/[\\w]+"}, flags = {2})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "depositfiles.com" }, urls = { "http://[\\w\\.]*?depositfiles\\.com(/\\w{1,3})?/files/[\\w]+" }, flags = { 2 })
 public class DepositFiles extends PluginForHost {
 
     private static final String DOWNLOAD_NOTALLOWED = "Entschuldigung aber im Moment koennen Sie nur diesen Downloadmodus anwenden";
@@ -59,7 +59,7 @@ public class DepositFiles extends PluginForHost {
         this.enablePremium("http://depositfiles.com/signup.php?ref=down1");
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
         requestFileInformation(downloadLink);
@@ -129,7 +129,7 @@ public class DepositFiles extends PluginForHost {
         return false;
     }
 
-    //@Override
+    // @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         setBrowserExclusive();
@@ -165,7 +165,7 @@ public class DepositFiles extends PluginForHost {
         return ai;
     }
 
-    //@Override
+    // @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
         login(account);
@@ -205,7 +205,7 @@ public class DepositFiles extends PluginForHost {
         dl.startDownload();
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://depositfiles.com/en/agreem.html";
     }
@@ -214,9 +214,9 @@ public class DepositFiles extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replaceAll("\\.com(/.*?)?/files", ".com/de/files"));
     }
 
-    //@Override
+    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        setBrowserExclusive();        
+        setBrowserExclusive();
         String link = downloadLink.getDownloadURL();
 
         setLangtoGer();
@@ -237,35 +237,35 @@ public class DepositFiles extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    //@Override
-    /* /* public String getVersion() {
-        return getVersion("$Revision$");
-    } */
+    // @Override
+    /*
+     * /* public String getVersion() { return getVersion("$Revision$"); }
+     */
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return simultanpremium;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public int getTimegapBetweenConnections() {
         return 800;
     }
 
-    //@Override
+    // @Override
     public void resetDownloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

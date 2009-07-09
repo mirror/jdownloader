@@ -29,14 +29,14 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "uploading.com"}, urls ={ "http://[\\w\\.]*?uploading\\.com/files/\\w+/.+"}, flags = {2})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploading.com" }, urls = { "http://[\\w\\.]*?uploading\\.com/files/\\w+/.+" }, flags = { 2 })
 public class UploadingCom extends PluginForHost {
     private static int simultanpremium = 1;
 
@@ -59,7 +59,7 @@ public class UploadingCom extends PluginForHost {
     }
 
     public void login(Account account) throws IOException, PluginException {
-        this.setBrowserExclusive();        
+        this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.setCookie("http://www.uploading.com/", "_lang", "en");
         br.setCookie("http://www.uploading.com/", "setlang", "en");
@@ -170,9 +170,9 @@ public class UploadingCom extends PluginForHost {
     }
 
     // @Override
-    /* public String getVersion() {
-        return getVersion("$Revision$");
-    } */
+    /*
+     * public String getVersion() { return getVersion("$Revision$"); }
+     */
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {

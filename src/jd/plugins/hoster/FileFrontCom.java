@@ -21,13 +21,13 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "filefront.com"}, urls ={ "http://files.filefront\\.com/[^\\s]+/;\\d+(;/fileinfo.html|;)"}, flags = {0})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filefront.com" }, urls = { "http://files.filefront\\.com/[^\\s]+/;\\d+(;/fileinfo.html|;)" }, flags = { 0 })
 public class FileFrontCom extends PluginForHost {
 
     public FileFrontCom(PluginWrapper wrapper) {
@@ -56,9 +56,9 @@ public class FileFrontCom extends PluginForHost {
     }
 
     // @Override
-    /* /* public String getVersion() {
-        return getVersion("$Revision$");
-    } */
+    /*
+     * /* public String getVersion() { return getVersion("$Revision$"); }
+     */
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {

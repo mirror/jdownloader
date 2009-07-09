@@ -22,11 +22,11 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
+import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "addat.hu"}, urls ={ "http://[\\w\\.]*?addat.hu/.+/.+"}, flags = {0})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "addat.hu" }, urls = { "http://[\\w\\.]*?addat.hu/.+/.+" }, flags = { 0 })
 public class AddatHu extends PluginForHost {
 
     public AddatHu(PluginWrapper wrapper) {
@@ -70,9 +70,10 @@ public class AddatHu extends PluginForHost {
     }
 
     // @Override
-    /*  /* /* public String getVersion() {
-        return getVersion("$Revision$");
-    } */  
+    /*
+     * /* /* public String getVersion() { return
+     * getVersion("$Revision$"); }
+     */
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {

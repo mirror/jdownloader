@@ -18,13 +18,13 @@ package jd.plugins.hoster;
 
 import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "myupload.dk"}, urls ={ "http://[\\w\\.]*?myupload\\.dk/showfile/[0-9a-fA-F]+"}, flags = {0})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myupload.dk" }, urls = { "http://[\\w\\.]*?myupload\\.dk/showfile/[0-9a-fA-F]+" }, flags = { 0 })
 public class MyuploadDK extends PluginForHost {
 
     public MyuploadDK(PluginWrapper wrapper) {
@@ -65,10 +65,11 @@ public class MyuploadDK extends PluginForHost {
 
     }
 
-    /* public String getVersion() {
-        return getVersion("$Revision$");
-
-    } */
+    /*
+     * public String getVersion() { return getVersion("$Revision$");
+     * 
+     * }
+     */
 
     public int getMaxSimultanFreeDownloadNum() {
         return 20;

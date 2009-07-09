@@ -24,15 +24,15 @@ import jd.config.ConfigEntry;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "jamendo.com"}, urls ={ "http://[\\w\\.]*?jamendo\\.com/.*.*/?(track|download/album)/\\d+"}, flags = {0})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jamendo.com" }, urls = { "http://[\\w\\.]*?jamendo\\.com/.*.*/?(track|download/album)/\\d+" }, flags = { 0 })
 public class JamendoCom extends PluginForHost {
 
     private static String PREFER_HIGHQUALITY = "PREFER_HIGHQUALITY";
@@ -42,12 +42,12 @@ public class JamendoCom extends PluginForHost {
         setConfigElements();
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://www.jamendo.com/en/cgu_user";
     }
 
-    //@Override
+    // @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
         String TrackDownloadID = new Regex(parameter.getDownloadURL(), "/download/track/(\\d+)").getMatch(0);
@@ -86,7 +86,7 @@ public class JamendoCom extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
         String dlurl = null;
@@ -152,17 +152,17 @@ public class JamendoCom extends PluginForHost {
         return dlurl;
     }
 
-    //@Override
-    /* public String getVersion() {
-        return getVersion("$Revision$");
-    } */
+    // @Override
+    /*
+     * public String getVersion() { return getVersion("$Revision$"); }
+     */
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
@@ -170,10 +170,10 @@ public class JamendoCom extends PluginForHost {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_HIGHQUALITY, JDL.L("plugins.hoster.jamendo", "Prefer High Quality Download")).setDefaultValue(true));
     }
 
-    //@Override
+    // @Override
     public void resetDownloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
-        
+
     }
 
 }

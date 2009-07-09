@@ -22,13 +22,13 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.http.Encoding;
 import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "upload-drive.com"}, urls ={ "http://[\\w\\.]*?upload-drive\\.com/\\d+/.+"}, flags = {0})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upload-drive.com" }, urls = { "http://[\\w\\.]*?upload-drive\\.com/\\d+/.+" }, flags = { 0 })
 public class UploadDriveCom extends PluginForHost {
 
     public UploadDriveCom(PluginWrapper wrapper) {
@@ -36,12 +36,12 @@ public class UploadDriveCom extends PluginForHost {
         this.setStartIntervall(5000l);
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://www.upload-drive.com/terms.html";
     }
 
-    //@Override
+    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
@@ -57,12 +57,12 @@ public class UploadDriveCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    //@Override
-    /* public String getVersion() {
-        return getVersion("$Revision$");
-    } */
+    // @Override
+    /*
+     * public String getVersion() { return getVersion("$Revision$"); }
+     */
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String linkurl = br.getRegex("<div class=\"logo\"[^>]*>\\s*<a href=\"(.*?)\"><img").getMatch(0);
@@ -72,22 +72,22 @@ public class UploadDriveCom extends PluginForHost {
         dl.startDownload();
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 10;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void resetDownloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
-        
+
     }
 }

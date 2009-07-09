@@ -24,13 +24,13 @@ import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "rapidshark.pl"}, urls ={ "http://[\\w\\.]*?rapidshark\\.pl/.*?[\\w]+/?"}, flags = {0})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidshark.pl" }, urls = { "http://[\\w\\.]*?rapidshark\\.pl/.*?[\\w]+/?" }, flags = { 0 })
 public class RapidSharkPl extends PluginForHost {
 
     public RapidSharkPl(PluginWrapper wrapper) {
@@ -64,22 +64,19 @@ public class RapidSharkPl extends PluginForHost {
             String captchascope = br.getRegex("<div style='width:80px[^>]*>(.*?)</div>").getMatch(0);
             String[] captchaletters = new Regex(captchascope, "<span[^>]*>(\\d)</span>").getColumn(0);
             String[] captchalpositions = new Regex(captchascope, "padding-left:(\\d+)px").getColumn(0);
-            int i,k = 0,position = 0,less = -1;
-            for(k=0;k<captchalpositions.length;k++)
-            {
-                for (i=0;i<captchalpositions.length;i++)
-                {
-                if (less==-1 || less>Integer.parseInt(captchalpositions[i])) 
-                    {
-                    less = Integer.parseInt(captchalpositions[i]);
-                    position = i;
+            int i, k = 0, position = 0, less = -1;
+            for (k = 0; k < captchalpositions.length; k++) {
+                for (i = 0; i < captchalpositions.length; i++) {
+                    if (less == -1 || less > Integer.parseInt(captchalpositions[i])) {
+                        less = Integer.parseInt(captchalpositions[i]);
+                        position = i;
                     }
                 }
                 captchalpositions[position] = "99999";
                 less = -1;
-                code = code+captchaletters[position];
+                code = code + captchaletters[position];
                 position = 0;
-   
+
             }
             System.out.println(captchascope);
             System.out.println(code);
@@ -140,9 +137,9 @@ public class RapidSharkPl extends PluginForHost {
     }
 
     // @Override
-    /* public String getVersion() {
-        return getVersion("$Revision$");
-    } */
+    /*
+     * public String getVersion() { return getVersion("$Revision$"); }
+     */
 
     // @Override
     public void reset() {

@@ -27,14 +27,14 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "filefactory.com"}, urls ={ "http://[\\w\\.]*?filefactory\\.com(/|//)file/[\\w]+/?"}, flags = {2})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filefactory.com" }, urls = { "http://[\\w\\.]*?filefactory\\.com(/|//)file/[\\w]+/?" }, flags = { 2 })
 public class FileFactory extends PluginForHost {
 
     private static Pattern baseLink = Pattern.compile("action=\"(\\/dlf.*).\\ ", Pattern.CASE_INSENSITIVE);
@@ -112,11 +112,11 @@ public class FileFactory extends PluginForHost {
         dl = br.openDownload(parameter, downloadUrl);
 
         // Prüft ob content disposition header da sind
-        if (dl.getConnection().isContentDisposition()) {            
-            dl.startDownload();            
+        if (dl.getConnection().isContentDisposition()) {
+            dl.startDownload();
         } else {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        }        
+        }
 
     }
 
@@ -239,9 +239,9 @@ public class FileFactory extends PluginForHost {
     }
 
     // @Override
-    /* /* public String getVersion() {
-        return getVersion("$Revision$");
-    } */
+    /*
+     * /* public String getVersion() { return getVersion("$Revision$"); }
+     */
 
     // @Override
     public void init() {

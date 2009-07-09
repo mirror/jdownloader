@@ -21,26 +21,26 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "fileqube.com"}, urls ={ "http://[\\w\\.]*?fileqube\\.com/(file|shared)/[\\w]+"}, flags = {0})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileqube.com" }, urls = { "http://[\\w\\.]*?fileqube\\.com/(file|shared)/[\\w]+" }, flags = { 0 })
 public class FileQubeCom extends PluginForHost {
 
     public FileQubeCom(PluginWrapper wrapper) {
         super(wrapper);
-        //this.setStartIntervall(5000l);
+        // this.setStartIntervall(5000l);
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://www.fileqube.com/terms.html";
     }
 
-    //@Override
+    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -49,19 +49,19 @@ public class FileQubeCom extends PluginForHost {
         String filename = br.getRegex("<h1\\sclass=\"orange\">(.*?)</h1>").getMatch(0);
         String filesize = br.getRegex("id=.fileSize.>(.*?)</strong>").getMatch(0);
         br.toString();
-        //System.out.println(filename+" "+filesize);
+        // System.out.println(filename+" "+filesize);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
         return AvailableStatus.TRUE;
     }
 
-    //@Override
-    /* /* public String getVersion() {
-        return getVersion("$Revision$");
-    } */
+    // @Override
+    /*
+     * /* public String getVersion() { return getVersion("$Revision$"); }
+     */
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String linkurl = br.getRegex("Copy file</strong></a></span>\\s+<span[^>]*><a href=\"(.*?)\"").getMatch(0);
@@ -72,22 +72,22 @@ public class FileQubeCom extends PluginForHost {
 
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void resetDownloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
-        
+
     }
 }

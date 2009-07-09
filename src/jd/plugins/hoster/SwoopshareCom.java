@@ -21,11 +21,11 @@ import java.net.MalformedURLException;
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
+import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "swoopshare.com"}, urls ={ "http://[\\w\\.]*?swoopshare\\.com/file/.*"}, flags = {0})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "swoopshare.com" }, urls = { "http://[\\w\\.]*?swoopshare\\.com/file/.*" }, flags = { 0 })
 public class SwoopshareCom extends PluginForHost {
 
     public SwoopshareCom(PluginWrapper wrapper) {
@@ -64,9 +64,9 @@ public class SwoopshareCom extends PluginForHost {
     }
 
     // @Override
-    /* public String getVersion() {
-        return getVersion("$Revision$");
-    } */
+    /*
+     * public String getVersion() { return getVersion("$Revision$"); }
+     */
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {

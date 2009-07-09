@@ -27,14 +27,14 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "filehostme.com"}, urls ={ "http://[\\w\\.]*?filehostme\\.com/[\\w]+\\.html"}, flags = {2})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filehostme.com" }, urls = { "http://[\\w\\.]*?filehostme\\.com/[\\w]+\\.html" }, flags = { 2 })
 public class FileHostMecom extends PluginForHost {
 
     public FileHostMecom(PluginWrapper wrapper) {
@@ -42,7 +42,7 @@ public class FileHostMecom extends PluginForHost {
         this.enablePremium("http://www.filehostme.com/premium.html");
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://www.filehostme.com/tos.html";
     }
@@ -64,7 +64,7 @@ public class FileHostMecom extends PluginForHost {
         return false;
     }
 
-    //@Override
+    // @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         setBrowserExclusive();
@@ -89,7 +89,7 @@ public class FileHostMecom extends PluginForHost {
         return ai;
     }
 
-    //@Override
+    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
@@ -101,12 +101,12 @@ public class FileHostMecom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    //@Override
-    /* /* public String getVersion() {
-        return getVersion("$Revision$");
-    } */
+    // @Override
+    /*
+     * /* public String getVersion() { return getVersion("$Revision$"); }
+     */
 
-    //@Override
+    // @Override
     public void handlePremium(DownloadLink parameter, Account account) throws Exception {
         requestFileInformation(parameter);
         login(account);
@@ -162,7 +162,7 @@ public class FileHostMecom extends PluginForHost {
         return retcap;
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.getPage(downloadLink.getDownloadURL());
@@ -199,20 +199,20 @@ public class FileHostMecom extends PluginForHost {
         dl.startDownload();
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void resetDownloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

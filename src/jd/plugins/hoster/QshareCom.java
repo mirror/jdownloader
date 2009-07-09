@@ -28,13 +28,13 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "qshare.com"}, urls ={ "http://[\\w\\.]*?qshare\\.com/get/[0-9]{1,20}/.*"}, flags = {2})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "qshare.com" }, urls = { "http://[\\w\\.]*?qshare\\.com/get/[0-9]{1,20}/.*" }, flags = { 2 })
 public class QshareCom extends PluginForHost {
     public QshareCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -209,9 +209,9 @@ public class QshareCom extends PluginForHost {
     }
 
     // @Override
-    /* public String getVersion() {
-        return getVersion("$Revision$");
-    } */
+    /*
+     * public String getVersion() { return getVersion("$Revision$"); }
+     */
 
     // @Override
     public int getMaxSimultanFreeDownloadNum() {

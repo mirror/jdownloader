@@ -26,14 +26,14 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "uploader.pl"}, urls ={ "http://[\\w\\d\\.]*?easy-share\\.com/\\d{6}.*"}, flags = {2})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploader.pl" }, urls = { "http://[\\w\\d\\.]*?easy-share\\.com/\\d{6}.*" }, flags = { 2 })
 public class UploaderPl extends PluginForHost {
 
     private int simultanpremium = 1;
@@ -43,7 +43,7 @@ public class UploaderPl extends PluginForHost {
         enablePremium("http://uploader.pl/register.php");
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String linkurl = br.getRegex("downloadurl'\\);\">(.*?)</textarea>").getMatch(0);
@@ -55,7 +55,7 @@ public class UploaderPl extends PluginForHost {
         dl.startDownload();
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 10;
     }
@@ -90,7 +90,7 @@ public class UploaderPl extends PluginForHost {
         return true;
     }
 
-    //@Override
+    // @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         try {
@@ -116,12 +116,12 @@ public class UploaderPl extends PluginForHost {
         return ai;
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return simultanpremium;
     }
 
-    //@Override
+    // @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
         login(account);
@@ -145,12 +145,12 @@ public class UploaderPl extends PluginForHost {
         dl.startDownload();
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://uploader.pl/rules.php";
     }
 
-    //@Override
+    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage("http://uploader.pl/en");
@@ -164,23 +164,23 @@ public class UploaderPl extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    //@Override
-    /* public String getVersion() {
-        return getVersion("$Revision$");
-    } */
+    // @Override
+    /*
+     * public String getVersion() { return getVersion("$Revision$"); }
+     */
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void resetDownloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
-        
+
     }
 
 }

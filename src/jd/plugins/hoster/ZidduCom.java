@@ -23,14 +23,14 @@ import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "ziddu.com"}, urls ={ "http://[\\w\\.]*?ziddu\\.com/((download(file)?/\\d+/.+)|(download\\.php\\?uid=.+))"}, flags = {0})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ziddu.com" }, urls = { "http://[\\w\\.]*?ziddu\\.com/((download(file)?/\\d+/.+)|(download\\.php\\?uid=.+))" }, flags = { 0 })
 public class ZidduCom extends PluginForHost {
 
     public ZidduCom(PluginWrapper wrapper) {
@@ -60,8 +60,8 @@ public class ZidduCom extends PluginForHost {
          * angenommen wird dass das Captcha falsch war.
          */
         if (!dl.getConnection().isContentDisposition()) {
-        	dl.getConnection().disconnect();
-        	throw new PluginException(LinkStatus.ERROR_CAPTCHA, JDL.L("downloadlink.status.error.captcha_wrong", "Captcha wrong"));
+            dl.getConnection().disconnect();
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA, JDL.L("downloadlink.status.error.captcha_wrong", "Captcha wrong"));
         }
         dl.startDownload();
     }
@@ -95,9 +95,9 @@ public class ZidduCom extends PluginForHost {
     }
 
     // @Override
-    /* public String getVersion() {
-        return getVersion("$Revision$");
-    } */
+    /*
+     * public String getVersion() { return getVersion("$Revision$"); }
+     */
 
     // @Override
     public void reset() {

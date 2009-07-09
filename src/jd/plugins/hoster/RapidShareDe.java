@@ -31,15 +31,15 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.RAFDownload;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "rapidshare.de"}, urls ={ "http://[w.]*?rapidshare.de/files/[d]{3,9}/.*"}, flags = {2})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidshare.de" }, urls = { "http://[w.]*?rapidshare.de/files/[d]{3,9}/.*" }, flags = { 2 })
 public class RapidShareDe extends PluginForHost {
 
     public RapidShareDe(PluginWrapper wrapper) {
@@ -186,10 +186,11 @@ public class RapidShareDe extends PluginForHost {
     }
 
     // @Override
-    /* public String getVersion() {
-
-        return getVersion("$Revision$");
-    } */
+    /*
+     * public String getVersion() {
+     * 
+     * return getVersion("$Revision$"); }
+     */
 
     // @Override
     public int getMaxSimultanFreeDownloadNum() {

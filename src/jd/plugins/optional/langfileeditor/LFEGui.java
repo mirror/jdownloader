@@ -57,9 +57,7 @@ import jd.gui.UserIO;
 import jd.gui.skins.simple.JTabbedPanel;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.ChartAPIEntity;
-import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.PieChartAPI;
-import jd.nutils.io.JDFileFilter;
 import jd.nutils.io.JDIO;
 import jd.nutils.svn.Subversion;
 import jd.utils.JDGeoCode;
@@ -70,10 +68,7 @@ import net.miginfocom.swing.MigLayout;
 import org.jdesktop.swingx.JXTable;
 import org.jdesktop.swingx.decorator.ColorHighlighter;
 import org.jdesktop.swingx.decorator.ComponentAdapter;
-import org.jdesktop.swingx.decorator.Filter;
-import org.jdesktop.swingx.decorator.FilterPipeline;
 import org.jdesktop.swingx.decorator.HighlightPredicate;
-import org.jdesktop.swingx.decorator.PatternFilter;
 import org.jdesktop.swingx.search.SearchFactory;
 import org.tmatesoft.svn.core.SVNException;
 import org.tmatesoft.svn.core.wc.SVNInfo;
@@ -91,17 +86,6 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
 
     private final SubConfiguration subConfig;
 
-    // private final String PROPERTY_SHOW_DONE = "PROPERTY_SHOW_DONE";
-    // private final String PROPERTY_SHOW_MISSING = "PROPERTY_SHOW_MISSING";
-    // private final String PROPERTY_SHOW_OLD = "PROPERTY_SHOW_OLD";
-    // private final String PROPERTY_COLORIZE_DONE = "PROPERTY_COLORIZE_DONE";
-    // private final String PROPERTY_COLORIZE_MISSING =
-    // "PROPERTY_COLORIZE_MISSING";
-    // private final String PROPERTY_COLORIZE_OLD = "PROPERTY_COLORIZE_OLD";
-    // private final String PROPERTY_DONE_COLOR = "PROPERTY_DONE_COLOR";
-    // private final String PROPERTY_MISSING_COLOR = "PROPERTY_MISSING_COLOR";
-    // private final String PROPERTY_OLD_COLOR = "PROPERTY_OLD_COLOR";
-
     final static String PROPERTY_SVN_ACCESS_ANONYMOUS = "PROPERTY_SVN_CHECKOUT_ANONYMOUS";
     final static String PROPERTY_SVN_ACCESS_USER = "PROPERTY_SVN_CHECKOUT_USER";
     final static String PROPERTY_SVN_ACCESS_PASS = "PROPERTY_SVN_CHECKOUT_PASS";
@@ -109,48 +93,32 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
     private JXTable table;
     private MyTableModel tableModel;
     private File languageFile;
-    // private ComboBrowseFile cmboFile;
     private PieChartAPI keyChart;
     private ChartAPIEntity entDone, entMissing, entOld;
-    private JMenu mnuFile, mnuKey, mnuEntries;
-    private JMenuItem mnuNew, mnuSave;
-
+    private JMenu mnuFile, mnuLoad, mnuKey, mnuEntries;
+    private JMenuItem mnuSave, mnuReload;
     private JMenuItem mnuAdd, mnuAdopt, mnuAdoptMissing, mnuClear, mnuDelete, mnuTranslate, mnuTranslateMissing;
     private JMenuItem mnuShowDupes, mnuOpenSearchDialog;
     private JPopupMenu mnuContextPopup;
     private JMenuItem mnuContextAdopt, mnuContextClear, mnuContextDelete, mnuContextTranslate;
 
-    // private HashMap<String, String> sourceEntries = new HashMap<String,
-    // String>();
-    // private ArrayList<String> sourcePatterns = new ArrayList<String>();
     private HashMap<String, String> languageKeysFormFile = new HashMap<String, String>();
     private ArrayList<KeyInfo> data = new ArrayList<KeyInfo>();
     private HashMap<String, ArrayList<String>> dupes = new HashMap<String, ArrayList<String>>();
     private String lngKey = null;
     private boolean changed = false;
-    // private boolean initComplete = false;
     private boolean updatingInProgress = false;
-    private final JDFileFilter fileFilter;
     private final File dirLanguages, dirWorkingCopy;
 
-    private boolean colorizeDone, colorizeMissing, colorizeOld, showDone, showMissing, showOld;
-    private Color colorDone, colorMissing, colorOld;
     private ColorHighlighter doneHighlighter, missingHighlighter, oldHighlighter;
 
     private SrcParser sourceParser;
 
-    private JMenu mnuLoad;
-
     private long HEAD;
-
-    private JMenuItem mnuReload;
 
     public LFEGui(SubConfiguration cfg) {
         subConfig = cfg;
-        fileFilter = new JDFileFilter(JDL.L(LOCALE_PREFIX + "fileFilter2", "JD Language File (*.loc) or Folder with Sourcefiles"), ".loc", true);
-        // String lfeHome =
-        // JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() +
-        // "/plugins/lfe/";
+
         dirLanguages = JDUtilities.getResourceFile("tmp/lfe/lng/");
         dirWorkingCopy = JDUtilities.getResourceFile("tmp/lfe/src/");
         dirLanguages.mkdirs();
@@ -159,28 +127,14 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
     }
 
     private void showGui() {
-        colorizeDone = true;
-        colorizeMissing = true;
-        colorizeOld = true;
-
-        showDone = true;
-        showMissing = true;
-        showOld = true;
-
-        colorDone = Color.GREEN;
-        colorMissing = Color.RED;
-        colorOld = Color.ORANGE;
-
-        doneHighlighter = new ColorHighlighter(new DonePredicate(), colorDone, null);
-        missingHighlighter = new ColorHighlighter(new MissingPredicate(), colorMissing, null);
-        oldHighlighter = new ColorHighlighter(new OldPredicate(), colorOld, null);
+        doneHighlighter = new ColorHighlighter(new DonePredicate(), Color.GREEN, null);
+        missingHighlighter = new ColorHighlighter(new MissingPredicate(), Color.RED, null);
+        oldHighlighter = new ColorHighlighter(new OldPredicate(), Color.ORANGE, null);
 
         tableModel = new MyTableModel();
         table = new JXTable(tableModel);
-       
+
         table.setEnabled(false);
-        FilterPipeline pipeline = new FilterPipeline(new Filter[] { new MyPatternFilter() });
-        table.setFilters(pipeline);
         table.getTableHeader().setReorderingAllowed(false);
         table.getColumn(0).setMinWidth(50);
         table.getColumn(0).setMaxWidth(50);
@@ -191,39 +145,18 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         table.setAutoStartEditOnKeyStroke(false);
 
-        if (colorizeDone) table.addHighlighter(doneHighlighter);
-        if (colorizeMissing) table.addHighlighter(missingHighlighter);
-        if (colorizeOld) table.addHighlighter(oldHighlighter);
-
-        // cmboSource = new ComboBrowseFile("LANGFILEEDITOR_SOURCE");
-        // cmboSource.setFileSelectionMode(JDFileChooser.FILES_AND_DIRECTORIES);
-        // cmboSource.setFileFilter(fileFilter);
-        // cmboSource.addActionListener(this);
-
-        // cmboFile = new ComboBrowseFile("LANGFILEEDITOR_FILE");
-        // cmboFile.setFileSelectionMode(JDFileChooser.FILES_ONLY);
-        // cmboFile.setFileFilter(fileFilter);
-        // cmboFile.addActionListener(this);
-
+        table.addHighlighter(doneHighlighter);
+        table.addHighlighter(missingHighlighter);
+        table.addHighlighter(oldHighlighter);
         keyChart = new PieChartAPI("", 225, 50);
-        keyChart.addEntity(entDone = new ChartAPIEntity(JDL.L(LOCALE_PREFIX + "keychart.done", "Done"), 0, colorDone));
-        keyChart.addEntity(entMissing = new ChartAPIEntity(JDL.L(LOCALE_PREFIX + "keychart.missing", "Missing"), 0, colorMissing));
-        keyChart.addEntity(entOld = new ChartAPIEntity(JDL.L(LOCALE_PREFIX + "keychart.old", "Old"), 0, colorOld));
+        keyChart.addEntity(entDone = new ChartAPIEntity(JDL.L(LOCALE_PREFIX + "keychart.done", "Done"), 0, Color.GREEN));
+        keyChart.addEntity(entMissing = new ChartAPIEntity(JDL.L(LOCALE_PREFIX + "keychart.missing", "Missing"), 0, Color.RED));
+        keyChart.addEntity(entOld = new ChartAPIEntity(JDL.L(LOCALE_PREFIX + "keychart.old", "Old"), 0, Color.ORANGE));
 
         this.setLayout(new MigLayout("wrap 3", "[][grow, fill][]", "[][grow, fill][]"));
         this.add(buildMenu(), "span 3, growx, spanx");
-        // this.add(new JLabel(JDLocale.L(LOCALE_PREFIX + "source",
-        // "Source:")));
-        // this.add(cmboSource, "growx");
-
-        // this.add(new JLabel(JDLocale.L(LOCALE_PREFIX + "languageFile",
-        // "Language File:")));
-        // this.add(cmboFile, "growx");
-
         this.add(new JScrollPane(table), "span 3, grow, span");
         this.add(keyChart, "spany 1, w 225!, h 50!");
-        // sourceFile = cmboSource.getCurrentPath();
-        // languageFile = cmboFile.getCurrentPath();
 
         new Thread(new Runnable() {
 
@@ -236,19 +169,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
                  * gestartet!
                  */
                 updateSVN();
-                // if (languageFile == null) {
-                // if (dirLanguages.exists() && new File(dirLanguages,
-                // JDLocale.getLocale() + ".loc").exists()) {
-                // cmboFile.setCurrentPath(new File(dirLanguages,
-                // JDLocale.getLocale() + ".loc"));
-                // } else {
-                // cmboFile.setCurrentPath(JDLocale.getLanguageFile());
-                // }
-                // }
 
-                // initComplete = true;
-
-                // if (sourceFile != null)
                 getSourceEntries();
                 initLocaleData();
 
@@ -280,49 +201,41 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
     }
 
     private JMenuBar buildMenu() {
-        // File Menü
-        mnuFile = new JMenu(JDL.L(LOCALE_PREFIX + "file", "File"));
-      
-//        mnuFile.add(mnuNew = new JMenuItem(JDL.L(LOCALE_PREFIX + "new", "New")));
-        mnuFile.add(mnuLoad = new JMenu(JDL.L(LOCALE_PREFIX + "load", "Load Language")));
+        // Load Menü
+        mnuLoad = new JMenu(JDL.L(LOCALE_PREFIX + "load", "Load Language"));
         for (File f : dirLanguages.listFiles()) {
             if (f.getName().endsWith(".loc")) {
                 String language = JDGeoCode.toLonger(f.getName().substring(0, f.getName().length() - 4));
                 if (language != null) {
-                    JMenuItem mi;
-                    mnuLoad.add(mi = new JMenuItem(language));
+                    JMenuItem mi = new JMenuItem(language);
                     mi.addActionListener(new ActionListener() {
 
                         public void actionPerformed(ActionEvent e) {
                             languageFile = new File(dirLanguages, JDGeoCode.longToShort(e.getActionCommand()) + ".loc");
                             initLocaleData();
                             table.setEnabled(true);
-
                         }
 
                     });
+                    mnuLoad.add(mi);
                 }
             }
-
         }
+
+        // File Menü
+        mnuFile = new JMenu(JDL.L(LOCALE_PREFIX + "file", "File"));
+
+        mnuFile.add(mnuLoad);
         mnuFile.addSeparator();
         mnuFile.add(mnuSave = new JMenuItem(JDL.L(LOCALE_PREFIX + "save", "Save")));
         mnuFile.addSeparator();
         mnuFile.add(mnuReload = new JMenuItem(JDL.L(LOCALE_PREFIX + "reload", "Revert/Reload")));
-        // mnuFile.add(mnuSaveAs = new JMenuItem(JDL.L(LOCALE_PREFIX + "saveAs",
-        // "Save As")));
-        // mnuFile.addSeparator();
-        // mnuFile.add(mnuReload = new JMenuItem(JDL.L(LOCALE_PREFIX + "reload",
-        // "Reload")));
-        mnuReload.addActionListener(this);
-//        mnuNew.addActionListener(this);
-        mnuSave.addActionListener(this);
 
-        // mnuReload.addActionListener(this);
+        mnuReload.addActionListener(this);
+        mnuSave.addActionListener(this);
 
         mnuSave.setEnabled(false);
 
-//        mnuNew.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_N, KeyEvent.CTRL_DOWN_MASK));
         mnuSave.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, KeyEvent.CTRL_DOWN_MASK));
 
         // Key Menü
@@ -367,7 +280,6 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         // Menü-Bar zusammensetzen
         JMenuBar menuBar = new JMenuBar();
         menuBar.add(mnuFile);
-
         menuBar.add(mnuKey);
         menuBar.add(mnuEntries);
 
@@ -391,69 +303,9 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
     }
 
     public void actionPerformed(ActionEvent e) {
-        // if (e.getSource() == cmboSource) {
-        //
-        // if (!initComplete) return;
-        // File sourceFile = cmboSource.getCurrentPath();
-        // if (sourceFile == this.sourceFile) return;
-        //
-        // if (!saveChanges(this.sourceFile, true, null)) return;
-        //
-        // if (sourceFile != this.sourceFile && sourceFile != null) {
-        // this.sourceFile = sourceFile;
-        // initLocaleDataComplete();
-        // }
-        //
-        // } else
-        // if (e.getSource() == cmboFile) {
-
-        // File languageFile = cmboFile.getCurrentPath();
-        // if (languageFile == this.languageFile) return;
-        //
-        // if
-        // (!languageFile.getAbsolutePath().startsWith(this.dirLanguages.getAbsolutePath()))
-        // {
-        // UserIO.getInstance().requestMessageDialog(JDLocale.LF(LOCALE_PREFIX +
-        // "wrongLanguageFile",
-        // "With the selected LanguageFile you are unable to let the LanguageFileEditor commit your changes to the SVN! Please change to a LanguageFile from the folder %s",
-        // dirLanguages.getAbsolutePath()));
-        // }
-        //
-        // if (!saveChanges(this.languageFile, false, languageFile)) return;
-        //
-        // if (languageFile != this.languageFile && languageFile != null) {
-        // this.languageFile = languageFile;
-        // initLocaleData();
-        // }
-
-        // } else
-        
-        if (e.getSource() == this.mnuReload) {
+        if (e.getSource() == mnuReload) {
             initLocaleDataComplete();
             updateSVNinThread();
-            
-        }else if (e.getSource() == mnuNew) {
-
-            if (!saveChanges()) return;
-
-            JDFileChooser chooser = new JDFileChooser("LANGFILEEDITOR_FILE");
-            chooser.setFileFilter(fileFilter);
-            if (languageFile != null) chooser.setCurrentDirectory(languageFile.getParentFile());
-
-            if (chooser.showSaveDialog(this) == JDFileChooser.APPROVE_OPTION) {
-                languageFile = chooser.getSelectedFile();
-                if (!languageFile.getAbsolutePath().endsWith(".loc")) languageFile = new File(languageFile.getAbsolutePath() + ".loc");
-                if (!languageFile.exists()) {
-                    try {
-                        languageFile.createNewFile();
-                    } catch (IOException e1) {
-                        JDLogger.exception(e1);
-                    }
-                }
-                // cmboFile.setCurrentPath(languageFile);
-
-                initLocaleDataComplete();
-            }
 
         } else if (e.getSource() == mnuSave) {
 
@@ -489,14 +341,14 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
             for (int i = 0; i < tableModel.getRowCount(); ++i) {
 
                 if (tableModel.getValueAt(i, 3).equals("")) {
-                    tableModel.setValueAt(tableModel.getValueAt(i, 2), i,3);
+                    tableModel.setValueAt(tableModel.getValueAt(i, 2), i, 3);
                 }
             }
 
         } else if (e.getSource() == mnuClear || e.getSource() == mnuContextClear) {
 
             for (int row : getSelectedRows()) {
-                tableModel.setValueAt("", row,3);
+                tableModel.setValueAt("", row, 3);
             }
 
         } else if (e.getSource() == mnuShowDupes) {
@@ -512,7 +364,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
             if (getLanguageKey() == null) return;
 
             int[] rows = getSelectedRows();
-      
+
             for (int i = rows.length - 1; i >= 0; --i) {
                 translateRow(rows[i]);
             }
@@ -527,26 +379,8 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
                 }
             }
 
-
         }
 
-    }
-
-    private boolean saveChanges() {
-        if (changed) {
-            int res = JOptionPane.showConfirmDialog(this, JDL.L(LOCALE_PREFIX + "changed.message", "Language File changed! Save changes?"), JDL.L(LOCALE_PREFIX + "changed.title", "Save changes?"), JOptionPane.YES_NO_CANCEL_OPTION);
-            if (res == JOptionPane.CANCEL_OPTION) {
-
-                return false;
-            } else if (res == JOptionPane.YES_OPTION) {
-                saveLanguageFile(languageFile);
-
-            } else {
-                changed = false;
-            }
-        }
-
-        return true;
     }
 
     private void updateSVNinThread() {
@@ -613,12 +447,6 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         updatingInProgress = false;
         SimpleGUI.CURRENTGUI.setWaiting(false);
 
-        // if (sourceFile == null || !sourceFile.equals(dirWorkingCopy)) {
-        // if (!initComplete) sourceFile = dirWorkingCopy;
-        // cmboSource.setCurrentPath(dirWorkingCopy);
-        // } else if (sourceFile.equals(dirWorkingCopy) && !changed) {
-        // if (initComplete) initLocaleDataComplete();
-        // }
     }
 
     private String getLanguageKey() {
@@ -700,8 +528,6 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
             return;
         }
 
-        // if (languageFile.getAbsolutePath() != cmboFile.getText())
-        // cmboFile.setCurrentPath(languageFile);
         changed = false;
         UserIO.getInstance().requestMessageDialog(JDL.L(LOCALE_PREFIX + "save.success.message", "LanguageFile saved successfully!"));
     }
@@ -782,19 +608,9 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
 
     private void getSourceEntries() {
         SimpleGUI.CURRENTGUI.setWaiting(true);
-        // if (sourceFile.isDirectory()) {
-
         getSourceEntriesFromFolder();
-        // } else {
-        // getSourceEntriesFromFile();
-        // }
         SimpleGUI.CURRENTGUI.setWaiting(false);
     }
-
-    // private void getSourceEntriesFromFile() {
-    // sourcePatterns.clear();
-    // // parseLanguageFile(sourceFile, sourceEntries);
-    // }
 
     private void getSourceEntriesFromFolder() {
 
@@ -805,7 +621,6 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
 
             if (subConfig.getBooleanProperty(PROPERTY_SVN_ACCESS_ANONYMOUS, true)) {
                 svn = new Subversion(SOURCE_SVN);
-
             } else {
                 svn = new Subversion(SOURCE_SVN, subConfig.getStringProperty(PROPERTY_SVN_ACCESS_USER), subConfig.getStringProperty(PROPERTY_SVN_ACCESS_PASS));
             }
@@ -820,7 +635,6 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
                 return;
             }
         } catch (SVNException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
 
@@ -854,7 +668,6 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
                 }
             }
         } catch (SVNException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
         progress.setStatusText(JDL.L(LOCALE_PREFIX + "analyzingSource.ready", "Analyzing Source Folder: Complete"));
@@ -865,14 +678,12 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         try {
             if (subConfig.getBooleanProperty(PROPERTY_SVN_ACCESS_ANONYMOUS, true)) return false;
             if (svn == null) {
-
                 svn = new Subversion(LANGUAGE_SVN, subConfig.getStringProperty(PROPERTY_SVN_ACCESS_USER), subConfig.getStringProperty(PROPERTY_SVN_ACCESS_PASS));
             }
             svn.update(file, null);
             svn.commit(file, string);
             return true;
         } catch (SVNException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
         return false;
@@ -1000,16 +811,6 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         public boolean isHighlighted(Component arg0, ComponentAdapter arg1) {
             return (table.getValueAt(arg1.row, 2).equals(""));
         }
-    }
-
-    private class MyPatternFilter extends PatternFilter {
-
-        @Override
-        public boolean test(int row) {
-            boolean result = true;
-            return result;
-        }
-
     }
 
     private class MyTableModel extends AbstractTableModel {

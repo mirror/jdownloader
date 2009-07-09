@@ -25,13 +25,13 @@ import jd.http.Encoding;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "filestore.to"}, urls ={ "http://[\\w\\.]*?filestore\\.to/\\?d=[\\w]+"}, flags = {0})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filestore.to" }, urls = { "http://[\\w\\.]*?filestore\\.to/\\?d=[\\w]+" }, flags = { 0 })
 public class FilestoreTo extends PluginForHost {
 
     public FilestoreTo(PluginWrapper wrapper) {
@@ -39,12 +39,12 @@ public class FilestoreTo extends PluginForHost {
         this.setStartIntervall(2000l);
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://www.filestore.to/rules.php?setlang=en";
     }
 
-    //@Override
+    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
 
@@ -71,12 +71,12 @@ public class FilestoreTo extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
-    //@Override
-    /* /* public String getVersion() {
-        return getVersion("$Revision$");
-    } */
+    // @Override
+    /*
+     * /* public String getVersion() { return getVersion("$Revision$"); }
+     */
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
@@ -94,27 +94,27 @@ public class FilestoreTo extends PluginForHost {
         dl.startDownload();
     }
 
-    //@Override
+    // @Override
     public int getTimegapBetweenConnections() {
         return 2000;
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 3;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void resetDownloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
-        
+
     }
 }

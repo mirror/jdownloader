@@ -21,13 +21,13 @@ import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "furk.net"}, urls ={ "http(s)://[\\w\\.]*?furk\\.net/.+[/0-9a-zA-Z]+.html"}, flags = {0})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "furk.net" }, urls = { "http(s)://[\\w\\.]*?furk\\.net/.+[/0-9a-zA-Z]+.html" }, flags = { 0 })
 public class FurkNet extends PluginForHost {
 
     public FurkNet(PluginWrapper wrapper) {
@@ -82,10 +82,9 @@ public class FurkNet extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    
-    /* public String getVersion() {
-        return getVersion("$Revision$");
-    } */
+    /*
+     * public String getVersion() { return getVersion("$Revision$"); }
+     */
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {

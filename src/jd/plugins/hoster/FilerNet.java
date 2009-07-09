@@ -31,15 +31,15 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "filer.net"}, urls ={ "http://[\\w\\.]*?filer.net/(file[\\d]+|get|dl)/.*"}, flags = {2})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filer.net" }, urls = { "http://[\\w\\.]*?filer.net/(file[\\d]+|get|dl)/.*" }, flags = { 2 })
 public class FilerNet extends PluginForHost {
 
     private static final Pattern PATTERN_MATCHER_ERROR = Pattern.compile("errors", Pattern.CASE_INSENSITIVE);
@@ -107,11 +107,10 @@ public class FilerNet extends PluginForHost {
         Thread.sleep(500);
         String cookie = br.getCookie("http://filer.net", "filer_net");
         if (cookie == null) {
-            if(br.containsHTML("Mit diesem Usernamen ist bereits ein Benutzer eingelogged")){
-                throw new PluginException(LinkStatus.ERROR_PREMIUM,"Fraud Detection. This Username is currently used by someone else.", LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                
+            if (br.containsHTML("Mit diesem Usernamen ist bereits ein Benutzer eingelogged")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, "Fraud Detection. This Username is currently used by someone else.", LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE);
+
             }
-            
+
             account.setEnabled(false);
             throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
         }
@@ -229,9 +228,9 @@ public class FilerNet extends PluginForHost {
     }
 
     // @Override
-    /* /* public String getVersion() {
-        return getVersion("$Revision$");
-    } */
+    /*
+     * /* public String getVersion() { return getVersion("$Revision$"); }
+     */
 
     // @Override
     public int getMaxSimultanFreeDownloadNum() {

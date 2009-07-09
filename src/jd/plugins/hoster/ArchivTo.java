@@ -22,13 +22,13 @@ import jd.PluginWrapper;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "archiv.to"}, urls ={ "http://[\\w\\.]*?archiv\\.to/\\?Module\\=Details&HashID\\=.*"}, flags = {0})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "archiv.to" }, urls = { "http://[\\w\\.]*?archiv\\.to/\\?Module\\=Details&HashID\\=.*" }, flags = { 0 })
 public class ArchivTo extends PluginForHost {
 
     public ArchivTo(PluginWrapper wrapper) {
@@ -60,9 +60,10 @@ public class ArchivTo extends PluginForHost {
     }
 
     // @Override
-    /*  /* /* public String getVersion() {
-        return getVersion("$Revision$");
-    } */  
+    /*
+     * /* /* public String getVersion() { return
+     * getVersion("$Revision$"); }
+     */
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {

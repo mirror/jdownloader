@@ -18,55 +18,56 @@ package jd.plugins.hoster;
 
 import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
+import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "roms.zophar.net"}, urls ={ "http://www[\\d]?\\.przeslij\\.net/download\\.php\\?file=(.*)"}, flags = {0})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "roms.zophar.net" }, urls = { "http://www[\\d]?\\.przeslij\\.net/download\\.php\\?file=(.*)" }, flags = { 0 })
 public class RomsZopharNet extends PluginForHost {
 
     public RomsZopharNet(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://roms.zophar.net/legal.html";
     }
 
-    //@Override
+    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) {
         return AvailableStatus.TRUE;
     }
 
-    //@Override
-    /* public String getVersion() {
+    // @Override
+    /*
+     * public String getVersion() {
+     * 
+     * return getVersion("$Revision$"); }
+     */
 
-        return getVersion("$Revision$");
-    } */
-
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
         br.openDownload(downloadLink, br.getRedirectLocation()).startDownload();
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         /* TODO: Wert nachprüfen */
         return 1;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void resetDownloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

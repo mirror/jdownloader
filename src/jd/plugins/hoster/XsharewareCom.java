@@ -25,13 +25,13 @@ import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "xshareware.com"}, urls ={ "http://[\\w\\.]*?xshareware\\.com/[\\w]+/.*"}, flags = {0})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xshareware.com" }, urls = { "http://[\\w\\.]*?xshareware\\.com/[\\w]+/.*" }, flags = { 0 })
 public class XsharewareCom extends PluginForHost {
 
     public XsharewareCom(PluginWrapper wrapper) {
@@ -111,9 +111,9 @@ public class XsharewareCom extends PluginForHost {
     }
 
     // @Override
-    /* public String getVersion() {
-        return getVersion("$Revision$");
-    } */
+    /*
+     * public String getVersion() { return getVersion("$Revision$"); }
+     */
 
     // @Override
     public void reset() {

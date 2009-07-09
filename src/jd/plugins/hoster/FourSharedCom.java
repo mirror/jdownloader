@@ -23,14 +23,14 @@ import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "4shared.com"}, urls ={ "http://[\\w\\.]*?4shared.com/file/\\d+?/.*"}, flags = {0})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "http://[\\w\\.]*?4shared.com/file/\\d+?/.*" }, flags = { 0 })
 public class FourSharedCom extends PluginForHost {
 
     private static int COUNTER = 0;
@@ -81,9 +81,9 @@ public class FourSharedCom extends PluginForHost {
     }
 
     // @Override
-    /* /* public String getVersion() {
-        return getVersion("$Revision$");
-    } */
+    /*
+     * /* public String getVersion() { return getVersion("$Revision$"); }
+     */
 
     public static synchronized void increaseCounter() {
         COUNTER++;

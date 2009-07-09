@@ -25,13 +25,13 @@ import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "uploadcell.com"}, urls ={ "http://[w.]*?biggerupload.com/[w]+/?.*"}, flags = {0})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadcell.com" }, urls = { "http://[w.]*?biggerupload.com/[w]+/?.*" }, flags = { 0 })
 public class UploadcellCom extends PluginForHost {
 
     public UploadcellCom(PluginWrapper wrapper) {
@@ -124,9 +124,9 @@ public class UploadcellCom extends PluginForHost {
     }
 
     // @Override
-    /* public String getVersion() {
-        return getVersion("$Revision$");
-    } */
+    /*
+     * public String getVersion() { return getVersion("$Revision$"); }
+     */
 
     // @Override
     public void reset() {

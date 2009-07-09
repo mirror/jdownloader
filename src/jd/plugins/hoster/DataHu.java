@@ -27,13 +27,13 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "data.hu"}, urls ={ "http://[\\w\\.]*?data.hu/get/.+/.+"}, flags = {2})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "data.hu" }, urls = { "http://[\\w\\.]*?data.hu/get/.+/.+" }, flags = { 2 })
 public class DataHu extends PluginForHost {
 
     public DataHu(PluginWrapper wrapper) {
@@ -41,12 +41,12 @@ public class DataHu extends PluginForHost {
         this.enablePremium("http://data.hu/premium.php");
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://data.hu/adatvedelem.php";
     }
 
-    //@Override
+    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException {
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
@@ -58,10 +58,10 @@ public class DataHu extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    //@Override
-    /* /* public String getVersion() {
-        return getVersion("$Revision$");
-    } */
+    // @Override
+    /*
+     * /* public String getVersion() { return getVersion("$Revision$"); }
+     */
 
     public void login(Account account) throws Exception {
         this.setBrowserExclusive();
@@ -82,7 +82,7 @@ public class DataHu extends PluginForHost {
         return false;
     }
 
-    //@Override
+    // @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         this.setBrowserExclusive();
@@ -107,7 +107,7 @@ public class DataHu extends PluginForHost {
         return ai;
     }
 
-    //@Override
+    // @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
         login(account);
@@ -119,7 +119,7 @@ public class DataHu extends PluginForHost {
         dl.startDownload();
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         br.setFollowRedirects(true);
         requestFileInformation(downloadLink);
@@ -134,30 +134,30 @@ public class DataHu extends PluginForHost {
 
     }
 
-    //@Override
+    // @Override
     public int getTimegapBetweenConnections() {
         return 500;
     }
 
-    //@Override
+    // @Override
     public int getMaxConnections() {
         return 1;
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void resetDownloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

@@ -19,15 +19,15 @@ import jd.PluginWrapper;
 import jd.http.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "megaftp.com"}, urls ={ "http://[\\w\\.]*?megaftp\\.com/[0-9]+"}, flags = {0})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megaftp.com" }, urls = { "http://[\\w\\.]*?megaftp\\.com/[0-9]+" }, flags = { 0 })
 public class MegaFtpCom extends PluginForHost {
 
     public MegaFtpCom(PluginWrapper wrapper) {
@@ -55,9 +55,9 @@ public class MegaFtpCom extends PluginForHost {
     }
 
     // @Override
-    /* public String getVersion() {
-        return getVersion("$Revision$");
-    } */
+    /*
+     * public String getVersion() { return getVersion("$Revision$"); }
+     */
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {

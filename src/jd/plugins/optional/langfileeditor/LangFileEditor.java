@@ -48,36 +48,32 @@ public class LangFileEditor extends PluginOptional {
 
     private void initConfigEntries() {
         ConfigEntry cfg;
-
         ConfigEntry cond;
-        config.addEntry(cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), LFEGui.PROPERTY_SVN_ACCESS_ANONYMOUS, "Do not upload(SVN) changes on save").setDefaultValue(true));
-
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), LFEGui.PROPERTY_SVN_ACCESS_USER, "Upload(SVN) Username"));
-      
+        
+        config.addEntry(cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), LFEGui.PROPERTY_SVN_ACCESS_ANONYMOUS, "Do not upload (SVN) changes on save").setDefaultValue(true));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), LFEGui.PROPERTY_SVN_ACCESS_USER, "Upload (SVN) Username"));
         cfg.setEnabledCondidtion(cond, "==", false);
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, getPluginConfig(), LFEGui.PROPERTY_SVN_ACCESS_PASS, "Upload (SVN) Password"));
-       
         cfg.setEnabledCondidtion(cond, "==", false);
-
     }
 
-    // @Override
+    @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() instanceof MenuItem && ((MenuItem) e.getSource()).getActionID() == 0) {
             SimpleGUI.CURRENTGUI.getContentPane().display(lfe.getPanel());
         }
     }
 
-    // @Override
+    @Override
     public boolean initAddon() {
         return true;
     }
 
-    // @Override
+    @Override
     public void onExit() {
     }
 
-    // @Override
+    @Override
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
 
@@ -86,12 +82,12 @@ public class LangFileEditor extends PluginOptional {
         return menu;
     }
 
-    // @Override
+    @Override
     public String getCoder() {
         return "Greeny";
     }
 
-    // @Override
+    @Override
     public String getIconKey() {
         return "gui.splash.languages";
     }

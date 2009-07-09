@@ -24,14 +24,14 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.Form.MethodType;
 import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "netgull.com"}, urls ={ "http://[\\w\\.]*?netgull\\.com/\\?d=[0-9a-fA-F]+"}, flags = {0})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "netgull.com" }, urls = { "http://[\\w\\.]*?netgull\\.com/\\?d=[0-9a-fA-F]+" }, flags = { 0 })
 public class NetGullCom extends PluginForHost {
 
     public NetGullCom(PluginWrapper wrapper) {
@@ -57,9 +57,9 @@ public class NetGullCom extends PluginForHost {
     }
 
     // @Override
-    /* public String getVersion() {
-        return getVersion("$Revision$");
-    } */
+    /*
+     * public String getVersion() { return getVersion("$Revision$"); }
+     */
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {

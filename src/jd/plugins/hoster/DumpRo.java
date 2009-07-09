@@ -24,13 +24,13 @@ import jd.parser.html.Form;
 import jd.parser.html.InputField;
 import jd.parser.html.Form.MethodType;
 import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "dump.ro"}, urls ={ "http://[\\w\\.]*?dump\\.ro/[0-9A-Za-z/\\-\\.\\?\\=\\&]+"}, flags = {0})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dump.ro" }, urls = { "http://[\\w\\.]*?dump\\.ro/[0-9A-Za-z/\\-\\.\\?\\=\\&]+" }, flags = { 0 })
 public class DumpRo extends PluginForHost {
 
     public DumpRo(PluginWrapper wrapper) {
@@ -98,9 +98,8 @@ public class DumpRo extends PluginForHost {
         return 1;
     }
 
-  
-    /* /* public String getVersion() {
-        return getVersion("$Revision$");
-    } */
+    /*
+     * /* public String getVersion() { return getVersion("$Revision$"); }
+     */
 
 }

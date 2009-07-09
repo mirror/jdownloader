@@ -24,13 +24,13 @@ import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "upmusic.in"}, urls ={ "http://[\\w\\.]*?upmusic\\.in/[a-z0-9]+.*?"}, flags = {0})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upmusic.in" }, urls = { "http://[\\w\\.]*?upmusic\\.in/[a-z0-9]+.*?" }, flags = { 0 })
 public class UpMusicIn extends PluginForHost {
 
     public UpMusicIn(PluginWrapper wrapper) {
@@ -39,7 +39,7 @@ public class UpMusicIn extends PluginForHost {
         // enablePremium("http://www.upmusic.in/?op=registration");
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         String linkurl = null;
         String previousLink = null;
@@ -97,7 +97,7 @@ public class UpMusicIn extends PluginForHost {
         dl.startDownload();
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 7;
     }
@@ -131,8 +131,8 @@ public class UpMusicIn extends PluginForHost {
      * (br.containsHTML("package_info'\\)\"><b>Zareje")) return false; return
      * true; }
      * 
-     * //@Override public AccountInfo fetchAccountInfo(Account account)
-     * throws Exception { AccountInfo ai = new AccountInfo(this, account); try {
+     * //@Override public AccountInfo fetchAccountInfo(Account account) throws
+     * Exception { AccountInfo ai = new AccountInfo(this, account); try {
      * login(account); } catch (PluginException e) { ai.setValid(false); return
      * ai; } if (!isPremium()) {
      * ai.setStatus(JDLocale.L("plugins.hoster.UploaderPl.freememberacc",
@@ -163,12 +163,12 @@ public class UpMusicIn extends PluginForHost {
      * uncomment when they find a better // way to force wait time dl =
      * br.openDownload(downloadLink, linkurl); dl.startDownload(); }
      */
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://www.upmusic.in/tos.html";
     }
 
-    //@Override
+    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -185,22 +185,22 @@ public class UpMusicIn extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    //@Override
-    /* public String getVersion() {
-        return getVersion("$Revision$");
-    } */
+    // @Override
+    /*
+     * public String getVersion() { return getVersion("$Revision$"); }
+     */
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void resetDownloadlink(DownloadLink link) {
-        link.setProperty("directLink", null);     
+        link.setProperty("directLink", null);
     }
 
 }

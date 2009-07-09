@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision", interfaceVersion = 2, names = { "anyfiles.net" }, urls = { "http://[\\w\\.]*?anyfiles.net/download/[a-z|0-9]+/.+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anyfiles.net" }, urls = { "http://[\\w\\.]*?anyfiles.net/download/[a-z|0-9]+/.+\\.html" }, flags = { 0 })
 public class AnyFilesNet extends PluginForHost {
 
     public AnyFilesNet(PluginWrapper wrapper) {
@@ -41,7 +41,7 @@ public class AnyFilesNet extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
         br.setFollowRedirects(false);
-        
+
         String uid1 = br.getRegex("[^ ]{18,}<input type='hidden' name='uid' value='(.*?)' />").getMatch(0);
         String uid2 = br.getRegex("<input type='hidden' name='uid2' value='(.*?)' /></th></table></form>").getMatch(0);
         String hcode = br.getRegex("type='hidden' name='hcode' value='(.*?)'>").getMatch(0);

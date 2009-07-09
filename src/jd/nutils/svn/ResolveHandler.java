@@ -1,6 +1,5 @@
 package jd.nutils.svn;
 
-import org.tmatesoft.svn.core.wc.SVNInfo;
 
 public interface ResolveHandler {
 

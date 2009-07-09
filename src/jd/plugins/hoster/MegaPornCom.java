@@ -37,16 +37,16 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "megaporn.com"}, urls ={ "http://[\\w\\.]*?(megaporn)\\.com/.*?(\\?|&)d=[\\w]+"}, flags = {2})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megaporn.com" }, urls = { "http://[\\w\\.]*?(megaporn)\\.com/.*?(\\?|&)d=[\\w]+" }, flags = { 2 })
 public class MegaPornCom extends PluginForHost {
 
     private static final String MU_PARAM_PORT = "MU_PARAM_PORT";
@@ -340,9 +340,9 @@ public class MegaPornCom extends PluginForHost {
     }
 
     // @Override
-    /* public String getVersion() {
-        return getVersion("$Revision$");
-    } */
+    /*
+     * public String getVersion() { return getVersion("$Revision$"); }
+     */
 
     public void handleFree1(DownloadLink link, Account account) throws Exception {
         this.setBrowserExclusive();
@@ -411,7 +411,7 @@ public class MegaPornCom extends PluginForHost {
                 URLConnectionAdapter con = c.openGetConnection(captcha);
                 Browser.download(file, con);
 
-                code = getCaptchaCode("megaupload.com",file, link);
+                code = getCaptchaCode("megaupload.com", file, link);
 
                 if (this.getPluginConfig().getIntegerProperty(CAPTCHA_MODE, 0) != 1) {
                     if (code == null || code.contains("-") || code.trim().length() != 4) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 1000l); }

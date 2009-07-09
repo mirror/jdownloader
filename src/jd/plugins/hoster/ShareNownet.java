@@ -26,14 +26,14 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "share-now.net"}, urls ={ "http://[\\w\\.]*?share-now\\.net/{1,}files/\\d+-(.*?)\\.html"}, flags = {0})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share-now.net" }, urls = { "http://[\\w\\.]*?share-now\\.net/{1,}files/\\d+-(.*?)\\.html" }, flags = { 0 })
 public class ShareNownet extends PluginForHost {
 
     public ShareNownet(PluginWrapper wrapper) {
@@ -66,9 +66,9 @@ public class ShareNownet extends PluginForHost {
     }
 
     // @Override
-    /* public String getVersion() {
-        return getVersion("$Revision$");
-    } */
+    /*
+     * public String getVersion() { return getVersion("$Revision$"); }
+     */
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {

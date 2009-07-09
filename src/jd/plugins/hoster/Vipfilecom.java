@@ -25,14 +25,14 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "vip-file.com"}, urls ={ "http://[\\w\\.]*?vip-file\\.com/download/[\\w\\.]+/(.*?)\\.html"}, flags = {2})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vip-file.com" }, urls = { "http://[\\w\\.]*?vip-file\\.com/download/[\\w\\.]+/(.*?)\\.html" }, flags = { 2 })
 public class Vipfilecom extends PluginForHost {
 
     public Vipfilecom(PluginWrapper wrapper) {
@@ -66,9 +66,9 @@ public class Vipfilecom extends PluginForHost {
     }
 
     // @Override
-    /* public String getVersion() {
-        return getVersion("$Revision$");
-    } */
+    /*
+     * public String getVersion() { return getVersion("$Revision$"); }
+     */
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
@@ -82,7 +82,7 @@ public class Vipfilecom extends PluginForHost {
         br.getPage(link);
         link = br.getRedirectLocation();
         if (!link.contains("vip-file.com")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.vipfilecom.errors.nofreedownloadlink", "No free download link for this file"));
-        //link = link.replaceAll("file.com.*?/", "file.com:8080/");
+        // link = link.replaceAll("file.com.*?/", "file.com:8080/");
         br.setFollowRedirects(true);
         br.openDownload(downloadLink, link, true, 1).startDownload();
     }

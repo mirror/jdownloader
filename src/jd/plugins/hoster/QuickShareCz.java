@@ -24,14 +24,14 @@ import jd.http.Encoding;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "quickshare.cz"}, urls ={ "http://[\\w\\.]*?quickshare\\.cz/stahnout-soubor/\\d+:[^\\s]+"}, flags = {0})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "quickshare.cz" }, urls = { "http://[\\w\\.]*?quickshare\\.cz/stahnout-soubor/\\d+:[^\\s]+" }, flags = { 0 })
 public class QuickShareCz extends PluginForHost {
 
     public QuickShareCz(PluginWrapper wrapper) {
@@ -39,12 +39,12 @@ public class QuickShareCz extends PluginForHost {
         this.setStartIntervall(5000l);
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://www.quickshare.cz/podminky-pouziti";
     }
 
-    //@Override
+    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
@@ -57,12 +57,12 @@ public class QuickShareCz extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    //@Override
-    /* public String getVersion() {
-        return getVersion("$Revision$");
-    } */
+    // @Override
+    /*
+     * public String getVersion() { return getVersion("$Revision$"); }
+     */
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String ID1 = Encoding.formEncoding(br.getRegex("var ID1 = '(.*?)'").getMatch(0));
@@ -70,39 +70,38 @@ public class QuickShareCz extends PluginForHost {
         String ID3 = Encoding.formEncoding(br.getRegex("var ID3 = '(.*?)'").getMatch(0));
         String ID4 = Encoding.formEncoding(br.getRegex("var ID4 = '(.*?)'").getMatch(0));
         String server = br.getRegex("var server = '(.*?)'").getMatch(0);
-        if (ID1 == null || ID2 == null || ID3 == null || ID4 == null)throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); 
-        String param = "ID1="+ID1+"&ID2="+ID2+"&ID3="+ID3+"&ID4="+ID4;
+        if (ID1 == null || ID2 == null || ID3 == null || ID4 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        String param = "ID1=" + ID1 + "&ID2=" + ID2 + "&ID3=" + ID3 + "&ID4=" + ID4;
         br.setFollowRedirects(true);
         // this.sleep(10000, downloadLink); // uncomment when they find a better
         // way to force wait time
-        dl = br.openDownload(downloadLink, server+"/download.php", param);
+        dl = br.openDownload(downloadLink, server + "/download.php", param);
         URLConnectionAdapter con = dl.getConnection();
         if (con.getContentType().contains("text")) {
             String herror = br.getURL();
-            if (herror.contains("chyba/1")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.QuickShareCz.alreadyloading", "This IP is already downloading"), 2 *60 * 1000);
+            if (herror.contains("chyba/1")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.QuickShareCz.alreadyloading", "This IP is already downloading"), 2 * 60 * 1000);
             if (herror.contains("chyba/2")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.QuickShareCz.nofreeslots", "No free slots available"), 60 * 1000);
-        }
-        else dl.startDownload();
-       
+        } else
+            dl.startDownload();
 
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void resetDownloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
-        
+
     }
 }

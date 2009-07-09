@@ -21,13 +21,13 @@ import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "files.to"}, urls ={ "http://[\\w\\.]*?files\\.to/get/[0-9]+/[\\w]+"}, flags = {0})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "files.to" }, urls = { "http://[\\w\\.]*?files\\.to/get/[0-9]+/[\\w]+" }, flags = { 0 })
 public class FilesTo extends PluginForHost {
 
     public FilesTo(PluginWrapper wrapper) {
@@ -55,9 +55,9 @@ public class FilesTo extends PluginForHost {
     }
 
     // @Override
-    /* /* public String getVersion() {
-        return getVersion("$Revision$");
-    } */
+    /*
+     * /* public String getVersion() { return getVersion("$Revision$"); }
+     */
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {

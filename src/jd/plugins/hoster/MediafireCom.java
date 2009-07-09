@@ -22,18 +22,18 @@ import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "mediafire.com"}, urls ={ "http://[\\w\\.]*?mediafire\\.com/(download\\.php\\?.+|\\?.+|file/.+)"}, flags = {0})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediafire.com" }, urls = { "http://[\\w\\.]*?mediafire\\.com/(download\\.php\\?.+|\\?.+|file/.+)" }, flags = { 0 })
 public class MediafireCom extends PluginForHost {
 
     static private final String offlinelink = "tos_aup_violation";
@@ -82,9 +82,9 @@ public class MediafireCom extends PluginForHost {
     }
 
     // @Override
-    /* public String getVersion() {
-        return getVersion("$Revision$");
-    } */
+    /*
+     * public String getVersion() { return getVersion("$Revision$"); }
+     */
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
@@ -128,11 +128,11 @@ public class MediafireCom extends PluginForHost {
                 if (error != null && !error.trim().equalsIgnoreCase("15")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
                 String js = br.getRegex("'Your download is starting.*?(http.*)\\+ '\"> Click here to start download..</a>'").getMatch(0).trim();
                 String vars = br.getRegex("<!--(.*?)function").getMatch(0).trim();
-                Context cx = Context.enter();                                         
+                Context cx = Context.enter();
                 Scriptable scope = cx.initStandardObjects();
-                String eval = "function f(){\r\n" + vars + "\r\n return \"" + js + ";\r\n}\r\n f();";           
+                String eval = "function f(){\r\n" + vars + "\r\n return \"" + js + ";\r\n}\r\n f();";
                 Object result = cx.evaluateString(scope, eval, "<cmd>", 1, null);
-           
+
                 url = Context.toString(result);
             }
         }

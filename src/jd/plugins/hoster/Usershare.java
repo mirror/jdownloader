@@ -19,13 +19,13 @@ package jd.plugins.hoster;
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "usershare.net"}, urls ={ "http://[\\w\\.]*?usershare\\.net/[0-9a-zA-Z.]+"}, flags = {0})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "usershare.net" }, urls = { "http://[\\w\\.]*?usershare\\.net/[0-9a-zA-Z.]+" }, flags = { 0 })
 public class Usershare extends PluginForHost {
 
     public Usershare(PluginWrapper wrapper) {
@@ -76,10 +76,9 @@ public class Usershare extends PluginForHost {
 
     }
 
-   
-    /* public String getVersion() {
-        return getVersion("$Revision$");
-    } */
+    /*
+     * public String getVersion() { return getVersion("$Revision$"); }
+     */
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {

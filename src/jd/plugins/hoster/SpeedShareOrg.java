@@ -22,16 +22,16 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "speedshare.org"}, urls ={ "http://[\\w\\.]*?speedshare\\.org/download\\.php\\?id=[\\w]+"}, flags = {0})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "speedshare.org" }, urls = { "http://[\\w\\.]*?speedshare\\.org/download\\.php\\?id=[\\w]+" }, flags = { 0 })
 public class SpeedShareOrg extends PluginForHost {
 
     private String url;
@@ -40,12 +40,12 @@ public class SpeedShareOrg extends PluginForHost {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://www.speedshare.org/rules.php";
     }
 
-    //@Override
+    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
@@ -57,12 +57,12 @@ public class SpeedShareOrg extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    //@Override
-    /* public String getVersion() {
-        return getVersion("$Revision$");
-    } */
+    // @Override
+    /*
+     * public String getVersion() { return getVersion("$Revision$"); }
+     */
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         url = downloadLink.getDownloadURL();
         /* Nochmals das File überprüfen */
@@ -93,20 +93,20 @@ public class SpeedShareOrg extends PluginForHost {
         dl.startDownload();
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void resetDownloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

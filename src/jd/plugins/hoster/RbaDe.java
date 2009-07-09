@@ -24,13 +24,13 @@ import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "r-b-a.de"}, urls ={ "http://www[\\d]?\\.przeslij\\.net/download\\.php\\?file=(.*)"}, flags = {0})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "r-b-a.de" }, urls = { "http://www[\\d]?\\.przeslij\\.net/download\\.php\\?file=(.*)" }, flags = { 0 })
 public class RbaDe extends PluginForHost {
 
     private static final String AGB_LINK = "http://www.r-b-a.de/index.php?ID=3003";
@@ -49,13 +49,14 @@ public class RbaDe extends PluginForHost {
         super(wrapper);
     }
 
-    //@Override
-    /* public String getVersion() {
+    // @Override
+    /*
+     * public String getVersion() {
+     * 
+     * return getVersion("$Revision$"); }
+     */
 
-        return getVersion("$Revision$");
-    } */
-
-    //@Override
+    // @Override
     public String getAGBLink() {
         return AGB_LINK;
     }
@@ -87,7 +88,7 @@ public class RbaDe extends PluginForHost {
         return fileName.toString();
     }
 
-    //@Override
+    // @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws PluginException, IOException {
         Browser br = new Browser();
         br.clearCookies(getHost());
@@ -133,7 +134,7 @@ public class RbaDe extends PluginForHost {
         }
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
 
@@ -147,13 +148,13 @@ public class RbaDe extends PluginForHost {
         }
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetDownloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
-        
+
     }
 }

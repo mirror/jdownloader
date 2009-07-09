@@ -27,17 +27,17 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "sendspace.com"}, urls ={ "http://[\\w\\.]*?sendspace\\.com/file/[0-9a-zA-Z]+"}, flags = {2})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sendspace.com" }, urls = { "http://[\\w\\.]*?sendspace\\.com/file/[0-9a-zA-Z]+" }, flags = { 2 })
 public class SendspaceCom extends PluginForHost {
 
     public SendspaceCom(PluginWrapper wrapper) {
@@ -123,9 +123,9 @@ public class SendspaceCom extends PluginForHost {
     }
 
     // @Override
-    /* public String getVersion() {
-        return getVersion("$Revision$");
-    } */
+    /*
+     * public String getVersion() { return getVersion("$Revision$"); }
+     */
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {

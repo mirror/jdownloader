@@ -23,25 +23,25 @@ import jd.PluginWrapper;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "yourfilesender.com"}, urls ={ "http://[\\w\\.]*?yourfilesender\\.com/v/\\d+/(.*?\\.html)"}, flags = {0})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourfilesender.com" }, urls = { "http://[\\w\\.]*?yourfilesender\\.com/v/\\d+/(.*?\\.html)" }, flags = { 0 })
 public class YourFileSendercom extends PluginForHost {
 
     public YourFileSendercom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://www.yourfilesender.com/terms.php";
     }
 
-    //@Override
+    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         String downloadurl = downloadLink.getDownloadURL();
         this.setBrowserExclusive();
@@ -60,13 +60,14 @@ public class YourFileSendercom extends PluginForHost {
 
     }
 
-    //@Override
-    /* public String getVersion() {
+    // @Override
+    /*
+     * public String getVersion() {
+     * 
+     * return getVersion("$Revision$"); }
+     */
 
-        return getVersion("$Revision$");
-    } */
-
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
 
         /* Nochmals das File überprüfen */
@@ -86,22 +87,22 @@ public class YourFileSendercom extends PluginForHost {
         dl.startDownload();
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         /* TODO: Wert prüfen */
         return 1;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
 
     }
 
-    //@Override
+    // @Override
     public void resetDownloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

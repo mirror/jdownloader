@@ -22,13 +22,13 @@ import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "plikus.pl"}, urls ={ "http://[\\w\\.]*?plikus\\.pl/zobacz_plik-.*?-\\d+\\.html"}, flags = {0})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "plikus.pl" }, urls = { "http://[\\w\\.]*?plikus\\.pl/zobacz_plik-.*?-\\d+\\.html" }, flags = { 0 })
 public class PlikusPl extends PluginForHost {
 
     public PlikusPl(PluginWrapper wrapper) {
@@ -36,12 +36,12 @@ public class PlikusPl extends PluginForHost {
         setStartIntervall(5000l);
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://www.osemka.pl/html/regulamin/#regulamin_plikus";
     }
 
-    //@Override
+    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
         setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
@@ -53,12 +53,12 @@ public class PlikusPl extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    //@Override
-    /* public String getVersion() {
-        return getVersion("$Revision$");
-    } */
+    // @Override
+    /*
+     * public String getVersion() { return getVersion("$Revision$"); }
+     */
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         Form form = br.getForm(0);
@@ -68,29 +68,29 @@ public class PlikusPl extends PluginForHost {
         dl.startDownload();
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    //@Override
+    // @Override
     public int getTimegapBetweenConnections() {
         return 2500;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
 
     }
 
-    //@Override
+    // @Override
     public void resetDownloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
-        
+
     }
 
 }

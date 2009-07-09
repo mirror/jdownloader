@@ -19,12 +19,12 @@ package jd.plugins.hoster;
 import jd.PluginWrapper;
 import jd.gui.skins.simple.ConvertDialog.ConversionMode;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
+import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDMediaConvert;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "myvideo.de"}, urls ={ "http://[\\w\\.]*?myvideo.*?/.*?/\\d+\\.flv"}, flags = {0})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myvideo.de" }, urls = { "http://[\\w\\.]*?myvideo.*?/.*?/\\d+\\.flv" }, flags = { 0 })
 public class MyVideo extends PluginForHost {
     static private final String AGB = "http://www.myvideo.de/news.php?rubrik=jjghf&p=hm8";
 
@@ -47,9 +47,9 @@ public class MyVideo extends PluginForHost {
     }
 
     // @Override
-    /* public String getVersion() {
-        return getVersion("$Revision$");
-    } */
+    /*
+     * public String getVersion() { return getVersion("$Revision$"); }
+     */
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {

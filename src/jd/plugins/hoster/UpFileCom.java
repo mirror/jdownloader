@@ -22,13 +22,13 @@ import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "up-file.com"}, urls ={ "http://[\\w\\.]*?up-file\\.com/download/[a-z0-9]+"}, flags = {0})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "up-file.com" }, urls = { "http://[\\w\\.]*?up-file\\.com/download/[a-z0-9]+" }, flags = { 0 })
 public class UpFileCom extends PluginForHost {
 
     public UpFileCom(PluginWrapper wrapper) {
@@ -54,9 +54,9 @@ public class UpFileCom extends PluginForHost {
     }
 
     // @Override
-    /* public String getVersion() {
-        return getVersion("$Revision$");
-    } */
+    /*
+     * public String getVersion() { return getVersion("$Revision$"); }
+     */
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {

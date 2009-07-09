@@ -24,13 +24,13 @@ import jd.http.Encoding;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "filezzz.com"}, urls ={ "http://[\\w\\.]*?filezzz\\.com/download/[0-9]+/"}, flags = {0})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filezzz.com" }, urls = { "http://[\\w\\.]*?filezzz\\.com/download/[0-9]+/" }, flags = { 0 })
 public class FilezzzCom extends PluginForHost {
 
     public FilezzzCom(PluginWrapper wrapper) {
@@ -38,12 +38,12 @@ public class FilezzzCom extends PluginForHost {
         this.setStartIntervall(1000l);
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://www.filezzz.com/terms.html";
     }
 
-    //@Override
+    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         String url = downloadLink.getDownloadURL();
@@ -58,16 +58,16 @@ public class FilezzzCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    //@Override
-    /* /* public String getVersion() {
-        return getVersion("$Revision$");
-    } */
+    // @Override
+    /*
+     * /* public String getVersion() { return getVersion("$Revision$"); }
+     */
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
-        //this.sleep(4000l, downloadLink);
+        // this.sleep(4000l, downloadLink);
         /* Link holen */
         String linkurl = br.getRegex("<br>\\s+<br>\\s+<a href=\"(.*?)\"").getMatch(0);
         if (linkurl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
@@ -80,22 +80,22 @@ public class FilezzzCom extends PluginForHost {
         dl.startDownload();
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 3;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void resetDownloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
-        
+
     }
 }

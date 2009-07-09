@@ -20,13 +20,13 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "dump.ru"}, urls ={ "http://[\\w\\.]*?dump\\.ru/file/[0-9]+"}, flags = {0})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dump.ru" }, urls = { "http://[\\w\\.]*?dump\\.ru/file/[0-9]+" }, flags = { 0 })
 public class DumpRu extends PluginForHost {
 
     public DumpRu(PluginWrapper wrapper) {
@@ -72,16 +72,17 @@ public class DumpRu extends PluginForHost {
     }
 
     // @Override
-    /* /* public String getVersion() {
-        return getVersion("$Revision$");
-    } */
+    /*
+     * /* public String getVersion() { return getVersion("$Revision$"); }
+     */
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.submitForm(br.getForm(1));
         String link = br.getRegex(Pattern.compile("<a href=\"(http://.*?dump\\.ru/file_download/.*?)\">")).getMatch(0);
-        //final filename can't be taken from the header due to encoding problems, set it here
+        // final filename can't be taken from the header due to encoding
+        // problems, set it here
         downloadLink.setFinalFileName(downloadLink.toString());
         dl = br.openDownload(downloadLink, link);
         dl.startDownload();

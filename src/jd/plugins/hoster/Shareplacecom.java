@@ -29,7 +29,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "shareplace.com"}, urls ={ "http://[\\w\\.]*?shareplace\\.com/\\?[\\w]+(/.*?)?"}, flags = {0})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shareplace.com" }, urls = { "http://[\\w\\.]*?shareplace\\.com/\\?[\\w]+(/.*?)?" }, flags = { 0 })
 public class Shareplacecom extends PluginForHost {
 
     private String url;
@@ -65,9 +65,9 @@ public class Shareplacecom extends PluginForHost {
     }
 
     // @Override
-    /* public String getVersion() {
-        return getVersion("$Revision$");
-    } */
+    /*
+     * public String getVersion() { return getVersion("$Revision$"); }
+     */
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {

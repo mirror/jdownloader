@@ -20,24 +20,24 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
-import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "youporn.com"}, urls ={ "http://download\\.youporn\\.com/download/\\d+.*"}, flags = {0})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youporn.com" }, urls = { "http://download\\.youporn\\.com/download/\\d+.*" }, flags = { 0 })
 public class YouPornCom extends PluginForHost {
 
     public YouPornCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://youporn.com/terms";
     }
 
-    //@Override
+    // @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws IOException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -48,28 +48,29 @@ public class YouPornCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
         br.openDownload(link, link.getDownloadURL()).startDownload();
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
-    /* public String getVersion() {
+    // @Override
+    /*
+     * public String getVersion() {
+     * 
+     * return getVersion("$Revision$"); }
+     */
 
-        return getVersion("$Revision$");
-    } */
-
-    //@Override
+    // @Override
     public void resetDownloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

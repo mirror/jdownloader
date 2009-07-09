@@ -20,6 +20,8 @@ import java.io.Serializable;
 
 public class LngEntry implements Serializable {
 
+    private static final long serialVersionUID = -5404905213297379291L;
+
     private String value;
 
     private String key;

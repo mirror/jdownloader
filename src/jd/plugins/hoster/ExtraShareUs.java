@@ -22,28 +22,28 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForHost;
 import jd.plugins.HostPlugin;
+import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "extrashare.us"}, urls ={ "http://[\\w\\.]*?extrashare.us/file/.+/.+"}, flags = {0})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "extrashare.us" }, urls = { "http://[\\w\\.]*?extrashare.us/file/.+/.+" }, flags = { 0 })
 public class ExtraShareUs extends PluginForHost {
 
     public ExtraShareUs(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public String getAGBLink() {
         return "http://www.extrashare.us/rules.php";
     }
 
-    //@Override
+    // @Override
     public String getCoder() {
         return "TnS";
     }
 
-    //@Override
+    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException {
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
@@ -55,12 +55,12 @@ public class ExtraShareUs extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    //@Override
-    /* /* public String getVersion() {
-        return getVersion("$Revision$");
-    } */
+    // @Override
+    /*
+     * /* public String getVersion() { return getVersion("$Revision$"); }
+     */
 
-    //@Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         br.setFollowRedirects(true);
         requestFileInformation(downloadLink);
@@ -68,32 +68,32 @@ public class ExtraShareUs extends PluginForHost {
         br.openDownload(downloadLink, link, true, 1).startDownload();
     }
 
-    //@Override
+    // @Override
     public int getTimegapBetweenConnections() {
         return 500;
     }
 
-    //@Override
+    // @Override
     public int getMaxConnections() {
         return 1;
     }
 
-    //@Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    //@Override
+    // @Override
     public void reset() {
     }
 
-    //@Override
+    // @Override
     public void resetPluginGlobals() {
     }
 
-    //@Override
+    // @Override
     public void resetDownloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
-        
+
     }
 }

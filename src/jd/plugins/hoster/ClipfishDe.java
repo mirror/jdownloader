@@ -20,13 +20,13 @@ import jd.PluginWrapper;
 import jd.gui.skins.simple.ConvertDialog.ConversionMode;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
-import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDMediaConvert;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "clipfish.de"}, urls ={ "http://[\\w\\.]*?pg\\d+\\.clipfish\\.de/media/.+?\\.flv"}, flags = {0})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "clipfish.de" }, urls = { "http://[\\w\\.]*?pg\\d+\\.clipfish\\.de/media/.+?\\.flv" }, flags = { 0 })
 public class ClipfishDe extends PluginForHost {
     public ClipfishDe(PluginWrapper wrapper) {
         super(wrapper);
@@ -53,10 +53,11 @@ public class ClipfishDe extends PluginForHost {
     }
 
     // @Override
-    /* /* public String getVersion() {
-
-        return getVersion("$Revision$");
-    } */
+    /*
+     * /* public String getVersion() {
+     * 
+     * return getVersion("$Revision$"); }
+     */
 
     // @Override
     public void reset() {

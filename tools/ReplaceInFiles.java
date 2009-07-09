@@ -14,8 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -33,20 +31,14 @@ import jd.nutils.DiffMatchPatch.Diff;
 import jd.nutils.DiffMatchPatch.Operation;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
-
-import org.tmatesoft.svn.core.SVNException;
-
 import tests.utils.TestUtils;
 
 public class ReplaceInFiles {
 
-    private static final String SVN_SRC = "svn://svn.jdownloader.org/jdownloader/trunk/src";
+    // private static final String SVN_SRC =
+    // "svn://svn.jdownloader.org/jdownloader/trunk/src";
 
-    /**
-     * @param args
-     * @throws SVNException
-     */
-    public static void main(String[] args) throws SVNException {
+    public static void main(String[] args) {
         TestUtils.mainInit();
         // TestUtils.initGUI();
         TestUtils.initDecrypter();
@@ -54,7 +46,7 @@ public class ReplaceInFiles {
         TestUtils.initHosts();
         TestUtils.finishInit();
 
-        new GuiRunnable() {
+        new GuiRunnable<Object>() {
 
             @Override
             public Object runSave() {
@@ -90,7 +82,7 @@ public class ReplaceInFiles {
             LinkedList<Diff> diffs = diff.diffMain(l, newL, true);
             String html = diffPrettyHtml(diffs);
             if (!ok) {
-                int ret = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN|UserIO.STYLE_HTML | UserIO.STYLE_LARGE, "Diffs found in  "+id, html, null, null, null);
+                int ret = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.STYLE_HTML | UserIO.STYLE_LARGE, "Diffs found in  " + id, html, null, null, null);
                 if (JDFlags.hasSomeFlags(ret, UserIO.RETURN_CANCEL)) { return; }
                 if (JDFlags.hasSomeFlags(ret, UserIO.DONT_SHOW_AGAIN)) {
                     if (JDFlags.hasSomeFlags(ret, UserIO.RETURN_OK)) {
@@ -100,7 +92,7 @@ public class ReplaceInFiles {
             }
             System.out.println(html);
             JDIO.writeLocalFile(f, newL);
-            
+
         }
 
     }

@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision", interfaceVersion = 2, names = { "filebase.to" }, urls = { "http://[\\w\\.]*?filebase\\.to/files/\\d{1,}/.*" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filebase.to" }, urls = { "http://[\\w\\.]*?filebase\\.to/files/\\d{1,}/.*" }, flags = { 0 })
 public class FileBaseTo extends PluginForHost {
 
     public FileBaseTo(PluginWrapper wrapper) {
@@ -61,9 +61,9 @@ public class FileBaseTo extends PluginForHost {
     }
 
     // @Override
-    /* /* public String getVersion() {
-        return getVersion("$Revision$");
-    } */
+    /*
+     * /* public String getVersion() { return getVersion("$Revision$"); }
+     */
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
@@ -106,7 +106,7 @@ public class FileBaseTo extends PluginForHost {
             dl.startDownload();
         } catch (IOException e) {
 
-            if (e.getCause() instanceof NullPointerException) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("jd.plugins.hoster.filebaseto.serversideerror", "Server Error. Retry later"),10*60*1000l); }
+            if (e.getCause() instanceof NullPointerException) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("jd.plugins.hoster.filebaseto.serversideerror", "Server Error. Retry later"), 10 * 60 * 1000l); }
         }
     }
 

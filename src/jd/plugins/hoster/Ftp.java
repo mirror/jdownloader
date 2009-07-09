@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.RAFDownload;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "ftp" }, urls = { "ftp://.+/.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ftp" }, urls = { "ftp://.+/.+" }, flags = { 0 })
 public class Ftp extends PluginForHost {
 
     public Ftp(PluginWrapper wrapper) {
@@ -62,9 +62,9 @@ public class Ftp extends PluginForHost {
     }
 
     // @Override
-    /* /* public String getVersion() {
-        return getVersion("$Revision: 6489 $");
-    } */
+    /*
+     * /* public String getVersion() { return getVersion("$Revision: 6489 $"); }
+     */
 
     // @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {

@@ -31,7 +31,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision", interfaceVersion = 1, names = { "hotfile.com" }, urls = { "http://[\\w\\.]*?hotfile\\.com/dl/\\d+/[0-9a-zA-Z]+/" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 1, names = { "hotfile.com" }, urls = { "http://[\\w\\.]*?hotfile\\.com/dl/\\d+/[0-9a-zA-Z]+/" }, flags = { 2 })
 public class HotFileCom extends PluginForHost {
 
     public HotFileCom(PluginWrapper wrapper) {
@@ -108,7 +108,6 @@ public class HotFileCom extends PluginForHost {
     // @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
-     
 
         if (br.containsHTML("You are currently downloading")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
         if (br.containsHTML("starthtimer\\(\\)")) {
@@ -146,9 +145,9 @@ public class HotFileCom extends PluginForHost {
     }
 
     // @Override
-    /* public String getVersion() {
-        return getVersion("$Revision$");
-    } */
+    /*
+     * public String getVersion() { return getVersion("$Revision$"); }
+     */
 
     // @Override
     public void resetDownloadlink(DownloadLink link) {

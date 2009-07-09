@@ -22,13 +22,13 @@ import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "fisierulmeu.ro"}, urls ={ "http://[\\w\\.]*?fisierulmeu\\.ro/.+/.+\\.html"}, flags = {0})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fisierulmeu.ro" }, urls = { "http://[\\w\\.]*?fisierulmeu\\.ro/.+/.+\\.html" }, flags = { 0 })
 public class FisierulMeuRo extends PluginForHost {
 
     public FisierulMeuRo(PluginWrapper wrapper) {
@@ -45,7 +45,7 @@ public class FisierulMeuRo extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         br.getPage(downloadLink.getDownloadURL());
         this.setBrowserExclusive();
-        if(br.containsHTML("Ne pare rau, dar acest fisier are o adresa gresita.") || br.containsHTML("404 Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); 
+        if (br.containsHTML("Ne pare rau, dar acest fisier are o adresa gresita.") || br.containsHTML("404 Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String name = br.getRegex(Pattern.compile("<div class=\"dwn_text\" style=\"overflow:hidden;\"><b>Numele Fisierului:</b>(.*?)</div>", Pattern.DOTALL)).getMatch(0);
         if (name == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filesize = br.getRegex(Pattern.compile("<div class=\"dwn_text\"><b>Marimea Fisierului:</b>(.*?)</div>", Pattern.DOTALL)).getMatch(0);
@@ -57,9 +57,9 @@ public class FisierulMeuRo extends PluginForHost {
     }
 
     // @Override
-    /* /* public String getVersion() {
-        return getVersion("$Revision$");
-    } */
+    /*
+     * /* public String getVersion() { return getVersion("$Revision$"); }
+     */
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {

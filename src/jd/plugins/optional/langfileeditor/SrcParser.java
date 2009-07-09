@@ -97,7 +97,6 @@ public class SrcParser {
         currentContent = Pattern.compile("\\/\\*(.*?)\\*\\/", Pattern.DOTALL).matcher(currentContent).replaceAll("[[/*.....*/]]");
         currentContent = Pattern.compile("[^:]//(.*?)[\n|\r]", Pattern.DOTALL).matcher(currentContent).replaceAll("[[\\.....]]");
 
-        // TODO: Hiermit wird auch JDL.LOCALEID gemachted ...
         String[] matches = new Regex(currentContent, "([^;^{^}]*JDL\\.LF?\\s*?\\(.*?\\)[^;^{^}]*)").getColumn(0);
 
         for (String match : matches) {
@@ -195,7 +194,7 @@ public class SrcParser {
                     /*
                      * merge expressions
                      */
-                    merge: while (parameter[0].contains("+")) {
+                    while (parameter[0].contains("+")) {
                         try {
                             String[][] matches = new Regex(parameter[0], "(\\+(\\w+)\\+?)").getMatches();
                             for (String[] mm : matches) {
@@ -289,19 +288,19 @@ public class SrcParser {
                     /*
                      * merge expressions
                      */
-                    merge: while (parameter[0].contains("+")) {
+                    while (parameter[0].contains("+")) {
                         try {
                             String[][] matches = new Regex(parameter[0], "(\\+([^%]+)\\+?)").getMatches();
                             for (String[] mm : matches) {
                                 try {
                                     String value = getValueOf(mm[1]);
-                                    System.out.println(mm[0]+" - "+mm[1]);
+                                    System.out.println(mm[0] + " - " + mm[1]);
                                     parameter[0] = parameter[0].replace(mm[0], value);
 
                                 } catch (Exception e) {
-                                    parameter[0]= parameter[0].replace(mm[0], "*");
+                                    parameter[0] = parameter[0].replace(mm[0], "*");
                                     JDLogger.getLogger().severe("Pattern match in" + currentFile + " : " + match);
-                                 
+
                                 }
                             }
 
@@ -362,7 +361,7 @@ public class SrcParser {
 
                     if (parameter[0].contains("*")) {
                         String patt = parameter[0].replace(".", "\\.").replace("*", "(.+?)");
-                        if(!pattern.contains(patt))pattern.add(patt);
+                        if (!pattern.contains(patt)) pattern.add(patt);
                     } else {
                         entry = new LngEntry(parameter[0], parameter[1]);
 
@@ -402,11 +401,10 @@ public class SrcParser {
         String[] entries = Regex.getLines(JDIO.getLocalFile(file));
 
         for (String line : entries) {
-            if (line.startsWith("#pattern: ")){
+            if (line.startsWith("#pattern: ")) {
                 pattern.add(line.substring(10));
                 continue;
-                
-                
+
             }
             if (line.startsWith("#")) continue;
             String key = line.substring(0, line.indexOf("=")).trim();

@@ -25,13 +25,13 @@ import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision="$Revision", interfaceVersion=2, names = { "savefile.ro"}, urls ={ "http://[\\w\\.]*?savefile\\.ro/[\\w]+/?"}, flags = {0})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "savefile.ro" }, urls = { "http://[\\w\\.]*?savefile\\.ro/[\\w]+/?" }, flags = { 0 })
 public class SavefileRo extends PluginForHost {
 
     public SavefileRo(PluginWrapper wrapper) {
@@ -109,9 +109,9 @@ public class SavefileRo extends PluginForHost {
     }
 
     // @Override
-    /* public String getVersion() {
-        return getVersion("$Revision$");
-    } */
+    /*
+     * public String getVersion() { return getVersion("$Revision$"); }
+     */
 
     // @Override
     public void reset() {
