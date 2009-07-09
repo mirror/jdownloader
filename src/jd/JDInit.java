@@ -17,17 +17,10 @@
 package jd;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.net.MalformedURLException;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.List;
-import java.util.jar.JarEntry;
-import java.util.jar.JarInputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -48,6 +41,7 @@ import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.http.Browser;
 import jd.http.Encoding;
+import jd.nutils.ClassFinder;
 import jd.nutils.OSDetector;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
@@ -498,36 +492,6 @@ public class JDInit {
     }
 
     /**
-     * Scans all classes accessible from the context class loader which belong
-     * to the given package and subpackages.
-     * 
-     * @author DZone Snippts Section. http://snippets.dzone.com/posts/show/4831
-     * @param packageName
-     * @return
-     * @throws ClassNotFoundException
-     * @throws IOException
-     */
-    public static List<Class<?>> getClasses(String packageName, ClassLoader classLoader) throws ClassNotFoundException, IOException {
-        logger.finest("Get classes for " + packageName + " in " + classLoader);
-        String path = packageName.replace('.', '/');
-        Enumeration<URL> resources = classLoader.getResources(path);
-
-        List<Class<?>> classes = new ArrayList<Class<?>>();
-        while (resources.hasMoreElements()) {
-            URL resource = resources.nextElement();
-            logger.finest("Ressource: " + resource);
-            try {
-                classes.addAll(findPlugins(resource, packageName, classLoader));
-            } catch (Exception e) {
-                JDLogger.exception(e);
-            }
-
-        }
-
-        return classes;
-    }
-
-    /**
      * Returns a classloader to load plugins (class files); Depending on runtype
      * (dev or local jared) a different classoader is used to load plugins
      * either from installdirectory or from rundirectory
@@ -535,106 +499,23 @@ public class JDInit {
      * @return
      */
     private static ClassLoader getPluginClassLoader() {
-        if (CL == null) try {
-
-            if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED) {
-
-                CL = new URLClassLoader(new URL[] { JDUtilities.getJDHomeDirectoryFromEnvironment().toURI().toURL(), JDUtilities.getResourceFile("java").toURI().toURL() }, Thread.currentThread().getContextClassLoader());
-            } else {
-                CL = Thread.currentThread().getContextClassLoader();
-
+        if (CL == null) {
+            try {
+                if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED) {
+                    CL = new URLClassLoader(new URL[] { JDUtilities.getJDHomeDirectoryFromEnvironment().toURI().toURL(), JDUtilities.getResourceFile("java").toURI().toURL() }, Thread.currentThread().getContextClassLoader());
+                } else {
+                    CL = Thread.currentThread().getContextClassLoader();
+                }
+            } catch (MalformedURLException e) {
+                JDLogger.exception(e);
             }
-        } catch (MalformedURLException e) {
-            // TODO Auto-generated catch block
-            JDLogger.exception(e);
         }
-
         return CL;
     }
 
-    /**
-     * Recursive method used to find all classes in a given directory and
-     * subdirs.
-     * 
-     * @author DZone Snippts Section. http://snippets.dzone.com/posts/show/4831
-     * @param directory
-     * @param packageName
-     * @param x
-     * @return
-     * @throws ClassNotFoundException
-     * @throws URISyntaxException
-     */
-    private static List<Class<?>> findPlugins(URL directory, String packageName, ClassLoader classLoader) throws ClassNotFoundException, URISyntaxException {
-        List<Class<?>> classes = new ArrayList<Class<?>>();
-        logger.finest("Find classes in " + directory + " : " + packageName);
-
-        File[] files=null;
-        logger.finest("path  "+directory.toURI().getPath());
-        
-        try{
-        files= new File(directory.toURI().getPath()).listFiles();
-        }catch(Exception e){
-//            JDLogger.exception(e);;
-
-        }
-        logger.finest("tofile " + directory.toURI().getPath());
-        logger.finest("list " + files);
-        if (files == null) {
-            try {
-                // it's a jar
-                logger.finest("jar!");
-                String path = directory.toString().substring(4);
-                // split path | intern path
-                String[] splitted = path.split("!");
-
-                splitted[1] = splitted[1].substring(1);
-                File file = new File(new URL(splitted[0]).toURI());
-
-                JarInputStream jarFile = new JarInputStream(new FileInputStream(file));
-                JarEntry e;
-
-                while ((e = jarFile.getNextJarEntry()) != null) {
-                    if (e.getName().startsWith(splitted[1])) {
-
-                        Class<?> c = classLoader.loadClass(e.getName().substring(0, e.getName().length() - 6).replace("/", "."));
-                        if (c != null) {
-                            classes.add(c);
-                            logger.finest(directory + "Jarclass " + c);
-                        }
-                    }
-
-                }
-
-            } catch (Throwable e) {
-                JDLogger.exception(e);
-            }
-
-        } else {
-            for (File file : files) {
-                logger.finest("file " + file);
-                if (file.isDirectory()) {
-                    logger.finest("isdir " + file);
-                    try {
-                        classes.addAll(findPlugins(file.toURI().toURL(), packageName + "." + file.getName(), classLoader));
-                    } catch (MalformedURLException e) {
-                        // TODO Auto-generated catch block
-                        JDLogger.exception(e);
-                    }
-                } else if (file.getName().endsWith(".class")) {
-
-                    Class<?> c;
-                    classes.add(c = classLoader.loadClass(packageName + '.' + file.getName().substring(0, file.getName().length() - 6)));
-                    logger.finest(directory + " - class: " + c);
-                }
-            }
-        }
-        return classes;
-    }
-
     public void loadPluginForHost() {
-
         try {
-            for (Class<?> c : getClasses("jd.plugins.hoster", getPluginClassLoader())) {
+            for (Class<?> c : ClassFinder.getClasses("jd.plugins.hoster", getPluginClassLoader())) {
                 try {
                     logger.finest("Try to load " + c);
                     if (c != null && c.getAnnotations().length > 0) {
@@ -642,7 +523,7 @@ public class JDInit {
 
                         if (help.interfaceVersion() != HostPlugin.INTERFACE_VERSION) {
                             logger.warning("Outdated Plugin found: " + help);
-
+                            continue;
                         }
                         for (int i = 0; i < help.names().length; i++) {
                             new HostPluginWrapper(help.names()[i], c.getSimpleName(), help.urls()[i], help.flags()[i], help.revision());
@@ -659,13 +540,10 @@ public class JDInit {
     }
 
     public void loadPluginOptional() {
-        logger.finest("DO");
-
         ArrayList<String> list = new ArrayList<String>();
         try {
-            for (Class<?> c : getClasses("jd.plugins.optional", JDUtilities.getJDClassLoader())) {
+            for (Class<?> c : ClassFinder.getClasses("jd.plugins.optional", JDUtilities.getJDClassLoader())) {
                 try {
-
                     if (list.contains(c.getName())) {
                         System.out.println("Already loaded:" + c);
                         continue;
@@ -680,7 +558,6 @@ public class JDInit {
                                 list.add(c.getName());
                             }
                         }
-
                     }
                 } catch (Throwable e) {
                     JDLogger.exception(e);

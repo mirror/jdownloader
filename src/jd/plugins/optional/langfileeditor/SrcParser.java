@@ -31,8 +31,6 @@ import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.utils.JDUtilities;
 
-import org.tmatesoft.svn.core.SVNException;
-
 public class SrcParser {
 
     public static final int PARSE_NEW_FILE = 0;
@@ -61,11 +59,6 @@ public class SrcParser {
 
     public ArrayList<LngEntry> getEntries() {
         return entries;
-    }
-
-    public static void main(String[] args) throws SVNException {
-        new SrcParser(JDUtilities.getResourceFile("tmp/lfe/src/")).parse();
-
     }
 
     private ArrayList<LngEntry> entries;
@@ -235,17 +228,17 @@ public class SrcParser {
 
                     if (orgm.substring(3).trim().charAt(0) != '(') {
 
-                        JDLogger.getLogger().severe("Mailformated translation value in " + currentFile + " : " + m);
+                        JDLogger.getLogger().severe("Malformated translation value in " + currentFile + " : " + m);
                         continue;
                     }
                     if (parameter.length != 2) {
 
-                        JDLogger.getLogger().severe("Mailformated translation pair (inner functions?) in " + currentFile + " : " + match);
+                        JDLogger.getLogger().severe("Malformated translation pair (inner functions?) in " + currentFile + " : " + match);
                         continue;
                     }
                     int i = 0;
                     if (parameter[1].contains("+")) {
-                        JDLogger.getLogger().severe("Mailformated translation value in " + currentFile + " : " + match);
+                        JDLogger.getLogger().severe("Malformated translation value in " + currentFile + " : " + match);
                         continue;
                     }
 
@@ -262,7 +255,7 @@ public class SrcParser {
 
                                 } catch (Exception e) {
 
-                                    JDLogger.getLogger().severe("Mailformated translation key in " + currentFile + " : " + match);
+                                    JDLogger.getLogger().severe("Malformated translation key in " + currentFile + " : " + match);
                                     break main;
                                 }
                             }
@@ -280,7 +273,7 @@ public class SrcParser {
                                     parameter[0] = parameter[0].replace(mm[0], value);
 
                                 } catch (Exception e) {
-                                    JDLogger.getLogger().severe("Mailformated translation key in 2" + currentFile + " : " + match);
+                                    JDLogger.getLogger().severe("Malformated translation key in 2" + currentFile + " : " + match);
                                     break main;
                                 }
                             }
@@ -300,23 +293,23 @@ public class SrcParser {
 
                     }
                     String error;
-                    if ((error = new Regex(parameter[0], "([\\(\\)\\{\\}\\/\\\\\\$\\&\\+\\~\\#\\\"\\!\\?]+)").getMatch(0)) != null) {
+                    if (!new Regex(parameter[0], "^\\$(.+?)\\$$").matches() && (error = new Regex(parameter[0], "([\\(\\)\\{\\}\\/\\\\\\$\\&\\+\\~\\#\\\"\\!\\?]+)").getMatch(0)) != null) {
 
                         int index = parameter[0].indexOf(error);
                         if (index >= 0) {
-                            JDLogger.getLogger().warning(" Unsupported chars (" + parameter[0].substring(0, index) + "<< |" + parameter[0].substring(index + 1) + ") in key:" + currentFile + " : " + parameter[0]);
+                            JDLogger.getLogger().warning("Unsupported chars (" + parameter[0].substring(0, index) + "<< |" + parameter[0].substring(index + 1) + ") in key:" + currentFile + " : " + parameter[0]);
 
                         } else {
-                            JDLogger.getLogger().warning(" Unsupported chars in key:" + currentFile + " : " + parameter[0]);
+                            JDLogger.getLogger().warning("Unsupported chars in key: " + currentFile + " : " + parameter[0]);
 
                         }
                         continue;
                     }
                     if (!parameter[0].contains(".")) {
-                        JDLogger.getLogger().warning(" Prob. Malformated translation key in " + currentFile + " : " + match);
+                        JDLogger.getLogger().warning("Prob. Malformated translation key in " + currentFile + " : " + match);
                     }
                     if (parameter[0].contains("null")) {
-                        JDLogger.getLogger().warning(" Prob. Malformated translation key in " + currentFile + " : " + match);
+                        JDLogger.getLogger().warning("Prob. Malformated translation key in " + currentFile + " : " + match);
                     }
                     entry = new LngEntry(parameter[0], parameter[1]);
                     if (!entries.contains(entry)) {
@@ -333,17 +326,17 @@ public class SrcParser {
 
                     if (orgm.substring(2).trim().charAt(0) != '(') {
 
-                        JDLogger.getLogger().severe("Mailformated translation value in " + currentFile + " : " + m);
+                        JDLogger.getLogger().severe("Malformated translation value in " + currentFile + " : " + m);
                         continue;
                     }
                     if (parameter.length != 2) {
 
-                        JDLogger.getLogger().severe("Mailformated translation pair (inner functions?) in " + currentFile + " : " + match);
+                        JDLogger.getLogger().severe("Malformated translation pair (inner functions?) in " + currentFile + " : " + match);
                         continue;
                     }
                     int i = 0;
                     if (parameter[1].contains("+")) {
-                        JDLogger.getLogger().severe("Mailformated translation value in " + currentFile + " : " + match);
+                        JDLogger.getLogger().severe("Malformated translation value in " + currentFile + " : " + match);
                         continue;
                     }
 
@@ -361,7 +354,7 @@ public class SrcParser {
 
                                 } catch (Exception e) {
                                     parameter[0] = parameter[0].replace(mm[0], "*");
-                                    JDLogger.getLogger().severe("Pattern match in" + currentFile + " : " + match);
+                                    JDLogger.getLogger().severe("Pattern match in " + currentFile + " : " + match);
 
                                 }
                             }
@@ -379,7 +372,7 @@ public class SrcParser {
                                     parameter[0] = parameter[0].replace(mm[0], value);
 
                                 } catch (Exception e) {
-                                    JDLogger.getLogger().severe("Mailformated translation key in 1" + currentFile + " : " + match);
+                                    JDLogger.getLogger().severe("Malformated translation key in 1" + currentFile + " : " + match);
                                     break main;
                                 }
                             }
@@ -400,24 +393,24 @@ public class SrcParser {
                     }
 
                     String error;
-                    if ((error = new Regex(parameter[0], "([\\(\\)\\{\\}\\/\\\\\\$\\&\\+\\~\\#\\\"\\!\\?]+)").getMatch(0)) != null) {
+                    if (!new Regex(parameter[0], "^\\$(.+?)\\$$").matches() && (error = new Regex(parameter[0], "([\\(\\)\\{\\}\\/\\\\\\$\\&\\+\\~\\#\\\"\\!\\?]+)").getMatch(0)) != null) {
 
                         int index = parameter[0].indexOf(error);
                         if (index >= 0) {
-                            JDLogger.getLogger().warning(" Unsupported chars (" + parameter[0].substring(0, index) + "<< |" + parameter[0].substring(index + 1) + ") in key:" + currentFile + " : " + parameter[0]);
+                            JDLogger.getLogger().warning("Unsupported chars (" + parameter[0].substring(0, index) + "<< |" + parameter[0].substring(index + 1) + ") in key:" + currentFile + " : " + parameter[0]);
 
                         } else {
-                            JDLogger.getLogger().warning(" Unsupported chars in key:" + currentFile + " : " + parameter[0]);
+                            JDLogger.getLogger().warning("Unsupported chars in key: " + currentFile + " : " + parameter[0]);
 
                         }
                         continue;
                     }
                     if (!parameter[0].contains(".")) {
-                        JDLogger.getLogger().warning(" Prob. Mailformated translation key in " + currentFile + " : " + match);
+                        JDLogger.getLogger().warning("Prob. Malformated translation key in " + currentFile + " : " + match);
                         break;
                     }
                     if (parameter[0].contains("null")) {
-                        JDLogger.getLogger().warning(" Prob. Mailformated translation key in " + currentFile + " : " + match);
+                        JDLogger.getLogger().warning("Prob. Malformated translation key in " + currentFile + " : " + match);
                         break;
                     }
 
