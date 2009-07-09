@@ -422,17 +422,17 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
 
     }
 
-    private void updateSVNinThread() {
-        if (updatingInProgress) return;
-        new Thread(new Runnable() {
-
-            public void run() {
-                updateSVN(false);
-                populateLngMenu();
-            }
-
-        }).start();
-    }
+//    private void updateSVNinThread() {
+//        if (updatingInProgress) return;
+//        new Thread(new Runnable() {
+//
+//            public void run() {
+//                updateSVN(false);
+//                populateLngMenu();
+//            }
+//
+//        }).start();
+//    }
 
     private void updateSVN(boolean revert) {
         SimpleGUI.CURRENTGUI.setWaiting(true);
