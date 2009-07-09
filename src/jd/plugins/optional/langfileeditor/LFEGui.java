@@ -55,6 +55,7 @@ import jd.controlling.ProgressController;
 import jd.event.MessageEvent;
 import jd.event.MessageListener;
 import jd.gui.UserIO;
+import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.JTabbedPanel;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.ChartAPIEntity;
@@ -282,30 +283,39 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
     }
 
     private void populateLngMenu() {
-        mnuLoad.removeAll();
-        for (File f : dirLanguages.listFiles()) {
-            if (f.getName().endsWith(".loc")) {
-                try {
-                    String language = JDGeoCode.toLonger(f.getName().substring(0, f.getName().length() - 4));
-                    if (language != null) {
-                        JMenuItem mi = new JMenuItem(language);
-                        mi.addActionListener(new ActionListener() {
+        new GuiRunnable(){
 
-                            public void actionPerformed(ActionEvent e) {
-                                languageFile = new File(dirLanguages, JDGeoCode.longToShort(e.getActionCommand()) + ".loc");
-                                initLocaleData();
-                                table.setEnabled(true);
+            @Override
+            public Object runSave() {
+                mnuLoad.removeAll();
+                for (File f : dirLanguages.listFiles()) {
+                    if (f.getName().endsWith(".loc")) {
+                        try {
+                            String language = JDGeoCode.toLonger(f.getName().substring(0, f.getName().length() - 4));
+                            if (language != null) {
+                                JMenuItem mi = new JMenuItem(language);
+                                mi.addActionListener(new ActionListener() {
+
+                                    public void actionPerformed(ActionEvent e) {
+                                        languageFile = new File(dirLanguages, JDGeoCode.longToShort(e.getActionCommand()) + ".loc");
+                                        initLocaleData();
+                                        table.setEnabled(true);
+                                    }
+
+                                });
+                                mnuLoad.add(mi);
                             }
-
-                        });
-                        mnuLoad.add(mi);
+                        } catch (Exception e) {
+                            System.out.println(f);
+                            e.printStackTrace();
+                        }
                     }
-                } catch (Exception e) {
-                    System.out.println(f);
-                    e.printStackTrace();
                 }
+                return null;
             }
-        }
+            
+        }.waitForEDT();
+       
     }
 
     private void buildContextMenu() {
