@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jd.ObjectConverter;
 import jd.controlling.JDLogger;
 import jd.event.JDBroadcaster;
 import jd.event.MessageEvent;
@@ -107,22 +106,21 @@ public class SrcParser {
         ArrayList<String> filePattern = new ArrayList<String>();
         if (cacheEntries.exists() && cachePattern.exists()) {
 
-
             try {
-                fileEntries = (ArrayList<LngEntry>) JDIO.loadObject(null,cacheEntries,false);
+                fileEntries = (ArrayList<LngEntry>) JDIO.loadObject(null, cacheEntries, false);
 
-                filePattern = (ArrayList<String>) JDIO.loadObject(null,cachePattern,false);
+                filePattern = (ArrayList<String>) JDIO.loadObject(null, cachePattern, false);
 
                 for (LngEntry entry : fileEntries) {
                     if (!entries.contains(entry)) {
-                        System.out.println(" CACHE: "+entry);
+                        System.out.println(" CACHE: " + entry);
                         entries.add(entry);
                     }
                 }
 
                 for (String patt : filePattern) {
-                    if (!pattern.contains(patt)){
-                        System.out.println(" CACHE: "+patt);
+                    if (!pattern.contains(patt)) {
+                        System.out.println(" CACHE: " + patt);
                         pattern.add(patt);
                     }
                 }
@@ -148,13 +146,12 @@ public class SrcParser {
 
         }
 
-
         try {
-         JDIO.saveObject(null, fileEntries, cacheEntries, null, null, false);
-         JDIO.saveObject(null, filePattern, cachePattern, null, null, false);
-        
+            JDIO.saveObject(null, fileEntries, cacheEntries, null, null, false);
+            JDIO.saveObject(null, filePattern, cachePattern, null, null, false);
+
         } catch (Exception e) {
-         e.printStackTrace();
+            e.printStackTrace();
             cacheEntries.delete();
             cachePattern.delete();
         }

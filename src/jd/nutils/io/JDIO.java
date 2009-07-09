@@ -140,9 +140,9 @@ public class JDIO {
      *            Soll das Objekt in eine XML Datei gespeichert werden?
      */
     public static void saveObject(Component frame, Object objectToSave, File fileOutput, String name, String extension, boolean asXML) {
-        
-        fileOutput.getParentFile().mkdirs();
-        
+
+        if (fileOutput != null) fileOutput.getParentFile().mkdirs();
+
         if (fileOutput == null) {
             JDFileFilter fileFilter = new JDFileFilter(extension, extension, true);
             JFileChooser fileChooserSave = new JFileChooser();

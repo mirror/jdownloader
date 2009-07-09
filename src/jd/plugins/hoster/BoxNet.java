@@ -10,7 +10,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(names = { "box.net" }, urls = { "(http://www\\.box\\.net/(shared/static/|rssdownload/).*)|(http://www\\.box\\.net/index\\.php\\?rm=box_download_shared_file\\&file_id=.+?\\&shared_name=\\w+)" }, flags = { 0 }, revision = "$Revision", interfaceVersion = 2)
+@HostPlugin(names = { "box.net" }, urls = { "(http://www\\.box\\.net/(shared/static/|rssdownload/).*)|(http://www\\.box\\.net/index\\.php\\?rm=box_download_shared_file\\&file_id=.+?\\&shared_name=\\w+)" }, flags = { 0 }, revision = "$Revision$", interfaceVersion = 2)
 public class BoxNet extends PluginForHost {
     private static final String TOS_LINK = "https://www.box.net/static/html/terms.html";
 
@@ -45,12 +45,12 @@ public class BoxNet extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         logger.finer("requesting  info for: " + parameter.getDownloadURL());
-        
+
         // setup referer and cookies for single file downloads
         if (parameter.getDownloadURL().matches(REDIRECT_DOWNLOAD_LINK)) {
             br.getPage(parameter.getBrowserUrl());
         }
-       
+
         URLConnectionAdapter urlConnection = br.openGetConnection(parameter.getDownloadURL());
         if (urlConnection.getResponseCode() == 404 || !urlConnection.isOK()) {
             urlConnection.disconnect();
@@ -81,11 +81,6 @@ public class BoxNet extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
-    }
-
-    @Override
-    public String getVersion() {
-        return "$Revision$";
     }
 
 }

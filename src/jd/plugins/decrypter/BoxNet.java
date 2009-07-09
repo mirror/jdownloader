@@ -4,9 +4,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.xpath.XPathExpressionException;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Encoding;
@@ -15,8 +12,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-
-import org.xml.sax.SAXException;
 
 public class BoxNet extends PluginForDecrypt {
     private static final String BASE_URL_PATTERN = "(http://www\\.box\\.net/shared/\\w+)(#\\w*)?";
@@ -32,7 +27,7 @@ public class BoxNet extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         logger.finer("Decrypting: " + parameter.getCryptedUrl());
         // check if page is a rss feed
         if (parameter.toString().endsWith("rss.xml")) { return feedExists(parameter.toString()) ? decryptFeed(parameter.toString()) : null; }
@@ -74,23 +69,19 @@ public class BoxNet extends PluginForDecrypt {
      *            the url of the rss feed
      * @return a list of decrypted links, null if the links could not be
      *         extracted.
-     * @throws IOException 
      * @throws IOException
-     * @throws XPathExpressionException
-     * @throws ParserConfigurationException
-     * @throws SAXException
      */
     private ArrayList<DownloadLink> decryptFeed(String feedUrl) throws IOException {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-       FilePackage filePackage = FilePackage.getInstance();
-        
+        FilePackage filePackage = FilePackage.getInstance();
+
         br.getPage(feedUrl);
 
         String[] folder = br.getRegex(FEED_FILEINFO_PATTERN).getColumn(0);
         if (folder == null) return null;
-        
+
         String title = br.getRegex(FEED_FILETITLE_PATTERN).getMatch(0);
-        if(title != null) filePackage.setName(title);
+        if (title != null) filePackage.setName(title);
 
         for (String fileInfo : folder) {
             String dlUrl = new Regex(fileInfo, FEED_DL_LINK_PATTERN).getMatch(0);
