@@ -1,7 +1,7 @@
 addons.jdgrowlnotification.menu = Growl Messages
 addons.jdshutdown.menu = enabled
-addons.jdshutdown.menu_tes2t = 11121100000111111
-addons.jdshutdown.menu_tes3t = 0987654321
+addons.jdshutdown.menu_tes2t = 1113434243242111
+
 addons.jdshutdown.menu_test = 1234456767
 addons.jdshutdown.statusmessage.disabled = The System will NOT be shut down by JDownloader
 addons.jdshutdown.statusmessage.enabled = JDownloader will shut down your System after downloads finished
@@ -44,7 +44,7 @@ container.message.password = Password
 container.message.title = DownloadLinkContainer loaded
 container.message.uploaded = Brought to you by
 controller.packages.defaultname = Various
-controller.status.agb_tos = AGB/TOS not signed
+controller.status.agb_tos = TOS not signed
 controller.status.connectionproblems = Connection lost
 controller.status.containererror = Container Error
 controller.status.fileexists.overwritefailed = Failed to overwrite
@@ -67,7 +67,7 @@ dialogs.premiumstatus.global.title = Disable Premium?
 download.chunks.connection = Connection
 download.connection.idle = Idle
 download.connection.normal = Download
-download.error.message.connectioncopyerror = Could not clone the connection
+download.error.message.connectioncopyerror = Failed cloning connection
 download.error.message.incomplete = Download incomplete
 download.error.message.iopermissions = No permissions to write to hard disk
 download.error.message.localio = Could not write to file: %s
