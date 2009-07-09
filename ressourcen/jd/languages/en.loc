@@ -1216,7 +1216,6 @@ system.download.docrc2 = CRC-Check running (%s)
 system.download.docrc2.failed = CRC-Check FAILED (%s)
 system.download.docrc2.success = CRC-Check OK (%s)
 system.download.errors.couldnotoverwrite = Could not overwrite existing file
-system.download.errors.couldnotoverwritejdu = Update Download Error
 system.download.errors.couldnotrename = Could not rename Part File
 system.download.errors.invalidoutputfile = Invalid Output File
 system.download.errors.linkisblocked = Mirror %s is loading
