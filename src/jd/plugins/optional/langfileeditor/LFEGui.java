@@ -214,7 +214,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         // Load Menü
         mnuLoad = new JMenu(JDL.L(LOCALE_PREFIX + "load", "Load Language"));
 
- populateLngMenu();
+        populateLngMenu();
 
         // File Menü
         mnuFile = new JMenu(JDL.L(LOCALE_PREFIX + "file", "File"));
@@ -285,22 +285,22 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         mnuLoad.removeAll();
         for (File f : dirLanguages.listFiles()) {
             if (f.getName().endsWith(".loc")) {
-                try{
-                String language = JDGeoCode.toLonger(f.getName().substring(0, f.getName().length() - 4));
-                if (language != null) {
-                    JMenuItem mi = new JMenuItem(language);
-                    mi.addActionListener(new ActionListener() {
+                try {
+                    String language = JDGeoCode.toLonger(f.getName().substring(0, f.getName().length() - 4));
+                    if (language != null) {
+                        JMenuItem mi = new JMenuItem(language);
+                        mi.addActionListener(new ActionListener() {
 
-                        public void actionPerformed(ActionEvent e) {
-                            languageFile = new File(dirLanguages, JDGeoCode.longToShort(e.getActionCommand()) + ".loc");
-                            initLocaleData();
-                            table.setEnabled(true);
-                        }
+                            public void actionPerformed(ActionEvent e) {
+                                languageFile = new File(dirLanguages, JDGeoCode.longToShort(e.getActionCommand()) + ".loc");
+                                initLocaleData();
+                                table.setEnabled(true);
+                            }
 
-                    });
-                    mnuLoad.add(mi);
-                }
-                }catch(Exception e){
+                        });
+                        mnuLoad.add(mi);
+                    }
+                } catch (Exception e) {
                     System.out.println(f);
                     e.printStackTrace();
                 }
@@ -327,8 +327,8 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
     public void actionPerformed(ActionEvent e) {
 
         if (e.getSource() == mnuReload) {
-
-            if (JOptionPane.showConfirmDialog(this, JDL.L(LOCALE_PREFIX + "changed.message", "Language File changed! Save changes?"), JDL.L(LOCALE_PREFIX + "changed.title", "Save changes?"), JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+            int ret = UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, "Save changes?", "Save your changes to " + this.languageFile + "?", null, null, null);
+            if (JDFlags.hasAllFlags(ret, UserIO.RETURN_OK)) {
                 saveLanguageFile(languageFile);
             }
             SimpleGUI.CURRENTGUI.setWaiting(true);
@@ -422,17 +422,17 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
 
     }
 
-//    private void updateSVNinThread() {
-//        if (updatingInProgress) return;
-//        new Thread(new Runnable() {
-//
-//            public void run() {
-//                updateSVN(false);
-//                populateLngMenu();
-//            }
-//
-//        }).start();
-//    }
+    // private void updateSVNinThread() {
+    // if (updatingInProgress) return;
+    // new Thread(new Runnable() {
+    //
+    // public void run() {
+    // updateSVN(false);
+    // populateLngMenu();
+    // }
+    //
+    // }).start();
+    // }
 
     private void updateSVN(boolean revert) {
         SimpleGUI.CURRENTGUI.setWaiting(true);
