@@ -1,4 +1,3 @@
-
 addons.jdgrowlnotification.menu = Growl Super Messages
 addons.jdshutdown.menu = enabled
 addons.jdshutdown.statusmessage.disabled = The System will NOT be shut down by JDownloader
