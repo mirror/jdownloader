@@ -178,7 +178,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
                 updateSVN(false);
 
                 getSourceEntries();
-
+                populateLngMenu();
                 LFEGui.this.setEnabled(true);
 
             }
@@ -214,24 +214,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         // Load Menü
         mnuLoad = new JMenu(JDL.L(LOCALE_PREFIX + "load", "Load Language"));
 
-        for (File f : dirLanguages.listFiles()) {
-            if (f.getName().endsWith(".loc")) {
-                String language = JDGeoCode.toLonger(f.getName().substring(0, f.getName().length() - 4));
-                if (language != null) {
-                    JMenuItem mi = new JMenuItem(language);
-                    mi.addActionListener(new ActionListener() {
-
-                        public void actionPerformed(ActionEvent e) {
-                            languageFile = new File(dirLanguages, JDGeoCode.longToShort(e.getActionCommand()) + ".loc");
-                            initLocaleData();
-                            table.setEnabled(true);
-                        }
-
-                    });
-                    mnuLoad.add(mi);
-                }
-            }
-        }
+ populateLngMenu();
 
         // File Menü
         mnuFile = new JMenu(JDL.L(LOCALE_PREFIX + "file", "File"));
@@ -298,6 +281,33 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         return menuBar;
     }
 
+    private void populateLngMenu() {
+        mnuLoad.removeAll();
+        for (File f : dirLanguages.listFiles()) {
+            if (f.getName().endsWith(".loc")) {
+                try{
+                String language = JDGeoCode.toLonger(f.getName().substring(0, f.getName().length() - 4));
+                if (language != null) {
+                    JMenuItem mi = new JMenuItem(language);
+                    mi.addActionListener(new ActionListener() {
+
+                        public void actionPerformed(ActionEvent e) {
+                            languageFile = new File(dirLanguages, JDGeoCode.longToShort(e.getActionCommand()) + ".loc");
+                            initLocaleData();
+                            table.setEnabled(true);
+                        }
+
+                    });
+                    mnuLoad.add(mi);
+                }
+                }catch(Exception e){
+                    System.out.println(f);
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
     private void buildContextMenu() {
         // Context Menü
         mnuContextPopup = new JPopupMenu();
@@ -328,6 +338,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
                         getSourceEntries();
 
                         updateSVN(true);
+                        populateLngMenu();
                         initLocaleData();
                     } finally {
                         SimpleGUI.CURRENTGUI.setWaiting(false);
@@ -417,6 +428,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
 
             public void run() {
                 updateSVN(false);
+                populateLngMenu();
             }
 
         }).start();

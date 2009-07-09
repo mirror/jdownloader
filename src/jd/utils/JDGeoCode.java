@@ -552,6 +552,7 @@ public class JDGeoCode {
      */
     public static String toLonger(String string) {
         String[] p = JDGeoCode.parseLanguageCode(string);
+        if(p==null)return null;
         String language = LANGUAGES.get(p[0])[0];
         String country = COUNTRIES.get(p[1]);
         String extension = EXTENSIONS.get(p[2]);
