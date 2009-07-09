@@ -1786,13 +1786,7 @@ abstract public class DownloadInterface {
             fileOutput.getParentFile().mkdirs();
         }
         if (fileOutput.exists()) {
-//            if (downloadLink.getLinkType() == DownloadLink.LINKTYPE_JDU) {
-//                if (!new File(downloadLink.getFileOutput()).delete()) {
-//                    linkstatus.addStatus(LinkStatus.ERROR_FATAL);
-//                    linkstatus.setErrorMessage(JDL.L("system.download.errors.couldnotoverwritejdu", "Update Download Error"));
-//                    return true;
-//                }
-//            }
+
             if (SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_FILE_EXISTS) == 0) {
                 if (!new File(downloadLink.getFileOutput()).delete()) {
                     linkstatus.addStatus(LinkStatus.ERROR_FATAL);
