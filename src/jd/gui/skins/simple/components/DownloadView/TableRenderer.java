@@ -42,7 +42,7 @@ public class TableRenderer extends DefaultTableRenderer {
 
     private static final long serialVersionUID = -3912572910439565199L;
 
-    private static final String NULL_BYTE_PROGRESS = "0.00%(0 B/* MB)";
+    private static final String NULL_BYTE_PROGRESS = "0.00% (0 B/* MB)";
 
     private DecimalFormat c = new DecimalFormat("0.00");
 
@@ -336,15 +336,18 @@ public class TableRenderer extends DefaultTableRenderer {
             statuspanel.setBackground(co.getBackground());
             statuspanel.setPainter(((JRendererLabel) co).getPainter());
 
-//            if (dLink.getPluginProgress() != null && dLink.getPluginProgress().getPercent() > 0.0 && dLink.getPluginProgress().getPercent() < 100.0) {
-//                statuspanel.setText(dLink.getLinkStatus().getStatusString());
-//            } else if (dLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
-//                statuspanel.setText(dLink.getLinkStatus().getStatusString());
-//            } else if (dLink.getLinkStatus().isFailed()) {
-//                statuspanel.setText(dLink.getLinkStatus().getStatusString());
-//            } else {
-                statuspanel.setText(dLink.getLinkStatus().getStatusString());
-//            }
+            // if (dLink.getPluginProgress() != null &&
+            // dLink.getPluginProgress().getPercent() > 0.0 &&
+            // dLink.getPluginProgress().getPercent() < 100.0) {
+            // statuspanel.setText(dLink.getLinkStatus().getStatusString());
+            // } else if (dLink.getLinkStatus().hasStatus(LinkStatus.FINISHED))
+            // {
+            // statuspanel.setText(dLink.getLinkStatus().getStatusString());
+            // } else if (dLink.getLinkStatus().isFailed()) {
+            // statuspanel.setText(dLink.getLinkStatus().getStatusString());
+            // } else {
+            statuspanel.setText(dLink.getLinkStatus().getStatusString());
+            // }
 
             counter = 0;
 
