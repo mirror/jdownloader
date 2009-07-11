@@ -9,11 +9,11 @@ param.colorType = RGB;
 
 param.borderVarianceX=3;
 param.borderVarianceY=3;
-param.scanVarianceX=5;
-param.scanVarianceY=5;
+param.scanVarianceX=3;
+param.scanVarianceY=3;
 
-param.LetterSearchLimitPerfectPercent=8;
-param.overlayNoiseSize=3;
+param.LetterSearchLimitPerfectPercent=11;
+param.overlayNoiseSize=0;
 
 param.objectColorContrast = 0.2;
 param.objectDetectionContrast = 0.2;
@@ -40,4 +40,4 @@ captcha.prepare.toBlackAndWhite(0.5);
 ###############################
 
 letter.prepare.removeSmallObjects(0.5,0.95,30);
-letter.prepare.resizeToHeight(20);
+letter.prepare.resizeToHeight(25);
