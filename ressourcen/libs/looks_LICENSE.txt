@@ -1,0 +1,24 @@
+
+          JGoodies Looks Demo Binary Software License Agreement
+          =====================================================
+
+Copyright (c) 2002-2008 JGoodies Karsten Lentzsch. All rights reserved.
+
+This software is provided 'as-is', without any express or implied warranty.  
+In no event will JGoodies Karsten Lentzsch be held liable for any damages
+arising from the use of this software.
+
+Permission is granted to anyone to use this software, to copy it 
+and redistribute it freely, subject to the following restrictions:
+
+ 1. The origin of this software must not be misrepresented; 
+    you must not claim that you wrote the software. 
+    
+ 2. You may not modify or create derivative works of this software, 
+    or reverse engineer, or decompile binary portions of it, 
+    or otherwise attempt to derive the source code from such portions.
+
+ 3. You may not sell, rent, loan or otherwise encumber 
+    this software in whole or in part, to any third party.
+
+ 4. This notice may not be removed or altered from redistributions.

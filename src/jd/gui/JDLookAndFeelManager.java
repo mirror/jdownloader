@@ -29,20 +29,28 @@ import javax.swing.UIManager;
 import javax.swing.UIManager.LookAndFeelInfo;
 
 import jd.JDInitFlags;
+import jd.OptionalPluginWrapper;
 import jd.config.SubConfiguration;
 import jd.config.container.JDLabelContainer;
 import jd.controlling.JDLogger;
 import jd.gui.skins.simple.SimpleGuiConstants;
+import jd.nutils.ClassFinder;
 import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
 import jd.parser.Regex;
+import jd.plugins.OptionalPlugin;
+import jd.plugins.PluginOptional;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+
+import com.jgoodies.looks.plastic.PlasticTheme;
+import com.jgoodies.looks.plastic.PlasticXPLookAndFeel;
+import com.jgoodies.looks.plastic.theme.SkyBlue;
 
 public class JDLookAndFeelManager implements Serializable, JDLabelContainer {
 
     private static final long serialVersionUID = -8056003135389551814L;
-    public static final String PARAM_PLAF = "PLAF";
+    public static final String PARAM_PLAF = "PLAF2";
     private static boolean uiInitated = false;
     private static JDLookAndFeelManager MACDEFAULT;
     private String className;
@@ -50,7 +58,7 @@ public class JDLookAndFeelManager implements Serializable, JDLabelContainer {
 
     public static JDLookAndFeelManager[] getSupportedLookAndFeels() {
         LookAndFeelInfo[] lafis = UIManager.getInstalledLookAndFeels();
-
+        JDInitFlags.SWITCH_DEBUG = false;
         ArrayList<JDLookAndFeelManager> ret = new ArrayList<JDLookAndFeelManager>();
         for (int i = 0; i < lafis.length; i++) {
             String clname = lafis[i].getClassName();
@@ -60,24 +68,31 @@ public class JDLookAndFeelManager implements Serializable, JDLabelContainer {
             } else if (clname.contains("Synthetica")) {
                 ret.add(new JDLookAndFeelManager(lafis[i]));
             } else if (clname.contains("goodie")) {
-                if (OSDetector.isLinux()) {
-                    JDLookAndFeelManager lafm = new JDLookAndFeelManager(lafis[i]);
-                    lafm.setName("JGoodies");
-                    ret.add(lafm);
-                }
+                // if (OSDetector.isLinux() || JDInitFlags.SWITCH_DEBUG) {
+                JDLookAndFeelManager lafm = new JDLookAndFeelManager(lafis[i]);
+                lafm.setName(lafis[i].getName());
+                ret.add(lafm);
+                // }
             } else if (clname.startsWith("apple.laf")) {
                 JDLookAndFeelManager lafm = new JDLookAndFeelManager(lafis[i]);
                 lafm.setName("Apple Aqua");
                 MACDEFAULT = lafm;
                 ret.add(lafm);
             } else if (clname.endsWith("WindowsLookAndFeel")) {
-                JDLookAndFeelManager lafm = new JDLookAndFeelManager(lafis[i]);
-                lafm.setName("Windows Style");
-                ret.add(lafm);
+                // JDLookAndFeelManager lafm = new
+                // JDLookAndFeelManager(lafis[i]);
+                // lafm.setName("Windows Style");
+                // ret.add(lafm);
             } else if (clname.endsWith("MetalLookAndFeel") && OSDetector.isLinux()) {
+                // JDLookAndFeelManager lafm = new
+                // JDLookAndFeelManager(lafis[i]);
+                // lafm.setName("Light(Metal)");
+                // ret.add(lafm);
+            } else if (clname.startsWith("com.jtattoo")) {
                 JDLookAndFeelManager lafm = new JDLookAndFeelManager(lafis[i]);
-                lafm.setName("Light(Metal)");
+                lafm.setName(lafis[i].getName());
                 ret.add(lafm);
+
             } else if (JDInitFlags.SWITCH_DEBUG) {
                 JDLookAndFeelManager lafm = new JDLookAndFeelManager(lafis[i]);
                 lafm.setName(lafis[i].getName() + "(debug)");
@@ -136,7 +151,8 @@ public class JDLookAndFeelManager implements Serializable, JDLabelContainer {
     }
 
     private static JDLookAndFeelManager getDefaultLAFM() {
-        if (JDUtilities.getJavaVersion() >= 1.6) return new JDLookAndFeelManager("org.jvnet.substance.skin.SubstanceBusinessBlackSteelLookAndFeel");
+        // if (JDUtilities.getJavaVersion() >= 1.6) return new
+        // JDLookAndFeelManager("org.jvnet.substance.skin.SubstanceBusinessBlackSteelLookAndFeel");
 
         JDLookAndFeelManager[] sup = getSupportedLookAndFeels();
         if (sup.length == 0) return new JDLookAndFeelManager(UIManager.getSystemLookAndFeelClassName());
@@ -160,7 +176,7 @@ public class JDLookAndFeelManager implements Serializable, JDLabelContainer {
                 if (e.getName().startsWith(pkg)) {
                     String laf = new Regex(e.getName(), "org/jvnet/substance/skin/(.*?)LookAndFeel\\.class").getMatch(0);
                     if (laf != null) {
-                       
+
                         UIManager.installLookAndFeel(laf, "org.jvnet.substance.skin." + laf + "LookAndFeel");
                     }
                 }
@@ -171,22 +187,22 @@ public class JDLookAndFeelManager implements Serializable, JDLabelContainer {
             JDLogger.exception(e);
         }
     }
+
     public static void installSynthetica() {
-//        de.javasoft.plaf.synthetica.SyntheticaStandardLookAndFeel
+        // de.javasoft.plaf.synthetica.SyntheticaStandardLookAndFeel
         String pkg = "de/javasoft/plaf/synthetica";
         URL res = JDUtilities.getJDClassLoader().getResource(pkg);
         String url = new Regex(res, "(.*)\\!.*").getMatch(0);
         url = url.substring(4);
         try {
             File file = new File(new URL(url).toURI());
-           
+
             JarInputStream jarFile = new JarInputStream(new FileInputStream(file));
             JarEntry e;
             while ((e = jarFile.getNextJarEntry()) != null) {
                 if (e.getName().startsWith(pkg)) {
                     String laf = new Regex(e.getName(), "de/javasoft/plaf/synthetica/(.*?)LookAndFeel\\.class").getMatch(0);
-                
-                    
+
                     if (laf != null) {
 
                         UIManager.installLookAndFeel(laf, "de.javasoft.plaf.synthetica." + laf + "LookAndFeel");
@@ -194,9 +210,9 @@ public class JDLookAndFeelManager implements Serializable, JDLabelContainer {
                 }
 
             }
-//            de.javasoft.plaf.synthetica.SyntheticaSkyMetallicLookAndFeel
-//            de.javasoft.plaf.synthetica.SyntheticaWhiteVisionLookAndFeel
-            
+            // de.javasoft.plaf.synthetica.SyntheticaSkyMetallicLookAndFeel
+            // de.javasoft.plaf.synthetica.SyntheticaWhiteVisionLookAndFeel
+
             UIManager.installLookAndFeel("SkyMetallic", "de.javasoft.plaf.synthetica.SyntheticaSkyMetallicLookAndFeel");
             UIManager.installLookAndFeel("WhiteVision", "de.javasoft.plaf.synthetica.SyntheticaWhiteVisionLookAndFeel");
             UIManager.installLookAndFeel("SyntheticaBlackMoon", "de.javasoft.plaf.synthetica.SyntheticaBlackMoonLookAndFeel");
@@ -210,21 +226,48 @@ public class JDLookAndFeelManager implements Serializable, JDLabelContainer {
         uiInitated = true;
 
         installJGoodies();
+        installJTattoo();
         if (JDUtilities.getJavaVersion() >= 1.6) installSubstance();
-//        installSynthetica();
-     
+        // installSynthetica();
 
         try {
             JDLogger.getLogger().info("Use Look & Feel: " + getPlaf().getClassName());
+
+            if (getPlaf().getClassName().contains("plastic.")) {
+                PlasticTheme theme = new SkyBlue();
+                PlasticXPLookAndFeel.setPlasticTheme(theme);
+                JDGoodieLafUtils.installDefaults();
+                PlasticXPLookAndFeel.setTabStyle("metal");
+
+            }
             UIManager.setLookAndFeel(getPlaf().getClassName());
+
         } catch (Exception e) {
             JDLogger.exception(e);
         }
 
     }
 
+    private static void installJTattoo() {
+      
+        UIManager.installLookAndFeel("AluminiumLookAndFeel", "com.jtattoo.plaf.aluminium.AluminiumLookAndFeel");
+        UIManager.installLookAndFeel("AcrylLookAndFeel", "com.jtattoo.plaf.acryl.AcrylLookAndFeel");
+        UIManager.installLookAndFeel("AeroLookAndFeel", "com.jtattoo.plaf.aero.AeroLookAndFeel");
+        UIManager.installLookAndFeel("NoireLookAndFeel", "com.jtattoo.plaf.noire.NoireLookAndFeel");
+        UIManager.installLookAndFeel("MintLookAndFeel", "com.jtattoo.plaf.mint.MintLookAndFeel");
+        UIManager.installLookAndFeel("McWinLookAndFeel", "com.jtattoo.plaf.mcwin.McWinLookAndFeel");
+        UIManager.installLookAndFeel("LunaLookAndFeel", "com.jtattoo.plaf.luna.LunaLookAndFeel");
+        UIManager.installLookAndFeel("HiFiLookAndFeel", "com.jtattoo.plaf.hifi.HiFiLookAndFeel");
+        UIManager.installLookAndFeel("FastLookAndFeel", "com.jtattoo.plaf.fast.FastLookAndFeel");
+        UIManager.installLookAndFeel("BernsteinLookAndFeel", "com.jtattoo.plaf.bernstein.BernsteinLookAndFeel");
+        UIManager.installLookAndFeel("SmartLookAndFeel", "com.jtattoo.plaf.smart.SmartLookAndFeel");
+    }
+
     private static void installJGoodies() {
-        UIManager.installLookAndFeel("JGoodie", "com.jgoodies.looks.windows.WindowsLookAndFeel");
+        // com.jgoodies.plaf.plastic.PlasticXPLookAndFeel
+
+        UIManager.installLookAndFeel("JDownloaderDefault", "com.jgoodies.looks.plastic.PlasticXPLookAndFeel");
+        UIManager.installLookAndFeel("JDownloaderWindows", "com.jgoodies.looks.windows.WindowsLookAndFeel");
     }
 
     public JDLookAndFeelManager(LookAndFeelInfo lafi) {

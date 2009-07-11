@@ -72,7 +72,7 @@ public class Updater {
     public static void main(String[] args) throws Exception {
         String branch = null;
 
-        branch = "NIGHTLY";
+        branch = "NIGHTLY"; 
         Updater upd = new Updater();
 
         if (branch != null) WebUpdater.getConfig("WEBUPDATE").setProperty("BRANCH", branch);

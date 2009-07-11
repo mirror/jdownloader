@@ -457,7 +457,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
     }
 
     public void updateDecoration() {
-
+//UIManager.getLookAndFeel().getName().toLowerCase().contains("substance")&&
         if (UIManager.getLookAndFeel().getSupportsWindowDecorations() && SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.DECORATION_ENABLED, true)) {
             setUndecorated(true);
             getRootPane().setWindowDecorationStyle(JRootPane.FRAME);

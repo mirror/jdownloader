@@ -110,13 +110,13 @@ public class ConfigPanelGUI extends ConfigPanel {
         ce.setDefaultValue(true);
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.PARAM_SHOW_BALLOON, JDL.L("gui.config.gui.showBalloon", "Show Balloon infos")).setGroup(feel));
         ce.setDefaultValue(true);
-        ConfigGroup perf = new ConfigGroup(JDL.L("gui.config.gui.performance", "Performance"), JDTheme.II("gui.images.performance", 32, 32));
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.ANIMATION_ENABLED, JDL.L("gui.config.gui.animationenabled", "Enable extended effects.")).setGroup(perf));
-        ce.setDefaultValue(false);
-        ce.setPropertyType(PropertyType.NEEDS_RESTART);
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.DECORATION_ENABLED, JDL.L("gui.config.gui.decoration", "Enable Windowdecoration")).setGroup(perf));
-        ce.setDefaultValue(true);
-        ce.setPropertyType(PropertyType.NEEDS_RESTART);
+//        ConfigGroup perf = new ConfigGroup(JDL.L("gui.config.gui.performance", "Performance"), JDTheme.II("gui.images.performance", 32, 32));
+//        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.ANIMATION_ENABLED, JDL.L("gui.config.gui.animationenabled", "Enable extended effects.")).setGroup(perf));
+//        ce.setDefaultValue(false);
+//        ce.setPropertyType(PropertyType.NEEDS_RESTART);
+//        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.DECORATION_ENABLED, JDL.L("gui.config.gui.decoration", "Enable Windowdecoration")).setGroup(perf));
+//        ce.setDefaultValue(true);
+//        ce.setPropertyType(PropertyType.NEEDS_RESTART);
         // Extended Tab
         ConfigContainer ext = new ConfigContainer(JDL.L("gui.config.gui.ext", "Advanced"));
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, ext));
