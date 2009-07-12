@@ -107,12 +107,13 @@ public abstract class ConfigPanel extends JTabbedPanel {
             // groupMenu.setEnabled(false);
             // }
             if (entry.getDecoration() != null) {
-             
-                
+
                 switch (entry.getConfigEntry().getType()) {
-//                case ConfigContainer.TYPE_BUTTON:
-//                    panel.add(entry.getDecoration(), "spany " + entry.getInput().length + (entry.getInput().length == 0 ? ",spanx" : ""));
-//                     break;
+                // case ConfigContainer.TYPE_BUTTON:
+                // panel.add(entry.getDecoration(), "spany " +
+                // entry.getInput().length + (entry.getInput().length == 0 ?
+                // ",spanx" : ""));
+                // break;
                 case ConfigContainer.TYPE_TEXTAREA:
                 case ConfigContainer.TYPE_LISTCONTROLLED:
                     panel.add(entry.getDecoration(), "spany " + entry.getInput().length + ",spanx, gapright " + getGapRight());
@@ -120,7 +121,7 @@ public abstract class ConfigPanel extends JTabbedPanel {
                     break;
                 default:
                     panel.add(entry.getDecoration(), "spany " + entry.getInput().length + (entry.getInput().length == 0 ? ",spanx" : ""));
-                    
+
                 }
             }
 
@@ -128,7 +129,7 @@ public abstract class ConfigPanel extends JTabbedPanel {
                 switch (entry.getConfigEntry().getType()) {
                 case ConfigContainer.TYPE_BUTTON:
                     panel.add(c, entry.getDecoration() == null ? "spanx,gapright " + getGapRight() : "width n:n:160,gapright " + getGapRight());
-                    
+                    break;
                 case ConfigContainer.TYPE_TEXTAREA:
                 case ConfigContainer.TYPE_LISTCONTROLLED:
                     panel.add(new JScrollPane(c), "spanx,gapright " + getGapRight() + ",growy,pushy");
@@ -167,13 +168,14 @@ public abstract class ConfigPanel extends JTabbedPanel {
             }
             if (entry.getDecoration() != null) {
                 switch (entry.getConfigEntry().getType()) {
-//                case ConfigContainer.TYPE_BUTTON:
-//                    panel.add(entry.getDecoration(), "gapleft " + getGapLeft() + ",spany " + entry.getInput().length + (entry.getInput().length == 0 ? ",spanx" : ""));
-//                     break;
+                // case ConfigContainer.TYPE_BUTTON:
+                // panel.add(entry.getDecoration(), "gapleft " + getGapLeft() +
+                // ",spany " + entry.getInput().length +
+                // (entry.getInput().length == 0 ? ",spanx" : ""));
+                // break;
                 case ConfigContainer.TYPE_TEXTAREA:
                 case ConfigContainer.TYPE_LISTCONTROLLED:
                     panel.add(entry.getDecoration(), "gapleft " + getGapLeft() + ",spany " + entry.getInput().length + ",spanx");
-
                     break;
                 default:
                     panel.add(entry.getDecoration(), "gapleft " + getGapLeft() + ",spany " + entry.getInput().length + (entry.getInput().length == 0 ? ",spanx" : ""));
@@ -183,10 +185,10 @@ public abstract class ConfigPanel extends JTabbedPanel {
             for (JComponent c : entry.getInput()) {
 
                 switch (entry.getConfigEntry().getType()) {
-                 case ConfigContainer.TYPE_BUTTON:
-                     panel.add(c, entry.getDecoration() == null ? "spanx,gapright " + this.getGapRight() + ",gapleft " + this.getGapLeft() : "width n:n:160,gapright " + this.getGapRight());
-                     header.setVisible(true);
-                 break;
+                case ConfigContainer.TYPE_BUTTON:
+                    panel.add(c, entry.getDecoration() == null ? "spanx,gapright " + this.getGapRight() + ",gapleft " + this.getGapLeft() : "width n:n:160,gapright " + this.getGapRight());
+                    header.setVisible(true);
+                    break;
 
                 case ConfigContainer.TYPE_TEXTAREA:
                     viewport = false;

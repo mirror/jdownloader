@@ -40,10 +40,14 @@ public class AddContainerAction extends StartAction {
         JDFileChooser fc = new JDFileChooser("_LOADSAVEDLC");
         fc.setDialogTitle(JDL.L("gui.filechooser.loaddlc", "Load DLC file"));
         fc.setFileFilter(new JDFileFilter(null, ".dlc|.rsdf|.ccf|.metalink", true));
+        fc.setFileSelectionMode(JDFileChooser.FILES_ONLY);
+        fc.setMultiSelectionEnabled(true);
         if (fc.showOpenDialog(null) == JDFileChooser.APPROVE_OPTION) {
-            File ret2 = fc.getSelectedFile();
-            if (ret2 != null) {
-                JDUtilities.getController().loadContainerFile(ret2);
+            File[] ret = fc.getSelectedFiles();
+            if (ret != null) {
+                for (File r : ret) {
+                    JDUtilities.getController().loadContainerFile(r);
+                }
             }
         }
     }
