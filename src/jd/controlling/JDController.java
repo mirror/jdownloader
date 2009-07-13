@@ -467,6 +467,7 @@ public class JDController implements ControlListener {
 
     public int getForbiddenReconnectDownloadNum() {
         boolean allowinterrupt = SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty("PARAM_DOWNLOAD_AUTORESUME_ON_RECONNECT", true);
+       
         int ret = 0;
         ArrayList<DownloadLink> links = DownloadWatchDog.getInstance().getRunningDownloads();
         for (DownloadLink link : links) {

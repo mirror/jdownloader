@@ -396,7 +396,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
     }
 
     public boolean newDLStartAllowed() {
-        if (paused || Reconnecter.isReconnecting() || aborting || aborted || Reconnecter.preferReconnect()) return false;
+        if (paused || Reconnecter.isReconnecting() || aborting || aborted || Reconnecter.isReconnectPrefered()) return false;
         return true;
     }
 
@@ -428,7 +428,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                     ArrayList<DownloadLink> removes = new ArrayList<DownloadLink>();
                     while (aborted != true) {
 
-                        Reconnecter.hasWaittimeLinks = false;
+                        Reconnecter.setReconnectRequested(false);
                         hasInProgressLinks = false;
                         hasTempDisabledLinks = false;
 
@@ -460,13 +460,13 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                                         if (linkStatus.getRemainingWaittime() == 0) {
                                             linkStatus.reset();
                                         } else if (linkStatus.getRemainingWaittime() > 0) {
-                                            Reconnecter.hasWaittimeLinks = true;
+                                            Reconnecter.setReconnectRequested(true);
                                             updates.add(link);
                                         }
                                     }
                                     /* Link mit HosterWartezeit */
                                     if (link.isEnabled() && link.getPlugin().getRemainingHosterWaittime() > 0 && !linkStatus.hasStatus(LinkStatus.PLUGIN_IN_PROGRESS)) {
-                                        Reconnecter.hasWaittimeLinks = true;
+                                        Reconnecter.setReconnectRequested(true);
                                         updates.add(link);
                                     }
                                     // Laufende DownloadLinks
@@ -525,7 +525,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                                 if (!reachedStopMark()) ret = setDownloadActive();
                             }
                             if (ret == 0) {
-                                if (!hasTempDisabledLinks && !hasInProgressLinks && !Reconnecter.hasWaittimeLinks && getNextDownloadLink() == null && activeDownloads == 0) {
+                                if (!hasTempDisabledLinks && !hasInProgressLinks && !Reconnecter.isReconnectRequested() && getNextDownloadLink() == null && activeDownloads == 0) {
                                     /*
                                      * nur runterzählen falls auch erlaubt war
                                      * nen download zu starten

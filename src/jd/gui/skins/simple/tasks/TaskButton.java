@@ -33,7 +33,7 @@ abstract public class TaskButton extends TaskPanel {
 
     public TaskButton(String string, ImageIcon ii, String pid) {
         super(string, ii, pid);
-        super.setDeligateCollapsed(true);
+//        super.setDeligateCollapsed(true);
     }
 
     private boolean collapsed = false;
@@ -50,7 +50,7 @@ abstract public class TaskButton extends TaskPanel {
 
     //@Override
     public void setCollapsed(boolean collapsed) {
-        super.setCollapsed(true);
+//        super.setCollapsed(true);
         boolean oldValue = isCollapsed();
         this.collapsed = collapsed;
 

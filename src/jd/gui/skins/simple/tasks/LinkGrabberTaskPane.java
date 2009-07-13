@@ -76,7 +76,10 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
             public void run() {
                 this.setName("LinkGrabberTask: infoupdate");
                 while (true) {
-                    if (!isCollapsed()) update();
+                    //TODO
+//                    if (!isCollapsed()) 
+                        
+                        update();
                     try {
                         Thread.sleep(2000);
                     } catch (InterruptedException e) {

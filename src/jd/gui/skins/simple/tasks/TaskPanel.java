@@ -18,34 +18,27 @@ package jd.gui.skins.simple.tasks;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JPanel;
+import javax.swing.UIManager;
 import javax.swing.event.EventListenerList;
 
-import jd.config.ConfigPropertyListener;
-import jd.config.Property;
-import jd.config.SubConfiguration;
-import jd.controlling.JDController;
 import jd.gui.skins.simple.Factory;
 import jd.gui.skins.simple.JTabbedPanel;
-import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.gui.skins.simple.SingletonPanel;
 import net.miginfocom.swing.MigLayout;
 
-import org.jdesktop.swingx.JXTaskPane;
+import com.jtattoo.plaf.AbstractLookAndFeel;
+import com.jtattoo.plaf.BaseTitlePane;
 
-public abstract class TaskPanel extends JXTaskPane implements MouseListener, PropertyChangeListener, ActionListener {
+public abstract class TaskPanel extends JPanel implements ActionListener {
 
     private static final long serialVersionUID = 2136414459422852581L;
 
-    public static final int ACTION_TOGGLE = -1;
     public static final int ACTION_CLICK = -2;
     protected EventListenerList listenerList;
     private String panelID = "taskpanel";
@@ -62,42 +55,50 @@ public abstract class TaskPanel extends JXTaskPane implements MouseListener, Pro
     protected static final String D2_CHECKBOX = "spanx,alignx left,gaptop 2,gapleft 23";
     public boolean pressed;
 
-    public TaskPanel(String string, ImageIcon ii, String pid) {
-        this.setTitle(string);
+    private ImageIcon icon;
+
+    private String taskName;
+
+    public String getTaskName() {
+        return taskName;
+    }
+
+    public void setTaskName(String taskName) {
+        this.taskName = taskName;
+    }
+
+    public TaskPanel(String title, ImageIcon ii, String pid) {
+        // this.setTitle(string);
+        // this.setIcon(ii);
+        // this.addMouseListener(this);
+        this.taskName = title;
+
         this.setIcon(ii);
-        this.addMouseListener(this);
+
         this.listenerList = new EventListenerList();
         this.setPanelID(pid);
-        this.setAnimated(SimpleGuiConstants.isAnimated());
-        JDController.getInstance().addControlListener(new ConfigPropertyListener(SimpleGuiConstants.ANIMATION_ENABLED) {
-
-            // @Override
-            public void onPropertyChanged(Property source, String propertyName) {
-                setAnimated(SimpleGuiConstants.isAnimated());
-
-            }
-
-        });
-        this.addPropertyChangeListener(this);
-        this.setLayout(new MigLayout("ins 5 5 5 15, wrap 1", "[fill,grow]", "[]0[]0[]0[]0[]0[]0[]0[]0[]0[]0[]0[]"));
-        setDeligateCollapsed(SubConfiguration.getConfig("gui").getBooleanProperty(getPanelID() + "_collapsed", false));
+      
+        if (UIManager.getLookAndFeel() instanceof AbstractLookAndFeel) {
+//        AbstractLookAndFeel laf = (AbstractLookAndFeel)UIManager.getLookAndFeel();
+    
+//        this.setBackground(laf.getTheme().getToolbarBackgroundColor());
+        }
+        // this.addPropertyChangeListener(this);
+        this.setLayout(new MigLayout("ins 5 5 5 5, wrap 1", "[fill,grow]"));
+        // setDeligateCollapsed(SubConfiguration.getConfig("gui").getBooleanProperty(getPanelID()
+        // + "_collapsed", false));
         this.panels = new ArrayList<SingletonPanel>();
 
     }
 
-    public void setCollapsed(boolean collapsed) {
+    private void setIcon(ImageIcon ii) {
 
-        //        
+        icon = ii;
+
     }
 
-    public void setDeligateCollapsed(boolean collapsed) {
-
-        // if(collapsed){
-        // System.out.println(collapsed+" - "+this);
-        // }else{
-        // System.out.println(collapsed+" - "+this);
-        // }
-        super.setCollapsed(collapsed);
+    public ImageIcon getIcon() {
+        return icon;
     }
 
     /**
@@ -158,28 +159,15 @@ public abstract class TaskPanel extends JXTaskPane implements MouseListener, Pro
         return listenerList.getListeners(ActionListener.class);
     }
 
-    public void mouseClicked(MouseEvent e) {
-    }
-
-    public void mouseEntered(MouseEvent e) {
-    }
-
-    public void mouseExited(MouseEvent e) {
-    }
-
-    public void mousePressed(MouseEvent e) {
-        pressed = true;
-    }
-
-    public void mouseReleased(MouseEvent e) {
-        if (super.isCollapsed()) {
-            super.setCollapsed(false);
-        } else {
-            super.setCollapsed(true);
-        }
-
-        broadcastEvent(new ActionEvent(this, ACTION_CLICK, "Toggle"));
-    }
+    // public void mouseReleased(MouseEvent e) {
+    // if (super.isCollapsed()) {
+    // super.setCollapsed(false);
+    // } else {
+    // super.setCollapsed(true);
+    // }
+    //
+    // broadcastEvent(new ActionEvent(this, ACTION_CLICK, "Toggle"));
+    // }
 
     public JTabbedPanel getPanel(int i) {
         return panels.get(i).getPanel();
@@ -197,17 +185,17 @@ public abstract class TaskPanel extends JXTaskPane implements MouseListener, Pro
         return Factory.createButton(string, i, this);
     }
 
-    public void propertyChange(PropertyChangeEvent evt) {
-        if (evt.getPropertyName().equals("collapsed")) {
-            SubConfiguration cfg = SubConfiguration.getConfig("gui");
-            if (pressed) {
-                broadcastEvent(new ActionEvent(this, ACTION_TOGGLE, "Toggle"));
-                cfg.setProperty(getPanelID() + "_collapsed", this.isCollapsed());
-                cfg.save();
-                pressed = false;
-            }
-        }
-
-    }
+    // public void propertyChange(PropertyChangeEvent evt) {
+    // if (evt.getPropertyName().equals("collapsed")) {
+    // SubConfiguration cfg = SubConfiguration.getConfig("gui");
+    // if (pressed) {
+    // broadcastEvent(new ActionEvent(this, ACTION_TOGGLE, "Toggle"));
+    // cfg.setProperty(getPanelID() + "_collapsed", this.isCollapsed());
+    // cfg.save();
+    // pressed = false;
+    // }
+    // }
+    //
+    // }
 
 }

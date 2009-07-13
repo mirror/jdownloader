@@ -39,6 +39,7 @@ import jd.config.MenuItem;
 import jd.controlling.JDLogger;
 import jd.gui.skins.simple.components.JDUnderlinedText;
 import jd.gui.skins.simple.components.JLinkButton;
+import jd.gui.skins.simple.components.borders.JDBorderFactory;
 import jd.plugins.PluginForHost;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -110,6 +111,17 @@ public class Factory {
             }
             component.add(pluginPopup);
         }
+    }
+/**
+ * Retuns a subpanel
+ * @param ii
+ * @param l
+ * @return
+ */
+    public static JPanel getSubPane(ImageIcon ii, String l) {
+        JPanel p = new JPanel(new MigLayout("ins 5 5 5 5, wrap 1", "[fill,grow]"));
+        p.setBorder(JDBorderFactory.createTitleBorder(ii,l));
+        return p;
     }
 
 }

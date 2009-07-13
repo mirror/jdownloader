@@ -20,15 +20,19 @@ import java.awt.event.ActionEvent;
 
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
+import javax.swing.JPanel;
 
 import jd.controlling.DownloadController;
 import jd.controlling.DownloadInformations;
+import jd.gui.skins.simple.Factory;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.components.DownloadView.JDProgressBar;
+import jd.gui.skins.simple.components.borders.JDBorderFactory;
 import jd.nutils.Formatter;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+import net.miginfocom.swing.MigLayout;
 
 public class DownloadTaskPane extends TaskPanel {
 
@@ -40,13 +44,16 @@ public class DownloadTaskPane extends TaskPanel {
     private JDProgressBar progress;
     private JLabel speed;
     private JLabel eta;
-    private JLabel downloadlist;
-    private JLabel progresslabel;
+
     private Thread fadeTimer;
 
     private DownloadInformations ds = new DownloadInformations();
     private long speedm = 0;
     private DownloadController dlc = JDUtilities.getDownloadController();
+
+    private JPanel listOverview;
+
+    private JPanel progressOverview;
 
     public DownloadTaskPane(String string, ImageIcon ii) {
         super(string, ii, "downloadtask");
@@ -55,8 +62,9 @@ public class DownloadTaskPane extends TaskPanel {
         fadeTimer = new Thread() {
             public void run() {
                 this.setName("DownloadTask: infoupdate");
-                while (true) {
-                    if (!isCollapsed()) update();
+                while (true) {// TODO
+                // if (!isCollapsed())
+                    update();
                     try {
                         Thread.sleep(2000);
                     } catch (InterruptedException e) {
@@ -98,27 +106,35 @@ public class DownloadTaskPane extends TaskPanel {
     }
 
     private void initGUI() {
-        downloadlist = new JLabel(JDL.L("gui.taskpanes.download.downloadlist", "Downloadlist"));
-        downloadlist.setIcon(JDTheme.II("gui.splash.dllist", 16, 16));
+
         packages = new JLabel(JDL.LF("gui.taskpanes.download.downloadlist.packages", "%s Package(s)", 0));
         downloadlinks = new JLabel(JDL.LF("gui.taskpanes.download.downloadlist.downloadLinks", "%s Link(s)", 0));
         totalsize = new JLabel(JDL.LF("gui.taskpanes.download.downloadlist.size", "Total size: %s", 0));
-        progresslabel = new JLabel(JDL.L("gui.taskpanes.download.progress", "Total progress"));
-        progresslabel.setIcon(JDTheme.II("gui.images.progress", 16, 16));
+
         progress = new JDProgressBar();
         progress.setStringPainted(false);
         speed = new JLabel(JDL.LF("gui.taskpanes.download.progress.speed", "Speed: %s", 0));
         eta = new JLabel(JDL.LF("gui.taskpanes.download.progress.eta", "ETA: %s", 0));
 
-        add(downloadlist, D1_LABEL_ICON);
-        add(packages, D2_LABEL);
-        add(downloadlinks, D2_LABEL);
-        add(totalsize, D2_LABEL);
-        add(progresslabel, D1_LABEL_ICON);
-        add(progress, D2_PROGRESSBAR);
-        add(speed, D2_LABEL);
-        add(eta, D2_LABEL);
+        listOverview = Factory.getSubPane(JDTheme.II("gui.splash.dllist", 16, 16), JDL.L("gui.taskpanes.download.downloadlist", "Downloadlist"));
+        
+
+        progressOverview = Factory.getSubPane(JDTheme.II("gui.images.progress", 16, 16), JDL.L("gui.taskpanes.download.progress", "Total progress"));
+        
+     
+        listOverview.add(packages);
+        listOverview.add(downloadlinks);
+        listOverview.add(totalsize);
+
+        progressOverview.add(progress);
+        progressOverview.add(speed);
+        progressOverview.add(eta);
+        add(listOverview,"growx,pushx");
+        add(progressOverview,"growx,pushx");
+
     }
+
+
 
     public void actionPerformed(ActionEvent arg0) {
     }

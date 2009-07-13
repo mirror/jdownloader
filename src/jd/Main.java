@@ -46,6 +46,9 @@ import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 
+import com.vladium.utils.CPUUsageThread.IUsageEventListener;
+import com.vladium.utils.SystemInformation.CPUUsageSnapshot;
+
 import jd.captcha.JACController;
 import jd.captcha.JACMethod;
 import jd.captcha.JAntiCaptcha;
@@ -138,6 +141,16 @@ public class Main {
 
     public static void main(String args[]) {
 
+        
+
+        
+        
+        
+        
+        
+        
+        
+        
         System.setProperty("file.encoding", "UTF-8");
         OSDetector.setOSString(System.getProperty("os.name"));
         // System.setProperty("os.name", "Windows Vista m.a.c");

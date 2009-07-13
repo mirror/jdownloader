@@ -22,6 +22,7 @@ import java.awt.Container;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.EventQueue;
+import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
@@ -38,6 +39,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JMenuBar;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JRootPane;
@@ -114,6 +116,15 @@ import org.jdesktop.swingx.JXTitledSeparator;
 import org.jdesktop.swingx.JXLoginPane.Status;
 import org.jvnet.lafwidget.LafWidget;
 import org.jvnet.lafwidget.utils.LafConstants.AnimationKind;
+
+import com.jtattoo.plaf.AbstractLookAndFeel;
+import com.jtattoo.plaf.BaseRootPaneUI;
+import com.jtattoo.plaf.BaseTitlePane;
+import com.jtattoo.plaf.ColorHelper;
+import com.jtattoo.plaf.DecorationHelper;
+import com.jtattoo.plaf.JTattooUtilities;
+import com.jtattoo.plaf.acryl.AcrylLookAndFeel;
+import com.jtattoo.plaf.acryl.AcrylTitlePane;
 
 public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
 
@@ -192,6 +203,10 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
      */
     private SimpleGUI() {
         super("");
+        if (UIManager.getLookAndFeel() instanceof AbstractLookAndFeel) {
+            setJTattooRootPane();
+
+        }
         SimpleGuiConstants.GUI_CONFIG = SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME);
         updateDecoration();
         JDLookAndFeelManager.setUIManager();
@@ -331,10 +346,98 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
         });
 
         JPanel glass = new JPanel(new MigLayout("ins 0"));
-        glass.add(startbutton, "gapleft 2,gaptop 2,alignx left,aligny top");
+        if (JFrame.isDefaultLookAndFeelDecorated()) {
+            glass.add(startbutton, "gapleft 2,gaptop 25,alignx left,aligny top");
+        } else {
+            glass.add(startbutton, "gapleft 2,gaptop 2,alignx left,aligny top");
+        }
+
         glass.setOpaque(false);
         this.setGlassPane(glass);
         glass.setVisible(true);
+    }
+
+    private void setJTattooRootPane() {
+
+        if (UIManager.getLookAndFeel() instanceof com.jtattoo.plaf.acryl.AcrylLookAndFeel) {
+            this.getRootPane().setUI(new BaseRootPaneUI() {
+
+                public BaseTitlePane createTitlePane(JRootPane root) {
+                    return new AcrylTitlePane(root, this) {
+                   
+                        protected void createMenuBar() {
+                                         }
+                        protected void installSubcomponents() {
+                            if (getWindowDecorationStyle() == BaseRootPaneUI.FRAME) {
+                                createActions();
+//                                createMenuBar();
+                                createButtons();
+//                                add(menuBar);
+                                add(iconifyButton);
+                                add(maxButton);
+                                add(closeButton);
+                            } else {
+                                createActions();
+                                createButtons();
+                                add(closeButton);
+                            }
+                        }
+
+                        public void paintComponent(Graphics g) {
+                            if (getFrame() != null) {
+                                setState(DecorationHelper.getExtendedState(getFrame()));
+                            }
+
+                            paintBackground(g);
+
+                            boolean leftToRight = isLeftToRight();
+                            boolean isSelected = (window == null) ? true : JTattooUtilities.isWindowActive(window);
+                            Color foreground = AbstractLookAndFeel.getWindowInactiveTitleForegroundColor();
+                            if (isSelected) {
+                                foreground = AbstractLookAndFeel.getWindowTitleForegroundColor();
+                            }
+
+                            int width = getWidth();
+                            int height = getHeight();
+                            int titleWidth = width - buttonsWidth - 4;
+                            int xOffset = leftToRight ? 4 : width - 4;
+                            if (getWindowDecorationStyle() == BaseRootPaneUI.FRAME) {
+                                xOffset += leftToRight ? height : -height;
+                                titleWidth -= height;
+                            }
+
+                            g.setFont(getFont());
+                            FontMetrics fm = g.getFontMetrics();
+                            String frameTitle = JTattooUtilities.getClippedText(getTitle(), fm, titleWidth);
+                            if (frameTitle != null) {
+                                int titleLength = fm.stringWidth(frameTitle);
+                                int yOffset = ((height - fm.getHeight()) / 2) + fm.getAscent() - 1;
+                                if (!leftToRight) {
+                                    xOffset -= titleLength;
+                                }
+                                if (getWindowDecorationStyle() == BaseRootPaneUI.FRAME) {
+                                    xOffset=(width-titleLength)/2;
+                                }
+                                if (isSelected) {
+                                    g.setColor(ColorHelper.darker(AcrylLookAndFeel.getWindowTitleColorDark(), 30));
+                                    JTattooUtilities.drawString(rootPane, g, frameTitle, xOffset - 1, yOffset - 1);
+                                    JTattooUtilities.drawString(rootPane, g, frameTitle, xOffset - 1, yOffset + 1);
+                                    JTattooUtilities.drawString(rootPane, g, frameTitle, xOffset + 1, yOffset - 1);
+                                    JTattooUtilities.drawString(rootPane, g, frameTitle, xOffset + 1, yOffset + 1);
+                                    JTattooUtilities.drawString(rootPane, g, frameTitle, xOffset + 1, yOffset + 1);
+                                }
+
+                                g.setColor(foreground);
+                                JTattooUtilities.drawString(rootPane, g, frameTitle, xOffset, yOffset);
+                                paintText(g, xOffset, yOffset, frameTitle);
+                            }
+                            
+                        }
+                    };
+                }
+            });
+        }
+
     }
 
     public void setWaiting(boolean b) {
@@ -457,7 +560,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
     }
 
     public void updateDecoration() {
-//UIManager.getLookAndFeel().getName().toLowerCase().contains("substance")&&
+        // UIManager.getLookAndFeel().getName().toLowerCase().contains("substance")&&
         if (UIManager.getLookAndFeel().getSupportsWindowDecorations() && SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.DECORATION_ENABLED, true)) {
             setUndecorated(true);
             getRootPane().setWindowDecorationStyle(JRootPane.FRAME);
@@ -555,7 +658,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
     }
 
     private void addAddonTask() {
-        addonTaskPanel = new AddonTaskPane(JDL.L("gui.taskpanes.addons", "Addons"), JDTheme.II("gui.images.taskpanes.addons", 24, 24));
+        addonTaskPanel = new AddonTaskPane(JDL.L("gui.taskpanes.addons", "Addons"), JDTheme.II("gui.images.taskpanes.addons", 16, 16));
         taskPane.add(addonTaskPanel);
     }
 
@@ -565,7 +668,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
 
     private void addLogTask() {
 
-        LogTaskPane logTask = new LogTaskPane(JDL.L("gui.taskpanes.log", "Log"), JDTheme.II("gui.images.terminal", 24, 24));
+        LogTaskPane logTask = new LogTaskPane(JDL.L("gui.taskpanes.log", "Log"), JDTheme.II("gui.images.terminal", 16, 16));
         logTask.setName(JDL.L("quickhelp.lopgtaskpane", "Log Taskpane"));
         logPanel = new SingletonPanel(LogPane.class);
         logTask.addPanel(logPanel);
@@ -583,7 +686,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
     }
 
     private void addConfigTask() {
-        cfgTskPane = new ConfigTaskPane(JDL.L("gui.taskpanes.configuration", "Configuration"), JDTheme.II("gui.images.taskpanes.configuration", 24, 24));
+        cfgTskPane = new ConfigTaskPane(JDL.L("gui.taskpanes.configuration", "Configuration"), JDTheme.II("gui.images.taskpanes.configuration", 16, 16));
 
         Object[] configConstructorObjects = new Object[] { JDUtilities.getConfiguration() };
 
@@ -652,7 +755,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
 
     private void addLinkgrabberTask() {
         linkGrabber = LinkGrabberPanel.getLinkGrabber();
-        lgTaskPane = new LinkGrabberTaskPane(JDL.L("gui.taskpanes.linkgrabber", "LinkGrabber"), JDTheme.II("gui.images.taskpanes.linkgrabber", 24, 24));
+        lgTaskPane = new LinkGrabberTaskPane(JDL.L("gui.taskpanes.linkgrabber", "LinkGrabber"), JDTheme.II("gui.images.taskpanes.linkgrabber", 16, 16));
         lgTaskPane.setName(JDL.L("quickhelp.linkgrabbertaskpane", "Linkgrabber Taskpane"));
         LinkAdder linkadder = new LinkAdder();
 
@@ -698,7 +801,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
 
     private void addDownloadTask() {
 
-        dlTskPane = new DownloadTaskPane(JDL.L("gui.taskpanes.download", "Download"), JDTheme.II("gui.images.taskpanes.download", 24, 24));
+        dlTskPane = new DownloadTaskPane(JDL.L("gui.taskpanes.download", "Download"), JDTheme.II("gui.images.taskpanes.download", 16, 16));
         dlTskPane.setName(JDL.L("quickhelp.downloadtaskpane", "Download Taskpane"));
         // dlTskPane.add(toolBar);
         // // toolBar.setFocusable(false);

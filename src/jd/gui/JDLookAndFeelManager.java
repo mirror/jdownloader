@@ -46,7 +46,7 @@ import com.jgoodies.looks.plastic.theme.SkyBlue;
 public class JDLookAndFeelManager implements Serializable, JDLabelContainer {
 
     private static final long serialVersionUID = -8056003135389551814L;
-    public static final String PARAM_PLAF = "PLAF2";
+    public static final String PARAM_PLAF = "PLAF3";
     private static boolean uiInitated = false;
     private static JDLookAndFeelManager MACDEFAULT;
     private String className;
@@ -54,7 +54,8 @@ public class JDLookAndFeelManager implements Serializable, JDLabelContainer {
 
     public static JDLookAndFeelManager[] getSupportedLookAndFeels() {
         LookAndFeelInfo[] lafis = UIManager.getInstalledLookAndFeels();
-        JDInitFlags.SWITCH_DEBUG = false;
+  
+       
         ArrayList<JDLookAndFeelManager> ret = new ArrayList<JDLookAndFeelManager>();
         for (int i = 0; i < lafis.length; i++) {
             String clname = lafis[i].getClassName();
@@ -147,8 +148,9 @@ public class JDLookAndFeelManager implements Serializable, JDLabelContainer {
     }
 
     private static JDLookAndFeelManager getDefaultLAFM() {
-        // if (JDUtilities.getJavaVersion() >= 1.6) return new
-        // JDLookAndFeelManager("org.jvnet.substance.skin.SubstanceBusinessBlackSteelLookAndFeel");
+        // if (JDUtilities.getJavaVersion() >= 1.6) 
+        
+       if(true)return new JDLookAndFeelManager("com.jtattoo.plaf.acryl.AcrylLookAndFeel");
 
         JDLookAndFeelManager[] sup = getSupportedLookAndFeels();
         if (sup.length == 0) return new JDLookAndFeelManager(UIManager.getSystemLookAndFeelClassName());

@@ -1353,7 +1353,7 @@ public class JDChat extends PluginOptional implements ControlListener {
     public void setEnabled(boolean b) {
         if (b) {
             initGUI();
-            tp = new JDChatTaskPane(JDL.L("plugins.optional.jdChat.gui.title2", "JD Support Chat"), JDTheme.II("gui.images.config.tip", 24, 24));
+            tp = new JDChatTaskPane(JDL.L("plugins.optional.jdChat.gui.title2", "JD Support Chat"), JDTheme.II("gui.images.config.tip", 16, 16));
             SimpleGUI.CURRENTGUI.getTaskPane().add(tp);
             tp.addActionListener(new ActionListener() {
 
