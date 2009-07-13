@@ -156,27 +156,21 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         keyChart.addEntity(entMissing = new ChartAPIEntity(JDL.L(LOCALE_PREFIX + "keychart.missing", "Missing"), 0, Color.RED));
         keyChart.addEntity(entOld = new ChartAPIEntity(JDL.L(LOCALE_PREFIX + "keychart.old", "Old"), 0, Color.ORANGE));
 
-        this.setLayout(new MigLayout("wrap 3", "[][grow, fill][]", "[][grow, fill][]"));
-        this.add(buildMenu(), "span 3, growx, spanx");
-        this.add(new JScrollPane(table), "span 3, grow, span");
-        this.add(keyChart, "spany 1, w 225!, h 50!");
+        this.setLayout(new MigLayout("wrap 3", "[grow, fill]", "[][grow, fill][]"));
+        this.add(buildMenu(), "growx, spanx");
+        this.add(new JScrollPane(table), "grow, spanx");
+        this.add(keyChart, "w 225!, h 50!");
 
         new Thread(new Runnable() {
 
             public void run() {
-
                 LFEGui.this.setEnabled(false);
 
-                /*
-                 * SVN Working Copy nur dann automatisch Updaten, wenn per Jar
-                 * gestartet!
-                 */
                 updateSVN(false);
 
                 getSourceEntries();
                 populateLngMenu();
                 LFEGui.this.setEnabled(true);
-
             }
 
         }).start();
@@ -329,7 +323,6 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
     }
 
     public void actionPerformed(ActionEvent e) {
-
         if (e.getSource() == mnuReload) {
             saveChanges();
 

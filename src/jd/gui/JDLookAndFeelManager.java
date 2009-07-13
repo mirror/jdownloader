@@ -29,17 +29,13 @@ import javax.swing.UIManager;
 import javax.swing.UIManager.LookAndFeelInfo;
 
 import jd.JDInitFlags;
-import jd.OptionalPluginWrapper;
 import jd.config.SubConfiguration;
 import jd.config.container.JDLabelContainer;
 import jd.controlling.JDLogger;
 import jd.gui.skins.simple.SimpleGuiConstants;
-import jd.nutils.ClassFinder;
 import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
 import jd.parser.Regex;
-import jd.plugins.OptionalPlugin;
-import jd.plugins.PluginOptional;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
@@ -249,7 +245,7 @@ public class JDLookAndFeelManager implements Serializable, JDLabelContainer {
     }
 
     private static void installJTattoo() {
-      
+
         UIManager.installLookAndFeel("AluminiumLookAndFeel", "com.jtattoo.plaf.aluminium.AluminiumLookAndFeel");
         UIManager.installLookAndFeel("AcrylLookAndFeel", "com.jtattoo.plaf.acryl.AcrylLookAndFeel");
         UIManager.installLookAndFeel("AeroLookAndFeel", "com.jtattoo.plaf.aero.AeroLookAndFeel");

@@ -371,7 +371,7 @@ public class LinkGrabberTable extends JXTable implements MouseListener, MouseMot
     private void addDisabledHighlighter() {
         Color background = JDTheme.C("gui.color.downloadlist.row_link_disabled", "adadad", 100);
 
-        addHighlighter(new DownloadLinkRowHighlighter(this, background, background) {
+        addHighlighter(new DownloadLinkRowHighlighter(this, background) {
             // @Override
             public boolean doHighlight(DownloadLink link) {
                 return !link.isEnabled();
@@ -394,7 +394,7 @@ public class LinkGrabberTable extends JXTable implements MouseListener, MouseMot
     private void addExistsHighlighter() {
         /* TODO: andre farbe auswählen */
         Color background = JDTheme.C("gui.color.linkgrabber.error_exists", "ff7f00", 120);
-        addHighlighter(new DownloadLinkRowHighlighter(this, background, background) {
+        addHighlighter(new DownloadLinkRowHighlighter(this, background) {
             // @Override
             public boolean doHighlight(DownloadLink link) {
                 if (link.getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS)) return true;

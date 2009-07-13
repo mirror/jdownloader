@@ -35,13 +35,8 @@ public abstract class DownloadLinkRowHighlighter extends PainterHighlighter {
     protected JXTable table;
 
     public DownloadLinkRowHighlighter(JXTable table, Color colora) {
-        this(table, new Color(colora.getRed(), colora.getGreen(), colora.getBlue(), 40), new Color(colora.getRed(), colora.getGreen(), colora.getBlue(), 200));
-
-    }
-
-    public DownloadLinkRowHighlighter(JXTable table, Color colora, Color colorb) {
         super();
-        this.setPainter(getGradientPainter(colora, colorb));
+        this.setPainter(getGradientPainter(colora));
         this.table = table;
         this.setHighlightPredicate(getPredicate());
     }
@@ -57,10 +52,10 @@ public abstract class DownloadLinkRowHighlighter extends PainterHighlighter {
         };
     }
 
-    public Painter<?> getGradientPainter(Color colora, Color colorb) {
+    public Painter<?> getGradientPainter(Color colora) {
         int height = 20;
         if (JDUtilities.getJavaVersion() >= 1.6) {
-            LinearGradientPaint gradientPaint = new LinearGradientPaint(1, 0, 1, height, new float[] { 0.0f, 1.0f }, new Color[] { colora, colorb });
+            LinearGradientPaint gradientPaint = new LinearGradientPaint(1, 0, 1, height, new float[] { 0.0f, 1.0f }, new Color[] { colora, colora });
 
             return new MattePainter(gradientPaint);
         } else {

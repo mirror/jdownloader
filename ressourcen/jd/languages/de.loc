@@ -796,7 +796,7 @@ jd.update.webupdater.updatefiles.failed = Fehlgeschlagen
 jd.update.webupdater.updatefiles.success = Erfolgreich
 jd.utils.webupdate.ballon.message.updateinprogress = Es ist bereits ein Update im Gange!
 jd.utils.webupdate.ballon.title = Aktualisieren
-jd.utils.webupdate.message = <font size="2" face="Verdana, Arial, Helvetica, sans-serif">% s Update (s) verfügbar. Jetzt installieren? </ font>
+jd.utils.webupdate.message = <font size="2" face="Verdana, Arial, Helvetica, sans-serif">%s Update(s) verfügbar. Jetzt installieren?</font>
 jd.utils.webupdate.progress.autopluginupdate = Plugins aktualisieren
 jd.utils.webupdate.progresscontroller.text = Aktualisierung läuft
 linkgrabber.onlinestatus.offline = Offline

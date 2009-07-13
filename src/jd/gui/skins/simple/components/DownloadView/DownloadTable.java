@@ -212,7 +212,7 @@ public class DownloadTable extends JXTable implements MouseListener, MouseMotion
 
     private void addWaitHighlighter() {
         Color background = JDTheme.C("gui.color.downloadlist.error_post", "ff9936", 100);
-        addHighlighter(new DownloadLinkRowHighlighter(this, background, background) {
+        addHighlighter(new DownloadLinkRowHighlighter(this, background) {
             // @Override
             public boolean doHighlight(DownloadLink dLink) {
                 if (dLink.getLinkStatus().hasStatus(LinkStatus.FINISHED) || !dLink.isEnabled() || dLink.getLinkStatus().isPluginActive()) return false;
@@ -224,7 +224,7 @@ public class DownloadTable extends JXTable implements MouseListener, MouseMotion
 
     private void addPostErrorHighlighter() {
         Color background = JDTheme.C("gui.color.downloadlist.error_post", "ff9936", 120);
-        addHighlighter(new DownloadLinkRowHighlighter(this, background, background) {
+        addHighlighter(new DownloadLinkRowHighlighter(this, background) {
             // @Override
             public boolean doHighlight(DownloadLink link) {
                 return link.getLinkStatus().hasStatus(LinkStatus.ERROR_POST_PROCESS);
@@ -235,7 +235,7 @@ public class DownloadTable extends JXTable implements MouseListener, MouseMotion
 
     private void addDisabledHighlighter() {
         Color background = JDTheme.C("gui.color.downloadlist.row_link_disabled", "adadad", 100);
-        addHighlighter(new DownloadLinkRowHighlighter(this, background, background) {
+        addHighlighter(new DownloadLinkRowHighlighter(this, background) {
             // @Override
             public boolean doHighlight(DownloadLink link) {
                 return !link.isEnabled();
