@@ -92,12 +92,12 @@ public class JDToolBar extends JToolBar implements ControlListener {
         setLayout(new MigLayout("ins 0,gap 0", "[][][][][][][][][][][][][][grow,fill]"));
 
         JSeparator sep;
-        if (noTitlePainter) {
-            add(sep = new JSeparator(JSeparator.VERTICAL), "gapleft 30,height 0,gapright 5");
-        } else {
-            add(sep = new JSeparator(JSeparator.VERTICAL), "gapleft 46,height 0,gapright 5");
-        }
-        sep.setVisible(false);
+//        if (noTitlePainter) {
+//            add(sep = new JSeparator(JSeparator.VERTICAL), "gapleft 30,height 0,gapright 5");
+//        } else {
+//            add(sep = new JSeparator(JSeparator.VERTICAL), "gapleft 46,height 0,gapright 5");
+//        }
+//        sep.setVisible(false);
         initController();
         add(new JSeparator(JSeparator.VERTICAL), "height 32,gapleft 10,gapright 10");
         initQuickConfig();

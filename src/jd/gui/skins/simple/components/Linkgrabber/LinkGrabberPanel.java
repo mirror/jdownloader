@@ -112,7 +112,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
         super(new MigLayout("ins 0,wrap 1", "[fill,grow]", "[fill,grow]"));
         internalTable = new LinkGrabberTable(new LinkGrabberJTableModel(), this);
         scrollPane = new JScrollPane(internalTable);
-        this.add(scrollPane, "cell 0 0");
+        this.add(scrollPane, "cell 0 0,gaptop 6");
         filePackageInfo = new LinkGrabberFilePackageInfo();
         Update_Async = new Timer(250, this);
         Update_Async.setInitialDelay(250);

@@ -95,7 +95,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
         internalTable = new DownloadTable(new DownloadJTableModel(), this);
         scrollPane = new JScrollPane(internalTable);
         filePackageInfo = new FilePackageInfo();
-        this.add(scrollPane, "cell 0 0");
+        this.add(scrollPane, "cell 0 0,gaptop 6");
         JDUtilities.getDownloadController().addListener(this);
         Update_Async = new Timer(UPDATE_TIMING, this);
         last_async_update = 0;

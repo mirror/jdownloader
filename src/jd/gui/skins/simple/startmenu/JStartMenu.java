@@ -27,7 +27,7 @@ public class JStartMenu extends JMenu {
 
     public JStartMenu(String name, String icon) {
         super(JDL.L(name, null));
-        this.setIcon(JDTheme.II(icon, 24, 24));
+        this.setIcon(JDTheme.II(icon, 16, 16));
     }
 
 }

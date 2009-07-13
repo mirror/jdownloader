@@ -39,6 +39,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
@@ -87,7 +88,16 @@ import jd.gui.skins.simple.config.panels.ConfigPanelGUI;
 import jd.gui.skins.simple.config.panels.ConfigPanelGeneral;
 import jd.gui.skins.simple.config.panels.ConfigPanelPluginForHost;
 import jd.gui.skins.simple.config.panels.ConfigPanelReconnect;
+import jd.gui.skins.simple.startmenu.AboutMenu;
+import jd.gui.skins.simple.startmenu.AddLinksMenu;
+import jd.gui.skins.simple.startmenu.AddonsMenu;
+import jd.gui.skins.simple.startmenu.CleanupMenu;
 import jd.gui.skins.simple.startmenu.JDStartMenu;
+import jd.gui.skins.simple.startmenu.JStartMenu;
+import jd.gui.skins.simple.startmenu.PremiumMenu;
+import jd.gui.skins.simple.startmenu.SaveMenu;
+import jd.gui.skins.simple.startmenu.actions.ExitAction;
+import jd.gui.skins.simple.startmenu.actions.RestartAction;
 import jd.gui.skins.simple.tasks.AddonTaskPane;
 import jd.gui.skins.simple.tasks.ConfigTaskPane;
 import jd.gui.skins.simple.tasks.DownloadTaskPane;
@@ -198,6 +208,8 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
 
     private JLabel startbutton;
 
+    private JMenuBar menuBar;
+
     /**
      * Das Hauptfenster wird erstellt. Singleton. Use SimpleGUI.createGUI
      */
@@ -215,6 +227,8 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
          * Init panels
          */
 
+        menuBar = createMenuBar();
+        this.setJMenuBar(menuBar);
         statusBar = new JDStatusBar();
         initWaitPane();
         this.setEnabled(false);
@@ -345,16 +359,42 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
 
         });
 
-        JPanel glass = new JPanel(new MigLayout("ins 0"));
-        if (JFrame.isDefaultLookAndFeelDecorated()) {
-            glass.add(startbutton, "gapleft 2,gaptop 25,alignx left,aligny top");
-        } else {
-            glass.add(startbutton, "gapleft 2,gaptop 2,alignx left,aligny top");
-        }
+        // JPanel glass = new JPanel(new MigLayout("ins 0"));
+        // if (JFrame.isDefaultLookAndFeelDecorated()) {
+        // glass.add(startbutton, "gapleft 2,gaptop 25,alignx left,aligny top");
+        // } else {
+        // glass.add(startbutton, "gapleft 2,gaptop 2,alignx left,aligny top");
+        // }
+        //
+        // glass.setOpaque(false);
+        // this.setGlassPane(glass);
+        // glass.setVisible(true);
+    }
 
-        glass.setOpaque(false);
-        this.setGlassPane(glass);
-        glass.setVisible(true);
+    private JMenuBar createMenuBar() {
+        JMenuBar ret = new JMenuBar();
+        // File=
+        JMenu file = new JMenu("File");
+        file.add(new SaveMenu());
+        file.addSeparator();
+        file.add(new RestartAction());
+        file.add(new ExitAction());
+
+        JMenu edit = new JMenu("Edit");
+
+        edit.add(new AddLinksMenu());
+        edit.add(new CleanupMenu());
+        ret.add(file);
+        ret.add(edit);
+        JStartMenu m;
+        ret.add(m=new PremiumMenu());
+        m.setIcon(null);
+        ret.add(m=new AddonsMenu());
+        m.setIcon(null);
+        ret.add(m=new AboutMenu());
+        m.setIcon(null);
+
+        return ret;
     }
 
     private void setJTattooRootPane() {
@@ -364,15 +404,16 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
 
                 public BaseTitlePane createTitlePane(JRootPane root) {
                     return new AcrylTitlePane(root, this) {
-                   
+
                         protected void createMenuBar() {
-                                         }
+                        }
+
                         protected void installSubcomponents() {
                             if (getWindowDecorationStyle() == BaseRootPaneUI.FRAME) {
                                 createActions();
-//                                createMenuBar();
+                                // createMenuBar();
                                 createButtons();
-//                                add(menuBar);
+                                // add(menuBar);
                                 add(iconifyButton);
                                 add(maxButton);
                                 add(closeButton);
@@ -416,7 +457,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
                                     xOffset -= titleLength;
                                 }
                                 if (getWindowDecorationStyle() == BaseRootPaneUI.FRAME) {
-                                    xOffset=(width-titleLength)/2;
+                                    xOffset = (width - titleLength) / 2;
                                 }
                                 if (isSelected) {
                                     g.setColor(ColorHelper.darker(AcrylLookAndFeel.getWindowTitleColorDark(), 30));
@@ -431,7 +472,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
                                 JTattooUtilities.drawString(rootPane, g, frameTitle, xOffset, yOffset);
                                 paintText(g, xOffset, yOffset, frameTitle);
                             }
-                            
+
                         }
                     };
                 }

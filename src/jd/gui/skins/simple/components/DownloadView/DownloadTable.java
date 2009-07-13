@@ -18,6 +18,7 @@ package jd.gui.skins.simple.components.DownloadView;
 
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.LinearGradientPaint;
 import java.awt.Point;
 import java.awt.Rectangle;
@@ -118,6 +119,7 @@ public class DownloadTable extends JXTable implements MouseListener, MouseMotion
         addKeyListener(this);
         addMouseMotionListener(this);
 
+        getTableHeader().setPreferredSize(new Dimension(getColumnModel().getTotalColumnWidth(), 19));
         this.setSortable(false);
         this.getTableHeader().addMouseListener(this);
         UIManager.put("Table.focusCellHighlightBorder", null);

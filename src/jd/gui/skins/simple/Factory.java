@@ -119,8 +119,8 @@ public class Factory {
  * @return
  */
     public static JPanel getSubPane(ImageIcon ii, String l) {
-        JPanel p = new JPanel(new MigLayout("ins 5 5 5 5, wrap 1", "[fill,grow]"));
-        p.setBorder(JDBorderFactory.createTitleBorder(ii,l));
+        JPanel p = new JPanel(new MigLayout("ins 5 15 5 10, wrap 1", "[fill,grow]"));
+        p.setBorder(JDBorderFactory.createTitleBorder(ii, l, 0, 0));
         return p;
     }
 

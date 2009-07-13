@@ -84,7 +84,7 @@ public abstract class TaskPanel extends JPanel implements ActionListener {
 //        this.setBackground(laf.getTheme().getToolbarBackgroundColor());
         }
         // this.addPropertyChangeListener(this);
-        this.setLayout(new MigLayout("ins 5 5 5 5, wrap 1", "[fill,grow]"));
+        this.setLayout(new MigLayout("ins 5 3 5 3, wrap 1", "[fill,grow]"));
         // setDeligateCollapsed(SubConfiguration.getConfig("gui").getBooleanProperty(getPanelID()
         // + "_collapsed", false));
         this.panels = new ArrayList<SingletonPanel>();

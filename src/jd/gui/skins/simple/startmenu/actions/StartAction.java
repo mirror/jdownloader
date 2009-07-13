@@ -40,7 +40,7 @@ public abstract class StartAction extends AbstractAction {
     }
 
     protected void setIcon(String key) {
-        putValue(AbstractAction.SMALL_ICON, JDTheme.II(key, 24, 24));
+        putValue(AbstractAction.SMALL_ICON, JDTheme.II(key, 16, 16));
 
     }
 

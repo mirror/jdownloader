@@ -18,6 +18,7 @@ package jd.gui.skins.simple.components.Linkgrabber;
 
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
@@ -124,6 +125,7 @@ public class LinkGrabberTable extends JXTable implements MouseListener, MouseMot
 
         addDisabledHighlighter();
 
+        getTableHeader().setPreferredSize(new Dimension(getColumnModel().getTotalColumnWidth(), 19));
         addExistsHighlighter();
         setTransferHandler(new LinkGrabberTableTransferHandler(this));
 

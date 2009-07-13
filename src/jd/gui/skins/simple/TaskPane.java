@@ -51,7 +51,8 @@ public class TaskPane extends JTabbedPane {
             }
 
         });
-      
+//        com.jtattoo.plaf.BaseTableHeaderUI
+//        com.jtattoo.plaf.acryl.AcrylInternalFrameUI
         if (getUI() instanceof AcrylTabbedPaneUI) {
             
 
@@ -86,11 +87,26 @@ public class TaskPane extends JTabbedPane {
 //                }
                 
                 protected void paintContentBorder(Graphics g, int tabPlacement, int selectedIndex, int x, int y, int w, int h) {
-                
+//                super.paintContentBorder(arg0, arg1, arg2, arg3, arg4, arg5, arg6)
                     int sepHeight = tabAreaInsets.bottom;
                     if (sepHeight > 0) {
                         switch (tabPlacement) {
-                          
+                        case TOP: {
+                            int tabAreaHeight = calculateTabAreaHeight(tabPlacement, runCount, maxTabHeight);
+                            if (sepHeight > 1) {
+                                Color colors[] = getContentBorderColors(tabPlacement);
+                                for (int i = 0; i < colors.length; i++) {
+                                    g.setColor(colors[i]);
+                                    g.drawLine(x, y + tabAreaHeight - sepHeight + i + 1, x + w, y + tabAreaHeight - sepHeight + i + 1);
+                                }
+                            } else {
+                                g.setColor(getContentBorderColors(tabPlacement)[0]);
+                                g.drawLine(x, y + tabAreaHeight, w, y + tabAreaHeight);
+                            }
+//                            g.setColor(AbstractLookAndFeel.getControlDarkShadow());
+//                            g.drawRect(x, y + tabAreaHeight - 1, x + w - 1, h - tabAreaHeight);
+                            break;
+                        }
                             case BOTTOM: {
                                 int tabAreaHeight = calculateTabAreaHeight(tabPlacement, runCount, maxTabHeight);
                                 if (sepHeight > 1) {
@@ -117,10 +133,10 @@ public class TaskPane extends JTabbedPane {
             });
 
         }
-      
+      this.setFocusable(false);
         // panels = new ArrayList<TaskPanel>();
         // this.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
-        this.setTabPlacement(JTabbedPane.BOTTOM);
+        this.setTabPlacement(JTabbedPane.TOP);
         // this.setBackgroundPainter(null);
         // this.setPreferredSize(new Dimension(180, 10));
         // this.setLayout(new MigLayout("ins 5, wrap 1", "[fill,grow]",
