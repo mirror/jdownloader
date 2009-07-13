@@ -96,7 +96,7 @@ exceptions.browserexception.couldnotrenam = Could not rename output file
 exceptions.browserexception.rangeerror = Chunkload error
 exceptions.browserexception.redirecterror = Unexpected chunkcopy error: Redirect
 gui.about.message = JDownloader - Hall of Fame
-gui.about.title = About JDownloader
+gui.about.title = ?
 gui.accountcheck.pluginerror = Plugin %s may be defective. Inform support!
 gui.accountcontroller.globpremdisabled = Premium accounts are globally disabled!<br/>Click <a href='http://jdownloader.org/knowledge/wiki/gui/premiummenu'>here</a> for help.
 gui.addurls.progress = Parse %s URL(s)
