@@ -46,8 +46,7 @@ import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 
-import com.vladium.utils.CPUUsageThread.IUsageEventListener;
-import com.vladium.utils.SystemInformation.CPUUsageSnapshot;
+
 
 import jd.captcha.JACController;
 import jd.captcha.JACMethod;
