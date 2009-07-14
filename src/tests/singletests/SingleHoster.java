@@ -21,7 +21,6 @@ import static org.junit.Assert.fail;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map.Entry;
 
 import jd.controlling.DistributeData;
@@ -56,16 +55,8 @@ public class SingleHoster {
     @Test
     public void findDownloadLink() {
         try {
-            for (Iterator<Entry<String, String>> it = links.entrySet().iterator(); it.hasNext();) {
-
-                Entry<String, String> next = it.next();
-                // if
-                // (next.getKey().equalsIgnoreCase(TestUtils.HOSTER_LINKTYPE_NORMAL
-                // + 1)) {
+            for (Entry<String, String> next : links.entrySet()) {
                 getDownloadLink(next.getValue());
-
-                // }
-
             }
         } catch (Exception e) {
             fail(e.getMessage());
@@ -76,80 +67,54 @@ public class SingleHoster {
     @Test
     public void availableCheck() {
 
-        for (Iterator<Entry<String, String>> it = links.entrySet().iterator(); it.hasNext();) {
-
-            Entry<String, String> next = it.next();
-            DownloadLink dlink;
+        for (Entry<String, String> next : links.entrySet()) {
             try {
-                dlink = getDownloadLink(next.getValue());
-
+                DownloadLink dlink = getDownloadLink(next.getValue());
+                TestUtils.log("Testing link: " + next.getValue());
                 if (next.getKey().equalsIgnoreCase(TestUtils.HOSTER_LINKTYPE_NORMAL + 1)) {
-
                     if (dlink.getAvailableStatus() != AvailableStatus.TRUE) {
                         fail(TestUtils.log(next.getKey() + " Downloadlink " + next.getValue() + " is marked as NOT AVAILABLE"));
-
                     }
-
                 } else if (next.getKey().equalsIgnoreCase(TestUtils.HOSTER_LINKTYPE_FNF + 1)) {
-
                     if (dlink.getAvailableStatus() != AvailableStatus.FALSE) {
                         fail(TestUtils.log(next.getKey() + " Downloadlink " + next.getValue() + " is marked as " + dlink.getAvailableStatus()));
-
                     }
-
                 } else if (next.getKey().equalsIgnoreCase(TestUtils.HOSTER_LINKTYPE_ABUSED + 1)) {
-
                     if (dlink.getAvailableStatus() != AvailableStatus.FALSE) {
                         fail(TestUtils.log(next.getKey() + " Downloadlink " + next.getValue() + " is marked as " + dlink.getAvailableStatus()));
-
                     }
-
                 } else if (next.getKey().equalsIgnoreCase(TestUtils.HOSTER_LINKTYPE_ERROR_TEMP + 1)) {
-
                     if (dlink.getAvailableStatus() != AvailableStatus.TRUE) {
                         fail(TestUtils.log(next.getKey() + " Downloadlink " + next.getValue() + " is marked as " + dlink.getAvailableStatus()));
-
                     }
-
                 }
             } catch (TestException e) {
                 fail(e.getMessage());
             }
-
         }
 
     }
 
     @Test
     public void downloadFree() {
-
-        for (Iterator<Entry<String, String>> it = links.entrySet().iterator(); it.hasNext();) {
-
-            Entry<String, String> next = it.next();
+        for (Entry<String, String> next : links.entrySet()) {
             if (next.getKey().equalsIgnoreCase(TestUtils.HOSTER_LINKTYPE_NORMAL + 1)) {
                 download(next.getValue());
-
             }
-
         }
-
     }
 
     private void download(String url) {
 
-        DownloadLink dlink;
         try {
-            dlink = getDownloadLink(url);
-
+            DownloadLink dlink = getDownloadLink(url);
             if (dlink.getAvailableStatus() != AvailableStatus.TRUE) {
                 fail(TestUtils.log("Downloadlink " + url + " is marked as NOT AVAILABLE"));
-
             }
             SingleDownloadController download = new SingleDownloadController(dlink);
 
             dlink.getLinkStatus().setActive(true);
             if (new File(dlink.getFileOutput()).delete()) {
-
                 TestUtils.log("Removed local testfile: " + dlink.getFileOutput());
             }
 
@@ -166,8 +131,7 @@ public class SingleHoster {
                 Thread.sleep(1000);
                 System.out.println(dlink.getLinkStatus().getStatusString());
 
-                if (dlink.getDownloadCurrent() > 0&&!dlink.getLinkStatus().getStatusString().startsWith("Connecting")) {
-
+                if (dlink.getDownloadCurrent() > 0 && !dlink.getLinkStatus().getStatusString().startsWith("Connecting")) {
                     TestUtils.log("Download started correct");
                     download.abortDownload();
                     return;
@@ -179,7 +143,6 @@ public class SingleHoster {
                         download.abortDownload();
                         return;
                     } else {
-
                         TestUtils.log("Download started correct");
                         download.abortDownload();
                         return;
@@ -191,7 +154,6 @@ public class SingleHoster {
         } catch (TestException e) {
             fail(e.getMessage());
         } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
 
@@ -207,9 +169,7 @@ public class SingleHoster {
         } else {
             if (!url.toLowerCase().contains(links.get(0).getPlugin().getHost())) {
                 throw new TestException("Wrong plugin found for " + url + " (" + links.get(0).getPlugin().getHost() + ")");
-
             } else {
-
                 return links.get(0);
             }
         }

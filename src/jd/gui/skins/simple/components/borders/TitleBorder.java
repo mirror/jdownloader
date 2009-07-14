@@ -8,7 +8,6 @@ import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Insets;
-import java.lang.reflect.Method;
 
 import javax.swing.Icon;
 import javax.swing.JComponent;
@@ -16,6 +15,7 @@ import javax.swing.UIManager;
 import javax.swing.border.AbstractBorder;
 
 import jd.utils.JDUtilities;
+import sun.swing.SwingUtilities2;
 
 import com.jtattoo.plaf.AbstractLookAndFeel;
 import com.jtattoo.plaf.ColorHelper;
@@ -23,6 +23,7 @@ import com.jtattoo.plaf.JTattooUtilities;
 
 public class TitleBorder extends AbstractBorder {
 
+    private static final long serialVersionUID = -5141737828416982838L;
     private Icon icon = null;
     private String title = null;
     private int shadowSize = 3;
@@ -51,7 +52,7 @@ public class TitleBorder extends AbstractBorder {
             // AbstractLookAndFeel.getTheme().getT
             hiFrameColor = AbstractLookAndFeel.getControlHighlight();
             loFrameColor = AbstractLookAndFeel.getControlDarkShadow();
-    
+
             textColor = AbstractLookAndFeel.getForegroundColor();
         } else {
             hiFrameColor = Color.white;
@@ -59,7 +60,7 @@ public class TitleBorder extends AbstractBorder {
             hiBackColor = ColorHelper.brighter(c.getBackground(), 30.0f);
             loBackColor = ColorHelper.darker(c.getBackground(), 10.0f);
             textColor = c.getForeground();
-            colors=  ColorHelper.createColorArr(hiBackColor, loBackColor, 48);
+            colors = ColorHelper.createColorArr(hiBackColor, loBackColor, 48);
         }
 
         int titleHeight = getBorderInsets(c).top - 3 - innerSpace;
@@ -87,7 +88,7 @@ public class TitleBorder extends AbstractBorder {
         g2D.setComposite(composite);
 
         // JTattooUtilities.fillHorGradient(g, , 0, 0, getWidth(), getHeight());
-      
+
         JTattooUtilities.fillHorGradient(g, colors, x + 2, y + 2, w - shadowSize - 4, titleHeight);
 
         paintText(c, g, x, y, w, h, textColor, null);
@@ -131,11 +132,7 @@ public class TitleBorder extends AbstractBorder {
             if (c instanceof JComponent) {
                 if (JDUtilities.getJavaVersion() >= 1.6) {
                     try {
-                        Class swingUtilities2Class = Class.forName("sun.swing.SwingUtilities2");
-                        Class classParams[] = { JComponent.class, Graphics.class, String.class, Integer.TYPE, Integer.TYPE };
-                        Method m = swingUtilities2Class.getMethod("drawString", classParams);
-                        Object methodParams[] = { c, g, theTitle, new Integer(x), new Integer(y) };
-                        m.invoke(null, methodParams);
+                        SwingUtilities2.drawString((JComponent) c, g, theTitle, x, y);
                     } catch (Exception ex) {
                         g.drawString(theTitle, x, y);
                     }

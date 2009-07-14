@@ -27,12 +27,10 @@ import jd.controlling.DownloadInformations;
 import jd.gui.skins.simple.Factory;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.components.DownloadView.JDProgressBar;
-import jd.gui.skins.simple.components.borders.JDBorderFactory;
 import jd.nutils.Formatter;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-import net.miginfocom.swing.MigLayout;
 
 public class DownloadTaskPane extends TaskPanel {
 
@@ -63,7 +61,7 @@ public class DownloadTaskPane extends TaskPanel {
             public void run() {
                 this.setName("DownloadTask: infoupdate");
                 while (true) {// TODO
-                // if (!isCollapsed())
+                    // if (!isCollapsed())
                     update();
                     try {
                         Thread.sleep(2000);
@@ -117,11 +115,9 @@ public class DownloadTaskPane extends TaskPanel {
         eta = new JLabel(JDL.LF("gui.taskpanes.download.progress.eta", "ETA: %s", 0));
 
         listOverview = Factory.getSubPane(JDTheme.II("gui.splash.dllist", 16, 16), JDL.L("gui.taskpanes.download.downloadlist", "Downloadlist"));
-        
 
         progressOverview = Factory.getSubPane(JDTheme.II("gui.images.progress", 16, 16), JDL.L("gui.taskpanes.download.progress", "Total progress"));
-        
-     
+
         listOverview.add(packages);
         listOverview.add(downloadlinks);
         listOverview.add(totalsize);
@@ -129,12 +125,10 @@ public class DownloadTaskPane extends TaskPanel {
         progressOverview.add(progress);
         progressOverview.add(speed);
         progressOverview.add(eta);
-        add(listOverview,"growx,pushx");
-        add(progressOverview,"growx,pushx");
+        add(listOverview, "growx,pushx");
+        add(progressOverview, "growx,pushx");
 
     }
-
-
 
     public void actionPerformed(ActionEvent arg0) {
     }

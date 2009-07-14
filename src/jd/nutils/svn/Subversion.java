@@ -60,7 +60,7 @@ import org.tmatesoft.svn.core.wc.SVNWCUtil;
 
 public class Subversion implements ISVNEventHandler {
 
-    private static final String PROPERTY_SVN_ACCESS_USER = null;
+//    private static final String PROPERTY_SVN_ACCESS_USER = null;
     private SVNRepository repository;
     private SVNURL svnurl;
     private String user;
@@ -275,7 +275,7 @@ public class Subversion implements ISVNEventHandler {
             public String resolveConflict(SVNInfo info, File file, String contents, int startMine, int endMine, int startTheirs, int endTheirs) {
               
                 String mine = contents.substring(startMine, endMine).trim();
-                String theirs = contents.substring(startTheirs, endTheirs).trim();
+//                String theirs = contents.substring(startTheirs, endTheirs).trim();
 
                 return mine;
             }

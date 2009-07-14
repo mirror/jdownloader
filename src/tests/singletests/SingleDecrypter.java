@@ -21,7 +21,6 @@ import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map.Entry;
 
 import jd.DecryptPluginWrapper;
@@ -55,21 +54,16 @@ public class SingleDecrypter {
 
     @Test
     public void decrypt() {
-        String url = links.get("NORMAL_DECRYPTERLINK_1");
-        for (Iterator<Entry<String, String>> it = links.entrySet().iterator(); it.hasNext();) {
-
-            Entry<String, String> next = it.next();
+        for (Entry<String, String> next : links.entrySet()) {
+            TestUtils.log("Testing link: " + next.getValue());
             if (next.getKey().equalsIgnoreCase("NORMAL_DECRYPTERLINK_1")) {
                 decryptURL(next.getValue());
-
-            } else if (next.getKey().startsWith("PASSWORD_PROTECTED_1:")){
+            } else if (next.getKey().startsWith("PASSWORD_PROTECTED_1:")) {
                 decryptPWURL(next.getValue(), next.getKey().substring("PASSWORD_PROTECTED_1:".length()));
-            }else{
-                System.out.println("No Test for "+next.getKey());
+            } else {
+                System.out.println("No Test for " + next.getKey());
             }
-
         }
-
     }
 
     private void decryptPWURL(String url, String pw) {
@@ -117,11 +111,10 @@ public class SingleDecrypter {
                 try {
                     ArrayList<DownloadLink> a = plg.decryptIt(d[0], new ProgressController("test", 10));
 
-                    if (a.size() > 1 || (a.size() == 1 && a.get(0).getBrowserUrl() != null))
+                    if (a.size() > 1 || (a.size() == 1 && a.get(0).getBrowserUrl() != null)) {
                         assertTrue(true);
-                    else {
-                        TestUtils.log("Error with url: " + url);
-                        assertTrue(false);
+                    } else {
+                        fail(TestUtils.log("Error with url: " + url));
                     }
                 } catch (Exception e) {
                     e.printStackTrace();

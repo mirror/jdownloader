@@ -23,9 +23,6 @@ import java.awt.GraphicsEnvironment;
 import java.awt.Image;
 import java.awt.Transparency;
 import java.awt.image.BufferedImage;
-import java.awt.image.BufferedImageOp;
-import java.awt.image.ConvolveOp;
-import java.awt.image.Kernel;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
@@ -157,7 +154,7 @@ public class JDImage {
         BUFFERED_IMAGE_CACHE.put(imageName, ret);
         return ret;
     }
- 
+
     public static BufferedImage getImage(File file) {
         BufferedImage ret = BUFFERED_IMAGE_CACHE.get(file.getAbsolutePath());
         if (ret != null) return ret;
