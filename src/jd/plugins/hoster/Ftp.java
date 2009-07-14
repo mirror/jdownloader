@@ -32,6 +32,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.RAFDownload;
+import jd.plugins.download.DownloadInterface.Chunk;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ftp" }, urls = { "ftp://.+/.+" }, flags = { 0 })
 public class Ftp extends PluginForHost {
@@ -85,8 +86,7 @@ public class Ftp extends PluginForHost {
                     downloadLink.setDownloadCurrent(event.getProgress());
 
                     if (System.currentTimeMillis() - lastTime > 250) {
-
-                        downloadLink.getSpeedMeter().addSpeedValue((int) ((1000 * (event.getProgress() - last)) / (System.currentTimeMillis() - lastTime)));
+                        downloadLink.getDownloadInstance().getChunks().get(0).getSpeedMeter().addSpeedValue((event.getProgress() - last), System.currentTimeMillis() - lastTime);
                         downloadLink.requestGuiUpdate();
                         last = event.getProgress();
                         lastTime = System.currentTimeMillis();
@@ -103,13 +103,16 @@ public class Ftp extends PluginForHost {
 
             downloadLink.setDownloadInstance(dl);
             dl.addChunksDownloading(1);
+            Chunk ch = dl.new Chunk(0, 0, null, null);
+            ch.setInProgress(true);
+            dl.getChunks().add(ch);
             downloadLink.getLinkStatus().addStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
             try {
                 ftp.download(downloadLink.getName(), tmp = new File(downloadLink.getFileOutput() + ".part"));
             } finally {
                 downloadLink.getLinkStatus().removeStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
                 downloadLink.setDownloadInstance(null);
-
+                ch.setInProgress(false);
             }
             if (tmp.length() != downloadLink.getDownloadSize()) {
                 tmp.delete();
@@ -123,7 +126,6 @@ public class Ftp extends PluginForHost {
             if (!tmp.renameTo(new File(downloadLink.getFileOutput()))) { throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, " Rename failed. file exists?"); }
             downloadLink.getLinkStatus().addStatus(LinkStatus.FINISHED);
         } finally {
-
             ftp.disconnect();
         }
     }

@@ -139,27 +139,29 @@ public class Reconnecter {
     public static boolean isReconnecting() {
         return RECONNECT_IN_PROGRESS;
     }
-/**
- * Returns true, if there is a requested reconnect qaiting, and the user selected  not to start new downloads of reconnects are waiting
- * @return
- */
+
+    /**
+     * Returns true, if there is a requested reconnect qaiting, and the user
+     * selected not to start new downloads of reconnects are waiting
+     * 
+     * @return
+     */
     public static boolean isReconnectPrefered() {
-   
+
         return (isReconnectRequested() && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true) && SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty("PARAM_DOWNLOAD_PREFER_RECONNECT", true) && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_LATEST_RECONNECT_RESULT, true));
     }
 
     public static boolean doReconnectIfRequested(boolean bypassrcvalidation) {
         if (RECONNECT_IN_PROGRESS) return false;
         /* falls nen Linkcheck läuft, kein Reconnect */
-        if (LinkCheck.getLinkChecker().isRunning()){
-            JDLogger.getLogger().info("No Reconnect: Linkgrabber is active");
-            
+        if (LinkCheck.getLinkChecker().isRunning()) {
+            //JDLogger.getLogger().info("No Reconnect: Linkgrabber is active");
             return false;
         }
         boolean num;
-        if (num=JDUtilities.getController().getForbiddenReconnectDownloadNum() > 0) {
+        if (num = JDUtilities.getController().getForbiddenReconnectDownloadNum() > 0) {
             /* darf keinen reconnect machen */
-            JDLogger.getLogger().info("No Reconnect: "+num+" no resumable downloads are running");
+            //JDLogger.getLogger().info("No Reconnect: " + num + " no resumable downloads are running");
             return false;
         }
         RECONNECT_IN_PROGRESS = true;
@@ -216,8 +218,6 @@ public class Reconnecter {
                     JDUtilities.getConfiguration().save();
                 }
             }
-        }else{
-            JDLogger.getLogger().info("No Reconnect: NO waittiumelinks");
         }
         return ret;
     }
@@ -305,7 +305,8 @@ public class Reconnecter {
     }
 
     /**
-     * @param RECONNECT_REQUESTED the RECONNECT_REQUESTED to set
+     * @param RECONNECT_REQUESTED
+     *            the RECONNECT_REQUESTED to set
      */
     public static void setReconnectRequested(boolean reconnectRequested) {
         Reconnecter.RECONNECT_REQUESTED = reconnectRequested;

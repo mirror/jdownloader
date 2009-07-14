@@ -522,10 +522,12 @@ public class SimpleFTP {
         int bytesRead = 0;
         long counter = 0;
         while ((bytesRead = input.read(buffer)) != -1) {
-            if (Thread.currentThread().isInterrupted()){
-                out.flush();
+            if (Thread.currentThread().isInterrupted()) {                
                 out.close();
                 input.close();
+                dataSocket.shutdownOutput();
+                dataSocket.shutdownInput();
+                dataSocket.close();
                 response = readLine();
                 throw new InterruptedIOException();
             }
@@ -533,11 +535,12 @@ public class SimpleFTP {
             out.write(buffer, 0, bytesRead);
             broadcaster.fireEvent(new FtpEvent(this, FtpEvent.DOWNLOAD_PROGRESS, counter));
 
-        }
-
-        out.flush();
+        }        
         out.close();
         input.close();
+        dataSocket.shutdownOutput();
+        dataSocket.shutdownInput();
+        dataSocket.close();
         response = readLine();
         if (!response.startsWith("226")) { throw new IOException("Download failed: " + response); }
 

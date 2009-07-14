@@ -23,11 +23,13 @@ package jd.controlling;
  * 
  */
 public class SpeedMeter {
-    private static final int capacity = 5;
+    private static final int capacity = 2;
 
     private int c = 0;
-    private int lastSpeed = 0;
-    private int[] speeds = new int[capacity];
+    private int lastSpeed = -1;
+    private long[] bytes = new long[capacity];
+    private long[] times = new long[capacity];
+    private Object lock = new Object();
 
     // private Logger logger;
     /**
@@ -39,8 +41,8 @@ public class SpeedMeter {
     public SpeedMeter() {
         // logger=JDUtilities.getLogger();
         for (int i = 0; i < capacity; i++) {
-            speeds[i] = -1;
-
+            bytes[i] = -1;
+            times[i] = 1;
         }
     }
 
@@ -49,14 +51,15 @@ public class SpeedMeter {
      * 
      * @param value
      */
-    public void addSpeedValue(int value) {
-
-        speeds[c] = value;
-        c++;
-        if (c == capacity) {
-            c = 0;
+    public void addSpeedValue(long value, long deltaTime) {
+        synchronized (lock) {
+            bytes[c] = value;
+            times[c] = deltaTime;
+            c++;
+            if (c == capacity) {
+                c = 0;
+            }
         }
-
     }
 
     /**
@@ -66,37 +69,22 @@ public class SpeedMeter {
      */
 
     public int getSpeed() {
-        /*
-         * if(lastAccess+System.currentTimeMillis()<100) return lastSpeed;
-         * 
-         * lastAccess=-System.currentTimeMillis();
-         */
-        long totalValue = 0;
-        int i = 0;
-
-        while (i < capacity) {
-            if (speeds[i] == -1) {
-                break;
+        synchronized (lock) {
+            long totalValue = 0;
+            long totalTime = 0;
+            int i = 0;
+            while (i < capacity) {
+                if (bytes[i] == -1) break;
+                totalValue += bytes[i];
+                totalTime += times[i];
+                i++;
             }
-            totalValue += speeds[i];
-            i++;
+            if (totalTime > 0) {
+                lastSpeed = (int) (totalValue / totalTime) * 1024;
+            }            
+            return lastSpeed;
+            
         }
-
-        if (i != 0) {
-            lastSpeed = (int) (totalValue / i);
-        }
-        // logger.info(totalValue+"/"+dif+"="+lastSpeed+" - "+(lastSpeed/1024));
-        return lastSpeed;
-
-        /*
-         * //doppelzugriffe sind unnötig
-         * if(lastAccess+System.currentTimeMillis()<100) return lastSpeed;
-         * 
-         * lastAccess=-System.currentTimeMillis(); lastSpeed=0; int i = 0;
-         * while(i<capacity) { if(speed[i]==-1)break; lastSpeed+=speed[i++]; }
-         * if(i!=0) lastSpeed/=i; return lastSpeed;
-         */
-
     }
 
 }

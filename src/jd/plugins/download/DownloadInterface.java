@@ -41,6 +41,7 @@ import jd.config.SubConfiguration;
 import jd.controlling.ByteBufferController;
 import jd.controlling.ByteBufferEntry;
 import jd.controlling.JDLogger;
+import jd.controlling.SpeedMeter;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.URLConnectionAdapter;
@@ -113,6 +114,10 @@ abstract public class DownloadInterface {
 
         private boolean addedtoStartedChunks = false;
 
+        private boolean chunkinprogress = false;
+
+        private SpeedMeter speed = new SpeedMeter();
+
         /**
          * Die Connection wird entsprechend der start und endbytes neu
          * aufgebaut.
@@ -132,7 +137,18 @@ abstract public class DownloadInterface {
 
         private void addChunkBytesLoaded(long limit) {
             chunkBytesLoaded += limit;
+        }
 
+        public boolean inProgress() {
+            return chunkinprogress;
+        }
+
+        public void setInProgress(boolean b) {
+            chunkinprogress = b;
+        }
+
+        public SpeedMeter getSpeedMeter() {
+            return speed;
         }
 
         private void setChunkStartet() {
@@ -276,7 +292,6 @@ abstract public class DownloadInterface {
 
         private void download() {
             long bufferSize = 1;
-
             if (speedDebug) {
                 logger.finer("resume Chunk with " + totalPartBytes + "/" + getChunkSize() + " at " + getCurrentBytesPosition());
             }
@@ -296,6 +311,7 @@ abstract public class DownloadInterface {
             }
 
             try {
+                chunkinprogress = true;
                 connection.setReadTimeout(getReadTimeout());
                 connection.setConnectTimeout(getRequestTimeout());
                 if (connection.getHeaderField("Content-Encoding") != null && connection.getHeaderField("Content-Encoding").equalsIgnoreCase("gzip")) {
@@ -457,10 +473,9 @@ abstract public class DownloadInterface {
                     deltaTime = System.currentTimeMillis() - timer;
                     if (deltaTime == 0) deltaTime = 1;
                     bytesPerSecond = 1000 * bytes / deltaTime;
-                    updateSpeed();
-
+                    speed.addSpeedValue(bytes, deltaTime);
                     if (speedDebug) {
-                        logger.finer(downloadLink.getSpeedMeter().getSpeed() + " loaded" + bytes + " b in " + deltaTime + " ms: " + bytesPerSecond + "(" + desiredBps + ") ");
+                        logger.finer(downloadLink.getDownloadSpeed() + " loaded" + bytes + " b in " + deltaTime + " ms: " + bytesPerSecond + "(" + desiredBps + ") ");
                     }
 
                 }
@@ -504,6 +519,7 @@ abstract public class DownloadInterface {
                 addException(e);
             } finally {
                 if (buffer != null) buffer.setUnused();
+                chunkinprogress = false;
             }
 
             try {
@@ -1365,10 +1381,12 @@ abstract public class DownloadInterface {
         }
 
     }
-/**
- * Public for dummy mode
- * @param i
- */
+
+    /**
+     * Public for dummy mode
+     * 
+     * @param i
+     */
     public synchronized void addChunksDownloading(long i) {
 
         chunksDownloading += i;
@@ -1891,20 +1909,6 @@ abstract public class DownloadInterface {
         }
     }
 
-    /**
-     * Addiert alle chunkspeeds und giubt diese an den downloadlink weiter
-     */
-    public void updateSpeed() {
-        int speed = 0;
-        synchronized (chunks) {
-            Iterator<Chunk> it = chunks.iterator();
-            while (it.hasNext()) {
-                speed += it.next().bytesPerSecond;
-            }
-        }
-        downloadLink.addSpeedValue(speed);
-    }
-
     // public void abort() {
     // this.aborted = true;
     //
@@ -1978,7 +1982,7 @@ abstract public class DownloadInterface {
      */
     public void setFirstChunkRangeless(boolean b) {
         firstChunkRangeless = b;
-       
+
     }
 
     public boolean isFirstChunkRangeless() {

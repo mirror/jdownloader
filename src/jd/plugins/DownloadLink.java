@@ -34,7 +34,6 @@ import jd.config.SubConfiguration;
 import jd.controlling.DownloadController;
 import jd.controlling.JDLogger;
 import jd.controlling.SingleDownloadController;
-import jd.controlling.SpeedMeter;
 import jd.event.JDBroadcaster;
 import jd.nutils.Formatter;
 import jd.nutils.JDImage;
@@ -42,6 +41,7 @@ import jd.nutils.OSDetector;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.DownloadInterface.Chunk;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -71,7 +71,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     public static final int LINKTYPE_CONTAINER = 1;
 
-//    public static final int LINKTYPE_JDU = 2;
+    // public static final int LINKTYPE_JDU = 2;
 
     public static final int LINKTYPE_NORMAL = 0;
 
@@ -148,9 +148,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     private ArrayList<String> sourcePluginPasswordList = null;
 
-    // Speedmeter zum berechnen des Downloadspeeds
-    private transient SpeedMeter speedMeter;
-
     /**
      * Wird dieser Wert gesetzt, so wird der Download unter diesem Namen (nicht
      * Pfad) abgespeichert.
@@ -201,7 +198,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         downloadMax = 0;
         this.host = host == null ? null : host.toLowerCase();
         this.isEnabled = isEnabled;
-        speedMeter = new SpeedMeter();
 
         this.setUrlDownload(urlDownload);
 
@@ -257,10 +253,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     public void setSubdirectory(DownloadLink downloadLink) {
         subdirectory = downloadLink.getSubdirectory();
-    }
-
-    public void addSpeedValue(int speed) {
-        getSpeedMeter().addSpeedValue(speed);
     }
 
     public int compareTo(DownloadLink o) {
@@ -327,7 +319,11 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     public int getDownloadSpeed() {
         if (!getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) { return -1; }
-        return getSpeedMeter().getSpeed();
+        int currspeed = 0;
+        for (Chunk ch : this.getDownloadInstance().getChunks()) {
+            if (ch.inProgress()) currspeed += ch.getSpeedMeter().getSpeed();
+        }
+        return currspeed;
     }
 
     /**
@@ -519,18 +515,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     /**
-     * Gibt den internen Speedmeter zurück
-     * 
-     * @return Speedmeter
-     */
-    public SpeedMeter getSpeedMeter() {
-        if (speedMeter == null) {
-            speedMeter = new SpeedMeter();
-        }
-        return speedMeter;
-    }
-
-    /**
      * Gibt den Finalen Downloadnamen zurück. Wird null zurückgegeben, so wird
      * der dateiname von den jeweiligen plugins automatisch ermittelt.
      * 
@@ -580,15 +564,14 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
         for (int retry = 0; retry < 5; retry++) {
             try {
-                long startTime=System.currentTimeMillis();
+                long startTime = System.currentTimeMillis();
                 availableStatus = getPlugin().requestFileInformation(this);
-                startTime=System.currentTimeMillis()-startTime;
-                if(getLinkStatus().getStatusText()==null||getLinkStatus().getStatusText().trim().length()==0){
-                  this.requestTime=startTime;
-                getLinkStatus().setStatusText(JDL.LF("jd.plugins.downloadlink.statustext.requesttime","Requesttime: %s",Formatter.formatMilliseconds(startTime)));
+                startTime = System.currentTimeMillis() - startTime;
+                if (getLinkStatus().getStatusText() == null || getLinkStatus().getStatusText().trim().length() == 0) {
+                    this.requestTime = startTime;
+                    getLinkStatus().setStatusText(JDL.LF("jd.plugins.downloadlink.statustext.requesttime", "Requesttime: %s", Formatter.formatMilliseconds(startTime)));
                 }
-                
-                
+
                 try {
                     getPlugin().getBrowser().getHttpConnection().disconnect();
                 } catch (Exception e) {
@@ -632,10 +615,12 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         if (availableStatus == null) availableStatus = AvailableStatus.UNCHECKABLE;
         return availableStatus;
     }
-/**
- * 
- * @return requesttime. TIme the downloadlink took for it's latest request. Usually set by linkgrabber
- */
+
+    /**
+     * 
+     * @return requesttime. TIme the downloadlink took for it's latest request.
+     *         Usually set by linkgrabber
+     */
     public long getRequestTime() {
         return requestTime;
     }
