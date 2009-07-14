@@ -4,7 +4,6 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Rectangle;
-import java.awt.Robot;
 import java.awt.image.BufferedImage;
 
 import javax.swing.JComponent;
@@ -16,6 +15,8 @@ import javax.swing.event.PopupMenuListener;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicPopupMenuUI;
 
+import jd.nutils.nativeintegration.ScreenCapture;
+
 import com.jhlabs.image.BoxBlurFilter;
 import com.jtattoo.plaf.AbstractLookAndFeel;
 
@@ -26,30 +27,17 @@ import com.jtattoo.plaf.AbstractLookAndFeel;
  */
 public class BluredPopupUI extends BasicPopupMenuUI {
 
-    private Robot robot;
     private BufferedImage screenImage;
 
     public static ComponentUI createUI(JComponent x) {
         return new BluredPopupUI();
     }
 
-    private Robot getRobot() {
-
-        if (robot == null) {
-            try {
-                robot = new Robot();
-            } catch (Exception ex) {
-            }
-        }
-        return robot;
-    }
-
     public Popup getPopup(JPopupMenu popupMenu, int x, int y) {
-
         try {
             Dimension size = popupMenu.getPreferredSize();
             Rectangle screenRect = new Rectangle(x, y, size.width, size.height);
-            screenImage = getRobot().createScreenCapture(screenRect);
+            screenImage = ScreenCapture.getScreenShot(screenRect);
             Object blurParameter = UIManager.get("PopupMenu.blurParameter");
             if (blurParameter != null && blurParameter instanceof int[]) {
                 BoxBlurFilter blur = new BoxBlurFilter(((int[]) blurParameter)[0], ((int[]) blurParameter)[1], ((int[]) blurParameter)[2]);
@@ -133,7 +121,7 @@ public class BluredPopupUI extends BasicPopupMenuUI {
     }
 
     private boolean isMenuOpaque() {
-        return (AbstractLookAndFeel.getTheme().isMenuOpaque() || (getRobot() == null));
+        return (AbstractLookAndFeel.getTheme().isMenuOpaque() || (!ScreenCapture.gotRobots()));
     }
 
     private void resetScreenImage() {
