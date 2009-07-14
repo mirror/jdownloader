@@ -238,8 +238,8 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
         this.password = JDUtilities.passwordArrayToString(pwList.toArray(new String[pwList.size()]));
     }
 
-    public void add(int index, DownloadLink link) {
-        if (link == null) return;
+    public int add(int index, DownloadLink link, int repos) {
+        if (link == null) return repos;
         synchronized (LinkGrabberController.ControllerLock) {
             synchronized (downloadLinks) {
                 boolean newadded = false;
@@ -247,7 +247,7 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
                 if (downloadLinks.contains(link)) {
                     int posa = this.indexOf(link);
                     if (posa < index) {
-                        index--;
+                        index -= ++repos;
                     }
                     downloadLinks.remove(link);
                     if (index > downloadLinks.size() - 1) {
@@ -274,6 +274,7 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
                 }
             }
         }
+        return repos;
     }
 
     public void addAll(ArrayList<DownloadLink> links) {
@@ -292,8 +293,9 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
     }
 
     public void addAllAt(ArrayList<DownloadLink> links, int index) {
+        int repos = 0;
         for (int i = 0; i < links.size(); i++) {
-            add(index + i, links.get(i));
+            repos = add(index + i, links.get(i), repos);
         }
     }
 

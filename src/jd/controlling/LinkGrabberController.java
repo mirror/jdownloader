@@ -261,26 +261,27 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
     public void addAllAt(ArrayList<LinkGrabberFilePackage> links, int index) {
         synchronized (LinkGrabberController.ControllerLock) {
             synchronized (packages) {
+                int repos = 0;
                 for (int i = 0; i < links.size(); i++) {
-                    addPackageAt(links.get(i), index + i);
+                    repos = addPackageAt(links.get(i), index + i, repos);
                 }
             }
         }
     }
 
-    public void addPackageAt(LinkGrabberFilePackage fp, int index) {
-        if (fp == null) return;
+    public int addPackageAt(LinkGrabberFilePackage fp, int index, int repos) {
+        if (fp == null) return repos;
         synchronized (LinkGrabberController.ControllerLock) {
             synchronized (packages) {
                 if (packages.size() == 0) {
                     addPackage(fp);
-                    return;
+                    return repos;
                 }
                 boolean newadded = false;
                 if (packages.contains(fp)) {
                     int posa = this.indexOf(fp);
                     if (posa < index) {
-                        index--;
+                        index -= ++repos;
                     }
                     packages.remove(fp);
                     if (index > packages.size() - 1) {
@@ -305,6 +306,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
                 }
             }
         }
+        return repos;
     }
 
     public void removePackage(LinkGrabberFilePackage fp) {

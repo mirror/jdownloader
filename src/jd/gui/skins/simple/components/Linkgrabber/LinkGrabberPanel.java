@@ -571,7 +571,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                                 nfp.addAll(selected_links);
                                 if (passwords != null) nfp.setPassword(JDUtilities.passwordArrayToString(passwords.toArray(new String[passwords.size()])));
                                 if (SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.PARAM_INSERT_NEW_LINKS_AT, false)) {
-                                    LGINSTANCE.addPackageAt(nfp, 0);
+                                    LGINSTANCE.addPackageAt(nfp, 0, 0);
                                 } else {
                                     LGINSTANCE.addPackage(nfp);
                                 }
@@ -714,7 +714,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
         }
         if (!fpv2.isIgnored()) {
             if (SimpleGuiConstants.GUI_CONFIG != null && SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.PARAM_INSERT_NEW_LINKS_AT, false)) {
-                JDUtilities.getDownloadController().addPackageAt(fp, index);
+                JDUtilities.getDownloadController().addPackageAt(fp, index, 0);
             } else {
                 JDUtilities.getDownloadController().addPackage(fp);
             }

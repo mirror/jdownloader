@@ -160,14 +160,14 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
         }
     }
 
-    public void add(int index, DownloadLink link) {
+    public int add(int index, DownloadLink link, int repos) {
         synchronized (DownloadController.ControllerLock) {
             boolean newadded = false;
             synchronized (downloadLinkList) {
                 if (downloadLinkList.contains(link)) {
                     int posa = this.indexOf(link);
-                    if (posa < index) {
-                        index--;
+                    if (posa <= index) {
+                        index -= ++repos;
                     }
                     downloadLinkList.remove(link);
                     if (index > downloadLinkList.size() - 1) {
@@ -197,6 +197,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
                 broadcaster.fireEvent(new FilePackageEvent(this, FilePackageEvent.FILEPACKAGE_UPDATE));
             }
         }
+        return repos;
     }
 
     public void addLinks(ArrayList<DownloadLink> links) {
@@ -214,8 +215,9 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
     }
 
     public void addLinksAt(ArrayList<DownloadLink> links, int index) {
+        int repos = 0;
         for (int i = 0; i < links.size(); i++) {
-            add(index + i, links.get(i));
+            repos = add(index + i, links.get(i), repos);            
         }
     }
 

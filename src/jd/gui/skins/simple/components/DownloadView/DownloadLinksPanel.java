@@ -486,7 +486,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                         }
                         if (passwords != null) nfp.setPassword(JDUtilities.passwordArrayToString(passwords.toArray(new String[passwords.size()])));
                         if (SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.PARAM_INSERT_NEW_LINKS_AT, false)) {
-                            JDUtilities.getDownloadController().addPackageAt(nfp, 0);
+                            JDUtilities.getDownloadController().addPackageAt(nfp, 0, 0);
                         } else {
                             JDUtilities.getDownloadController().addPackage(nfp);
                         }

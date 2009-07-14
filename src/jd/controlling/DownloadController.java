@@ -426,19 +426,19 @@ public class DownloadController implements FilePackageListener, DownloadControll
         return packages.indexOf(fp);
     }
 
-    public void addPackageAt(FilePackage fp, int index) {
-        if (fp == null) return;
+    public int addPackageAt(FilePackage fp, int index, int repos) {
+        if (fp == null) return repos;
         synchronized (DownloadController.ControllerLock) {
             synchronized (packages) {
                 if (packages.size() == 0) {
                     addPackage(fp);
-                    return;
+                    return repos;
                 }
                 boolean newadded = false;
                 if (packages.contains(fp)) {
                     int posa = this.indexOf(fp);
                     if (posa < index) {
-                        index--;
+                        index -= ++repos;
                     }
                     packages.remove(fp);
                     if (index > packages.size() - 1) {
@@ -464,13 +464,15 @@ public class DownloadController implements FilePackageListener, DownloadControll
                 }
             }
         }
+        return repos;
     }
 
     public void addAllAt(ArrayList<FilePackage> links, int index) {
         synchronized (DownloadController.ControllerLock) {
             synchronized (packages) {
+                int repos = 0;
                 for (int i = 0; i < links.size(); i++) {
-                    addPackageAt(links.get(i), index + i);
+                    repos = addPackageAt(links.get(i), index + i, repos);
                 }
             }
         }
