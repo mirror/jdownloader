@@ -115,6 +115,8 @@ public class FileFactory extends PluginForHost {
         if (dl.getConnection().isContentDisposition()) {
             dl.startDownload();
         } else {
+            br.followConnection();
+            logger.info(br.toString());
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
 

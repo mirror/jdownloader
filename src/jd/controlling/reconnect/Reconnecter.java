@@ -155,13 +155,13 @@ public class Reconnecter {
         if (RECONNECT_IN_PROGRESS) return false;
         /* falls nen Linkcheck läuft, kein Reconnect */
         if (LinkCheck.getLinkChecker().isRunning()) {
-            //JDLogger.getLogger().info("No Reconnect: Linkgrabber is active");
+            // JDLogger.getLogger().info("No Reconnect: Linkgrabber is active");
             return false;
         }
-        boolean num;
-        if (num = JDUtilities.getController().getForbiddenReconnectDownloadNum() > 0) {
+        if (JDUtilities.getController().getForbiddenReconnectDownloadNum() > 0) {
             /* darf keinen reconnect machen */
-            //JDLogger.getLogger().info("No Reconnect: " + num + " no resumable downloads are running");
+            // JDLogger.getLogger().info("No Reconnect: " + num +
+            // " no resumable downloads are running");
             return false;
         }
         RECONNECT_IN_PROGRESS = true;
