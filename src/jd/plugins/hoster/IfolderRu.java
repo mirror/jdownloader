@@ -78,12 +78,13 @@ public class IfolderRu extends PluginForHost {
             br.getPage(watchAd);
             watchAd = br.getRegex("\"f_top\" src=\"(.*?)\"").getMatch(0);
             if (watchAd == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            watchAd = "http://ints.ifolder.ru" + watchAd;
             br.getPage(watchAd);
             /* Tickettime */
             String ticketTimeS = br.getRegex("delay = (\\d+)").getMatch(0);
             if (ticketTimeS == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             int ticketTime = Integer.parseInt(ticketTimeS) * 1000;
-            this.sleep(ticketTime, downloadLink);
+            this.sleep(ticketTime + 1, downloadLink);
             br.getPage(watchAd);
         }
         for (int retry = 1; retry <= 5; retry++) {
@@ -103,9 +104,11 @@ public class IfolderRu extends PluginForHost {
             /* Captcha */
             String captchaCode = getCaptchaCode(captchaurl, downloadLink);
             captchaForm.put("confirmed_number", captchaCode);
-
-            br.submitForm(captchaForm);
-
+            try {
+                br.submitForm(captchaForm);
+            } catch (Exception e) {
+                br.submitForm(captchaForm);
+            }
             String directLink = br.getRegex("id=\"download_file_href\"\\s+href=\"(.*?)\"").getMatch(0);
             if (directLink != null) {
                 dl = br.openDownload(downloadLink, directLink, true, -2);
@@ -129,7 +132,6 @@ public class IfolderRu extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        /* Tested up to 10 parallel downloads */
         return 10;
     }
 
