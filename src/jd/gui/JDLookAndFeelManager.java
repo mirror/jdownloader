@@ -25,9 +25,6 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
 import javax.swing.ImageIcon;
-import javax.swing.JDialog;
-import javax.swing.JFrame;
-import javax.swing.JRootPane;
 import javax.swing.UIManager;
 import javax.swing.UIManager.LookAndFeelInfo;
 

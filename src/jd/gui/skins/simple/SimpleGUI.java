@@ -172,7 +172,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
 
     private JDStatusBar statusBar;
 
-    private boolean noTitlePane = false;
+//    private boolean noTitlePane = false;
 
     private JDSeparator sep;
 
@@ -231,16 +231,16 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
         if (isSubstance() && SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.DECORATION_ENABLED, true)) {
             mainMenuIcon = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_54_54_trans"), 54, 54);
             mainMenuIconRollOver = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_54_54"), 54, 54);
-            noTitlePane = false;
+//            noTitlePane = false;
         } else {
             mainMenuIcon = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_54_54_trans"), 32, 32);
             mainMenuIconRollOver = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_54_54"), 32, 32);
-            this.noTitlePane = true;
+//            this.noTitlePane = true;
         }
 
         if (isSubstance()) this.getRootPane().setUI(new JDSubstanceUI());
 
-        toolBar = new JDToolBar(noTitlePane);
+        toolBar = new JDToolBar();
 
         // System.out.println(ui);
         addWindowListener(this);
@@ -492,15 +492,15 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
             mainMenuIconRollOver = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_54_54"), 54, 54);
             this.getRootPane().setUI(new JDSubstanceUI());
 
-            JDController.getInstance().addControlListener(new ConfigPropertyListener(SimpleGuiConstants.ANIMATION_ENABLED) {
-
-                // @Override
-                public void onPropertyChanged(Property source, String propertyName) {
-
-                }
-
-            });
-            noTitlePane = false;
+//            JDController.getInstance().addControlListener(new ConfigPropertyListener(SimpleGuiConstants.ANIMATION_ENABLED) {
+//
+//                // @Override
+//                public void onPropertyChanged(Property source, String propertyName) {
+//
+//                }
+//
+//            });
+//            noTitlePane = false;
         }
 
     }

@@ -60,7 +60,7 @@ public class JDToolBar extends JToolBar implements ControlListener {
 
     private SpeedMeterPanel speedmeter;
 
-    private boolean noTitlePainter;
+//    private boolean noTitlePainter;
 
     private JButton reconnectButton;
 
@@ -80,10 +80,10 @@ public class JDToolBar extends JToolBar implements ControlListener {
 
     public static final int ENTRY_ALL = ENTRY_CONTROL | ENTRY_CONFIG | ENTRY_INTERACTION;
 
-    public JDToolBar(boolean noTitlePane) {
+    public JDToolBar() {
         super(JToolBar.HORIZONTAL);
 
-        noTitlePainter = noTitlePane;
+//        noTitlePainter = noTitlePane;
 
         JDUtilities.getController().addControlListener(this);
 
@@ -91,7 +91,7 @@ public class JDToolBar extends JToolBar implements ControlListener {
         setFloatable(false);
         setLayout(new MigLayout("ins 0,gap 0", "[][][][][][][][][][][][][][grow,fill]"));
 
-        JSeparator sep;
+//        JSeparator sep;
 //        if (noTitlePainter) {
 //            add(sep = new JSeparator(JSeparator.VERTICAL), "gapleft 30,height 0,gapright 5");
 //        } else {

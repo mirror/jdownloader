@@ -207,7 +207,7 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
         startAfterAdding.setToolTipText(JDL.L("gui.tooltips.linkgrabber.topOrBottom", "if selected, new links will be added at top of your downloadlist"));
 
         settingsLinks.add(topOrBottom);
-
+        add(settingsLinks);
     }
 
     public void actionPerformed(ActionEvent e) {

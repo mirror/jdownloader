@@ -44,12 +44,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.imageio.ImageIO;
-import javax.swing.JDialog;
 import javax.swing.JFrame;
-import javax.swing.JRootPane;
-import javax.swing.UIManager;
-
-
 
 import jd.captcha.JACController;
 import jd.captcha.JACMethod;
