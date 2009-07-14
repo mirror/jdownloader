@@ -19,6 +19,7 @@ package jd.nutils.nativeintegration;
 import java.awt.AWTException;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
+import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.image.BufferedImage;
@@ -27,10 +28,9 @@ import java.util.ArrayList;
 import jd.config.SubConfiguration;
 import jd.gui.skins.simple.SimpleGuiConstants;
 
-public class ScreenCapture {
+public class ScreenDevices {
 
-   
-    private static ScreenCapture INSTANCE = new ScreenCapture();
+    private static ScreenDevices INSTANCE = new ScreenDevices();
 
     private static DeviceInfo SCREENS[] = new DeviceInfo[0];
     static {
@@ -40,6 +40,7 @@ public class ScreenCapture {
                 try {
                     DeviceInfo tmp = INSTANCE.new DeviceInfo();
                     tmp.robot = new Robot(dv);
+                    tmp.dv = dv;
                     tmp.height = dv.getDisplayMode().getHeight();
                     tmp.width = dv.getDisplayMode().getWidth();
                     tmp.posx = dv.getDefaultConfiguration().getBounds().x;
@@ -60,6 +61,18 @@ public class ScreenCapture {
         return SCREENS.length > 0;
     }
 
+    public static GraphicsDevice getGraphicsDeviceforPoint(Point p){
+        synchronized (SCREENS) {
+            if (SCREENS.length == 0)  return GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
+            for (DeviceInfo dv : SCREENS) {
+                if (p.x >= dv.posx && p.x <= dv.maxx && p.y >= dv.posy && p.y <= dv.maxy) {
+                    return dv.dv;
+                }
+            }
+            return GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
+        }
+    }
+
     public static BufferedImage getScreenShot(Rectangle r) throws AWTException {
         synchronized (SCREENS) {
             if (SCREENS.length == 0) { return new Robot().createScreenCapture(r); }
@@ -77,8 +90,10 @@ public class ScreenCapture {
             }
         }
     }
+
     class DeviceInfo {
         Robot robot;
+        GraphicsDevice dv;
         int width;
         int height;
         int posx;

@@ -24,6 +24,7 @@ import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.awt.Image;
+import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Transparency;
 import java.awt.event.ActionEvent;
@@ -38,11 +39,14 @@ import javax.swing.JProgressBar;
 import javax.swing.JWindow;
 import javax.swing.Timer;
 
+import jd.config.SubConfiguration;
 import jd.controlling.JDController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.skins.simple.GuiRunnable;
+import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.gui.swing.laf.LookAndFeelController;
+import jd.nutils.nativeintegration.ScreenDevices;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
@@ -101,6 +105,8 @@ public class SplashScreen implements ActionListener, ControlListener {
 
     private String curString = new String();
 
+    private GraphicsDevice gd = null;
+
     public SplashScreen(JDController controller) throws IOException, AWTException {
 
         LookAndFeelController.setUIManager();
@@ -113,9 +119,20 @@ public class SplashScreen implements ActionListener, ControlListener {
         progressimages.add(new SplashProgressImage(JDTheme.I("gui.splash.plugins", 32, 32)));
         progressimages.add(new SplashProgressImage(JDTheme.I("gui.splash.screen", 32, 32)));
         progressimages.add(new SplashProgressImage(JDTheme.I("gui.splash.dllist", 32, 32)));
-        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-
-        Rectangle v = ge.getDefaultScreenDevice().getDefaultConfiguration().getBounds();
+        try {
+            Object loc = SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getProperty("LOCATION_OF_MAINFRAME");
+            if (loc != null && loc instanceof Point) {
+                Point point = (Point) loc;
+                if (point.x < 0) point.x = 0;
+                if (point.y < 0) point.y = 0;
+                gd = ScreenDevices.getGraphicsDeviceforPoint(point);
+            }else{
+                gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
+            }
+        } catch (Exception e) {
+            gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
+        }
+        Rectangle v = gd.getDefaultConfiguration().getBounds();
         int screenWidth = (int) v.getWidth();
         int screenHeight = (int) v.getHeight();
         x = screenWidth / 2 - image.getWidth(null) / 2;
@@ -135,7 +152,7 @@ public class SplashScreen implements ActionListener, ControlListener {
     }
 
     private void initGui() {
-        GraphicsConfiguration gc = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration();
+        GraphicsConfiguration gc = gd.getDefaultConfiguration();        
         label = new JLabel();
         label.setIcon(drawImage(0.0f));
 
@@ -166,9 +183,7 @@ public class SplashScreen implements ActionListener, ControlListener {
      * @param alphaValue
      * @throws AWTException
      */
-    private ImageIcon drawImage(float alphaValue) {
-        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-        GraphicsDevice gd = ge.getDefaultScreenDevice();
+    private ImageIcon drawImage(float alphaValue) {        
         GraphicsConfiguration gc = gd.getDefaultConfiguration();
         BufferedImage res = gc.createCompatibleImage(w, h, Transparency.BITMASK);
         Graphics2D g2d = res.createGraphics();

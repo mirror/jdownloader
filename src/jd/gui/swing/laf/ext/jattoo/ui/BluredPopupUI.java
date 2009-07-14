@@ -15,7 +15,7 @@ import javax.swing.event.PopupMenuListener;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicPopupMenuUI;
 
-import jd.nutils.nativeintegration.ScreenCapture;
+import jd.nutils.nativeintegration.ScreenDevices;
 
 import com.jhlabs.image.BoxBlurFilter;
 import com.jtattoo.plaf.AbstractLookAndFeel;
@@ -37,7 +37,7 @@ public class BluredPopupUI extends BasicPopupMenuUI {
         try {
             Dimension size = popupMenu.getPreferredSize();
             Rectangle screenRect = new Rectangle(x, y, size.width, size.height);
-            screenImage = ScreenCapture.getScreenShot(screenRect);
+            screenImage = ScreenDevices.getScreenShot(screenRect);
             Object blurParameter = UIManager.get("PopupMenu.blurParameter");
             if (blurParameter != null && blurParameter instanceof int[]) {
                 BoxBlurFilter blur = new BoxBlurFilter(((int[]) blurParameter)[0], ((int[]) blurParameter)[1], ((int[]) blurParameter)[2]);
@@ -121,7 +121,7 @@ public class BluredPopupUI extends BasicPopupMenuUI {
     }
 
     private boolean isMenuOpaque() {
-        return (AbstractLookAndFeel.getTheme().isMenuOpaque() || (!ScreenCapture.gotRobots()));
+        return (AbstractLookAndFeel.getTheme().isMenuOpaque() || (!ScreenDevices.gotRobots()));
     }
 
     private void resetScreenImage() {
