@@ -35,9 +35,9 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "badongo.com" }, urls = { "(http://[w.]*?meinupload.com/{1,}dl/.+/.+)|(http://[w.]*?meinupload.com/?d=.*)|http://[w.]*?mein-upload.com/[w]+(.html|/)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "badongo.com" }, urls = { "http://[\\w\\.]*?badongo\\.viajd.*/.*(file|vid)/[0-9]+/?\\d?/?\\w?\\w?" }, flags = { PluginWrapper.LOAD_ON_INIT })
 public class BadongoCom extends PluginForHost {
-
+   
     public BadongoCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.badongo.com/compare");

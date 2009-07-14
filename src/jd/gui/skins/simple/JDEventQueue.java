@@ -268,6 +268,7 @@ public class JDEventQueue extends EventQueue {
         final JTextComponent t = (JTextComponent) c;
 
         JPopupMenu menu = new JPopupMenu();
+        
         menu.add(new MenuAbstractAction(t, JDL.L("gui.textcomponent.context.cut", "Ausschneiden"), JDTheme.II("gui.icons.cut", 16, 16), JDL.L("gui.textcomponent.context.cut.acc", "ctrl X")) {
 
             private static final long serialVersionUID = 1L;

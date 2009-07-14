@@ -16,11 +16,12 @@
 
 package jd.gui.skins.simple.startmenu;
 
-import jd.gui.skins.simple.components.JBlurMenu;
+import javax.swing.JMenu;
+
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
-public class JStartMenu extends JBlurMenu {
+public class JStartMenu extends JMenu {
 
     private static final long serialVersionUID = -7833871754471332953L;
 

@@ -129,6 +129,7 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
         final Object current = table.getModel().getValueAt(row, 0);
         if (current == null) return false;
         JPopupMenu popup = new JPopupMenu();
+
         JMenuItem m;
         synchronized (DownloadController.getInstance().getPackages()) {
             switch (draggingType) {

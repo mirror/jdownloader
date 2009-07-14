@@ -36,6 +36,10 @@ import jd.utils.JDUtilities;
 public class Property implements Serializable {
 
     private static final long serialVersionUID = -6093927038856757256L;
+/**
+ * Nullvalue used to remove a key completly.
+ */
+    public static final Object NULL = new Object();
 
     protected transient Logger logger = null;
 
@@ -217,6 +221,7 @@ public class Property implements Serializable {
      */
     public void setProperties(HashMap<String, Object> properties) {
         this.properties = properties;
+        propertiesHashes = new HashMap<String, Integer>();
     }
 
     /**
@@ -227,13 +232,25 @@ public class Property implements Serializable {
      */
     @SuppressWarnings("unchecked")
     public void setProperty(String key, Object value) {
+
+        if (value == NULL) {
+            if (properties.containsKey(key)) {
+                properties.remove(key);
+                propertiesHashes.remove(key);
+                JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));
+                this.changes = true;
+                
+            }
+            return;
+
+        }
         if (properties == null) {
             properties = new HashMap<String, Object>();
         }
         if (propertiesHashes == null) {
             propertiesHashes = new HashMap<String, Integer>();
         }
-      
+
         Object old = getProperty(key);
 
         properties.put(key, value);

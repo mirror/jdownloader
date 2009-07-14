@@ -55,7 +55,6 @@ import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
-import jd.gui.JDLookAndFeelManager;
 import jd.gui.skins.simple.Factory;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.SimpleGUI;
@@ -65,6 +64,7 @@ import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.components.PieChartAPI;
 import jd.gui.skins.simple.components.DownloadView.JDProgressBar;
 import jd.gui.skins.simple.config.GUIConfigEntry;
+import jd.gui.swing.laf.LookAndFeelController;
 import jd.http.Encoding;
 import jd.nutils.Formatter;
 import jd.plugins.Account;
@@ -302,16 +302,9 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
             this.setOpaque(false);
 
             this.setBackground(null);
-            /*
-             * JGoodies seems to have a performance bug rendering JCheckBoxes.
-             */
-            if (JDLookAndFeelManager.getPlaf().isJGoodies()) {
-                chkEnable = new JToggleButton();
-                chkEnable.setIcon(JDTheme.II("gui.images.disabled", 16, 16));
-                chkEnable.setSelectedIcon(JDTheme.II("gui.images.enabled", 16, 16));
-            } else {
+            
                 chkEnable = new JCheckBox();
-            }
+            
 
             if (premiumActivated) {
                 chkEnable.setText(JDL.LF("plugins.config.premium.accountnum", "<html><b>Premium Account #%s</b></html>", nr));

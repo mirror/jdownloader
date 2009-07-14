@@ -3,10 +3,15 @@ package jd;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map.Entry;
 
 import javax.swing.DefaultComboBoxModel;
@@ -15,13 +20,21 @@ import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.ListSelectionModel;
+import javax.swing.SwingUtilities;
+import javax.swing.UIDefaults;
+import javax.swing.UIManager;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
 
 import jd.config.Configuration;
+import jd.config.Property;
 import jd.config.SubConfiguration;
+import jd.controlling.JDController;
+import jd.event.ControlEvent;
+import jd.event.ControlListener;
 import jd.gui.UserIO;
+import jd.gui.swing.laf.LookAndFeelController;
 import jd.gui.userio.SimpleUserIO;
 import jd.gui.userio.dialog.AbstractDialog;
 import jd.update.JDUpdateUtils;
@@ -45,13 +58,58 @@ public class Config {
     private JButton add;
     private JButton edit;
     private JButton remove;
+    private JFrame frame;
 
     public Config() {
+
         JDInit jdi = new JDInit();
         jdi.init();
+        final JDController controller = JDController.getInstance();
         JDUpdateUtils.backupDataBase();
+
         System.out.println("Backuped Database");
         mainConfig = JDUtilities.getConfiguration();
+        LookAndFeelController.setUIManager();
+        final SubConfiguration laf = SubConfiguration.getConfig(LookAndFeelController.DEFAULT_PREFIX + "." + LookAndFeelController.getPlaf().getClassName());
+        final SubConfiguration tmplaf = SubConfiguration.getConfig("CURRENT_LOOK_AND_FEEL");
+        tmplaf.setProperties(new HashMap<String, Object>());
+
+        tmplaf.getProperties().putAll(laf.getProperties());
+        UIDefaults defaults = UIManager.getDefaults();
+       
+       
+        Enumeration keys = defaults.keys();
+        while (keys.hasMoreElements()) {         
+            Object key = keys.nextElement();
+        
+            if (key instanceof String) {
+                if (!tmplaf.hasProperty(key.toString())) {
+                    System.out.println("ORG UI Defauls: " +key.toString()+" : "+defaults.get(key.toString()));
+//                    if(next.getKey().toString().equals("PopupMenuUI")){
+//                        System.out.println("ORG UI Defauls: " + next);
+//                    }
+                    tmplaf.setProperty(key.toString(), defaults.get(key.toString()));
+                }
+            }
+        }
+
+        controller.addControlListener(new ControlListener() {
+
+            public void controlEvent(ControlEvent event) {
+                if (event.getSource() == tmplaf && event.getID() == ControlEvent.CONTROL_JDPROPERTY_CHANGED) {
+                    Object value = tmplaf.getProperty(event.getParameter().toString());
+                    if (value == null) value = Property.NULL;
+                    laf.setProperty(event.getParameter().toString(), value);
+                   if(value!=null&&value!=Property.NULL) UIManager.put(event.getParameter().toString(), value);
+                    laf.save();
+                    SwingUtilities.updateComponentTreeUI(frame);
+                    
+                    frame.pack();
+
+                }
+            }
+
+        });
         configs = JDUtilities.getDatabaseConnector().getSubConfigurationKeys();
 
         configs.add(0, mainConfig);
@@ -73,7 +131,16 @@ public class Config {
         });
 
     }
+    private int[] getSelectedRows() {
+        int[] rows = table.getSelectedRows();
+        int[] ret = new int[rows.length];
 
+        for (int i = 0; i < rows.length; ++i) {
+            ret[i] = table.convertRowIndexToModel(rows[i]);
+        }
+        Arrays.sort(ret);
+        return ret;
+    }
     private void setCurrentConfig(SubConfiguration cfg) {
         currentConfig = cfg;
 
@@ -103,7 +170,45 @@ public class Config {
     }
 
     private void initGUI() {
-        JFrame frame = new JFrame("JDownloader Config - leave any warranty behind you!");
+        frame = new JFrame("JDownloader Config - leave any warranty behind you!");
+        frame.addWindowListener(new WindowListener() {
+
+            public void windowActivated(WindowEvent e) {
+                // TODO Auto-generated method stub
+
+            }
+
+            public void windowClosed(WindowEvent e) {
+                System.exit(0);
+
+            }
+
+            public void windowClosing(WindowEvent e) {
+                // TODO Auto-generated method stub
+
+            }
+
+            public void windowDeactivated(WindowEvent e) {
+                // TODO Auto-generated method stub
+
+            }
+
+            public void windowDeiconified(WindowEvent e) {
+                // TODO Auto-generated method stub
+
+            }
+
+            public void windowIconified(WindowEvent e) {
+                // TODO Auto-generated method stub
+
+            }
+
+            public void windowOpened(WindowEvent e) {
+                // TODO Auto-generated method stub
+
+            }
+
+        });
         frame.setLayout(new MigLayout("ins 10,wrap 1", "[grow,fill]", "[][grow,fill]"));
         frame.setMinimumSize(new Dimension(800, 600));
 
@@ -139,7 +244,9 @@ public class Config {
         table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
 
             public void valueChanged(ListSelectionEvent e) {
-                int row = table.getSelectedRow();
+               int[] rows = getSelectedRows();
+               if(rows.length==0)return;
+                int row = rows[0];
                 Object value = tableModel.getValueAt(row, 1);
                 try {
                     new ObjectConverter().toString(value);
@@ -148,7 +255,7 @@ public class Config {
                 } catch (Exception e1) {
                     e1.printStackTrace();
                     edit.setEnabled(false);
-                    remove.setEnabled(false);
+                    remove.setEnabled(true);
                 }
 
             }
@@ -193,7 +300,8 @@ public class Config {
                             }
                         }
 
-                        props.put(configKeys[configKeys.length - 1], object);
+                        currentConfig.setProperty(configKeys[configKeys.length - 1], object);
+
                         currentConfig.save();
                         setCurrentConfig(currentConfig);
                     }
@@ -210,7 +318,9 @@ public class Config {
         edit.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
-                int row = table.getSelectedRow();
+                int[] rows = getSelectedRows();
+                if(rows.length==0)return;
+                 int row = rows[0];
                 Object key = tableModel.getValueAt(row, 0);
                 Object value = tableModel.getValueAt(row, 1);
 
@@ -242,12 +352,13 @@ public class Config {
                                 }
                             }
 
-                            props.put(myKey, object);
+                            currentConfig.setProperty(myKey, object);
                             currentConfig.save();
                             setCurrentConfig(currentConfig);
                         }
 
                     } catch (Exception e1) {
+                        e1.printStackTrace();
                         SimpleUserIO.getInstance().requestMessageDialog("Could not save object. Failures in XML structure!");
 
                     }
@@ -263,14 +374,18 @@ public class Config {
         remove.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
-                int row = table.getSelectedRow();
+                int[] rows = getSelectedRows();
+                if(rows.length==0)return;
+                 int row = rows[0];
                 Object key = tableModel.getValueAt(row, 0);
                 String[] keys = key.toString().split("/");
                 if (keys[keys.length - 1].equals("null")) {
                     keys[keys.length - 1] = null;
                 }
                 if (keys.length == 1) {
-                    currentConfig.getProperties().remove(keys[0]);
+
+                    currentConfig.setProperty(keys[0], Property.NULL);
+
                     currentConfig.save();
                     setCurrentConfig(currentConfig);
                 } else {
@@ -289,8 +404,8 @@ public class Config {
 
                         }
                     }
+                    currentConfig.setProperty(keys[keys.length - 1], Property.NULL);
 
-                    props.remove(keys[keys.length - 1]);
                     currentConfig.save();
                     setCurrentConfig(currentConfig);
 
@@ -309,13 +424,14 @@ public class Config {
         remove.setBorderPainted(false);
         remove.setContentAreaFilled(false);
         frame.add(configSelection, "split 4,pushx,growx");
+        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+
         frame.add(add, "alignx right");
         frame.add(remove, "alignx right");
         frame.add(edit, "alignx right");
         frame.add(new JScrollPane(table));
         frame.setVisible(true);
         frame.pack();
-        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
     }
 

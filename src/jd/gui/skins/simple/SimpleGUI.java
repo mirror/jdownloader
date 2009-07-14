@@ -38,6 +38,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
@@ -66,11 +67,9 @@ import jd.controlling.ProgressControllerEvent;
 import jd.controlling.ProgressControllerListener;
 import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlEvent;
-import jd.gui.JDLookAndFeelManager;
 import jd.gui.UIInterface;
 import jd.gui.UserIO;
 import jd.gui.skins.simple.components.ChartAPIEntity;
-import jd.gui.skins.simple.components.JBlurMenu;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.components.PieChartAPI;
 import jd.gui.skins.simple.components.DownloadView.DownloadLinksPanel;
@@ -103,6 +102,7 @@ import jd.gui.skins.simple.tasks.DownloadTaskPane;
 import jd.gui.skins.simple.tasks.LinkGrabberTaskPane;
 import jd.gui.skins.simple.tasks.LogTaskPane;
 import jd.gui.skins.simple.tasks.TaskPanel;
+import jd.gui.swing.laf.LookAndFeelController;
 import jd.gui.userio.dialog.ContainerDialog;
 import jd.nutils.Formatter;
 import jd.nutils.JDFlags;
@@ -125,8 +125,6 @@ import org.jdesktop.swingx.JXTitledSeparator;
 import org.jdesktop.swingx.JXLoginPane.Status;
 import org.jvnet.lafwidget.LafWidget;
 import org.jvnet.lafwidget.utils.LafConstants.AnimationKind;
-
-import com.jtattoo.plaf.AbstractLookAndFeel;
 
 public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
 
@@ -172,7 +170,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
 
     private JDStatusBar statusBar;
 
-//    private boolean noTitlePane = false;
+    // private boolean noTitlePane = false;
 
     private JDSeparator sep;
 
@@ -212,11 +210,8 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
 
         SimpleGuiConstants.GUI_CONFIG = SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME);
         updateDecoration();
-        JDLookAndFeelManager.setUIManager();
-        if (isJTattoo()) {
-            JTattooUtils.setJTattooRootPane(this);
+        LookAndFeelController.setUIManager();
 
-        }
         /**
          * Init panels
          */
@@ -231,11 +226,11 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
         if (isSubstance() && SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.DECORATION_ENABLED, true)) {
             mainMenuIcon = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_54_54_trans"), 54, 54);
             mainMenuIconRollOver = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_54_54"), 54, 54);
-//            noTitlePane = false;
+            // noTitlePane = false;
         } else {
             mainMenuIcon = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_54_54_trans"), 32, 32);
             mainMenuIconRollOver = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_54_54"), 32, 32);
-//            this.noTitlePane = true;
+            // this.noTitlePane = true;
         }
 
         if (isSubstance()) this.getRootPane().setUI(new JDSubstanceUI());
@@ -365,25 +360,17 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
         // glass.setVisible(true);
     }
 
-    private boolean isJTattoo() {
-        // TODO Auto-generated method stub
-        return UIManager.getLookAndFeel() instanceof AbstractLookAndFeel;
-    }
-
     private JMenuBar createMenuBar() {
         JMenuBar ret = new JMenuBar();
-        if (isJTattoo()) {
-            JTattooUtils.setJTattooMenuBarUI(ret);
-            // File=
-        }
-        JBlurMenu file = new JBlurMenu(JDL.L("jd.gui.skins.simple.simplegui.menubar.filemenu", "File"));
+
+        JMenu file = new JMenu(JDL.L("jd.gui.skins.simple.simplegui.menubar.filemenu", "File"));
 
         file.add(new SaveMenu());
         file.addSeparator();
         file.add(new RestartAction());
         file.add(new ExitAction());
 
-        JBlurMenu edit = new JBlurMenu(JDL.L("jd.gui.skins.simple.simplegui.menubar.linksmenu", "Links"));
+        JMenu edit = new JMenu(JDL.L("jd.gui.skins.simple.simplegui.menubar.linksmenu", "Links"));
 
         edit.add(new AddLinksMenu());
         edit.add(new CleanupMenu());
@@ -492,15 +479,17 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
             mainMenuIconRollOver = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_54_54"), 54, 54);
             this.getRootPane().setUI(new JDSubstanceUI());
 
-//            JDController.getInstance().addControlListener(new ConfigPropertyListener(SimpleGuiConstants.ANIMATION_ENABLED) {
-//
-//                // @Override
-//                public void onPropertyChanged(Property source, String propertyName) {
-//
-//                }
-//
-//            });
-//            noTitlePane = false;
+            // JDController.getInstance().addControlListener(new
+            // ConfigPropertyListener(SimpleGuiConstants.ANIMATION_ENABLED) {
+            //
+            // // @Override
+            // public void onPropertyChanged(Property source, String
+            // propertyName) {
+            //
+            // }
+            //
+            // });
+            // noTitlePane = false;
         }
 
     }
@@ -1157,6 +1146,11 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
         if (d.getStatus() != Status.SUCCEEDED) return null;
 
         return new String[] { d.getPanel().getUserName(), new String(d.getPanel().getPassword()) };
+    }
+
+    public boolean isJTattoo() {
+        // TODO Auto-generated method stub
+        return false;
     }
 
 }

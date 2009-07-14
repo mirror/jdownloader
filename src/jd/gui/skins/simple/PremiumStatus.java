@@ -393,6 +393,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
             if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
                 SimpleGUI.CURRENTGUI.setWaiting(true);
                 JPopupMenu popup = new JPopupMenu();
+             
                 Factory.createHosterPopup(popup);
                 popup.show(premium, e.getPoint().x, e.getPoint().y);
                 SimpleGUI.CURRENTGUI.setWaiting(false);
@@ -404,6 +405,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
                 if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
                     SimpleGUI.CURRENTGUI.setWaiting(true);
                     JPopupMenu popup = new JPopupMenu();
+                  
                     ArrayList<MenuItem> entries = bars[i].getPlugin().createMenuitems();
                     for (MenuItem next : entries) {
                         JMenuItem mi = JDMenu.getJMenuItem(next);

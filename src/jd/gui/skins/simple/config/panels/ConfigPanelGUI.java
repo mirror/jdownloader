@@ -29,12 +29,12 @@ import jd.config.SubConfiguration;
 import jd.config.ConfigEntry.PropertyType;
 import jd.controlling.JDLogger;
 import jd.controlling.LinkGrabberController;
-import jd.gui.JDLookAndFeelManager;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import jd.gui.skins.simple.config.ConfigPanel;
+import jd.gui.swing.laf.LookAndFeelController;
 import jd.nutils.OSDetector;
 import jd.nutils.nativeintegration.LocalBrowser;
 import jd.utils.JDTheme;
@@ -95,9 +95,9 @@ public class ConfigPanelGUI extends ConfigPanel {
             ce.setDefaultValue("default");
             ce.setPropertyType(PropertyType.NEEDS_RESTART);
         }
-        if (JDLookAndFeelManager.getSupportedLookAndFeels().length > 1) {
-            look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, JDLookAndFeelManager.PARAM_PLAF, JDLookAndFeelManager.getSupportedLookAndFeels(), JDL.L("gui.config.gui.plaf", "Style(benötigt JD-Neustart)")).setGroup(lookGroup));
-            ce.setDefaultValue(JDLookAndFeelManager.getPlaf());
+        if (LookAndFeelController.getSupportedLookAndFeels().length > 1) {
+            look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, LookAndFeelController.PARAM_PLAF, LookAndFeelController.getSupportedLookAndFeels(), JDL.L("gui.config.gui.plaf", "Style(benötigt JD-Neustart)")).setGroup(lookGroup));
+            ce.setDefaultValue(LookAndFeelController.getPlaf());
             ce.setPropertyType(PropertyType.NEEDS_RESTART);
         }
 
@@ -295,12 +295,12 @@ public class ConfigPanelGUI extends ConfigPanel {
     // try {
     //
     // if
-    // (UIManager.getLookAndFeel().getClass().getName().equals(JDLookAndFeelManager.getPlaf().getClassName()))
+    // (UIManager.getLookAndFeel().getClass().getName().equals(LookAndFeelController.getPlaf().getClassName()))
     // return null;
     // boolean restart = false;
-    // restart |= JDLookAndFeelManager.getPlaf().isJGoodies() &&
+    // restart |= LookAndFeelController.getPlaf().isJGoodies() &&
     // UIManager.getLookAndFeel().getSupportsWindowDecorations();
-    // restart |= JDLookAndFeelManager.getPlaf().isSubstance() &&
+    // restart |= LookAndFeelController.getPlaf().isSubstance() &&
     // !UIManager.getLookAndFeel().getSupportsWindowDecorations();
     // if (restart) {
     // if
@@ -311,7 +311,7 @@ public class ConfigPanelGUI extends ConfigPanel {
     //
     // JDUtilities.restartJD();
     // }
-    // UIManager.setLookAndFeel(JDLookAndFeelManager.getPlaf().getClassName());
+    // UIManager.setLookAndFeel(LookAndFeelController.getPlaf().getClassName());
     //
     // SwingUtilities.updateComponentTreeUI(SimpleGUI.CURRENTGUI);
     // SimpleGUI.CURRENTGUI.onLAFChanged();

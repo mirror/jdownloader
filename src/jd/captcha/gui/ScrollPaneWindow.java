@@ -39,6 +39,7 @@ public class ScrollPaneWindow extends BasicWindow {
 
     public ScrollPaneWindow() {
         super();
+        this.setAlwaysOnTop(true);
         panel = new JPanel();
         panel.setLayout(new GridBagLayout());
         setLayout(new BorderLayout());

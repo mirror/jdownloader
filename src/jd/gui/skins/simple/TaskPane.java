@@ -91,6 +91,38 @@ public class TaskPane extends JTabbedPane {
                     int sepHeight = tabAreaInsets.bottom;
                     if (sepHeight > 0) {
                         switch (tabPlacement) {
+                        case LEFT: {
+                            int tabAreaWidth = calculateTabAreaWidth(tabPlacement, runCount, maxTabWidth);
+                            if (sepHeight > 1) {
+                                Color colors[] = getContentBorderColors(tabPlacement);
+                                for (int i = 0; i < colors.length; i++) {
+                                    g.setColor(colors[i]);
+                                    g.drawLine(x + tabAreaWidth - sepHeight + i + 1, y, x + tabAreaWidth - sepHeight + i + 1, y + h);
+                                }
+                            } else {
+                                g.setColor(getContentBorderColors(tabPlacement)[0]);
+                                g.drawLine(x + tabAreaWidth, y, x + tabAreaWidth, h);
+                            }
+                            g.setColor(AbstractLookAndFeel.getControlDarkShadow());
+                            g.drawLine(x + tabAreaWidth - 1, y,x + tabAreaWidth - 1 , y + h - 1);
+                            break;
+                        }
+                        case RIGHT: {
+                            int tabAreaWidth = calculateTabAreaWidth(tabPlacement, runCount, maxTabWidth);
+                            if (sepHeight > 1) {
+                                Color colors[] = getContentBorderColors(tabPlacement);
+                                for (int i = 0; i < colors.length; i++) {
+                                    g.setColor(colors[i]);
+                                    g.drawLine(x + w - tabAreaWidth + i, y, x + w - tabAreaWidth + i, y + h);
+                                }
+                            } else {
+                                g.setColor(getContentBorderColors(tabPlacement)[0]);
+                                g.drawLine(x + w - tabAreaWidth, y, x + w - tabAreaWidth, h);
+                            }
+                            g.setColor(AbstractLookAndFeel.getControlDarkShadow());
+                            g.drawLine(x, y, x, y + h - 1);
+                            break;
+                        }
                         case TOP: {
                             int tabAreaHeight = calculateTabAreaHeight(tabPlacement, runCount, maxTabHeight);
                             if (sepHeight > 1) {
@@ -103,34 +135,33 @@ public class TaskPane extends JTabbedPane {
                                 g.setColor(getContentBorderColors(tabPlacement)[0]);
                                 g.drawLine(x, y + tabAreaHeight, w, y + tabAreaHeight);
                             }
-//                            g.setColor(AbstractLookAndFeel.getControlDarkShadow());
-//                            g.drawRect(x, y + tabAreaHeight - 1, x + w - 1, h - tabAreaHeight);
+                            g.setColor(AbstractLookAndFeel.getControlDarkShadow());
+                            g.drawLine(x + w - 1, y + tabAreaHeight - 1, x + w - 1, h);
                             break;
                         }
-                            case BOTTOM: {
-                                int tabAreaHeight = calculateTabAreaHeight(tabPlacement, runCount, maxTabHeight);
-                                if (sepHeight > 1) {
-                                    Color colors[] = getContentBorderColors(tabPlacement);
-                                    for (int i = 0; i < colors.length; i++) {
-                                        g.setColor(colors[i]);
-                                        //g.drawLine(x, y + h - tabAreaHeight + i - 1, x + w, y + h - tabAreaHeight + i - 1);
-                                        g.drawLine(x, y + h - tabAreaHeight + i, x + w, y + h - tabAreaHeight + i);
-                                    }
-                                } else {
-                                    g.setColor(getContentBorderColors(tabPlacement)[0]);
-                                    //g.drawLine(x, y + h - tabAreaHeight - 1, w, y + h - tabAreaHeight - 1);
-                                    g.drawLine(x, y + h - tabAreaHeight, w, y + h - tabAreaHeight);
+                        case BOTTOM: {
+                            int tabAreaHeight = calculateTabAreaHeight(tabPlacement, runCount, maxTabHeight);
+                            if (sepHeight > 1) {
+                                Color colors[] = getContentBorderColors(tabPlacement);
+                                for (int i = 0; i < colors.length; i++) {
+                                    g.setColor(colors[i]);
+                                    //g.drawLine(x, y + h - tabAreaHeight + i - 1, x + w, y + h - tabAreaHeight + i - 1);
+                                    g.drawLine(x, y + h - tabAreaHeight + i, x + w, y + h - tabAreaHeight + i);
                                 }
-//                                g.setColor(AbstractLookAndFeel.getControlDarkShadow());
-//                                g.drawRect(x, y, x + w - 1, h - tabAreaHeight);
-                                break;
+                            } else {
+                                g.setColor(getContentBorderColors(tabPlacement)[0]);
+                                //g.drawLine(x, y + h - tabAreaHeight - 1, w, y + h - tabAreaHeight - 1);
+                                g.drawLine(x, y + h - tabAreaHeight, w, y + h - tabAreaHeight);
                             }
+                            g.setColor(AbstractLookAndFeel.getControlDarkShadow());
+                            g.drawLine(x + w - 1, y, x + w - 1, h - tabAreaHeight);
+                            break;
                         }
                     }
                 
                 }
 
-            });
+            }});
 
         }
       this.setFocusable(false);

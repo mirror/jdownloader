@@ -30,7 +30,10 @@ public class SubConfiguration extends Property implements Serializable {
     protected String name;
     transient private ArrayList<ConfigurationListener> listener = null;
     transient private static HashMap<String, SubConfiguration> SUB_CONFIGS = new HashMap<String, SubConfiguration>();
-
+/**
+ * adds a configurationlistener to this subconfig. A configurationlistener gets informed before, AND after each save process.
+ * @param listener
+ */
     public void addConfigurationListener(ConfigurationListener listener) {
         if (this.listener == null) {
             this.listener = new ArrayList<ConfigurationListener>();

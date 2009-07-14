@@ -34,11 +34,11 @@ import jd.controlling.JDLogger;
 import jd.controlling.PasswordListController;
 import jd.controlling.interaction.Interaction;
 import jd.event.ControlEvent;
-import jd.gui.JDLookAndFeelManager;
 import jd.gui.UIInterface;
 import jd.gui.UserIO;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.SimpleGuiConstants;
+import jd.gui.swing.laf.LookAndFeelController;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.nutils.ClassFinder;
@@ -225,7 +225,7 @@ public class JDInit {
              * Workaround to enable JGoodies for MAC oS
              */
 
-            JDLookAndFeelManager.setUIManager();
+            LookAndFeelController.setUIManager();
             Installer inst = new Installer();
 
             if (!inst.isAborted()) {

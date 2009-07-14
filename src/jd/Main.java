@@ -290,7 +290,7 @@ public class Main {
         
         
         
-   
+  
         if (instanceStarted || JDInitFlags.SWITCH_NEW_INSTANCE) {
             JDTheme.setTheme("default");
             if (JDInitFlags.SHOW_SPLASH) {

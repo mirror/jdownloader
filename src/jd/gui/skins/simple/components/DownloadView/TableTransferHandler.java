@@ -34,6 +34,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.TransferHandler;
 
 import jd.controlling.DownloadController;
+
 import jd.gui.skins.simple.SimpleGUI;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -132,6 +133,7 @@ public class TableTransferHandler extends TransferHandler {
         final Object current = table.getModel().getValueAt(row, 0);
         if (current == null) return false;
         JPopupMenu popup = new JPopupMenu();
+        
         JMenuItem m;
         synchronized (DownloadController.getInstance().getPackages()) {
             switch (draggingType) {

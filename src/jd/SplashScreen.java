@@ -41,8 +41,8 @@ import javax.swing.Timer;
 import jd.controlling.JDController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
-import jd.gui.JDLookAndFeelManager;
 import jd.gui.skins.simple.GuiRunnable;
+import jd.gui.swing.laf.LookAndFeelController;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
@@ -103,7 +103,7 @@ public class SplashScreen implements ActionListener, ControlListener {
 
     public SplashScreen(JDController controller) throws IOException, AWTException {
 
-        JDLookAndFeelManager.setUIManager();
+        LookAndFeelController.setUIManager();
         this.image = (BufferedImage) JDTheme.I("gui.splash");
         progressimages = new ArrayList<SplashProgressImage>();
         progressimages.add(new SplashProgressImage(JDTheme.I("gui.splash.languages", 32, 32)));

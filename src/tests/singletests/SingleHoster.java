@@ -49,7 +49,7 @@ public class SingleHoster {
         TestUtils.initHosts();
         TestUtils.finishInit();
         // JDLogger.getLogger().setLevel(Level.ALL);
-        links = TestUtils.getHosterLinks("hotfile.com");
+        links = TestUtils.getHosterLinks("badongo.com");
     }
 
     @Test

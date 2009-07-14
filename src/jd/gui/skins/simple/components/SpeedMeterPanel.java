@@ -252,6 +252,7 @@ public class SpeedMeterPanel extends JPanel implements ActionListener, MouseList
             mi.addActionListener(this);
 
             JPopupMenu popup = new JPopupMenu();
+
             popup.add(mi);
             popup.show(this, e.getPoint().x, e.getPoint().y);
         }

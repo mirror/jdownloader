@@ -112,12 +112,14 @@ public class Factory {
             component.add(pluginPopup);
         }
     }
-/**
- * Retuns a subpanel
- * @param ii
- * @param l
- * @return
- */
+
+    /**
+     * Retuns a subpanel
+     * 
+     * @param ii
+     * @param l
+     * @return
+     */
     public static JPanel getSubPane(ImageIcon ii, String l) {
         JPanel p = new JPanel(new MigLayout("ins 5 15 5 10, wrap 1", "[fill,grow]"));
         p.setBorder(JDBorderFactory.createTitleBorder(ii, l, 0, 0));
