@@ -38,7 +38,6 @@ import java.util.Iterator;
 import java.util.List;
 
 import javax.swing.DropMode;
-import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
@@ -58,6 +57,7 @@ import jd.event.ControlEvent;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.JDMenu;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.simple.components.JBlurMenu;
 import jd.nutils.Colors;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -467,9 +467,9 @@ public class DownloadTable extends JXTable implements MouseListener, MouseMotion
         }
     }
 
-    private JMenu buildpriomenu(ArrayList<DownloadLink> links) {
+    private JBlurMenu buildpriomenu(ArrayList<DownloadLink> links) {
         JMenuItem tmp;
-        JMenu prioPopup = new JMenu(JDL.L("gui.table.contextmenu.priority", "Priority") + " (" + links.size() + ")");
+        JBlurMenu prioPopup = new JBlurMenu(JDL.L("gui.table.contextmenu.priority", "Priority") + " (" + links.size() + ")");
         Integer prio = null;
         if (links.size() == 1) prio = links.get(0).getPriority();
         prioPopup.setIcon(JDTheme.II("gui.images.priority0", 16, 16));
@@ -489,8 +489,8 @@ public class DownloadTable extends JXTable implements MouseListener, MouseMotion
         return prioPopup;
     }
 
-    private JMenu createExtrasMenu(Object obj) {
-        JMenu pluginPopup = new JMenu(JDL.L("gui.table.contextmenu.extrasSubmenu", "Extras"));
+    private JBlurMenu createExtrasMenu(Object obj) {
+        JBlurMenu pluginPopup = new JBlurMenu(JDL.L("gui.table.contextmenu.extrasSubmenu", "Extras"));
         ArrayList<MenuItem> entries = new ArrayList<MenuItem>();
         if (obj instanceof FilePackage) {
             JDUtilities.getController().fireControlEventDirect(new ControlEvent((FilePackage) obj, ControlEvent.CONTROL_LINKLIST_CONTEXT_MENU, entries));

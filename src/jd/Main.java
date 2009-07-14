@@ -44,7 +44,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.imageio.ImageIO;
+import javax.swing.JDialog;
 import javax.swing.JFrame;
+import javax.swing.JRootPane;
+import javax.swing.UIManager;
 
 
 
@@ -83,7 +86,7 @@ import jd.utils.locale.JDL;
 public class Main {
 
     private static Logger LOGGER;
-    public static SplashScreen SPLASHSCREEN = null;
+//    public static SplashScreen SPLASHSCREEN = null;
     private static String instanceID = Main.class.getName();
     private static boolean instanceStarted = false;
 
@@ -287,7 +290,12 @@ public class Main {
             LOGGER.severe("Instance Handling not possible!");
             instanceStarted = true;
         }
+        
         new JDController();
+        
+        
+        
+   
         if (instanceStarted || JDInitFlags.SWITCH_NEW_INSTANCE) {
             JDTheme.setTheme("default");
             if (JDInitFlags.SHOW_SPLASH) {

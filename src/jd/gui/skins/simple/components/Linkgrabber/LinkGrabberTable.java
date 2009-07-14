@@ -38,7 +38,6 @@ import java.util.Set;
 
 import javax.swing.DropMode;
 import javax.swing.JCheckBoxMenuItem;
-import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
@@ -54,6 +53,7 @@ import jd.config.SubConfiguration;
 import jd.controlling.LinkGrabberController;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.SimpleGuiConstants;
+import jd.gui.skins.simple.components.JBlurMenu;
 import jd.gui.skins.simple.components.DownloadView.DownloadLinkRowHighlighter;
 import jd.gui.skins.simple.components.DownloadView.DownloadTable;
 import jd.gui.skins.simple.components.DownloadView.JColumnControlButton;
@@ -335,7 +335,7 @@ public class LinkGrabberTable extends JXTable implements MouseListener, MouseMot
 
     private JMenuItem buildExtMenu() {
         JMenuItem tmp;
-        JMenu men = new JMenu(JDL.L("gui.table.contextmenu.filetype", "Filter"));
+        JBlurMenu men = new JBlurMenu(JDL.L("gui.table.contextmenu.filetype", "Filter"));
         ArrayList<String> extensions = linkgrabber.getExtensions();
         HashSet<String> fl = LinkGrabberController.getInstance().getExtensionFilter();
         men.setIcon(JDTheme.II("gui.images.filter", 16, 16));
@@ -348,9 +348,9 @@ public class LinkGrabberTable extends JXTable implements MouseListener, MouseMot
         return men;
     }
 
-    private JMenu buildpriomenu(ArrayList<DownloadLink> links) {
+    private JBlurMenu buildpriomenu(ArrayList<DownloadLink> links) {
         JMenuItem tmp;
-        JMenu prioPopup = new JMenu(JDL.L("gui.table.contextmenu.priority", "Priority") + " (" + links.size() + ")");
+        JBlurMenu prioPopup = new JBlurMenu(JDL.L("gui.table.contextmenu.priority", "Priority") + " (" + links.size() + ")");
         Integer prio = null;
         if (links.size() == 1) prio = links.get(0).getPriority();
         prioPopup.setIcon(JDTheme.II("gui.images.priority0", 16, 16));

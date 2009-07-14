@@ -25,11 +25,13 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
+import javax.swing.JPanel;
 import javax.swing.JSeparator;
 
 import jd.controlling.LinkGrabberController;
 import jd.controlling.LinkGrabberControllerEvent;
 import jd.controlling.LinkGrabberControllerListener;
+import jd.gui.skins.simple.Factory;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.SimpleGuiConstants;
@@ -42,15 +44,16 @@ import jd.utils.locale.JDL;
 public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, LinkGrabberControllerListener {
 
     private static final long serialVersionUID = -7720749076951577192L;
-    private JButton panel_add_links;
-    private JButton panel_add_containers;
-    private JButton lg_add_all;
-    private JButton lg_add_selected;
-    private JButton lg_clear;
+    private static final String JDL_PREFIX = "jd.gui.skins.simple.tasks.linkgrabbertaskpane.";
+    private JButton panelAddLinks;
+    private JButton panelAddContainers;
+    private JButton lgAddAll;
+    private JButton lgAddSelected;
+    private JButton lgClear;
 
     private boolean linkgrabberButtonsEnabled = false;
 
-    private JLabel linkgrabber;
+    private JPanel linkgrabber;
 
     private JLabel downloadlinks;
     private JLabel filteredlinks;
@@ -65,6 +68,9 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
 
     private long tot = 0;
     private long links = 0;
+    private JPanel addLinks;
+    private JPanel confirmLinks;
+    private JPanel settingsLinks;
 
     public LinkGrabberTaskPane(String string, ImageIcon ii) {
         super(string, ii, "linkgrabber");
@@ -95,18 +101,23 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
 
     private void initListStatGUI() {
 
-        linkgrabber = (new JLabel(JDL.L("gui.taskpanes.download.linkgrabber", "Packagestats")));
-        linkgrabber.setIcon(JDTheme.II("gui.images.taskpanes.linkgrabber", 16, 16));
+        linkgrabber = Factory.getSubPane(
+                JDTheme.II("gui.images.taskpanes.linkgrabber", 16, 16), 
+                JDL.L("gui.taskpanes.download.linkgrabber", "Packagestats")
+                );
+        
+      
 
         packages = (new JLabel(JDL.LF("gui.taskpanes.download.linkgrabber.packages", "%s Package(s)", 0)));
         downloadlinks = (new JLabel(JDL.LF("gui.taskpanes.download.linkgrabber.downloadLinks", "%s Link(s)", 0)));
         filteredlinks = (new JLabel(JDL.LF("gui.taskpanes.download.linkgrabber.filteredLinks", "%s filtered Link(s)", 0)));
         totalsize = (new JLabel(JDL.LF("gui.taskpanes.download.linkgrabber.size", "Total size: %s", 0)));
-        add(linkgrabber, D1_LABEL_ICON);
-        add(packages, D2_LABEL);
-        add(downloadlinks, D2_LABEL);
-        add(filteredlinks, D2_LABEL);
-        add(totalsize, D2_LABEL);
+    
+        linkgrabber.add(packages);
+        linkgrabber.add(downloadlinks);
+        linkgrabber.add(filteredlinks);
+        linkgrabber.add(totalsize);
+        add(  linkgrabber);
     }
 
     /**
@@ -136,34 +147,51 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
 
     private void initGUI() {
 
-        this.panel_add_links = (this.createButton(JDL.L("gui.linkgrabberv2.addlinks", "Add Links"), JDTheme.II("gui.images.add", 16, 16)));
-        this.panel_add_containers = (this.createButton(JDL.L("gui.linkgrabberv2.addcontainers", "Open Containers"), JDTheme.II("gui.images.load", 16, 16)));
 
-        lg_add_all = (createButton(JDL.L("gui.linkgrabberv2.lg.addall", "Add all packages"), JDTheme.II("gui.images.add_all", 16, 16)));
-        lg_add_all.setName("addAllPackages");
+        addLinks = Factory.getSubPane(
+                JDTheme.II("gui.images.add", 16, 16), 
+                JDL.L(JDL_PREFIX+"link", "Add Links")
+                );
         
-        lg_add_selected = (createButton(JDL.L("gui.linkgrabberv2.lg.addselected", "Add selected package(s)"), JDTheme.II("gui.images.add_package", 16, 16)));
-        lg_clear = (createButton(JDL.L("gui.linkgrabberv2.lg.clear", "Clear List"), JDTheme.II("gui.images.clear", 16, 16)));
+        this.panelAddLinks = (this.createButton(JDL.L("gui.linkgrabberv2.addlinks", "Add Links"), JDTheme.II("gui.images.add", 16, 16)));
+        this.panelAddContainers = (this.createButton(JDL.L("gui.linkgrabberv2.addcontainers", "Open Containers"), JDTheme.II("gui.images.load", 16, 16)));
 
-        add(panel_add_links, D1_BUTTON_ICON);
-        add(panel_add_containers, D1_BUTTON_ICON);
-        add(new JSeparator());
-        add(lg_add_all, D1_BUTTON_ICON);
-        add(lg_add_selected, D1_BUTTON_ICON);
-        add(lg_clear, D1_BUTTON_ICON);
-        lg_add_all.setEnabled(false);
-        lg_add_selected.setEnabled(false);
-        lg_clear.setEnabled(false);
+        lgAddAll = (createButton(JDL.L("gui.linkgrabberv2.lg.addall", "Add all packages"), JDTheme.II("gui.images.add_all", 16, 16)));
+        lgAddAll.setName("addAllPackages");
+        
+        lgAddSelected = (createButton(JDL.L("gui.linkgrabberv2.lg.addselected", "Add selected package(s)"), JDTheme.II("gui.images.add_package", 16, 16)));
+        lgClear = (createButton(JDL.L("gui.linkgrabberv2.lg.clear", "Clear List"), JDTheme.II("gui.images.clear", 16, 16)));
 
-        add(new JSeparator());
+        addLinks.add(panelAddLinks);
+        addLinks.add(panelAddContainers);
+        add(addLinks);
+       
+        confirmLinks = Factory.getSubPane(
+                JDTheme.II("gui.images.add", 16, 16), 
+                JDL.L(JDL_PREFIX+"accept", "Confirm Links")
+                );
+        confirmLinks.add(lgAddAll);
+        confirmLinks.add(lgAddSelected);
+        confirmLinks.add(lgClear);
+        lgAddAll.setEnabled(false);
+        lgAddSelected.setEnabled(false);
+        lgClear.setEnabled(false);
+        add(confirmLinks);
+  
+
+     
         initListStatGUI();
-        add(new JSeparator());
+      
         initQuickConfig();
     }
 
     private void initQuickConfig() {
-        JLabel config = (new JLabel(JDL.L("gui.taskpanes.download.linkgrabber.config", "Settings")));
-        config.setIcon(JDTheme.II("gui.images.taskpanes.configuration", 16, 16));
+        
+        settingsLinks = Factory.getSubPane(
+                JDTheme.II("gui.images.taskpanes.configuration", 16, 16), 
+                JDL.L("gui.taskpanes.download.linkgrabber.config", "Settings")
+                );
+     
 
         topOrBottom = new JCheckBox(JDL.L("gui.taskpanes.download.linkgrabber.config.addattop", "Add at top"));
         topOrBottom.setOpaque(false);
@@ -192,37 +220,37 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
         if (SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.PARAM_START_AFTER_ADDING_LINKS, true)) {
             startAfterAdding.setSelected(true);
         }
-        add(config, D1_LABEL_ICON);
+     
 
         startAfterAdding.setToolTipText(JDL.L("gui.tooltips.linkgrabber.startlinksafteradd", "Is selected, download starts after adding new links"));
-        add(startAfterAdding, TaskPanel.D2_CHECKBOX);
+        settingsLinks.add(startAfterAdding);
         startAfterAdding.setToolTipText(JDL.L("gui.tooltips.linkgrabber.topOrBottom", "if selected, new links will be added at top of your downloadlist"));
 
-        add(topOrBottom, TaskPanel.D2_CHECKBOX);
+        settingsLinks.add(topOrBottom);
 
     }
 
     public void actionPerformed(ActionEvent e) {
 
-        if (e.getSource() == panel_add_links) {
+        if (e.getSource() == panelAddLinks) {
             this.broadcastEvent(new ActionEvent(this, LinkGrabberTableAction.GUI_ADD, null));
             return;
         }
 
-        if (e.getSource() == panel_add_containers) {
+        if (e.getSource() == panelAddContainers) {
             this.broadcastEvent(new ActionEvent(this, LinkGrabberTableAction.GUI_LOAD, null));
             return;
         }
 
-        if (e.getSource() == lg_add_all) {
+        if (e.getSource() == lgAddAll) {
             this.broadcastEvent(new ActionEvent(this, LinkGrabberTableAction.ADD_ALL, null));
             return;
         }
-        if (e.getSource() == lg_add_selected) {
+        if (e.getSource() == lgAddSelected) {
             this.broadcastEvent(new ActionEvent(this, LinkGrabberTableAction.ADD_SELECTED_PACKAGES, null));
             return;
         }
-        if (e.getSource() == lg_clear) {
+        if (e.getSource() == lgClear) {
             this.broadcastEvent(new ActionEvent(this, LinkGrabberTableAction.CLEAR, null));
             return;
         }
@@ -238,10 +266,10 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
         }.start();
         // switch (i) {
         // case 0:
-        // lg_add_all.setEnabled(false);
-        // lg_add_selected.setEnabled(false);
-        // lg_clear.setEnabled(false);
-        // panel_add_links.setEnabled(false);
+        // lgAddAll.setEnabled(false);
+        // lgAddSelected.setEnabled(false);
+        // lgClear.setEnabled(false);
+        // panelAddLinks.setEnabled(false);
         //
         // linkgrabber.setEnabled(false);
         // packages.setEnabled(false);
@@ -253,11 +281,11 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
         // packages.setEnabled(true);
         // downloadlinks.setEnabled(true);
         // totalsize.setEnabled(true);
-        // panel_add_links.setEnabled(true);
+        // panelAddLinks.setEnabled(true);
         // if (linkgrabberButtonsEnabled) {
-        // lg_add_all.setEnabled(true);
-        // lg_add_selected.setEnabled(true);
-        // lg_clear.setEnabled(true);
+        // lgAddAll.setEnabled(true);
+        // lgAddSelected.setEnabled(true);
+        // lgClear.setEnabled(true);
         // }
         // break;
         // }
@@ -271,9 +299,9 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
             linkgrabberButtonsEnabled = true;
             EventQueue.invokeLater(new Runnable() {
                 public void run() {
-                    lg_add_all.setEnabled(true);
-                    lg_add_selected.setEnabled(true);
-                    lg_clear.setEnabled(true);
+                    lgAddAll.setEnabled(true);
+                    lgAddSelected.setEnabled(true);
+                    lgClear.setEnabled(true);
                     revalidate();
                 }
             });
@@ -281,9 +309,9 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
         case LinkGrabberControllerEvent.EMPTY:
             EventQueue.invokeLater(new Runnable() {
                 public void run() {
-                    lg_add_all.setEnabled(false);
-                    lg_add_selected.setEnabled(false);
-                    lg_clear.setEnabled(false);
+                    lgAddAll.setEnabled(false);
+                    lgAddSelected.setEnabled(false);
+                    lgClear.setEnabled(false);
                     revalidate();
                     linkgrabberButtonsEnabled = false;
                 }

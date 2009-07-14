@@ -25,6 +25,9 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
 import javax.swing.ImageIcon;
+import javax.swing.JDialog;
+import javax.swing.JFrame;
+import javax.swing.JRootPane;
 import javax.swing.UIManager;
 import javax.swing.UIManager.LookAndFeelInfo;
 
@@ -221,6 +224,8 @@ public class JDLookAndFeelManager implements Serializable, JDLabelContainer {
 
     public static void setUIManager() {
         if (uiInitated) return;
+        
+    
         uiInitated = true;
 
         installJGoodies();
@@ -239,6 +244,14 @@ public class JDLookAndFeelManager implements Serializable, JDLabelContainer {
 
             }
             UIManager.setLookAndFeel(getPlaf().getClassName());
+            
+//            System.setProperty("sun.awt.noerasebackground", "false");
+//            if (UIManager.getLookAndFeel().getSupportsWindowDecorations() && SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.DECORATION_ENABLED, true)) {
+//     
+//                JFrame.setDefaultLookAndFeelDecorated(true);
+//                JDialog.setDefaultLookAndFeelDecorated(true);
+//            }
+            
 
         } catch (Exception e) {
             JDLogger.exception(e);
