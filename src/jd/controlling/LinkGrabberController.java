@@ -386,6 +386,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
                     if (fp == null) {
                         fp = new LinkGrabberFilePackage(packageName, this);
                     }
+                    fp.setDownloadDirectory(link.getFilePackage().getDownloadDirectory());
                     fp.setPassword(link.getFilePackage().getPassword());
                 }
             }
@@ -431,6 +432,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
             if (bestSim < 99) {
                 LinkGrabberFilePackage fp = new LinkGrabberFilePackage(packageName, this);
                 fp.setPassword(link.getFilePackage().getPassword());
+                fp.setDownloadDirectory(link.getFilePackage().getDownloadDirectory());
                 fp.add(link);
             } else {
                 String newPackageName = autoPackage ? getSimString(bestp.getName(), packageName) : packageName;

@@ -360,6 +360,10 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         browserurl = url;
     }
 
+    public boolean gotBrowserUrl() {
+        return browserurl != null;
+    }
+
     /**
      * Gibt den Darstellbaren Dateinamen zurück. Dabei handelt es sich nicht
      * zwangsläufig um einen Valid-Filename. Dieser String eignet sich zur

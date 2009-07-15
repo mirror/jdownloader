@@ -291,6 +291,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
         setVisible(true);
 
         // Why this?
+        // Because we want to start clipboardwatcher first, when gui is finished with init, not before!
         ClipboardHandler.getClipboard().setTempDisabled(false);
 
         new Thread("guiworker") {

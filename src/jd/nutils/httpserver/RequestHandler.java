@@ -104,7 +104,7 @@ this.parseParameter(req, new String(buffer));
 
     public void parseParameter(Request req, String parameter) {
         String[] help = parameter.split("\\&");
-
+        
         for (String entry : help) {
             entry = entry.trim();
             int index = entry.indexOf("=");
