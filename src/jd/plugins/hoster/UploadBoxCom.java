@@ -48,6 +48,7 @@ public class UploadBoxCom extends PluginForHost {
         this.setBrowserExclusive();
         br.getPage(parameter.getDownloadURL());
         if (br.containsHTML("class=\"not_found\">")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("id=\"error\">")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<.*?>File name:<.*?>(.*?)</.*?>").getMatch(0);
         String filesize = br.getRegex("<.*?>File size:<.*?>(.*?)</.*?>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
