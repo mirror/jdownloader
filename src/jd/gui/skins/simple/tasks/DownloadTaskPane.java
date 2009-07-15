@@ -20,12 +20,12 @@ import java.awt.event.ActionEvent;
 
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
-import javax.swing.JPanel;
 
 import jd.controlling.DownloadController;
 import jd.controlling.DownloadInformations;
 import jd.gui.skins.simple.Factory;
 import jd.gui.skins.simple.GuiRunnable;
+import jd.gui.skins.simple.SubPane;
 import jd.gui.skins.simple.components.DownloadView.JDProgressBar;
 import jd.nutils.Formatter;
 import jd.utils.JDTheme;
@@ -49,9 +49,9 @@ public class DownloadTaskPane extends TaskPanel {
     private long speedm = 0;
     private DownloadController dlc = JDUtilities.getDownloadController();
 
-    private JPanel listOverview;
+    private SubPane listOverview;
 
-    private JPanel progressOverview;
+    private SubPane progressOverview;
 
     public DownloadTaskPane(String string, ImageIcon ii) {
         super(string, ii, "downloadtask");
@@ -61,8 +61,9 @@ public class DownloadTaskPane extends TaskPanel {
             public void run() {
                 this.setName("DownloadTask: infoupdate");
                 while (true) {// TODO
-                    // if (!isCollapsed())
-                    update();
+                    if (isActiveTab()||true) {
+                        update();
+                    }
                     try {
                         Thread.sleep(2000);
                     } catch (InterruptedException e) {
@@ -117,16 +118,16 @@ public class DownloadTaskPane extends TaskPanel {
         listOverview = Factory.getSubPane(JDTheme.II("gui.splash.dllist", 16, 16), JDL.L("gui.taskpanes.download.downloadlist", "Downloadlist"));
 
         progressOverview = Factory.getSubPane(JDTheme.II("gui.images.progress", 16, 16), JDL.L("gui.taskpanes.download.progress", "Total progress"));
+        String gapleft = "gapleft 14";
+        listOverview.add(packages,gapleft);
+        listOverview.add(downloadlinks,gapleft);
+        listOverview.add(totalsize,gapleft);
 
-        listOverview.add(packages);
-        listOverview.add(downloadlinks);
-        listOverview.add(totalsize);
-
-        progressOverview.add(progress);
-        progressOverview.add(speed);
-        progressOverview.add(eta);
+        progressOverview.add(progress,gapleft);
+        progressOverview.add(speed,gapleft);
+        progressOverview.add(eta,gapleft);
         add(listOverview, "growx,pushx");
-        add(progressOverview, "growx,pushx");
+        add(progressOverview, "growx,pushx,pushy,growy");
 
     }
 

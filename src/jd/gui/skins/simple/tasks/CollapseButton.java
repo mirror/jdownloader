@@ -27,6 +27,7 @@ import javax.swing.JButton;
 import javax.swing.JPanel;
 
 import jd.gui.skins.simple.Factory;
+import jd.gui.skins.simple.components.borders.JDBorderFactory;
 import net.miginfocom.swing.MigLayout;
 
 public class CollapseButton extends JPanel {
@@ -41,13 +42,14 @@ public class CollapseButton extends JPanel {
         this.setBackground(null);
 
         button = createButton(host, ii);
-        add(button, "width 165!");
+        add(button, "width 165!,hidemode 3");
         button.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent arg0) {
                 if (!collapsible.isVisible()) {
                     collapsible.setVisible(true);
-                    CollapseButton.this.setBorder(BorderFactory.createLineBorder(getBackground().darker()));
+                    button.setVisible(false);
+                    CollapseButton.this.setBorder(JDBorderFactory.createLineTitleBorder(button.getIcon(), button.getText()));
 
                 } else {
                     // collapsible.setCollapsed(true);
@@ -66,7 +68,8 @@ public class CollapseButton extends JPanel {
 
     public void setCollapsed(boolean b) {
         collapsible.setVisible(!b);
-        this.setBorder(b ? null : BorderFactory.createLineBorder(getBackground().darker()));
+        button.setVisible(b);
+        this.setBorder(b ? null : JDBorderFactory.createLineTitleBorder(button.getIcon(), button.getText()));
     }
 
     public Container getContentPane() {

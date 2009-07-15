@@ -45,8 +45,8 @@ public class LogTaskPane extends TaskPanel implements ActionListener {
     private void initGui() {
         save = this.createButton(JDL.L("gui.taskpanels.log.save", "Save as"), JDTheme.II("gui.images.save", 16, 16));
         upload = this.createButton(JDL.L("gui.taskpanels.log.upload", "Upload log"), JDTheme.II("gui.images.upload", 16, 16));
-        add(save, D1_BUTTON_ICON);
-        add(upload, D1_BUTTON_ICON);
+        add(save);
+        add(upload);
     
     }
 

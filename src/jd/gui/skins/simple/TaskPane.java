@@ -17,77 +17,50 @@
 package jd.gui.skins.simple;
 
 import java.awt.Color;
-import java.awt.FontMetrics;
 import java.awt.Graphics;
-import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 
-import javax.swing.Icon;
-import javax.swing.JComponent;
 import javax.swing.JTabbedPane;
-import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import javax.swing.text.View;
 
 import jd.gui.skins.simple.tasks.TaskPanel;
 
-import com.jgoodies.looks.Options;
 import com.jtattoo.plaf.AbstractLookAndFeel;
 import com.jtattoo.plaf.acryl.AcrylTabbedPaneUI;
 
 public class TaskPane extends JTabbedPane {
 
     private static final long serialVersionUID = 2484591650508276173L;
+    private TaskPanel currentTab = null;
+
     // private ArrayList<TaskPanel> panels;
-    private TaskPanel lastSource;
 
     public TaskPane() {
         this.addChangeListener(new ChangeListener() {
 
             public void stateChanged(ChangeEvent e) {
-
+                if (currentTab != null) {
+                    currentTab.onHide();
+                    currentTab.setActiveTab(false);
+                }
                 ((TaskPanel) getSelectedComponent()).broadcastEvent(new ActionEvent(((TaskPanel) getSelectedComponent()), TaskPanel.ACTION_CLICK, "Click"));
+                currentTab = ((TaskPanel) getSelectedComponent());
+                currentTab.onDisplay();
+                currentTab.setActiveTab(true);
             }
 
         });
-//        com.jtattoo.plaf.BaseTableHeaderUI
-//        com.jtattoo.plaf.acryl.AcrylInternalFrameUI
+        // com.jtattoo.plaf.BaseTableHeaderUI
+        // com.jtattoo.plaf.acryl.AcrylInternalFrameUI
         if (getUI() instanceof AcrylTabbedPaneUI) {
-            
 
             setUI(new AcrylTabbedPaneUI() {
-
-//                protected void layoutLabel(int tabPlacement, FontMetrics metrics, int tabIndex, String title, Icon icon, Rectangle tabRect, Rectangle iconRect, Rectangle textRect, boolean isSelected) {
-//                    textRect.x = textRect.y = iconRect.x = iconRect.y = 0;
-//                    View v = getTextViewForTab(tabIndex);
-//                    if (v != null) {
-//                        tabPane.putClientProperty("html", v);
-//                    }
-//
-//                    SwingUtilities.layoutCompoundLabel((JComponent) tabPane,
-//                            metrics, title, icon,
-//                            SwingUtilities.CENTER,
-//                            SwingUtilities.CENTER,
-//                            SwingUtilities.CENTER,
-//                            SwingUtilities.LEADING,
-//                            tabRect,
-//                            iconRect,
-//                            textRect,
-//                            textIconGap);
-//
-//                    tabPane.putClientProperty("html", null);
-//
-//                    int xNudge = getTabLabelShiftX(tabPlacement, tabIndex, isSelected);
-//                    int yNudge = getTabLabelShiftY(tabPlacement, tabIndex, isSelected);
-//                    iconRect.x += xNudge+10;
-//                    iconRect.y += yNudge+1;
-//                    textRect.x += xNudge+10;
-//                    textRect.y += yNudge+1;
-//                }
                 
+
                 protected void paintContentBorder(Graphics g, int tabPlacement, int selectedIndex, int x, int y, int w, int h) {
-//                super.paintContentBorder(arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+                    // super.paintContentBorder(arg0, arg1, arg2, arg3, arg4,
+                    // arg5, arg6)
                     int sepHeight = tabAreaInsets.bottom;
                     if (sepHeight > 0) {
                         switch (tabPlacement) {
@@ -104,7 +77,7 @@ public class TaskPane extends JTabbedPane {
                                 g.drawLine(x + tabAreaWidth, y, x + tabAreaWidth, h);
                             }
                             g.setColor(AbstractLookAndFeel.getControlDarkShadow());
-                            g.drawLine(x + tabAreaWidth - 1, y,x + tabAreaWidth - 1 , y + h - 1);
+                            g.drawLine(x + tabAreaWidth - 1, y, x + tabAreaWidth - 1, y + h - 1);
                             break;
                         }
                         case RIGHT: {
@@ -145,26 +118,29 @@ public class TaskPane extends JTabbedPane {
                                 Color colors[] = getContentBorderColors(tabPlacement);
                                 for (int i = 0; i < colors.length; i++) {
                                     g.setColor(colors[i]);
-                                    //g.drawLine(x, y + h - tabAreaHeight + i - 1, x + w, y + h - tabAreaHeight + i - 1);
+                                    // g.drawLine(x, y + h - tabAreaHeight + i -
+                                    // 1, x + w, y + h - tabAreaHeight + i - 1);
                                     g.drawLine(x, y + h - tabAreaHeight + i, x + w, y + h - tabAreaHeight + i);
                                 }
                             } else {
                                 g.setColor(getContentBorderColors(tabPlacement)[0]);
-                                //g.drawLine(x, y + h - tabAreaHeight - 1, w, y + h - tabAreaHeight - 1);
+                                // g.drawLine(x, y + h - tabAreaHeight - 1, w, y
+                                // + h - tabAreaHeight - 1);
                                 g.drawLine(x, y + h - tabAreaHeight, w, y + h - tabAreaHeight);
                             }
                             g.setColor(AbstractLookAndFeel.getControlDarkShadow());
                             g.drawLine(x + w - 1, y, x + w - 1, h - tabAreaHeight);
                             break;
                         }
-                    }
-                
-                }
+                        }
 
-            }});
+                    }
+
+                }
+            });
 
         }
-      this.setFocusable(false);
+        this.setFocusable(false);
         // panels = new ArrayList<TaskPanel>();
         // this.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
         this.setTabPlacement(JTabbedPane.TOP);
@@ -175,7 +151,7 @@ public class TaskPane extends JTabbedPane {
     }
 
     public void add(TaskPanel panel) {
-        super.addTab(null, panel.getIcon(), panel,panel.getTaskName());
+        super.addTab(null, panel.getIcon(), panel, panel.getTaskName());
     }
 
     public void add(int index, TaskPanel panel) {
@@ -216,7 +192,6 @@ public class TaskPane extends JTabbedPane {
         // int index = this.indexOfComponent(src);
         this.setSelectedComponent(src);
         if (src != null) {
-            lastSource = src;
 
             src.broadcastEvent(new ActionEvent(src, TaskPanel.ACTION_CLICK, "Click"));
             SimpleGUI.CURRENTGUI.hideSideBar(false);

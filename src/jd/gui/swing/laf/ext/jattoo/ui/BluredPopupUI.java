@@ -3,11 +3,13 @@ package jd.gui.swing.laf.ext.jattoo.ui;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 
 import javax.swing.JComponent;
 import javax.swing.JPopupMenu;
+import javax.swing.JRootPane;
 import javax.swing.Popup;
 import javax.swing.UIManager;
 import javax.swing.event.PopupMenuEvent;
@@ -95,13 +97,13 @@ public class BluredPopupUI extends BasicPopupMenuUI {
 
                 public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
                     if (screenImage != null) {
-                        // JPopupMenu popup = (JPopupMenu) e.getSource();
-                        // JRootPane root = popup.getRootPane();
-                        // Point ptPopup = popup.getLocationOnScreen();
-                        // Point ptRoot = root.getLocationOnScreen();
-                        // Graphics g = popup.getRootPane().getGraphics();
-                        // g.drawImage(screenImage, ptPopup.x - ptRoot.x,
-                        // ptPopup.y - ptRoot.y, null);
+                         JPopupMenu popup = (JPopupMenu) e.getSource();
+                         JRootPane root = popup.getRootPane();
+                         Point ptPopup = popup.getLocationOnScreen();
+                         Point ptRoot = root.getLocationOnScreen();
+                         Graphics g = popup.getRootPane().getGraphics();
+                         g.drawImage(screenImage, ptPopup.x - ptRoot.x,
+                         ptPopup.y - ptRoot.y, null);
                         resetScreenImage();
                     }
                 }

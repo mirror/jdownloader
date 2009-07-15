@@ -1,8 +1,9 @@
-package jd.gui.skins.simple.components.borders;
 /**
- * Based on Jattoo titleborder
+ * BarBOrder based on jattoos Titleborder
  */
-import java.awt.AlphaComposite;
+
+package jd.gui.skins.simple.components.borders;
+
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Composite;
@@ -23,18 +24,18 @@ import com.jtattoo.plaf.AbstractLookAndFeel;
 import com.jtattoo.plaf.ColorHelper;
 import com.jtattoo.plaf.JTattooUtilities;
 
-public class TitleBorder extends AbstractBorder {
+public class BoxedBorder extends AbstractBorder {
 
     private static final long serialVersionUID = -5141737828416982838L;
     private Icon icon = null;
     private String title = null;
-    private int shadowSize = 3;
+
     private int innerSpace = 4;
 
-    public TitleBorder(Icon aIcon, String aTitle, int aShadowSize, int aInnerSpace) {
+    public BoxedBorder(Icon aIcon, String aTitle, int aInnerSpace) {
         icon = aIcon;
         title = aTitle;
-        shadowSize = aShadowSize;
+      
         innerSpace = aInnerSpace;
     }
 
@@ -67,31 +68,19 @@ public class TitleBorder extends AbstractBorder {
 
         int titleHeight = getBorderInsets(c).top - 3 - innerSpace;
         g.setColor(loFrameColor);
-        g.drawRect(x, y, w - shadowSize - 1, h - shadowSize - 1);
-        g.setColor(hiFrameColor);
-        g.drawRect(x + 1, y + 1, w - shadowSize - 3, h - shadowSize - 3);
+        g.drawRect(x, y, w -  1, titleHeight +2);
 
         g.setColor(loFrameColor);
-        g.drawLine(x + 2, y + getBorderInsets(c).top - innerSpace - 1, x + w - shadowSize - 1, y + getBorderInsets(c).top - innerSpace - 1);
+        g.drawLine(x + 2, y + getBorderInsets(c).top - innerSpace - 1, x + w - 1, y + getBorderInsets(c).top - innerSpace - 1);
 
-        // paint the shadow
-        if (shadowSize > 0) {
-            g2D.setColor(new Color(0, 16, 0));
-            float alphaValue = 0.4f;
-            for (int i = 0; i < shadowSize; i++) {
-                AlphaComposite alpha = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alphaValue);
-                g2D.setComposite(alpha);
-                g.drawLine(x + w - shadowSize + i, y + shadowSize + 4, x + w - shadowSize + i, y + h - shadowSize - 1 + i);
-                g.drawLine(x + shadowSize + 2, y + h - shadowSize + i, x + w - shadowSize + i, y + h - shadowSize + i);
-                alphaValue -= (alphaValue / 2);
-            }
-        }
+ 
+     
 
         g2D.setComposite(composite);
 
         // JTattooUtilities.fillHorGradient(g, , 0, 0, getWidth(), getHeight());
 
-        JTattooUtilities.fillHorGradient(g, colors, x + 2, y + 2, w - shadowSize - 4, titleHeight);
+        JTattooUtilities.fillHorGradient(g, colors, x + 2, y + 2, w  - 4, titleHeight);
 
         paintText(c, g, x, y, w, h, textColor, null);
     }
@@ -156,7 +145,7 @@ public class TitleBorder extends AbstractBorder {
             if (icon != null) {
                 titleHeight = Math.max(titleHeight, icon.getIconHeight() + (icon.getIconHeight() / 4));
             }
-            return new Insets(titleHeight + frameWidth, frameWidth, frameWidth + shadowSize, frameWidth + shadowSize);
+            return new Insets(titleHeight + frameWidth, frameWidth, frameWidth, frameWidth);
         }
         return new Insets(0, 0, 0, 0);
     }

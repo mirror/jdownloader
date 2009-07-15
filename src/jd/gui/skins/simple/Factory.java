@@ -39,7 +39,6 @@ import jd.config.MenuItem;
 import jd.controlling.JDLogger;
 import jd.gui.skins.simple.components.JDUnderlinedText;
 import jd.gui.skins.simple.components.JLinkButton;
-import jd.gui.skins.simple.components.borders.JDBorderFactory;
 import jd.plugins.PluginForHost;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -85,6 +84,7 @@ public class Factory {
         bt.setFocusPainted(false);
         bt.setBorderPainted(false);
         bt.setHorizontalAlignment(JButton.LEFT);
+        bt.setIconTextGap(5);
         if (listener != null) bt.addActionListener(listener);
         bt.addMouseListener(new JDUnderlinedText(bt));
         return bt;
@@ -120,10 +120,10 @@ public class Factory {
      * @param l
      * @return
      */
-    public static JPanel getSubPane(ImageIcon ii, String l) {
-        JPanel p = new JPanel(new MigLayout("ins 5 15 5 10, wrap 1", "[fill,grow]"));
-        p.setBorder(JDBorderFactory.createTitleBorder(ii, l, 0, 0));
-        return p;
+    public static SubPane getSubPane(ImageIcon ii, String l) {
+
+        return new SubPane(l, ii);
+        
     }
 
 }

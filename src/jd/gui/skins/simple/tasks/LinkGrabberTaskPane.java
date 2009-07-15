@@ -25,7 +25,6 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
-import javax.swing.JPanel;
 
 import jd.controlling.LinkGrabberController;
 import jd.controlling.LinkGrabberControllerEvent;
@@ -34,6 +33,7 @@ import jd.gui.skins.simple.Factory;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.SimpleGuiConstants;
+import jd.gui.skins.simple.SubPane;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberFilePackage;
 import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberTableAction;
 import jd.nutils.Formatter;
@@ -52,7 +52,7 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
 
     private boolean linkgrabberButtonsEnabled = false;
 
-    private JPanel linkgrabber;
+    private SubPane linkgrabber;
 
     private JLabel downloadlinks;
     private JLabel filteredlinks;
@@ -67,9 +67,9 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
 
     private long tot = 0;
     private long links = 0;
-    private JPanel addLinks;
-    private JPanel confirmLinks;
-    private JPanel settingsLinks;
+    private SubPane addLinks;
+    private SubPane confirmLinks;
+    private SubPane settingsLinks;
 
     public LinkGrabberTaskPane(String string, ImageIcon ii) {
         super(string, ii, "linkgrabber");
@@ -81,10 +81,10 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
             public void run() {
                 this.setName("LinkGrabberTask: infoupdate");
                 while (true) {
-                    // TODO
-                    // if (!isCollapsed())
+                    if (isActiveTab()) {
 
-                    update();
+                        update();
+                    }
                     try {
                         Thread.sleep(2000);
                     } catch (InterruptedException e) {
@@ -106,12 +106,12 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
         downloadlinks = new JLabel(JDL.LF("gui.taskpanes.download.linkgrabber.downloadLinks", "%s Link(s)", 0));
         filteredlinks = new JLabel(JDL.LF("gui.taskpanes.download.linkgrabber.filteredLinks", "%s filtered Link(s)", 0));
         totalsize = new JLabel(JDL.LF("gui.taskpanes.download.linkgrabber.size", "Total size: %s", 0));
-
-        linkgrabber.add(packages);
-        linkgrabber.add(downloadlinks);
-        linkgrabber.add(filteredlinks);
-        linkgrabber.add(totalsize);
-        add(linkgrabber);
+String gapleft = "gapleft 14";
+        linkgrabber.add(packages,gapleft);
+        linkgrabber.add(downloadlinks,gapleft);
+        linkgrabber.add(filteredlinks,gapleft);
+        linkgrabber.add(totalsize,gapleft);
+        add(linkgrabber, "shrinky 100");
     }
 
     /**
@@ -142,7 +142,7 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
     private void initGUI() {
 
         addLinks = Factory.getSubPane(JDTheme.II("gui.images.add", 16, 16), JDL.L(JDL_PREFIX + "link", "Add Links"));
-
+        // com.jtattoo.plaf.BaseButtonUI
         this.panelAddLinks = this.createButton(JDL.L("gui.linkgrabberv2.addlinks", "Add Links"), JDTheme.II("gui.images.add", 16, 16));
         this.panelAddContainers = this.createButton(JDL.L("gui.linkgrabberv2.addcontainers", "Open Containers"), JDTheme.II("gui.images.load", 16, 16));
 
@@ -203,11 +203,12 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
         }
 
         startAfterAdding.setToolTipText(JDL.L("gui.tooltips.linkgrabber.startlinksafteradd", "Is selected, download starts after adding new links"));
-        settingsLinks.add(startAfterAdding);
+        startAfterAdding.setIconTextGap(3);
+        settingsLinks.add(startAfterAdding,"gapleft 5");
         startAfterAdding.setToolTipText(JDL.L("gui.tooltips.linkgrabber.topOrBottom", "if selected, new links will be added at top of your downloadlist"));
-
-        settingsLinks.add(topOrBottom);
-        add(settingsLinks);
+        topOrBottom.setIconTextGap(3);
+        settingsLinks.add(topOrBottom,"gapleft 5");
+        add(settingsLinks, "shrinky 100,growy,pushy");
     }
 
     public void actionPerformed(ActionEvent e) {

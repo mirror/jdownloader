@@ -52,6 +52,8 @@ public class AddonTaskPane extends TaskPanel implements ActionListener {
     }
 
     public void initGUI() {
+        int width = this.getWidth();
+        int height = this.getHeight();
         this.removeAll();
         this.buttonMap = new HashMap<Object, OptionalPluginWrapper>();
         this.entries = new ArrayList<CollapseButton>();
@@ -62,7 +64,7 @@ public class AddonTaskPane extends TaskPanel implements ActionListener {
             if (menuItems != null) {
                 if (menuItems.size() > 1 || wrapper.getPlugin().getConfig().getEntries().size() > 0) {
                     CollapseButton bt = new CollapseButton(wrapper.getPlugin().getHost(), JDTheme.II(wrapper.getPlugin().getIconKey(), 16, 16));
-                    add(bt, D1_BUTTON_ICON);
+                    add(bt);
 
                     for (MenuItem entry : menuItems) {
                         JComponent comp = createMenu(entry, null, wrapper);
@@ -77,9 +79,9 @@ public class AddonTaskPane extends TaskPanel implements ActionListener {
                     JComponent btn = createMenu(menuItems.get(0), JDTheme.II(wrapper.getPlugin().getIconKey(), 16, 16), wrapper);
                     btn.setOpaque(false);
                     if (menuItems.get(0).getType() == MenuItem.TOGGLE) {
-                        add(btn, D1_TOGGLEBUTTON_ICON);
+                        add(btn);
                     } else {
-                        add(btn, D1_BUTTON_ICON);
+                        add(btn);
                     }
                 }
             } else if (wrapper.isEnabled()) {
@@ -91,9 +93,9 @@ public class AddonTaskPane extends TaskPanel implements ActionListener {
                 JComponent btn = createMenu(menuItems.get(0), JDTheme.II(wrapper.getPlugin().getIconKey(), 16, 16), wrapper);
                 btn.setOpaque(false);
                 if (menuItems.get(0).getType() == MenuItem.TOGGLE) {
-                    add(btn, D1_TOGGLEBUTTON_ICON);
+                    add(btn);
                 } else {
-                    add(btn, D1_BUTTON_ICON);
+                    add(btn);
                 }
             }
         }
@@ -101,7 +103,9 @@ public class AddonTaskPane extends TaskPanel implements ActionListener {
 
         config = createButton(JDL.L("gui.tasks.addons.edit", "Addonmanager"), JDTheme.II("gui.images.config.addons", 16, 16));
 
-        add(config, D1_BUTTON_ICON);
+        add(config);
+        this.revalidate();
+        this.repaint(0, 0, width, height);
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -119,9 +123,9 @@ public class AddonTaskPane extends TaskPanel implements ActionListener {
                         i++;
                     }
                 }
-                
+
                 updateToggle(wrapper);
-                
+
                 isAction = true;
                 SimpleGUI.CURRENTGUI.getContentPane().display(new ConfigEntriesPanel(cfg));
             }
@@ -179,7 +183,7 @@ public class AddonTaskPane extends TaskPanel implements ActionListener {
         case MenuItem.TOGGLE:
             JCheckBox ch = new JCheckBox(entry.getTitle(), entry.isSelected());
             ch.setContentAreaFilled(false);
-            
+
             ch.setFocusPainted(false);
             ch.setBorderPainted(false);
             ch.addMouseListener(new JDUnderlinedText(ch));
@@ -193,19 +197,30 @@ public class AddonTaskPane extends TaskPanel implements ActionListener {
         }
         return null;
     }
-    
+/**
+ * overrides onHide to collapse all entries on hide
+ */
+    public void onHide() {
+        super.onHide();
+        for (CollapseButton entry : entries) {
+
+            entry.setCollapsed(true);
+
+        }
+    }
+
     public void updateToggle() {
         for (OptionalPluginWrapper wrapper : OptionalPluginWrapper.getOptionalWrapper()) {
             if (!wrapper.isEnabled() || wrapper.getPlugin() == null) continue;
             updateToggle(wrapper);
         }
     }
-    
+
     private void updateToggle(OptionalPluginWrapper wrapper) {
         ArrayList<MenuItem> menuItems = wrapper.getPlugin().createMenuitems();
         if (menuItems != null) {
-            for(MenuItem entry : wrapper.getPlugin().createMenuitems()) {
-                if(entry.getType() == MenuItem.TOGGLE) {
+            for (MenuItem entry : wrapper.getPlugin().createMenuitems()) {
+                if (entry.getType() == MenuItem.TOGGLE) {
                     chks.get(wrapper.getPlugin().getHost() + "-" + entry.getTitle()).setSelected(entry.isSelected());
                 }
             }

@@ -21,6 +21,7 @@ import java.io.FileInputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Properties;
 import java.util.Map.Entry;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
@@ -38,6 +39,7 @@ import jd.parser.Regex;
 import jd.utils.JDUtilities;
 
 import com.jtattoo.plaf.AbstractLookAndFeel;
+import com.jtattoo.plaf.BaseTheme;
 
 public class LookAndFeelController {
 
@@ -277,7 +279,13 @@ public class LookAndFeelController {
             defaults.put("PopupMenuAlpha", 0.7f);
             defaults.put("PopupMenuUI", "jd.gui.swing.laf.ext.jattoo.ui.BluredPopupUI");
             defaults.put("RootPaneUI", "jd.gui.swing.laf.ext.jtattoo.acryl.ui.AcrylRootPaneUI");
+            defaults.put("CheckBoxUI", "jd.gui.swing.laf.ext.jattoo.ui.BaseJDCheckBoxUI");
+            defaults.put("ButtonUI", "jd.gui.swing.laf.ext.jattoo.ui.BaseJDButtonUI");
 
+            Properties props = new Properties();
+            props.put("dynamicLayout", "on");
+            props.put("logoString", "");
+            BaseTheme.setProperties(props);
         }
 
         //  
@@ -289,7 +297,16 @@ public class LookAndFeelController {
      * Execvutes LAF dependen commands BEFORE initializing the LAF
      */
     private static void preSetup(String className) {
+        if (className.equals("com.jtattoo.plaf.acryl.AcrylLookAndFeel")) {
+            Properties props = new Properties();
+            props.put("textAntiAliasingMode", "default");
+            props.put("windowDecoration", "off");
+            props.put("dynamicLayout", "on");
+            props.put("textAntiAliasing", "off");
+            props.put("logoString", "JDownloader");
+            com.jtattoo.plaf.acryl.AcrylLookAndFeel.setCurrentTheme(props);
 
+        }
     }
 
     private static void installJTattoo() {

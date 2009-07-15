@@ -29,6 +29,7 @@ import java.util.HashSet;
 import java.util.logging.Logger;
 
 import javax.swing.JMenuItem;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.Timer;
 
@@ -43,6 +44,7 @@ import jd.gui.skins.simple.JDCollapser;
 import jd.gui.skins.simple.JTabbedPanel;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.SimpleGuiConstants;
+import jd.gui.skins.simple.components.ContentTabbedPane;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.components.Linkgrabber.LinkCheck;
@@ -90,12 +92,19 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
 
     private JScrollPane scrollPane;
 
+    private ContentTabbedPane mainTabbed;
+
     public DownloadLinksPanel() {
         super(new MigLayout("ins 0, wrap 1", "[grow, fill]", "[grow, fill]"));
         internalTable = new DownloadTable(new DownloadJTableModel(), this);
         scrollPane = new JScrollPane(internalTable);
         filePackageInfo = new FilePackageInfo();
-        this.add(scrollPane, "cell 0 0,gaptop 6");
+        mainTabbed=new ContentTabbedPane();
+        JPanel p= new JPanel(new MigLayout("ins 5 0 0 0","[grow,fill]","[grow,fill]"));
+        p.add(scrollPane);
+        scrollPane.setBorder(null);
+        mainTabbed.addTab("Downloadview", scrollPane);
+        this.add(mainTabbed, "cell 0 0");
         JDUtilities.getDownloadController().addListener(this);
         Update_Async = new Timer(UPDATE_TIMING, this);
         last_async_update = 0;

@@ -33,7 +33,6 @@ import jd.gui.skins.simple.SingletonPanel;
 import net.miginfocom.swing.MigLayout;
 
 import com.jtattoo.plaf.AbstractLookAndFeel;
-import com.jtattoo.plaf.BaseTitlePane;
 
 public abstract class TaskPanel extends JPanel implements ActionListener {
 
@@ -42,22 +41,16 @@ public abstract class TaskPanel extends JPanel implements ActionListener {
     public static final int ACTION_CLICK = -2;
     protected EventListenerList listenerList;
     private String panelID = "taskpanel";
-    protected static final String GAP_BUTTON_LEFT = "gapleft 10";
-    private ArrayList<SingletonPanel> panels;
-    protected static final String D1_BUTTON_ICON = "spanx,alignx left,gaptop 2";
-    protected static final String D1_TOGGLEBUTTON_ICON = "spanx,alignx left,gaptop 2,gapleft 14";
-    protected static final String D1_LABEL_ICON = "spanx,alignx left,gaptop 7,gapleft 7";
-    protected static final String D2_LABEL = "spanx,alignx left,gaptop 2,gapleft 27";
-    protected static final String D1_LABEL = "spanx,alignx left,gaptop 7,gapleft 7";
-    protected static final String D2_PROGRESSBAR = "height 10!,gaptop 7,gapleft 27, width null:110:180";
-    protected static final String D1_COMPONENT = "spanx,alignx left,gaptop 2,gapleft 7";
 
-    protected static final String D2_CHECKBOX = "spanx,alignx left,gaptop 2,gapleft 23";
+    private ArrayList<SingletonPanel> panels;
+
     public boolean pressed;
 
     private ImageIcon icon;
 
     private String taskName;
+
+    private boolean activeTab;
 
     public String getTaskName() {
         return taskName;
@@ -77,11 +70,12 @@ public abstract class TaskPanel extends JPanel implements ActionListener {
 
         this.listenerList = new EventListenerList();
         this.setPanelID(pid);
-      
+
         if (UIManager.getLookAndFeel() instanceof AbstractLookAndFeel) {
-//        AbstractLookAndFeel laf = (AbstractLookAndFeel)UIManager.getLookAndFeel();
-    
-//        this.setBackground(laf.getTheme().getToolbarBackgroundColor());
+            // AbstractLookAndFeel laf =
+            // (AbstractLookAndFeel)UIManager.getLookAndFeel();
+
+            // this.setBackground(laf.getTheme().getToolbarBackgroundColor());
         }
         // this.addPropertyChangeListener(this);
         this.setLayout(new MigLayout("ins 5 3 5 3, wrap 1", "[fill,grow]"));
@@ -185,6 +179,27 @@ public abstract class TaskPanel extends JPanel implements ActionListener {
         return Factory.createButton(string, i, this);
     }
 
+    /**
+     * is called if the tab is hidden
+     */
+    public void onHide() {
+        
+    }
+
+    public boolean isActiveTab() {
+        return activeTab;
+    }
+
+    public void setActiveTab(boolean activeTab) {
+        this.activeTab = activeTab;
+    }
+
+    /**
+     * gets called if the tab gets displayed
+     */
+    public void onDisplay() {
+     
+    }
     // public void propertyChange(PropertyChangeEvent evt) {
     // if (evt.getPropertyName().equals("collapsed")) {
     // SubConfiguration cfg = SubConfiguration.getConfig("gui");
