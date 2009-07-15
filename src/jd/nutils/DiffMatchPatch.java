@@ -44,7 +44,7 @@ import java.util.regex.Pattern;
  * Functions for diff, match and patch.
  * Computes the difference between two texts to create a patch.
  * Applies the patch onto another text, allowing for errors.
- *
+ * Copyright:
  * @author fraser@google.com (Neil Fraser)
  */
 

@@ -49,7 +49,7 @@ public class SingleDecrypter {
         TestUtils.initHosts();
         TestUtils.finishInit();
         // JDLogger.getLogger().setLevel(Level.ALL);
-        links = TestUtils.getDecrypterLinks("stealth.to");
+        links = TestUtils.getDecrypterLinks("mediafire.com");
     }
 
     @Test

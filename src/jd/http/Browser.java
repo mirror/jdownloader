@@ -493,6 +493,16 @@ public class Browser {
             // throw new IOException("Sniffer found");
         }
         if (request != null) base = request.getUrl().toString();
+        try{
+        //find base in source
+        String sourceBase = this.getRegex("<base.*?href=\"(.+?)\"").getMatch(0).trim();
+        //check if valid url
+        new URL(sourceBase);
+        base=sourceBase;
+    }catch(Throwable e){
+        
+    }
+        
         String action = form.getAction(base);
         switch (form.getMethod()) {
 
