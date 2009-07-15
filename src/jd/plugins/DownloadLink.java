@@ -318,7 +318,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @return Downloadgeschwindigkeit in bytes/sekunde
      */
     public int getDownloadSpeed() {
-        if (!getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) { return -1; }
+        if (!getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) { return 0; }
         int currspeed = 0;
         for (Chunk ch : this.getDownloadInstance().getChunks()) {
             if (ch.inProgress()) currspeed += ch.getSpeedMeter().getSpeed();

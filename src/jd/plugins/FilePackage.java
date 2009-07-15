@@ -665,7 +665,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
                     }
                 }
 
-                totalDownloadSpeed_v2 += Math.max(0, next.getDownloadSpeed());
+                totalDownloadSpeed_v2 += next.getDownloadSpeed();
                 if (next.isEnabled()) {
                     totalBytesLoaded_v2 += next.getDownloadCurrent();
                 }

@@ -26,7 +26,7 @@ public class SpeedMeter {
     private static final int capacity = 2;
 
     private int c = 0;
-    private int lastSpeed = -1;
+    private int lastSpeed = 0;
     private long[] bytes = new long[capacity];
     private long[] times = new long[capacity];
     private Object lock = new Object();
@@ -41,7 +41,7 @@ public class SpeedMeter {
     public SpeedMeter() {
         // logger=JDUtilities.getLogger();
         for (int i = 0; i < capacity; i++) {
-            bytes[i] = -1;
+            bytes[i] = 0;
             times[i] = 1;
         }
     }

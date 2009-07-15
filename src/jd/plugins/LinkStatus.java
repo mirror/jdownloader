@@ -272,7 +272,7 @@ public class LinkStatus implements Serializable {
             removeStatus(DOWNLOADINTERFACE_IN_PROGRESS);
         }
         if (hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
-            int speed = Math.max(0, downloadLink.getDownloadSpeed());
+            int speed = downloadLink.getDownloadSpeed();
             String chunkString = "(" + downloadLink.getDownloadInstance().getChunksDownloading() + "/" + downloadLink.getDownloadInstance().getChunkNum() + ")";
 
             if (speed > 0) {
