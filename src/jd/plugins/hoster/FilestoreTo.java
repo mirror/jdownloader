@@ -22,6 +22,7 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Encoding;
+import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -32,6 +33,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filestore.to" }, urls = { "http://[\\w\\.]*?filestore\\.to/\\?d=[\\w]+" }, flags = { 0 })
+
 public class FilestoreTo extends PluginForHost {
 
     public FilestoreTo(PluginWrapper wrapper) {
@@ -47,12 +49,12 @@ public class FilestoreTo extends PluginForHost {
     // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
-
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         Browser.setRequestIntervalLimitGlobal(getHost(), 500);
         String url = downloadLink.getDownloadURL();
         String downloadName = null;
         String downloadSize = null;
-        for (int i = 1; i < 3; i++) {
+        for (int i = 1; i < 10; i++) {
             try {
                 br.getPage(url);
             } catch (Exception e) {
@@ -78,6 +80,7 @@ public class FilestoreTo extends PluginForHost {
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
         /* Link holen */
