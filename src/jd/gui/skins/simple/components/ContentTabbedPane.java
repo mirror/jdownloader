@@ -5,7 +5,6 @@ import java.awt.Graphics;
 
 import javax.swing.JTabbedPane;
 
-import com.jtattoo.plaf.AbstractLookAndFeel;
 import com.jtattoo.plaf.acryl.AcrylTabbedPaneUI;
 
 public class ContentTabbedPane extends JTabbedPane {

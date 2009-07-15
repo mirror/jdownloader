@@ -21,7 +21,6 @@ import java.awt.event.ActionListener;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.JSeparator;
 
 import jd.config.ConfigEntry.PropertyType;
 import jd.event.ControlEvent;

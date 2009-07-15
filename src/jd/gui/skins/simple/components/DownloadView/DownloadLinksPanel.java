@@ -29,7 +29,6 @@ import java.util.HashSet;
 import java.util.logging.Logger;
 
 import javax.swing.JMenuItem;
-import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.Timer;
 
@@ -100,8 +99,6 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
         scrollPane = new JScrollPane(internalTable);
         filePackageInfo = new FilePackageInfo();
         mainTabbed=new ContentTabbedPane();
-        JPanel p= new JPanel(new MigLayout("ins 5 0 0 0","[grow,fill]","[grow,fill]"));
-        p.add(scrollPane);
         scrollPane.setBorder(null);
         mainTabbed.addTab("Downloadview", scrollPane);
         this.add(mainTabbed, "cell 0 0");

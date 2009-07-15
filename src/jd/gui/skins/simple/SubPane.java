@@ -11,6 +11,8 @@ import net.miginfocom.swing.MigLayout;
 
 public class SubPane extends JScrollPane {
 
+    private static final long serialVersionUID = -1727950693360506752L;
+
     public SubPane(String l, ImageIcon ii) {
         super(new JPanel(new MigLayout("ins 0 8 5 5, wrap 1", "[fill,grow]","[]0[]0[]0[]0[]0[]0[]0[]0[]0[]0[]0[]0[]0[]0[]0[]0[]0[]")));
         this.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);

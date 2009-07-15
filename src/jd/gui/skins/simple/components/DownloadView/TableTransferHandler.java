@@ -34,7 +34,6 @@ import javax.swing.SwingUtilities;
 import javax.swing.TransferHandler;
 
 import jd.controlling.DownloadController;
-
 import jd.gui.skins.simple.SimpleGUI;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;

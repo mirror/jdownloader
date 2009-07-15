@@ -64,7 +64,6 @@ import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.components.PieChartAPI;
 import jd.gui.skins.simple.components.DownloadView.JDProgressBar;
 import jd.gui.skins.simple.config.GUIConfigEntry;
-import jd.gui.swing.laf.LookAndFeelController;
 import jd.http.Encoding;
 import jd.nutils.Formatter;
 import jd.plugins.Account;

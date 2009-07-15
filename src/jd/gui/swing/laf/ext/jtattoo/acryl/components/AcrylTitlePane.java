@@ -4,13 +4,11 @@ import java.awt.Color;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Toolkit;
-import java.awt.Window;
 
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JRootPane;
 import javax.swing.JSeparator;
-import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
 import jd.gui.swing.laf.ext.jtattoo.components.TitlePaneSystemMenu;
