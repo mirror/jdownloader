@@ -19,6 +19,8 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.gui.UserIO;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -40,6 +42,15 @@ public class Redirecter extends PluginForDecrypt {
         // Workaround for ponyurl.com Links
         parameter = parameter.replace("ponyurl.com/", "ponyurl.com/forward.php?");
         br.getPage(parameter);
+
+        //Password input for skracaj.org/l-x.pl redirector
+        if(br.containsHTML("<b>Podaj has.?o dost.?pu:</b><br />")){
+            Form passForm = br.getForm(0);
+            String password = UserIO.getInstance().requestInputDialog("Enter password for redirect link:");
+            passForm.put("shortcut_password", password);
+            br.submitForm(passForm);
+        }
+        
         declink = br.getRedirectLocation();
         if (declink == null) declink = br.getRegex("<iframe frameborder=\"0\"  src=\"(.*?)\"").getMatch(0);
         if (declink == null) return null;
