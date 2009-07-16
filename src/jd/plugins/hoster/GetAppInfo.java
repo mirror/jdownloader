@@ -65,7 +65,8 @@ public class GetAppInfo extends PluginForHost {
         if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         //Captcha Usereingabe in die Form einfügen
         captchaForm.put("secure", code);
-        sleep(13000l, downloadLink);
+        //Auskommentierte Wartezeit, die momentan nicht gebraucht wird, da man sie überspringen kann
+        //sleep(13000l, downloadLink);
         //sendet die ganze Form
         br.submitForm(captchaForm);
         if (!br.containsHTML("Download!</font>")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
@@ -80,7 +81,7 @@ public class GetAppInfo extends PluginForHost {
 
     // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return 2;
     }
 
     @Override
@@ -88,6 +89,6 @@ public class GetAppInfo extends PluginForHost {
     }
 
     /*
-     * public String getVersion() { return getVersion("$Revision: 6576 $"); }
+     * public String getVersion() { return getVersion("$Revision$"); }
      */
 }
