@@ -98,7 +98,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
         internalTable = new DownloadTable(new DownloadJTableModel(), this);
         scrollPane = new JScrollPane(internalTable);
         filePackageInfo = new FilePackageInfo();
-        mainTabbed=new ContentTabbedPane();
+        mainTabbed = new ContentTabbedPane();
         scrollPane.setBorder(null);
         mainTabbed.addTab("Downloadview", scrollPane);
         this.add(mainTabbed, "cell 0 0");
@@ -145,7 +145,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
         new Thread() {
             public void run() {
                 if (id2 != REFRESH_DATA_AND_STRUCTURE_CHANGED_FAST) tablerefreshinprogress = true;
-                if (id2 == REFRESH_DATA_AND_STRUCTURE_CHANGED || id2 == REFRESH_DATA_AND_STRUCTURE_CHANGED_FAST) internalTable.getTableModel().refreshmodel();
+                if (id2 == REFRESH_DATA_AND_STRUCTURE_CHANGED || id2 == REFRESH_DATA_AND_STRUCTURE_CHANGED_FAST) internalTable.getTableModel().refreshModel();
                 try {
                     internalTable.fireTableChanged(id2, objs2);
                 } catch (Exception e) {

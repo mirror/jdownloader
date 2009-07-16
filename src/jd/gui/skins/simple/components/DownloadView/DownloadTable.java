@@ -17,13 +17,11 @@
 package jd.gui.skins.simple.components.DownloadView;
 
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.LinearGradientPaint;
 import java.awt.Point;
 import java.awt.Rectangle;
-import java.awt.MultipleGradientPaint.CycleMethod;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
@@ -34,14 +32,12 @@ import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
 
 import javax.swing.DropMode;
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
-import javax.swing.JSeparator;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
@@ -49,6 +45,7 @@ import javax.swing.ToolTipManager;
 import javax.swing.UIManager;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
+import javax.swing.table.TableColumnModel;
 
 import jd.config.MenuItem;
 import jd.config.Property;
@@ -57,8 +54,7 @@ import jd.controlling.DownloadWatchDog;
 import jd.event.ControlEvent;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.JDMenu;
-import jd.gui.skins.simple.SimpleGUI;
-import jd.nutils.Colors;
+import jd.gui.skins.simple.components.RowHighlighter;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -66,27 +62,15 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.jdesktop.swingx.JXTable;
-import org.jdesktop.swingx.decorator.ComponentAdapter;
-import org.jdesktop.swingx.decorator.HighlightPredicate;
-import org.jdesktop.swingx.decorator.Highlighter;
-import org.jdesktop.swingx.decorator.PainterHighlighter;
-import org.jdesktop.swingx.painter.MattePainter;
-import org.jdesktop.swingx.painter.Painter;
-import org.jdesktop.swingx.table.TableColumnExt;
-import org.jvnet.substance.api.ComponentState;
-import org.jvnet.substance.api.SubstanceColorScheme;
-import org.jvnet.substance.utils.SubstanceColorSchemeUtilities;
-
-public class DownloadTable extends JXTable implements MouseListener, MouseMotionListener, KeyListener {
+public class DownloadTable extends JTable implements MouseListener, MouseMotionListener, KeyListener {
 
     public static final String PROPERTY_EXPANDED = "expanded";
 
     private static final long serialVersionUID = 1L;
 
-    private TableCellRenderer cellRenderer;
+    private TableRenderer cellRenderer;
 
-    private TableColumnExt[] cols;
+    private TableColumn[] cols;
 
     private DownloadLinksPanel panel;
 
@@ -94,41 +78,39 @@ public class DownloadTable extends JXTable implements MouseListener, MouseMotion
 
     private DownloadJTableModel model;
 
-    public DownloadTable(DownloadJTableModel Model, final DownloadLinksPanel panel) {
-        super(Model);
-        cellRenderer = new TableRenderer(this);
+    public DownloadTable(DownloadJTableModel model, DownloadLinksPanel panel) {
+        super(model);
+        this.cellRenderer = new TableRenderer(this);
         this.panel = panel;
-        this.model = Model;
-        this.setShowGrid(false);
-        this.setShowHorizontalLines(false);
-        this.setShowVerticalLines(false);
+        this.model = model;
+        setShowGrid(false);
+        setShowHorizontalLines(false);
+        setShowVerticalLines(false);
         createColumns();
         getTableHeader().setReorderingAllowed(false);
         getTableHeader().setResizingAllowed(true);
         prioDescs = new String[] { JDL.L("gui.treetable.tooltip.priority-1", "Low Priority"), JDL.L("gui.treetable.tooltip.priority0", "No Priority"), JDL.L("gui.treetable.tooltip.priority1", "High Priority"), JDL.L("gui.treetable.tooltip.priority2", "Higher Priority"), JDL.L("gui.treetable.tooltip.priority3", "Highest Priority") };
         setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
         setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-        this.setColumnSelectionAllowed(false);
-        this.setRowSelectionAllowed(true);
-        setColumnControlVisible(true);
-
-        this.setColumnControl(new JColumnControlButton(this));
+        setColumnSelectionAllowed(false);
+        setRowSelectionAllowed(true);
+        // setColumnControlVisible(true);
+        // setColumnControl(new JColumnControlButton(this));
         setAutoscrolls(false);
-        setEditable(false);
+        // setEditable(false);
         addMouseListener(this);
         addKeyListener(this);
         addMouseMotionListener(this);
 
         getTableHeader().setPreferredSize(new Dimension(getColumnModel().getTotalColumnWidth(), 19));
-        this.setSortable(false);
-        this.getTableHeader().addMouseListener(this);
+        // setSortable(false);
+        getTableHeader().addMouseListener(this);
         UIManager.put("Table.focusCellHighlightBorder", null);
 
         if (JDUtilities.getJavaVersion() >= 1.6) {
             // setDropMode(DropMode.ON_OR_INSERT_ROWS); /*muss noch geschaut
             // werden wie man das genau macht*/
             setDropMode(DropMode.USE_SELECTION);
-            // setDropMode(DropMode.ON_OR_INSERT_ROWS);
         }
 
         setDragEnabled(true);
@@ -137,117 +119,99 @@ public class DownloadTable extends JXTable implements MouseListener, MouseMotion
         ToolTipManager.sharedInstance().unregisterComponent(this);
         ToolTipManager.sharedInstance().unregisterComponent(this.getTableHeader());
 
-        this.setHighlighters(new Highlighter[] {});
         addDisabledHighlighter();
         addPostErrorHighlighter();
         addWaitHighlighter();
         addPackageHighlighter();
     }
 
-    public static Painter<?> getFolderPainter(JXTable table) {
-
-        if (JDUtilities.getJavaVersion() >= 1.6 && SimpleGUI.isSubstance()) {
-
-            int height = 20;
-            SubstanceColorScheme colorScheme = SubstanceColorSchemeUtilities.getColorScheme(table, ComponentState.SELECTED);
-            Color[] colors = new Color[] { Colors.getColor(colorScheme.getUltraLightColor(), 30), Colors.getColor(colorScheme.getLightColor(), 30), Colors.getColor(colorScheme.getMidColor(), 30), Colors.getColor(colorScheme.getUltraLightColor(), 30) };
-
-            // Color[] colors= new
-            // Color[]{Color.RED,Color.BLUE,Color.BLUE,Color.RED};
-            LinearGradientPaint paint = new LinearGradientPaint(0, 0, 0, height, new float[] { 0.0f, 0.4f, 0.5f, 1.0f }, colors, CycleMethod.REPEAT);
-            return new MattePainter(paint);
-
-        } else {
-            return new MattePainter(JDTheme.C("gui.color.downloadlist.package", "4c4c4c", 150));
-        }
-
-    }
-
-    private void addPackageHighlighter() {
-        addHighlighter(new PainterHighlighter(new HighlightPredicate() {
-            public boolean isHighlighted(Component renderer, ComponentAdapter adapter) {
-                if (adapter.row == -1) return false;
-                Object element = model.getValueAt(adapter.row, 0);
-                if (element != null && element instanceof FilePackage) { return true; }
-                return false;
-            }
-        }, DownloadTable.getFolderPainter(this)));
-    }
-
-    private void createColumns() {
+    public void createColumns() {
         setAutoCreateColumnsFromModel(false);
-        List<TableColumn> columns = getColumns(true);
-        for (Iterator<TableColumn> iter = columns.iterator(); iter.hasNext();) {
-            getColumnModel().removeColumn(iter.next());
-
+        TableColumnModel tcm = getColumnModel();
+        while (tcm.getColumnCount() > 0) {
+            tcm.removeColumn(tcm.getColumn(0));
         }
 
         final SubConfiguration config = SubConfiguration.getConfig("gui");
-        cols = new TableColumnExt[getModel().getColumnCount()];
-        for (int i = 0; i < getModel().getColumnCount(); i++) {
-            TableColumnExt tableColumn = getColumnFactory().createAndConfigureTableColumn(getModel(), i);
+        cols = new TableColumn[getModel().getColumnCount()];
+        for (int i = 0; i < getModel().getColumnCount(); ++i) {
+            final int j = i;
+            TableColumn tableColumn = new TableColumn(i);
             cols[i] = tableColumn;
             tableColumn.addPropertyChangeListener(new PropertyChangeListener() {
                 public void propertyChange(PropertyChangeEvent evt) {
-                    TableColumnExt column = (TableColumnExt) evt.getSource();
                     if (evt.getPropertyName().equals("width")) {
-                        config.setProperty("WIDTH_COL_" + column.getModelIndex(), evt.getNewValue());
-                        config.save();
-                    } else if (evt.getPropertyName().equals("visible")) {
-                        config.setProperty("VISABLE_COL_" + column.getModelIndex(), evt.getNewValue());
+                        config.setProperty("WIDTH_COL_" + model.toModel(j), evt.getNewValue());
                         config.save();
                     }
                 }
             });
-
-            tableColumn.setVisible(config.getBooleanProperty("VISABLE_COL_" + i, true));
-            tableColumn.setPreferredWidth(config.getIntegerProperty("WIDTH_COL_" + i, tableColumn.getWidth()));
-
-            getColumnModel().addColumn(tableColumn);
+            tableColumn.setPreferredWidth(config.getIntegerProperty("WIDTH_COL_" + model.toModel(j), tableColumn.getWidth()));
+            addColumn(tableColumn);
         }
-
     }
 
-    public TableColumnExt[] getCols() {
-        return cols;
+    private void addPackageHighlighter() {
+        Color background = JDTheme.C("gui.color.downloadlist.package", "4c4c4c", 150);
+        cellRenderer.addHighlighter(new RowHighlighter<DownloadJTableModel>(model, background) {
+
+            @Override
+            public boolean doHighlight(int row) {
+                Object o = model.getObjectforRow(row);
+                return (o != null && o instanceof FilePackage);
+            }
+
+        });
     }
 
     private void addWaitHighlighter() {
         Color background = JDTheme.C("gui.color.downloadlist.error_post", "ff9936", 100);
-        addHighlighter(new DownloadLinkRowHighlighter(this, background) {
-            // @Override
-            public boolean doHighlight(DownloadLink dLink) {
-                if (dLink.getLinkStatus().hasStatus(LinkStatus.FINISHED) || !dLink.isEnabled() || dLink.getLinkStatus().isPluginActive()) return false;
-                return dLink.getPlugin() == null || dLink.getPlugin().getRemainingHosterWaittime() > 0;
-            }
-        });
+        cellRenderer.addHighlighter(new RowHighlighter<DownloadJTableModel>(model, background) {
 
+            @Override
+            public boolean doHighlight(int row) {
+                Object o = model.getObjectforRow(row);
+                if (o == null || !(o instanceof DownloadLink)) return false;
+                DownloadLink dl = (DownloadLink) o;
+                if (dl.getLinkStatus().hasStatus(LinkStatus.FINISHED) || !dl.isEnabled() || dl.getLinkStatus().isPluginActive()) return false;
+                return dl.getPlugin() == null || dl.getPlugin().getRemainingHosterWaittime() > 0;
+            }
+
+        });
     }
 
     private void addPostErrorHighlighter() {
         Color background = JDTheme.C("gui.color.downloadlist.error_post", "ff9936", 120);
-        addHighlighter(new DownloadLinkRowHighlighter(this, background) {
-            // @Override
-            public boolean doHighlight(DownloadLink link) {
-                return link.getLinkStatus().hasStatus(LinkStatus.ERROR_POST_PROCESS);
-            }
-        });
+        cellRenderer.addHighlighter(new RowHighlighter<DownloadJTableModel>(model, background) {
 
+            @Override
+            public boolean doHighlight(int row) {
+                Object o = model.getObjectforRow(row);
+                return (o != null && o instanceof DownloadLink && ((DownloadLink) o).getLinkStatus().hasStatus(LinkStatus.ERROR_POST_PROCESS));
+            }
+
+        });
     }
 
     private void addDisabledHighlighter() {
         Color background = JDTheme.C("gui.color.downloadlist.row_link_disabled", "adadad", 100);
-        addHighlighter(new DownloadLinkRowHighlighter(this, background) {
-            // @Override
-            public boolean doHighlight(DownloadLink link) {
-                return !link.isEnabled();
-            }
-        });
+        cellRenderer.addHighlighter(new RowHighlighter<DownloadJTableModel>(model, background) {
 
+            @Override
+            public boolean doHighlight(int row) {
+                Object o = model.getObjectforRow(row);
+                return (o != null && o instanceof DownloadLink && !((DownloadLink) o).isEnabled());
+            }
+
+        });
     }
 
     public TableCellRenderer getCellRenderer(int row, int col) {
         return cellRenderer;
+    }
+
+    public TableColumn getColumn(int column) {
+        return getColumnModel().getColumn(model.toVisible(column));
     }
 
     public DownloadJTableModel getTableModel() {
@@ -352,11 +316,34 @@ public class DownloadTable extends JXTable implements MouseListener, MouseMotion
     }
 
     public void mouseClicked(MouseEvent e) {
-        if (e.getSource() == this.getTableHeader()) {
-            int col = getRealcolumnAtPoint(e.getX());
-            TableAction test = new TableAction(panel, JDTheme.II("gui.images.sort", 16, 16), JDL.L("gui.table.contextmenu.packagesort", "Paket sortieren"), TableAction.SORT_ALL, new Property("col", col));
-            test.actionPerformed(new ActionEvent(test, 0, ""));
-            return;
+        if (e.getSource() == getTableHeader()) {
+            if (e.getButton() == MouseEvent.BUTTON1) {
+                int col = getRealColumnAtPoint(e.getX());
+                TableAction test = new TableAction(panel, JDTheme.II("gui.images.sort", 16, 16), JDL.L("gui.table.contextmenu.packagesort", "Paket sortieren"), TableAction.SORT_ALL, new Property("col", col));
+                test.actionPerformed(new ActionEvent(test, 0, ""));
+            } else if (e.getButton() == MouseEvent.BUTTON3) {
+                JPopupMenu popup = new JPopupMenu();
+                JCheckBoxMenuItem[] mis = new JCheckBoxMenuItem[model.getRealColumnCount()];
+                for (int i = 0; i < model.getRealColumnCount(); ++i) {
+                    final int j = i;
+                    final JCheckBoxMenuItem mi = new JCheckBoxMenuItem(model.getRealColumnName(i));
+                    mis[i] = mi;
+                    if (i == 0) mi.setEnabled(false);
+                    mi.setSelected(model.isVisible(i));
+                    mi.addActionListener(new ActionListener() {
+
+                        public void actionPerformed(ActionEvent e) {
+                            model.setVisible(j, mi.isSelected());
+                            createColumns();
+                            revalidate();
+                            repaint();
+                        }
+
+                    });
+                    popup.add(mi);
+                }
+                popup.show(getTableHeader(), e.getX(), e.getY());
+            }
         }
     }
 
@@ -372,14 +359,13 @@ public class DownloadTable extends JXTable implements MouseListener, MouseMotion
     public void mouseMoved(MouseEvent e) {
     }
 
-    private int getRealcolumnAtPoint(int x) {
+    private int getRealColumnAtPoint(int x) {
         /*
          * diese funktion gibt den echten columnindex zurück, da durch
          * an/ausschalten dieser anders kann
          */
-        int c = getColumnModel().getColumnIndexAtX(x);
-        if (c == -1) return -1;
-        return getColumnModel().getColumn(c).getModelIndex();
+        x = getColumnModel().getColumnIndexAtX(x);
+        return model.toModel(x);
     }
 
     public void mousePressed(MouseEvent e) {
@@ -387,7 +373,7 @@ public class DownloadTable extends JXTable implements MouseListener, MouseMotion
         if (e.getSource() != this) return;
         Point point = e.getPoint();
         int row = rowAtPoint(point);
-        int col = getRealcolumnAtPoint(e.getX());
+        int col = columnAtPoint(point);
         JMenuItem tmp;
 
         if (!isRowSelected(row) && e.getButton() == MouseEvent.BUTTON3) {
@@ -422,17 +408,17 @@ public class DownloadTable extends JXTable implements MouseListener, MouseMotion
                 if (DownloadWatchDog.getInstance().isStopMark(obj)) tmp.setIcon(tmp.getDisabledIcon());
                 popup.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.delete", 16, 16), JDL.L("gui.table.contextmenu.delete", "entfernen") + " (" + alllinks.size() + ")", TableAction.DELETE, new Property("links", alllinks))));
 
-                popup.add(new JSeparator());
+                popup.addSeparator();
             }
 
             popup.add(createExtrasMenu(obj));
             if (obj instanceof FilePackage) {
                 popup.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.package_opened", 16, 16), JDL.L("gui.table.contextmenu.downloadDir", "Zielordner öffnen"), TableAction.DOWNLOAD_DIR, new Property("folder", new File(((FilePackage) obj).getDownloadDirectory())))));
-                popup.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.sort", 16, 16), JDL.L("gui.table.contextmenu.packagesort", "Paket sortieren") + " (" + sfp.size() + "), (" + this.getModel().getColumnName(col) + ")", TableAction.SORT, new Property("col", col))));
+                popup.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.sort", 16, 16), JDL.L("gui.table.contextmenu.packagesort", "Paket sortieren") + " (" + sfp.size() + "), (" + model.getColumnName(col) + ")", TableAction.SORT, new Property("col", model.toModel(col)))));
                 popup.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.edit", 16, 16), JDL.L("gui.table.contextmenu.editpackagename", "Paketname ändern") + " (" + sfp.size() + ")", TableAction.EDIT_NAME, new Property("packages", sfp))));
                 popup.add(tmp = new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.save", 16, 16), JDL.L("gui.table.contextmenu.editdownloadDir", "Zielordner ändern") + " (" + sfp.size() + ")", TableAction.EDIT_DIR, new Property("packages", sfp))));
 
-                popup.add(new JSeparator());
+                popup.addSeparator();
             }
             if (obj instanceof DownloadLink) {
                 popup.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.package_opened", 16, 16), JDL.L("gui.table.contextmenu.downloadDir", "Zielordner öffnen"), TableAction.DOWNLOAD_DIR, new Property("folder", new File(((DownloadLink) obj).getFileOutput()).getParentFile()))));
@@ -448,7 +434,7 @@ public class DownloadTable extends JXTable implements MouseListener, MouseMotion
                 popup.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.config.network_local", 16, 16), JDL.L("gui.table.contextmenu.check", "Check OnlineStatus") + " (" + alllinks.size() + ")", TableAction.CHECK, new Property("links", alllinks))));
                 popup.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.newpackage", 16, 16), JDL.L("gui.table.contextmenu.newpackage", "In neues Paket verschieben") + " (" + alllinks.size() + ")", TableAction.NEW_PACKAGE, new Property("links", alllinks))));
                 popup.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.password", 16, 16), JDL.L("gui.table.contextmenu.setdlpw", "Set download password") + " (" + alllinks.size() + ")", TableAction.SET_PW, new Property("links", alllinks))));
-                popup.add(new JSeparator());
+                popup.addSeparator();
                 HashMap<String, Object> prop = new HashMap<String, Object>();
                 prop.put("links", alllinks);
                 prop.put("boolean", true);
@@ -519,7 +505,7 @@ public class DownloadTable extends JXTable implements MouseListener, MouseMotion
         if (e.getSource() != this) return;
         int row = rowAtPoint(e.getPoint());
         if (row == -1) return;
-        int column = getRealcolumnAtPoint(e.getX());
+        int column = getRealColumnAtPoint(e.getX());
         if (column == 0 && e.getButton() == MouseEvent.BUTTON1 && e.getX() < 20 && e.getClickCount() == 1) {
             Object element = this.getModel().getValueAt(row, 0);
             if (element != null && element instanceof FilePackage) {

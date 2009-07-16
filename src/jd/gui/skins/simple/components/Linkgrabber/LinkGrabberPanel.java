@@ -178,7 +178,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                             }
                         }
                     }
-                    internalTable.getTableModel().refreshmodel();
+                    internalTable.getTableModel().refreshModel();
                 }
                 try {
                     internalTable.fireTableChanged();

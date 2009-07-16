@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 import javax.swing.table.AbstractTableModel;
 
+import jd.config.SubConfiguration;
 import jd.controlling.LinkGrabberController;
 import jd.plugins.DownloadLink;
 import jd.utils.locale.JDL;
@@ -18,10 +19,12 @@ public class LinkGrabberJTableModel extends AbstractTableModel {
 
     private static final String[] COLUMN_NAMES = { JDL.L("gui.linkgrabber.header.packagesfiles", "Pakete/Dateien"), JDL.L("gui.treetable.header.size", "Größe"), JDL.L("gui.treetable.header_3.hoster", "Anbieter"), JDL.L("gui.treetable.header_4.status", "Status") };
     private ArrayList<Object> addlist = new ArrayList<Object>();
+    private SubConfiguration config;
 
     public LinkGrabberJTableModel() {
         super();
-        refreshmodel();
+        config = SubConfiguration.getConfig("linkgrabber");
+        refreshModel();
     }
 
     public int getRowCount() {
@@ -34,7 +37,14 @@ public class LinkGrabberJTableModel extends AbstractTableModel {
         }
     }
 
-    public void refreshmodel() {
+    public Object getObjectforRow(int row) {
+        synchronized (addlist) {
+            if (row < addlist.size()) return addlist.get(row);
+            return null;
+        }
+    }
+
+    public void refreshModel() {
         synchronized (LinkGrabberController.ControllerLock) {
             synchronized (LinkGrabberController.getInstance().getPackages()) {
                 synchronized (addlist) {
@@ -60,13 +70,57 @@ public class LinkGrabberJTableModel extends AbstractTableModel {
         }
     }
 
-    public int getColumnCount() {
+    public int getRealColumnCount() {
         return COLUMN_NAMES.length;
+    }
+
+    public String getRealColumnName(int column) {
+        return COLUMN_NAMES[column];
+    }
+
+    public int getColumnCount() {
+        int j = 0;
+        for (int i = 0; i < COLUMN_NAMES.length; ++i) {
+            if (isVisible(i)) ++j;
+        }
+        return j;
+    }
+
+    public boolean isVisible(int column) {
+        return config.getBooleanProperty("VISABLE_COL_" + column, true);
+    }
+
+    public void setVisible(int column, boolean visible) {
+        config.setProperty("VISABLE_COL_" + column, visible);
+        config.save();
+    }
+
+    public int toModel(int column) {
+        int i = 0;
+        int k;
+        for (k = 0; k < getRealColumnCount(); ++k) {
+            if (isVisible(k)) {
+                ++i;
+            }
+            if (i > column) break;
+        }
+        return k;
+    }
+
+    public int toVisible(int column) {
+        int i = column;
+        int k;
+        for (k = column; k >= 0; --k) {
+            if (!isVisible(k)) {
+                --i;
+            }
+        }
+        return i;
     }
 
     // @Override
     public String getColumnName(int column) {
-        return COLUMN_NAMES[column];
+        return COLUMN_NAMES[toModel(column)];
     }
 
     // @Override

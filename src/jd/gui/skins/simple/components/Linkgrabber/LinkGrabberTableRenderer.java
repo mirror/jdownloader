@@ -17,12 +17,15 @@
 package jd.gui.skins.simple.components.Linkgrabber;
 
 import java.awt.Component;
+import java.util.ArrayList;
 
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
+import javax.swing.JComponent;
 import javax.swing.JTable;
 import javax.swing.border.Border;
 
+import jd.gui.skins.simple.components.RowHighlighter;
 import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
 import jd.utils.JDTheme;
@@ -78,11 +81,17 @@ public class LinkGrabberTableRenderer extends DefaultTableRenderer {
     private String strUnCheckable;
 
     public LinkGrabberTableRenderer(LinkGrabberTable linkgrabberTreeTable) {
-
         table = linkgrabberTreeTable;
         leftGap = BorderFactory.createEmptyBorder(0, 30, 0, 0);
+        highlighter = new ArrayList<RowHighlighter<?>>();
         initLocale();
         initIcons();
+    }
+
+    private ArrayList<RowHighlighter<?>> highlighter;
+
+    public void addHighlighter(RowHighlighter<?> rh) {
+        highlighter.add(rh);
     }
 
     private void initLocale() {
@@ -110,15 +119,22 @@ public class LinkGrabberTableRenderer extends DefaultTableRenderer {
     // @Override
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         hasFocus = false;
-        column = this.table.getColumn(column).getModelIndex();
+        column = this.table.getTableModel().toModel(column);
         if (value instanceof LinkGrabberFilePackage) {
-            return getFilePackageCell(table, value, isSelected, hasFocus, row, column);
+            co = getFilePackageCell(table, value, isSelected, hasFocus, row, column);
         } else if (value instanceof DownloadLink) {
-            return getDownloadLinkCell(table, value, isSelected, hasFocus, row, column);
+            co = getDownloadLinkCell(table, value, isSelected, hasFocus, row, column);
         } else {
-            return super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
         }
 
+        for (RowHighlighter<?> rh : highlighter) {
+            if (rh.doHighlight(row)) {
+                ((JComponent) co).setBackground(rh.getColor());
+            }
+        }
+
+        return co;
     }
 
     private Component getDownloadLinkCell(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {

@@ -19,14 +19,18 @@ package jd.gui.skins.simple.components.DownloadView;
 import java.awt.Color;
 import java.awt.Component;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 
 import javax.swing.BorderFactory;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
+import javax.swing.JComponent;
 import javax.swing.JTable;
 import javax.swing.border.Border;
+import javax.swing.table.TableColumn;
 
 import jd.controlling.JDController;
+import jd.gui.skins.simple.components.RowHighlighter;
 import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -36,7 +40,6 @@ import jd.utils.locale.JDL;
 
 import org.jdesktop.swingx.renderer.DefaultTableRenderer;
 import org.jdesktop.swingx.renderer.JRendererLabel;
-import org.jdesktop.swingx.table.TableColumnExt;
 
 public class TableRenderer extends DefaultTableRenderer {
 
@@ -72,7 +75,7 @@ public class TableRenderer extends DefaultTableRenderer {
 
     private String strSecondsAbrv;
 
-    private TableColumnExt col;
+    private TableColumn col;
 
     private Border leftGap;
 
@@ -113,11 +116,18 @@ public class TableRenderer extends DefaultTableRenderer {
         initLocale();
         table = downloadTreeTable;
         leftGap = BorderFactory.createEmptyBorder(0, 30, 0, 0);
+        highlighter = new ArrayList<RowHighlighter<?>>();
         progress = new JDProgressBar();
         progress.setStringPainted(true);
         progress.setOpaque(true);
         COL_PROGRESS_NORMAL = progress.getForeground();
         statuspanel = new StatusLabel();
+    }
+
+    private ArrayList<RowHighlighter<?>> highlighter;
+
+    public void addHighlighter(RowHighlighter<?> rh) {
+        highlighter.add(rh);
     }
 
     private void initIcons() {
@@ -148,18 +158,17 @@ public class TableRenderer extends DefaultTableRenderer {
     // @Override
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         hasFocus = false;
-        column = this.table.getColumn(column).getModelIndex();
-
+        column = this.table.getTableModel().toModel(column);
         if (value instanceof FilePackage) {
             co = getFilePackageCell(table, value, isSelected, hasFocus, row, column);
             if (!((FilePackage) value).isEnabled()) {
                 co.setEnabled(false);
-                progress.setString("");
+                if (co instanceof JDProgressBar) {
+                    ((JDProgressBar) co).setString("");
+                }
             } else {
                 co.setEnabled(true);
             }
-
-            return co;
         } else if (value instanceof DownloadLink) {
             co = getDownloadLinkCell(table, value, isSelected, hasFocus, row, column);
             if (!((DownloadLink) value).isEnabled()) {
@@ -170,15 +179,19 @@ public class TableRenderer extends DefaultTableRenderer {
             } else {
                 co.setEnabled(true);
             }
-
-            return co;
         } else {
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             co.setEnabled(true);
         }
 
-        return co;
+        if (co instanceof JDProgressBar) return co;
+        for (RowHighlighter<?> rh : highlighter) {
+            if (rh.doHighlight(row)) {
+                ((JComponent) co).setBackground(rh.getColor());
+            }
+        }
 
+        return co;
     }
 
     private Component getDownloadLinkCell(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
@@ -233,7 +246,7 @@ public class TableRenderer extends DefaultTableRenderer {
                 ((JRendererLabel) co).setBorder(null);
                 return co;
             } else if (dLink.getPluginProgress() != null) {
-                col = this.table.getCols()[column];
+                col = this.table.getColumn(column);
                 if (col.getWidth() < 40) {
 
                 } else if (col.getWidth() < 170) {
@@ -252,7 +265,7 @@ public class TableRenderer extends DefaultTableRenderer {
                 progress.setForeground(COL_PROGRESS_ERROR);
                 progress.setValue(dLink.getLinkStatus().getRemainingWaittime());
                 clearSB();
-                col = this.table.getCols()[column];
+                col = this.table.getColumn(column);
                 if (col.getWidth() < 60) {
 
                 } else if (col.getWidth() < 170) {
@@ -266,7 +279,7 @@ public class TableRenderer extends DefaultTableRenderer {
                 if (!dLink.getLinkStatus().isPluginActive()) {
                     if (dLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                         clearSB();
-                        col = this.table.getCols()[column];
+                        col = this.table.getColumn(column);
                         if (col.getWidth() < 40) {
 
                         } else if (col.getWidth() < 170) {
@@ -278,7 +291,7 @@ public class TableRenderer extends DefaultTableRenderer {
 
                     } else {
                         clearSB();
-                        col = this.table.getCols()[column];
+                        col = this.table.getColumn(column);
                         if (col.getWidth() < 60) {
 
                         } else if (col.getWidth() < 170) {
@@ -294,7 +307,7 @@ public class TableRenderer extends DefaultTableRenderer {
                         progress.setString(strWaitIO);
                     } else {
                         clearSB();
-                        col = this.table.getCols()[column];
+                        col = this.table.getColumn(column);
                         if (col.getWidth() < 60) {
 
                         } else if (col.getWidth() < 170) {
@@ -314,7 +327,7 @@ public class TableRenderer extends DefaultTableRenderer {
             progress.setValue(0);
             if (dLink.getDownloadSize() > 1) {
                 clearSB();
-                col = this.table.getCols()[column];
+                col = this.table.getColumn(column);
                 if (col.getWidth() < 60) {
 
                 } else if (col.getWidth() < 170) {
@@ -431,7 +444,7 @@ public class TableRenderer extends DefaultTableRenderer {
                 progress.setMaximum(100);
                 progress.setValue(100);
                 clearSB();
-                col = this.table.getCols()[column];
+                col = this.table.getColumn(column);
                 if (col.getWidth() < 40) {
 
                 } else if (col.getWidth() < 170) {
@@ -444,7 +457,7 @@ public class TableRenderer extends DefaultTableRenderer {
                 progress.setMaximum(Math.max(1, fp.getTotalEstimatedPackageSize()));
                 progress.setValue(fp.getTotalKBLoaded());
                 clearSB();
-                col = this.table.getCols()[column];
+                col = this.table.getColumn(column);
                 if (col.getWidth() < 40) {
 
                 } else if (col.getWidth() < 170) {
