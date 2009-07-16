@@ -971,16 +971,12 @@ sep.setVisible(false);
     }
 
     public void closeWindow() {
-        if (!OSDetector.isMac()) {
-            if (showConfirmDialog(JDL.L("sys.ask.rlyclose", "Wollen Sie jDownloader wirklich schließen?"))) {
-                contentPanel.getRightPanel().onHide();
-                SimpleGuiUtils.saveLastLocation(this, null);
-                SimpleGuiUtils.saveLastDimension(this, null);
-                SimpleGuiConstants.GUI_CONFIG.save();
-                JDUtilities.getController().exit();
-            }
-        } else {
-            this.setVisible(false);
+        if (showConfirmDialog(JDL.L("sys.ask.rlyclose", "Wollen Sie jDownloader wirklich schließen?"))) {
+            contentPanel.getRightPanel().onHide();
+            SimpleGuiUtils.saveLastLocation(this, null);
+            SimpleGuiUtils.saveLastDimension(this, null);
+            SimpleGuiConstants.GUI_CONFIG.save();
+            JDUtilities.getController().exit();
         }
     }
 
