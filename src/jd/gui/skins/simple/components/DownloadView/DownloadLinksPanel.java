@@ -91,17 +91,18 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
 
     private JScrollPane scrollPane;
 
-    private ContentTabbedPane mainTabbed;
 
     public DownloadLinksPanel() {
         super(new MigLayout("ins 0, wrap 1", "[grow, fill]", "[grow, fill]"));
         internalTable = new DownloadTable(new DownloadJTableModel(), this);
         scrollPane = new JScrollPane(internalTable);
         filePackageInfo = new FilePackageInfo();
-        mainTabbed = new ContentTabbedPane();
+
+      
+
         scrollPane.setBorder(null);
-        mainTabbed.addTab("Downloadview", scrollPane);
-        this.add(mainTabbed, "cell 0 0");
+       
+        this.add(scrollPane, "cell 0 0");
         JDUtilities.getDownloadController().addListener(this);
         Update_Async = new Timer(UPDATE_TIMING, this);
         last_async_update = 0;
