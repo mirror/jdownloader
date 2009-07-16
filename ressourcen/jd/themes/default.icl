@@ -112,6 +112,7 @@ gui.images.taskpanes.linkgrabber = default/system-search-add
 gui.images.taskpanes.configuration = default/applications-system
 gui.images.taskpanes.generalpurpose = default/go-bottom
 gui.images.taskpanes.premium = default/premium
+gui.images.taskpanes.log =  default/utilities-terminal
 gui.images.vip = default/contact-new
 gui.images.buy = default/premium
 gui.images.accounts = default/accounts
