@@ -59,10 +59,7 @@ public class ConfigPanelGUI extends ConfigPanel {
         load();
     }
 
-    @Override
-    public boolean needsViewport() {
-        return false;
-    }
+
 
     @Override
     public void initPanel() {

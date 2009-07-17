@@ -138,10 +138,7 @@ public class ConfigPanelAddons extends ConfigPanel implements ActionListener, Mo
         load();
     }
 
-    @Override
-    public boolean needsViewport() {
-        return false;
-    }
+
 
     @Override
     public void initPanel() {

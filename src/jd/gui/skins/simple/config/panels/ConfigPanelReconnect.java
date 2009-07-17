@@ -237,10 +237,7 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
 
     }
 
-    @Override
-    public boolean needsViewport() {
-        return false;
-    }
+
 
     private void addCLR() {
         String name = JDL.L("modules.reconnect.types.clr", "CLR Script");

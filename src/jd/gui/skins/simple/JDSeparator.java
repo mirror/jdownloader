@@ -24,7 +24,6 @@ import java.awt.event.MouseListener;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 
-import jd.gui.skins.SwingGui;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 

@@ -6,22 +6,22 @@ import java.util.HashMap;
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
-import javax.swing.JPanel;
 
-import jd.gui.skins.simple.components.borders.JDBorderFactory;
+import jd.gui.skins.jdgui.borders.JDBorderFactory;
+import jd.gui.skins.jdgui.interfaces.DroppedPanel;
 import net.miginfocom.swing.MigLayout;
 
-public class InfoPanel extends JPanel {
+public class InfoPanel extends DroppedPanel {
     private JLabel iconContainer;
-//    private JLabel nameContainer;
-//    private JLabel descContainer;
+    // private JLabel nameContainer;
+    // private JLabel descContainer;
 
     private Color valueColor;
     private Color titleColor;
     private HashMap<String, JComponent> map;
 
     public InfoPanel() {
-
+        super();
         this.setBorder(JDBorderFactory.createInsideShadowBorder(5, 0, 0, 0));
         map = new HashMap<String, JComponent>();
         this.setLayout(new MigLayout("ins 5", "[]5[]", "[][]"));
@@ -29,12 +29,12 @@ public class InfoPanel extends JPanel {
         titleColor = getBackground().darker().darker();
         this.iconContainer = new JLabel();
         add(iconContainer, "spany 2,cell 0 0,gapleft 1");
-//        this.nameContainer = new JLabel("Infopane");
-//        add(nameContainer, "gapleft 10,cell 1 0");
-//        nameContainer.setForeground(valueColor);
-//        this.descContainer = new JLabel("");
-//        add(descContainer, "gapleft 10,cell 1 1");
-//        descContainer.setForeground(titleColor);
+        // this.nameContainer = new JLabel("Infopane");
+        // add(nameContainer, "gapleft 10,cell 1 0");
+        // nameContainer.setForeground(valueColor);
+        // this.descContainer = new JLabel("");
+        // add(descContainer, "gapleft 10,cell 1 1");
+        // descContainer.setForeground(titleColor);
 
     }
 
@@ -76,10 +76,20 @@ public class InfoPanel extends JPanel {
         map.put(title, myValue);
     }
 
-  
-
     protected void setIcon(ImageIcon ii) {
         iconContainer.setIcon(ii);
 
+    }
+
+    @Override
+    public void onHide() {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void onShow() {
+        // TODO Auto-generated method stub
+        
     }
 }

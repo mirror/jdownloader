@@ -66,10 +66,7 @@ public class ConfigPanelDownload extends ConfigPanel {
         config.save();
     }
 
-    @Override
-    public boolean needsViewport() {
-        return false;
-    }
+
 
     @Override
     public PropertyType hasChanges() {

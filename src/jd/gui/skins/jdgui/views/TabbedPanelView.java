@@ -2,7 +2,7 @@ package jd.gui.skins.jdgui.views;
 
 import javax.swing.Icon;
 
-import jd.gui.skins.simple.JTabbedPanel;
+import jd.gui.skins.jdgui.interfaces.SwitchPanel;
 
 /**
  * A Wrapper for compatibility to old TabbedPanels
@@ -12,9 +12,9 @@ import jd.gui.skins.simple.JTabbedPanel;
  */
 public class TabbedPanelView extends View {
 
-    private JTabbedPanel tabbedPanel;
+    private SwitchPanel tabbedPanel;
 
-    public TabbedPanelView(JTabbedPanel tabbedPanel) {
+    public TabbedPanelView(SwitchPanel tabbedPanel) {
         super();
         this.tabbedPanel = tabbedPanel;
         this.setContent(tabbedPanel);

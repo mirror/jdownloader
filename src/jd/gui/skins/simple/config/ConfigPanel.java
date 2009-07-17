@@ -32,11 +32,11 @@ import jd.config.ConfigGroup;
 import jd.config.SubConfiguration;
 import jd.config.ConfigEntry.PropertyType;
 import jd.gui.skins.SwingGui;
+import jd.gui.skins.jdgui.interfaces.SwitchPanel;
 import jd.gui.skins.simple.Factory;
-import jd.gui.skins.simple.JTabbedPanel;
 import net.miginfocom.swing.MigLayout;
 
-public abstract class ConfigPanel extends JTabbedPanel {
+public abstract class ConfigPanel extends SwitchPanel {
 
     private static final long serialVersionUID = 3383448498625377495L;
 
@@ -71,10 +71,7 @@ public abstract class ConfigPanel extends JTabbedPanel {
   
     
 
-    @Override
-    public boolean needsViewport() {
-        return viewport;
-    }
+  
 
     public void setTabbed(boolean b) {
         tabbed = b;
@@ -249,7 +246,7 @@ public abstract class ConfigPanel extends JTabbedPanel {
     public abstract void save();
 
     @Override
-    public void onDisplay() {
+    public void onShow() {
         System.out.println("Display " + this);
         loadConfigEntries();
     }

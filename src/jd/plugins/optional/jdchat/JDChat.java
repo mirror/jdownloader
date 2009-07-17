@@ -55,7 +55,7 @@ import jd.controlling.interaction.Interaction;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.skins.SwingGui;
-import jd.gui.skins.simple.JTabbedPanel;
+import jd.gui.skins.jdgui.interfaces.SwitchPanel;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.tasks.TaskPanel;
@@ -117,7 +117,7 @@ public class JDChat extends PluginOptional implements ControlListener {
     private boolean changed;
 
     private IRCConnection conn;
-    private JTabbedPanel frame;
+    private SwitchPanel frame;
     private long lastAction;
     private String lastCommand;
     private boolean loggedIn;
@@ -900,12 +900,12 @@ public class JDChat extends PluginOptional implements ControlListener {
     @SuppressWarnings("unchecked")
     private void initGUI() {
 
-        frame = new JTabbedPanel(new BorderLayout()) {
+        frame = new SwitchPanel(new BorderLayout()) {
 
             private static final long serialVersionUID = 2138710083573682339L;
 
             // @Override
-            public void onDisplay() {
+            public void onShow() {
 
             }
 

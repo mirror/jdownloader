@@ -23,10 +23,10 @@ import javax.swing.JLabel;
 
 import jd.controlling.DownloadController;
 import jd.controlling.DownloadInformations;
+import jd.gui.skins.jdgui.components.downloadview.JDProgressBar;
 import jd.gui.skins.simple.Factory;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.SubPane;
-import jd.gui.skins.simple.components.DownloadView.JDProgressBar;
 import jd.nutils.Formatter;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;

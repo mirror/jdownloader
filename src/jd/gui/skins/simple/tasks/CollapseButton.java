@@ -25,8 +25,8 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 
+import jd.gui.skins.jdgui.borders.JDBorderFactory;
 import jd.gui.skins.simple.Factory;
-import jd.gui.skins.simple.components.borders.JDBorderFactory;
 import net.miginfocom.swing.MigLayout;
 
 public class CollapseButton extends JPanel {

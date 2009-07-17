@@ -128,10 +128,7 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
         load();
     }
 
-    @Override
-    public boolean needsViewport() {
-        return false;
-    }
+
 
     public void actionPerformed(ActionEvent e) {
 
@@ -262,8 +259,8 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
     }
 
     @Override
-    public void onDisplay() {
-        super.onDisplay();
+    public void onShow() {
+        super.onShow();
         this.changes = false;
     }
 

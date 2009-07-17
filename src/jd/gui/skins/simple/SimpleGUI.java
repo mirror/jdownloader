@@ -69,13 +69,16 @@ import jd.event.ControlEvent;
 import jd.gui.UIInterface;
 import jd.gui.UserIO;
 import jd.gui.skins.SwingGui;
+import jd.gui.skins.jdgui.InfoPanelHandler;
+import jd.gui.skins.jdgui.components.JDCollapser;
+import jd.gui.skins.jdgui.components.downloadview.DownloadLinksPanel;
+import jd.gui.skins.jdgui.components.linkgrabberview.LinkAdder;
+import jd.gui.skins.jdgui.components.linkgrabberview.LinkGrabberPanel;
+import jd.gui.skins.jdgui.components.linkgrabberview.LinkGrabberTableAction;
+import jd.gui.skins.jdgui.interfaces.SwitchPanel;
 import jd.gui.skins.simple.components.ChartAPIEntity;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.components.PieChartAPI;
-import jd.gui.skins.simple.components.DownloadView.DownloadLinksPanel;
-import jd.gui.skins.simple.components.Linkgrabber.LinkAdder;
-import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberPanel;
-import jd.gui.skins.simple.components.Linkgrabber.LinkGrabberTableAction;
 import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import jd.gui.skins.simple.config.ConfigPanel;
 import jd.gui.skins.simple.config.panels.ConfigPanelAddons;
@@ -961,8 +964,8 @@ sep.setVisible(false);
                     JDCollapser.getInstance().setIcon(JDTheme.II("gui.images.config.addons", 24, 24));
                 }
 
-                JDCollapser.getInstance().setVisible(true);
-                JDCollapser.getInstance().setCollapsed(false);
+                InfoPanelHandler.setPanel(JDCollapser.getInstance());
+                
                 return null;
             }
 
@@ -1127,7 +1130,7 @@ sep.setVisible(false);
 
     }
 
-    public JTabbedPanel getDownloadPanel() {
+    public SwitchPanel getDownloadPanel() {
         return this.linkListPane;
     }
 
@@ -1150,7 +1153,7 @@ sep.setVisible(false);
     }
 
     @Override
-    public void setContent(JTabbedPanel tabbedPanel) {
+    public void setContent(SwitchPanel tabbedPanel) {
        this.getContentPane().display(tabbedPanel);
     }
 

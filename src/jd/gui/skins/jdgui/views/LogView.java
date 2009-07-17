@@ -2,7 +2,7 @@ package jd.gui.skins.jdgui.views;
 
 import javax.swing.Icon;
 
-import jd.gui.skins.simple.components.DownloadView.DownloadLinksPanel;
+import jd.gui.skins.jdgui.components.downloadview.DownloadLinksPanel;
 import jd.gui.skins.simple.tasks.DownloadTaskPane;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;

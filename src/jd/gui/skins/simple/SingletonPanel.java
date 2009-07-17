@@ -21,25 +21,26 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
 import jd.controlling.JDLogger;
+import jd.gui.skins.jdgui.interfaces.SwitchPanel;
 import jd.gui.skins.simple.tasks.TaskPanel;
 
 public class SingletonPanel {
 
-    private JTabbedPanel panel;
+    private SwitchPanel panel;
     private TaskPanel taskPanel;
-    private Class<? extends JTabbedPanel> clazz;
+    private Class<? extends SwitchPanel> clazz;
     private Object[] objs;
 
-    public SingletonPanel(JTabbedPanel linkListPane) {
+    public SingletonPanel(SwitchPanel linkListPane) {
         this.panel = linkListPane;
     }
 
-    public SingletonPanel(Class<? extends JTabbedPanel> class1, Object... objects) {
+    public SingletonPanel(Class<? extends SwitchPanel> class1, Object... objects) {
         clazz = class1;
         objs = objects;
     }
 
-    public JTabbedPanel getPanel() {
+    public SwitchPanel getPanel() {
         if (panel == null) {
 
             try {
@@ -63,7 +64,7 @@ public class SingletonPanel {
         for (int i = 0; i < objs.length; i++)
             classes[i] = objs[i].getClass();
 
-        Constructor<? extends JTabbedPanel> c = clazz.getConstructor(classes);
+        Constructor<? extends SwitchPanel> c = clazz.getConstructor(classes);
         panel = c.newInstance(objs);
 
     }

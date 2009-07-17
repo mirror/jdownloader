@@ -30,8 +30,8 @@ import javax.swing.SwingUtilities;
 
 import jd.controlling.DownloadController;
 import jd.controlling.DownloadInformations;
+import jd.gui.skins.jdgui.components.downloadview.JDProgressBar;
 import jd.gui.skins.simple.GuiRunnable;
-import jd.gui.skins.simple.components.DownloadView.JDProgressBar;
 import jd.nutils.Formatter;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;

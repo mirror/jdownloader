@@ -33,6 +33,7 @@ import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.UserIO;
 import jd.gui.skins.SwingGui;
+import jd.gui.skins.jdgui.interfaces.SwitchPanel;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.tasks.LogTaskPane;
@@ -48,7 +49,7 @@ import net.miginfocom.swing.MigLayout;
  * Ein Dialog, der Logger-Output anzeigen kann.
  * 
  */
-public class LogPane extends JTabbedPanel implements ActionListener, ControlListener {
+public class LogPane extends SwitchPanel implements ActionListener, ControlListener {
 
     private static final long serialVersionUID = -5753733398829409112L;
 
@@ -140,7 +141,7 @@ public class LogPane extends JTabbedPanel implements ActionListener, ControlList
     }
 
     // @Override
-    public void onDisplay() {
+    public void onShow() {
         /*
          * enable autoscrolling by setting the caret to the last position
          */

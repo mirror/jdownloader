@@ -54,7 +54,7 @@ import jd.PluginWrapper;
 import jd.config.MenuItem;
 import jd.controlling.reconnect.HTTPLiveHeader;
 import jd.gui.skins.SwingGui;
-import jd.gui.skins.simple.JTabbedPanel;
+import jd.gui.skins.jdgui.interfaces.SwitchPanel;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.http.Encoding;
@@ -77,7 +77,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
         super(wrapper);
     }
 
-    private JTabbedPanel tabbedPanel;
+    private SwitchPanel tabbedPanel;
 
     private JMenuItem menHelpWiki, menEditAddDefine, menEditAddRequest, menEditAddWait, menEditValidate;
 
@@ -288,12 +288,12 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
     private void initGUI() {
         if (tabbedPanel != null) return;
 
-        tabbedPanel = new JTabbedPanel() {
+        tabbedPanel = new SwitchPanel() {
 
             private static final long serialVersionUID = 1L;
 
             @Override
-            public void onDisplay() {
+            public void onShow() {
             }
 
             @Override

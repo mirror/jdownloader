@@ -27,8 +27,8 @@ import javax.swing.JPanel;
 import javax.swing.UIManager;
 import javax.swing.event.EventListenerList;
 
+import jd.gui.skins.jdgui.interfaces.SwitchPanel;
 import jd.gui.skins.simple.Factory;
-import jd.gui.skins.simple.JTabbedPanel;
 import jd.gui.skins.simple.SingletonPanel;
 import net.miginfocom.swing.MigLayout;
 
@@ -163,7 +163,7 @@ public abstract class TaskPanel extends JPanel implements ActionListener {
     // broadcastEvent(new ActionEvent(this, ACTION_CLICK, "Toggle"));
     // }
 
-    public JTabbedPanel getPanel(int i) {
+    public SwitchPanel getPanel(int i) {
         return panels.get(i).getPanel();
     }
 

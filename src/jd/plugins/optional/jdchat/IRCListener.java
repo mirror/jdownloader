@@ -16,15 +16,10 @@
 
 package jd.plugins.optional.jdchat;
 
-import java.util.ArrayList;
 import java.util.logging.Level;
-import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
-import jd.controlling.JDLogHandler;
 import jd.controlling.JDLogger;
-import jd.gui.skins.SwingGui;
-import jd.gui.skins.simple.SimpleGUI;
 import jd.parser.Regex;
 import jd.utils.JDUtilities;
 import jd.utils.Upload;

@@ -11,8 +11,8 @@ import javax.swing.ScrollPaneConstants;
 import javax.swing.UIManager;
 import javax.swing.plaf.metal.MetalLookAndFeel;
 
-import jd.gui.skins.jdgui.views.info.InfoPanel;
-import jd.gui.skins.simple.JTabbedPanel;
+import jd.gui.skins.jdgui.interfaces.DroppedPanel;
+import jd.gui.skins.jdgui.interfaces.SwitchPanel;
 import jd.gui.skins.simple.tasks.TaskPanel;
 import jd.utils.JDTheme;
 import net.miginfocom.swing.MigLayout;
@@ -31,11 +31,12 @@ public abstract class View extends JPanel {
     private JPanel rightPane;
     private JScrollPane sidebar;
     private TaskPanel sidebarContent;
-    private JTabbedPanel content;
+    private SwitchPanel content;
     private JPanel topContent;
     private JToolBar toolBar;
     private JPanel bottomContent;
-    private InfoPanel infoBar;
+    private DroppedPanel infoPanel;
+    private DroppedPanel defaultInfoPanel;
 
     public View() {
         this.setLayout(new MigLayout("ins 0", "[]0[grow,fill]", "[grow,fill]"));
@@ -64,21 +65,42 @@ public abstract class View extends JPanel {
     }
 
     /**
-     * SOUTH CONTENT sets the south infopanel.
+     * Sets the default infopanel
      * 
-     * @param info
+     * @param panel
      */
-    protected void setInfo(InfoPanel info) {
+    protected void setDefaultInfoPanel(DroppedPanel panel) {
+        this.defaultInfoPanel = panel;
+        if (this.getInfoPanel() == null) setInfoPanel(panel);
+    }
+
+    /**
+     * SOUTH CONTENT sets the south infopanel. if set to null, the default info
+     * panel is shown. of this is null, too the info area is hidden
+     * 
+     * @param infoPanel
+     */
+    public void setInfoPanel(DroppedPanel info) {
+        if (info == null) info = defaultInfoPanel;
+        if (infoPanel == info) return;
+
+        if (infoPanel != null) infoPanel.onHide();
         if (info == null) {
+
             bottomContent.setVisible(false);
 
         } else {
             bottomContent.setVisible(true);
             bottomContent.removeAll();
             bottomContent.add(info);
+            info.onShow();
         }
+        revalidate();
+        this.infoPanel = info;
+    }
 
-        this.infoBar = info;
+    public DroppedPanel getInfoPanel() {
+        return infoPanel;
     }
 
     /**
@@ -105,7 +127,7 @@ public abstract class View extends JPanel {
      * 
      * @param right
      */
-    protected void setContent(JTabbedPanel right) {
+    protected void setContent(SwitchPanel right) {
         rightPane.removeAll();
         rightPane.add(right);
         this.content = right;

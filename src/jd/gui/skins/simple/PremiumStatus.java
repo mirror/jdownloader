@@ -46,6 +46,8 @@ import jd.controlling.AccountControllerListener;
 import jd.controlling.JDController;
 import jd.gui.UserIO;
 import jd.gui.skins.SwingGui;
+import jd.gui.skins.jdgui.InfoPanelHandler;
+import jd.gui.skins.jdgui.components.JDCollapser;
 import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import jd.nutils.Formatter;
 import jd.nutils.JDFlags;
@@ -425,7 +427,8 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
                             new GuiRunnable<Object>() {
                                 // @Override
                                 public Object runSave() {
-                                    JDCollapser.getInstance().setCollapsed(true);
+                                    InfoPanelHandler.setPanel(null);
+                                    
                                     return null;
                                 }
                             }.start();

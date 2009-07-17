@@ -39,6 +39,7 @@ import jd.event.ControlEvent;
 import jd.gui.UserIO;
 import jd.gui.skins.SwingGui;
 import jd.gui.skins.jdgui.events.EDTEventQueue;
+import jd.gui.skins.jdgui.interfaces.SwitchPanel;
 import jd.gui.skins.jdgui.views.AddonView;
 import jd.gui.skins.jdgui.views.ConfigurationView;
 import jd.gui.skins.jdgui.views.DownloadView;
@@ -49,7 +50,6 @@ import jd.gui.skins.simple.Balloon;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.JDStatusBar;
 import jd.gui.skins.simple.JDToolBar;
-import jd.gui.skins.simple.JTabbedPanel;
 import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.gui.skins.simple.SimpleGuiUtils;
 import jd.gui.skins.simple.TabProgress;
@@ -157,6 +157,8 @@ add(toolBar,"dock NORTH");
         contentPane.add(statusBar, "dock SOUTH");
 
     }
+    
+    
 
     private void initDefaults() {
         Toolkit.getDefaultToolkit().getSystemEventQueue().push(new EDTEventQueue());
@@ -408,7 +410,7 @@ add(toolBar,"dock NORTH");
     }
 
     @Override
-    public void setContent(final JTabbedPanel tabbedPanel) {
+    public void setContent(final SwitchPanel tabbedPanel) {
         TabbedPanelView view = new TabbedPanelView(tabbedPanel);
 
         if (!mainTabbedPane.contains(view)) {
@@ -417,5 +419,9 @@ add(toolBar,"dock NORTH");
         }
         mainTabbedPane.setSelectedComponent(view);
 
+    }
+
+    public MainTabbedPane getMainTabbedPane() {
+       return this.mainTabbedPane;
     }
 }

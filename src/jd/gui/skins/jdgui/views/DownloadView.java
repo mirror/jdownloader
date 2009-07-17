@@ -1,25 +1,26 @@
 package jd.gui.skins.jdgui.views;
 
-
-
 import javax.swing.Icon;
 
+import jd.gui.skins.jdgui.components.JDCollapser;
+import jd.gui.skins.jdgui.components.downloadview.DownloadLinksPanel;
 import jd.gui.skins.jdgui.views.info.DownloadInfoPanel;
-import jd.gui.skins.simple.JDToolBar;
-import jd.gui.skins.simple.components.DownloadView.DownloadLinksPanel;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
-public class DownloadView extends View{
+public class DownloadView extends View {
 
     public DownloadView() {
         super();
-//        this.setToolBar(new JDToolBar());
-//        this.setSideBar(new DownloadTaskPane(JDL.L("gui.taskpanes.download", "Download"), JDTheme.II("gui.images.taskpanes.download", 16, 16)));
+        // this.setToolBar(new JDToolBar());
+        // this.setSideBar(new DownloadTaskPane(JDL.L("gui.taskpanes.download",
+        // "Download"), JDTheme.II("gui.images.taskpanes.download", 16, 16)));
         this.setContent(new DownloadLinksPanel());
-this.setInfo(new DownloadInfoPanel());
+        this.setDefaultInfoPanel(new DownloadInfoPanel());
+     
+      
     }
-  
+
  
 
     /**

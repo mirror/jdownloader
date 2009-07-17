@@ -6,7 +6,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
 
-import jd.gui.skins.simple.components.borders.LineTitleBorder;
+import jd.gui.skins.jdgui.borders.LineTitleBorder;
 import net.miginfocom.swing.MigLayout;
 
 public class SubPane extends JScrollPane {

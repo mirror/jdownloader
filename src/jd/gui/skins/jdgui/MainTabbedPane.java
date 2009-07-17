@@ -11,9 +11,7 @@ import javax.swing.Icon;
 import javax.swing.JTabbedPane;
 
 import jd.config.SubConfiguration;
-import jd.gui.skins.jdgui.views.TabbedPanelView;
 import jd.gui.skins.jdgui.views.View;
-import jd.gui.skins.simple.JTabbedPanel;
 
 import com.jtattoo.plaf.JTattooUtilities;
 import com.jtattoo.plaf.acryl.AcrylTabbedPaneUI;
@@ -39,7 +37,8 @@ public class MainTabbedPane extends JTabbedPane {
                 public void installDefaults() {
                     super.installDefaults();
                     contentBorderInsets = new Insets(0, 0, 0, 0);
-                    tabInsets = new Insets(4, 6, 4, 6);
+                    int inset = extraHighlight ? 4 : 1;
+                    tabInsets = new Insets(inset, 6, inset, 6);
                 }
 
                 protected void paintContentBorder(Graphics g, int tabPlacement, int selectedIndex, int x, int y, int w, int h) {
@@ -121,12 +120,23 @@ public class MainTabbedPane extends JTabbedPane {
         // TODO Auto-generated method stub
 
     }
-/**
- * CHecks if there is already a tabbepanel of this type in this pane.
- * @param view
- * @return
- */
-    public boolean contains(TabbedPanelView view) {
+
+    /**
+     * returns the currently selected View
+     */
+
+    public View getSelectedView() {
+        return (View) super.getSelectedComponent();
+
+    }
+
+    /**
+     * CHecks if there is already a tabbepanel of this type in this pane.
+     * 
+     * @param view
+     * @return
+     */
+    public boolean contains(View view) {
         for (int i = 0; i < this.getTabCount(); i++) {
 
             if (this.getTabComponentAt(i).equals(view)) return true;

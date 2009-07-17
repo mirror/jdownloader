@@ -39,7 +39,6 @@ import jd.config.SubConfiguration;
 import jd.controlling.ClipboardHandler;
 import jd.controlling.JDController;
 import jd.controlling.reconnect.Reconnecter;
-import jd.gui.skins.SwingGui;
 import jd.gui.skins.simple.Factory;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.startmenu.actions.AddContainerAction;

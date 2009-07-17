@@ -34,7 +34,7 @@ import javax.swing.Timer;
 import jd.PluginWrapper;
 import jd.config.MenuItem;
 import jd.gui.skins.SwingGui;
-import jd.gui.skins.simple.JTabbedPanel;
+import jd.gui.skins.jdgui.interfaces.SwitchPanel;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
 import jd.utils.locale.JDL;
@@ -58,7 +58,7 @@ public class Schedule extends PluginOptional {
     private Vector<String> listData = new Vector<String>();
     private Vector<ScheduleFrame> schedules = null;
 
-    private JTabbedPanel tabbedPanel;
+    private SwitchPanel tabbedPanel;
 
     public Schedule(PluginWrapper wrapper) {
         super(wrapper);
@@ -80,12 +80,12 @@ public class Schedule extends PluginOptional {
         logger.finer("Scheduler: restored " + schedules.size() + " schedules");
         reloadList();
 
-        tabbedPanel = new JTabbedPanel() {
+        tabbedPanel = new SwitchPanel() {
 
             private static final long serialVersionUID = 4758934444244058336L;
 
             // @Override
-            public void onDisplay() {
+            public void onShow() {
             }
 
             // @Override

@@ -2,7 +2,7 @@ package jd.gui.skins;
 
 import jd.gui.UIInterface;
 import jd.gui.skins.jdgui.WindowAdapter;
-import jd.gui.skins.simple.JTabbedPanel;
+import jd.gui.skins.jdgui.interfaces.SwitchPanel;
 
 public abstract class SwingGui extends WindowAdapter implements UIInterface {
 
@@ -38,6 +38,6 @@ public abstract class SwingGui extends WindowAdapter implements UIInterface {
 
     abstract public void closeWindow();
 
-    abstract public void setContent(JTabbedPanel tabbedPanel);
+    abstract public void setContent(SwitchPanel tabbedPanel);
 
 }

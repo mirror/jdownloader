@@ -21,12 +21,14 @@ import java.awt.Dimension;
 import javax.swing.JPanel;
 import javax.swing.JViewport;
 
+import jd.gui.skins.jdgui.components.JDCollapser;
+import jd.gui.skins.jdgui.interfaces.SwitchPanel;
 import net.miginfocom.swing.MigLayout;
 
 public class ContentPanel extends JPanel {
     private static final Object LOCK = new Object();
     private static final long serialVersionUID = 1606909731977454208L;
-    private JTabbedPanel rightPanel = null;
+    private SwitchPanel rightPanel = null;
     private JViewport viewport;
 
     // public static ContentPanel PANEL;
@@ -38,7 +40,7 @@ public class ContentPanel extends JPanel {
 
     }
 
-    public void display(JTabbedPanel panel) {
+    public void display(SwitchPanel panel) {
         synchronized (LOCK) {
             // System.out.println(panel);
             // new Exception().printStackTrace();
@@ -68,14 +70,14 @@ public class ContentPanel extends JPanel {
             }
             rightPanel.setEnabled(true);
             rightPanel.setVisible(true);
-            rightPanel.onDisplay();
+            rightPanel.onShow();
             this.setPreferredSize(new Dimension(100, 10));
             this.revalidate();
             this.repaint();
         }
     }
 
-    public JTabbedPanel getRightPanel() {
+    public SwitchPanel getRightPanel() {
         return rightPanel;
     }
 
