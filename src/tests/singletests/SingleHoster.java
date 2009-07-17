@@ -39,6 +39,13 @@ public class SingleHoster {
     private String[] urls = {};
     private HashMap<String, String> links;
 
+    /*
+     * change this to the host that is tested, test links are taken from
+     * http://jdownloader
+     * .net:8081/knowledge/wiki/development/intern/testlinks/hoster/HOST
+     */
+    private static final String HOST = "badongo.com";
+
     @Before
     public void setUp() {
 
@@ -49,7 +56,8 @@ public class SingleHoster {
         TestUtils.initHosts();
         TestUtils.finishInit();
         // JDLogger.getLogger().setLevel(Level.ALL);
-        links = TestUtils.getHosterLinks("badongo.com");
+        links = TestUtils.getHosterLinks(HOST);
+        TestUtils.log("Found " + links.size() + " test link(s) for host " + HOST);
     }
 
     @Test
