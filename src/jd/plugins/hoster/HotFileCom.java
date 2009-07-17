@@ -88,7 +88,7 @@ public class HotFileCom extends PluginForHost {
             finalUrl = br.getRegex("<h3 style='margin-top: 20px'><a href=\"(.*?hotfile.*?)\">Click here to download</a></h3>").getMatch(0);
         }
         if (finalUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        dl = br.openDownload(downloadLink, finalUrl, true, 0);
+        dl = br.openDownload(downloadLink, finalUrl, true, -20);
         dl.setFilenameFix(true);
         dl.startDownload();
     }
