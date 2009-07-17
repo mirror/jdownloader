@@ -25,8 +25,6 @@ import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -36,14 +34,12 @@ import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
-import javax.swing.JTabbedPane;
 import javax.swing.KeyStroke;
 import javax.swing.MenuSelectionManager;
 import javax.swing.SwingUtilities;
 import javax.swing.text.JTextComponent;
 
-import jd.gui.skins.simple.components.JLinkButton;
-import jd.nutils.Formatter;
+import jd.gui.skins.SwingGui;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
@@ -96,153 +92,6 @@ public class JDEventQueue extends EventQueue {
 
                 lastPoint--;
                 break qh;
-            } else if (e.getID() == MouseEvent.MOUSE_PRESSED && e.isControlDown() && e.isShiftDown()) {
-
-                this.lastPoint = 2;
-                Point point = e.getPoint();
-                Component source = SimpleGUI.CURRENTGUI.getRealContentPane();
-                point.x -= (source.getLocationOnScreen().x - SimpleGUI.CURRENTGUI.getLocationOnScreen().x);
-                point.y -= (source.getLocationOnScreen().y - SimpleGUI.CURRENTGUI.getLocationOnScreen().y);
-                final StringBuilder sb = new StringBuilder();
-                while (source != null) {
-                    Component source2 = source.getComponentAt(point);
-                    if (source instanceof JTabbedPane) {
-                        source2 = ((JTabbedPane) source).getSelectedComponent();
-                    }
-                    if (source2 == source || source2 == null) {
-                        if (sb.length() > 0) {
-                            new Thread() {
-                                public void run() {
-                                    try {
-                                        String url = "http://jdownloader.org/quickhelp/" + sb;
-                                        JLinkButton.openURL(url);
-                                        return;
-                                    } catch (Exception e) {
-                                        e.printStackTrace();
-                                    }
-
-                                }
-                            }.start();
-                            return;
-                        } else {
-                            break;
-                        }
-                    }
-                    if (source2 != null) {
-                        point.x -= source2.getLocation().x;
-                        point.y -= source2.getLocation().y;
-
-                        if (source2.getName() != null) {
-                            if (sb.length() > 0) sb.append(".");
-                            sb.append(source2.getName().replace(" ", "-"));
-                        }
-                    }
-                    source = source2;
-
-                }
-
-            } else if (e.getID() == MouseEvent.MOUSE_PRESSED && e.isControlDown() && e.isAltDown()) {
-
-                this.lastPoint = 2;
-                Point point = e.getPoint();
-                Component source = SimpleGUI.CURRENTGUI.getRealContentPane();
-                point.x -= (source.getLocationOnScreen().x - SimpleGUI.CURRENTGUI.getLocationOnScreen().x);
-                point.y -= (source.getLocationOnScreen().y - SimpleGUI.CURRENTGUI.getLocationOnScreen().y);
-                StringBuilder sb2 = new StringBuilder();
-                int i = 0;
-                while (source != null) {
-                    Component source2 = source.getComponentAt(point);
-                    if (source instanceof JTabbedPane) {
-                        source2 = ((JTabbedPane) source).getSelectedComponent();
-                    }
-                    if (source2 == source || source2 == null) {
-                        System.out.println(sb2);
-                        return;
-                    }
-                    if (source2 != null) {
-                        point.x -= source2.getLocation().x;
-                        point.y -= source2.getLocation().y;
-
-                        if (source2 != source) {
-                            sb2.append("\r\n" + Formatter.fillString("", " ", "", i * 3) + " - " + source2.getClass().getName() + "/" + (source2 instanceof JLabel) + "(" + source2.getName() + ")");
-                            String text = null;
-                            if (source2 instanceof JLabel) {
-                                text = ((JLabel) source2).getText();
-
-                            } else {
-
-                                Method method = null;
-                                try {
-                                    method = source2.getClass().getMethod("getText", new Class[] {});
-                                } catch (Exception e1) {
-                                    // e1.printStackTrace();
-                                }
-                                try {
-                                    method = source2.getClass().getMethod("getTitle", new Class[] {});
-                                } catch (Exception e1) {
-                                    // e1.printStackTrace();
-                                }
-                                if (method != null) {
-                                    try {
-                                        text = method.invoke(source2) + "";
-                                    } catch (IllegalArgumentException e1) {
-                                        e1.printStackTrace();
-                                    } catch (IllegalAccessException e1) {
-                                        e1.printStackTrace();
-                                    } catch (InvocationTargetException e1) {
-                                        e1.printStackTrace();
-                                    }
-                                }
-                            }
-                            if (text != null) {
-                                String[] keys = JDL.getKeysFor(text);
-                                if (keys != null) {
-                                    for (String t : keys) {
-                                        sb2.append("\r\n" + Formatter.fillString("", " ", "", i * 3) + " Possible Translation: " + JDL.L(t, text) + " (" + t + ")");
-                                    }
-
-                                }
-                                if (source2 instanceof JLabel) {
-                                    ((JLabel) source2).setText(keys[0]);
-                                }
-                            }
-                        }
-
-                    }
-                    source = source2;
-
-                }
-                return;
-            } else if (e.getID() == MouseEvent.MOUSE_MOVED && e.isControlDown() && e.isShiftDown()) {
-
-                Point point = e.getPoint();
-                Component source = SimpleGUI.CURRENTGUI.getRealContentPane();
-
-                point.x -= (source.getLocationOnScreen().x - SimpleGUI.CURRENTGUI.getLocationOnScreen().x);
-                point.y -= (source.getLocationOnScreen().y - SimpleGUI.CURRENTGUI.getLocationOnScreen().y);
-                while (source != null) {
-
-                    Component source2 = source.getComponentAt(point);
-                    if (source instanceof JTabbedPane) {
-                        source2 = ((JTabbedPane) source).getSelectedComponent();
-                    }
-                    if (source == null || source2 == null || source2 == source) break;
-                    source = source2;
-                    point.x -= source.getLocation().x;
-                    point.y -= source.getLocation().y;
-                    // if (source == sdource || sdource == null) {
-                    if (source.getName() != null) {
-                        lbl.setText(JDL.LF("gui.quickhelp.text", "Click for help: %s", source.getName()));
-                        mouseOver.revalidate();
-                        MouseFollower.show(mouseOver);
-
-                        break;
-                    }
-
-                }
-            } else {
-                MouseFollower.hide();
-
             }
 
         }
@@ -258,9 +107,9 @@ public class JDEventQueue extends EventQueue {
         if (e.getSource() instanceof JDialog) {
             c = SwingUtilities.getDeepestComponentAt((JDialog) e.getSource(), (int) point.getX(), (int) point.getY());
         } else {
-            Component source = SimpleGUI.CURRENTGUI.getRealContentPane();
-            point.x -= (source.getLocationOnScreen().x - SimpleGUI.CURRENTGUI.getLocationOnScreen().x);
-            point.y -= (source.getLocationOnScreen().y - SimpleGUI.CURRENTGUI.getLocationOnScreen().y);
+            Component source = SwingGui.getInstance().getContentPane();
+            point.x -= (source.getLocationOnScreen().x - SwingGui.getInstance().getLocationOnScreen().x);
+            point.y -= (source.getLocationOnScreen().y - SwingGui.getInstance().getLocationOnScreen().y);
             c = SwingUtilities.getDeepestComponentAt(source, (int) point.getX(), (int) point.getY());
         }
         if (!(c instanceof JTextComponent)) { return; }

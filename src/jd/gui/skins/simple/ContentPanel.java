@@ -32,8 +32,8 @@ public class ContentPanel extends JPanel {
     // public static ContentPanel PANEL;
 
     public ContentPanel() {
-        // PANEL = this;
-        viewport = new JViewport();
+      
+   
         this.setLayout(new MigLayout("ins 0", "[grow,fill]", "[grow,fill]"));
 
     }
@@ -43,7 +43,7 @@ public class ContentPanel extends JPanel {
             // System.out.println(panel);
             // new Exception().printStackTrace();
             if (rightPanel == panel) {
-                SimpleGUI.CURRENTGUI.setWaiting(false);
+             
                 return;
             }
 

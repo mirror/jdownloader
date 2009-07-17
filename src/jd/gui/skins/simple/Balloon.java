@@ -30,6 +30,7 @@ import javax.swing.JTextPane;
 import javax.swing.JWindow;
 
 import jd.config.SubConfiguration;
+import jd.gui.skins.SwingGui;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.nutils.JDImage;
 import jd.nutils.Screen;
@@ -57,7 +58,7 @@ public class Balloon {
      * Displays only if mainframe is hidden
      */
     public static void showIfHidden(String title, ImageIcon icon, String htmlmessage) {
-        if (SimpleGUI.CURRENTGUI != null && !SimpleGUI.CURRENTGUI.isActive()) Balloon.show(title, icon, htmlmessage);
+        if (SwingGui.getInstance() != null && !SwingGui.getInstance().isActive()) Balloon.show(title, icon, htmlmessage);
     }
 
     public static void show(String title, ImageIcon icon, String htmlmessage) {
@@ -146,8 +147,8 @@ public class Balloon {
                 JPanel titlePanel = new JPanel(new MigLayout("ins 0", "[grow,fill][]"));
                 titlePanel.addMouseListener(new JDMouseAdapter() {
                     public void mouseClicked(MouseEvent e) {
-                        SimpleGUI.CURRENTGUI.setVisible(true);
-                        SimpleGUI.CURRENTGUI.toFront();
+                        SwingGui.getInstance().setVisible(true);
+                        SwingGui.getInstance().toFront();
                     }
                 });
                 titlePanel.add(lbl);

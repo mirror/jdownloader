@@ -42,7 +42,7 @@ import jd.config.SubConfiguration;
 import jd.config.ConfigEntry.PropertyType;
 import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.InteractionTrigger;
-import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.SwingGui;
 import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import jd.gui.skins.simple.config.ConfigPanel;
 import jd.gui.skins.simple.config.ConfigurationPopup;
@@ -185,7 +185,7 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
         panel.add(npanel, BorderLayout.NORTH);
         if (config != null) panel.add(config);
 
-        ConfigurationPopup pop = new ConfigurationPopup(SimpleGUI.CURRENTGUI, config, panel);
+        ConfigurationPopup pop = new ConfigurationPopup(SwingGui.getInstance(), config, panel);
         pop.setLocation(Screen.getCenterOfComponent(this, pop));
         pop.setVisible(true);
     }

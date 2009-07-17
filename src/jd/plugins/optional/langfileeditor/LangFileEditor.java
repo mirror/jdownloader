@@ -23,7 +23,7 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.MenuItem;
-import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.SwingGui;
 import jd.gui.skins.simple.SingletonPanel;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
@@ -60,7 +60,7 @@ public class LangFileEditor extends PluginOptional {
     @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() instanceof MenuItem && ((MenuItem) e.getSource()).getActionID() == 0) {
-            SimpleGUI.CURRENTGUI.getContentPane().display(lfe.getPanel());
+            SwingGui.getInstance().setContent(lfe.getPanel());
         }
     }
 

@@ -34,7 +34,7 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.CaptchaController;
 import jd.gui.UserIO;
-import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.SwingGui;
 import jd.nutils.Screen;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
@@ -74,7 +74,7 @@ public class CaptchaDialog extends JCountdownDialog implements ActionListener, K
     private SwingWorker<Object, Object> jacWorker;
 
     public CaptchaDialog(int flag, String methodname, File captchafile, String suggestion, String explain) {
-        super(SimpleGUI.CURRENTGUI);
+        super(SwingGui.getInstance());
         this.flag = flag;
         this.method = methodname;
         this.imagefile = captchafile;
@@ -126,10 +126,10 @@ public class CaptchaDialog extends JCountdownDialog implements ActionListener, K
         this.setMinimumSize(new Dimension(300, -1));
         this.pack();
         this.setResizable(false);
-        if (SimpleGUI.CURRENTGUI == null || SimpleGUI.CURRENTGUI.getExtendedState() == JFrame.ICONIFIED || !SimpleGUI.CURRENTGUI.isVisible() || !SimpleGUI.CURRENTGUI.isActive()) {
+        if (SwingGui.getInstance() == null || SwingGui.getInstance().getExtendedState() == JFrame.ICONIFIED || !SwingGui.getInstance().isVisible() || !SwingGui.getInstance().isActive()) {
             this.setLocation(Screen.getDockBottomRight(this));
         } else {
-            this.setLocation(Screen.getCenterOfComponent(SimpleGUI.CURRENTGUI, this));
+            this.setLocation(Screen.getCenterOfComponent(SwingGui.getInstance(), this));
         }
         this.toFront();
         this.setAlwaysOnTop(true);

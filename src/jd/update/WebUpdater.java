@@ -237,6 +237,7 @@ public class WebUpdater implements Serializable {
         for (int i = 0; i < UPDATE_MIRROR.length; i++) {
             String serv = mirrors.remove((int) (Math.random() * (UPDATE_MIRROR.length - 1 - i)));
             try {
+             
                 br.getPage(serv + "branches.lst");
                 if (br.getRequest().getHttpConnection().isOK()) {
                     this.branches = Regex.getLines(br.toString());
@@ -244,7 +245,7 @@ public class WebUpdater implements Serializable {
                     return branches;
                 }
             } catch (Exception e) {
-
+e.printStackTrace();
             }
             System.err.println("No branches found on " + serv);
         }

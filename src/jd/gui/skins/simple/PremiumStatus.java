@@ -45,6 +45,7 @@ import jd.controlling.AccountControllerEvent;
 import jd.controlling.AccountControllerListener;
 import jd.controlling.JDController;
 import jd.gui.UserIO;
+import jd.gui.skins.SwingGui;
 import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import jd.nutils.Formatter;
 import jd.nutils.JDFlags;
@@ -391,19 +392,19 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
     public void mouseClicked(MouseEvent e) {
         if (e.getSource() == premium) {
             if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
-                SimpleGUI.CURRENTGUI.setWaiting(true);
+                SwingGui.getInstance().setWaiting(true);
                 JPopupMenu popup = new JPopupMenu();
              
                 Factory.createHosterPopup(popup);
                 popup.show(premium, e.getPoint().x, e.getPoint().y);
-                SimpleGUI.CURRENTGUI.setWaiting(false);
+                SwingGui.getInstance().setWaiting(false);
             }
             return;
         }
         for (int i = 0; i < BARCOUNT; i++) {
             if (bars[i] == e.getSource()) {
                 if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
-                    SimpleGUI.CURRENTGUI.setWaiting(true);
+                    SwingGui.getInstance().setWaiting(true);
                     JPopupMenu popup = new JPopupMenu();
                   
                     ArrayList<MenuItem> entries = bars[i].getPlugin().createMenuitems();
@@ -416,7 +417,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
                         }
                     }
                     popup.show(bars[i], e.getPoint().x, e.getPoint().y);
-                    SimpleGUI.CURRENTGUI.setWaiting(false);
+                    SwingGui.getInstance().setWaiting(false);
                 } else {
                     if (JDCollapser.getInstance().getContentPanel() != null && JDCollapser.getInstance().getContentPanel() instanceof ConfigEntriesPanel) {
                         ConfigContainer cfg = ((ConfigEntriesPanel) JDCollapser.getInstance().getContentPanel()).getConfigContainer();

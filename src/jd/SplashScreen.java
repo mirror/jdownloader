@@ -19,13 +19,16 @@ package jd;
 import java.awt.AWTException;
 import java.awt.AlphaComposite;
 import java.awt.Color;
+import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.awt.Image;
+import java.awt.Insets;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.RenderingHints;
 import java.awt.Transparency;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -34,10 +37,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import javax.swing.ImageIcon;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JProgressBar;
 import javax.swing.JWindow;
 import javax.swing.Timer;
+import javax.swing.plaf.basic.BasicProgressBarUI;
 
 import jd.config.SubConfiguration;
 import jd.controlling.JDController;
@@ -50,6 +55,10 @@ import jd.nutils.nativeintegration.ScreenDevices;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
+
+import com.jtattoo.plaf.AbstractLookAndFeel;
+import com.jtattoo.plaf.ColorHelper;
+import com.jtattoo.plaf.JTattooUtilities;
 
 class SplashProgressImage {
 
@@ -126,7 +135,7 @@ public class SplashScreen implements ActionListener, ControlListener {
                 if (point.x < 0) point.x = 0;
                 if (point.y < 0) point.y = 0;
                 gd = ScreenDevices.getGraphicsDeviceforPoint(point);
-            }else{
+            } else {
                 gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
             }
         } catch (Exception e) {
@@ -152,7 +161,7 @@ public class SplashScreen implements ActionListener, ControlListener {
     }
 
     private void initGui() {
-        GraphicsConfiguration gc = gd.getDefaultConfiguration();        
+        GraphicsConfiguration gc = gd.getDefaultConfiguration();
         label = new JLabel();
         label.setIcon(drawImage(0.0f));
 
@@ -163,6 +172,119 @@ public class SplashScreen implements ActionListener, ControlListener {
         window.add(label);
         window.add(progress = new JProgressBar(), "hidemode 3,height 20!");
         progress.setVisible(true);
+        progress.setUI(new BasicProgressBarUI() {
+
+          
+
+            protected void paintIndeterminate(Graphics g, JComponent c) {
+                if (!(g instanceof Graphics2D)) { return; }
+                Graphics2D g2D = (Graphics2D) g;
+
+                Insets b = progressBar.getInsets(); // area for border
+                int barRectWidth = progressBar.getWidth() - (b.right + b.left);
+                int barRectHeight = progressBar.getHeight() - (b.top + b.bottom);
+
+                Color colors[] = null;
+                if (!JTattooUtilities.isActive(c)) {
+                    colors = AbstractLookAndFeel.getTheme().getInActiveColors();
+                } else if (c.isEnabled()) {
+                    colors = AbstractLookAndFeel.getTheme().getProgressBarColors();
+                } else {
+                    colors = AbstractLookAndFeel.getTheme().getDisabledColors();
+                }
+
+                Color cHi = ColorHelper.darker(colors[colors.length - 1], 5);
+                Color cLo = ColorHelper.darker(colors[colors.length - 1], 10);
+
+                // Paint the bouncing box.
+                Rectangle boxRect = getBox(null);
+                if (boxRect != null) {
+                    g2D.setColor(progressBar.getForeground());
+                    JTattooUtilities.draw3DBorder(g, cHi, cLo, boxRect.x + 1, boxRect.y + 1, boxRect.width - 2, boxRect.height - 2);
+                    JTattooUtilities.fillHorGradient(g, colors, boxRect.x + 2, boxRect.y + 2, boxRect.width - 4, boxRect.height - 4);
+                }
+
+                // Deal with possible text painting
+                if (progressBar.isStringPainted()) {
+                    Object savedRenderingHint = null;
+                    if (AbstractLookAndFeel.getTheme().isTextAntiAliasingOn()) {
+                        savedRenderingHint = g2D.getRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING);
+                        
+                        g2D.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB);
+                    }
+                    if (progressBar.getOrientation() == JProgressBar.HORIZONTAL) {
+                        paintString(g2D, b.left, b.top, barRectWidth, barRectHeight, boxRect.width, b);
+                    } else {
+                        paintString(g2D, b.left, b.top, barRectWidth, barRectHeight, boxRect.height, b);
+                    }
+                    if (AbstractLookAndFeel.getTheme().isTextAntiAliasingOn()) {
+                        g2D.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, savedRenderingHint);
+                    }
+                }
+            }
+
+            protected void paintDeterminate(Graphics g, JComponent c) {
+                if (!(g instanceof Graphics2D)) { return; }
+
+                Graphics2D g2D = (Graphics2D) g;
+                Insets b = progressBar.getInsets(); // area for border
+                int w = progressBar.getWidth() - (b.right + b.left);
+                int h = progressBar.getHeight() - (b.top + b.bottom);
+
+                // amount of progress to draw
+                int amountFull = getAmountFull(b, w, h);
+                Color colors[] = null;
+                if (!JTattooUtilities.isActive(c)) {
+                    colors = AbstractLookAndFeel.getTheme().getInActiveColors();
+                } else if (c.isEnabled()) {
+                    colors = AbstractLookAndFeel.getTheme().getProgressBarColors();
+                } else {
+                    colors = AbstractLookAndFeel.getTheme().getDisabledColors();
+                }
+                Color cHi = ColorHelper.darker(colors[colors.length - 1], 5);
+                Color cLo = ColorHelper.darker(colors[colors.length - 1], 10);
+                if (progressBar.getOrientation() == JProgressBar.HORIZONTAL) {
+                    if (JTattooUtilities.isLeftToRight(progressBar)) {
+                        JTattooUtilities.draw3DBorder(g, cHi, cLo, 2, 2, amountFull - 2, h - 2);
+                        JTattooUtilities.fillHorGradient(g, colors, 3, 3, amountFull - 4, h - 4);
+                    } else {
+                        JTattooUtilities.draw3DBorder(g, cHi, cLo, w - amountFull + 2, 2, w - 2, h - 2);
+                        JTattooUtilities.fillHorGradient(g, colors, w - amountFull + 3, 3, w - 4, h - 4);
+                    }
+                } else { // VERTICAL
+                    JTattooUtilities.draw3DBorder(g, cHi, cLo, 2, 2, w - 2, amountFull - 2);
+                    JTattooUtilities.fillVerGradient(g, colors, 3, 3, w - 4, amountFull - 4);
+                }
+
+                // Deal with possible text painting
+                if (progressBar.isStringPainted()) {
+                    Object savedRenderingHint = null;
+                    if (AbstractLookAndFeel.getTheme().isTextAntiAliasingOn()) {
+                        savedRenderingHint = g2D.getRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING);
+                        g2D.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, AbstractLookAndFeel.getTheme().getTextAntiAliasingHint());
+                    }
+                    paintString(g, b.left, b.top, w, h, amountFull, b);
+                    if (AbstractLookAndFeel.getTheme().isTextAntiAliasingOn()) {
+                        g2D.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, savedRenderingHint);
+                    }
+                }
+            }
+
+            public void paint(Graphics g, JComponent c) {
+                if (JTattooUtilities.getJavaVersion() >= 1.4) {
+                    if (progressBar.isIndeterminate()) {
+                        paintIndeterminate(g, c);
+                    } else {
+                        paintDeterminate(g, c);
+                    }
+                } else {
+                    paintDeterminate(g, c);
+                }
+            }
+        }
+
+        );
+
         progress.setIndeterminate(true);
         window.pack();
         Rectangle b = gc.getBounds();
@@ -183,7 +305,7 @@ public class SplashScreen implements ActionListener, ControlListener {
      * @param alphaValue
      * @throws AWTException
      */
-    private ImageIcon drawImage(float alphaValue) {        
+    private ImageIcon drawImage(float alphaValue) {
         GraphicsConfiguration gc = gd.getDefaultConfiguration();
         BufferedImage res = gc.createCompatibleImage(w, h, Transparency.BITMASK);
         Graphics2D g2d = res.createGraphics();

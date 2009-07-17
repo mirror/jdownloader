@@ -34,7 +34,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.TransferHandler;
 
 import jd.controlling.DownloadController;
-import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.SwingGui;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -101,8 +101,8 @@ public class TableTransferHandler extends TransferHandler {
         String url = "http://www.jdownloader.org";
         ArrayList<FilePackage> packages = table.getSelectedFilePackages();
         ArrayList<DownloadLink> downloadLinks = table.getSelectedDownloadLinks();
-        Point p = SimpleGUI.CURRENTGUI.getMousePosition();
-        p = SwingUtilities.convertPoint(SimpleGUI.CURRENTGUI, p, table);
+        Point p = SwingGui.getInstance().getMousePosition();
+        p = SwingUtilities.convertPoint(SwingGui.getInstance(), p, table);
         int row = table.rowAtPoint(p);
         if (row == -1) {
             isDragging = false;

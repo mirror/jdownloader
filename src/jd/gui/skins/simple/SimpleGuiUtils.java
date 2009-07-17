@@ -23,6 +23,7 @@ import java.awt.Toolkit;
 
 import javax.swing.JFrame;
 
+import jd.gui.skins.SwingGui;
 import jd.nutils.Screen;
 
 public class SimpleGuiUtils {
@@ -66,7 +67,7 @@ public class SimpleGuiUtils {
     }
 
     public static void restoreWindow(JFrame parent, Component component) {
-        if (parent == null) parent = SimpleGUI.CURRENTGUI;
+        if (parent == null) parent = SwingGui.getInstance();
 
         component.setLocation(getLastLocation(parent, null, component));
         Dimension dim = getLastDimension(component, null);

@@ -33,7 +33,7 @@ import javax.swing.WindowConstants;
 
 import jd.config.SubConfiguration;
 import jd.gui.UserIO;
-import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.SwingGui;
 import jd.nutils.JDFlags;
 import jd.nutils.JDHash;
 import jd.nutils.JDImage;
@@ -153,12 +153,12 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
         this.toFront();
         this.setMinimumSize(this.getPreferredSize());
         if (DEFAULT_DIMENSION != null) this.setSize(DEFAULT_DIMENSION);
-        if (SimpleGUI.CURRENTGUI == null) {
+        if (SwingGui.getInstance() == null) {
             this.setLocation(Screen.getCenterOfComponent(null, this));
-        } else if (SimpleGUI.CURRENTGUI.getExtendedState() == JFrame.ICONIFIED || !SimpleGUI.CURRENTGUI.isVisible() || !SimpleGUI.CURRENTGUI.isActive()) {
+        } else if (SwingGui.getInstance().getExtendedState() == JFrame.ICONIFIED || !SwingGui.getInstance().isVisible()) {
             this.setLocation(Screen.getDockBottomRight(this));
         } else {
-            this.setLocation(Screen.getCenterOfComponent(SimpleGUI.CURRENTGUI, this));
+            this.setLocation(Screen.getCenterOfComponent(SwingGui.getInstance(), this));
         }
         this.setVisible(true);
         this.pack();
@@ -260,7 +260,7 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
         }
 
         public static JFrame getDialogParent() {
-            if (SimpleGUI.CURRENTGUI != null) return SimpleGUI.CURRENTGUI;
+            if (SwingGui.getInstance() != null) return SwingGui.getInstance();
 
             return new DummyFrame();
         }

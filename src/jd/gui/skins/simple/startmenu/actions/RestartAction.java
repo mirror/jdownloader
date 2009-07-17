@@ -18,6 +18,8 @@ package jd.gui.skins.simple.startmenu.actions;
 
 import java.awt.event.ActionEvent;
 
+import jd.gui.UserIO;
+import jd.gui.skins.SwingGui;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.gui.skins.simple.SimpleGuiUtils;
@@ -33,10 +35,13 @@ public class RestartAction extends StartAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (SimpleGUI.CURRENTGUI.showConfirmDialog(JDL.L("sys.ask.rlyrestart", "Wollen Sie jDownloader wirklich neustarten?"))) {
-            SimpleGUI.CURRENTGUI.getContentPane().getRightPanel().onHide();
-            SimpleGuiUtils.saveLastLocation(SimpleGUI.CURRENTGUI, null);
-            SimpleGuiUtils.saveLastDimension(SimpleGUI.CURRENTGUI, null);
+        if (UserIO.RETURN_OK==UserIO.getInstance().requestConfirmDialog(0,JDL.L("sys.ask.rlyrestart", "Wollen Sie jDownloader wirklich neustarten?"))) {
+            //TODO
+            if(SimpleGUI.CURRENTGUI!=null){
+                SimpleGUI.CURRENTGUI.getContentPane().getRightPanel().onHide();
+            }
+            SimpleGuiUtils.saveLastLocation(SwingGui.getInstance(), null);
+            SimpleGuiUtils.saveLastDimension(SwingGui.getInstance(), null);
             SimpleGuiConstants.GUI_CONFIG.save();
             JDUtilities.restartJD();
         }

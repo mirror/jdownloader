@@ -27,8 +27,8 @@ import jd.controlling.DownloadController;
 import jd.controlling.JDController;
 import jd.controlling.PasswordListController;
 import jd.controlling.interaction.Interaction;
+import jd.gui.skins.SwingGui;
 import jd.gui.skins.simple.GuiRunnable;
-import jd.gui.skins.simple.SimpleGUI;
 import jd.nutils.OSDetector;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -136,9 +136,9 @@ public class StartUp {
             }
         }.waitForEDT();
 
-        SimpleGUI.CURRENTGUI.setVisible(false);
+        SwingGui.getInstance().setVisible(false);
 
-        assertTrue(SimpleGUI.CURRENTGUI != null);
+        assertTrue(SwingGui.getInstance() != null);
     }
 
     @Test

@@ -18,16 +18,18 @@ package jd.controlling;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Formatter;
 import java.util.logging.Level;
+import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 public class JDLogger {
     private static Logger LOGGER = null;
     public static String LOGGER_NAME = "java_downloader";
     private static ConsoleHandler console;
-    public static long INIT_TIME=System.currentTimeMillis();
+    public static long INIT_TIME = System.currentTimeMillis();
 
     /**
      * Liefert die Klasse zurück, mit der Nachrichten ausgegeben werden können
@@ -38,7 +40,7 @@ public class JDLogger {
     public static Logger getLogger() {
 
         if (LOGGER == null) {
-         
+
             LOGGER = Logger.getLogger(LOGGER_NAME);
             Formatter formatter = new LogFormatter();
             LOGGER.setUseParentHandlers(false);
@@ -55,10 +57,12 @@ public class JDLogger {
         }
         return LOGGER;
     }
-public static void timestamp(String msg){
 
-    getLogger().warning(jd.nutils.Formatter.formatMilliseconds(System.currentTimeMillis()-INIT_TIME)+" : "+msg);
-}
+    public static void timestamp(String msg) {
+
+        getLogger().warning(jd.nutils.Formatter.formatMilliseconds(System.currentTimeMillis() - INIT_TIME) + " : " + msg);
+    }
+
     public static void exception(Throwable e) {
         exception(Level.SEVERE, e);
     }
@@ -82,8 +86,10 @@ public static void timestamp(String msg){
         System.out.println("Footstep: " + new Exception().getStackTrace()[1]);
 
     }
+
     /**
      * Retusn a Stacdktrace of an Exception
+     * 
      * @param thrown
      * @return
      */
@@ -93,6 +99,29 @@ public static void timestamp(String msg){
         thrown.printStackTrace(pw);
         pw.close();
         return sw.toString();
+    }
+/**
+ * Retuns al log entries as string.. filtered with loglevel level
+ * @param all
+ * @return
+ */
+    public static String getLog(Level level) {
+
+        Level tmp = getLogger().getLevel();
+        getLogger().setLevel(level);
+        try {
+            ArrayList<LogRecord> buff = JDLogHandler.getHandler().getBuffer();
+            StringBuilder sb = new StringBuilder();
+            for (LogRecord lr : buff) {
+
+                sb.append(JDLogHandler.getHandler().getFormatter().format(lr));
+            }
+
+            return sb.toString();
+        } finally {
+            getLogger().setLevel(tmp);
+
+        }
     }
 
 }

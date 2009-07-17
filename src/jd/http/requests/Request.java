@@ -437,12 +437,13 @@ public abstract class Request {
 
         long tima = System.currentTimeMillis();
 
-        // der aufruf ist ohne proxy
-        // der hier mit proxy..
-        // da k�nnte man sich mal schlauch machen.. welche proxy typen da
-        // unterst�tzt werden
         if (!headers.contains("Host")) {
-            headers.setAt(0, "Host", url.getHost());
+            if(url.getPort()!=80&&url.getPort()>0){
+                headers.setAt(0, "Host", url.getHost()+":"+url.getPort());
+            }else{
+                headers.setAt(0, "Host", url.getHost());
+            }
+         
         }
         if (proxy != null) {
 

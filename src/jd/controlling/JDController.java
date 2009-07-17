@@ -224,6 +224,7 @@ public class JDController implements ControlListener {
      *            Ein neuer Listener
      */
     public synchronized void addControlListener(ControlListener listener) {
+        if(listener==null)throw new NullPointerException();
         synchronized (controlListener) {
             synchronized (removeList) {
                 if (removeList.contains(listener)) removeList.remove(listener);
@@ -467,7 +468,7 @@ public class JDController implements ControlListener {
 
     public int getForbiddenReconnectDownloadNum() {
         boolean allowinterrupt = SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty("PARAM_DOWNLOAD_AUTORESUME_ON_RECONNECT", true);
-       
+
         int ret = 0;
         ArrayList<DownloadLink> links = DownloadWatchDog.getInstance().getRunningDownloads();
         for (DownloadLink link : links) {
@@ -836,7 +837,7 @@ public class JDController implements ControlListener {
         return al;
     }
 
-    public DownloadLink getDownloadLinkByFileOutput(File file, Integer Linkstatus) {        
+    public DownloadLink getDownloadLinkByFileOutput(File file, Integer Linkstatus) {
         ArrayList<DownloadLink> links = JDUtilities.getDownloadController().getAllDownloadLinks();
         try {
             for (DownloadLink nextDownloadLink : links) {

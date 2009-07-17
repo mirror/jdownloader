@@ -39,6 +39,7 @@ import jd.config.SubConfiguration;
 import jd.controlling.ClipboardHandler;
 import jd.controlling.JDController;
 import jd.controlling.reconnect.Reconnecter;
+import jd.gui.skins.SwingGui;
 import jd.gui.skins.simple.Factory;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.startmenu.actions.AddContainerAction;
@@ -247,7 +248,8 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
             JDUtilities.getController().pauseDownloads(true);
             break;
         case TrayIconPopup.ACTION_RECONNECT:
-            SimpleGUI.CURRENTGUI.doManualReconnect();
+            //TODO
+           if( SimpleGUI.CURRENTGUI!=null) SimpleGUI.CURRENTGUI.doManualReconnect();
             break;
         case TrayIconPopup.ACTION_START:
         case TrayIconPopup.ACTION_STOP:
@@ -263,7 +265,8 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
             new WebUpdate().doUpdateCheck(true, true);
             break;
         case TrayIconPopup.ACTION_EXIT:
-            SimpleGUI.CURRENTGUI.getContentPane().getRightPanel().onHide();
+            //TODO
+           if( SimpleGUI.CURRENTGUI!=null) SimpleGUI.CURRENTGUI.getContentPane().getRightPanel().onHide();
             JDUtilities.getController().exit();
             break;
         case TrayIconPopup.ACTION_TOGGLE_PREMIUM:

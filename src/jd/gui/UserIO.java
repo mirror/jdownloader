@@ -54,6 +54,7 @@ public abstract class UserIO {
     public static final int ICON_WARNING = 1;
     public static final int ICON_ERROR = 2;
     public static final int ICON_QUESTION = 3;
+    public static final String ICON_NONE = "NULLICONDUMMY";
 
     protected static UserIO INSTANCE = null;
     private static Integer COUNTDOWN_TIME = null;
@@ -152,6 +153,7 @@ public abstract class UserIO {
     }
 
     private ImageIcon getDefaultIcon(String text) {
+        if (text == UserIO.ICON_NONE) return null;
         if (text.contains("?")) {
             return this.getIcon(ICON_QUESTION);
         } else if (text.matches(JDL.L("userio.errorregex", ".*(error|failed).*"))) {
@@ -185,9 +187,26 @@ public abstract class UserIO {
     }
 
     public String requestInputDialog(String message) {
-        // TODO Auto-generated method stub
-        return this.requestInputDialog(0, JDL.L("jd.gui.userio.defaulttitle.input","Please enter!"), message, null, this.getDefaultIcon(message), null, null);
+
+        return requestInputDialog(0, message, null);
     }
 
+    public int requestConfirmDialog(int flag, String question) {
+        return UserIO.getInstance().requestConfirmDialog(flag, JDL.L("jd.gui.userio.defaulttitle.confirm", "Please confirm!"), question, this.getDefaultIcon(question), null, null);
+    }
+
+    /**
+     * 
+     * @param flag
+     *            flag
+     * @param question
+     *            question
+     * @param defaultvalue
+     *            defaultvalue
+     * @return
+     */
+    public String requestInputDialog(int flag, String question, String defaultvalue) {
+        return this.requestInputDialog(0, JDL.L("jd.gui.userio.defaulttitle.input", "Please enter!"), question, defaultvalue, this.getDefaultIcon(question), null, null);
+    }
 
 }

@@ -35,8 +35,8 @@ import javax.swing.JSeparator;
 import jd.PluginWrapper;
 import jd.captcha.specials.Raubkopierer;
 import jd.controlling.ProgressController;
+import jd.gui.skins.SwingGui;
 import jd.gui.skins.simple.GuiRunnable;
-import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.HTMLEntities;
@@ -247,7 +247,7 @@ public class RaubkopiererWs extends PluginForDecrypt {
             // @Override
             public Object runSave() {
 
-                new JDialog(SimpleGUI.CURRENTGUI) {
+                new JDialog(SwingGui.getInstance()) {
                     private static final long serialVersionUID = 1981746297816350752L;
 
                     private void init() {

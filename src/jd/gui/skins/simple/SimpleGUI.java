@@ -28,7 +28,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -69,6 +68,7 @@ import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlEvent;
 import jd.gui.UIInterface;
 import jd.gui.UserIO;
+import jd.gui.skins.SwingGui;
 import jd.gui.skins.simple.components.ChartAPIEntity;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.components.PieChartAPI;
@@ -107,7 +107,6 @@ import jd.gui.userio.dialog.ContainerDialog;
 import jd.nutils.Formatter;
 import jd.nutils.JDFlags;
 import jd.nutils.JDImage;
-import jd.nutils.OSDetector;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -119,14 +118,13 @@ import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingworker.SwingWorker;
-import org.jdesktop.swingx.JXFrame;
 import org.jdesktop.swingx.JXLoginDialog;
 import org.jdesktop.swingx.JXTitledSeparator;
 import org.jdesktop.swingx.JXLoginPane.Status;
 import org.jvnet.lafwidget.LafWidget;
 import org.jvnet.lafwidget.utils.LafConstants.AnimationKind;
 
-public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
+public class SimpleGUI extends SwingGui {
 
     public static SimpleGUI CURRENTGUI = null;
 
@@ -396,7 +394,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
             this.getGlassPane().setCursor(null);
         }
 
-        if (b == isWaiting()) return;
+      
         // super.setWaiting(b);
     }
 
@@ -480,7 +478,7 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
             mainMenuIconRollOver = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_54_54"), 54, 54);
             this.getRootPane().setUI(new JDSubstanceUI());
 
-            // JDController.getInstance().addControlListener(new
+            // JDController.genew DownloadtInstance().addControlListener(new
             // ConfigPropertyListener(SimpleGuiConstants.ANIMATION_ENABLED) {
             //
             // // @Override
@@ -580,7 +578,8 @@ public class SimpleGUI extends JXFrame implements UIInterface, WindowListener {
         JPanel panel = new JPanel(new MigLayout("ins 0,wrap 1", "[fill,grow]", "[fill,grow]0[]0[]0[]"));
 
         setContentPane(panel);
-        this.setToolBar(toolBar);
+       
+        add(toolBar,"dock north");
         // panel.add(this.toolBar, "spanx");
         JPanel center = new JPanel(new MigLayout("ins 0,wrap 3", "[fill]0[shrink]0[fill,grow 100]", "[grow,fill]0[]"));
 
@@ -1148,6 +1147,11 @@ sep.setVisible(false);
     public boolean isJTattoo() {
         // TODO Auto-generated method stub
         return false;
+    }
+
+    @Override
+    public void setContent(JTabbedPanel tabbedPanel) {
+       this.getContentPane().display(tabbedPanel);
     }
 
 }

@@ -16,6 +16,7 @@ package jd.gui.swing.laf;
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import java.awt.Insets;
 import java.io.File;
 import java.io.FileInputStream;
 import java.net.URL;
@@ -281,10 +282,15 @@ public class LookAndFeelController {
             defaults.put("RootPaneUI", "jd.gui.swing.laf.ext.jtattoo.acryl.ui.AcrylRootPaneUI");
             defaults.put("CheckBoxUI", "jd.gui.swing.laf.ext.jattoo.ui.BaseJDCheckBoxUI");
             defaults.put("ButtonUI", "jd.gui.swing.laf.ext.jattoo.ui.BaseJDButtonUI");
-
+            defaults.put("TabbedPane.tabInsets", new Insets(0, 5, 0, 5));
+//            defaults.put("ProgressBar.selectionForeground", new Color(100, 100, 100));
             Properties props = new Properties();
             props.put("dynamicLayout", "on");
             props.put("logoString", "");
+            props.put("textAntiAliasingMode", "GRAY");
+            props.put("windowDecoration", "off");
+            props.put("dynamicLayout", "on");
+            props.put("textAntiAliasing", "off");
             BaseTheme.setProperties(props);
         }
 
@@ -299,10 +305,10 @@ public class LookAndFeelController {
     private static void preSetup(String className) {
         if (className.equals("com.jtattoo.plaf.acryl.AcrylLookAndFeel")) {
             Properties props = new Properties();
-            props.put("textAntiAliasingMode", "default");
+            props.put("textAntiAliasingMode", "GRAY");
             props.put("windowDecoration", "off");
             props.put("dynamicLayout", "on");
-            props.put("textAntiAliasing", "off");
+            props.put("textAntiAliasing", "on");
             props.put("logoString", "JDownloader");
             com.jtattoo.plaf.acryl.AcrylLookAndFeel.setCurrentTheme(props);
 

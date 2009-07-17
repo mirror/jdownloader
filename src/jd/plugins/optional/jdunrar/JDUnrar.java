@@ -41,7 +41,7 @@ import jd.controlling.ProgressController;
 import jd.controlling.SingleDownloadController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
-import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.SwingGui;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.nutils.Executer;
 import jd.nutils.Formatter;
@@ -457,7 +457,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
             };
             fc.setFileFilter(ff);
-            if (fc.showOpenDialog(SimpleGUI.CURRENTGUI) == JDFileChooser.APPROVE_OPTION) {
+            if (fc.showOpenDialog(SwingGui.getInstance()) == JDFileChooser.APPROVE_OPTION) {
                 File[] list = fc.getSelectedFiles();
                 if (list == null) return;
                 for (File archiveStartFile : list) {
@@ -571,7 +571,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             while (extractto != null && !extractto.isDirectory())
                 extractto = extractto.getParentFile();
             fc.setCurrentDirectory(extractto);
-            if (fc.showOpenDialog(SimpleGUI.CURRENTGUI) == JDFileChooser.APPROVE_OPTION) {
+            if (fc.showOpenDialog(SwingGui.getInstance()) == JDFileChooser.APPROVE_OPTION) {
 
                 File dl = fc.getSelectedFile();
                 if (dl == null) { return; }

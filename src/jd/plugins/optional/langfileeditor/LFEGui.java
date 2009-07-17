@@ -53,9 +53,9 @@ import jd.controlling.ProgressController;
 import jd.event.MessageEvent;
 import jd.event.MessageListener;
 import jd.gui.UserIO;
+import jd.gui.skins.SwingGui;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.JTabbedPanel;
-import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.ChartAPIEntity;
 import jd.gui.skins.simple.components.PieChartAPI;
 import jd.nutils.JDFlags;
@@ -326,7 +326,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
         if (e.getSource() == mnuReload) {
             saveChanges();
 
-            SimpleGUI.CURRENTGUI.setWaiting(true);
+            SwingGui.getInstance().setWaiting(true);
             new Thread(new Runnable() {
                 public void run() {
                     try {
@@ -336,7 +336,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
                         populateLngMenu();
                         initLocaleData();
                     } finally {
-                        SimpleGUI.CURRENTGUI.setWaiting(false);
+                        SwingGui.getInstance().setWaiting(false);
                     }
                 }
             }).start();
@@ -347,7 +347,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
 
         } else if (e.getSource() == mnuAdd) {
 
-            String[] result = SimpleGUI.CURRENTGUI.showTwoTextFieldDialog(JDL.L(LOCALE_PREFIX + "addKey.title", "Add new key"), JDL.L(LOCALE_PREFIX + "addKey.message1", "Type in the name of the key:"), JDL.L(LOCALE_PREFIX + "addKey.message2", "Type in the translated message of the key:"), "", "");
+            String[] result = SwingGui.getInstance().showTwoTextFieldDialog(JDL.L(LOCALE_PREFIX + "addKey.title", "Add new key"), JDL.L(LOCALE_PREFIX + "addKey.message1", "Type in the name of the key:"), JDL.L(LOCALE_PREFIX + "addKey.message2", "Type in the translated message of the key:"), "", "");
             if (result == null || result[0].equals("")) return;
             result[0] = result[0].toLowerCase();
             for (KeyInfo ki : data) {
@@ -387,7 +387,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
 
         } else if (e.getSource() == mnuShowDupes) {
 
-            LFEDupeDialog.showDialog(SimpleGUI.CURRENTGUI, dupes);
+            LFEDupeDialog.showDialog(SwingGui.getInstance(), dupes);
 
         } else if (e.getSource() == mnuOpenSearchDialog) {
 
@@ -426,7 +426,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
     }
 
     private void updateSVN(boolean revert) {
-        SimpleGUI.CURRENTGUI.setWaiting(true);
+        SwingGui.getInstance().setWaiting(true);
 
         if (!dirLanguages.exists()) dirLanguages.mkdirs();
         if (!dirWorkingCopy.exists()) dirWorkingCopy.mkdirs();
@@ -490,7 +490,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
             progress.finalize(5 * 1000l);
         }
 
-        SimpleGUI.CURRENTGUI.setWaiting(false);
+        SwingGui.getInstance().setWaiting(false);
 
     }
 
@@ -584,7 +584,7 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
     }
 
     private void initLocaleData() {
-        SimpleGUI.CURRENTGUI.setWaiting(true);
+        SwingGui.getInstance().setWaiting(true);
         parseLanguageFile(languageFile, languageKeysFormFile);
 
         HashMap<String, String> dupeHelp = new HashMap<String, String>();
@@ -650,13 +650,13 @@ public class LFEGui extends JTabbedPanel implements ActionListener, MouseListene
 
         });
 
-        SimpleGUI.CURRENTGUI.setWaiting(false);
+        SwingGui.getInstance().setWaiting(false);
     }
 
     private void getSourceEntries() {
-        SimpleGUI.CURRENTGUI.setWaiting(true);
+        SwingGui.getInstance().setWaiting(true);
         getSourceEntriesFromFolder();
-        SimpleGUI.CURRENTGUI.setWaiting(false);
+        SwingGui.getInstance().setWaiting(false);
     }
 
     private void getSourceEntriesFromFolder() {

@@ -44,8 +44,8 @@ import jd.PluginWrapper;
 import jd.controlling.DistributeData;
 import jd.controlling.ProgressController;
 import jd.controlling.reconnect.Reconnecter;
+import jd.gui.skins.SwingGui;
 import jd.gui.skins.simple.GuiRunnable;
-import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.URLConnectionAdapter;
@@ -1101,7 +1101,7 @@ public class Serienjunkies extends PluginForDecrypt {
         private static final long serialVersionUID = -6111708970744373146L;
 
         public SerienjunkiesCatDialog() {
-            super(SimpleGUI.CURRENTGUI);
+            super(SwingGui.getInstance());
 
             initGUI();
         }
@@ -1181,7 +1181,7 @@ public class Serienjunkies extends PluginForDecrypt {
         public ArrayList<SerienjunkiesLinks> dls;
 
         public SerienjunkiesSJTable(ArrayList<SerienjunkiesLinks> dLinks) {
-            super(SimpleGUI.CURRENTGUI);
+            super(SwingGui.getInstance());
 
             dls = dLinks;
             initGUI();

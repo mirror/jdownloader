@@ -36,6 +36,8 @@ import jd.controlling.interaction.Interaction;
 import jd.event.ControlEvent;
 import jd.gui.UIInterface;
 import jd.gui.UserIO;
+import jd.gui.skins.SwingGui;
+import jd.gui.skins.jdgui.JDGui;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.gui.swing.laf.LookAndFeelController;
@@ -139,8 +141,10 @@ public class JDInit {
     }
 
     public UIInterface initGUI(JDController controller) {
-
-        UIInterface uiInterface = SimpleGUI.createGUI();
+        LookAndFeelController.setUIManager();
+        
+        SwingGui.setInstance(JDGui.getInstance());
+        UIInterface uiInterface =             SwingGui.getInstance();
 
         controller.setUiInterface(uiInterface);
         controller.addControlListener(uiInterface);

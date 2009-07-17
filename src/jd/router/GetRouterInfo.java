@@ -47,9 +47,9 @@ import jd.controlling.JDLogger;
 import jd.controlling.reconnect.ReconnectMethod;
 import jd.controlling.reconnect.Reconnecter;
 import jd.gui.UserIO;
+import jd.gui.skins.SwingGui;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.ProgressDialog;
-import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.config.GUIConfigEntry;
 import jd.http.Browser;
 import jd.http.RequestHeader;
@@ -870,7 +870,7 @@ public class GetRouterInfo {
 
     public static void autoConfig(final Object pass, final Object user, final Object ip, final Object routerScript) {
 
-        final ProgressDialog progress = new ProgressDialog(SimpleGUI.CURRENTGUI, JDL.L("gui.config.liveHeader.progress.message", "jDownloader sucht nach Ihren Routereinstellungen"), null, false, true);
+        final ProgressDialog progress = new ProgressDialog(SwingGui.getInstance(), JDL.L("gui.config.liveHeader.progress.message", "jDownloader sucht nach Ihren Routereinstellungen"), null, false, true);
         final GetRouterInfo routerInfo = new GetRouterInfo(progress);
         final Thread th = new Thread() {
             // @Override

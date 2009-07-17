@@ -28,6 +28,7 @@ import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.pluginUtils.Recaptcha;
 import jd.utils.JDUtilities;
 
 public class Gwarezcc extends PluginForDecrypt {
@@ -108,6 +109,9 @@ public class Gwarezcc extends PluginForDecrypt {
                         // deshalb wird der check zuerst gemacht.
                         linkString = brc.getRegex("<meta http-equiv=\"refresh\".*?URL=(.*?)\">").getMatch(0);
                         if (linkString != null) break;
+                        
+                        Recaptcha rc = new Recaptcha(brc);
+                        rc.parse();
                         String k = brc.getRegex("<script type=\"text/javascript\" src=\"http://api.recaptcha.net/challenge\\?k=(.*?)\"></script>").getMatch(0);
                         if (k != null) {
                             /* recaptcha */

@@ -66,9 +66,9 @@ public class TabProgress extends JPanel implements ActionListener, ControlListen
 
     private JLabel title;
 
-    private boolean updateinprogress = false;
+    private boolean updateInProgress = false;
 
-    private long last_update = 0;
+    private long latestUpdateTIme = 0;
 
     /**
      * Die Tabelle für die Pluginaktivitäten
@@ -94,7 +94,7 @@ public class TabProgress extends JPanel implements ActionListener, ControlListen
         add(title = new JLabel(""), "split 3,gapleft 10,gapbottom 5,gaptop 5");
         title.setIcon(JDTheme.II("gui.images.sort", 24, 24));
         title.setIconTextGap(15);
-        add(new JSeparator(), "growx,pushx,gapright 10");
+        add(new JSeparator(), "growx,pushx,gapright 15");
         add(new JLabel(JDTheme.II("gui.images.config.tip", 16, 16)));
         for (int i = 0; i < MAX_BARS; i++) {
             lines[i] = new ProgressEntry();
@@ -146,9 +146,9 @@ public class TabProgress extends JPanel implements ActionListener, ControlListen
 
     protected void update(boolean force) {
         if (!force) {
-            if (updateinprogress) return;
-            if ((System.currentTimeMillis() - last_update) < (500)) return;
-            updateinprogress = true;
+            if (updateInProgress) return;
+            if ((System.currentTimeMillis() - latestUpdateTIme) < (500)) return;
+            updateInProgress = true;
         }
         sortControllers();
         synchronized (controllers) {
@@ -180,8 +180,8 @@ public class TabProgress extends JPanel implements ActionListener, ControlListen
             this.setTitle(JDL.LF("gui.progresspane.title", "%s module(s) running", "" + controllers.size()));
             this.revalidate();
             this.repaint();
-            if (!force) updateinprogress = false;
-            last_update = System.currentTimeMillis();
+            if (!force) updateInProgress = false;
+            latestUpdateTIme = System.currentTimeMillis();
         }
     }
 

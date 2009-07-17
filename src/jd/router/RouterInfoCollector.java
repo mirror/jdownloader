@@ -82,7 +82,7 @@ public class RouterInfoCollector {
          * void run() { RouterInfoCollector ric = new RouterInfoCollector();
          * String xml = ric.toString(); if (xml != null && isValidReconnect()) {
          * CountdownConfirmDialog ccd = new
-         * CountdownConfirmDialog(SimpleGUI.CURRENTGUI,
+         * CountdownConfirmDialog(SwingGui.getInstance(),
          * JDLocale.L("routerinfocollector.dialog.title",
          * "Helfen sie die Routererkennung zu verbessern"), 30, true,
          * CountdownConfirmDialog.STYLE_YES | CountdownConfirmDialog.STYLE_NO |
@@ -95,7 +95,7 @@ public class RouterInfoCollector {
          * PROPERTY_SHOW_ROUTERINFO_DIALOG, false);
          * JDUtilities.getConfiguration().save(); } if (ccd.result) { if
          * (ric.routerMethodeNames == null) { ric.routerMethodeNames =
-         * SimpleGUI.CURRENTGUI.showUserInputDialog(JDLocale.L(
+         * SwingGui.getInstance().showUserInputDialog(JDLocale.L(
          * "routerinfocollector.namedialog.title",
          * "Please enter the following routerinfos: manufacturer, model, firmware. (e.g DLink, 635 , FW1.37)"
          * )); } ric.sendToServer(); } }

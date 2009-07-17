@@ -55,9 +55,9 @@ import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
+import jd.gui.skins.SwingGui;
 import jd.gui.skins.simple.Factory;
 import jd.gui.skins.simple.GuiRunnable;
-import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.ChartAPIEntity;
 import jd.gui.skins.simple.components.JDTextField;
 import jd.gui.skins.simple.components.JLinkButton;
@@ -156,7 +156,7 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
 
     public void loadAccounts() {
         try {
-            if (!SimpleGUI.CURRENTGUI.isWaiting()) SimpleGUI.CURRENTGUI.setWaiting(true);
+     
 
             synchronized (Lock) {
                 ArrayList<Account> accounts = new ArrayList<Account>(AccountController.getInstance().getAllAccounts(host));
@@ -171,7 +171,7 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
             }
         } finally {
 
-            SimpleGUI.CURRENTGUI.getRealContentPane().invalidate();
+            SwingGui.getInstance().getContentPane().invalidate();
 
         }
     }
@@ -206,7 +206,7 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
         add.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent arg0) {
-                SimpleGUI.CURRENTGUI.setWaiting(true);
+                SwingGui.getInstance().setWaiting(true);
 
                 // Container p = PremiumPanel.this;
                 // main: while ((p = p.getParent()) != null) {
@@ -356,7 +356,7 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
                 @Override
                 public void paint(Graphics g) {
                     super.paint(g);
-                    SimpleGUI.CURRENTGUI.setWaiting(false);
+                    SwingGui.getInstance().setWaiting(false);
                 }
 
             };
@@ -430,7 +430,7 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
             }
             if (e.getSource() == btnCheck) {
                 if (info.isCollapsed()) {
-                    SimpleGUI.CURRENTGUI.setWaiting(true);
+                    SwingGui.getInstance().setWaiting(true);
                     AccountInfo ai;
                     try {
                         Account acc = getAccount();

@@ -19,10 +19,10 @@ package jd.plugins.hoster;
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.HostPlugin;
 import jd.plugins.DownloadLink.AvailableStatus;
 
 //           Videolinks gehen noch net, müssen umgeformt werden von video->download, aber kP ob man die so dann wirklich laden kann!

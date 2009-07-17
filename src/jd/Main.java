@@ -24,7 +24,6 @@ import it.sauronsoftware.junique.MessageHandler;
 import java.awt.EventQueue;
 import java.awt.Image;
 import java.awt.MediaTracker;
-import java.awt.Toolkit;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -58,7 +57,6 @@ import jd.controlling.interaction.Interaction;
 import jd.event.ControlEvent;
 import jd.gui.UserIO;
 import jd.gui.skins.simple.GuiRunnable;
-import jd.gui.skins.simple.JDEventQueue;
 import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.userio.SimpleUserIO;
@@ -340,7 +338,7 @@ public class Main {
             final Main main = new Main();
             EventQueue.invokeLater(new Runnable() {
                 public void run() {
-                    Toolkit.getDefaultToolkit().getSystemEventQueue().push(new JDEventQueue());
+                    
                     main.go();
                     for (String p : args) {
                         LOGGER.finest("Param: " + p);

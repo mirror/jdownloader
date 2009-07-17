@@ -16,9 +16,9 @@
 
 package jd.utils;
 
+import jd.gui.skins.SwingGui;
 import jd.gui.skins.simple.AboutDialog;
 import jd.gui.skins.simple.GuiRunnable;
-import jd.gui.skins.simple.SimpleGUI;
 
 import com.apple.eawt.Application;
 import com.apple.eawt.ApplicationAdapter;
@@ -52,13 +52,13 @@ public class MacOSController extends Application {
         }
 
         // public void handlePreferences(ApplicationEvent e) {
-        // SimpleGUI.CURRENTGUI.actionPerformed(new ActionEvent(this,
+        // SwingGui.getInstance().actionPerformed(new ActionEvent(this,
         // JDAction.APP_CONFIGURATION, null));
         // }
 
         public void handleReOpenApplication(ApplicationEvent e) {
-            if (SimpleGUI.CURRENTGUI.isVisible() == false) {
-                SimpleGUI.CURRENTGUI.setVisible(true);
+            if (SwingGui.getInstance().isVisible() == false) {
+                SwingGui.getInstance().setVisible(true);
             }
         }
 

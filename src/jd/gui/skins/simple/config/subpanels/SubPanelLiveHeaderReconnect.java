@@ -46,8 +46,8 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.controlling.reconnect.HTTPLiveHeader;
+import jd.gui.skins.SwingGui;
 import jd.gui.skins.simple.GuiRunnable;
-import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.config.ConfigPanel;
 import jd.gui.skins.simple.config.GUIConfigEntry;
 import jd.http.Encoding;
@@ -118,7 +118,7 @@ public class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionLi
 
                         @Override
                         public Object runSave() {
-                            JDRRGui jd = new JDRRGui(SimpleGUI.CURRENTGUI, ((JTextField) ip.getInput()[0]).getText());
+                            JDRRGui jd = new JDRRGui(SwingGui.getInstance(), ((JTextField) ip.getInput()[0]).getText());
                             jd.setModal(true);
                             jd.setVisible(true);
                             if (jd.saved) {

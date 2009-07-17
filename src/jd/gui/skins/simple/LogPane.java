@@ -32,6 +32,7 @@ import jd.controlling.JDLogger;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.UserIO;
+import jd.gui.skins.SwingGui;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.tasks.LogTaskPane;
@@ -106,7 +107,7 @@ public class LogPane extends JTabbedPanel implements ActionListener, ControlList
             String question = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN, JDL.L("userio.input.title", "Please enter!"), JDL.L("gui.logger.askQuestion", "Please describe your Problem/Bug/Question!"), null, null, null, null);
 
             if (question == null) return;
-            SimpleGUI.CURRENTGUI.setWaiting(true);
+            SwingGui.getInstance().setWaiting(true);
             String url = Upload.toJDownloader(content, name + "\r\n\r\n" + question);
 
             try {
@@ -122,7 +123,7 @@ public class LogPane extends JTabbedPanel implements ActionListener, ControlList
                 this.logField.append(JDL.L("gui.logDialog.warning.uploadFailed", "Upload failed"));
             }
             logField.append("\r\n\r\n-------------------------------------------------------------\r\n\r\n");
-            SimpleGUI.CURRENTGUI.setWaiting(false);
+            SwingGui.getInstance().setWaiting(false);
             logField.setCaretPosition(logField.getText().length());
             break;
         }
@@ -147,7 +148,7 @@ public class LogPane extends JTabbedPanel implements ActionListener, ControlList
          * TODO: not synchronized properbly in loop.
          */
         try {
-            SimpleGUI.CURRENTGUI.setWaiting(true);
+            SwingGui.getInstance().setWaiting(true);
             JDUtilities.getController().addControlListener(this);
             ArrayList<LogRecord> buff = JDLogHandler.getHandler().getBuffer();
             StringBuilder sb = new StringBuilder();
@@ -157,7 +158,7 @@ public class LogPane extends JTabbedPanel implements ActionListener, ControlList
                 sb.append(JDLogHandler.getHandler().getFormatter().format(lr));
             }
             logField.setText(sb.toString());
-            SimpleGUI.CURRENTGUI.setWaiting(false);
+            SwingGui.getInstance().setWaiting(false);
             logField.setCaretPosition(logField.getText().length());
         } catch (Exception e) {
             e.printStackTrace();

@@ -16,8 +16,14 @@
 
 package jd.plugins.optional.jdchat;
 
+import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
+import jd.controlling.JDLogHandler;
+import jd.controlling.JDLogger;
+import jd.gui.skins.SwingGui;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.parser.Regex;
 import jd.utils.JDUtilities;
@@ -163,7 +169,13 @@ class IRCListener implements IRCEventListener {
 
                 public void run() {
                     if (JDUtilities.getGUI().showCountdownConfirmDialog(JDL.LF("plugin.optional.jdchat.getlog", "%s needs a log to solve your problem. Do you agree to send him the Log?", user.name), 30)) {
-                        String url = Upload.toJDownloader(SimpleGUI.CURRENTGUI.getLogDialog().toString(), "JDChatuser:\r\n\r\n" + owner.getNick());
+                
+               
+                       
+                        
+                        
+                        
+                        String url = Upload.toJDownloader(JDLogger.getLog(Level.ALL), "JDChatuser:\r\n\r\n" + owner.getNick());
                         owner.sendMessage(user.name, url);
                     } else {
                         owner.sendMessage(user.name, owner.getNick() + " gibt seine Log nicht her");

@@ -45,8 +45,9 @@ public class DownloadTaskPane extends TaskPanel {
 
     private Thread fadeTimer;
 
-    private DownloadInformations ds = new DownloadInformations();
+
     private long speedm = 0;
+    private DownloadInformations ds = new DownloadInformations();
     private DownloadController dlc = JDUtilities.getDownloadController();
 
     private SubPane listOverview;

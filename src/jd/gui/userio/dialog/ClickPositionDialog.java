@@ -34,7 +34,7 @@ import javax.swing.WindowConstants;
 
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
-import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.SwingGui;
 import jd.nutils.Screen;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
@@ -55,7 +55,7 @@ public class ClickPositionDialog extends JCountdownDialog implements ActionListe
     private String explain;
 
     public ClickPositionDialog(File imagefile, String title, String explain) {
-        super(SimpleGUI.CURRENTGUI);
+        super(SwingGui.getInstance());
         this.imagefile = imagefile;
         this.title = title;
         this.explain = explain;
@@ -101,10 +101,10 @@ public class ClickPositionDialog extends JCountdownDialog implements ActionListe
         this.setMinimumSize(new Dimension(300, -1));
         this.pack();
         this.setResizable(false);
-        if (SimpleGUI.CURRENTGUI == null || SimpleGUI.CURRENTGUI.getExtendedState() == JFrame.ICONIFIED || !SimpleGUI.CURRENTGUI.isVisible() || !SimpleGUI.CURRENTGUI.isActive()) {
+        if (SwingGui.getInstance() == null || SwingGui.getInstance().getExtendedState() == JFrame.ICONIFIED || !SwingGui.getInstance().isVisible() ) {
             this.setLocation(Screen.getDockBottomRight(this));
         } else {
-            this.setLocation(Screen.getCenterOfComponent(SimpleGUI.CURRENTGUI, this));
+            this.setLocation(Screen.getCenterOfComponent(SwingGui.getInstance(), this));
         }
         this.toFront();
         this.setAlwaysOnTop(true);

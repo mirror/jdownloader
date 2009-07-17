@@ -22,7 +22,7 @@ import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
 import jd.controlling.DownloadController;
 import jd.controlling.DownloadWatchDog;
-import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.SwingGui;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 
@@ -42,7 +42,7 @@ public class Gui {
 
         Thread.sleep(2000);
 
-        frame = new FrameFixture(SimpleGUI.CURRENTGUI);
+        frame = new FrameFixture(SwingGui.getInstance());
     }
 
     @Test

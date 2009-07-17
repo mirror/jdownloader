@@ -13,7 +13,7 @@ import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.PasswordListController;
 import jd.gui.UserIO;
-import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.SwingGui;
 import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.http.Encoding;
 import jd.nutils.JDFlags;
@@ -93,7 +93,7 @@ public class JDExternInterface extends PluginOptional {
                             PasswordListController.getInstance().addPassword(p);
                         if (urls.length != 0) {
                             ArrayList<DownloadLink> links = new DistributeData(Encoding.htmlDecode(request.getParameters().get("urls"))).findLinks();
-                            SimpleGUI.CURRENTGUI.addLinksToGrabber(links, false);
+                            SwingGui.getInstance().addLinksToGrabber(links, false);
                             response.addContent("success\r\n");
                         } else {
                             response.addContent("failed\r\n");
@@ -110,7 +110,7 @@ public class JDExternInterface extends PluginOptional {
                             JDIO.saveToFile(tmp, dlc.getBytes());
                             ArrayList<DownloadLink> links = JDUtilities.getController().getContainerLinks(tmp);
 
-                            SimpleGUI.CURRENTGUI.addLinksToGrabber(links, false);
+                            SwingGui.getInstance().addLinksToGrabber(links, false);
                             response.addContent("success\r\n");
                         } catch (IOException e) {
                             e.printStackTrace();
@@ -201,7 +201,7 @@ public class JDExternInterface extends PluginOptional {
                             if (autostart) {
                                 addandstart(fp);
                             } else {
-                                SimpleGUI.CURRENTGUI.addLinksToGrabber(links, false);
+                                SwingGui.getInstance().addLinksToGrabber(links, false);
                             }
                         } else if (autostart) {
                             /*
@@ -214,7 +214,7 @@ public class JDExternInterface extends PluginOptional {
                             addandstart(fp);
                         } else {
                             /* add links to linkgrabber */
-                            SimpleGUI.CURRENTGUI.addLinksToGrabber(links, false);
+                            SwingGui.getInstance().addLinksToGrabber(links, false);
                         }
                     }
                 }

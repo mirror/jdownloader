@@ -16,7 +16,9 @@
 
 package jd.gui.skins.simple.config;
 
-import java.awt.ComponentOrientation;
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Insets;
 import java.util.ArrayList;
 import java.util.Vector;
 import java.util.logging.Logger;
@@ -25,16 +27,17 @@ import javax.swing.DefaultSingleSelectionModel;
 import javax.swing.JComponent;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
-import javax.swing.SwingConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigEntry.PropertyType;
-import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.SwingGui;
 import jd.nutils.JDImage;
 import net.miginfocom.swing.MigLayout;
+
+import com.jtattoo.plaf.acryl.AcrylTabbedPaneUI;
 
 public class ConfigEntriesPanel extends ConfigPanel {
 
@@ -87,7 +90,7 @@ public class ConfigEntriesPanel extends ConfigPanel {
     }
 
     public void init() {
-        if (SimpleGUI.CURRENTGUI != null) SimpleGUI.CURRENTGUI.setWaiting(true);
+        if (SwingGui.getInstance() != null) SwingGui.getInstance().setWaiting(true);
         initPanel();
         load();
 
@@ -131,10 +134,10 @@ public class ConfigEntriesPanel extends ConfigPanel {
         } else {
             subPanels = new Vector<ConfigEntriesPanel>();
             tabbedPane = new JTabbedPane();
-
-            tabbedPane.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
-            tabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
-            tabbedPane.setTabPlacement(SwingConstants.TOP);
+initUI(tabbedPane);
+//            tabbedPane.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
+//            tabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
+//            tabbedPane.setTabPlacement(SwingConstants.TOP);
             tabbedPane.setModel(new DefaultSingleSelectionModel() {
                 /**
                  * 
@@ -190,6 +193,48 @@ public class ConfigEntriesPanel extends ConfigPanel {
         }
 
     }
+
+    private void initUI(JTabbedPane tabbedPane2) {
+
+            
+            if (tabbedPane2.getUI() instanceof AcrylTabbedPaneUI) {
+
+                tabbedPane2.setUI(new AcrylTabbedPaneUI() {
+                    public void installDefaults() {
+                        super.installDefaults();
+                        contentBorderInsets=new Insets(0, 0, 0, 0);
+                        tabInsets=new Insets(0, 6, 0, 6);
+                    }
+                    protected void paintContentBorder(Graphics g, int tabPlacement, int selectedIndex, int x, int y, int w, int h) {
+                        // super.paintContentBorder(arg0, arg1, arg2, arg3, arg4,
+                        // arg5, arg6)
+                        int sepHeight = tabAreaInsets.bottom;
+                       
+                        if (sepHeight > 0) {
+                            switch (tabPlacement) {
+                            case TOP: {
+                                int tabAreaHeight = calculateTabAreaHeight(tabPlacement, runCount, maxTabHeight);
+                                Color colors[] = getContentBorderColors(tabPlacement);
+                                for (int i = 0; i < colors.length; i++) {
+                                    g.setColor(colors[i]);
+                                    g.drawLine(x, y + tabAreaHeight - sepHeight + i + 1, x + w, y + tabAreaHeight - sepHeight + i + 1);
+                                }
+
+                                break;
+                            }
+
+                            }
+
+                        }
+
+                    }
+
+                  
+
+                });
+
+            }
+        }
 
     // @Override
     public void load() {

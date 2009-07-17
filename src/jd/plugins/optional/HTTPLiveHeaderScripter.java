@@ -53,8 +53,8 @@ import javax.swing.event.DocumentListener;
 import jd.PluginWrapper;
 import jd.config.MenuItem;
 import jd.controlling.reconnect.HTTPLiveHeader;
+import jd.gui.skins.SwingGui;
 import jd.gui.skins.simple.JTabbedPanel;
-import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.http.Encoding;
@@ -89,7 +89,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() instanceof MenuItem && ((MenuItem) e.getSource()).getActionID() == 0) {
             initGUI();
-            SimpleGUI.CURRENTGUI.getContentPane().display(tabbedPanel);
+            SwingGui.getInstance().setContent(tabbedPanel);
         } else if (e.getSource() == menImportHTTPLive) {
             importFF();
         } else if (e.getSource() == menHelpWiki) {

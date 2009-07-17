@@ -73,7 +73,7 @@ public class JDCollapser extends JPanel {
 
     public void paint(Graphics g) {
         super.paint(g);
-        SimpleGUI.CURRENTGUI.setWaiting(false);
+       
     }
 
     public void setCollapsed(boolean b) {

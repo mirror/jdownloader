@@ -176,7 +176,8 @@ public class JDToolBar extends JToolBar implements ControlListener {
             public void actionPerformed(ActionEvent e) {
                 new Thread() {
                     public void run() {
-                        SimpleGUI.CURRENTGUI.doManualReconnect();
+                        //TODO
+//                        SwingGui.getInstance().doManualReconnect();
                     }
                 }.start();
             }
@@ -273,7 +274,8 @@ public class JDToolBar extends JToolBar implements ControlListener {
                                 }
                             }
                             fps = null;
-                            SimpleGUI.CURRENTGUI.getTaskPane().switcher(SimpleGUI.CURRENTGUI.getDlTskPane());
+                            //TODO
+//                            SwingGui.getInstance().getTaskPane().switcher(SwingGui.getInstance().getDlTskPane());
                         }
                         setPause(false);
                         JDUtilities.getController().startDownloads();

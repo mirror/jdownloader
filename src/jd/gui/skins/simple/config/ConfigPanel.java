@@ -31,9 +31,9 @@ import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
 import jd.config.SubConfiguration;
 import jd.config.ConfigEntry.PropertyType;
+import jd.gui.skins.SwingGui;
 import jd.gui.skins.simple.Factory;
 import jd.gui.skins.simple.JTabbedPanel;
-import jd.gui.skins.simple.SimpleGUI;
 import net.miginfocom.swing.MigLayout;
 
 public abstract class ConfigPanel extends JTabbedPanel {
@@ -68,6 +68,9 @@ public abstract class ConfigPanel extends JTabbedPanel {
         // }
     }
 
+  
+    
+
     @Override
     public boolean needsViewport() {
         return viewport;
@@ -82,7 +85,7 @@ public abstract class ConfigPanel extends JTabbedPanel {
     public void paint(Graphics g) {
 
         super.paint(g);
-        if (SimpleGUI.CURRENTGUI != null) SimpleGUI.CURRENTGUI.setWaiting(false);
+        if (SwingGui.getInstance() != null) SwingGui.getInstance().setWaiting(false);
     }
 
     public void addGUIConfigEntry(GUIConfigEntry entry, JPanel panel) {

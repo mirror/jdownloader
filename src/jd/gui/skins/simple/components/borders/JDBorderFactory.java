@@ -33,4 +33,9 @@ public class JDBorderFactory {
     
         return new LineTitleBorder(icon, text, 2);
     }
+
+    public static Border createInsideShadowBorder(int top, int left, int bottom, int right) {
+        // TODO Auto-generated method stub
+        return new InsideShadowBorder(top,left,bottom,right);
+    }
 }

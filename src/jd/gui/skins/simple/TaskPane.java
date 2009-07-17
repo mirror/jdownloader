@@ -194,7 +194,7 @@ public class TaskPane extends JTabbedPane {
         if (src != null) {
 
             src.broadcastEvent(new ActionEvent(src, TaskPanel.ACTION_CLICK, "Click"));
-            SimpleGUI.CURRENTGUI.hideSideBar(false);
+           SimpleGUI.CURRENTGUI.hideSideBar(false);
         }
         // new GuiRunnable<Object>() {
         //

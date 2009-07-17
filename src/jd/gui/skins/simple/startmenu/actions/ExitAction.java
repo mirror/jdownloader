@@ -18,7 +18,7 @@ package jd.gui.skins.simple.startmenu.actions;
 
 import java.awt.event.ActionEvent;
 
-import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.SwingGui;
 
 public class ExitAction extends StartAction {
 
@@ -29,7 +29,7 @@ public class ExitAction extends StartAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        SimpleGUI.CURRENTGUI.closeWindow();
+        SwingGui.getInstance().closeWindow();
     }
 
 }

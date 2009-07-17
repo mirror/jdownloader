@@ -1,20 +1,26 @@
 package jd;
 
-import java.io.File;
-import java.net.URI;
-import java.net.URL;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Tester {
 
-    public static void main(String[] args) throws Exception {
-        File file = new File("c:/test it");
-        System.out.println(file);
-        URL url = file.toURI().toURL();
-        System.out.println(url);
-        URI uri = url.toURI();
-        url.getFile();
-        System.out.println(uri);
-        System.out.println(uri.getPath());
-    }
+    public static void main(String args[]) throws Exception {
+        String regex = "\\S+(?<!(\\.p?h?p?))";
+        Pattern pattern = Pattern.compile(regex);
 
+        String candidate = "I think that JohnSmith.bla ";
+        candidate += "is a fictional chara.dsct.php His real name ";
+        candidate += "might be JohnJackson, JohnWestling, ";
+        candidate += "or JohnHolmes for all we know.";
+
+        Matcher matcher = pattern.matcher(candidate);
+
+        String tmp = null;
+
+        while (matcher.find()) {
+          tmp = matcher.group();
+          System.out.println("MATCH:" + tmp);
+        }
+      }
 }

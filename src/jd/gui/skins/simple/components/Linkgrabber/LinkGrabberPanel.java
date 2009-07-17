@@ -40,12 +40,12 @@ import jd.controlling.LinkGrabberControllerListener;
 import jd.controlling.ProgressController;
 import jd.controlling.ProgressControllerEvent;
 import jd.controlling.ProgressControllerListener;
+import jd.gui.UserIO;
+import jd.gui.skins.SwingGui;
 import jd.gui.skins.simple.Balloon;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.JDCollapser;
-import jd.gui.skins.simple.JDToolBar;
 import jd.gui.skins.simple.JTabbedPanel;
-import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.tasks.LinkGrabberTaskPane;
@@ -112,7 +112,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
         super(new MigLayout("ins 0,wrap 1", "[fill,grow]", "[fill,grow]"));
         internalTable = new LinkGrabberTable(new LinkGrabberJTableModel(), this);
         scrollPane = new JScrollPane(internalTable);
-        this.add(scrollPane, "cell 0 0,gaptop 6");
+        this.add(scrollPane, "cell 0 0");
         filePackageInfo = new LinkGrabberFilePackageInfo();
         Update_Async = new Timer(250, this);
         Update_Async.setInitialDelay(250);
@@ -196,13 +196,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
         LGINSTANCE.removeListener(this);
         Update_Async.stop();
         visible = false;
-        new GuiRunnable<Object>() {
-            // @Override
-            public Object runSave() {
-                SimpleGUI.CURRENTGUI.getToolBar().setEnabled(JDToolBar.ENTRY_ALL, true, JDL.L("gui.linkgrabber.toolbar.disabled", "Switch to downloadtask to enable buttons"));
-                return null;
-            }
-        }.start();
+ 
     }
 
     public void addLinks(final DownloadLink[] linkList) {
@@ -322,13 +316,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
 
     // @Override
     public void onDisplay() {
-        new GuiRunnable<Object>() {
-            // @Override
-            public Object runSave() {
-                SimpleGUI.CURRENTGUI.getToolBar().setEnabled(JDToolBar.ENTRY_CONTROL | JDToolBar.ENTRY_INTERACTION, false, JDL.L("gui.linkgrabber.toolbar.disabled", "Switch to downloadtask to enable buttons"));
-                return null;
-            }
-        }.start();
+       
         fireTableChanged(false);
         LGINSTANCE.addListener(this);
         visible = true;
@@ -556,7 +544,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                         case LinkGrabberTableAction.NEW_PACKAGE:
                             fp = LGINSTANCE.getFPwithLink(selected_links.get(0));
                             LinkGrabberFilePackage nfp;
-                            if (name == null) name = SimpleGUI.CURRENTGUI.showUserInputDialog(JDL.L("gui.linklist.newpackage.message", "Name of the new package"), fp.getName());
+                            if (name == null) name = UserIO.getInstance().requestInputDialog(0,JDL.L("gui.linklist.newpackage.message", "Name of the new package"), fp.getName());
                             if (name != null) {
                                 nfp = new LinkGrabberFilePackage(name, LGINSTANCE);
                                 nfp.setDownloadDirectory(fp.getDownloadDirectory());
@@ -583,7 +571,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                                 public File runSave() {
                                     JDFileChooser fc = new JDFileChooser("_LOADSAVEDLC");
                                     fc.setFileFilter(new JDFileFilter(null, ".dlc", true));
-                                    if (fc.showSaveDialog(SimpleGUI.CURRENTGUI) == JDFileChooser.APPROVE_OPTION) return fc.getSelectedFile();
+                                    if (fc.showSaveDialog(SwingGui.getInstance()) == JDFileChooser.APPROVE_OPTION) return fc.getSelectedFile();
                                     return null;
                                 }
                             };
@@ -595,7 +583,7 @@ public class LinkGrabberPanel extends JTabbedPanel implements ActionListener, Li
                             JDUtilities.getController().saveDLC(ret, selected_links);
                             break;
                         case LinkGrabberTableAction.SET_PW:
-                            pw = SimpleGUI.CURRENTGUI.showUserInputDialog(JDL.L("gui.linklist.setpw.message", "Set download password"), null);
+                            pw = SwingGui.getInstance().showUserInputDialog(JDL.L("gui.linklist.setpw.message", "Set download password"), null);
                             for (int i = 0; i < selected_links.size(); i++) {
                                 selected_links.get(i).setProperty("pass", pw);
                             }

@@ -22,14 +22,10 @@ import java.awt.event.ActionListener;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 
-import jd.config.ConfigEntry.PropertyType;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
-import jd.gui.skins.simple.ContentPanel;
 import jd.gui.skins.simple.Factory;
-import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.SubPane;
-import jd.gui.skins.simple.config.ConfigPanel;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -110,7 +106,7 @@ plugins.add(addons);
     }
 
     public void actionPerformed(ActionEvent e) {
-        SimpleGUI.CURRENTGUI.setWaiting(true);
+      
         if (e.getSource() == general) {
             this.broadcastEvent(new ActionEvent(this, ACTION_GENERAL, ((JButton) e.getSource()).getName()));
             return;
@@ -151,20 +147,20 @@ plugins.add(addons);
     }
 
     public void controlEvent(ControlEvent event) {
-        if (event.getID() == ControlEvent.CONTROL_JDPROPERTY_CHANGED) {
-            ContentPanel contentPanel = SimpleGUI.CURRENTGUI.getContentPane();
-            if (contentPanel != null && contentPanel.getRightPanel() instanceof ConfigPanel) {
-                if (((ConfigPanel) contentPanel.getRightPanel()).hasChanges() != PropertyType.NONE) {
-                    this.changes = true;
-                    if (((ConfigPanel) contentPanel.getRightPanel()).hasChanges() == PropertyType.NEEDS_RESTART) {
-                        System.out.println("RESTART !");
-                    }
-                }
-                if (changes) {
-                    sav.setEnabled(true);
-                }
-            }
-        }
+//        if (event.getID() == ControlEvent.CONTROL_JDPROPERTY_CHANGED) {
+//            ContentPanel contentPanel = SwingGui.getInstance().getContentPane();
+//            if (contentPanel != null && contentPanel.getRightPanel() instanceof ConfigPanel) {
+//                if (((ConfigPanel) contentPanel.getRightPanel()).hasChanges() != PropertyType.NONE) {
+//                    this.changes = true;
+//                    if (((ConfigPanel) contentPanel.getRightPanel()).hasChanges() == PropertyType.NEEDS_RESTART) {
+//                        System.out.println("RESTART !");
+//                    }
+//                }
+//                if (changes) {
+//                    sav.setEnabled(true);
+//                }
+//            }
+//        }
     }
 
 }

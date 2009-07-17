@@ -33,11 +33,12 @@ public class Formatter {
 
     /**
      * Formatiert Sekunden in das zeitformat stunden:minuten:sekunden
-     * 
+     * returns "~" vor values <0
      * @param eta
      * @return formatierte Zeit
      */
     public static String formatSeconds(long eta) {
+        if(eta<0)return "~";
         long hours = eta / (60 * 60);
         eta -= hours * 60 * 60;
         long minutes = eta / 60;

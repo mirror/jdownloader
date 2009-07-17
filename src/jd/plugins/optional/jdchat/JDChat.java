@@ -54,6 +54,7 @@ import jd.controlling.JDLogger;
 import jd.controlling.interaction.Interaction;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
+import jd.gui.skins.SwingGui;
 import jd.gui.skins.simple.JTabbedPanel;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JLinkButton;
@@ -682,9 +683,9 @@ public class JDChat extends PluginOptional implements ControlListener {
             public void run() {
                 if (changed) {
 
-                    if (!SimpleGUI.CURRENTGUI.isActive() && conn != null && msg2.contains(conn.getNick())) {
+                    if (!SwingGui.getInstance().isActive() && conn != null && msg2.contains(conn.getNick())) {
                         // JDSounds.PT("sound.gui.selectPackage");
-                        SimpleGUI.CURRENTGUI.toFront();
+                        SwingGui.getInstance().toFront();
                     }
 
                     textArea.setText(STYLE + "<ul>" + sb.toString() + "</ul>");
@@ -729,7 +730,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         if (e.getID() == ControlEvent.CONTROL_INTERACTION_CALL) {
 
             if (e.getSource() == Interaction.INTERACTION_AFTER_RECONNECT) {
-                if (SimpleGUI.CURRENTGUI.isActive() && !nickaway) {
+                if (SwingGui.getInstance().isActive() && !nickaway) {
                     initIRC();
                 } else {
                     addToText(null, STYLE_ERROR, "You got disconnected because of a reconnect. <a href='intern:reconnect|reconnect'><b>[RECONNECT NOW]</b></a>");
@@ -1351,19 +1352,21 @@ public class JDChat extends PluginOptional implements ControlListener {
     }
 
     public void setEnabled(boolean b) {
+        if(SimpleGUI.CURRENTGUI==null)return;
         if (b) {
             initGUI();
             tp = new JDChatTaskPane(JDL.L("plugins.optional.jdChat.gui.title2", "JD Support Chat"), JDTheme.II("gui.images.config.tip", 16, 16));
+           //TODO
             SimpleGUI.CURRENTGUI.getTaskPane().add(tp);
             tp.addActionListener(new ActionListener() {
 
                 public void actionPerformed(ActionEvent e) {
-                    SimpleGUI.CURRENTGUI.getContentPane().display(frame);
+                    SwingGui.getInstance().setContent(frame);
 
                 }
 
             });
-            SimpleGUI.CURRENTGUI.getContentPane().display(frame);
+            SwingGui.getInstance().setContent(frame);
             SimpleGUI.CURRENTGUI.getTaskPane().switcher(tp);
             JDUtilities.getController().addControlListener(this);
             new Thread() {
@@ -1375,8 +1378,8 @@ public class JDChat extends PluginOptional implements ControlListener {
         } else {
             if (frame != null) {
                 SimpleGUI.CURRENTGUI.getTaskPane().remove(tp);
-                if (SimpleGUI.CURRENTGUI.getContentPane().getRightPanel() == frame) {
-                    SimpleGUI.CURRENTGUI.getTaskPane().switcher(SimpleGUI.CURRENTGUI.getDlTskPane());
+                if ( SimpleGUI.CURRENTGUI.getContentPane().getRightPanel() == frame) {
+                    SimpleGUI.CURRENTGUI.getTaskPane().switcher( SimpleGUI.CURRENTGUI.getDlTskPane());
                 }
 
                 this.onExit();

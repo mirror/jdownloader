@@ -110,7 +110,8 @@ public class ConfigPanelAddons extends ConfigPanel implements ActionListener, Mo
                 } else {
                     plgWrapper.getPlugin().onExit();
                 }
-                SimpleGUI.CURRENTGUI.getAddonPanel().initGUI();
+                //TODO
+//                SwingGui.getInstance().getAddonPanel().initGUI();
             }
         }
 

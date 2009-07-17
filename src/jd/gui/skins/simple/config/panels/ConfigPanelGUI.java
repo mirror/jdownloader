@@ -29,7 +29,7 @@ import jd.config.SubConfiguration;
 import jd.config.ConfigEntry.PropertyType;
 import jd.controlling.JDLogger;
 import jd.controlling.LinkGrabberController;
-import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.UserIO;
 import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.config.ConfigEntriesPanel;
@@ -198,14 +198,14 @@ public class ConfigPanelGUI extends ConfigPanel {
         browser.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
 
             public void actionPerformed(ActionEvent arg0) {
-                if (SimpleGUI.CURRENTGUI.showConfirmDialog(JDL.L("gui.config.gui.testbrowser.message", "JDownloader now tries to open http://jdownloader.org in your browser."))) {
+                if (UserIO.RETURN_OK==UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN,JDL.L("gui.config.gui.testbrowser.message", "JDownloader now tries to open http://jdownloader.org in your browser."))) {
                     try {
                         save();
 
                         JLinkButton.openURL("http://jdownloader.org");
                     } catch (Exception e) {
                         JDLogger.exception(e);
-                        SimpleGUI.CURRENTGUI.showMessageDialog(JDL.LF("gui.config.gui.testbrowser.error", "Browser launcher failed: %s", e.getLocalizedMessage()));
+                        UserIO.getInstance().requestMessageDialog(JDL.LF("gui.config.gui.testbrowser.error", "Browser launcher failed: %s", e.getLocalizedMessage()));
                     }
                 }
 
@@ -304,7 +304,7 @@ public class ConfigPanelGUI extends ConfigPanel {
     // !UIManager.getLookAndFeel().getSupportsWindowDecorations();
     // if (restart) {
     // if
-    // (!SimpleGUI.CURRENTGUI.showConfirmDialog(JDLocale.L("gui.dialog.plaf.restart",
+    // (!SwingGui.getInstance().showConfirmDialog(JDLocale.L("gui.dialog.plaf.restart",
     // "This Look&Feel needs JDownloader to restart. Restart now?"),
     // JDLocale.L("gui.dialog.plaf.restart.title", "Restart JDownloader?")))
     // return null;
@@ -313,8 +313,8 @@ public class ConfigPanelGUI extends ConfigPanel {
     // }
     // UIManager.setLookAndFeel(LookAndFeelController.getPlaf().getClassName());
     //
-    // SwingUtilities.updateComponentTreeUI(SimpleGUI.CURRENTGUI);
-    // SimpleGUI.CURRENTGUI.onLAFChanged();
+    // SwingUtilities.updateComponentTreeUI(SwingGui.getInstance());
+    // SwingGui.getInstance().onLAFChanged();
     // } catch (Exception e) {
     // JDLogger.exception(e);
     // }

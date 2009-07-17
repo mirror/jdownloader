@@ -16,6 +16,7 @@
 
 package tests.utils;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.logging.Level;
 
@@ -31,8 +32,8 @@ import jd.controlling.JDLogger;
 import jd.controlling.interaction.Interaction;
 import jd.event.ControlEvent;
 import jd.gui.UserIO;
+import jd.gui.skins.SwingGui;
 import jd.gui.skins.simple.GuiRunnable;
-import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.userio.SimpleUserIO;
 import jd.http.Browser;
 import jd.nutils.OSDetector;
@@ -43,14 +44,14 @@ import jd.utils.MacOSController;
 import jd.utils.WebUpdate;
 
 public abstract class TestUtils {
-/**
- * Normal  usual downloadlink
- */
+    /**
+     * Normal usual downloadlink
+     */
     public static final String HOSTER_LINKTYPE_NORMAL = "NORMAL_DOWNLOADLINK_";
     /**
      * File not found downloadlink. invalid URL. NOT ABUSED!
      */
-    public static final String HOSTER_LINKTYPE_FNF= "FNF_DOWNLOADLINK_";
+    public static final String HOSTER_LINKTYPE_FNF = "FNF_DOWNLOADLINK_";
     /**
      * Very very tiny download. just a few kb or less
      */
@@ -66,12 +67,11 @@ public abstract class TestUtils {
     /**
      * Serverside error
      */
-    public static final String HOSTER_LINKTYPE_ERROR_HARDWARE= "HARDWARE_ERROR_DOWNLOADLINK_";
+    public static final String HOSTER_LINKTYPE_ERROR_HARDWARE = "HARDWARE_ERROR_DOWNLOADLINK_";
     /**
      * Tempora. unavailable
      */
     public static final String HOSTER_LINKTYPE_ERROR_TEMP = "TEM_ERROR_DOWNLOADLINK_";
-    
 
     private static JFrame FRAME;
 
@@ -96,6 +96,36 @@ public abstract class TestUtils {
         cfg.setProperty(string, ret);
         cfg.save();
         return ret;
+    }
+/**
+ * logs in the browser to jd wiki
+ * @param br
+ */
+    public static void wikiLogin(Browser br) {
+        try {
+            br.setFollowRedirects(true);
+            br.setDebug(true);
+            br.getPage("http://jdownloader.net:8081/home/index");
+            String login = br.getRegex("(http://jdownloader.net:8081/home/index\\?do=login\\&amp\\;sectok=.*?)\"").getMatch(0);
+
+            br.getPage(login);
+
+            Form form = br.getForm(2);
+
+            WIKI_USER = TestUtils.getStringProperty("JD_WIKI_USER");
+            WIKI_PASS = TestUtils.getStringProperty("JD_WIKI_PASS");
+
+            form.put("u", WIKI_USER);
+            form.put("p", WIKI_PASS);
+            br.submitForm(form);
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
     }
 
     public static int getIntegerProperty(String string) {
@@ -163,7 +193,6 @@ public abstract class TestUtils {
             UserIO.getInstance().requestMessageDialog("JDownloader cannot create the config files. Make sure, that JD_HOME/config/ exists and is writeable");
         }
 
-        
     }
 
     public static void initDecrypter() {
@@ -191,7 +220,7 @@ public abstract class TestUtils {
     }
 
     public static void initGUI() {
-        if (SimpleGUI.CURRENTGUI != null) return;
+        if (SwingGui.getInstance() != null) return;
 
         new GuiRunnable<Object>() {
             @Override
@@ -202,7 +231,7 @@ public abstract class TestUtils {
             }
         }.waitForEDT();
 
-        // SimpleGUI.CURRENTGUI.setVisible(false);
+        // SwingGui.getInstance().setVisible(false);
     }
 
     public static void initControllers() {
@@ -210,9 +239,9 @@ public abstract class TestUtils {
     }
 
     public static void finishInit() {
-      
+
         try {
-           Main.loadDynamics();
+            Main.loadDynamics();
         } catch (Exception e1) {
             JDLogger.exception(Level.FINEST, e1);
         }
@@ -264,30 +293,31 @@ public abstract class TestUtils {
         return ret;
 
     }
-/**
- * 
 
-    *
-      NORMAL_DECRYPTERLINK_1
-
-    *
-      DLC_DECRYPTER_LINK_1
-
-    *
-      PASSWORD_PROTECTED_1:12345
-    *
-      PASSWORD_PROTECTED_2:12345
-
-    *
-      CAPTCHA_DECRYPTER_1
-    *
-      FOLDER_DECRYPTER_1
-
-
- * @param string
- * @return
- */
-    public static  HashMap<String, String> getDecrypterLinks(String string) {
+    /**
+     * 
+     * 
+     * 
+     NORMAL_DECRYPTERLINK_1
+     * 
+     * 
+     * DLC_DECRYPTER_LINK_1
+     * 
+     * 
+     * PASSWORD_PROTECTED_1:12345
+     * 
+     * PASSWORD_PROTECTED_2:12345
+     * 
+     * 
+     * CAPTCHA_DECRYPTER_1
+     * 
+     * FOLDER_DECRYPTER_1
+     * 
+     * 
+     * @param string
+     * @return
+     */
+    public static HashMap<String, String> getDecrypterLinks(String string) {
         HashMap<String, String> ret = new HashMap<String, String>();
         try {
 
@@ -322,8 +352,8 @@ public abstract class TestUtils {
 
     }
 
-public static void initContainer() {
-    jdi.loadCPlugins();
-    
-}
+    public static void initContainer() {
+        jdi.loadCPlugins();
+
+    }
 }

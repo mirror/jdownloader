@@ -37,6 +37,7 @@ import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.userio.dialog.AbstractDialog;
 import jd.http.Browser;
 import jd.nutils.JDImage;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
@@ -46,7 +47,7 @@ public class AboutDialog extends AbstractDialog {
     private JList list;
 
     public AboutDialog() {
-        super(UserIO.NO_COUNTDOWN | UserIO.NO_OK_OPTION | UserIO.NO_CANCEL_OPTION, JDL.L("gui.about.title", "About JDownloader"), null, null, null);
+        super(UserIO.NO_COUNTDOWN | UserIO.NO_OK_OPTION | UserIO.NO_CANCEL_OPTION, JDL.L("gui.about.title", "About JDownloader")+JDUtilities.getRevision(), null, null, null);
 
         init();
     }

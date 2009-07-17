@@ -33,8 +33,8 @@ import javax.swing.Timer;
 
 import jd.PluginWrapper;
 import jd.config.MenuItem;
+import jd.gui.skins.SwingGui;
 import jd.gui.skins.simple.JTabbedPanel;
-import jd.gui.skins.simple.SimpleGUI;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
 import jd.utils.locale.JDL;
@@ -148,7 +148,7 @@ public class Schedule extends PluginOptional {
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() instanceof MenuItem && ((MenuItem) e.getSource()).getActionID() == 0) {
             initGUI();
-            SimpleGUI.CURRENTGUI.getContentPane().display(tabbedPanel);
+            SwingGui.getInstance().setContent(tabbedPanel);
         } else if (e.getSource() == add) {
             schedules.add(new ScheduleFrame(new ScheduleFrameSettings(JDL.L("addons.schedule.menu.schedule", "Schedule") + " " + (schedules.size() + 1), true)));
             reloadList();

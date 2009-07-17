@@ -38,12 +38,12 @@ import jd.controlling.DownloadControllerEvent;
 import jd.controlling.DownloadControllerListener;
 import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDLogger;
+import jd.gui.UserIO;
+import jd.gui.skins.SwingGui;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.JDCollapser;
 import jd.gui.skins.simple.JTabbedPanel;
-import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.SimpleGuiConstants;
-import jd.gui.skins.simple.components.ContentTabbedPane;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.components.Linkgrabber.LinkCheck;
@@ -356,7 +356,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                     }.start();
                     break;
                 case TableAction.EDIT_NAME:
-                    String name = SimpleGUI.CURRENTGUI.showUserInputDialog(JDL.L("gui.linklist.editpackagename.message", "Neuer Paketname"), selected_packages.get(0).getName());
+                    String name =UserIO.getInstance().requestInputDialog(0,JDL.L("gui.linklist.editpackagename.message", "Neuer Paketname"), selected_packages.get(0).getName());
                     if (name != null) {
                         for (int i = 0; i < selected_packages.size(); i++) {
                             selected_packages.get(i).setName(name);
@@ -387,7 +387,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                         public File runSave() {
                             JDFileChooser fc = new JDFileChooser("_LOADSAVEDLC");
                             fc.setFileFilter(new JDFileFilter(null, ".dlc", true));
-                            if (fc.showSaveDialog(SimpleGUI.CURRENTGUI) == JDFileChooser.APPROVE_OPTION) return fc.getSelectedFile();
+                            if (fc.showSaveDialog(SwingGui.getInstance()) == JDFileChooser.APPROVE_OPTION) return fc.getSelectedFile();
                             return null;
                         }
                     };
@@ -403,7 +403,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                     new Thread() {
                         public void run() {
 
-                            if (SimpleGUI.CURRENTGUI.showConfirmDialog(JDL.L("gui.downloadlist.reset", "Reset selected downloads?") + " (" + JDL.LF("gui.downloadlist.delete.size_packagev2", "%s links", links.size()) + ")")) {
+                            if (UserIO.RETURN_OK==UserIO.getInstance().requestConfirmDialog(0,JDL.L("gui.downloadlist.reset", "Reset selected downloads?") + " (" + JDL.LF("gui.downloadlist.delete.size_packagev2", "%s links", links.size()) + ")")) {
                                 for (int i = 0; i < links.size(); i++) {
                                     links.get(i).reset();
                                 }
@@ -476,7 +476,7 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                     break;
                 case TableAction.NEW_PACKAGE:
                     fp = selected_links.get(0).getFilePackage();
-                    string = SimpleGUI.CURRENTGUI.showUserInputDialog(JDL.L("gui.linklist.newpackage.message", "Name of the new package"), fp.getName());
+                    string = SwingGui.getInstance().showUserInputDialog(JDL.L("gui.linklist.newpackage.message", "Name of the new package"), fp.getName());
                     if (string != null) {
                         FilePackage nfp = FilePackage.getInstance();
                         nfp.setName(string);
@@ -500,13 +500,13 @@ public class DownloadLinksPanel extends JTabbedPanel implements ActionListener, 
                     }
                     break;
                 case TableAction.SET_PW:
-                    String pw = SimpleGUI.CURRENTGUI.showUserInputDialog(JDL.L("gui.linklist.setpw.message", "Set download password"), null);
+                    String pw = SwingGui.getInstance().showUserInputDialog(JDL.L("gui.linklist.setpw.message", "Set download password"), null);
                     for (int i = 0; i < selected_links.size(); i++) {
                         selected_links.get(i).setProperty("pass", pw);
                     }
                     break;
                 case TableAction.DELETE:
-                    if (SimpleGUI.CURRENTGUI.showConfirmDialog(JDL.L("gui.downloadlist.delete", "Ausgewählte Links wirklich entfernen?") + " (" + JDL.LF("gui.downloadlist.delete.size_packagev2", "%s links", selected_links.size()) + ")")) {
+                    if (SwingGui.getInstance().showConfirmDialog(JDL.L("gui.downloadlist.delete", "Ausgewählte Links wirklich entfernen?") + " (" + JDL.LF("gui.downloadlist.delete.size_packagev2", "%s links", selected_links.size()) + ")")) {
                         for (int i = 0; i < selected_links.size(); i++) {
                             selected_links.get(i).setEnabled(false);
                             selected_links.get(i).getFilePackage().remove(selected_links.get(i));

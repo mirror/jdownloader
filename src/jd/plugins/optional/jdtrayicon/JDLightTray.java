@@ -41,8 +41,8 @@ import jd.config.MenuItem;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.event.ControlEvent;
+import jd.gui.skins.SwingGui;
 import jd.gui.skins.simple.GuiRunnable;
-import jd.gui.skins.simple.SimpleGUI;
 import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
 import jd.plugins.OptionalPlugin;
@@ -103,8 +103,8 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
                 }
                 try {
                     JDUtilities.getController().addControlListener(JDLightTray.this);
-                    if (SimpleGUI.CURRENTGUI != null && SimpleGUI.CURRENTGUI != null) {
-                        guiFrame = SimpleGUI.CURRENTGUI;
+                    if (SwingGui.getInstance() != null && SwingGui.getInstance() != null) {
+                        guiFrame = SwingGui.getInstance();
                         guiFrame.addWindowListener(JDLightTray.this);
                     }
                     logger.info("Systemtray OK");
@@ -133,7 +133,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     public void controlEvent(ControlEvent event) {
         if (event.getID() == ControlEvent.CONTROL_INIT_COMPLETE && event.getSource() instanceof Main) {
             logger.info("JDLightTrayIcon Init complete");
-            guiFrame = SimpleGUI.CURRENTGUI;
+            guiFrame = SwingGui.getInstance();
             if (subConfig.getBooleanProperty(PROPERTY_START_MINIMIZED, false)) {
                 guiFrame.setState(JFrame.ICONIFIED);
             }
