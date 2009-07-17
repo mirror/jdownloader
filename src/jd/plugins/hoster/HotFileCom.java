@@ -114,8 +114,24 @@ public class HotFileCom extends PluginForHost {
             String waittime = br.getRegex("starthtimer\\(\\).*?timerend=.*?\\+(\\d+);").getMatch(0);
             if (Long.parseLong(waittime.trim()) > 0) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(waittime.trim())); }
         }
-        Form[] forms = br.getForms();
-        Form form = forms[1];
+
+        int i = 0;
+        Form form = new Form();
+        while(true) {
+            Boolean error = false;
+            try {
+                Form[] forms = br.getForms();
+                form = forms[1];
+            } catch(ArrayIndexOutOfBoundsException e) {
+                error = true;
+            }
+
+            if(!error){
+                break;
+            }else if(++i == 3){
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            }
+        }
 
         this.sleep(30000l, link);
         br.submitForm(form);
@@ -133,7 +149,7 @@ public class HotFileCom extends PluginForHost {
         String dl_url = br.getRegex("<h3 style='margin-top: 20px'><a href=\"(.*?)\">Click here to download</a>").getMatch(0);
         if (dl_url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.setFollowRedirects(true);
-        dl = br.openDownload(link, dl_url, true, 0);
+        dl = br.openDownload(link, dl_url, true, -20);
         dl.setFilenameFix(true);
         dl.startDownload();
     }
