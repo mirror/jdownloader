@@ -6,10 +6,8 @@ package jd.gui.skins.simple.components.borders;
 
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.Composite;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
-import java.awt.Graphics2D;
 import java.awt.Insets;
 
 import javax.swing.Icon;
@@ -21,7 +19,6 @@ import jd.utils.JDUtilities;
 import sun.swing.SwingUtilities2;
 
 import com.jtattoo.plaf.AbstractLookAndFeel;
-import com.jtattoo.plaf.ColorHelper;
 import com.jtattoo.plaf.JTattooUtilities;
 
 public class LineTitleBorder extends AbstractBorder {
@@ -35,56 +32,31 @@ public class LineTitleBorder extends AbstractBorder {
     public LineTitleBorder(Icon aIcon, String aTitle, int aInnerSpace) {
         icon = aIcon;
         title = aTitle;
-      
+
         innerSpace = aInnerSpace;
     }
 
     public void paintBorder(Component c, Graphics g, int x, int y, int w, int h) {
-        Graphics2D g2D = (Graphics2D) g;
-        Composite composite = g2D.getComposite();
 
-        Color hiFrameColor = null;
         Color loFrameColor = null;
-        Color hiBackColor = null;
-        Color loBackColor = null;
         Color textColor = null;
-        Color[] colors;
+
         if (UIManager.getLookAndFeel() instanceof AbstractLookAndFeel) {
-
-            colors = AbstractLookAndFeel.getTheme().getColHeaderColors();
-            // AbstractLookAndFeel.getTheme().getT
-            hiFrameColor = AbstractLookAndFeel.getControlHighlight();
             loFrameColor = AbstractLookAndFeel.getControlDarkShadow();
-
             textColor = AbstractLookAndFeel.getForegroundColor();
         } else {
-            hiFrameColor = Color.white;
             loFrameColor = Color.gray;
-            hiBackColor = ColorHelper.brighter(c.getBackground(), 30.0f);
-            loBackColor = ColorHelper.darker(c.getBackground(), 10.0f);
             textColor = c.getForeground();
-            colors = ColorHelper.createColorArr(hiBackColor, loBackColor, 48);
         }
         g.setFont(c.getFont());
         FontMetrics fm = g.getFontMetrics();
-       int strWidth = fm.stringWidth(title);
+        int strWidth = fm.stringWidth(title);
         int titleHeight = getBorderInsets(c).top - 3 - innerSpace;
-//        g.setColor(loFrameColor);
-//        g.drawRect(x, y, w -  1, titleHeight +2);
 
         g.setColor(loFrameColor);
-        int hh = y + titleHeight/2+3;
-        int xs = 2+strWidth+icon.getIconWidth()+14;
-        g.drawLine(x +xs , hh, w-getBorderInsets(c).right-innerSpace-4, hh);
-
- 
-     
-
-//        g2D.setComposite(composite);
-
-        // JTattooUtilities.fillHorGradient(g, , 0, 0, getWidth(), getHeight());
-
-//        JTattooUtilities.fillHorGradient(g, colors, x + 2, y + 2, w  - 4, titleHeight);
+        int hh = y + titleHeight / 2 + 3;
+        int xs = 2 + strWidth + icon.getIconWidth() + 14;
+        g.drawLine(x + xs, hh, w - getBorderInsets(c).right - innerSpace - 4, hh);
 
         paintText(c, g, x, y, w, h, textColor, null);
     }

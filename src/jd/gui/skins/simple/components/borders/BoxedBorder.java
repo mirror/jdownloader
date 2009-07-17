@@ -35,7 +35,7 @@ public class BoxedBorder extends AbstractBorder {
     public BoxedBorder(Icon aIcon, String aTitle, int aInnerSpace) {
         icon = aIcon;
         title = aTitle;
-      
+
         innerSpace = aInnerSpace;
     }
 
@@ -43,22 +43,16 @@ public class BoxedBorder extends AbstractBorder {
         Graphics2D g2D = (Graphics2D) g;
         Composite composite = g2D.getComposite();
 
-        Color hiFrameColor = null;
         Color loFrameColor = null;
         Color hiBackColor = null;
         Color loBackColor = null;
         Color textColor = null;
         Color[] colors;
         if (UIManager.getLookAndFeel() instanceof AbstractLookAndFeel) {
-
             colors = AbstractLookAndFeel.getTheme().getColHeaderColors();
-            // AbstractLookAndFeel.getTheme().getT
-            hiFrameColor = AbstractLookAndFeel.getControlHighlight();
             loFrameColor = AbstractLookAndFeel.getControlDarkShadow();
-
             textColor = AbstractLookAndFeel.getForegroundColor();
         } else {
-            hiFrameColor = Color.white;
             loFrameColor = Color.gray;
             hiBackColor = ColorHelper.brighter(c.getBackground(), 30.0f);
             loBackColor = ColorHelper.darker(c.getBackground(), 10.0f);
@@ -68,19 +62,14 @@ public class BoxedBorder extends AbstractBorder {
 
         int titleHeight = getBorderInsets(c).top - 3 - innerSpace;
         g.setColor(loFrameColor);
-        g.drawRect(x, y, w -  1, titleHeight +2);
+        g.drawRect(x, y, w - 1, titleHeight + 2);
 
         g.setColor(loFrameColor);
         g.drawLine(x + 2, y + getBorderInsets(c).top - innerSpace - 1, x + w - 1, y + getBorderInsets(c).top - innerSpace - 1);
 
- 
-     
-
         g2D.setComposite(composite);
 
-        // JTattooUtilities.fillHorGradient(g, , 0, 0, getWidth(), getHeight());
-
-        JTattooUtilities.fillHorGradient(g, colors, x + 2, y + 2, w  - 4, titleHeight);
+        JTattooUtilities.fillHorGradient(g, colors, x + 2, y + 2, w - 4, titleHeight);
 
         paintText(c, g, x, y, w, h, textColor, null);
     }

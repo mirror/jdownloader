@@ -75,18 +75,17 @@ public class Config {
 
         tmplaf.getProperties().putAll(laf.getProperties());
         UIDefaults defaults = UIManager.getDefaults();
-       
-       
-        Enumeration keys = defaults.keys();
-        while (keys.hasMoreElements()) {         
+
+        Enumeration<Object> keys = defaults.keys();
+        while (keys.hasMoreElements()) {
             Object key = keys.nextElement();
-        
+
             if (key instanceof String) {
                 if (!tmplaf.hasProperty(key.toString())) {
-                    System.out.println("ORG UI Defauls: " +key.toString()+" : "+defaults.get(key.toString()));
-//                    if(next.getKey().toString().equals("PopupMenuUI")){
-//                        System.out.println("ORG UI Defauls: " + next);
-//                    }
+                    System.out.println("ORG UI Defauls: " + key.toString() + " : " + defaults.get(key.toString()));
+                    // if(next.getKey().toString().equals("PopupMenuUI")){
+                    // System.out.println("ORG UI Defauls: " + next);
+                    // }
                     tmplaf.setProperty(key.toString(), defaults.get(key.toString()));
                 }
             }
@@ -99,10 +98,10 @@ public class Config {
                     Object value = tmplaf.getProperty(event.getParameter().toString());
                     if (value == null) value = Property.NULL;
                     laf.setProperty(event.getParameter().toString(), value);
-                   if(value!=null&&value!=Property.NULL) UIManager.put(event.getParameter().toString(), value);
+                    if (value != null && value != Property.NULL) UIManager.put(event.getParameter().toString(), value);
                     laf.save();
                     SwingUtilities.updateComponentTreeUI(frame);
-                    
+
                     frame.pack();
 
                 }
@@ -130,6 +129,7 @@ public class Config {
         });
 
     }
+
     private int[] getSelectedRows() {
         int[] rows = table.getSelectedRows();
         int[] ret = new int[rows.length];
@@ -140,6 +140,7 @@ public class Config {
         Arrays.sort(ret);
         return ret;
     }
+
     private void setCurrentConfig(SubConfiguration cfg) {
         currentConfig = cfg;
 
@@ -243,8 +244,8 @@ public class Config {
         table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
 
             public void valueChanged(ListSelectionEvent e) {
-               int[] rows = getSelectedRows();
-               if(rows.length==0)return;
+                int[] rows = getSelectedRows();
+                if (rows.length == 0) return;
                 int row = rows[0];
                 Object value = tableModel.getValueAt(row, 1);
                 try {
@@ -318,8 +319,8 @@ public class Config {
 
             public void actionPerformed(ActionEvent e) {
                 int[] rows = getSelectedRows();
-                if(rows.length==0)return;
-                 int row = rows[0];
+                if (rows.length == 0) return;
+                int row = rows[0];
                 Object key = tableModel.getValueAt(row, 0);
                 Object value = tableModel.getValueAt(row, 1);
 
@@ -374,8 +375,8 @@ public class Config {
 
             public void actionPerformed(ActionEvent e) {
                 int[] rows = getSelectedRows();
-                if(rows.length==0)return;
-                 int row = rows[0];
+                if (rows.length == 0) return;
+                int row = rows[0];
                 Object key = tableModel.getValueAt(row, 0);
                 String[] keys = key.toString().split("/");
                 if (keys[keys.length - 1].equals("null")) {
