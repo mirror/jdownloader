@@ -60,9 +60,10 @@ public class EndlessAppsNet extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
         br.getPage(parameter.getDownloadURL());
-        if (br.containsHTML("<p>File: </p>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("The file doesn't exist. There will be a problem.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<p>File: (.*?)</p>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filesize = br.getRegex("<p>File Size: (.*?)</p>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         parameter.setName(filename.trim());
         return AvailableStatus.TRUE;
     }
@@ -80,7 +81,7 @@ public class EndlessAppsNet extends PluginForHost {
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision: 6526 $");
+        return getVersion("$Revision$");
     }
 
     public int getMaxSimultanFreeDownloadNum() {
