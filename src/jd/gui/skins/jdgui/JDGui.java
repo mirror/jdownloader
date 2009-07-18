@@ -131,7 +131,7 @@ public class JDGui extends SwingGui {
         mainTabbedPane = new MainTabbedPane();
 
         multiProgressBar = new TabProgress();
-this.toolBar=new JDToolBar();
+        this.toolBar = new JDToolBar();
         downloadView = new DownloadView();
         linkgrabberView = new LinkgrabberView();
         configurationView = new ConfigurationView();
@@ -150,15 +150,13 @@ this.toolBar=new JDToolBar();
         MigLayout mainLayout = new MigLayout("ins 0 0 0 0,wrap 1", "[grow,fill]", "[grow,fill]0[shrink]");
         contentPane.setLayout(mainLayout);
         this.setJMenuBar(menuBar);
-add(toolBar,"dock NORTH");
+        add(toolBar, "dock NORTH");
         contentPane.add(mainTabbedPane);
 
         contentPane.add(multiProgressBar, "hidemode 3");
         contentPane.add(statusBar, "dock SOUTH");
 
     }
-    
-    
 
     private void initDefaults() {
         Toolkit.getDefaultToolkit().getSystemEventQueue().push(new EDTEventQueue());
@@ -422,6 +420,13 @@ add(toolBar,"dock NORTH");
     }
 
     public MainTabbedPane getMainTabbedPane() {
-       return this.mainTabbedPane;
+        return this.mainTabbedPane;
+    }
+
+    public void requestPanel(String panelID) {
+        if (panelID.equals(jd.gui.UIContants.PANEL_ID_DOWNLOADLIST)) {
+            mainTabbedPane.setSelectedComponent(downloadView);
+        }
+
     }
 }

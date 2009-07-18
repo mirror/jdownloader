@@ -157,4 +157,15 @@ public interface UIInterface extends ControlListener {
      */
     public void showAccountInformation(PluginForHost pluginForHost, Account account);
 
+    /**
+     * requests a special view from the gui.
+     * example:
+     * 
+     * JDUtilities.getGUI().requestPanel(UIConstants.PANEL_ID_DOWNLOADLIST);
+     * 
+     * asks the gui backend to display the downloadlist. IT depends on the guibackend which requests are fullfilled and which not.
+     * @param panelIdDownloadlist
+     */
+    public void requestPanel(String panelID);
+
 }

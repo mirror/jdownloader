@@ -53,6 +53,7 @@ public class JDSimpleWebserverRequestHandler {
     public JDSimpleWebserverRequestHandler(HashMap<String, String> headers, JDSimpleWebserverResponseCreator response) {
         lgi = LinkGrabberController.getInstance();
         this.response = response;
+        
         this.headers = headers;
     }
 

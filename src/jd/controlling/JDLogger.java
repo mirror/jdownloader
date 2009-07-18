@@ -26,6 +26,10 @@ import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 public class JDLogger {
+   protected JDLogger(){
+       
+   }
+
     private static Logger LOGGER = null;
     public static String LOGGER_NAME = "java_downloader";
     private static ConsoleHandler console;
@@ -87,6 +91,11 @@ public class JDLogger {
 
     }
 
+    static public void warning(Object o) {
+        getLogger().warning(o.toString());
+
+    }
+
     /**
      * Retusn a Stacdktrace of an Exception
      * 
@@ -100,11 +109,13 @@ public class JDLogger {
         pw.close();
         return sw.toString();
     }
-/**
- * Retuns al log entries as string.. filtered with loglevel level
- * @param all
- * @return
- */
+
+    /**
+     * Retuns al log entries as string.. filtered with loglevel level
+     * 
+     * @param all
+     * @return
+     */
     public static String getLog(Level level) {
 
         Level tmp = getLogger().getLevel();

@@ -1003,9 +1003,6 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
         saveChanges();
     }
 
-    @Override
-    public boolean needsViewport() {
-        return false;
-    }
+  
 
 }
