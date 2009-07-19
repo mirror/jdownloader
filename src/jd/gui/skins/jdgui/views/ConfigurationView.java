@@ -24,7 +24,16 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-public class ConfigurationView  extends View{
+public class ConfigurationView extends View {
+
+    private static final long serialVersionUID = -5607304856678049342L;
+
+    /**
+     * DO NOT MOVE THIS CONSTANT. IT's important to have it in this file for the
+     * LFE to parse JDL Keys correct
+     */
+    private static final String IDENT_PREFIX = "jd.gui.skins.jdgui.views.configurationview.";
+
     public ConfigurationView() {
         super();
         ConfigTaskPane cfgTskPane;
@@ -88,30 +97,20 @@ public class ConfigurationView  extends View{
         });
         setContent(cfgTskPane.getPanel(SimpleGuiConstants.GUI_CONFIG.getIntegerProperty("LAST_CONFIG_PANEL", ConfigTaskPane.ACTION_GENERAL)));
 
-        
-
     }
-    /**
-     * DO NOT MOVE THIS CONSTANT. IT's important to have it in this file for the
-     * LFE to parse JDL Keys correct
-     */
-    private static final String IDENT_PREFIX = "jd.gui.skins.jdgui.views.configurationview.";
 
     @Override
     public Icon getIcon() {
-        // TODO Auto-generated method stub
         return JDTheme.II("gui.images.taskpanes.configuration", ICON_SIZE, ICON_SIZE);
     }
 
     @Override
     public String getTitle() {
-        // TODO Auto-generated method stub
         return JDL.L(IDENT_PREFIX + "tab.title", "Settings");
     }
 
     @Override
     public String getTooltip() {
-        // TODO Auto-generated method stub
         return JDL.L(IDENT_PREFIX + "tab.tooltip", "All options and settings for JDownloader");
     }
 

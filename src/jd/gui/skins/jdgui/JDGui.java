@@ -26,10 +26,7 @@ import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JPanel;
-import javax.swing.JTabbedPane;
 import javax.swing.WindowConstants;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 
 import jd.config.SubConfiguration;
 import jd.controlling.ClipboardHandler;
@@ -137,7 +134,7 @@ public class JDGui extends SwingGui {
         mainTabbedPane = new MainTabbedPane();
 
         multiProgressBar = new TabProgress();
-        this.toolBar = JDToolBar.getINSTANCE();
+        this.toolBar = JDToolBar.getInstance();
         downloadView = new DownloadView();
         linkgrabberView = new LinkgrabberView();
         configurationView = new ConfigurationView();

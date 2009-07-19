@@ -12,6 +12,7 @@ import jd.gui.skins.jdgui.interfaces.SwitchPanel;
  */
 public class TabbedPanelView extends View {
 
+    private static final long serialVersionUID = 5496287547880139678L;
     private SwitchPanel tabbedPanel;
 
     public TabbedPanelView(SwitchPanel tabbedPanel) {
@@ -21,6 +22,7 @@ public class TabbedPanelView extends View {
 
     }
 
+    @Override
     public boolean equals(Object e) {
         if (e instanceof TabbedPanelView) return false;
 

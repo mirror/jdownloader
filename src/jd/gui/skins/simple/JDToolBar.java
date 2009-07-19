@@ -49,7 +49,7 @@ public class JDToolBar extends JToolBar {
 
     private SpeedMeterPanel speedmeter;
 
-    public static synchronized JDToolBar getINSTANCE() {
+    public static synchronized JDToolBar getInstance() {
         if (INSTANCE == null) INSTANCE = new JDToolBar();
         return INSTANCE;
     }
@@ -81,7 +81,7 @@ public class JDToolBar extends JToolBar {
             }
         }
         new GuiRunnable<Object>() {
-            public Object runSave() {                
+            public Object runSave() {
                 removeAll();
                 initToolbar(current);
                 addSpeedMeter();
@@ -97,7 +97,6 @@ public class JDToolBar extends JToolBar {
 
     private void initToolbar(String[] list) {
         synchronized (list) {
-            JButton bt;
             AbstractButton ab;
             JToggleButton tbt;
             for (String key : list) {
@@ -113,7 +112,7 @@ public class JDToolBar extends JToolBar {
                 switch (action.getType()) {
                 case NORMAL:
 
-                    add(ab = bt = new JButton(action), BUTTON_CONSTRAINTS);
+                    add(ab = new JButton(action), BUTTON_CONSTRAINTS);
 
                     break;
                 case TOGGLE:

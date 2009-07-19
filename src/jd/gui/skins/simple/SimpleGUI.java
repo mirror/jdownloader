@@ -72,7 +72,6 @@ import jd.gui.skins.SwingGui;
 import jd.gui.skins.jdgui.InfoPanelHandler;
 import jd.gui.skins.jdgui.components.JDCollapser;
 import jd.gui.skins.jdgui.components.downloadview.DownloadLinksPanel;
-import jd.gui.skins.jdgui.components.linkgrabberview.LinkAdder;
 import jd.gui.skins.jdgui.components.linkgrabberview.LinkGrabberPanel;
 import jd.gui.skins.jdgui.components.linkgrabberview.LinkGrabberTableAction;
 import jd.gui.skins.jdgui.interfaces.SwitchPanel;
@@ -233,7 +232,7 @@ public class SimpleGUI extends SwingGui {
 
         if (isSubstance()) this.getRootPane().setUI(new JDSubstanceUI());
 
-        toolBar = new JDToolBar();
+        toolBar = JDToolBar.getInstance();
 
         // System.out.println(ui);
         addWindowListener(this);
@@ -538,8 +537,7 @@ public class SimpleGUI extends SwingGui {
             // @Override
             public Object runSave() {
                 logger.info("Add links to Linkgrabber: " + links.size());
-                DownloadLink[] linkList = links.toArray(new DownloadLink[] {});
-                linkGrabber.addLinks(linkList);
+                linkGrabber.addLinks(links);
 
                 if (!hideGrabber) taskPane.switcher(lgTaskPane);
                 return null;
@@ -686,9 +684,9 @@ public class SimpleGUI extends SwingGui {
         linkGrabber = LinkGrabberPanel.getLinkGrabber();
         lgTaskPane = new LinkGrabberTaskPane(JDL.L("gui.taskpanes.linkgrabber", "LinkGrabber"), JDTheme.II("gui.images.taskpanes.linkgrabber", 16, 16));
         lgTaskPane.setName(JDL.L("quickhelp.linkgrabbertaskpane", "Linkgrabber Taskpane"));
-        LinkAdder linkadder = new LinkAdder();
+        // LinkAdder linkadder = new LinkAdder();
 
-        lgTaskPane.addPanel(new SingletonPanel(linkadder));
+        // lgTaskPane.addPanel(new SingletonPanel(linkadder));
         LinkGrabberController.getInstance().addListener(new LinkGrabberControllerListener() {
             public void onLinkGrabberControllerEvent(LinkGrabberControllerEvent event) {
                 switch (event.getID()) {
@@ -1112,13 +1110,17 @@ public class SimpleGUI extends SwingGui {
     }
 
     public boolean isJTattoo() {
-        // TODO Auto-generated method stub
         return false;
     }
 
     @Override
     public void setContent(SwitchPanel tabbedPanel) {
         this.getContentPane().display(tabbedPanel);
+    }
+
+    public void requestPanel(byte panelID) {
+        // TODO Auto-generated method stub
+
     }
 
 }
