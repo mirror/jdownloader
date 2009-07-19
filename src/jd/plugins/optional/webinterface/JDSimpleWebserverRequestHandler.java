@@ -315,16 +315,14 @@ public class JDSimpleWebserverRequestHandler {
             } else if (requestParameter.get("do").compareToIgnoreCase("add") == 0) {
                 if (requestParameter.containsKey("addlinks")) {
                     String AddLinks = Encoding.htmlDecode(requestParameter.get("addlinks"));
-                    ArrayList<DownloadLink> waitingLinkList = new DistributeData(AddLinks).findLinks();
-                    DownloadLink[] linkList = waitingLinkList.toArray(new DownloadLink[] {});
-                    LinkGrabberPanel.getLinkGrabber().addLinks(linkList);
+                    ArrayList<DownloadLink> waitingLinkList = new DistributeData(AddLinks).findLinks();                    
+                    LinkGrabberPanel.getLinkGrabber().addLinks(waitingLinkList);
                 }
             } else if (requestParameter.get("do").compareToIgnoreCase("upload") == 0) {
                 if (requestParameter.containsKey("file")) {
                     File container = JDUtilities.getResourceFile("container/" + requestParameter.get("file"));
-                    ArrayList<DownloadLink> waitingLinkList = JDUtilities.getController().getContainerLinks(container);
-                    DownloadLink[] linkList = waitingLinkList.toArray(new DownloadLink[] {});
-                    LinkGrabberPanel.getLinkGrabber().addLinks(linkList);
+                    ArrayList<DownloadLink> waitingLinkList = JDUtilities.getController().getContainerLinks(container);                    
+                    LinkGrabberPanel.getLinkGrabber().addLinks(waitingLinkList);
                 }
             }
         }

@@ -26,7 +26,10 @@ import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JPanel;
+import javax.swing.JTabbedPane;
 import javax.swing.WindowConstants;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 import jd.config.SubConfiguration;
 import jd.controlling.ClipboardHandler;
@@ -36,8 +39,10 @@ import jd.controlling.ProgressController;
 import jd.controlling.ProgressControllerEvent;
 import jd.controlling.ProgressControllerListener;
 import jd.event.ControlEvent;
+import jd.gui.UIConstants;
 import jd.gui.UserIO;
 import jd.gui.skins.SwingGui;
+import jd.gui.skins.jdgui.components.linkgrabberview.LinkGrabberPanel;
 import jd.gui.skins.jdgui.events.EDTEventQueue;
 import jd.gui.skins.jdgui.interfaces.SwitchPanel;
 import jd.gui.skins.jdgui.views.AddonView;
@@ -106,7 +111,7 @@ public class JDGui extends SwingGui {
         initLocationAndDimension();
         pack();
         setVisible(true);
-
+        ClipboardHandler.getClipboard().setTempDisabled(false);
     }
 
     /**
@@ -131,7 +136,7 @@ public class JDGui extends SwingGui {
         mainTabbedPane = new MainTabbedPane();
 
         multiProgressBar = new TabProgress();
-        this.toolBar = new JDToolBar();
+        this.toolBar = JDToolBar.getINSTANCE();
         downloadView = new DownloadView();
         linkgrabberView = new LinkgrabberView();
         configurationView = new ConfigurationView();
@@ -142,6 +147,7 @@ public class JDGui extends SwingGui {
         mainTabbedPane.addTab(configurationView);
         mainTabbedPane.addTab(addonView);
         mainTabbedPane.addTab(logView);
+        mainTabbedPane.setSelectedComponent(downloadView);
     }
 
     private void layoutComponents() {
@@ -238,8 +244,9 @@ public class JDGui extends SwingGui {
     }
 
     public void addLinksToGrabber(ArrayList<DownloadLink> links, boolean hideGrabber) {
-        // TODO Auto-generated method stub
-
+        LinkGrabberPanel.getLinkGrabber().addLinks(links);
+        requestPanel(UIConstants.PANEL_ID_LINKGRABBER);
+        /* TODO Hidegrabber */
     }
 
     public void displayMiniWarning(String shortWarn, String longWarn) {
@@ -410,23 +417,26 @@ public class JDGui extends SwingGui {
     @Override
     public void setContent(final SwitchPanel tabbedPanel) {
         TabbedPanelView view = new TabbedPanelView(tabbedPanel);
-
         if (!mainTabbedPane.contains(view)) {
-
             mainTabbedPane.addTab(view);
         }
         mainTabbedPane.setSelectedComponent(view);
-
     }
 
     public MainTabbedPane getMainTabbedPane() {
         return this.mainTabbedPane;
     }
 
-    public void requestPanel(String panelID) {
-        if (panelID.equals(jd.gui.UIContants.PANEL_ID_DOWNLOADLIST)) {
+    public void requestPanel(byte panelID) {
+        switch (panelID) {
+        case UIConstants.PANEL_ID_DOWNLOADLIST:
+            mainTabbedPane.setSelectedComponent(downloadView);
+            break;
+        case UIConstants.PANEL_ID_LINKGRABBER:
+            mainTabbedPane.setSelectedComponent(linkgrabberView);
+            break;
+        default:
             mainTabbedPane.setSelectedComponent(downloadView);
         }
-
     }
 }

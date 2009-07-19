@@ -82,7 +82,6 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
                 this.setName("LinkGrabberTask: infoupdate");
                 while (true) {
                     if (isActiveTab()) {
-
                         update();
                     }
                     try {
@@ -106,11 +105,11 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
         downloadlinks = new JLabel(JDL.LF("gui.taskpanes.download.linkgrabber.downloadLinks", "%s Link(s)", 0));
         filteredlinks = new JLabel(JDL.LF("gui.taskpanes.download.linkgrabber.filteredLinks", "%s filtered Link(s)", 0));
         totalsize = new JLabel(JDL.LF("gui.taskpanes.download.linkgrabber.size", "Total size: %s", 0));
-String gapleft = "gapleft 14";
-        linkgrabber.add(packages,gapleft);
-        linkgrabber.add(downloadlinks,gapleft);
-        linkgrabber.add(filteredlinks,gapleft);
-        linkgrabber.add(totalsize,gapleft);
+        String gapleft = "gapleft 14";
+        linkgrabber.add(packages, gapleft);
+        linkgrabber.add(downloadlinks, gapleft);
+        linkgrabber.add(filteredlinks, gapleft);
+        linkgrabber.add(totalsize, gapleft);
         add(linkgrabber, "shrinky 100");
     }
 
@@ -204,10 +203,10 @@ String gapleft = "gapleft 14";
 
         startAfterAdding.setToolTipText(JDL.L("gui.tooltips.linkgrabber.startlinksafteradd", "Is selected, download starts after adding new links"));
         startAfterAdding.setIconTextGap(3);
-        settingsLinks.add(startAfterAdding,"gapleft 5");
+        settingsLinks.add(startAfterAdding, "gapleft 5");
         startAfterAdding.setToolTipText(JDL.L("gui.tooltips.linkgrabber.topOrBottom", "if selected, new links will be added at top of your downloadlist"));
         topOrBottom.setIconTextGap(3);
-        settingsLinks.add(topOrBottom,"gapleft 5");
+        settingsLinks.add(topOrBottom, "gapleft 5");
         add(settingsLinks, "shrinky 100,growy,pushy");
     }
 

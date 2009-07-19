@@ -43,10 +43,12 @@ import jd.controlling.ProgressControllerListener;
 import jd.gui.UserIO;
 import jd.gui.skins.SwingGui;
 import jd.gui.skins.jdgui.InfoPanelHandler;
+import jd.gui.skins.jdgui.actions.ToolBarAction;
 import jd.gui.skins.jdgui.components.JDCollapser;
 import jd.gui.skins.jdgui.interfaces.SwitchPanel;
 import jd.gui.skins.simple.Balloon;
 import jd.gui.skins.simple.GuiRunnable;
+import jd.gui.skins.simple.JDToolBar;
 import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.tasks.LinkGrabberTaskPane;
@@ -64,6 +66,8 @@ import net.miginfocom.swing.MigLayout;
 public class LinkGrabberPanel extends SwitchPanel implements ActionListener, LinkCheckListener, ProgressControllerListener, LinkGrabberControllerListener {
 
     private static final long serialVersionUID = 1607433619381447389L;
+
+    public static final String JDL_PREFIX = "jd.gui.skins.jdgui.components.linkgrabberview";
 
     private ArrayList<DownloadLink> waitingList = new ArrayList<DownloadLink>();
 
@@ -124,6 +128,49 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         INSTANCE = this;
         LGINSTANCE = LinkGrabberController.getInstance();
         LGINSTANCE.addListener(this);
+        initActions();
+    }
+
+    private void initActions() {
+        new ToolBarAction("toolbar.linkgrabber.move.top", "gui.images.up") {
+            /**
+             * 
+             */
+            private static final long serialVersionUID = -4999411890044706885L;
+
+            public void actionPerformed(ActionEvent e) {
+            }
+
+            @Override
+            public void initDefaults() {
+                this.setToolTipText(JDL.L(JDL_PREFIX + ".toolbar.move.top.tooltip", "Move selected links/packages to top"));
+            }
+
+            @Override
+            public void init() {
+            }
+        };
+
+        new ToolBarAction("toolbar.linkgrabber.move.bottom", "gui.images.down") {
+
+            /**
+             * 
+             */
+            private static final long serialVersionUID = -3419680744706889449L;
+
+            public void actionPerformed(ActionEvent e) {
+            }
+
+            @Override
+            public void initDefaults() {
+                this.setToolTipText(JDL.L(JDL_PREFIX + ".toolbar.move.bottom.tooltip", "Move selected links/packages to bottom"));
+            }
+
+            @Override
+            public void init() {
+            }
+
+        };
     }
 
     public JScrollPane getScrollPane() {
@@ -138,7 +185,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                 JDCollapser.getInstance().setContentPanel(filePackageInfo);
                 JDCollapser.getInstance().setTitle(JDL.L("gui.linkgrabber.packagetab.title", "File package"));
                 InfoPanelHandler.setPanel(JDCollapser.getInstance());
-                
+
                 return null;
             }
         }.start();
@@ -149,7 +196,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
             // @Override
             public Object runSave() {
                 InfoPanelHandler.setPanel(null);
-                
+
                 return null;
             }
         }.start();
@@ -195,17 +242,17 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
 
     // @Override
     public void onHide() {
+        JDToolBar.getINSTANCE().setList(null);
         LGINSTANCE.removeListener(this);
         Update_Async.stop();
         visible = false;
- 
     }
 
-    public void addLinks(final DownloadLink[] linkList) {
+    public void addLinks(final ArrayList<DownloadLink> linkList) {
         addinginprogress = true;
         new Thread() {
             public void run() {
-                Balloon.showIfHidden(JDL.L("gui.config.gui.linkgrabber", "LinkGrabber"), JDTheme.II("gui.images.add", 32, 32), JDL.LF("gui.linkgrabber.adding", "Adding %s link(s) to LinkGrabber", "" + linkList.length));
+                Balloon.showIfHidden(JDL.L("gui.config.gui.linkgrabber", "LinkGrabber"), JDTheme.II("gui.images.add", 32, 32), JDL.LF("gui.linkgrabber.adding", "Adding %s link(s) to LinkGrabber", "" + linkList.size()));
                 for (DownloadLink element : linkList) {
                     if (LGINSTANCE.isDupe(element)) continue;
                     addToWaitingList(element);
@@ -318,7 +365,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
 
     // @Override
     public void onShow() {
-       
+        JDToolBar.getINSTANCE().setList(new String[] { "toolbar.control.start", "toolbar.control.pause", "toolbar.control.stop", "toolbar.separator", "toolbar.quickconfig.clipboardoberserver", "toolbar.quickconfig.reconnecttoggle", "toolbar.separator", "toolbar.interaction.reconnect", "toolbar.interaction.update", "toolbar.separator", "toolbar.linkgrabber.move.top", "toolbar.linkgrabber.move.bottom" });
         fireTableChanged(false);
         LGINSTANCE.addListener(this);
         visible = true;
@@ -546,7 +593,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                         case LinkGrabberTableAction.NEW_PACKAGE:
                             fp = LGINSTANCE.getFPwithLink(selected_links.get(0));
                             LinkGrabberFilePackage nfp;
-                            if (name == null) name = UserIO.getInstance().requestInputDialog(0,JDL.L("gui.linklist.newpackage.message", "Name of the new package"), fp.getName());
+                            if (name == null) name = UserIO.getInstance().requestInputDialog(0, JDL.L("gui.linklist.newpackage.message", "Name of the new package"), fp.getName());
                             if (name != null) {
                                 nfp = new LinkGrabberFilePackage(name, LGINSTANCE);
                                 nfp.setDownloadDirectory(fp.getDownloadDirectory());

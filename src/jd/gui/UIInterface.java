@@ -166,6 +166,6 @@ public interface UIInterface extends ControlListener {
      * asks the gui backend to display the downloadlist. IT depends on the guibackend which requests are fullfilled and which not.
      * @param panelIdDownloadlist
      */
-    public void requestPanel(String panelID);
+    public void requestPanel(byte panelID);
 
 }

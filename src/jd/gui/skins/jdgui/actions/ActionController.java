@@ -13,8 +13,9 @@ import jd.controlling.ProgressController;
 import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlEvent;
 import jd.event.ControlIDListener;
-import jd.gui.UIContants;
+import jd.gui.UIConstants;
 import jd.gui.UserIO;
+import jd.gui.skins.SwingGui;
 import jd.gui.skins.jdgui.components.linkgrabberview.LinkGrabberFilePackage;
 import jd.gui.skins.jdgui.components.linkgrabberview.LinkGrabberPanel;
 import jd.gui.skins.simple.GuiRunnable;
@@ -33,7 +34,15 @@ public class ActionController {
     private static ArrayList<ToolBarAction> TOOLBAR_ACTION_LIST = new ArrayList<ToolBarAction>();
 
     public static void register(ToolBarAction action) {
-        TOOLBAR_ACTION_LIST.add(action);
+        synchronized (TOOLBAR_ACTION_LIST) {
+            for (ToolBarAction tmp : TOOLBAR_ACTION_LIST) {
+                if (tmp.getID().equalsIgnoreCase(action.getID())) {
+                    TOOLBAR_ACTION_LIST.remove(tmp);
+                    break;
+                }
+            }
+            if (!TOOLBAR_ACTION_LIST.contains(action)) TOOLBAR_ACTION_LIST.add(action);
+        }
     }
 
     /**
@@ -72,7 +81,7 @@ public class ActionController {
                                 }
                             }
                             fps = null;
-                            JDUtilities.getGUI().requestPanel(UIContants.PANEL_ID_DOWNLOADLIST);
+                            SwingGui.getInstance().requestPanel(UIConstants.PANEL_ID_DOWNLOADLIST);
 
                         }
                         new GuiRunnable<Object>() {
@@ -370,59 +379,9 @@ public class ActionController {
                 });
             }
 
-        };
+        };  
 
-        new ToolBarAction("toolbar.move.up", "gui.images.up") {
-
-            public void actionPerformed(ActionEvent e) {
-                /**
-                 * Fill in move up actions here.. DO NOT USE ANY SWING/GUI CODE
-                 * IN HERE. WRITE INTERFACES,
-                 */
-
-            }
-
-            @Override
-            public void initDefaults() {
-
-                this.setToolTipText(JDL.L(JDL_PREFIX + ".toolbar.move.up.tooltip", "Move selected links up"));
-            }
-
-            @Override
-            public void init() {
-                // init listeners here to enable/disable the action() depends on
-                // selection
-                // take care not to use swingcode in here
-            }
-
-        };
         
-        
-
-        new ToolBarAction("toolbar.move.down", "gui.images.down") {
-
-            public void actionPerformed(ActionEvent e) {
-                /**
-                 * Fill in move up actions here.. DO NOT USE ANY SWING/GUI CODE
-                 * IN HERE. WRITE INTERFACES,
-                 */
-
-            }
-
-            @Override
-            public void initDefaults() {
-
-                this.setToolTipText(JDL.L(JDL_PREFIX + ".toolbar.move.down.tooltip", "Move selected links down"));
-            }
-
-            @Override
-            public void init() {
-                // init listeners here to enable/disable the action() depends on
-                // selection
-                // take care not to use swingcode in here
-            }
-
-        };
 
     }
 
@@ -433,11 +392,13 @@ public class ActionController {
      * @return
      */
     public static ToolBarAction getToolBarAction(String keyid) {
-        for (ToolBarAction a : TOOLBAR_ACTION_LIST) {
-            if (a.getID().equals(keyid)) return a;
+        synchronized (TOOLBAR_ACTION_LIST) {
+            for (ToolBarAction a : TOOLBAR_ACTION_LIST) {
+                if (a.getID().equals(keyid)) return a;
 
+            }
+            return null;
         }
-        return null;
     }
 
 }

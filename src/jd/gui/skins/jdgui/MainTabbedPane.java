@@ -1,14 +1,16 @@
 package jd.gui.skins.jdgui;
 
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Insets;
 import java.awt.Rectangle;
-
 import javax.swing.Icon;
 import javax.swing.JTabbedPane;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 import jd.config.SubConfiguration;
 import jd.gui.skins.jdgui.views.View;
@@ -16,8 +18,9 @@ import jd.gui.skins.jdgui.views.View;
 import com.jtattoo.plaf.JTattooUtilities;
 import com.jtattoo.plaf.acryl.AcrylTabbedPaneUI;
 
-public class MainTabbedPane extends JTabbedPane {
+public class MainTabbedPane extends JTabbedPane implements ChangeListener {
 
+    private static final long serialVersionUID = -1531827591735215594L;
     private Boolean extraHighlight;
 
     public void addTab(View downloadView) {
@@ -25,6 +28,10 @@ public class MainTabbedPane extends JTabbedPane {
         this.setFocusable(false);
         extraHighlight = SubConfiguration.getConfig(JDGuiConstants.CONFIG_PARAMETER).getBooleanProperty(JDGuiConstants.CFG_KEY_MAIN_TABBED_HIGHLIGHT, false);
         initUI();
+    }
+
+    public MainTabbedPane() {
+        addChangeListener(this);
     }
 
     /**
@@ -118,7 +125,6 @@ public class MainTabbedPane extends JTabbedPane {
      */
     public void onClose() {
         // TODO Auto-generated method stub
-
     }
 
     /**
@@ -127,7 +133,10 @@ public class MainTabbedPane extends JTabbedPane {
 
     public View getSelectedView() {
         return (View) super.getSelectedComponent();
+    }
 
+    public void setSelectedComponent(Component e) {
+        super.setSelectedComponent(e);
     }
 
     /**
@@ -138,11 +147,15 @@ public class MainTabbedPane extends JTabbedPane {
      */
     public boolean contains(View view) {
         for (int i = 0; i < this.getTabCount(); i++) {
-
             if (this.getTabComponentAt(i).equals(view)) return true;
         }
-
         return false;
     }
 
+    @Override
+    public void stateChanged(ChangeEvent e) {
+        JTabbedPane pane = (JTabbedPane) e.getSource();
+        ((View) pane.getSelectedComponent()).onDisplay();
+        System.out.println("statechanged ondisplay");
+    }
 }

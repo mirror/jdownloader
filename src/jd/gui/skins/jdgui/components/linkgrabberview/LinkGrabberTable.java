@@ -70,8 +70,6 @@ public class LinkGrabberTable extends JTable implements MouseListener, MouseMoti
     public static final String PROPERTY_EXPANDED = "lg_expanded";
     public static final String PROPERTY_USEREXPAND = "lg_userexpand";
 
-    // public static final String PROPERTY_SELECTED = "lg_selected";
-
     public LinkGrabberPanel getLinkGrabber() {
         return linkgrabber;
     }

@@ -39,7 +39,6 @@ public class TabbedPanelView extends View {
 
     @Override
     public String getTooltip() {
-
         return tabbedPanel.getToolTipText();
     }
 

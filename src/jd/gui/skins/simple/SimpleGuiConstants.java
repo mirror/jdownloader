@@ -39,8 +39,7 @@ public class SimpleGuiConstants {
     public static final String DECORATION_ENABLED = "DECORATION_ENABLED2";
     public static final String PARAM_INSERT_NEW_LINKS_AT = "PARAM_INSERT_NEW_LINKS_AT2";
     public static final String PARAM_START_AFTER_ADDING_LINKS = "PARAM_START_AFTER_ADDING_LINKS";
-    public static final String PARAM_SHOW_BALLOON = "PARAM_SHOW_BALLOON";
-    public static final String PARAM_LINKGRABBER_CLIPBOARD_OBSERVER = "PARAM_DISABLE_LINKGRABBER_CLIPBOARD_OBSERVER";
+    public static final String PARAM_SHOW_BALLOON = "PARAM_SHOW_BALLOON";    
 
     public static boolean isAnimated() {
         return SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getBooleanProperty(SimpleGuiConstants.ANIMATION_ENABLED, false);

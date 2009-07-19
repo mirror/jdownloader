@@ -2,7 +2,6 @@ package jd.gui.skins.jdgui.views;
 
 import javax.swing.Icon;
 
-import jd.gui.skins.jdgui.components.JDCollapser;
 import jd.gui.skins.jdgui.components.downloadview.DownloadLinksPanel;
 import jd.gui.skins.jdgui.views.info.DownloadInfoPanel;
 import jd.utils.JDTheme;
@@ -10,18 +9,16 @@ import jd.utils.locale.JDL;
 
 public class DownloadView extends View {
 
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 2624923838160423884L;
+
     public DownloadView() {
         super();
-        // this.setToolBar(new JDToolBar());
-        // this.setSideBar(new DownloadTaskPane(JDL.L("gui.taskpanes.download",
-        // "Download"), JDTheme.II("gui.images.taskpanes.download", 16, 16)));
         this.setContent(new DownloadLinksPanel());
         this.setDefaultInfoPanel(new DownloadInfoPanel());
-     
-      
     }
-
- 
 
     /**
      * DO NOT MOVE THIS CONSTANT. IT's important to have it in this file for the

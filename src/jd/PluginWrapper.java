@@ -214,7 +214,6 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
             JDLogger.exception(e);
         }
         return null;
-
     }
 
     public boolean hasConfig() {

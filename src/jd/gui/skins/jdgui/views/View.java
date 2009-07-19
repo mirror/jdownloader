@@ -27,16 +27,23 @@ import com.jtattoo.plaf.ColorHelper;
  * 
  */
 public abstract class View extends JPanel {
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 8661526331504317690L;
     public static final int ICON_SIZE = 16;
     private JPanel rightPane;
     private JScrollPane sidebar;
     private TaskPanel sidebarContent;
     private SwitchPanel content;
     private JPanel topContent;
-    private JToolBar toolBar;
     private JPanel bottomContent;
     private DroppedPanel infoPanel;
     private DroppedPanel defaultInfoPanel;
+    private static Object LOCK = new Object();
+    private boolean visible = false;
+
+    private static View LastView = null;
 
     public View() {
         this.setLayout(new MigLayout("ins 0", "[]0[grow,fill]", "[grow,fill]"));
@@ -51,7 +58,6 @@ public abstract class View extends JPanel {
             // MetalLookAndFeel.getControlHighlight() ;
             line = MetalLookAndFeel.getControl();
         }
-
         sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, line));
         sidebar.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         sidebar.setVisible(false);
@@ -59,9 +65,36 @@ public abstract class View extends JPanel {
         add(rightPane);
         add(topContent = new JPanel(new MigLayout("ins 0", "[grow,fill]", "[]")), "dock NORTH,hidemode 3");
         topContent.setVisible(false);
-
         add(bottomContent = new JPanel(new MigLayout("ins 0", "[grow,fill]", "[]")), "dock SOUTH");
         bottomContent.setVisible(false);
+    }
+
+    public boolean isVisible() {
+        return visible;
+    }
+
+    public void setVisible(boolean b) {
+        visible = b;
+    }
+
+    public void onDisplay() {
+        synchronized (LOCK) {
+            if (LastView != null) {
+                LastView.onHide();
+                LastView.setVisible(false);
+            }
+            setVisible(true);
+            if (this.content != null && visible) this.content.onShow();
+            if (this.sidebarContent != null && visible) this.sidebarContent.onDisplay();
+            if (this.infoPanel != null && visible) this.infoPanel.onShow();
+            LastView = this;
+        }
+    }
+
+    private void onHide() {
+        if (this.content != null) this.content.onHide();
+        if (this.sidebarContent != null) this.sidebarContent.onHide();
+        if (this.infoPanel != null && visible) this.infoPanel.onHide();
     }
 
     /**
@@ -83,20 +116,17 @@ public abstract class View extends JPanel {
     public void setInfoPanel(DroppedPanel info) {
         if (info == null) info = defaultInfoPanel;
         if (infoPanel == info) return;
-
-        if (infoPanel != null) infoPanel.onHide();
         if (info == null) {
-
             bottomContent.setVisible(false);
-
         } else {
             bottomContent.setVisible(true);
             bottomContent.removeAll();
             bottomContent.add(info);
-            info.onShow();
         }
+        if (infoPanel != null) infoPanel.onHide();
         revalidate();
         this.infoPanel = info;
+        if (this.infoPanel != null && visible) this.infoPanel.onShow();
     }
 
     public DroppedPanel getInfoPanel() {
@@ -111,15 +141,12 @@ public abstract class View extends JPanel {
     protected void setToolBar(JToolBar toolbar) {
         if (toolbar == null) {
             topContent.setVisible(false);
-
         } else {
             topContent.setVisible(true);
             topContent.removeAll();
             topContent.add(toolbar);
         }
-
-        this.toolBar = toolbar;
-
+        revalidate();
     }
 
     /**
@@ -129,9 +156,11 @@ public abstract class View extends JPanel {
      */
     protected void setContent(SwitchPanel right) {
         rightPane.removeAll();
-        rightPane.add(right);
+        if (right != null) rightPane.add(right);
+        if (this.content != null) this.content.onHide();
         this.content = right;
         this.revalidate();
+        if (this.content != null && visible) this.content.onShow();
     }
 
     /**
@@ -142,13 +171,13 @@ public abstract class View extends JPanel {
     protected void setSideBar(TaskPanel left) {
         if (left == null) {
             sidebar.setVisible(false);
-
         } else {
             sidebar.setVisible(true);
             sidebar.setViewportView(left);
-
         }
+        if (this.sidebarContent != null) this.sidebarContent.onHide();
         this.sidebarContent = left;
+        if (this.sidebarContent != null && visible) this.sidebarContent.onDisplay();
     }
 
     /**

@@ -120,12 +120,10 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
         filePackageInfo.setPackage(fp);
         new GuiRunnable<Object>() {
             // @Override
-            public Object runSave() {
-               
+            public Object runSave() {               
                 JDCollapser.getInstance().setContentPanel(filePackageInfo);
                 JDCollapser.getInstance().setTitle(JDL.L("gui.linkgrabber.packagetab.title", "FilePackage"));
-                InfoPanelHandler.setPanel(JDCollapser.getInstance());
-                
+                InfoPanelHandler.setPanel(JDCollapser.getInstance());                
                 return null;
             }
         }.start();
