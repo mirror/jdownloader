@@ -3,8 +3,6 @@ package jd;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -171,44 +169,7 @@ public class Config {
 
     private void initGUI() {
         frame = new JFrame("JDownloader Config - leave any warranty behind you!");
-        frame.addWindowListener(new WindowListener() {
-
-            public void windowActivated(WindowEvent e) {
-                // TODO Auto-generated method stub
-
-            }
-
-            public void windowClosed(WindowEvent e) {
-                System.exit(0);
-
-            }
-
-            public void windowClosing(WindowEvent e) {
-                // TODO Auto-generated method stub
-
-            }
-
-            public void windowDeactivated(WindowEvent e) {
-                // TODO Auto-generated method stub
-
-            }
-
-            public void windowDeiconified(WindowEvent e) {
-                // TODO Auto-generated method stub
-
-            }
-
-            public void windowIconified(WindowEvent e) {
-                // TODO Auto-generated method stub
-
-            }
-
-            public void windowOpened(WindowEvent e) {
-                // TODO Auto-generated method stub
-
-            }
-
-        });
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLayout(new MigLayout("ins 10,wrap 1", "[grow,fill]", "[][grow,fill]"));
         frame.setMinimumSize(new Dimension(800, 600));
 
@@ -264,6 +225,7 @@ public class Config {
         add = new JButton(JDTheme.II("gui.images.add", 24, 24));
         add.addActionListener(new ActionListener() {
 
+            @SuppressWarnings("unchecked")
             public void actionPerformed(ActionEvent e) {
                 String key = SimpleUserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN, "Enter Key", "Enter your key use / deliminator to create new sub-maps", "NEW_KEY", null, "Create Entry", "Cancel");
                 if (key == null) { return; }
@@ -317,6 +279,7 @@ public class Config {
         edit.setEnabled(false);
         edit.addActionListener(new ActionListener() {
 
+            @SuppressWarnings("unchecked")
             public void actionPerformed(ActionEvent e) {
                 int[] rows = getSelectedRows();
                 if (rows.length == 0) return;
@@ -373,6 +336,7 @@ public class Config {
         remove.setEnabled(false);
         remove.addActionListener(new ActionListener() {
 
+            @SuppressWarnings("unchecked")
             public void actionPerformed(ActionEvent e) {
                 int[] rows = getSelectedRows();
                 if (rows.length == 0) return;

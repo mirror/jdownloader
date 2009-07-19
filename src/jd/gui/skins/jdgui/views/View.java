@@ -210,4 +210,5 @@ public abstract class View extends JPanel {
         // TODO Auto-generated method stub
         return JDTheme.II("gui.images.add_package", 16, 16);
     }
+
 }

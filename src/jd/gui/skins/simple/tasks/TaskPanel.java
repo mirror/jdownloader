@@ -24,7 +24,6 @@ import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JPanel;
-import javax.swing.UIManager;
 import javax.swing.event.EventListenerList;
 
 import jd.gui.skins.jdgui.interfaces.SwitchPanel;
@@ -32,15 +31,12 @@ import jd.gui.skins.simple.Factory;
 import jd.gui.skins.simple.SingletonPanel;
 import net.miginfocom.swing.MigLayout;
 
-import com.jtattoo.plaf.AbstractLookAndFeel;
-
 public abstract class TaskPanel extends JPanel implements ActionListener {
 
     private static final long serialVersionUID = 2136414459422852581L;
 
     public static final int ACTION_CLICK = -2;
     protected EventListenerList listenerList;
-    private String panelID = "taskpanel";
 
     private ArrayList<SingletonPanel> panels;
 
@@ -60,35 +56,13 @@ public abstract class TaskPanel extends JPanel implements ActionListener {
         this.taskName = taskName;
     }
 
+    // TODO: pid vom Constructor entfernen
     public TaskPanel(String title, ImageIcon ii, String pid) {
-        // this.setTitle(string);
-        // this.setIcon(ii);
-        // this.addMouseListener(this);
-        this.taskName = title;
-
-        this.setIcon(ii);
-
-        this.listenerList = new EventListenerList();
-        this.setPanelID(pid);
-
-        if (UIManager.getLookAndFeel() instanceof AbstractLookAndFeel) {
-            // AbstractLookAndFeel laf =
-            // (AbstractLookAndFeel)UIManager.getLookAndFeel();
-
-            // this.setBackground(laf.getTheme().getToolbarBackgroundColor());
-        }
-        // this.addPropertyChangeListener(this);
         this.setLayout(new MigLayout("ins 5 3 5 3, wrap 1", "[fill,grow]"));
-        // setDeligateCollapsed(SubConfiguration.getConfig("gui").getBooleanProperty(getPanelID()
-        // + "_collapsed", false));
+        this.taskName = title;
+        this.icon = ii;
+        this.listenerList = new EventListenerList();
         this.panels = new ArrayList<SingletonPanel>();
-
-    }
-
-    private void setIcon(ImageIcon ii) {
-
-        icon = ii;
-
     }
 
     public ImageIcon getIcon() {
@@ -96,7 +70,7 @@ public abstract class TaskPanel extends JPanel implements ActionListener {
     }
 
     /**
-     * Adds an <code>ActionListener</code> to the button.
+     * Adds an <code>ActionListener</code> to the TaskPanel.
      * 
      * @param l
      *            the <code>ActionListener</code> to be added
@@ -107,7 +81,7 @@ public abstract class TaskPanel extends JPanel implements ActionListener {
     }
 
     /**
-     * Removes an <code>ActionListener</code> from the button.
+     * Removes an <code>ActionListener</code> from the TaskPanel.
      * 
      * @param l
      *            the listener to be removed
@@ -115,6 +89,12 @@ public abstract class TaskPanel extends JPanel implements ActionListener {
     public void removeActionListener(ActionListener l) {
         listenerList.remove(ActionListener.class, l);
 
+    }
+
+    public void broadcastEvent(final ActionEvent e) {
+        for (ActionListener listener : listenerList.getListeners(ActionListener.class)) {
+            listener.actionPerformed(e);
+        }
     }
 
     public void addPanel(SingletonPanel singletonPanel) {
@@ -136,54 +116,12 @@ public abstract class TaskPanel extends JPanel implements ActionListener {
 
     }
 
-    public void broadcastEvent(final ActionEvent e) {
-        for (ActionListener listener : listenerList.getListeners(ActionListener.class)) {
-            listener.actionPerformed(e);
-        }
-    }
-
-    /**
-     * Returns an array of all the <code>ActionListener</code>s added to this
-     * AbstractButton with addActionListener().
-     * 
-     * @return all of the <code>ActionListener</code>s added or an empty array
-     *         if no listeners have been added
-     */
-    public ActionListener[] getActionListeners() {
-        return listenerList.getListeners(ActionListener.class);
-    }
-
-    // public void mouseReleased(MouseEvent e) {
-    // if (super.isCollapsed()) {
-    // super.setCollapsed(false);
-    // } else {
-    // super.setCollapsed(true);
-    // }
-    //
-    // broadcastEvent(new ActionEvent(this, ACTION_CLICK, "Toggle"));
-    // }
-
     public SwitchPanel getPanel(int i) {
         return panels.get(i).getPanel();
     }
 
-    public void setPanelID(String panelID) {
-        this.panelID = panelID;
-    }
-
-    public String getPanelID() {
-        return panelID;
-    }
-
     public JButton createButton(String string, Icon i) {
         return Factory.createButton(string, i, this);
-    }
-
-    /**
-     * is called if the tab is hidden
-     */
-    public void onHide() {
-        
     }
 
     public boolean isActiveTab() {
@@ -195,22 +133,17 @@ public abstract class TaskPanel extends JPanel implements ActionListener {
     }
 
     /**
+     * is called if the tab is hidden
+     */
+    public void onHide() {
+
+    }
+
+    /**
      * gets called if the tab gets displayed
      */
     public void onDisplay() {
-     
+
     }
-    // public void propertyChange(PropertyChangeEvent evt) {
-    // if (evt.getPropertyName().equals("collapsed")) {
-    // SubConfiguration cfg = SubConfiguration.getConfig("gui");
-    // if (pressed) {
-    // broadcastEvent(new ActionEvent(this, ACTION_TOGGLE, "Toggle"));
-    // cfg.setProperty(getPanelID() + "_collapsed", this.isCollapsed());
-    // cfg.save();
-    // pressed = false;
-    // }
-    // }
-    //
-    // }
 
 }

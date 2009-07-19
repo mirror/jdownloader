@@ -50,15 +50,12 @@ public class JDEventQueue extends EventQueue {
 
     private JPanel mouseOver;
 
-    private JLabel lbl;
-
     public JDEventQueue() {
         super();
 
         mouseOver = new JPanel(new MigLayout("ins 3"));
-        mouseOver.add(lbl = new JLabel(JDTheme.II("gui.images.help", 24, 24)), "alignx left");
+        mouseOver.add(new JLabel(JDTheme.II("gui.images.help", 24, 24)), "alignx left");
         mouseOver.setBorder(BorderFactory.createLineBorder(mouseOver.getBackground().darker()));
-
     }
 
     abstract class MenuAbstractAction extends AbstractAction {
@@ -117,7 +114,7 @@ public class JDEventQueue extends EventQueue {
         final JTextComponent t = (JTextComponent) c;
 
         JPopupMenu menu = new JPopupMenu();
-        
+
         menu.add(new MenuAbstractAction(t, JDL.L("gui.textcomponent.context.cut", "Ausschneiden"), JDTheme.II("gui.icons.cut", 16, 16), JDL.L("gui.textcomponent.context.cut.acc", "ctrl X")) {
 
             private static final long serialVersionUID = 1L;

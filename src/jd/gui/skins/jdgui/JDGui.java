@@ -81,6 +81,7 @@ import net.miginfocom.swing.MigLayout;
 
 public class JDGui extends SwingGui {
 
+    private static final long serialVersionUID = 1048792964102830601L;
     private static JDGui INSTANCE;
     private JMenuBar menuBar;
     private JDStatusBar statusBar;

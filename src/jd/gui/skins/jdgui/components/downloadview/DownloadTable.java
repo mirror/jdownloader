@@ -52,7 +52,6 @@ import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.DownloadWatchDog;
 import jd.event.ControlEvent;
-import jd.gui.skins.SwingGui;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.JDMenu;
 import jd.gui.skins.simple.components.RowHighlighter;

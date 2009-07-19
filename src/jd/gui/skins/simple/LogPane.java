@@ -34,9 +34,9 @@ import jd.event.ControlListener;
 import jd.gui.UserIO;
 import jd.gui.skins.SwingGui;
 import jd.gui.skins.jdgui.interfaces.SwitchPanel;
+import jd.gui.skins.jdgui.views.info.LogInfoPanel;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.JLinkButton;
-import jd.gui.skins.simple.tasks.LogTaskPane;
 import jd.http.Encoding;
 import jd.nutils.JDFlags;
 import jd.nutils.io.JDIO;
@@ -47,7 +47,6 @@ import net.miginfocom.swing.MigLayout;
 
 /**
  * Ein Dialog, der Logger-Output anzeigen kann.
- * 
  */
 public class LogPane extends SwitchPanel implements ActionListener, ControlListener {
 
@@ -75,7 +74,7 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
 
         switch (e.getID()) {
 
-        case LogTaskPane.ACTION_SAVE:
+        case LogInfoPanel.ACTION_SAVE:
             JDFileChooser fc = new JDFileChooser();
             fc.setApproveButtonText(JDL.L("gui.btn_save", "Save"));
             fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
@@ -88,7 +87,7 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
                 }
             }
             break;
-        case LogTaskPane.ACTION_UPLOAD:
+        case LogInfoPanel.ACTION_UPLOAD:
             Level level = JDLogger.getLogger().getLevel();
 
             if (!level.equals(Level.ALL)) {
@@ -131,7 +130,7 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
 
     }
 
-    // @Override
+    @Override
     public String toString() {
         String content = logField.getSelectedText();
         if (content == null || content.length() == 0) {
@@ -140,7 +139,7 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
         return content;
     }
 
-    // @Override
+    @Override
     public void onShow() {
         /*
          * enable autoscrolling by setting the caret to the last position
@@ -166,7 +165,7 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
         }
     }
 
-    // @Override
+    @Override
     public void onHide() {
         JDUtilities.getController().removeControlListener(this);
     }

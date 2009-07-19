@@ -25,6 +25,11 @@ import jd.utils.JDUtilities;
 
 public class JDLogHandler extends Handler {
 
+    public static JDLogHandler getHandler() {
+        if (HANDLER == null) HANDLER = new JDLogHandler();
+        return HANDLER;
+    }
+
     private static JDLogHandler HANDLER = null;
     private ArrayList<LogRecord> buffer;
 
@@ -44,21 +49,10 @@ public class JDLogHandler extends Handler {
     }
 
     public void publish(LogRecord logRecord) {
-
         this.buffer.add(logRecord);
         if (JDUtilities.getController() != null) {
             JDUtilities.getController().fireControlEvent(ControlEvent.CONTROL_LOG_OCCURED, logRecord);
         }
-    }
-
-    public static JDLogHandler getHandler() {
-        if (HANDLER == null) createHandler();
-        return HANDLER;
-    }
-
-    private static void createHandler() {
-        HANDLER = new JDLogHandler();
-
     }
 
 }

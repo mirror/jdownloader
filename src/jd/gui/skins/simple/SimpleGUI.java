@@ -103,7 +103,6 @@ import jd.gui.skins.simple.tasks.AddonTaskPane;
 import jd.gui.skins.simple.tasks.ConfigTaskPane;
 import jd.gui.skins.simple.tasks.DownloadTaskPane;
 import jd.gui.skins.simple.tasks.LinkGrabberTaskPane;
-import jd.gui.skins.simple.tasks.LogTaskPane;
 import jd.gui.skins.simple.tasks.TaskPanel;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.gui.userio.dialog.ContainerDialog;
@@ -121,9 +120,7 @@ import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingworker.SwingWorker;
-import org.jdesktop.swingx.JXLoginDialog;
 import org.jdesktop.swingx.JXTitledSeparator;
-import org.jdesktop.swingx.JXLoginPane.Status;
 import org.jvnet.lafwidget.LafWidget;
 import org.jvnet.lafwidget.utils.LafConstants.AnimationKind;
 
@@ -292,7 +289,8 @@ public class SimpleGUI extends SwingGui {
         setVisible(true);
 
         // Why this?
-        // Because we want to start clipboardwatcher first, when gui is finished with init, not before!
+        // Because we want to start clipboardwatcher first, when gui is finished
+        // with init, not before!
         ClipboardHandler.getClipboard().setTempDisabled(false);
 
         new Thread("guiworker") {
@@ -397,7 +395,6 @@ public class SimpleGUI extends SwingGui {
             this.getGlassPane().setCursor(null);
         }
 
-      
         // super.setWaiting(b);
     }
 
@@ -570,7 +567,6 @@ public class SimpleGUI extends SwingGui {
         addLinkgrabberTask();
         addConfigTask();
         addAddonTask();
-        addLogTask();
 
         progressBar = new TabProgress();
 
@@ -581,19 +577,19 @@ public class SimpleGUI extends SwingGui {
         JPanel panel = new JPanel(new MigLayout("ins 0,wrap 1", "[fill,grow]", "[fill,grow]0[]0[]0[]"));
 
         setContentPane(panel);
-       
-        add(toolBar,"dock north");
+
+        add(toolBar, "dock north");
         // panel.add(this.toolBar, "spanx");
         JPanel center = new JPanel(new MigLayout("ins 0,wrap 3", "[fill]0[shrink]0[fill,grow 100]", "[grow,fill]0[]"));
 
-//        taskPaneView = new JViewport();
-//        taskPaneView.setView(taskPane);
+        // taskPaneView = new JViewport();
+        // taskPaneView.setView(taskPane);
 
         center.add(taskPane, "hidemode 2,spany 2,aligny top,width 160:n:n");
         sep = new JDSeparator();
 
         center.add(sep, "width 6!,gapright 2,spany 2,growy, pushy,hidemode 1");
-sep.setVisible(false);
+        sep.setVisible(false);
         center.add(contentPanel, "");
         // sp.setBorder(null);
         center.add(JDCollapser.getInstance(), "hidemode 3,gaptop 15,growx,pushx,growy,pushy");
@@ -616,25 +612,6 @@ sep.setVisible(false);
 
     public AddonTaskPane getAddonPanel() {
         return addonTaskPanel;
-    }
-
-    private void addLogTask() {
-
-        LogTaskPane logTask = new LogTaskPane(JDL.L("gui.taskpanes.log", "Log"), JDTheme.II("gui.images.terminal", 16, 16));
-        logTask.setName(JDL.L("quickhelp.lopgtaskpane", "Log Taskpane"));
-        logPanel = new SingletonPanel(LogPane.class);
-        logTask.addPanel(logPanel);
-        logTask.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-
-                switch (e.getID()) {
-                case DownloadTaskPane.ACTION_CLICK:
-                    contentPanel.display(((TaskPanel) e.getSource()).getPanel(0));
-
-                }
-            }
-        });
-        taskPane.add(logTask);
     }
 
     private void addConfigTask() {
@@ -965,7 +942,7 @@ sep.setVisible(false);
                 }
 
                 InfoPanelHandler.setPanel(JDCollapser.getInstance());
-                
+
                 return null;
             }
 
@@ -1134,19 +1111,6 @@ sep.setVisible(false);
         return this.linkListPane;
     }
 
-    public String[] showLoginDialog(String title, String defaultUser, String defaultPassword, String error) {
-        JXLoginDialog d = new JXLoginDialog(this, JDL.L("gui.dialogs.login.title", "Login required"), true);
-        if (defaultPassword != null) d.getPanel().setPassword(defaultPassword.toCharArray());
-        d.getPanel().setUserName(defaultUser);
-        d.getPanel().setErrorMessage(error);
-        d.getPanel().setMessage(title);
-        d.setVisible(true);
-
-        if (d.getStatus() != Status.SUCCEEDED) return null;
-
-        return new String[] { d.getPanel().getUserName(), new String(d.getPanel().getPassword()) };
-    }
-
     public boolean isJTattoo() {
         // TODO Auto-generated method stub
         return false;
@@ -1154,7 +1118,7 @@ sep.setVisible(false);
 
     @Override
     public void setContent(SwitchPanel tabbedPanel) {
-       this.getContentPane().display(tabbedPanel);
+        this.getContentPane().display(tabbedPanel);
     }
 
 }

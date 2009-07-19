@@ -7,43 +7,31 @@ import javax.swing.JFrame;
 
 public class WindowAdapter extends JFrame implements WindowListener {
 
+    private static final long serialVersionUID = 5189191413125429350L;
+
     public WindowAdapter(String string) {
        super(string);
     }
 
     public void windowActivated(WindowEvent e) {
-        // TODO Auto-generated method stub
-        
     }
 
     public void windowClosed(WindowEvent e) {
-        // TODO Auto-generated method stub
-        
     }
 
     public void windowClosing(WindowEvent e) {
-        // TODO Auto-generated method stub
-        
     }
 
     public void windowDeactivated(WindowEvent e) {
-        // TODO Auto-generated method stub
-        
     }
 
     public void windowDeiconified(WindowEvent e) {
-        // TODO Auto-generated method stub
-        
     }
 
     public void windowIconified(WindowEvent e) {
-        // TODO Auto-generated method stub
-        
     }
 
     public void windowOpened(WindowEvent e) {
-        // TODO Auto-generated method stub
-        
     }
 
 }

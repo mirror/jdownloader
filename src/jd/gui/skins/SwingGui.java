@@ -6,11 +6,12 @@ import jd.gui.skins.jdgui.interfaces.SwitchPanel;
 
 public abstract class SwingGui extends WindowAdapter implements UIInterface {
 
+    private static final long serialVersionUID = 7164420260634468080L;
+
     private static SwingGui INSTANCE = null;
 
     public SwingGui(String string) {
         super(string);
-        // TODO Auto-generated constructor stub
     }
 
     /**
@@ -29,7 +30,6 @@ public abstract class SwingGui extends WindowAdapter implements UIInterface {
      * @param ins
      */
     public static void setInstance(SwingGui ins) {
-
         INSTANCE = ins;
     }
 

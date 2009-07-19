@@ -152,7 +152,6 @@ public class MainTabbedPane extends JTabbedPane implements ChangeListener {
         return false;
     }
 
-    @Override
     public void stateChanged(ChangeEvent e) {
         JTabbedPane pane = (JTabbedPane) e.getSource();
         ((View) pane.getSelectedComponent()).onDisplay();
