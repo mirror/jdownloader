@@ -52,6 +52,7 @@ import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.DownloadWatchDog;
 import jd.event.ControlEvent;
+import jd.gui.skins.SwingGui;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.JDMenu;
 import jd.gui.skins.simple.components.RowHighlighter;
@@ -67,6 +68,9 @@ public class DownloadTable extends JTable implements MouseListener, MouseMotionL
     public static final String PROPERTY_EXPANDED = "expanded";
 
     private static final long serialVersionUID = 1L;
+
+    protected static final String WIDTH_PREFIX = "WIDTH7_COL_";
+  
 
     private TableRenderer cellRenderer;
 
@@ -134,19 +138,27 @@ public class DownloadTable extends JTable implements MouseListener, MouseMotionL
 
         final SubConfiguration config = SubConfiguration.getConfig("gui");
         cols = new TableColumn[getModel().getColumnCount()];
+   
+      
         for (int i = 0; i < getModel().getColumnCount(); ++i) {
             final int j = i;
             TableColumn tableColumn = new TableColumn(i);
+            
+          
             cols[i] = tableColumn;
             tableColumn.addPropertyChangeListener(new PropertyChangeListener() {
                 public void propertyChange(PropertyChangeEvent evt) {
                     if (evt.getPropertyName().equals("width")) {
-                        config.setProperty("WIDTH_COL_" + model.toModel(j), evt.getNewValue());
+                        config.setProperty(WIDTH_PREFIX + model.toModel(j), evt.getNewValue());
                         config.save();
                     }
                 }
             });
-            tableColumn.setPreferredWidth(config.getIntegerProperty("WIDTH_COL_" + model.toModel(j), tableColumn.getWidth()));
+            int defWidth =DownloadJTableModel.COL_WIDTHS[i];
+            
+            if(defWidth<=0)defWidth=tableColumn.getWidth();
+            tableColumn.setPreferredWidth(config.getIntegerProperty(WIDTH_PREFIX + model.toModel(j),defWidth ));
+            tableColumn.setPreferredWidth(defWidth);
             addColumn(tableColumn);
         }
     }
