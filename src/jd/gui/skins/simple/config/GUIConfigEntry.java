@@ -203,7 +203,7 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
             if (configEntry.getList().length > 0) {
                 if (configEntry.getList()[0] instanceof JDLabelContainer) {
                     ((JComboBox) input[0]).setRenderer(new JDLabelListRenderer());
-                    ((JComboBox) input[0]).setMaximumRowCount(3);
+                    ((JComboBox) input[0]).setMaximumRowCount(10);
 
                 }
             }

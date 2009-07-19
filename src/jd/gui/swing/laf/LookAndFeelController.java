@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.Properties;
 import java.util.Map.Entry;
@@ -199,31 +200,40 @@ public class LookAndFeelController {
     public static void installSynthetica() {
         // de.javasoft.plaf.synthetica.SyntheticaStandardLookAndFeel
         String pkg = "de/javasoft/plaf/synthetica";
-        URL res = JDUtilities.getJDClassLoader().getResource(pkg);
-        String url = new Regex(res, "(.*)\\!.*").getMatch(0);
-        url = url.substring(4);
         try {
-            File file = new File(new URL(url).toURI());
+            Enumeration<URL> res = JDUtilities.getJDClassLoader().getResources(pkg);
+            while (res.hasMoreElements()) {
 
-            JarInputStream jarFile = new JarInputStream(new FileInputStream(file));
-            JarEntry e;
-            while ((e = jarFile.getNextJarEntry()) != null) {
-                if (e.getName().startsWith(pkg)) {
-                    String laf = new Regex(e.getName(), "de/javasoft/plaf/synthetica/(.*?)LookAndFeel\\.class").getMatch(0);
+                String url = new Regex(res.nextElement(), "(.*)\\!.*").getMatch(0);
+                if (url == null) return;
+                url = url.substring(4);
 
-                    if (laf != null) {
+                File file = new File(new URL(url).toURI());
 
-                        UIManager.installLookAndFeel(laf, "de.javasoft.plaf.synthetica." + laf + "LookAndFeel");
+                JarInputStream jarFile = new JarInputStream(new FileInputStream(file));
+                JarEntry e;
+                while ((e = jarFile.getNextJarEntry()) != null) {
+                    if (e.getName().startsWith(pkg)) {
+                        String laf = new Regex(e.getName(), "de/javasoft/plaf/synthetica/(.*?)LookAndFeel\\.class").getMatch(0);
+
+                        if (laf != null) {
+
+                            UIManager.installLookAndFeel(laf, "de.javasoft.plaf.synthetica." + laf + "LookAndFeel");
+                        }
                     }
+
                 }
+                // de.javasoft.plaf.synthetica.SyntheticaSkyMetallicLookAndFeel
+                // de.javasoft.plaf.synthetica.SyntheticaWhiteVisionLookAndFeel
+
+                // UIManager.installLookAndFeel("SkyMetallic",
+                // "de.javasoft.plaf.synthetica.SyntheticaSkyMetallicLookAndFeel");
+                // UIManager.installLookAndFeel("WhiteVision",
+                // "de.javasoft.plaf.synthetica.SyntheticaWhiteVisionLookAndFeel");
+                // UIManager.installLookAndFeel("SyntheticaBlackMoon",
+                // "de.javasoft.plaf.synthetica.SyntheticaBlackMoonLookAndFeel");
 
             }
-            // de.javasoft.plaf.synthetica.SyntheticaSkyMetallicLookAndFeel
-            // de.javasoft.plaf.synthetica.SyntheticaWhiteVisionLookAndFeel
-
-            UIManager.installLookAndFeel("SkyMetallic", "de.javasoft.plaf.synthetica.SyntheticaSkyMetallicLookAndFeel");
-            UIManager.installLookAndFeel("WhiteVision", "de.javasoft.plaf.synthetica.SyntheticaWhiteVisionLookAndFeel");
-            UIManager.installLookAndFeel("SyntheticaBlackMoon", "de.javasoft.plaf.synthetica.SyntheticaBlackMoonLookAndFeel");
         } catch (Exception e) {
             JDLogger.exception(e);
         }
@@ -238,9 +248,9 @@ public class LookAndFeelController {
         uiInitated = true;
 
         // installJGoodies();
-        installJTattoo();
-        if (JDUtilities.getJavaVersion() >= 1.6) installSubstance();
-        // installSynthetica();
+        // installJTattoo();
+        // if (JDUtilities.getJavaVersion() >= 1.6) installSubstance();
+        installSynthetica();
 
         try {
             JDLogger.getLogger().info("Use Look & Feel: " + getPlaf().getClassName());
@@ -282,8 +292,10 @@ public class LookAndFeelController {
             defaults.put("RootPaneUI", "jd.gui.swing.laf.ext.jtattoo.acryl.ui.AcrylRootPaneUI");
             defaults.put("CheckBoxUI", "jd.gui.swing.laf.ext.jattoo.ui.BaseJDCheckBoxUI");
             defaults.put("ButtonUI", "jd.gui.swing.laf.ext.jattoo.ui.BaseJDButtonUI");
+            defaults.put("ProgressBarUI", "jd.gui.swing.laf.ext.jtattoo.acryl.ui.AcrylProgressBarUI");
             defaults.put("TabbedPane.tabInsets", new Insets(0, 5, 0, 5));
-//            defaults.put("ProgressBar.selectionForeground", new Color(100, 100, 100));
+            // defaults.put("ProgressBar.selectionForeground", new Color(100,
+            // 100, 100));
             Properties props = new Properties();
             props.put("dynamicLayout", "on");
             props.put("logoString", "");
