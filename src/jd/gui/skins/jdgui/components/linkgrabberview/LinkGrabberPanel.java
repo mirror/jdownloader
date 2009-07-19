@@ -242,7 +242,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
 
     // @Override
     public void onHide() {
-        JDToolBar.getInstance().setList(null);
+        
         LGINSTANCE.removeListener(this);
         Update_Async.stop();
         visible = false;
@@ -365,8 +365,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
 
     // @Override
     public void onShow() {
-        JDToolBar.getInstance().setList(new String[] { "toolbar.control.start", "toolbar.control.pause", "toolbar.control.stop", "toolbar.separator", "toolbar.quickconfig.clipboardoberserver", "toolbar.quickconfig.reconnecttoggle", "toolbar.separator", "toolbar.interaction.reconnect", "toolbar.interaction.update", "toolbar.separator", "toolbar.linkgrabber.move.top", "toolbar.linkgrabber.move.bottom" });
-        fireTableChanged(false);
+       fireTableChanged(false);
         LGINSTANCE.addListener(this);
         visible = true;
         Update_Async.restart();

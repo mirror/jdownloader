@@ -28,33 +28,38 @@ import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
 
 import jd.controlling.JDLogger;
+import jd.gui.skins.jdgui.actions.ActionControlEvent;
 import jd.gui.skins.jdgui.actions.ActionController;
 import jd.gui.skins.jdgui.actions.ToolBarAction;
+import jd.gui.skins.jdgui.actions.event.ActionControllerListener;
 import jd.gui.skins.simple.components.SpeedMeterPanel;
 import net.miginfocom.swing.MigLayout;
 
-public class JDToolBar extends JToolBar {
+public class JDToolBar extends JToolBar implements ActionControllerListener {
 
     private static JDToolBar INSTANCE = null;
 
     private static final long serialVersionUID = 7533138014274040205L;
 
-    private static final String defaultlist[] = new String[] { "toolbar.control.start", "toolbar.control.pause", "toolbar.control.stop", "toolbar.separator", "toolbar.quickconfig.clipboardoberserver", "toolbar.quickconfig.reconnecttoggle", "toolbar.separator", "toolbar.interaction.reconnect", "toolbar.interaction.update" };
-
     private static final String BUTTON_CONSTRAINTS = "gaptop 2, gapleft 2";
 
     private static final String GUIINSTANCE = "GUI";
+
+    private static final String PROPERTY_CHANGE_LISTENER = "PROPERTY_CHANGE_LISTENER";
 
     private String[] current = null;
 
     private SpeedMeterPanel speedmeter;
 
+    private boolean updateing;
+
     public static synchronized JDToolBar getInstance() {
+
         if (INSTANCE == null) INSTANCE = new JDToolBar();
         return INSTANCE;
     }
 
-    private JDToolBar() {
+    public JDToolBar() {
         super(JToolBar.HORIZONTAL);
         // noTitlePainter = noTitlePane;
         setRollover(true);
@@ -62,33 +67,37 @@ public class JDToolBar extends JToolBar {
         setLayout(new MigLayout("ins 0,gap 0", "[][][][][][][][][][][][][][grow,fill]"));
         ActionController.initActions();
 
-        current = defaultlist;
-        // allows to load userdefined toolbars
-        // current =
-        // SubConfiguration.getConfig(JDGuiConstants.CONFIG_PARAMETER).getGenericProperty(JDGuiConstants.CFG_KEY_TOOLBAR_ACTIONLIST,
-        // defaultlist);
-        initToolbar(current);
-        addSpeedMeter();
+        // this.updateToolbar();
+        current = new String[] {
+                "toolbar.control.start",
+                "toolbar.control.pause",
+                "toolbar.control.stop",
+                "toolbar.separator",
+                "toolbar.quickconfig.clipboardoberserver",
+                "toolbar.quickconfig.reconnecttoggle",
+                "toolbar.separator",
+                "toolbar.interaction.reconnect",
+                "toolbar.interaction.update",
+
+        };
+        this.updateToolbar();
+        // please add listener here. to avoid the toolbar beiong pained multible
+        // times
+        ActionController.getBroadcaster().addListener(this);
+
         INSTANCE = this;
     }
 
     public void setList(String[] newlist) {
+        if(newlist==current)return;
         synchronized (current) {
-            if (newlist == null || newlist.length == 0) {
-                current = defaultlist;
-            } else {
-                current = newlist;
-            }
+            if (newlist == null || newlist.length == 0) newlist = current;
+            current = newlist;
+
         }
-        new GuiRunnable<Object>() {
-            public Object runSave() {
-                removeAll();
-                initToolbar(current);
-                addSpeedMeter();
-                revalidate();
-                return null;
-            }
-        }.start();
+
+        this.updateToolbar();
+
     }
 
     public String[] getList() {
@@ -99,59 +108,77 @@ public class JDToolBar extends JToolBar {
         synchronized (list) {
             AbstractButton ab;
             JToggleButton tbt;
-            for (String key : list) {
-                ToolBarAction action = ActionController.getToolBarAction(key);
+            if (list != null) {
+                for (String key : list) {
+                    ToolBarAction action = ActionController.getToolBarAction(key);
 
-                if (action == null) {
-                    warning("The Action " + key + " is not available");
-                    continue;
+                    if (action == null) {
+                        warning("The Action " + key + " is not available");
+                        continue;
 
-                }
-                action.init();
-                ab = null;
-                switch (action.getType()) {
-                case NORMAL:
+                    }
 
-                    add(ab = new JButton(action), BUTTON_CONSTRAINTS);
+                    action.init();
+                    if (!action.isVisible()) {
+                        warning("Action " + action + " is set to invisble");
+                        continue;
 
-                    break;
-                case TOGGLE:
+                    }
 
-                    add(ab = tbt = new JToggleButton(action), BUTTON_CONSTRAINTS);
-                    tbt.setText("");
-                    break;
-                case SEPARATOR:
-                    add(new JSeparator(JSeparator.VERTICAL), "height 32,gapleft 10,gapright 10");
-                    break;
-                }
-                if (ab != null) {
-                    ab.setText("");
-                    ab.setToolTipText(action.getTooltipText());
-                    ab.setEnabled(action.isEnabled());
-                    ab.setSelected(action.isSelected());
-                    action.putValue(GUIINSTANCE, ab);
-                    // external changes on the action get deligated to the
-                    // buttons
-                    action.addPropertyChangeListener(new PropertyChangeListener() {
-                        public void propertyChange(PropertyChangeEvent evt) {
-                            ToolBarAction action = (ToolBarAction) evt.getSource();
-                            try {
-                                AbstractButton ab = ((AbstractButton) action.getValue(GUIINSTANCE));
-                                ab.setText("");
-                                ab.setToolTipText(action.getTooltipText());
-                                ab.setEnabled(action.isEnabled());
-                                ab.setSelected(action.isSelected());
-                            } catch (Throwable w) {
-                                JDLogger.exception(w);
-                                action.removePropertyChangeListener(this);
+                    ab = null;
+                    switch (action.getType()) {
+                    case NORMAL:
+
+                        add(ab = new JButton(action), BUTTON_CONSTRAINTS);
+                        ab.setText("");
+                        break;
+                    case SEPARATOR:
+                        add(new JSeparator(JSeparator.VERTICAL), "height 32,gapleft 10,gapright 10");
+                        break;
+
+                    case TOGGLE:
+
+                        add(ab = tbt = new JToggleButton(action), BUTTON_CONSTRAINTS);
+                        tbt.setText("");
+                        break;
+
+                    }
+                    if (ab != null) {
+                        ab.setText("");
+                        ab.setToolTipText(action.getTooltipText());
+                        ab.setEnabled(action.isEnabled());
+                        ab.setSelected(action.isSelected());
+
+                        action.putValue(GUIINSTANCE, ab);
+                        PropertyChangeListener pcl;
+                        // external changes on the action get deligated to the
+                        // buttons
+                        action.addPropertyChangeListener(pcl = new PropertyChangeListener() {
+                            public void propertyChange(PropertyChangeEvent evt) {
+                                ToolBarAction action = (ToolBarAction) evt.getSource();
+                                try {
+                                    AbstractButton ab = ((AbstractButton) action.getValue(GUIINSTANCE));
+                                    ab.setText("");
+                                    ab.setToolTipText(action.getTooltipText());
+                                    ab.setEnabled(action.isEnabled());
+                                    ab.setSelected(action.isSelected());
+                                } catch (Throwable w) {
+                                    JDLogger.exception(w);
+                                    action.removePropertyChangeListener(this);
+
+                                }
+
                             }
 
+                        });
+                        if (action.getValue(PROPERTY_CHANGE_LISTENER) != null) {
+
+                            action.removePropertyChangeListener((PropertyChangeListener) action.getValue(PROPERTY_CHANGE_LISTENER));
                         }
+                        action.putValue(PROPERTY_CHANGE_LISTENER, pcl);
 
-                    });
-
+                    }
                 }
-                // inits the actions
             }
         }
     }
@@ -159,6 +186,42 @@ public class JDToolBar extends JToolBar {
     private void addSpeedMeter() {
         speedmeter = new SpeedMeterPanel();
         add(speedmeter, "cell 0 13,dock east,hidemode 3,height 30!,width 30:200:300");
+    }
+
+    public synchronized void onActionControlEvent(ActionControlEvent event) {
+        if (updateing) return;
+        updateing = true;
+
+        // currently visible buttons have a registered propertychangelistener
+        // that updates them on change.
+        // we only need a complete redraw for the visible event.
+        if (event.getParameter() == ToolBarAction.VISIBLE) {
+            updateToolbar();
+        }
+        updateing = false;
+    }
+
+    /**
+     * UPdates the toolbar
+     */
+    private void updateToolbar() {
+        System.out.println("II");
+        new GuiRunnable<Object>() {
+
+            @Override
+            public Object runSave() {
+                setVisible(false);
+                removeAll();
+                initToolbar(current);
+                addSpeedMeter();
+                setVisible(true);
+                revalidate();
+
+                return null;
+            }
+
+        }.waitForEDT();
+
     }
 
 }

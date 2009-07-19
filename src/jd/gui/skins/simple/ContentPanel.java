@@ -70,7 +70,7 @@ public class ContentPanel extends JPanel {
             }
             rightPanel.setEnabled(true);
             rightPanel.setVisible(true);
-            rightPanel.onShow();
+            rightPanel.show();
             this.setPreferredSize(new Dimension(100, 10));
             this.revalidate();
             this.repaint();

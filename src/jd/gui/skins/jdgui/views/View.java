@@ -11,9 +11,12 @@ import javax.swing.ScrollPaneConstants;
 import javax.swing.UIManager;
 import javax.swing.plaf.metal.MetalLookAndFeel;
 
+import jd.config.SubConfiguration;
+import jd.gui.skins.jdgui.JDGuiConstants;
 import jd.gui.skins.jdgui.interfaces.DroppedPanel;
+import jd.gui.skins.jdgui.interfaces.SideBarPanel;
 import jd.gui.skins.jdgui.interfaces.SwitchPanel;
-import jd.gui.skins.simple.tasks.TaskPanel;
+import jd.gui.skins.simple.JDToolBar;
 import jd.utils.JDTheme;
 import net.miginfocom.swing.MigLayout;
 
@@ -26,7 +29,7 @@ import com.jtattoo.plaf.ColorHelper;
  * @author Coalado
  * 
  */
-public abstract class View extends JPanel {
+public abstract class View extends SwitchPanel {
     /**
      * 
      */
@@ -34,16 +37,13 @@ public abstract class View extends JPanel {
     public static final int ICON_SIZE = 16;
     private JPanel rightPane;
     private JScrollPane sidebar;
-    private TaskPanel sidebarContent;
+    private SideBarPanel sidebarContent;
     private SwitchPanel content;
     private JPanel topContent;
     private JPanel bottomContent;
     private DroppedPanel infoPanel;
     private DroppedPanel defaultInfoPanel;
-    private static Object LOCK = new Object();
-    private boolean visible = false;
-
-    private static View LastView = null;
+    private boolean currentlyVisible;
 
     public View() {
         this.setLayout(new MigLayout("ins 0", "[]0[grow,fill]", "[grow,fill]"));
@@ -69,32 +69,19 @@ public abstract class View extends JPanel {
         bottomContent.setVisible(false);
     }
 
-    public boolean isVisible() {
-        return visible;
-    }
+    /**
+     * updates the Toolbar of id. set the defaultlist. if available, a
+     * userdefined list will be choosen.
+     * 
+     * @param id
+     *            (id, e.g. downloadview)
+     * @param defaultlist
+     *            list of action ids
+     */
+    protected void updateToolbar(String id, String[] defaultlist) {
 
-    public void setVisible(boolean b) {
-        visible = b;
-    }
-
-    public void onDisplay() {
-        synchronized (LOCK) {
-            if (LastView != null) {
-                LastView.onHide();
-                LastView.setVisible(false);
-            }
-            setVisible(true);
-            if (this.content != null && visible) this.content.onShow();
-            if (this.sidebarContent != null && visible) this.sidebarContent.onDisplay();
-            if (this.infoPanel != null && visible) this.infoPanel.onShow();
-            LastView = this;
-        }
-    }
-
-    private void onHide() {
-        if (this.content != null) this.content.onHide();
-        if (this.sidebarContent != null) this.sidebarContent.onHide();
-        if (this.infoPanel != null && visible) this.infoPanel.onHide();
+        defaultlist = SubConfiguration.getConfig(JDGuiConstants.CONFIG_PARAMETER).getGenericProperty(JDGuiConstants.CFG_KEY_TOOLBAR_ACTIONLIST + "." + id, defaultlist);
+        JDToolBar.getInstance().setList(defaultlist);
     }
 
     /**
@@ -123,10 +110,10 @@ public abstract class View extends JPanel {
             bottomContent.removeAll();
             bottomContent.add(info);
         }
-        if (infoPanel != null) infoPanel.onHide();
+        if (infoPanel != null && isShown()) infoPanel.hide();
         revalidate();
         this.infoPanel = info;
-        if (this.infoPanel != null && visible) this.infoPanel.onShow();
+        if (this.infoPanel != null && isShown()) this.infoPanel.show();
     }
 
     public DroppedPanel getInfoPanel() {
@@ -157,10 +144,10 @@ public abstract class View extends JPanel {
     protected void setContent(SwitchPanel right) {
         rightPane.removeAll();
         if (right != null) rightPane.add(right);
-        if (this.content != null) this.content.onHide();
+        if (this.content != null && isShown()) this.content.hide();
         this.content = right;
         this.revalidate();
-        if (this.content != null && visible) this.content.onShow();
+        if (this.content != null && isShown()) this.content.show();
     }
 
     /**
@@ -168,16 +155,19 @@ public abstract class View extends JPanel {
      * 
      * @param left
      */
-    protected void setSideBar(TaskPanel left) {
+    protected void setSideBar(SideBarPanel left) {
+        if (left == sidebarContent) return;
         if (left == null) {
             sidebar.setVisible(false);
         } else {
             sidebar.setVisible(true);
             sidebar.setViewportView(left);
         }
-        if (this.sidebarContent != null) this.sidebarContent.onHide();
+
+        if (sidebarContent != null && isShown()) sidebarContent.hide();
+
         this.sidebarContent = left;
-        if (this.sidebarContent != null && visible) this.sidebarContent.onDisplay();
+        if (isShown()) left.show();
     }
 
     /**

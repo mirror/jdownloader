@@ -2,8 +2,11 @@ package jd.gui.skins.jdgui.views;
 
 import javax.swing.Icon;
 
+import jd.config.SubConfiguration;
+import jd.gui.skins.jdgui.JDGuiConstants;
 import jd.gui.skins.jdgui.components.downloadview.DownloadLinksPanel;
 import jd.gui.skins.jdgui.views.info.DownloadInfoPanel;
+import jd.gui.skins.simple.JDToolBar;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
@@ -37,5 +40,29 @@ public class DownloadView extends View {
     public String getTooltip() {
         return JDL.L(IDENT_PREFIX + "tab.tooltip", "Downloadlist and Progress");
     }
+
+    @Override
+    protected void onHide() {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    protected void onShow() {
+        updateToolbar("downloadview", new String[] {
+                "toolbar.control.start",
+                "toolbar.control.pause",
+                "toolbar.control.stop",
+                "toolbar.separator",
+                "toolbar.quickconfig.clipboardoberserver",
+                "toolbar.quickconfig.reconnecttoggle",
+                "toolbar.separator",
+                "toolbar.interaction.reconnect",
+                "toolbar.interaction.update",
+                "toolbar.TESTER"
+        });
+    }
+
+
 
 }

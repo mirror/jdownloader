@@ -7,10 +7,10 @@ import jd.gui.skins.simple.tasks.DownloadTaskPane;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
-public class AddonView extends View {
 
-    private static final long serialVersionUID = 2921418481250709032L;
-
+public class AddonView extends View{
+    
+ 
     /**
      * DO NOT MOVE THIS CONSTANT. IT's important to have it in this file for the
      * LFE to parse JDL Keys correct
@@ -19,7 +19,7 @@ public class AddonView extends View {
 
     public AddonView() {
         super();
-        this.setSideBar(new DownloadTaskPane(JDL.L("gui.taskpanes.download", "Download"), JDTheme.II("gui.images.taskpanes.download", 16, 16)));
+//        this.setSideBar(new DownloadTaskPane(JDL.L("gui.taskpanes.download", "Download"), JDTheme.II("gui.images.taskpanes.download", 16, 16)));
         this.setContent(new DownloadLinksPanel());
     }
 
@@ -36,6 +36,18 @@ public class AddonView extends View {
     @Override
     public String getTooltip() {
         return JDL.L(IDENT_PREFIX + "tab.tooltip", "Addon settings");
+    }
+
+    @Override
+    protected void onHide() {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    protected void onShow() {
+        // TODO Auto-generated method stub
+        
     }
 
 }

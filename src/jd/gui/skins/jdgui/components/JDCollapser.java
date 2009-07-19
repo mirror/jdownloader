@@ -117,7 +117,7 @@ public class JDCollapser extends DroppedPanel {
      * deligates the onHidevenet to the contentpanel
      */
     public void onHide() {
-        if(panel!=null)panel.onHide();
+        if(panel!=null)panel.hide();
     }
 
     @Override
@@ -125,7 +125,7 @@ public class JDCollapser extends DroppedPanel {
      * deligates the onShow event to the contentpanel
      */
     public void onShow() {
-     if(panel!=null)panel.onShow();
+     if(panel!=null)panel.show();
         
     }
 }

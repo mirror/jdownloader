@@ -7,7 +7,9 @@ import jd.gui.skins.simple.LogPane;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
+
 public class LogView extends View {
+
 
     private static final long serialVersionUID = -4440872942373187410L;
 
@@ -39,6 +41,18 @@ public class LogView extends View {
     @Override
     public String getTooltip() {
         return JDL.L(IDENT_PREFIX + "tab.tooltip", "See or Upload the Log");
+    }
+
+    @Override
+    protected void onHide() {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    protected void onShow() {
+        // TODO Auto-generated method stub
+        
     }
 
 }

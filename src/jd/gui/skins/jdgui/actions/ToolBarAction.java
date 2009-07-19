@@ -24,12 +24,27 @@ public abstract class ToolBarAction extends AbstractAction {
     /**
      * 
      */
+    protected boolean inited=false;
     private static final long serialVersionUID = -7856598906795360922L;
-    private static final String SELECTED = "SELECTED";
-    private static final String PRIORITY = "PRIORITY";
-    private static final String ID = "ID";
+    public static final String SELECTED = "SELECTED";
+    public static final String PRIORITY = "PRIORITY";
+    public static final String ID = "ID";
+    public static final String VISIBLE = "VISIBLE";
 
     protected Types type = Types.NORMAL;
+
+    public void setVisible(boolean b) {
+        this.putValue(VISIBLE, b);
+    }
+
+    public boolean isVisible() {
+        try {
+            return (Boolean) this.getValue(VISIBLE);
+
+        } catch (Exception e) {
+            return true;
+        }
+    }
 
     public void setId(String id) {
         this.putValue(ID, id);
@@ -50,7 +65,10 @@ public abstract class ToolBarAction extends AbstractAction {
         ActionController.register(this);
 
     }
-
+public boolean equals(Object o){
+   return getID().equals(((ToolBarAction)o).getID());        
+    
+}
     /**
      * Set default values
      */
@@ -139,7 +157,7 @@ public abstract class ToolBarAction extends AbstractAction {
 
     public String getTooltipText() {
         try {
-        return getValue(AbstractAction.LONG_DESCRIPTION).toString();
+            return getValue(AbstractAction.LONG_DESCRIPTION).toString();
         } catch (Exception e) {
             return "";
         }

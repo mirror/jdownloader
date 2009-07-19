@@ -16,18 +16,24 @@
 
 package jd.gui.skins.jdgui.interfaces;
 
+import java.awt.Component;
 import java.awt.LayoutManager;
 
+import javax.swing.JComponent;
 import javax.swing.JPanel;
+
+import jd.gui.skins.jdgui.views.View;
+
 /**
  * a panel which gets informed if it gets displayed or removed from display
  * 
  * @author Coalado
- *
+ * 
  */
 public abstract class SwitchPanel extends JPanel {
 
     private static final long serialVersionUID = -7856570342778191232L;
+    private boolean currentlyVisible = false;
 
     public SwitchPanel(LayoutManager layout) {
         super(layout);
@@ -38,10 +44,71 @@ public abstract class SwitchPanel extends JPanel {
         super();
     }
 
-    abstract public void onShow();
+    /**
+     * DO NEVER call this method directly. This is a callback
+     */
+    abstract protected void onShow();
 
-    abstract public void onHide();
+    /**
+     * DO NEVER call this method directly. This is a callback
+     */
+    abstract protected void onHide();
 
+    /**
+     * invokes the view chain of this panel. all nestes views get informed, too
+     */
+    public void show() {
+        this.currentlyVisible = true;
+        onShow();
 
+        distributeView(this);
+
+    }
+
+    private void distributeView(JComponent switchPanel) {
+
+        for (Component comp : switchPanel.getComponents()) {
+            if(!(comp instanceof JComponent))continue;
+            if (comp == switchPanel) continue;
+            if (comp instanceof SwitchPanel) {
+                ((SwitchPanel) comp).show();
+            } else {
+                distributeView((JComponent)comp);
+            }
+        }
+    }
+
+    private void distributeHide(JComponent switchPanel) {
+        for (Component comp : switchPanel.getComponents()) {
+            if(!(comp instanceof JComponent))continue;
+            if (comp == switchPanel) continue;
+            if (comp instanceof SwitchPanel) {
+                ((SwitchPanel) comp).hide();
+            } else {
+                distributeHide((JComponent)comp);
+            }
+        }
+    }
+
+    /**
+     * invokes the view chain of this panel. all nestes views get informed, too
+     */
+    public void hide() {
+
+        this.currentlyVisible = false;
+        onHide();
+
+        distributeHide(this);
+    }
+
+    /**
+     * returns if the panel is currently visible on screen
+     * 
+     * @return
+     */
+    public boolean isShown() {
+        // TODO Auto-generated method stub
+        return currentlyVisible;
+    }
 
 }

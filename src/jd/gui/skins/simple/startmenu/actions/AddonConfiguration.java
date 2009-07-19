@@ -30,7 +30,7 @@ public class AddonConfiguration extends StartAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        SimpleGuiConstants.GUI_CONFIG.setProperty("LAST_CONFIG_PANEL", ConfigTaskPane.ACTION_ADDONS);
+//        SimpleGuiConstants.GUI_CONFIG.setProperty("LAST_CONFIG_PANEL", ConfigTaskPane.ACTION_ADDONS);
         //TODO
 //        SwingGui.getInstance().getTaskPane().switcher(SwingGui.getInstance().getCfgTskPane());
     }

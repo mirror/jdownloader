@@ -19,10 +19,11 @@ import jd.gui.skins.jdgui.views.View;
 import com.jtattoo.plaf.JTattooUtilities;
 import com.jtattoo.plaf.acryl.AcrylTabbedPaneUI;
 
-public class MainTabbedPane extends JTabbedPane implements ChangeListener {
+public class MainTabbedPane extends JTabbedPane {
 
     private static final long serialVersionUID = -1531827591735215594L;
     private Boolean extraHighlight;
+    protected View latestSelection;
 
     public void addTab(View downloadView) {
         super.addTab(downloadView.getTitle(), downloadView.getIcon(), downloadView, downloadView.getTooltip());
@@ -32,7 +33,21 @@ public class MainTabbedPane extends JTabbedPane implements ChangeListener {
     }
 
     public MainTabbedPane() {
-        addChangeListener(this);
+
+        this.getModel().addChangeListener(new ChangeListener() {
+
+            public void stateChanged(ChangeEvent e) {
+                View comp = (View) getSelectedComponent();
+                if (comp == latestSelection) return;
+                if (latestSelection != null) {
+                    latestSelection.hide();
+                }
+                latestSelection = comp;
+                comp.show();
+
+            }
+
+        });
     }
 
     /**
@@ -153,9 +168,5 @@ public class MainTabbedPane extends JTabbedPane implements ChangeListener {
         return false;
     }
 
-    public void stateChanged(ChangeEvent e) {
-        JTabbedPane pane = (JTabbedPane) e.getSource();
-        ((View) pane.getSelectedComponent()).onDisplay();
-        System.out.println("statechanged ondisplay");
-    }
+
 }

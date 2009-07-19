@@ -44,4 +44,16 @@ public class TabbedPanelView extends View {
         return tabbedPanel.getToolTipText();
     }
 
+    @Override
+    protected void onHide() {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    protected void onShow() {
+        // TODO Auto-generated method stub
+        
+    }
+
 }
