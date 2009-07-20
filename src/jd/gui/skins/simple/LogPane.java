@@ -148,7 +148,7 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
          * TODO: not synchronized properbly in loop.
          */
         try {
-            SwingGui.getInstance().setWaiting(true);
+            if( SwingGui.getInstance()!=null)SwingGui.getInstance().setWaiting(true);
             JDUtilities.getController().addControlListener(this);
             ArrayList<LogRecord> buff = JDLogHandler.getHandler().getBuffer();
             StringBuilder sb = new StringBuilder();
@@ -158,7 +158,7 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
                 sb.append(JDLogHandler.getHandler().getFormatter().format(lr));
             }
             logField.setText(sb.toString());
-            SwingGui.getInstance().setWaiting(false);
+            if( SwingGui.getInstance()!=null)SwingGui.getInstance().setWaiting(false);
             logField.setCaretPosition(logField.getText().length());
         } catch (Exception e) {
             e.printStackTrace();

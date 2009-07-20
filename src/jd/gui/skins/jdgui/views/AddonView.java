@@ -20,7 +20,7 @@ public class AddonView extends View {
         super();
         // this.setSideBar(new DownloadTaskPane(JDL.L("gui.taskpanes.download",
         // "Download"), JDTheme.II("gui.images.taskpanes.download", 16, 16)));
-        this.setContent(new DownloadLinksPanel());
+//        this.setContent(new DownloadLinksPanel());
     }
 
     @Override

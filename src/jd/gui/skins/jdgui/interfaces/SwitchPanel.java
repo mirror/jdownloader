@@ -37,6 +37,7 @@ public abstract class SwitchPanel extends JPanel {
 
     public SwitchPanel(LayoutManager layout) {
         super(layout);
+      
 
     }
 
@@ -57,7 +58,7 @@ public abstract class SwitchPanel extends JPanel {
     /**
      * invokes the view chain of this panel. all nestes views get informed, too
      */
-    public void show() {
+    public void setShown() {
         this.currentlyVisible = true;
         onShow();
 
@@ -71,7 +72,7 @@ public abstract class SwitchPanel extends JPanel {
             if(!(comp instanceof JComponent))continue;
             if (comp == switchPanel) continue;
             if (comp instanceof SwitchPanel) {
-                ((SwitchPanel) comp).show();
+                ((SwitchPanel) comp).setShown();
             } else {
                 distributeView((JComponent)comp);
             }
@@ -83,7 +84,7 @@ public abstract class SwitchPanel extends JPanel {
             if(!(comp instanceof JComponent))continue;
             if (comp == switchPanel) continue;
             if (comp instanceof SwitchPanel) {
-                ((SwitchPanel) comp).hide();
+                ((SwitchPanel) comp).setHidden();
             } else {
                 distributeHide((JComponent)comp);
             }
@@ -93,8 +94,8 @@ public abstract class SwitchPanel extends JPanel {
     /**
      * invokes the view chain of this panel. all nestes views get informed, too
      */
-    public void hide() {
-
+    public void setHidden() {
+//
         this.currentlyVisible = false;
         onHide();
 

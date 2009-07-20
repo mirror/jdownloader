@@ -43,7 +43,7 @@ public abstract class View extends SwitchPanel {
     private JPanel bottomContent;
     private DroppedPanel infoPanel;
     private DroppedPanel defaultInfoPanel;
-    private boolean currentlyVisible;
+  
 
     public View() {
         this.setLayout(new MigLayout("ins 0", "[]0[grow,fill]", "[grow,fill]"));
@@ -110,10 +110,10 @@ public abstract class View extends SwitchPanel {
             bottomContent.removeAll();
             bottomContent.add(info);
         }
-        if (infoPanel != null && isShown()) infoPanel.hide();
+        if (infoPanel != null && isShown()) infoPanel.setHidden();
         revalidate();
         this.infoPanel = info;
-        if (this.infoPanel != null && isShown()) this.infoPanel.show();
+        if (this.infoPanel != null && isShown()) this.infoPanel.setShown();
     }
 
     public DroppedPanel getInfoPanel() {
@@ -144,10 +144,10 @@ public abstract class View extends SwitchPanel {
     protected void setContent(SwitchPanel right) {
         rightPane.removeAll();
         if (right != null) rightPane.add(right);
-        if (this.content != null && isShown()) this.content.hide();
+        if (this.content != null && isShown()) this.content.setHidden();
         this.content = right;
         this.revalidate();
-        if (this.content != null && isShown()) this.content.show();
+        if (this.content != null && isShown()) this.content.setShown();
     }
 
     /**
@@ -164,10 +164,10 @@ public abstract class View extends SwitchPanel {
             sidebar.setViewportView(left);
         }
 
-        if (sidebarContent != null && isShown()) sidebarContent.hide();
+        if (sidebarContent != null && isShown()) sidebarContent.setHidden();
 
         this.sidebarContent = left;
-        if (isShown()) left.show();
+        if (isShown()) left.setShown();
     }
 
     /**

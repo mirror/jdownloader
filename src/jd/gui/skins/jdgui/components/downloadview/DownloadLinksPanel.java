@@ -63,7 +63,7 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
 
     private static final long serialVersionUID = -6029423913449902141L;
 
-    private final int NO_JOB = -1;
+    private static final int NO_JOB = -1;
     public final static int REFRESH_ALL_DATA_CHANGED = 1;
     public final static int REFRESH_DATA_AND_STRUCTURE_CHANGED = 0;
     public final static int REFRESH_DATA_AND_STRUCTURE_CHANGED_FAST = 10;
@@ -84,7 +84,7 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
 
     private long latestAsyncUpdate;
 
-    private boolean visible = true;
+   
 
     private FilePackageInfo filePackageInfo;
 
@@ -141,6 +141,7 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
     }
 
     public void fireTableChanged(int id, ArrayList<Object> objs) {
+    
         if (tableRefreshInProgress && id != REFRESH_DATA_AND_STRUCTURE_CHANGED_FAST) return;
         final ArrayList<Object> objs2 = new ArrayList<Object>(objs);
         final int id2 = id;
@@ -163,7 +164,7 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
 
     // @Override
     public void onShow() {
-        visible = true;
+  
         updateTableTask(REFRESH_DATA_AND_STRUCTURE_CHANGED, null);
         fireTableTask();
         asyncUpdate.restart();
@@ -174,7 +175,7 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
 
     // @Override
     public void onHide() {
-        visible = false;
+   
         JDUtilities.getDownloadController().removeListener(this);
         asyncUpdate.stop();
         internalTable.removeKeyListener(internalTable);
@@ -182,7 +183,7 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
 
     @SuppressWarnings("unchecked")
     public void updateTableTask(int id, Object Param) {
-        if (!visible) {
+        if (!isShown()) {
             asyncUpdate.stop();
             return;
         }
@@ -259,8 +260,8 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
     private void fireTableTask() {
         latestAsyncUpdate = System.currentTimeMillis();
         synchronized (jobObjects) {
-            if (visible && jobID != NO_JOB) fireTableChanged(this.jobID, this.jobObjects);
-            this.jobID = this.NO_JOB;
+            if (isShown() && jobID != NO_JOB) fireTableChanged(this.jobID, this.jobObjects);
+            this.jobID = NO_JOB;
             this.jobObjects.clear();
         }
     }
@@ -280,6 +281,7 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
                 HashSet<String> List = new HashSet<String>();
                 StringBuilder build = new StringBuilder();
                 String string = null;
+              
                 Object obj = null;
                 FilePackage fp = null;
                 DownloadLink link = null;
