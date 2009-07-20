@@ -98,16 +98,16 @@ public class Stealth extends PluginForDecrypt {
                 clone.submitForm(form);
                 if (clone.containsHTML("incorrect-captcha-sol")) {
                     if (max == 0) {
-
                         logger.warning("Captcha error");
+                        
                         return null;
                     } else {
                         continue;
                     }
                 }
+                
                 break;
             }
-
         }
 
         File container = JDUtilities.getResourceFile("container/stealth.to_" + System.currentTimeMillis() + ".dlc");
@@ -122,23 +122,23 @@ public class Stealth extends PluginForDecrypt {
         Browser.download(container, br.openGetConnection("http://sql.stealth.to/dlc.php?name=" + stealthID));
         ArrayList<DownloadLink> links = JDUtilities.getController().getContainerLinks(container);
 
-        if (links!=null&&links.size() > 0) {
-            for(DownloadLink l:links)l.setFilePackage(fp);
+        if (links != null && links.size() > 0) {
+            for (DownloadLink l : links) l.setFilePackage(fp);
             decryptedLinks.addAll(links);
         } else {
             logger.log(Level.WARNING, "Cannot decrypt download links file ['" + container.getName() + "']");
-            return decryptedLinks;
         }
 
         container.delete();
 
-        if (decryptedLinks.size() > 0) {
-            logger.info("There were " + decryptedLinks.size() + " links obtained from the URL '" + url + "'");
+        int numberOfDecryptedLinks = decryptedLinks.size();
+        if (numberOfDecryptedLinks > 0) {
+            logger.info("There were " + numberOfDecryptedLinks + " links obtained from the URL '" + url + "'");
         } else {
             logger.warning("There were no links obtained for the URL '" + url + "'");
         }
+        
         return decryptedLinks;
-
     }
 
     // @Override
