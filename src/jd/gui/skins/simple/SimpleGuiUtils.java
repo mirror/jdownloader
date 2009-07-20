@@ -89,7 +89,9 @@ public class SimpleGuiUtils {
         if (key == null) key = child.getName();
 
         SimpleGuiConstants.GUI_CONFIG.setProperty("DIMENSION_OF_" + key, child.getSize());
-        if (child instanceof JFrame) SimpleGuiConstants.GUI_CONFIG.setProperty("MAXIMIZED_STATE_OF_" + key, ((JFrame) child).getExtendedState());
+        if (child instanceof JFrame) {
+            SimpleGuiConstants.GUI_CONFIG.setProperty("MAXIMIZED_STATE_OF_" + key, ((JFrame) child).getExtendedState());
+        }
         SimpleGuiConstants.GUI_CONFIG.save();
     }
 

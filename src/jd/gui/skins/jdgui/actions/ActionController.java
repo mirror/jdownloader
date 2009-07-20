@@ -132,7 +132,7 @@ public class ActionController {
             }
 
             @Override
-            public void threadedactionPerformed(ActionEvent e) {
+            public void threadedActionPerformed(ActionEvent e) {
                 if (LinkGrabberPanel.getLinkGrabber().isVisible()) {
                     ArrayList<LinkGrabberFilePackage> fps = new ArrayList<LinkGrabberFilePackage>(LinkGrabberController.getInstance().getPackages());
                     synchronized (LinkGrabberController.ControllerLock) {
@@ -240,7 +240,7 @@ public class ActionController {
             }
 
             @Override
-            public void threadedactionPerformed(ActionEvent e) {
+            public void threadedActionPerformed(ActionEvent e) {
                 ActionController.getToolBarAction("toolbar.control.pause").setSelected(false);
                 JDUtilities.getController().pauseDownloads(false);
                 final ProgressController pc = new ProgressController(JDL.L("gui.downloadstop", "Stopping current downloads..."));
@@ -298,7 +298,7 @@ public class ActionController {
             }
 
             @Override
-            public void threadedactionPerformed(ActionEvent e) {
+            public void threadedActionPerformed(ActionEvent e) {
                 new GuiRunnable<Object>() {
                     public Object runSave() {
                         if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, JDL.L("gui.reconnect.confirm", "Wollen Sie sicher eine neue Verbindung aufbauen?")), UserIO.RETURN_OK, UserIO.DONT_SHOW_AGAIN)) {
@@ -337,7 +337,7 @@ public class ActionController {
             }
 
             @Override
-            public void threadedactionPerformed(ActionEvent e) {
+            public void threadedActionPerformed(ActionEvent e) {
                 new WebUpdate().doUpdateCheck(true, true);
             }
 

@@ -17,13 +17,9 @@ import jd.utils.locale.JDL;
 
 public class LinkGrabberInfoPanel extends InfoPanel {
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = 2276105693934789404L;
 
     private static final String JDL_PREFIX = "jd.gui.skins.jdgui.views.info.LinkGrabberInfoPanel.";
-    private boolean visible = false;
     private LinkGrabberController lgi;
     protected int links;
     protected int tot;
@@ -94,7 +90,7 @@ public class LinkGrabberInfoPanel extends InfoPanel {
     }
 
     private void update() {
-        if (!visible) return;
+        if (!isShown()) return;
         new GuiRunnable<Object>() {
 
             @Override
@@ -118,12 +114,10 @@ public class LinkGrabberInfoPanel extends InfoPanel {
 
     @Override
     public void onHide() {
-        visible = false;
     }
 
     @Override
     public void onShow() {
-        visible = true;
     }
 
 }

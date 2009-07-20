@@ -16,12 +16,8 @@ public abstract class ThreadedAction extends ToolBarAction {
         multiplethreadsallowed = allowmultiplethreads;
     }
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = -1483816271981451352L;
 
-    @Override
     /*
      * this action is performed in its own thread, explicit edt queueing is
      * needed
@@ -33,7 +29,7 @@ public abstract class ThreadedAction extends ToolBarAction {
             public void run() {
                 this.setName(getID());
                 try {
-                    threadedactionPerformed(e);
+                    threadedActionPerformed(e);
                 } catch (Exception e) {
                 }
                 actionrunning = false;
@@ -41,6 +37,6 @@ public abstract class ThreadedAction extends ToolBarAction {
         }.start();
     }
 
-    public abstract void threadedactionPerformed(ActionEvent e);
+    public abstract void threadedActionPerformed(ActionEvent e);
 
 }

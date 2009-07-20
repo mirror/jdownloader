@@ -6,19 +6,20 @@ import javax.swing.JTabbedPane;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import jd.config.SubConfiguration;
 import jd.gui.skins.jdgui.interfaces.View;
 
 public class MainTabbedPane extends JTabbedPane {
 
     private static final long serialVersionUID = -1531827591735215594L;
-    private Boolean extraHighlight;
+    // private Boolean extraHighlight;
     protected View latestSelection;
 
     public void addTab(View downloadView) {
         super.addTab(downloadView.getTitle(), downloadView.getIcon(), downloadView, downloadView.getTooltip());
         this.setFocusable(false);
-        extraHighlight = SubConfiguration.getConfig(JDGuiConstants.CONFIG_PARAMETER).getBooleanProperty(JDGuiConstants.CFG_KEY_MAIN_TABBED_HIGHLIGHT, false);
+        // extraHighlight =
+        // SubConfiguration.getConfig(JDGuiConstants.CONFIG_PARAMETER).getBooleanProperty(JDGuiConstants.CFG_KEY_MAIN_TABBED_HIGHLIGHT,
+        // false);
         // initUI();
     }
 

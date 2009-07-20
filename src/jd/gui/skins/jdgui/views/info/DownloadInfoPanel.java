@@ -15,7 +15,6 @@ public class DownloadInfoPanel extends InfoPanel {
     private DownloadInformations ds;
     private DownloadController dlc;
     private int speed;
-    private boolean visible = false;
 
     public DownloadInfoPanel() {
         super();
@@ -46,7 +45,7 @@ public class DownloadInfoPanel extends InfoPanel {
     }
 
     private void update() {
-        if (!visible) return;
+        if (!isShown()) return;
         new GuiRunnable<Object>() {
             @Override
             public Object runSave() {
@@ -65,12 +64,10 @@ public class DownloadInfoPanel extends InfoPanel {
 
     @Override
     public void onHide() {
-        visible = false;
     }
 
     @Override
     public void onShow() {
-        visible = true;
     }
 
 }

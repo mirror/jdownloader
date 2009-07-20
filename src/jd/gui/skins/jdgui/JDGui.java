@@ -26,7 +26,6 @@ import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JPanel;
-import javax.swing.WindowConstants;
 
 import jd.config.SubConfiguration;
 import jd.controlling.ClipboardHandler;
@@ -108,25 +107,22 @@ public class JDGui extends SwingGui {
         setWindowTitle();
         layoutComponents();
 
-        initLocationAndDimension();
         pack();
+        initLocationAndDimension();
         setVisible(true);
         ClipboardHandler.getClipboard().setTempDisabled(false);
     }
 
     /**
-     * restores the dimension and location fo the window
+     * restores the dimension and location to the window
      */
     private void initLocationAndDimension() {
         Dimension dim = SimpleGuiUtils.getLastDimension(this, null);
-        if (dim == null) {
-            dim = new Dimension(800, 600);
-        }
+        if (dim == null) dim = new Dimension(800, 600);
         setPreferredSize(dim);
         setMinimumSize(new Dimension(400, 100));
         setLocation(SimpleGuiUtils.getLastLocation(null, null, this));
         setExtendedState(JDGuiConstants.GUI_CONFIG.getIntegerProperty("MAXIMIZED_STATE_OF_" + this.getName(), JFrame.NORMAL));
-
     }
 
     private void initComponents() {
@@ -172,7 +168,7 @@ public class JDGui extends SwingGui {
 
     private void initDefaults() {
         Toolkit.getDefaultToolkit().getSystemEventQueue().push(new EDTEventQueue());
-        setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
+        setDefaultCloseOperation(SwingGui.DO_NOTHING_ON_CLOSE);
         this.addWindowListener(this);
     }
 
