@@ -99,6 +99,7 @@ public class JDGui extends SwingGui {
         // Important for unittests
         setName("MAINFRAME");
         SimpleGuiConstants.GUI_CONFIG = SubConfiguration.getConfig(JDGuiConstants.CONFIG_PARAMETER);
+        JDGuiConstants.GUI_CONFIG = SubConfiguration.getConfig(JDGuiConstants.CONFIG_PARAMETER);
         initDefaults();
         initComponents();
 
@@ -123,7 +124,7 @@ public class JDGui extends SwingGui {
         setPreferredSize(dim);
         setMinimumSize(new Dimension(400, 100));
         setLocation(SimpleGuiUtils.getLastLocation(null, null, this));
-        setExtendedState(SimpleGuiConstants.GUI_CONFIG.getIntegerProperty("MAXIMIZED_STATE_OF_" + this.getName(), JFrame.NORMAL));
+        setExtendedState(JDGuiConstants.GUI_CONFIG.getIntegerProperty("MAXIMIZED_STATE_OF_" + this.getName(), JFrame.NORMAL));
 
     }
 

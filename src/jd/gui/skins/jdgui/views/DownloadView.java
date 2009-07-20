@@ -21,7 +21,6 @@ public class DownloadView extends View {
     public DownloadView() {
         super();
         this.setContent(new DownloadLinksPanel());
-
         this.setDefaultInfoPanel(new DownloadInfoPanel());
     }
 

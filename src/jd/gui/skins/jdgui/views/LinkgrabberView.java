@@ -1,12 +1,15 @@
 package jd.gui.skins.jdgui.views;
 
 import javax.swing.Icon;
+import javax.swing.JMenuItem;
 
 import jd.controlling.LinkGrabberController;
 import jd.controlling.LinkGrabberControllerEvent;
 import jd.controlling.LinkGrabberControllerListener;
+import jd.gui.skins.jdgui.actions.ActionController;
 import jd.gui.skins.jdgui.components.linkgrabberview.LinkGrabberPanel;
 import jd.gui.skins.jdgui.interfaces.View;
+import jd.gui.skins.jdgui.views.info.LinkGrabberInfoPanel;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
@@ -23,6 +26,7 @@ public class LinkgrabberView extends View {
     public LinkgrabberView() {
         super();
         this.setContent(LinkGrabberPanel.getLinkGrabber());
+        this.setDefaultInfoPanel(new LinkGrabberInfoPanel());
         LinkGrabberController.getInstance().addListener(new LinkGrabberControllerListener() {
             public void onLinkGrabberControllerEvent(LinkGrabberControllerEvent event) {
                 switch (event.getID()) {
@@ -56,7 +60,7 @@ public class LinkgrabberView extends View {
 
     @Override
     protected void onShow() {
-        updateToolbar("linkgrabberview", new String[] { "toolbar.control.start", "toolbar.control.pause", "toolbar.control.stop", "toolbar.separator", "toolbar.quickconfig.clipboardoberserver", "toolbar.quickconfig.reconnecttoggle", "toolbar.separator", "toolbar.interaction.reconnect", "toolbar.interaction.update", "toolbar.separator", "toolbar.linkgrabber.move.top", "toolbar.linkgrabber.move.bottom" });
+        updateToolbar("linkgrabberview", new String[] { "toolbar.control.start", "toolbar.control.pause", "toolbar.control.stop", "toolbar.separator", "toolbar.quickconfig.clipboardoberserver", "toolbar.quickconfig.reconnecttoggle", "toolbar.separator", "toolbar.interaction.reconnect", "toolbar.interaction.update", "toolbar.separator", "action.addurl", "action.load", "toolbar.separator", "action.linkgrabber.addall", "action.linkgrabber.clearlist" });
     }
 
 }

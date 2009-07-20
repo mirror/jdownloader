@@ -38,9 +38,7 @@ import net.miginfocom.swing.MigLayout;
 
 public class JDToolBar extends JToolBar implements ActionControllerListener {
 
-    private static String[] defaultlist = new String[] { "toolbar.control.start", "toolbar.control.pause", "toolbar.control.stop", "toolbar.separator", "toolbar.quickconfig.clipboardoberserver", "toolbar.quickconfig.reconnecttoggle", "toolbar.separator", "toolbar.interaction.reconnect", "toolbar.interaction.update",
-
-    };
+    private static String[] defaultlist = new String[] { "toolbar.control.start", "toolbar.control.pause", "toolbar.control.stop", "toolbar.separator", "toolbar.quickconfig.clipboardoberserver", "toolbar.quickconfig.reconnecttoggle", "toolbar.separator", "toolbar.interaction.reconnect", "toolbar.interaction.update" };
 
     private static JDToolBar INSTANCE = null;
 
@@ -199,8 +197,7 @@ public class JDToolBar extends JToolBar implements ActionControllerListener {
      * UPdates the toolbar
      */
     private void updateToolbar() {
-        
-  
+
         new GuiRunnable<Object>() {
 
             @Override

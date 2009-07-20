@@ -88,7 +88,7 @@ public abstract class InfoPanel extends DroppedPanel {
         SwingGui.checkEDT();
         JComponent c = map.get(key);
 
-        if (c instanceof JLabel) {
+        if (c != null && c instanceof JLabel) {
             ((JLabel) c).setText(value.toString());
         }
     }
@@ -128,6 +128,10 @@ public abstract class InfoPanel extends DroppedPanel {
         add(myTitle, "gapleft 20,alignx right,cell " + x + " " + y);
         add(myComponent, "cell " + (x + 1) + " " + y);
         map.put(title, myComponent);
+    }
+
+    protected JComponent getComponent(String key) {
+        return map.get(key);
     }
 
     protected void setIcon(ImageIcon ii) {

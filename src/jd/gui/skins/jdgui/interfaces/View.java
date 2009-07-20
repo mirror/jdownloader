@@ -83,7 +83,10 @@ public abstract class View extends SwitchPanel {
             /* reset toolbar to global defaultlist */
             JDToolBar.getInstance().setList(null);
         } else {
-            defaultlist = SubConfiguration.getConfig(JDGuiConstants.CONFIG_PARAMETER).getGenericProperty(JDGuiConstants.CFG_KEY_TOOLBAR_ACTIONLIST + "." + id, defaultlist);
+            // solange noch kein editor dafür vorhanden
+            // defaultlist =
+            // SubConfiguration.getConfig(JDGuiConstants.CONFIG_PARAMETER).getGenericProperty(JDGuiConstants.CFG_KEY_TOOLBAR_ACTIONLIST
+            // + "." + id, defaultlist);
             JDToolBar.getInstance().setList(defaultlist);
         }
     }
@@ -94,7 +97,7 @@ public abstract class View extends SwitchPanel {
      * @param panel
      */
     protected void setDefaultInfoPanel(DroppedPanel panel) {
-     
+
         this.defaultInfoPanel = panel;
         if (this.getInfoPanel() == null) setInfoPanel(panel);
     }
@@ -150,7 +153,7 @@ public abstract class View extends SwitchPanel {
      */
     public synchronized void setContent(SwitchPanel right) {
         SwingGui.checkEDT();
-       
+
         for (Component c : rightPane.getComponents()) {
             c.setVisible(false);
         }

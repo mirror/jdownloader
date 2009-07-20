@@ -24,7 +24,7 @@ public abstract class ToolBarAction extends AbstractAction {
     /**
      * 
      */
-    protected boolean inited=false;
+    protected boolean inited = false;
     private static final long serialVersionUID = -7856598906795360922L;
     public static final String SELECTED = "SELECTED";
     public static final String PRIORITY = "PRIORITY";
@@ -63,12 +63,13 @@ public abstract class ToolBarAction extends AbstractAction {
         setAccelerator(JDL.L("gui.menu." + menukey + ".accel", "-"));
         initDefaults();
         ActionController.register(this);
+    }
+
+    public boolean equals(Object o) {
+        return getID().equals(((ToolBarAction) o).getID());
 
     }
-public boolean equals(Object o){
-   return getID().equals(((ToolBarAction)o).getID());        
-    
-}
+
     /**
      * Set default values
      */

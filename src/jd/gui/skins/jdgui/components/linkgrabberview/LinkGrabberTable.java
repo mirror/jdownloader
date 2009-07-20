@@ -50,6 +50,7 @@ import javax.swing.table.TableColumnModel;
 import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.LinkGrabberController;
+import jd.gui.skins.jdgui.actions.ActionController;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.components.RowHighlighter;
 import jd.plugins.DownloadLink;
@@ -271,8 +272,7 @@ public class LinkGrabberTable extends JTable implements MouseListener, MouseMoti
             clearSelection();
             if (e.getButton() == MouseEvent.BUTTON3) {
                 JPopupMenu popup = new JPopupMenu();
-
-                popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.add_all", 16, 16), JDL.L("gui.linkgrabberv2.lg.addall", "Add all packages"), LinkGrabberTableAction.ADD_ALL)));
+                popup.add(new JMenuItem(ActionController.getToolBarAction("action.linkgrabber.addall")));
                 popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.removefailed", 16, 16), JDL.L("gui.linkgrabberv2.lg.rmoffline", "Remove all Offline"), LinkGrabberTableAction.DELETE_OFFLINE)));
                 popup.add(buildExtMenu());
                 if (popup.getComponentCount() != 0) popup.show(this, point.x, point.y);
@@ -299,7 +299,7 @@ public class LinkGrabberTable extends JTable implements MouseListener, MouseMoti
             JPopupMenu popup = new JPopupMenu();
 
             if (obj instanceof LinkGrabberFilePackage || obj instanceof DownloadLink) {
-                popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.add_all", 16, 16), JDL.L("gui.linkgrabberv2.lg.addall", "Add all packages"), LinkGrabberTableAction.ADD_ALL)));
+                popup.add(new JMenuItem(ActionController.getToolBarAction("action.linkgrabber.addall")));
                 popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.removefailed", 16, 16), JDL.L("gui.linkgrabberv2.lg.rmoffline", "Remove all Offline"), LinkGrabberTableAction.DELETE_OFFLINE)));
 
                 popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.delete", 16, 16), JDL.L("gui.table.contextmenu.delete", "entfernen") + " (" + alllinks.size() + ")", LinkGrabberTableAction.DELETE, new Property("links", alllinks))));

@@ -212,26 +212,11 @@ public class LinkGrabberTaskPane extends TaskPanel implements ActionListener, Li
 
     public void actionPerformed(ActionEvent e) {
 
-        if (e.getSource() == panelAddLinks) {
-            this.broadcastEvent(new ActionEvent(this, LinkGrabberTableAction.GUI_ADD, null));
-            return;
-        }
 
-        if (e.getSource() == panelAddContainers) {
-            this.broadcastEvent(new ActionEvent(this, LinkGrabberTableAction.GUI_LOAD, null));
-            return;
-        }
 
-        if (e.getSource() == lgAddAll) {
-            this.broadcastEvent(new ActionEvent(this, LinkGrabberTableAction.ADD_ALL, null));
-            return;
-        }
+
         if (e.getSource() == lgAddSelected) {
             this.broadcastEvent(new ActionEvent(this, LinkGrabberTableAction.ADD_SELECTED_PACKAGES, null));
-            return;
-        }
-        if (e.getSource() == lgClear) {
-            this.broadcastEvent(new ActionEvent(this, LinkGrabberTableAction.CLEAR, null));
             return;
         }
     }

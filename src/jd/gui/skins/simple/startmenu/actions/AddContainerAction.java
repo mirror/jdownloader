@@ -17,12 +17,9 @@
 package jd.gui.skins.simple.startmenu.actions;
 
 import java.awt.event.ActionEvent;
-import java.io.File;
 
-import jd.gui.skins.simple.components.JDFileChooser;
-import jd.nutils.io.JDFileFilter;
-import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
+import jd.gui.skins.jdgui.actions.ActionController;
+import jd.gui.skins.jdgui.actions.ToolBarAction;
 
 public class AddContainerAction extends StartAction {
 
@@ -33,23 +30,8 @@ public class AddContainerAction extends StartAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        AddContainerAction.addContainerDialog();
-    }
-
-    public static void addContainerDialog() {
-        JDFileChooser fc = new JDFileChooser("_LOADSAVEDLC");
-        fc.setDialogTitle(JDL.L("gui.filechooser.loaddlc", "Load DLC file"));
-        fc.setFileFilter(new JDFileFilter(null, ".dlc|.rsdf|.ccf|.metalink", true));
-        fc.setFileSelectionMode(JDFileChooser.FILES_ONLY);
-        fc.setMultiSelectionEnabled(true);
-        if (fc.showOpenDialog(null) == JDFileChooser.APPROVE_OPTION) {
-            File[] ret = fc.getSelectedFiles();
-            if (ret != null) {
-                for (File r : ret) {
-                    JDUtilities.getController().loadContainerFile(r);
-                }
-            }
-        }
+        ToolBarAction tmp = ActionController.getToolBarAction("action.load");
+        tmp.actionPerformed(e);
     }
 
 }

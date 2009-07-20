@@ -24,6 +24,7 @@ import javax.swing.filechooser.FileFilter;
 
 import jd.config.SubConfiguration;
 import jd.gui.skins.simple.SimpleGuiConstants;
+import jd.gui.userio.NoUserIO;
 import jd.utils.locale.JDL;
 
 public abstract class UserIO {
@@ -61,6 +62,7 @@ public abstract class UserIO {
     private static Integer COUNTDOWN_TIME = null;
 
     public static UserIO getInstance() {
+        if (INSTANCE == null) INSTANCE = new NoUserIO();
         return INSTANCE;
     }
 
