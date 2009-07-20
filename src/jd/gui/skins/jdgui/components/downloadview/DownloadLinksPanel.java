@@ -163,8 +163,7 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
     }
 
     // @Override
-    public void onShow() {
-  
+    public void onShow() {  
         updateTableTask(REFRESH_DATA_AND_STRUCTURE_CHANGED, null);
         fireTableTask();
         asyncUpdate.restart();

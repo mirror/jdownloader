@@ -43,7 +43,6 @@ public abstract class View extends SwitchPanel {
     private JPanel bottomContent;
     private DroppedPanel infoPanel;
     private DroppedPanel defaultInfoPanel;
-  
 
     public View() {
         this.setLayout(new MigLayout("ins 0", "[]0[grow,fill]", "[grow,fill]"));
@@ -79,9 +78,13 @@ public abstract class View extends SwitchPanel {
      *            list of action ids
      */
     protected void updateToolbar(String id, String[] defaultlist) {
-
-        defaultlist = SubConfiguration.getConfig(JDGuiConstants.CONFIG_PARAMETER).getGenericProperty(JDGuiConstants.CFG_KEY_TOOLBAR_ACTIONLIST + "." + id, defaultlist);
-        JDToolBar.getInstance().setList(defaultlist);
+        if (id == null && defaultlist == null) {
+            /* reset toolbar to global defaultlist */
+            JDToolBar.getInstance().setList(null);
+        } else {
+            defaultlist = SubConfiguration.getConfig(JDGuiConstants.CONFIG_PARAMETER).getGenericProperty(JDGuiConstants.CFG_KEY_TOOLBAR_ACTIONLIST + "." + id, defaultlist);
+            JDToolBar.getInstance().setList(defaultlist);
+        }
     }
 
     /**

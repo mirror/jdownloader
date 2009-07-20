@@ -47,8 +47,13 @@ public class StorageTo extends PluginForHost {
             int wait = Integer.valueOf(br.getRegex("'countdown' : (.*?),").getMatch(0)).intValue();
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * wait);
         }
-        int sleepcd = Integer.valueOf(br.getRegex("'countdown' : (.*?),").getMatch(0)).intValue();
-        sleep(sleepcd * 1000 + 1, link);
+        String time = br.getRegex("'countdown' : (.*?),").getMatch(0);
+        long sleeptime = 0;
+        try {
+            sleeptime = Long.parseLong(time);
+        } catch (Exception e) {
+        }
+        if (sleeptime > 0) sleep(sleeptime + 1 * 1000, link);
         String dllink;
         dllink = br.getRegex("'link' : '(.*?)',").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);

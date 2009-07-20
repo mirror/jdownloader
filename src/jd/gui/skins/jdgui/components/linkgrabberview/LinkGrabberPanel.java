@@ -240,8 +240,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
     }
 
     // @Override
-    public void onHide() {
-        
+    public void onHide() {        
         LGINSTANCE.removeListener(this);
         Update_Async.stop();
         visible = false;

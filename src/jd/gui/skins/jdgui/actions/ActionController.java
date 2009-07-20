@@ -39,45 +39,28 @@ public class ActionController {
     private static PropertyChangeListener PCL;
 
     public static void register(ToolBarAction action) {
-
         synchronized (TOOLBAR_ACTION_LIST) {
+            if (TOOLBAR_ACTION_LIST.contains(action)) return;
+            for (ToolBarAction act : TOOLBAR_ACTION_LIST) {
+                if (act.getID().equalsIgnoreCase(action.getID())) return;
+            }
             action.addPropertyChangeListener(getPropertyChangeListener());
-            if (!TOOLBAR_ACTION_LIST.contains(action)) TOOLBAR_ACTION_LIST.add(action);
+            TOOLBAR_ACTION_LIST.add(action);
         }
-
     }
 
     private static PropertyChangeListener getPropertyChangeListener() {
         if (PCL == null) {
             PCL = new PropertyChangeListener() {
-
                 public void propertyChange(PropertyChangeEvent evt) {
                     // broadcast only known ids. this avoid recusrion loops and
                     // stack overflow errors
-                    if (evt.getPropertyName() == ToolBarAction.ID
-                            || evt.getPropertyName() == ToolBarAction.PRIORITY
-                            || evt.getPropertyName() == ToolBarAction.SELECTED
-                            || evt.getPropertyName() == ToolBarAction.VISIBLE
-                            || evt.getPropertyName() == ToolBarAction.ACCELERATOR_KEY
-                            || evt.getPropertyName() == ToolBarAction.ACTION_COMMAND_KEY
-                            || evt.getPropertyName() == ToolBarAction.DEFAULT
-                            || evt.getPropertyName() == ToolBarAction.DISPLAYED_MNEMONIC_INDEX_KEY
-                            || evt.getPropertyName() == ToolBarAction.LARGE_ICON_KEY
-                            || evt.getPropertyName() == ToolBarAction.LONG_DESCRIPTION
-                            || evt.getPropertyName() == ToolBarAction.MNEMONIC_KEY
-                            || evt.getPropertyName() == ToolBarAction.NAME
-                            || evt.getPropertyName() == ToolBarAction.SELECTED_KEY
-                            || evt.getPropertyName() == ToolBarAction.SHORT_DESCRIPTION
-                            || evt.getPropertyName() == ToolBarAction.SMALL_ICON
-
-                    ) {
+                    if (evt.getPropertyName() == ToolBarAction.ID || evt.getPropertyName() == ToolBarAction.PRIORITY || evt.getPropertyName() == ToolBarAction.SELECTED || evt.getPropertyName() == ToolBarAction.VISIBLE || evt.getPropertyName() == ToolBarAction.ACCELERATOR_KEY || evt.getPropertyName() == ToolBarAction.ACTION_COMMAND_KEY || evt.getPropertyName() == ToolBarAction.DEFAULT || evt.getPropertyName() == ToolBarAction.DISPLAYED_MNEMONIC_INDEX_KEY || evt.getPropertyName() == ToolBarAction.LARGE_ICON_KEY || evt.getPropertyName() == ToolBarAction.LONG_DESCRIPTION || evt.getPropertyName() == ToolBarAction.MNEMONIC_KEY || evt.getPropertyName() == ToolBarAction.NAME || evt.getPropertyName() == ToolBarAction.SELECTED_KEY || evt.getPropertyName() == ToolBarAction.SHORT_DESCRIPTION || evt.getPropertyName() == ToolBarAction.SMALL_ICON) {
                         getBroadcaster().fireEvent(new ActionControlEvent(evt.getSource(), ActionControlEvent.PROPERTY_CHANGED, evt.getPropertyName()));
                     }
                 }
-
             };
         }
-
         return PCL;
     }
 
@@ -146,26 +129,22 @@ public class ActionController {
             public void init() {
                 if (inited) return;
                 this.inited = true;
-                JDUtilities.getController().addControlListener(
-                                                               new ControlIDListener(
-                                                                       ControlEvent.CONTROL_DOWNLOAD_START,
-                                                                       ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED,
-                                                                       ControlEvent.CONTROL_DOWNLOAD_STOP) {
-                                                                   public void controlIDEvent(ControlEvent event) {
-                                                                       switch (event.getID()) {
-                                                                       case ControlEvent.CONTROL_DOWNLOAD_START:
+                JDUtilities.getController().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOAD_START, ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED, ControlEvent.CONTROL_DOWNLOAD_STOP) {
+                    public void controlIDEvent(ControlEvent event) {
+                        switch (event.getID()) {
+                        case ControlEvent.CONTROL_DOWNLOAD_START:
 
-                                                                           setEnabled(false);
+                            setEnabled(false);
 
-                                                                           break;
-                                                                       case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
-                                                                       case ControlEvent.CONTROL_DOWNLOAD_STOP:
-                                                                           setEnabled(true);
+                            break;
+                        case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
+                        case ControlEvent.CONTROL_DOWNLOAD_STOP:
+                            setEnabled(true);
 
-                                                                           break;
-                                                                       }
-                                                                   }
-                                                               });
+                            break;
+                        }
+                    }
+                });
             }
 
         };
@@ -191,28 +170,24 @@ public class ActionController {
             public void init() {
                 if (inited) return;
                 this.inited = true;
-                JDUtilities.getController().addControlListener(
-                                                               new ControlIDListener(
-                                                                       ControlEvent.CONTROL_DOWNLOAD_START,
-                                                                       ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED,
-                                                                       ControlEvent.CONTROL_DOWNLOAD_STOP) {
-                                                                   public void controlIDEvent(ControlEvent event) {
-                                                                       switch (event.getID()) {
-                                                                       case ControlEvent.CONTROL_DOWNLOAD_START:
+                JDUtilities.getController().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOAD_START, ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED, ControlEvent.CONTROL_DOWNLOAD_STOP) {
+                    public void controlIDEvent(ControlEvent event) {
+                        switch (event.getID()) {
+                        case ControlEvent.CONTROL_DOWNLOAD_START:
 
-                                                                           setEnabled(true);
-                                                                           setSelected(false);
+                            setEnabled(true);
+                            setSelected(false);
 
-                                                                           break;
-                                                                       case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
-                                                                       case ControlEvent.CONTROL_DOWNLOAD_STOP:
-                                                                           setEnabled(false);
-                                                                           setSelected(false);
+                            break;
+                        case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
+                        case ControlEvent.CONTROL_DOWNLOAD_STOP:
+                            setEnabled(false);
+                            setSelected(false);
 
-                                                                           break;
-                                                                       }
-                                                                   }
-                                                               });
+                            break;
+                        }
+                    }
+                });
                 //
                 // JDController.getInstance().addControlListener(new
                 // ConfigPropertyListener(Configuration.PARAM_DOWNLOAD_PAUSE_SPEED)
@@ -274,23 +249,19 @@ public class ActionController {
             public void init() {
                 if (inited) return;
                 this.inited = true;
-                JDUtilities.getController().addControlListener(
-                                                               new ControlIDListener(
-                                                                       ControlEvent.CONTROL_DOWNLOAD_START,
-                                                                       ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED,
-                                                                       ControlEvent.CONTROL_DOWNLOAD_STOP) {
-                                                                   public void controlIDEvent(ControlEvent event) {
-                                                                       switch (event.getID()) {
-                                                                       case ControlEvent.CONTROL_DOWNLOAD_START:
-                                                                           setEnabled(true);
-                                                                           break;
-                                                                       case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
-                                                                       case ControlEvent.CONTROL_DOWNLOAD_STOP:
-                                                                           setEnabled(false);
-                                                                           break;
-                                                                       }
-                                                                   }
-                                                               });
+                JDUtilities.getController().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOAD_START, ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED, ControlEvent.CONTROL_DOWNLOAD_STOP) {
+                    public void controlIDEvent(ControlEvent event) {
+                        switch (event.getID()) {
+                        case ControlEvent.CONTROL_DOWNLOAD_START:
+                            setEnabled(true);
+                            break;
+                        case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
+                        case ControlEvent.CONTROL_DOWNLOAD_STOP:
+                            setEnabled(false);
+                            break;
+                        }
+                    }
+                });
 
             }
 
@@ -336,15 +307,11 @@ public class ActionController {
                         if (!source.getBooleanProperty(key, true)) {
                             setIcon("gui.images.reconnect_warning");
                             setToolTipText(JDL.L("gui.menu.action.reconnect.notconfigured.tooltip", "Your Reconnect is not configured correct"));
-                            getToolBarAction("toolbar.quickconfig.reconnecttoggle")
-                                    .setToolTipText(JDL.L("gui.menu.action.reconnect.notconfigured.tooltip", "Your Reconnect is not configured correct"));
+                            getToolBarAction("toolbar.quickconfig.reconnecttoggle").setToolTipText(JDL.L("gui.menu.action.reconnect.notconfigured.tooltip", "Your Reconnect is not configured correct"));
                         } else {
                             setToolTipText(JDL.L("gui.menu.action.reconnectman.desc", "Manual reconnect. Get a new IP by resetting your internet connection"));
                             setIcon("gui.images.reconnect");
-                            getToolBarAction("toolbar.quickconfig.reconnecttoggle").setToolTipText(
-                                                                                                   JDL.L(
-                                                                                                         "gui.menu.action.reconnectauto.desc",
-                                                                                                         "Auto reconnect. Get a new IP by resetting your internet connection"));
+                            getToolBarAction("toolbar.quickconfig.reconnecttoggle").setToolTipText(JDL.L("gui.menu.action.reconnectauto.desc", "Auto reconnect. Get a new IP by resetting your internet connection"));
                         }
                     }
                 });
@@ -400,8 +367,8 @@ public class ActionController {
                 if (inited) return;
                 this.inited = true;
                 setSelected(JDUtilities.getConfiguration().getGenericProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, true));
-                
-                setIcon(isSelected()?"gui.images.clipboard_enabled":"gui.images.clipboard_disabled");
+
+                setIcon(isSelected() ? "gui.images.clipboard_enabled" : "gui.images.clipboard_disabled");
                 JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE) {
                     @Override
                     public void onPropertyChanged(Property source, final String key) {
@@ -435,8 +402,8 @@ public class ActionController {
                 if (inited) return;
                 this.inited = true;
                 setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true));
-              
-                    setIcon(isSelected()?"gui.images.reconnect_enabled":"gui.images.reconnect_disabled");
+
+                setIcon(isSelected() ? "gui.images.reconnect_enabled" : "gui.images.reconnect_disabled");
                 JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_ALLOW_RECONNECT) {
                     @Override
                     public void onPropertyChanged(Property source, final String key) {
@@ -453,9 +420,7 @@ public class ActionController {
             }
 
         };
-//testaction
-        
-        
+        // testaction
 
         new ToolBarAction("toolbar.TESTER", "gui.images.next") {
             public void actionPerformed(ActionEvent e) {
@@ -469,7 +434,7 @@ public class ActionController {
 
             @Override
             public void init() {
-                
+
             }
 
         };
@@ -493,7 +458,6 @@ public class ActionController {
 
             };
         }
-
         return BROADCASTER;
     }
 
@@ -507,7 +471,6 @@ public class ActionController {
         synchronized (TOOLBAR_ACTION_LIST) {
             for (ToolBarAction a : TOOLBAR_ACTION_LIST) {
                 if (a.getID().equals(keyid)) return a;
-
             }
             return null;
         }

@@ -41,8 +41,7 @@ public class DownloadView extends View {
 
     @Override
     protected void onHide() {
-        // TODO Auto-generated method stub
-
+        updateToolbar(null, null);
     }
 
     @Override

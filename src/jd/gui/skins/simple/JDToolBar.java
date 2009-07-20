@@ -37,6 +37,10 @@ import net.miginfocom.swing.MigLayout;
 
 public class JDToolBar extends JToolBar implements ActionControllerListener {
 
+    private static String[] defaultlist = new String[] { "toolbar.control.start", "toolbar.control.pause", "toolbar.control.stop", "toolbar.separator", "toolbar.quickconfig.clipboardoberserver", "toolbar.quickconfig.reconnecttoggle", "toolbar.separator", "toolbar.interaction.reconnect", "toolbar.interaction.update",
+
+    };
+
     private static JDToolBar INSTANCE = null;
 
     private static final long serialVersionUID = 7533138014274040205L;
@@ -67,18 +71,7 @@ public class JDToolBar extends JToolBar implements ActionControllerListener {
         ActionController.initActions();
 
         // this.updateToolbar();
-        current = new String[] {
-                "toolbar.control.start",
-                "toolbar.control.pause",
-                "toolbar.control.stop",
-                "toolbar.separator",
-                "toolbar.quickconfig.clipboardoberserver",
-                "toolbar.quickconfig.reconnecttoggle",
-                "toolbar.separator",
-                "toolbar.interaction.reconnect",
-                "toolbar.interaction.update",
-
-        };
+        current = defaultlist;
         this.updateToolbar();
         // please add listener here. to avoid the toolbar beiong pained multible
         // times
@@ -88,15 +81,15 @@ public class JDToolBar extends JToolBar implements ActionControllerListener {
     }
 
     public void setList(String[] newlist) {
-        if(newlist==current)return;
+        if (newlist == current) return;
         synchronized (current) {
-            if (newlist == null || newlist.length == 0) newlist = current;
-            current = newlist;
-
+            if (newlist == null || newlist.length == 0) {
+                current = defaultlist;
+            } else {
+                current = newlist;
+            }
         }
-
         this.updateToolbar();
-
     }
 
     public String[] getList() {

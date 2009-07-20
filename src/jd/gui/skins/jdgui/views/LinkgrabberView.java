@@ -21,10 +21,6 @@ public class LinkgrabberView extends View {
 
     public LinkgrabberView() {
         super();
-        // this.setSideBar(new
-        // LinkGrabberTaskPane(JDL.L("gui.taskpanes.linkgrabber",
-        // "LinkGrabber"), JDTheme.II("gui.images.taskpanes.linkgrabber", 16,
-        // 16)));
         this.setContent(LinkGrabberPanel.getLinkGrabber());
         LinkGrabberController.getInstance().addListener(new LinkGrabberControllerListener() {
             public void onLinkGrabberControllerEvent(LinkGrabberControllerEvent event) {
@@ -54,27 +50,12 @@ public class LinkgrabberView extends View {
 
     @Override
     protected void onHide() {
-
+        updateToolbar(null, null);
     }
 
     @Override
     protected void onShow() {
-
-        updateToolbar("linkgrabberview", new String[] {
-                "toolbar.control.start",
-                "toolbar.control.pause",
-                "toolbar.control.stop",
-                "toolbar.separator",
-                "toolbar.quickconfig.clipboardoberserver",
-                "toolbar.quickconfig.reconnecttoggle",
-                "toolbar.separator",
-                "toolbar.interaction.reconnect",
-                "toolbar.interaction.update",
-                "toolbar.separator",
-                "toolbar.linkgrabber.move.top",
-                "toolbar.linkgrabber.move.bottom"
-        });
-
+        updateToolbar("linkgrabberview", new String[] { "toolbar.control.start", "toolbar.control.pause", "toolbar.control.stop", "toolbar.separator", "toolbar.quickconfig.clipboardoberserver", "toolbar.quickconfig.reconnecttoggle", "toolbar.separator", "toolbar.interaction.reconnect", "toolbar.interaction.update", "toolbar.separator", "toolbar.linkgrabber.move.top", "toolbar.linkgrabber.move.bottom" });
     }
 
 }

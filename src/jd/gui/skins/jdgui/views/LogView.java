@@ -15,9 +15,7 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-
 public class LogView extends View implements ControlListener {
-
 
     private static final long serialVersionUID = -4440872942373187410L;
 
@@ -31,12 +29,10 @@ public class LogView extends View implements ControlListener {
 
     public LogView() {
         super();
-     
         LogPane lp;
         this.setContent(lp = new LogPane());
         this.setDefaultInfoPanel(lip = new LogInfoPanel());
         lip.addActionListener(lp);
-       
     }
 
     @Override
@@ -56,55 +52,52 @@ public class LogView extends View implements ControlListener {
 
     @Override
     protected void onHide() {
-        // TODO Auto-generated method stub
-        
+        JDUtilities.getController().removeControlListener(this);
     }
 
     @Override
     protected void onShow() {
         JDUtilities.getController().addControlListener(this);
-        int severe=0;
-        int warning=0;
-        int exceptions=0;
-        int http=0;
+        int severe = 0;
+        int warning = 0;
+        int exceptions = 0;
+        int http = 0;
         ArrayList<LogRecord> buff = JDLogHandler.getHandler().getBuffer();
-        
-        for(LogRecord r:buff){
-            if(r.getLevel()==Level.SEVERE)severe++;
-            if(r.getLevel()==Level.WARNING)warning++;
-            if(r.getMessage().contains("--Request--"))http++;
-            if(r.getMessage().contains("xecption"))exceptions++;
-            
-            
+
+        for (LogRecord r : buff) {
+            if (r.getLevel() == Level.SEVERE) severe++;
+            if (r.getLevel() == Level.WARNING) warning++;
+            if (r.getMessage().contains("--Request--")) http++;
+            if (r.getMessage().contains("xecption")) exceptions++;
+
         }
         lip.setSevereCount(severe);
         lip.setWarningCount(warning);
         lip.setExceptionCount(exceptions);
         lip.setHttpCount(http);
         lip.update();
-        
     }
 
     public void controlEvent(ControlEvent event) {
         if (event.getID() == ControlEvent.CONTROL_LOG_OCCURED) {
-         LogRecord r = (LogRecord) event.getParameter();
-         if(r.getMessage().contains("xecption")){
-             lip.setExceptionCount(lip.getExceptionCount()+1);
-             lip.update();
-             
-         }else if(r.getLevel()==Level.SEVERE){
-             lip.setSevereCount(lip.getSevereCount()+1);
-             lip.update();
-             
-         }else if(r.getLevel()==Level.WARNING){
-             lip.setWarningCount(lip.getWarningCount()+1);
-             lip.update();
-             
-         }else if(r.getMessage().contains("--Request--")){
-             lip.setHttpCount(lip.getHttpCount()+1);
-             lip.update();
-             
-         }
+            LogRecord r = (LogRecord) event.getParameter();
+            if (r.getMessage().contains("xecption")) {
+                lip.setExceptionCount(lip.getExceptionCount() + 1);
+                lip.update();
+
+            } else if (r.getLevel() == Level.SEVERE) {
+                lip.setSevereCount(lip.getSevereCount() + 1);
+                lip.update();
+
+            } else if (r.getLevel() == Level.WARNING) {
+                lip.setWarningCount(lip.getWarningCount() + 1);
+                lip.update();
+
+            } else if (r.getMessage().contains("--Request--")) {
+                lip.setHttpCount(lip.getHttpCount() + 1);
+                lip.update();
+
+            }
         }
     }
 
