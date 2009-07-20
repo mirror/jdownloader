@@ -39,10 +39,9 @@ import jd.config.SubConfiguration;
 import jd.controlling.ClipboardHandler;
 import jd.controlling.JDController;
 import jd.controlling.reconnect.Reconnecter;
+import jd.gui.skins.jdgui.actions.ActionController;
 import jd.gui.skins.simple.Factory;
 import jd.gui.skins.simple.SimpleGUI;
-import jd.gui.skins.simple.startmenu.actions.AddContainerAction;
-import jd.gui.skins.simple.startmenu.actions.AddUrlAction;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.WebUpdate;
@@ -237,11 +236,11 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
         switch (index) {
         case TrayIconPopup.ACTION_ADD:
             dispose();
-            AddUrlAction.addUrlDialog();
+            ActionController.getToolBarAction("action.addurl").actionPerformed(e);
             break;
         case TrayIconPopup.ACTION_LOAD:
             dispose();
-            AddContainerAction.addContainerDialog();
+            ActionController.getToolBarAction("action.load").actionPerformed(e);
             break;
         case TrayIconPopup.ACTION_PAUSE:
             JDUtilities.getController().pauseDownloads(true);

@@ -66,7 +66,7 @@ public class JDToolBar extends JToolBar implements ActionControllerListener {
         // noTitlePainter = noTitlePane;
         setRollover(true);
         setFloatable(false);
-        setLayout(new MigLayout("ins 0,gap 0", "[][][][][][][][][][][][][][grow,fill]"));
+        setLayout(new MigLayout("ins 0"));
         ActionController.initActions();
 
         // this.updateToolbar();
@@ -177,7 +177,7 @@ public class JDToolBar extends JToolBar implements ActionControllerListener {
 
     private void addSpeedMeter() {
         speedmeter = new SpeedMeterPanel();
-        add(speedmeter, "cell 0 13,dock east,hidemode 3,height 30!,width 30:200:300");
+        add(speedmeter, "dock east,hidemode 3,height 30!,width 30:200:300, grow");
     }
 
     public synchronized void onActionControlEvent(ActionControlEvent event) {

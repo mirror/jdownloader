@@ -1,12 +1,10 @@
 package jd.gui.skins.jdgui.views;
 
 import javax.swing.Icon;
-import javax.swing.JMenuItem;
 
 import jd.controlling.LinkGrabberController;
 import jd.controlling.LinkGrabberControllerEvent;
 import jd.controlling.LinkGrabberControllerListener;
-import jd.gui.skins.jdgui.actions.ActionController;
 import jd.gui.skins.jdgui.components.linkgrabberview.LinkGrabberPanel;
 import jd.gui.skins.jdgui.interfaces.View;
 import jd.gui.skins.jdgui.views.info.LinkGrabberInfoPanel;

@@ -13,6 +13,8 @@ import jd.gui.skins.simple.GuiRunnable;
 import net.miginfocom.swing.MigLayout;
 
 public class ConfigSidebar extends SideBarPanel {
+
+    private static final long serialVersionUID = 6456662020047832983L;
     private JTree tree;
     private ConfigurationView view;
 
@@ -77,14 +79,10 @@ public class ConfigSidebar extends SideBarPanel {
 
     @Override
     protected void onHide() {
-        // TODO Auto-generated method stub
-
     }
 
     @Override
     protected void onShow() {
-        // TODO Auto-generated method stub
-
     }
 
 }

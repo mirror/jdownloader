@@ -3,35 +3,17 @@ package jd.gui.skins.jdgui.views;
 import javax.swing.Icon;
 import javax.swing.JLabel;
 
-import jd.gui.skins.jdgui.interfaces.SwitchPanel;
 import jd.gui.skins.jdgui.interfaces.View;
-import jd.gui.skins.simple.LogPane;
 import jd.utils.JDTheme;
 
 public class TestView extends View {
 
+    private static final long serialVersionUID = 8698758386841005256L;
+
     public TestView() {
         super();
 
-        LogPane lp;
-        SwitchPanel sp;
         this.add(new JLabel("fhjdksjf"));
-//        this.setContent(sp = new SwitchPanel() {
-//
-//            @Override
-//            protected void onHide() {
-//                // TODO Auto-generated method stub
-//
-//            }
-//
-//            @Override
-//            protected void onShow() {
-//                // TODO Auto-generated method stub
-//
-//            }
-//
-//        });
-//        sp.add(new JLabel("THIS IS A TESTVIEW"));
     }
 
     @Override
@@ -51,13 +33,10 @@ public class TestView extends View {
 
     @Override
     protected void onHide() {
-        // TODO Auto-generated method stub
-
     }
 
     @Override
     protected void onShow() {
-
     }
 
 }
