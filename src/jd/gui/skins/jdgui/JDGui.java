@@ -302,11 +302,6 @@ public class JDGui extends SwingGui {
         return false;
     }
 
-    public String[] showLoginDialog(String title, String defaultUser, String defaultPassword, String errorMessage) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
     public void showMessageDialog(String string) {
         // TODO Auto-generated method stub
 
@@ -428,7 +423,7 @@ public class JDGui extends SwingGui {
     }
 
     @Override
-    public void setContent(final SwitchPanel tabbedPanel) {
+    public void setContent(SwitchPanel tabbedPanel) {
         TabbedPanelView view = new TabbedPanelView(tabbedPanel);
         if (!mainTabbedPane.contains(view)) {
             mainTabbedPane.addTab(view);

@@ -2,7 +2,6 @@ package jd.gui.skins.jdgui.views;
 
 import javax.swing.Icon;
 
-import jd.gui.skins.jdgui.components.downloadview.DownloadLinksPanel;
 import jd.gui.skins.jdgui.interfaces.View;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
@@ -21,7 +20,7 @@ public class AddonView extends View {
         super();
         // this.setSideBar(new DownloadTaskPane(JDL.L("gui.taskpanes.download",
         // "Download"), JDTheme.II("gui.images.taskpanes.download", 16, 16)));
-//        this.setContent(new DownloadLinksPanel());
+        // this.setContent(new DownloadLinksPanel());
     }
 
     @Override

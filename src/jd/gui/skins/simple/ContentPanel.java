@@ -43,9 +43,7 @@ public class ContentPanel extends JPanel {
         synchronized (LOCK) {
             // System.out.println(panel);
             // new Exception().printStackTrace();
-            if (rightPanel == panel) {
-
-            return; }
+            if (rightPanel == panel) return;
 
             JDCollapser.getInstance().setCollapsed(true);
             if (rightPanel != null) {
@@ -55,7 +53,7 @@ public class ContentPanel extends JPanel {
                 rightPanel.setEnabled(false);
                 rightPanel.setVisible(false);
 
-                rightPanel.hide();
+                rightPanel.setHidden();
             }
             rightPanel = panel;
 
@@ -68,7 +66,7 @@ public class ContentPanel extends JPanel {
             }
             rightPanel.setEnabled(true);
             rightPanel.setVisible(true);
-            rightPanel.show();
+            rightPanel.setShown();
             this.setPreferredSize(new Dimension(100, 10));
             this.revalidate();
             this.repaint();

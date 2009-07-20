@@ -7,8 +7,6 @@ import javax.swing.event.TreeModelListener;
 import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 
-import jd.event.JDBroadcaster;
-import jd.event.JDEvent;
 import jd.gui.skins.jdgui.interfaces.SwitchPanel;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.SingletonPanel;

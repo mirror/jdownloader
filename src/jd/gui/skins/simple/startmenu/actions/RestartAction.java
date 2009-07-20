@@ -38,7 +38,7 @@ public class RestartAction extends StartAction {
         if (UserIO.RETURN_OK == UserIO.getInstance().requestConfirmDialog(0, JDL.L("sys.ask.rlyrestart", "Wollen Sie jDownloader wirklich neustarten?"))) {
             // TODO
             if (SimpleGUI.CURRENTGUI != null) {
-                SimpleGUI.CURRENTGUI.getContentPane().getRightPanel().hide();
+                SimpleGUI.CURRENTGUI.getContentPane().getRightPanel().setHidden();
             }
             SimpleGuiUtils.saveLastLocation(SwingGui.getInstance(), null);
             SimpleGuiUtils.saveLastDimension(SwingGui.getInstance(), null);

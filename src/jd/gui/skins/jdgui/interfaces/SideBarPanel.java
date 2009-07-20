@@ -1,7 +1,7 @@
 package jd.gui.skins.jdgui.interfaces;
 
-import javax.swing.JPanel;
-
 public abstract class SideBarPanel extends SwitchPanel {
+
+    private static final long serialVersionUID = -3520505194493472744L;
 
 }

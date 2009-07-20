@@ -22,7 +22,6 @@ import java.awt.LayoutManager;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 
-
 /**
  * a panel which gets informed if it gets displayed or removed from display
  * 
@@ -36,8 +35,6 @@ public abstract class SwitchPanel extends JPanel {
 
     public SwitchPanel(LayoutManager layout) {
         super(layout);
-      
-
     }
 
     public SwitchPanel() {
@@ -62,30 +59,29 @@ public abstract class SwitchPanel extends JPanel {
         onShow();
 
         distributeView(this);
-
     }
 
     private void distributeView(JComponent switchPanel) {
 
         for (Component comp : switchPanel.getComponents()) {
-            if(!(comp instanceof JComponent))continue;
+            if (!(comp instanceof JComponent)) continue;
             if (comp == switchPanel) continue;
             if (comp instanceof SwitchPanel) {
                 ((SwitchPanel) comp).setShown();
             } else {
-                distributeView((JComponent)comp);
+                distributeView((JComponent) comp);
             }
         }
     }
 
     private void distributeHide(JComponent switchPanel) {
         for (Component comp : switchPanel.getComponents()) {
-            if(!(comp instanceof JComponent))continue;
+            if (!(comp instanceof JComponent)) continue;
             if (comp == switchPanel) continue;
             if (comp instanceof SwitchPanel) {
                 ((SwitchPanel) comp).setHidden();
             } else {
-                distributeHide((JComponent)comp);
+                distributeHide((JComponent) comp);
             }
         }
     }
@@ -94,7 +90,6 @@ public abstract class SwitchPanel extends JPanel {
      * invokes the view chain of this panel. all nestes views get informed, too
      */
     public void setHidden() {
-//
         this.currentlyVisible = false;
         onHide();
 
@@ -107,7 +102,6 @@ public abstract class SwitchPanel extends JPanel {
      * @return
      */
     public boolean isShown() {
-        // TODO Auto-generated method stub
         return currentlyVisible;
     }
 
