@@ -4,6 +4,7 @@ import javax.swing.Icon;
 import javax.swing.JLabel;
 
 import jd.gui.skins.jdgui.interfaces.SwitchPanel;
+import jd.gui.skins.jdgui.interfaces.View;
 import jd.gui.skins.simple.LogPane;
 import jd.utils.JDTheme;
 

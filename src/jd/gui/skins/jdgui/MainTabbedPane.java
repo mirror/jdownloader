@@ -15,7 +15,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import jd.config.SubConfiguration;
-import jd.gui.skins.jdgui.views.View;
+import jd.gui.skins.jdgui.interfaces.View;
 
 import com.jtattoo.plaf.JTattooUtilities;
 import com.jtattoo.plaf.acryl.AcrylTabbedPaneUI;

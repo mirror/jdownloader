@@ -28,6 +28,7 @@ import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
 
 import jd.controlling.JDLogger;
+import jd.gui.skins.SwingGui;
 import jd.gui.skins.jdgui.actions.ActionControlEvent;
 import jd.gui.skins.jdgui.actions.ActionController;
 import jd.gui.skins.jdgui.actions.ToolBarAction;
@@ -98,6 +99,7 @@ public class JDToolBar extends JToolBar implements ActionControllerListener {
 
     private void initToolbar(String[] list) {
         synchronized (list) {
+            SwingGui.checkEDT();
             AbstractButton ab;
             JToggleButton tbt;
             if (list != null) {
@@ -197,7 +199,8 @@ public class JDToolBar extends JToolBar implements ActionControllerListener {
      * UPdates the toolbar
      */
     private void updateToolbar() {
-        System.out.println("II");
+        
+  
         new GuiRunnable<Object>() {
 
             @Override

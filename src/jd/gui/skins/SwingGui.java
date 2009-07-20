@@ -1,5 +1,7 @@
 package jd.gui.skins;
 
+import jd.JDInitFlags;
+import jd.controlling.JDLogger;
 import jd.gui.UIInterface;
 import jd.gui.skins.jdgui.WindowAdapter;
 import jd.gui.skins.jdgui.interfaces.SwitchPanel;
@@ -7,6 +9,7 @@ import jd.gui.skins.jdgui.interfaces.SwitchPanel;
 public abstract class SwingGui extends WindowAdapter implements UIInterface {
 
     private static final long serialVersionUID = 7164420260634468080L;
+
 
     private static SwingGui INSTANCE = null;
 
@@ -25,7 +28,8 @@ public abstract class SwingGui extends WindowAdapter implements UIInterface {
     }
 
     /**
-     * Sets the currently used GUI. IS not! thouight to be used to change gui at runtime
+     * Sets the currently used GUI. IS not! thouight to be used to change gui at
+     * runtime
      * 
      * @param ins
      */
@@ -39,5 +43,18 @@ public abstract class SwingGui extends WindowAdapter implements UIInterface {
     abstract public void closeWindow();
 
     abstract public void setContent(SwitchPanel tabbedPanel);
+
+    /**
+     * Throws an RuntimeException if the current thread is not the edt
+     */
+    public static void checkEDT() {
+        if (!JDInitFlags.SWITCH_DEBUG) return;
+        Thread th = Thread.currentThread();
+        String name = th.toString();
+        if (!name.contains("EventQueue")) {
+            JDLogger.exception(new RuntimeException("EDT Violation! Runs in "+th));
+        }
+
+    }
 
 }

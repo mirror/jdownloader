@@ -1,7 +1,7 @@
 package jd.gui.skins.jdgui;
 
 import jd.gui.skins.jdgui.interfaces.DroppedPanel;
-import jd.gui.skins.jdgui.views.View;
+import jd.gui.skins.jdgui.interfaces.View;
 
 public class InfoPanelHandler {
 /**

@@ -3,6 +3,7 @@ package jd.gui.skins.jdgui.views;
 import javax.swing.Icon;
 
 import jd.gui.skins.jdgui.interfaces.SwitchPanel;
+import jd.gui.skins.jdgui.interfaces.View;
 
 /**
  * A Wrapper for compatibility to old TabbedPanels

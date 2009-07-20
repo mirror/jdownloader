@@ -40,7 +40,7 @@ public class SingletonPanel {
         objs = objects;
     }
 
-    public SwitchPanel getPanel() {
+    public synchronized SwitchPanel getPanel() {
         if (panel == null) {
 
             try {

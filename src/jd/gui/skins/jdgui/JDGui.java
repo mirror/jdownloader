@@ -23,7 +23,6 @@ import java.awt.event.WindowEvent;
 import java.util.ArrayList;
 
 import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JPanel;
@@ -49,7 +48,6 @@ import jd.gui.skins.jdgui.views.DownloadView;
 import jd.gui.skins.jdgui.views.LinkgrabberView;
 import jd.gui.skins.jdgui.views.LogView;
 import jd.gui.skins.jdgui.views.TabbedPanelView;
-import jd.gui.skins.jdgui.views.TestView;
 import jd.gui.skins.simple.Balloon;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.JDStatusBar;
@@ -142,17 +140,17 @@ public class JDGui extends SwingGui {
         configurationView = new ConfigurationView();
         addonView = new AddonView();
         logView = new LogView();
-//        mainTabbedPane.add());
-//        mainTabbedPane.add(new JLabel("III2"));
-//        mainTabbedPane.add(new JLabel("III3"));
-//        mainTabbedPane.add(new JLabel("III4"));
-        
-     mainTabbedPane.addTab(downloadView);
+        // mainTabbedPane.add());
+        // mainTabbedPane.add(new JLabel("III2"));
+        // mainTabbedPane.add(new JLabel("III3"));
+        // mainTabbedPane.add(new JLabel("III4"));
+
+        mainTabbedPane.addTab(downloadView);
         mainTabbedPane.addTab(linkgrabberView);
         mainTabbedPane.addTab(configurationView);
         mainTabbedPane.addTab(addonView);
         mainTabbedPane.addTab(logView);
-//        mainTabbedPane.addTab(new TestView());
+        // mainTabbedPane.addTab(new TestView());
         mainTabbedPane.setSelectedComponent(downloadView);
     }
 
@@ -245,7 +243,16 @@ public class JDGui extends SwingGui {
      * @return
      */
     public static JDGui getInstance() {
-        if (INSTANCE == null) INSTANCE = new JDGui();
+        if (INSTANCE == null) {
+            INSTANCE = new GuiRunnable<JDGui>() {
+                @Override
+                public JDGui runSave() {
+                    return new JDGui();
+                }
+
+            }.getReturnValue();
+
+        }
         return INSTANCE;
     }
 

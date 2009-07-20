@@ -22,7 +22,6 @@ import java.awt.LayoutManager;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 
-import jd.gui.skins.jdgui.views.View;
 
 /**
  * a panel which gets informed if it gets displayed or removed from display

@@ -10,6 +10,7 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.event.EventListenerList;
 
+import jd.gui.skins.SwingGui;
 import jd.gui.skins.jdgui.borders.JDBorderFactory;
 import jd.gui.skins.jdgui.interfaces.DroppedPanel;
 import net.miginfocom.swing.MigLayout;
@@ -30,6 +31,7 @@ public abstract class InfoPanel extends DroppedPanel {
 
     public InfoPanel() {
         super();
+        SwingGui.checkEDT();
         this.setBorder(JDBorderFactory.createInsideShadowBorder(5, 0, 0, 0));
         listenerList = new EventListenerList();
         map = new HashMap<String, JComponent>();
@@ -83,6 +85,7 @@ public abstract class InfoPanel extends DroppedPanel {
      * @param string
      */
     protected void updateInfo(String key, Object value) {
+        SwingGui.checkEDT();
         JComponent c = map.get(key);
 
         if (c instanceof JLabel) {
@@ -100,12 +103,14 @@ public abstract class InfoPanel extends DroppedPanel {
      * @param y
      */
     protected void addInfoEntry(String title, String value, int x, int y) {
+        SwingGui.checkEDT();
         JLabel myValue = new JLabel(value);
         myValue.setForeground(valueColor);
         addComponent(title, myValue, x, y);
     }
 
     protected void addComponent(JComponent myComponent, int x, int y) {
+        SwingGui.checkEDT();
         x *= 2;
         x += 1;
         myComponent.setForeground(valueColor);
@@ -114,9 +119,10 @@ public abstract class InfoPanel extends DroppedPanel {
     }
 
     protected void addComponent(String title, JComponent myComponent, int x, int y) {
+        SwingGui.checkEDT();
         x *= 2;
         x += 1;
-        JLabel myTitle = new JLabel(title + ":");
+        JLabel myTitle = new JLabel((title!=null&&title.length()>0) ?title + ":":"");
         myTitle.setForeground(titleColor);
         myComponent.setForeground(valueColor);
         add(myTitle, "gapleft 20,alignx right,cell " + x + " " + y);

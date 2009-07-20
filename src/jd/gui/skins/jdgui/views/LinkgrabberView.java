@@ -6,6 +6,7 @@ import jd.controlling.LinkGrabberController;
 import jd.controlling.LinkGrabberControllerEvent;
 import jd.controlling.LinkGrabberControllerListener;
 import jd.gui.skins.jdgui.components.linkgrabberview.LinkGrabberPanel;
+import jd.gui.skins.jdgui.interfaces.View;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 

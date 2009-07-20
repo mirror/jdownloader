@@ -1,6 +1,7 @@
-package jd.gui.skins.jdgui.views;
+package jd.gui.skins.jdgui.interfaces;
 
 import java.awt.Color;
+import java.awt.Component;
 
 import javax.swing.BorderFactory;
 import javax.swing.Icon;
@@ -8,14 +9,13 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JToolBar;
 import javax.swing.ScrollPaneConstants;
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.plaf.metal.MetalLookAndFeel;
 
 import jd.config.SubConfiguration;
+import jd.gui.skins.SwingGui;
 import jd.gui.skins.jdgui.JDGuiConstants;
-import jd.gui.skins.jdgui.interfaces.DroppedPanel;
-import jd.gui.skins.jdgui.interfaces.SideBarPanel;
-import jd.gui.skins.jdgui.interfaces.SwitchPanel;
 import jd.gui.skins.simple.JDToolBar;
 import jd.utils.JDTheme;
 import net.miginfocom.swing.MigLayout;
@@ -45,6 +45,7 @@ public abstract class View extends SwitchPanel {
     private DroppedPanel defaultInfoPanel;
 
     public View() {
+        SwingGui.checkEDT();
         this.setLayout(new MigLayout("ins 0", "[]0[grow,fill]", "[grow,fill]"));
 
         add(sidebar = new JScrollPane(), "width 200!,hidemode 1");
@@ -78,6 +79,7 @@ public abstract class View extends SwitchPanel {
      *            list of action ids
      */
     protected void updateToolbar(String id, String[] defaultlist) {
+        SwingGui.checkEDT();
         if (id == null && defaultlist == null) {
             /* reset toolbar to global defaultlist */
             JDToolBar.getInstance().setList(null);
@@ -93,6 +95,7 @@ public abstract class View extends SwitchPanel {
      * @param panel
      */
     protected void setDefaultInfoPanel(DroppedPanel panel) {
+     
         this.defaultInfoPanel = panel;
         if (this.getInfoPanel() == null) setInfoPanel(panel);
     }
@@ -104,6 +107,7 @@ public abstract class View extends SwitchPanel {
      * @param infoPanel
      */
     public void setInfoPanel(DroppedPanel info) {
+        SwingGui.checkEDT();
         if (info == null) info = defaultInfoPanel;
         if (infoPanel == info) return;
         if (info == null) {
@@ -129,6 +133,7 @@ public abstract class View extends SwitchPanel {
      * @param toolbar
      */
     protected void setToolBar(JToolBar toolbar) {
+        SwingGui.checkEDT();
         if (toolbar == null) {
             topContent.setVisible(false);
         } else {
@@ -144,9 +149,17 @@ public abstract class View extends SwitchPanel {
      * 
      * @param right
      */
-    protected void setContent(SwitchPanel right) {
-        rightPane.removeAll();
-        if (right != null) rightPane.add(right);
+    public synchronized void setContent(SwitchPanel right) {
+        SwingGui.checkEDT();
+       
+        for (Component c : rightPane.getComponents()) {
+            c.setVisible(false);
+        }
+
+        if (right != null) {
+            right.setVisible(true);
+            rightPane.add(right, "hidemode 3");
+        }
         if (this.content != null && isShown()) this.content.setHidden();
         this.content = right;
         this.revalidate();
@@ -159,6 +172,7 @@ public abstract class View extends SwitchPanel {
      * @param left
      */
     protected void setSideBar(SideBarPanel left) {
+        SwingGui.checkEDT();
         if (left == sidebarContent) return;
         if (left == null) {
             sidebar.setVisible(false);

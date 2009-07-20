@@ -9,6 +9,7 @@ import javax.swing.Icon;
 import jd.controlling.JDLogHandler;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
+import jd.gui.skins.jdgui.interfaces.View;
 import jd.gui.skins.jdgui.views.info.LogInfoPanel;
 import jd.gui.skins.simple.LogPane;
 import jd.utils.JDTheme;
