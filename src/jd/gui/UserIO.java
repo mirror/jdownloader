@@ -20,6 +20,7 @@ import java.awt.Point;
 import java.io.File;
 
 import javax.swing.ImageIcon;
+import javax.swing.filechooser.FileFilter;
 
 import jd.config.SubConfiguration;
 import jd.gui.skins.simple.SimpleGuiConstants;
@@ -141,6 +142,32 @@ public abstract class UserIO {
     }
 
     abstract protected String[] showTwoTextFieldDialog(String title, String messageOne, String defOne, String messageTwo, String defTwo);
+
+    /**
+     * Requests a FileChooserDialog.
+     * 
+     * @param id
+     *            ID of the dialog (used to save and restore the old directory)
+     * @param title
+     *            dialog-title or null for default
+     * @param fileSelectionMode
+     *            mode for selecting files (like JDFileChooser.FILES_ONLY) or
+     *            null for default
+     * @param fileFilter
+     *            filters the choosable files or null for default
+     * @param multiSelection
+     *            multible files choosable? or null for default
+     * @return an array of files or null if the user cancel the dialog
+     */
+    public File[] requestFileChooser(String id, String title, Integer fileSelectionMode, FileFilter fileFilter, Boolean multiSelection) {
+
+        synchronized (INSTANCE) {
+            return showFileChooser(id, title, fileSelectionMode, fileFilter, multiSelection);
+        }
+
+    }
+
+    abstract protected File[] showFileChooser(String id, String title, Integer fileSelectionMode, FileFilter fileFilter, Boolean multiSelection);
 
     public void requestMessageDialog(String message) {
         requestMessageDialog(JDL.L("gui.dialogs.message.title", "Message"), message);

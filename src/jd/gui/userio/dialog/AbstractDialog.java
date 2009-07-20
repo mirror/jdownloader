@@ -18,10 +18,8 @@ package jd.gui.userio.dialog;
 
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -34,11 +32,10 @@ import javax.swing.WindowConstants;
 import jd.config.SubConfiguration;
 import jd.gui.UserIO;
 import jd.gui.skins.SwingGui;
+import jd.gui.userio.DummyFrame;
 import jd.nutils.JDFlags;
 import jd.nutils.JDHash;
-import jd.nutils.JDImage;
 import jd.nutils.Screen;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
@@ -227,42 +224,4 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
         return DEFAULT_DIMENSION;
     }
 
-    /**
-     * Dumme JFRame from which dialogs can inherit the icon. workaround for 1.5
-     * 
-     * @author Coalado
-     * 
-     */
-    static class DummyFrame extends JFrame {
-        /**
-     * 
-     */
-        private static final long serialVersionUID = 5729536627803588177L;
-
-        public DummyFrame() {
-            super();
-            ArrayList<Image> list = new ArrayList<Image>();
-
-            list.add(JDImage.getImage("logo/logo_14_14"));
-            list.add(JDImage.getImage("logo/logo_15_15"));
-            list.add(JDImage.getImage("logo/logo_16_16"));
-            list.add(JDImage.getImage("logo/logo_17_17"));
-            list.add(JDImage.getImage("logo/logo_18_18"));
-            list.add(JDImage.getImage("logo/logo_19_19"));
-            list.add(JDImage.getImage("logo/logo_20_20"));
-            list.add(JDImage.getImage("logo/jd_logo_64_64"));
-            if (JDUtilities.getJavaVersion() >= 1.6) {
-                this.setIconImages(list);
-            } else {
-                this.setIconImage(list.get(3));
-            }
-
-        }
-
-        public static JFrame getDialogParent() {
-            if (SwingGui.getInstance() != null) return SwingGui.getInstance();
-
-            return new DummyFrame();
-        }
-    }
 }

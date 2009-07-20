@@ -20,9 +20,11 @@ import java.awt.Point;
 import java.io.File;
 
 import javax.swing.ImageIcon;
+import javax.swing.filechooser.FileFilter;
 
 import jd.gui.UserIO;
 import jd.gui.skins.simple.GuiRunnable;
+import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.userio.dialog.CaptchaDialog;
 import jd.gui.userio.dialog.ClickPositionDialog;
 import jd.gui.userio.dialog.ConfirmDialog;
@@ -161,6 +163,17 @@ public class SimpleUserIO extends UserIO {
         default:
             return JDTheme.II("gui.images.config.tip", 32, 32);
         }
+    }
+
+    @Override
+    protected File[] showFileChooser(String id, String title, Integer fileSelectionMode, FileFilter fileFilter, Boolean multiSelection) {
+        JDFileChooser fc = new JDFileChooser(id);
+        if (title != null) fc.setDialogTitle(title);
+        if (fileSelectionMode != null) fc.setFileSelectionMode(fileSelectionMode);
+        if (fileFilter != null) fc.setFileFilter(fileFilter);
+        if (multiSelection != null) fc.setMultiSelectionEnabled(multiSelection);
+        if (fc.showOpenDialog(DummyFrame.getDialogParent()) == JDFileChooser.APPROVE_OPTION) return fc.getSelectedFiles();
+        return null;
     }
 
 }
