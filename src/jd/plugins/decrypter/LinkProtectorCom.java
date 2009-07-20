@@ -20,7 +20,6 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -30,18 +29,6 @@ public class LinkProtectorCom extends PluginForDecrypt {
 
     public LinkProtectorCom(PluginWrapper wrapper) {
         super(wrapper);
-    }
-
-    private String decryptCode(String decryptedLink, int charCode) {
-        String result = "";
-        try {
-            for (int i = 0; i * 4 < decryptedLink.length(); i++) {
-                result = (char) (Integer.parseInt(decryptedLink.substring(i * 4, i * 4 + 4)) - charCode) + result;
-            }
-        } catch (Exception e) {
-            result = "";
-        }
-        return result;
     }
 
     //@Override
@@ -70,10 +57,7 @@ public class LinkProtectorCom extends PluginForDecrypt {
         }
 
         if (do_continue == true) {
-            String cryptedLink = br.getRegex("write\\(stream\\('(.*?)'\\)").getMatch(0);
-            int charCode = Integer.parseInt(br.getRegex("fromCharCode\\(yy\\[i\\]-(.*?)\\)\\;").getMatch(0));
-            String decryptedLink = decryptCode(cryptedLink, charCode);
-            String link = new Regex(decryptedLink, "<iframe src=\"(.*?)\"").getMatch(0);
+            String link = br.getRegex("onClick=\"window.location='(.*?)'\" style=").getMatch(0);
             if (link != null) {
                 decryptedLinks.add(createDownloadlink(link));
             } else {
