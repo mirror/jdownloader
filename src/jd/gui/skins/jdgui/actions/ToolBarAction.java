@@ -67,7 +67,6 @@ public abstract class ToolBarAction extends AbstractAction {
 
     public boolean equals(Object o) {
         return getID().equals(((ToolBarAction) o).getID());
-
     }
 
     /**
@@ -82,7 +81,6 @@ public abstract class ToolBarAction extends AbstractAction {
 
     public void setIcon(String key) {
         putValue(AbstractAction.SMALL_ICON, JDTheme.II(key, 24, 24));
-
     }
 
     /**
@@ -92,7 +90,6 @@ public abstract class ToolBarAction extends AbstractAction {
      */
     public void setToolTipText(String tt) {
         putValue(AbstractAction.LONG_DESCRIPTION, tt);
-
     }
 
     private void setAccelerator(String acceleratorString) {
@@ -103,7 +100,6 @@ public abstract class ToolBarAction extends AbstractAction {
 
     private void setMnemonic(String key, String keyname) {
         char mnemonic = key.charAt(0);
-
         if (mnemonic != 0 && !key.contentEquals("-")) {
             Class<?> b = KeyEvent.class;
             Field f;
@@ -125,7 +121,6 @@ public abstract class ToolBarAction extends AbstractAction {
 
     public void setSelected(boolean b) {
         putValue(SELECTED, b);
-
     }
 
     /**
@@ -134,7 +129,6 @@ public abstract class ToolBarAction extends AbstractAction {
      * @return
      */
     public String getID() {
-
         return this.getValue(ID).toString();
     }
 
@@ -152,7 +146,6 @@ public abstract class ToolBarAction extends AbstractAction {
     }
 
     public Types getType() {
-
         return type;
     }
 
@@ -160,7 +153,7 @@ public abstract class ToolBarAction extends AbstractAction {
         try {
             return getValue(AbstractAction.LONG_DESCRIPTION).toString();
         } catch (Exception e) {
-            return "";
+            return null;
         }
     }
 

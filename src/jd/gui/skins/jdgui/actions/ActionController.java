@@ -112,6 +112,12 @@ public class ActionController {
                 this.setEnabled(true);
                 this.type = ToolBarAction.Types.NORMAL;
                 this.setToolTipText(JDL.L(JDL_PREFIX + ".toolbar.control.start.tooltip", "Start downloads in list"));
+            }
+
+            @Override
+            public void init() {
+                if (inited) return;
+                this.inited = true;
                 JDUtilities.getController().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOAD_START, ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED, ControlEvent.CONTROL_DOWNLOAD_STOP) {
                     public void controlIDEvent(ControlEvent event) {
                         switch (event.getID()) {
@@ -125,10 +131,6 @@ public class ActionController {
                         }
                     }
                 });
-            }
-
-            @Override
-            public void init() {
             }
 
             @Override
@@ -175,6 +177,12 @@ public class ActionController {
                 this.setEnabled(false);
                 this.type = ToolBarAction.Types.TOGGLE;
                 this.setToolTipText(JDL.L(JDL_PREFIX + ".toolbar.control.pause.tooltip", "Pause active transfer (decrease speed to 10 kb/s)"));
+            }
+
+            @Override
+            public void init() {
+                if (inited) return;
+                this.inited = true;
                 JDUtilities.getController().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOAD_START, ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED, ControlEvent.CONTROL_DOWNLOAD_STOP) {
                     public void controlIDEvent(ControlEvent event) {
                         switch (event.getID()) {
@@ -202,10 +210,6 @@ public class ActionController {
                 });
             }
 
-            @Override
-            public void init() {
-            }
-
         };
 
         new ThreadedAction("toolbar.control.stop", "gui.images.stop") {
@@ -220,6 +224,12 @@ public class ActionController {
                 setPriority(998);
                 this.setEnabled(false);
                 this.setToolTipText(JDL.L(JDL_PREFIX + ".toolbar.control.stop.tooltip", "Stop all running downloads"));
+            }
+
+            @Override
+            public void init() {
+                if (inited) return;
+                this.inited = true;
                 JDUtilities.getController().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOAD_START, ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED, ControlEvent.CONTROL_DOWNLOAD_STOP) {
                     public void controlIDEvent(ControlEvent event) {
                         switch (event.getID()) {
@@ -236,11 +246,8 @@ public class ActionController {
             }
 
             @Override
-            public void init() {
-            }
-
-            @Override
             public void threadedActionPerformed(ActionEvent e) {
+
                 ActionController.getToolBarAction("toolbar.control.pause").setSelected(false);
                 JDUtilities.getController().pauseDownloads(false);
                 final ProgressController pc = new ProgressController(JDL.L("gui.downloadstop", "Stopping current downloads..."));
@@ -266,7 +273,6 @@ public class ActionController {
         };
 
         new ThreadedAction("toolbar.interaction.reconnect", "gui.images.reconnect") {
-
             /**
              * 
              */
@@ -277,6 +283,12 @@ public class ActionController {
                 setPriority(800);
                 this.setEnabled(true);
                 this.setToolTipText(JDL.L(JDL_PREFIX + ".toolbar.interaction.reconnect.tooltip", "Get a new IP be resetting your internet connection"));
+            }
+
+            @Override
+            public void init() {
+                if (inited) return;
+                this.inited = true;
                 JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_LATEST_RECONNECT_RESULT) {
                     @Override
                     public void onPropertyChanged(Property source, final String key) {
@@ -294,11 +306,8 @@ public class ActionController {
             }
 
             @Override
-            public void init() {
-            }
-
-            @Override
             public void threadedActionPerformed(ActionEvent e) {
+
                 new GuiRunnable<Object>() {
                     public Object runSave() {
                         if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, JDL.L("gui.reconnect.confirm", "Wollen Sie sicher eine neue Verbindung aufbauen?")), UserIO.RETURN_OK, UserIO.DONT_SHOW_AGAIN)) {
@@ -331,9 +340,6 @@ public class ActionController {
 
             @Override
             public void init() {
-                if (inited) return;
-                this.inited = true;
-
             }
 
             @Override
@@ -361,8 +367,13 @@ public class ActionController {
                 this.type = ToolBarAction.Types.TOGGLE;
                 this.setToolTipText(JDL.L("gui.menu.action.clipboard.desc", null));
                 setSelected(JDUtilities.getConfiguration().getGenericProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, true));
-
                 setIcon(isSelected() ? "gui.images.clipboard_enabled" : "gui.images.clipboard_disabled");
+            }
+
+            @Override
+            public void init() {
+                if (inited) return;
+                this.inited = true;
                 JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE) {
                     @Override
                     public void onPropertyChanged(Property source, final String key) {
@@ -375,10 +386,6 @@ public class ActionController {
                         }
                     }
                 });
-            }
-
-            @Override
-            public void init() {
             }
         };
 
@@ -399,8 +406,13 @@ public class ActionController {
                 this.type = ToolBarAction.Types.TOGGLE;
                 this.setToolTipText(JDL.L("gui.menu.action.reconnect.desc", null));
                 setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true));
-
                 setIcon(isSelected() ? "gui.images.reconnect_enabled" : "gui.images.reconnect_disabled");
+            }
+
+            @Override
+            public void init() {
+                if (inited) return;
+                this.inited = true;
                 JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_ALLOW_RECONNECT) {
                     @Override
                     public void onPropertyChanged(Property source, final String key) {
@@ -414,10 +426,6 @@ public class ActionController {
                         }
                     }
                 });
-            }
-
-            @Override
-            public void init() {
             }
 
         };
@@ -475,7 +483,6 @@ public class ActionController {
 
             @Override
             public void init() {
-
             }
 
         };
@@ -490,13 +497,10 @@ public class ActionController {
     public static JDBroadcaster<ActionControllerListener, ActionControlEvent> getBroadcaster() {
         if (BROADCASTER == null) {
             BROADCASTER = new JDBroadcaster<ActionControllerListener, ActionControlEvent>() {
-
                 @Override
                 protected void fireEvent(ActionControllerListener listener, ActionControlEvent event) {
                     listener.onActionControlEvent(event);
-
                 }
-
             };
         }
         return BROADCASTER;

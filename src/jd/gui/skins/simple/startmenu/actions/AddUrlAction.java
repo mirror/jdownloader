@@ -19,7 +19,6 @@ package jd.gui.skins.simple.startmenu.actions;
 import java.awt.event.ActionEvent;
 
 import jd.gui.skins.jdgui.actions.ActionController;
-import jd.gui.skins.jdgui.actions.ToolBarAction;
 
 public class AddUrlAction extends StartAction {
 
@@ -30,8 +29,7 @@ public class AddUrlAction extends StartAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        ToolBarAction tmp = ActionController.getToolBarAction("action.addurl");
-        tmp.actionPerformed(e);
+        ActionController.getToolBarAction("action.addurl").actionPerformed(e);
     }
 
 }

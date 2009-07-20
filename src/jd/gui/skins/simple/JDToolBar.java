@@ -27,7 +27,10 @@ import javax.swing.JSeparator;
 import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
 
+import jd.controlling.JDController;
 import jd.controlling.JDLogger;
+import jd.event.ControlEvent;
+import jd.event.ControlListener;
 import jd.gui.skins.SwingGui;
 import jd.gui.skins.jdgui.actions.ActionControlEvent;
 import jd.gui.skins.jdgui.actions.ActionController;
@@ -36,7 +39,7 @@ import jd.gui.skins.jdgui.actions.event.ActionControllerListener;
 import jd.gui.skins.simple.components.SpeedMeterPanel;
 import net.miginfocom.swing.MigLayout;
 
-public class JDToolBar extends JToolBar implements ActionControllerListener {
+public class JDToolBar extends JToolBar implements ActionControllerListener, ControlListener {
 
     private static String[] defaultlist = new String[] { "toolbar.control.start", "toolbar.control.pause", "toolbar.control.stop", "toolbar.separator", "toolbar.quickconfig.clipboardoberserver", "toolbar.quickconfig.reconnecttoggle", "toolbar.separator", "toolbar.interaction.reconnect", "toolbar.interaction.update" };
 
@@ -67,6 +70,7 @@ public class JDToolBar extends JToolBar implements ActionControllerListener {
         setRollover(true);
         setFloatable(false);
         setLayout(new MigLayout("ins 0"));
+        speedmeter = new SpeedMeterPanel();
         ActionController.initActions();
 
         // this.updateToolbar();
@@ -75,8 +79,8 @@ public class JDToolBar extends JToolBar implements ActionControllerListener {
         // please add listener here. to avoid the toolbar beiong pained multible
         // times
         ActionController.getBroadcaster().addListener(this);
-
         INSTANCE = this;
+        JDController.getInstance().addControlListener(this);
     }
 
     public void setList(String[] newlist) {
@@ -176,7 +180,6 @@ public class JDToolBar extends JToolBar implements ActionControllerListener {
     }
 
     private void addSpeedMeter() {
-        speedmeter = new SpeedMeterPanel();
         add(speedmeter, "dock east,hidemode 3,height 30!,width 30:200:300, grow");
     }
 
@@ -197,9 +200,7 @@ public class JDToolBar extends JToolBar implements ActionControllerListener {
      * UPdates the toolbar
      */
     private void updateToolbar() {
-
         new GuiRunnable<Object>() {
-
             @Override
             public Object runSave() {
                 setVisible(false);
@@ -208,12 +209,21 @@ public class JDToolBar extends JToolBar implements ActionControllerListener {
                 addSpeedMeter();
                 setVisible(true);
                 revalidate();
-
                 return null;
             }
-
         }.waitForEDT();
+    }
 
+    @Override
+    public void controlEvent(ControlEvent event) {
+        switch (event.getID()) {
+        case ControlEvent.CONTROL_DOWNLOAD_START:
+            speedmeter.start();
+            break;
+        case ControlEvent.CONTROL_DOWNLOAD_STOP:
+            speedmeter.stop();
+            break;
+        }
     }
 
 }

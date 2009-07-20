@@ -148,6 +148,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
             }
 
             public void threadedActionPerformed(ActionEvent e) {
+
                 synchronized (LinkGrabberController.ControllerLock) {
                     synchronized (LGINSTANCE.getPackages()) {
                         stopLinkGatherer();
