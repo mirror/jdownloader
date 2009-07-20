@@ -239,7 +239,7 @@ public class LookAndFeelController {
         uiInitated = true;
 
         // installJGoodies();
-        // installJTattoo();
+        installJTattoo();
         // if (JDUtilities.getJavaVersion() >= 1.6) installSubstance();
         installSynthetica();
 
@@ -277,9 +277,7 @@ public class LookAndFeelController {
             // jd.gui.swing.laf.ext.jattoo.ui.BluredPopupUI
             // set own uis
             UIDefaults defaults = UIManager.getDefaults();
-            defaults.put("PopupMenu.blurParameter", new int[] {
-                    2, 2, 3
-            });
+            defaults.put("PopupMenu.blurParameter", new int[] { 2, 2, 3 });
             defaults.put("PopupMenuAlpha", 0.7f);
             defaults.put("PopupMenuUI", "jd.gui.swing.laf.ext.jattoo.ui.BluredPopupUI");
             defaults.put("RootPaneUI", "jd.gui.swing.laf.ext.jtattoo.acryl.ui.AcrylRootPaneUI");
@@ -318,7 +316,7 @@ public class LookAndFeelController {
             com.jtattoo.plaf.acryl.AcrylLookAndFeel.setCurrentTheme(props);
 
         } else if (className.contains("ynth")) {
-//            System.setProperty("swing.aatext", "true"); 
+            // System.setProperty("swing.aatext", "true");
             UIManager.put("Synthetica.dialog.icon.enabled", true);
 
             UIManager.put("Synthetica​.rootPane​.titlePane​.menuButton​.useOriginalImageSize", Boolean.TRUE);

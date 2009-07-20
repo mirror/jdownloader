@@ -69,7 +69,6 @@ public class JDToolBar extends JToolBar implements ActionControllerListener, Con
         // noTitlePainter = noTitlePane;
         setRollover(true);
         setFloatable(false);
-        setLayout(new MigLayout("ins 0"));
         speedmeter = new SpeedMeterPanel();
         ActionController.initActions();
 
@@ -99,9 +98,19 @@ public class JDToolBar extends JToolBar implements ActionControllerListener, Con
         return current;
     }
 
+    private String getColConstraints(String[] list) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < list.length; ++i) {
+            sb.append("[]");
+        }
+        sb.append("[grow,fill]");
+        return sb.toString();
+    }
+
     private void initToolbar(String[] list) {
         synchronized (list) {
             SwingGui.checkEDT();
+            setLayout(new MigLayout("ins 0, gap 0", getColConstraints(list)));
             AbstractButton ab;
             JToggleButton tbt;
             if (list != null) {
@@ -180,7 +189,7 @@ public class JDToolBar extends JToolBar implements ActionControllerListener, Con
     }
 
     private void addSpeedMeter() {
-        add(speedmeter, "dock east,hidemode 3,height 30!,width 30:200:300, grow");
+        add(speedmeter, "dock east,hidemode 3,height 30!,width 30:200:300");
     }
 
     public synchronized void onActionControlEvent(ActionControlEvent event) {
@@ -214,7 +223,6 @@ public class JDToolBar extends JToolBar implements ActionControllerListener, Con
         }.waitForEDT();
     }
 
-    @Override
     public void controlEvent(ControlEvent event) {
         switch (event.getID()) {
         case ControlEvent.CONTROL_DOWNLOAD_START:

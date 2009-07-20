@@ -395,10 +395,6 @@ public class RaubkopiererWs extends PluginForDecrypt {
                 return useForSample;
             }
 
-            public void setKey(String key) {
-                this.key = key;
-            }
-
             public void setName(String name) {
                 this.name = name;
             }
