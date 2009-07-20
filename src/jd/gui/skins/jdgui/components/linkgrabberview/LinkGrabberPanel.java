@@ -48,7 +48,6 @@ import jd.gui.skins.jdgui.components.JDCollapser;
 import jd.gui.skins.jdgui.interfaces.SwitchPanel;
 import jd.gui.skins.simple.Balloon;
 import jd.gui.skins.simple.GuiRunnable;
-import jd.gui.skins.simple.JDToolBar;
 import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.tasks.LinkGrabberTaskPane;

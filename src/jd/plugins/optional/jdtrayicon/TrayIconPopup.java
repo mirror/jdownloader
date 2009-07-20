@@ -87,7 +87,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
         add(new JSeparator(), "growx, spanx");
         add(bottomPanel);
 
-        //toFront();
+        // toFront();
         setAlwaysOnTop(true);
         pack();
     }
@@ -247,8 +247,8 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
             JDUtilities.getController().pauseDownloads(true);
             break;
         case TrayIconPopup.ACTION_RECONNECT:
-            //TODO
-           if( SimpleGUI.CURRENTGUI!=null) SimpleGUI.CURRENTGUI.doManualReconnect();
+            // TODO
+            if (SimpleGUI.CURRENTGUI != null) SimpleGUI.CURRENTGUI.doManualReconnect();
             break;
         case TrayIconPopup.ACTION_START:
         case TrayIconPopup.ACTION_STOP:
@@ -264,8 +264,8 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
             new WebUpdate().doUpdateCheck(true, true);
             break;
         case TrayIconPopup.ACTION_EXIT:
-            //TODO
-           if( SimpleGUI.CURRENTGUI!=null) SimpleGUI.CURRENTGUI.getContentPane().getRightPanel().onHide();
+            // TODO
+            if (SimpleGUI.CURRENTGUI != null) SimpleGUI.CURRENTGUI.getContentPane().getRightPanel().hide();
             JDUtilities.getController().exit();
             break;
         case TrayIconPopup.ACTION_TOGGLE_PREMIUM:

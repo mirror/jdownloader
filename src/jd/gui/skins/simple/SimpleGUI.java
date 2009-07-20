@@ -949,7 +949,7 @@ public class SimpleGUI extends SwingGui {
 
     public void closeWindow() {
         if (showConfirmDialog(JDL.L("sys.ask.rlyclose", "Wollen Sie jDownloader wirklich schließen?"))) {
-            contentPanel.getRightPanel().onHide();
+            contentPanel.getRightPanel().hide();
             SimpleGuiUtils.saveLastLocation(this, null);
             SimpleGuiUtils.saveLastDimension(this, null);
             SimpleGuiConstants.GUI_CONFIG.save();

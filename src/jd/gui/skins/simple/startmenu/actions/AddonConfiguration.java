@@ -18,9 +18,6 @@ package jd.gui.skins.simple.startmenu.actions;
 
 import java.awt.event.ActionEvent;
 
-import jd.gui.skins.simple.SimpleGuiConstants;
-import jd.gui.skins.simple.tasks.ConfigTaskPane;
-
 public class AddonConfiguration extends StartAction {
 
     private static final long serialVersionUID = 5296731283280444433L;

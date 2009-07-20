@@ -68,8 +68,7 @@ public class JUnique {
      * Locks table. Normalized IDs are placed in the key side, while the value
      * is a {@link Lock} object representing the lock details.
      */
-    @SuppressWarnings("unchecked")
-    private static Hashtable locks = new Hashtable();
+    private static Hashtable<String, Lock> locks = new Hashtable<String, Lock>();
 
     static {
         // Creates the lock files dir, if it yet doesn't exist.
@@ -107,7 +106,6 @@ public class JUnique {
      *             If the lock cannot be acquired, since it has been already
      *             taken in the user-space.
      */
-    @SuppressWarnings("unchecked")
     public static void acquireLock(String id, MessageHandler messageHandler) throws AlreadyLockedException {
         // Some usefull references.
         File lockFile;
@@ -157,7 +155,6 @@ public class JUnique {
                     try {
                         portWriter.close();
                     } catch (Throwable t) {
-                        ;
                     }
                 }
             }
@@ -183,7 +180,7 @@ public class JUnique {
         j_lock();
         try {
             // Searches for the Lock instance.
-            Lock lock = (Lock) locks.remove(nid);
+            Lock lock = locks.remove(nid);
             // Is it ok?
             if (lock != null) {
                 releaseLock(lock);
@@ -207,12 +204,10 @@ public class JUnique {
         try {
             lock.getLockFileLock().release();
         } catch (Throwable t) {
-            ;
         }
         try {
             lock.getLockFileChannel().close();
         } catch (Throwable t) {
-            ;
         }
         // Deletes the port file.
         lock.getPortFile().delete();
@@ -252,13 +247,11 @@ public class JUnique {
                     port = Integer.parseInt(line);
                 }
             } catch (Throwable t) {
-                ;
             } finally {
                 if (reader != null) {
                     try {
                         reader.close();
                     } catch (Throwable t) {
-                        ;
                     }
                 }
             }
@@ -289,21 +282,18 @@ public class JUnique {
                     try {
                         outputStream.close();
                     } catch (Throwable t) {
-                        ;
                     }
                 }
                 if (inputStream != null) {
                     try {
                         inputStream.close();
                     } catch (Throwable t) {
-                        ;
                     }
                 }
                 if (socket != null) {
                     try {
                         socket.close();
                     } catch (Throwable t) {
-                        ;
                     }
                 }
             }
@@ -375,7 +365,6 @@ public class JUnique {
                 globalFileLock = lock;
                 break;
             } catch (Throwable t) {
-                ;
             }
         } while (true);
     }
@@ -391,12 +380,10 @@ public class JUnique {
         try {
             lock.release();
         } catch (Throwable t) {
-            ;
         }
         try {
             channel.close();
         } catch (Throwable t) {
-            ;
         }
     }
 
@@ -406,21 +393,20 @@ public class JUnique {
      */
     private static class ShutdownHook implements Runnable {
 
-        @SuppressWarnings("unchecked")
         public void run() {
             // Cross-JVM lock.
             j_lock();
             try {
                 // Collects nids.
-                ArrayList nids = new ArrayList();
-                for (Enumeration e = locks.keys(); e.hasMoreElements();) {
-                    String nid = (String) e.nextElement();
+                ArrayList<String> nids = new ArrayList<String>();
+                for (Enumeration<String> e = locks.keys(); e.hasMoreElements();) {
+                    String nid = e.nextElement();
                     nids.add(nid);
                 }
                 // Releases any unreleased lock.
-                for (Iterator i = nids.iterator(); i.hasNext();) {
-                    String nid = (String) i.next();
-                    Lock lock = (Lock) locks.remove(nid);
+                for (Iterator<String> i = nids.iterator(); i.hasNext();) {
+                    String nid = i.next();
+                    Lock lock = locks.remove(nid);
                     releaseLock(lock);
                 }
             } finally {

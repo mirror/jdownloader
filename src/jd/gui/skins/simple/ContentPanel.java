@@ -34,8 +34,7 @@ public class ContentPanel extends JPanel {
     // public static ContentPanel PANEL;
 
     public ContentPanel() {
-      
-   
+
         this.setLayout(new MigLayout("ins 0", "[grow,fill]", "[grow,fill]"));
 
     }
@@ -45,9 +44,8 @@ public class ContentPanel extends JPanel {
             // System.out.println(panel);
             // new Exception().printStackTrace();
             if (rightPanel == panel) {
-             
-                return;
-            }
+
+            return; }
 
             JDCollapser.getInstance().setCollapsed(true);
             if (rightPanel != null) {
@@ -57,7 +55,7 @@ public class ContentPanel extends JPanel {
                 rightPanel.setEnabled(false);
                 rightPanel.setVisible(false);
 
-                rightPanel.onHide();
+                rightPanel.hide();
             }
             rightPanel = panel;
 
