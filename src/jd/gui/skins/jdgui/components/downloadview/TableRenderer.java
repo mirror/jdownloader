@@ -547,14 +547,10 @@ public class TableRenderer extends DefaultTableRenderer {
 
             ((JRendererLabel) co).setBorder(null);
             return co;
-
         case DownloadJTableModel.COL_HOSTER:
             value = fp.getHoster();
-
             break;
-
         case DownloadJTableModel.COL_PROGRESS:
-
             if (fp.isFinished()) {
                 progress.setMaximum(100);
                 progress.setValue(100);
@@ -580,11 +576,9 @@ public class TableRenderer extends DefaultTableRenderer {
             }
             progress.setForeground(COL_PROGRESS_NORMAL);
             return progress;
-
         case DownloadJTableModel.COL_STATUS_DETAILS:
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             if (fp.isFinished()) {
-
                 clearSB();
                 col = this.table.getColumn(column);
               if (col.getWidth() < 100) {
@@ -597,19 +591,18 @@ public class TableRenderer extends DefaultTableRenderer {
                 ((JRendererLabel) co).setBorder(null);
                 return co;
             } else {
-
                 clearSB();
                 col = this.table.getColumn(column);
                  if (col.getWidth() < 100) {
                     sb.append(c.format(fp.getPercent())).append('%');
                 } else {
-                    sb.append(Formatter.formatReadable(progress.getRealValue())).append('/').append(Formatter.formatReadable(Math.max(0, progress.getRealMax())));
+                    sb.append(Formatter.formatReadable(fp.getTotalKBLoaded())).append('/').append(Formatter.formatReadable(Math.max(0, fp.getTotalEstimatedPackageSize())));
                 }
                 ((JRendererLabel) co).setText(sb.toString());
                 ((JRendererLabel) co).setIcon(null);
                 ((JRendererLabel) co).setBorder(null);
+                return co;
             }
-
         case DownloadJTableModel.COL_STATUS:
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             statuspanel.setBackground(co.getBackground());
@@ -628,9 +621,7 @@ public class TableRenderer extends DefaultTableRenderer {
             } else {
                 statuspanel.setText("");
             }
-
             counter = 0;
-
             if (fp.isFinished()) {
                 statuspanel.setIcon(counter, imgFinished);
                 counter++;

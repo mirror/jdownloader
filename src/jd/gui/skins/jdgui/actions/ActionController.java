@@ -28,6 +28,7 @@ import jd.gui.skins.jdgui.components.linkgrabberview.LinkGrabberFilePackage;
 import jd.gui.skins.jdgui.components.linkgrabberview.LinkGrabberPanel;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.components.JDFileChooser;
+import jd.nutils.JDFlags;
 import jd.nutils.io.JDFileFilter;
 import jd.parser.html.HTMLParser;
 import jd.utils.JDTheme;
@@ -300,7 +301,7 @@ public class ActionController {
             public void threadedactionPerformed(ActionEvent e) {
                 new GuiRunnable<Object>() {
                     public Object runSave() {
-                        if (UserIO.RETURN_OK == UserIO.getInstance().requestConfirmDialog(0, JDL.L("gui.reconnect.confirm", "Wollen Sie sicher eine neue Verbindung aufbauen?"))) {
+                        if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, JDL.L("gui.reconnect.confirm", "Wollen Sie sicher eine neue Verbindung aufbauen?")), UserIO.RETURN_OK, UserIO.DONT_SHOW_AGAIN)) {
                             new Thread(new Runnable() {
                                 public void run() {
                                     Reconnecter.doManualReconnect();

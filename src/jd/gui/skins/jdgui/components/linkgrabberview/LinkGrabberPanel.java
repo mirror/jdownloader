@@ -182,7 +182,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                 synchronized (LinkGrabberController.ControllerLock) {
                     synchronized (LGINSTANCE.getPackages()) {
                         LGINSTANCE.getFILTERPACKAGE().clear();
-                        ArrayList<LinkGrabberFilePackage> fps = LGINSTANCE.getPackages();
+                        ArrayList<LinkGrabberFilePackage> fps = new ArrayList<LinkGrabberFilePackage>(LGINSTANCE.getPackages());
                         confirmPackages(fps);
                     }
                 }
@@ -645,7 +645,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                                 selected_links.get(i).setEnabled(b);
                             }
                             Update_Async.restart();
-                            break;                        
+                            break;
                         case LinkGrabberTableAction.ADD_SELECTED_PACKAGES:
                             confirmPackages(selected_packages);
                             break;
@@ -676,7 +676,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
 
     private void confirmPackages(ArrayList<LinkGrabberFilePackage> all) {
         if (all.size() == 0) return;
-        for (int i = 0; i < all.size(); ++i) {
+        for (int i = 0; i < all.size(); i++) {
             confirmPackage(all.get(i), null, i);
         }
         LGINSTANCE.throwLinksAdded();

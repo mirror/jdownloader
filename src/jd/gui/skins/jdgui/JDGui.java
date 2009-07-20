@@ -64,6 +64,7 @@ import jd.gui.skins.simple.startmenu.PremiumMenu;
 import jd.gui.skins.simple.startmenu.SaveMenu;
 import jd.gui.skins.simple.startmenu.actions.ExitAction;
 import jd.gui.skins.simple.startmenu.actions.RestartAction;
+import jd.nutils.JDFlags;
 import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
 import jd.plugins.Account;
@@ -401,7 +402,7 @@ public class JDGui extends SwingGui {
 
     public void closeWindow() {
         if (!OSDetector.isMac()) {
-            if (UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_COUNTDOWN, JDL.L("sys.ask.rlyclose", "Wollen Sie jDownloader wirklich schließen?")) == UserIO.RETURN_OK) {
+            if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_COUNTDOWN, JDL.L("sys.ask.rlyclose", "Wollen Sie jDownloader wirklich schließen?")), UserIO.RETURN_OK, UserIO.DONT_SHOW_AGAIN)) {
                 this.mainTabbedPane.onClose();
                 SimpleGuiUtils.saveLastLocation(this, null);
                 SimpleGuiUtils.saveLastDimension(this, null);

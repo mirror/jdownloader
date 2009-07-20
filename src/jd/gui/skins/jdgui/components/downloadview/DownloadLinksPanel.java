@@ -50,6 +50,7 @@ import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.JLinkButton;
+import jd.nutils.JDFlags;
 import jd.nutils.io.JDFileFilter;
 import jd.nutils.io.JDIO;
 import jd.plugins.DownloadLink;
@@ -84,14 +85,11 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
 
     private long latestAsyncUpdate;
 
-   
-
     private FilePackageInfo filePackageInfo;
 
     private boolean tableRefreshInProgress = false;
 
     private JScrollPane scrollPane;
-
 
     public DownloadLinksPanel() {
         super(new MigLayout("ins 0, wrap 1", "[grow, fill]", "[grow, fill]"));
@@ -99,10 +97,8 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
         scrollPane = new JScrollPane(internalTable);
         filePackageInfo = new FilePackageInfo();
 
-      
-
         scrollPane.setBorder(null);
-       
+
         this.add(scrollPane, "cell 0 0");
         JDUtilities.getDownloadController().addListener(this);
         asyncUpdate = new Timer(UPDATE_TIMING, this);
@@ -120,10 +116,10 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
         filePackageInfo.setPackage(fp);
         new GuiRunnable<Object>() {
             // @Override
-            public Object runSave() {               
+            public Object runSave() {
                 JDCollapser.getInstance().setContentPanel(filePackageInfo);
                 JDCollapser.getInstance().setTitle(JDL.L("gui.linkgrabber.packagetab.title", "FilePackage"));
-                InfoPanelHandler.setPanel(JDCollapser.getInstance());                
+                InfoPanelHandler.setPanel(JDCollapser.getInstance());
                 return null;
             }
         }.start();
@@ -134,14 +130,14 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
             // @Override
             public Object runSave() {
                 InfoPanelHandler.setPanel(null);
-              
+
                 return null;
             }
         }.start();
     }
 
     public void fireTableChanged(int id, ArrayList<Object> objs) {
-    
+
         if (tableRefreshInProgress && id != REFRESH_DATA_AND_STRUCTURE_CHANGED_FAST) return;
         final ArrayList<Object> objs2 = new ArrayList<Object>(objs);
         final int id2 = id;
@@ -163,7 +159,7 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
     }
 
     // @Override
-    public void onShow() {  
+    public void onShow() {
         updateTableTask(REFRESH_DATA_AND_STRUCTURE_CHANGED, null);
         fireTableTask();
         asyncUpdate.restart();
@@ -174,7 +170,6 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
 
     // @Override
     public void onHide() {
-   
         JDUtilities.getDownloadController().removeListener(this);
         asyncUpdate.stop();
         internalTable.removeKeyListener(internalTable);
@@ -280,11 +275,12 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
                 HashSet<String> List = new HashSet<String>();
                 StringBuilder build = new StringBuilder();
                 String string = null;
-              
+
                 Object obj = null;
                 FilePackage fp = null;
                 DownloadLink link = null;
                 File folder = null;
+                boolean b = false;
                 int col = 0;
                 if (e.getSource() instanceof JMenuItem) {
                     switch (e.getID()) {
@@ -358,7 +354,7 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
                     }.start();
                     break;
                 case TableAction.EDIT_NAME:
-                    String name =UserIO.getInstance().requestInputDialog(0,JDL.L("gui.linklist.editpackagename.message", "Neuer Paketname"), selectedPackages.get(0).getName());
+                    String name = UserIO.getInstance().requestInputDialog(0, JDL.L("gui.linklist.editpackagename.message", "Neuer Paketname"), selectedPackages.get(0).getName());
                     if (name != null) {
                         for (int i = 0; i < selectedPackages.size(); i++) {
                             selectedPackages.get(i).setName(name);
@@ -404,13 +400,15 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
                     final ArrayList<DownloadLink> links = selectedLinks;
                     new Thread() {
                         public void run() {
-
-                            if (UserIO.RETURN_OK==UserIO.getInstance().requestConfirmDialog(0,JDL.L("gui.downloadlist.reset", "Reset selected downloads?") + " (" + JDL.LF("gui.downloadlist.delete.size_packagev2", "%s links", links.size()) + ")")) {
+                            boolean b = false;
+                            if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, JDL.L("gui.downloadlist.reset", "Reset selected downloads?") + " (" + JDL.LF("gui.downloadlist.delete.size_packagev2", "%s links", links.size()) + ")"), UserIO.RETURN_OK, UserIO.DONT_SHOW_AGAIN)) {
+                                b = true;
+                            }
+                            if (b) {
                                 for (int i = 0; i < links.size(); i++) {
                                     links.get(i).reset();
                                 }
                             }
-
                         }
                     }.start();
                     break;
@@ -470,7 +468,7 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
                     }
                     break;
                 case TableAction.DE_ACTIVATE:
-                    boolean b = (Boolean) prop.get("boolean");
+                    b = (Boolean) prop.get("boolean");
                     for (int i = 0; i < selectedLinks.size(); i++) {
                         selectedLinks.get(i).setEnabled(b);
                     }
@@ -507,14 +505,18 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
                         selectedLinks.get(i).setProperty("pass", pw);
                     }
                     break;
-                case TableAction.DELETE:
-                    if (SwingGui.getInstance().showConfirmDialog(JDL.L("gui.downloadlist.delete", "Ausgewählte Links wirklich entfernen?") + " (" + JDL.LF("gui.downloadlist.delete.size_packagev2", "%s links", selectedLinks.size()) + ")")) {
+                case TableAction.DELETE: {
+                    if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, JDL.L("gui.downloadlist.delete", "Ausgewählte Links wirklich entfernen?") + " (" + JDL.LF("gui.downloadlist.delete.size_packagev2", "%s links", selectedLinks.size()) + ")"), UserIO.RETURN_OK, UserIO.DONT_SHOW_AGAIN)) {
+                        b = true;
+                    }
+                    if (b) {
                         for (int i = 0; i < selectedLinks.size(); i++) {
                             selectedLinks.get(i).setEnabled(false);
                             selectedLinks.get(i).getFilePackage().remove(selectedLinks.get(i));
                         }
                     }
-                    break;
+                    return;
+                }
                 }
             }
         }.start();
@@ -594,7 +596,6 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
         JDCollapser.getInstance().setContentPanel(filePackageInfo);
         JDCollapser.getInstance().setTitle(JDL.L("gui.linkgrabber.infopanel.link.title", "Link information"));
         InfoPanelHandler.setPanel(JDCollapser.getInstance());
-        
 
     }
 

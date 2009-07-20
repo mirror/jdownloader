@@ -12,9 +12,7 @@ import javax.swing.ScrollPaneConstants;
 import javax.swing.UIManager;
 import javax.swing.plaf.metal.MetalLookAndFeel;
 
-import jd.config.SubConfiguration;
 import jd.gui.skins.SwingGui;
-import jd.gui.skins.jdgui.JDGuiConstants;
 import jd.gui.skins.simple.JDToolBar;
 import jd.utils.JDTheme;
 import net.miginfocom.swing.MigLayout;
@@ -78,7 +76,6 @@ public abstract class View extends SwitchPanel {
      *            list of action ids
      */
     protected void updateToolbar(String id, String[] defaultlist) {
-        SwingGui.checkEDT();
         if (id == null && defaultlist == null) {
             /* reset toolbar to global defaultlist */
             JDToolBar.getInstance().setList(null);

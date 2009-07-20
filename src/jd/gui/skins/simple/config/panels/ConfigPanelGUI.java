@@ -35,6 +35,7 @@ import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import jd.gui.skins.simple.config.ConfigPanel;
 import jd.gui.swing.laf.LookAndFeelController;
+import jd.nutils.JDFlags;
 import jd.nutils.OSDetector;
 import jd.nutils.nativeintegration.LocalBrowser;
 import jd.utils.JDTheme;
@@ -59,8 +60,6 @@ public class ConfigPanelGUI extends ConfigPanel {
         load();
     }
 
-
-
     @Override
     public void initPanel() {
         ConfigContainer container = new ConfigContainer();
@@ -77,7 +76,7 @@ public class ConfigPanelGUI extends ConfigPanel {
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, look));
         look.addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, JDL.LF("gui.config.gui.languageFileInfo2", "Current Language File: %s", JDL.getLocale().toString())).setGroup(lookGroup));
 
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, SubConfiguration.getConfig(JDL.CONFIG), JDL.LOCALE_ID, JDL.getLocaleIDs().toArray(new JDLocale[]{}), JDL.L("gui.config.gui.language", "Language")).setGroup(lookGroup));
+        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, SubConfiguration.getConfig(JDL.CONFIG), JDL.LOCALE_ID, JDL.getLocaleIDs().toArray(new JDLocale[] {}), JDL.L("gui.config.gui.language", "Language")).setGroup(lookGroup));
         ce.setDefaultValue(JDL.DEFAULT_LOCALE);
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
 
@@ -105,13 +104,21 @@ public class ConfigPanelGUI extends ConfigPanel {
         ce.setDefaultValue(true);
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.PARAM_SHOW_BALLOON, JDL.L("gui.config.gui.showBalloon", "Show Balloon infos")).setGroup(feel));
         ce.setDefaultValue(true);
-//        ConfigGroup perf = new ConfigGroup(JDL.L("gui.config.gui.performance", "Performance"), JDTheme.II("gui.images.performance", 32, 32));
-//        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.ANIMATION_ENABLED, JDL.L("gui.config.gui.animationenabled", "Enable extended effects.")).setGroup(perf));
-//        ce.setDefaultValue(false);
-//        ce.setPropertyType(PropertyType.NEEDS_RESTART);
-//        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.DECORATION_ENABLED, JDL.L("gui.config.gui.decoration", "Enable Windowdecoration")).setGroup(perf));
-//        ce.setDefaultValue(true);
-//        ce.setPropertyType(PropertyType.NEEDS_RESTART);
+        // ConfigGroup perf = new
+        // ConfigGroup(JDL.L("gui.config.gui.performance", "Performance"),
+        // JDTheme.II("gui.images.performance", 32, 32));
+        // look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX,
+        // subConfig, SimpleGuiConstants.ANIMATION_ENABLED,
+        // JDL.L("gui.config.gui.animationenabled",
+        // "Enable extended effects.")).setGroup(perf));
+        // ce.setDefaultValue(false);
+        // ce.setPropertyType(PropertyType.NEEDS_RESTART);
+        // look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX,
+        // subConfig, SimpleGuiConstants.DECORATION_ENABLED,
+        // JDL.L("gui.config.gui.decoration",
+        // "Enable Windowdecoration")).setGroup(perf));
+        // ce.setDefaultValue(true);
+        // ce.setPropertyType(PropertyType.NEEDS_RESTART);
         // Extended Tab
         ConfigContainer ext = new ConfigContainer(JDL.L("gui.config.gui.ext", "Advanced"));
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, ext));
@@ -193,10 +200,9 @@ public class ConfigPanelGUI extends ConfigPanel {
         browser.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
 
             public void actionPerformed(ActionEvent arg0) {
-                if (UserIO.RETURN_OK==UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN,JDL.L("gui.config.gui.testbrowser.message", "JDownloader now tries to open http://jdownloader.org in your browser."))) {
+                if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, JDL.L("gui.config.gui.testbrowser.message", "JDownloader now tries to open http://jdownloader.org in your browser.")), UserIO.RETURN_OK, UserIO.DONT_SHOW_AGAIN)) {
                     try {
                         save();
-
                         JLinkButton.openURL("http://jdownloader.org");
                     } catch (Exception e) {
                         JDLogger.exception(e);
@@ -205,7 +211,7 @@ public class ConfigPanelGUI extends ConfigPanel {
                 }
 
             }
-        }, JDL.L("gui.config.gui.testbrowser.short", "Start browser"),JDL.L("gui.config.gui.testbrowser.long", "Test starting your browser"),JDTheme.II("gui.images.config.host", 16, 16)));
+        }, JDL.L("gui.config.gui.testbrowser.short", "Start browser"), JDL.L("gui.config.gui.testbrowser.long", "Test starting your browser"), JDTheme.II("gui.images.config.host", 16, 16)));
 
         ConfigEntry conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGuiConstants.PARAM_CUSTOM_BROWSER_USE, JDL.L("gui.config.gui.use_custom_browser", "Use custom browser"));
         conditionEntry.setDefaultValue(false);
