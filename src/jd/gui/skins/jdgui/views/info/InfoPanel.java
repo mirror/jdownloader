@@ -84,7 +84,7 @@ public abstract class InfoPanel extends DroppedPanel {
      * @param key
      * @param string
      */
-    protected void updateInfo(String key, Object value) {
+    protected void updateInfo(String key, Object value) {        
         SwingGui.checkEDT();
         JComponent c = map.get(key);
 

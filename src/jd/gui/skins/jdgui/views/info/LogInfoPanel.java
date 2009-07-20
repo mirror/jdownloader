@@ -7,6 +7,7 @@ import javax.swing.JButton;
 
 import jd.controlling.JDLogger;
 import jd.gui.skins.simple.Factory;
+import jd.gui.skins.simple.GuiRunnable;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
@@ -110,13 +111,16 @@ public class LogInfoPanel extends InfoPanel implements ActionListener {
     }
 
     public void update() {
-        this.updateInfo("", JDL.LF(JDL_PREFIX + "loglevel", "Log Level %s", JDLogger.getLogger().getLevel().getLocalizedName()));
-        
-        this.updateInfo(JDL.L(JDL_PREFIX + "info.severe", "Error(s)"), severeCount + "");
-        this.updateInfo(JDL.L(JDL_PREFIX + "info.warning", "Warning(s)"), warningCount + "");
-
-        this.updateInfo(JDL.L(JDL_PREFIX + "info.warninghttp", "HTTP Notify"), httpCount + "");
-        this.updateInfo(JDL.L(JDL_PREFIX + "info.exceptions", "Fatal error(s)"), exceptionCount + "");
-
+        new GuiRunnable<Object>() {
+            @Override
+            public Object runSave() {
+                updateInfo("", JDL.LF(JDL_PREFIX + "loglevel", "Log Level %s", JDLogger.getLogger().getLevel().getLocalizedName()));
+                updateInfo(JDL.L(JDL_PREFIX + "info.severe", "Error(s)"), severeCount + "");
+                updateInfo(JDL.L(JDL_PREFIX + "info.warning", "Warning(s)"), warningCount + "");
+                updateInfo(JDL.L(JDL_PREFIX + "info.warninghttp", "HTTP Notify"), httpCount + "");
+                updateInfo(JDL.L(JDL_PREFIX + "info.exceptions", "Fatal error(s)"), exceptionCount + "");
+                return null;
+            }
+        }.start();
     }
 }

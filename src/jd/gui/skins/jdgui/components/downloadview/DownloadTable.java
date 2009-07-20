@@ -126,6 +126,7 @@ public class DownloadTable extends JTable implements MouseListener, MouseMotionL
         addPostErrorHighlighter();
         addWaitHighlighter();
         addPackageHighlighter();
+        this.setFillsViewportHeight(true);
     }
 
     public void createColumns() {

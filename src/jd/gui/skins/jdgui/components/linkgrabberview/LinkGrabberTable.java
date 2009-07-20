@@ -109,7 +109,7 @@ public class LinkGrabberTable extends JTable implements MouseListener, MouseMoti
 
         getTableHeader().setPreferredSize(new Dimension(getColumnModel().getTotalColumnWidth(), 19));
         setTransferHandler(new LinkGrabberTableTransferHandler(this));
-
+        this.setFillsViewportHeight(true);
         prioDescs = new String[] { JDL.L("gui.treetable.tooltip.priority-1", "Low Priority"), JDL.L("gui.treetable.tooltip.priority0", "No Priority"), JDL.L("gui.treetable.tooltip.priority1", "High Priority"), JDL.L("gui.treetable.tooltip.priority2", "Higher Priority"), JDL.L("gui.treetable.tooltip.priority3", "Highest Priority") };
     }
 
@@ -274,7 +274,7 @@ public class LinkGrabberTable extends JTable implements MouseListener, MouseMoti
                 JPopupMenu popup = new JPopupMenu();
                 popup.add(new JMenuItem(ActionController.getToolBarAction("action.linkgrabber.addall")));
                 popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.removefailed", 16, 16), JDL.L("gui.linkgrabberv2.lg.rmoffline", "Remove all Offline"), LinkGrabberTableAction.DELETE_OFFLINE)));
-                popup.add(buildExtMenu());
+                addExtMenu(popup);
                 if (popup.getComponentCount() != 0) popup.show(this, point.x, point.y);
             }
             return;
@@ -319,7 +319,7 @@ public class LinkGrabberTable extends JTable implements MouseListener, MouseMoti
             if (obj instanceof LinkGrabberFilePackage || obj instanceof DownloadLink) {
                 popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.dlc", 16, 16), JDL.L("gui.table.contextmenu.dlc", "DLC erstellen") + " (" + alllinks.size() + ")", LinkGrabberTableAction.SAVE_DLC, new Property("links", alllinks))));
                 popup.add(buildpriomenu(alllinks));
-                popup.add(buildExtMenu());
+                addExtMenu(popup);
                 Set<String> hoster = linkgrabber.getHosterList(alllinks);
                 popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.addselected", 16, 16), JDL.L("gui.linkgrabberv2.onlyselectedhoster", "Keep only selected Hoster") + " (" + hoster.size() + ")", LinkGrabberTableAction.SELECT_HOSTER, new Property("hoster", hoster))));
                 popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.newpackage", 16, 16), JDL.L("gui.table.contextmenu.newpackage2", "Move to new package") + " (" + alllinks.size() + ")", LinkGrabberTableAction.NEW_PACKAGE, new Property("links", alllinks))));
@@ -339,10 +339,11 @@ public class LinkGrabberTable extends JTable implements MouseListener, MouseMoti
         }
     }
 
-    private JMenuItem buildExtMenu() {
+    private void addExtMenu(JPopupMenu popup) {
         JMenuItem tmp;
         JMenu men = new JMenu(JDL.L("gui.table.contextmenu.filetype", "Filter"));
         ArrayList<String> extensions = linkgrabber.getExtensions();
+        if (extensions.size() == 0) return;
         HashSet<String> fl = LinkGrabberController.getInstance().getExtensionFilter();
         men.setIcon(JDTheme.II("gui.images.filter", 16, 16));
         synchronized (fl) {
@@ -351,7 +352,7 @@ public class LinkGrabberTable extends JTable implements MouseListener, MouseMoti
                 tmp.setSelected(!fl.contains(e));
             }
         }
-        return men;
+        popup.add(men);
     }
 
     private JMenu buildpriomenu(ArrayList<DownloadLink> links) {
