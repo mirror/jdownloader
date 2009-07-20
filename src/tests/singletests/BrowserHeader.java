@@ -26,25 +26,16 @@ import tests.utils.TestUtils;
 
 public class BrowserHeader {
 
-
- 
-
     @Before
     public void setUp() throws Exception {
-        
     }
-
 
     @Test
     public void CheckPortRequest() {
-
         try {
-            
-         Browser br = new Browser();
-        TestUtils.wikiLogin(br);
-         br.getPage("http://jdownloader.net:8081/knowledge/wiki/development/intern/brunittest");
-         
-         br=br;
+            Browser br = new Browser();
+            TestUtils.wikiLogin(br);
+            br.getPage("http://jdownloader.net:8081/knowledge/wiki/development/intern/brunittest");
         } catch (Exception e) {
             e.printStackTrace();
             assertTrue(false);

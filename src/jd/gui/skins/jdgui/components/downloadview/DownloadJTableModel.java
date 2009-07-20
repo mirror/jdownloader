@@ -19,27 +19,18 @@ public class DownloadJTableModel extends AbstractTableModel {
     public static final int COL_STATUS_DETAILS = 3;
     public static final int COL_PROGRESS = 4;
 
-    protected static final String[] COLUMN_NAMES = {
-            JDL.L("gui.treetable.header_1.tree", "F"),
-            JDL.L("gui.treetable.header_3.hoster", "Anbieter"),
-            JDL.L("gui.treetable.header_4.status", "Status"),
-            JDL.L(" jd.gui.skins.jdgui.components.downloadview.DownloadJTableModel.extendedstatus.status", "Details"),
-            JDL.L("gui.treetable.header_5.progress", "Fortschritt")
-    };
+    protected static final String[] COLUMN_NAMES = { JDL.L("gui.treetable.header_1.tree", "F"), JDL.L("gui.treetable.header_3.hoster", "Anbieter"), JDL.L("gui.treetable.header_4.status", "Status"), JDL.L("jd.gui.skins.jdgui.components.downloadview.DownloadJTableModel.extendedstatus.status", "Details"), JDL.L("gui.treetable.header_5.progress", "Fortschritt") };
 
     /**
-     * Default widths in px
-     * -1 is AUTO
+     * Default widths in px -1 is AUTO
      */
-    protected static final int[] COL_WIDTHS = new int[] {
-            -1,30, -1, -1, 10
+    protected static final int[] COL_WIDTHS = new int[] { -1, 30, -1, -1, 10
 
     };
     /**
      * Default visible
      */
-    protected static final boolean[] COL_VISIBLE = new boolean[] {
-            true, true, true, true, true
+    protected static final boolean[] COL_VISIBLE = new boolean[] { true, true, true, true, true
 
     };
     private ArrayList<Object> downloadlist = new ArrayList<Object>();

@@ -1,27 +1,8 @@
 package jd.gui.skins.jdgui.views;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-
 import javax.swing.Icon;
 
-import jd.config.ConfigEntry.PropertyType;
-import jd.gui.skins.simple.SimpleGuiConstants;
-import jd.gui.skins.simple.SingletonPanel;
-import jd.gui.skins.simple.config.ConfigPanel;
-import jd.gui.skins.simple.config.panels.ConfigPanelAddons;
-import jd.gui.skins.simple.config.panels.ConfigPanelCaptcha;
-import jd.gui.skins.simple.config.panels.ConfigPanelDownload;
-import jd.gui.skins.simple.config.panels.ConfigPanelEventmanager;
-import jd.gui.skins.simple.config.panels.ConfigPanelGUI;
-import jd.gui.skins.simple.config.panels.ConfigPanelGeneral;
-import jd.gui.skins.simple.config.panels.ConfigPanelPluginForHost;
-import jd.gui.skins.simple.config.panels.ConfigPanelReconnect;
-import jd.gui.skins.simple.tasks.ConfigTaskPane;
-import jd.gui.skins.simple.tasks.DownloadTaskPane;
-import jd.gui.skins.simple.tasks.TaskPanel;
 import jd.utils.JDTheme;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 public class ConfigurationView extends View {
@@ -36,7 +17,7 @@ public class ConfigurationView extends View {
 
     public ConfigurationView() {
         super();
-        ConfigTaskPane cfgTskPane;
+//        ConfigTaskPane cfgTskPane;
 //        this.setSideBar(cfgTskPane = new ConfigTaskPane(JDL.L("gui.taskpanes.configuration", "Configuration"), JDTheme.II("gui.images.taskpanes.configuration", 16, 16)));
 
 //        Object[] configConstructorObjects = new Object[] { JDUtilities.getConfiguration() };

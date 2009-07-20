@@ -3,14 +3,13 @@ package jd.gui.skins.jdgui.views;
 import javax.swing.Icon;
 
 import jd.gui.skins.jdgui.components.downloadview.DownloadLinksPanel;
-import jd.gui.skins.simple.tasks.DownloadTaskPane;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
+public class AddonView extends View {
 
-public class AddonView extends View{
-    
- 
+    private static final long serialVersionUID = -1689555321903600837L;
+
     /**
      * DO NOT MOVE THIS CONSTANT. IT's important to have it in this file for the
      * LFE to parse JDL Keys correct
@@ -19,7 +18,8 @@ public class AddonView extends View{
 
     public AddonView() {
         super();
-//        this.setSideBar(new DownloadTaskPane(JDL.L("gui.taskpanes.download", "Download"), JDTheme.II("gui.images.taskpanes.download", 16, 16)));
+        // this.setSideBar(new DownloadTaskPane(JDL.L("gui.taskpanes.download",
+        // "Download"), JDTheme.II("gui.images.taskpanes.download", 16, 16)));
         this.setContent(new DownloadLinksPanel());
     }
 
@@ -41,13 +41,13 @@ public class AddonView extends View{
     @Override
     protected void onHide() {
         // TODO Auto-generated method stub
-        
+
     }
 
     @Override
     protected void onShow() {
         // TODO Auto-generated method stub
-        
+
     }
 
 }

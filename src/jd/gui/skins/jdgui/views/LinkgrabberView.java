@@ -10,10 +10,14 @@ import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
 public class LinkgrabberView extends View {
-    /**
-     * 
-     */
+
     private static final long serialVersionUID = -8027069594232979742L;
+
+    /**
+     * DO NOT MOVE THIS CONSTANT. IT's important to have it in this file for the
+     * LFE to parse JDL Keys correct
+     */
+    private static final String IDENT_PREFIX = "jd.gui.skins.jdgui.views.linkgrabberview.";
 
     public LinkgrabberView() {
         super();
@@ -33,27 +37,18 @@ public class LinkgrabberView extends View {
         });
     }
 
-    /**
-     * DO NOT MOVE THIS CONSTANT. IT's important to have it in this file for the
-     * LFE to parse JDL Keys correct
-     */
-    private static final String IDENT_PREFIX = "jd.gui.skins.jdgui.views.linkgrabberview.";
-
     @Override
     public Icon getIcon() {
-        // TODO Auto-generated method stub
         return JDTheme.II("gui.images.taskpanes.linkgrabber", ICON_SIZE, ICON_SIZE);
     }
 
     @Override
     public String getTitle() {
-        // TODO Auto-generated method stub
         return JDL.L(IDENT_PREFIX + "tab.title", "Linkgrabber");
     }
 
     @Override
     public String getTooltip() {
-        // TODO Auto-generated method stub
         return JDL.L(IDENT_PREFIX + "tab.tooltip", "Collect, add and select links and URLs");
     }
 

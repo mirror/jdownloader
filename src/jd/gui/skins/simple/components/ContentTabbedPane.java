@@ -8,6 +8,8 @@ import javax.swing.JTabbedPane;
 import com.jtattoo.plaf.acryl.AcrylTabbedPaneUI;
 
 public class ContentTabbedPane extends JTabbedPane {
+    private static final long serialVersionUID = 6626424731025112897L;
+
     public ContentTabbedPane() {
 
         this.setFocusable(false);

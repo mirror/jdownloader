@@ -54,12 +54,11 @@ public class JDToolBar extends JToolBar implements ActionControllerListener {
     private boolean updateing;
 
     public static synchronized JDToolBar getInstance() {
-
         if (INSTANCE == null) INSTANCE = new JDToolBar();
         return INSTANCE;
     }
 
-    public JDToolBar() {
+    private JDToolBar() {
         super(JToolBar.HORIZONTAL);
         // noTitlePainter = noTitlePane;
         setRollover(true);

@@ -16,7 +16,6 @@
 
 package jd.plugins.optional.jdchat;
 
-import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.KeyboardFocusManager;
@@ -37,7 +36,6 @@ import java.util.regex.Pattern;
 import javax.swing.ImageIcon;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
-import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.JTextPane;
@@ -71,7 +69,8 @@ import jd.utils.locale.JDLocale;
 import net.miginfocom.swing.MigLayout;
 
 import org.schwering.irc.lib.IRCConnection;
-@OptionalPlugin(rev="$Revision$", id="chat",interfaceversion=4)
+
+@OptionalPlugin(rev = "$Revision$", id = "chat", interfaceversion = 4)
 public class JDChat extends PluginOptional implements ControlListener {
     private static final long AWAY_TIMEOUT = 15 * 60 * 1000;
     private static String CHANNEL = "#jDownloader";
@@ -110,9 +109,6 @@ public class JDChat extends PluginOptional implements ControlListener {
     private static final int TEXT_BUFFER = 1024 * 600;
     public static final String USERLIST_STYLE = JDIO.getLocalFile(JDUtilities.getResourceFile("plugins/jdchat/userliststyles.css"));
     private static final String CHANNEL_LNG = "CHANNEL_LNG2";
-
-
-
 
     private boolean changed;
 
@@ -795,11 +791,11 @@ public class JDChat extends PluginOptional implements ControlListener {
     public String getNickname() {
 
         String loc = JDL.getCountryCodeByIP();
-        
+
         if (loc == null) {
             loc = System.getProperty("user.country");
-        }else{
-            loc=loc.toLowerCase();
+        } else {
+            loc = loc.toLowerCase();
         }
         String def = "JD-[" + loc + "]_" + ("" + System.currentTimeMillis()).substring(6);
         nick = subConfig.getStringProperty(PARAM_NICK);
@@ -821,8 +817,6 @@ public class JDChat extends PluginOptional implements ControlListener {
         return nick;
     }
 
-
-
     public User getUser(String name) {
         for (User next : NAMES) {
             if (next.isUser(name)) return next;
@@ -830,7 +824,6 @@ public class JDChat extends PluginOptional implements ControlListener {
         }
         return null;
     }
-
 
     // @Override
     public boolean initAddon() {
@@ -899,28 +892,6 @@ public class JDChat extends PluginOptional implements ControlListener {
 
     @SuppressWarnings("unchecked")
     private void initGUI() {
-
-        frame = new SwitchPanel(new BorderLayout()) {
-
-            private static final long serialVersionUID = 2138710083573682339L;
-
-            // @Override
-            public void onShow() {
-
-            }
-
-            // @Override
-            public void onHide() {
-            }
-
-            public boolean needsViewport() {
-
-                return false;
-            }
-
-        };
-
-        frame.setLayout(new MigLayout("ins 0", "[grow,fill]", "[grow,fill]"));
         top = new JLabel();
         textArea = new JTextPane();
         HyperlinkListener hyp = new HyperlinkListener() {
@@ -1046,14 +1017,22 @@ public class JDChat extends PluginOptional implements ControlListener {
         textArea.setContentType("text/html");
         textArea.setEditable(false);
 
-        frame.add(top, BorderLayout.NORTH);
-        // frame.add(new JScrollPane(right), BorderLayout.EAST);
-        frame.add(scrollPane, BorderLayout.CENTER);
-        JPanel south = new JPanel();
-        south.setLayout(new BorderLayout());
-        south.add(textField, BorderLayout.CENTER);
-        south.add(lang, BorderLayout.EAST);
-        frame.add(south, BorderLayout.SOUTH);
+        frame = new SwitchPanel() {
+            private static final long serialVersionUID = 2138710083573682339L;
+
+            @Override
+            public void onShow() {
+            }
+
+            @Override
+            public void onHide() {
+            }
+        };
+        frame.setLayout(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[grow,fill]"));
+        frame.add(top);
+        frame.add(scrollPane);
+        frame.add(textField, "growx, split 2");
+        frame.add(lang, "w pref!");
         lastAction = System.currentTimeMillis();
         MouseMotionListener ml = new MouseMotionListener() {
 
@@ -1063,7 +1042,6 @@ public class JDChat extends PluginOptional implements ControlListener {
             public void mouseMoved(MouseEvent e) {
                 lastAction = System.currentTimeMillis();
                 setNickAway(false);
-
             }
 
         };
@@ -1352,11 +1330,11 @@ public class JDChat extends PluginOptional implements ControlListener {
     }
 
     public void setEnabled(boolean b) {
-        if(SimpleGUI.CURRENTGUI==null)return;
+        if (SimpleGUI.CURRENTGUI == null) return;
         if (b) {
             initGUI();
             tp = new JDChatTaskPane(JDL.L("plugins.optional.jdChat.gui.title2", "JD Support Chat"), JDTheme.II("gui.images.config.tip", 16, 16));
-           //TODO
+            // TODO
             SimpleGUI.CURRENTGUI.getTaskPane().add(tp);
             tp.addActionListener(new ActionListener() {
 
@@ -1378,8 +1356,8 @@ public class JDChat extends PluginOptional implements ControlListener {
         } else {
             if (frame != null) {
                 SimpleGUI.CURRENTGUI.getTaskPane().remove(tp);
-                if ( SimpleGUI.CURRENTGUI.getContentPane().getRightPanel() == frame) {
-                    SimpleGUI.CURRENTGUI.getTaskPane().switcher( SimpleGUI.CURRENTGUI.getDlTskPane());
+                if (SimpleGUI.CURRENTGUI.getContentPane().getRightPanel() == frame) {
+                    SimpleGUI.CURRENTGUI.getTaskPane().switcher(SimpleGUI.CURRENTGUI.getDlTskPane());
                 }
 
                 this.onExit();

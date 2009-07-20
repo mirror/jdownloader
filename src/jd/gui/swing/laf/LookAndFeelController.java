@@ -51,10 +51,6 @@ public class LookAndFeelController {
     public static final String PARAM_PLAF = "PLAF4";
     public static final String DEFAULT_PREFIX = "LAF_CFG";
     private static boolean uiInitated = false;
-    /**
-     * Stores mac default LAF if found
-     */
-    private static LookAndFeelWrapper MAC_DEFAULT;
 
     /**
      * Collects all supported LAFs for the current system
@@ -73,15 +69,12 @@ public class LookAndFeelController {
             } else if (clname.contains("Synthetica")) {
                 ret.add(new LookAndFeelWrapper(lafis[i]));
             } else if (clname.contains("goodie")) {
-                // if (OSDetector.isLinux() || JDInitFlags.SWITCH_DEBUG) {
                 LookAndFeelWrapper lafm = new LookAndFeelWrapper(lafis[i]);
                 lafm.setName(lafis[i].getName());
                 ret.add(lafm);
-                // }
             } else if (clname.startsWith("apple.laf")) {
                 LookAndFeelWrapper lafm = new LookAndFeelWrapper(lafis[i]);
                 lafm.setName("Apple Aqua");
-                MAC_DEFAULT = lafm;
                 ret.add(lafm);
             } else if (clname.endsWith("WindowsLookAndFeel")) {
                 LookAndFeelWrapper lafm = new LookAndFeelWrapper(lafis[i]);
@@ -95,7 +88,6 @@ public class LookAndFeelController {
                 LookAndFeelWrapper lafm = new LookAndFeelWrapper(lafis[i]);
                 lafm.setName(lafis[i].getName());
                 ret.add(lafm);
-
             } else if (JDInitFlags.SWITCH_DEBUG) {
                 LookAndFeelWrapper lafm = new LookAndFeelWrapper(lafis[i]);
                 lafm.setName(lafis[i].getName() + "(debug)");
@@ -182,7 +174,6 @@ public class LookAndFeelController {
                 if (e.getName().startsWith(pkg)) {
                     String laf = new Regex(e.getName(), "org/jvnet/substance/skin/(.*?)LookAndFeel\\.class").getMatch(0);
                     if (laf != null) {
-
                         UIManager.installLookAndFeel(laf, "org.jvnet.substance.skin." + laf + "LookAndFeel");
                     }
                 }
