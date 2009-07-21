@@ -13,7 +13,7 @@ import javax.swing.UIManager;
 import javax.swing.plaf.metal.MetalLookAndFeel;
 
 import jd.gui.skins.SwingGui;
-import jd.gui.skins.simple.JDToolBar;
+import jd.gui.skins.simple.MainToolBar;
 import jd.utils.JDTheme;
 import net.miginfocom.swing.MigLayout;
 
@@ -78,13 +78,13 @@ public abstract class View extends SwitchPanel {
     protected void updateToolbar(String id, String[] defaultlist) {
         if (id == null && defaultlist == null) {
             /* reset toolbar to global defaultlist */
-            JDToolBar.getInstance().setList(null);
+            MainToolBar.getInstance().setList(null);
         } else {
             // solange noch kein editor dafür vorhanden
             // defaultlist =
             // SubConfiguration.getConfig(JDGuiConstants.CONFIG_PARAMETER).getGenericProperty(JDGuiConstants.CFG_KEY_TOOLBAR_ACTIONLIST
             // + "." + id, defaultlist);
-            JDToolBar.getInstance().setList(defaultlist);
+            MainToolBar.getInstance().setList(defaultlist);
         }
     }
 

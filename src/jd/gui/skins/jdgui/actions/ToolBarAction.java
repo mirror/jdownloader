@@ -30,6 +30,7 @@ public abstract class ToolBarAction extends AbstractAction {
     public static final String PRIORITY = "PRIORITY";
     public static final String ID = "ID";
     public static final String VISIBLE = "VISIBLE";
+    public static final String IMAGE_KEY = "IMAGE_KEY";
 
     protected Types type = Types.NORMAL;
 
@@ -80,6 +81,7 @@ public abstract class ToolBarAction extends AbstractAction {
     public abstract void init();
 
     public void setIcon(String key) {
+        putValue(IMAGE_KEY, key);
         putValue(AbstractAction.SMALL_ICON, JDTheme.II(key, 24, 24));
     }
 

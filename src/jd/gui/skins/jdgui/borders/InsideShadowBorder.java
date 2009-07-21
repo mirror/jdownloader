@@ -34,7 +34,15 @@ public class InsideShadowBorder extends AbstractBorder {
 
             alphaValue -= (alphaValue / 2);
         }
+        g2D.setColor(new Color(0, 16, 0));
+        alphaValue = 0.4f;
+        for (int i = 0; i < insets.bottom; i++) {
+            AlphaComposite alpha = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alphaValue);
+            g2D.setComposite(alpha);
+            g.drawLine(x + i, y+h - i, x + w - i * 2, y+h - i);
 
+            alphaValue -= (alphaValue / 2);
+        }
         g2D.setComposite(composite);
 
     }

@@ -5,7 +5,9 @@ import javax.swing.Icon;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.LinkGrabberControllerEvent;
 import jd.controlling.LinkGrabberControllerListener;
+import jd.gui.skins.jdgui.borders.JDBorderFactory;
 import jd.gui.skins.jdgui.components.linkgrabberview.LinkGrabberPanel;
+import jd.gui.skins.jdgui.components.toolbar.ToolBar;
 import jd.gui.skins.jdgui.interfaces.View;
 import jd.gui.skins.jdgui.views.info.LinkGrabberInfoPanel;
 import jd.utils.JDTheme;
@@ -25,6 +27,12 @@ public class LinkgrabberView extends View {
         super();
         this.setContent(LinkGrabberPanel.getLinkGrabber());
         this.setDefaultInfoPanel(new LinkGrabberInfoPanel());
+        ToolBar toolbar = new ToolBar(16);
+        toolbar.setOpaque(false);
+        toolbar.setBorder(JDBorderFactory.createInsideShadowBorder(0, 0, 5, 0));
+        toolbar.setBackground(null);
+        this.setToolBar(toolbar);
+
         LinkGrabberController.getInstance().addListener(new LinkGrabberControllerListener() {
             public void onLinkGrabberControllerEvent(LinkGrabberControllerEvent event) {
                 switch (event.getID()) {
@@ -58,7 +66,23 @@ public class LinkgrabberView extends View {
 
     @Override
     protected void onShow() {
-        updateToolbar("linkgrabberview", new String[] { "toolbar.control.start", "toolbar.control.pause", "toolbar.control.stop", "toolbar.separator", "toolbar.quickconfig.clipboardoberserver", "toolbar.quickconfig.reconnecttoggle", "toolbar.separator", "toolbar.interaction.reconnect", "toolbar.interaction.update", "toolbar.separator", "action.addurl", "action.load", "toolbar.separator", "action.linkgrabber.addall", "action.linkgrabber.clearlist" });
+        updateToolbar("linkgrabberview", new String[] {
+                "toolbar.control.start",
+                "toolbar.control.pause",
+                "toolbar.control.stop",
+                "toolbar.separator",
+                "toolbar.quickconfig.clipboardoberserver",
+                "toolbar.quickconfig.reconnecttoggle",
+                "toolbar.separator",
+                "toolbar.interaction.reconnect",
+                "toolbar.interaction.update",
+                "toolbar.separator",
+                "action.addurl",
+                "action.load",
+                "toolbar.separator",
+                "action.linkgrabber.addall",
+                "action.linkgrabber.clearlist"
+        });
     }
 
 }

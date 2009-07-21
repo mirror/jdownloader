@@ -72,6 +72,8 @@ import jd.utils.MacOSController;
 import jd.utils.WebUpdate;
 import jd.utils.locale.JDL;
 
+import org.fest.swing.edt.FailOnThreadViolationRepaintManager;
+
 /**
  * @author JD-Team
  */
@@ -79,7 +81,7 @@ import jd.utils.locale.JDL;
 public class Main {
 
     private static Logger LOGGER;
-//    public static SplashScreen SPLASHSCREEN = null;
+    // public static SplashScreen SPLASHSCREEN = null;
     private static String instanceID = Main.class.getName();
     private static boolean instanceStarted = false;
 
@@ -136,16 +138,6 @@ public class Main {
 
     public static void main(String args[]) {
 
-        
-
-        
-        
-        
-        
-        
-        
-        
-        
         System.setProperty("file.encoding", "UTF-8");
         OSDetector.setOSString(System.getProperty("os.name"));
         // System.setProperty("os.name", "Windows Vista m.a.c");
@@ -283,12 +275,9 @@ public class Main {
             LOGGER.severe("Instance Handling not possible!");
             instanceStarted = true;
         }
-        
+
         new JDController();
-        
-        
-        
-  
+
         if (instanceStarted || JDInitFlags.SWITCH_NEW_INSTANCE) {
             JDTheme.setTheme("default");
             if (JDInitFlags.SHOW_SPLASH) {
@@ -330,6 +319,7 @@ public class Main {
     }
 
     private static void start(final String args[]) {
+       
         if (!JDInitFlags.STOP && !JDInitFlags.ENOUGH_MEMORY) {
             JDUtilities.restartJD();
             return;
@@ -338,7 +328,7 @@ public class Main {
             final Main main = new Main();
             EventQueue.invokeLater(new Runnable() {
                 public void run() {
-                    
+
                     main.go();
                     for (String p : args) {
                         LOGGER.finest("Param: " + p);
@@ -371,7 +361,18 @@ public class Main {
             System.exit(0);
         }
         if (JDUtilities.getJavaVersion() < 1.6 && !OSDetector.isMac()) {
-            int returnValue = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_CANCEL_OPTION, JDL.LF("gui.javacheck.newerjavaavailable.title", "Outdated Javaversion found: %s!", JDUtilities.getJavaVersion()), JDL.L("gui.javacheck.newerjavaavailable.msg", "Although JDownloader runs on your javaversion, we advise to install the latest java updates. \r\nJDownloader will run more stable, faster, and will look better. \r\n\r\nVisit http://jdownloader.org/download."), JDTheme.II("gui.images.warning", 32, 32), null, null);
+            int returnValue = UserIO
+                    .getInstance()
+                    .requestConfirmDialog(
+                                          UserIO.DONT_SHOW_AGAIN | UserIO.NO_CANCEL_OPTION,
+                                          JDL.LF("gui.javacheck.newerjavaavailable.title", "Outdated Javaversion found: %s!", JDUtilities.getJavaVersion()),
+                                          JDL
+                                                  .L(
+                                                     "gui.javacheck.newerjavaavailable.msg",
+                                                     "Although JDownloader runs on your javaversion, we advise to install the latest java updates. \r\nJDownloader will run more stable, faster, and will look better. \r\n\r\nVisit http://jdownloader.org/download."),
+                                          JDTheme.II("gui.images.warning", 32, 32),
+                                          null,
+                                          null);
             if ((returnValue & UserIO.RETURN_SKIPPED_BY_DONT_SHOW) == 0) {
                 try {
                     JLinkButton.openURL("http://jdownloader.org/download/index?updatejava=1");
@@ -507,7 +508,9 @@ public class Main {
      */
     public static void loadDynamics() throws Exception {
         ArrayList<String> classes = new ArrayList<String>();
-        URLClassLoader classLoader = new URLClassLoader(new URL[] { JDUtilities.getJDHomeDirectoryFromEnvironment().toURI().toURL(), JDUtilities.getResourceFile("java").toURI().toURL() }, Thread.currentThread().getContextClassLoader());
+        URLClassLoader classLoader = new URLClassLoader(new URL[] {
+                JDUtilities.getJDHomeDirectoryFromEnvironment().toURI().toURL(), JDUtilities.getResourceFile("java").toURI().toURL()
+        }, Thread.currentThread().getContextClassLoader());
         if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL) {
             /* dynamics aus eclipse heraus laden */
 
@@ -515,13 +518,13 @@ public class Main {
             ArrayList<String> dynamics = new ArrayList<String>();
             while (resources.hasMoreElements()) {
                 URL resource = resources.nextElement();
-                if(resource.toURI().getPath()!=null){
-                String[] files = new File(resource.toURI().getPath()).list();
-                if (files != null) {
-                    for (String file : files) {
-                        dynamics.add(new File(file).getName());
+                if (resource.toURI().getPath() != null) {
+                    String[] files = new File(resource.toURI().getPath()).list();
+                    if (files != null) {
+                        for (String file : files) {
+                            dynamics.add(new File(file).getName());
+                        }
                     }
-                }
                 }
             }
             if (dynamics.size() == 0) return;

@@ -50,7 +50,7 @@ import jd.gui.skins.jdgui.views.TabbedPanelView;
 import jd.gui.skins.simple.Balloon;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.JDStatusBar;
-import jd.gui.skins.simple.JDToolBar;
+import jd.gui.skins.simple.MainToolBar;
 import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.gui.skins.simple.SimpleGuiUtils;
 import jd.gui.skins.simple.TabProgress;
@@ -90,7 +90,7 @@ public class JDGui extends SwingGui {
     private ConfigurationView configurationView;
     private AddonView addonView;
     private LogView logView;
-    private JDToolBar toolBar;
+    private MainToolBar toolBar;
 
     private JDGui() {
         super("");
@@ -132,7 +132,7 @@ public class JDGui extends SwingGui {
         mainTabbedPane = new MainTabbedPane();
 
         multiProgressBar = new TabProgress();
-        this.toolBar = JDToolBar.getInstance();
+        this.toolBar = MainToolBar.getInstance();
         downloadView = new DownloadView();
         linkgrabberView = new LinkgrabberView();
         configurationView = new ConfigurationView();

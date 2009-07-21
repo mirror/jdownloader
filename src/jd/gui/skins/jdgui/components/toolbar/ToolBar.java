@@ -1,20 +1,4 @@
-//    jDownloader - Downloadmanager
-//    Copyright (C) 2009  JD-Team support@jdownloader.org
-//
-//    This program is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
-//
-//    This program is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-//    GNU General Public License for more details.
-//
-//    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-package jd.gui.skins.simple;
+package jd.gui.skins.jdgui.components.toolbar;
 
 import static jd.controlling.JDLogger.warning;
 
@@ -27,25 +11,30 @@ import javax.swing.JSeparator;
 import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
 
-import jd.controlling.JDController;
 import jd.controlling.JDLogger;
-import jd.event.ControlEvent;
-import jd.event.ControlListener;
 import jd.gui.skins.SwingGui;
 import jd.gui.skins.jdgui.actions.ActionControlEvent;
 import jd.gui.skins.jdgui.actions.ActionController;
 import jd.gui.skins.jdgui.actions.ToolBarAction;
 import jd.gui.skins.jdgui.actions.event.ActionControllerListener;
-import jd.gui.skins.simple.components.SpeedMeterPanel;
+import jd.gui.skins.simple.GuiRunnable;
+import jd.utils.JDTheme;
 import net.miginfocom.swing.MigLayout;
 
-public class JDToolBar extends JToolBar implements ActionControllerListener, ControlListener {
+public class ToolBar extends JToolBar implements ActionControllerListener {
+    private static String[] defaultlist = new String[] {
+            "toolbar.control.start",
+            "toolbar.control.pause",
+            "toolbar.control.stop",
+            "toolbar.separator",
+            "toolbar.quickconfig.clipboardoberserver",
+            "toolbar.quickconfig.reconnecttoggle",
+            "toolbar.separator",
+            "toolbar.interaction.reconnect",
+            "toolbar.interaction.update"
+    };
 
-    private static String[] defaultlist = new String[] { "toolbar.control.start", "toolbar.control.pause", "toolbar.control.stop", "toolbar.separator", "toolbar.quickconfig.clipboardoberserver", "toolbar.quickconfig.reconnecttoggle", "toolbar.separator", "toolbar.interaction.reconnect", "toolbar.interaction.update" };
-
-    private static JDToolBar INSTANCE = null;
-
-    private static final long serialVersionUID = 7533138014274040205L;
+    private static final long serialVersionUID = 7533137014274040205L;
 
     private static final String BUTTON_CONSTRAINTS = "gaptop 2, gapleft 2";
 
@@ -55,21 +44,22 @@ public class JDToolBar extends JToolBar implements ActionControllerListener, Con
 
     private String[] current = null;
 
-    private SpeedMeterPanel speedmeter;
+    private boolean updateing = false;
 
-    private boolean updateing;
+    private int preferredIconSize;
 
-    public static synchronized JDToolBar getInstance() {
-        if (INSTANCE == null) INSTANCE = new JDToolBar();
-        return INSTANCE;
+    public ToolBar() {
+        this(24);
+
     }
 
-    private JDToolBar() {
+    public ToolBar(int iconSize) {
         super(JToolBar.HORIZONTAL);
-        // noTitlePainter = noTitlePane;
+        preferredIconSize = iconSize;
+
         setRollover(true);
         setFloatable(false);
-        speedmeter = new SpeedMeterPanel();
+
         ActionController.initActions();
 
         // this.updateToolbar();
@@ -78,8 +68,7 @@ public class JDToolBar extends JToolBar implements ActionControllerListener, Con
         // please add listener here. to avoid the toolbar beiong pained multible
         // times
         ActionController.getBroadcaster().addListener(this);
-        INSTANCE = this;
-        JDController.getInstance().addControlListener(this);
+
     }
 
     public void setList(String[] newlist) {
@@ -150,6 +139,7 @@ public class JDToolBar extends JToolBar implements ActionControllerListener, Con
                     }
                     if (ab != null) {
                         ab.setText("");
+                        ab.setIcon(JDTheme.II(action.getValue(ToolBarAction.IMAGE_KEY) + "", preferredIconSize, preferredIconSize));
                         ab.setToolTipText(action.getTooltipText());
                         ab.setEnabled(action.isEnabled());
                         ab.setSelected(action.isSelected());
@@ -188,10 +178,6 @@ public class JDToolBar extends JToolBar implements ActionControllerListener, Con
         }
     }
 
-    private void addSpeedMeter() {
-        add(speedmeter, "dock east,hidemode 3,height 30!,width 30:200:300");
-    }
-
     public synchronized void onActionControlEvent(ActionControlEvent event) {
         if (updateing) return;
         updateing = true;
@@ -208,30 +194,19 @@ public class JDToolBar extends JToolBar implements ActionControllerListener, Con
     /**
      * UPdates the toolbar
      */
-    private void updateToolbar() {
+    protected void updateToolbar() {
         new GuiRunnable<Object>() {
             @Override
             public Object runSave() {
                 setVisible(false);
                 removeAll();
                 initToolbar(current);
-                addSpeedMeter();
+
                 setVisible(true);
                 revalidate();
                 return null;
             }
         }.waitForEDT();
-    }
-
-    public void controlEvent(ControlEvent event) {
-        switch (event.getID()) {
-        case ControlEvent.CONTROL_DOWNLOAD_START:
-            speedmeter.start();
-            break;
-        case ControlEvent.CONTROL_DOWNLOAD_STOP:
-            speedmeter.stop();
-            break;
-        }
     }
 
 }
