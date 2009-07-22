@@ -53,7 +53,7 @@ public class StorageTo extends PluginForHost {
             sleeptime = Long.parseLong(time);
         } catch (Exception e) {
         }
-        if (sleeptime > 0) sleep(sleeptime + 1 * 1000, link);
+        if (sleeptime > 0) sleep((sleeptime + 1) * 1000, link);
         String dllink;
         dllink = br.getRegex("'link' : '(.*?)',").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
