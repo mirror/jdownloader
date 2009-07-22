@@ -26,7 +26,7 @@ import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 
 import jd.config.SubConfiguration;
-import jd.gui.skins.simple.SimpleGuiConstants;
+import jd.gui.skins.jdgui.GUIUtils;
 
 public class ScreenDevices {
 
@@ -76,7 +76,7 @@ public class ScreenDevices {
     public static BufferedImage getScreenShot(Rectangle r) throws AWTException {
         synchronized (SCREENS) {
             if (SCREENS.length == 0) { return new Robot().createScreenCapture(r); }
-            if (SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getBooleanProperty("XINERAMAWORKAROUND", false)) {
+            if (SubConfiguration.getConfig(GUIUtils.getConfig()).getBooleanProperty("XINERAMAWORKAROUND", false)) {
                 for (DeviceInfo dv : SCREENS) {
                     if (r.x >= dv.posx && r.x <= dv.maxx && r.y >= dv.posy && r.y <= dv.maxy) {
                         r.x = r.x - dv.posx;

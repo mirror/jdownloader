@@ -23,7 +23,8 @@ import javax.swing.ImageIcon;
 import javax.swing.filechooser.FileFilter;
 
 import jd.config.SubConfiguration;
-import jd.gui.skins.simple.SimpleGuiConstants;
+import jd.gui.skins.jdgui.GUIUtils;
+import jd.gui.skins.jdgui.JDGuiConstants;
 import jd.gui.userio.NoUserIO;
 import jd.utils.locale.JDL;
 
@@ -197,9 +198,9 @@ public abstract class UserIO {
     public abstract ImageIcon getIcon(int iconInfo);
 
     public static int getCountdownTime() {
-        SubConfiguration cfg = SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME);
+        SubConfiguration cfg = SubConfiguration.getConfig(GUIUtils.getConfig());
         if (COUNTDOWN_TIME != null) return COUNTDOWN_TIME.intValue();
-        return Math.max(2, cfg.getIntegerProperty(SimpleGuiConstants.PARAM_INPUTTIMEOUT, 20));
+        return Math.max(2, cfg.getIntegerProperty(JDGuiConstants.PARAM_INPUTTIMEOUT, 20));
     }
 
     /**

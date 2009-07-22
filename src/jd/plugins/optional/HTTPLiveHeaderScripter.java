@@ -54,9 +54,9 @@ import jd.PluginWrapper;
 import jd.config.MenuItem;
 import jd.controlling.reconnect.HTTPLiveHeader;
 import jd.gui.skins.SwingGui;
+import jd.gui.skins.jdgui.components.linkbutton.JLink;
 import jd.gui.skins.jdgui.interfaces.SwitchPanel;
 import jd.gui.skins.simple.components.JDFileChooser;
-import jd.gui.skins.simple.components.JLinkButton;
 import jd.http.Encoding;
 import jd.nutils.io.JDFileFilter;
 import jd.nutils.io.JDIO;
@@ -94,7 +94,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
             importFF();
         } else if (e.getSource() == menHelpWiki) {
             try {
-                JLinkButton.openURL(JDL.L("plugins.optional.httpliveheaderscripter.gui.wikilink", "http://wiki.jdownloader.org/index.php?title=HTTPLiveHeader_reconnect_Script_erstellen"));
+                JLink.openURL(JDL.L("plugins.optional.httpliveheaderscripter.gui.wikilink", "http://wiki.jdownloader.org/index.php?title=HTTPLiveHeader_reconnect_Script_erstellen"));
             } catch (Exception e1) {
                 e1.printStackTrace();
             }

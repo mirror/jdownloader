@@ -17,6 +17,8 @@
 package jd.gui.skins.simple;
 
 import jd.config.SubConfiguration;
+import jd.gui.skins.jdgui.GUIUtils;
+import jd.gui.skins.jdgui.JDGuiConstants;
 
 public class SimpleGuiConstants {
 
@@ -42,7 +44,7 @@ public class SimpleGuiConstants {
     public static final String PARAM_SHOW_BALLOON = "PARAM_SHOW_BALLOON";    
 
     public static boolean isAnimated() {
-        return SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getBooleanProperty(SimpleGuiConstants.ANIMATION_ENABLED, false);
+        return SubConfiguration.getConfig(GUIUtils.getConfig()).getBooleanProperty(JDGuiConstants.ANIMATION_ENABLED, false);
     }
 
 }

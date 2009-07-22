@@ -53,7 +53,6 @@ import jd.config.ConfigPropertyListener;
 import jd.config.Configuration;
 import jd.config.Property;
 import jd.config.SubConfiguration;
-import jd.config.ConfigEntry.PropertyType;
 import jd.controlling.ClipboardHandler;
 import jd.controlling.DownloadController;
 import jd.controlling.JDController;
@@ -69,26 +68,19 @@ import jd.event.ControlEvent;
 import jd.gui.UIInterface;
 import jd.gui.UserIO;
 import jd.gui.skins.SwingGui;
+import jd.gui.skins.jdgui.GUIUtils;
 import jd.gui.skins.jdgui.InfoPanelHandler;
+import jd.gui.skins.jdgui.JDGuiConstants;
 import jd.gui.skins.jdgui.components.JDCollapser;
-import jd.gui.skins.jdgui.components.downloadview.DownloadLinksPanel;
-import jd.gui.skins.jdgui.components.linkgrabberview.LinkGrabberPanel;
-import jd.gui.skins.jdgui.components.linkgrabberview.LinkGrabberTableAction;
+import jd.gui.skins.jdgui.components.linkbutton.JLink;
 import jd.gui.skins.jdgui.components.toolbar.MainToolBar;
 import jd.gui.skins.jdgui.interfaces.SwitchPanel;
+import jd.gui.skins.jdgui.settings.ConfigEntriesPanel;
+import jd.gui.skins.jdgui.views.downloadview.DownloadLinksPanel;
+import jd.gui.skins.jdgui.views.linkgrabberview.LinkGrabberPanel;
+import jd.gui.skins.jdgui.views.linkgrabberview.LinkGrabberTableAction;
 import jd.gui.skins.simple.components.ChartAPIEntity;
-import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.components.PieChartAPI;
-import jd.gui.skins.simple.config.ConfigEntriesPanel;
-import jd.gui.skins.simple.config.ConfigPanel;
-import jd.gui.skins.simple.config.panels.ConfigPanelAddons;
-import jd.gui.skins.simple.config.panels.ConfigPanelCaptcha;
-import jd.gui.skins.simple.config.panels.ConfigPanelDownload;
-import jd.gui.skins.simple.config.panels.ConfigPanelEventmanager;
-import jd.gui.skins.simple.config.panels.ConfigPanelGUI;
-import jd.gui.skins.simple.config.panels.ConfigPanelGeneral;
-import jd.gui.skins.simple.config.panels.ConfigPanelPluginForHost;
-import jd.gui.skins.simple.config.panels.ConfigPanelReconnect;
 import jd.gui.skins.simple.startmenu.AboutMenu;
 import jd.gui.skins.simple.startmenu.AddLinksMenu;
 import jd.gui.skins.simple.startmenu.AddonsMenu;
@@ -102,8 +94,6 @@ import jd.gui.skins.simple.startmenu.actions.RestartAction;
 import jd.gui.skins.simple.tasks.AddonTaskPane;
 import jd.gui.skins.simple.tasks.ConfigTaskPane;
 import jd.gui.skins.simple.tasks.DownloadTaskPane;
-import jd.gui.skins.simple.tasks.LinkGrabberTaskPane;
-import jd.gui.skins.simple.tasks.TaskPanel;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.gui.userio.dialog.ContainerDialog;
 import jd.nutils.Formatter;
@@ -121,8 +111,6 @@ import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingworker.SwingWorker;
 import org.jdesktop.swingx.JXTitledSeparator;
-import org.jvnet.lafwidget.LafWidget;
-import org.jvnet.lafwidget.utils.LafConstants.AnimationKind;
 
 public class SimpleGUI extends SwingGui {
 
@@ -160,7 +148,7 @@ public class SimpleGUI extends SwingGui {
         return dlTskPane;
     }
 
-    private LinkGrabberTaskPane lgTaskPane;
+
 
     private MainToolBar toolBar;
 
@@ -206,7 +194,8 @@ public class SimpleGUI extends SwingGui {
 
         // Avoid resize bug if decorated.. works only for windows
 
-        SimpleGuiConstants.GUI_CONFIG = SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME);
+        // GUIUtils.getConfig() =
+        // SubConfiguration.getConfig(GUIUtils.getConfig());
         updateDecoration();
         LookAndFeelController.setUIManager();
 
@@ -221,7 +210,7 @@ public class SimpleGUI extends SwingGui {
         this.setEnabled(false);
         this.setWaiting(true);
 
-        if (isSubstance() && SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.DECORATION_ENABLED, true)) {
+        if (isSubstance() && GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.DECORATION_ENABLED, true)) {
             mainMenuIcon = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_54_54_trans"), 54, 54);
             mainMenuIconRollOver = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_54_54"), 54, 54);
             // noTitlePane = false;
@@ -238,7 +227,7 @@ public class SimpleGUI extends SwingGui {
         // System.out.println(ui);
         addWindowListener(this);
         this.setAnimate();
-        JDController.getInstance().addControlListener(new ConfigPropertyListener(SimpleGuiConstants.ANIMATION_ENABLED) {
+        JDController.getInstance().addControlListener(new ConfigPropertyListener(JDGuiConstants.ANIMATION_ENABLED) {
 
             // @Override
             public void onPropertyChanged(Property source, String propertyName) {
@@ -273,18 +262,18 @@ public class SimpleGUI extends SwingGui {
         buildUI();
 
         setName("MAINFRAME");
-        Dimension dim = SimpleGuiUtils.getLastDimension(this, null);
+        Dimension dim = GUIUtils.getLastDimension(this, null);
         if (dim == null) {
             dim = new Dimension(800, 600);
         }
         setPreferredSize(dim);
         setMinimumSize(new Dimension(400, 100));
-        setLocation(SimpleGuiUtils.getLastLocation(null, null, this));
+        setLocation(GUIUtils.getLastLocation(null, null, this));
         pack();
 
-        setExtendedState(SimpleGuiConstants.GUI_CONFIG.getIntegerProperty("MAXIMIZED_STATE_OF_" + this.getName(), JFrame.NORMAL));
+        setExtendedState(GUIUtils.getConfig().getIntegerProperty("MAXIMIZED_STATE_OF_" + this.getName(), JFrame.NORMAL));
 
-        this.hideSideBar(SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.PARAM_SIDEBAR_COLLAPSED, false));
+        this.hideSideBar(GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_SIDEBAR_COLLAPSED, false));
 
         setVisible(true);
 
@@ -479,7 +468,7 @@ public class SimpleGUI extends SwingGui {
             this.getRootPane().setUI(new JDSubstanceUI());
 
             // JDController.genew DownloadtInstance().addControlListener(new
-            // ConfigPropertyListener(SimpleGuiConstants.ANIMATION_ENABLED) {
+            // ConfigPropertyListener(JDGuiConstants.ANIMATION_ENABLED) {
             //
             // // @Override
             // public void onPropertyChanged(Property source, String
@@ -495,21 +484,11 @@ public class SimpleGUI extends SwingGui {
 
     private void setAnimate() {
 
-        if (isSubstance()) {
-            if (SimpleGuiConstants.isAnimated()) {
-                UIManager.put(LafWidget.ANIMATION_KIND, AnimationKind.REGULAR);
-
-            } else {
-                UIManager.put(LafWidget.ANIMATION_KIND, AnimationKind.NONE);
-            }
-
-        }
-
     }
 
     public void updateDecoration() {
         // UIManager.getLookAndFeel().getName().toLowerCase().contains("substance")&&
-        if (UIManager.getLookAndFeel().getSupportsWindowDecorations() && SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.DECORATION_ENABLED, true)) {
+        if (UIManager.getLookAndFeel().getSupportsWindowDecorations() && GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.DECORATION_ENABLED, true)) {
             setUndecorated(true);
             getRootPane().setWindowDecorationStyle(JRootPane.FRAME);
             JFrame.setDefaultLookAndFeelDecorated(true);
@@ -540,7 +519,7 @@ public class SimpleGUI extends SwingGui {
                 logger.info("Add links to Linkgrabber: " + links.size());
                 linkGrabber.addLinks(links);
 
-                if (!hideGrabber) taskPane.switcher(lgTaskPane);
+              
                 return null;
             }
 
@@ -614,64 +593,88 @@ public class SimpleGUI extends SwingGui {
     }
 
     private void addConfigTask() {
-//        cfgTskPane = new ConfigTaskPane(JDL.L("gui.taskpanes.configuration", "Configuration"), JDTheme.II("gui.images.taskpanes.configuration", 16, 16));
-//
-//        Object[] configConstructorObjects = new Object[] { JDUtilities.getConfiguration() };
-//
-////        cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_ADDONS, new SingletonPanel(ConfigPanelAddons.class, configConstructorObjects));
-////        cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_CAPTCHA, new SingletonPanel(ConfigPanelCaptcha.class, configConstructorObjects));
-////        cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_DOWNLOAD, new SingletonPanel(ConfigPanelDownload.class, configConstructorObjects));
-////        cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_EVENTMANAGER, new SingletonPanel(ConfigPanelEventmanager.class, configConstructorObjects));
-////        cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_GENERAL, new SingletonPanel(ConfigPanelGeneral.class, configConstructorObjects));
-////        cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_GUI, new SingletonPanel(ConfigPanelGUI.class, configConstructorObjects));
-////        cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_HOST, new SingletonPanel(ConfigPanelPluginForHost.class, configConstructorObjects));
-////        cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_RECONNECT, new SingletonPanel(ConfigPanelReconnect.class, configConstructorObjects));
-//
-//        cfgTskPane.addActionListener(new ActionListener() {
-//
-//            public void actionPerformed(final ActionEvent e) {
-//
-//                switch (e.getID()) {
-//                case DownloadTaskPane.ACTION_CLICK:
-//
-//                    contentPanel.display(((TaskPanel) e.getSource()).getPanel(SimpleGuiConstants.GUI_CONFIG.getIntegerProperty("LAST_CONFIG_PANEL", ConfigTaskPane.ACTION_GENERAL)));
-//
-//                    break;
-//                case ConfigTaskPane.ACTION_SAVE:
-//                    boolean restart = false;
-//
-//                    for (SingletonPanel panel : ((ConfigTaskPane) e.getSource()).getPanels()) {
-//
-//                        if (panel != null && panel.getPanel() != null && panel.getPanel() instanceof ConfigPanel) {
-//                            if (((ConfigPanel) panel.getPanel()).hasChanges() == PropertyType.NEEDS_RESTART) restart = true;
-//                            ((ConfigPanel) panel.getPanel()).save();
-//                        }
-//                    }
-//
-//                    if (restart) {
-//                        if (JDUtilities.getGUI().showConfirmDialog(JDL.L("gui.config.save.restart", "Your changes need a restart of JDownloader to take effect.\r\nRestart now?"), JDL.L("gui.config.save.restart.title", "JDownloader restart requested"))) {
-//                            JDUtilities.restartJD();
-//                        }
-//                    }
-//                    break;
-//
-//                case ConfigTaskPane.ACTION_ADDONS:
-//                case ConfigTaskPane.ACTION_CAPTCHA:
-//                case ConfigTaskPane.ACTION_DOWNLOAD:
-//                case ConfigTaskPane.ACTION_EVENTMANAGER:
-//                case ConfigTaskPane.ACTION_GENERAL:
-//                case ConfigTaskPane.ACTION_GUI:
-//                case ConfigTaskPane.ACTION_HOST:
-//                case ConfigTaskPane.ACTION_RECONNECT:
-//                    SimpleGuiConstants.GUI_CONFIG.setProperty("LAST_CONFIG_PANEL", e.getID());
-//
-//                    contentPanel.display(((ConfigTaskPane) e.getSource()).getPanel(e.getID()));
-//                    SimpleGuiConstants.GUI_CONFIG.save();
-//                    break;
-//                }
-//
-//            }
-//        });
+        // cfgTskPane = new ConfigTaskPane(JDL.L("gui.taskpanes.configuration",
+        // "Configuration"), JDTheme.II("gui.images.taskpanes.configuration",
+        // 16, 16));
+        //
+        // Object[] configConstructorObjects = new Object[] {
+        // JDUtilities.getConfiguration() };
+        //
+        // // cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_ADDONS, new
+        // SingletonPanel(ConfigPanelAddons.class, configConstructorObjects));
+        // // cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_CAPTCHA, new
+        // SingletonPanel(ConfigPanelCaptcha.class, configConstructorObjects));
+        // // cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_DOWNLOAD, new
+        // SingletonPanel(ConfigPanelDownload.class, configConstructorObjects));
+        // // cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_EVENTMANAGER, new
+        // SingletonPanel(ConfigPanelEventmanager.class,
+        // configConstructorObjects));
+        // // cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_GENERAL, new
+        // SingletonPanel(ConfigPanelGeneral.class, configConstructorObjects));
+        // // cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_GUI, new
+        // SingletonPanel(ConfigPanelGUI.class, configConstructorObjects));
+        // // cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_HOST, new
+        // SingletonPanel(ConfigPanelPluginForHost.class,
+        // configConstructorObjects));
+        // // cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_RECONNECT, new
+        // SingletonPanel(ConfigPanelReconnect.class,
+        // configConstructorObjects));
+        //
+        // cfgTskPane.addActionListener(new ActionListener() {
+        //
+        // public void actionPerformed(final ActionEvent e) {
+        //
+        // switch (e.getID()) {
+        // case DownloadTaskPane.ACTION_CLICK:
+        //
+        // contentPanel.display(((TaskPanel)
+        // e.getSource()).getPanel(GUIUtils.getConfig().getIntegerProperty("LAST_CONFIG_PANEL",
+        // ConfigTaskPane.ACTION_GENERAL)));
+        //
+        // break;
+        // case ConfigTaskPane.ACTION_SAVE:
+        // boolean restart = false;
+        //
+        // for (SingletonPanel panel : ((ConfigTaskPane)
+        // e.getSource()).getPanels()) {
+        //
+        // if (panel != null && panel.getPanel() != null && panel.getPanel()
+        // instanceof ConfigPanel) {
+        // if (((ConfigPanel) panel.getPanel()).hasChanges() ==
+        // PropertyType.NEEDS_RESTART) restart = true;
+        // ((ConfigPanel) panel.getPanel()).save();
+        // }
+        // }
+        //
+        // if (restart) {
+        // if
+        // (JDUtilities.getGUI().showConfirmDialog(JDL.L("gui.config.save.restart",
+        // "Your changes need a restart of JDownloader to take effect.\r\nRestart now?"),
+        // JDL.L("gui.config.save.restart.title",
+        // "JDownloader restart requested"))) {
+        // JDUtilities.restartJD();
+        // }
+        // }
+        // break;
+        //
+        // case ConfigTaskPane.ACTION_ADDONS:
+        // case ConfigTaskPane.ACTION_CAPTCHA:
+        // case ConfigTaskPane.ACTION_DOWNLOAD:
+        // case ConfigTaskPane.ACTION_EVENTMANAGER:
+        // case ConfigTaskPane.ACTION_GENERAL:
+        // case ConfigTaskPane.ACTION_GUI:
+        // case ConfigTaskPane.ACTION_HOST:
+        // case ConfigTaskPane.ACTION_RECONNECT:
+        // GUIUtils.getConfig().setProperty("LAST_CONFIG_PANEL", e.getID());
+        //
+        // contentPanel.display(((ConfigTaskPane)
+        // e.getSource()).getPanel(e.getID()));
+        // GUIUtils.getConfig().save();
+        // break;
+        // }
+        //
+        // }
+        // });
 
         taskPane.add(cfgTskPane);
 
@@ -683,9 +686,9 @@ public class SimpleGUI extends SwingGui {
 
     private void addLinkgrabberTask() {
         linkGrabber = LinkGrabberPanel.getLinkGrabber();
-        lgTaskPane = new LinkGrabberTaskPane(JDL.L("gui.taskpanes.linkgrabber", "LinkGrabber"), JDTheme.II("gui.images.taskpanes.linkgrabber", 16, 16));
-        lgTaskPane.setName(JDL.L("quickhelp.linkgrabbertaskpane", "Linkgrabber Taskpane"));
-        // LinkAdder linkadder = new LinkAdder();
+//        lgTaskPane = new LinkGrabberTaskPane(JDL.L("gui.taskpanes.linkgrabber", "LinkGrabber"), JDTheme.II("gui.images.taskpanes.linkgrabber", 16, 16));
+//        lgTaskPane.setName(JDL.L("quickhelp.linkgrabbertaskpane", "Linkgrabber Taskpane"));
+//        // LinkAdder linkadder = new LinkAdder();
 
         // lgTaskPane.addPanel(new SingletonPanel(linkadder));
         LinkGrabberController.getInstance().addListener(new LinkGrabberControllerListener() {
@@ -701,31 +704,31 @@ public class SimpleGUI extends SwingGui {
             }
 
         });
-        lgTaskPane.addPanel(new SingletonPanel(linkGrabber));
-
-        lgTaskPane.addActionListener(linkGrabber);
-        lgTaskPane.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                switch (e.getID()) {
-                case DownloadTaskPane.ACTION_CLICK:
-                    if (linkGrabber.hasLinks()) {
-                        lgTaskPane.setPanelID(1);
-                    } else {
-                        lgTaskPane.setPanelID(0);
-                    }
-                    break;
-                case LinkGrabberTableAction.GUI_ADD:
-                    lgTaskPane.setPanelID(0);
-                    return;
-                }
-            }
-        });
-        taskPane.add(lgTaskPane);
+//        lgTaskPane.addPanel(new SingletonPanel(linkGrabber));
+//
+//        lgTaskPane.addActionListener(linkGrabber);
+//        lgTaskPane.addActionListener(new ActionListener() {
+//            public void actionPerformed(ActionEvent e) {
+//                switch (e.getID()) {
+//                case DownloadTaskPane.ACTION_CLICK:
+//                    if (linkGrabber.hasLinks()) {
+//                        lgTaskPane.setPanelID(1);
+//                    } else {
+//                        lgTaskPane.setPanelID(0);
+//                    }
+//                    break;
+//                case LinkGrabberTableAction.GUI_ADD:
+//                    lgTaskPane.setPanelID(0);
+//                    return;
+//                }
+//            }
+//        });
+//        taskPane.add(lgTaskPane);
     }
 
-    public LinkGrabberTaskPane getLgTaskPane() {
-        return lgTaskPane;
-    }
+//    public LinkGrabberTaskPane getLgTaskPane() {
+//        return lgTaskPane;
+//    }
 
     private void addDownloadTask() {
 
@@ -762,7 +765,7 @@ public class SimpleGUI extends SwingGui {
 
                     SimpleGUI.this.setWaiting(false);
                     SimpleGUI.this.setEnabled(true);
-                    if (SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.PARAM_START_DOWNLOADS_AFTER_START, false)) {
+                    if (GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_START_DOWNLOADS_AFTER_START, false)) {
                         new Thread() {
                             public void run() {
                                 this.setName("Autostart counter");
@@ -883,7 +886,13 @@ public class SimpleGUI extends SwingGui {
         int flags = 0;
         if (string.contains("<") && string.contains(">")) flags |= UserIO.STYLE_HTML;
         try {
-            return JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(flags, JDL.L("userio.countdownconfirm", "Please confirm"), string, JDTheme.II("gui.images.config.eventmanager", 32, 32), null, null), UserIO.RETURN_OK);
+            return JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(
+                                                                                 flags,
+                                                                                 JDL.L("userio.countdownconfirm", "Please confirm"),
+                                                                                 string,
+                                                                                 JDTheme.II("gui.images.config.eventmanager", 32, 32),
+                                                                                 null,
+                                                                                 null), UserIO.RETURN_OK);
         } finally {
             UserIO.setCountdownTime(null);
         }
@@ -951,9 +960,9 @@ public class SimpleGUI extends SwingGui {
     public void closeWindow() {
         if (showConfirmDialog(JDL.L("sys.ask.rlyclose", "Wollen Sie jDownloader wirklich schließen?"))) {
             contentPanel.getRightPanel().setHidden();
-            SimpleGuiUtils.saveLastLocation(this, null);
-            SimpleGuiUtils.saveLastDimension(this, null);
-            SimpleGuiConstants.GUI_CONFIG.save();
+            GUIUtils.saveLastLocation(this, null);
+            GUIUtils.saveLastDimension(this, null);
+            GUIUtils.getConfig().save();
             JDUtilities.getController().exit();
         }
     }
@@ -1000,23 +1009,43 @@ public class SimpleGUI extends SwingGui {
                 }
                 if (!ai.isValid()) {
                     account.setEnabled(false);
-                    SimpleGUI.this.showMessageDialog(JDL.LF("plugins.host.premium.info.notValid", "The account for '%s' isn't valid! Please check username and password!\r\n%s", account.getUser(), ai.getStatus() != null ? ai.getStatus() : ""));
+                    SimpleGUI.this.showMessageDialog(JDL.LF("plugins.host.premium.info.notValid", "The account for '%s' isn't valid! Please check username and password!\r\n%s", account.getUser(), ai
+                            .getStatus() != null ? ai.getStatus() : ""));
                     return null;
                 }
                 if (ai.isExpired()) {
                     account.setEnabled(false);
-                    SimpleGUI.this.showMessageDialog(JDL.LF("plugins.host.premium.info.expired", "The account for '%s' is expired! Please extend the account or buy a new one!\r\n%s", account.getUser(), ai.getStatus() != null ? ai.getStatus() : ""));
+                    SimpleGUI.this.showMessageDialog(JDL.LF("plugins.host.premium.info.expired", "The account for '%s' is expired! Please extend the account or buy a new one!\r\n%s", account
+                            .getUser(), ai.getStatus() != null ? ai.getStatus() : ""));
                     return null;
                 }
 
                 String def = JDL.LF("plugins.host.premium.info.title", "Accountinformation from %s for %s", account.getUser(), pluginForHost.getHost());
-                String[] label = new String[] { JDL.L("plugins.host.premium.info.validUntil", "Valid until"), JDL.L("plugins.host.premium.info.trafficLeft", "Traffic left"), JDL.L("plugins.host.premium.info.files", "Files"), JDL.L("plugins.host.premium.info.premiumpoints", "PremiumPoints"), JDL.L("plugins.host.premium.info.usedSpace", "Used Space"), JDL.L("plugins.host.premium.info.cash", "Cash"), JDL.L("plugins.host.premium.info.trafficShareLeft", "Traffic Share left"), JDL.L("plugins.host.premium.info.status", "Info") };
+                String[] label = new String[] {
+                        JDL.L("plugins.host.premium.info.validUntil", "Valid until"),
+                        JDL.L("plugins.host.premium.info.trafficLeft", "Traffic left"),
+                        JDL.L("plugins.host.premium.info.files", "Files"),
+                        JDL.L("plugins.host.premium.info.premiumpoints", "PremiumPoints"),
+                        JDL.L("plugins.host.premium.info.usedSpace", "Used Space"),
+                        JDL.L("plugins.host.premium.info.cash", "Cash"),
+                        JDL.L("plugins.host.premium.info.trafficShareLeft", "Traffic Share left"),
+                        JDL.L("plugins.host.premium.info.status", "Info")
+                };
 
                 DateFormat formater = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM);
                 String validUntil = (ai.isExpired() ? JDL.L("plugins.host.premium.info.expiredInfo", "[expired]") + " " : "") + formater.format(new Date(ai.getValidUntil())) + "";
                 if (ai.getValidUntil() == -1) validUntil = null;
                 String premiumPoints = ai.getPremiumPoints() + ((ai.getNewPremiumPoints() > 0) ? " [+" + ai.getNewPremiumPoints() + "]" : "");
-                String[] data = new String[] { validUntil, Formatter.formatReadable(ai.getTrafficLeft()), ai.getFilesNum() + "", premiumPoints, Formatter.formatReadable(ai.getUsedSpace()), ai.getAccountBalance() < 0 ? null : (ai.getAccountBalance() / 100.0) + " €", Formatter.formatReadable(ai.getTrafficShareLeft()), ai.getStatus() };
+                String[] data = new String[] {
+                        validUntil,
+                        Formatter.formatReadable(ai.getTrafficLeft()),
+                        ai.getFilesNum() + "",
+                        premiumPoints,
+                        Formatter.formatReadable(ai.getUsedSpace()),
+                        ai.getAccountBalance() < 0 ? null : (ai.getAccountBalance() / 100.0) + " €",
+                        Formatter.formatReadable(ai.getTrafficShareLeft()),
+                        ai.getStatus()
+                };
 
                 JPanel panel = new JPanel(new MigLayout("ins 5", "[right]10[grow,fill]10[]"));
                 panel.add(new JXTitledSeparator("<html><b>" + def + "</b></html>"), "spanx, pushx, growx, gapbottom 15");
@@ -1054,10 +1083,15 @@ public class SimpleGUI extends SwingGui {
     }
 
     public static void showChangelogDialog() {
-        int status = UserIO.getInstance().requestHelpDialog(UserIO.NO_CANCEL_OPTION, JDL.LF("system.update.message.title", "Updated to version %s", JDUtilities.getRevision()), JDL.L("system.update.message", "Update successfull"), JDL.L("system.update.showchangelogv2", "What's new?"), "http://jdownloader.org/changes/index");
+        int status = UserIO.getInstance().requestHelpDialog(
+                                                            UserIO.NO_CANCEL_OPTION,
+                                                            JDL.LF("system.update.message.title", "Updated to version %s", JDUtilities.getRevision()),
+                                                            JDL.L("system.update.message", "Update successfull"),
+                                                            JDL.L("system.update.showchangelogv2", "What's new?"),
+                                                            "http://jdownloader.org/changes/index");
         if (JDFlags.hasAllFlags(status, UserIO.RETURN_OK) && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_AUTO_SHOW_CHANGELOG, true)) {
             try {
-                JLinkButton.openURL("http://jdownloader.org/changes/index");
+                JLink.openURL("http://jdownloader.org/changes/index");
             } catch (Exception e) {
                 JDLogger.exception(e);
             }
@@ -1065,7 +1099,7 @@ public class SimpleGUI extends SwingGui {
     }
 
     public SubConfiguration getGuiConfig() {
-        return SimpleGuiConstants.GUI_CONFIG;
+        return GUIUtils.getConfig();
     }
 
     public Container getRealContentPane() {
@@ -1101,8 +1135,8 @@ public class SimpleGUI extends SwingGui {
 
         }
 
-        SimpleGuiConstants.GUI_CONFIG.setProperty(SimpleGuiConstants.PARAM_SIDEBAR_COLLAPSED, b);
-        SimpleGuiConstants.GUI_CONFIG.save();
+        GUIUtils.getConfig().setProperty(JDGuiConstants.PARAM_SIDEBAR_COLLAPSED, b);
+        GUIUtils.getConfig().save();
 
     }
 

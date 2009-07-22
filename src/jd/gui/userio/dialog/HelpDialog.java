@@ -25,7 +25,7 @@ import javax.swing.JPanel;
 import javax.swing.JTextPane;
 
 import jd.controlling.JDLogger;
-import jd.gui.skins.simple.components.JLinkButton;
+import jd.gui.skins.jdgui.components.linkbutton.JLink;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
@@ -63,7 +63,7 @@ public class HelpDialog extends AbstractDialog {
 
             public void actionPerformed(ActionEvent e) {
                 try {
-                    JLinkButton.openURL(url);
+                    JLink.openURL(url);
                 } catch (Exception ex) {
                     JDLogger.exception(ex);
                 }

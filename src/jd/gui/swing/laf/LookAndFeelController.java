@@ -22,12 +22,11 @@ import java.io.FileInputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Enumeration;
-import java.util.Iterator;
 import java.util.Properties;
-import java.util.Map.Entry;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
+import javax.swing.JLabel;
 import javax.swing.UIDefaults;
 import javax.swing.UIManager;
 import javax.swing.UIManager.LookAndFeelInfo;
@@ -35,15 +34,13 @@ import javax.swing.UIManager.LookAndFeelInfo;
 import jd.JDInitFlags;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
-import jd.gui.skins.simple.SimpleGuiConstants;
+import jd.gui.skins.jdgui.GUIUtils;
 import jd.nutils.OSDetector;
 import jd.parser.Regex;
 import jd.utils.JDUtilities;
 
 import com.jtattoo.plaf.AbstractLookAndFeel;
 import com.jtattoo.plaf.BaseTheme;
-
-import de.javasoft.plaf.synthetica.SyntheticaStandardLookAndFeel;
 
 public class LookAndFeelController {
 
@@ -117,7 +114,7 @@ public class LookAndFeelController {
     }
 
     public static LookAndFeelWrapper getPlaf0() {
-        SubConfiguration config = SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME);
+        SubConfiguration config = SubConfiguration.getConfig(GUIUtils.getConfig());
         Object plaf = config.getProperty(PARAM_PLAF, null);
         if (plaf == null) { return getDefaultLAFM(); }
         if (plaf instanceof LookAndFeelWrapper) {
@@ -250,24 +247,34 @@ public class LookAndFeelController {
 
             preSetup(getPlaf().getClassName());
 
-            UIManager.put("Synthetica​.tabbedPane​.tab​.text​.position​.leading", true);
+            // UIManager.put("Synthetica​.tabbedPane​.tab​.text​.position​.leading",
+            // true);
             UIManager.put("Synthetica.window.opaque", true);
-            UIManager.put("Synthetica​.cache.enabled", true);
-           
+            // UIManager.put("Synthetica​.cache.enabled", true);
+            // 
             
+            UIManager.put(" Synthetica​.tableHeader​.horizontalAlignment", JLabel.CENTER);
+           
+            UIManager.put("Synthetica.window.decoration", false);
+            // UIManager.put("Synthetica​.rootPane​.titlePane​.menuButton​.useOriginalImageSize",
+            // Boolean.TRUE);
+            UIManager.put("Synthetica​.tabbedPane​.tab​.animation​.cycles", 100);
+            UIManager.put("Synthetica​.tabbedPane​.tabs​.stretch", Boolean.TRUE);
             UIManager.setLookAndFeel(getPlaf().getClassName());
-//            UIManager.setLookAndFeel(new SyntheticaStandardLookAndFeel());
+            // UIManager.setLookAndFeel(new SyntheticaStandardLookAndFeel());
 
             // overwrite defaults
             SubConfiguration cfg = SubConfiguration.getConfig(DEFAULT_PREFIX + "." + LookAndFeelController.getPlaf().getClassName());
 
-//            postSetup(getPlaf().getClassName());
-//
-//            for (Iterator<Entry<String, Object>> it = cfg.getProperties().entrySet().iterator(); it.hasNext();) {
-//                Entry<String, Object> next = it.next();
-//                JDLogger.getLogger().info("Use special LAF Property: " + next.getKey() + " = " + next.getValue());
-//                UIManager.put(next.getKey(), next.getValue());
-//            }
+            // postSetup(getPlaf().getClassName());
+            //
+            // for (Iterator<Entry<String, Object>> it =
+            // cfg.getProperties().entrySet().iterator(); it.hasNext();) {
+            // Entry<String, Object> next = it.next();
+            // JDLogger.getLogger().info("Use special LAF Property: " +
+            // next.getKey() + " = " + next.getValue());
+            // UIManager.put(next.getKey(), next.getValue());
+            // }
 
         } catch (Exception e) {
             JDLogger.exception(e);
@@ -340,11 +347,6 @@ public class LookAndFeelController {
             UIManager.put("Synthetica​.tabbedPane​.tabs​.stretch", Boolean.TRUE);
 
         }
-        UIManager.put("Synthetica.dialog.icon.enabled", true);
-
-        UIManager.put("Synthetica​.rootPane​.titlePane​.menuButton​.useOriginalImageSize", Boolean.TRUE);
-        UIManager.put("Synthetica​.tabbedPane​.tab​.animation​.cycles", 100);
-        UIManager.put("Synthetica​.tabbedPane​.tabs​.stretch", Boolean.TRUE);
 
     }
 

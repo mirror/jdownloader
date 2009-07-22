@@ -43,8 +43,8 @@ import javax.swing.SwingUtilities;
 import javax.swing.text.JTextComponent;
 
 import jd.gui.skins.jdgui.JDGui;
+import jd.gui.skins.jdgui.components.linkbutton.JLink;
 import jd.gui.skins.simple.MouseFollower;
-import jd.gui.skins.simple.components.JLinkButton;
 import jd.nutils.Formatter;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
@@ -116,7 +116,7 @@ public class EDTEventQueue extends EventQueue {
                                 public void run() {
                                     try {
                                         String url = "http://jdownloader.org/quickhelp/" + sb;
-                                        JLinkButton.openURL(url);
+                                        JLink.openURL(url);
                                         return;
                                     } catch (Exception e) {
                                         e.printStackTrace();

@@ -18,7 +18,7 @@ package jd.gui.skins.simple.startmenu.actions;
 
 import java.awt.event.ActionEvent;
 
-import jd.gui.skins.simple.components.JLinkButton;
+import jd.gui.skins.jdgui.components.linkbutton.JLink;
 
 public class LatestChanges extends StartAction {
 
@@ -30,7 +30,7 @@ public class LatestChanges extends StartAction {
 
     public void actionPerformed(ActionEvent e) {
         try {
-            JLinkButton.openURL("http://jdownloader.org/changes/index");
+            JLink.openURL("http://jdownloader.org/changes/index");
         } catch (Exception e1) {
             e1.printStackTrace();
         }

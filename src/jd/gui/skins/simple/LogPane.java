@@ -33,10 +33,10 @@ import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.UserIO;
 import jd.gui.skins.SwingGui;
+import jd.gui.skins.jdgui.components.linkbutton.JLink;
 import jd.gui.skins.jdgui.interfaces.SwitchPanel;
 import jd.gui.skins.jdgui.views.info.LogInfoPanel;
 import jd.gui.skins.simple.components.JDFileChooser;
-import jd.gui.skins.simple.components.JLinkButton;
 import jd.http.Encoding;
 import jd.nutils.JDFlags;
 import jd.nutils.io.JDIO;
@@ -111,7 +111,7 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
             String url = Upload.toJDownloader(content, name + "\r\n\r\n" + question);
 
             try {
-                JLinkButton.openURL(url);
+                JLink.openURL(url);
             } catch (Exception e1) {
                 JDLogger.exception(e1);
             }

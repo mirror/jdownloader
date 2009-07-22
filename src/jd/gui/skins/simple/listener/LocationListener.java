@@ -20,7 +20,7 @@ import java.awt.Component;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 
-import jd.gui.skins.simple.SimpleGuiUtils;
+import jd.gui.skins.jdgui.GUIUtils;
 
 public class LocationListener implements WindowListener {
 
@@ -29,8 +29,8 @@ public class LocationListener implements WindowListener {
 
     public void saveAll(Component src) {
         if (src != null) {
-            SimpleGuiUtils.saveLastLocation(src, null);
-            SimpleGuiUtils.saveLastDimension(src, null);
+            GUIUtils.saveLastLocation(src, null);
+            GUIUtils.saveLastDimension(src, null);
         }
     }
 

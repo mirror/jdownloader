@@ -33,7 +33,7 @@ import javax.swing.event.ListSelectionListener;
 
 import jd.controlling.JDLogger;
 import jd.gui.UserIO;
-import jd.gui.skins.simple.components.JLinkButton;
+import jd.gui.skins.jdgui.components.linkbutton.JLink;
 import jd.gui.userio.dialog.AbstractDialog;
 import jd.http.Browser;
 import jd.nutils.JDImage;
@@ -90,7 +90,7 @@ public class AboutDialog extends AbstractDialog {
             }
 
         }).start();
-        textField.addHyperlinkListener(JLinkButton.getHyperlinkListener());
+//        textField.addHyperlinkListener(JLink.getHyperlinkListener());
         DevEntry[] devs = getDevs();
         cp.add(new JScrollPane(list = new JList(devs)), "split 2,width 120!,growy,pushy");
         list.addListSelectionListener(new ListSelectionListener() {
@@ -107,9 +107,9 @@ public class AboutDialog extends AbstractDialog {
         lbl.setEnabled(false);
         this.getContentPane().setBackground(Color.WHITE);
 
-        cp.add(new JLinkButton(JDL.L("gui.dialog.about.homepage", "Homepage"), JDL.L("gui.dialog.about.homeurl", "http://www.jdownloader.org/home?lng=en")), "alignx right, aligny bottom");
-        cp.add(new JLinkButton(JDL.L("gui.dialog.about.forum", "Support board"), JDL.L("gui.dialog.about.forumurl", "http://board.jdownloader.org")), "alignx right, aligny bottom");
-        cp.add(new JLinkButton(JDL.L("gui.dialog.about.chat", "Chat"), JDL.L("gui.dialog.about.chaturl", "http://www.jdownloader.org/support?lng=en")), "alignx right, aligny bottom");
+        cp.add(new JLink(JDL.L("gui.dialog.about.homepage", "Homepage"), JDL.L("gui.dialog.about.homeurl", "http://www.jdownloader.org/home?lng=en")), "alignx right, aligny bottom");
+        cp.add(new JLink(JDL.L("gui.dialog.about.forum", "Support board"), JDL.L("gui.dialog.about.forumurl", "http://board.jdownloader.org")), "alignx right, aligny bottom");
+        cp.add(new JLink(JDL.L("gui.dialog.about.chat", "Chat"), JDL.L("gui.dialog.about.chaturl", "http://www.jdownloader.org/support?lng=en")), "alignx right, aligny bottom");
         return cp;
     }
 

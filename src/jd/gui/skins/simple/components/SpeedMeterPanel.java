@@ -43,7 +43,8 @@ import jd.config.Configuration;
 import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.JDController;
-import jd.gui.skins.simple.SimpleGuiConstants;
+import jd.gui.skins.jdgui.GUIUtils;
+import jd.gui.skins.jdgui.JDGuiConstants;
 import jd.nutils.Formatter;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -61,8 +62,8 @@ public class SpeedMeterPanel extends JPanel implements ActionListener, MouseList
 
     public SpeedMeterPanel() {
         i = 0;
-        window = SimpleGuiConstants.GUI_CONFIG.getIntegerProperty(SimpleGuiConstants.PARAM_SHOW_SPEEDMETER_WINDOWSIZE, 60);
-        show = SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.PARAM_SHOW_SPEEDMETER, true);
+        window = GUIUtils.getConfig().getIntegerProperty(JDGuiConstants.PARAM_SHOW_SPEEDMETER_WINDOWSIZE, 60);
+        show = GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_SHOW_SPEEDMETER, true);
         cache = new int[CAPACITY];
         for (int x = 0; x < CAPACITY; x++) {
             cache[x] = 0;
@@ -72,21 +73,25 @@ public class SpeedMeterPanel extends JPanel implements ActionListener, MouseList
         setBorder(show ? BorderFactory.createEtchedBorder() : null);
         addMouseListener(this);
 
-        JDUtilities.getController().addControlListener(new ConfigPropertyListener(Configuration.PARAM_DOWNLOAD_MAX_SPEED, SimpleGuiConstants.PARAM_SHOW_SPEEDMETER_WINDOWSIZE, SimpleGuiConstants.PARAM_SHOW_SPEEDMETER) {
+        JDUtilities.getController().addControlListener(
+                                                       new ConfigPropertyListener(
+                                                               Configuration.PARAM_DOWNLOAD_MAX_SPEED,
+                                                               JDGuiConstants.PARAM_SHOW_SPEEDMETER_WINDOWSIZE,
+                                                               JDGuiConstants.PARAM_SHOW_SPEEDMETER) {
 
-            @Override
-            public void onPropertyChanged(Property source, String key) {
-                if (key == Configuration.PARAM_DOWNLOAD_MAX_SPEED) {
-                    update();
-                } else if (key == SimpleGuiConstants.PARAM_SHOW_SPEEDMETER_WINDOWSIZE) {
-                    window = SimpleGuiConstants.GUI_CONFIG.getIntegerProperty(SimpleGuiConstants.PARAM_SHOW_SPEEDMETER_WINDOWSIZE, 60);
-                } else if (key == SimpleGuiConstants.PARAM_SHOW_SPEEDMETER) {
-                    show = SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.PARAM_SHOW_SPEEDMETER, true);
-                    setBorder(show ? BorderFactory.createEtchedBorder() : null);
-                }
-            }
+                                                           @Override
+                                                           public void onPropertyChanged(Property source, String key) {
+                                                               if (key == Configuration.PARAM_DOWNLOAD_MAX_SPEED) {
+                                                                   update();
+                                                               } else if (key == JDGuiConstants.PARAM_SHOW_SPEEDMETER_WINDOWSIZE) {
+                                                                   window = GUIUtils.getConfig().getIntegerProperty(JDGuiConstants.PARAM_SHOW_SPEEDMETER_WINDOWSIZE, 60);
+                                                               } else if (key == JDGuiConstants.PARAM_SHOW_SPEEDMETER) {
+                                                                   show = GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_SHOW_SPEEDMETER, true);
+                                                                   setBorder(show ? BorderFactory.createEtchedBorder() : null);
+                                                               }
+                                                           }
 
-        });
+                                                       });
 
     }
 
@@ -240,8 +245,8 @@ public class SpeedMeterPanel extends JPanel implements ActionListener, MouseList
 
             update();
         } else if (e.getSource() instanceof JMenuItem) {
-            SimpleGuiConstants.GUI_CONFIG.setProperty(SimpleGuiConstants.PARAM_SHOW_SPEEDMETER, !show);
-            SimpleGuiConstants.GUI_CONFIG.save();
+            GUIUtils.getConfig().setProperty(JDGuiConstants.PARAM_SHOW_SPEEDMETER, !show);
+            GUIUtils.getConfig().save();
         }
     }
 

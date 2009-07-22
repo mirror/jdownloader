@@ -19,7 +19,7 @@ package jd.gui.userio.dialog;
 import javax.swing.JComponent;
 import javax.swing.JTextPane;
 
-import jd.gui.skins.simple.components.JLinkButton;
+import jd.gui.skins.jdgui.components.linkbutton.JLink;
 import jd.utils.JDTheme;
 
 public class HtmlDialog extends AbstractDialog {
@@ -42,7 +42,10 @@ public class HtmlDialog extends AbstractDialog {
         htmlArea.setText(message);
         htmlArea.setOpaque(false);
         htmlArea.requestFocusInWindow();
-        htmlArea.addHyperlinkListener(JLinkButton.getHyperlinkListener());
+        /**
+         * TODO
+         */
+//        htmlArea.addHyperlinkListener(JLink.getHyperlinkListener());
 
         return htmlArea;
     }

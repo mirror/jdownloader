@@ -7,10 +7,10 @@ import java.util.ArrayList;
 import javax.swing.JCheckBox;
 
 import jd.controlling.LinkGrabberController;
+import jd.gui.skins.jdgui.GUIUtils;
 import jd.gui.skins.jdgui.JDGuiConstants;
-import jd.gui.skins.jdgui.components.linkgrabberview.LinkGrabberFilePackage;
+import jd.gui.skins.jdgui.views.linkgrabberview.LinkGrabberFilePackage;
 import jd.gui.skins.simple.GuiRunnable;
-import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.nutils.Formatter;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
@@ -57,12 +57,12 @@ public class LinkGrabberInfoPanel extends InfoPanel {
         topOrBottom.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
-                JDGuiConstants.GUI_CONFIG.setProperty(SimpleGuiConstants.PARAM_INSERT_NEW_LINKS_AT, topOrBottom.isSelected());
-                JDGuiConstants.GUI_CONFIG.save();
+                GUIUtils.getConfig().setProperty(JDGuiConstants.PARAM_INSERT_NEW_LINKS_AT, topOrBottom.isSelected());
+                GUIUtils.getConfig().save();
             }
 
         });
-        if (JDGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.PARAM_INSERT_NEW_LINKS_AT, false)) {
+        if (GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_INSERT_NEW_LINKS_AT, false)) {
             topOrBottom.setSelected(true);
         }
         topOrBottom.setToolTipText(JDL.L("gui.tooltips.linkgrabber.topOrBottom", "if selected, new links will be added at top of your downloadlist"));
@@ -73,12 +73,12 @@ public class LinkGrabberInfoPanel extends InfoPanel {
         startAfterAdding.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
-                JDGuiConstants.GUI_CONFIG.setProperty(SimpleGuiConstants.PARAM_START_AFTER_ADDING_LINKS, startAfterAdding.isSelected());
-                JDGuiConstants.GUI_CONFIG.save();
+                GUIUtils.getConfig().setProperty(JDGuiConstants.PARAM_START_AFTER_ADDING_LINKS, startAfterAdding.isSelected());
+                GUIUtils.getConfig().save();
             }
 
         });
-        if (JDGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.PARAM_START_AFTER_ADDING_LINKS, true)) {
+        if (GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_START_AFTER_ADDING_LINKS, true)) {
             startAfterAdding.setSelected(true);
         }
 

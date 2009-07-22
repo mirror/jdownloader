@@ -31,9 +31,9 @@ import jd.OptionalPluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigGroup;
 import jd.config.MenuItem;
+import jd.gui.skins.jdgui.settings.ConfigEntriesPanel;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JDUnderlinedText;
-import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 

@@ -145,7 +145,7 @@ this.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT );
      * gets called form the main frame if it gets closed
      */
     public void onClose() {
-        // TODO Auto-generated method stub
+        getSelectedView().setHidden();
     }
 
     /**

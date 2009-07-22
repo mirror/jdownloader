@@ -14,7 +14,8 @@ import jd.controlling.JDLogger;
 import jd.controlling.PasswordListController;
 import jd.gui.UserIO;
 import jd.gui.skins.SwingGui;
-import jd.gui.skins.simple.SimpleGuiConstants;
+import jd.gui.skins.jdgui.GUIUtils;
+import jd.gui.skins.jdgui.JDGuiConstants;
 import jd.http.Encoding;
 import jd.nutils.JDFlags;
 import jd.nutils.httpserver.Handler;
@@ -224,7 +225,7 @@ public class JDExternInterface extends PluginOptional {
         }
 
         private void addandstart(FilePackage fp) {
-            if (SimpleGuiConstants.GUI_CONFIG != null && SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.PARAM_INSERT_NEW_LINKS_AT, false)) {
+            if (GUIUtils.getConfig() != null && GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_INSERT_NEW_LINKS_AT, false)) {
                 DownloadController.getInstance().addPackageAt(fp, 0, 0);
             } else {
                 DownloadController.getInstance().addPackage(fp);
@@ -243,7 +244,19 @@ public class JDExternInterface extends PluginOptional {
             JDLogger.getLogger().warning(request.toString());
             JDLogger.getLogger().warning(request.getParameters().toString());
             JDLogger.getLogger().warning("\r\n-----------------------External request---------------------");
-            if (!JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN, JDL.LF("jd.plugins.optional.interfaces.jdflashgot.security.title", "External request from %s to %s interface!", app, namespace), JDL.LF("jd.plugins.optional.interfaces.jdflashgot.security.message", "An external application tries to add links. See Log for details."), UserIO.getInstance().getIcon(UserIO.ICON_WARNING), JDL.L("jd.plugins.optional.interfaces.jdflashgot.security.btn_allow", "Allow it!"), JDL.L("jd.plugins.optional.interfaces.jdflashgot.security.btn_deny", "Deny access!")), UserIO.RETURN_OK)) {
+            if (!JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(
+                                                                               UserIO.DONT_SHOW_AGAIN,
+                                                                               JDL.LF(
+                                                                                      "jd.plugins.optional.interfaces.jdflashgot.security.title",
+                                                                                      "External request from %s to %s interface!",
+                                                                                      app,
+                                                                                      namespace),
+                                                                               JDL.LF(
+                                                                                      "jd.plugins.optional.interfaces.jdflashgot.security.message",
+                                                                                      "An external application tries to add links. See Log for details."),
+                                                                               UserIO.getInstance().getIcon(UserIO.ICON_WARNING),
+                                                                               JDL.L("jd.plugins.optional.interfaces.jdflashgot.security.btn_allow", "Allow it!"),
+                                                                               JDL.L("jd.plugins.optional.interfaces.jdflashgot.security.btn_deny", "Deny access!")), UserIO.RETURN_OK)) {
 
                 JDLogger.getLogger().warning("Denied access.");
                 throw new Exception("User denied access");

@@ -21,7 +21,6 @@ import java.awt.Dimension;
 import javax.swing.JPanel;
 import javax.swing.JViewport;
 
-import jd.gui.skins.jdgui.components.JDCollapser;
 import jd.gui.skins.jdgui.interfaces.SwitchPanel;
 import net.miginfocom.swing.MigLayout;
 

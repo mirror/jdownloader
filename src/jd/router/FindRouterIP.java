@@ -20,7 +20,7 @@ import java.awt.Color;
 import java.net.InetAddress;
 
 import jd.controlling.ProgressController;
-import jd.gui.skins.simple.config.GUIConfigEntry;
+import jd.gui.skins.jdgui.settings.GUIConfigEntry;
 import jd.utils.locale.JDL;
 
 public class FindRouterIP {

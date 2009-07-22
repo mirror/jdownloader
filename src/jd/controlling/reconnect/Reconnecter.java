@@ -27,7 +27,7 @@ import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.controlling.interaction.Interaction;
-import jd.gui.skins.jdgui.components.linkgrabberview.LinkCheck;
+import jd.gui.skins.jdgui.views.linkgrabberview.LinkCheck;
 import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;

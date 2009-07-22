@@ -56,10 +56,11 @@ import jd.controlling.JDLogger;
 import jd.controlling.interaction.Interaction;
 import jd.event.ControlEvent;
 import jd.gui.UserIO;
+import jd.gui.skins.jdgui.GUIUtils;
+import jd.gui.skins.jdgui.JDGuiConstants;
+import jd.gui.skins.jdgui.components.linkbutton.JLink;
 import jd.gui.skins.jdgui.userio.UserIOGui;
 import jd.gui.skins.simple.GuiRunnable;
-import jd.gui.skins.simple.SimpleGuiConstants;
-import jd.gui.skins.simple.components.JLinkButton;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.OSDetector;
@@ -279,7 +280,7 @@ public class Main {
         if (instanceStarted || JDInitFlags.SWITCH_NEW_INSTANCE) {
             JDTheme.setTheme("default");
             if (JDInitFlags.SHOW_SPLASH) {
-                if (SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getBooleanProperty(SimpleGuiConstants.PARAM_SHOW_SPLASH, true)) {
+                if (SubConfiguration.getConfig(GUIUtils.getConfig()).getBooleanProperty(JDGuiConstants.PARAM_SHOW_SPLASH, true)) {
                     LOGGER.info("init Splash");
                     new GuiRunnable<Object>() {
                         // @Override
@@ -373,7 +374,7 @@ public class Main {
                                           null);
             if ((returnValue & UserIO.RETURN_SKIPPED_BY_DONT_SHOW) == 0) {
                 try {
-                    JLinkButton.openURL("http://jdownloader.org/download/index?updatejava=1");
+                    JLink.openURL("http://jdownloader.org/download/index?updatejava=1");
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

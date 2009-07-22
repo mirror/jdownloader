@@ -24,7 +24,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 import jd.gui.UserIO;
-import jd.gui.skins.simple.components.JLinkButton;
+import jd.gui.skins.jdgui.components.linkbutton.JLink;
 import jd.gui.userio.dialog.AbstractDialog;
 import jd.nutils.JDFlags;
 import jd.plugins.DownloadLink;
@@ -55,7 +55,7 @@ public class AgbDialog extends AbstractDialog {
 
     private static final long serialVersionUID = -1466993330568207945L;
 
-    private JLinkButton linkAgb;
+    private JLink linkAgb;
 
     private JCheckBox checkAgbAccepted;
 
@@ -82,8 +82,8 @@ public class AgbDialog extends AbstractDialog {
 
         JLabel labelInfo = new JLabel(JDL.LF("gui.dialogs.agb_tos.description", "Die Allgemeinen Geschäftsbedingungen (AGB) von %s wurden nicht gelesen und akzeptiert.", downloadLink.getPlugin().getHost()));
 
-        linkAgb = new JLinkButton(JDL.LF("gui.dialogs.agb_tos.readAgb", "%s AGB lesen", downloadLink.getPlugin().getHost()), downloadLink.getPlugin().getAGBLink());
-        linkAgb.addActionListener(this);
+        linkAgb = new JLink(JDL.LF("gui.dialogs.agb_tos.readAgb", "%s AGB lesen", downloadLink.getPlugin().getHost()), downloadLink.getPlugin().getAGBLink());
+       linkAgb.getBroadcaster().addListener(this);
         linkAgb.setFocusable(false);
 
         checkAgbAccepted = new JCheckBox(JDL.L("gui.dialogs.agb_tos.agbAccepted", "Ich bin mit den Allgemeinen Geschäftsbedingungen einverstanden"));

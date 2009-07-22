@@ -33,7 +33,7 @@ import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
 import jd.gui.UserIO;
-import jd.gui.skins.simple.components.JLinkButton;
+import jd.gui.skins.jdgui.components.linkbutton.JLink;
 import jd.gui.userio.dialog.AbstractDialog;
 import jd.http.Browser;
 import jd.nutils.JDImage;
@@ -113,7 +113,7 @@ public class KikinDialog extends AbstractDialog {
 
                 if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
                     try {
-                        JLinkButton.openURL(e.getURL());
+                        JLink.openURL(e.getURL());
                     } catch (Exception e1) {
                         e1.printStackTrace();
                         JDUtilities.runCommand("cmd", new String[] { "/c", "start " + e.getURL() + "" }, null, 0);

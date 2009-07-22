@@ -53,9 +53,9 @@ import jd.controlling.interaction.Interaction;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.skins.SwingGui;
+import jd.gui.skins.jdgui.components.linkbutton.JLink;
 import jd.gui.skins.jdgui.interfaces.SwitchPanel;
 import jd.gui.skins.simple.SimpleGUI;
-import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.tasks.TaskPanel;
 import jd.nutils.OSDetector;
 import jd.nutils.io.JDIO;
@@ -906,7 +906,7 @@ public class JDChat extends PluginOptional implements ControlListener {
                         }
                     } else {
                         try {
-                            JLinkButton.openURL(e.getURL());
+                            JLink.openURL(e.getURL());
                         } catch (Exception e1) {
                             JDLogger.exception(e1);
                         }

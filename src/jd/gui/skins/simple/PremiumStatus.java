@@ -48,7 +48,7 @@ import jd.gui.UserIO;
 import jd.gui.skins.SwingGui;
 import jd.gui.skins.jdgui.InfoPanelHandler;
 import jd.gui.skins.jdgui.components.JDCollapser;
-import jd.gui.skins.simple.config.ConfigEntriesPanel;
+import jd.gui.skins.jdgui.settings.ConfigEntriesPanel;
 import jd.nutils.Formatter;
 import jd.nutils.JDFlags;
 import jd.plugins.Account;

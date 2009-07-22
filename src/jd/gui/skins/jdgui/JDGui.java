@@ -38,21 +38,18 @@ import jd.event.ControlEvent;
 import jd.gui.UIConstants;
 import jd.gui.UserIO;
 import jd.gui.skins.SwingGui;
-import jd.gui.skins.jdgui.components.linkgrabberview.LinkGrabberPanel;
 import jd.gui.skins.jdgui.components.toolbar.MainToolBar;
 import jd.gui.skins.jdgui.events.EDTEventQueue;
 import jd.gui.skins.jdgui.interfaces.SwitchPanel;
-import jd.gui.skins.jdgui.views.AddonView;
 import jd.gui.skins.jdgui.views.ConfigurationView;
 import jd.gui.skins.jdgui.views.DownloadView;
 import jd.gui.skins.jdgui.views.LinkgrabberView;
 import jd.gui.skins.jdgui.views.LogView;
 import jd.gui.skins.jdgui.views.TabbedPanelView;
+import jd.gui.skins.jdgui.views.linkgrabberview.LinkGrabberPanel;
 import jd.gui.skins.simple.Balloon;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.JDStatusBar;
-import jd.gui.skins.simple.SimpleGuiConstants;
-import jd.gui.skins.simple.SimpleGuiUtils;
 import jd.gui.skins.simple.TabProgress;
 import jd.gui.skins.simple.startmenu.AboutMenu;
 import jd.gui.skins.simple.startmenu.AddLinksMenu;
@@ -88,7 +85,7 @@ public class JDGui extends SwingGui {
     private DownloadView downloadView;
     private LinkgrabberView linkgrabberView;
     private ConfigurationView configurationView;
-    private AddonView addonView;
+
     private LogView logView;
     private MainToolBar toolBar;
 
@@ -98,8 +95,8 @@ public class JDGui extends SwingGui {
         ClipboardHandler.getClipboard().setTempDisabled(false);
         // Important for unittests
         setName("MAINFRAME");
-        SimpleGuiConstants.GUI_CONFIG = SubConfiguration.getConfig(JDGuiConstants.CONFIG_PARAMETER);
-        JDGuiConstants.GUI_CONFIG = SubConfiguration.getConfig(JDGuiConstants.CONFIG_PARAMETER);
+//        GUIUtils.getConfig() = SubConfiguration.getConfig(JDGuiConstants.CONFIG_PARAMETER);
+
         initDefaults();
         initComponents();
 
@@ -117,12 +114,13 @@ public class JDGui extends SwingGui {
      * restores the dimension and location to the window
      */
     private void initLocationAndDimension() {
-        Dimension dim = SimpleGuiUtils.getLastDimension(this, null);
+        Dimension dim = GUIUtils.getLastDimension(this, null);
         if (dim == null) dim = new Dimension(800, 600);
         setPreferredSize(dim);
+        this.setSize(dim);
         setMinimumSize(new Dimension(400, 100));
-        setLocation(SimpleGuiUtils.getLastLocation(null, null, this));
-        setExtendedState(JDGuiConstants.GUI_CONFIG.getIntegerProperty("MAXIMIZED_STATE_OF_" + this.getName(), JFrame.NORMAL));
+        setLocation(GUIUtils.getLastLocation(null, null, this));
+        setExtendedState(GUIUtils.getConfig().getIntegerProperty("MAXIMIZED_STATE_OF_" + this.getName(), JFrame.NORMAL));
     }
 
     private void initComponents() {
@@ -136,7 +134,7 @@ public class JDGui extends SwingGui {
         downloadView = new DownloadView();
         linkgrabberView = new LinkgrabberView();
         configurationView = new ConfigurationView();
-        addonView = new AddonView();
+
         logView = new LogView();
         // mainTabbedPane.add());
         // mainTabbedPane.add(new JLabel("III2"));
@@ -146,7 +144,7 @@ public class JDGui extends SwingGui {
         mainTabbedPane.addTab(downloadView);
         mainTabbedPane.addTab(linkgrabberView);
         mainTabbedPane.addTab(configurationView);
-        mainTabbedPane.addTab(addonView);
+
         mainTabbedPane.addTab(logView);
         // mainTabbedPane.addTab(new TestView());
         mainTabbedPane.setSelectedComponent(downloadView);
@@ -336,7 +334,7 @@ public class JDGui extends SwingGui {
                     return null;
                 }
             }.start();
-            if (SimpleGuiConstants.GUI_CONFIG.getBooleanProperty(SimpleGuiConstants.PARAM_START_DOWNLOADS_AFTER_START, false)) {
+            if (GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_START_DOWNLOADS_AFTER_START, false)) {
                 new Thread() {
                     public void run() {
                         this.setName("Autostart counter");
@@ -365,6 +363,10 @@ public class JDGui extends SwingGui {
             new GuiRunnable<Object>() {
                 @Override
                 public Object runSave() {
+                    mainTabbedPane.onClose();
+                    GUIUtils.saveLastLocation(JDGui.this, null);
+                    GUIUtils.saveLastDimension(JDGui.this, null);
+                    GUIUtils.getConfig().save();
                     setVisible(false);
                     dispose();
                     return null;
@@ -398,11 +400,11 @@ public class JDGui extends SwingGui {
 
     public void closeWindow() {
         if (!OSDetector.isMac()) {
-            if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_COUNTDOWN, JDL.L("sys.ask.rlyclose", "Wollen Sie jDownloader wirklich schließen?")), UserIO.RETURN_OK, UserIO.DONT_SHOW_AGAIN)) {
-                this.mainTabbedPane.onClose();
-                SimpleGuiUtils.saveLastLocation(this, null);
-                SimpleGuiUtils.saveLastDimension(this, null);
-                SimpleGuiConstants.GUI_CONFIG.save();
+            if (JDFlags.hasSomeFlags(
+                                     UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_COUNTDOWN, JDL.L("sys.ask.rlyclose", "Wollen Sie jDownloader wirklich schließen?")),
+                                     UserIO.RETURN_OK,
+                                     UserIO.DONT_SHOW_AGAIN)) {
+
                 JDUtilities.getController().exit();
             }
         } else {

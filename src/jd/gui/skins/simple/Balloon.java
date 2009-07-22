@@ -31,7 +31,9 @@ import javax.swing.JWindow;
 
 import jd.config.SubConfiguration;
 import jd.gui.skins.SwingGui;
-import jd.gui.skins.simple.components.JLinkButton;
+import jd.gui.skins.jdgui.GUIUtils;
+import jd.gui.skins.jdgui.JDGuiConstants;
+import jd.gui.skins.jdgui.components.linkbutton.JLink;
 import jd.nutils.JDImage;
 import jd.nutils.Screen;
 import jd.utils.JDTheme;
@@ -73,7 +75,7 @@ public class Balloon {
     }
 
     public static void show(final String title, ImageIcon ii, final JPanel panel) {
-        if (!SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getBooleanProperty(SimpleGuiConstants.PARAM_SHOW_BALLOON, true)) return;
+        if (!SubConfiguration.getConfig(GUIUtils.getConfig()).getBooleanProperty(JDGuiConstants.PARAM_SHOW_BALLOON, true)) return;
 
         final ImageIcon icon;
         if (ii == null) {
@@ -250,8 +252,10 @@ public class Balloon {
                 // textField.setOpaque(false);
                 textField.setText(string2);
                 textField.setEditable(false);
-
-                textField.addHyperlinkListener(JLinkButton.getHyperlinkListener());
+/**
+ * TODO
+ */
+//                textField.addHyperlinkListener(JLink.getHyperlinkListener());
                 return p;
             }
         }.getReturnValue();

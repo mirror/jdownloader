@@ -37,8 +37,8 @@ import jd.HostPluginWrapper;
 import jd.config.ConfigGroup;
 import jd.config.MenuItem;
 import jd.controlling.JDLogger;
+import jd.gui.skins.jdgui.components.linkbutton.JLink;
 import jd.gui.skins.simple.components.JDUnderlinedText;
-import jd.gui.skins.simple.components.JLinkButton;
 import jd.plugins.PluginForHost;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -52,9 +52,9 @@ public class Factory {
 
     public static JPanel createHeader(String name, ImageIcon icon) {
         JPanel ret = new JPanel(new MigLayout("ins 0", "[]10[grow,fill]3[]"));
-        JLinkButton label;
+        JLink label;
         try {
-            ret.add(label = new JLinkButton("<html><u><b>" + name + "</b></u></html>", icon, new URL("http://wiki.jdownloader.org/quickhelp/" + name.replace(" ", "-"))));
+            ret.add(label = new JLink("<html><u><b>" + name + "</b></u></html>", icon, new URL("http://wiki.jdownloader.org/quickhelp/" + name.replace(" ", "-"))));
             label.setIconTextGap(8);
             label.setBorder(null);
         } catch (MalformedURLException e) {

@@ -2,8 +2,8 @@ package jd.gui.skins.jdgui.views;
 
 import javax.swing.Icon;
 
-import jd.gui.skins.jdgui.components.downloadview.DownloadLinksPanel;
 import jd.gui.skins.jdgui.interfaces.View;
+import jd.gui.skins.jdgui.views.downloadview.DownloadLinksPanel;
 import jd.gui.skins.jdgui.views.info.DownloadInfoPanel;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;

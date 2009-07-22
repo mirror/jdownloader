@@ -28,6 +28,7 @@ public abstract class JDBroadcaster<T extends EventListener, TT extends JDEvent>
     transient protected Vector<T> removeList = null;
 
     public JDBroadcaster() {
+
         callList = new Vector<T>();
         removeList = new Vector<T>();
     }

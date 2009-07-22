@@ -32,7 +32,7 @@ import jd.controlling.JDLogger;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
-import jd.gui.skins.simple.components.JLinkButton;
+import jd.gui.skins.jdgui.components.linkbutton.JLink;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.nutils.Formatter;
@@ -258,14 +258,14 @@ public abstract class PluginForDecrypt extends Plugin {
                 if (open) {
                     try {
 
-                        JLinkButton.openURL(cryptedLink.getCryptedUrl());
-                        // JLinkButton.openURL(
+                        JLink.openURL(cryptedLink.getCryptedUrl());
+                        // JLink.openURL(
                         // "http://jdownloader.org/clicknload-redirect/"
                         // +Encoding.urlEncode
                         // (cryptedLink.getCryptedUrl().replace("http://",
                         // "")));
 
-                        // JLinkButton.openURL(
+                        // JLink.openURL(
                         // "http://jdownloader.org/clicknload-redirect/" +
                         // Encoding.urlEncode
                         // (cryptedLink.getCryptedUrl().replace("http://",

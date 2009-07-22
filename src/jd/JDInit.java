@@ -37,9 +37,10 @@ import jd.event.ControlEvent;
 import jd.gui.UIInterface;
 import jd.gui.UserIO;
 import jd.gui.skins.SwingGui;
+import jd.gui.skins.jdgui.GUIUtils;
 import jd.gui.skins.jdgui.JDGui;
+import jd.gui.skins.jdgui.JDGuiConstants;
 import jd.gui.skins.simple.SimpleGUI;
-import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.http.Browser;
 import jd.http.Encoding;
@@ -201,7 +202,7 @@ public class JDInit {
             Configuration configuration = (Configuration) obj;
             JDUtilities.setConfiguration(configuration);
             jd.controlling.JDLogger.getLogger().setLevel(configuration.getGenericProperty(Configuration.PARAM_LOGGER_LEVEL, Level.WARNING));
-            JDTheme.setTheme(SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getStringProperty(SimpleGuiConstants.PARAM_THEME, "default"));
+            JDTheme.setTheme(SubConfiguration.getConfig(GUIUtils.getConfig()).getStringProperty(JDGuiConstants.PARAM_THEME, "default"));
 
         } else {
 
@@ -220,7 +221,7 @@ public class JDInit {
             Configuration configuration = new Configuration();
             JDUtilities.setConfiguration(configuration);
             jd.controlling.JDLogger.getLogger().setLevel(configuration.getGenericProperty(Configuration.PARAM_LOGGER_LEVEL, Level.WARNING));
-            JDTheme.setTheme(SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).getStringProperty(SimpleGuiConstants.PARAM_THEME, "default"));
+            JDTheme.setTheme(SubConfiguration.getConfig(GUIUtils.getConfig()).getStringProperty(JDGuiConstants.PARAM_THEME, "default"));
 
             JDUtilities.getDatabaseConnector().saveConfiguration(Configuration.NAME, JDUtilities.getConfiguration());
             installerVisible = true;

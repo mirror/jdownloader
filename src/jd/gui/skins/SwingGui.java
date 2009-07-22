@@ -57,4 +57,6 @@ public abstract class SwingGui extends WindowAdapter implements UIInterface {
 
     }
 
+   
+
 }
