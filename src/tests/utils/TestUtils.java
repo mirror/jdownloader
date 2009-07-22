@@ -33,8 +33,8 @@ import jd.controlling.interaction.Interaction;
 import jd.event.ControlEvent;
 import jd.gui.UserIO;
 import jd.gui.skins.SwingGui;
+import jd.gui.skins.jdgui.userio.UserIOGui;
 import jd.gui.skins.simple.GuiRunnable;
-import jd.gui.userio.SimpleUserIO;
 import jd.http.Browser;
 import jd.nutils.OSDetector;
 import jd.parser.html.Form;
@@ -91,7 +91,7 @@ public abstract class TestUtils {
         SubConfiguration cfg = SubConfiguration.getConfig("UNITTEST");
         String ret = cfg.getStringProperty(string);
 
-        ret = SimpleUserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN, "PLease enter String", string, ret, null, null, null);
+        ret = UserIOGui.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN, "PLease enter String", string, ret, null, null, null);
         ;
         cfg.setProperty(string, ret);
         cfg.save();
@@ -132,7 +132,7 @@ public abstract class TestUtils {
         SubConfiguration cfg = SubConfiguration.getConfig("UNITTEST");
         int ret = cfg.getIntegerProperty(string);
 
-        ret = Integer.parseInt(SimpleUserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN, "Please enter Integer", string, ret + "", null, null, null));
+        ret = Integer.parseInt(UserIOGui.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN, "Please enter Integer", string, ret + "", null, null, null));
         ;
 
         cfg.setProperty(string, ret);
@@ -141,7 +141,7 @@ public abstract class TestUtils {
     }
 
     public static boolean ask(String question) {
-        return SimpleUserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, "We need to know if..?", question, null, null, null) == UserIO.RETURN_OK;
+        return UserIOGui.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, "We need to know if..?", question, null, null, null) == UserIO.RETURN_OK;
 
     }
 
@@ -225,7 +225,7 @@ public abstract class TestUtils {
         new GuiRunnable<Object>() {
             @Override
             public Object runSave() {
-                UserIO.setInstance(SimpleUserIO.getInstance());
+                UserIO.setInstance(UserIOGui.getInstance());
                 jdi.initGUI(JDUtilities.getController());
                 return null;
             }

@@ -24,9 +24,9 @@ import java.util.regex.Pattern;
 import javax.swing.JFileChooser;
 
 import jd.gui.UserIO;
+import jd.gui.skins.jdgui.userio.UserIOGui;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.components.JDFileChooser;
-import jd.gui.userio.SimpleUserIO;
 import jd.nutils.DiffMatchPatch;
 import jd.nutils.JDFlags;
 import jd.nutils.DiffMatchPatch.Diff;
@@ -53,7 +53,7 @@ public class ReplaceInFiles {
             @Override
             public Object runSave() {
                 JDFileChooser fc = new JDFileChooser();
-                UserIO.setInstance(SimpleUserIO.getInstance());
+                UserIO.setInstance(UserIOGui.getInstance());
                 fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
                 if (fc.showOpenDialog(null) == JDFileChooser.APPROVE_OPTION) {
                     File ret = fc.getSelectedFile();

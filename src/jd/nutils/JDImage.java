@@ -104,6 +104,7 @@ public class JDImage {
         if (ret != null) return ret;
 
         ret = new ImageIcon(getScaledImage((BufferedImage) img.getImage(), width, height));
+
         IMAGE_ICON_CACHE.put(id, ret);
         return ret;
     }

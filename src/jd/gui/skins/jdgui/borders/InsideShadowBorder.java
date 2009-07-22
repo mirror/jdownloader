@@ -30,7 +30,7 @@ public class InsideShadowBorder extends AbstractBorder {
         for (int i = 0; i < insets.top; i++) {
             AlphaComposite alpha = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alphaValue);
             g2D.setComposite(alpha);
-            g.drawLine(x + i, y + i, x + w - i * 2, y + i);
+            g.drawLine(x + Math.min(insets.left, i), y + i, x + w - Math.min(insets.left, i)-Math.min(insets.right, i), y + i);
 
             alphaValue -= (alphaValue / 2);
         }
@@ -39,7 +39,7 @@ public class InsideShadowBorder extends AbstractBorder {
         for (int i = 0; i < insets.bottom; i++) {
             AlphaComposite alpha = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alphaValue);
             g2D.setComposite(alpha);
-            g.drawLine(x + i, y+h - i, x + w - i * 2, y+h - i);
+            g.drawLine(x + Math.min(insets.left, i), y+h - i, x + w - Math.min(insets.left, i)-Math.min(insets.right, i), y+h - i);
 
             alphaValue -= (alphaValue / 2);
         }

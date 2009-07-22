@@ -56,10 +56,10 @@ import jd.controlling.JDLogger;
 import jd.controlling.interaction.Interaction;
 import jd.event.ControlEvent;
 import jd.gui.UserIO;
+import jd.gui.skins.jdgui.userio.UserIOGui;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.SimpleGuiConstants;
 import jd.gui.skins.simple.components.JLinkButton;
-import jd.gui.userio.SimpleUserIO;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.OSDetector;
@@ -71,8 +71,6 @@ import jd.utils.JDUtilities;
 import jd.utils.MacOSController;
 import jd.utils.WebUpdate;
 import jd.utils.locale.JDL;
-
-import org.fest.swing.edt.FailOnThreadViolationRepaintManager;
 
 /**
  * @author JD-Team
@@ -165,7 +163,7 @@ public class Main {
             }
         }
 
-        UserIO.setInstance(SimpleUserIO.getInstance());
+        UserIO.setInstance(UserIOGui.getInstance());
         preInitChecks();
         JDUtilities.setJDargs(args);
 
@@ -319,7 +317,7 @@ public class Main {
     }
 
     private static void start(final String args[]) {
-       
+
         if (!JDInitFlags.STOP && !JDInitFlags.ENOUGH_MEMORY) {
             JDUtilities.restartJD();
             return;

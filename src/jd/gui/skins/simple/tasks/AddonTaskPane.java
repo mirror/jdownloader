@@ -131,7 +131,7 @@ public class AddonTaskPane extends TaskPanel implements ActionListener {
             }
         }
         if (e.getSource() == config) {
-            SimpleGUI.CURRENTGUI.getContentPane().display( SimpleGUI.CURRENTGUI.getCfgTskPane().getPanel(ConfigTaskPane.ACTION_ADDONS));
+//            SimpleGUI.CURRENTGUI.getContentPane().display( SimpleGUI.CURRENTGUI.getCfgTskPane().getPanel(ConfigTaskPane.ACTION_ADDONS));
             isAction = true;
         }
         if (isAction) {

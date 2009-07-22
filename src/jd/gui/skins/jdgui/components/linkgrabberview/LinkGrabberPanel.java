@@ -44,8 +44,10 @@ import jd.gui.UserIO;
 import jd.gui.skins.SwingGui;
 import jd.gui.skins.jdgui.InfoPanelHandler;
 import jd.gui.skins.jdgui.actions.ThreadedAction;
+import jd.gui.skins.jdgui.borders.JDBorderFactory;
 import jd.gui.skins.jdgui.components.JDCollapser;
 import jd.gui.skins.jdgui.interfaces.SwitchPanel;
+import jd.gui.skins.jdgui.views.toolbar.ViewToolbar;
 import jd.gui.skins.simple.Balloon;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.SimpleGuiConstants;
@@ -95,6 +97,8 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
 
     private JScrollPane scrollPane;
 
+    private ViewToolbar toolbar;
+
     public static synchronized LinkGrabberPanel getLinkGrabber() {
         if (INSTANCE == null) INSTANCE = new LinkGrabberPanel();
         return INSTANCE;
@@ -128,6 +132,13 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         LGINSTANCE = LinkGrabberController.getInstance();
         LGINSTANCE.addListener(this);
         initActions();
+        toolbar = new ViewToolbar();
+        toolbar.setHorizontalAlign(ViewToolbar.EAST);
+//        toolbar.setBorder(JDBorderFactory.createInsideShadowBorder(3, 0, 0, 0));
+        toolbar.setList(new String[] {
+                "action.linkgrabber.clearlist", "action.linkgrabber.addall"
+        });
+        this.add(toolbar, "gapbottom 3,DOCK SOUTH");
     }
 
     public void initActions() {
@@ -269,7 +280,8 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         addinginprogress = true;
         new Thread() {
             public void run() {
-                Balloon.showIfHidden(JDL.L("gui.config.gui.linkgrabber", "LinkGrabber"), JDTheme.II("gui.images.add", 32, 32), JDL.LF("gui.linkgrabber.adding", "Adding %s link(s) to LinkGrabber", "" + linkList.size()));
+                Balloon.showIfHidden(JDL.L("gui.config.gui.linkgrabber", "LinkGrabber"), JDTheme.II("gui.images.add", 32, 32), JDL.LF("gui.linkgrabber.adding", "Adding %s link(s) to LinkGrabber", ""
+                        + linkList.size()));
                 for (DownloadLink element : linkList) {
                     if (LGINSTANCE.isDupe(element)) continue;
                     addToWaitingList(element);
@@ -364,7 +376,11 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                 for (LinkGrabberFilePackage fp : fps) {
                     links += fp.getDownloadLinks().size();
                 }
-                Balloon.showIfHidden(JDL.L("gui.config.gui.linkgrabber", "LinkGrabber"), JDTheme.II("gui.images.add", 32, 32), JDL.LF("gui.linkgrabber.finished", "Grabbed %s link(s) in %s Package(s)", "" + links, "" + fps.size()));
+                Balloon.showIfHidden(JDL.L("gui.config.gui.linkgrabber", "LinkGrabber"), JDTheme.II("gui.images.add", 32, 32), JDL.LF(
+                                                                                                                                      "gui.linkgrabber.finished",
+                                                                                                                                      "Grabbed %s link(s) in %s Package(s)",
+                                                                                                                                      "" + links,
+                                                                                                                                      "" + fps.size()));
                 fps = null;
             }
         };
@@ -688,7 +704,9 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
 
     private void addToDownloadDirs(String downloadDirectory, String packageName) {
         if (packageName.length() < 5 || downloadDirectory.equalsIgnoreCase(JDUtilities.getConfiguration().getDefaultDownloadDirectory())) return;
-        getDownloadDirList().add(new String[] { downloadDirectory, packageName });
+        getDownloadDirList().add(new String[] {
+                downloadDirectory, packageName
+        });
         SubConfiguration.getConfig(SimpleGuiConstants.GUICONFIGNAME).save();
     }
 

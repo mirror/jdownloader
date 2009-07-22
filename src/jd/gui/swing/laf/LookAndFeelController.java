@@ -43,6 +43,8 @@ import jd.utils.JDUtilities;
 import com.jtattoo.plaf.AbstractLookAndFeel;
 import com.jtattoo.plaf.BaseTheme;
 
+import de.javasoft.plaf.synthetica.SyntheticaStandardLookAndFeel;
+
 public class LookAndFeelController {
 
     /**
@@ -247,17 +249,25 @@ public class LookAndFeelController {
             JDLogger.getLogger().info("Use Look & Feel: " + getPlaf().getClassName());
 
             preSetup(getPlaf().getClassName());
+
+            UIManager.put("Synthetica​.tabbedPane​.tab​.text​.position​.leading", true);
+            UIManager.put("Synthetica.window.opaque", true);
+            UIManager.put("Synthetica​.cache.enabled", true);
+           
+            
             UIManager.setLookAndFeel(getPlaf().getClassName());
+//            UIManager.setLookAndFeel(new SyntheticaStandardLookAndFeel());
+
             // overwrite defaults
             SubConfiguration cfg = SubConfiguration.getConfig(DEFAULT_PREFIX + "." + LookAndFeelController.getPlaf().getClassName());
 
-            postSetup(getPlaf().getClassName());
-
-            for (Iterator<Entry<String, Object>> it = cfg.getProperties().entrySet().iterator(); it.hasNext();) {
-                Entry<String, Object> next = it.next();
-                JDLogger.getLogger().info("Use special LAF Property: " + next.getKey() + " = " + next.getValue());
-                UIManager.put(next.getKey(), next.getValue());
-            }
+//            postSetup(getPlaf().getClassName());
+//
+//            for (Iterator<Entry<String, Object>> it = cfg.getProperties().entrySet().iterator(); it.hasNext();) {
+//                Entry<String, Object> next = it.next();
+//                JDLogger.getLogger().info("Use special LAF Property: " + next.getKey() + " = " + next.getValue());
+//                UIManager.put(next.getKey(), next.getValue());
+//            }
 
         } catch (Exception e) {
             JDLogger.exception(e);
@@ -277,7 +287,9 @@ public class LookAndFeelController {
             // jd.gui.swing.laf.ext.jattoo.ui.BluredPopupUI
             // set own uis
             UIDefaults defaults = UIManager.getDefaults();
-            defaults.put("PopupMenu.blurParameter", new int[] { 2, 2, 3 });
+            defaults.put("PopupMenu.blurParameter", new int[] {
+                    2, 2, 3
+            });
             defaults.put("PopupMenuAlpha", 0.7f);
             defaults.put("PopupMenuUI", "jd.gui.swing.laf.ext.jattoo.ui.BluredPopupUI");
             defaults.put("RootPaneUI", "jd.gui.swing.laf.ext.jtattoo.acryl.ui.AcrylRootPaneUI");
@@ -296,7 +308,11 @@ public class LookAndFeelController {
             props.put("textAntiAliasing", "off");
             BaseTheme.setProperties(props);
         }
+        UIManager.put("Synthetica.dialog.icon.enabled", true);
 
+        UIManager.put("Synthetica​.rootPane​.titlePane​.menuButton​.useOriginalImageSize", Boolean.TRUE);
+        UIManager.put("Synthetica​.tabbedPane​.tab​.animation​.cycles", 100);
+        UIManager.put("Synthetica​.tabbedPane​.tabs​.stretch", Boolean.TRUE);
         //  
         // JTattooUtils.setJTattooRootPane(this);
 
@@ -320,8 +336,15 @@ public class LookAndFeelController {
             UIManager.put("Synthetica.dialog.icon.enabled", true);
 
             UIManager.put("Synthetica​.rootPane​.titlePane​.menuButton​.useOriginalImageSize", Boolean.TRUE);
+            UIManager.put("Synthetica​.tabbedPane​.tab​.animation​.cycles", 100);
+            UIManager.put("Synthetica​.tabbedPane​.tabs​.stretch", Boolean.TRUE);
 
         }
+        UIManager.put("Synthetica.dialog.icon.enabled", true);
+
+        UIManager.put("Synthetica​.rootPane​.titlePane​.menuButton​.useOriginalImageSize", Boolean.TRUE);
+        UIManager.put("Synthetica​.tabbedPane​.tab​.animation​.cycles", 100);
+        UIManager.put("Synthetica​.tabbedPane​.tabs​.stretch", Boolean.TRUE);
 
     }
 

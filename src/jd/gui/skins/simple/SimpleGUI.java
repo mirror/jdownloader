@@ -74,6 +74,7 @@ import jd.gui.skins.jdgui.components.JDCollapser;
 import jd.gui.skins.jdgui.components.downloadview.DownloadLinksPanel;
 import jd.gui.skins.jdgui.components.linkgrabberview.LinkGrabberPanel;
 import jd.gui.skins.jdgui.components.linkgrabberview.LinkGrabberTableAction;
+import jd.gui.skins.jdgui.components.toolbar.MainToolBar;
 import jd.gui.skins.jdgui.interfaces.SwitchPanel;
 import jd.gui.skins.simple.components.ChartAPIEntity;
 import jd.gui.skins.simple.components.JLinkButton;
@@ -161,7 +162,7 @@ public class SimpleGUI extends SwingGui {
 
     private LinkGrabberTaskPane lgTaskPane;
 
-    private JDToolBar toolBar;
+    private MainToolBar toolBar;
 
     // private JDMenuBar menuBar;
 
@@ -232,7 +233,7 @@ public class SimpleGUI extends SwingGui {
 
         if (isSubstance()) this.getRootPane().setUI(new JDSubstanceUI());
 
-        toolBar = JDToolBar.getInstance();
+        toolBar = MainToolBar.getInstance();
 
         // System.out.println(ui);
         addWindowListener(this);
@@ -446,7 +447,7 @@ public class SimpleGUI extends SwingGui {
 
     }
 
-    public JDToolBar getToolBar() {
+    public MainToolBar getToolBar() {
         return toolBar;
     }
 
@@ -613,64 +614,64 @@ public class SimpleGUI extends SwingGui {
     }
 
     private void addConfigTask() {
-        cfgTskPane = new ConfigTaskPane(JDL.L("gui.taskpanes.configuration", "Configuration"), JDTheme.II("gui.images.taskpanes.configuration", 16, 16));
-
-        Object[] configConstructorObjects = new Object[] { JDUtilities.getConfiguration() };
-
-        cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_ADDONS, new SingletonPanel(ConfigPanelAddons.class, configConstructorObjects));
-        cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_CAPTCHA, new SingletonPanel(ConfigPanelCaptcha.class, configConstructorObjects));
-        cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_DOWNLOAD, new SingletonPanel(ConfigPanelDownload.class, configConstructorObjects));
-        cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_EVENTMANAGER, new SingletonPanel(ConfigPanelEventmanager.class, configConstructorObjects));
-        cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_GENERAL, new SingletonPanel(ConfigPanelGeneral.class, configConstructorObjects));
-        cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_GUI, new SingletonPanel(ConfigPanelGUI.class, configConstructorObjects));
-        cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_HOST, new SingletonPanel(ConfigPanelPluginForHost.class, configConstructorObjects));
-        cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_RECONNECT, new SingletonPanel(ConfigPanelReconnect.class, configConstructorObjects));
-
-        cfgTskPane.addActionListener(new ActionListener() {
-
-            public void actionPerformed(final ActionEvent e) {
-
-                switch (e.getID()) {
-                case DownloadTaskPane.ACTION_CLICK:
-
-                    contentPanel.display(((TaskPanel) e.getSource()).getPanel(SimpleGuiConstants.GUI_CONFIG.getIntegerProperty("LAST_CONFIG_PANEL", ConfigTaskPane.ACTION_GENERAL)));
-
-                    break;
-                case ConfigTaskPane.ACTION_SAVE:
-                    boolean restart = false;
-
-                    for (SingletonPanel panel : ((ConfigTaskPane) e.getSource()).getPanels()) {
-
-                        if (panel != null && panel.getPanel() != null && panel.getPanel() instanceof ConfigPanel) {
-                            if (((ConfigPanel) panel.getPanel()).hasChanges() == PropertyType.NEEDS_RESTART) restart = true;
-                            ((ConfigPanel) panel.getPanel()).save();
-                        }
-                    }
-
-                    if (restart) {
-                        if (JDUtilities.getGUI().showConfirmDialog(JDL.L("gui.config.save.restart", "Your changes need a restart of JDownloader to take effect.\r\nRestart now?"), JDL.L("gui.config.save.restart.title", "JDownloader restart requested"))) {
-                            JDUtilities.restartJD();
-                        }
-                    }
-                    break;
-
-                case ConfigTaskPane.ACTION_ADDONS:
-                case ConfigTaskPane.ACTION_CAPTCHA:
-                case ConfigTaskPane.ACTION_DOWNLOAD:
-                case ConfigTaskPane.ACTION_EVENTMANAGER:
-                case ConfigTaskPane.ACTION_GENERAL:
-                case ConfigTaskPane.ACTION_GUI:
-                case ConfigTaskPane.ACTION_HOST:
-                case ConfigTaskPane.ACTION_RECONNECT:
-                    SimpleGuiConstants.GUI_CONFIG.setProperty("LAST_CONFIG_PANEL", e.getID());
-
-                    contentPanel.display(((ConfigTaskPane) e.getSource()).getPanel(e.getID()));
-                    SimpleGuiConstants.GUI_CONFIG.save();
-                    break;
-                }
-
-            }
-        });
+//        cfgTskPane = new ConfigTaskPane(JDL.L("gui.taskpanes.configuration", "Configuration"), JDTheme.II("gui.images.taskpanes.configuration", 16, 16));
+//
+//        Object[] configConstructorObjects = new Object[] { JDUtilities.getConfiguration() };
+//
+////        cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_ADDONS, new SingletonPanel(ConfigPanelAddons.class, configConstructorObjects));
+////        cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_CAPTCHA, new SingletonPanel(ConfigPanelCaptcha.class, configConstructorObjects));
+////        cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_DOWNLOAD, new SingletonPanel(ConfigPanelDownload.class, configConstructorObjects));
+////        cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_EVENTMANAGER, new SingletonPanel(ConfigPanelEventmanager.class, configConstructorObjects));
+////        cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_GENERAL, new SingletonPanel(ConfigPanelGeneral.class, configConstructorObjects));
+////        cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_GUI, new SingletonPanel(ConfigPanelGUI.class, configConstructorObjects));
+////        cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_HOST, new SingletonPanel(ConfigPanelPluginForHost.class, configConstructorObjects));
+////        cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_RECONNECT, new SingletonPanel(ConfigPanelReconnect.class, configConstructorObjects));
+//
+//        cfgTskPane.addActionListener(new ActionListener() {
+//
+//            public void actionPerformed(final ActionEvent e) {
+//
+//                switch (e.getID()) {
+//                case DownloadTaskPane.ACTION_CLICK:
+//
+//                    contentPanel.display(((TaskPanel) e.getSource()).getPanel(SimpleGuiConstants.GUI_CONFIG.getIntegerProperty("LAST_CONFIG_PANEL", ConfigTaskPane.ACTION_GENERAL)));
+//
+//                    break;
+//                case ConfigTaskPane.ACTION_SAVE:
+//                    boolean restart = false;
+//
+//                    for (SingletonPanel panel : ((ConfigTaskPane) e.getSource()).getPanels()) {
+//
+//                        if (panel != null && panel.getPanel() != null && panel.getPanel() instanceof ConfigPanel) {
+//                            if (((ConfigPanel) panel.getPanel()).hasChanges() == PropertyType.NEEDS_RESTART) restart = true;
+//                            ((ConfigPanel) panel.getPanel()).save();
+//                        }
+//                    }
+//
+//                    if (restart) {
+//                        if (JDUtilities.getGUI().showConfirmDialog(JDL.L("gui.config.save.restart", "Your changes need a restart of JDownloader to take effect.\r\nRestart now?"), JDL.L("gui.config.save.restart.title", "JDownloader restart requested"))) {
+//                            JDUtilities.restartJD();
+//                        }
+//                    }
+//                    break;
+//
+//                case ConfigTaskPane.ACTION_ADDONS:
+//                case ConfigTaskPane.ACTION_CAPTCHA:
+//                case ConfigTaskPane.ACTION_DOWNLOAD:
+//                case ConfigTaskPane.ACTION_EVENTMANAGER:
+//                case ConfigTaskPane.ACTION_GENERAL:
+//                case ConfigTaskPane.ACTION_GUI:
+//                case ConfigTaskPane.ACTION_HOST:
+//                case ConfigTaskPane.ACTION_RECONNECT:
+//                    SimpleGuiConstants.GUI_CONFIG.setProperty("LAST_CONFIG_PANEL", e.getID());
+//
+//                    contentPanel.display(((ConfigTaskPane) e.getSource()).getPanel(e.getID()));
+//                    SimpleGuiConstants.GUI_CONFIG.save();
+//                    break;
+//                }
+//
+//            }
+//        });
 
         taskPane.add(cfgTskPane);
 

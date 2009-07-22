@@ -31,8 +31,8 @@ import jd.controlling.JDController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.UserIO;
+import jd.gui.skins.jdgui.userio.UserIOGui;
 import jd.gui.swing.laf.LookAndFeelController;
-import jd.gui.userio.SimpleUserIO;
 import jd.gui.userio.dialog.AbstractDialog;
 import jd.update.JDUpdateUtils;
 import jd.utils.JDTheme;
@@ -227,13 +227,13 @@ public class Config {
 
             @SuppressWarnings("unchecked")
             public void actionPerformed(ActionEvent e) {
-                String key = SimpleUserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN, "Enter Key", "Enter your key use / deliminator to create new sub-maps", "NEW_KEY", null, "Create Entry", "Cancel");
+                String key = UserIOGui.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN, "Enter Key", "Enter your key use / deliminator to create new sub-maps", "NEW_KEY", null, "Create Entry", "Cancel");
                 if (key == null) { return; }
                 if (keys.contains(key)) {
-                    SimpleUserIO.getInstance().requestMessageDialog("Key " + key + " is already available. Try Edit feature");
+                    UserIOGui.getInstance().requestMessageDialog("Key " + key + " is already available. Try Edit feature");
                     return;
                 }
-                String result = SimpleUserIO.getInstance().requestInputDialog(UserIO.STYLE_LARGE | UserIO.NO_COUNTDOWN, "Edit value for " + key, "Please take care to keep xml structure", "<classtype>VALUE</classtype>\r\n e.g.: <boolean>true</boolean>", null, "Save", "Cancel");
+                String result = UserIOGui.getInstance().requestInputDialog(UserIO.STYLE_LARGE | UserIO.NO_COUNTDOWN, "Edit value for " + key, "Please take care to keep xml structure", "<classtype>VALUE</classtype>\r\n e.g.: <boolean>true</boolean>", null, "Save", "Cancel");
                 if (result == null) return;
                 try {
 
@@ -269,7 +269,7 @@ public class Config {
                     }
 
                 } catch (Exception e1) {
-                    SimpleUserIO.getInstance().requestMessageDialog("Could not save object. Failures in XML structure!");
+                    UserIOGui.getInstance().requestMessageDialog("Could not save object. Failures in XML structure!");
 
                 }
             }
@@ -292,7 +292,7 @@ public class Config {
                     ObjectConverter oc = new ObjectConverter();
                     String valuess = oc.toString(value);
 
-                    String result = SimpleUserIO.getInstance().requestInputDialog(UserIO.STYLE_LARGE | UserIO.NO_COUNTDOWN, "Edit value for " + key, "Please take care to keep xml structure", valuess, null, "Save", "Cancel");
+                    String result = UserIOGui.getInstance().requestInputDialog(UserIO.STYLE_LARGE | UserIO.NO_COUNTDOWN, "Edit value for " + key, "Please take care to keep xml structure", valuess, null, "Save", "Cancel");
                     try {
 
                         if (result != null) {
@@ -322,7 +322,7 @@ public class Config {
 
                     } catch (Exception e1) {
                         e1.printStackTrace();
-                        SimpleUserIO.getInstance().requestMessageDialog("Could not save object. Failures in XML structure!");
+                        UserIOGui.getInstance().requestMessageDialog("Could not save object. Failures in XML structure!");
 
                     }
                 } catch (Exception e1) {

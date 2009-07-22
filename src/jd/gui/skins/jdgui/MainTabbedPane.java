@@ -24,7 +24,7 @@ public class MainTabbedPane extends JTabbedPane {
     }
 
     public MainTabbedPane() {
-
+this.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT );
         this.addChangeListener(new ChangeListener() {
 
             public void stateChanged(ChangeEvent e) {

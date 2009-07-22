@@ -35,7 +35,7 @@ import javax.swing.JOptionPane;
 
 import jd.config.CFGConfig;
 import jd.controlling.JDLogger;
-import jd.gui.userio.SimpleUserIO;
+import jd.gui.skins.jdgui.userio.UserIOGui;
 import jd.http.Browser;
 import jd.nutils.JDHash;
 import jd.nutils.SimpleFTP;
@@ -833,7 +833,7 @@ public class Updater {
 
         }
         if (true) {
-            String removeFiles = SimpleUserIO.getInstance().requestTextAreaDialog("Files to remove", "These " + i + " files were found localy, but not in the remotehashlist. The will be removed if you don't delete them.", sb.toString());
+            String removeFiles = UserIOGui.getInstance().requestTextAreaDialog("Files to remove", "These " + i + " files were found localy, but not in the remotehashlist. The will be removed if you don't delete them.", sb.toString());
             if (removeFiles != null) {
                 for (String line : Regex.getLines(removeFiles)) {
                     File del = new File(line.trim());

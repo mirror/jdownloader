@@ -45,7 +45,7 @@ public class ContentPanel extends JPanel {
             // new Exception().printStackTrace();
             if (rightPanel == panel) return;
 
-            JDCollapser.getInstance().setCollapsed(true);
+//            JDCollapser.getInstance().setCollapsed(true);
             if (rightPanel != null) {
 
                 this.remove(viewport);
@@ -57,13 +57,13 @@ public class ContentPanel extends JPanel {
             }
             rightPanel = panel;
 
-            if (rightPanel.needsViewport()) {
-                viewport.setView(rightPanel);
-                this.add(viewport, "cell 0 0");
-
-            } else {
+//            if (rightPanel.needsViewport()) {
+//                viewport.setView(rightPanel);
+//                this.add(viewport, "cell 0 0");
+//
+//            } else {
                 this.add(rightPanel, "cell 0 0");
-            }
+//            }
             rightPanel.setEnabled(true);
             rightPanel.setVisible(true);
             rightPanel.setShown();

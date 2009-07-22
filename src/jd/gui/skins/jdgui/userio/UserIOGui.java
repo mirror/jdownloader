@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.gui.userio;
+package jd.gui.skins.jdgui.userio;
 
 import java.awt.Point;
 import java.io.File;
@@ -25,6 +25,7 @@ import javax.swing.filechooser.FileFilter;
 import jd.gui.UserIO;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.components.JDFileChooser;
+import jd.gui.userio.DummyFrame;
 import jd.gui.userio.dialog.CaptchaDialog;
 import jd.gui.userio.dialog.ClickPositionDialog;
 import jd.gui.userio.dialog.ConfirmDialog;
@@ -36,14 +37,14 @@ import jd.gui.userio.dialog.TwoTextFieldDialog;
 import jd.nutils.JDFlags;
 import jd.utils.JDTheme;
 
-public class SimpleUserIO extends UserIO {
-    private SimpleUserIO() {
+public class UserIOGui extends UserIO {
+    private UserIOGui() {
         super();
     }
 
     public static UserIO getInstance() {
         if (INSTANCE == null) {
-            INSTANCE = new SimpleUserIO();
+            INSTANCE = new UserIOGui();
         }
         return INSTANCE;
     }

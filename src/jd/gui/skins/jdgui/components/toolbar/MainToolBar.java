@@ -14,12 +14,12 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.gui.skins.simple;
+package jd.gui.skins.jdgui.components.toolbar;
 
 import jd.controlling.JDController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
-import jd.gui.skins.jdgui.components.toolbar.ToolBar;
+import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.components.SpeedMeterPanel;
 
 public class MainToolBar extends ToolBar implements ControlListener {

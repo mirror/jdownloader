@@ -7,13 +7,15 @@ import javax.swing.BorderFactory;
 import javax.swing.Icon;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JToolBar;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.UIManager;
 import javax.swing.plaf.metal.MetalLookAndFeel;
 
+import jd.config.SubConfiguration;
 import jd.gui.skins.SwingGui;
-import jd.gui.skins.simple.MainToolBar;
+import jd.gui.skins.jdgui.JDGuiConstants;
+import jd.gui.skins.jdgui.components.toolbar.MainToolBar;
+import jd.gui.skins.jdgui.views.toolbar.ViewToolbar;
 import jd.utils.JDTheme;
 import net.miginfocom.swing.MigLayout;
 
@@ -40,6 +42,7 @@ public abstract class View extends SwitchPanel {
     private JPanel bottomContent;
     private DroppedPanel infoPanel;
     private DroppedPanel defaultInfoPanel;
+    private ViewToolbar toolbar;
 
     public View() {
         SwingGui.checkEDT();
@@ -60,7 +63,7 @@ public abstract class View extends SwitchPanel {
         sidebar.setVisible(false);
         rightPane = new JPanel(new MigLayout("ins 0", "[grow,fill]", "[grow,fill]"));
         add(rightPane);
-        add(topContent = new JPanel(new MigLayout("ins 0", "[grow,fill]", "[]")), "dock NORTH,hidemode 3");
+        add(topContent = new JPanel(new MigLayout("ins 0", "[grow,fill]", "[]")), "gapbottom 3,dock NORTH,hidemode 3");
         topContent.setVisible(false);
         add(bottomContent = new JPanel(new MigLayout("ins 0", "[grow,fill]", "[]")), "dock SOUTH");
         bottomContent.setVisible(false);
@@ -80,10 +83,8 @@ public abstract class View extends SwitchPanel {
             /* reset toolbar to global defaultlist */
             MainToolBar.getInstance().setList(null);
         } else {
-            // solange noch kein editor dafür vorhanden
-            // defaultlist =
-            // SubConfiguration.getConfig(JDGuiConstants.CONFIG_PARAMETER).getGenericProperty(JDGuiConstants.CFG_KEY_TOOLBAR_ACTIONLIST
-            // + "." + id, defaultlist);
+            // editor == about:config
+            defaultlist = SubConfiguration.getConfig(JDGuiConstants.CONFIG_PARAMETER).getGenericProperty(JDGuiConstants.CFG_KEY_TOOLBAR_ACTIONLIST + "." + id, defaultlist);
             MainToolBar.getInstance().setList(defaultlist);
         }
     }
@@ -131,7 +132,7 @@ public abstract class View extends SwitchPanel {
      * 
      * @param toolbar
      */
-    protected void setToolBar(JToolBar toolbar) {
+    protected void setToolBar(ViewToolbar toolbar) {
         SwingGui.checkEDT();
         if (toolbar == null) {
             topContent.setVisible(false);
@@ -140,6 +141,7 @@ public abstract class View extends SwitchPanel {
             topContent.removeAll();
             topContent.add(toolbar);
         }
+        this.toolbar = toolbar;
         revalidate();
     }
 
