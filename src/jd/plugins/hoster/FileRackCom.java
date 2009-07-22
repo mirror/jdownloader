@@ -64,7 +64,7 @@ public class FileRackCom extends PluginForHost {
             retry++;
         } while (br.containsHTML("<b>Verification Code doesn't match </b>"));
         String dllink = br.getRegex(Pattern.compile("<span id=\"btn_download2\">.*<a href=\"(.*?)\" onclick=\"disableimg\\(\\)\">", Pattern.DOTALL)).getMatch(0);
-        dl = br.openDownload(link, dllink, true, -10);
+        dl = br.openDownload(link, dllink, true, -20);
         dl.startDownload();
 
     }
@@ -95,6 +95,6 @@ public class FileRackCom extends PluginForHost {
     
     // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 10;
+        return 20;
     }
 }
