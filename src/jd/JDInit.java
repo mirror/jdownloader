@@ -142,9 +142,9 @@ public class JDInit {
 
     public UIInterface initGUI(JDController controller) {
         LookAndFeelController.setUIManager();
-        
+
         SwingGui.setInstance(JDGui.getInstance());
-        UIInterface uiInterface =             SwingGui.getInstance();
+        UIInterface uiInterface = SwingGui.getInstance();
 
         controller.setUiInterface(uiInterface);
         controller.addControlListener(uiInterface);
@@ -347,7 +347,7 @@ public class JDInit {
         new DecryptPluginWrapper("link-share.org", "LinkShareOrg", "http://[\\w\\.]*?link-share\\.org/view.php\\?url=[\\w]{32}");
         new DecryptPluginWrapper("linkshield.com", "Linkshield", "http://[\\w\\.]*?linkshield\\.com/[sc]/[\\d]+_[\\d]+");
         new DecryptPluginWrapper("lix.in", "Lixin", "http://[\\w\\.]*?lix\\.in/[-]{0,1}[\\w]{6,10}");
-       
+
         new DecryptPluginWrapper("mediafire.com", "MediafireFolder", "http://[\\w\\.]*?mediafire\\.com/(\\?sharekey=.+)");
         new DecryptPluginWrapper("redirect.musicalmente.info", "MusicalmenteInfo", "http://[\\w\\.]*?redirect\\.musicalmente\\.info/.+");
         new DecryptPluginWrapper("music-base.ws", "MusicBaseWs", "http://[\\w\\.]*?music-base\\.ws/dl\\.php.*?c=[\\w]+");
@@ -491,6 +491,7 @@ public class JDInit {
         new DecryptPluginWrapper("free-url.net", "FreeUrlNet", "http://[\\w\\.]*?free-url\\.net/[0-9]+/");
         new DecryptPluginWrapper("box.net", "BoxNet", "http://www\\.box\\.net/shared/(\\w+\\b(?<!\\bstatic))(/rss\\.xml|#\\w*)?");
         new DecryptPluginWrapper("Szort.pl", "SzortPl", "http://[\\w\\.]*(tini\\.us|justlink\\.us|poourl\\.com|szort\\.pl)/.+");
+        new DecryptPluginWrapper("Zoodl.com", "ZoodlCom", "http://[\\w\\.]*?zoodl\\.com/.+");
 
         // Decrypter from Extern
 
