@@ -21,8 +21,6 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.parser.html.Form;
-import jd.parser.html.InputField;
-import jd.parser.html.Form.MethodType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;

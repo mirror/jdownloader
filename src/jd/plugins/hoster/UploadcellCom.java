@@ -31,7 +31,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadcell.com" }, urls = { "http://uploadcell.com/[0-9a-z]+/[0-9a-zA-Z_.]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadcell.com" }, urls = { "http://uploadcell.com/[0-9a-z]+/[0-9a-zA-Z_.-]+" }, flags = { 0 })
 public class UploadcellCom extends PluginForHost {
 
     public UploadcellCom(PluginWrapper wrapper) {
