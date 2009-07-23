@@ -886,7 +886,7 @@ plugins.optional.remotecontrol.port = Port:
 addons.jdshutdown.statusmessage.enabled = Das System wird nach dem Download heruntergefahren.
 addons.jdshutdown.statusmessage.disabled = Das System wird nach dem Download NICHT heruntergefahren.
 addons.jdshutdown.menu = Shutdown after downloads finished
-interaction.shutdown.dialog.msg = <h2><font color=\"red\">Achtung ihr Betriebssystem wird heruntergefahren!</font></h2>
+interaction.shutdown.dialog.msg = <h2><font color="red">Achtung ihr Betriebssystem wird heruntergefahren!</font></h2>
 interaction.shutdown.dialog.title = Shutdown
 gui.config.jdshutdown.standby = Standby (Nur einige OS)
 gui.config.jdshutdown.hibernate = Ruhezustand/Hibernate (Nur einige OS)
@@ -1126,7 +1126,7 @@ init.webupdate.progress.0_title = Webupdate
 jd.utils.webupdate.progress.autopluginupdate = Update plugins
 init.webupdate.progress.1_title = Update Check
 init.webupdate.auto.countdowndialog2 = Automatic update.
-jd.utils.webupdate.message = <font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\">%s update(s) available. Install now?</font>
+jd.utils.webupdate.message = <font size="2" face="Verdana, Arial, Helvetica, sans-serif">%s update(s) available. Install now?</font>
 system.dialogs.update = Updates available
 jd.utils.webupdate.progresscontroller.text = Update is running
 #pattern: sys\.warning\.dlcerror\.(.+?)
