@@ -27,7 +27,6 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JPanel;
 
-import jd.config.SubConfiguration;
 import jd.controlling.ClipboardHandler;
 import jd.controlling.DownloadController;
 import jd.controlling.JDLogger;

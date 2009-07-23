@@ -33,7 +33,6 @@ import jd.config.SubConfiguration;
 import jd.gui.skins.SwingGui;
 import jd.gui.skins.jdgui.GUIUtils;
 import jd.gui.skins.jdgui.JDGuiConstants;
-import jd.gui.skins.jdgui.components.linkbutton.JLink;
 import jd.nutils.JDImage;
 import jd.nutils.Screen;
 import jd.utils.JDTheme;
@@ -252,10 +251,10 @@ public class Balloon {
                 // textField.setOpaque(false);
                 textField.setText(string2);
                 textField.setEditable(false);
-/**
- * TODO
- */
-//                textField.addHyperlinkListener(JLink.getHyperlinkListener());
+                /**
+                 * TODO
+                 */
+                // textField.addHyperlinkListener(JLink.getHyperlinkListener());
                 return p;
             }
         }.getReturnValue();

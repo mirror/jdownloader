@@ -25,7 +25,6 @@ import net.miginfocom.swing.MigLayout;
 
 public class ViewToolbar extends JPanel implements ActionControllerListener {
     public ViewToolbar() {
-      
 
         ActionController.initActions();
 
@@ -78,20 +77,20 @@ public class ViewToolbar extends JPanel implements ActionControllerListener {
 
     private String getColConstraints(String[] list) {
         StringBuilder sb = new StringBuilder();
-        
-        if(halign == EAST){
+
+        if (halign == EAST) {
             sb.append("[grow]");
             for (int i = 0; i < list.length; ++i) {
                 sb.append("[]");
             }
-         
-        }else{
+
+        } else {
             for (int i = 0; i < list.length; ++i) {
                 sb.append("[]");
             }
             sb.append("[grow,fill]");
         }
-       
+
         return sb.toString();
     }
 
@@ -100,7 +99,6 @@ public class ViewToolbar extends JPanel implements ActionControllerListener {
             SwingGui.checkEDT();
             setLayout(new MigLayout("ins 0, gap 0", getColConstraints(list)));
             AbstractButton ab;
-            JToggleButton tbt;
             if (list != null) {
 
                 if (halign == EAST) {
@@ -125,49 +123,33 @@ public class ViewToolbar extends JPanel implements ActionControllerListener {
                     ab = null;
                     switch (action.getType()) {
                     case NORMAL:
-
                         add(ab = new JButton(action), BUTTON_CONSTRAINTS);
-                        // ab.setText("");
                         break;
                     case SEPARATOR:
                         add(new JSeparator(JSeparator.VERTICAL), "height 32,gapleft 10,gapright 10");
                         break;
 
                     case TOGGLE:
-
-                        add(ab = tbt = new JToggleButton(action), BUTTON_CONSTRAINTS);
-                        // tbt.setText("");
+                        add(ab = new JToggleButton(action), BUTTON_CONSTRAINTS);
                         break;
 
                     }
                     if (ab != null) {
-                        // ab.setText("");
-                        // ab.setContentAreaFilled(false);
-
                         ab.addMouseListener(new MouseListener() {
 
                             public void mouseClicked(MouseEvent e) {
-                                // TODO Auto-generated method stub
-
                             }
 
                             public void mouseEntered(MouseEvent e) {
-                                // ((AbstractButton)e.getSource()).setContentAreaFilled(true);
                             }
 
                             public void mouseExited(MouseEvent e) {
-                                // ((AbstractButton)e.getSource()).setContentAreaFilled(false);
-
                             }
 
                             public void mousePressed(MouseEvent e) {
-                                // TODO Auto-generated method stub
-
                             }
 
                             public void mouseReleased(MouseEvent e) {
-                                // TODO Auto-generated method stub
-
                             }
 
                         });

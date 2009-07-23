@@ -16,7 +16,6 @@ package jd.gui.swing.laf;
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import java.awt.Insets;
 import java.io.File;
 import java.io.FileInputStream;
 import java.net.URL;
@@ -26,8 +25,6 @@ import java.util.Properties;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
-import javax.swing.JLabel;
-import javax.swing.UIDefaults;
 import javax.swing.UIManager;
 import javax.swing.UIManager.LookAndFeelInfo;
 
@@ -38,9 +35,6 @@ import jd.gui.skins.jdgui.GUIUtils;
 import jd.nutils.OSDetector;
 import jd.parser.Regex;
 import jd.utils.JDUtilities;
-
-import com.jtattoo.plaf.AbstractLookAndFeel;
-import com.jtattoo.plaf.BaseTheme;
 
 public class LookAndFeelController {
 
@@ -252,9 +246,9 @@ public class LookAndFeelController {
             UIManager.put("Synthetica.window.opaque", true);
             // UIManager.put("Synthetica​.cache.enabled", true);
             // 
-            
+
 //            UIManager.put("Synthetica​.tableHeader​.horizontalAlignment", JLabel.CENTER);
-           
+
 //            UIManager.put("Synthetica.window.decoration", false);
             // UIManager.put("Synthetica​.rootPane​.titlePane​.menuButton​.useOriginalImageSize",
             // Boolean.TRUE);
@@ -264,7 +258,8 @@ public class LookAndFeelController {
             // UIManager.setLookAndFeel(new SyntheticaStandardLookAndFeel());
 
             // overwrite defaults
-            SubConfiguration cfg = SubConfiguration.getConfig(DEFAULT_PREFIX + "." + LookAndFeelController.getPlaf().getClassName());
+            // SubConfiguration cfg = SubConfiguration.getConfig(DEFAULT_PREFIX
+            // + "." + LookAndFeelController.getPlaf().getClassName());
 
             // postSetup(getPlaf().getClassName());
             //
@@ -282,48 +277,55 @@ public class LookAndFeelController {
 
     }
 
-    /**
-     * Executes laf dependend commands AFTER setting the laf
-     * 
-     * @param className
-     */
-    private static void postSetup(String className) {
-        if (className.equals("com.jtattoo.plaf.acryl.AcrylLookAndFeel")) {
-            AbstractLookAndFeel.setTheme(new jd.gui.swing.laf.ext.jtattoo.acryl.themes.AcrylJDTheme());
-
-            // jd.gui.swing.laf.ext.jattoo.ui.BluredPopupUI
-            // set own uis
-            UIDefaults defaults = UIManager.getDefaults();
-            defaults.put("PopupMenu.blurParameter", new int[] {
-                    2, 2, 3
-            });
-            defaults.put("PopupMenuAlpha", 0.7f);
-            defaults.put("PopupMenuUI", "jd.gui.swing.laf.ext.jattoo.ui.BluredPopupUI");
-            defaults.put("RootPaneUI", "jd.gui.swing.laf.ext.jtattoo.acryl.ui.AcrylRootPaneUI");
-            defaults.put("CheckBoxUI", "jd.gui.swing.laf.ext.jattoo.ui.BaseJDCheckBoxUI");
-            defaults.put("ButtonUI", "jd.gui.swing.laf.ext.jattoo.ui.BaseJDButtonUI");
-            defaults.put("ProgressBarUI", "jd.gui.swing.laf.ext.jtattoo.acryl.ui.AcrylProgressBarUI");
-            defaults.put("TabbedPane.tabInsets", new Insets(0, 5, 0, 5));
-            // defaults.put("ProgressBar.selectionForeground", new Color(100,
-            // 100, 100));
-            Properties props = new Properties();
-            props.put("dynamicLayout", "on");
-            props.put("logoString", "");
-            props.put("textAntiAliasingMode", "GRAY");
-            props.put("windowDecoration", "off");
-            props.put("dynamicLayout", "on");
-            props.put("textAntiAliasing", "off");
-            BaseTheme.setProperties(props);
-        }
-        UIManager.put("Synthetica.dialog.icon.enabled", true);
-
-        UIManager.put("Synthetica​.rootPane​.titlePane​.menuButton​.useOriginalImageSize", Boolean.TRUE);
-        UIManager.put("Synthetica​.tabbedPane​.tab​.animation​.cycles", 100);
-        UIManager.put("Synthetica​.tabbedPane​.tabs​.stretch", Boolean.TRUE);
-        //  
-        // JTattooUtils.setJTattooRootPane(this);
-
-    }
+    // /**
+    // * Executes laf dependend commands AFTER setting the laf
+    // *
+    // * @param className
+    // */
+    // private static void postSetup(String className) {
+    // if (className.equals("com.jtattoo.plaf.acryl.AcrylLookAndFeel")) {
+    // AbstractLookAndFeel.setTheme(new
+    // jd.gui.swing.laf.ext.jtattoo.acryl.themes.AcrylJDTheme());
+    //
+    // // jd.gui.swing.laf.ext.jattoo.ui.BluredPopupUI
+    // // set own uis
+    // UIDefaults defaults = UIManager.getDefaults();
+    // defaults.put("PopupMenu.blurParameter", new int[] {
+    // 2, 2, 3
+    // });
+    // defaults.put("PopupMenuAlpha", 0.7f);
+    // defaults.put("PopupMenuUI",
+    // "jd.gui.swing.laf.ext.jattoo.ui.BluredPopupUI");
+    // defaults.put("RootPaneUI",
+    // "jd.gui.swing.laf.ext.jtattoo.acryl.ui.AcrylRootPaneUI");
+    // defaults.put("CheckBoxUI",
+    // "jd.gui.swing.laf.ext.jattoo.ui.BaseJDCheckBoxUI");
+    // defaults.put("ButtonUI",
+    // "jd.gui.swing.laf.ext.jattoo.ui.BaseJDButtonUI");
+    // defaults.put("ProgressBarUI",
+    // "jd.gui.swing.laf.ext.jtattoo.acryl.ui.AcrylProgressBarUI");
+    // defaults.put("TabbedPane.tabInsets", new Insets(0, 5, 0, 5));
+    // // defaults.put("ProgressBar.selectionForeground", new Color(100,
+    // // 100, 100));
+    // Properties props = new Properties();
+    // props.put("dynamicLayout", "on");
+    // props.put("logoString", "");
+    // props.put("textAntiAliasingMode", "GRAY");
+    // props.put("windowDecoration", "off");
+    // props.put("dynamicLayout", "on");
+    // props.put("textAntiAliasing", "off");
+    // BaseTheme.setProperties(props);
+    // }
+    // UIManager.put("Synthetica.dialog.icon.enabled", true);
+    //
+    // UIManager.put("Synthetica​.rootPane​.titlePane​.menuButton​.useOriginalImageSize",
+    // Boolean.TRUE);
+    // UIManager.put("Synthetica​.tabbedPane​.tab​.animation​.cycles", 100);
+    // UIManager.put("Synthetica​.tabbedPane​.tabs​.stretch", Boolean.TRUE);
+    // //
+    // // JTattooUtils.setJTattooRootPane(this);
+    //
+    // }
 
     /*
      * Execvutes LAF dependen commands BEFORE initializing the LAF

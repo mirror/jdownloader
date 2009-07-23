@@ -732,9 +732,6 @@ public class DiffMatchPatchTest extends TestCase {
         patches = dmp.patchMake(text1, diffs);
         assertEquals("patchMake: Text1+Diff inputs", expectedPatch, dmp.patchToText(patches));
 
-        patches = dmp.patchMake(text1, text2, diffs);
-        assertEquals("patchMake: Text1+Text2+Diff inputs (deprecated)", expectedPatch, dmp.patchToText(patches));
-
         patches = dmp.patchMake("`1234567890-=[]\\;',./", "~!@#$%^&*()_+{}|:\"<>?");
         assertEquals("patchToText: Character encoding.", "@@ -1,21 +1,21 @@\n-%601234567890-=%5B%5D%5C;',./\n+~!@#$%25%5E&*()_+%7B%7D%7C:%22%3C%3E?\n", dmp.patchToText(patches));
 
@@ -776,7 +773,7 @@ public class DiffMatchPatchTest extends TestCase {
 
         patches = dmp.patchMake("XY", "XtestY");
         assertEquals("patchAddPadding: Both edges partial.", "@@ -1,2 +1,6 @@\n X\n+test\n Y\n", dmp.patchToText(patches));
-        String patchAddPadding = dmp.patchAddPadding(patches);
+        dmp.patchAddPadding(patches);
         assertEquals("patchAddPadding: Both edges partial.", "@@ -2,8 +2,12 @@\n %01%02%03X\n+test\n Y%00%01%02\n", dmp.patchToText(patches));
 
         patches = dmp.patchMake("XXXXYYYY", "XXXXtestYYYY");

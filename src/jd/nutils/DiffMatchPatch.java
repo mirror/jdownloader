@@ -1724,23 +1724,6 @@ public class DiffMatchPatch {
     }
 
     /**
-     * Compute a list of patches to turn text1 into text2. text2 is ignored,
-     * diffs are the delta between text1 and text2.
-     * 
-     * @param text1
-     *            Old text
-     * @param text2
-     *            Ignored.
-     * @param diffs
-     *            Array of diff tuples for text1 to text2.
-     * @return LinkedList of Patch objects.
-     * @deprecated Prefer patchMake(String text1, LinkedList<Diff> diffs).
-     */
-    public LinkedList<Patch> patchMake(String text1, String text2, LinkedList<Diff> diffs) {
-        return patchMake(text1, diffs);
-    }
-
-    /**
      * Compute a list of patches to turn text1 into text2. text2 is not
      * provided, diffs are the delta between text1 and text2.
      * 

@@ -19,7 +19,6 @@ package jd.gui.userio.dialog;
 import javax.swing.JComponent;
 import javax.swing.JTextPane;
 
-import jd.gui.skins.jdgui.components.linkbutton.JLink;
 import jd.utils.JDTheme;
 
 public class HtmlDialog extends AbstractDialog {

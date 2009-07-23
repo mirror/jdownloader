@@ -78,7 +78,6 @@ import jd.gui.skins.jdgui.interfaces.SwitchPanel;
 import jd.gui.skins.jdgui.settings.ConfigEntriesPanel;
 import jd.gui.skins.jdgui.views.downloadview.DownloadLinksPanel;
 import jd.gui.skins.jdgui.views.linkgrabberview.LinkGrabberPanel;
-import jd.gui.skins.jdgui.views.linkgrabberview.LinkGrabberTableAction;
 import jd.gui.skins.simple.components.ChartAPIEntity;
 import jd.gui.skins.simple.components.PieChartAPI;
 import jd.gui.skins.simple.startmenu.AboutMenu;
@@ -147,8 +146,6 @@ public class SimpleGUI extends SwingGui {
     public DownloadTaskPane getDlTskPane() {
         return dlTskPane;
     }
-
-
 
     private MainToolBar toolBar;
 
@@ -519,7 +516,6 @@ public class SimpleGUI extends SwingGui {
                 logger.info("Add links to Linkgrabber: " + links.size());
                 linkGrabber.addLinks(links);
 
-              
                 return null;
             }
 
@@ -686,9 +682,13 @@ public class SimpleGUI extends SwingGui {
 
     private void addLinkgrabberTask() {
         linkGrabber = LinkGrabberPanel.getLinkGrabber();
-//        lgTaskPane = new LinkGrabberTaskPane(JDL.L("gui.taskpanes.linkgrabber", "LinkGrabber"), JDTheme.II("gui.images.taskpanes.linkgrabber", 16, 16));
-//        lgTaskPane.setName(JDL.L("quickhelp.linkgrabbertaskpane", "Linkgrabber Taskpane"));
-//        // LinkAdder linkadder = new LinkAdder();
+        // lgTaskPane = new
+        // LinkGrabberTaskPane(JDL.L("gui.taskpanes.linkgrabber",
+        // "LinkGrabber"), JDTheme.II("gui.images.taskpanes.linkgrabber", 16,
+        // 16));
+        // lgTaskPane.setName(JDL.L("quickhelp.linkgrabbertaskpane",
+        // "Linkgrabber Taskpane"));
+        // // LinkAdder linkadder = new LinkAdder();
 
         // lgTaskPane.addPanel(new SingletonPanel(linkadder));
         LinkGrabberController.getInstance().addListener(new LinkGrabberControllerListener() {
@@ -704,31 +704,31 @@ public class SimpleGUI extends SwingGui {
             }
 
         });
-//        lgTaskPane.addPanel(new SingletonPanel(linkGrabber));
-//
-//        lgTaskPane.addActionListener(linkGrabber);
-//        lgTaskPane.addActionListener(new ActionListener() {
-//            public void actionPerformed(ActionEvent e) {
-//                switch (e.getID()) {
-//                case DownloadTaskPane.ACTION_CLICK:
-//                    if (linkGrabber.hasLinks()) {
-//                        lgTaskPane.setPanelID(1);
-//                    } else {
-//                        lgTaskPane.setPanelID(0);
-//                    }
-//                    break;
-//                case LinkGrabberTableAction.GUI_ADD:
-//                    lgTaskPane.setPanelID(0);
-//                    return;
-//                }
-//            }
-//        });
-//        taskPane.add(lgTaskPane);
+        // lgTaskPane.addPanel(new SingletonPanel(linkGrabber));
+        //
+        // lgTaskPane.addActionListener(linkGrabber);
+        // lgTaskPane.addActionListener(new ActionListener() {
+        // public void actionPerformed(ActionEvent e) {
+        // switch (e.getID()) {
+        // case DownloadTaskPane.ACTION_CLICK:
+        // if (linkGrabber.hasLinks()) {
+        // lgTaskPane.setPanelID(1);
+        // } else {
+        // lgTaskPane.setPanelID(0);
+        // }
+        // break;
+        // case LinkGrabberTableAction.GUI_ADD:
+        // lgTaskPane.setPanelID(0);
+        // return;
+        // }
+        // }
+        // });
+        // taskPane.add(lgTaskPane);
     }
 
-//    public LinkGrabberTaskPane getLgTaskPane() {
-//        return lgTaskPane;
-//    }
+    // public LinkGrabberTaskPane getLgTaskPane() {
+    // return lgTaskPane;
+    // }
 
     private void addDownloadTask() {
 
@@ -886,13 +886,7 @@ public class SimpleGUI extends SwingGui {
         int flags = 0;
         if (string.contains("<") && string.contains(">")) flags |= UserIO.STYLE_HTML;
         try {
-            return JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(
-                                                                                 flags,
-                                                                                 JDL.L("userio.countdownconfirm", "Please confirm"),
-                                                                                 string,
-                                                                                 JDTheme.II("gui.images.config.eventmanager", 32, 32),
-                                                                                 null,
-                                                                                 null), UserIO.RETURN_OK);
+            return JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(flags, JDL.L("userio.countdownconfirm", "Please confirm"), string, JDTheme.II("gui.images.config.eventmanager", 32, 32), null, null), UserIO.RETURN_OK);
         } finally {
             UserIO.setCountdownTime(null);
         }
@@ -1009,43 +1003,23 @@ public class SimpleGUI extends SwingGui {
                 }
                 if (!ai.isValid()) {
                     account.setEnabled(false);
-                    SimpleGUI.this.showMessageDialog(JDL.LF("plugins.host.premium.info.notValid", "The account for '%s' isn't valid! Please check username and password!\r\n%s", account.getUser(), ai
-                            .getStatus() != null ? ai.getStatus() : ""));
+                    SimpleGUI.this.showMessageDialog(JDL.LF("plugins.host.premium.info.notValid", "The account for '%s' isn't valid! Please check username and password!\r\n%s", account.getUser(), ai.getStatus() != null ? ai.getStatus() : ""));
                     return null;
                 }
                 if (ai.isExpired()) {
                     account.setEnabled(false);
-                    SimpleGUI.this.showMessageDialog(JDL.LF("plugins.host.premium.info.expired", "The account for '%s' is expired! Please extend the account or buy a new one!\r\n%s", account
-                            .getUser(), ai.getStatus() != null ? ai.getStatus() : ""));
+                    SimpleGUI.this.showMessageDialog(JDL.LF("plugins.host.premium.info.expired", "The account for '%s' is expired! Please extend the account or buy a new one!\r\n%s", account.getUser(), ai.getStatus() != null ? ai.getStatus() : ""));
                     return null;
                 }
 
                 String def = JDL.LF("plugins.host.premium.info.title", "Accountinformation from %s for %s", account.getUser(), pluginForHost.getHost());
-                String[] label = new String[] {
-                        JDL.L("plugins.host.premium.info.validUntil", "Valid until"),
-                        JDL.L("plugins.host.premium.info.trafficLeft", "Traffic left"),
-                        JDL.L("plugins.host.premium.info.files", "Files"),
-                        JDL.L("plugins.host.premium.info.premiumpoints", "PremiumPoints"),
-                        JDL.L("plugins.host.premium.info.usedSpace", "Used Space"),
-                        JDL.L("plugins.host.premium.info.cash", "Cash"),
-                        JDL.L("plugins.host.premium.info.trafficShareLeft", "Traffic Share left"),
-                        JDL.L("plugins.host.premium.info.status", "Info")
-                };
+                String[] label = new String[] { JDL.L("plugins.host.premium.info.validUntil", "Valid until"), JDL.L("plugins.host.premium.info.trafficLeft", "Traffic left"), JDL.L("plugins.host.premium.info.files", "Files"), JDL.L("plugins.host.premium.info.premiumpoints", "PremiumPoints"), JDL.L("plugins.host.premium.info.usedSpace", "Used Space"), JDL.L("plugins.host.premium.info.cash", "Cash"), JDL.L("plugins.host.premium.info.trafficShareLeft", "Traffic Share left"), JDL.L("plugins.host.premium.info.status", "Info") };
 
                 DateFormat formater = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM);
                 String validUntil = (ai.isExpired() ? JDL.L("plugins.host.premium.info.expiredInfo", "[expired]") + " " : "") + formater.format(new Date(ai.getValidUntil())) + "";
                 if (ai.getValidUntil() == -1) validUntil = null;
                 String premiumPoints = ai.getPremiumPoints() + ((ai.getNewPremiumPoints() > 0) ? " [+" + ai.getNewPremiumPoints() + "]" : "");
-                String[] data = new String[] {
-                        validUntil,
-                        Formatter.formatReadable(ai.getTrafficLeft()),
-                        ai.getFilesNum() + "",
-                        premiumPoints,
-                        Formatter.formatReadable(ai.getUsedSpace()),
-                        ai.getAccountBalance() < 0 ? null : (ai.getAccountBalance() / 100.0) + " €",
-                        Formatter.formatReadable(ai.getTrafficShareLeft()),
-                        ai.getStatus()
-                };
+                String[] data = new String[] { validUntil, Formatter.formatReadable(ai.getTrafficLeft()), ai.getFilesNum() + "", premiumPoints, Formatter.formatReadable(ai.getUsedSpace()), ai.getAccountBalance() < 0 ? null : (ai.getAccountBalance() / 100.0) + " €", Formatter.formatReadable(ai.getTrafficShareLeft()), ai.getStatus() };
 
                 JPanel panel = new JPanel(new MigLayout("ins 5", "[right]10[grow,fill]10[]"));
                 panel.add(new JXTitledSeparator("<html><b>" + def + "</b></html>"), "spanx, pushx, growx, gapbottom 15");
@@ -1083,12 +1057,7 @@ public class SimpleGUI extends SwingGui {
     }
 
     public static void showChangelogDialog() {
-        int status = UserIO.getInstance().requestHelpDialog(
-                                                            UserIO.NO_CANCEL_OPTION,
-                                                            JDL.LF("system.update.message.title", "Updated to version %s", JDUtilities.getRevision()),
-                                                            JDL.L("system.update.message", "Update successfull"),
-                                                            JDL.L("system.update.showchangelogv2", "What's new?"),
-                                                            "http://jdownloader.org/changes/index");
+        int status = UserIO.getInstance().requestHelpDialog(UserIO.NO_CANCEL_OPTION, JDL.LF("system.update.message.title", "Updated to version %s", JDUtilities.getRevision()), JDL.L("system.update.message", "Update successfull"), JDL.L("system.update.showchangelogv2", "What's new?"), "http://jdownloader.org/changes/index");
         if (JDFlags.hasAllFlags(status, UserIO.RETURN_OK) && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_AUTO_SHOW_CHANGELOG, true)) {
             try {
                 JLink.openURL("http://jdownloader.org/changes/index");

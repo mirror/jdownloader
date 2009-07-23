@@ -37,7 +37,7 @@ public class GUIUtils {
         int width = screenSize.width;
         int height = screenSize.height;
         SubConfiguration cfg = getConfig();
-        Object loc = getConfig().getProperty("DIMENSION_OF_" + key);
+        Object loc = cfg.getProperty("DIMENSION_OF_" + key);
         if (loc != null && loc instanceof Dimension) {
             Dimension dim = (Dimension) loc;
             if (dim.width > width) dim.width = width;

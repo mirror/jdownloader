@@ -26,7 +26,6 @@ import jd.OptionalPluginWrapper;
 import jd.config.MenuItem;
 import jd.gui.skins.simple.JDMenu;
 import jd.gui.skins.simple.SimpleGUI;
-import jd.gui.skins.simple.startmenu.actions.AddonConfiguration;
 import jd.plugins.Plugin;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;

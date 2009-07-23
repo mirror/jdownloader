@@ -36,20 +36,26 @@ import org.junit.Test;
 import tests.utils.TestUtils;
 
 public class SingleDecrypter {
-    private String[] urls = {};
     private HashMap<String, String> links;
+
+    /**
+     * change this to the host that is tested, test links are taken from
+     * http://jdownloader
+     * .net:8081/knowledge/wiki/development/intern/testlinks/decrypter/DECRYPT
+     */
+    private static final String DECRYPT = "mediafire.com";
 
     @Before
     public void setUp() {
-
         TestUtils.mainInit();
         TestUtils.initGUI();
         TestUtils.initDecrypter();
         TestUtils.initContainer();
         TestUtils.initHosts();
         TestUtils.finishInit();
-        // JDLogger.getLogger().setLevel(Level.ALL);
-        links = TestUtils.getDecrypterLinks("mediafire.com");
+
+        links = TestUtils.getDecrypterLinks(DECRYPT);
+        TestUtils.log("Found " + links.size() + " test link(s) for decrypter " + DECRYPT);
     }
 
     @Test

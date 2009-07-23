@@ -30,31 +30,29 @@ import tests.utils.TestUtils;
 
 public class FTP {
 
-    private static final String URL = null;
+    // private static final String URL = null;
     private SimpleFTP ftp;
     private HashMap<String, String> links;
- 
 
     @Before
     public void setUp() throws Exception {
         ftp = new SimpleFTP();
         links = TestUtils.getHosterLinks("ftp");
         ftp.connect(new URL(links.get("NORMAL_DOWNLOADLINK_1")));
-       
-    }
 
+    }
 
     @Test
     public void getFileInfo() {
 
         try {
-            
-          String[] info = ftp.getFileInfo(new URL(links.get("NORMAL_DOWNLOADLINK_1")).getPath());
-          assertTrue(info!=null);  
-          
-          info = ftp.getFileInfo(new URL(links.get("FNF_DOWNLOADLINK_1")).getPath());
-          assertTrue(info==null);  
-         
+
+            String[] info = ftp.getFileInfo(new URL(links.get("NORMAL_DOWNLOADLINK_1")).getPath());
+            assertTrue(info != null);
+
+            info = ftp.getFileInfo(new URL(links.get("FNF_DOWNLOADLINK_1")).getPath());
+            assertTrue(info == null);
+
         } catch (Exception e) {
             e.printStackTrace();
             assertTrue(false);
