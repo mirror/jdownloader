@@ -404,6 +404,9 @@ public class Serienjunkies extends PluginForDecrypt {
         }
         return links;
     }
+    private boolean isEinzelLink(String link) {
+		return link.indexOf("/safe/") >= 0 || link.indexOf("/save/") >= 0;
+	}
 
     private ArrayList<DownloadLink> getDLinks(String parameter, CryptedLink cryptedLink) throws DecrypterException {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -498,7 +501,7 @@ public class Serienjunkies extends PluginForDecrypt {
             ArrayList<String> helpvector = new ArrayList<String>();
 
             // Einzellink
-            if (parameter.indexOf("/safe/") >= 0 || parameter.indexOf("/save/") >= 0) {
+            if (isEinzelLink(parameter)) {
                 logger.info("safe link");
                 decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(einzelLinks(parameter, cryptedLink))));
             } else if (parameter.indexOf(subdomain + "serienjunkies.org") >= 0 || parameter.indexOf("/sjsafe/") >= 0) {
@@ -733,6 +736,7 @@ public class Serienjunkies extends PluginForDecrypt {
                                         if (canHandle(element4) && getHostname(element4).equals(wh)) {
                                             SerienjunkiesLinks dl = createdl(element4, new String[] { size, element3[0], element3[1], title });
                                             decryptedLinks.add(dl);
+                                            if(!isEinzelLink(element4))
                                             break outer;
                                         }
                                     }
