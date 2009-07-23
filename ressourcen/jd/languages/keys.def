@@ -953,6 +953,7 @@ plugins.optional.jdunrar.name = JD-Unrar
 plugins.optional.langfileeditor.duplicatedentries = Duplicated Entries
 plugins.optional.langfileeditor.string = String
 plugins.optional.langfileeditor.keys = Keys
+plugins.optional.langfileeditor.title = Language Editor
 plugins.optional.langfileeditor.keychart.done = Done
 plugins.optional.langfileeditor.keychart.missing = Missing
 plugins.optional.langfileeditor.keychart.old = Old
