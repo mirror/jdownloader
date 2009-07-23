@@ -121,7 +121,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
 
     public LFEGui(SubConfiguration cfg) {
         subConfig = cfg;
-
+        this.setName(JDL.L(LOCALE_PREFIX + "title", "Language Editor"));
         dirLanguages = JDUtilities.getResourceFile("tmp/lfe/lng/");
         dirWorkingCopy = JDUtilities.getResourceFile("tmp/lfe/src/");
         dirLanguages.mkdirs();
@@ -347,7 +347,12 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
 
         } else if (e.getSource() == mnuAdd) {
 
-            String[] result = SwingGui.getInstance().showTwoTextFieldDialog(JDL.L(LOCALE_PREFIX + "addKey.title", "Add new key"), JDL.L(LOCALE_PREFIX + "addKey.message1", "Type in the name of the key:"), JDL.L(LOCALE_PREFIX + "addKey.message2", "Type in the translated message of the key:"), "", "");
+            String[] result = SwingGui.getInstance().showTwoTextFieldDialog(
+                                                                            JDL.L(LOCALE_PREFIX + "addKey.title", "Add new key"),
+                                                                            JDL.L(LOCALE_PREFIX + "addKey.message1", "Type in the name of the key:"),
+                                                                            JDL.L(LOCALE_PREFIX + "addKey.message2", "Type in the translated message of the key:"),
+                                                                            "",
+                                                                            "");
             if (result == null || result[0].equals("")) return;
             result[0] = result[0].toLowerCase();
             for (KeyInfo ki : data) {
@@ -447,7 +452,8 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
             svn.getBroadcaster().addListener(new MessageListener() {
 
                 public void onMessage(MessageEvent event) {
-                    progress.setStatusText(JDL.L(LOCALE_PREFIX + "svn.updating", "Updating SVN: Please wait") + ": " + event.getMessage().replace(dirWorkingCopy.getParentFile().getAbsolutePath(), ""));
+                    progress
+                            .setStatusText(JDL.L(LOCALE_PREFIX + "svn.updating", "Updating SVN: Please wait") + ": " + event.getMessage().replace(dirWorkingCopy.getParentFile().getAbsolutePath(), ""));
 
                 }
 
@@ -463,7 +469,9 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
             } catch (Exception e) {
 
                 JDLogger.exception(e);
-                UserIO.getInstance().requestMessageDialog(JDL.L(LOCALE_PREFIX + "error.title", "Error occured"), JDL.LF(LOCALE_PREFIX + "error.updatesource.message", "Error while updating source:\r\n %s", JDLogger.getStackTrace(e)));
+                UserIO.getInstance().requestMessageDialog(
+                                                          JDL.L(LOCALE_PREFIX + "error.title", "Error occured"),
+                                                          JDL.LF(LOCALE_PREFIX + "error.updatesource.message", "Error while updating source:\r\n %s", JDLogger.getStackTrace(e)));
             }
             if (revert) {
                 try {
@@ -478,7 +486,9 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
                 svnLanguageDir.update(dirLanguages, null);
             } catch (Exception e) {
                 JDLogger.exception(e);
-                UserIO.getInstance().requestMessageDialog(JDL.L(LOCALE_PREFIX + "error.title", "Error occured"), JDL.LF(LOCALE_PREFIX + "error.updatelanguages.message", "Error while updating languages:\r\n %s", JDLogger.getStackTrace(e)));
+                UserIO.getInstance().requestMessageDialog(
+                                                          JDL.L(LOCALE_PREFIX + "error.title", "Error occured"),
+                                                          JDL.LF(LOCALE_PREFIX + "error.updatelanguages.message", "Error while updating languages:\r\n %s", JDLogger.getStackTrace(e)));
 
             }
             progress.setStatusText(JDL.L(LOCALE_PREFIX + "svn.updating.ready", "Updating SVN: Complete"));
@@ -936,7 +946,12 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
 
         private static final long serialVersionUID = -5434313385327397539L;
 
-        private String[] columnNames = { JDL.L(LOCALE_PREFIX + "id", "ID"), JDL.L(LOCALE_PREFIX + "key", "Key"), JDL.L(LOCALE_PREFIX + "sourceValue", "Default Value"), JDL.L(LOCALE_PREFIX + "languageFileValue", "Language File Value") };
+        private String[] columnNames = {
+                JDL.L(LOCALE_PREFIX + "id", "ID"),
+                JDL.L(LOCALE_PREFIX + "key", "Key"),
+                JDL.L(LOCALE_PREFIX + "sourceValue", "Default Value"),
+                JDL.L(LOCALE_PREFIX + "languageFileValue", "Language File Value")
+        };
 
         public int getColumnCount() {
             return columnNames.length;
@@ -1002,7 +1017,5 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
     public void onHide() {
         saveChanges();
     }
-
-  
 
 }

@@ -253,13 +253,13 @@ public class LookAndFeelController {
             // UIManager.put("Synthetica​.cache.enabled", true);
             // 
             
-            UIManager.put(" Synthetica​.tableHeader​.horizontalAlignment", JLabel.CENTER);
+//            UIManager.put("Synthetica​.tableHeader​.horizontalAlignment", JLabel.CENTER);
            
-            UIManager.put("Synthetica.window.decoration", false);
+//            UIManager.put("Synthetica.window.decoration", false);
             // UIManager.put("Synthetica​.rootPane​.titlePane​.menuButton​.useOriginalImageSize",
             // Boolean.TRUE);
-            UIManager.put("Synthetica​.tabbedPane​.tab​.animation​.cycles", 100);
-            UIManager.put("Synthetica​.tabbedPane​.tabs​.stretch", Boolean.TRUE);
+//            UIManager.put("Synthetica​.tabbedPane​.tab​.animation​.cycles", 100);
+//            UIManager.put("Synthetica​.tabbedPane​.tabs​.stretch", Boolean.TRUE);
             UIManager.setLookAndFeel(getPlaf().getClassName());
             // UIManager.setLookAndFeel(new SyntheticaStandardLookAndFeel());
 

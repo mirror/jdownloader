@@ -56,6 +56,7 @@ public class SingletonPanel {
             taskPanel.addActionListener((ActionListener) panel);
 
         }
+      
         return panel;
     }
 

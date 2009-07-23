@@ -25,9 +25,11 @@ public class TabbedPanelView extends View {
 
     @Override
     public boolean equals(Object e) {
-        if (e instanceof TabbedPanelView) return false;
+   
+        if (!(e instanceof TabbedPanelView)) return false;
 
         return ((TabbedPanelView) e).tabbedPanel == this.tabbedPanel;
+     
     }
 
     @Override

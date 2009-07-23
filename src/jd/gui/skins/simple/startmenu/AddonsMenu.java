@@ -42,7 +42,11 @@ public class AddonsMenu extends JStartMenu {
     }
 
     private void updateMenu() {
-        this.add(new AddonConfiguration());
+        /**
+         * 
+         * TODO
+         */
+//        this.add(new AddonConfiguration());
 
         ArrayList<JMenuItem> itemsWithSubmenu = new ArrayList<JMenuItem>();
         ArrayList<JMenuItem> itemsToggle = new ArrayList<JMenuItem>();

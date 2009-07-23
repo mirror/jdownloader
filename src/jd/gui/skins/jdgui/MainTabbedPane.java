@@ -6,6 +6,7 @@ import javax.swing.JTabbedPane;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import jd.gui.skins.SwingGui;
 import jd.gui.skins.jdgui.interfaces.View;
 
 public class MainTabbedPane extends JTabbedPane {
@@ -14,8 +15,10 @@ public class MainTabbedPane extends JTabbedPane {
     // private Boolean extraHighlight;
     protected View latestSelection;
 
-    public void addTab(View downloadView) {
-        super.addTab(downloadView.getTitle(), downloadView.getIcon(), downloadView, downloadView.getTooltip());
+    public void addTab(View view) {
+        SwingGui.checkEDT();
+        super.addTab(view.getTitle(), view.getIcon(), view, view.getTooltip());
+       
         this.setFocusable(false);
         // extraHighlight =
         // SubConfiguration.getConfig(JDGuiConstants.CONFIG_PARAMETER).getBooleanProperty(JDGuiConstants.CFG_KEY_MAIN_TABBED_HIGHLIGHT,
@@ -24,7 +27,7 @@ public class MainTabbedPane extends JTabbedPane {
     }
 
     public MainTabbedPane() {
-this.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT );
+        this.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
         this.addChangeListener(new ChangeListener() {
 
             public void stateChanged(ChangeEvent e) {
@@ -153,11 +156,40 @@ this.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT );
      */
 
     public View getSelectedView() {
+        SwingGui.checkEDT();
         return (View) super.getSelectedComponent();
     }
 
     public void setSelectedComponent(Component e) {
-        super.setSelectedComponent(e);
+        SwingGui.checkEDT();
+        super.setSelectedComponent(getComponentEquals((View) e));
+    }
+
+//    public String getTitleAt(int index) {
+//        System.out.println(index);
+//        try {
+//            return super.getTitleAt(index);
+//        } catch (Exception e) {
+//
+//            e.printStackTrace();
+//            return "";
+//        }
+//
+//    }
+
+    /**
+     * returns the component in this tab that equals view
+     * 
+     * @param view
+     * @return
+     */
+    public View getComponentEquals(View view) {
+        SwingGui.checkEDT();
+        for (int i = 0; i < this.getTabCount(); i++) {
+            Component c = this.getComponentAt(i);
+            if (c.equals(view)) return (View) c;
+        }
+        return null;
     }
 
     /**
@@ -168,7 +200,8 @@ this.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT );
      */
     public boolean contains(View view) {
         for (int i = 0; i < this.getTabCount(); i++) {
-            if (this.getTabComponentAt(i).equals(view)) return true;
+            Component c = this.getComponentAt(i);
+            if (c.equals(view)) return true;
         }
         return false;
     }
