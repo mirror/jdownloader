@@ -32,7 +32,7 @@ import jd.utils.locale.JDL;
 public class Advanced extends ConfigPanel {
     private static final String JDL_PREFIX = "jd.gui.skins.jdgui.settings.panels.downloadandnetwork.Advanced.";
 
-      public String getBreadcrum() {     return JDL.L(this.getClass().getName()+".breadcrum", this.getClass().getSimpleName() + "/" + getTitle()); }   public static String getTitle() {
+      public String getBreadcrum() {     return JDL.L(this.getClass().getName()+".breadcrum", this.getClass().getSimpleName()); }   public static String getTitle() {
         return JDL.L(JDL_PREFIX + "download.advanced.title", "Advanced");
     }
 

@@ -66,7 +66,7 @@ public abstract class ConfigPanel extends SwitchPanel {
     }
 
     public String getBreadcrum() {
-        return JDL.L(this.getClass().getName() + ".breadcrum", this.getClass().getSimpleName() + "/" + getTitle());
+        return JDL.L(this.getClass().getName() + ".breadcrum", this.getClass().getSimpleName());
     }
 
     public static String getTitle() {

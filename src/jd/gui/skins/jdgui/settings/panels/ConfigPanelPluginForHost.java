@@ -57,7 +57,7 @@ import org.jdesktop.swingx.decorator.PainterHighlighter;
 import org.jdesktop.swingx.painter.MattePainter;
 
 public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListener, MouseListener {
-      public String getBreadcrum() {     return JDL.L(this.getClass().getName()+".breadcrum", this.getClass().getSimpleName() + "/" + getTitle()); }   public static String getTitle(){
+      public String getBreadcrum() {     return JDL.L(this.getClass().getName()+".breadcrum", this.getClass().getSimpleName()); }   public static String getTitle(){
         return JDL.L(JDL_PREFIX + "host.title", "Hoster & Premium");
      }
     private static final String JDL_PREFIX = "jd.gui.skins.jdgui.settings.panels.ConfigPanelPluginForHost.";

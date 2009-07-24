@@ -44,7 +44,7 @@ public class Browser extends ConfigPanel {
     private static final long serialVersionUID = 3383448498625377495L;
 
     private static final String JDL_PREFIX = "jd.gui.skins.jdgui.settings.panels.gui.Browser.";
-      public String getBreadcrum() {     return JDL.L(this.getClass().getName()+".breadcrum", this.getClass().getSimpleName() + "/" + getTitle()); }   public static String getTitle(){
+      public String getBreadcrum() {     return JDL.L(this.getClass().getName()+".breadcrum", this.getClass().getSimpleName()); }   public static String getTitle(){
         return JDL.L(JDL_PREFIX + "gui.browser.title", "Browser");
      }
     private Configuration configuration;

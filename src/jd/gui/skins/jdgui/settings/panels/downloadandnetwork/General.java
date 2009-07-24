@@ -34,7 +34,7 @@ import jd.utils.locale.JDL;
 public class General extends ConfigPanel {
     private static final String JDL_PREFIX = "jd.gui.skins.jdgui.settings.panels.downloadandnetwork.General.";
 
-      public String getBreadcrum() {     return JDL.L(this.getClass().getName()+".breadcrum", this.getClass().getSimpleName() + "/" + getTitle()); }   public static String getTitle(){
+      public String getBreadcrum() {     return JDL.L(this.getClass().getName()+".breadcrum", this.getClass().getSimpleName()); }   public static String getTitle(){
         return JDL.L(JDL_PREFIX + "download.title", "Download & Network");
      }
     private static final long serialVersionUID = 3383448498625377495L;

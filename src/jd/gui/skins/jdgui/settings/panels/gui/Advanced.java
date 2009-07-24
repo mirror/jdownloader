@@ -53,7 +53,7 @@ public class Advanced extends ConfigPanel {
         initPanel();
         load();
     }
-      public String getBreadcrum() {     return JDL.L(this.getClass().getName()+".breadcrum", this.getClass().getSimpleName() + "/" + getTitle()); }   public static String getTitle(){
+      public String getBreadcrum() {     return JDL.L(this.getClass().getName()+".breadcrum", this.getClass().getSimpleName()); }   public static String getTitle(){
         return JDL.L(JDL_PREFIX + "gui.advanced.title", "Advanced");
      }
     private ConfigContainer setupContainer() {
