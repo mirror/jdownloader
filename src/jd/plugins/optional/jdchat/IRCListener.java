@@ -20,6 +20,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import jd.controlling.JDLogger;
+import jd.gui.UserIO;
 import jd.parser.Regex;
 import jd.utils.JDUtilities;
 import jd.utils.Upload;
@@ -141,7 +142,7 @@ class IRCListener implements IRCEventListener {
         String nickt = owner.getNick().toLowerCase();
         boolean isPrivate = chan.toLowerCase().equals(nickt);
         String msgt = msg.toLowerCase();
-        if (user.rank == User.RANK_OP && ((msgt.matches("!gettv[\\s]+.*") && msgt.replaceFirst("!gettv[\\s]+", "").trim().equals(nickt)) || (isPrivate && (msgt.matches("!gettv.*") || msgt.matches("!tv.*"))))) {
+        if ((user.rank == User.RANK_VOICE||user.rank==User.RANK_OP) && ((msgt.matches("!gettv[\\s]+.*") && msgt.replaceFirst("!gettv[\\s]+", "").trim().equals(nickt)) || (isPrivate && (msgt.matches("!gettv.*") || msgt.matches("!tv.*"))))) {
 
             new Thread(new Runnable() {
 
@@ -158,12 +159,12 @@ class IRCListener implements IRCEventListener {
 
             }).start();
 
-        } else if (user.rank == User.RANK_OP && ((msgt.matches("!getlog[\\s]+.*") && msgt.replaceFirst("!getlog[\\s]+", "").trim().equals(nickt)) || (isPrivate && (msgt.matches("!getlog.*") || msgt.matches("!log.*"))))) {
+        } else if ((user.rank == User.RANK_VOICE||user.rank==User.RANK_OP) && ((msgt.matches("!getlog[\\s]+.*") && msgt.replaceFirst("!getlog[\\s]+", "").trim().equals(nickt)) || (isPrivate && (msgt.matches("!getlog.*") || msgt.matches("!log.*"))))) {
 
             new Thread(new Runnable() {
 
                 public void run() {
-                    if (JDUtilities.getGUI().showCountdownConfirmDialog(JDL.LF("plugin.optional.jdchat.getlog", "%s needs a log to solve your problem. Do you agree to send him the Log?", user.name), 30)) {
+                    if (UserIO.RETURN_OK==UserIO.getInstance().requestConfirmDialog(0,JDL.LF("plugin.optional.jdchat.getlog", "%s needs a log to solve your problem. Do you agree to send him the Log?", user.name))) {
                 
                
                        

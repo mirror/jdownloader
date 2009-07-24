@@ -5,6 +5,7 @@ import jd.controlling.JDLogger;
 import jd.gui.UIInterface;
 import jd.gui.skins.jdgui.WindowAdapter;
 import jd.gui.skins.jdgui.interfaces.SwitchPanel;
+import jd.plugins.optional.jdchat.JDChatView;
 
 public abstract class SwingGui extends WindowAdapter implements UIInterface {
 
@@ -56,6 +57,12 @@ public abstract class SwingGui extends WindowAdapter implements UIInterface {
         }
 
     }
+
+    /**
+     * remove a panel completly.. e.g. unloading an plugin.
+     * @param view
+     */
+    abstract public void disposeView(SwitchPanel view);
 
    
 

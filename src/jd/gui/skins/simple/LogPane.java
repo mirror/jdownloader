@@ -19,16 +19,23 @@ package jd.gui.skins.simple;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
 import javax.swing.JFileChooser;
 import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
+import javax.swing.JTextPane;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.EditorKit;
+import javax.swing.text.html.HTMLDocument;
 
 import jd.controlling.JDLogHandler;
 import jd.controlling.JDLogger;
+import jd.controlling.LogFormatter;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.UserIO;
@@ -38,6 +45,7 @@ import jd.gui.skins.jdgui.interfaces.SwitchPanel;
 import jd.gui.skins.jdgui.views.info.LogInfoPanel;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.http.Encoding;
+import jd.http.HTMLEntities;
 import jd.nutils.JDFlags;
 import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
@@ -55,7 +63,7 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
     /**
      * JTextField wo der Logger Output eingetragen wird
      */
-    private JTextArea logField;
+    private JTextPane logField;
 
     /**
      * Primary Constructor
@@ -64,9 +72,11 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
         this.setName("LOGDIALOG");
         this.setLayout(new MigLayout("ins 3", "[fill,grow]", "[fill,grow]"));
 
-        logField = new JTextArea(10, 60);
+        logField = new JTextPane();
+        logField.setContentType("text/html");
         logField.setEditable(true);
         logField.setAutoscrolls(true);
+
         add(new JScrollPane(logField));
     }
 
@@ -91,7 +101,15 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
             Level level = JDLogger.getLogger().getLevel();
 
             if (!level.equals(Level.ALL)) {
-                int status = UserIO.getInstance().requestHelpDialog(UserIO.NO_COUNTDOWN, JDL.L("gui.logdialog.loglevelwarning.title", "Wrong Loglevel for Uploading selected!"), JDL.LF("gui.logdialog.loglevelwarning", "The selected loglevel (%s) isn't preferred to upload a log! Please change it to ALL and create a new log!", level.getName()), null, "http://jdownloader.org/knowledge/wiki/support/create-a-jd-log");
+                int status = UserIO.getInstance().requestHelpDialog(
+                                                                    UserIO.NO_COUNTDOWN,
+                                                                    JDL.L("gui.logdialog.loglevelwarning.title", "Wrong Loglevel for Uploading selected!"),
+                                                                    JDL.LF(
+                                                                           "gui.logdialog.loglevelwarning",
+                                                                           "The selected loglevel (%s) isn't preferred to upload a log! Please change it to ALL and create a new log!",
+                                                                           level.getName()),
+                                                                    null,
+                                                                    "http://jdownloader.org/knowledge/wiki/support/create-a-jd-log");
                 if (JDFlags.hasSomeFlags(status, UserIO.RETURN_CANCEL, UserIO.RETURN_COUNTDOWN_TIMEOUT)) return;
             }
 
@@ -104,7 +122,14 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
 
             String name = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN, JDL.L("userio.input.title", "Please enter!"), JDL.L("gui.askName", "Your name?"), null, null, null, null);
             if (name == null) return;
-            String question = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN, JDL.L("userio.input.title", "Please enter!"), JDL.L("gui.logger.askQuestion", "Please describe your Problem/Bug/Question!"), null, null, null, null);
+            String question = UserIO.getInstance().requestInputDialog(
+                                                                      UserIO.NO_COUNTDOWN,
+                                                                      JDL.L("userio.input.title", "Please enter!"),
+                                                                      JDL.L("gui.logger.askQuestion", "Please describe your Problem/Bug/Question!"),
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null);
 
             if (question == null) return;
             SwingGui.getInstance().setWaiting(true);
@@ -115,14 +140,14 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
             } catch (Exception e1) {
                 JDLogger.exception(e1);
             }
-            logField.append("\r\n\r\n-------------------------------------------------------------\r\n\r\n");
+            append("\r\n\r\n-------------------------------------------------------------\r\n\r\n");
             if (url != null) {
-                logField.append(JDL.L("gui.logupload.message", "Please send this loglink to your supporter") + "\r\n");
-                this.logField.append(url);
+                append(JDL.L("gui.logupload.message", "Please send this loglink to your supporter") + "\r\n");
+                append(url);
             } else {
-                this.logField.append(JDL.L("gui.logDialog.warning.uploadFailed", "Upload failed"));
+                append(JDL.L("gui.logDialog.warning.uploadFailed", "Upload failed"));
             }
-            logField.append("\r\n\r\n-------------------------------------------------------------\r\n\r\n");
+            append("\r\n\r\n-------------------------------------------------------------\r\n\r\n");
             SwingGui.getInstance().setWaiting(false);
             logField.setCaretPosition(logField.getText().length());
             break;
@@ -148,20 +173,44 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
          * TODO: not synchronized properbly in loop.
          */
         try {
-            if( SwingGui.getInstance()!=null)SwingGui.getInstance().setWaiting(true);
+            if (SwingGui.getInstance() != null) SwingGui.getInstance().setWaiting(true);
             JDUtilities.getController().addControlListener(this);
-            ArrayList<LogRecord> buff = JDLogHandler.getHandler().getBuffer();
+            ArrayList<LogRecord> buff = new ArrayList<LogRecord>();
+
+            buff.addAll(JDLogHandler.getHandler().getBuffer());
+
+            LogFormatter formater = (LogFormatter) JDLogHandler.getHandler().getFormatter();
             StringBuilder sb = new StringBuilder();
+
+            sb.append("<style type=\"text/css\">");
+            sb.append(".warning { background-color:yellow;}");
+            sb.append(".severe { background-color:red;}");
+            sb.append(".exception { background-color:red;}");
+            // sb.append(".normal { background-color:black;}");
+            sb.append("</style>");
+
             for (LogRecord lr : buff) {
                 // if (lr.getLevel().intValue() >=
                 // JDLogger.getLogger().getLevel().intValue())
-                sb.append(JDLogHandler.getHandler().getFormatter().format(lr));
+
+                sb.append(format(lr, formater));
             }
             logField.setText(sb.toString());
-            if( SwingGui.getInstance()!=null)SwingGui.getInstance().setWaiting(false);
-            logField.setCaretPosition(logField.getText().length());
+            System.out.println(sb.toString());
+            if (SwingGui.getInstance() != null) SwingGui.getInstance().setWaiting(false);
+            logField.setCaretPosition(logField.getDocument().getEndPosition().getOffset()-1);
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    private String format(LogRecord lr, LogFormatter formater) {
+        if (lr.getThrown() != null) {
+
+            return ("<span class='exception'>" + HTMLEntities.htmlTotal(formater.format(lr)).trim().replace("\r\n", "<br>") + "</span><br>");
+
+        } else {
+            return ("<span class='" + lr.getLevel().getName().toLowerCase() + "'>" + HTMLEntities.htmlTotal(formater.format(lr)).trim().replace("\r\n", "<br>") + "</span><br>");
         }
     }
 
@@ -170,9 +219,33 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
         JDUtilities.getController().removeControlListener(this);
     }
 
+    public void append(String sb) {
+        HTMLDocument doc = (HTMLDocument)logField.getDocument();
+    
+        EditorKit editorkit = logField.getEditorKit();
+        Reader r = new StringReader(sb);
+        try {
+            editorkit.read(r, doc, doc.getEndPosition().getOffset()-1);
+        } catch (IOException e1) {
+            // TODO Auto-generated catch block
+            e1.printStackTrace();
+        } catch (BadLocationException e1) {
+            // TODO Auto-generated catch block
+            e1.printStackTrace();
+        }
+//        if (doc != null) {
+//            try {
+//                doc.insertString(doc.getLength(), sb, null);
+//            } catch (BadLocationException e) {
+//            }
+//        }
+
+    }
+
     public void controlEvent(ControlEvent event) {
         if (event.getID() == ControlEvent.CONTROL_LOG_OCCURED) {
-            logField.append(JDLogHandler.getHandler().getFormatter().format((LogRecord) event.getParameter()));
+            append(format((LogRecord) event.getParameter(), (LogFormatter) JDLogHandler.getHandler().getFormatter()));
+
         }
     }
 

@@ -40,6 +40,7 @@ import jd.gui.skins.SwingGui;
 import jd.gui.skins.jdgui.components.toolbar.MainToolBar;
 import jd.gui.skins.jdgui.events.EDTEventQueue;
 import jd.gui.skins.jdgui.interfaces.SwitchPanel;
+import jd.gui.skins.jdgui.interfaces.View;
 import jd.gui.skins.jdgui.views.ConfigurationView;
 import jd.gui.skins.jdgui.views.DownloadView;
 import jd.gui.skins.jdgui.views.LinkgrabberView;
@@ -49,7 +50,6 @@ import jd.gui.skins.jdgui.views.linkgrabberview.LinkGrabberPanel;
 import jd.gui.skins.simple.Balloon;
 import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.JDStatusBar;
-import jd.gui.skins.simple.TabProgress;
 import jd.gui.skins.simple.startmenu.AboutMenu;
 import jd.gui.skins.simple.startmenu.AddLinksMenu;
 import jd.gui.skins.simple.startmenu.AddonsMenu;
@@ -94,7 +94,8 @@ public class JDGui extends SwingGui {
         ClipboardHandler.getClipboard().setTempDisabled(false);
         // Important for unittests
         setName("MAINFRAME");
-//        GUIUtils.getConfig() = SubConfiguration.getConfig(JDGuiConstants.CONFIG_PARAMETER);
+        // GUIUtils.getConfig() =
+        // SubConfiguration.getConfig(JDGuiConstants.CONFIG_PARAMETER);
 
         initDefaults();
         initComponents();
@@ -399,10 +400,8 @@ public class JDGui extends SwingGui {
 
     public void closeWindow() {
         if (!OSDetector.isMac()) {
-            if (JDFlags.hasSomeFlags(
-                                     UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_COUNTDOWN, JDL.L("sys.ask.rlyclose", "Wollen Sie jDownloader wirklich schließen?")),
-                                     UserIO.RETURN_OK,
-                                     UserIO.DONT_SHOW_AGAIN)) {
+            if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_COUNTDOWN, JDL.L("sys.ask.rlyclose", "Wollen Sie jDownloader wirklich schließen?")),
+                                     UserIO.RETURN_OK, UserIO.DONT_SHOW_AGAIN)) {
 
                 JDUtilities.getController().exit();
             }
@@ -445,5 +444,16 @@ public class JDGui extends SwingGui {
         default:
             mainTabbedPane.setSelectedComponent(downloadView);
         }
+    }
+
+    @Override
+    public void disposeView(SwitchPanel view) {
+        if (view instanceof View) {
+            view = mainTabbedPane.getComponentEquals((View) view);
+
+            mainTabbedPane.remove(view);
+
+        }
+
     }
 }

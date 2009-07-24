@@ -14,20 +14,25 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.gui.skins.simple;
+package jd.gui.skins.jdgui;
 
-import java.awt.event.ActionListener;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
 import jd.controlling.JDLogger;
 import jd.gui.skins.jdgui.interfaces.SwitchPanel;
-import jd.gui.skins.simple.tasks.TaskPanel;
 
+/**
+ * This calss is used as a jpanelwrapper.. it creates an instance of a Class<?
+ * extends SwitchPanel> class only once
+ * 
+ * @author Coalado
+ * 
+ */
 public class SingletonPanel {
 
     private SwitchPanel panel;
-    private TaskPanel taskPanel;
+
     private Class<? extends SwitchPanel> clazz;
     private Object[] objs;
 
@@ -35,6 +40,13 @@ public class SingletonPanel {
         this.panel = linkListPane;
     }
 
+    /**
+     * 
+     * @param Class
+     *            <? extends SwitchPanel> class
+     * @param paranmeter
+     *            of the desred constructor in class
+     */
     public SingletonPanel(Class<? extends SwitchPanel> class1, Object... objects) {
         clazz = class1;
         objs = objects;
@@ -52,11 +64,7 @@ public class SingletonPanel {
             }
 
         }
-        if (taskPanel != null && panel instanceof ActionListener) {
-            taskPanel.addActionListener((ActionListener) panel);
 
-        }
-      
         return panel;
     }
 
@@ -67,11 +75,6 @@ public class SingletonPanel {
 
         Constructor<? extends SwitchPanel> c = clazz.getConstructor(classes);
         panel = c.newInstance(objs);
-
-    }
-
-    public void setTaskPanel(TaskPanel taskPanel) {
-        this.taskPanel = taskPanel;
 
     }
 

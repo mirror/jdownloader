@@ -24,7 +24,7 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.MenuItem;
 import jd.gui.skins.SwingGui;
-import jd.gui.skins.simple.SingletonPanel;
+import jd.gui.skins.jdgui.SingletonPanel;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
 
@@ -49,8 +49,9 @@ public class LangFileEditor extends PluginOptional {
     private void initConfigEntries() {
         ConfigEntry cfg;
         ConfigEntry cond;
-        
-        config.addEntry(cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), LFEGui.PROPERTY_SVN_ACCESS_ANONYMOUS, "Do not upload (SVN) changes on save").setDefaultValue(true));
+
+        config.addEntry(cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), LFEGui.PROPERTY_SVN_ACCESS_ANONYMOUS, "Do not upload (SVN) changes on save")
+                .setDefaultValue(true));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), LFEGui.PROPERTY_SVN_ACCESS_USER, "Upload (SVN) Username"));
         cfg.setEnabledCondidtion(cond, "==", false);
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, getPluginConfig(), LFEGui.PROPERTY_SVN_ACCESS_PASS, "Upload (SVN) Password"));

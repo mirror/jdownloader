@@ -186,8 +186,8 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
         case ConfigContainer.TYPE_BUTTON:
             decoration = new JLabel(configEntry.getDescription());
             input[0] = new JButton(configEntry.getLabel());
-            if(configEntry.getImageIcon()!=null){
-                ((JButton)input[0]).setIcon(configEntry.getImageIcon());
+            if (configEntry.getImageIcon() != null) {
+                ((JButton) input[0]).setIcon(configEntry.getImageIcon());
             }
             // input[0].setName(configEntry.getLabel());
             ((JButton) input[0]).addActionListener(this);

@@ -36,7 +36,9 @@ public class ConfigSidebar extends SideBarPanel {
 
                     @Override
                     public Object runSave() {
+                        if(tree.getSelectionPath()==null)return null;
                         entry = (TreeEntry) tree.getSelectionPath().getLastPathComponent();
+                        tree.expandPath(tree.getSelectionPath());
                         if (entry.getPanel() == null) {
                             entry = entry.getEntries().get(0);
                         }
@@ -48,7 +50,14 @@ public class ConfigSidebar extends SideBarPanel {
             }
 
         });
-        expandAll(tree, true);
+        TreePath rootPath = new TreePath(tree.getModel().getRoot());
+        tree.expandPath(rootPath);
+        TreeEntry node = (TreeEntry) rootPath.getLastPathComponent();
+            for (TreeEntry n : node.getEntries()) {
+                TreePath path = rootPath.pathByAddingChild(n);
+                tree.expandPath(path);
+            }        
+      
         tree.setSelectionRow(0);
     }
 
@@ -57,7 +66,7 @@ public class ConfigSidebar extends SideBarPanel {
         expandAll(tree, new TreePath(root), expand);
     }
 
-    private void expandAll(JTree tree, TreePath parent, boolean expand) {
+    public void expandAll(JTree tree, TreePath parent, boolean expand) {
 
         TreeEntry node = (TreeEntry) parent.getLastPathComponent();
         if (node.size() >= 0) {

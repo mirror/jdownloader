@@ -367,6 +367,8 @@ public class LookAndFeelController {
         UIManager.installLookAndFeel("SmartLookAndFeel", "com.jtattoo.plaf.smart.SmartLookAndFeel");
     }
 
+
+
     // private static void installJGoodies() {
     // // com.jgoodies.plaf.plastic.PlasticXPLookAndFeel
     //

@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.gui.skins.jdgui.settings.panels;
+package jd.gui.skins.jdgui.settings.panels.reconnect;
 
 import java.awt.Color;
 import java.awt.event.ActionEvent;
@@ -38,8 +38,8 @@ import jd.controlling.reconnect.ExternReconnect;
 import jd.controlling.reconnect.HTTPLiveHeader;
 import jd.controlling.reconnect.ReconnectMethod;
 import jd.controlling.reconnect.Reconnecter;
-import jd.gui.skins.jdgui.settings.ConfigEntriesPanel;
 import jd.gui.skins.jdgui.settings.ConfigPanel;
+import jd.gui.skins.jdgui.settings.GUIConfigEntry;
 import jd.gui.skins.jdgui.settings.subpanels.SubPanelCLRReconnect;
 import jd.gui.skins.jdgui.settings.subpanels.SubPanelLiveHeaderReconnect;
 import jd.gui.skins.simple.Factory;
@@ -50,8 +50,11 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
-public class ConfigPanelReconnect extends ConfigPanel implements ActionListener {
-
+public class MethodSelection extends ConfigPanel implements ActionListener {
+      public String getBreadcrum() {     return JDL.L(this.getClass().getName()+".breadcrum", this.getClass().getSimpleName() + "/" + getTitle()); }   public static String getTitle(){
+        return JDL.L(JDL_PREFIX + "reconnect.title", "Reconnection");
+     }
+    private static final String JDL_PREFIX = "jd.gui.skins.jdgui.settings.panels.reconnect.MethodSelection.";
     private static final long serialVersionUID = 3383448498625377495L;
 
     private JButton btn;
@@ -74,15 +77,9 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
 
     private JLabel time;
 
-    private JTabbedPane maintabbed;
-
-    private ConfigContainer container;
-
-    private ConfigEntriesPanel cep;
-
     private JPanel method;
 
-    public ConfigPanelReconnect(Configuration configuration) {
+    public MethodSelection(Configuration configuration) {
         super();
         this.configuration = configuration;
         initPanel();
@@ -163,9 +160,8 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
 
     @Override
     public void initPanel() {
-        setupContainer();
+
         /* 0=LiveHeader, 1=Extern, 2=Batch,3=CLR */
-        maintabbed = new JTabbedPane();
 
         method = new JPanel(new MigLayout("ins 0 0 0 0,wrap 2", "[fill,grow 10]10[fill,grow]"));
 
@@ -181,7 +177,8 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
         addCLR();
         // tabbed.setSelectedIndex(configuration.getIntegerProperty(
         // ReconnectMethod.PARAM_RECONNECT_TYPE, ReconnectMethod.LIVEHEADER));
-        method.add(Factory.createHeader(new ConfigGroup(JDL.L("gui.config.reconnect.test", "Showcase"), JDTheme.II("gui.images.config.network_local", 32, 32))), "spanx,gaptop 15,gapleft 20,gapright 15");
+        method.add(Factory.createHeader(new ConfigGroup(JDL.L("gui.config.reconnect.test", "Showcase"), JDTheme.II("gui.images.config.network_local", 32, 32))),
+                   "spanx,gaptop 15,gapleft 20,gapright 15");
         JPanel p = new JPanel(new MigLayout(" ins 0,wrap 7", "[]5[fill]5[align right]20[align right]20[align right]20[align right]20[align right]", "[][]"));
         method.add(p, "spanx,gapright 20,gapleft 54");
         btn = new JButton(JDL.L("gui.config.reconnect.showcase.reconnect", "Change IP"));
@@ -217,23 +214,18 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
             }
         }.start();
 
-        maintabbed.addTab(JDL.L("gui.config.reconnect.methodtab", "Reconnect method"), JDTheme.II("gui.images.config.network_local", 16, 16), method);
-        maintabbed.addTab(JDL.L("gui.config.reconnect.settingstab", "Advanced Settings"), JDTheme.II("gui.images.reconnect_settings", 16, 16), cep = new ConfigEntriesPanel(container));
+        // maintabbed.addTab(JDL.L("gui.config.reconnect.methodtab",
+        // "Reconnect method"), JDTheme.II("gui.images.config.network_local",
+        // 16, 16), method);
+        // maintabbed.addTab(JDL.L("gui.config.reconnect.settingstab",
+        // "Advanced Settings"), JDTheme.II("gui.images.reconnect_settings", 16,
+        // 16), cep = new ConfigEntriesPanel(container));
         setLayout(new MigLayout("ins 0,wrap 1", "[fill,grow 10]", "[fill,grow]"));
         // panel.add();
-        add(maintabbed);
+        JTabbedPane tabbed = new JTabbedPane();
+        tabbed.add(getBreadcrum(), method);
 
-    }
-
-    private void setupContainer() {
-
-        container = new ConfigContainer();
-
-        ConfigGroup group = new ConfigGroup(JDL.L("gui.config.reconnect.shared", "General Reconnect Settings"), JDTheme.II("gui.images.reconnect_settings", 32, 32));
-        container.setGroup(group);
-        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), ReconnectMethod.PARAM_IPCHECKWAITTIME, JDL.L("reconnect.waitTimeToFirstIPCheck", "Wartezeit bis zum ersten IP-Check [sek]"), 0, 600).setDefaultValue(5));
-        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), ReconnectMethod.PARAM_RETRIES, JDL.L("reconnect.retries", "Max. Wiederholungen (-1 = unendlich)"), -1, 20).setDefaultValue(5));
-        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), ReconnectMethod.PARAM_WAITFORIPCHANGE, JDL.L("reconnect.waitForIp", "Auf neue IP warten [sek]"), 0, 600).setDefaultValue(20));
+        this.add(tabbed);
 
     }
 
@@ -249,14 +241,70 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
     private void addBatch() {
         String name = JDL.L("modules.reconnect.types.batch", "Batch");
 
-        tabbed.addTab(name, new ConfigEntriesPanel(new BatchReconnect().getConfig()));
+        ConfigPanel cp;
+        tabbed.addTab(name, cp=new ConfigPanel(){         
+
+            @Override
+            public void initPanel() {
+                ConfigContainer container =  new BatchReconnect().getConfig();
+
+                for (ConfigEntry cfgEntry : container.getEntries()) {
+                    GUIConfigEntry ce = new GUIConfigEntry(cfgEntry);
+                    if (ce != null) addGUIConfigEntry(ce);
+                }
+
+                add(panel);
+            }
+
+            @Override
+            public void load() {
+                loadConfigEntries();
+            }
+
+            @Override
+            public void save() {
+                saveConfigEntries();
+
+            }
+            
+        });
+        cp.initPanel();
+        cp.load();
 
     }
 
     private void addExtern() {
         String name = JDL.L("modules.reconnect.types.extern", "Extern");
 
-        tabbed.addTab(name, new ConfigEntriesPanel(new ExternReconnect().getConfig()));
+        ConfigPanel cp;
+        tabbed.addTab(name,cp= new ConfigPanel(){         
+
+            @Override
+            public void initPanel() {
+                ConfigContainer container =  new ExternReconnect().getConfig();
+
+                for (ConfigEntry cfgEntry : container.getEntries()) {
+                    GUIConfigEntry ce = new GUIConfigEntry(cfgEntry);
+                    if (ce != null) addGUIConfigEntry(ce);
+                }
+
+                add(panel);
+            }
+
+            @Override
+            public void load() {
+                loadConfigEntries();
+            }
+
+            @Override
+            public void save() {
+                saveConfigEntries();
+
+            }
+            
+        });
+        cp.initPanel();
+        cp.load();
 
     }
 
@@ -281,7 +329,7 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener 
 
     @Override
     public void save() {
-        cep.save();
+       
         saveConfigEntries();
         configuration.setProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, tabbed.getSelectedIndex());
         ((ConfigPanel) tabbed.getSelectedComponent()).save();

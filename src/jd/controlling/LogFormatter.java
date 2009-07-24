@@ -22,6 +22,7 @@ import java.util.logging.LogRecord;
 import java.util.logging.SimpleFormatter;
 
 import jd.nutils.Formatter;
+import jd.nutils.JDFlags;
 
 /**
  * Mit dieser Klasse können die Logmeldungen anders dargestellt werden. Der Code
@@ -33,6 +34,7 @@ import jd.nutils.Formatter;
  */
 public class LogFormatter extends SimpleFormatter {
 
+   
     // private final static String format = "{0,date} {0,time}";
     private Object args[] = new Object[1];
     Date dat = new Date();
@@ -90,11 +92,12 @@ public class LogFormatter extends SimpleFormatter {
         sb.append(lineSeparator);
         if (record.getThrown() != null) {
             ;
-           
-             
-                sb.append(JDLogger.getStackTrace( record.getThrown()));
-          
+
+            sb.append(JDLogger.getStackTrace(record.getThrown()));
+
         }
         return sb.toString();
     }
+
+   
 }

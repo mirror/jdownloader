@@ -30,6 +30,7 @@ import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 public class SrcParser {
 
@@ -80,6 +81,12 @@ public class SrcParser {
             parseFile(f);
         }
 
+    }
+
+    public static void main(String args[]) {
+
+        SrcParser p = new SrcParser(new File("C:\\Users\\Coalado\\.jd_home\\tmp\\lfe\\src\\jd\\gui\\skins\\jdgui\\views"));
+        p.parse();
     }
 
     @SuppressWarnings("unchecked")
@@ -151,6 +158,13 @@ public class SrcParser {
     }
 
     private void prepareContent() {
+        
+        String cl = this.currentFile.getAbsolutePath();
+        cl=cl.replace("\\", "/");
+        cl=cl.substring(cl.indexOf("/jd/")+1).replace('/', '.');
+        cl=cl.replace(".java", "");
+        currentContent=currentContent.replace("this.getClass().getName()","\""+cl+"\"");
+        currentContent=currentContent.replace("getClass().getName()","\""+cl+"\"");
         if (this.currentContent.contains("jd.gui.skins.simple.startmenu.actions;")) {
             String menukey = new Regex(currentContent, "super\\(\"(.*?)\",\\s*\".*?\"\\);").getMatch(0);
             if (menukey != null) {
@@ -164,7 +178,25 @@ public class SrcParser {
             currentContent = currentContent.replaceFirst("super\\(\"(.*?)\",\\s*\".*?\"\\);", "[[...]]");
             currentContent += "\r\nJDL.L(\"" + menukey + "\",\"" + menukey + "\");";
 
-        }
+        } else if (this.currentContent.contains("ThreadedAction")) {
+            String[] keys = new Regex(currentContent, "ThreadedAction\\s*\\(\"(.*?)\"\\,\\s*\"(.*?)\"").getColumn(0);
+
+            for (String k : keys) {
+                currentContent += "\r\nJDL.L(\"" + "gui.menu." + k + ".name" + "\",\"" + "gui.menu." + k + ".name" + "\");";
+                currentContent += "\r\nJDL.L(\"" + "gui.menu." + k + ".mnem" + "\",\"" + "gui.menu." + k + ".mnem" + "\");";
+                currentContent += "\r\nJDL.L(\"" + "gui.menu." + k + ".accel" + "\",\"" + "-" + "\");";
+            }
+
+        } else if (this.currentContent.contains("ToolBarAction")) {
+            String[] keys = new Regex(currentContent, "ToolBarAction\\s*\\(\"(.*?)\"\\,\\s*\"(.*?)\"").getColumn(0);
+
+            for (String k : keys) {
+                currentContent += "\r\nJDL.L(\"" + "gui.menu." + k + ".name" + "\",\"" + "gui.menu." + k + ".name" + "\");";
+                currentContent += "\r\nJDL.L(\"" + "gui.menu." + k + ".mnem" + "\",\"" + "gui.menu." + k + ".mnem" + "\");";
+                currentContent += "\r\nJDL.L(\"" + "gui.menu." + k + ".accel" + "\",\"" + "-" + "\");";
+            }
+        } 
+        //JDL.L(this.getClass().getName()
 
     }
 
@@ -297,7 +329,15 @@ public class SrcParser {
 
                         int index = parameter[0].indexOf(error);
                         if (index >= 0) {
-                            JDLogger.getLogger().warning("Unsupported chars (" + parameter[0].substring(0, index) + "<< |" + parameter[0].substring(index + 1) + ") in key:" + currentFile + " : " + parameter[0]);
+                            JDLogger.getLogger().warning(
+                                                         "Unsupported chars ("
+                                                                 + parameter[0].substring(0, index)
+                                                                 + "<< |"
+                                                                 + parameter[0].substring(index + 1)
+                                                                 + ") in key:"
+                                                                 + currentFile
+                                                                 + " : "
+                                                                 + parameter[0]);
 
                         } else {
                             JDLogger.getLogger().warning("Unsupported chars in key: " + currentFile + " : " + parameter[0]);
@@ -397,7 +437,15 @@ public class SrcParser {
 
                         int index = parameter[0].indexOf(error);
                         if (index >= 0) {
-                            JDLogger.getLogger().warning("Unsupported chars (" + parameter[0].substring(0, index) + "<< |" + parameter[0].substring(index + 1) + ") in key:" + currentFile + " : " + parameter[0]);
+                            JDLogger.getLogger().warning(
+                                                         "Unsupported chars ("
+                                                                 + parameter[0].substring(0, index)
+                                                                 + "<< |"
+                                                                 + parameter[0].substring(index + 1)
+                                                                 + ") in key:"
+                                                                 + currentFile
+                                                                 + " : "
+                                                                 + parameter[0]);
 
                         } else {
                             JDLogger.getLogger().warning("Unsupported chars in key: " + currentFile + " : " + parameter[0]);

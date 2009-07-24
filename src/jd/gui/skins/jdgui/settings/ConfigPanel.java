@@ -34,6 +34,7 @@ import jd.config.ConfigEntry.PropertyType;
 import jd.gui.skins.SwingGui;
 import jd.gui.skins.jdgui.interfaces.SwitchPanel;
 import jd.gui.skins.simple.Factory;
+import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 public abstract class ConfigPanel extends SwitchPanel {
@@ -43,16 +44,10 @@ public abstract class ConfigPanel extends SwitchPanel {
     protected Vector<GUIConfigEntry> entries = new Vector<GUIConfigEntry>();
 
     protected Logger logger = jd.controlling.JDLogger.getLogger();
-    private boolean tabbed = false;
+
     protected JPanel panel;
 
     private ConfigGroup currentGroup;
-
-    protected boolean viewport = true;
-    //
-    // private JMenuBar menuBar;
-    //
-    // private JMenu groupMenu;
 
     private JPanel header;
 
@@ -61,21 +56,6 @@ public abstract class ConfigPanel extends SwitchPanel {
         panel = new JPanel();
         panel.setLayout(new MigLayout("ins 0 10 10 10,wrap 2", "[fill,grow 10]10[fill,grow]"));
 
-        // if (menuBar == null) {
-        // menuBar = new JMenuBar();
-        // panel.add(menuBar, "spanx,growx,pushx,hidemode 3");
-        // menuBar.setVisible(false);
-        // }
-    }
-
-  
-    
-
-  
-
-    public void setTabbed(boolean b) {
-        tabbed = b;
-
     }
 
     @Override
@@ -83,6 +63,14 @@ public abstract class ConfigPanel extends SwitchPanel {
 
         super.paint(g);
         if (SwingGui.getInstance() != null) SwingGui.getInstance().setWaiting(false);
+    }
+
+    public String getBreadcrum() {
+        return JDL.L(this.getClass().getName() + ".breadcrum", this.getClass().getSimpleName() + "/" + getTitle());
+    }
+
+    public static String getTitle() {
+        return "NOTITLE";
     }
 
     public void addGUIConfigEntry(GUIConfigEntry entry, JPanel panel) {
@@ -133,18 +121,14 @@ public abstract class ConfigPanel extends SwitchPanel {
                 case ConfigContainer.TYPE_TEXTAREA:
                 case ConfigContainer.TYPE_LISTCONTROLLED:
                     panel.add(new JScrollPane(c), "spanx,gapright " + getGapRight() + ",growy,pushy");
-                    // panel.add(new JScrollPane(c),
-                    // "spanx,gapright 20,growy,pushy");
-                    viewport = false;
+
                     break;
                 case ConfigContainer.TYPE_PREMIUMPANEL:
                     this.setLayout(new MigLayout("ins 0", "[fill,grow]", "[fill,grow]"));
                     panel.setLayout(new MigLayout("ins 0,wrap 2", "[fill,grow 10]10[fill,grow]"));
 
-                    // JScrollPane sp;
                     panel.add(c, "spanx,growy,pushy");
-                    // panel.add(sp=new JScrollPane(c), "spanx,growy,pushy");
-                    // sp.setBorder(null);
+
                     break;
                 default:
                     panel.add(c, entry.getDecoration() == null ? "spanx,gapright " + getGapRight() : "gapright " + getGapRight());
@@ -161,18 +145,13 @@ public abstract class ConfigPanel extends SwitchPanel {
 
                 panel.add(header = Factory.createHeader(group), "spanx,hidemode 3");
                 header.setVisible(false);
-                // menuBar.add(groupMenu = new JMenu(group.getName()));
-                // groupMenu.setEnabled(false);
+                ;
 
                 currentGroup = group;
             }
             if (entry.getDecoration() != null) {
                 switch (entry.getConfigEntry().getType()) {
-                // case ConfigContainer.TYPE_BUTTON:
-                // panel.add(entry.getDecoration(), "gapleft " + getGapLeft() +
-                // ",spany " + entry.getInput().length +
-                // (entry.getInput().length == 0 ? ",spanx" : ""));
-                // break;
+
                 case ConfigContainer.TYPE_TEXTAREA:
                 case ConfigContainer.TYPE_LISTCONTROLLED:
                     panel.add(entry.getDecoration(), "gapleft " + getGapLeft() + ",spany " + entry.getInput().length + ",spanx");
@@ -191,7 +170,7 @@ public abstract class ConfigPanel extends SwitchPanel {
                     break;
 
                 case ConfigContainer.TYPE_TEXTAREA:
-                    viewport = false;
+
                     // panel.add(new JScrollPane(c),
                     // "spanx,gapleft 35,gapright 20");
                     panel.add(new JScrollPane(c), "spanx,gapright " + getGapRight() + ",growy,pushy,gapleft " + getGapLeft());
@@ -220,11 +199,11 @@ public abstract class ConfigPanel extends SwitchPanel {
 
     private String getGapLeft() {
         // TODO Auto-generated method stub
-        return tabbed ? "35" : "35";
+        return "35";
     }
 
     private String getGapRight() {
-        return tabbed ? "16" : "20";
+        return "20";
     }
 
     public void addGUIConfigEntry(GUIConfigEntry entry) {
@@ -247,7 +226,7 @@ public abstract class ConfigPanel extends SwitchPanel {
 
     @Override
     public void onShow() {
-        System.out.println("Display " + this);
+
         loadConfigEntries();
     }
 

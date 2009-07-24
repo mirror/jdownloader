@@ -17,15 +17,12 @@
 package jd.gui.skins.simple;
 
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.Container;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.Graphics;
 import java.awt.Image;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowEvent;
 import java.text.DateFormat;
@@ -42,7 +39,6 @@ import javax.swing.JMenuBar;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JRootPane;
-import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 import javax.swing.JViewport;
 import javax.swing.UIManager;
@@ -57,9 +53,6 @@ import jd.controlling.ClipboardHandler;
 import jd.controlling.DownloadController;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
-import jd.controlling.LinkGrabberController;
-import jd.controlling.LinkGrabberControllerEvent;
-import jd.controlling.LinkGrabberControllerListener;
 import jd.controlling.ProgressController;
 import jd.controlling.ProgressControllerEvent;
 import jd.controlling.ProgressControllerListener;
@@ -69,13 +62,13 @@ import jd.gui.UIInterface;
 import jd.gui.UserIO;
 import jd.gui.skins.SwingGui;
 import jd.gui.skins.jdgui.GUIUtils;
-import jd.gui.skins.jdgui.InfoPanelHandler;
 import jd.gui.skins.jdgui.JDGuiConstants;
+import jd.gui.skins.jdgui.SingletonPanel;
+import jd.gui.skins.jdgui.TabProgress;
 import jd.gui.skins.jdgui.components.JDCollapser;
 import jd.gui.skins.jdgui.components.linkbutton.JLink;
 import jd.gui.skins.jdgui.components.toolbar.MainToolBar;
 import jd.gui.skins.jdgui.interfaces.SwitchPanel;
-import jd.gui.skins.jdgui.settings.ConfigEntriesPanel;
 import jd.gui.skins.jdgui.views.downloadview.DownloadLinksPanel;
 import jd.gui.skins.jdgui.views.linkgrabberview.LinkGrabberPanel;
 import jd.gui.skins.simple.components.ChartAPIEntity;
@@ -90,9 +83,6 @@ import jd.gui.skins.simple.startmenu.PremiumMenu;
 import jd.gui.skins.simple.startmenu.SaveMenu;
 import jd.gui.skins.simple.startmenu.actions.ExitAction;
 import jd.gui.skins.simple.startmenu.actions.RestartAction;
-import jd.gui.skins.simple.tasks.AddonTaskPane;
-import jd.gui.skins.simple.tasks.ConfigTaskPane;
-import jd.gui.skins.simple.tasks.DownloadTaskPane;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.gui.userio.dialog.ContainerDialog;
 import jd.nutils.Formatter;
@@ -129,23 +119,23 @@ public class SimpleGUI extends SwingGui {
      */
     private DownloadLinksPanel linkListPane;
 
-    public LogPane getLogDialog() {
-        return (LogPane) logPanel.getPanel();
-    }
+    // public LogPane getLogDialog() {
+    // return (LogPane) logPanel.getPanel();
+    // }
 
     private Logger logger = JDLogger.getLogger();
 
     private TabProgress progressBar;
 
-    private TaskPane taskPane;
+    // private TaskPane taskPane;
 
     private ContentPanel contentPanel;
 
-    private DownloadTaskPane dlTskPane;
-
-    public DownloadTaskPane getDlTskPane() {
-        return dlTskPane;
-    }
+    // private DownloadTaskPane dlTskPane;
+    //
+    // public DownloadTaskPane getDlTskPane() {
+    // return dlTskPane;
+    // }
 
     private MainToolBar toolBar;
 
@@ -161,9 +151,9 @@ public class SimpleGUI extends SwingGui {
 
     // private SingletonPanel addonPanel;
 
-    private ConfigTaskPane cfgTskPane;
-
-    private AddonTaskPane addonTaskPanel;
+    // private ConfigTaskPane cfgTskPane;
+    //
+    // private AddonTaskPane addonTaskPanel;
 
     // private JDSubstanceUI titleUI;
 
@@ -523,9 +513,9 @@ public class SimpleGUI extends SwingGui {
 
     }
 
-    public TaskPane getTaskPane() {
-        return taskPane;
-    }
+    // public TaskPane getTaskPane() {
+    // return taskPane;
+    // }
 
     /**
      * Hier wird die komplette Oberfläche der Applikation zusammengestrickt
@@ -535,18 +525,18 @@ public class SimpleGUI extends SwingGui {
         linkListPane = new DownloadLinksPanel();
         contentPanel = new ContentPanel();
 
-        taskPane = new TaskPane();
+        // taskPane = new TaskPane();
 
-        addDownloadTask();
-        addLinkgrabberTask();
-        addConfigTask();
-        addAddonTask();
+        // addDownloadTask();
+        // addLinkgrabberTask();
+        // addConfigTask();
+        // addAddonTask();
 
         progressBar = new TabProgress();
 
         contentPanel.display(linkListPane);
 
-        taskPane.switcher(dlTskPane);
+        // taskPane.switcher(dlTskPane);
 
         JPanel panel = new JPanel(new MigLayout("ins 0,wrap 1", "[fill,grow]", "[fill,grow]0[]0[]0[]"));
 
@@ -559,7 +549,7 @@ public class SimpleGUI extends SwingGui {
         // taskPaneView = new JViewport();
         // taskPaneView.setView(taskPane);
 
-        center.add(taskPane, "hidemode 2,spany 2,aligny top,width 160:n:n");
+        // center.add(taskPane, "hidemode 2,spany 2,aligny top,width 160:n:n");
         sep = new JDSeparator();
 
         center.add(sep, "width 6!,gapright 2,spany 2,growy, pushy,hidemode 1");
@@ -579,14 +569,15 @@ public class SimpleGUI extends SwingGui {
 
     }
 
-    private void addAddonTask() {
-        addonTaskPanel = new AddonTaskPane(JDL.L("gui.taskpanes.addons", "Addons"), JDTheme.II("gui.images.taskpanes.addons", 16, 16));
-        taskPane.add(addonTaskPanel);
-    }
-
-    public AddonTaskPane getAddonPanel() {
-        return addonTaskPanel;
-    }
+    // private void addAddonTask() {
+    // addonTaskPanel = new AddonTaskPane(JDL.L("gui.taskpanes.addons",
+    // "Addons"), JDTheme.II("gui.images.taskpanes.addons", 16, 16));
+    // taskPane.add(addonTaskPanel);
+    // }
+    //
+    // public AddonTaskPane getAddonPanel() {
+    // return addonTaskPanel;
+    // }
 
     private void addConfigTask() {
         // cfgTskPane = new ConfigTaskPane(JDL.L("gui.taskpanes.configuration",
@@ -599,7 +590,7 @@ public class SimpleGUI extends SwingGui {
         // // cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_ADDONS, new
         // SingletonPanel(ConfigPanelAddons.class, configConstructorObjects));
         // // cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_CAPTCHA, new
-        // SingletonPanel(ConfigPanelCaptcha.class, configConstructorObjects));
+        // SingletonPanel(General.class, configConstructorObjects));
         // // cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_DOWNLOAD, new
         // SingletonPanel(ConfigPanelDownload.class, configConstructorObjects));
         // // cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_EVENTMANAGER, new
@@ -613,7 +604,7 @@ public class SimpleGUI extends SwingGui {
         // SingletonPanel(ConfigPanelPluginForHost.class,
         // configConstructorObjects));
         // // cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_RECONNECT, new
-        // SingletonPanel(ConfigPanelReconnect.class,
+        // SingletonPanel(MethodSelection.class,
         // configConstructorObjects));
         //
         // cfgTskPane.addActionListener(new ActionListener() {
@@ -672,13 +663,13 @@ public class SimpleGUI extends SwingGui {
         // }
         // });
 
-        taskPane.add(cfgTskPane);
+        // taskPane.add(cfgTskPane);
 
     }
 
-    public ConfigTaskPane getCfgTskPane() {
-        return cfgTskPane;
-    }
+    // public ConfigTaskPane getCfgTskPane() {
+    // return cfgTskPane;
+    // }
 
     private void addLinkgrabberTask() {
         linkGrabber = LinkGrabberPanel.getLinkGrabber();
@@ -691,19 +682,21 @@ public class SimpleGUI extends SwingGui {
         // // LinkAdder linkadder = new LinkAdder();
 
         // lgTaskPane.addPanel(new SingletonPanel(linkadder));
-        LinkGrabberController.getInstance().addListener(new LinkGrabberControllerListener() {
-            public void onLinkGrabberControllerEvent(LinkGrabberControllerEvent event) {
-                switch (event.getID()) {
-                case LinkGrabberControllerEvent.ADDED:
-                    taskPane.switcher(dlTskPane);
-                    break;
-                case LinkGrabberControllerEvent.EMPTY:
-                    // lgTaskPane.setPanelID(0);
-                    break;
-                }
-            }
-
-        });
+        // LinkGrabberController.getInstance().addListener(new
+        // LinkGrabberControllerListener() {
+        // public void onLinkGrabberControllerEvent(LinkGrabberControllerEvent
+        // event) {
+        // switch (event.getID()) {
+        // case LinkGrabberControllerEvent.ADDED:
+        // // taskPane.switcher(dlTskPane);
+        // break;
+        // case LinkGrabberControllerEvent.EMPTY:
+        // // lgTaskPane.setPanelID(0);
+        // break;
+        // }
+        // }
+        //
+        // });
         // lgTaskPane.addPanel(new SingletonPanel(linkGrabber));
         //
         // lgTaskPane.addActionListener(linkGrabber);
@@ -730,29 +723,31 @@ public class SimpleGUI extends SwingGui {
     // return lgTaskPane;
     // }
 
-    private void addDownloadTask() {
-
-        dlTskPane = new DownloadTaskPane(JDL.L("gui.taskpanes.download", "Download"), JDTheme.II("gui.images.taskpanes.download", 16, 16));
-        dlTskPane.setName(JDL.L("quickhelp.downloadtaskpane", "Download Taskpane"));
-        // dlTskPane.add(toolBar);
-        // // toolBar.setFocusable(false);
-        // // toolBar.setBorderPainted(true);
-        // toolBar.setOpaque(false);
-        dlTskPane.addPanel(new SingletonPanel(linkListPane));
-        dlTskPane.addActionListener(new ActionListener() {
-
-            public void actionPerformed(ActionEvent e) {
-                switch (e.getID()) {
-                case DownloadTaskPane.ACTION_CLICK:
-                    contentPanel.display(dlTskPane.getPanel(0));
-                    break;
-                }
-
-            }
-
-        });
-        taskPane.add(dlTskPane);
-    }
+    // private void addDownloadTask() {
+    //
+    // dlTskPane = new DownloadTaskPane(JDL.L("gui.taskpanes.download",
+    // "Download"), JDTheme.II("gui.images.taskpanes.download", 16, 16));
+    // dlTskPane.setName(JDL.L("quickhelp.downloadtaskpane",
+    // "Download Taskpane"));
+    // // dlTskPane.add(toolBar);
+    // // // toolBar.setFocusable(false);
+    // // // toolBar.setBorderPainted(true);
+    // // toolBar.setOpaque(false);
+    // dlTskPane.addPanel(new SingletonPanel(linkListPane));
+    // dlTskPane.addActionListener(new ActionListener() {
+    //
+    // public void actionPerformed(ActionEvent e) {
+    // switch (e.getID()) {
+    // case DownloadTaskPane.ACTION_CLICK:
+    // contentPanel.display(dlTskPane.getPanel(0));
+    // break;
+    // }
+    //
+    // }
+    //
+    // });
+    // taskPane.add(dlTskPane);
+    // }
 
     public void controlEvent(final ControlEvent event) {
         // Moved the whole content of this method into a Runnable run by
@@ -886,7 +881,8 @@ public class SimpleGUI extends SwingGui {
         int flags = 0;
         if (string.contains("<") && string.contains(">")) flags |= UserIO.STYLE_HTML;
         try {
-            return JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(flags, JDL.L("userio.countdownconfirm", "Please confirm"), string, JDTheme.II("gui.images.config.eventmanager", 32, 32), null, null), UserIO.RETURN_OK);
+            return JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(flags, JDL.L("userio.countdownconfirm", "Please confirm"), string,
+                                                                                 JDTheme.II("gui.images.config.eventmanager", 32, 32), null, null), UserIO.RETURN_OK);
         } finally {
             UserIO.setCountdownTime(null);
         }
@@ -921,34 +917,38 @@ public class SimpleGUI extends SwingGui {
     }
 
     public static void displayConfig(final ConfigContainer container, final boolean toLastTab) {
-        new GuiRunnable<Object>() {
-
-            // @Override
-            public Object runSave() {
-                ConfigEntriesPanel cep;
-
-                JDCollapser.getInstance().setContentPanel(cep = new ConfigEntriesPanel(container));
-                if (toLastTab) {
-                    Component comp = cep.getComponent(0);
-                    if (comp instanceof JTabbedPane) {
-                        ((JTabbedPane) comp).setSelectedIndex(((JTabbedPane) comp).getTabCount() - 1);
-                    }
-                }
-                if (container.getGroup() != null) {
-                    JDCollapser.getInstance().setTitle(container.getGroup().getName());
-                    // JDCollapser.getInstance().setIcon(container.getGroup().
-                    // getIcon());
-                } else {
-                    JDCollapser.getInstance().setTitle(JDL.L("gui.panels.collapsibleconfig", "Settings"));
-                    JDCollapser.getInstance().setIcon(JDTheme.II("gui.images.config.addons", 24, 24));
-                }
-
-                InfoPanelHandler.setPanel(JDCollapser.getInstance());
-
-                return null;
-            }
-
-        }.start();
+        // new GuiRunnable<Object>() {
+        //
+        // // @Override
+        // public Object runSave() {
+        // ConfigEntriesPanel cep;
+        //
+        // JDCollapser.getInstance().setContentPanel(cep = new
+        // ConfigEntriesPanel(container));
+        // if (toLastTab) {
+        // Component comp = cep.getComponent(0);
+        // if (comp instanceof JTabbedPane) {
+        // ((JTabbedPane) comp).setSelectedIndex(((JTabbedPane)
+        // comp).getTabCount() - 1);
+        // }
+        // }
+        // if (container.getGroup() != null) {
+        // JDCollapser.getInstance().setTitle(container.getGroup().getName());
+        // // JDCollapser.getInstance().setIcon(container.getGroup().
+        // // getIcon());
+        // } else {
+        // JDCollapser.getInstance().setTitle(JDL.L("gui.panels.collapsibleconfig",
+        // "Settings"));
+        // JDCollapser.getInstance().setIcon(JDTheme.II("gui.images.config.addons",
+        // 24, 24));
+        // }
+        //
+        // InfoPanelHandler.setPanel(JDCollapser.getInstance());
+        //
+        // return null;
+        // }
+        //
+        // }.start();
     }
 
     public void closeWindow() {
@@ -1003,23 +1003,43 @@ public class SimpleGUI extends SwingGui {
                 }
                 if (!ai.isValid()) {
                     account.setEnabled(false);
-                    SimpleGUI.this.showMessageDialog(JDL.LF("plugins.host.premium.info.notValid", "The account for '%s' isn't valid! Please check username and password!\r\n%s", account.getUser(), ai.getStatus() != null ? ai.getStatus() : ""));
+                    SimpleGUI.this.showMessageDialog(JDL.LF("plugins.host.premium.info.notValid", "The account for '%s' isn't valid! Please check username and password!\r\n%s", account.getUser(), ai
+                            .getStatus() != null ? ai.getStatus() : ""));
                     return null;
                 }
                 if (ai.isExpired()) {
                     account.setEnabled(false);
-                    SimpleGUI.this.showMessageDialog(JDL.LF("plugins.host.premium.info.expired", "The account for '%s' is expired! Please extend the account or buy a new one!\r\n%s", account.getUser(), ai.getStatus() != null ? ai.getStatus() : ""));
+                    SimpleGUI.this.showMessageDialog(JDL.LF("plugins.host.premium.info.expired", "The account for '%s' is expired! Please extend the account or buy a new one!\r\n%s", account
+                            .getUser(), ai.getStatus() != null ? ai.getStatus() : ""));
                     return null;
                 }
 
                 String def = JDL.LF("plugins.host.premium.info.title", "Accountinformation from %s for %s", account.getUser(), pluginForHost.getHost());
-                String[] label = new String[] { JDL.L("plugins.host.premium.info.validUntil", "Valid until"), JDL.L("plugins.host.premium.info.trafficLeft", "Traffic left"), JDL.L("plugins.host.premium.info.files", "Files"), JDL.L("plugins.host.premium.info.premiumpoints", "PremiumPoints"), JDL.L("plugins.host.premium.info.usedSpace", "Used Space"), JDL.L("plugins.host.premium.info.cash", "Cash"), JDL.L("plugins.host.premium.info.trafficShareLeft", "Traffic Share left"), JDL.L("plugins.host.premium.info.status", "Info") };
+                String[] label = new String[] {
+                        JDL.L("plugins.host.premium.info.validUntil", "Valid until"),
+                        JDL.L("plugins.host.premium.info.trafficLeft", "Traffic left"),
+                        JDL.L("plugins.host.premium.info.files", "Files"),
+                        JDL.L("plugins.host.premium.info.premiumpoints", "PremiumPoints"),
+                        JDL.L("plugins.host.premium.info.usedSpace", "Used Space"),
+                        JDL.L("plugins.host.premium.info.cash", "Cash"),
+                        JDL.L("plugins.host.premium.info.trafficShareLeft", "Traffic Share left"),
+                        JDL.L("plugins.host.premium.info.status", "Info")
+                };
 
                 DateFormat formater = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM);
                 String validUntil = (ai.isExpired() ? JDL.L("plugins.host.premium.info.expiredInfo", "[expired]") + " " : "") + formater.format(new Date(ai.getValidUntil())) + "";
                 if (ai.getValidUntil() == -1) validUntil = null;
                 String premiumPoints = ai.getPremiumPoints() + ((ai.getNewPremiumPoints() > 0) ? " [+" + ai.getNewPremiumPoints() + "]" : "");
-                String[] data = new String[] { validUntil, Formatter.formatReadable(ai.getTrafficLeft()), ai.getFilesNum() + "", premiumPoints, Formatter.formatReadable(ai.getUsedSpace()), ai.getAccountBalance() < 0 ? null : (ai.getAccountBalance() / 100.0) + " €", Formatter.formatReadable(ai.getTrafficShareLeft()), ai.getStatus() };
+                String[] data = new String[] {
+                        validUntil,
+                        Formatter.formatReadable(ai.getTrafficLeft()),
+                        ai.getFilesNum() + "",
+                        premiumPoints,
+                        Formatter.formatReadable(ai.getUsedSpace()),
+                        ai.getAccountBalance() < 0 ? null : (ai.getAccountBalance() / 100.0) + " €",
+                        Formatter.formatReadable(ai.getTrafficShareLeft()),
+                        ai.getStatus()
+                };
 
                 JPanel panel = new JPanel(new MigLayout("ins 5", "[right]10[grow,fill]10[]"));
                 panel.add(new JXTitledSeparator("<html><b>" + def + "</b></html>"), "spanx, pushx, growx, gapbottom 15");
@@ -1057,7 +1077,9 @@ public class SimpleGUI extends SwingGui {
     }
 
     public static void showChangelogDialog() {
-        int status = UserIO.getInstance().requestHelpDialog(UserIO.NO_CANCEL_OPTION, JDL.LF("system.update.message.title", "Updated to version %s", JDUtilities.getRevision()), JDL.L("system.update.message", "Update successfull"), JDL.L("system.update.showchangelogv2", "What's new?"), "http://jdownloader.org/changes/index");
+        int status = UserIO.getInstance().requestHelpDialog(UserIO.NO_CANCEL_OPTION, JDL.LF("system.update.message.title", "Updated to version %s", JDUtilities.getRevision()),
+                                                            JDL.L("system.update.message", "Update successfull"), JDL.L("system.update.showchangelogv2", "What's new?"),
+                                                            "http://jdownloader.org/changes/index");
         if (JDFlags.hasAllFlags(status, UserIO.RETURN_OK) && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_AUTO_SHOW_CHANGELOG, true)) {
             try {
                 JLink.openURL("http://jdownloader.org/changes/index");
@@ -1125,6 +1147,12 @@ public class SimpleGUI extends SwingGui {
     public void requestPanel(byte panelID) {
         // TODO Auto-generated method stub
 
+    }
+
+    @Override
+    public void disposeView(SwitchPanel view) {
+        // TODO Auto-generated method stub
+        
     }
 
 }

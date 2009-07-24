@@ -172,7 +172,7 @@ public abstract class View extends SwitchPanel {
      * 
      * @param left
      */
-    protected void setSideBar(SideBarPanel left) {
+    public void setSideBar(SideBarPanel left) {
         SwingGui.checkEDT();
         if (left == sidebarContent) return;
         if (left == null) {

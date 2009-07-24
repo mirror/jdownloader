@@ -25,6 +25,7 @@ import java.util.Collections;
 
 import javax.swing.JButton;
 import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
@@ -43,7 +44,10 @@ import net.miginfocom.swing.MigLayout;
  * 
  */
 public class ConfigPanelAddons extends ConfigPanel implements ActionListener, MouseListener {
-
+    private static final String JDL_PREFIX = "jd.gui.skins.jdgui.settings.panels.ConfigPanelAddons.";
+      public String getBreadcrum() {     return JDL.L(this.getClass().getName()+".breadcrum", this.getClass().getSimpleName() + "/" + getTitle()); }   public static String getTitle(){
+        return JDL.L(JDL_PREFIX + "addons.title", "Extensions");
+     }
     private class InternalTableModel extends AbstractTableModel {
 
         private static final long serialVersionUID = 1155282457354673850L;
@@ -158,8 +162,13 @@ public class ConfigPanelAddons extends ConfigPanel implements ActionListener, Mo
         btnEdit.addActionListener(this);
 
         setLayout(new MigLayout("ins 5,wrap 1", "[fill,grow]", "[fill,grow][]"));
-        add(new JScrollPane(table));
-        add(btnEdit, "w pref!");
+        panel.add(new JScrollPane(table));
+        panel.add(btnEdit, "w pref!");
+        
+        JTabbedPane tabbed = new JTabbedPane();
+        tabbed.add(getBreadcrum(), panel);
+
+        this.add(tabbed);
     }
 
     private void editEntry() {

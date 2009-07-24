@@ -28,6 +28,7 @@ import java.util.Collections;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
 import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
@@ -56,7 +57,10 @@ import org.jdesktop.swingx.decorator.PainterHighlighter;
 import org.jdesktop.swingx.painter.MattePainter;
 
 public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListener, MouseListener {
-
+      public String getBreadcrum() {     return JDL.L(this.getClass().getName()+".breadcrum", this.getClass().getSimpleName() + "/" + getTitle()); }   public static String getTitle(){
+        return JDL.L(JDL_PREFIX + "host.title", "Hoster & Premium");
+     }
+    private static final String JDL_PREFIX = "jd.gui.skins.jdgui.settings.panels.ConfigPanelPluginForHost.";
     private class InternalTableModel extends AbstractTableModel {
 
         private static final long serialVersionUID = 1155282457354673850L;
@@ -251,8 +255,13 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         bpanel.add(btnLoad);
 
         setLayout(new MigLayout("ins 5,wrap 1", "[fill,grow]", "[fill,grow][]"));
-        add(new JScrollPane(table));
-        add(bpanel, "w pref!");
+        panel.add(new JScrollPane(table));
+        panel.add(bpanel, "w pref!");
+        
+        JTabbedPane tabbed = new JTabbedPane();
+        tabbed.add(getBreadcrum(), panel);
+
+        this.add(tabbed);
     }
 
     @Override

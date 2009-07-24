@@ -23,7 +23,8 @@ import javax.swing.JList;
 import javax.swing.ListCellRenderer;
 
 import jd.config.container.JDLabelContainer;
-import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.SwingGui;
+import jd.gui.swing.laf.LookAndFeelController;
 
 /**
  * Cellrenderer für Copmboboxen mit Bildern
@@ -35,7 +36,7 @@ public class JDLabelListRenderer extends JLabel implements ListCellRenderer {
     private static final long serialVersionUID = 3607383089555373774L;
 
     public JDLabelListRenderer() {
-        if (SimpleGUI.isSubstance()) {
+        if (LookAndFeelController.getPlaf().isSubstance()) {
             setOpaque(false);
         } else {
             setOpaque(true);
@@ -45,7 +46,7 @@ public class JDLabelListRenderer extends JLabel implements ListCellRenderer {
     }
 
     public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-        if (SimpleGUI.isSubstance()) {
+        if (LookAndFeelController.getPlaf().isSubstance()) {
             if (isSelected) {
                 setOpaque(true);
                 setBackground(list.getSelectionBackground());

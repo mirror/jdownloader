@@ -15,6 +15,11 @@ import java.util.Hashtable;
  * 
  * @author Nicola Asuni [www.tecnick.com].
  * @version 1.0.004
+ * 
+ * 
+ * Changes by JD-Team:
+ * 
+ * added htmlTotal Method
  */
 public class HTMLEntities {
 
@@ -301,6 +306,23 @@ public class HTMLEntities {
      */
     public HTMLEntities() {
         HTMLEntities.initializeEntitiesTables();
+    }
+/**
+ * @author JD-Team coalado
+ * @param format
+ * @return
+ */
+    public static String htmlTotal(String format) {
+        
+        format=HTMLEntities.htmlentities(format);
+       format=HTMLEntities.htmlAmpersand(format);
+       format=HTMLEntities.htmlAngleBrackets(format);
+       format=HTMLEntities.htmlDoubleQuotes(format);
+       
+       format=HTMLEntities.htmlQuotes(format);
+       format=HTMLEntities.htmlSingleQuotes(format);
+      
+        return format;
     }
 
 }

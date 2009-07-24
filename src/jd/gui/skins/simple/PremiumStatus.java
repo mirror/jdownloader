@@ -48,7 +48,7 @@ import jd.gui.UserIO;
 import jd.gui.skins.SwingGui;
 import jd.gui.skins.jdgui.InfoPanelHandler;
 import jd.gui.skins.jdgui.components.JDCollapser;
-import jd.gui.skins.jdgui.settings.ConfigEntriesPanel;
+
 import jd.nutils.Formatter;
 import jd.nutils.JDFlags;
 import jd.plugins.Account;
@@ -421,21 +421,24 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
                     popup.show(bars[i], e.getPoint().x, e.getPoint().y);
                     SwingGui.getInstance().setWaiting(false);
                 } else {
-                    if (JDCollapser.getInstance().getContentPanel() != null && JDCollapser.getInstance().getContentPanel() instanceof ConfigEntriesPanel) {
-                        ConfigContainer cfg = ((ConfigEntriesPanel) JDCollapser.getInstance().getContentPanel()).getConfigContainer();
-                        if (cfg != null && cfg == bars[i].getPlugin().getConfig()) {
-                            new GuiRunnable<Object>() {
-                                // @Override
-                                public Object runSave() {
-                                    InfoPanelHandler.setPanel(null);
-                                    
-                                    return null;
-                                }
-                            }.start();
-                            return;
-                        }
-                    }
-                    SimpleGUI.displayConfig(bars[i].getPlugin().getConfig(), true);
+                    /**
+                     * TODO
+                     */
+//                    if (JDCollapser.getInstance().getContentPanel() != null && JDCollapser.getInstance().getContentPanel() instanceof ConfigEntriesPanel) {
+//                        ConfigContainer cfg = ((ConfigEntriesPanel) JDCollapser.getInstance().getContentPanel()).getConfigContainer();
+//                        if (cfg != null && cfg == bars[i].getPlugin().getConfig()) {
+//                            new GuiRunnable<Object>() {
+//                                // @Override
+//                                public Object runSave() {
+//                                    InfoPanelHandler.setPanel(null);
+//                                    
+//                                    return null;
+//                                }
+//                            }.start();
+//                            return;
+//                        }
+//                    }
+//                    SimpleGUI.displayConfig(bars[i].getPlugin().getConfig(), true);
                 }
                 return;
             }
