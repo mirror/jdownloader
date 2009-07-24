@@ -74,7 +74,7 @@ public class Balloon {
     }
 
     public static void show(final String title, ImageIcon ii, final JPanel panel) {
-        if (!SubConfiguration.getConfig(GUIUtils.getConfig()).getBooleanProperty(JDGuiConstants.PARAM_SHOW_BALLOON, true)) return;
+        if (!GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_SHOW_BALLOON, true)) return;
 
         final ImageIcon icon;
         if (ii == null) {

@@ -280,7 +280,7 @@ public class Main {
         if (instanceStarted || JDInitFlags.SWITCH_NEW_INSTANCE) {
             JDTheme.setTheme("default");
             if (JDInitFlags.SHOW_SPLASH) {
-                if (SubConfiguration.getConfig(GUIUtils.getConfig()).getBooleanProperty(JDGuiConstants.PARAM_SHOW_SPLASH, true)) {
+                if (GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_SHOW_SPLASH, true)) {
                     LOGGER.info("init Splash");
                     new GuiRunnable<Object>() {
                         // @Override

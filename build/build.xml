@@ -5,7 +5,7 @@
 	<property name="dist" value="dist" />
 	<property name="res" value="ressourcen" />
 	<property name="keystore" value="G:\jDownloader.keystore" />
-	<property name="class-path" value="libs/Filters.jar libs/JTattoo.jar libs/JUnique.jar libs/JDGUI.jar libs/JDHttp.jar libs/JAntiCaptcha.jar libs/JDUtils.jar libs/BrowserLauncher2.jar libs/clink170.jar libs/cobra.jar libs/hsqldb.jar libs/htmlcleaner2_0.jar libs/irclib.jar libs/js.jar libs/looks.jar libs/mail.jar libs/miglayout.jar libs/savemytube.jar libs/substance-swingx.jar libs/substance.jar libs/svnkit.jar libs/swingworker.jar libs/swingx.jar libs/ui.jar" />
+	<property name="class-path" value="libs/Filters.jar libs/JTattoo.jar libs/JUnique.jar libs/JDGUI.jar libs/JDHttp.jar libs/JAntiCaptcha.jar libs/JDUtils.jar libs/BrowserLauncher2.jar libs/clink170.jar libs/cobra.jar libs/hsqldb.jar libs/htmlcleaner2_0.jar libs/irclib.jar libs/js.jar libs/looks.jar libs/mail.jar libs/miglayout.jar libs/savemytube.jar libs/substance-swingx.jar libs/substance.jar libs/svnkit.jar libs/swingworker.jar libs/swingx.jar libs/ui.jar libs\synthetica.jar libs\syntheticaBatik.jar libs\syntheticaBlackMoon.jar libs\syntheticaBlackStar.jar libs\syntheticaBlueIce.jar libs\syntheticaBlueMoon.jar libs\syntheticaBlueSteel.jar libs\syntheticaGreenDream.jar libs\syntheticaMauveMetallic.jar libs\syntheticaOrangeMetallic.jar libs\syntheticaSilverMoon.jar libs\syntheticaSimple2D.jar libs\syntheticaSkyMetallic.jar libs\syntheticaWhiteVision.jar" />
 
 	<target name="compile">
 		<mkdir dir="${cls}" />

@@ -202,7 +202,7 @@ public class JDInit {
             Configuration configuration = (Configuration) obj;
             JDUtilities.setConfiguration(configuration);
             jd.controlling.JDLogger.getLogger().setLevel(configuration.getGenericProperty(Configuration.PARAM_LOGGER_LEVEL, Level.WARNING));
-            JDTheme.setTheme(SubConfiguration.getConfig(GUIUtils.getConfig()).getStringProperty(JDGuiConstants.PARAM_THEME, "default"));
+            JDTheme.setTheme(GUIUtils.getConfig().getStringProperty(JDGuiConstants.PARAM_THEME, "default"));
 
         } else {
 
@@ -221,7 +221,7 @@ public class JDInit {
             Configuration configuration = new Configuration();
             JDUtilities.setConfiguration(configuration);
             jd.controlling.JDLogger.getLogger().setLevel(configuration.getGenericProperty(Configuration.PARAM_LOGGER_LEVEL, Level.WARNING));
-            JDTheme.setTheme(SubConfiguration.getConfig(GUIUtils.getConfig()).getStringProperty(JDGuiConstants.PARAM_THEME, "default"));
+            JDTheme.setTheme(GUIUtils.getConfig().getStringProperty(JDGuiConstants.PARAM_THEME, "default"));
 
             JDUtilities.getDatabaseConnector().saveConfiguration(Configuration.NAME, JDUtilities.getConfiguration());
             installerVisible = true;

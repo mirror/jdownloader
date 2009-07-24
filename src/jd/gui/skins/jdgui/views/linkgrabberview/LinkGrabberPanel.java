@@ -708,11 +708,11 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         getDownloadDirList().add(new String[] {
                 downloadDirectory, packageName
         });
-        SubConfiguration.getConfig(GUIUtils.getConfig()).save();
+        GUIUtils.getConfig().save();
     }
 
     private ArrayList<String[]> getDownloadDirList() {
-        return SubConfiguration.getConfig(GUIUtils.getConfig()).getGenericProperty("DOWNLOADDIR_LIST", new ArrayList<String[]>());
+        return GUIUtils.getConfig().getGenericProperty("DOWNLOADDIR_LIST", new ArrayList<String[]>());
     }
 
     public void confirmPackage(LinkGrabberFilePackage fpv2, String host, int index) {

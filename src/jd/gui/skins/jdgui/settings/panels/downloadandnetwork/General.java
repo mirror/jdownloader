@@ -113,7 +113,7 @@ public class General extends ConfigPanel {
                                                                                                                                                 "Wenn eine Datei schon vorhanden ist:")));
         ce.setDefaultValue(fileExists[1]);
 
-        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, SubConfiguration.getConfig(GUIUtils.getConfig()), JDGuiConstants.PARAM_START_DOWNLOADS_AFTER_START, JDL
+        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, GUIUtils.getConfig(), JDGuiConstants.PARAM_START_DOWNLOADS_AFTER_START, JDL
                 .L("gui.config.download.startDownloadsOnStartUp", "Download beim Programmstart beginnen")));
         ce.setDefaultValue(false);
 

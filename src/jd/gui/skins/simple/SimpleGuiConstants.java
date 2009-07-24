@@ -44,7 +44,7 @@ public class SimpleGuiConstants {
     public static final String PARAM_SHOW_BALLOON = "PARAM_SHOW_BALLOON";    
 
     public static boolean isAnimated() {
-        return SubConfiguration.getConfig(GUIUtils.getConfig()).getBooleanProperty(JDGuiConstants.ANIMATION_ENABLED, false);
+        return GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.ANIMATION_ENABLED, false);
     }
 
 }

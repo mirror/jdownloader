@@ -108,7 +108,7 @@ public class LookAndFeelController {
     }
 
     public static LookAndFeelWrapper getPlaf0() {
-        SubConfiguration config = SubConfiguration.getConfig(GUIUtils.getConfig());
+        SubConfiguration config = GUIUtils.getConfig();
         Object plaf = config.getProperty(PARAM_PLAF, null);
         if (plaf == null) { return getDefaultLAFM(); }
         if (plaf instanceof LookAndFeelWrapper) {
@@ -139,7 +139,7 @@ public class LookAndFeelController {
      * @return
      */
     private static LookAndFeelWrapper getDefaultLAFM() {
-        return new LookAndFeelWrapper("com.jtattoo.plaf.acryl.AcrylLookAndFeel");
+        return new LookAndFeelWrapper("de.javasoft.plaf.synthetica.SyntheticaBlackStarLookAndFeel");
 
         // LookAndFeelWrapper[] sup = getSupportedLookAndFeels();
         // if (sup.length == 0) return new

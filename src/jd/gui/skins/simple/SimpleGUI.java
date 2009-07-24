@@ -182,7 +182,7 @@ public class SimpleGUI extends SwingGui {
         // Avoid resize bug if decorated.. works only for windows
 
         // GUIUtils.getConfig() =
-        // SubConfiguration.getConfig(GUIUtils.getConfig());
+        // GUIUtils.getConfig();
         updateDecoration();
         LookAndFeelController.setUIManager();
 

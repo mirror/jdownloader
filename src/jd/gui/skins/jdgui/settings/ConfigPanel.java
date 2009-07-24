@@ -31,9 +31,12 @@ import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
 import jd.config.SubConfiguration;
 import jd.config.ConfigEntry.PropertyType;
+import jd.gui.UserIO;
 import jd.gui.skins.SwingGui;
 import jd.gui.skins.jdgui.interfaces.SwitchPanel;
 import jd.gui.skins.simple.Factory;
+import jd.nutils.JDFlags;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
@@ -232,7 +235,18 @@ public abstract class ConfigPanel extends SwitchPanel {
 
     @Override
     public void onHide() {
+
+        PropertyType changes = hasChanges();
         this.save();
+        if (changes == PropertyType.NEEDS_RESTART) {
+            int answer = UserIO.getInstance().requestConfirmDialog(0, JDL.L("jd.gui.skins.jdgui.settings.ConfigPanel.restartquestion.title", "Restart required!"),
+                                                                   JDL.L("jd.gui.skins.jdgui.settings.ConfigPanel.restartquestion", "This option needs a JDownloader restart."), null,
+                                                                   JDL.L("jd.gui.skins.jdgui.settings.ConfigPanel.restartquestion.ok", "Restart NOW!"), null);
+
+            if (JDFlags.hasSomeFlags(answer, UserIO.RETURN_DONT_SHOW_AGAIN | UserIO.RETURN_OK)) {
+                JDUtilities.restartJD();
+            }
+        }
     }
 
     public ConfigEntry.PropertyType hasChanges() {

@@ -433,17 +433,29 @@ public class JDGui extends SwingGui {
         return this.mainTabbedPane;
     }
 
-    public void requestPanel(byte panelID) {
-        switch (panelID) {
-        case UIConstants.PANEL_ID_DOWNLOADLIST:
-            mainTabbedPane.setSelectedComponent(downloadView);
-            break;
-        case UIConstants.PANEL_ID_LINKGRABBER:
-            mainTabbedPane.setSelectedComponent(linkgrabberView);
-            break;
-        default:
-            mainTabbedPane.setSelectedComponent(downloadView);
-        }
+    public void requestPanel(final byte panelID) {
+
+        new GuiRunnable<Object>() {
+
+            @Override
+            public Object runSave() {
+
+                switch (panelID) {
+                case UIConstants.PANEL_ID_DOWNLOADLIST:
+                    mainTabbedPane.setSelectedComponent(downloadView);
+                    break;
+                case UIConstants.PANEL_ID_LINKGRABBER:
+                    mainTabbedPane.setSelectedComponent(linkgrabberView);
+                    break;
+                default:
+                    mainTabbedPane.setSelectedComponent(downloadView);
+                }
+
+                // TODO Auto-generated method stub
+                return null;
+            }
+
+        }.waitForEDT();
     }
 
     @Override

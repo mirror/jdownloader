@@ -198,7 +198,7 @@ public abstract class UserIO {
     public abstract ImageIcon getIcon(int iconInfo);
 
     public static int getCountdownTime() {
-        SubConfiguration cfg = SubConfiguration.getConfig(GUIUtils.getConfig());
+        SubConfiguration cfg = GUIUtils.getConfig();
         if (COUNTDOWN_TIME != null) return COUNTDOWN_TIME.intValue();
         return Math.max(2, cfg.getIntegerProperty(JDGuiConstants.PARAM_INPUTTIMEOUT, 20));
     }

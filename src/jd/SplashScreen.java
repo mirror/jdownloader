@@ -120,7 +120,7 @@ public class SplashScreen implements ActionListener, ControlListener {
         progressimages.add(new SplashProgressImage(JDTheme.I("gui.splash.screen", 32, 32)));
         progressimages.add(new SplashProgressImage(JDTheme.I("gui.splash.dllist", 32, 32)));
         try {
-            Object loc = SubConfiguration.getConfig(GUIUtils.getConfig()).getProperty("LOCATION_OF_MAINFRAME");
+            Object loc = GUIUtils.getConfig().getProperty("LOCATION_OF_MAINFRAME");
             if (loc != null && loc instanceof Point) {
                 Point point = (Point) loc;
                 if (point.x < 0) point.x = 0;
