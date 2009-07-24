@@ -27,7 +27,7 @@ import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 
 import jd.controlling.JDLogger;
-import jd.gui.skins.simple.GuiRunnable;
+import jd.gui.skins.jdgui.swing.GuiRunnable;
 import jd.utils.JDUtilities;
 
 /**

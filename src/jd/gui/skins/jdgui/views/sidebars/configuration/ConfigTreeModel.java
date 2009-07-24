@@ -12,7 +12,7 @@ import jd.gui.skins.jdgui.interfaces.SwitchPanel;
 import jd.gui.skins.jdgui.settings.panels.ConfigPanelAddons;
 import jd.gui.skins.jdgui.settings.panels.ConfigPanelGeneral;
 import jd.gui.skins.jdgui.settings.panels.ConfigPanelPluginForHost;
-import jd.gui.skins.simple.GuiRunnable;
+import jd.gui.skins.jdgui.swing.GuiRunnable;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;

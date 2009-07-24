@@ -45,7 +45,7 @@ import jd.controlling.DistributeData;
 import jd.controlling.ProgressController;
 import jd.controlling.reconnect.Reconnecter;
 import jd.gui.skins.SwingGui;
-import jd.gui.skins.simple.GuiRunnable;
+import jd.gui.skins.jdgui.swing.GuiRunnable;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.URLConnectionAdapter;

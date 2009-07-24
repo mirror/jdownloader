@@ -42,7 +42,7 @@ import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.event.ControlEvent;
 import jd.gui.skins.SwingGui;
-import jd.gui.skins.simple.GuiRunnable;
+import jd.gui.skins.jdgui.swing.GuiRunnable;
 import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
 import jd.plugins.OptionalPlugin;

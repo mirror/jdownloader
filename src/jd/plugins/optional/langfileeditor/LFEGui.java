@@ -55,7 +55,7 @@ import jd.event.MessageListener;
 import jd.gui.UserIO;
 import jd.gui.skins.SwingGui;
 import jd.gui.skins.jdgui.interfaces.SwitchPanel;
-import jd.gui.skins.simple.GuiRunnable;
+import jd.gui.skins.jdgui.swing.GuiRunnable;
 import jd.gui.skins.simple.components.ChartAPIEntity;
 import jd.gui.skins.simple.components.PieChartAPI;
 import jd.nutils.JDFlags;

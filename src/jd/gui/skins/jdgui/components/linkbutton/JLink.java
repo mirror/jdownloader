@@ -37,7 +37,7 @@ import jd.controlling.JDLogger;
 import jd.event.JDBroadcaster;
 import jd.event.JDEvent;
 import jd.gui.skins.jdgui.JDGuiConstants;
-import jd.gui.skins.simple.JDMouseAdapter;
+import jd.gui.skins.jdgui.interfaces.JDMouseAdapter;
 import jd.nutils.Executer;
 import jd.nutils.nativeintegration.LocalBrowser;
 import jd.parser.Regex;

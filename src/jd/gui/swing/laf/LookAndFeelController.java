@@ -139,7 +139,9 @@ public class LookAndFeelController {
      * @return
      */
     private static LookAndFeelWrapper getDefaultLAFM() {
-        return new LookAndFeelWrapper("de.javasoft.plaf.synthetica.SyntheticaBlackStarLookAndFeel");
+        //de.javasoft.plaf.synthetica.SyntheticaSkyMetallicLookAndFeel
+        return new LookAndFeelWrapper("de.javasoft.plaf.synthetica.SyntheticaSkyMetallicLookAndFeel");
+//        return new LookAndFeelWrapper("de.javasoft.plaf.synthetica.SyntheticaBlackStarLookAndFeel");
 
         // LookAndFeelWrapper[] sup = getSupportedLookAndFeels();
         // if (sup.length == 0) return new

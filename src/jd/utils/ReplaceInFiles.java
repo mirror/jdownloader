@@ -24,8 +24,8 @@ import java.util.regex.Pattern;
 import javax.swing.JFileChooser;
 
 import jd.gui.UserIO;
+import jd.gui.skins.jdgui.swing.GuiRunnable;
 import jd.gui.skins.jdgui.userio.UserIOGui;
-import jd.gui.skins.simple.GuiRunnable;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.nutils.DiffMatchPatch;
 import jd.nutils.JDFlags;

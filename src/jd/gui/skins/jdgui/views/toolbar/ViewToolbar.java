@@ -19,7 +19,7 @@ import jd.gui.skins.jdgui.actions.ActionControlEvent;
 import jd.gui.skins.jdgui.actions.ActionController;
 import jd.gui.skins.jdgui.actions.ToolBarAction;
 import jd.gui.skins.jdgui.actions.event.ActionControllerListener;
-import jd.gui.skins.simple.GuiRunnable;
+import jd.gui.skins.jdgui.swing.GuiRunnable;
 import jd.utils.JDTheme;
 import net.miginfocom.swing.MigLayout;
 

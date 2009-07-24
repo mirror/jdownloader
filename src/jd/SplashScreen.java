@@ -44,7 +44,7 @@ import jd.controlling.JDController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.skins.jdgui.GUIUtils;
-import jd.gui.skins.simple.GuiRunnable;
+import jd.gui.skins.jdgui.swing.GuiRunnable;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.nutils.nativeintegration.ScreenDevices;
 import jd.utils.JDTheme;

@@ -36,7 +36,7 @@ import jd.PluginWrapper;
 import jd.captcha.specials.Raubkopierer;
 import jd.controlling.ProgressController;
 import jd.gui.skins.SwingGui;
-import jd.gui.skins.simple.GuiRunnable;
+import jd.gui.skins.jdgui.swing.GuiRunnable;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.HTMLEntities;

@@ -36,7 +36,7 @@ import javax.swing.JSeparator;
 import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
-import jd.gui.skins.simple.GuiRunnable;
+import jd.gui.skins.jdgui.swing.GuiRunnable;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;

@@ -22,6 +22,8 @@ import java.awt.Point;
 import javax.swing.JComponent;
 import javax.swing.JWindow;
 
+import jd.gui.skins.jdgui.swing.GuiRunnable;
+
 public class MouseFollower {
 
     private static JWindow window;

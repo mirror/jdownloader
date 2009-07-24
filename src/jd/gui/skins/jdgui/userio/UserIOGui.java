@@ -23,7 +23,7 @@ import javax.swing.ImageIcon;
 import javax.swing.filechooser.FileFilter;
 
 import jd.gui.UserIO;
-import jd.gui.skins.simple.GuiRunnable;
+import jd.gui.skins.jdgui.swing.GuiRunnable;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.userio.DummyFrame;
 import jd.gui.userio.dialog.CaptchaDialog;

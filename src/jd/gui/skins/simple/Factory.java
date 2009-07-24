@@ -38,6 +38,7 @@ import jd.config.ConfigGroup;
 import jd.config.MenuItem;
 import jd.controlling.JDLogger;
 import jd.gui.skins.jdgui.components.linkbutton.JLink;
+import jd.gui.skins.jdgui.menu.JDMenu;
 import jd.gui.skins.simple.components.JDUnderlinedText;
 import jd.plugins.PluginForHost;
 import jd.utils.JDTheme;

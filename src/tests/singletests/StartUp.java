@@ -28,7 +28,7 @@ import jd.controlling.JDController;
 import jd.controlling.PasswordListController;
 import jd.controlling.interaction.Interaction;
 import jd.gui.skins.SwingGui;
-import jd.gui.skins.simple.GuiRunnable;
+import jd.gui.skins.jdgui.swing.GuiRunnable;
 import jd.nutils.OSDetector;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;

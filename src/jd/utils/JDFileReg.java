@@ -27,7 +27,7 @@ import javax.swing.JTextArea;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.gui.UserIO;
-import jd.gui.skins.simple.GuiRunnable;
+import jd.gui.skins.jdgui.swing.GuiRunnable;
 import jd.gui.userio.dialog.AbstractDialog;
 import jd.gui.userio.dialog.ContainerDialog;
 import jd.nutils.JDImage;

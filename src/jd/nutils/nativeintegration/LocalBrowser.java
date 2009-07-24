@@ -22,7 +22,7 @@ import java.io.Serializable;
 import java.net.URL;
 import java.util.ArrayList;
 
-import jd.gui.skins.simple.GuiRunnable;
+import jd.gui.skins.jdgui.swing.GuiRunnable;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.DnDWebBrowser;
 import jd.nutils.Executer;

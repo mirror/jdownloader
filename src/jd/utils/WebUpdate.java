@@ -35,7 +35,7 @@ import jd.controlling.ProgressController;
 import jd.event.MessageEvent;
 import jd.event.MessageListener;
 import jd.gui.UserIO;
-import jd.gui.skins.simple.Balloon;
+import jd.gui.skins.jdgui.components.Balloon;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDFlags;

@@ -52,7 +52,7 @@ import jd.config.SubConfiguration;
 import jd.controlling.LinkGrabberController;
 import jd.gui.skins.jdgui.actions.ActionController;
 import jd.gui.skins.jdgui.components.JExtCheckBoxMenuItem;
-import jd.gui.skins.simple.GuiRunnable;
+import jd.gui.skins.jdgui.swing.GuiRunnable;
 import jd.gui.skins.simple.components.RowHighlighter;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
