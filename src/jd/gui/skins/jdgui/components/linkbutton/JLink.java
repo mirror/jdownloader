@@ -105,11 +105,12 @@ public class JLink extends JLabel {
 
     public JLink(final String text, Icon icon, URL url) {
         super(text);
+   
         this.setIcon(icon);
 
         init(text, url);
 
-        initBroadcaster();
+     
     }
 
     private void initBroadcaster() {
@@ -125,6 +126,7 @@ public class JLink extends JLabel {
     }
 
     public JDBroadcaster<ActionListener, JDEvent> getBroadcaster() {
+        if(broadcaster==null)     initBroadcaster();
         return broadcaster;
     }
 
@@ -193,7 +195,8 @@ public class JLink extends JLabel {
         try {
             url = new URL(urlstr);
         } catch (Exception e) {
-            e.printStackTrace();
+//            e.printStackTrace();
+            this.setEnabled(false);
         }
         ;
         init(text, url);
@@ -213,7 +216,9 @@ public class JLink extends JLabel {
 
     public void setUrl(URL url) {
         this.url = url;
+        if(url!=null){
         this.setToolTipText(url.toExternalForm());
+        }
     }
 
 }

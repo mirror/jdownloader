@@ -168,7 +168,7 @@ public class SrcParser {
         String simple = cl.substring(cl.lastIndexOf(".")+1);
         currentContent=currentContent.replace("this.getClass().getSimpleName()","\""+simple+"\"");  
         currentContent=currentContent.replace("getClass().getSimpleName()","\""+simple+"\""); 
-        
+        currentContent=currentContent.replace("\"+\"",""); 
         if (this.currentContent.contains("jd.gui.skins.simple.startmenu.actions;")) {
             String menukey = new Regex(currentContent, "super\\(\"(.*?)\",\\s*\".*?\"\\);").getMatch(0);
             if (menukey != null) {

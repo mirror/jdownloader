@@ -45,9 +45,15 @@ import net.miginfocom.swing.MigLayout;
  */
 public class ConfigPanelAddons extends ConfigPanel implements ActionListener, MouseListener {
     private static final String JDL_PREFIX = "jd.gui.skins.jdgui.settings.panels.ConfigPanelAddons.";
-      public String getBreadcrum() {     return JDL.L(this.getClass().getName()+".breadcrum", this.getClass().getSimpleName()); }   public static String getTitle(){
+
+    public String getBreadcrum() {
+        return JDL.L(this.getClass().getName() + ".breadcrum", this.getClass().getSimpleName());
+    }
+
+    public static String getTitle() {
         return JDL.L(JDL_PREFIX + "addons.title", "Extensions");
-     }
+    }
+
     private class InternalTableModel extends AbstractTableModel {
 
         private static final long serialVersionUID = 1155282457354673850L;
@@ -114,8 +120,8 @@ public class ConfigPanelAddons extends ConfigPanel implements ActionListener, Mo
                 } else {
                     plgWrapper.getPlugin().onExit();
                 }
-                //TODO
-//                SwingGui.getInstance().getAddonPanel().initGUI();
+                // TODO
+                // SwingGui.getInstance().getAddonPanel().initGUI();
             }
         }
 
@@ -142,8 +148,6 @@ public class ConfigPanelAddons extends ConfigPanel implements ActionListener, Mo
         load();
     }
 
-
-
     @Override
     public void initPanel() {
         tableModel = new InternalTableModel();
@@ -161,10 +165,10 @@ public class ConfigPanelAddons extends ConfigPanel implements ActionListener, Mo
         btnEdit.setEnabled(false);
         btnEdit.addActionListener(this);
 
-        setLayout(new MigLayout("ins 5,wrap 1", "[fill,grow]", "[fill,grow][]"));
+        panel.setLayout(new MigLayout("ins 5,wrap 1", "[fill,grow]", "[fill,grow][]"));
         panel.add(new JScrollPane(table));
         panel.add(btnEdit, "w pref!");
-        
+
         JTabbedPane tabbed = new JTabbedPane();
         tabbed.add(getBreadcrum(), panel);
 

@@ -254,7 +254,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         bpanel.add(btnEdit);
         bpanel.add(btnLoad);
 
-        setLayout(new MigLayout("ins 5,wrap 1", "[fill,grow]", "[fill,grow][]"));
+        panel.setLayout(new MigLayout("ins 5,wrap 1", "[fill,grow]", "[fill,grow][]"));
         panel.add(new JScrollPane(table));
         panel.add(bpanel, "w pref!");
         
