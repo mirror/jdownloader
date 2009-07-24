@@ -85,7 +85,7 @@ public class SrcParser {
 
     public static void main(String args[]) {
 
-        SrcParser p = new SrcParser(new File("C:\\Users\\Coalado\\.jd_home\\tmp\\lfe\\src\\jd\\gui\\skins\\jdgui\\views"));
+        SrcParser p = new SrcParser(new File("C:\\Users\\Coalado\\.jd_home\\tmp\\lfe\\src\\jd\\gui\\skins\\jdgui\\"));
         p.parse();
     }
 
@@ -165,6 +165,10 @@ public class SrcParser {
         cl=cl.replace(".java", "");
         currentContent=currentContent.replace("this.getClass().getName()","\""+cl+"\"");
         currentContent=currentContent.replace("getClass().getName()","\""+cl+"\"");
+        String simple = cl.substring(cl.lastIndexOf(".")+1);
+        currentContent=currentContent.replace("this.getClass().getSimpleName()","\""+simple+"\"");  
+        currentContent=currentContent.replace("getClass().getSimpleName()","\""+simple+"\""); 
+        
         if (this.currentContent.contains("jd.gui.skins.simple.startmenu.actions;")) {
             String menukey = new Regex(currentContent, "super\\(\"(.*?)\",\\s*\".*?\"\\);").getMatch(0);
             if (menukey != null) {
