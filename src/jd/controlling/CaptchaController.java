@@ -66,7 +66,7 @@ public class CaptchaController {
             Image captchaImage = ImageIO.read(captchafile);
 
             Captcha captcha = jac.createCaptcha(captchaImage);
-            String captchaCode = jac.checkCaptcha(captcha);
+            String captchaCode = jac.checkCaptcha(captchafile, captcha);
             if (jac.isExtern()) {
                 if ((flag & UserIO.NO_USER_INTERACTION) == 0 && captchaCode == null || captchaCode.trim().length() == 0) {
 

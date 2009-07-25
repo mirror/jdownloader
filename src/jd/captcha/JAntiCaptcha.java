@@ -87,7 +87,7 @@ public class JAntiCaptcha {
      * @param methodname
      * @return Captchacode
      */
-    public static String getCaptchaCode(Image img, String methodPath, String methodname) {
+    public static String getCaptchaCode(File file, Image img, String methodPath, String methodname) {
         JAntiCaptcha jac = new JAntiCaptcha(methodPath, methodname);
         // BasicWindow.showImage(img);
         Captcha cap = jac.createCaptcha(img);
@@ -98,7 +98,7 @@ public class JAntiCaptcha {
             return "JACerror";
         }
         // BasicWindow.showImage(cap.getImageWithGaps(2));
-        String ret = jac.checkCaptcha(cap);
+        String ret = jac.checkCaptcha(file,cap);
         if (Utilities.isLoggerActive()) {
             logger.info("captcha text:" + ret);
         }
@@ -172,7 +172,7 @@ public class JAntiCaptcha {
 
             w.setImage(2, i, cap.getImage());
             // BasicWindow.showImage(cap.getImageWithGaps(2));
-            code = jac.checkCaptcha(cap);
+            code = jac.checkCaptcha(captchaFile, cap);
             w.setImage(3, i, cap.getImage());
 
             w.setText(4, i, "JAC:" + code);
@@ -318,11 +318,11 @@ public class JAntiCaptcha {
      *            Captcha instanz
      * @return CaptchaCode
      */
-    public String checkCaptcha(Captcha captcha) {
+    public String checkCaptcha(File file, Captcha captcha) {
         if (extern) return callExtern();
         workingCaptcha = captcha;
         // Führe prepare aus
-        jas.executePrepareCommands(captcha);
+        jas.executePrepareCommands(file, captcha);
         Letter[] letters = captcha.getLetters(getLetterNum());
         if (letters == null) {
             captcha.setValityPercent(100.0);
@@ -497,7 +497,7 @@ public class JAntiCaptcha {
         Captcha captcha = createCaptcha(captchaImage);
         captcha.setCaptchaFile(captchafile);
         // captcha.printCaptcha();
-        return checkCaptcha(captcha);
+        return checkCaptcha(captchafile, captcha);
     }
 
     /**
@@ -1596,7 +1596,7 @@ public class JAntiCaptcha {
         BasicWindow.showImage(captchaImage);
         Captcha captcha = createCaptcha(captchaImage);
 
-        logger.info("CAPTCHA :_" + checkCaptcha(captcha));
+        logger.info("CAPTCHA :_" + checkCaptcha(captchafile, captcha));
         if (bw3 != null) {
             bw3.dispose();
         }
@@ -1606,7 +1606,7 @@ public class JAntiCaptcha {
 
         bw3.add(new ImageComponent(captcha.getImage(1)), Utilities.getGBC(0, 2, 2, 2));
         bw3.add(new JLabel("Farbraum Anpassung"), Utilities.getGBC(2, 2, 2, 2));
-        jas.executePrepareCommands(captcha);
+        jas.executePrepareCommands(captchafile,captcha);
 
         bw3.add(new ImageComponent(captcha.getImage(1)), Utilities.getGBC(0, 4, 2, 2));
         bw3.add(new JLabel("Prepare Code ausgeführt"), Utilities.getGBC(2, 4, 2, 2));
@@ -1821,7 +1821,7 @@ public class JAntiCaptcha {
         // Führe das Prepare aus
         // jas.executePrepareCommands(captcha);
         // Hole die letters aus dem neuen captcha
-        guess = checkCaptcha(captcha);
+        guess = checkCaptcha(captchafile, captcha);
         Letter[] letters = captcha.getLetters(letterNum);
         // Utilities.wait(40000);
         // prüfe auf Erfolgreiche Lettererkennung

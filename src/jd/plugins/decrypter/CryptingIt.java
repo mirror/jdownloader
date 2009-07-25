@@ -34,7 +34,19 @@ public class CryptingIt extends PluginForDecrypt {
     public CryptingIt(PluginWrapper wrapper) {
         super(wrapper);
     }
-
+    private static int getCode(String code) {
+    	try {
+    		int ind = code.indexOf('p');
+    		if(ind==-1)
+    		{
+    			ind = code.indexOf('m');
+    			return Integer.parseInt(code.substring(0,ind)) - Integer.parseInt(code.substring(ind+1));
+    		}
+    		return Integer.parseInt(code.substring(0,ind)) + Integer.parseInt(code.substring(ind+1));
+		} catch (Exception e) {
+		}
+		return 0;
+	}
     // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -62,7 +74,7 @@ public class CryptingIt extends PluginForDecrypt {
         // mirrors)
         for (int i = 1; i <= 5; i++) {
             String code = getCaptchaCode("http://www.crypting.it/captcha.php", param);
-            form.put("AnimCaptcha", code);
+            form.put("AnimCaptcha", ""+getCode(code));
             Browser br3 = br.cloneBrowser();
             br3.submitForm(form); // Wrong answer!
             String error = br3.getRegex("alert\\(\"(.*?)\"\\);").getMatch(0);

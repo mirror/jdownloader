@@ -118,7 +118,7 @@ public class Main {
                 mediaTracker.removeImage(captchaImage);
                 JAntiCaptcha jac = new JAntiCaptcha(JDUtilities.getJACMethodsDirectory(), host);
                 Captcha captcha = jac.createCaptcha(captchaImage);
-                String captchaCode = jac.checkCaptcha(captcha);
+                String captchaCode = jac.checkCaptcha(file, captcha);
                 if (path.contains("http://")) file.delete();
 
                 return captchaCode;

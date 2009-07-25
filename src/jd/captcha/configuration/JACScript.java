@@ -361,12 +361,12 @@ public class JACScript {
      * 
      * @param captcha
      */
-    public void executePrepareCommands(Captcha captcha) {
+    public void executePrepareCommands(File file, Captcha captcha) {
         if (captcha == null || captcha.isPrepared()) {
             // ISt schon prepared
             return;
         }
-
+        captcha.setCaptchaFile(file);
         if (Utilities.isLoggerActive()) {
             logger.fine("Execute Script.jas Prepare scripts");
         }
