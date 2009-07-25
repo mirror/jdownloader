@@ -493,6 +493,8 @@ public class JDInit {
         new DecryptPluginWrapper("box.net", "BoxNet", "http://www\\.box\\.net/shared/(\\w+\\b(?<!\\bstatic))(/rss\\.xml|#\\w*)?");
         new DecryptPluginWrapper("Szort.pl", "SzortPl", "http://[\\w\\.]*(tini\\.us|justlink\\.us|poourl\\.com|szort\\.pl)/.+");
         new DecryptPluginWrapper("Zoodl.com", "ZoodlCom", "http://[\\w\\.]*?zoodl\\.com/.+");
+        new DecryptPluginWrapper("divshare.com", "DivShareComFolder", "http://[\\w\\.]*?divshare\\.com/folder/[0-9a-zA-z|-]+");
+        new DecryptPluginWrapper("mega.1280.com", "Mega1280ComFolder", "http://[\\w\\.]*?mega\\.1280\\.com/folder/[A-Z|0-9]+");
 
         // Decrypter from Extern
 
