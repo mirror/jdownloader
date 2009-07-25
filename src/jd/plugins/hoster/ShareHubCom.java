@@ -24,6 +24,7 @@ public class ShareHubCom extends PluginForHost {
 	}
 
 	public void handleFree(DownloadLink downloadLink) throws Exception {
+		br.setDebug(true);
 		AvailableStatus av = requestFileInformation(downloadLink);
 		if (av != AvailableStatus.TRUE)
 			throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED);
@@ -31,6 +32,7 @@ public class ShareHubCom extends PluginForHost {
 		form.setProperty("x", (int) (Math.random() * 134));
 		form.setProperty("y", (int) (Math.random() * 25));
 		dl = br.openDownload(downloadLink, form, true, 2);
+        dl.setFilesizeCheck(false);
 		dl.startDownload();
 
 	}
