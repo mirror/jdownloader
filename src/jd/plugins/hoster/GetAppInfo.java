@@ -53,7 +53,19 @@ public class GetAppInfo extends PluginForHost {
         link.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
     }
-
+    private static int getCode(String code) {
+    	try {
+    		int ind = code.indexOf('+');
+    		if(ind==-1)
+    		{
+    			ind = code.indexOf('-');
+    			return Integer.parseInt(code.substring(0,ind)) - Integer.parseInt(code.substring(ind+1));
+    		}
+    		return Integer.parseInt(code.substring(0,ind)) + Integer.parseInt(code.substring(ind+1));
+		} catch (Exception e) {
+		}
+		return 0;
+	}
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
@@ -61,10 +73,11 @@ public class GetAppInfo extends PluginForHost {
         //Link zum Captcha
         String captchaurl = "http://getapp.info/image.php";
         String code = getCaptchaCode(captchaurl, downloadLink);
+        
         Form captchaForm = br.getForm(1);
         if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         //Captcha Usereingabe in die Form einfügen
-        captchaForm.put("secure", code);
+        captchaForm.put("secure", ""+getCode(code));
         //Auskommentierte Wartezeit, die momentan nicht gebraucht wird, da man sie überspringen kann
         //sleep(13000l, downloadLink);
         //sendet die ganze Form
