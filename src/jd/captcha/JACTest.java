@@ -40,7 +40,7 @@ public class JACTest {
     }
 
     private void go() {
-        String hoster = "megaupload.com";
+        String hoster = "linkbase.biz";
 
         JAntiCaptcha jac = new JAntiCaptcha(Utilities.getMethodDir(), hoster);
 
@@ -72,10 +72,11 @@ public class JACTest {
         int id = (int) (Math.random() * (list.length - 1));
         // id=21;
         System.out.println("ID: " + id);
-        File f = list[id];
+        File f = new File("/home/dwd/.jd_home/captchas/linkbase.biz/400.png");
 
         System.out.println(f + "");
         jac.showPreparedCaptcha(f);
+        jac.displayLibrary();
         if (JOptionPane.showConfirmDialog(null, "train") == JOptionPane.OK_OPTION) {
             f.renameTo(new File("C:\\Users\\coalado\\Desktop\\caps\\" + f.getName()));
         }

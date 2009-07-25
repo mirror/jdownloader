@@ -47,16 +47,15 @@ public class JACLoad {
     }
 
     private void loadMegaUpload() {
-        final String dir = "/home/dwd/.jd_home/captchas/megaupload.com/";
+        final String dir = "/home/dwd/.jd_home/captchas/linkbase.biz1/";
 
         for (int i = 0; i < 200; i++) {
+        	final int b = i;
             new Thread(new Runnable() {
                 public void run() {
                     Browser br = new Browser();
                     try {
-                        br.getPage("http://megaupload.com/?d=02KOI7N0");
-                        String cap = br.getRegex("<img src=\"([^\"]*gencap.php[^\"]*)\"").getMatch(0);
-                        br.getDownload(new File(dir + cap.replaceFirst(".*?gencap.php.", "") + ".gif"), cap);
+                        br.getDownload(new File(dir + b + ".png"), "http://linkbase.biz/captcha_text.php");
                     } catch (IOException e) {
                         JDLogger.exception(e);
                     }

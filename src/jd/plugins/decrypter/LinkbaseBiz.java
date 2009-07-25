@@ -16,9 +16,12 @@
 
 package jd.plugins.decrypter;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import jd.gui.UserIO;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -108,8 +111,9 @@ public class LinkbaseBiz extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        for (int retry = 1; retry <= 10; retry++) {
+        for (int retry = 1; retry <= 20; retry++) {
             try {
+            	br.clearCookies(getHost());
                 br.getPage(parameter);
                 if (br.getRegex("Du hast.*?Du musst noch").matches()) {
                     param.getProgressController().setRange(30);
@@ -124,7 +128,17 @@ public class LinkbaseBiz extends PluginForDecrypt {
                 }
                 String captchaurl = br.getRegex("<img src='(.*?captcha.*?)'").getMatch(0);
                 if (captchaurl != null) {
-                    String captchaCode = getCaptchaCode("http://linkbase.biz/" + captchaurl, param);
+                    File captchaFile = this.getLocalCaptchaFile();
+                    try {
+                        Browser.download(captchaFile, br.cloneBrowser().openGetConnection("http://linkbase.biz/" + captchaurl));
+                    } catch (Exception e) {
+                        logger.severe("Captcha Download fehlgeschlagen: " + "http://linkbase.biz/" + captchaurl);
+                        throw new DecrypterException(DecrypterException.CAPTCHA);
+                    }
+
+                    String captchaCode = getCaptchaCode("linkbase.biz1",captchaFile,UserIO.NO_USER_INTERACTION, param,null,null);
+                    if(captchaCode==null||captchaCode.contains("-"))
+                    	continue;
                     Form form = br.getForm(0);
                     form.put("captcha", captchaCode);
                     br.submitForm(form);
