@@ -7,10 +7,9 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.UIManager;
 
-import de.javasoft.plaf.synthetica.SyntheticaStandardLookAndFeel;
-
 import jd.gui.skins.jdgui.components.linkbutton.JLink;
 import net.miginfocom.swing.MigLayout;
+import de.javasoft.plaf.synthetica.SyntheticaStandardLookAndFeel;
 
 public class Tester {
     public static void main(String args[]) throws Exception {

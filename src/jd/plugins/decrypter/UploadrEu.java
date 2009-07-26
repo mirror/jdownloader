@@ -19,11 +19,10 @@ package jd.plugins.decrypter;
 import java.io.File;
 import java.util.ArrayList;
 
-import jd.gui.UserIO;
-import jd.http.Browser;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.gui.UserIO;
+import jd.http.Browser;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -33,24 +32,25 @@ import jd.utils.locale.JDL;
 
 public class UploadrEu extends PluginForDecrypt {
 
-	public UploadrEu(PluginWrapper wrapper) {
-		super(wrapper);
-	}
+    public UploadrEu(PluginWrapper wrapper) {
+        super(wrapper);
+    }
+
     private static int getCode(String code) {
-    	try {
-    		int ind = code.indexOf('+');
-    		if(ind==-1)
-    		{
-    			ind = code.indexOf('-');
-    			return Integer.parseInt(code.substring(0,ind)) - Integer.parseInt(code.substring(ind+1, code.indexOf('=')) );
-    		}
-    		return Integer.parseInt(code.substring(0,ind)) + Integer.parseInt(code.substring(ind+1, code.indexOf('=')));
-		} catch (Exception e) {
-		}
-		return 0;
-	}
-	// @Override
-	public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        try {
+            int ind = code.indexOf('+');
+            if (ind == -1) {
+                ind = code.indexOf('-');
+                return Integer.parseInt(code.substring(0, ind)) - Integer.parseInt(code.substring(ind + 1, code.indexOf('=')));
+            }
+            return Integer.parseInt(code.substring(0, ind)) + Integer.parseInt(code.substring(ind + 1, code.indexOf('=')));
+        } catch (Exception e) {
+        }
+        return 0;
+    }
+
+    // @Override
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
         String parameter = param.toString();
@@ -92,17 +92,14 @@ public class UploadrEu extends PluginForDecrypt {
                             logger.severe("Captcha Download fehlgeschlagen: " + captchaurl);
                             throw new DecrypterException(DecrypterException.CAPTCHA);
                         }
-                        if(captchaurl.contains("type=2"))
-                        {
-                        	captchastring = getCaptchaCode("linkbase.biz2",captchaFile,UserIO.NO_USER_INTERACTION, param,null,null);
-                        	captchastring=captchastring.replaceAll("gg", "0");
-                        	if(!captchastring.matches("\\d+[\\+|\\-]\\d=\\?"))
-                        		continue;
-                        	captchastring=""+getCode(captchastring);
-                        	
-                        }
-                        else
-                        	captchastring = getCaptchaCode("linkbase.biz1",captchaFile,UserIO.NO_USER_INTERACTION, param,null,null);
+                        if (captchaurl.contains("type=2")) {
+                            captchastring = getCaptchaCode("linkbase.biz2", captchaFile, UserIO.NO_USER_INTERACTION, param, null, null);
+                            captchastring = captchastring.replaceAll("gg", "0");
+                            if (!captchastring.matches("\\d+[\\+|\\-]\\d=\\?")) continue;
+                            captchastring = "" + getCode(captchastring);
+
+                        } else
+                            captchastring = getCaptchaCode("linkbase.biz1", captchaFile, UserIO.NO_USER_INTERACTION, param, null, null);
                         captcha = true;
                     }
                     if (captcha) passcap.put("captchastring", captchastring);
@@ -128,8 +125,8 @@ public class UploadrEu extends PluginForDecrypt {
             return null;
     }
 
-	// @Override
-	public String getVersion() {
-		return getVersion("$Revision$");
-	}
+    // @Override
+    public String getVersion() {
+        return getVersion("$Revision$");
+    }
 }

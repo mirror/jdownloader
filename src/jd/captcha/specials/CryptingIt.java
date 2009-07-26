@@ -19,14 +19,11 @@ package jd.captcha.specials;
 import java.awt.image.BufferedImage;
 import java.util.Vector;
 
-import jd.captcha.LetterComperator;
-
-import jd.captcha.pixelobject.PixelObject;
-
 import jd.captcha.JAntiCaptcha;
-
-import jd.captcha.pixelgrid.Letter;
+import jd.captcha.LetterComperator;
 import jd.captcha.pixelgrid.Captcha;
+import jd.captcha.pixelgrid.Letter;
+import jd.captcha.pixelobject.PixelObject;
 import jd.captcha.utils.GifDecoder;
 
 public class CryptingIt {

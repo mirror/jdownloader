@@ -8,10 +8,6 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
-import net.miginfocom.swing.MigLayout;
-
-import org.jdesktop.swingx.JXTitledSeparator;
-
 import jd.controlling.JDLogger;
 import jd.gui.UserIF;
 import jd.gui.UserIO;
@@ -27,6 +23,9 @@ import jd.plugins.AccountInfo;
 import jd.plugins.PluginForHost;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
+import net.miginfocom.swing.MigLayout;
+
+import org.jdesktop.swingx.JXTitledSeparator;
 
 /*
  * UserIF welches auf der JDGui arbeitet

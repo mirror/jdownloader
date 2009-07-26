@@ -407,7 +407,6 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         }
     }
 
-    @Override
     public void addLinks(ArrayList<DownloadLink> links, boolean hidegrabber, boolean autostart) {
         if (links.size() == 0) return;
         if (hidegrabber || autostart) {

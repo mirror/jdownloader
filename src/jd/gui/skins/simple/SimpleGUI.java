@@ -57,7 +57,6 @@ import jd.gui.UserIO;
 import jd.gui.skins.SwingGui;
 import jd.gui.skins.jdgui.GUIUtils;
 import jd.gui.skins.jdgui.JDGuiConstants;
-import jd.gui.skins.jdgui.SingletonPanel;
 import jd.gui.skins.jdgui.TabProgress;
 import jd.gui.skins.jdgui.components.Balloon;
 import jd.gui.skins.jdgui.components.JDCollapser;
@@ -137,7 +136,7 @@ public class SimpleGUI extends SwingGui {
 
     private JDSeparator sep;
 
-    private SingletonPanel logPanel;
+    // private SingletonPanel logPanel;
 
     // private SingletonPanel addonPanel;
 
@@ -569,145 +568,145 @@ public class SimpleGUI extends SwingGui {
     // return addonTaskPanel;
     // }
 
-    private void addConfigTask() {
-        // cfgTskPane = new ConfigTaskPane(JDL.L("gui.taskpanes.configuration",
-        // "Configuration"), JDTheme.II("gui.images.taskpanes.configuration",
-        // 16, 16));
-        //
-        // Object[] configConstructorObjects = new Object[] {
-        // JDUtilities.getConfiguration() };
-        //
-        // // cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_ADDONS, new
-        // SingletonPanel(ConfigPanelAddons.class, configConstructorObjects));
-        // // cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_CAPTCHA, new
-        // SingletonPanel(General.class, configConstructorObjects));
-        // // cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_DOWNLOAD, new
-        // SingletonPanel(ConfigPanelDownload.class, configConstructorObjects));
-        // // cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_EVENTMANAGER, new
-        // SingletonPanel(ConfigPanelEventmanager.class,
-        // configConstructorObjects));
-        // // cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_GENERAL, new
-        // SingletonPanel(ConfigPanelGeneral.class, configConstructorObjects));
-        // // cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_GUI, new
-        // SingletonPanel(ConfigPanelGUI.class, configConstructorObjects));
-        // // cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_HOST, new
-        // SingletonPanel(ConfigPanelPluginForHost.class,
-        // configConstructorObjects));
-        // // cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_RECONNECT, new
-        // SingletonPanel(MethodSelection.class,
-        // configConstructorObjects));
-        //
-        // cfgTskPane.addActionListener(new ActionListener() {
-        //
-        // public void actionPerformed(final ActionEvent e) {
-        //
-        // switch (e.getID()) {
-        // case DownloadTaskPane.ACTION_CLICK:
-        //
-        // contentPanel.display(((TaskPanel)
-        // e.getSource()).getPanel(GUIUtils.getConfig().getIntegerProperty("LAST_CONFIG_PANEL",
-        // ConfigTaskPane.ACTION_GENERAL)));
-        //
-        // break;
-        // case ConfigTaskPane.ACTION_SAVE:
-        // boolean restart = false;
-        //
-        // for (SingletonPanel panel : ((ConfigTaskPane)
-        // e.getSource()).getPanels()) {
-        //
-        // if (panel != null && panel.getPanel() != null && panel.getPanel()
-        // instanceof ConfigPanel) {
-        // if (((ConfigPanel) panel.getPanel()).hasChanges() ==
-        // PropertyType.NEEDS_RESTART) restart = true;
-        // ((ConfigPanel) panel.getPanel()).save();
-        // }
-        // }
-        //
-        // if (restart) {
-        // if
-        // (JDUtilities.getGUI().showConfirmDialog(JDL.L("gui.config.save.restart",
-        // "Your changes need a restart of JDownloader to take effect.\r\nRestart now?"),
-        // JDL.L("gui.config.save.restart.title",
-        // "JDownloader restart requested"))) {
-        // JDUtilities.restartJD();
-        // }
-        // }
-        // break;
-        //
-        // case ConfigTaskPane.ACTION_ADDONS:
-        // case ConfigTaskPane.ACTION_CAPTCHA:
-        // case ConfigTaskPane.ACTION_DOWNLOAD:
-        // case ConfigTaskPane.ACTION_EVENTMANAGER:
-        // case ConfigTaskPane.ACTION_GENERAL:
-        // case ConfigTaskPane.ACTION_GUI:
-        // case ConfigTaskPane.ACTION_HOST:
-        // case ConfigTaskPane.ACTION_RECONNECT:
-        // GUIUtils.getConfig().setProperty("LAST_CONFIG_PANEL", e.getID());
-        //
-        // contentPanel.display(((ConfigTaskPane)
-        // e.getSource()).getPanel(e.getID()));
-        // GUIUtils.getConfig().save();
-        // break;
-        // }
-        //
-        // }
-        // });
+    // private void addConfigTask() {
+    // cfgTskPane = new ConfigTaskPane(JDL.L("gui.taskpanes.configuration",
+    // "Configuration"), JDTheme.II("gui.images.taskpanes.configuration",
+    // 16, 16));
+    //
+    // Object[] configConstructorObjects = new Object[] {
+    // JDUtilities.getConfiguration() };
+    //
+    // // cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_ADDONS, new
+    // SingletonPanel(ConfigPanelAddons.class, configConstructorObjects));
+    // // cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_CAPTCHA, new
+    // SingletonPanel(General.class, configConstructorObjects));
+    // // cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_DOWNLOAD, new
+    // SingletonPanel(ConfigPanelDownload.class, configConstructorObjects));
+    // // cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_EVENTMANAGER, new
+    // SingletonPanel(ConfigPanelEventmanager.class,
+    // configConstructorObjects));
+    // // cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_GENERAL, new
+    // SingletonPanel(ConfigPanelGeneral.class, configConstructorObjects));
+    // // cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_GUI, new
+    // SingletonPanel(ConfigPanelGUI.class, configConstructorObjects));
+    // // cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_HOST, new
+    // SingletonPanel(ConfigPanelPluginForHost.class,
+    // configConstructorObjects));
+    // // cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_RECONNECT, new
+    // SingletonPanel(MethodSelection.class,
+    // configConstructorObjects));
+    //
+    // cfgTskPane.addActionListener(new ActionListener() {
+    //
+    // public void actionPerformed(final ActionEvent e) {
+    //
+    // switch (e.getID()) {
+    // case DownloadTaskPane.ACTION_CLICK:
+    //
+    // contentPanel.display(((TaskPanel)
+    // e.getSource()).getPanel(GUIUtils.getConfig().getIntegerProperty("LAST_CONFIG_PANEL",
+    // ConfigTaskPane.ACTION_GENERAL)));
+    //
+    // break;
+    // case ConfigTaskPane.ACTION_SAVE:
+    // boolean restart = false;
+    //
+    // for (SingletonPanel panel : ((ConfigTaskPane)
+    // e.getSource()).getPanels()) {
+    //
+    // if (panel != null && panel.getPanel() != null && panel.getPanel()
+    // instanceof ConfigPanel) {
+    // if (((ConfigPanel) panel.getPanel()).hasChanges() ==
+    // PropertyType.NEEDS_RESTART) restart = true;
+    // ((ConfigPanel) panel.getPanel()).save();
+    // }
+    // }
+    //
+    // if (restart) {
+    // if
+    // (JDUtilities.getGUI().showConfirmDialog(JDL.L("gui.config.save.restart",
+    // "Your changes need a restart of JDownloader to take effect.\r\nRestart now?"),
+    // JDL.L("gui.config.save.restart.title",
+    // "JDownloader restart requested"))) {
+    // JDUtilities.restartJD();
+    // }
+    // }
+    // break;
+    //
+    // case ConfigTaskPane.ACTION_ADDONS:
+    // case ConfigTaskPane.ACTION_CAPTCHA:
+    // case ConfigTaskPane.ACTION_DOWNLOAD:
+    // case ConfigTaskPane.ACTION_EVENTMANAGER:
+    // case ConfigTaskPane.ACTION_GENERAL:
+    // case ConfigTaskPane.ACTION_GUI:
+    // case ConfigTaskPane.ACTION_HOST:
+    // case ConfigTaskPane.ACTION_RECONNECT:
+    // GUIUtils.getConfig().setProperty("LAST_CONFIG_PANEL", e.getID());
+    //
+    // contentPanel.display(((ConfigTaskPane)
+    // e.getSource()).getPanel(e.getID()));
+    // GUIUtils.getConfig().save();
+    // break;
+    // }
+    //
+    // }
+    // });
 
-        // taskPane.add(cfgTskPane);
+    // taskPane.add(cfgTskPane);
 
-    }
+    // }
 
     // public ConfigTaskPane getCfgTskPane() {
     // return cfgTskPane;
     // }
 
-    private void addLinkgrabberTask() {
-        linkGrabber = LinkGrabberPanel.getLinkGrabber();
-        // lgTaskPane = new
-        // LinkGrabberTaskPane(JDL.L("gui.taskpanes.linkgrabber",
-        // "LinkGrabber"), JDTheme.II("gui.images.taskpanes.linkgrabber", 16,
-        // 16));
-        // lgTaskPane.setName(JDL.L("quickhelp.linkgrabbertaskpane",
-        // "Linkgrabber Taskpane"));
-        // // LinkAdder linkadder = new LinkAdder();
+    // private void addLinkgrabberTask() {
+    // linkGrabber = LinkGrabberPanel.getLinkGrabber();
+    // lgTaskPane = new
+    // LinkGrabberTaskPane(JDL.L("gui.taskpanes.linkgrabber",
+    // "LinkGrabber"), JDTheme.II("gui.images.taskpanes.linkgrabber", 16,
+    // 16));
+    // lgTaskPane.setName(JDL.L("quickhelp.linkgrabbertaskpane",
+    // "Linkgrabber Taskpane"));
+    // // LinkAdder linkadder = new LinkAdder();
 
-        // lgTaskPane.addPanel(new SingletonPanel(linkadder));
-        // LinkGrabberController.getInstance().addListener(new
-        // LinkGrabberControllerListener() {
-        // public void onLinkGrabberControllerEvent(LinkGrabberControllerEvent
-        // event) {
-        // switch (event.getID()) {
-        // case LinkGrabberControllerEvent.ADDED:
-        // // taskPane.switcher(dlTskPane);
-        // break;
-        // case LinkGrabberControllerEvent.EMPTY:
-        // // lgTaskPane.setPanelID(0);
-        // break;
-        // }
-        // }
-        //
-        // });
-        // lgTaskPane.addPanel(new SingletonPanel(linkGrabber));
-        //
-        // lgTaskPane.addActionListener(linkGrabber);
-        // lgTaskPane.addActionListener(new ActionListener() {
-        // public void actionPerformed(ActionEvent e) {
-        // switch (e.getID()) {
-        // case DownloadTaskPane.ACTION_CLICK:
-        // if (linkGrabber.hasLinks()) {
-        // lgTaskPane.setPanelID(1);
-        // } else {
-        // lgTaskPane.setPanelID(0);
-        // }
-        // break;
-        // case LinkGrabberTableAction.GUI_ADD:
-        // lgTaskPane.setPanelID(0);
-        // return;
-        // }
-        // }
-        // });
-        // taskPane.add(lgTaskPane);
-    }
+    // lgTaskPane.addPanel(new SingletonPanel(linkadder));
+    // LinkGrabberController.getInstance().addListener(new
+    // LinkGrabberControllerListener() {
+    // public void onLinkGrabberControllerEvent(LinkGrabberControllerEvent
+    // event) {
+    // switch (event.getID()) {
+    // case LinkGrabberControllerEvent.ADDED:
+    // // taskPane.switcher(dlTskPane);
+    // break;
+    // case LinkGrabberControllerEvent.EMPTY:
+    // // lgTaskPane.setPanelID(0);
+    // break;
+    // }
+    // }
+    //
+    // });
+    // lgTaskPane.addPanel(new SingletonPanel(linkGrabber));
+    //
+    // lgTaskPane.addActionListener(linkGrabber);
+    // lgTaskPane.addActionListener(new ActionListener() {
+    // public void actionPerformed(ActionEvent e) {
+    // switch (e.getID()) {
+    // case DownloadTaskPane.ACTION_CLICK:
+    // if (linkGrabber.hasLinks()) {
+    // lgTaskPane.setPanelID(1);
+    // } else {
+    // lgTaskPane.setPanelID(0);
+    // }
+    // break;
+    // case LinkGrabberTableAction.GUI_ADD:
+    // lgTaskPane.setPanelID(0);
+    // return;
+    // }
+    // }
+    // });
+    // taskPane.add(lgTaskPane);
+    // }
 
     // public LinkGrabberTaskPane getLgTaskPane() {
     // return lgTaskPane;
@@ -933,8 +932,6 @@ public class SimpleGUI extends SwingGui {
 
     public void windowOpened(WindowEvent e) {
     }
-
-    
 
     public static void showChangelogDialog() {
         int status = UserIO.getInstance().requestHelpDialog(UserIO.NO_CANCEL_OPTION, JDL.LF("system.update.message.title", "Updated to version %s", JDUtilities.getRevision()), JDL.L("system.update.message", "Update successfull"), JDL.L("system.update.showchangelogv2", "What's new?"), "http://jdownloader.org/changes/index");

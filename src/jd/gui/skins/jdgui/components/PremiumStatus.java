@@ -49,7 +49,6 @@ import jd.gui.skins.jdgui.menu.JDMenu;
 import jd.gui.skins.jdgui.swing.GuiRunnable;
 import jd.gui.skins.simple.Factory;
 import jd.gui.skins.simple.TinyProgressBar;
-
 import jd.nutils.Formatter;
 import jd.nutils.JDFlags;
 import jd.plugins.Account;
@@ -397,7 +396,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
             if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
                 SwingGui.getInstance().setWaiting(true);
                 JPopupMenu popup = new JPopupMenu();
-             
+
                 Factory.createHosterPopup(popup);
                 popup.show(premium, e.getPoint().x, e.getPoint().y);
                 SwingGui.getInstance().setWaiting(false);
@@ -409,7 +408,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
                 if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
                     SwingGui.getInstance().setWaiting(true);
                     JPopupMenu popup = new JPopupMenu();
-                  
+
                     ArrayList<MenuItem> entries = bars[i].getPlugin().createMenuitems();
                     for (MenuItem next : entries) {
                         JMenuItem mi = JDMenu.getJMenuItem(next);
@@ -425,21 +424,26 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
                     /**
                      * TODO
                      */
-//                    if (JDCollapser.getInstance().getContentPanel() != null && JDCollapser.getInstance().getContentPanel() instanceof ConfigEntriesPanel) {
-//                        ConfigContainer cfg = ((ConfigEntriesPanel) JDCollapser.getInstance().getContentPanel()).getConfigContainer();
-//                        if (cfg != null && cfg == bars[i].getPlugin().getConfig()) {
-//                            new GuiRunnable<Object>() {
-//                                // @Override
-//                                public Object runSave() {
-//                                    InfoPanelHandler.setPanel(null);
-//                                    
-//                                    return null;
-//                                }
-//                            }.start();
-//                            return;
-//                        }
-//                    }
-//                    SimpleGUI.displayConfig(bars[i].getPlugin().getConfig(), true);
+                    // if (JDCollapser.getInstance().getContentPanel() != null
+                    // && JDCollapser.getInstance().getContentPanel() instanceof
+                    // ConfigEntriesPanel) {
+                    // ConfigContainer cfg = ((ConfigEntriesPanel)
+                    // JDCollapser.getInstance().getContentPanel()).getConfigContainer();
+                    // if (cfg != null && cfg ==
+                    // bars[i].getPlugin().getConfig()) {
+                    // new GuiRunnable<Object>() {
+                    // // @Override
+                    // public Object runSave() {
+                    // InfoPanelHandler.setPanel(null);
+                    //                                    
+                    // return null;
+                    // }
+                    // }.start();
+                    // return;
+                    // }
+                    // }
+                    // SimpleGUI.displayConfig(bars[i].getPlugin().getConfig(),
+                    // true);
                 }
                 return;
             }

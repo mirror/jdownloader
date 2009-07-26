@@ -19,16 +19,12 @@ package jd.utils;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Properties;
-import java.util.Map.Entry;
-import java.util.regex.Pattern;
 
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
@@ -40,15 +36,11 @@ import jd.http.Browser;
 import jd.nutils.JDHash;
 import jd.nutils.SimpleFTP;
 import jd.nutils.io.JDIO;
-import jd.nutils.jobber.JDRunnable;
-import jd.nutils.jobber.Jobber;
 import jd.nutils.svn.Subversion;
-import jd.nutils.zip.Zip;
 import jd.parser.Regex;
 import jd.update.FileUpdate;
 import jd.update.WebUpdater;
 
-import org.tmatesoft.svn.core.SVNDirEntry;
 import org.tmatesoft.svn.core.SVNException;
 
 public class Updater {
@@ -56,40 +48,29 @@ public class Updater {
     public static StringBuilder SERVERLIST = new StringBuilder();
     static {
         // SERVERLIST.append("-1:http://update4ex.jdownloader.org/branches/%BRANCH%/\r\n");
-
         // SERVERLIST.append("-1:http://jdupdate.bluehost.to/branches/%BRANCH%/\r\n");
         SERVERLIST.append("-1:http://update1.jdownloader.org/%BRANCH%/\r\n");
         SERVERLIST.append("-1:http://update2.jdownloader.org/%BRANCH%/\r\n");
         SERVERLIST.append("-1:http://update0.jdownloader.org/%BRANCH%/\r\n");
-        ;
     }
 
-    //
-    /**
-     * @param args
-     * @throws Exception
-     */
     public static void main(String[] args) throws Exception {
         String branch = null;
 
-        branch = "NIGHTLY"; 
+        branch = "NIGHTLY";
         Updater upd = new Updater();
 
         if (branch != null) WebUpdater.getConfig("WEBUPDATE").setProperty("BRANCH", branch);
         WebUpdater.getConfig("WEBUPDATE").save();
         System.out.println("STATUS: Webupdate");
         upd.webupdate();
-        // System.out.println("STATUS: Webupdate ende");
-        // System.out.println("STATUS: Scan local");
-        // upd.lockUpdate();
+
         upd.removeFileOverhead();
 
         System.out.println("STATUS: move plugins");
         upd.movePlugins(getCFG("plugins_dir"));
         upd.moveJars(getCFG("dist_dir"));
-        // // // System.out.println("STATUS: FINISHED");
         upd.cleanUp();
-        // upd.filter("DBBackup.*.class");
 
         if (branch == null) branch = JOptionPane.showInputDialog(upd.frame, "branchname");
         upd.createBranch(branch);
@@ -103,142 +84,9 @@ public class Updater {
         upd.clone0(upd.branch);
         upd.clone2(upd.branch);
 
-        // upd.clonebluehost2();
         upd.uploadHashList();
-        // upd.refreshUpdateJar();
-        // upd.spread(list);
-        // upd.incFTPSpread(upd.branch);
 
         System.exit(0);
-    }
-
-    private void filter(String filter) {
-        ArrayList<File> list = getLocalFileList(this.updateDir, true);
-
-        for (File f : list) {
-            if (!new Regex(f.getAbsolutePath(), filter).matches()) {
-                f.delete();
-                System.out.println("Filter: remove " + f);
-            } else {
-                System.out.println("Filter: keep " + f);
-            }
-        }
-    }
-
-    private void refreshUpdateJar() throws IOException {
-        if (JOptionPane.showConfirmDialog(frame, "upload latest updater?") == JOptionPane.OK_OPTION) {
-            uploadJDUpdateJar();
-        } else {
-
-            File file0 = null;
-            try {
-                SimpleFTP.download("update0.jdownloader.org", 2121, getCFG("update012user"), getCFG("update012pass"), "/http/", "jdupdate.jar", file0 = File.createTempFile("hash", null));
-
-            } catch (Exception e) {
-                e.printStackTrace();
-                file0 = null;
-            }
-            File file1 = null;
-            try {
-                SimpleFTP.download("update1.jdownloader.org", 2121, getCFG("update012user"), getCFG("update012pass"), "/http/", "jdupdate.jar", file1 = File.createTempFile("hash", null));
-            } catch (Exception e) {
-                e.printStackTrace();
-                file1 = null;
-            }
-            File file2 = null;
-            try {
-                SimpleFTP.download("update2.jdownloader.org", 2121, getCFG("update012user"), getCFG("update012pass"), "/http/", "jdupdate.jar", file2 = File.createTempFile("hash", null));
-            } catch (Exception e) {
-                e.printStackTrace();
-                file2 = null;
-            }
-
-            File hash0 = null;
-            try {
-                SimpleFTP.download("update0.jdownloader.org", 2121, getCFG("update012user"), getCFG("update012pass"), "/http/", "jdupdate.jar.md5", hash0 = File.createTempFile("hash", null));
-
-            } catch (Exception e) {
-                e.printStackTrace();
-                file0 = null;
-            }
-            File hash1 = null;
-            try {
-                SimpleFTP.download("update1.jdownloader.org", 2121, getCFG("update012user"), getCFG("update012pass"), "/http/", "jdupdate.jar.md5", hash1 = File.createTempFile("hash", null));
-            } catch (Exception e) {
-                e.printStackTrace();
-                file1 = null;
-            }
-            File hash2 = null;
-            try {
-                SimpleFTP.download("update2.jdownloader.org", 2121, getCFG("update012user"), getCFG("update012pass"), "/http/", "jdupdate.jar.md5", hash2 = File.createTempFile("hash", null));
-            } catch (Exception e) {
-                e.printStackTrace();
-                file2 = null;
-            }
-
-            String[] hashes = new String[] { JDHash.getMD5(file0), JDHash.getMD5(file1), JDHash.getMD5(file2), JDIO.getLocalFile(hash0), JDIO.getLocalFile(hash1), JDIO.getLocalFile(hash2) };
-            String c = null;
-            boolean res = false;
-            for (String h : hashes) {
-                if (h == null) continue;
-                if (c != null && !c.equalsIgnoreCase(h.trim())) {
-                    System.err.println("Upadte.jar sind nicht gleich");
-                    if (JOptionPane.showConfirmDialog(frame, "upload latest updater?") == JOptionPane.OK_OPTION) {
-                        uploadJDUpdateJar();
-                        return;
-                    }
-
-                }
-                c = h.trim();
-            }
-            System.out.println("JDUpdate.jar überprüft: hashwerte ok: " + c);
-
-        }
-    }
-
-    private void uploadJDUpdateJar() throws IOException {
-        File file = File.createTempFile("hash", null);
-        file = new File(file.getParentFile(), "jdupdate.jar.md5");
-
-        JDIO.writeLocalFile(file, JDHash.getMD5(new File(getCFG("localupdatejarpath"))));
-
-        System.out.println("Hash: " + JDIO.getLocalFile(file));
-        SimpleFTP.uploadtoFolderSecure("update0.jdownloader.org", 2121, getCFG("update012user"), getCFG("update012pass"), "/http/", new File(getCFG("localupdatejarpath")), file);
-        SimpleFTP.uploadtoFolderSecure("update1.jdownloader.org", 2121, getCFG("update012user"), getCFG("update012pass"), "/http/", new File(getCFG("localupdatejarpath")), file);
-        SimpleFTP.uploadtoFolderSecure("update2.jdownloader.org", 2121, getCFG("update012user"), getCFG("update012pass"), "/http/", new File(getCFG("localupdatejarpath")), file);
-
-    }
-
-    private void incFTPSpread(final String branch2) throws IOException {
-        final ArrayList<File> list = this.getLocalFileList(this.workingDir, false);
-
-        Jobber uploader = new Jobber(4);
-        uploader.add(new JDRunnable() {
-
-            public void go() throws Exception {
-                SimpleFTP.uploadSecure("jdupdate.bluehost.to", 2100, getCFG("bluehost_user"), getCFG("bluehost_pass"), "/branches/" + branch2, workingDir, list.toArray(new File[] {}));
-
-            }
-        });
-        uploader.add(new JDRunnable() {
-
-            public void go() throws Exception {
-                SimpleFTP.uploadSecure("update4ex.jdownloader.org", 21, getCFG("update4ex_user"), getCFG("update4ex_pass"), "/branches/" + branch2, workingDir, list.toArray(new File[] {}));
-
-            }
-        });
-
-        int todo = uploader.getJobsAdded();
-        uploader.start();
-        while (uploader.getJobsFinished() != todo) {
-            try {
-                Thread.sleep(200);
-            } catch (InterruptedException e) {
-                return;
-            }
-        }
-        uploader.stop();
-
     }
 
     private void cleanUp() {
@@ -294,19 +142,17 @@ public class Updater {
     private static String UPDATE_SERVER = "http://update1.jdownloader.org/";
     private File jars;
 
-    private boolean uploadaddons;
-
     private String latestBranch;
 
     public Updater() throws IOException, SVNException {
         workingDir = new File(".").getCanonicalFile();
 
-        updateDir = new File(workingDir, UPDATE_SUB_DIR);
         svn = new File(workingDir, UPDATE_SUB_SRC);
         svn.mkdirs();
+
+        updateDir = new File(workingDir, UPDATE_SUB_DIR);
         updateDir.mkdirs();
         initGUI();
-
     }
 
     /**
@@ -329,24 +175,6 @@ public class Updater {
         return ret;
     }
 
-    private void clonebluehost2() throws IOException {
-        HashMap<String, String> map = createHashList(this.workingDir);
-        Browser br = new Browser();
-        br.forceDebug(true);
-
-        map.put("pass", getCFG("updateHashPW"));
-
-        br.postPage("http://jdupdate.bluehost.to/clone.php?pass=" + getCFG("updateHashPW"), map);
-        System.out.println(br + "");
-        if (!br.containsHTML("<b>fail</b>") && !br.containsHTML("<b>Warning</b>") && !br.containsHTML("<b>Error</b>")) {
-            System.out.println("CLONE update2 OK");
-            return;
-        }
-
-        JOptionPane.showConfirmDialog(frame, "MD5 ERROR!!!! See log");
-
-    }
-
     private void moveJars(String string) throws IOException {
         jars = new File(string);
         copyDirectory(new File(jars, "libs"), new File(this.updateDir, "libs"));
@@ -362,7 +190,6 @@ public class Updater {
                 JDIO.saveToFile(new File(updateDir, "config/version.cfg"), (head + "").getBytes());
 
             } catch (SVNException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
         }
@@ -433,36 +260,6 @@ public class Updater {
     //
     // }
 
-    /**
-     * TODO spreadinglist wird online nicht verabeitet
-     * 
-     * @param list
-     * @throws IOException
-     */
-    private void spread(ArrayList<File> list) throws IOException {
-        System.out.println("Spread now");
-        Browser br = new Browser();
-        br.forceDebug(true);
-        br.setReadTimeout(10 * 60 * 1000);
-        try {
-            System.out.println(br.getPage("http://update1.jdownloader.org/spread.php?pass=" + getCFG("server_pass") + "&server=update4ex.jdownloader.org"));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        try {
-            System.out.println(br.getPage("http://update1.jdownloader.org/spread.php?pass=" + getCFG("server_pass") + "&server=r22593.ovh.net"));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        try {
-            System.out.println(br.getPage("http://update1.jdownloader.org/spread.php?pass=" + getCFG("server_pass") + "&server=78.143.20.67"));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        System.out.println("Spread ok");
-    }
-
     private void checkHashes() throws IOException {
         while (true) {
             HashMap<String, String> map = createHashList(this.workingDir);
@@ -499,99 +296,6 @@ public class Updater {
 
             JOptionPane.showConfirmDialog(frame, "MD5 ERROR!!!! See log");
         }
-    }
-
-    // private String createAddonList() throws Exception {
-    // File file = new File(getCFG("addon_dir2"));
-    // StringBuilder sb = new StringBuilder();
-    // uploadaddons = JOptionPane.showConfirmDialog(frame, "Upload addons?") ==
-    // JOptionPane.OK_OPTION;
-    //
-    // if (!uploadaddons) {
-    //
-    // if (new File(this.workingDir, "addonlist.lst").exists()) {
-    // return JDIO.getLocalFile(new File(this.workingDir, "addonlist.lst"));
-    // } else {
-    // return "";
-    // }
-    //
-    // }
-    // sb.append("<packages>\r\n");
-    // for (File addon : file.listFiles()) {
-    //
-    // if (new File(addon, "info.txt").exists()) {
-    //
-    // Properties info = new Properties();
-    // FileInputStream stream;
-    // try {
-    // stream = new FileInputStream(new File(addon, "info.txt"));
-    // info.load(stream);
-    // stream.close();
-    // } catch (Exception e) {
-    // // TODO Auto-generated catch block
-    // e.printStackTrace();
-    // }
-    //
-    // if (info.getProperty("disabled") == null ||
-    // !info.getProperty("disabled").equalsIgnoreCase("false")) {
-    // addAddon(sb, addon, info);
-    // }
-    // }
-    // }
-    //
-    // sb.append("</packages>");
-    // JDIO.writeLocalFile(new File(this.workingDir, "addonlist.lst"),
-    // sb.toString());
-    // System.out.println(sb);
-    // return sb.toString();
-    // }
-
-    private void addAddon(StringBuilder sb, File addon, Properties info) throws Exception {
-
-        File[] files = addon.listFiles(new FilenameFilter() {
-            public boolean accept(File dir, String name) {
-                if (name.endsWith(".svn") || name.endsWith("info.txt")) { return false; }
-                return true;
-
-            }
-
-        });
-        Subversion svn = new Subversion("svn://svn.jdownloader.org/jdownloader");
-        SVNDirEntry svnInfo = svn.getRepository().info("/trunk/ressourcen/pluginressourcen/" + addon.getName(), svn.latestRevision());
-
-        File des = File.createTempFile("test", ".jdu");
-        des = new File(des.getParentFile(), svnInfo.getRevision() + "_" + info.getProperty("filename"));
-        Zip zip = new Zip(files, des);
-        zip.setExcludeFilter(Pattern.compile("\\.svn", Pattern.CASE_INSENSITIVE));
-        zip.zip();
-        SimpleFTP.uploadtoFolderSecure("update2.jdownloader.org", 2121, getCFG("update2_ftp_user"), getCFG("update2_ftp_pass"), "/http/addons", des);
-        sb.append("    <package>\r\n");
-        for (Iterator<Entry<Object, Object>> it = info.entrySet().iterator(); it.hasNext();) {
-            Entry<Object, Object> next = it.next();
-            if (next.getKey().toString().equalsIgnoreCase("version")) {
-                next.setValue(svnInfo.getRevision());
-
-                sb.append("          <lastAuthor>" + svnInfo.getAuthor() + "</lastAuthor>\r\n");
-                sb.append("          <lastChangeDate>" + svnInfo.getDate() + "</lastChangeDate>\r\n");
-
-            }
-
-            if (next.getKey().toString().equalsIgnoreCase("url")) {
-                next.setValue("http://update2.jdownloader.org/addons/" + des.getName() + "?.zip");
-                Browser br = new Browser();
-                br.openGetConnection("http://update2.jdownloader.org/addons/" + des.getName());
-
-                sb.append("          <filesize>" + br.getRequest().getContentLength() + "</filesize>\r\n");
-                sb.append("          <md5>" + JDHash.getMD5(des) + "</md5>\r\n");
-                sb.append("          <responseCode>" + br.getRequest().getHttpConnection().getResponseCode() + "</responseCode>\r\n");
-                br.getRequest().getHttpConnection().disconnect();
-            }
-            if (next.getKey().toString().equalsIgnoreCase("light-url")) {
-                next.setValue("http://update2.jdownloader.org/addons/" + des.getName() + "?.zip");
-            }
-            sb.append("          <" + next.getKey() + ">" + next.getValue() + "</" + next.getKey() + ">\r\n");
-        }
-        sb.append("    </package>\r\n");
     }
 
     /**
@@ -639,15 +343,9 @@ public class Updater {
      * @throws IOException
      */
     private boolean upload(ArrayList<File> list) throws IOException {
-
         SimpleFTP.uploadSecure("update1.jdownloader.org", 2121, getCFG("update1_ftp_user"), getCFG("update1_ftp_pass"), "/http/" + this.branch, updateDir, list.toArray(new File[] {}));
 
         return true;
-
-    }
-
-    private JFrame getFrame() {
-        return frame;
     }
 
     /**
@@ -660,7 +358,6 @@ public class Updater {
         System.out.println("Demerge updatelist");
         ArrayList<File> listUpdate = this.getLocalFileList(this.updateDir, true);
         listUpdate.remove(0);
-        ArrayList<File> listLocal = this.getLocalFileList(this.workingDir, false);
         main: for (Iterator<File> it = listUpdate.iterator(); it.hasNext();) {
             File file = it.next();
 
@@ -703,21 +400,6 @@ public class Updater {
         copyDirectory(new File(pluginsDir.getParentFile(), "dynamics"), file);
         System.out.println("Updated BIN->" + file);
 
-    }
-
-    /**
-     * Exports svn ressources dir
-     * 
-     * @throws SVNException
-     * @throws IOException
-     */
-    private void updateSource() throws SVNException, IOException {
-        Subversion sv = new Subversion("https://www.syncom.org/svn/jdownloader/trunk/ressourcen/");
-        sv.export(svn);
-        moveSrcToDif("jd", "jd");
-        moveSrcToDif("tools", "tools");
-        moveSrcToDif("libs", "libs");
-        // moveSrcToDif("jd/captcha", "jd/captcha");
     }
 
     /**
@@ -774,22 +456,6 @@ public class Updater {
             out.close();
             System.out.println("        Copy File " + srcPath + " -> " + dstPath);
         }
-
-    }
-
-    /**
-     * Copies ressources from svn t update
-     * 
-     * @param string
-     * @param string2
-     * @throws IOException
-     */
-    private void moveSrcToDif(String string, String string2) throws IOException {
-        File file;
-        JDIO.removeDirectoryOrFile(file = new File(this.updateDir, string2));
-
-        copyDirectory(new File(this.svn, string), file);
-        System.out.println("Updated SVN->" + file);
 
     }
 
@@ -913,8 +579,8 @@ public class Updater {
             if (f.isDirectory()) {
                 if (remote.startsWith(local)) { return true; }
             } else {
-              
-                if (f.exists()&&remote.equals(local) && JDHash.getMD5(f).equalsIgnoreCase(fu.getRemoteHash())) { return true; }
+
+                if (f.exists() && remote.equals(local) && JDHash.getMD5(f).equalsIgnoreCase(fu.getRemoteHash())) { return true; }
             }
 
         }
@@ -936,9 +602,6 @@ public class Updater {
             return ret;
         }
         for (File f : dir.listFiles()) {
-            // if(f.getAbsolutePath().contains("jd\\captcha")){
-            // f=f;
-            // }
             if (f.isDirectory()) {
                 ret.addAll(getLocalFileList(f, noFilter));
             } else {

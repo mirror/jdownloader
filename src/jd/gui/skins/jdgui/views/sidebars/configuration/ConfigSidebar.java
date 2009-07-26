@@ -43,7 +43,6 @@ public class ConfigSidebar extends SideBarPanel {
                             entry = entry.getEntries().get(0);
                         }
                         view.setContent(entry.getPanel().getPanel());
-                        view.revalidate();
                         return null;
                     }
                 }.start();

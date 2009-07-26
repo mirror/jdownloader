@@ -51,9 +51,14 @@ import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 public class MethodSelection extends ConfigPanel implements ActionListener {
-      public String getBreadcrum() {     return JDL.L(this.getClass().getName()+".breadcrum", this.getClass().getSimpleName()); }   public static String getTitle(){
+    public String getBreadcrum() {
+        return JDL.L(this.getClass().getName() + ".breadcrum", this.getClass().getSimpleName());
+    }
+
+    public static String getTitle() {
         return JDL.L(JDL_PREFIX + "reconnect.title", "Reconnection");
-     }
+    }
+
     private static final String JDL_PREFIX = "jd.gui.skins.jdgui.settings.panels.reconnect.MethodSelection.";
     private static final long serialVersionUID = 3383448498625377495L;
 
@@ -177,8 +182,7 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
         addCLR();
         // tabbed.setSelectedIndex(configuration.getIntegerProperty(
         // ReconnectMethod.PARAM_RECONNECT_TYPE, ReconnectMethod.LIVEHEADER));
-        method.add(Factory.createHeader(new ConfigGroup(JDL.L("gui.config.reconnect.test", "Showcase"), JDTheme.II("gui.images.config.network_local", 32, 32))),
-                   "spanx,gaptop 15,gapleft 20,gapright 15");
+        method.add(Factory.createHeader(new ConfigGroup(JDL.L("gui.config.reconnect.test", "Showcase"), JDTheme.II("gui.images.config.network_local", 32, 32))), "spanx,gaptop 15,gapleft 20,gapright 15");
         JPanel p = new JPanel(new MigLayout(" ins 0,wrap 7", "[]5[fill]5[align right]20[align right]20[align right]20[align right]20[align right]", "[][]"));
         method.add(p, "spanx,gapright 20,gapleft 54");
         btn = new JButton(JDL.L("gui.config.reconnect.showcase.reconnect", "Change IP"));
@@ -229,8 +233,6 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
 
     }
 
-
-
     private void addCLR() {
         String name = JDL.L("modules.reconnect.types.clr", "CLR Script");
 
@@ -242,11 +244,13 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
         String name = JDL.L("modules.reconnect.types.batch", "Batch");
 
         ConfigPanel cp;
-        tabbed.addTab(name, cp=new ConfigPanel(){         
+        tabbed.addTab(name, cp = new ConfigPanel() {
+
+            private static final long serialVersionUID = -6178073263504701330L;
 
             @Override
             public void initPanel() {
-                ConfigContainer container =  new BatchReconnect().getConfig();
+                ConfigContainer container = new BatchReconnect().getConfig();
 
                 for (ConfigEntry cfgEntry : container.getEntries()) {
                     GUIConfigEntry ce = new GUIConfigEntry(cfgEntry);
@@ -266,7 +270,7 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
                 saveConfigEntries();
 
             }
-            
+
         });
         cp.initPanel();
         cp.load();
@@ -277,11 +281,13 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
         String name = JDL.L("modules.reconnect.types.extern", "Extern");
 
         ConfigPanel cp;
-        tabbed.addTab(name,cp= new ConfigPanel(){         
+        tabbed.addTab(name, cp = new ConfigPanel() {
+
+            private static final long serialVersionUID = 1086423194283483561L;
 
             @Override
             public void initPanel() {
-                ConfigContainer container =  new ExternReconnect().getConfig();
+                ConfigContainer container = new ExternReconnect().getConfig();
 
                 for (ConfigEntry cfgEntry : container.getEntries()) {
                     GUIConfigEntry ce = new GUIConfigEntry(cfgEntry);
@@ -301,7 +307,7 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
                 saveConfigEntries();
 
             }
-            
+
         });
         cp.initPanel();
         cp.load();
@@ -329,7 +335,7 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
 
     @Override
     public void save() {
-       
+
         saveConfigEntries();
         configuration.setProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, tabbed.getSelectedIndex());
         ((ConfigPanel) tabbed.getSelectedComponent()).save();

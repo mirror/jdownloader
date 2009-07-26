@@ -31,6 +31,7 @@ import jd.utils.locale.JDL;
 
 public class InternetAndNetwork extends ConfigPanel {
 
+    private static final long serialVersionUID = -7292287136387344296L;
     private static final String JDL_PREFIX = "jd.gui.skins.jdgui.settings.panels.downloadandnetwork.InternetAndNetwork.";
     private SubConfiguration config;
 
@@ -42,9 +43,13 @@ public class InternetAndNetwork extends ConfigPanel {
         load();
     }
 
-      public String getBreadcrum() {     return JDL.L(this.getClass().getName()+".breadcrum", this.getClass().getSimpleName()); }   public static String getTitle(){
-        return JDL.L(JDL_PREFIX + "download.internetandnetwork.title","Internet & Network");
-     }
+    public String getBreadcrum() {
+        return JDL.L(this.getClass().getName() + ".breadcrum", this.getClass().getSimpleName());
+    }
+
+    public static String getTitle() {
+        return JDL.L(JDL_PREFIX + "download.internetandnetwork.title", "Internet & Network");
+    }
 
     private ConfigContainer setupContainer() {
 
@@ -56,13 +61,11 @@ public class InternetAndNetwork extends ConfigPanel {
 
         network.setGroup(new ConfigGroup(JDL.L("gui.config.download.timeout", "Timeout & Connection loss"), JDTheme.II("gui.images.networkerror", 32, 32)));
 
-        network.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, JDL.L("gui.config.download.timeout.read", "Timeout beim Lesen [ms]"),
-                60000, 120000));
+        network.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, JDL.L("gui.config.download.timeout.read", "Timeout beim Lesen [ms]"), 60000, 120000));
         ce.setDefaultValue(100000);
         ce.setStep(500);
 
-        network.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT, JDL.L("gui.config.download.timeout.connect",
-                                                                                                                                        "Timeout beim Verbinden(Request) [ms]"), 60000, 120000));
+        network.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT, JDL.L("gui.config.download.timeout.connect", "Timeout beim Verbinden(Request) [ms]"), 60000, 120000));
         ce.setDefaultValue(100000);
         ce.setStep(500);
 
@@ -76,10 +79,7 @@ public class InternetAndNetwork extends ConfigPanel {
         // ce.setStep(1);
 
         network.setGroup(new ConfigGroup(JDL.L("gui.config.download.proxy", "Proxy Settings"), JDTheme.II("gui.images.proxy", 32, 32)));
-        network.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.USE_PROXY, JDL.L("gui.config.download.use_proxy", "Http-Proxy Verwenden")
-                + " ("
-                + JDL.L("gui.warning.restartNeeded", "JD-Restart needed after changes!")
-                + ")"));
+        network.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.USE_PROXY, JDL.L("gui.config.download.use_proxy", "Http-Proxy Verwenden") + " (" + JDL.L("gui.warning.restartNeeded", "JD-Restart needed after changes!") + ")"));
 
         conditionEntry.setDefaultValue(false);
         conditionEntry.setPropertyType(PropertyType.NEEDS_RESTART);
@@ -97,10 +97,7 @@ public class InternetAndNetwork extends ConfigPanel {
         ce.setEnabledCondidtion(conditionEntry, "==", true);
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
 
-        network.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.USE_SOCKS, JDL.L("gui.config.download.use_socks", "Socks-Proxy Verwenden")
-                + " ("
-                + JDL.L("gui.warning.restartNeeded", "JD-Restart needed after changes!")
-                + ")"));
+        network.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.USE_SOCKS, JDL.L("gui.config.download.use_socks", "Socks-Proxy Verwenden") + " (" + JDL.L("gui.warning.restartNeeded", "JD-Restart needed after changes!") + ")"));
         conditionEntry.setDefaultValue(false);
         conditionEntry.setPropertyType(PropertyType.NEEDS_RESTART);
         network.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.SOCKS_HOST, JDL.L("gui.config.download.socks.host", "Host/IP")));

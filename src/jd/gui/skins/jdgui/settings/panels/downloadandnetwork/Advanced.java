@@ -30,9 +30,15 @@ import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
 public class Advanced extends ConfigPanel {
+
+    private static final long serialVersionUID = -8421603124342250902L;
     private static final String JDL_PREFIX = "jd.gui.skins.jdgui.settings.panels.downloadandnetwork.Advanced.";
 
-      public String getBreadcrum() {     return JDL.L(this.getClass().getName()+".breadcrum", this.getClass().getSimpleName()); }   public static String getTitle() {
+    public String getBreadcrum() {
+        return JDL.L(this.getClass().getName() + ".breadcrum", this.getClass().getSimpleName());
+    }
+
+    public static String getTitle() {
         return JDL.L(JDL_PREFIX + "download.advanced.title", "Advanced");
     }
 
@@ -57,13 +63,11 @@ public class Advanced extends ConfigPanel {
 
         extended.setGroup(new ConfigGroup(JDL.L("gui.config.download.ipcheck", "Reconnect IP-Check"), JDTheme.II("gui.images.network", 32, 32)));
 
-        extended.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.PARAM_GLOBAL_IP_DISABLE, JDL.L("gui.config.download.ipcheck.disable",
-                                                                                                                                               "IP Überprüfung deaktivieren")));
+        extended.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.PARAM_GLOBAL_IP_DISABLE, JDL.L("gui.config.download.ipcheck.disable", "IP Überprüfung deaktivieren")));
 
         conditionEntry.setDefaultValue(false);
 
-        extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PARAM_GLOBAL_IP_CHECK_SITE, JDL.L("gui.config.download.ipcheck.website",
-                                                                                                                                       "IP prüfen über (Website)")));
+        extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PARAM_GLOBAL_IP_CHECK_SITE, JDL.L("gui.config.download.ipcheck.website", "IP prüfen über (Website)")));
         ce.setDefaultValue("http://checkip.dyndns.org");
         ce.setEnabledCondidtion(conditionEntry, "==", false);
 
@@ -75,8 +79,7 @@ public class Advanced extends ConfigPanel {
         ce.setDefaultValue("\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).)" + "{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b");
         ce.setEnabledCondidtion(conditionEntry, "==", false);
 
-        extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, "EXTERNAL_IP_CHECK_INTERVAL", JDL.L("gui.config.download.ipcheck.externalinterval",
-                                                                                                                         "External IP Check Interval [sec]"), 10, 60 * 60));
+        extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, "EXTERNAL_IP_CHECK_INTERVAL", JDL.L("gui.config.download.ipcheck.externalinterval", "External IP Check Interval [sec]"), 10, 60 * 60));
         ce.setDefaultValue(10 * 60);
         ce.setEnabledCondidtion(conditionEntry, "==", false);
 

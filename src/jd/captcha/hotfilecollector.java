@@ -1,11 +1,9 @@
 package jd.captcha;
 
 import java.io.File;
-import java.io.IOException;
 
 import jd.controlling.JDLogger;
 import jd.http.Browser;
-
 import jd.parser.html.Form;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;

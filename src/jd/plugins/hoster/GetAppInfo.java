@@ -17,14 +17,13 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 
+import jd.PluginWrapper;
 import jd.gui.UserIO;
 import jd.http.Browser;
-import jd.plugins.DecrypterException;
-
-import jd.PluginWrapper;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -32,7 +31,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {"getapp.info"}, urls = {"http://[\\w\\.]*?getapp\\.info/download/.+"}, flags = {0})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "getapp.info" }, urls = { "http://[\\w\\.]*?getapp\\.info/download/.+" }, flags = { 0 })
 public class GetAppInfo extends PluginForHost {
 
     public GetAppInfo(PluginWrapper wrapper) {
@@ -58,24 +57,25 @@ public class GetAppInfo extends PluginForHost {
         link.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
     }
+
     private static int getCode(String code) {
-    	try {
-    		int ind = code.indexOf('+');
-    		if(ind==-1)
-    		{
-    			ind = code.indexOf('-');
-    			return Integer.parseInt(code.substring(0,ind)) - Integer.parseInt(code.substring(ind+1));
-    		}
-    		return Integer.parseInt(code.substring(0,ind)) + Integer.parseInt(code.substring(ind+1));
-		} catch (Exception e) {
-		}
-		return 0;
-	}
+        try {
+            int ind = code.indexOf('+');
+            if (ind == -1) {
+                ind = code.indexOf('-');
+                return Integer.parseInt(code.substring(0, ind)) - Integer.parseInt(code.substring(ind + 1));
+            }
+            return Integer.parseInt(code.substring(0, ind)) + Integer.parseInt(code.substring(ind + 1));
+        } catch (Exception e) {
+        }
+        return 0;
+    }
+
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
-        //Link zum Captcha
+        // Link zum Captcha
         String captchaurl = "http://getapp.info/image.php";
         File captchaFile = this.getLocalCaptchaFile();
         try {
@@ -85,16 +85,16 @@ public class GetAppInfo extends PluginForHost {
             throw new DecrypterException(DecrypterException.CAPTCHA);
         }
 
-        String code = getCaptchaCode("getapp.info",captchaFile,UserIO.NO_USER_INTERACTION, downloadLink,null,null);
-        
-        
+        String code = getCaptchaCode("getapp.info", captchaFile, UserIO.NO_USER_INTERACTION, downloadLink, null, null);
+
         Form captchaForm = br.getForm(1);
         if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        //Captcha Usereingabe in die Form einfügen
-        captchaForm.put("secure", ""+getCode(code));
-        //Auskommentierte Wartezeit, die momentan nicht gebraucht wird, da man sie überspringen kann
-        //sleep(13000l, downloadLink);
-        //sendet die ganze Form
+        // Captcha Usereingabe in die Form einfügen
+        captchaForm.put("secure", "" + getCode(code));
+        // Auskommentierte Wartezeit, die momentan nicht gebraucht wird, da man
+        // sie überspringen kann
+        // sleep(13000l, downloadLink);
+        // sendet die ganze Form
         br.submitForm(captchaForm);
         if (!br.containsHTML("Download!</font>")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         String downloadURL = br.getRegex("href='(.*?)'>").getMatch(0);

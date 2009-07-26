@@ -21,10 +21,9 @@ import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jd.gui.UserIO;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -113,7 +112,7 @@ public class LinkbaseBiz extends PluginForDecrypt {
 
         for (int retry = 1; retry <= 20; retry++) {
             try {
-            	br.clearCookies(getHost());
+                br.clearCookies(getHost());
                 br.getPage(parameter);
                 if (br.getRegex("Du hast.*?Du musst noch").matches()) {
                     param.getProgressController().setRange(30);
@@ -136,9 +135,8 @@ public class LinkbaseBiz extends PluginForDecrypt {
                         throw new DecrypterException(DecrypterException.CAPTCHA);
                     }
 
-                    String captchaCode = getCaptchaCode("linkbase.biz1",captchaFile,UserIO.NO_USER_INTERACTION, param,null,null);
-                    if(captchaCode==null||captchaCode.contains("-"))
-                    	continue;
+                    String captchaCode = getCaptchaCode("linkbase.biz1", captchaFile, UserIO.NO_USER_INTERACTION, param, null, null);
+                    if (captchaCode == null || captchaCode.contains("-")) continue;
                     Form form = br.getForm(0);
                     form.put("captcha", captchaCode);
                     br.submitForm(form);
