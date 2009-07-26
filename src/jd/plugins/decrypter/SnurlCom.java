@@ -16,20 +16,16 @@
 
 package jd.plugins.decrypter;
 
-import java.io.File;
 import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.gui.UserIO;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
+import jd.gui.UserIO;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.JDUtilities;
 
 public class SnurlCom extends PluginForDecrypt {
 
@@ -41,15 +37,17 @@ public class SnurlCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        br.setDebug(true);
         br.getPage(parameter);
-
-        if (br.containsHTML("<title>301 Moved Permanently</title>")) {
-            parameter = br.getRedirectLocation();
-            br.getPage(parameter);
+        String url = null;
+        if (br.getRedirectLocation() != null) {
+            url = br.getRedirectLocation();
+            br.getPage(url);
         }
 
         // Password
         if (br.containsHTML("Please enter a passcode to continue to")) {
+            url = null;
             Form form = br.getFormbyProperty("name", "pkeyform");
             if (form == null) return null;
 
@@ -57,12 +55,15 @@ public class SnurlCom extends PluginForDecrypt {
                 String folderPass = UserIO.getInstance().requestInputDialog("File Password");
                 form.put("pkey", folderPass);
                 br.submitForm(form);
-                if (!br.containsHTML("Please enter a passcode to continue to")) break;
+                if (br.getRedirectLocation() != null) {
+                    url = br.getRedirectLocation();
+                    break;
+                }
             }
-            if (br.containsHTML("Please enter a passcode to continue to")) throw new DecrypterException("Wrong Password");
+            if (url == null) throw new DecrypterException("Wrong Password");
         }
 
-        decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
+        decryptedLinks.add(createDownloadlink(url));
 
         return decryptedLinks;
     }

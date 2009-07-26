@@ -86,10 +86,8 @@ public class ReplaceInFiles {
             if (!ok) {
                 int ret = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.STYLE_HTML | UserIO.STYLE_LARGE, "Diffs found in  " + id, html, null, null, null);
                 if (JDFlags.hasSomeFlags(ret, UserIO.RETURN_CANCEL)) { return; }
-                if (JDFlags.hasSomeFlags(ret, UserIO.DONT_SHOW_AGAIN)) {
-                    if (JDFlags.hasSomeFlags(ret, UserIO.RETURN_OK)) {
-                        ok = true;
-                    }
+                if (JDFlags.hasSomeFlags(ret, UserIO.RETURN_DONT_SHOW_AGAIN, UserIO.RETURN_OK)) {
+                    ok = true;
                 }
             }
             System.out.println(html);

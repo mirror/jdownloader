@@ -361,7 +361,7 @@ public class Main {
         }
         if (JDUtilities.getJavaVersion() < 1.6 && !OSDetector.isMac()) {
             int returnValue = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_CANCEL_OPTION, JDL.LF("gui.javacheck.newerjavaavailable.title", "Outdated Javaversion found: %s!", JDUtilities.getJavaVersion()), JDL.L("gui.javacheck.newerjavaavailable.msg", "Although JDownloader runs on your javaversion, we advise to install the latest java updates. \r\nJDownloader will run more stable, faster, and will look better. \r\n\r\nVisit http://jdownloader.org/download."), JDTheme.II("gui.images.warning", 32, 32), null, null);
-            if ((returnValue & UserIO.RETURN_SKIPPED_BY_DONT_SHOW) == 0) {
+            if ((returnValue & UserIO.RETURN_DONT_SHOW_AGAIN) == 0) {
                 try {
                     JLink.openURL("http://jdownloader.org/download/index?updatejava=1");
                 } catch (Exception e) {

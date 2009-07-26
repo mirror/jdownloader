@@ -44,9 +44,15 @@ public class Browser extends ConfigPanel {
     private static final long serialVersionUID = 3383448498625377495L;
 
     private static final String JDL_PREFIX = "jd.gui.skins.jdgui.settings.panels.gui.Browser.";
-      public String getBreadcrum() {     return JDL.L(this.getClass().getName()+".breadcrum", this.getClass().getSimpleName()); }   public static String getTitle(){
+
+    public String getBreadcrum() {
+        return JDL.L(this.getClass().getName() + ".breadcrum", this.getClass().getSimpleName());
+    }
+
+    public static String getTitle() {
         return JDL.L(JDL_PREFIX + "gui.browser.title", "Browser");
-     }
+    }
+
     private Configuration configuration;
 
     private SubConfiguration subConfig;
@@ -70,11 +76,7 @@ public class Browser extends ConfigPanel {
         container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
 
             public void actionPerformed(ActionEvent arg0) {
-                if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(
-                                                                                   UserIO.NO_COUNTDOWN,
-                                                                                   JDL.L("gui.config.gui.testcontainer.message",
-                                                                                         "JDownloader now tries to open http://jdownloader.org in your container.")), UserIO.RETURN_OK,
-                                         UserIO.DONT_SHOW_AGAIN)) {
+                if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, JDL.L("gui.config.gui.testcontainer.message", "JDownloader now tries to open http://jdownloader.org in your container.")), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
                     try {
                         save();
                         JLink.openURL("http://jdownloader.org");
@@ -87,8 +89,7 @@ public class Browser extends ConfigPanel {
             }
         }, JDL.L("gui.config.gui.testcontainer.short", "Start browser"), JDL.L("gui.config.gui.testcontainer.long", "Test starting your browser"), JDTheme.II("gui.images.config.host", 16, 16)));
 
-        ConfigEntry conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDGuiConstants.PARAM_CUSTOM_BROWSER_USE, JDL
-                .L("gui.config.gui.use_custom_browser", "Use custom browser"));
+        ConfigEntry conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDGuiConstants.PARAM_CUSTOM_BROWSER_USE, JDL.L("gui.config.gui.use_custom_browser", "Use custom browser"));
         conditionEntry.setDefaultValue(false);
 
         container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, JDGuiConstants.PARAM_BROWSER, LocalBrowser.getBrowserList(), JDL.L("gui.config.gui.Browser", "Browser")));
@@ -138,8 +139,7 @@ public class Browser extends ConfigPanel {
         ce.setDefaultValue(path);
         ce.setEnabledCondidtion(conditionEntry, "==", true);
 
-        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, subConfig, JDGuiConstants.PARAM_CUSTOM_BROWSER_PARAM, JDL.L("gui.config.gui.custom_browser_param",
-                                                                                                                                           "Parameter %url (one parameter per line)")));
+        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, subConfig, JDGuiConstants.PARAM_CUSTOM_BROWSER_PARAM, JDL.L("gui.config.gui.custom_browser_param", "Parameter %url (one parameter per line)")));
         ce.setDefaultValue(parameter);
         ce.setEnabledCondidtion(conditionEntry, "==", true);
         return container;

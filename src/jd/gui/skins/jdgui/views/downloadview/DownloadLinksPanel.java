@@ -400,7 +400,7 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
                     final ArrayList<DownloadLink> links = selectedLinks;
                     new Thread() {
                         public void run() {
-                            if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, JDL.L("gui.downloadlist.reset", "Reset selected downloads?") + " (" + JDL.LF("gui.downloadlist.delete.size_packagev2", "%s links", links.size()) + ")"), UserIO.RETURN_OK, UserIO.DONT_SHOW_AGAIN)) {
+                            if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, JDL.L("gui.downloadlist.reset", "Reset selected downloads?") + " (" + JDL.LF("gui.downloadlist.delete.size_packagev2", "%s links", links.size()) + ")"), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
                                 for (int i = 0; i < links.size(); i++) {
                                     links.get(i).reset();
                                 }
@@ -502,7 +502,7 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
                     }
                     break;
                 case TableAction.DELETE: {
-                    if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, JDL.L("gui.downloadlist.delete", "Ausgewählte Links wirklich entfernen?") + " (" + JDL.LF("gui.downloadlist.delete.size_packagev2", "%s links", selectedLinks.size()) + ")"), UserIO.RETURN_OK, UserIO.DONT_SHOW_AGAIN)) {
+                    if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, JDL.L("gui.downloadlist.delete", "Ausgewählte Links wirklich entfernen?") + " (" + JDL.LF("gui.downloadlist.delete.size_packagev2", "%s links", selectedLinks.size()) + ")"), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
                         for (int i = 0; i < selectedLinks.size(); i++) {
                             selectedLinks.get(i).setEnabled(false);
                             selectedLinks.get(i).getFilePackage().remove(selectedLinks.get(i));
