@@ -492,6 +492,7 @@ public class JDInit {
         new DecryptPluginWrapper("divshare.com", "DivShareComFolder", "http://[\\w\\.]*?divshare\\.com/folder/[0-9a-zA-z|-]+");
         new DecryptPluginWrapper("mega.1280.com", "Mega1280ComFolder", "http://[\\w\\.]*?mega\\.1280\\.com/folder/[A-Z|0-9]+");
         new DecryptPluginWrapper("Snurl.com", "SnurlCom", "http://[\\w\\.]*?(snurl\\.com|snipurl\\.com|sn\\.im|snipr\\.com)/.+");
+        new DecryptPluginWrapper("data-loading.com", "DataLoadingComFolder", "http://[\\w\\.]*?data-loading\\.com/.{2}/folders/.*[0-9]/.*");
 
         // Decrypter from Extern
 
