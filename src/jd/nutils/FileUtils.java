@@ -338,6 +338,7 @@ public class FileUtils {
                 if (copy(src, dest, allowOverwrite)) {
                     if (dest.exists() && (dest.length() == src.length())) {
                         delete(src, FileUtils.DeletePermanently);
+                        moved = true;
                     }
                     else if (dest.exists() && (dest.length() != src.length())) {
                         JDLogger.getLogger().warning("Error while copying file: new file has a diffent lenght! src["+src.getAbsolutePath()+","+src.length()+"] dest["+dest.getAbsolutePath()+","+dest.length()+"]");
