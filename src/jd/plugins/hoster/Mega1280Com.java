@@ -66,8 +66,7 @@ public class Mega1280Com extends PluginForHost {
         // Captcha Usereingabe in die Form einfügen
         captchaForm.put("code_security", code);
         br.submitForm(captchaForm);
-        System.out.print(br.toString());
-        if (!br.containsHTML("frm_download")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (br.containsHTML("frm_download")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         
         //setzt den downloadlink zusammen (damit wird die Wartezeit umgangen)
         String dllink0 = br.getRegex("<div id=\"hddomainname\" style=\"display:none\">(.*?)</div>").getMatch(0);
