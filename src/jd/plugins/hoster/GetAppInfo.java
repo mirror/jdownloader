@@ -14,7 +14,12 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
+
+import jd.gui.UserIO;
+import jd.http.Browser;
+import jd.plugins.DecrypterException;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
@@ -72,7 +77,16 @@ public class GetAppInfo extends PluginForHost {
         br.setFollowRedirects(true);
         //Link zum Captcha
         String captchaurl = "http://getapp.info/image.php";
-        String code = getCaptchaCode(captchaurl, downloadLink);
+        File captchaFile = this.getLocalCaptchaFile();
+        try {
+            Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaurl));
+        } catch (Exception e) {
+            logger.severe("Captcha Download fehlgeschlagen: " + captchaurl);
+            throw new DecrypterException(DecrypterException.CAPTCHA);
+        }
+
+        String code = getCaptchaCode("linkbase.biz1",captchaFile,UserIO.NO_USER_INTERACTION, downloadLink,null,null);
+        
         
         Form captchaForm = br.getForm(1);
         if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
