@@ -22,7 +22,6 @@ import java.util.logging.Logger;
 import jd.controlling.JDLogger;
 import jd.gui.UserIO;
 import jd.parser.Regex;
-import jd.utils.JDUtilities;
 import jd.utils.Upload;
 import jd.utils.locale.JDL;
 
@@ -148,7 +147,7 @@ class IRCListener implements IRCEventListener {
 
                 public void run() {
 
-                    String[] data = JDUtilities.getGUI().showTwoTextFieldDialog(JDL.L("plugin.optional.jdchat.teamviewer.yourtvdata", "Deine Teamviewer Daten:"), "ID:", "PW:", "", "");
+                    String[] data = UserIO.getInstance().requestTwoTextFieldDialog(JDL.L("plugin.optional.jdchat.teamviewer.yourtvdata", "Deine Teamviewer Daten:"), "ID:", "PW:", "", "");
                     if (data == null || new Regex(data[0], "^[\\s]*$").matches()) {
                         owner.sendMessage(user.name, owner.getNick() + " hat den Teamviewer Dialog geschlossen.");
                     } else {

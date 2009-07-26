@@ -347,7 +347,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
 
         } else if (e.getSource() == mnuAdd) {
 
-            String[] result = SwingGui.getInstance().showTwoTextFieldDialog(
+            String[] result = UserIO.getInstance().requestTwoTextFieldDialog(
                                                                             JDL.L(LOCALE_PREFIX + "addKey.title", "Add new key"),
                                                                             JDL.L(LOCALE_PREFIX + "addKey.message1", "Type in the name of the key:"),
                                                                             JDL.L(LOCALE_PREFIX + "addKey.message2", "Type in the translated message of the key:"),

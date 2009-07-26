@@ -16,7 +16,6 @@
 
 package jd.gui.skins.simple;
 
-import java.awt.Color;
 import java.awt.Container;
 import java.awt.Cursor;
 import java.awt.Dimension;
@@ -25,9 +24,7 @@ import java.awt.Graphics;
 import java.awt.Image;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowEvent;
-import java.text.DateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.logging.Logger;
 
 import javax.swing.ImageIcon;
@@ -39,7 +36,6 @@ import javax.swing.JMenuBar;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JRootPane;
-import javax.swing.JTextField;
 import javax.swing.JViewport;
 import javax.swing.UIManager;
 import javax.swing.WindowConstants;
@@ -56,9 +52,7 @@ import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.controlling.ProgressControllerEvent;
 import jd.controlling.ProgressControllerListener;
-import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlEvent;
-import jd.gui.UIInterface;
 import jd.gui.UserIO;
 import jd.gui.skins.SwingGui;
 import jd.gui.skins.jdgui.GUIUtils;
@@ -85,25 +79,17 @@ import jd.gui.skins.jdgui.menu.actions.RestartAction;
 import jd.gui.skins.jdgui.swing.GuiRunnable;
 import jd.gui.skins.jdgui.views.downloadview.DownloadLinksPanel;
 import jd.gui.skins.jdgui.views.linkgrabberview.LinkGrabberPanel;
-import jd.gui.skins.simple.components.ChartAPIEntity;
-import jd.gui.skins.simple.components.PieChartAPI;
 import jd.gui.swing.laf.LookAndFeelController;
-import jd.gui.userio.dialog.ContainerDialog;
-import jd.nutils.Formatter;
 import jd.nutils.JDFlags;
 import jd.nutils.JDImage;
-import jd.plugins.Account;
-import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
-import jd.plugins.PluginForHost;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingworker.SwingWorker;
-import org.jdesktop.swingx.JXTitledSeparator;
 
 public class SimpleGUI extends SwingGui {
 
@@ -824,50 +810,12 @@ public class SimpleGUI extends SwingGui {
         Balloon.show(shortWarn, JDTheme.II("gui.images.warning", 32, 32), toolTip);
     }
 
-    public void doManualReconnect() {
-        new GuiRunnable<Object>() {
-            public Object runSave() {
-                if (showConfirmDialog(JDL.L("gui.reconnect.confirm", "Wollen Sie sicher eine neue Verbindung aufbauen?"))) {
-                    new Thread(new Runnable() {
-                        public void run() {
-                            Reconnecter.doManualReconnect();
-                        }
-                    }).start();
-                }
-                return null;
-            }
-        }.start();
-    }
-
     /**
      * Diese Funktion wird in einem 1000 ms interval aufgerufen und kann dazu
      * verwendet werden die GUI zu aktuelisieren TODO
      */
     private void interval() {
         setTitle(JDUtilities.getJDTitle());
-    }
-
-    public void setFrameStatus(int id) {
-        switch (id) {
-        case UIInterface.WINDOW_STATUS_MAXIMIZED:
-            setState(JFrame.MAXIMIZED_BOTH);
-            break;
-        case UIInterface.WINDOW_STATUS_MINIMIZED:
-            setState(JFrame.ICONIFIED);
-            break;
-        case UIInterface.WINDOW_STATUS_NORMAL:
-            setState(JFrame.NORMAL);
-            setVisible(true);
-            break;
-        case UIInterface.WINDOW_STATUS_FOREGROUND:
-            setState(JFrame.NORMAL);
-            setFocusableWindowState(false);
-            setVisible(true);
-            toFront();
-            setFocusableWindowState(true);
-            break;
-        }
-
     }
 
     public boolean showConfirmDialog(String message) {
@@ -885,8 +833,7 @@ public class SimpleGUI extends SwingGui {
         int flags = 0;
         if (string.contains("<") && string.contains(">")) flags |= UserIO.STYLE_HTML;
         try {
-            return JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(flags, JDL.L("userio.countdownconfirm", "Please confirm"), string,
-                                                                                 JDTheme.II("gui.images.config.eventmanager", 32, 32), null, null), UserIO.RETURN_OK);
+            return JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(flags, JDL.L("userio.countdownconfirm", "Please confirm"), string, JDTheme.II("gui.images.config.eventmanager", 32, 32), null, null), UserIO.RETURN_OK);
         } finally {
             UserIO.setCountdownTime(null);
         }
@@ -987,103 +934,10 @@ public class SimpleGUI extends SwingGui {
     public void windowOpened(WindowEvent e) {
     }
 
-    public void showAccountInformation(final PluginForHost pluginForHost, final Account account) {
-        new GuiRunnable<Object>() {
-
-            // @Override
-            public Object runSave() {
-                AccountInfo ai;
-                try {
-                    ai = pluginForHost.getAccountInformation(account);
-                } catch (Exception e) {
-                    account.setEnabled(false);
-                    JDLogger.exception(e);
-                    SimpleGUI.this.showMessageDialog(JDL.LF("gui.accountcheck.pluginerror", "Plugin %s may be defect. Inform support!", pluginForHost.getPluginID()));
-                    return null;
-                }
-                if (ai == null) {
-                    SimpleGUI.this.showMessageDialog(JDL.LF("plugins.host.premium.info.error", "The %s plugin does not support the Accountinfo feature yet.", pluginForHost.getHost()));
-                    return null;
-                }
-                if (!ai.isValid()) {
-                    account.setEnabled(false);
-                    SimpleGUI.this.showMessageDialog(JDL.LF("plugins.host.premium.info.notValid", "The account for '%s' isn't valid! Please check username and password!\r\n%s", account.getUser(), ai
-                            .getStatus() != null ? ai.getStatus() : ""));
-                    return null;
-                }
-                if (ai.isExpired()) {
-                    account.setEnabled(false);
-                    SimpleGUI.this.showMessageDialog(JDL.LF("plugins.host.premium.info.expired", "The account for '%s' is expired! Please extend the account or buy a new one!\r\n%s", account
-                            .getUser(), ai.getStatus() != null ? ai.getStatus() : ""));
-                    return null;
-                }
-
-                String def = JDL.LF("plugins.host.premium.info.title", "Accountinformation from %s for %s", account.getUser(), pluginForHost.getHost());
-                String[] label = new String[] {
-                        JDL.L("plugins.host.premium.info.validUntil", "Valid until"),
-                        JDL.L("plugins.host.premium.info.trafficLeft", "Traffic left"),
-                        JDL.L("plugins.host.premium.info.files", "Files"),
-                        JDL.L("plugins.host.premium.info.premiumpoints", "PremiumPoints"),
-                        JDL.L("plugins.host.premium.info.usedSpace", "Used Space"),
-                        JDL.L("plugins.host.premium.info.cash", "Cash"),
-                        JDL.L("plugins.host.premium.info.trafficShareLeft", "Traffic Share left"),
-                        JDL.L("plugins.host.premium.info.status", "Info")
-                };
-
-                DateFormat formater = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM);
-                String validUntil = (ai.isExpired() ? JDL.L("plugins.host.premium.info.expiredInfo", "[expired]") + " " : "") + formater.format(new Date(ai.getValidUntil())) + "";
-                if (ai.getValidUntil() == -1) validUntil = null;
-                String premiumPoints = ai.getPremiumPoints() + ((ai.getNewPremiumPoints() > 0) ? " [+" + ai.getNewPremiumPoints() + "]" : "");
-                String[] data = new String[] {
-                        validUntil,
-                        Formatter.formatReadable(ai.getTrafficLeft()),
-                        ai.getFilesNum() + "",
-                        premiumPoints,
-                        Formatter.formatReadable(ai.getUsedSpace()),
-                        ai.getAccountBalance() < 0 ? null : (ai.getAccountBalance() / 100.0) + " €",
-                        Formatter.formatReadable(ai.getTrafficShareLeft()),
-                        ai.getStatus()
-                };
-
-                JPanel panel = new JPanel(new MigLayout("ins 5", "[right]10[grow,fill]10[]"));
-                panel.add(new JXTitledSeparator("<html><b>" + def + "</b></html>"), "spanx, pushx, growx, gapbottom 15");
-
-                for (int j = 0; j < data.length; j++) {
-                    if (data[j] != null && !data[j].equals("-1") && !data[j].equals("-1 B")) {
-                        panel.add(new JLabel(label[j]), "gapleft 20");
-
-                        JTextField tf = new JTextField(data[j]);
-                        tf.setBorder(null);
-                        tf.setBackground(null);
-                        tf.setEditable(false);
-                        tf.setOpaque(false);
-
-                        if (label[j].equals(JDL.L("plugins.host.premium.info.trafficLeft", "Traffic left"))) {
-                            PieChartAPI freeTrafficChart = new PieChartAPI("", 150, 60);
-                            freeTrafficChart.addEntity(new ChartAPIEntity(JDL.L("plugins.host.premium.info.freeTraffic", "Free"), ai.getTrafficLeft(), new Color(50, 200, 50)));
-                            freeTrafficChart.addEntity(new ChartAPIEntity("", ai.getTrafficMax() - ai.getTrafficLeft(), new Color(150, 150, 150)));
-                            freeTrafficChart.fetchImage();
-
-                            panel.add(tf);
-                            panel.add(freeTrafficChart, "spany, wrap");
-                        } else {
-                            panel.add(tf, "span 2, wrap");
-                        }
-                    }
-
-                }
-                new ContainerDialog(UserIO.NO_CANCEL_OPTION, def, panel, null, null);
-
-                return null;
-            }
-
-        }.start();
-    }
+    
 
     public static void showChangelogDialog() {
-        int status = UserIO.getInstance().requestHelpDialog(UserIO.NO_CANCEL_OPTION, JDL.LF("system.update.message.title", "Updated to version %s", JDUtilities.getRevision()),
-                                                            JDL.L("system.update.message", "Update successfull"), JDL.L("system.update.showchangelogv2", "What's new?"),
-                                                            "http://jdownloader.org/changes/index");
+        int status = UserIO.getInstance().requestHelpDialog(UserIO.NO_CANCEL_OPTION, JDL.LF("system.update.message.title", "Updated to version %s", JDUtilities.getRevision()), JDL.L("system.update.message", "Update successfull"), JDL.L("system.update.showchangelogv2", "What's new?"), "http://jdownloader.org/changes/index");
         if (JDFlags.hasAllFlags(status, UserIO.RETURN_OK) && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_AUTO_SHOW_CHANGELOG, true)) {
             try {
                 JLink.openURL("http://jdownloader.org/changes/index");
@@ -1156,7 +1010,7 @@ public class SimpleGUI extends SwingGui {
     @Override
     public void disposeView(SwitchPanel view) {
         // TODO Auto-generated method stub
-        
+
     }
 
 }

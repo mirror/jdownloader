@@ -25,12 +25,14 @@ import jd.controlling.DistributeData;
 import jd.controlling.JDController;
 import jd.controlling.PasswordListController;
 import jd.controlling.reconnect.Reconnecter;
-import jd.gui.UIInterface;
+import jd.gui.UIConstants;
+import jd.gui.UserIF;
 import jd.utils.JDUtilities;
 
 public class ParameterManager {
 
     private static Logger logger = jd.controlling.JDLogger.getLogger();
+    private static boolean startDownload = false;
     private static final long serialVersionUID = 1L;
 
     public static void showCmdHelp() {
@@ -53,7 +55,6 @@ public class ParameterManager {
         Vector<String> containersToAdd = new Vector<String>();
 
         boolean hideGrabber = false;
-        boolean startDownload = false;
 
         JDController controller = JDUtilities.getController();
 
@@ -128,7 +129,7 @@ public class ParameterManager {
                 addLinksSwitch = false;
                 addContainersSwitch = false;
                 addPasswordsSwitch = false;
-                JDUtilities.getGUI().setFrameStatus(UIInterface.WINDOW_STATUS_MINIMIZED);
+                UserIF.getInstance().setFrameStatus(UIConstants.WINDOW_STATUS_MINIMIZED);
 
                 logger.info(currentArg + " parameter");
 
@@ -138,7 +139,7 @@ public class ParameterManager {
                 addContainersSwitch = false;
                 addPasswordsSwitch = false;
                 logger.info(currentArg + " parameter");
-                JDUtilities.getGUI().setFrameStatus(UIInterface.WINDOW_STATUS_FOREGROUND);
+                UserIF.getInstance().setFrameStatus(UIConstants.WINDOW_STATUS_FOREGROUND);
 
             } else if (currentArg.equals("--hide") || currentArg.equals("-H")) {
 
@@ -214,15 +215,12 @@ public class ParameterManager {
         }
         String linksToAddString = adder.toString().trim();
         if (!linksToAddString.equals("")) {
-
-            new DistributeData(linksToAddString, hideGrabber, startDownload).start();
-
-        } else if (startDownload) {
-
+            new DistributeData(linksToAddString, hideGrabber).start();
+        }
+        if (startDownload) {
             if (controller.getDownloadStatus() == JDController.DOWNLOAD_NOT_RUNNING) {
-                controller.toggleStartStop();
+                JDController.getInstance().startDownloads();
             }
-
         }
     }
 

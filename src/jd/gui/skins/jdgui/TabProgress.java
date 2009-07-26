@@ -247,16 +247,29 @@ public class TabProgress extends JPanel implements ActionListener, ControlListen
 
         public void update(ProgressController controller) {
             this.controller = controller;
-            if (cancel != null) cancel.setEnabled(controller.isInterruptable());
-            if (cancel != null) cancel.setToolTipText(controller.isInterruptable() ? JDL.L("gui.progressbars.cancel.tooltip.enabled", "Interrupt this module") : JDL.L("gui.progressbars.cancel.tooltip.disabled", "Not possible to interrupt this module"));
+            if (!controller.isInterruptable()) {
+                cancel.setIcon(JDTheme.II("gui.images.cancel", 16, 16));
+                cancel.setEnabled(false);
+                cancel.setToolTipText(JDL.L("gui.progressbars.cancel.tooltip.disabled", "Not possible to interrupt this module"));
+            } else {
+                if (controller.isAbort()) {
+                    cancel.setIcon(JDTheme.II("gui.images.bad", 16, 16));
+                    cancel.setEnabled(false);
+                    cancel.setToolTipText(JDL.L("gui.progressbars.cancel.tooltip.interrupted", "Termination in progress"));
+                } else {
+                    cancel.setIcon(JDTheme.II("gui.images.cancel", 16, 16));
+                    cancel.setEnabled(true);
+                    cancel.setToolTipText(JDL.L("gui.progressbars.cancel.tooltip.enabled", "Interrupt this module"));
+                }
+            }
             label.setIcon(controller.getIcon() == null ? JDTheme.II("gui.images.running", 16, 16) : controller.getIcon());
             label.setToolTipText(JDL.L("gui.tooltip.progressicon", "This module is active"));
-         if(controller.isIndeterminate()){
-            bar.setIndeterminate(true);
-         }else{
-            bar.setMaximum(10000);
-            bar.setValue(controller.getPercent());
-         }
+            if (controller.isIndeterminate()) {
+                bar.setIndeterminate(true);
+            } else {
+                bar.setMaximum(10000);
+                bar.setValue(controller.getPercent());
+            }
             bar.setStringPainted(true);
             bar.setString(controller.getStatusText());
             if (controller.getColor() != null) {
@@ -270,10 +283,7 @@ public class TabProgress extends JPanel implements ActionListener, ControlListen
 
         public void actionPerformed(ActionEvent arg0) {
             if (arg0.getSource() == this.cancel) {
-                if (controller != null) controller.fireCancelAction();
-                cancel.setIcon(JDTheme.II("gui.images.bad", 16, 16));
-                cancel.setToolTipText(JDL.L("gui.progressbars.cancel.tooltip.interrupted", "Termination in progress"));
-                cancel = null;
+                if (controller != null && !controller.isAbort()) controller.fireCancelAction();
             }
         }
 

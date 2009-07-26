@@ -11,10 +11,7 @@ import javax.swing.ScrollPaneConstants;
 import javax.swing.UIManager;
 import javax.swing.plaf.metal.MetalLookAndFeel;
 
-import jd.config.SubConfiguration;
 import jd.gui.skins.SwingGui;
-import jd.gui.skins.jdgui.JDGuiConstants;
-import jd.gui.skins.jdgui.components.toolbar.MainToolBar;
 import jd.gui.skins.jdgui.views.toolbar.ViewToolbar;
 import jd.utils.JDTheme;
 import net.miginfocom.swing.MigLayout;
@@ -42,6 +39,7 @@ public abstract class View extends SwitchPanel {
     private JPanel bottomContent;
     private DroppedPanel infoPanel;
     private DroppedPanel defaultInfoPanel;
+    @SuppressWarnings("unused")
     private ViewToolbar toolbar;
 
     public View() {
@@ -67,26 +65,6 @@ public abstract class View extends SwitchPanel {
         topContent.setVisible(false);
         add(bottomContent = new JPanel(new MigLayout("ins 0", "[grow,fill]", "[]")), "dock SOUTH");
         bottomContent.setVisible(false);
-    }
-
-    /**
-     * updates the Toolbar of id. set the defaultlist. if available, a
-     * userdefined list will be choosen.
-     * 
-     * @param id
-     *            (id, e.g. downloadview)
-     * @param defaultlist
-     *            list of action ids
-     */
-    protected void updateToolbar(String id, String[] defaultlist) {
-        if (id == null && defaultlist == null) {
-            /* reset toolbar to global defaultlist */
-            MainToolBar.getInstance().setList(null);
-        } else {
-            // editor == about:config
-            defaultlist = SubConfiguration.getConfig(JDGuiConstants.CONFIG_PARAMETER).getGenericProperty(JDGuiConstants.CFG_KEY_TOOLBAR_ACTIONLIST + "." + id, defaultlist);
-            MainToolBar.getInstance().setList(defaultlist);
-        }
     }
 
     /**

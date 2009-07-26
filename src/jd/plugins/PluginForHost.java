@@ -43,8 +43,8 @@ import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.CaptchaController;
 import jd.controlling.DownloadController;
-import jd.controlling.JDController;
 import jd.controlling.JDLogger;
+import jd.gui.UserIF;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Browser;
 import jd.nutils.Formatter;
@@ -192,7 +192,7 @@ public abstract class PluginForHost extends Plugin {
         if (e.getID() >= 200) {
             int accountID = e.getID() - 200;
             Account account = accounts.get(accountID);
-            JDUtilities.getGUI().showAccountInformation(this, account);
+            UserIF.getInstance().showAccountInformation(this, account);
         } else if (e.getID() >= 100) {
             int accountID = e.getID() - 100;
             Account account = accounts.get(accountID);
@@ -223,13 +223,13 @@ public abstract class PluginForHost extends Plugin {
                 account.setProperty(AccountInfo.PARAM_INSTANCE, null);
                 String shortWarn = JDL.LF("gui.shortwarn.accountdisabled.expired", "Account %s(%s) got disabled(expired)", this.getHost(), account.getUser());
 
-                if (JDController.getInstance().getUiInterface() != null) JDController.getInstance().getUiInterface().displayMiniWarning(JDL.L("gui.ballon.accountmanager.title", "Accountmanager"), shortWarn);
+                UserIF.getInstance().displayMiniWarning(JDL.L("gui.ballon.accountmanager.title", "Accountmanager"), shortWarn);
             } else if (!ret.isValid()) {
                 account.setEnabled(false);
                 account.setProperty(AccountInfo.PARAM_INSTANCE, null);
                 String shortWarn = JDL.LF("gui.shortwarn.accountdisabled.invalid", "Account %s(%s) got disabled(invalid)", this.getHost(), account.getUser());
 
-                if (JDController.getInstance().getUiInterface() != null) JDController.getInstance().getUiInterface().displayMiniWarning(JDL.L("gui.ballon.accountmanager.title", "Accountmanager"), shortWarn);
+                UserIF.getInstance().displayMiniWarning(JDL.L("gui.ballon.accountmanager.title", "Accountmanager"), shortWarn);
             }
 
             account.setProperty(AccountInfo.PARAM_INSTANCE, ret);
@@ -239,7 +239,7 @@ public abstract class PluginForHost extends Plugin {
             account.setProperty(AccountInfo.PARAM_INSTANCE, null);
             String shortWarn = JDL.LF("gui.shortwarn.accountdisabled", "Account %s(%s) got disabled: %s", this.getHost(), account.getUser(), e.getMessage());
 
-            if (JDController.getInstance().getUiInterface() != null) JDController.getInstance().getUiInterface().displayMiniWarning(shortWarn, shortWarn);
+            UserIF.getInstance().displayMiniWarning(shortWarn, shortWarn);
             throw e;
         }
 

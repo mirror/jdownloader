@@ -24,6 +24,7 @@ import jd.captcha.specials.Linksave;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.Encoding;
+import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
@@ -42,6 +43,7 @@ public class LinksaveIn extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.setCookie("http://linksave.in/", "Linksave_Language", "german");
         br.getPage(param.getCryptedUrl());
         if (br.containsHTML("Ordner nicht gefunden")) return decryptedLinks;

@@ -272,7 +272,7 @@ public class Gui extends JDialog implements ActionListener {
                         save();
                     } else {
                         // save(); /*zu debugzwecken*/
-                        JDUtilities.getGUI().showMessageDialog(JDL.L("gui.config.jdrr.reconnectfaild", "Reconnect failed"));
+                        UserIO.getInstance().requestMessageDialog(JDL.L("gui.config.jdrr.reconnectfaild", "Reconnect failed"));
                     }
 
                     dispose();

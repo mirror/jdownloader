@@ -66,7 +66,6 @@ import jd.config.SubConfiguration;
 import jd.controlling.DownloadController;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
-import jd.gui.UIInterface;
 import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.nutils.Executer;
@@ -329,7 +328,7 @@ public class JDUtilities {
         synchronized (userio_lock) {
             if (message == null) message = JDL.L("gui.linkgrabber.password", "Password?");
             if (defaultmessage == null) defaultmessage = "";
-            String password = JDUtilities.getGUI().showCountdownUserInputDialog(message, defaultmessage);
+            String password = UserIO.getInstance().requestInputDialog(0, message, defaultmessage);
             return password;
         }
     }
@@ -404,11 +403,6 @@ public class JDUtilities {
         if (lastDir == null) return dlDirectory;
         return new File(lastDir);
 
-    }
-
-    public static UIInterface getGUI() {
-        if (JDUtilities.getController() == null) return null;
-        return JDUtilities.getController().getUiInterface();
     }
 
     /**

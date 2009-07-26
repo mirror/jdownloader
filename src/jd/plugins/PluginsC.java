@@ -29,6 +29,8 @@ import jd.controlling.DistributeData;
 import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
+import jd.gui.UserIO;
+import jd.nutils.JDFlags;
 import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
@@ -234,8 +236,7 @@ public abstract class PluginsC extends Plugin {
                     ren += l.getFileOutput() + "<br>";
                 }
             }
-
-            if (JDUtilities.getGUI().showHTMLDialog("DLC Missmatch", "<b>JD discovered an error while downloading DLC links.</b> <br>The following files may have errors:<br>" + ren + "<br><u> Do you want JD to try to correct them?</u>")) {
+            if (JDFlags.hasAllFlags(UserIO.getInstance().requestHtmlDialog(UserIO.NO_COUNTDOWN, "DLC Missmatch", "<b>JD discovered an error while downloading DLC links.</b> <br>The following files may have errors:<br>" + ren + "<br><u> Do you want JD to try to correct them?</u>"), UserIO.RETURN_OK)) {
                 int ffailed = 0;
                 ren = "";
                 for (DownloadLink l : rename) {
@@ -247,7 +248,7 @@ public abstract class PluginsC extends Plugin {
                         String newName = l.getName();
 
                         if (!name.equals(newName)) {
-                            if (JDUtilities.getGUI().showHTMLDialog("Rename file", "<b>Filename missmatch</b> <br>This file seems to have the wrong name:" + filename + "<br><u> Rename it to " + newName + "?</u>")) {
+                            if (JDFlags.hasAllFlags(UserIO.getInstance().requestHtmlDialog(UserIO.NO_COUNTDOWN, "Rename file", "<b>Filename missmatch</b> <br>This file seems to have the wrong name:" + filename + "<br><u> Rename it to " + newName + "?</u>"), UserIO.RETURN_OK)) {
                                 File newFile = new File(new File(l.getFileOutput()).getParent() + "/restore/" + newName);
                                 newFile.mkdirs();
                                 if (newFile.exists()) {
@@ -269,7 +270,7 @@ public abstract class PluginsC extends Plugin {
                     }
                     l.setUrlDownload(null);
                 }
-                JDUtilities.getGUI().showHTMLDialog("DLC Correction", "<b>Correction result:</b> <br>" + ren + "");
+                JDFlags.hasAllFlags(UserIO.getInstance().requestHtmlDialog(UserIO.NO_COUNTDOWN, "DLC Correction", "<b>Correction result:</b> <br>" + ren + ""), UserIO.RETURN_OK);
 
                 ren = null;
             }
@@ -396,7 +397,7 @@ public abstract class PluginsC extends Plugin {
                 progress.setColor(Color.RED);
                 progress.setStatusText(JDL.LF("plugins.container.exit.error", "Container error: %s", containerStatus.getStatusText()));
                 progress.finalize(5000);
-                new WebUpdate().doUpdateCheck(false,false);
+                new WebUpdate().doUpdateCheck(false, false);
             } else {
                 progress.finalize();
             }

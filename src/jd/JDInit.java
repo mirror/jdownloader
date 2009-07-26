@@ -25,7 +25,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import jd.config.Configuration;
-import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.ByteBufferController;
 import jd.controlling.DownloadController;
@@ -34,12 +33,13 @@ import jd.controlling.JDLogger;
 import jd.controlling.PasswordListController;
 import jd.controlling.interaction.Interaction;
 import jd.event.ControlEvent;
-import jd.gui.UIInterface;
+import jd.gui.UserIF;
 import jd.gui.UserIO;
 import jd.gui.skins.SwingGui;
 import jd.gui.skins.jdgui.GUIUtils;
 import jd.gui.skins.jdgui.JDGui;
 import jd.gui.skins.jdgui.JDGuiConstants;
+import jd.gui.skins.jdgui.userio.UserIFJDGui;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.http.Browser;
@@ -74,7 +74,7 @@ public class JDInit {
 
     public void checkUpdate() {
         if (JDUtilities.getResourceFile("webcheck.tmp").exists() && JDIO.getLocalFile(JDUtilities.getResourceFile("webcheck.tmp")).indexOf("(Revision" + JDUtilities.getRevision() + ")") > 0) {
-            JDUtilities.getController().getUiInterface().showTextAreaDialog("Error", "Failed Update detected!", "It seems that the previous webupdate failed.\r\nPlease ensure that your java-version is equal- or above 1.5.\r\nMore infos at http://www.syncom.org/projects/jdownloader/wiki/FAQ.\r\n\r\nErrorcode: \r\n" + JDIO.getLocalFile(JDUtilities.getResourceFile("webcheck.tmp")));
+            UserIO.getInstance().requestTextAreaDialog("Error", "Failed Update detected!", "It seems that the previous webupdate failed.\r\nPlease ensure that your java-version is equal- or above 1.5.\r\nMore infos at http://www.syncom.org/projects/jdownloader/wiki/FAQ.\r\n\r\nErrorcode: \r\n" + JDIO.getLocalFile(JDUtilities.getResourceFile("webcheck.tmp")));
             JDUtilities.getResourceFile("webcheck.tmp").delete();
             JDUtilities.getConfiguration().setProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, false);
         } else {
@@ -141,15 +141,11 @@ public class JDInit {
         // LinkGrabberController.getInstance();
     }
 
-    public UIInterface initGUI(JDController controller) {
+    public void initGUI(JDController controller) {
         LookAndFeelController.setUIManager();
-
         SwingGui.setInstance(JDGui.getInstance());
-        UIInterface uiInterface = SwingGui.getInstance();
-
-        controller.setUiInterface(uiInterface);
-        controller.addControlListener(uiInterface);
-        return uiInterface;
+        UserIF.setInstance(new UserIFJDGui((JDGui) SwingGui.getInstance()));
+        controller.addControlListener(SwingGui.getInstance());
     }
 
     public void initPlugins() {

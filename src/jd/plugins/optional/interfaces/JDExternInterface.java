@@ -8,14 +8,10 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.config.MenuItem;
 import jd.controlling.DistributeData;
-import jd.controlling.DownloadController;
-import jd.controlling.JDController;
 import jd.controlling.JDLogger;
+import jd.controlling.LinkGrabberController;
 import jd.controlling.PasswordListController;
 import jd.gui.UserIO;
-import jd.gui.skins.SwingGui;
-import jd.gui.skins.jdgui.GUIUtils;
-import jd.gui.skins.jdgui.JDGuiConstants;
 import jd.http.Encoding;
 import jd.nutils.JDFlags;
 import jd.nutils.httpserver.Handler;
@@ -94,7 +90,7 @@ public class JDExternInterface extends PluginOptional {
                             PasswordListController.getInstance().addPassword(p);
                         if (urls.length != 0) {
                             ArrayList<DownloadLink> links = new DistributeData(Encoding.htmlDecode(request.getParameters().get("urls"))).findLinks();
-                            SwingGui.getInstance().addLinksToGrabber(links, false);
+                            LinkGrabberController.getInstance().addLinks(links, false, false);
                             response.addContent("success\r\n");
                         } else {
                             response.addContent("failed\r\n");
@@ -111,7 +107,7 @@ public class JDExternInterface extends PluginOptional {
                             JDIO.saveToFile(tmp, dlc.getBytes());
                             ArrayList<DownloadLink> links = JDUtilities.getController().getContainerLinks(tmp);
 
-                            SwingGui.getInstance().addLinksToGrabber(links, false);
+                            LinkGrabberController.getInstance().addLinks(links, false, false);
                             response.addContent("success\r\n");
                         } catch (IOException e) {
                             e.printStackTrace();
@@ -156,12 +152,11 @@ public class JDExternInterface extends PluginOptional {
                     String urls[] = Regex.getLines(Encoding.urlDecode(request.getParameters().get("urls"), false));
                     String desc[] = Regex.getLines(Encoding.urlDecode(request.getParameters().get("descriptions"), false));
                     String dir = null;
-                    FilePackage fp = null;
+                    FilePackage fp = FilePackage.getInstance();
+                    fp.setName("FlashGot");
                     if (request.getParameters().get("dir") != null) {
                         dir = Encoding.urlDecode(request.getParameters().get("dir"), false).trim();
-                        fp = FilePackage.getInstance();
                         fp.setDownloadDirectory(dir);
-                        fp.setName("FlashGot");
                     }
                     String cookies = null;
                     if (request.getParameters().get("cookies") != null) cookies = Encoding.urlDecode(request.getParameters().get("cookies"), false);
@@ -192,46 +187,17 @@ public class JDExternInterface extends PluginOptional {
                                 if (i < desc.length) direct.setSourcePluginComment(desc[i]);
                                 direct.setProperty("cookies", cookies);
                                 direct.setProperty("post", post);
+                                direct.setProperty("referer", referer);
                                 plg.correctDownloadLink(direct);
                                 links.add(direct);
                             }
                         }
-                        if (fp != null) {
-                            /* downloadfolder got set by flashgot */
-                            fp.addLinks(links);
-                            if (autostart) {
-                                addandstart(fp);
-                            } else {
-                                SwingGui.getInstance().addLinksToGrabber(links, false);
-                            }
-                        } else if (autostart) {
-                            /*
-                             * autostart enabled but no downloadfolder set,
-                             * create dummy filepackage
-                             */
-                            fp = FilePackage.getInstance();
-                            fp.setName("FlashGot");
-                            fp.addLinks(links);
-                            addandstart(fp);
-                        } else {
-                            /* add links to linkgrabber */
-                            SwingGui.getInstance().addLinksToGrabber(links, false);
-                        }
+                        LinkGrabberController.getInstance().addLinks(links, autostart, autostart);
                     }
                 }
             } catch (Exception e) {
                 JDLogger.exception(e);
             }
-        }
-
-        private void addandstart(FilePackage fp) {
-            if (GUIUtils.getConfig() != null && GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_INSERT_NEW_LINKS_AT, false)) {
-                DownloadController.getInstance().addPackageAt(fp, 0, 0);
-            } else {
-                DownloadController.getInstance().addPackage(fp);
-            }
-            DownloadController.getInstance().addPackage(fp);
-            JDController.getInstance().startDownloads();
         }
 
         private void askPermission(Request request) throws Exception {
@@ -244,19 +210,7 @@ public class JDExternInterface extends PluginOptional {
             JDLogger.getLogger().warning(request.toString());
             JDLogger.getLogger().warning(request.getParameters().toString());
             JDLogger.getLogger().warning("\r\n-----------------------External request---------------------");
-            if (!JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(
-                                                                               UserIO.DONT_SHOW_AGAIN,
-                                                                               JDL.LF(
-                                                                                      "jd.plugins.optional.interfaces.jdflashgot.security.title",
-                                                                                      "External request from %s to %s interface!",
-                                                                                      app,
-                                                                                      namespace),
-                                                                               JDL.LF(
-                                                                                      "jd.plugins.optional.interfaces.jdflashgot.security.message",
-                                                                                      "An external application tries to add links. See Log for details."),
-                                                                               UserIO.getInstance().getIcon(UserIO.ICON_WARNING),
-                                                                               JDL.L("jd.plugins.optional.interfaces.jdflashgot.security.btn_allow", "Allow it!"),
-                                                                               JDL.L("jd.plugins.optional.interfaces.jdflashgot.security.btn_deny", "Deny access!")), UserIO.RETURN_OK)) {
+            if (!JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN, JDL.LF("jd.plugins.optional.interfaces.jdflashgot.security.title", "External request from %s to %s interface!", app, namespace), JDL.LF("jd.plugins.optional.interfaces.jdflashgot.security.message", "An external application tries to add links. See Log for details."), UserIO.getInstance().getIcon(UserIO.ICON_WARNING), JDL.L("jd.plugins.optional.interfaces.jdflashgot.security.btn_allow", "Allow it!"), JDL.L("jd.plugins.optional.interfaces.jdflashgot.security.btn_deny", "Deny access!")), UserIO.RETURN_OK)) {
 
                 JDLogger.getLogger().warning("Denied access.");
                 throw new Exception("User denied access");

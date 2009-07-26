@@ -46,6 +46,7 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.controlling.reconnect.HTTPLiveHeader;
+import jd.gui.UserIO;
 import jd.gui.skins.SwingGui;
 import jd.gui.skins.jdgui.settings.ConfigPanel;
 import jd.gui.skins.jdgui.settings.GUIConfigEntry;
@@ -55,7 +56,6 @@ import jd.router.FindRouterIP;
 import jd.router.GetRouterInfo;
 import jd.router.reconnectrecorder.Gui;
 import jd.utils.JDTheme;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
@@ -283,7 +283,7 @@ public class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionLi
                 int id = Integer.parseInt(selected.split("\\.")[0]);
                 String[] data = scripts.get(id);
                 if (data[2].toLowerCase().indexOf("curl") >= 0) {
-                    JDUtilities.getGUI().showMessageDialog(JDL.L("gui.config.liveHeader.warning.noCURLConvert", "JD could not convert this curl-batch to a Live-Header Script. Please consult your JD-Support Team!"));
+                    UserIO.getInstance().requestMessageDialog(JDL.L("gui.config.liveHeader.warning.noCURLConvert", "JD could not convert this curl-batch to a Live-Header Script. Please consult your JD-Support Team!"));
                 }
                 script.setData(data[2]);
                 String username = (String) user.getText();

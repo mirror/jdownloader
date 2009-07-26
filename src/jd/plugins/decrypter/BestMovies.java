@@ -22,13 +22,13 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.gui.UserIO;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 public class BestMovies extends PluginForDecrypt {
@@ -63,7 +63,7 @@ public class BestMovies extends PluginForDecrypt {
                 String time[] = new Regex(captchaCode, "(\\d+)[\\.\\:\\-\\,](\\d+)").getRow(0);
 
                 if (time == null) {
-                    JDUtilities.getGUI().showCountdownConfirmDialog(JDL.L("jd.plugins.decrypt.BestMovies.CaptchaInputWrong", "Wrong Input, please enter time like this: 4:30"), 20);
+                    UserIO.getInstance().requestConfirmDialog(0, JDL.L("jd.plugins.decrypt.BestMovies.CaptchaInputWrong", "Wrong Input, please enter time like this: 4:30"));
                     logger.severe("Wrong User Input, Please enter time like this: 4:30");
                     throw new DecrypterException(DecrypterException.CAPTCHA);
                 }

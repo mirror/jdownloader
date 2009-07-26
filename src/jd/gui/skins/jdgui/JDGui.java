@@ -29,7 +29,10 @@ import javax.swing.JPanel;
 
 import jd.controlling.ClipboardHandler;
 import jd.controlling.DownloadController;
+import jd.controlling.JDController;
 import jd.controlling.JDLogger;
+import jd.controlling.LinkGrabberController;
+import jd.controlling.LinkGrabberDistributeEvent;
 import jd.controlling.ProgressController;
 import jd.controlling.ProgressControllerEvent;
 import jd.controlling.ProgressControllerListener;
@@ -61,18 +64,16 @@ import jd.gui.skins.jdgui.views.TabbedPanelView;
 import jd.gui.skins.jdgui.views.linkgrabberview.LinkGrabberPanel;
 import jd.nutils.JDFlags;
 import jd.nutils.JDImage;
-import jd.nutils.OSDetector;
-import jd.plugins.Account;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
-import jd.plugins.PluginForHost;
 import jd.update.WebUpdater;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
-public class JDGui extends SwingGui {
+public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
 
     private static final long serialVersionUID = 1048792964102830601L;
     private static JDGui INSTANCE;
@@ -90,8 +91,8 @@ public class JDGui extends SwingGui {
 
     private JDGui() {
         super("");
-        // disable Clipboard while guid is loading
-        ClipboardHandler.getClipboard().setTempDisabled(false);
+        // disable Clipboard while gui is loading
+        ClipboardHandler.getClipboard().setTempDisabled(true);
         // Important for unittests
         setName("MAINFRAME");
         // GUIUtils.getConfig() =
@@ -108,6 +109,7 @@ public class JDGui extends SwingGui {
         initLocationAndDimension();
         setVisible(true);
         ClipboardHandler.getClipboard().setTempDisabled(false);
+        LinkGrabberController.getInstance().setDistributer(this);
     }
 
     /**
@@ -247,80 +249,30 @@ public class JDGui extends SwingGui {
                 }
 
             }.getReturnValue();
-
         }
         return INSTANCE;
     }
 
-    public void addLinksToGrabber(ArrayList<DownloadLink> links, boolean hideGrabber) {
-        LinkGrabberPanel.getLinkGrabber().addLinks(links);
-        requestPanel(UIConstants.PANEL_ID_LINKGRABBER);
-        /* TODO Hidegrabber */
-    }
-
-    public void displayMiniWarning(String shortWarn, String longWarn) {
-        // TODO Auto-generated method stub
-
-    }
-
     public void setFrameStatus(int id) {
-        // TODO Auto-generated method stub
-
-    }
-
-    public void showAccountInformation(PluginForHost pluginForHost, Account account) {
-        // TODO Auto-generated method stub
-
-    }
-
-    public boolean showConfirmDialog(String string) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    public boolean showConfirmDialog(String string, String title) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    public boolean showCountdownConfirmDialog(String string, int sec) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    public String showCountdownUserInputDialog(String message, String def) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    public boolean showHTMLDialog(String title, String htmlQuestion) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    public void showMessageDialog(String string) {
-        // TODO Auto-generated method stub
-
-    }
-
-    public String showTextAreaDialog(String title, String question, String def) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    public String[] showTwoTextFieldDialog(String title, String questionOne, String questionTwo, String defaultOne, String defaultTwo) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    public String showUserInputDialog(String string) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    public String showUserInputDialog(String string, String def) {
-        // TODO Auto-generated method stub
-        return null;
+        switch (id) {
+        case UIConstants.WINDOW_STATUS_MAXIMIZED:
+            setState(JFrame.MAXIMIZED_BOTH);
+            break;
+        case UIConstants.WINDOW_STATUS_MINIMIZED:
+            setState(JFrame.ICONIFIED);
+            break;
+        case UIConstants.WINDOW_STATUS_NORMAL:
+            setState(JFrame.NORMAL);
+            setVisible(true);
+            break;
+        case UIConstants.WINDOW_STATUS_FOREGROUND:
+            setState(JFrame.NORMAL);
+            setFocusableWindowState(false);
+            setVisible(true);
+            toFront();
+            setFocusableWindowState(true);
+            break;
+        }
     }
 
     public void controlEvent(ControlEvent event) {
@@ -399,25 +351,14 @@ public class JDGui extends SwingGui {
     }
 
     public void closeWindow() {
-        if (!OSDetector.isMac()) {
-            if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_COUNTDOWN, JDL.L("sys.ask.rlyclose", "Wollen Sie jDownloader wirklich schließen?")),
-                                     UserIO.RETURN_OK, UserIO.DONT_SHOW_AGAIN)) {
-
-                JDUtilities.getController().exit();
-            }
-        } else {
-            // TODO
-            /*
-             * This prevents jd to close
-             */
-            this.setVisible(false);
+        if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_COUNTDOWN, JDL.L("sys.ask.rlyclose", "Wollen Sie jDownloader wirklich schließen?")), UserIO.RETURN_OK, UserIO.DONT_SHOW_AGAIN)) {
+            JDUtilities.getController().exit();
         }
     }
 
     @Override
     public void setWaiting(boolean b) {
         // TODO Auto-generated method stub
-
     }
 
     @Override
@@ -462,10 +403,36 @@ public class JDGui extends SwingGui {
     public void disposeView(SwitchPanel view) {
         if (view instanceof View) {
             view = mainTabbedPane.getComponentEquals((View) view);
-
             mainTabbedPane.remove(view);
-
         }
-
     }
+
+    @Override
+    public void addLinks(ArrayList<DownloadLink> links, boolean hidegrabber, boolean autostart) {
+        if (links.size() == 0) return;
+        if (hidegrabber || autostart) {
+            /* TODO: hier autopackaging ? */
+            ArrayList<FilePackage> fps = new ArrayList<FilePackage>();
+            FilePackage fp = FilePackage.getInstance();
+            fp.setName("Added " + System.currentTimeMillis());
+            for (DownloadLink link : links) {
+                if (link.getFilePackage() == FilePackage.getDefaultFilePackage()) {
+                    fp.add(link);
+                    if (!fps.contains(fp)) fps.add(fp);
+                } else {
+                    if (!fps.contains(link.getFilePackage())) fps.add(link.getFilePackage());
+                }
+            }
+            if (GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_INSERT_NEW_LINKS_AT, false)) {
+                DownloadController.getInstance().addAllAt(fps, 0);
+            } else {
+                DownloadController.getInstance().addAll(fps);
+            }
+            if (autostart) JDController.getInstance().startDownloads();
+        } else {
+            LinkGrabberPanel.getLinkGrabber().addLinks(links);
+            requestPanel(UIConstants.PANEL_ID_LINKGRABBER);
+        }
+    }
+
 }

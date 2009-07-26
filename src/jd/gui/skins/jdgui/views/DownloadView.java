@@ -41,23 +41,10 @@ public class DownloadView extends View {
 
     @Override
     protected void onHide() {
-        updateToolbar(null, null);
     }
 
     @Override
     protected void onShow() {
-        updateToolbar("downloadview", new String[] {
-                "toolbar.control.start",
-                "toolbar.control.pause",
-                "toolbar.control.stop",
-                "toolbar.separator",
-                "toolbar.quickconfig.clipboardoberserver",
-                "toolbar.quickconfig.reconnecttoggle",
-                "toolbar.separator",
-                "toolbar.interaction.reconnect",
-                "toolbar.interaction.update",
-                "toolbar.TESTER"
-        });
     }
 
 }

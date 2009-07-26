@@ -23,7 +23,6 @@ import javax.swing.JList;
 import javax.swing.ListCellRenderer;
 
 import jd.config.container.JDLabelContainer;
-import jd.gui.skins.SwingGui;
 import jd.gui.swing.laf.LookAndFeelController;
 
 /**

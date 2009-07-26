@@ -31,29 +31,6 @@ public class ControlEvent extends AWTEvent {
     public final static int CONTROL_ALL_DOWNLOADS_FINISHED = 1;
 
     /**
-     * Das Verteilen des Inhalts der Zwischenablage ist abgeschlossen Als
-     * Parameter wird hier ein Vector mit DownloadLinks übergeben, die
-     * herausgearbeitet wurden
-     */
-    public final static int CONTROL_DISTRIBUTE_FINISHED = 3;
-
-    /**
-     * Das Verteilen des Inhalts der Zwischenablage ist abgeschlossen Als
-     * Parameter wird hier ein Vector mit DownloadLinks übergeben, die
-     * herausgearbeitet wurden Es wird kein Linkgrabber geöffnet sonder sofort
-     * hinzugefügt
-     */
-    public final static int CONTROL_DISTRIBUTE_FINISHED_HIDEGRABBER = 19;
-
-    /**
-     * Das Verteilen des Inhalts der Zwischenablage ist abgeschlossen Als
-     * Parameter wird hier ein Vector mit DownloadLinks übergeben, die
-     * herausgearbeitet wurden Es wird kein Linkgrabber geöffnet sonder sofort
-     * hinzugefügt Nach dem Hinzufügen wird der Download gestartet
-     */
-    public final static int CONTROL_DISTRIBUTE_FINISHED_HIDEGRABBER_START = 20;
-
-    /**
      * Gibt an, dass der Downloadvorgang gestartet wurde
      */
     public static final int CONTROL_DOWNLOAD_START = 13;
@@ -110,7 +87,7 @@ public class ControlEvent extends AWTEvent {
      * Wird vom Controller vor dem beeenden des Programms aufgerufen
      */
     public static final int CONTROL_SYSTEM_EXIT = 26;
-    public static final int CONTROL_INIT_COMPLETE = 30;    
+    public static final int CONTROL_INIT_COMPLETE = 30;
 
     /**
      * serialVersionUID

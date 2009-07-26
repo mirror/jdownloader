@@ -23,7 +23,7 @@ public class ConfigSidebar extends SideBarPanel {
         this.setLayout(new MigLayout("ins 0 ", "[grow,fill]", "[grow,fill]"));
 
         this.add(tree = new JTree(getTreeModel()));
-        tree.setCellRenderer(new TreeRenderer());
+        tree.setCellRenderer(new TreeRenderer());        
         tree.setOpaque(false);
         tree.setRootVisible(false);
         tree.setExpandsSelectedPaths(true);
@@ -36,7 +36,7 @@ public class ConfigSidebar extends SideBarPanel {
 
                     @Override
                     public Object runSave() {
-                        if(tree.getSelectionPath()==null)return null;
+                        if (tree.getSelectionPath() == null) return null;
                         entry = (TreeEntry) tree.getSelectionPath().getLastPathComponent();
                         tree.expandPath(tree.getSelectionPath());
                         if (entry.getPanel() == null) {
@@ -53,11 +53,11 @@ public class ConfigSidebar extends SideBarPanel {
         TreePath rootPath = new TreePath(tree.getModel().getRoot());
         tree.expandPath(rootPath);
         TreeEntry node = (TreeEntry) rootPath.getLastPathComponent();
-            for (TreeEntry n : node.getEntries()) {
-                TreePath path = rootPath.pathByAddingChild(n);
-                tree.expandPath(path);
-            }        
-      
+        for (TreeEntry n : node.getEntries()) {
+            TreePath path = rootPath.pathByAddingChild(n);
+            tree.expandPath(path);
+        }
+
         tree.setSelectionRow(0);
     }
 
@@ -67,7 +67,6 @@ public class ConfigSidebar extends SideBarPanel {
     }
 
     public void expandAll(JTree tree, TreePath parent, boolean expand) {
-
         TreeEntry node = (TreeEntry) parent.getLastPathComponent();
         if (node.size() >= 0) {
             for (TreeEntry n : node.getEntries()) {

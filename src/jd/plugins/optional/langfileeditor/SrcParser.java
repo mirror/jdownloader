@@ -30,7 +30,6 @@ import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 public class SrcParser {
 

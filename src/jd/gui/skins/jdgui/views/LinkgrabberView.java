@@ -22,14 +22,14 @@ public class LinkgrabberView extends View {
      */
     private static final String IDENT_PREFIX = "jd.gui.skins.jdgui.views.linkgrabberview.";
 
-    private ViewToolbar toolbar;
+    
 
     public LinkgrabberView() {
         
         super();
         this.setContent(LinkGrabberPanel.getLinkGrabber());
         this.setDefaultInfoPanel(new LinkGrabberInfoPanel());
-        toolbar = new ViewToolbar();
+        ViewToolbar toolbar = new ViewToolbar();
 
         toolbar.setList(new String[] {
                 "action.addurl", "action.load"
@@ -64,8 +64,7 @@ public class LinkgrabberView extends View {
     }
 
     @Override
-    protected void onHide() {
-        updateToolbar(null, null);
+    protected void onHide() {        
     }
 
     @Override

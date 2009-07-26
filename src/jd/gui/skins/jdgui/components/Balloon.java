@@ -29,7 +29,6 @@ import javax.swing.JSeparator;
 import javax.swing.JTextPane;
 import javax.swing.JWindow;
 
-import jd.config.SubConfiguration;
 import jd.gui.skins.SwingGui;
 import jd.gui.skins.jdgui.GUIUtils;
 import jd.gui.skins.jdgui.JDGuiConstants;

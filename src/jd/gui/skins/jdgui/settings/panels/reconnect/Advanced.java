@@ -16,7 +16,6 @@
 
 package jd.gui.skins.jdgui.settings.panels.reconnect;
 
-import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 
 import jd.config.ConfigContainer;

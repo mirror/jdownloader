@@ -898,7 +898,7 @@ public class GetRouterInfo {
                 if (data == null) {
                     progress.setVisible(false);
                     progress.dispose();
-                    JDUtilities.getGUI().showMessageDialog(JDL.L("gui.config.liveHeader.warning.notFound", "jDownloader konnte ihre Routereinstellung nicht automatisch ermitteln."));
+                    UserIO.getInstance().requestMessageDialog(JDL.L("gui.config.liveHeader.warning.notFound", "jDownloader konnte ihre Routereinstellung nicht automatisch ermitteln."));
                     return;
                 }
                 if (routerScript != null && routerScript instanceof GUIConfigEntry) {
@@ -909,7 +909,7 @@ public class GetRouterInfo {
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_ROUTERNAME, data.getRouterName());
                 progress.setVisible(false);
                 progress.dispose();
-                JDUtilities.getGUI().showMessageDialog(JDL.L("gui.config.liveHeader.warning.yourRouter", "Sie haben einen") + " " + data.getRouterName());
+                UserIO.getInstance().requestMessageDialog(JDL.L("gui.config.liveHeader.warning.yourRouter", "Sie haben einen") + " " + data.getRouterName());
 
             }
         };

@@ -32,7 +32,8 @@ public class Utils {
 
     public static String prepareMsg(String msg) {
         msg = HTMLEntities.htmlAngleBrackets(msg + " ");
-        return msg.replaceAll("((http://)|(www\\.))([^\\s\"]+)", "<a href=\"http://$3$4\">$3$4</a>").trim();
+        String tmp = msg.replaceAll("((http://)|(www\\.))([^\\s\"]+)", "<a href=\"http://$3$4\">$3$4</a>").trim();
+        return tmp;
 
     }
 }

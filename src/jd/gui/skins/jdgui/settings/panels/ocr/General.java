@@ -27,13 +27,9 @@ import javax.swing.table.TableColumn;
 
 import jd.captcha.JACMethod;
 import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
-import jd.config.ConfigGroup;
 import jd.config.Configuration;
-import jd.config.SubConfiguration;
 import jd.config.ConfigEntry.PropertyType;
 import jd.gui.skins.jdgui.settings.ConfigPanel;
-import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 

@@ -26,7 +26,6 @@ import java.util.Map;
 import java.util.Vector;
 
 import jd.controlling.reconnect.HTTPLiveHeader;
-import jd.gui.skins.simple.SimpleGUI;
 import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
 
@@ -145,14 +144,14 @@ public class ConvertRouterData {
     @SuppressWarnings("unchecked")
     private void saveTolist(Vector<String[]> list, File file) {
         if (file.exists()) {
-            list.addAll((Collection<? extends String[]>) JDIO.loadObject(((SimpleGUI) JDUtilities.getGUI()), file, true));
+            list.addAll((Collection<? extends String[]>) JDIO.loadObject(null, file, true));
             Collections.sort(list, new Comparator<String[]>() {
                 public int compare(String[] a, String[] b) {
                     return (a[0] + " " + a[1]).compareToIgnoreCase(b[0] + " " + b[1]);
                 }
             });
         }
-        JDIO.saveObject(((SimpleGUI) JDUtilities.getGUI()), list, file, null, null, true);
+        JDIO.saveObject(null, list, file, null, null, true);
     } /*
        * private static String replace(String arg) { return
        * arg.replaceAll("&amp;nbsp;", " ").replaceAll("&#13;", "\n"); }

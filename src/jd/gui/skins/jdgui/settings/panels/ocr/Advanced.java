@@ -16,8 +16,6 @@
 
 package jd.gui.skins.jdgui.settings.panels.ocr;
 
-import java.util.ArrayList;
-
 import javax.swing.JTabbedPane;
 
 import jd.config.ConfigContainer;
@@ -25,16 +23,11 @@ import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
-import jd.config.ConfigEntry.PropertyType;
 import jd.gui.skins.jdgui.GUIUtils;
-import jd.gui.skins.jdgui.JDGuiConstants;
 import jd.gui.skins.jdgui.settings.ConfigPanel;
 import jd.gui.skins.jdgui.settings.GUIConfigEntry;
-import jd.gui.swing.laf.LookAndFeelController;
 import jd.utils.JDTheme;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-import jd.utils.locale.JDLocale;
 
 public class Advanced extends ConfigPanel {
       public String getBreadcrum() {     return JDL.L(this.getClass().getName()+".breadcrum", this.getClass().getSimpleName()); }   public static String getTitle(){

@@ -49,7 +49,8 @@ import jd.plugins.optional.hjsplit.jaxe.ProgressEvent;
 import jd.plugins.optional.hjsplit.jaxe.ProgressEventListener;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-@OptionalPlugin(rev="$Revision$", defaultEnabled=true,id="hjsplit",interfaceversion=4)
+
+@OptionalPlugin(rev = "$Revision$", defaultEnabled = true, id = "hjsplit", interfaceversion = 4)
 public class JDHJSplit extends PluginOptional implements ControlListener {
 
     private static final String CONFIG_KEY_REMOVE_MERGED = "REMOVE_MERGED";
@@ -61,7 +62,6 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
 
     // Wird als reihe für anstehende extracthjobs verwendet
     private Jobber queue;
-
 
     public JDHJSplit(PluginWrapper wrapper) {
         super(wrapper);
@@ -357,7 +357,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
      * @return
      */
     private ArrayList<File> validateNormalType(File file) {
-        final String matcher = file.getName().replaceFirst("\\.[\\d]+($|\\.[^\\d]*$)", "\\\\.[\\\\d]+$1");
+        final String matcher = file.getName().replaceAll("\\[|\\]|\\(|\\)|\\?", ".").replaceFirst("\\.[\\d]+($|\\.[^\\d]*$)", "\\\\.[\\\\d]+$1");
         ArrayList<DownloadLink> missing = JDUtilities.getController().getDownloadLinksByNamePattern(matcher);
         for (DownloadLink miss : missing) {
             File par1 = new File(miss.getFileOutput()).getParentFile();
@@ -422,7 +422,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
      */
     private ArrayList<File> validateUnixType(File file) {
 
-        final String matcher = file.getName().replaceFirst("\\.a.($|\\..*)", "\\\\.a.$1");
+        final String matcher = file.getName().replaceAll("\\[|\\]|\\(|\\)|\\?", ".").replaceFirst("\\.a.($|\\..*)", "\\\\.a.$1");
         ArrayList<DownloadLink> missing = JDUtilities.getController().getDownloadLinksByNamePattern(matcher);
         for (DownloadLink miss : missing) {
             if (new File(miss.getFileOutput()).exists() && new File(miss.getFileOutput()).getParentFile().equals(file.getParentFile())) continue;
@@ -516,7 +516,6 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
         link.setFilePackage(fp);
         return link;
     }
-
 
     // @Override
     public boolean initAddon() {

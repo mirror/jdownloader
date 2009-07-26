@@ -22,7 +22,6 @@ import java.util.logging.LogRecord;
 import java.util.logging.SimpleFormatter;
 
 import jd.nutils.Formatter;
-import jd.nutils.JDFlags;
 
 /**
  * Mit dieser Klasse können die Logmeldungen anders dargestellt werden. Der Code

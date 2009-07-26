@@ -8,6 +8,10 @@ import jd.utils.locale.JDL;
 
 public class JDChatView extends View {
 
+    /**
+     * 
+     */
+    private static final long serialVersionUID = -7876057076125402969L;
     private static final String JDL_PREFIX = "jd.plugins.optional.jdchat.JDChatView.";
 
     public JDChatView() {

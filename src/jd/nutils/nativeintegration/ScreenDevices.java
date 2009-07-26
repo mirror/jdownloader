@@ -25,7 +25,6 @@ import java.awt.Robot;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 
-import jd.config.SubConfiguration;
 import jd.gui.skins.jdgui.GUIUtils;
 
 public class ScreenDevices {

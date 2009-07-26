@@ -32,7 +32,6 @@ import javax.swing.JScrollPane;
 import javax.swing.Timer;
 
 import jd.config.Configuration;
-import jd.config.SubConfiguration;
 import jd.controlling.JDController;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.LinkGrabberControllerEvent;
@@ -135,9 +134,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         toolbar.setHorizontalAlign(ViewToolbar.EAST);
         // toolbar.setBorder(JDBorderFactory.createInsideShadowBorder(3, 0, 0,
         // 0));
-        toolbar.setList(new String[] {
-                "action.linkgrabber.clearlist", "action.linkgrabber.addall"
-        });
+        toolbar.setList(new String[] { "action.linkgrabber.clearlist", "action.linkgrabber.addall" });
         this.add(toolbar, "gapbottom 3,DOCK SOUTH");
     }
 
@@ -280,8 +277,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         addinginprogress = true;
         new Thread() {
             public void run() {
-                Balloon.showIfHidden(JDL.L("gui.config.gui.linkgrabber", "LinkGrabber"), JDTheme.II("gui.images.add", 32, 32), JDL.LF("gui.linkgrabber.adding", "Adding %s link(s) to LinkGrabber", ""
-                        + linkList.size()));
+                Balloon.showIfHidden(JDL.L("gui.config.gui.linkgrabber", "LinkGrabber"), JDTheme.II("gui.images.add", 32, 32), JDL.LF("gui.linkgrabber.adding", "Adding %s link(s) to LinkGrabber", "" + linkList.size()));
                 for (DownloadLink element : linkList) {
                     if (LGINSTANCE.isDupe(element)) continue;
                     addToWaitingList(element);
@@ -376,11 +372,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                 for (LinkGrabberFilePackage fp : fps) {
                     links += fp.getDownloadLinks().size();
                 }
-                Balloon.showIfHidden(JDL.L("gui.config.gui.linkgrabber", "LinkGrabber"), JDTheme.II("gui.images.add", 32, 32), JDL.LF(
-                                                                                                                                      "gui.linkgrabber.finished",
-                                                                                                                                      "Grabbed %s link(s) in %s Package(s)",
-                                                                                                                                      "" + links,
-                                                                                                                                      "" + fps.size()));
+                Balloon.showIfHidden(JDL.L("gui.config.gui.linkgrabber", "LinkGrabber"), JDTheme.II("gui.images.add", 32, 32), JDL.LF("gui.linkgrabber.finished", "Grabbed %s link(s) in %s Package(s)", "" + links, "" + fps.size()));
                 fps = null;
             }
         };
@@ -445,31 +437,36 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                 synchronized (LinkGrabberController.ControllerLock) {
                     synchronized (LGINSTANCE.getPackages()) {
                         ArrayList<LinkGrabberFilePackage> fps = LGINSTANCE.getPackages();
-//                        if (arg0.getSource() instanceof LinkGrabberTaskPane) {
-//                            switch (arg0.getID()) {
-//                            case LinkGrabberTableAction.ADD_SELECTED_PACKAGES:
-//                                selected_packages = new ArrayList<LinkGrabberFilePackage>(INSTANCE.internalTable.getSelectedFilePackages());
-//                                break;
-//                            case LinkGrabberTableAction.GUI_LOAD:
-//                                new GuiRunnable<Object>() {
-//                                    // @Override
-//                                    public Object runSave() {
-//                                        JDFileChooser fc = new JDFileChooser("_LOADSAVEDLC");
-//                                        fc.setDialogTitle(JDL.L("gui.filechooser.loaddlc", "Load DLC file"));
-//                                        fc.setFileFilter(new JDFileFilter(null, ".dlc|.rsdf|.ccf|.metalink", true));
-//                                        if (fc.showOpenDialog(null) == JDFileChooser.APPROVE_OPTION) {
-//                                            File ret2 = fc.getSelectedFile();
-//                                            if (ret2 != null) {
-//                                                JDUtilities.getController().loadContainerFile(ret2);
-//                                            }
-//                                        }
-//                                        return null;
-//                                    }
-//                                }.start();
-//                                return;
-//                            }
-//                        } else 
-                            if (arg0.getSource() instanceof JMenuItem) {
+                        // if (arg0.getSource() instanceof LinkGrabberTaskPane)
+                        // {
+                        // switch (arg0.getID()) {
+                        // case LinkGrabberTableAction.ADD_SELECTED_PACKAGES:
+                        // selected_packages = new
+                        // ArrayList<LinkGrabberFilePackage>(INSTANCE.internalTable.getSelectedFilePackages());
+                        // break;
+                        // case LinkGrabberTableAction.GUI_LOAD:
+                        // new GuiRunnable<Object>() {
+                        // // @Override
+                        // public Object runSave() {
+                        // JDFileChooser fc = new JDFileChooser("_LOADSAVEDLC");
+                        // fc.setDialogTitle(JDL.L("gui.filechooser.loaddlc",
+                        // "Load DLC file"));
+                        // fc.setFileFilter(new JDFileFilter(null,
+                        // ".dlc|.rsdf|.ccf|.metalink", true));
+                        // if (fc.showOpenDialog(null) ==
+                        // JDFileChooser.APPROVE_OPTION) {
+                        // File ret2 = fc.getSelectedFile();
+                        // if (ret2 != null) {
+                        // JDUtilities.getController().loadContainerFile(ret2);
+                        // }
+                        // }
+                        // return null;
+                        // }
+                        // }.start();
+                        // return;
+                        // }
+                        // } else
+                        if (arg0.getSource() instanceof JMenuItem) {
                             switch (arg0.getID()) {
                             case LinkGrabberTableAction.SELECT_HOSTER:
                                 hoster = (Set<String>) ((LinkGrabberTableAction) ((JMenuItem) arg0.getSource()).getAction()).getProperty().getProperty("hoster");
@@ -652,7 +649,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                             JDUtilities.getController().saveDLC(ret, selected_links);
                             break;
                         case LinkGrabberTableAction.SET_PW:
-                            pw = SwingGui.getInstance().showUserInputDialog(JDL.L("gui.linklist.setpw.message", "Set download password"), null);
+                            pw = UserIO.getInstance().requestInputDialog(0, JDL.L("gui.linklist.setpw.message", "Set download password"), null);
                             for (int i = 0; i < selected_links.size(); i++) {
                                 selected_links.get(i).setProperty("pass", pw);
                             }
@@ -705,9 +702,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
 
     private void addToDownloadDirs(String downloadDirectory, String packageName) {
         if (packageName.length() < 5 || downloadDirectory.equalsIgnoreCase(JDUtilities.getConfiguration().getDefaultDownloadDirectory())) return;
-        getDownloadDirList().add(new String[] {
-                downloadDirectory, packageName
-        });
+        getDownloadDirList().add(new String[] { downloadDirectory, packageName });
         GUIUtils.getConfig().save();
     }
 

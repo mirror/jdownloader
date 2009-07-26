@@ -24,7 +24,6 @@ import java.util.logging.Logger;
 
 import jd.DecryptPluginWrapper;
 import jd.HostPluginWrapper;
-import jd.event.ControlEvent;
 import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.Encoding;
@@ -71,15 +70,12 @@ public class DistributeData extends Thread {
 
     private ArrayList<DownloadLink> linkData;
 
-    /**
-     * Download nach Beendigung starten
-     */
-    private boolean startDownload;
-
     private String orgData;
 
     private boolean filterNormalHTTP = false;
     private ArrayList<String> foundPasswords;
+
+    private boolean autostart = false;
 
     /**
      * Erstellt einen neuen Thread mit dem Text, der verteilt werden soll. Die
@@ -95,20 +91,30 @@ public class DistributeData extends Thread {
         foundPasswords = new ArrayList<String>();
     }
 
-    public DistributeData(String data, boolean disableDeepEmergencyScan) {
-        this(data);
-        this.disableDeepEmergencyScan = disableDeepEmergencyScan;
+    public DistributeData setDisableDeepEmergencyScan(boolean b) {
+        this.disableDeepEmergencyScan = b;
+        return this;
     }
 
-    public DistributeData(String data, boolean hideGrabber, boolean startDownload) {
+    public DistributeData setHideGrabber(boolean b) {
+        this.hideGrabber = b;
+        return this;
+    }
+
+    public DistributeData setAutostart(boolean b) {
+        this.autostart = b;
+        return this;
+    }
+
+    public DistributeData(String data, boolean hideGrabber) {
         this(data);
         this.hideGrabber = hideGrabber;
-        this.startDownload = startDownload;
         this.disableDeepEmergencyScan = true;
     }
 
-    public void setFilterNormalHTTP(boolean b) {
+    public DistributeData setFilterNormalHTTP(boolean b) {
         this.filterNormalHTTP = b;
+        return this;
     }
 
     static public boolean hasPluginFor(String tmp, boolean filterNormalHTTP) {
@@ -454,21 +460,8 @@ public class DistributeData extends Thread {
             }
 
         }
-
         Collections.sort(links);
-
-        if (hideGrabber && startDownload) {
-            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DISTRIBUTE_FINISHED_HIDEGRABBER_START, links));
-        } else if (hideGrabber) {
-            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DISTRIBUTE_FINISHED_HIDEGRABBER, links));
-        } else if (startDownload) {
-            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DISTRIBUTE_FINISHED, links));
-            if (JDUtilities.getController().getDownloadStatus() == JDController.DOWNLOAD_NOT_RUNNING) {
-                JDUtilities.getController().toggleStartStop();
-            }
-        } else {
-            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DISTRIBUTE_FINISHED, links));
-        }
+        LinkGrabberController.getInstance().addLinks(links, hideGrabber, autostart);
     }
 
     public void setLinkData(ArrayList<DownloadLink> linkData) {

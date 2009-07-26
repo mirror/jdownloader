@@ -409,6 +409,16 @@ public class DownloadController implements FilePackageListener, DownloadControll
         return packages;
     }
 
+    public void addAll(ArrayList<FilePackage> links) {
+        synchronized (DownloadController.ControllerLock) {
+            synchronized (packages) {
+                for (int i = 0; i < links.size(); i++) {
+                    addPackage(links.get(i));
+                }
+            }
+        }
+    }
+
     public void addPackage(FilePackage fp) {
         if (fp == null) return;
         synchronized (DownloadController.ControllerLock) {

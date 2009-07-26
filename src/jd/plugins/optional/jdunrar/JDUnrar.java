@@ -41,6 +41,7 @@ import jd.controlling.ProgressController;
 import jd.controlling.SingleDownloadController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
+import jd.gui.UserIO;
 import jd.gui.skins.SwingGui;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.nutils.Executer;
@@ -59,11 +60,11 @@ import jd.plugins.PluginProgress;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-@OptionalPlugin(rev="$Revision$",defaultEnabled=true, id="unrar",interfaceversion=4)
+
+@OptionalPlugin(rev = "$Revision$", defaultEnabled = true, id = "unrar", interfaceversion = 4)
 public class JDUnrar extends PluginOptional implements ControlListener, UnrarListener {
 
     private static final String DUMMY_HOSTER = "dum.my";
-
 
     /**
      * Wird als reihe für anstehende extracthjobs verwendet
@@ -198,7 +199,6 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         }
 
     }
-
 
     /**
      * Prüft im zugehörigem Filepackage, ob noch downloadlinks vom archiv
@@ -539,7 +539,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             String path = link.getStringProperty(JDUnrarConstants.DOWNLOADLINK_KEY_EXTRACTEDPATH + "2");
 
             if (!new File(path).exists()) {
-                JDUtilities.getGUI().showMessageDialog(JDL.LF("plugins.optional.jdunrar.messages", "The path %s does not exist.", path));
+                UserIO.getInstance().requestMessageDialog(JDL.LF("plugins.optional.jdunrar.messages", "The path %s does not exist.", path));
             } else {
                 JDUtilities.openExplorer(new File(path));
             }
@@ -601,9 +601,6 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         }
 
     }
-
-
-
 
     // @Override
     public boolean initAddon() {
@@ -874,8 +871,8 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             wrapper.getDownloadLink().requestGuiUpdate();
 
             if (this.getPluginConfig().getBooleanProperty(JDUnrarConstants.CONFIG_KEY_ASK_UNKNOWN_PASS, true)) {
-                String pass = JDUtilities.getGUI().showCountdownUserInputDialog(JDL.LF("plugins.optional.jdunrar.askForPassword", "Password for %s?", wrapper.getDownloadLink().getName()), null);
-                if (pass == null) {
+                String pass = UserIO.getInstance().requestInputDialog(0, JDL.LF("plugins.optional.jdunrar.askForPassword", "Password for %s?", wrapper.getDownloadLink().getName()), null);
+                if (pass == null || pass.length() == 0) {
                     ls.addStatus(LinkStatus.ERROR_POST_PROCESS);
                     ls.setStatusText(JDL.L("plugins.optional.jdunrar.status.extractfailedpass", "Extract failed (password)"));
                     this.onFinished(wrapper);
@@ -1119,8 +1116,8 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             pc.setStatusText(wrapper.getFile().getName() + ": " + JDL.L("plugins.optional.jdunrar.status.extractfailedpass", "Extract failed (password)"));
 
             if (this.getPluginConfig().getBooleanProperty(JDUnrarConstants.CONFIG_KEY_ASK_UNKNOWN_PASS, true)) {
-                String pass = JDUtilities.getGUI().showCountdownUserInputDialog(JDL.LF("plugins.optional.jdunrar.askForPassword", "Password for %s?", wrapper.getDownloadLink().getName()), null);
-                if (pass == null) {
+                String pass = UserIO.getInstance().requestInputDialog(0, JDL.LF("plugins.optional.jdunrar.askForPassword", "Password for %s?", wrapper.getDownloadLink().getName()), null);
+                if (pass == null || pass.length() == 0) {
                     this.onFinished(wrapper);
                     break;
                 }
@@ -1325,6 +1322,5 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             return null;
         }
     }
-
 
 }

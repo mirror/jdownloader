@@ -32,10 +32,12 @@ import jd.controlling.JDLogger;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
+import jd.gui.UserIO;
 import jd.gui.skins.jdgui.components.linkbutton.JLink;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.nutils.Formatter;
+import jd.nutils.JDFlags;
 import jd.nutils.jobber.JDRunnable;
 import jd.nutils.jobber.Jobber;
 import jd.parser.Regex;
@@ -254,7 +256,7 @@ public abstract class PluginForDecrypt extends Plugin {
         if (this.isClickNLoadEnabled() && OPEN_CLICK_N_LOAD >= 0 && OPEN_CLICK_N_LOAD <= 25) {
             synchronized (JDUtilities.userio_lock) {
                 if (OPEN_CLICK_N_LOAD < 0) return;
-                boolean open = JDUtilities.getGUI().showConfirmDialog(JDL.LF("gui.plugins.decrypt.askclicknload", "The decrypter %s seems to be outdated, but supports Click'n'Load. Open the website now?", this.getHost()));
+                boolean open = JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, JDL.LF("gui.plugins.decrypt.askclicknload", "The decrypter %s seems to be outdated, but supports Click'n'Load. Open the website now?", this.getHost())), UserIO.RETURN_OK);
                 if (open) {
                     try {
 

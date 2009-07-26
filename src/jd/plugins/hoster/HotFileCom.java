@@ -114,25 +114,8 @@ public class HotFileCom extends PluginForHost {
             String waittime = br.getRegex("starthtimer\\(\\).*?timerend=.*?\\+(\\d+);").getMatch(0);
             if (Long.parseLong(waittime.trim()) > 0) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(waittime.trim())); }
         }
-
-        int i = 0;
-        Form form = new Form();
-        while(true) {
-            Boolean error = false;
-            try {
-                Form[] forms = br.getForms();
-                form = forms[1];
-            } catch(ArrayIndexOutOfBoundsException e) {
-                error = true;
-            }
-
-            if(!error){
-                break;
-            }else if(++i == 3){
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-            }
-        }
-
+        Form[] forms = br.getForms();
+        Form form = forms[1];
         this.sleep(30000l, link);
         br.submitForm(form);
 

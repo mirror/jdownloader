@@ -128,7 +128,7 @@ public class ClipboardHandler extends Thread implements ControlListener {
                             if (!((String) clipboard.getData(element)).equals(olddata)) {
                                 olddata = (String) clipboard.getData(element);
 
-                                new DistributeData(olddata.trim(), true).start();
+                                new DistributeData(olddata.trim()).start();
                             }
                             break;
 

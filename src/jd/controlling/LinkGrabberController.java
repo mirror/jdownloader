@@ -71,6 +71,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
     private LinkGrabberFilePackage FP_UNCHECKABLE;
     private LinkGrabberFilePackage FP_OFFLINE;
     private LinkGrabberFilePackage FP_FILTERED;
+    private LinkGrabberDistributeEvent distributer = null;
 
     public synchronized static LinkGrabberController getInstance() {
         if (INSTANCE == null) INSTANCE = new LinkGrabberController();
@@ -79,6 +80,35 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
 
     public LinkGrabberFilePackage getFILTERPACKAGE() {
         return this.FP_FILTERED;
+    }
+
+    public void setDistributer(LinkGrabberDistributeEvent dist) {
+        this.distributer = dist;
+    }
+
+    public void addLinks(ArrayList<DownloadLink> links, boolean hidegrabber, boolean autostart) {
+        if (distributer != null) {
+            distributer.addLinks(links, hidegrabber, autostart);
+        } else {
+            /*
+             * TODO: evtl autopackaging auch hier, aber eigentlich net nötig, da
+             * es sache des coders ist was genau er machen soll
+             */
+            JDLogger.getLogger().info("No Distributer set, using minimal version");
+            ArrayList<FilePackage> fps = new ArrayList<FilePackage>();
+            FilePackage fp = FilePackage.getInstance();
+            fp.setName("Added");
+            for (DownloadLink link : links) {
+                if (link.getFilePackage() == FilePackage.getDefaultFilePackage()) {
+                    fp.add(link);
+                    if (!fps.contains(fp)) fps.add(fp);
+                } else {
+                    if (!fps.contains(link.getFilePackage())) fps.add(link.getFilePackage());
+                }
+            }
+            DownloadController.getInstance().addAllAt(fps, 0);
+            if (autostart) JDController.getInstance().startDownloads();
+        }
     }
 
     public void addListener(LinkGrabberControllerListener l) {

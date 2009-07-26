@@ -29,8 +29,9 @@ import jd.config.SubConfiguration;
 import jd.controlling.interaction.Interaction;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
-import jd.gui.UIInterface;
+import jd.gui.UserIO;
 import jd.http.Browser;
+import jd.nutils.JDFlags;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -194,11 +195,6 @@ public class JDController implements ControlListener {
      */
     private Logger logger = JDLogger.getLogger();
 
-    /**
-     * Schnittstelle zur Benutzeroberfläche
-     */
-    private UIInterface uiInterface;
-
     private ArrayList<FileUpdate> waitingUpdates = new ArrayList<FileUpdate>();
 
     /**
@@ -224,7 +220,7 @@ public class JDController implements ControlListener {
      *            Ein neuer Listener
      */
     public synchronized void addControlListener(ControlListener listener) {
-        if(listener==null)throw new NullPointerException();
+        if (listener == null) throw new NullPointerException();
         synchronized (controlListener) {
             synchronized (removeList) {
                 if (removeList.contains(listener)) removeList.remove(listener);
@@ -264,7 +260,6 @@ public class JDController implements ControlListener {
      * @param event
      */
 
-    @SuppressWarnings("unchecked")
     public void controlEvent(ControlEvent event) {
         if (event == null) {
             logger.warning("event= NULL");
@@ -318,30 +313,7 @@ public class JDController implements ControlListener {
             }
 
             break;
-        case ControlEvent.CONTROL_DISTRIBUTE_FINISHED:
-            if (uiInterface == null) return;
-            if (event.getParameter() != null && event.getParameter() instanceof ArrayList && ((ArrayList) event.getParameter()).size() > 0) {
-                ArrayList<DownloadLink> links = (ArrayList<DownloadLink>) event.getParameter();
-                uiInterface.addLinksToGrabber(links, false);
-            }
-            break;
-        case ControlEvent.CONTROL_DISTRIBUTE_FINISHED_HIDEGRABBER:
-            if (event.getParameter() != null && event.getParameter() instanceof ArrayList && ((ArrayList) event.getParameter()).size() > 0) {
-                ArrayList<DownloadLink> links = (ArrayList<DownloadLink>) event.getParameter();
-                uiInterface.addLinksToGrabber(links, true);
-            }
-            break;
-        case ControlEvent.CONTROL_DISTRIBUTE_FINISHED_HIDEGRABBER_START:
-            if (event.getParameter() != null && event.getParameter() instanceof ArrayList && ((ArrayList) event.getParameter()).size() > 0) {
-                ArrayList<DownloadLink> links = (ArrayList<DownloadLink>) event.getParameter();
-                uiInterface.addLinksToGrabber(links, true);
-                if (getDownloadStatus() == JDController.DOWNLOAD_NOT_RUNNING) {
-                    toggleStartStop();
-                }
-            }
-            break;
         }
-
     }
 
     public String encryptDLC(String xml) {
@@ -517,15 +489,6 @@ public class JDController implements ControlListener {
         return getWatchdog().getTotalSpeed();
     }
 
-    /**
-     * Gibt das verwendete UIinterface zurpck
-     * 
-     * @return aktuelles uiInterface
-     */
-    public UIInterface getUiInterface() {
-        return uiInterface;
-    }
-
     public ArrayList<FileUpdate> getWaitingUpdates() {
         return waitingUpdates;
 
@@ -644,7 +607,7 @@ public class JDController implements ControlListener {
      * @param file
      *            Die Containerdatei
      */
-    public void loadContainerFile(final File file, final boolean hideGrabber, final boolean startDownload) {
+    public void loadContainerFile(final File file, final boolean hideGrabber, final boolean autostart) {
         System.out.println("load container");
         new Thread() {
             @Override
@@ -693,14 +656,11 @@ public class JDController implements ControlListener {
                         }
                         String comment = downloadLinks.get(0).getFilePackage().getComment();
                         String password = downloadLinks.get(0).getFilePackage().getPassword();
-                        JDUtilities.getGUI().showHTMLDialog(JDL.L("container.message.title", "DownloadLinkContainer loaded"), String.format(html, JDIO.getFileExtension(file).toLowerCase(), JDL.L("container.message.title", "DownloadLinkContainer loaded"), JDL.L("container.message.uploaded", "Brought to you by"), uploader, JDL.L("container.message.created", "Created with"), app, JDL.L("container.message.comment", "Comment"), comment, JDL.L("container.message.password", "Password"), password));
+                        JDFlags.hasAllFlags(UserIO.getInstance().requestHtmlDialog(UserIO.NO_COUNTDOWN, JDL.L("container.message.title", "DownloadLinkContainer loaded"), String.format(html, JDIO.getFileExtension(file).toLowerCase(), JDL.L("container.message.title", "DownloadLinkContainer loaded"), JDL.L("container.message.uploaded", "Brought to you by"), uploader, JDL.L("container.message.created", "Created with"), app, JDL.L("container.message.comment", "Comment"), comment, JDL.L("container.message.password", "Password"), password)), UserIO.RETURN_OK);
 
                     }
                     // schickt die Links zuerst mal zum Linkgrabber
-                    uiInterface.addLinksToGrabber(downloadLinks, hideGrabber);
-                    if (startDownload && getDownloadStatus() == JDController.DOWNLOAD_NOT_RUNNING) {
-                        toggleStartStop();
-                    }
+                    LinkGrabberController.getInstance().addLinks(downloadLinks, hideGrabber, autostart);
                 }
                 progress.finalize();
             }
@@ -714,17 +674,15 @@ public class JDController implements ControlListener {
             SubConfiguration cfg = SubConfiguration.getConfig("DLCrypt");
             JDIO.writeLocalFile(file, cipher);
             if (cfg.getBooleanProperty("SHOW_INFO_AFTER_CREATE", false))
-            // Nur Falls Die Meldung nicht deaktiviert wurde
-            {
-                if (getUiInterface().showConfirmDialog(JDL.L("sys.dlc.success", "DLC encryption successfull. Run Testdecrypt now?"))) {
+            // Nur Falls Die Meldung nicht deaktiviert wurde {
+                if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, JDL.L("sys.dlc.success", "DLC encryption successfull. Run Testdecrypt now?")), UserIO.RETURN_OK)) {
                     loadContainerFile(file);
                     return;
                 }
-            }
             return;
         }
         logger.severe("Container creation failed");
-        getUiInterface().showMessageDialog("Container encryption failed");
+        UserIO.getInstance().requestMessageDialog("Container encryption failed");
     }
 
     /**
@@ -739,15 +697,6 @@ public class JDController implements ControlListener {
 
     public void setInitStatus(int initStatus) {
         this.initStatus = initStatus;
-    }
-
-    /**
-     * Setzt das UIINterface
-     * 
-     * @param uiInterface
-     */
-    public void setUiInterface(UIInterface uiInterface) {
-        this.uiInterface = uiInterface;
     }
 
     public void setWaitingUpdates(ArrayList<FileUpdate> files) {

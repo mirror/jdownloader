@@ -39,7 +39,6 @@ import javax.swing.JProgressBar;
 import javax.swing.JWindow;
 import javax.swing.Timer;
 
-import jd.config.SubConfiguration;
 import jd.controlling.JDController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;

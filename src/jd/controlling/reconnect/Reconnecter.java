@@ -27,6 +27,7 @@ import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.controlling.interaction.Interaction;
+import jd.gui.UserIF;
 import jd.gui.skins.jdgui.views.linkgrabberview.LinkCheck;
 import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
@@ -56,7 +57,7 @@ public class Reconnecter {
         boolean newState = !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true);
         JDUtilities.getConfiguration().setProperty(Configuration.PARAM_ALLOW_RECONNECT, newState);
         JDUtilities.getConfiguration().save();
-        if (!newState) JDUtilities.getGUI().displayMiniWarning(JDL.L("gui.warning.reconnect.hasbeendisabled", "Reconnect deaktiviert!"), JDL.L("gui.warning.reconnect.hasbeendisabled.tooltip", "Um erfolgreich einen Reconnect durchführen zu können muss diese Funktion wieder aktiviert werden."));
+        if (!newState) UserIF.getInstance().displayMiniWarning(JDL.L("gui.warning.reconnect.hasbeendisabled", "Reconnect deaktiviert!"), JDL.L("gui.warning.reconnect.hasbeendisabled.tooltip", "Um erfolgreich einen Reconnect durchführen zu können muss diese Funktion wieder aktiviert werden."));
     }
 
     private static boolean checkExternalIPChange() {

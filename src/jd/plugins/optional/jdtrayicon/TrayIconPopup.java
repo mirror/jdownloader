@@ -245,9 +245,8 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
         case TrayIconPopup.ACTION_PAUSE:
             JDUtilities.getController().pauseDownloads(!JDUtilities.getController().isPaused());
             break;
-        case TrayIconPopup.ACTION_RECONNECT:
-            // TODO
-            if (SimpleGUI.CURRENTGUI != null) SimpleGUI.CURRENTGUI.doManualReconnect();
+        case TrayIconPopup.ACTION_RECONNECT:            
+            ActionController.getToolBarAction("toolbar.interaction.reconnect").actionPerformed(null);
             break;
         case TrayIconPopup.ACTION_START:
         case TrayIconPopup.ACTION_STOP:

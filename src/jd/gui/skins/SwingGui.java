@@ -2,20 +2,18 @@ package jd.gui.skins;
 
 import jd.JDInitFlags;
 import jd.controlling.JDLogger;
-import jd.gui.UIInterface;
+import jd.event.ControlListener;
 import jd.gui.skins.jdgui.WindowAdapter;
 import jd.gui.skins.jdgui.interfaces.SwitchPanel;
-import jd.plugins.optional.jdchat.JDChatView;
 
-public abstract class SwingGui extends WindowAdapter implements UIInterface {
+public abstract class SwingGui extends WindowAdapter implements ControlListener  {
 
     private static final long serialVersionUID = 7164420260634468080L;
-
 
     private static SwingGui INSTANCE = null;
 
     public SwingGui(String string) {
-        super(string);
+        super(string);        
     }
 
     /**
@@ -24,7 +22,6 @@ public abstract class SwingGui extends WindowAdapter implements UIInterface {
      * @return
      */
     public static SwingGui getInstance() {
-
         return INSTANCE;
     }
 
@@ -53,17 +50,16 @@ public abstract class SwingGui extends WindowAdapter implements UIInterface {
         Thread th = Thread.currentThread();
         String name = th.toString();
         if (!name.contains("EventQueue")) {
-            JDLogger.exception(new RuntimeException("EDT Violation! Runs in "+th));
+            JDLogger.exception(new RuntimeException("EDT Violation! Runs in " + th));
         }
 
     }
 
     /**
      * remove a panel completly.. e.g. unloading an plugin.
+     * 
      * @param view
      */
     abstract public void disposeView(SwitchPanel view);
-
-   
 
 }

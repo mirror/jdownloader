@@ -23,11 +23,9 @@ import java.net.URL;
 import java.util.ArrayList;
 
 import jd.gui.skins.jdgui.swing.GuiRunnable;
-import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.DnDWebBrowser;
 import jd.nutils.Executer;
 import jd.nutils.OSDetector;
-import jd.utils.JDUtilities;
 import edu.stanford.ejalbert.BrowserLauncher;
 import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
 import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
@@ -209,7 +207,7 @@ abstract public class LocalBrowser implements Serializable {
 
                         @Override
                         public Object runSave() {
-                            DnDWebBrowser javaBrowser = new DnDWebBrowser(((SimpleGUI) JDUtilities.getGUI()));
+                            DnDWebBrowser javaBrowser = new DnDWebBrowser(null);
                             javaBrowser.goTo(url);
                             javaBrowser.setDefaultCloseOperation(DnDWebBrowser.DISPOSE_ON_CLOSE);
                             javaBrowser.setSize(800, 600);

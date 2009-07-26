@@ -34,7 +34,6 @@ import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
 import jd.HostPluginWrapper;
-import jd.config.ConfigContainer;
 import jd.config.ConfigPropertyListener;
 import jd.config.Configuration;
 import jd.config.MenuItem;
@@ -46,7 +45,6 @@ import jd.controlling.AccountControllerListener;
 import jd.controlling.JDController;
 import jd.gui.UserIO;
 import jd.gui.skins.SwingGui;
-import jd.gui.skins.jdgui.InfoPanelHandler;
 import jd.gui.skins.jdgui.menu.JDMenu;
 import jd.gui.skins.jdgui.swing.GuiRunnable;
 import jd.gui.skins.simple.Factory;

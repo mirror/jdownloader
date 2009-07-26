@@ -53,6 +53,7 @@ import javax.swing.event.DocumentListener;
 import jd.PluginWrapper;
 import jd.config.MenuItem;
 import jd.controlling.reconnect.HTTPLiveHeader;
+import jd.gui.UserIO;
 import jd.gui.skins.SwingGui;
 import jd.gui.skins.jdgui.components.linkbutton.JLink;
 import jd.gui.skins.jdgui.interfaces.SwitchPanel;
@@ -127,8 +128,8 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
                 ret = new File(ret.getAbsolutePath() + ".xml");
             }
             ArrayList<String> save = new ArrayList<String>();
-            String manu = JDUtilities.getGUI().showUserInputDialog(JDL.L("plugins.optional.httpliveheaderscripter.gui.save.manufactur", "Manufactur? (e.g. Siemens)"));
-            String model = JDUtilities.getGUI().showUserInputDialog(JDL.L("plugins.optional.httpliveheaderscripter.gui.save.model", "Model? (e.g. Gigaset 555 (fw 3.01.05)"));
+            String manu = UserIO.getInstance().requestInputDialog(0, JDL.L("plugins.optional.httpliveheaderscripter.gui.save.manufactur", "Manufactur? (e.g. Siemens)"), null);
+            String model = UserIO.getInstance().requestInputDialog(0, JDL.L("plugins.optional.httpliveheaderscripter.gui.save.model", "Model? (e.g. Gigaset 555 (fw 3.01.05)"), null);
             if (manu == null || model == null) { return; }
             save.add(manu);
             save.add(model);
@@ -138,7 +139,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
             JDIO.saveObject(tabbedPanel, save, ret, null, null, true);
         } else if (e.getSource() == menEditValidate) {
             if (validate()) {
-                JDUtilities.getGUI().showMessageDialog(JDL.L("plugins.optional.httpliveheaderscripter.gui.validate.ok", "Script is Valid."));
+                UserIO.getInstance().requestMessageDialog(JDL.L("plugins.optional.httpliveheaderscripter.gui.validate.ok", "Script is Valid."));
             }
         } else if (e.getSource() == menEditAddRequest) {
             if (!validate()) return;
@@ -370,7 +371,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
     }
 
     private void importFF() {
-        String script = JDUtilities.getGUI().showTextAreaDialog(JDL.L("plugins.optional.httpliveheaderscripter.gui.importff.title", "Import Firefox Live header Log"), JDL.L("plugins.optional.httpliveheaderscripter.gui.importff.message", "Insert your firefox Liveaheader Log here"), null);
+        String script = UserIO.getInstance().requestTextAreaDialog(JDL.L("plugins.optional.httpliveheaderscripter.gui.importff.title", "Import Firefox Live header Log"), JDL.L("plugins.optional.httpliveheaderscripter.gui.importff.message", "Insert your firefox Liveaheader Log here"), null);
 
         script = convertFF(script);
 
@@ -500,7 +501,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
             int id = Integer.parseInt(selected.split("\\.")[0]);
             String[] data = scripts.get(id);
             if (data[2].toLowerCase().indexOf("curl") >= 0) {
-                JDUtilities.getGUI().showMessageDialog(JDL.L("gui.config.liveHeader.warning.noCURLConvert", "JD could not convert this curl-batch to a Live-Header Script. Please consult your JD-Support Team!"));
+                UserIO.getInstance().requestMessageDialog(JDL.L("gui.config.liveHeader.warning.noCURLConvert", "JD could not convert this curl-batch to a Live-Header Script. Please consult your JD-Support Team!"));
             }
             textArea.setText(data[2]);
         }
@@ -510,7 +511,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
         String script = textArea.getText();
 
         if (script == null) {
-            JDUtilities.getGUI().showMessageDialog(JDL.L("plugins.optional.httpliveheaderscripter.gui.validate.error", "Script not valid"));
+            UserIO.getInstance().requestMessageDialog(JDL.L("plugins.optional.httpliveheaderscripter.gui.validate.error", "Script not valid"));
             return false;
         }
         // script = script.replaceAll("\\<", "&lt;");
@@ -528,7 +529,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
             Node root = xmlScript.getChildNodes().item(0);
             if (root == null || !root.getNodeName().equalsIgnoreCase("HSRC")) {
                 String error = "Root Node must be [[[HSRC]]]*[/HSRC]";
-                JDUtilities.getGUI().showMessageDialog(JDL.L("plugins.optional.httpliveheaderscripter.gui.validate.error", "Script not valid:") + error);
+                UserIO.getInstance().requestMessageDialog(JDL.L("plugins.optional.httpliveheaderscripter.gui.validate.error", "Script not valid:") + error);
                 return false;
             }
             // RequestInfo requestInfo = null;
@@ -545,7 +546,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
                 if (!current.getNodeName().equalsIgnoreCase("STEP")) {
 
                     String error = "Root Node should only contain [[[STEP]]]*[[[/STEP]]] ChildTag: " + current.getNodeName();
-                    JDUtilities.getGUI().showMessageDialog(JDL.L("plugins.optional.httpliveheaderscripter.gui.validate.error", "Script not valid:") + error);
+                    UserIO.getInstance().requestMessageDialog(JDL.L("plugins.optional.httpliveheaderscripter.gui.validate.error", "Script not valid:") + error);
                     return false;
                 }
                 // NodeList toDos = current.getChildNodes();
@@ -553,7 +554,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
 
         } catch (Exception e) {
             String error = e.getMessage();
-            JDUtilities.getGUI().showMessageDialog(JDL.L("plugins.optional.httpliveheaderscripter.gui.validate.error", "Script not valid:") + error);
+            UserIO.getInstance().requestMessageDialog(JDL.L("plugins.optional.httpliveheaderscripter.gui.validate.error", "Script not valid:") + error);
             return false;
         }
 

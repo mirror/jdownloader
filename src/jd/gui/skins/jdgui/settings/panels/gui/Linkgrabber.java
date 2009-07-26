@@ -16,8 +16,6 @@
 
 package jd.gui.skins.jdgui.settings.panels.gui;
 
-import java.util.ArrayList;
-
 import javax.swing.JTabbedPane;
 
 import jd.config.ConfigContainer;
@@ -25,17 +23,12 @@ import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
-import jd.config.ConfigEntry.PropertyType;
 import jd.controlling.LinkGrabberController;
 import jd.gui.skins.jdgui.GUIUtils;
-import jd.gui.skins.jdgui.JDGuiConstants;
 import jd.gui.skins.jdgui.settings.ConfigPanel;
 import jd.gui.skins.jdgui.settings.GUIConfigEntry;
-import jd.gui.swing.laf.LookAndFeelController;
 import jd.utils.JDTheme;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-import jd.utils.locale.JDLocale;
 
 public class Linkgrabber extends ConfigPanel {
     private static final String JDL_PREFIX = "jd.gui.skins.jdgui.settings.panels.gui.Linkgrabber.";

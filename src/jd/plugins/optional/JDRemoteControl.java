@@ -39,6 +39,7 @@ import jd.controlling.DistributeData;
 import jd.controlling.JDLogger;
 import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlListener;
+import jd.gui.UserIO;
 import jd.http.Encoding;
 import jd.nutils.Formatter;
 import jd.nutils.httpserver.Handler;
@@ -57,7 +58,8 @@ import jd.utils.locale.JDL;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-@OptionalPlugin(rev="$Revision$", id="remotecontrol",interfaceversion=4)
+
+@OptionalPlugin(rev = "$Revision$", id = "remotecontrol", interfaceversion = 4)
 public class JDRemoteControl extends PluginOptional implements ControlListener {
 
     private static final String PARAM_PORT = "PORT";
@@ -164,8 +166,8 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 commandvec.add("/action/set/download/max/%X%");
                 infovector.add("Set max sim. Downloads %X%");
 
-                commandvec.add("/action/add/links/grabber(0|1)/start(0|1)/%X%");
-                infovector.add("Add Links %X% to Grabber<br />" + "Options:<br />" + "grabber(0|1): Show/Hide LinkGrabber<br />" + "start(0|1): Start DLs after insert<br />" + "Sample:<br />" + "/action/add/links/grabber0/start1/http://tinyurl.com/6o73eq http://tinyurl.com/4khvhn<br />" + "Don't forget Space between Links!");
+                commandvec.add("/action/add/links/grabber(0|1)/%X%");
+                infovector.add("Add Links %X% to Grabber<br />" + "Options:<br />" + "grabber(0|1): Show/Hide LinkGrabber<br />" + "Sample:<br />" + "/action/add/links/grabber0/start1/http://tinyurl.com/6o73eq http://tinyurl.com/4khvhn<br />" + "Don't forget Space between Links!");
 
                 commandvec.add("/action/add/container/%X%");
                 infovector.add("Add Container %X%<br />" + "Sample:<br />" + "/action/add/container/C:\\container.dlc");
@@ -379,17 +381,12 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 if (showgrab == 0) {
                     hidegrabber = true;
                 }
-                // response.addContent(hidegrabber.toString());
-                Integer stdl = Integer.parseInt(new Regex(request.getRequestUrl(), "[\\s\\S]*?/action/add/links/grabber[01]{1}/start([01]{1})/[\\s\\S]+").getMatch(0));
-                Boolean startdl = false;
-                if (stdl == 1) {
-                    startdl = true;
-                }
+
                 // response.addContent(startdl.toString());
                 // link = Encoding.htmlDecode(link);
                 // wegen leerzeichen etc, die ja in urls verändert werden...
 
-                new DistributeData(link, hidegrabber, startdl).start();
+                new DistributeData(link, hidegrabber).start();
                 response.addContent("Link(s) added. (" + link + ")");
             } else if (request.getRequestUrl().matches("(?is).*/action/add/container/[\\s\\S]+")) {
                 // Open DLC Container
@@ -465,7 +462,6 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
 
     }
 
-
     private DecimalFormat f = new DecimalFormat("#0.00");
 
     private HttpServer server;
@@ -479,10 +475,10 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             if (enablePlugin) {
                 server = new HttpServer(subConfig.getIntegerProperty(PARAM_PORT, 10025), new Serverhandler());
                 server.start();
-                JDUtilities.getGUI().showMessageDialog(getHost() + " " + JDL.L("plugins.optional.remotecontrol.startedonport", "started on port") + " " + subConfig.getIntegerProperty(PARAM_PORT, 10025) + "\n http://127.0.0.1:" + subConfig.getIntegerProperty(PARAM_PORT, 10025) + JDL.L("plugins.optional.remotecontrol.help", "/help for Developer Information."));
+                UserIO.getInstance().requestMessageDialog(getHost() + " " + JDL.L("plugins.optional.remotecontrol.startedonport", "started on port") + " " + subConfig.getIntegerProperty(PARAM_PORT, 10025) + "\n http://127.0.0.1:" + subConfig.getIntegerProperty(PARAM_PORT, 10025) + JDL.L("plugins.optional.remotecontrol.help", "/help for Developer Information."));
             } else {
                 if (server != null) server.sstop();
-                JDUtilities.getGUI().showMessageDialog(getHost() + " " + JDL.L("plugins.optional.remotecontrol.stopped", "stopped."));
+                UserIO.getInstance().requestMessageDialog(getHost() + " " + JDL.L("plugins.optional.remotecontrol.stopped", "stopped."));
             }
         } catch (Exception ex) {
             JDLogger.exception(ex);
@@ -498,8 +494,6 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
 
         return menu;
     }
-
-
 
     public boolean initAddon() {
         logger.info("RemoteControl OK");
