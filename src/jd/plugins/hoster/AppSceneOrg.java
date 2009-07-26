@@ -26,7 +26,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "appscene.org" }, urls = { "http://[\\w\\.]*?appscene.org/download.php\\?id=[0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "appscene.org" }, urls = { "http://[\\w\\.]*?appscene\\.org/download\\.php\\?id=[0-9]+" }, flags = { 0 })
 public class AppSceneOrg extends PluginForHost {
 
     public AppSceneOrg(PluginWrapper wrapper) {

@@ -29,7 +29,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ipauploader.com" }, urls = { "http://[\\w\\.]*?ipauploader.com/download/[a-z|0-9]+/.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ipauploader.com" }, urls = { "http://[\\w\\.]*?ipauploader\\.com/download/[a-z|0-9]+/.+" }, flags = { 0 })
 public class IPAUploaderCom extends PluginForHost {
 
     public IPAUploaderCom(PluginWrapper wrapper) {

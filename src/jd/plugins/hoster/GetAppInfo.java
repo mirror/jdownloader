@@ -32,7 +32,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {"getapp.info"}, urls = {"http://[\\w\\.]*?getapp.info/download/.+"}, flags = {0})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {"getapp.info"}, urls = {"http://[\\w\\.]*?getapp\\.info/download/.+"}, flags = {0})
 public class GetAppInfo extends PluginForHost {
 
     public GetAppInfo(PluginWrapper wrapper) {
