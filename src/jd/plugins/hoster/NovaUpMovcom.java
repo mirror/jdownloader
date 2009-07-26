@@ -25,8 +25,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-//           Videolinks gehen noch net, müssen umgeformt werden von video->download, aber kP ob man die so dann wirklich laden kann!
-@HostPlugin(revision = "$Revision", interfaceVersion = 1, names = { "novaup.com" }, urls = { "http://[\\w\\.]*?nova(up|mov)\\.com/(download|sound|video)/[a-z|0-9]{13}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "novaup.com" }, urls = { "http://[\\w\\.]*?nova(up|mov)\\.com/(download|sound|video)/[a-z|0-9]+" }, flags = { 0 })
 public class NovaUpMovcom extends PluginForHost {
 
     public NovaUpMovcom(PluginWrapper wrapper) {
@@ -38,41 +37,58 @@ public class NovaUpMovcom extends PluginForHost {
         return "http://novamov.com/terms.html";
     }
 
-    
-    
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
         br.setFollowRedirects(false);
         String infolink = link.getDownloadURL();
         br.getPage(infolink);
-        String dllink;
-        dllink = br.getRegex("<li class=\"downloads_li\"><a href=\"(.*?)>Click here to download</a></li>").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        link.setFinalFileName(null);
-        dl = br.openDownload(link, dllink, true, -20);
-        dl.startDownload();
-        
+        //Handling für Videolinks
+        if (link.getDownloadURL().contains("video")) {
+            //String dllink = br.getRegex("addVariable(\"file\",\"(.*?)\");").getMatch(0);
+            String dllink = br.getRegex("\"file\",\"(.*?)\"").getMatch(0);
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            link.setFinalFileName(null);
+            dl = br.openDownload(link, dllink, true, -20);
+            dl.startDownload();
+
+        } else {
+//handling für "nicht"-video Links
+            String dllink1 = br.getRegex("> <strong><a href=\"(.*?)\"><span class=\"dwl_novaup").getMatch(0);
+            String dllink = "http://www.novaup.com" + dllink1;
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            link.setFinalFileName(null);
+            dl = br.openDownload(link, dllink, true, -20);
+            dl.startDownload();
+        }
 
     }
 
     @Override
-   
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
         br.getPage(parameter.getDownloadURL());
-        if (br.containsHTML("This file no longer exists on our servers.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("The file is beeing transfered to our other servers. This may take few minutes.")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-        String filename = br.getRegex("/([^/]*)\">Click here to download</a></li>").getMatch(0);
-        String filesize = br.getRegex("><em>File Size</em> : (.*(MB|KB))</p></li>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        parameter.setName(filename.trim());
-        parameter.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "")));
+//onlinecheck für Videolinks
+        if (parameter.getDownloadURL().contains("video")) {
+            if (br.containsHTML("This file no longer exists on our servers.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("The file is beeing transfered to our other servers. This may take few minutes.")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            String filename1 = br.getRegex("<h3>(.*?)</h3>").getMatch(0);
+            String filename = filename1 + ".flv";
+            parameter.setName(filename.trim());
+
+        } else {
+          //Onlinecheck für "nicht"-video Links
+            if (br.containsHTML("This file no longer exists on our servers.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("The file is beeing transfered to our other servers. This may take few minutes.")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            String filename = br.getRegex("/([^/]*)\"><span class=\"dwl_novaup\">Click here to download</span>").getMatch(0);
+            String filesize = br.getRegex("strong>File size : </strong>(.*?)</td>").getMatch(0);
+            if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            parameter.setName(filename.trim());
+            parameter.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "")));
+        }
+
         return AvailableStatus.TRUE;
     }
-
-    
-    
 
     @Override
     public void reset() {
