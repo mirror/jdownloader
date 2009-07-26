@@ -24,7 +24,6 @@ import jd.config.ConfigGroup;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.LinkGrabberController;
-import jd.gui.skins.jdgui.GUIUtils;
 import jd.gui.skins.jdgui.settings.ConfigPanel;
 import jd.gui.skins.jdgui.settings.GUIConfigEntry;
 import jd.utils.JDTheme;
@@ -33,19 +32,18 @@ import jd.utils.locale.JDL;
 public class Linkgrabber extends ConfigPanel {
     private static final String JDL_PREFIX = "jd.gui.skins.jdgui.settings.panels.gui.Linkgrabber.";
 
-      public String getBreadcrum() {     return JDL.L(this.getClass().getName()+".breadcrum", this.getClass().getSimpleName()); }   public static String getTitle(){
+    public String getBreadcrum() {
+        return JDL.L(this.getClass().getName() + ".breadcrum", this.getClass().getSimpleName());
+    }
+
+    public static String getTitle() {
         return JDL.L(JDL_PREFIX + "gui.linkgrabber.title", "Linkgrabber");
-     }
+    }
+
     private static final long serialVersionUID = 3383448498625377495L;
-
-    private Configuration configuration;
-
-    private SubConfiguration subConfig;
 
     public Linkgrabber(Configuration configuration) {
         super();
-        this.configuration = configuration;
-        subConfig = GUIUtils.getConfig();
         initPanel();
         load();
     }
@@ -54,11 +52,6 @@ public class Linkgrabber extends ConfigPanel {
         ConfigContainer container = new ConfigContainer();
 
         ConfigEntry ce;
-        /* LANGUAGE */
-
-        ConfigContainer look = new ConfigContainer(JDL.L("gui.config.gui.look.tab", "Anzeige & Bedienung"));
-
-        /* LOOK */
 
         container.setGroup(new ConfigGroup(JDL.L("gui.config.gui.linggrabber", "General Linkgrabber Settings"), JDTheme.II("gui.images.taskpanes.linkgrabber", 32, 32)));
 
@@ -69,7 +62,6 @@ public class Linkgrabber extends ConfigPanel {
 
         container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, SubConfiguration.getConfig(LinkGrabberController.CONFIG), LinkGrabberController.IGNORE_LIST, JDL.L("gui.config.linkgrabber.iognorelist", "The linkfilter is used to filter links based on regular expressions.")));
         ce.setDefaultValue("#Ignorefiletype 'olo':\r\n\r\n.+?\\.olo\r\n\r\n#Ignore hoster 'examplehost.com':\r\n\r\n.*?examplehost\\.com.*?");
-
 
         return container;
     }

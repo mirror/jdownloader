@@ -37,27 +37,28 @@ public class Advanced extends ConfigPanel {
 
     private static final String JDL_PREFIX = "jd.gui.skins.jdgui.settings.panels.gui.Advanced.";
 
-    private Configuration configuration;
-
     private SubConfiguration subConfig;
 
     public Advanced(Configuration configuration) {
         super();
-        this.configuration = configuration;
         subConfig = GUIUtils.getConfig();
         initPanel();
         load();
     }
-      public String getBreadcrum() {     return JDL.L(this.getClass().getName()+".breadcrum", this.getClass().getSimpleName()); }   public static String getTitle(){
+
+    public String getBreadcrum() {
+        return JDL.L(this.getClass().getName() + ".breadcrum", this.getClass().getSimpleName());
+    }
+
+    public static String getTitle() {
         return JDL.L(JDL_PREFIX + "gui.advanced.title", "Advanced");
-     }
+    }
+
     private ConfigContainer setupContainer() {
         ConfigContainer container = new ConfigContainer();
-  
+
         ConfigEntry ce;
         /* LANGUAGE */
-
-  
 
         /* LOOK */
 

@@ -26,7 +26,6 @@ import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableColumn;
 
 import jd.captcha.JACMethod;
-import jd.config.ConfigContainer;
 import jd.config.Configuration;
 import jd.config.ConfigEntry.PropertyType;
 import jd.gui.skins.jdgui.settings.ConfigPanel;
@@ -36,9 +35,14 @@ import net.miginfocom.swing.MigLayout;
 public class General extends ConfigPanel {
     private static final String JDL_PREFIX = "jd.gui.skins.jdgui.settings.panels.ocr.General.";
 
-      public String getBreadcrum() {     return JDL.L(this.getClass().getName()+".breadcrum", this.getClass().getSimpleName()); }   public static String getTitle(){
+    public String getBreadcrum() {
+        return JDL.L(this.getClass().getName() + ".breadcrum", this.getClass().getSimpleName());
+    }
+
+    public static String getTitle() {
         return JDL.L(JDL_PREFIX + "captcha.title", "OCR");
-     }
+    }
+
     private class InternalTableModel extends AbstractTableModel {
 
         private static final long serialVersionUID = 1155282457354673850L;
@@ -111,15 +115,11 @@ public class General extends ConfigPanel {
 
     private static final long serialVersionUID = 1592765387324291781L;
 
-    private ConfigContainer container;
-
     private Vector<JACMethod> methods;
 
     private JTable table;
 
     private InternalTableModel tableModel;
-
-  
 
     private Configuration configuration;
 
@@ -133,7 +133,6 @@ public class General extends ConfigPanel {
 
     @Override
     public void initPanel() {
-  
 
         tableModel = new InternalTableModel();
         table = new JTable(tableModel);
@@ -163,14 +162,17 @@ public class General extends ConfigPanel {
             }
         }
 
-//        tabbed = new JTabbedPane();
-//        tabbed.addTab(JDL.L("gui.config.panels.captcha.methodstab", "OCR methods"), new JScrollPane(table));
-//        tabbed.setIconAt(0, JDTheme.II("gui.images.captcha.methods", 16, 16));
-//        tabbed.addTab(JDL.L("gui.config.panels.captcha.advancedtab", "Advanced settings"), cep = new ConfigEntriesPanel(container));
-//        tabbed.setIconAt(1, JDTheme.II("gui.images.config.ocr", 16, 16));
+        // tabbed = new JTabbedPane();
+        // tabbed.addTab(JDL.L("gui.config.panels.captcha.methodstab",
+        // "OCR methods"), new JScrollPane(table));
+        // tabbed.setIconAt(0, JDTheme.II("gui.images.captcha.methods", 16,
+        // 16));
+        // tabbed.addTab(JDL.L("gui.config.panels.captcha.advancedtab",
+        // "Advanced settings"), cep = new ConfigEntriesPanel(container));
+        // tabbed.setIconAt(1, JDTheme.II("gui.images.config.ocr", 16, 16));
 
         setLayout(new MigLayout("ins 0,wrap 1", "[fill,grow 10]", "[fill,grow]"));
-     
+
         JTabbedPane tabbed = new JTabbedPane();
         tabbed.add(getBreadcrum(), new JScrollPane(table));
 
@@ -184,7 +186,7 @@ public class General extends ConfigPanel {
 
     @Override
     public void save() {
-     
+
         saveConfigEntries();
     }
 
@@ -192,8 +194,6 @@ public class General extends ConfigPanel {
     public PropertyType hasChanges() {
         return super.hasChanges();
     }
-
-
 
     private String jacKeyForMethod(int index) {
         return Configuration.PARAM_JAC_METHODS + methods.get(index).getServiceName();

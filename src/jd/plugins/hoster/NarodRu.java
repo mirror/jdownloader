@@ -16,19 +16,17 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.io.File;
 import java.util.regex.Pattern;
-import java.awt.*;
 
 import jd.PluginWrapper;
-import jd.utils.locale.JDL;
-import jd.gui.UserIO;
 import jd.http.Encoding;
-import jd.http.Browser;
 import jd.parser.Regex;
-import jd.parser.html.HTMLParser;
 import jd.parser.html.Form;
-import jd.plugins.*;
+import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "narod.ru" }, urls = { "http://[\\w\\.]*?narod\\.ru/disk/\\d+/.*\\.html" }, flags = { 0 })
@@ -56,7 +54,7 @@ public class NarodRu extends PluginForHost {
         String md5Hash = br.getRegex(Pattern.compile("<dt class=\"size\">md5:</dt>.*<dd class=\"size\">(.*?)</dd>", Pattern.DOTALL)).getMatch(0);
         if (md5Hash == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
-        //TODO: kyrillische Zeichen in der Dateigrš§e
+        // TODO: kyrillische Zeichen in der Dateigrï¿½ï¿½e
         String fileSize = br.getRegex(Pattern.compile("<td class=\"l-download-info-right\">.*<dl class=\"b-download-item g-line\">.*<dt class=\"size\">.*</dt>.*<dd class=\"size\">(.*?) ??</dd>", Pattern.DOTALL)).getMatch(0);
         if (fileSize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
@@ -73,14 +71,13 @@ public class NarodRu extends PluginForHost {
         br.getPage("http://narod.ru/disk/getcapchaxml/?rnd=1");
         System.out.print(br);
         String captchaKey = br.getRegex(Pattern.compile("<number.*>(.*?)</number>")).getMatch(0);
-        String captchaUrl = "http://u.captcha.yandex.net/image?key=" + captchaKey; 
+        String captchaUrl = "http://u.captcha.yandex.net/image?key=" + captchaKey;
 
         Form form = new Form();
         form.setMethod(Form.MethodType.POST);
         form.setAction(downloadLink.getDownloadURL());
         form.put("key", captchaKey);
         form.put("action", "sendcapcha");
-        
 
         for (int i = 1; i <= 3; i++) {
             String captchaCode = getCaptchaCode(captchaUrl, downloadLink);

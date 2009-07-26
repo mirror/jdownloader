@@ -53,13 +53,10 @@ public class Browser extends ConfigPanel {
         return JDL.L(JDL_PREFIX + "gui.browser.title", "Browser");
     }
 
-    private Configuration configuration;
-
     private SubConfiguration subConfig;
 
     public Browser(Configuration configuration) {
         super();
-        this.configuration = configuration;
         subConfig = GUIUtils.getConfig();
         initPanel();
         load();
@@ -69,9 +66,6 @@ public class Browser extends ConfigPanel {
         ConfigContainer container = new ConfigContainer();
 
         ConfigEntry ce;
-        /* LANGUAGE */
-
-        ConfigContainer look = new ConfigContainer(JDL.L("gui.config.gui.look.tab", "Anzeige & Bedienung"));
 
         container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
 

@@ -22,9 +22,7 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
 import jd.config.Configuration;
-import jd.config.SubConfiguration;
 import jd.controlling.reconnect.ReconnectMethod;
-import jd.gui.skins.jdgui.GUIUtils;
 import jd.gui.skins.jdgui.settings.ConfigPanel;
 import jd.gui.skins.jdgui.settings.GUIConfigEntry;
 import jd.utils.JDTheme;
@@ -32,20 +30,19 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 public class Advanced extends ConfigPanel {
-      public String getBreadcrum() {     return JDL.L(this.getClass().getName()+".breadcrum", this.getClass().getSimpleName()); }   public static String getTitle(){
+    public String getBreadcrum() {
+        return JDL.L(this.getClass().getName() + ".breadcrum", this.getClass().getSimpleName());
+    }
+
+    public static String getTitle() {
         return JDL.L(JDL_PREFIX + "reconnect.advanced.title", "Advanced");
-     }
+    }
+
     private static final String JDL_PREFIX = "jd.gui.skins.jdgui.settings.panels.reconnect.Advanced.";
     private static final long serialVersionUID = 3383448498625377495L;
 
-    private Configuration configuration;
-
-    private SubConfiguration subConfig;
-
     public Advanced(Configuration configuration) {
         super();
-        this.configuration = configuration;
-        subConfig = GUIUtils.getConfig();
         initPanel();
         load();
     }
@@ -54,14 +51,9 @@ public class Advanced extends ConfigPanel {
         ConfigContainer container = new ConfigContainer();
         ConfigGroup group = new ConfigGroup(JDL.L("gui.config.reconnect.shared", "General Reconnect Settings"), JDTheme.II("gui.images.reconnect_settings", 32, 32));
         container.setGroup(group);
-        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), ReconnectMethod.PARAM_IPCHECKWAITTIME, JDL.L("reconnect.waitTimeToFirstIPCheck",
-                                                                                                                                                      "Wartezeit bis zum ersten IP-Check [sek]"), 0,
-                600).setDefaultValue(5));
-        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), ReconnectMethod.PARAM_RETRIES, JDL.L("reconnect.retries",
-                                                                                                                                              "Max. Wiederholungen (-1 = unendlich)"), -1, 20)
-                .setDefaultValue(5));
-        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), ReconnectMethod.PARAM_WAITFORIPCHANGE, JDL
-                .L("reconnect.waitForIp", "Auf neue IP warten [sek]"), 0, 600).setDefaultValue(20));
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), ReconnectMethod.PARAM_IPCHECKWAITTIME, JDL.L("reconnect.waitTimeToFirstIPCheck", "Wartezeit bis zum ersten IP-Check [sek]"), 0, 600).setDefaultValue(5));
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), ReconnectMethod.PARAM_RETRIES, JDL.L("reconnect.retries", "Max. Wiederholungen (-1 = unendlich)"), -1, 20).setDefaultValue(5));
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), ReconnectMethod.PARAM_WAITFORIPCHANGE, JDL.L("reconnect.waitForIp", "Auf neue IP warten [sek]"), 0, 600).setDefaultValue(20));
 
         return container;
     }

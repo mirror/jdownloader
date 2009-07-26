@@ -41,23 +41,25 @@ public class General extends ConfigPanel {
 
     private static final String JDL_PREFIX = "jd.gui.skins.jdgui.settings.panels.gui.General.";
 
-    private Configuration configuration;
-
     private SubConfiguration subConfig;
 
     public General(Configuration configuration) {
         super();
-        this.configuration = configuration;
         subConfig = GUIUtils.getConfig();
         initPanel();
         load();
     }
-      public String getBreadcrum() {     return JDL.L(this.getClass().getName()+".breadcrum", this.getClass().getSimpleName()); }   public static String getTitle(){
+
+    public String getBreadcrum() {
+        return JDL.L(this.getClass().getName() + ".breadcrum", this.getClass().getSimpleName());
+    }
+
+    public static String getTitle() {
         return JDL.L(JDL_PREFIX + "gui.title", "User Interface");
-     }
+    }
+
     private ConfigContainer setupContainer() {
-    
-     
+
         ConfigEntry ce;
         /* LANGUAGE */
 
@@ -67,11 +69,9 @@ public class General extends ConfigPanel {
 
         ConfigGroup lookGroup = new ConfigGroup(JDL.L("gui.config.gui.view", "Look"), JDTheme.II("gui.images.config.gui", 32, 32));
 
-     
         look.addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, JDL.LF("gui.config.gui.languageFileInfo2", "Current Language File: %s", JDL.getLocale().toString())).setGroup(lookGroup));
 
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, SubConfiguration.getConfig(JDL.CONFIG), JDL.LOCALE_ID, JDL.getLocaleIDs().toArray(new JDLocale[] {}), JDL
-                .L("gui.config.gui.language", "Language")).setGroup(lookGroup));
+        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, SubConfiguration.getConfig(JDL.CONFIG), JDL.LOCALE_ID, JDL.getLocaleIDs().toArray(new JDLocale[] {}), JDL.L("gui.config.gui.language", "Language")).setGroup(lookGroup));
         ce.setDefaultValue(JDL.DEFAULT_LOCALE);
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
 
@@ -82,24 +82,20 @@ public class General extends ConfigPanel {
             subConfig.setProperty(JDGuiConstants.PARAM_THEME, themeIDs.get(0));
             subConfig.save();
         } else {
-            look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, JDGuiConstants.PARAM_THEME, themeIDs.toArray(new String[] {}), JDL.L("gui.config.gui.theme", "Theme"))
-                    .setGroup(lookGroup));
+            look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, JDGuiConstants.PARAM_THEME, themeIDs.toArray(new String[] {}), JDL.L("gui.config.gui.theme", "Theme")).setGroup(lookGroup));
             ce.setDefaultValue("default");
             ce.setPropertyType(PropertyType.NEEDS_RESTART);
         }
         if (LookAndFeelController.getSupportedLookAndFeels().length > 1) {
-            look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, LookAndFeelController.PARAM_PLAF, LookAndFeelController.getSupportedLookAndFeels(), JDL
-                    .L("gui.config.gui.plaf", "Style(benötigt JD-Neustart)")).setGroup(lookGroup));
+            look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, LookAndFeelController.PARAM_PLAF, LookAndFeelController.getSupportedLookAndFeels(), JDL.L("gui.config.gui.plaf", "Style(benötigt JD-Neustart)")).setGroup(lookGroup));
             ce.setDefaultValue(LookAndFeelController.getPlaf());
             ce.setPropertyType(PropertyType.NEEDS_RESTART);
         }
 
         /* FEEL */
         ConfigGroup feel = new ConfigGroup(JDL.L("gui.config.gui.feel", "Feel"), JDTheme.II("gui.images.configuration", 32, 32));
-        look.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, JDGuiConstants.PARAM_INPUTTIMEOUT, JDL.L("gui.config.gui.inputtimeout", "Timeout for InputWindows"), 0, 600)
-                .setDefaultValue(20).setGroup(feel));
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDGuiConstants.PARAM_SHOW_SPLASH, JDL.L("gui.config.gui.showSplash", "Splashscreen beim starten zeigen"))
-                .setGroup(feel));
+        look.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, JDGuiConstants.PARAM_INPUTTIMEOUT, JDL.L("gui.config.gui.inputtimeout", "Timeout for InputWindows"), 0, 600).setDefaultValue(20).setGroup(feel));
+        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDGuiConstants.PARAM_SHOW_SPLASH, JDL.L("gui.config.gui.showSplash", "Splashscreen beim starten zeigen")).setGroup(feel));
         ce.setDefaultValue(true);
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDGuiConstants.PARAM_SHOW_BALLOON, JDL.L("gui.config.gui.showBalloon", "Show Balloon infos")).setGroup(feel));
         ce.setDefaultValue(true);

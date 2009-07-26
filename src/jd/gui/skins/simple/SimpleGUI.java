@@ -16,7 +16,6 @@
 
 package jd.gui.skins.simple;
 
-import java.awt.Container;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.EventQueue;
@@ -41,13 +40,9 @@ import javax.swing.UIManager;
 import javax.swing.WindowConstants;
 
 import jd.config.ConfigContainer;
-import jd.config.ConfigPropertyListener;
 import jd.config.Configuration;
-import jd.config.Property;
-import jd.config.SubConfiguration;
 import jd.controlling.ClipboardHandler;
 import jd.controlling.DownloadController;
-import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.controlling.ProgressControllerEvent;
@@ -75,9 +70,7 @@ import jd.gui.skins.jdgui.menu.PremiumMenu;
 import jd.gui.skins.jdgui.menu.SaveMenu;
 import jd.gui.skins.jdgui.menu.actions.ExitAction;
 import jd.gui.skins.jdgui.menu.actions.RestartAction;
-import jd.gui.skins.jdgui.swing.GuiRunnable;
 import jd.gui.skins.jdgui.views.downloadview.DownloadLinksPanel;
-import jd.gui.skins.jdgui.views.linkgrabberview.LinkGrabberPanel;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.nutils.JDFlags;
 import jd.nutils.JDImage;
@@ -96,61 +89,28 @@ public class SimpleGUI extends SwingGui {
 
     private static SimpleGUI INSTANCE;
 
-    /**
-     * serialVersionUID
-     */
     private static final long serialVersionUID = 3966433144683787356L;
-
-    private LinkGrabberPanel linkGrabber;
 
     /**
      * Komponente, die alle Downloads anzeigt
      */
     private DownloadLinksPanel linkListPane;
 
-    // public LogPane getLogDialog() {
-    // return (LogPane) logPanel.getPanel();
-    // }
-
     private Logger logger = JDLogger.getLogger();
 
     private TabProgress progressBar;
 
-    // private TaskPane taskPane;
-
     private ContentPanel contentPanel;
-
-    // private DownloadTaskPane dlTskPane;
-    //
-    // public DownloadTaskPane getDlTskPane() {
-    // return dlTskPane;
-    // }
 
     private MainToolBar toolBar;
 
-    // private JDMenuBar menuBar;
-
     private JDStatusBar statusBar;
 
-    // private boolean noTitlePane = false;
-
     private JDSeparator sep;
-
-    // private SingletonPanel logPanel;
-
-    // private SingletonPanel addonPanel;
-
-    // private ConfigTaskPane cfgTskPane;
-    //
-    // private AddonTaskPane addonTaskPanel;
-
-    // private JDSubstanceUI titleUI;
 
     private Image mainMenuIconRollOver;
 
     private Image mainMenuIcon;
-
-    // private boolean mainMenuRollOverStatus = false;
 
     private JViewport taskPaneView;
 
@@ -168,10 +128,6 @@ public class SimpleGUI extends SwingGui {
     private SimpleGUI() {
         super("");
 
-        // Avoid resize bug if decorated.. works only for windows
-
-        // GUIUtils.getConfig() =
-        // GUIUtils.getConfig();
         updateDecoration();
         LookAndFeelController.setUIManager();
 
@@ -182,18 +138,15 @@ public class SimpleGUI extends SwingGui {
         menuBar = createMenuBar();
         this.setJMenuBar(menuBar);
         statusBar = new JDStatusBar();
-        initWaitPane();
         this.setEnabled(false);
         this.setWaiting(true);
 
         if (isSubstance() && GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.DECORATION_ENABLED, true)) {
             mainMenuIcon = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_54_54_trans"), 54, 54);
             mainMenuIconRollOver = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_54_54"), 54, 54);
-            // noTitlePane = false;
         } else {
             mainMenuIcon = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_54_54_trans"), 32, 32);
             mainMenuIconRollOver = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_54_54"), 32, 32);
-            // this.noTitlePane = true;
         }
 
         if (isSubstance()) this.getRootPane().setUI(new JDSubstanceUI());
@@ -202,15 +155,6 @@ public class SimpleGUI extends SwingGui {
 
         // System.out.println(ui);
         addWindowListener(this);
-        this.setAnimate();
-        JDController.getInstance().addControlListener(new ConfigPropertyListener(JDGuiConstants.ANIMATION_ENABLED) {
-
-            // @Override
-            public void onPropertyChanged(Property source, String propertyName) {
-                setAnimate();
-            }
-
-        });
 
         ArrayList<Image> list = new ArrayList<Image>();
 
@@ -313,16 +257,6 @@ public class SimpleGUI extends SwingGui {
 
         });
 
-        // JPanel glass = new JPanel(new MigLayout("ins 0"));
-        // if (JFrame.isDefaultLookAndFeelDecorated()) {
-        // glass.add(startbutton, "gapleft 2,gaptop 25,alignx left,aligny top");
-        // } else {
-        // glass.add(startbutton, "gapleft 2,gaptop 2,alignx left,aligny top");
-        // }
-        //
-        // glass.setOpaque(false);
-        // this.setGlassPane(glass);
-        // glass.setVisible(true);
     }
 
     private JMenuBar createMenuBar() {
@@ -353,14 +287,11 @@ public class SimpleGUI extends SwingGui {
     }
 
     public void setWaiting(boolean b) {
-
         if (b) {
             this.getGlassPane().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
         } else {
             this.getGlassPane().setCursor(null);
         }
-
-        // super.setWaiting(b);
     }
 
     /**
@@ -412,58 +343,7 @@ public class SimpleGUI extends SwingGui {
 
     }
 
-    public MainToolBar getToolBar() {
-        return toolBar;
-    }
-
-    private void initWaitPane() {
-
-        // JXLabel lbl = new
-        // JXLabel(JDImage.getScaledImageIcon(JDImage.getImage(
-        // "logo/jd_logo_128_128"), 300, 300));
-        // glass.add(lbl, "alignx center, aligny center");
-        // JProgressBar prg = new JProgressBar();
-        // glass.add(prg, "alignx center, aligny center,shrink");
-        // prg.setStringPainted(false);
-        // prg.setIndeterminate(true);
-        // glass.setOpaque(false);
-        // glass.setAlpha(0.5f);
-        // AbstractPainter fgPainter = (AbstractPainter)
-        // lbl.getForegroundPainter();
-        // StackBlurFilter filter = new StackBlurFilter();
-        // fgPainter.setFilters(filter);
-        // glass.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-        // this.setWaitPane(glass);
-    }
-
-    public void onLAFChanged() {
-        if (isSubstance()) {
-
-            mainMenuIcon = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_54_54_trans"), 54, 54);
-            mainMenuIconRollOver = JDImage.getScaledImage(JDImage.getImage("logo/jd_logo_54_54"), 54, 54);
-            this.getRootPane().setUI(new JDSubstanceUI());
-
-            // JDController.genew DownloadtInstance().addControlListener(new
-            // ConfigPropertyListener(JDGuiConstants.ANIMATION_ENABLED) {
-            //
-            // // @Override
-            // public void onPropertyChanged(Property source, String
-            // propertyName) {
-            //
-            // }
-            //
-            // });
-            // noTitlePane = false;
-        }
-
-    }
-
-    private void setAnimate() {
-
-    }
-
     public void updateDecoration() {
-        // UIManager.getLookAndFeel().getName().toLowerCase().contains("substance")&&
         if (UIManager.getLookAndFeel().getSupportsWindowDecorations() && GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.DECORATION_ENABLED, true)) {
             setUndecorated(true);
             getRootPane().setWindowDecorationStyle(JRootPane.FRAME);
@@ -487,25 +367,6 @@ public class SimpleGUI extends SwingGui {
         return INSTANCE;
     }
 
-    public synchronized void addLinksToGrabber(final ArrayList<DownloadLink> links, final boolean hideGrabber) {
-        new GuiRunnable<Object>() {
-
-            // @Override
-            public Object runSave() {
-                logger.info("Add links to Linkgrabber: " + links.size());
-                linkGrabber.addLinks(links);
-
-                return null;
-            }
-
-        }.start();
-
-    }
-
-    // public TaskPane getTaskPane() {
-    // return taskPane;
-    // }
-
     /**
      * Hier wird die komplette Oberfläche der Applikation zusammengestrickt
      */
@@ -514,229 +375,29 @@ public class SimpleGUI extends SwingGui {
         linkListPane = new DownloadLinksPanel();
         contentPanel = new ContentPanel();
 
-        // taskPane = new TaskPane();
-
-        // addDownloadTask();
-        // addLinkgrabberTask();
-        // addConfigTask();
-        // addAddonTask();
-
         progressBar = new TabProgress();
 
         contentPanel.display(linkListPane);
-
-        // taskPane.switcher(dlTskPane);
 
         JPanel panel = new JPanel(new MigLayout("ins 0,wrap 1", "[fill,grow]", "[fill,grow]0[]0[]0[]"));
 
         setContentPane(panel);
 
         add(toolBar, "dock north");
-        // panel.add(this.toolBar, "spanx");
         JPanel center = new JPanel(new MigLayout("ins 0,wrap 3", "[fill]0[shrink]0[fill,grow 100]", "[grow,fill]0[]"));
-
-        // taskPaneView = new JViewport();
-        // taskPaneView.setView(taskPane);
-
-        // center.add(taskPane, "hidemode 2,spany 2,aligny top,width 160:n:n");
         sep = new JDSeparator();
 
         center.add(sep, "width 6!,gapright 2,spany 2,growy, pushy,hidemode 1");
         sep.setVisible(false);
         center.add(contentPanel, "");
-        // sp.setBorder(null);
         center.add(JDCollapser.getInstance(), "hidemode 3,gaptop 15,growx,pushx,growy,pushy");
 
         panel.add(center);
-        // panel.add(generalPurposeTasks, "cell 0 2");
-        // contentPanel.setBorder(BorderFactory.createLineBorder(Color.GREEN));
 
         panel.add(progressBar, "spanx,hidemode 3");
-        // panel.add(new PremiumStatus(), "spanx, cell 0 4");
         panel.add(this.statusBar, "spanx, dock south");
-        // this.setStatusBar(statusBar);
 
     }
-
-    // private void addAddonTask() {
-    // addonTaskPanel = new AddonTaskPane(JDL.L("gui.taskpanes.addons",
-    // "Addons"), JDTheme.II("gui.images.taskpanes.addons", 16, 16));
-    // taskPane.add(addonTaskPanel);
-    // }
-    //
-    // public AddonTaskPane getAddonPanel() {
-    // return addonTaskPanel;
-    // }
-
-    // private void addConfigTask() {
-    // cfgTskPane = new ConfigTaskPane(JDL.L("gui.taskpanes.configuration",
-    // "Configuration"), JDTheme.II("gui.images.taskpanes.configuration",
-    // 16, 16));
-    //
-    // Object[] configConstructorObjects = new Object[] {
-    // JDUtilities.getConfiguration() };
-    //
-    // // cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_ADDONS, new
-    // SingletonPanel(ConfigPanelAddons.class, configConstructorObjects));
-    // // cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_CAPTCHA, new
-    // SingletonPanel(General.class, configConstructorObjects));
-    // // cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_DOWNLOAD, new
-    // SingletonPanel(ConfigPanelDownload.class, configConstructorObjects));
-    // // cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_EVENTMANAGER, new
-    // SingletonPanel(ConfigPanelEventmanager.class,
-    // configConstructorObjects));
-    // // cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_GENERAL, new
-    // SingletonPanel(ConfigPanelGeneral.class, configConstructorObjects));
-    // // cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_GUI, new
-    // SingletonPanel(ConfigPanelGUI.class, configConstructorObjects));
-    // // cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_HOST, new
-    // SingletonPanel(ConfigPanelPluginForHost.class,
-    // configConstructorObjects));
-    // // cfgTskPane.addPanelAt(ConfigTaskPane.ACTION_RECONNECT, new
-    // SingletonPanel(MethodSelection.class,
-    // configConstructorObjects));
-    //
-    // cfgTskPane.addActionListener(new ActionListener() {
-    //
-    // public void actionPerformed(final ActionEvent e) {
-    //
-    // switch (e.getID()) {
-    // case DownloadTaskPane.ACTION_CLICK:
-    //
-    // contentPanel.display(((TaskPanel)
-    // e.getSource()).getPanel(GUIUtils.getConfig().getIntegerProperty("LAST_CONFIG_PANEL",
-    // ConfigTaskPane.ACTION_GENERAL)));
-    //
-    // break;
-    // case ConfigTaskPane.ACTION_SAVE:
-    // boolean restart = false;
-    //
-    // for (SingletonPanel panel : ((ConfigTaskPane)
-    // e.getSource()).getPanels()) {
-    //
-    // if (panel != null && panel.getPanel() != null && panel.getPanel()
-    // instanceof ConfigPanel) {
-    // if (((ConfigPanel) panel.getPanel()).hasChanges() ==
-    // PropertyType.NEEDS_RESTART) restart = true;
-    // ((ConfigPanel) panel.getPanel()).save();
-    // }
-    // }
-    //
-    // if (restart) {
-    // if
-    // (JDUtilities.getGUI().showConfirmDialog(JDL.L("gui.config.save.restart",
-    // "Your changes need a restart of JDownloader to take effect.\r\nRestart now?"),
-    // JDL.L("gui.config.save.restart.title",
-    // "JDownloader restart requested"))) {
-    // JDUtilities.restartJD();
-    // }
-    // }
-    // break;
-    //
-    // case ConfigTaskPane.ACTION_ADDONS:
-    // case ConfigTaskPane.ACTION_CAPTCHA:
-    // case ConfigTaskPane.ACTION_DOWNLOAD:
-    // case ConfigTaskPane.ACTION_EVENTMANAGER:
-    // case ConfigTaskPane.ACTION_GENERAL:
-    // case ConfigTaskPane.ACTION_GUI:
-    // case ConfigTaskPane.ACTION_HOST:
-    // case ConfigTaskPane.ACTION_RECONNECT:
-    // GUIUtils.getConfig().setProperty("LAST_CONFIG_PANEL", e.getID());
-    //
-    // contentPanel.display(((ConfigTaskPane)
-    // e.getSource()).getPanel(e.getID()));
-    // GUIUtils.getConfig().save();
-    // break;
-    // }
-    //
-    // }
-    // });
-
-    // taskPane.add(cfgTskPane);
-
-    // }
-
-    // public ConfigTaskPane getCfgTskPane() {
-    // return cfgTskPane;
-    // }
-
-    // private void addLinkgrabberTask() {
-    // linkGrabber = LinkGrabberPanel.getLinkGrabber();
-    // lgTaskPane = new
-    // LinkGrabberTaskPane(JDL.L("gui.taskpanes.linkgrabber",
-    // "LinkGrabber"), JDTheme.II("gui.images.taskpanes.linkgrabber", 16,
-    // 16));
-    // lgTaskPane.setName(JDL.L("quickhelp.linkgrabbertaskpane",
-    // "Linkgrabber Taskpane"));
-    // // LinkAdder linkadder = new LinkAdder();
-
-    // lgTaskPane.addPanel(new SingletonPanel(linkadder));
-    // LinkGrabberController.getInstance().addListener(new
-    // LinkGrabberControllerListener() {
-    // public void onLinkGrabberControllerEvent(LinkGrabberControllerEvent
-    // event) {
-    // switch (event.getID()) {
-    // case LinkGrabberControllerEvent.ADDED:
-    // // taskPane.switcher(dlTskPane);
-    // break;
-    // case LinkGrabberControllerEvent.EMPTY:
-    // // lgTaskPane.setPanelID(0);
-    // break;
-    // }
-    // }
-    //
-    // });
-    // lgTaskPane.addPanel(new SingletonPanel(linkGrabber));
-    //
-    // lgTaskPane.addActionListener(linkGrabber);
-    // lgTaskPane.addActionListener(new ActionListener() {
-    // public void actionPerformed(ActionEvent e) {
-    // switch (e.getID()) {
-    // case DownloadTaskPane.ACTION_CLICK:
-    // if (linkGrabber.hasLinks()) {
-    // lgTaskPane.setPanelID(1);
-    // } else {
-    // lgTaskPane.setPanelID(0);
-    // }
-    // break;
-    // case LinkGrabberTableAction.GUI_ADD:
-    // lgTaskPane.setPanelID(0);
-    // return;
-    // }
-    // }
-    // });
-    // taskPane.add(lgTaskPane);
-    // }
-
-    // public LinkGrabberTaskPane getLgTaskPane() {
-    // return lgTaskPane;
-    // }
-
-    // private void addDownloadTask() {
-    //
-    // dlTskPane = new DownloadTaskPane(JDL.L("gui.taskpanes.download",
-    // "Download"), JDTheme.II("gui.images.taskpanes.download", 16, 16));
-    // dlTskPane.setName(JDL.L("quickhelp.downloadtaskpane",
-    // "Download Taskpane"));
-    // // dlTskPane.add(toolBar);
-    // // // toolBar.setFocusable(false);
-    // // // toolBar.setBorderPainted(true);
-    // // toolBar.setOpaque(false);
-    // dlTskPane.addPanel(new SingletonPanel(linkListPane));
-    // dlTskPane.addActionListener(new ActionListener() {
-    //
-    // public void actionPerformed(ActionEvent e) {
-    // switch (e.getID()) {
-    // case DownloadTaskPane.ACTION_CLICK:
-    // contentPanel.display(dlTskPane.getPanel(0));
-    // break;
-    // }
-    //
-    // }
-    //
-    // });
-    // taskPane.add(dlTskPane);
-    // }
 
     public void controlEvent(final ControlEvent event) {
         // Moved the whole content of this method into a Runnable run by
@@ -805,65 +466,12 @@ public class SimpleGUI extends SwingGui {
         });
     }
 
-    public void displayMiniWarning(final String shortWarn, final String toolTip) {
-        Balloon.show(shortWarn, JDTheme.II("gui.images.warning", 32, 32), toolTip);
-    }
-
     /**
      * Diese Funktion wird in einem 1000 ms interval aufgerufen und kann dazu
      * verwendet werden die GUI zu aktuelisieren TODO
      */
     private void interval() {
         setTitle(JDUtilities.getJDTitle());
-    }
-
-    public boolean showConfirmDialog(String message) {
-        return showConfirmDialog(message, JDL.L("userio.countdownconfirm", "Please confirm"));
-    }
-
-    public boolean showConfirmDialog(String string, String title) {
-        int flags = UserIO.NO_COUNTDOWN;
-        if (string.contains("<") && string.contains(">")) flags |= UserIO.STYLE_HTML;
-        return JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(flags, title, string, null, null, null), UserIO.RETURN_OK);
-    }
-
-    public boolean showCountdownConfirmDialog(String string, int sec) {
-        UserIO.setCountdownTime(sec);
-        int flags = 0;
-        if (string.contains("<") && string.contains(">")) flags |= UserIO.STYLE_HTML;
-        try {
-            return JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(flags, JDL.L("userio.countdownconfirm", "Please confirm"), string, JDTheme.II("gui.images.config.eventmanager", 32, 32), null, null), UserIO.RETURN_OK);
-        } finally {
-            UserIO.setCountdownTime(null);
-        }
-    }
-
-    public boolean showHTMLDialog(String title, String htmlQuestion) {
-        return JDFlags.hasAllFlags(UserIO.getInstance().requestHtmlDialog(UserIO.NO_COUNTDOWN, title, htmlQuestion), UserIO.RETURN_OK);
-    }
-
-    public void showMessageDialog(final String string) {
-        UserIO.getInstance().requestMessageDialog(string);
-    }
-
-    public String showUserInputDialog(String string) {
-        return showUserInputDialog(string, "");
-    }
-
-    public String showUserInputDialog(String string, String def) {
-        return UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN, JDL.L("gui.userio.input.title", "Please enter!"), string, def, JDTheme.II("gui.images.config.tip", 32, 32), null, null);
-    }
-
-    public String showCountdownUserInputDialog(String message, String def) {
-        return UserIO.getInstance().requestInputDialog(0, JDL.L("gui.userio.input.title", "Please enter!"), message, def, JDTheme.II("gui.images.config.tip", 32, 32), null, null);
-    }
-
-    public String showTextAreaDialog(String title, String message, String def) {
-        return UserIO.getInstance().requestTextAreaDialog(title, message, def);
-    }
-
-    public String[] showTwoTextFieldDialog(String title, String messageOne, String messageTwo, String defOne, String defTwo) {
-        return UserIO.getInstance().requestTwoTextFieldDialog(title, messageOne, defOne, messageTwo, defTwo);
     }
 
     public static void displayConfig(final ConfigContainer container, final boolean toLastTab) {
@@ -902,7 +510,7 @@ public class SimpleGUI extends SwingGui {
     }
 
     public void closeWindow() {
-        if (showConfirmDialog(JDL.L("sys.ask.rlyclose", "Wollen Sie jDownloader wirklich schließen?"))) {
+        if (JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(0, JDL.L("sys.ask.rlyclose", "Wollen Sie jDownloader wirklich schließen?")), UserIO.RETURN_OK)) {
             contentPanel.getRightPanel().setHidden();
             GUIUtils.saveLastLocation(this, null);
             GUIUtils.saveLastDimension(this, null);
@@ -911,26 +519,8 @@ public class SimpleGUI extends SwingGui {
         }
     }
 
-    public void windowActivated(WindowEvent e) {
-    }
-
-    public void windowClosed(WindowEvent e) {
-    }
-
     public void windowClosing(WindowEvent e) {
         if (e.getComponent() == this) closeWindow();
-    }
-
-    public void windowDeactivated(WindowEvent e) {
-    }
-
-    public void windowDeiconified(WindowEvent e) {
-    }
-
-    public void windowIconified(WindowEvent e) {
-    }
-
-    public void windowOpened(WindowEvent e) {
     }
 
     public static void showChangelogDialog() {
@@ -944,19 +534,8 @@ public class SimpleGUI extends SwingGui {
         }
     }
 
-    public SubConfiguration getGuiConfig() {
-        return GUIUtils.getConfig();
-    }
-
-    public Container getRealContentPane() {
-
-        return super.getContentPane();
-
-    }
-
     public ContentPanel getContentPane() {
         return this.contentPanel;
-
     }
 
     /**
@@ -965,7 +544,7 @@ public class SimpleGUI extends SwingGui {
      * @return
      */
     public static boolean isSubstance() {
-        return UIManager.getLookAndFeel().getName().contains("Substance");
+        return LookAndFeelController.getPlaf().isSubstance();
     }
 
     public void hideSideBar(boolean b) {
@@ -986,22 +565,9 @@ public class SimpleGUI extends SwingGui {
 
     }
 
-    public SwitchPanel getDownloadPanel() {
-        return this.linkListPane;
-    }
-
-    public boolean isJTattoo() {
-        return false;
-    }
-
     @Override
     public void setContent(SwitchPanel tabbedPanel) {
         this.getContentPane().display(tabbedPanel);
-    }
-
-    public void requestPanel(byte panelID) {
-        // TODO Auto-generated method stub
-
     }
 
     @Override
