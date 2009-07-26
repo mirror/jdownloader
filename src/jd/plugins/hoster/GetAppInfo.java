@@ -85,7 +85,7 @@ public class GetAppInfo extends PluginForHost {
             throw new DecrypterException(DecrypterException.CAPTCHA);
         }
 
-        String code = getCaptchaCode("linkbase.biz1",captchaFile,UserIO.NO_USER_INTERACTION, downloadLink,null,null);
+        String code = getCaptchaCode("getapp.info",captchaFile,UserIO.NO_USER_INTERACTION, downloadLink,null,null);
         
         
         Form captchaForm = br.getForm(1);
