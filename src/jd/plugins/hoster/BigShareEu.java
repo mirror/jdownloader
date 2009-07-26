@@ -28,7 +28,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bigshare.eu" }, urls = { "http://[\\w\\.]*?bigshare\\.eu/[download\\.php\\?id=].*[0-9A-Z]" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bigshare.eu" }, urls = { "http://[\\w\\.]*?bigshare\\.eu/download\\.php\\?id=[0-9A-Z]+" }, flags = { 2 })
 
 public class BigShareEu extends PluginForHost {
 
