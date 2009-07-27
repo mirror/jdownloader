@@ -57,10 +57,16 @@ import org.jdesktop.swingx.decorator.PainterHighlighter;
 import org.jdesktop.swingx.painter.MattePainter;
 
 public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListener, MouseListener {
-      public String getBreadcrum() {     return JDL.L(this.getClass().getName()+".breadcrum", this.getClass().getSimpleName()); }   public static String getTitle(){
+    public String getBreadcrum() {
+        return JDL.L(this.getClass().getName() + ".breadcrum", this.getClass().getSimpleName());
+    }
+
+    public static String getTitle() {
         return JDL.L(JDL_PREFIX + "host.title", "Hoster & Premium");
-     }
+    }
+
     private static final String JDL_PREFIX = "jd.gui.skins.jdgui.settings.panels.ConfigPanelPluginForHost.";
+
     private class InternalTableModel extends AbstractTableModel {
 
         private static final long serialVersionUID = 1155282457354673850L;
@@ -106,8 +112,12 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
             case 3:
                 return pluginsForHost.get(rowIndex).usePlugin();
             case 4:
-                JLink ret = new JLink(JDL.L("gui.config.plugin.host.readAGB", "AGB"),pluginsForHost.get(rowIndex).getPlugin().getAGBLink());
-            
+                String agbLink = null;
+                try {
+                    agbLink = pluginsForHost.get(rowIndex).getPlugin().getAGBLink();
+                } catch (NullPointerException e) {
+                }
+                JLink ret = new JLink(JDL.L("gui.config.plugin.host.readAGB", "AGB"), agbLink);
                 return ret;
             }
             return null;
@@ -257,7 +267,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         panel.setLayout(new MigLayout("ins 5,wrap 1", "[fill,grow]", "[fill,grow][]"));
         panel.add(new JScrollPane(table));
         panel.add(bpanel, "w pref!");
-        
+
         JTabbedPane tabbed = new JTabbedPane();
         tabbed.add(getBreadcrum(), panel);
 

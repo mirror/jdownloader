@@ -30,6 +30,8 @@ import java.util.Map;
 import javax.swing.Icon;
 import javax.swing.JLabel;
 import javax.swing.JTable;
+import javax.swing.event.HyperlinkEvent;
+import javax.swing.event.HyperlinkListener;
 import javax.swing.table.TableCellRenderer;
 
 import jd.config.SubConfiguration;
@@ -44,7 +46,6 @@ import jd.parser.Regex;
 
 class JLinkButtonRenderer implements TableCellRenderer {
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-
         return (Component) value;
     }
 }
@@ -77,7 +78,7 @@ public class JLink extends JLabel {
             exec.start();
             exec.setWaitTimeout(1);
             exec.waitTimeout();
-            if (exec.getException() != null) { throw exec.getException(); }
+            if (exec.getException() != null) throw exec.getException();
         } else {
             String browser = SubConfiguration.getConfig(JDGuiConstants.CONFIG_PARAMETER).getStringProperty(JDGuiConstants.PARAM_BROWSER, null);
             LocalBrowser.openURL(browser, url);
@@ -103,14 +104,32 @@ public class JLink extends JLabel {
         this(s, null, null);
     }
 
-    public JLink(final String text, Icon icon, URL url) {
+    public JLink(String text, String urlstr) {
         super(text);
-   
+        URL url = null;
+        try {
+            url = new URL(urlstr);
+        } catch (Exception e) {
+            // e.printStackTrace();
+            this.setEnabled(false);
+        }
+        init(text, url);
+    }
+
+    public JLink(String s, URL url) {
+        this(s, null, url);
+    }
+
+    public JLink(URL url) {
+        this(null, null, url);
+    }
+
+    public JLink(String text, Icon icon, URL url) {
+        super(text);
+
         this.setIcon(icon);
 
         init(text, url);
-
-     
     }
 
     private void initBroadcaster() {
@@ -126,7 +145,7 @@ public class JLink extends JLabel {
     }
 
     public JDBroadcaster<ActionListener, JDEvent> getBroadcaster() {
-        if(broadcaster==null)     initBroadcaster();
+        if (broadcaster == null) initBroadcaster();
         return broadcaster;
     }
 
@@ -189,36 +208,27 @@ public class JLink extends JLabel {
 
     }
 
-    public JLink(String text, String urlstr) {
-        super(text);
-        URL url = null;
-        try {
-            url = new URL(urlstr);
-        } catch (Exception e) {
-//            e.printStackTrace();
-            this.setEnabled(false);
-        }
-        ;
-        init(text, url);
-    }
-
-    public JLink(String s, URL url) {
-        this(s, null, url);
-    }
-
-    public JLink(URL url) {
-        this(null, null, url);
-    }
-
     public URL getUrl() {
         return url;
     }
 
     public void setUrl(URL url) {
         this.url = url;
-        if(url!=null){
-        this.setToolTipText(url.toExternalForm());
-        }
+        if (url != null) this.setToolTipText(url.toExternalForm());
+    }
+
+    public static HyperlinkListener getHyperlinkListener() {
+        return new HyperlinkListener() {
+            public void hyperlinkUpdate(HyperlinkEvent e) {
+                if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
+                    try {
+                        JLink.openURL(e.getURL());
+                    } catch (Exception e1) {
+                        JDLogger.exception(e1);
+                    }
+                }
+            }
+        };
     }
 
 }

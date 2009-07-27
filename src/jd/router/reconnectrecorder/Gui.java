@@ -81,10 +81,7 @@ public class Gui extends JDialog implements ActionListener {
         JTextPane infolable = new JTextPane();
         infolable.setEditable(false);
         infolable.setContentType("text/html");
-        /**
-         * TODO
-         */
-//        infolable.addHyperlinkListener(JLink.getHyperlinkListener());
+        infolable.addHyperlinkListener(JLink.getHyperlinkListener());
         infolable.setText(JDL.L("gui.config.jdrr.infolable", "<span color=\"#4682B4\">Überprüfe die IP-Adresse des Routers und drück auf Start,<br>ein Browserfenster mit der Startseite des Routers öffnet sich,<br>nach dem Reconnect drückst du auf Stop und speicherst.<br>Mehr Informationen gibt es </span><a href=\"http://wiki.jdownloader.org/index.php?title=Recorder\">hier</a>"));
 
         this.setTitle(JDL.L("gui.config.jdrr.title", "Reconnect Recorder"));

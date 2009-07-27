@@ -9,7 +9,7 @@ import javax.swing.JTable;
 import javax.swing.event.CellEditorListener;
 import javax.swing.table.TableCellEditor;
 
-class JLinkButtonEditor implements TableCellEditor, ActionListener {
+public class JLinkButtonEditor implements TableCellEditor, ActionListener {
 
     private boolean stop = false;
 

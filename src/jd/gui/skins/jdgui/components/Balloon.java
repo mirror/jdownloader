@@ -32,6 +32,7 @@ import javax.swing.JWindow;
 import jd.gui.skins.SwingGui;
 import jd.gui.skins.jdgui.GUIUtils;
 import jd.gui.skins.jdgui.JDGuiConstants;
+import jd.gui.skins.jdgui.components.linkbutton.JLink;
 import jd.gui.skins.jdgui.interfaces.JDMouseAdapter;
 import jd.gui.skins.jdgui.swing.GuiRunnable;
 import jd.nutils.JDImage;
@@ -252,10 +253,7 @@ public class Balloon {
                 // textField.setOpaque(false);
                 textField.setText(string2);
                 textField.setEditable(false);
-                /**
-                 * TODO
-                 */
-                // textField.addHyperlinkListener(JLink.getHyperlinkListener());
+                textField.addHyperlinkListener(JLink.getHyperlinkListener());
                 return p;
             }
         }.getReturnValue();

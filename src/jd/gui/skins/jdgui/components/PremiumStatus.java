@@ -29,7 +29,6 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
 import javax.swing.JToggleButton;
-import javax.swing.JToolTip;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
@@ -117,18 +116,12 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
         add(lbl, "hidemode 3");
 
         for (int i = 0; i < BARCOUNT; i++) {
-            PremiumBar pg = new PremiumBar();
-
-            pg.setOpaque(false);
-            bars[i] = pg;
+            bars[i] = new PremiumBar();
+            bars[i].setOpaque(false);
             bars[i].addMouseListener(this);
-
-            pg.setVisible(false);
-            add(pg, "hidemode 3");
-
-        }
-        for (int i = 0; i < BARCOUNT; i++) {
             bars[i].setEnabled(premium.isSelected());
+            bars[i].setVisible(false);
+            add(bars[i], "hidemode 3, h 16!");
         }
         this.setOpaque(false);
         config = SubConfiguration.getConfig("PREMIUMSTATUS");
@@ -191,12 +184,6 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
                 bars[i].setEnabled(premium.isSelected());
             }
         }
-    }
-
-    public JToolTip createToolTip() {
-        JToolTip toolTip = super.createToolTip();
-        toolTip.setTipText("TEST...");
-        return toolTip;
     }
 
     private synchronized void updatePremium() {

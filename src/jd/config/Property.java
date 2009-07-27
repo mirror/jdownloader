@@ -36,9 +36,9 @@ import jd.utils.JDUtilities;
 public class Property implements Serializable {
 
     private static final long serialVersionUID = -6093927038856757256L;
-/**
- * Nullvalue used to remove a key completly.
- */
+    /**
+     * Nullvalue used to remove a key completly.
+     */
     public static final Object NULL = new Object();
 
     protected transient Logger logger = null;
@@ -60,6 +60,19 @@ public class Property implements Serializable {
         setProperty(value, obj);
     }
 
+    /**
+     * Returns the saved object casted to the type of the defaultvalue
+     * <code>def</code>. So no more casts are necessary.
+     * 
+     * @param <E>
+     *            type of the saved object
+     * @param key
+     *            key for the saved object
+     * @param def
+     *            defaultvalue if no object is saved (is used to determine the
+     *            type of the saved object)
+     * @return the saved object casted to its correct type
+     */
     @SuppressWarnings("unchecked")
     public <E> E getGenericProperty(String key, E def) {
         Object r = getProperty(key, def);
@@ -239,7 +252,7 @@ public class Property implements Serializable {
                 propertiesHashes.remove(key);
                 JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));
                 this.changes = true;
-                
+
             }
             return;
 

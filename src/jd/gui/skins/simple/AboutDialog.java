@@ -47,7 +47,7 @@ public class AboutDialog extends AbstractDialog {
     private JList list;
 
     public AboutDialog() {
-        super(UserIO.NO_COUNTDOWN | UserIO.NO_OK_OPTION | UserIO.NO_CANCEL_OPTION, JDL.L("gui.about.title", "About JDownloader")+JDUtilities.getRevision(), null, null, null);
+        super(UserIO.NO_COUNTDOWN | UserIO.NO_OK_OPTION | UserIO.NO_CANCEL_OPTION, JDL.L("gui.about.title", "About JDownloader") + JDUtilities.getRevision(), null, null, null);
 
         init();
     }
@@ -90,7 +90,7 @@ public class AboutDialog extends AbstractDialog {
             }
 
         }).start();
-//        textField.addHyperlinkListener(JLink.getHyperlinkListener());
+        textField.addHyperlinkListener(JLink.getHyperlinkListener());
         DevEntry[] devs = getDevs();
         cp.add(new JScrollPane(list = new JList(devs)), "split 2,width 120!,growy,pushy");
         list.addListSelectionListener(new ListSelectionListener() {
