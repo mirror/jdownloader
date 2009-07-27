@@ -35,12 +35,12 @@ import jd.gui.UserIO;
 import jd.gui.skins.SwingGui;
 import jd.gui.skins.jdgui.swing.GuiRunnable;
 import jd.gui.skins.jdgui.userio.UserIOGui;
+import jd.gui.skins.swing.MacOSController;
 import jd.http.Browser;
 import jd.nutils.OSDetector;
 import jd.parser.html.Form;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
-import jd.utils.MacOSController;
 import jd.utils.WebUpdate;
 
 public abstract class TestUtils {

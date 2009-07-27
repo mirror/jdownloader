@@ -101,7 +101,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
                 try {
                     JDUtilities.getController().addControlListener(JDLightTray.this);
                     if (SwingGui.getInstance() != null && SwingGui.getInstance() != null) {
-                        guiFrame = SwingGui.getInstance();
+                        guiFrame = SwingGui.getInstance().getMainFrame();
                         guiFrame.addWindowListener(JDLightTray.this);
                     }
                     logger.info("Systemtray OK");
@@ -130,7 +130,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     public void controlEvent(ControlEvent event) {
         if (event.getID() == ControlEvent.CONTROL_INIT_COMPLETE && event.getSource() instanceof Main) {
             logger.info("JDLightTrayIcon Init complete");
-            guiFrame = SwingGui.getInstance();
+            guiFrame = SwingGui.getInstance().getMainFrame();
             if (subConfig.getBooleanProperty(PROPERTY_START_MINIMIZED, false)) {
                 guiFrame.setState(JFrame.ICONIFIED);
             }

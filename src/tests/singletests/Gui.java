@@ -42,7 +42,7 @@ public class Gui {
 
         Thread.sleep(2000);
 
-        frame = new FrameFixture(SwingGui.getInstance());
+        frame = new FrameFixture(SwingGui.getInstance().getMainFrame());
     }
 
     @Test

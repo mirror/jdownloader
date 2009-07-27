@@ -34,7 +34,7 @@ import javax.swing.event.HyperlinkListener;
 
 import jd.gui.UserIO;
 import jd.gui.skins.jdgui.components.linkbutton.JLink;
-import jd.gui.userio.dialog.AbstractDialog;
+import jd.gui.skins.swing.dialog.AbstractDialog;
 import jd.http.Browser;
 import jd.nutils.JDImage;
 import jd.nutils.OSDetector;

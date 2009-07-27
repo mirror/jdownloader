@@ -61,6 +61,7 @@ import jd.gui.skins.jdgui.JDGuiConstants;
 import jd.gui.skins.jdgui.components.linkbutton.JLink;
 import jd.gui.skins.jdgui.swing.GuiRunnable;
 import jd.gui.skins.jdgui.userio.UserIOGui;
+import jd.gui.skins.swing.MacOSController;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.OSDetector;
@@ -69,7 +70,6 @@ import jd.update.WebUpdater;
 import jd.utils.CheckJava;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
-import jd.utils.MacOSController;
 import jd.utils.WebUpdate;
 import jd.utils.locale.JDL;
 

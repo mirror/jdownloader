@@ -246,8 +246,11 @@ public class RaubkopiererWs extends PluginForDecrypt {
 
             // @Override
             public Object runSave() {
-
-                new JDialog(SwingGui.getInstance()) {
+/**
+ * TODO
+ * NO GUI IN PLUGINS!!
+ */
+                new JDialog(SwingGui.getInstance().getMainFrame()) {
                     private static final long serialVersionUID = 1981746297816350752L;
 
                     private void init() {

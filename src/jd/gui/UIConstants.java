@@ -2,9 +2,6 @@ package jd.gui;
 
 public class UIConstants {
 
-    public static final byte PANEL_ID_DOWNLOADLIST = 0;
-    public static final byte PANEL_ID_LINKGRABBER = 1;
-
     /**
      * GUI normal, aber im Vordergrund anzeigen
      */
@@ -21,4 +18,5 @@ public class UIConstants {
      * GUI normal anzeigen (Defaulteinstellungen)
      */
     public static final byte WINDOW_STATUS_NORMAL = 3;
+
 }

@@ -649,7 +649,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                                 public File runSave() {
                                     JDFileChooser fc = new JDFileChooser("_LOADSAVEDLC");
                                     fc.setFileFilter(new JDFileFilter(null, ".dlc", true));
-                                    if (fc.showSaveDialog(SwingGui.getInstance()) == JDFileChooser.APPROVE_OPTION) return fc.getSelectedFile();
+                                    if (fc.showSaveDialog(SwingGui.getInstance().getMainFrame()) == JDFileChooser.APPROVE_OPTION) return fc.getSelectedFile();
                                     return null;
                                 }
                             };

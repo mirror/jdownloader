@@ -870,7 +870,7 @@ public class GetRouterInfo {
 
     public static void autoConfig(final Object pass, final Object user, final Object ip, final Object routerScript) {
 
-        final ProgressDialog progress = new ProgressDialog(SwingGui.getInstance(), JDL.L("gui.config.liveHeader.progress.message", "jDownloader sucht nach Ihren Routereinstellungen"), null, false, true);
+        final ProgressDialog progress = new ProgressDialog(SwingGui.getInstance().getMainFrame(), JDL.L("gui.config.liveHeader.progress.message", "jDownloader sucht nach Ihren Routereinstellungen"), null, false, true);
         final GetRouterInfo routerInfo = new GetRouterInfo(progress);
         final Thread th = new Thread() {
             // @Override

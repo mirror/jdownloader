@@ -34,6 +34,7 @@ import javax.swing.table.AbstractTableModel;
 
 import jd.OptionalPluginWrapper;
 import jd.config.Configuration;
+import jd.gui.UserIF;
 import jd.gui.skins.jdgui.settings.ConfigPanel;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.utils.locale.JDL;
@@ -176,7 +177,8 @@ public class ConfigPanelAddons extends ConfigPanel implements ActionListener, Mo
     }
 
     private void editEntry() {
-        SimpleGUI.displayConfig(pluginsOptional.get(table.getSelectedRow()).getPlugin().getConfig(), false);
+        UserIF.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL, pluginsOptional.get(table.getSelectedRow()).getPlugin().getConfig());
+      
     }
 
     public void actionPerformed(ActionEvent e) {

@@ -25,7 +25,7 @@ import javax.swing.JPanel;
 
 import jd.gui.UserIO;
 import jd.gui.skins.jdgui.components.linkbutton.JLink;
-import jd.gui.userio.dialog.AbstractDialog;
+import jd.gui.skins.swing.dialog.AbstractDialog;
 import jd.nutils.JDFlags;
 import jd.plugins.DownloadLink;
 import jd.utils.locale.JDL;

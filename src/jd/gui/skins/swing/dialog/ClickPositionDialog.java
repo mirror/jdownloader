@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.gui.userio.dialog;
+package jd.gui.skins.swing.dialog;
 
 import java.awt.Cursor;
 import java.awt.Dimension;
@@ -55,7 +55,7 @@ public class ClickPositionDialog extends JCountdownDialog implements ActionListe
     private String explain;
 
     public ClickPositionDialog(File imagefile, String title, String explain) {
-        super(SwingGui.getInstance());
+        super(SwingGui.getInstance().getMainFrame());
         this.imagefile = imagefile;
         this.title = title;
         this.explain = explain;
@@ -101,10 +101,10 @@ public class ClickPositionDialog extends JCountdownDialog implements ActionListe
         this.setMinimumSize(new Dimension(300, -1));
         this.pack();
         this.setResizable(false);
-        if (SwingGui.getInstance() == null || SwingGui.getInstance().getExtendedState() == JFrame.ICONIFIED || !SwingGui.getInstance().isVisible() ) {
+        if (SwingGui.getInstance() == null || SwingGui.getInstance().getMainFrame().getExtendedState() == JFrame.ICONIFIED || !SwingGui.getInstance().getMainFrame().isVisible() ) {
             this.setLocation(Screen.getDockBottomRight(this));
         } else {
-            this.setLocation(Screen.getCenterOfComponent(SwingGui.getInstance(), this));
+            this.setLocation(Screen.getCenterOfComponent(SwingGui.getInstance().getMainFrame(), this));
         }
         this.toFront();
         this.setAlwaysOnTop(true);

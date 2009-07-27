@@ -114,17 +114,6 @@ public class Factory {
         }
     }
 
-    /**
-     * Retuns a subpanel
-     * 
-     * @param ii
-     * @param l
-     * @return
-     */
-    public static SubPane getSubPane(ImageIcon ii, String l) {
 
-        return new SubPane(l, ii);
-        
-    }
 
 }

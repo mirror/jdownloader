@@ -14,11 +14,12 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.utils;
+package jd.gui.skins.swing;
 
 import jd.gui.skins.SwingGui;
 import jd.gui.skins.jdgui.swing.GuiRunnable;
 import jd.gui.skins.simple.AboutDialog;
+import jd.utils.JDUtilities;
 
 import com.apple.eawt.Application;
 import com.apple.eawt.ApplicationAdapter;
@@ -57,8 +58,8 @@ public class MacOSController extends Application {
         // }
 
         public void handleReOpenApplication(ApplicationEvent e) {
-            if (SwingGui.getInstance().isVisible() == false) {
-                SwingGui.getInstance().setVisible(true);
+            if (SwingGui.getInstance().getMainFrame().isVisible() == false) {
+                SwingGui.getInstance().getMainFrame().setVisible(true);
             }
         }
 

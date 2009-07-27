@@ -17,7 +17,7 @@ import jd.utils.JDUtilities;
 public class DummyFrame extends JFrame {
 
     public static JFrame getDialogParent() {
-        if (SwingGui.getInstance() != null) return SwingGui.getInstance();
+        if (SwingGui.getInstance() != null) return SwingGui.getInstance().getMainFrame();
         return new DummyFrame();
     }
 

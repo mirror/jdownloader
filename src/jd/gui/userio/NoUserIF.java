@@ -11,7 +11,7 @@ public class NoUserIF extends UserIF {
     }
 
     @Override
-    public void requestPanel(byte panelID) {
+    public void requestPanel(Panels panelID, Object parameter) {
         System.out.println("NoUserIF set!");
     }
 

@@ -80,7 +80,7 @@ public class GUIUtils {
     }
 
     public static void restoreWindow(JFrame parent, Component component) {
-        if (parent == null) parent = SwingGui.getInstance();
+        if (parent == null) parent = SwingGui.getInstance().getMainFrame();
 
         component.setLocation(getLastLocation(parent, null, component));
         Dimension dim = getLastDimension(component, null);

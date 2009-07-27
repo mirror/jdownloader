@@ -16,17 +16,24 @@
 
 package jd.gui.skins.jdgui;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Image;
 import java.awt.Toolkit;
 import java.awt.event.WindowEvent;
+import java.text.DateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JPanel;
+import javax.swing.JTextField;
 
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.controlling.ClipboardHandler;
 import jd.controlling.DownloadController;
 import jd.controlling.JDController;
@@ -38,9 +45,11 @@ import jd.controlling.ProgressControllerEvent;
 import jd.controlling.ProgressControllerListener;
 import jd.event.ControlEvent;
 import jd.gui.UIConstants;
+import jd.gui.UserIF;
 import jd.gui.UserIO;
 import jd.gui.skins.SwingGui;
 import jd.gui.skins.jdgui.components.Balloon;
+import jd.gui.skins.jdgui.components.JDCollapser;
 import jd.gui.skins.jdgui.components.JDStatusBar;
 import jd.gui.skins.jdgui.components.toolbar.MainToolBar;
 import jd.gui.skins.jdgui.events.EDTEventQueue;
@@ -55,6 +64,8 @@ import jd.gui.skins.jdgui.menu.PremiumMenu;
 import jd.gui.skins.jdgui.menu.SaveMenu;
 import jd.gui.skins.jdgui.menu.actions.ExitAction;
 import jd.gui.skins.jdgui.menu.actions.RestartAction;
+import jd.gui.skins.jdgui.settings.ConfigPanel;
+import jd.gui.skins.jdgui.settings.GUIConfigEntry;
 import jd.gui.skins.jdgui.swing.GuiRunnable;
 import jd.gui.skins.jdgui.views.ConfigurationView;
 import jd.gui.skins.jdgui.views.DownloadView;
@@ -62,16 +73,27 @@ import jd.gui.skins.jdgui.views.LinkgrabberView;
 import jd.gui.skins.jdgui.views.LogView;
 import jd.gui.skins.jdgui.views.TabbedPanelView;
 import jd.gui.skins.jdgui.views.linkgrabberview.LinkGrabberPanel;
+import jd.gui.skins.simple.Factory;
+import jd.gui.skins.simple.components.ChartAPIEntity;
+import jd.gui.skins.simple.components.PieChartAPI;
+import jd.gui.skins.swing.dialog.ContainerDialog;
+import jd.nutils.Formatter;
 import jd.nutils.JDFlags;
 import jd.nutils.JDImage;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginForHost;
 import jd.update.WebUpdater;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
+
+import org.jdesktop.swingx.JXTitledSeparator;
+
 import de.javasoft.plaf.synthetica.SyntheticaRootPaneUI;
 
 public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
@@ -95,7 +117,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         // disable Clipboard while gui is loading
         ClipboardHandler.getClipboard().setTempDisabled(true);
         // Important for unittests
-        setName("MAINFRAME");
+        mainFrame.setName("MAINFRAME");
         // GUIUtils.getConfig() =
         // SubConfiguration.getConfig(JDGuiConstants.CONFIG_PARAMETER);
 
@@ -106,31 +128,134 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         setWindowTitle();
         layoutComponents();
 
-        pack();
+        mainFrame.pack();
         initLocationAndDimension();
-        setVisible(true);
-        if (this.getRootPane().getUI() instanceof SyntheticaRootPaneUI) {
-            ((SyntheticaRootPaneUI) this.getRootPane().getUI()).setMaximizedBounds(this);
+        mainFrame.setVisible(true);
+        if (mainFrame.getRootPane().getUI() instanceof SyntheticaRootPaneUI) {
+            ((SyntheticaRootPaneUI) mainFrame.getRootPane().getUI()).setMaximizedBounds(mainFrame);
         }
-        setExtendedState(GUIUtils.getConfig().getIntegerProperty("MAXIMIZED_STATE_OF_" + this.getName(), JFrame.NORMAL));
+        mainFrame.setExtendedState(GUIUtils.getConfig().getIntegerProperty("MAXIMIZED_STATE_OF_" + mainFrame.getName(), JFrame.NORMAL));
         ClipboardHandler.getClipboard().setTempDisabled(false);
         LinkGrabberController.getInstance().setDistributer(this);
+    }
+
+    @Override
+    public void showAccountInformation(final PluginForHost pluginForHost, final Account account) {
+        new GuiRunnable<Object>() {
+            // @Override
+            public Object runSave() {
+                AccountInfo ai;
+                try {
+                    ai = pluginForHost.getAccountInformation(account);
+                } catch (Exception e) {
+                    account.setEnabled(false);
+                    JDLogger.exception(e);
+                    UserIO.getInstance().requestMessageDialog(JDL.LF("gui.accountcheck.pluginerror", "Plugin %s may be defect. Inform support!", pluginForHost.getPluginID()));
+                    return null;
+                }
+                if (ai == null) {
+                    UserIO.getInstance().requestMessageDialog(JDL.LF("plugins.host.premium.info.error", "The %s plugin does not support the Accountinfo feature yet.", pluginForHost.getHost()));
+                    return null;
+                }
+                if (!ai.isValid()) {
+                    account.setEnabled(false);
+                    UserIO.getInstance().requestMessageDialog(
+                                                              JDL.LF("plugins.host.premium.info.notValid", "The account for '%s' isn't valid! Please check username and password!\r\n%s", account
+                                                                      .getUser(), ai.getStatus() != null ? ai.getStatus() : ""));
+                    return null;
+                }
+                if (ai.isExpired()) {
+                    account.setEnabled(false);
+                    UserIO.getInstance().requestMessageDialog(
+                                                              JDL.LF("plugins.host.premium.info.expired", "The account for '%s' is expired! Please extend the account or buy a new one!\r\n%s", account
+                                                                      .getUser(), ai.getStatus() != null ? ai.getStatus() : ""));
+                    return null;
+                }
+
+                String def = JDL.LF("plugins.host.premium.info.title", "Accountinformation from %s for %s", account.getUser(), pluginForHost.getHost());
+                String[] label = new String[] {
+                        JDL.L("plugins.host.premium.info.validUntil", "Valid until"),
+                        JDL.L("plugins.host.premium.info.trafficLeft", "Traffic left"),
+                        JDL.L("plugins.host.premium.info.files", "Files"),
+                        JDL.L("plugins.host.premium.info.premiumpoints", "PremiumPoints"),
+                        JDL.L("plugins.host.premium.info.usedSpace", "Used Space"),
+                        JDL.L("plugins.host.premium.info.cash", "Cash"),
+                        JDL.L("plugins.host.premium.info.trafficShareLeft", "Traffic Share left"),
+                        JDL.L("plugins.host.premium.info.status", "Info")
+                };
+
+                DateFormat formater = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM);
+                String validUntil = (ai.isExpired() ? JDL.L("plugins.host.premium.info.expiredInfo", "[expired]") + " " : "") + formater.format(new Date(ai.getValidUntil())) + "";
+                if (ai.getValidUntil() == -1) validUntil = null;
+                String premiumPoints = ai.getPremiumPoints() + ((ai.getNewPremiumPoints() > 0) ? " [+" + ai.getNewPremiumPoints() + "]" : "");
+                String[] data = new String[] {
+                        validUntil,
+                        Formatter.formatReadable(ai.getTrafficLeft()),
+                        ai.getFilesNum() + "",
+                        premiumPoints,
+                        Formatter.formatReadable(ai.getUsedSpace()),
+                        ai.getAccountBalance() < 0 ? null : (ai.getAccountBalance() / 100.0) + " €",
+                        Formatter.formatReadable(ai.getTrafficShareLeft()),
+                        ai.getStatus()
+                };
+
+                JPanel panel = new JPanel(new MigLayout("ins 5", "[right]10[grow,fill]10[]"));
+                panel.add(new JXTitledSeparator("<html><b>" + def + "</b></html>"), "spanx, pushx, growx, gapbottom 15");
+
+                for (int j = 0; j < data.length; j++) {
+                    if (data[j] != null && !data[j].equals("-1") && !data[j].equals("-1 B")) {
+                        panel.add(new JLabel(label[j]), "gapleft 20");
+
+                        JTextField tf = new JTextField(data[j]);
+                        tf.setBorder(null);
+                        tf.setBackground(null);
+                        tf.setEditable(false);
+                        tf.setOpaque(false);
+
+                        if (label[j].equals(JDL.L("plugins.host.premium.info.trafficLeft", "Traffic left"))) {
+                            PieChartAPI freeTrafficChart = new PieChartAPI("", 150, 60);
+                            freeTrafficChart.addEntity(new ChartAPIEntity(JDL.L("plugins.host.premium.info.freeTraffic", "Free"), ai.getTrafficLeft(), new Color(50, 200, 50)));
+                            freeTrafficChart.addEntity(new ChartAPIEntity("", ai.getTrafficMax() - ai.getTrafficLeft(), new Color(150, 150, 150)));
+                            freeTrafficChart.fetchImage();
+
+                            panel.add(tf);
+                            panel.add(freeTrafficChart, "spany, wrap");
+                        } else {
+                            panel.add(tf, "span 2, wrap");
+                        }
+                    }
+
+                }
+                new ContainerDialog(UserIO.NO_CANCEL_OPTION, def, panel, null, null);
+
+                return null;
+            }
+        }.start();
+    }
+
+    @Override
+    public void displayMiniWarning(String shortWarn, String longWarn) {
+        /*
+         * TODO: mal durch ein einheitliches notificationo system ersetzen,
+         * welches an das eventsystem gekoppelt ist
+         */
+        Balloon.show(shortWarn, JDTheme.II("gui.images.warning", 32, 32), longWarn);
     }
 
     /**
      * restores the dimension and location to the window
      */
     private void initLocationAndDimension() {
-        Dimension dim = GUIUtils.getLastDimension(this, null);
+        Dimension dim = GUIUtils.getLastDimension(mainFrame, null);
         if (dim == null) dim = new Dimension(800, 600);
-        setPreferredSize(dim);
-        this.setSize(dim);
-        setMinimumSize(new Dimension(400, 100));
-        setLocation(GUIUtils.getLastLocation(null, null, this));
-        setExtendedState(GUIUtils.getConfig().getIntegerProperty("MAXIMIZED_STATE_OF_" + this.getName(), JFrame.NORMAL));
+        mainFrame.setPreferredSize(dim);
+        mainFrame.setSize(dim);
+        mainFrame.setMinimumSize(new Dimension(400, 100));
+        mainFrame.setLocation(GUIUtils.getLastLocation(null, null, mainFrame));
+        mainFrame.setExtendedState(GUIUtils.getConfig().getIntegerProperty("MAXIMIZED_STATE_OF_" + mainFrame.getName(), JFrame.NORMAL));
 
-        if (this.getRootPane().getUI() instanceof SyntheticaRootPaneUI) {
-            ((SyntheticaRootPaneUI) this.getRootPane().getUI()).setMaximizedBounds(this);
+        if (mainFrame.getRootPane().getUI() instanceof SyntheticaRootPaneUI) {
+            ((SyntheticaRootPaneUI) mainFrame.getRootPane().getUI()).setMaximizedBounds(mainFrame);
         }
 
     }
@@ -164,11 +289,11 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
 
     private void layoutComponents() {
         JPanel contentPane;
-        this.setContentPane(contentPane = new JPanel());
+        mainFrame.setContentPane(contentPane = new JPanel());
         MigLayout mainLayout = new MigLayout("ins 0 0 0 0,wrap 1", "[grow,fill]", "[grow,fill]0[shrink]");
         contentPane.setLayout(mainLayout);
-        this.setJMenuBar(menuBar);
-        add(toolBar, "dock NORTH");
+        mainFrame.setJMenuBar(menuBar);
+        mainFrame.add(toolBar, "dock NORTH");
         contentPane.add(mainTabbedPane);
 
         contentPane.add(multiProgressBar, "hidemode 3");
@@ -178,8 +303,8 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
 
     private void initDefaults() {
         Toolkit.getDefaultToolkit().getSystemEventQueue().push(new EDTEventQueue());
-        setDefaultCloseOperation(SwingGui.DO_NOTHING_ON_CLOSE);
-        this.addWindowListener(this);
+        mainFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        mainFrame.addWindowListener(this);
     }
 
     /**
@@ -188,9 +313,9 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
     private void setWindowTitle() {
         String branch = WebUpdater.getConfig("WEBUPDATE").getStringProperty("BRANCHINUSE", null);
         if (branch != null) {
-            setTitle("JDownloader -" + branch + "-");
+            mainFrame.setTitle("JDownloader -" + branch + "-");
         } else {
-            setTitle("JDownloader");
+            mainFrame.setTitle("JDownloader");
         }
 
     }
@@ -211,9 +336,9 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         list.add(JDImage.getImage("logo/logo_20_20"));
         list.add(JDImage.getImage("logo/jd_logo_64_64"));
         if (JDUtilities.getJavaVersion() >= 1.6) {
-            this.setIconImages(list);
+            mainFrame.setIconImages(list);
         } else {
-            this.setIconImage(list.get(3));
+            mainFrame.setIconImage(list.get(3));
         }
     }
 
@@ -266,21 +391,21 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
     public void setFrameStatus(int id) {
         switch (id) {
         case UIConstants.WINDOW_STATUS_MAXIMIZED:
-            setState(JFrame.MAXIMIZED_BOTH);
+            mainFrame.setState(JFrame.MAXIMIZED_BOTH);
             break;
         case UIConstants.WINDOW_STATUS_MINIMIZED:
-            setState(JFrame.ICONIFIED);
+            mainFrame.setState(JFrame.ICONIFIED);
             break;
         case UIConstants.WINDOW_STATUS_NORMAL:
-            setState(JFrame.NORMAL);
-            setVisible(true);
+            mainFrame.setState(JFrame.NORMAL);
+            mainFrame.setVisible(true);
             break;
         case UIConstants.WINDOW_STATUS_FOREGROUND:
-            setState(JFrame.NORMAL);
-            setFocusableWindowState(false);
-            setVisible(true);
-            toFront();
-            setFocusableWindowState(true);
+            mainFrame.setState(JFrame.NORMAL);
+            mainFrame.setFocusableWindowState(false);
+            mainFrame.setVisible(true);
+            mainFrame.toFront();
+            mainFrame.setFocusableWindowState(true);
             break;
         }
     }
@@ -292,7 +417,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
             new GuiRunnable<Object>() {
                 @Override
                 public Object runSave() {
-                    setEnabled(true);
+                    mainFrame.setEnabled(true);
                     return null;
                 }
             }.start();
@@ -326,12 +451,12 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
                 @Override
                 public Object runSave() {
                     mainTabbedPane.onClose();
-                    GUIUtils.saveLastLocation(JDGui.this, null);
-                    GUIUtils.saveLastDimension(JDGui.this, null);
+                    GUIUtils.saveLastLocation(getMainFrame(), null);
+                    GUIUtils.saveLastDimension(getMainFrame(), null);
                     GUIUtils.getConfig().save();
                     JDController.releaseDelayExit();
-                    setVisible(false);
-                    dispose();
+                    getMainFrame().setVisible(false);
+                    getMainFrame().dispose();
                     return null;
                 }
             }.start();
@@ -358,7 +483,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
     }
 
     public void windowClosing(WindowEvent e) {
-        if (e.getComponent() == this) closeWindow();
+        if (e.getComponent() == getMainFrame()) closeWindow();
     }
 
     public void closeWindow() {
@@ -386,19 +511,27 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         return this.mainTabbedPane;
     }
 
-    public void requestPanel(final byte panelID) {
+    public void requestPanel(final Panels panel, final Object param) {
 
         new GuiRunnable<Object>() {
 
             @Override
             public Object runSave() {
 
-                switch (panelID) {
-                case UIConstants.PANEL_ID_DOWNLOADLIST:
+                switch (panel) {
+                case DOWNLOADLIST:
                     mainTabbedPane.setSelectedComponent(downloadView);
                     break;
-                case UIConstants.PANEL_ID_LINKGRABBER:
+                case LINKGRABBER:
                     mainTabbedPane.setSelectedComponent(linkgrabberView);
+                    break;
+                case CONFIGPANEL:
+                    if (param instanceof ConfigContainer) {
+
+                        showConfigPanel((ConfigContainer) param);
+
+                    }
+
                     break;
                 default:
                     mainTabbedPane.setSelectedComponent(downloadView);
@@ -409,6 +542,68 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
             }
 
         }.waitForEDT();
+    }
+
+    /**
+     * Converts a ConfigContainer to a Configpanel and displays it
+     * 
+     * @param container
+     */
+    protected void showConfigPanel(final ConfigContainer container) {
+
+        this.mainTabbedPane.getSelectedView().setInfoPanel(JDCollapser.getInstance());
+        ConfigPanel cp;
+    
+        JDCollapser.getInstance().setContentPanel(cp = new ConfigPanel() {
+
+            /**
+             * 
+             */
+            private static final long serialVersionUID = -5264498535270934888L;
+
+            @Override
+            public void initPanel() {
+            
+               init(container);
+                add(panel);
+            }
+
+            /**
+             * TODO handle tabs
+             * 
+             * @param container
+             */
+            private void init(ConfigContainer container) {
+              
+//                panel.add(Factory.createHeader(container.getTitle(), UserIO.getInstance().getIcon(UserIO.ICON_INFO)),"growx,pushx,spanx,newline,wrap");
+                for (ConfigEntry cfgEntry : container.getEntries()) {
+                    if (cfgEntry.getType() == ConfigContainer.TYPE_CONTAINER) {
+                        init(cfgEntry.getContainer());
+                        continue;
+                    }
+                    GUIConfigEntry ce = new GUIConfigEntry(cfgEntry);
+                    if (ce != null) addGUIConfigEntry(ce);
+                }
+
+            }
+
+            @Override
+            public void load() {
+                loadConfigEntries();
+            }
+
+            @Override
+            public void save() {
+                saveConfigEntries();
+
+            }
+
+        });
+        cp.initPanel();
+        cp.load();
+//        this.mainTabbedPane.getSelectedView().setContent( JDCollapser.getInstance());
+        this.mainTabbedPane.getSelectedView().setInfoPanel(JDCollapser.getInstance());
+
     }
 
     @Override
@@ -442,7 +637,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
             if (autostart) JDController.getInstance().startDownloads();
         } else {
             LinkGrabberPanel.getLinkGrabber().addLinks(links);
-            requestPanel(UIConstants.PANEL_ID_LINKGRABBER);
+            requestPanel(UserIF.Panels.LINKGRABBER, null);
         }
     }
 

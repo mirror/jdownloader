@@ -677,9 +677,9 @@ public class JDChat extends PluginOptional implements ControlListener {
             public void run() {
                 if (changed) {
 
-                    if (!SwingGui.getInstance().isActive() && conn != null && msg2.contains(conn.getNick())) {
+                    if (!SwingGui.getInstance().getMainFrame().isActive() && conn != null && msg2.contains(conn.getNick())) {
                         // JDSounds.PT("sound.gui.selectPackage");
-                        SwingGui.getInstance().toFront();
+                        SwingGui.getInstance().getMainFrame().toFront();
                     }
 
                     textArea.setText(STYLE + "<ul>" + sb.toString() + "</ul>");
@@ -724,7 +724,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         if (e.getID() == ControlEvent.CONTROL_INTERACTION_CALL) {
 
             if (e.getSource() == Interaction.INTERACTION_AFTER_RECONNECT) {
-                if (SwingGui.getInstance().isActive() && !nickaway) {
+                if (SwingGui.getInstance().getMainFrame().isActive() && !nickaway) {
                     initIRC();
                 } else {
                     addToText(null, STYLE_ERROR, "You got disconnected because of a reconnect. <a href='intern:reconnect|reconnect'><b>[RECONNECT NOW]</b></a>");

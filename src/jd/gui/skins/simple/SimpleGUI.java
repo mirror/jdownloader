@@ -49,7 +49,6 @@ import jd.controlling.ProgressControllerEvent;
 import jd.controlling.ProgressControllerListener;
 import jd.event.ControlEvent;
 import jd.gui.UserIO;
-import jd.gui.skins.SwingGui;
 import jd.gui.skins.jdgui.GUIUtils;
 import jd.gui.skins.jdgui.JDGuiConstants;
 import jd.gui.skins.jdgui.TabProgress;
@@ -83,7 +82,7 @@ import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingworker.SwingWorker;
 
-public class SimpleGUI extends SwingGui {
+public class SimpleGUI extends JFrame {
 
     public static SimpleGUI CURRENTGUI = null;
 
@@ -154,7 +153,7 @@ public class SimpleGUI extends SwingGui {
         toolBar = MainToolBar.getInstance();
 
         // System.out.println(ui);
-        addWindowListener(this);
+        
 
         ArrayList<Image> list = new ArrayList<Image>();
 
@@ -524,7 +523,9 @@ public class SimpleGUI extends SwingGui {
     }
 
     public static void showChangelogDialog() {
-        int status = UserIO.getInstance().requestHelpDialog(UserIO.NO_CANCEL_OPTION, JDL.LF("system.update.message.title", "Updated to version %s", JDUtilities.getRevision()), JDL.L("system.update.message", "Update successfull"), JDL.L("system.update.showchangelogv2", "What's new?"), "http://jdownloader.org/changes/index");
+        int status = UserIO.getInstance().requestHelpDialog(UserIO.NO_CANCEL_OPTION, JDL.LF("system.update.message.title", "Updated to version %s", JDUtilities.getRevision()),
+                                                            JDL.L("system.update.message", "Update successfull"), JDL.L("system.update.showchangelogv2", "What's new?"),
+                                                            "http://jdownloader.org/changes/index");
         if (JDFlags.hasAllFlags(status, UserIO.RETURN_OK) && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_AUTO_SHOW_CHANGELOG, true)) {
             try {
                 JLink.openURL("http://jdownloader.org/changes/index");
@@ -565,15 +566,15 @@ public class SimpleGUI extends SwingGui {
 
     }
 
-    @Override
-    public void setContent(SwitchPanel tabbedPanel) {
-        this.getContentPane().display(tabbedPanel);
-    }
-
-    @Override
-    public void disposeView(SwitchPanel view) {
-        // TODO Auto-generated method stub
-
-    }
+//    @Override
+//    public void setContent(SwitchPanel tabbedPanel) {
+//        this.getContentPane().display(tabbedPanel);
+//    }
+//
+//    @Override
+//    public void disposeView(SwitchPanel view) {
+//        // TODO Auto-generated method stub
+//
+//    }
 
 }

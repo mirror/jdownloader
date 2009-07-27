@@ -181,11 +181,12 @@ public abstract class PluginForHost extends Plugin {
     // @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getID() == 1) {
-            SimpleGUI.displayConfig(config, false);
+            UserIF.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL, config);
+           
             return;
         }
         if (e.getID() == 2) {
-            SimpleGUI.displayConfig(config, true);
+            UserIF.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL, config);
             return;
         }
         ArrayList<Account> accounts = getPremiumAccounts();

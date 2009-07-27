@@ -39,6 +39,7 @@ import jd.HostPluginWrapper;
 import jd.config.ConfigGroup;
 import jd.config.Configuration;
 import jd.config.ConfigEntry.PropertyType;
+import jd.gui.UserIF;
 import jd.gui.UserIO;
 import jd.gui.skins.jdgui.components.linkbutton.JLink;
 import jd.gui.skins.jdgui.settings.ConfigPanel;
@@ -176,7 +177,8 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
     private void editEntry(HostPluginWrapper hpw) {
         hpw.getPlugin().getConfig().setGroup(new ConfigGroup(hpw.getPlugin().getHost(), JDTheme.II("gui.images.taskpanes.premium", 24, 24)));
-        SimpleGUI.displayConfig(hpw.getPlugin().getConfig(), false);
+   
+        UserIF.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL, hpw.getPlugin().getConfig());
     }
 
     private void editEntry() {

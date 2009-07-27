@@ -1103,9 +1103,11 @@ public class Serienjunkies extends PluginForDecrypt {
     private class SerienjunkiesCatDialog extends JDialog {
 
         private static final long serialVersionUID = -6111708970744373146L;
-
+/**
+ * TODO NO GUI IN PLUGINS
+ */
         public SerienjunkiesCatDialog() {
-            super(SwingGui.getInstance());
+            super(SwingGui.getInstance().getMainFrame());
 
             initGUI();
         }
@@ -1183,9 +1185,12 @@ public class Serienjunkies extends PluginForDecrypt {
         private static final long serialVersionUID = 4525944250937805028L;
 
         public ArrayList<SerienjunkiesLinks> dls;
-
+/**
+ * TODO NO GUI IN PLUGINS
+ * @param dLinks
+ */
         public SerienjunkiesSJTable(ArrayList<SerienjunkiesLinks> dLinks) {
-            super(SwingGui.getInstance());
+            super(SwingGui.getInstance().getMainFrame());
 
             dls = dLinks;
             initGUI();

@@ -118,7 +118,7 @@ public class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionLi
 
                         @Override
                         public Object runSave() {
-                            Gui jd = new Gui(SwingGui.getInstance(), ((JTextField) ip.getInput()[0]).getText());
+                            Gui jd = new Gui(SwingGui.getInstance().getMainFrame(), ((JTextField) ip.getInput()[0]).getText());
                             jd.setModal(true);
                             jd.setVisible(true);
                             if (jd.saved) {

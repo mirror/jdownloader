@@ -61,7 +61,7 @@ public class Balloon {
      * Displays only if mainframe is hidden
      */
     public static void showIfHidden(String title, ImageIcon icon, String htmlmessage) {
-        if (SwingGui.getInstance() != null && !SwingGui.getInstance().isActive()) Balloon.show(title, icon, htmlmessage);
+        if (SwingGui.getInstance() != null && !SwingGui.getInstance().getMainFrame().isActive()) Balloon.show(title, icon, htmlmessage);
     }
 
     public static void show(String title, ImageIcon icon, String htmlmessage) {
@@ -150,8 +150,8 @@ public class Balloon {
                 JPanel titlePanel = new JPanel(new MigLayout("ins 0", "[grow,fill][]"));
                 titlePanel.addMouseListener(new JDMouseAdapter() {
                     public void mouseClicked(MouseEvent e) {
-                        SwingGui.getInstance().setVisible(true);
-                        SwingGui.getInstance().toFront();
+                        SwingGui.getInstance().getMainFrame().setVisible(true);
+                        SwingGui.getInstance().getMainFrame().toFront();
                     }
                 });
                 titlePanel.add(lbl);

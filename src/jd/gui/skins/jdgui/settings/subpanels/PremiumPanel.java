@@ -171,7 +171,7 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
             }
         } finally {
 
-            SwingGui.getInstance().getContentPane().invalidate();
+            SwingGui.getInstance().getMainFrame().getContentPane().invalidate();
 
         }
     }

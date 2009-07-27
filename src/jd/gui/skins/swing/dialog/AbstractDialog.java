@@ -14,12 +14,13 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.gui.userio.dialog;
+package jd.gui.skins.swing.dialog;
 
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -123,7 +124,9 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
 
         if ((flag & UserIO.NO_OK_OPTION) == 0) {
 
-            this.getRootPane().setDefaultButton(btnOK);
+            // this.getRootPane().setDefaultButton(btnOK);
+            getRootPane().setDefaultButton(btnOK);
+            btnOK.requestFocusInWindow();
             add(btnOK, "alignx right");
         }
         if ((flag & UserIO.NO_CANCEL_OPTION) == 0) {
@@ -131,6 +134,7 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
             add(btnCancel, "alignx right");
             if ((flag & UserIO.NO_OK_OPTION) != 0) {
                 this.getRootPane().setDefaultButton(btnCancel);
+                btnCancel.requestFocusInWindow();
             }
         }
         this.setMinimumSize(new Dimension(300, -1));
@@ -152,13 +156,20 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
         if (DEFAULT_DIMENSION != null) this.setSize(DEFAULT_DIMENSION);
         if (SwingGui.getInstance() == null) {
             this.setLocation(Screen.getCenterOfComponent(null, this));
-        } else if (SwingGui.getInstance().getExtendedState() == JFrame.ICONIFIED || !SwingGui.getInstance().isVisible()) {
+        } else if (SwingGui.getInstance().getMainFrame().getExtendedState() == JFrame.ICONIFIED || !SwingGui.getInstance().getMainFrame().isVisible()) {
             this.setLocation(Screen.getDockBottomRight(this));
         } else {
-            this.setLocation(Screen.getCenterOfComponent(SwingGui.getInstance(), this));
+            this.setLocation(Screen.getCenterOfComponent(SwingGui.getInstance().getMainFrame(), this));
         }
+
         this.setVisible(true);
+
         this.pack();
+
+    }
+
+    protected void processKeyEvent(KeyEvent e) {
+        super.processKeyEvent(e);
 
     }
 

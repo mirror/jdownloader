@@ -101,8 +101,8 @@ public class TableTransferHandler extends TransferHandler {
         String url = "http://www.jdownloader.org";
         ArrayList<FilePackage> packages = table.getSelectedFilePackages();
         ArrayList<DownloadLink> downloadLinks = table.getSelectedDownloadLinks();
-        Point p = SwingGui.getInstance().getMousePosition();
-        p = SwingUtilities.convertPoint(SwingGui.getInstance(), p, table);
+        Point p = SwingGui.getInstance().getMainFrame().getMousePosition();
+        p = SwingUtilities.convertPoint(SwingGui.getInstance().getMainFrame(), p, table);
         int row = table.rowAtPoint(p);
         if (row == -1) {
             isDragging = false;

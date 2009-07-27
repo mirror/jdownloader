@@ -101,9 +101,9 @@ public class EDTEventQueue extends EventQueue {
 
                 this.lastPoint = 2;
                 Point point = e.getPoint();
-                Component source = JDGui.getInstance().getContentPane();
-                point.x -= (source.getLocationOnScreen().x - JDGui.getInstance().getLocationOnScreen().x);
-                point.y -= (source.getLocationOnScreen().y - JDGui.getInstance().getLocationOnScreen().y);
+                Component source = JDGui.getInstance().getMainFrame().getContentPane();
+                point.x -= (source.getLocationOnScreen().x - JDGui.getInstance().getMainFrame().getLocationOnScreen().x);
+                point.y -= (source.getLocationOnScreen().y - JDGui.getInstance().getMainFrame().getLocationOnScreen().y);
                 final StringBuilder sb = new StringBuilder();
                 while (source != null) {
                     Component source2 = source.getComponentAt(point);
@@ -146,9 +146,9 @@ public class EDTEventQueue extends EventQueue {
 
                 this.lastPoint = 2;
                 Point point = e.getPoint();
-                Component source = JDGui.getInstance().getContentPane();
-                point.x -= (source.getLocationOnScreen().x - JDGui.getInstance().getLocationOnScreen().x);
-                point.y -= (source.getLocationOnScreen().y - JDGui.getInstance().getLocationOnScreen().y);
+                Component source = JDGui.getInstance().getMainFrame().getContentPane();
+                point.x -= (source.getLocationOnScreen().x - JDGui.getInstance().getMainFrame().getLocationOnScreen().x);
+                point.y -= (source.getLocationOnScreen().y - JDGui.getInstance().getMainFrame().getLocationOnScreen().y);
                 StringBuilder sb2 = new StringBuilder();
                 int i = 0;
                 while (source != null) {
@@ -217,10 +217,10 @@ public class EDTEventQueue extends EventQueue {
             } else if (e.getID() == MouseEvent.MOUSE_MOVED && e.isControlDown() && e.isShiftDown()) {
 
                 Point point = e.getPoint();
-                Component source =JDGui.getInstance().getContentPane();
+                Component source =JDGui.getInstance().getMainFrame().getContentPane();
 
-                point.x -= (source.getLocationOnScreen().x - JDGui.getInstance().getLocationOnScreen().x);
-                point.y -= (source.getLocationOnScreen().y - JDGui.getInstance().getLocationOnScreen().y);
+                point.x -= (source.getLocationOnScreen().x - JDGui.getInstance().getMainFrame().getLocationOnScreen().x);
+                point.y -= (source.getLocationOnScreen().y - JDGui.getInstance().getMainFrame().getLocationOnScreen().y);
                 while (source != null) {
 
                     Component source2 = source.getComponentAt(point);
@@ -259,9 +259,9 @@ public class EDTEventQueue extends EventQueue {
         if (e.getSource() instanceof JDialog) {
             c = SwingUtilities.getDeepestComponentAt((JDialog) e.getSource(), (int) point.getX(), (int) point.getY());
         } else {
-            Component source = JDGui.getInstance().getContentPane();
-            point.x -= (source.getLocationOnScreen().x - JDGui.getInstance().getLocationOnScreen().x);
-            point.y -= (source.getLocationOnScreen().y - JDGui.getInstance().getLocationOnScreen().y);
+            Component source = JDGui.getInstance().getMainFrame().getContentPane();
+            point.x -= (source.getLocationOnScreen().x - JDGui.getInstance().getMainFrame().getLocationOnScreen().x);
+            point.y -= (source.getLocationOnScreen().y - JDGui.getInstance().getMainFrame().getLocationOnScreen().y);
             c = SwingUtilities.getDeepestComponentAt(source, (int) point.getX(), (int) point.getY());
         }
         if (!(c instanceof JTextComponent)) { return; }

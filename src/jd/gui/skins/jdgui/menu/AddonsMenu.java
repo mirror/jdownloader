@@ -24,6 +24,9 @@ import javax.swing.JMenuItem;
 
 import jd.OptionalPluginWrapper;
 import jd.config.MenuItem;
+import jd.gui.UIConstants;
+import jd.gui.UserIF;
+import jd.gui.skins.SwingGui;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.plugins.Plugin;
 import jd.utils.JDTheme;
@@ -67,7 +70,8 @@ public class AddonsMenu extends JStartMenu {
                     mi.setActionListener(new ActionListener() {
 
                         public void actionPerformed(ActionEvent e) {
-                            SimpleGUI.displayConfig(((Plugin) ((MenuItem) e.getSource()).getProperty("PLUGIN")).getConfig(), false);
+                            UserIF.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL, ((Plugin) ((MenuItem) e.getSource()).getProperty("PLUGIN")).getConfig());
+//                            SimpleGUI.displayConfig(((Plugin) ((MenuItem) e.getSource()).getProperty("PLUGIN")).getConfig(), false);
                         }
 
                     });

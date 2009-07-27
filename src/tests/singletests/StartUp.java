@@ -29,10 +29,10 @@ import jd.controlling.PasswordListController;
 import jd.controlling.interaction.Interaction;
 import jd.gui.skins.SwingGui;
 import jd.gui.skins.jdgui.swing.GuiRunnable;
+import jd.gui.skins.swing.MacOSController;
 import jd.nutils.OSDetector;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
-import jd.utils.MacOSController;
 
 import org.junit.Test;
 
@@ -136,9 +136,9 @@ public class StartUp {
             }
         }.waitForEDT();
 
-        SwingGui.getInstance().setVisible(false);
+        SwingGui.getInstance().getMainFrame().setVisible(false);
 
-        assertTrue(SwingGui.getInstance() != null);
+        assertTrue(SwingGui.getInstance().getMainFrame() != null);
     }
 
     @Test

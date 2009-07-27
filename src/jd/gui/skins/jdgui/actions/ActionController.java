@@ -21,7 +21,6 @@ import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlEvent;
 import jd.event.ControlIDListener;
 import jd.event.JDBroadcaster;
-import jd.gui.UIConstants;
 import jd.gui.UserIF;
 import jd.gui.UserIO;
 import jd.gui.skins.jdgui.actions.event.ActionControllerListener;
@@ -146,7 +145,7 @@ public class ActionController {
                         }
                     }
                     fps = null;
-                    UserIF.getInstance().requestPanel(UIConstants.PANEL_ID_DOWNLOADLIST);
+                    UserIF.getInstance().requestPanel(UserIF.Panels.DOWNLOADLIST, null);
                 }
                 new GuiRunnable<Object>() {
                     public Object runSave() {

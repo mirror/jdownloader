@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.gui.userio.dialog;
+package jd.gui.skins.swing.dialog;
 
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
@@ -74,7 +74,7 @@ public class CaptchaDialog extends JCountdownDialog implements ActionListener, K
     private SwingWorker<Object, Object> jacWorker;
 
     public CaptchaDialog(int flag, String methodname, File captchafile, String suggestion, String explain) {
-        super(SwingGui.getInstance());
+        super(SwingGui.getInstance().getMainFrame());
         this.flag = flag;
         this.method = methodname;
         this.imagefile = captchafile;
@@ -126,10 +126,10 @@ public class CaptchaDialog extends JCountdownDialog implements ActionListener, K
         this.setMinimumSize(new Dimension(300, -1));
         this.pack();
         this.setResizable(false);
-        if (SwingGui.getInstance() == null || SwingGui.getInstance().getExtendedState() == JFrame.ICONIFIED || !SwingGui.getInstance().isVisible() || !SwingGui.getInstance().isActive()) {
+        if (SwingGui.getInstance() == null || SwingGui.getInstance().getMainFrame().getExtendedState() == JFrame.ICONIFIED || !SwingGui.getInstance().getMainFrame().isVisible() || !SwingGui.getInstance().getMainFrame().isActive()) {
             this.setLocation(Screen.getDockBottomRight(this));
         } else {
-            this.setLocation(Screen.getCenterOfComponent(SwingGui.getInstance(), this));
+            this.setLocation(Screen.getCenterOfComponent(SwingGui.getInstance().getMainFrame(), this));
         }
         this.toFront();
         this.setAlwaysOnTop(true);

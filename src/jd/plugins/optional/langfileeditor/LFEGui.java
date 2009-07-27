@@ -392,7 +392,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
 
         } else if (e.getSource() == mnuShowDupes) {
 
-            LFEDupeDialog.showDialog(SwingGui.getInstance(), dupes);
+            LFEDupeDialog.showDialog(SwingGui.getInstance().getMainFrame(), dupes);
 
         } else if (e.getSource() == mnuOpenSearchDialog) {
 
