@@ -98,7 +98,7 @@ public class JAntiCaptcha {
             return "JACerror";
         }
         // BasicWindow.showImage(cap.getImageWithGaps(2));
-        String ret = jac.checkCaptcha(file,cap);
+        String ret = jac.checkCaptcha(file, cap);
         if (Utilities.isLoggerActive()) {
             logger.info("captcha text:" + ret);
         }
@@ -711,10 +711,7 @@ public class JAntiCaptcha {
     }
 
     private String getCodeFromFileName(String name) {
-        String[] matches = new Regex(name, "captcha_(.*?)_code(.*?)\\.(.*?)").getRow(0);
-        if (matches != null && matches.length > 0) return matches[1];
-
-        return null;
+        return new Regex(name, "captcha_(.*?)_code(.*?)\\.(.*?)").getMatch(1);
     }
 
     /**
@@ -1606,7 +1603,7 @@ public class JAntiCaptcha {
 
         bw3.add(new ImageComponent(captcha.getImage(1)), Utilities.getGBC(0, 2, 2, 2));
         bw3.add(new JLabel("Farbraum Anpassung"), Utilities.getGBC(2, 2, 2, 2));
-        jas.executePrepareCommands(captchafile,captcha);
+        jas.executePrepareCommands(captchafile, captcha);
 
         bw3.add(new ImageComponent(captcha.getImage(1)), Utilities.getGBC(0, 4, 2, 2));
         bw3.add(new JLabel("Prepare Code ausgeführt"), Utilities.getGBC(2, 4, 2, 2));

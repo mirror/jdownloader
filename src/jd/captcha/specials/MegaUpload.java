@@ -30,7 +30,7 @@ import jd.nutils.Colors;
  * @author JD-Team
  */
 public class MegaUpload {
-    private static final String[] STATICMATCH = new String[] { "qwertzuiopasdfghjklyxcvbnmQWERTZUIOPASDFGHJKLYXCVBNM", "qwertzuiopasdfghjklyxcvbnmQWERTZUIOPASDFGHJKLYXCVBNM", "qwertzuiopasdfghjklyxcvbnmQWERTZUIOPASDFGHJKLYXCVBNM", "1234567890" };;
+    private static final String[] STATICMATCH = new String[] { "qwertzuiopasdfghjklyxcvbnmQWERTZUIOPASDFGHJKLYXCVBNM", "qwertzuiopasdfghjklyxcvbnmQWERTZUIOPASDFGHJKLYXCVBNM", "qwertzuiopasdfghjklyxcvbnmQWERTZUIOPASDFGHJKLYXCVBNM", "1234567890" };
 
     public static Letter[] getLetters(Captcha captcha) {
 

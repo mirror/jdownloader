@@ -86,7 +86,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
         bars = new PremiumBar[BARCOUNT];
         lbl = new JLabel(JDL.L("gui.statusbar.premiumloadlabel", "< Add Accounts"));
         setName(JDL.L("quickhelp.premiumstatusbar", "Premium statusbar"));
-        this.setLayout(new MigLayout("ins 0", "", "[center]"));
+        this.setLayout(new MigLayout("ins 0", "", "[::20, center]"));
         premium = new JToggleButton();
         premium.setToolTipText(JDL.L("gui.menu.action.premium.desc", "Enable Premiumusage globally"));
 
@@ -110,7 +110,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
         premium.setContentAreaFilled(false);
         premium.setBorderPainted(false);
         updatePremiumButton();
-        add(premium);
+        add(premium, "hmax 20");
         premium.addMouseListener(this);
         add(new JSeparator(JSeparator.VERTICAL), "growy");
         add(lbl, "hidemode 3");
@@ -121,7 +121,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
             bars[i].addMouseListener(this);
             bars[i].setEnabled(premium.isSelected());
             bars[i].setVisible(false);
-            add(bars[i], "hidemode 3, h 16!");
+            add(bars[i], "hidemode 3, hmax 20");
         }
         this.setOpaque(false);
         config = SubConfiguration.getConfig("PREMIUMSTATUS");
