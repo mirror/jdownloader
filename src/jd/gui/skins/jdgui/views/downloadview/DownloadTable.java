@@ -480,6 +480,15 @@ public class DownloadTable extends JTable implements MouseListener, MouseMotionL
                         JDL.L("gui.table.contextmenu.downloadDir", "Zielordner öffnen"),
                         TableAction.DOWNLOAD_DIR,
                         new Property("folder", new File(((DownloadLink) obj).getFileOutput()).getParentFile()))));
+                
+                popup.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.sort", 16, 16), JDL.L("gui.table.contextmenu.packagesort", "Paket sortieren")
+                        + " ("
+                        + sfp.size()
+                        + "), ("
+                        + model.getColumnName(col)
+                        + ")", TableAction.SORT, 
+                        new Property("col", model.toModel(col)))));
+                
                 popup.add(tmp = new JMenuItem(new TableAction(
                         panel,
                         JDTheme.II("gui.images.browse", 16, 16),

@@ -290,6 +290,7 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
                         break;
                     case TableAction.SORT:
                         col = (Integer) ((TableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("col");
+                        selectedLinks = new ArrayList<DownloadLink>(DownloadLinksPanel.this.internalTable.getSelectedDownloadLinks());
                         selectedPackages = new ArrayList<FilePackage>(DownloadLinksPanel.this.internalTable.getSelectedFilePackages());
                         break;
                     case TableAction.DOWNLOAD_PRIO:
@@ -459,6 +460,10 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
                         sort(col);
                     break;
                 case TableAction.SORT:
+                	if (selectedLinks.size()>0) {
+                		selectedLinks.get(0).getFilePackage().sort(col);
+                		break;
+                	}
                     for (int i = 0; i < selectedPackages.size(); i++) {
                         selectedPackages.get(i).sort(col);
                     }
@@ -525,7 +530,7 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
             Collections.sort(packages, new Comparator<FilePackage>() {
 
                 public int compare(FilePackage a, FilePackage b) {
-                    FilePackage aa = a;
+                	FilePackage aa = a;
                     FilePackage bb = b;
                     if (lastSort) {
                         aa = b;

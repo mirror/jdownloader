@@ -318,10 +318,10 @@ public class LinkGrabberTable extends JTable implements MouseListener, MouseMoti
             if (obj instanceof LinkGrabberFilePackage) {
                 popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.newpackage", 16, 16), JDL.L("gui.linkgrabberv2.splithoster", "Split by hoster") + " (" + sfp.size() + ")", LinkGrabberTableAction.SPLIT_HOSTER)));
                 popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.add_package", 16, 16), JDL.L("gui.table.contextmenu.editdownloadDir", "Zielordner ändern") + " (" + sfp.size() + ")", LinkGrabberTableAction.EDIT_DIR)));
-                popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.sort", 16, 16), JDL.L("gui.table.contextmenu.packagesort", "Paket sortieren") + " (" + sfp.size() + "), (" + model.getColumnName(col) + ")", LinkGrabberTableAction.SORT, new Property("col", model.toModel(col)))));
-                popup.addSeparator();
             }
             if (obj instanceof LinkGrabberFilePackage || obj instanceof DownloadLink) {
+            	popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.sort", 16, 16), JDL.L("gui.table.contextmenu.packagesort", "Paket sortieren") + " (" + sfp.size() + "), (" + model.getColumnName(col) + ")", LinkGrabberTableAction.SORT, new Property("col", model.toModel(col)))));
+                popup.addSeparator();
                 popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.dlc", 16, 16), JDL.L("gui.table.contextmenu.dlc", "DLC erstellen") + " (" + alllinks.size() + ")", LinkGrabberTableAction.SAVE_DLC, new Property("links", alllinks))));
                 popup.add(buildpriomenu(alllinks));
                 addExtMenu(popup);

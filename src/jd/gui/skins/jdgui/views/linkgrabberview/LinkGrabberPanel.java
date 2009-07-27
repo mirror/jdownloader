@@ -484,6 +484,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                                 break;
                             case LinkGrabberTableAction.SORT:
                                 col = (Integer) ((LinkGrabberTableAction) ((JMenuItem) arg0.getSource()).getAction()).getProperty().getProperty("col");
+                                selected_links = new ArrayList<DownloadLink>(INSTANCE.internalTable.getSelectedDownloadLinks());
                                 selected_packages = new ArrayList<LinkGrabberFilePackage>(INSTANCE.internalTable.getSelectedFilePackages());
                                 break;
                             case LinkGrabberTableAction.DOWNLOAD_PRIO:
@@ -569,6 +570,13 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                             }
                             break;
                         case LinkGrabberTableAction.SORT:
+                        	if (selected_links.size()>0) {
+                        		LinkGrabberFilePackage fp2 = LGINSTANCE.getFPwithLink(selected_links.get(0));
+                        		if (fp2 != null) {
+                        			fp2.sort(col, false);
+                        		}
+                        		break;
+                        	}
                             for (LinkGrabberFilePackage fp2 : selected_packages) {
                                 fp2.sort(col, false);
                             }
