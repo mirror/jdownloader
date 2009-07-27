@@ -72,14 +72,6 @@ public class Badongo {
 				int p = captcha.getPixelValue(x, y);
 
 				Color c = new Color(p);
-
-				if ((c.getBlue() > 100 && c.getRed() > 100 && c.getGreen() > 100) || (c.getBlue() > 130 || c.getRed() > 130 || c.getGreen() > 130)) {
-						PixelGrid.setPixelValue(x, y, newgrid, captcha
-								.getMaxPixelValue());
-
-				} else {
-					newgrid[x][y] = captcha.grid[x][y];
-				}
 				if (c.getBlue() > 100 && c.getRed() > 100 && c.getGreen() > 100 || c.getBlue() > 130 || c.getRed() > 130 || c.getGreen() > 130) {
 					if (lastC == null || !((Math.abs(lastpos[0]-x)+Math.abs(lastpos[1]-y))<3 && Colors.getColorDifference(lastC.getRGB(), c.getRGB()) < 10))
 						PixelGrid.setPixelValue(x, y, newgrid, captcha
