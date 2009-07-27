@@ -1,5 +1,4 @@
 <jDownloader>
-  <method name="filebase.to" author="ManiacMansion" />
+  <method name="getapp.info" author="DwD" />
   <format type="png" letterNum="5" />
-
 </jDownloader>

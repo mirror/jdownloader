@@ -135,7 +135,7 @@ public class LinkbaseBiz extends PluginForDecrypt {
                         throw new DecrypterException(DecrypterException.CAPTCHA);
                     }
 
-                    String captchaCode = getCaptchaCode("linkbase.biz1", captchaFile, UserIO.NO_USER_INTERACTION, param, null, null);
+                    String captchaCode = getCaptchaCode("linkbase.biz", captchaFile, UserIO.NO_USER_INTERACTION, param, null, null);
                     if (captchaCode == null || captchaCode.contains("-")) continue;
                     Form form = br.getForm(0);
                     form.put("captcha", captchaCode);

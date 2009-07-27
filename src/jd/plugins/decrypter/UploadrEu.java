@@ -93,13 +93,13 @@ public class UploadrEu extends PluginForDecrypt {
                             throw new DecrypterException(DecrypterException.CAPTCHA);
                         }
                         if (captchaurl.contains("type=2")) {
-                            captchastring = getCaptchaCode("linkbase.biz2", captchaFile, UserIO.NO_USER_INTERACTION, param, null, null);
+                            captchastring = getCaptchaCode("linkbase.biz_math", captchaFile, UserIO.NO_USER_INTERACTION, param, null, null);
                             captchastring = captchastring.replaceAll("gg", "0");
                             if (!captchastring.matches("\\d+[\\+|\\-]\\d=\\?")) continue;
                             captchastring = "" + getCode(captchastring);
 
                         } else
-                            captchastring = getCaptchaCode("linkbase.biz1", captchaFile, UserIO.NO_USER_INTERACTION, param, null, null);
+                            captchastring = getCaptchaCode("linkbase.biz", captchaFile, UserIO.NO_USER_INTERACTION, param, null, null);
                         captcha = true;
                     }
                     if (captcha) passcap.put("captchastring", captchastring);
