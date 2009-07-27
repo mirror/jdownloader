@@ -1758,6 +1758,50 @@ public class Captcha extends PixelGrid {
     }
 
     /**
+     * Entfernt bildbereiche deren Sättigung größe bzw kleiner der tollerance
+     * ist
+     * 
+     * @param mode
+     * @param tollerance
+     */
+    public void cleanBySaturation(int mode, int tollerance) {
+        int[][] newgrid = new int[getWidth()][getHeight()];
+
+        for (int x = 0; x < getWidth(); x++) {
+            for (int y = 0; y < getHeight(); y++) {
+
+                int p = getPixelValue(x, y);
+
+                Color c = new Color(p);
+                int min = Math.min(c.getRed(), Math.min(c.getGreen(), c.getBlue()));
+                int max = Math.max(c.getRed(), Math.max(c.getGreen(), c.getBlue()));
+                int v= 0;
+                if(max>0)
+                {
+                	v=(max-min)*100/max;
+                }
+                if (mode == 1) {
+                    if (v > tollerance) {
+                        PixelGrid.setPixelValue(x, y, newgrid, getMaxPixelValue());
+                    } else {
+                        newgrid[x][y] = grid[x][y];
+                    }
+
+                } else {
+                    if (v < tollerance) {
+                        PixelGrid.setPixelValue(x, y, newgrid, getMaxPixelValue());
+                    } else {
+                        newgrid[x][y] = grid[x][y];
+                    }
+
+                }
+
+            }
+        }
+        grid = newgrid;
+
+    }
+    /**
      * Entfernt bildbereiche deren RGB distance größe bzw kleiner der tollerance
      * ist
      * 
