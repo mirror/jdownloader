@@ -47,17 +47,13 @@ public class MegaFtpCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("404 Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
-        String filename = br.getRegex("<font color=\"#FC8622\" size=\"4\">(.*?)</font>").getMatch(0);
+        String filename = br.getRegex("<b><font color=\"#000000\" size=\"4\">File Name: </font><font color=\"#FC8622\" size=\"4\">(.*?)</font></b>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
         br.setFollowRedirects(false);
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
@@ -89,7 +85,7 @@ public class MegaFtpCom extends PluginForHost {
             }
         }
 
-        Form downloadForm = br.getFormbyProperty("name", "download");
+        Form downloadForm = br.getForm(0);
         downloadForm.put("download", Encoding.urlEncode("Click Here to Download"));
 
         dl = br.openDownload(downloadLink, downloadForm, true, 0);
