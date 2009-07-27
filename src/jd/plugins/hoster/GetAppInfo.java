@@ -46,7 +46,10 @@ public class GetAppInfo extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
+        //Eingefügter Link wird geändert um die Werbeseite zu umgehen
+        String dlpage2 = link.getDownloadURL().replaceAll("getapp.info/download/", "getapp.info/download1.php?id=");
+        br.getPage(dlpage2);
+
         if (br.containsHTML("The file requested is either invalid or may have been claimed by copyright holders.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         String filename = Encoding.htmlDecode(br.getRegex("File Name:<font color=\"#0088CC\">(.*?)</font><br>").getMatch(0));
@@ -74,6 +77,8 @@ public class GetAppInfo extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        //Eingefügter Link wird geändert um die Werbeseite zu umgehen
+        String dlpage2 = downloadLink.getDownloadURL().replaceAll("getapp.info/download/", "getapp.info/download1.php?id=");
         br.setFollowRedirects(true);
         // Link zum Captcha
         String captchaurl = "http://getapp.info/image.php";
@@ -86,7 +91,7 @@ public class GetAppInfo extends PluginForHost {
         }
 
         String code = getCaptchaCode("getapp.info", captchaFile, UserIO.NO_USER_INTERACTION, downloadLink, null, null);
-
+br.getPage(dlpage2);
         Form captchaForm = br.getForm(1);
         if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         // Captcha Usereingabe in die Form einfügen
