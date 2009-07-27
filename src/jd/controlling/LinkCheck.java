@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.gui.skins.jdgui.views.linkgrabberview;
+package jd.controlling;
 
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
@@ -25,10 +25,6 @@ import java.util.Iterator;
 
 import javax.swing.Timer;
 
-import jd.controlling.DownloadController;
-import jd.controlling.ProgressController;
-import jd.controlling.ProgressControllerEvent;
-import jd.controlling.ProgressControllerListener;
 import jd.event.JDBroadcaster;
 import jd.nutils.Formatter;
 import jd.nutils.jobber.JDRunnable;

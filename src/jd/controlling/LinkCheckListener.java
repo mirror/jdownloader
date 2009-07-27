@@ -14,24 +14,10 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.gui.skins.jdgui.views.linkgrabberview;
+package jd.controlling;
 
-import jd.event.JDEvent;
+import java.util.EventListener;
 
-public class LinkCheckEvent extends JDEvent {
-
-    public LinkCheckEvent(Object source, int ID, Object parameter) {
-        super(source, ID, parameter);
-        // TODO Auto-generated constructor stub
-    }
-
-    public LinkCheckEvent(Object source, int ID) {
-        super(source, ID);
-        // TODO Auto-generated constructor stub
-    }
-
-    public final static int START = 1;
-    public final static int STOP = 2;
-    public final static int ABORT = 3;
-    public final static int AFTER_CHECK = 4;
+public interface LinkCheckListener extends EventListener{
+    public void onLinkCheckEvent(LinkCheckEvent event);
 }

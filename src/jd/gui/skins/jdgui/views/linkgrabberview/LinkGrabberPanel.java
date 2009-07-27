@@ -33,6 +33,9 @@ import javax.swing.Timer;
 
 import jd.config.Configuration;
 import jd.controlling.JDController;
+import jd.controlling.LinkCheck;
+import jd.controlling.LinkCheckEvent;
+import jd.controlling.LinkCheckListener;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.LinkGrabberControllerEvent;
 import jd.controlling.LinkGrabberControllerListener;
