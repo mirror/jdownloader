@@ -139,7 +139,7 @@ public class AboutDialog extends AbstractDialog {
         devs.add(new DevEntry("Sheadox", "sheadox@jdownloader.org", "Hoster plugins, Decrypt plugins, Support"));
         devs.add(new DevEntry("Viperb0y", "support@jdownloader.org", "Hoster / Decrypter, Support and Bugfixing"));
         devs.add(new DevEntry("Gamewalker", "-", "Hoster plugins, Decrypt plugins, Support"));
-        devs.add(new DevEntry("Gigant", "-", "Hoster plugins, Decrypt plugins, Support"));
+        devs.add(new DevEntry("Gigant", "gigant@jdownloader.org", "Hoster plugins, Decrypt plugins, Support, Bugfixing"));
         devs.add(new DevEntry("Trazo", "ancoar@gmail.com", "Logo Design (v3)"));
         devs.add(new DevEntry("Freeloader", "-", "Turkish Translation, Homepage Translation"));
         devs.add(new DevEntry("Muelas", "-", "Spanish Translation, Homepage Translation"));
