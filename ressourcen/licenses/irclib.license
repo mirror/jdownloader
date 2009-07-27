@@ -1,0 +1,21 @@
+IRClib is client library for Internet Relay Chat (IRC) licensed under the 
+	* GNU Lesser General Public License (see COPYING_LGPL),
+	* Apache License, Version 2.0 (see COPYING_AL) and
+	* Eclipse Public License (see COPYING_EPL).
+
+IRClib requires Java Runtime Environment 1.2 or later. It requires
+JSSE (Java Secure Socket Extensions) until J2RE 1.3; J2RE 1.4 already
+includes JSSE and hence doesn't require JSSE. You can download JSSE
+from http://java.sun.com/products/jsse/index-103.html.
+
+Content:
+	* irclib.jar      IRClib java byte code
+	* src/            IRClib java source code
+	* javadoc/        IRClib javadoc documentation
+
+Check the project's homepage: http://moepii.sourceforge.net
+
+My name is Christoph Schwering. You can mail to schwering@gmail.com or
+visit http://www.schwering.org.
+Please see the file COPYING_* for copyright affairs and the file CHANGELOG
+for the changelog.
