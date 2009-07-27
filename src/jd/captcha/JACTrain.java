@@ -42,7 +42,7 @@ public class JACTrain {
     private void go() {
 
         // String hoster="rscat.com";
-        String hoster = "linkbase.biz1";
+        String hoster = "badongo.com";
         JAntiCaptcha jac = new JAntiCaptcha(Utilities.getMethodDir(), hoster);
         // jac.runTestMode(new File("1186941165349_captcha.jpg"));
         jac.displayLibrary();
