@@ -31,12 +31,12 @@ import jd.controlling.JDLogger;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.PasswordListController;
 import jd.controlling.reconnect.Reconnecter;
-import jd.gui.skins.jdgui.views.linkgrabberview.LinkGrabberFilePackage;
 import jd.gui.skins.jdgui.views.linkgrabberview.LinkGrabberPanel;
 import jd.http.Encoding;
 import jd.nutils.Formatter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkGrabberFilePackage;
 import jd.plugins.LinkStatus;
 import jd.utils.JDUtilities;
 

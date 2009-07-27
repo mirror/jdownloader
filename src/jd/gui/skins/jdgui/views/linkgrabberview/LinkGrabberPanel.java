@@ -59,6 +59,7 @@ import jd.nutils.io.JDIO;
 import jd.nutils.jobber.Jobber;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkGrabberFilePackage;
 import jd.plugins.LinkStatus;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;

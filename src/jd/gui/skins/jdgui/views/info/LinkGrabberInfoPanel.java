@@ -10,8 +10,8 @@ import jd.controlling.LinkGrabberController;
 import jd.gui.skins.jdgui.GUIUtils;
 import jd.gui.skins.jdgui.JDGuiConstants;
 import jd.gui.skins.jdgui.swing.GuiRunnable;
-import jd.gui.skins.jdgui.views.linkgrabberview.LinkGrabberFilePackage;
 import jd.nutils.Formatter;
+import jd.plugins.LinkGrabberFilePackage;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 

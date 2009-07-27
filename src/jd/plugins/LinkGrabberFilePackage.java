@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.gui.skins.jdgui.views.linkgrabberview;
+package jd.plugins;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -28,7 +28,6 @@ import jd.config.Property;
 import jd.controlling.LinkGrabberController;
 import jd.event.JDBroadcaster;
 import jd.nutils.io.JDIO;
-import jd.plugins.DownloadLink;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 

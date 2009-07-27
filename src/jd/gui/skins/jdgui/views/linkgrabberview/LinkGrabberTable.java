@@ -55,6 +55,7 @@ import jd.gui.skins.jdgui.components.JExtCheckBoxMenuItem;
 import jd.gui.skins.jdgui.swing.GuiRunnable;
 import jd.gui.skins.simple.components.RowHighlighter;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkGrabberFilePackage;
 import jd.plugins.LinkStatus;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;

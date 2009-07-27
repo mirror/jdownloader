@@ -28,6 +28,7 @@ import javax.swing.border.Border;
 import jd.gui.skins.simple.components.RowHighlighter;
 import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkGrabberFilePackage;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;

@@ -38,6 +38,7 @@ import jd.controlling.LinkGrabberController;
 import jd.gui.skins.SwingGui;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkGrabberFilePackage;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;

@@ -7,6 +7,7 @@ import javax.swing.table.AbstractTableModel;
 import jd.config.SubConfiguration;
 import jd.controlling.LinkGrabberController;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkGrabberFilePackage;
 import jd.utils.locale.JDL;
 
 public class LinkGrabberJTableModel extends AbstractTableModel {

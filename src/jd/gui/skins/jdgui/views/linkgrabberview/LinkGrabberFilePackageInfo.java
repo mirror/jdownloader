@@ -32,6 +32,7 @@ import jd.gui.skins.jdgui.interfaces.SwitchPanel;
 import jd.gui.skins.simple.components.ComboBrowseFile;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.JDTextField;
+import jd.plugins.LinkGrabberFilePackage;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
