@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.net.URL;
 
 import jd.PluginWrapper;
+import jd.http.Encoding;
 import jd.nutils.FtpEvent;
 import jd.nutils.FtpListener;
 import jd.nutils.JDHash;
@@ -53,9 +54,12 @@ public class Ftp extends PluginForHost {
             URL url = new URL(downloadLink.getDownloadURL());
             ftp.connect(url);
 
-            String[] list = ftp.getFileInfo(url.getPath());
+            String[] list = ftp.getFileInfo(Encoding.urlDecode(url.getPath(),false));
             if (list == null) return AvailableStatus.FALSE;
             downloadLink.setDownloadSize(Long.parseLong(list[4]));
+        }catch(Exception e){
+            e.printStackTrace();
+        
         } finally {
             ftp.disconnect();
         }

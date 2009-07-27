@@ -72,6 +72,7 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
+import de.javasoft.plaf.synthetica.SyntheticaRootPaneUI;
 
 public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
 
@@ -108,6 +109,10 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         pack();
         initLocationAndDimension();
         setVisible(true);
+        if (this.getRootPane().getUI() instanceof SyntheticaRootPaneUI) {
+            ((SyntheticaRootPaneUI) this.getRootPane().getUI()).setMaximizedBounds(this);
+        }
+        setExtendedState(GUIUtils.getConfig().getIntegerProperty("MAXIMIZED_STATE_OF_" + this.getName(), JFrame.NORMAL));
         ClipboardHandler.getClipboard().setTempDisabled(false);
         LinkGrabberController.getInstance().setDistributer(this);
     }
@@ -123,6 +128,11 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         setMinimumSize(new Dimension(400, 100));
         setLocation(GUIUtils.getLastLocation(null, null, this));
         setExtendedState(GUIUtils.getConfig().getIntegerProperty("MAXIMIZED_STATE_OF_" + this.getName(), JFrame.NORMAL));
+
+        if (this.getRootPane().getUI() instanceof SyntheticaRootPaneUI) {
+            ((SyntheticaRootPaneUI) this.getRootPane().getUI()).setMaximizedBounds(this);
+        }
+
     }
 
     private void initComponents() {
@@ -352,7 +362,8 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
     }
 
     public void closeWindow() {
-        if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_COUNTDOWN, JDL.L("sys.ask.rlyclose", "Wollen Sie jDownloader wirklich schließen?")), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
+        if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_COUNTDOWN, JDL.L("sys.ask.rlyclose", "Wollen Sie jDownloader wirklich schließen?")),
+                                 UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
             JDUtilities.getController().exit();
         }
     }

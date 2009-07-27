@@ -127,10 +127,14 @@ public class SimpleFTP {
         if (!response.startsWith("331 ")) { throw new IOException("SimpleFTP received an unknown response after sending the user: " + response); }
         sendLine("PASS " + pass);
         response = readLine();
-        if (!response.startsWith("230 ")) { throw new IOException("SimpleFTP was unable to log in with the supplied password: " + response); }
+        if (!response.startsWith("230")) { throw new IOException("SimpleFTP was unable to log in with the supplied password: " + response); }
+  
         sendLine("PWD");
-        response = readLine();
-        if (!response.startsWith("257 ")) { throw new IOException("PWD COmmand not understood " + response); }
+      while((  response = readLine()).startsWith("230")){
+            
+        }
+//        
+      if (!response.startsWith("257 ")) { throw new IOException("PWD COmmand not understood " + response); }
 
         // Response: 257 "/" is the current directory
         dir = new Regex(response, "\"(.*)\"").getMatch(0);
@@ -612,6 +616,7 @@ public class SimpleFTP {
      * @throws IOException
      */
     public String[] getFileInfo(String path) throws IOException {
+      
         String name = path.substring(path.lastIndexOf("/") + 1);
         path = path.substring(0, path.lastIndexOf("/"));
 
