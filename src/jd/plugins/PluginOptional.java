@@ -20,6 +20,7 @@ import java.util.regex.Pattern;
 
 import jd.OptionalPluginWrapper;
 import jd.PluginWrapper;
+import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
@@ -36,12 +37,13 @@ public abstract class PluginOptional extends Plugin implements ControlListener {
 
         // Deaktiviert das PLugin beim beenden
         if (event.getID() == ControlEvent.CONTROL_SYSTEM_EXIT) {
+            JDController.requestDelayExit();
             try {
                 onExit();
             } catch (Exception e) {
                 JDLogger.exception(e);
             }
-
+            JDController.releaseDelayExit();
         }
 
     }

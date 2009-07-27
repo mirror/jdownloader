@@ -154,6 +154,7 @@ public class JDExternInterface extends PluginOptional {
                     String dir = null;
                     FilePackage fp = FilePackage.getInstance();
                     fp.setName("FlashGot");
+                    fp.setProperty(LinkGrabberController.DONTFORCEPACKAGENAME, "yes");
                     if (request.getParameters().get("dir") != null) {
                         dir = Encoding.urlDecode(request.getParameters().get("dir"), false).trim();
                         fp.setDownloadDirectory(dir);
@@ -192,6 +193,7 @@ public class JDExternInterface extends PluginOptional {
                                 links.add(direct);
                             }
                         }
+                        fp.addLinks(links);
                         LinkGrabberController.getInstance().addLinks(links, autostart, autostart);
                     }
                 }

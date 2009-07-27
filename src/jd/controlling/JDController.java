@@ -203,6 +203,7 @@ public class JDController implements ControlListener {
     private DownloadWatchDog watchdog;
 
     private Integer StartStopSync = new Integer(0);
+    private static Integer delayExit = new Integer(0);
     private static JDController INSTANCE;
 
     public JDController() {
@@ -346,6 +347,8 @@ public class JDController implements ControlListener {
     public void prepareShutdown() {
         logger.info("Stop all runing downloads");
         stopDownloads();
+        logger.info("Call Exit event");
+        fireControlEventDirect(new ControlEvent(this, ControlEvent.CONTROL_SYSTEM_EXIT, this));
         logger.info("Save Downloadlist");
         JDUtilities.getDownloadController().saveDownloadLinksSyncnonThread();
         logger.info("Save Accountlist");
@@ -354,12 +357,49 @@ public class JDController implements ControlListener {
         PasswordListController.getInstance().saveSync();
         logger.info("Save HTACCESSlist");
         HTACCESSController.getInstance().saveSync();
-        logger.info("Call Exit event");
-        fireControlEventDirect(new ControlEvent(this, ControlEvent.CONTROL_SYSTEM_EXIT, this));
         logger.info("Call Exit interactions");
         Interaction.handleInteraction(Interaction.INTERACTION_EXIT, null);
+        logger.info("Wait for delayExit");
+        waitDelayExit();
         logger.info("Shutdown Database");
         JDUtilities.getDatabaseConnector().shutdownDatabase();
+    }
+
+    /*
+     * hiermit kann ein Thread den Exit von JD verzögern (zb. speichern von db
+     * sachen)
+     */
+    public static void requestDelayExit() {
+        synchronized (delayExit) {
+            delayExit++;
+        }
+    }
+
+    /*
+     * hiermit signalisiert ein Thread das es nun okay ist zu beenden
+     */
+    public static void releaseDelayExit() {
+        synchronized (delayExit) {
+            delayExit--;
+        }
+    }
+
+    /*
+     * verzögert den exit, sofern delayExit requests vorliegen, max 10 seks
+     */
+    private void waitDelayExit() {
+        long maxdelay = 10000;
+        while (maxdelay > 0) {
+            synchronized (delayExit) {
+                if (delayExit <= 0) return;
+            }
+            try {
+                Thread.sleep(200);
+            } catch (InterruptedException e) {
+            }
+            maxdelay -= 200;
+        }
+        logger.severe("Unable to satisfy all delayExit requests!");
     }
 
     /**

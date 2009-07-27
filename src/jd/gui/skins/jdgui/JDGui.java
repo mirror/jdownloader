@@ -311,7 +311,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
             break;
 
         case ControlEvent.CONTROL_SYSTEM_EXIT:
-
+            JDController.requestDelayExit();
             new GuiRunnable<Object>() {
                 @Override
                 public Object runSave() {
@@ -319,6 +319,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
                     GUIUtils.saveLastLocation(JDGui.this, null);
                     GUIUtils.saveLastDimension(JDGui.this, null);
                     GUIUtils.getConfig().save();
+                    JDController.releaseDelayExit();
                     setVisible(false);
                     dispose();
                     return null;

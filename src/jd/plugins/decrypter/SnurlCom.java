@@ -36,8 +36,7 @@ public class SnurlCom extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-        br.setDebug(true);
+        String parameter = param.toString();        
         br.getPage(parameter);
         String url = null;
         if (br.getRedirectLocation() != null) {

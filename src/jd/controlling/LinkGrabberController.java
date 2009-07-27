@@ -54,6 +54,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
     public static final String PARAM_ONLINECHECK = "PARAM_ONLINECHECK";
     public static final String CONFIG = "LINKGRABBER";
     public static final String IGNORE_LIST = "IGNORE_LIST";
+    public static final String DONTFORCEPACKAGENAME = "dontforcename";
 
     private static ArrayList<LinkGrabberFilePackage> packages = new ArrayList<LinkGrabberFilePackage>();
     private static final HashSet<String> extensionFilter = new HashSet<String>();
@@ -443,7 +444,13 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
                 this.FP_FILTERED.add(link);
                 return;
             } else if (link.getFilePackage() != FilePackage.getDefaultFilePackage()) {
-                packageName = link.getFilePackage().getName();
+                if (link.getFilePackage().getStringProperty(DONTFORCEPACKAGENAME, null) != null) {
+                    /* enable autopackaging even if filepackage is set */
+                    autoPackage = true;
+                    packageName = cleanFileName(link.getName());
+                } else {
+                    packageName = link.getFilePackage().getName();
+                }
             } else {
                 autoPackage = true;
                 packageName = cleanFileName(link.getName());

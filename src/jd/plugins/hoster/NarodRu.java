@@ -44,20 +44,19 @@ public class NarodRu extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
-
+        this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("<title>404</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-
         String name = br.getRegex(Pattern.compile("<dt class=\"name\"><i class=\"b-old-icon b-old-icon-arc\"></i>(.*?)</dt>")).getMatch(0);
         if (name == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         String md5Hash = br.getRegex(Pattern.compile("<dt class=\"size\">md5:</dt>.*<dd class=\"size\">(.*?)</dd>", Pattern.DOTALL)).getMatch(0);
         if (md5Hash == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-
-        // TODO: kyrillische Zeichen in der Dateigr��e
-        String fileSize = br.getRegex(Pattern.compile("<td class=\"l-download-info-right\">.*<dl class=\"b-download-item g-line\">.*<dt class=\"size\">.*</dt>.*<dd class=\"size\">(.*?) ??</dd>", Pattern.DOTALL)).getMatch(0);
+        String fileSize = br.getRegex(Pattern.compile("<td class=\"l-download-info-right\">.*?<dl class=\"b-download-item g-line\">.*?<dt class=\"size\">.*?</dt>.*?<dd class=\"size\">(.*?).</dd>", Pattern.DOTALL)).getMatch(0);
         if (fileSize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-
+        fileSize = fileSize.replaceAll("М", "M");
+        fileSize = fileSize.replaceAll("к", "k");
+        fileSize = fileSize + "b";
         downloadLink.setMD5Hash(md5Hash.trim());
         downloadLink.setName(name.trim());
         downloadLink.setDownloadSize(Regex.getSize(fileSize));
@@ -67,7 +66,6 @@ public class NarodRu extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-
         br.getPage("http://narod.ru/disk/getcapchaxml/?rnd=1");
         System.out.print(br);
         String captchaKey = br.getRegex(Pattern.compile("<number.*>(.*?)</number>")).getMatch(0);
