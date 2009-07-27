@@ -28,7 +28,6 @@ import jd.captcha.pixelgrid.PixelGrid;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
 import jd.captcha.pixelobject.PixelObject;
-import jd.captcha.utils.Utilities;
 
 /**
  * 
