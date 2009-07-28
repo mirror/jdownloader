@@ -47,15 +47,17 @@ public class JACLoad {
     }
 
     private void loadMegaUpload() {
-        final String dir = "/home/dwd/.jd_home/captchas/linkbase.biz1/";
+        final String dir = "/home/dwd/.jd_home/captchas/badongo.com/";
 
-        for (int i = 0; i < 200; i++) {
+        for (int i = 0; i < 500; i++) {
         	final int b = i;
             new Thread(new Runnable() {
                 public void run() {
                     Browser br = new Browser();
                     try {
-                        br.getDownload(new File(dir + b + ".png"), "http://linkbase.biz/captcha_text.php");
+                    	br.getPage("http://www.badongo.com/de/file/14240881"+ "?rs=displayCaptcha&rst=&rsrnd=" + System.currentTimeMillis() + "&rsargs[]=yellow");
+                        String cid = br.getRegex("cid=(\\d+)").getMatch(0);
+                        br.getDownload(new File(dir + b + ".jpg"), "http://www.badongo.com/ccaptcha.php?cid=" + cid);
                     } catch (IOException e) {
                         JDLogger.exception(e);
                     }
