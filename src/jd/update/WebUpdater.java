@@ -522,7 +522,7 @@ e.printStackTrace();
 
         String[] tmp = file.elementAt(0).split("\\?");
 
-        broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_FILE, JDL.LF("updatefile", "Download %s to %s", WebUpdater.formatPathReadable(tmp[1]), WebUpdater.formatPathReadable(JDUtilities.getResourceFile(tmp[0]).getAbsolutePath()))));
+        broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_FILE, JDL.LF("jd.update.WebUpdater.updatefile", "Download %s to %s", WebUpdater.formatPathReadable(tmp[1]), WebUpdater.formatPathReadable(JDUtilities.getResourceFile(tmp[0]).getAbsolutePath()))));
 
         Browser.download(JDUtilities.getResourceFile(tmp[0]), tmp[0]);
 

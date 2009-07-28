@@ -29,6 +29,7 @@ import jd.nutils.Formatter;
 import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
+import jd.plugins.PluginOptional;
 import jd.utils.JDUtilities;
 
 public class SrcParser {
@@ -84,7 +85,7 @@ public class SrcParser {
 
     public static void main(String args[]) {
 
-        SrcParser p = new SrcParser(new File("C:\\Users\\Coalado\\.jd_home\\tmp\\lfe\\src\\jd\\gui\\skins\\jdgui\\"));
+        SrcParser p = new SrcParser(new File("C:\\Users\\Coalado\\.jd_home\\tmp\\lfe\\src\\jd"));
         p.parse();
     }
 
@@ -181,7 +182,7 @@ public class SrcParser {
             currentContent = currentContent.replaceFirst("super\\(\"(.*?)\",\\s*\".*?\"\\);", "[[...]]");
             currentContent += "\r\nJDL.L(\"" + menukey + "\",\"" + menukey + "\");";
 
-        } else if (this.currentContent.contains("ThreadedAction")) {
+        } else if (this.currentContent.contains(" ThreadedAction")) {
             String[] keys = new Regex(currentContent, "ThreadedAction\\s*\\(\"(.*?)\"\\,\\s*\"(.*?)\"").getColumn(0);
 
             for (String k : keys) {
@@ -190,7 +191,7 @@ public class SrcParser {
                 currentContent += "\r\nJDL.L(\"" + "gui.menu." + k + ".accel" + "\",\"" + "-" + "\");";
             }
 
-        } else if (this.currentContent.contains("ToolBarAction")) {
+        } else if (this.currentContent.contains(" ToolBarAction")) {
             String[] keys = new Regex(currentContent, "ToolBarAction\\s*\\(\"(.*?)\"\\,\\s*\"(.*?)\"").getColumn(0);
 
             for (String k : keys) {
@@ -198,7 +199,10 @@ public class SrcParser {
                 currentContent += "\r\nJDL.L(\"" + "gui.menu." + k + ".mnem" + "\",\"" + "gui.menu." + k + ".mnem" + "\");";
                 currentContent += "\r\nJDL.L(\"" + "gui.menu." + k + ".accel" + "\",\"" + "-" + "\");";
             }
-        } 
+        } else if (this.currentContent.contains("extends PluginOptional")) {
+            currentContent += "\r\nJDL.L(\"" + cl + "\",\"" + simple + "\");";
+            
+        }
         //JDL.L(this.getClass().getName()
 
     }
@@ -234,15 +238,16 @@ public class SrcParser {
      * @param filePattern
      */
     private void parseCodeLine(String match, ArrayList<LngEntry> fileEntries, ArrayList<String> filePattern) {
-        String[] calls = match.split("JDL");
+        String[] calls = match.split("JDL\\.");
         String pat_string = "\"(.*?)(?<!\\\\)\"";
 
         LngEntry entry;
         String m;
         main: for (String orgm : calls) {
+           
             m = orgm;
             m = m.trim();
-            if (m.startsWith(".L")) {
+            if (m.startsWith("L")) {
 
                 String[] strings = new Regex(m, pat_string).getColumn(0);
                 m = m.replace("\r", "");
@@ -253,7 +258,22 @@ public class SrcParser {
                 m = m.replace(" ", "");
                 orgm = m;
 //                m = new Regex(m, "\\((.*?\\,.*?)[\\)\\,]").getMatch(0);
-                m=m.substring(m.indexOf("(")+1,m.lastIndexOf(")"));
+                try{
+                    int end = m.indexOf(")");
+                    int com=m.indexOf(",");
+                    com= m.indexOf(",",com+1);
+                    if(com>0&&com<end)end=com;
+                    if(end<0){
+                        m=m.substring(m.indexOf("(")+1).trim();
+                    }else{
+                        m=m.substring(m.indexOf("(")+1,end).trim(); 
+                    }
+           
+                }catch(Exception e){
+                    e.printStackTrace();
+                    
+                }
+                while(m.charAt(m.length()-1)==',')m=m.substring(0,m.length()-1);
                 if (m == null||m.length()==0) {
                     // JDLogger.getLogger().severe("unknown: " + orgm);
                     continue;
@@ -261,9 +281,9 @@ public class SrcParser {
               m=m.replace("%%%+%%%", "%%%%%%");
                 String[] parameter = m.split(",");
 
-                if (orgm.startsWith(".LF")) {
+                if (orgm.startsWith("LF ")||orgm.startsWith("LF(")) {
 
-                    if (orgm.substring(3).trim().charAt(0) != '(') {
+                    if (orgm.substring(2).trim().charAt(0) != '(') {
 
                         JDLogger.getLogger().severe("Malformated translation value in " + currentFile + " : " + m);
                         continue;
@@ -367,9 +387,9 @@ public class SrcParser {
                     if (!fileEntries.contains(entry)) {
                         fileEntries.add(entry);
                     }
-                } else if (orgm.startsWith(".L")) {
+                } else if (orgm.startsWith("L ")||orgm.startsWith("L(")) {
 
-                    if (orgm.substring(2).trim().charAt(0) != '(') {
+                    if (orgm.substring(1).trim().charAt(0) != '(') {
 
                         JDLogger.getLogger().severe("Malformated translation value in " + currentFile + " : " + m);
                         continue;

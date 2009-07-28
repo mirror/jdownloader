@@ -111,7 +111,7 @@ public class ActionController {
                 setPriority(1000);
                 this.setEnabled(true);
                 this.type = ToolBarAction.Types.NORMAL;
-                this.setToolTipText(JDL.L(JDL_PREFIX + ".toolbar.control.start.tooltip", "Start downloads in list"));
+                this.setToolTipText(JDL.L(JDL_PREFIX + "toolbar.control.start.tooltip", "Start downloads in list"));
             }
 
             @Override
@@ -176,7 +176,7 @@ public class ActionController {
                 setPriority(999);
                 this.setEnabled(false);
                 this.type = ToolBarAction.Types.TOGGLE;
-                this.setToolTipText(JDL.L(JDL_PREFIX + ".toolbar.control.pause.tooltip", "Pause active transfer (decrease speed to 10 kb/s)"));
+                this.setToolTipText(JDL.L(JDL_PREFIX + "toolbar.control.pause.tooltip", "Pause active transfer (decrease speed to 10 kb/s)"));
             }
 
             @Override
@@ -223,7 +223,7 @@ public class ActionController {
             public void initDefaults() {
                 setPriority(998);
                 this.setEnabled(false);
-                this.setToolTipText(JDL.L(JDL_PREFIX + ".toolbar.control.stop.tooltip", "Stop all running downloads"));
+                this.setToolTipText(JDL.L(JDL_PREFIX + "toolbar.control.stop.tooltip", "Stop all running downloads"));
             }
 
             @Override
@@ -282,7 +282,7 @@ public class ActionController {
             public void initDefaults() {
                 setPriority(800);
                 this.setEnabled(true);
-                this.setToolTipText(JDL.L(JDL_PREFIX + ".toolbar.interaction.reconnect.tooltip", "Get a new IP be resetting your internet connection"));
+                this.setToolTipText(JDL.L(JDL_PREFIX + "toolbar.interaction.reconnect.tooltip", "Get a new IP be resetting your internet connection"));
             }
 
             @Override
@@ -335,7 +335,7 @@ public class ActionController {
             public void initDefaults() {
                 setPriority(800);
                 this.setEnabled(true);
-                this.setToolTipText(JDL.L(JDL_PREFIX + ".toolbar.interaction.update.tooltip", "Check for new updates"));
+                this.setToolTipText(JDL.L(JDL_PREFIX + "toolbar.interaction.update.tooltip", "Check for new updates"));
             }
 
             @Override
