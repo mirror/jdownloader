@@ -134,6 +134,7 @@ public class CryptMeCom extends PluginForDecrypt {
     private String decrypt(Browser br) {
         String c = br.getRegex("c=\"(.*?)\"").getMatch(0);
         String x = br.getRegex("x\\(\"(.*?)\"\\)").getMatch(0);
+        if (x==null) return br.toString();
         String f = decrypt1(c);
         String dec2 = decrypt2(f, x);
         return dec2;
