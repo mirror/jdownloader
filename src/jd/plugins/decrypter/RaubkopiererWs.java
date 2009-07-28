@@ -98,15 +98,18 @@ public class RaubkopiererWs extends PluginForDecrypt {
             return new ArrayList<DownloadLink>();
         }
         /* Get package name + password */
-        if (br.containsHTML("<h1>(.*?)(<img.*?)?</h1>")) fpName = br.getRegex("<h1>(.*?)(<img.*?)?</h1>").getMatch(0).trim();
+        fpName = br.getRegex("<h1>(.*?)(<img.*?)?</h1>").getMatch(0).trim();
         if (fpName != null && !fpName.isEmpty()) fp.setName(HTMLEntities.unhtmlentities(fpName));
-        if (br.containsHTML("Passwort:</b></th>\\s+<td>(.*?)</td>")) fpPass = br.getRegex("Passwort:</b></th>\\s+<td>(.*?)</td>").getMatch(0).trim();
+        fpPass = br.getRegex("Passwort:</b></th>\\s+<td>(.*?)</td>").getMatch(0).trim();
         if (fpPass != null && !fpPass.isEmpty()) fp.setPassword(fpPass);
 
         Form form = br.getFormbyProperty("name", "go_captcha");
         if (form != null) {
-            for (InputField field : form.getInputFieldsByType("submit"))
-                mirrors.add(field.getKey(), "", true, false);
+            for (InputField field : form.getInputFieldsByType("submit")) {
+                String name = field.getStringProperty("class", null);
+                if (name == null) name = field.getKey();
+                mirrors.add(name, "", true, false);
+            }
             if (mirrors.isEmpty()) return null;
         } else
             return null;
@@ -246,10 +249,9 @@ public class RaubkopiererWs extends PluginForDecrypt {
 
             // @Override
             public Object runSave() {
-/**
- * TODO
- * NO GUI IN PLUGINS!!
- */
+                /**
+                 * TODO NO GUI IN PLUGINS!!
+                 */
                 new JDialog(SwingGui.getInstance().getMainFrame()) {
                     private static final long serialVersionUID = 1981746297816350752L;
 
@@ -376,7 +378,9 @@ public class RaubkopiererWs extends PluginForDecrypt {
             public boolean useForSample;
 
             public SingleMirror(String key, String name, boolean use, boolean useForSample) {
+                if (key == null) key = "unkown";
                 this.key = key;
+                if (name == null) name = "unknown";
                 this.name = name;
                 this.use = use;
                 this.useForSample = useForSample;
