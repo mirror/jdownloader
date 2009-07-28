@@ -117,6 +117,7 @@ public class ConfigTreeModel implements TreeModel {
         private Class<? extends SwitchPanel> clazz;
         private String title;
         private ImageIcon icon;
+        private String iconKey;
 
         public Class<? extends SwitchPanel> getClazz() {
             return clazz;
@@ -124,8 +125,17 @@ public class ConfigTreeModel implements TreeModel {
 
         public TreeEntry setIcon(String string) {
             // TODO Auto-generated method stub
-            icon = JDTheme.II(string, 16, 16);
+            iconKey=string;
+            icon = JDTheme.II(string, 20, 20);
             return this;
+        }
+
+        public String getIconKey() {
+            return iconKey;
+        }
+
+        public void setIconKey(String iconKey) {
+            this.iconKey = iconKey;
         }
 
         public void setClazz(Class<? extends SwitchPanel> clazz) {

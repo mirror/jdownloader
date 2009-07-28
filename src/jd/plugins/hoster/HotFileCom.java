@@ -36,7 +36,7 @@ public class HotFileCom extends PluginForHost {
 
     public HotFileCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://hotfile.com/premium.html");
+        this.enablePremium("http://hotfile.com/register.html?reff=274657");
     }
 
     // @Override

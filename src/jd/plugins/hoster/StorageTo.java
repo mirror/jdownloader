@@ -30,6 +30,7 @@ public class StorageTo extends PluginForHost {
 
     public StorageTo(PluginWrapper wrapper) {
         super(wrapper);
+        //premium http://www.storage.to/affiliate/Slh9BLxH
     }
 
     @Override

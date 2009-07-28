@@ -44,9 +44,9 @@ import jd.controlling.AccountControllerListener;
 import jd.controlling.JDController;
 import jd.gui.UserIO;
 import jd.gui.skins.SwingGui;
-import jd.gui.skins.jdgui.menu.JDMenu;
 import jd.gui.skins.jdgui.swing.GuiRunnable;
-import jd.gui.skins.simple.Factory;
+import jd.gui.skins.jdgui.swing.menu.HosterMenu;
+import jd.gui.skins.jdgui.swing.menu.Menu;
 import jd.gui.skins.simple.TinyProgressBar;
 import jd.nutils.Formatter;
 import jd.nutils.JDFlags;
@@ -80,6 +80,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
     private boolean updating = false;
     private Timer updateIntervalTimer;
     private boolean updateinprogress = false;
+    private JPopupMenu popup;
 
     public PremiumStatus() {
         super();
@@ -94,7 +95,9 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
 
             public void actionPerformed(ActionEvent e) {
                 if (!premium.isSelected()) {
-                    int answer = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_COUNTDOWN, JDL.L("dialogs.premiumstatus.global.title", "Disable Premium?"), JDL.L("dialogs.premiumstatus.global.message", "Do you really want to disable all premium accounts?"), JDTheme.II("gui.images.warning", 32, 32), JDL.L("gui.btn_yes", "Yes"), JDL.L("gui.btn_no", "No"));
+                    int answer = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_COUNTDOWN, JDL.L("dialogs.premiumstatus.global.title", "Disable Premium?"),
+                                                                           JDL.L("dialogs.premiumstatus.global.message", "Do you really want to disable all premium accounts?"),
+                                                                           JDTheme.II("gui.images.warning", 32, 32), JDL.L("gui.btn_yes", "Yes"), JDL.L("gui.btn_no", "No"));
                     if (JDFlags.hasAllFlags(answer, UserIO.RETURN_CANCEL) && !JDFlags.hasAllFlags(answer, UserIO.RETURN_DONT_SHOW_AGAIN)) {
                         premium.setSelected(true);
                         return;
@@ -294,7 +297,8 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
                         } else if (left > 0) {
                             bars[i].setMaximum(max);
                             bars[i].setValue(left);
-                            bars[i].setToolTipText(JDL.LF("gui.premiumstatus.traffic.tooltip", "%s - %s account(s) -- You can download up to %s today.", host, list.size(), Formatter.formatReadable(left)));
+                            bars[i].setToolTipText(JDL.LF("gui.premiumstatus.traffic.tooltip", "%s - %s account(s) -- You can download up to %s today.", host, list.size(), Formatter
+                                    .formatReadable(left)));
                         } else {
                             bars[i].setMaximum(10);
                             bars[i].setValue(10);
@@ -382,9 +386,10 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
         if (e.getSource() == premium) {
             if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
                 SwingGui.getInstance().setWaiting(true);
-                JPopupMenu popup = new JPopupMenu();
-
-                Factory.createHosterPopup(popup);
+                if (popup == null) {
+                    popup = new JPopupMenu();
+                    HosterMenu.update(popup);
+                }
                 popup.show(premium, e.getPoint().x, e.getPoint().y);
                 SwingGui.getInstance().setWaiting(false);
             }
@@ -398,7 +403,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
 
                     ArrayList<MenuItem> entries = bars[i].getPlugin().createMenuitems();
                     for (MenuItem next : entries) {
-                        JMenuItem mi = JDMenu.getJMenuItem(next);
+                        JMenuItem mi = Menu.getJMenuItem(next);
                         if (mi == null) {
                             popup.addSeparator();
                         } else {

@@ -39,7 +39,6 @@ import jd.utils.locale.JDL;
 public class JDGrowlNotification extends PluginOptional {
 
 
-
     public JDGrowlNotification(PluginWrapper wrapper) {
         super(wrapper);
     }

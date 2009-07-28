@@ -34,6 +34,8 @@ import jd.utils.locale.JDL;
 @OptionalPlugin(rev="$Revision$", id="folderwatch",interfaceversion=4)
 @SuppressWarnings("unchecked")
 public class JDFolderWatch extends PluginOptional {
+    
+
     public class check extends Thread {
         // @Override
         public void run() {

@@ -43,6 +43,11 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
     public static final int LOAD_ON_INIT = 1 << 1;
     public static final int ACCEPTONLYSURLSFALSE = 1 << 2;
     public static final int ALWAYS_ENABLED = 1 << 3;
+    /**
+     * Load only if debug flag is set
+     */
+    public static final int DEBUG_ONLY = 1 << 4;
+
     private Pattern pattern;
     private String host;
     private String className;
@@ -65,8 +70,10 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
         if (JDFlags.hasSomeFlags(flags, LOAD_ON_INIT)) this.getPlugin();
         if (JDFlags.hasSomeFlags(flags, ALWAYS_ENABLED)) this.alwaysenabled = true;
         if (JDFlags.hasSomeFlags(flags, ACCEPTONLYSURLSFALSE)) this.acceptOnlyURIs = false;
+        if (JDFlags.hasNoFlags(flags, DEBUG_ONLY) || JDInitFlags.SWITCH_DEBUG) {
 
-        WRAPPER.put(classn, this);
+            WRAPPER.put(classn, this);
+        }
     }
 
     public int getFlags() {
@@ -102,7 +109,9 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
         boolean manualupdate = SubConfiguration.getConfig("WEBUPDATE").getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false);
         try {
 
-            if (CL == null) CL = new URLClassLoader(new URL[] { JDUtilities.getJDHomeDirectoryFromEnvironment().toURI().toURL(), JDUtilities.getResourceFile("java").toURI().toURL() }, Thread.currentThread().getContextClassLoader());
+            if (CL == null) CL = new URLClassLoader(new URL[] {
+                    JDUtilities.getJDHomeDirectoryFromEnvironment().toURI().toURL(), JDUtilities.getResourceFile("java").toURI().toURL()
+            }, Thread.currentThread().getContextClassLoader());
             if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED && WebUpdater.getPluginList() != null) {
 
                 ArrayList<FileUpdate> filelist = new ArrayList<FileUpdate>();
@@ -148,10 +157,14 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
                 logger.info("PLUGIN NOT FOUND!");
                 return null;
             }
-            Class<?>[] classes = new Class[] { PluginWrapper.class };
+            Class<?>[] classes = new Class[] {
+                PluginWrapper.class
+            };
             Constructor<?> con = plgClass.getConstructor(classes);
             classes = null;
-            this.loadedPlugin = (Plugin) con.newInstance(new Object[] { this });
+            this.loadedPlugin = (Plugin) con.newInstance(new Object[] {
+                this
+            });
 
             return loadedPlugin;
         } catch (Exception e) {
@@ -209,7 +222,11 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
 
     public Plugin getNewPluginInstance() {
         try {
-            return getPlugin().getClass().getConstructor(new Class[] { PluginWrapper.class }).newInstance(new Object[] { this });
+            return getPlugin().getClass().getConstructor(new Class[] {
+                PluginWrapper.class
+            }).newInstance(new Object[] {
+                this
+            });
         } catch (Exception e) {
             JDLogger.exception(e);
         }

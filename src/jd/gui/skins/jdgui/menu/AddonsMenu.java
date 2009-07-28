@@ -24,10 +24,8 @@ import javax.swing.JMenuItem;
 
 import jd.OptionalPluginWrapper;
 import jd.config.MenuItem;
-import jd.gui.UIConstants;
 import jd.gui.UserIF;
-import jd.gui.skins.SwingGui;
-import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.jdgui.swing.menu.Menu;
 import jd.plugins.Plugin;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
@@ -82,7 +80,7 @@ public class AddonsMenu extends JStartMenu {
                     MenuItem m = new MenuItem(MenuItem.CONTAINER, plg.getPlugin().getHost(), 0);
                     m.setIcon(JDTheme.II(plg.getPlugin().getIconKey(), 16, 16));
                     m.setItems(mis);
-                    JMenuItem mi = JDMenu.getJMenuItem(m);
+                    JMenuItem mi = Menu.getJMenuItem(m);
                     mi.setIcon(m.getIcon());
                     if (mi != null) {
                         itemsWithSubmenu.add(mi);
@@ -91,7 +89,7 @@ public class AddonsMenu extends JStartMenu {
                     }
                 } else {
                     for (MenuItem mi : mis) {
-                        JMenuItem c = JDMenu.getJMenuItem(mi);
+                        JMenuItem c = Menu.getJMenuItem(mi);
                         c.setDisabledIcon(null);
                         c.setIcon(JDTheme.II(plg.getPlugin().getIconKey(), 16, 16));
                         c.setSelectedIcon(JDTheme.II(plg.getPlugin().getIconKey(), 16, 16));

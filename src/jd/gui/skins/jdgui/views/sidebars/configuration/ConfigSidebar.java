@@ -1,5 +1,7 @@
 package jd.gui.skins.jdgui.views.sidebars.configuration;
 
+import java.awt.event.MouseEvent;
+
 import javax.swing.JTree;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
@@ -22,11 +24,21 @@ public class ConfigSidebar extends SideBarPanel {
         this.view = configurationView;
         this.setLayout(new MigLayout("ins 0 ", "[grow,fill]", "[grow,fill]"));
 
-        this.add(tree = new JTree(getTreeModel()));
-        tree.setCellRenderer(new TreeRenderer());        
+        this.add(tree = new JTree(getTreeModel()) {
+            /**
+             * woraround a synthetica layout bug with doubleclick
+             */
+            public void processMouseEvent(MouseEvent m) {
+                if (m.getClickCount() > 1) return;
+                super.processMouseEvent(m);
+            }
+
+        });
+        tree.setCellRenderer(new TreeRenderer());
         tree.setOpaque(false);
         tree.setRootVisible(false);
         tree.setExpandsSelectedPaths(true);
+        tree.setBackground(null);
         tree.getSelectionModel().addTreeSelectionListener(new TreeSelectionListener() {
 
             private TreeEntry entry;

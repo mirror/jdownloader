@@ -34,7 +34,7 @@ import jd.config.ConfigEntry.PropertyType;
 import jd.gui.UserIO;
 import jd.gui.skins.SwingGui;
 import jd.gui.skins.jdgui.interfaces.SwitchPanel;
-import jd.gui.skins.simple.Factory;
+import jd.gui.skins.swing.Factory;
 import jd.nutils.JDFlags;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;

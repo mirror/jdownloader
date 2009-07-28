@@ -43,7 +43,7 @@ import jd.gui.skins.jdgui.settings.GUIConfigEntry;
 import jd.gui.skins.jdgui.settings.subpanels.SubPanelCLRReconnect;
 import jd.gui.skins.jdgui.settings.subpanels.SubPanelLiveHeaderReconnect;
 import jd.gui.skins.jdgui.swing.GuiRunnable;
-import jd.gui.skins.simple.Factory;
+import jd.gui.skins.swing.Factory;
 import jd.nutils.Formatter;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;

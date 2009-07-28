@@ -14,35 +14,25 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.gui.skins.simple;
+package jd.gui.skins.swing;
 
 import java.awt.Cursor;
 import java.awt.event.ActionListener;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collections;
 
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.JComponent;
 import javax.swing.JLabel;
-import javax.swing.JMenu;
-import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
 
-import jd.HostPluginWrapper;
 import jd.config.ConfigGroup;
-import jd.config.MenuItem;
 import jd.controlling.JDLogger;
 import jd.gui.skins.jdgui.components.linkbutton.JLink;
-import jd.gui.skins.jdgui.menu.JDMenu;
 import jd.gui.skins.simple.components.JDUnderlinedText;
-import jd.plugins.PluginForHost;
 import jd.utils.JDTheme;
-import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
 public class Factory {
@@ -90,30 +80,5 @@ public class Factory {
         bt.addMouseListener(new JDUnderlinedText(bt));
         return bt;
     }
-
-    public static void createHosterPopup(JComponent component) {
-        PluginForHost plugin;
-        JMenu pluginPopup;
-        JMenuItem mi;
-        ArrayList<HostPluginWrapper> hosts = JDUtilities.getPluginsForHost();
-        Collections.sort(hosts);
-        for (HostPluginWrapper wrapper : hosts) {
-            if (!wrapper.isLoaded() || !wrapper.isPremiumEnabled()) continue;
-            plugin = wrapper.getPlugin();
-            pluginPopup = new JMenu(wrapper.getHost());
-            if (plugin.hasHosterIcon()) pluginPopup.setIcon(plugin.getHosterIcon());
-            for (MenuItem next : plugin.createMenuitems()) {
-                mi = JDMenu.getJMenuItem(next);
-                if (mi == null) {
-                    pluginPopup.addSeparator();
-                } else {
-                    pluginPopup.add(mi);
-                }
-            }
-            component.add(pluginPopup);
-        }
-    }
-
-
 
 }

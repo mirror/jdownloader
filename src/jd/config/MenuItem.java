@@ -16,14 +16,19 @@
 
 package jd.config;
 
+import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
+import java.util.logging.Logger;
 
+import javax.swing.AbstractAction;
 import javax.swing.ImageIcon;
+import javax.swing.KeyStroke;
 
+import jd.controlling.JDLogger;
 import jd.plugins.Plugin;
 
-public class MenuItem extends Property {
+public class MenuItem extends AbstractAction {
     public static final int CONTAINER = 0;
     public static final int NORMAL = 1;
     public static final int SEPARATOR = 3;
@@ -32,16 +37,16 @@ public class MenuItem extends Property {
      */
     private static final long serialVersionUID = 9205555751462125274L;
     public static final int TOGGLE = 2;
+    private static final String MENUITEMS = "MENUITEMS";
     private int actionID;
     private ActionListener actionListener;
-    private boolean enabled = true;
+
     private int id = NORMAL;
     private ArrayList<MenuItem> items;
     private Plugin plugin;
-    private boolean selected;
-    private String title;
-    String accelerator = null;
-    private ImageIcon icon;
+
+    private Logger logger;
+    private Property properties;
 
     public MenuItem(int id) {
         this(id, null, -1);
@@ -50,7 +55,9 @@ public class MenuItem extends Property {
     public MenuItem(int id, String title, int actionID) {
         this.id = id;
         this.actionID = actionID;
-        this.title = title;
+
+        this.putValue(MenuItem.NAME, title);
+        logger = JDLogger.getLogger();
     }
 
     public MenuItem(String title, int actionID) {
@@ -58,11 +65,13 @@ public class MenuItem extends Property {
     }
 
     public void setAccelerator(String accelerator) {
-        this.accelerator = accelerator;
+        this.putValue(MenuItem.ACCELERATOR_KEY, KeyStroke.getKeyStroke(accelerator));
     }
 
     public String getAccelerator() {
-        return this.accelerator;
+        KeyStroke stroke = ((KeyStroke) getValue(ACCELERATOR_KEY));
+        if (stroke == null) return null;
+        return stroke.getKeyChar() + "";
     }
 
     public void addMenuItem(MenuItem m) {
@@ -73,6 +82,7 @@ public class MenuItem extends Property {
             items = new ArrayList<MenuItem>();
         }
         items.add(m);
+        this.firePropertyChange(MENUITEMS, null, items);
 
     }
 
@@ -106,26 +116,17 @@ public class MenuItem extends Property {
     }
 
     public String getTitle() {
-        return title;
-    }
-
-    public boolean isEnabled() {
-
-        return enabled;
+        return (String) getValue(NAME);
     }
 
     public boolean isSelected() {
 
-        return selected;
+        return (Boolean) getValue(SELECTED_KEY);
     }
 
     public MenuItem setActionListener(ActionListener actionListener) {
         this.actionListener = actionListener;
-        return this;
-    }
 
-    public MenuItem setEnabled(boolean enabled) {
-        this.enabled = enabled;
         return this;
     }
 
@@ -141,22 +142,43 @@ public class MenuItem extends Property {
     }
 
     public void setSelected(boolean selected) {
-        this.selected = selected;
+        putValue(SELECTED_KEY, selected);
     }
 
     public MenuItem setTitle(String title) {
-        this.title = title;
+        putValue(NAME, title);
         return this;
     }
 
     public MenuItem setIcon(ImageIcon ii) {
-        this.icon=ii;
+        putValue(SMALL_ICON, ii);
         return this;
-        
+
     }
 
     public ImageIcon getIcon() {
-        return icon;
+        return (ImageIcon) getValue(SMALL_ICON);
+    }
+
+    public void actionPerformed(ActionEvent e) {
+        if (getActionListener() == null) {
+            JDLogger.getLogger().warning("no Actionlistener for " + getTitle());
+            return;
+        }
+        getActionListener().actionPerformed(new ActionEvent(this, getActionID(), getTitle()));
+
+    }
+
+    public void setProperty(String string, Object value) {
+        if (properties == null) properties = new Property();
+        this.firePropertyChange(string, getProperty(string), value);
+        properties.setProperty(string, value);
+
+    }
+
+    public Object getProperty(String string) {
+        if (properties == null) properties = new Property();
+        return properties.getProperty(string);
     }
 
 }
