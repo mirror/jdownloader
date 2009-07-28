@@ -19,13 +19,13 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.gui.UserIO;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -72,29 +72,31 @@ public class TurkFileCom extends PluginForHost {
         // Form um auf "Datei herunterladen" zu klicken
         Form DLForm = br.getFormbyProperty("name", "F1");
         if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        String passCode = null;
         if (br.containsHTML("<br><b>Password:</b>")) {
-                String pass = UserIO.getInstance().requestInputDialog("Password");
-                DLForm.put("password", pass);
-            
+            if (downloadLink.getStringProperty("pass", null) == null) {
+                passCode = Plugin.getUserInput("Password?", downloadLink);
+            } else {
+                /* gespeicherten PassCode holen */
+                passCode = downloadLink.getStringProperty("pass", null);
+            }
+            DLForm.put("password", passCode);
         }
         sleep(25000l, downloadLink);
         br.openDownload(downloadLink, DLForm, false, 1);
-        {
-            if (!(dl.getConnection().isContentDisposition())) {
-                br.followConnection();
-                dl.getConnection().disconnect();
-
-                {
-                    if (br.containsHTML("Wrong password")) throw new PluginException(LinkStatus.ERROR_RETRY);
-                    logger.warning("Wrong password!");
-                    dl.getConnection().disconnect();
-                }
-                dl.getConnection().disconnect();
-            } else {
-
-                dl.startDownload();
+        if (!(dl.getConnection().isContentDisposition())) {
+            br.followConnection();
+            if (br.containsHTML("Wrong password")) {
+                logger.warning("Wrong password!");
+                downloadLink.setProperty("pass", null);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
             }
+            throw new PluginException(LinkStatus.ERROR_FATAL);
         }
+        if (passCode != null) {
+            downloadLink.setProperty("pass", passCode);
+        }
+        dl.startDownload();
     }
 
     @Override
