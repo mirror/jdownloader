@@ -21,7 +21,10 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.http.Encoding;
 import jd.http.URLConnectionAdapter;
+import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -29,23 +32,74 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freakshare.net" }, urls = { "http://[\\w\\.]*?freakshare\\.net/file(s/|/)[\\w]+/(.*)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freakshare.net" }, urls = { "http://[\\w\\.]*?freakshare\\.net/file(s/|/)[\\w]+/(.*)" }, flags = { 2 })
 public class Freaksharenet extends PluginForHost {
 
     public Freaksharenet(PluginWrapper wrapper) {
         super(wrapper);
         this.setStartIntervall(100l);
+        this.enablePremium("http://freakshare.net/shop.html");
     }
 
     // @Override
     public String getAGBLink() {
         return "http://freakshare.net/?x=faq";
     }
+    
+    public void login(Account account) throws IOException, PluginException {
+        this.setBrowserExclusive();        
+        br.setFollowRedirects(false);
+        br.getPage("http://freakshare.net/?language=US"); /*set english language in phpsession*/
+        br.getPage("http://freakshare.net/login.html");
+        br.postPage("http://freakshare.net/login.html", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass())+"&submit=Login");
+        if (br.getCookie("http://freakshare.net", "login") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        br.getPage("http://freakshare.net/");
+        if (!br.containsHTML("<td><b>Member \\(premium\\)</b></td>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);        
+    }
+    
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo(this, account);
+        this.setBrowserExclusive();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            ai.setValid(false);
+            return ai;
+        }
+        String left=br.getRegex(">Traffic left:</td>.*?<td>(.*?)</td>").getMatch(0);
+        ai.setTrafficLeft(left);
+        String validUntil = br.getRegex(">valid until:</td>.*?<td><b>(.*?)</b></td>").getMatch(0);
+        if (validUntil == null) {
+            ai.setValid(false);
+        } else {
+            ai.setValidUntil(Regex.getMilliSeconds(validUntil, "dd.MM.yyyy - HH:mm", null));
+            ai.setValid(true);
+        }
+        return ai;
+    }
+    
+    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {        
+        requestFileInformation(downloadLink);
+        login(account);        
+        br.getPage(downloadLink.getDownloadURL());
+        String url=null;
+        if (br.getRedirectLocation()==null){
+            Form form = br.getForm(0);
+            br.submitForm(form);
+            url=br.getRedirectLocation();
+        }else{
+            url=br.getRedirectLocation();
+        }
+        if (url==null) throw new PluginException(LinkStatus.ERROR_FATAL);
+        dl=br.openDownload(downloadLink, url,true,0);
+        dl.startDownload();
+    }
 
     // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
+        br.getPage("http://freakshare.net/?language=US"); /*set english language in phpsession*/
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("We are back soon")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
         if (br.containsHTML("Sorry but this File is not avaible")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -62,8 +116,7 @@ public class Freaksharenet extends PluginForHost {
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-
+        requestFileInformation(downloadLink);        
         if (br.containsHTML("You can Download only 1 File in")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1001);
         Form form = br.getForm(1);
         sleep(50 * 1000l, downloadLink);
@@ -71,14 +124,18 @@ public class Freaksharenet extends PluginForHost {
         form = br.getForm(0);
         dl = br.openDownload(downloadLink, form, false, 1);
 
-        URLConnectionAdapter con = dl.getConnection();
-        if (con.getContentType().contains("text")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1001);
+        URLConnectionAdapter con = dl.getConnection();   
+        if (!con.isContentDisposition()){
+            br.followConnection();            
+            if (br.containsHTML("you cant  download more then 1 at time")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1001);
+            throw new PluginException(LinkStatus.ERROR_FATAL);
+        }        
         dl.startDownload();
     }
 
     // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return 1;
     }
 
     // @Override
