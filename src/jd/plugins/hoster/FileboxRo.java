@@ -40,6 +40,7 @@ public class FileboxRo extends PluginForHost {
     // @Overrid
     public void correctDownloadLink(DownloadLink link) throws Exception { 
         this.setBrowserExclusive();
+        br.setCookie(link.getDownloadURL(), "filebox_language", "en");
         if (Regex.matches(link.getDownloadURL(), "http://[\\w\\.]*?fbx\\.ro/[0-9a-z]{16}")) {
             br.setFollowRedirects(true);
             br.getPage(link.getDownloadURL());
@@ -51,7 +52,7 @@ public class FileboxRo extends PluginForHost {
     
     // @Override
     public String getAGBLink() {
-        return "";
+        return "http://www.filebox.ro/disclaimer.php?english=1";
     }
     
     // @Override
