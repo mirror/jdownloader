@@ -66,6 +66,7 @@ public class StorageTo extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
+        br.clearCookies("storage.to");
         br.getPage(parameter.getDownloadURL());
         if (br.containsHTML("File not found.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<span class=\"orange\">Downloading:</span>(.*?)<span class=\"light\">(.*?)</span>").getMatch(0);
