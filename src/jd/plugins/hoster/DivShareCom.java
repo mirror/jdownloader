@@ -24,10 +24,12 @@ import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+//divshareCom by pspzockerscene+Maniac
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "divshare.com" }, urls = { "http://[\\w\\.]*?divshare\\.com/(download|image|direct)/[0-9]+-.+" }, flags = { 0 })
 public class DivShareCom extends PluginForHost {
 
@@ -56,17 +58,29 @@ public class DivShareCom extends PluginForHost {
             String infolink = link.getDownloadURL();
             br.getPage(infolink);
             // Check ob ein Passwort verlangt wird, wenn keins verlangt wird
-            // wird der Link sofort geändert und geladen (unten ists dann infolink2)!
+            // wird der Link sofort geändert und geladen (unten ists dann
+            // infolink2)!
             if (br.containsHTML("This file is password protected.")) {
-                for (int retry = 1; retry <= 5; retry++) {
-                    Form form = br.getForm(0);
-                    String pass = UserIO.getInstance().requestInputDialog("Password");
-                    form.put("gallery_password", pass);
-                    br.submitForm(form);
-                    //wenn die Seite den text "..." beinhaltet (wenns dieselbe Seite wie vor der eingabe ist) ist das Password falsch
-                    if (!br.containsHTML("This file is password protected.")) throw new PluginException(LinkStatus.ERROR_RETRY);
-                    logger.warning("Wrong password!");
+              Form form = br.getForm(0);
+              if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+              String passCode = null;
+                if (link.getStringProperty("pass", null) == null) {
+                    passCode = Plugin.getUserInput("Password?", link);
+                    
+                } else {
+                    /* gespeicherten PassCode holen */
+                    passCode = link.getStringProperty("pass", null);
                 }
+                form.put("gallery_password", passCode);
+                br.submitForm(form);
+              if (br.containsHTML("This file is password protected.")) {
+              logger.warning("Wrong password!");
+              link.setProperty("pass", null);
+              throw new PluginException(LinkStatus.ERROR_RETRY);
+              }
+              if (passCode != null) {
+                  link.setProperty("pass", passCode);
+              }
             }
             String infolink2 = link.getDownloadURL().replaceAll("divshare.com/(download|image)", "divshare.com/download/launch");
             br.getPage(infolink2);
