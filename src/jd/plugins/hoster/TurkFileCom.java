@@ -44,11 +44,12 @@ public class TurkFileCom extends PluginForHost {
     // @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setCookie("http://www.turkfile.com", "lang", "english");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("No such file with this filename")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("No such user exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("File Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = Encoding.htmlDecode(br.getRegex("<h2>Datei herunterladen (.*?)</h2>").getMatch(0));
+        String filename = Encoding.htmlDecode(br.getRegex("<h2>Download File (.*?)</h2>").getMatch(0));
         String filesize = br.getRegex("</font> ((.*?))</font>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         link.setName(filename);
@@ -61,12 +62,12 @@ public class TurkFileCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
-        //Form um auf free zu "klicken"
+        // Form um auf free zu "klicken"
         Form DLForm0 = br.getForm(0);
         if (DLForm0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         DLForm0.remove("method_premium");
         br.submitForm(DLForm0);
-        //Form um auf "Datei herunterladen" zu klicken
+        // Form um auf "Datei herunterladen" zu klicken
         Form DLForm = br.getFormbyProperty("name", "F1");
         if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         sleep(25000l, downloadLink);
