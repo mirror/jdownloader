@@ -35,7 +35,8 @@ public class Wiireloaded extends PluginForDecrypt {
     // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         int submitvalue = getPluginConfig().getIntegerProperty("WIIReloaded_SubmitValue", 5);
-        String parameter = param.toString();
+        br.setDebug(true);
+        String parameter = param.toString().replaceFirst("reloaded.info", "reloaded.org");        
         ArrayList<String> link_passwds = new ArrayList<String>();
         link_passwds.add("wii-reloaded.info");
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -55,7 +56,7 @@ public class Wiireloaded extends PluginForDecrypt {
                 logger.severe("Captcha Code has been wrong many times. abort.");
                 return null;
             }
-            String adr = "http://wii-reloaded.ath.cx/protect/captcha/captcha.php";
+            String adr = "http://www.wii-reloaded.org/protect/captcha/captcha.php";
 
             progress.addToMax(1);
 
@@ -74,9 +75,9 @@ public class Wiireloaded extends PluginForDecrypt {
         Browser brc = br.cloneBrowser();
         for (String element : ids) {
             for (int retry = 1; retry < 5; retry++) {
-                brc.getPage("http://wii-reloaded.ath.cx/protect/hastesosiehtsaus.php?i=" + element);
+                brc.getPage("http://www.wii-reloaded.org/protect/hastesosiehtsaus.php?i=" + element);
                 if (brc.containsHTML("captcha/numeric.php")) {
-                    String adr = "http://wii-reloaded.ath.cx/protect/captcha/numeric.php";
+                    String adr = "http://www.wii-reloaded.org/protect/captcha/numeric.php";
 
                     String capTxt = getCaptchaCode("wii-numeric", adr, param);
                     Form post = brc.getForm(0);
