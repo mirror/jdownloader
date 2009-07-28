@@ -19,17 +19,12 @@ package jd.captcha.specials;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.ListIterator;
 import java.util.Vector;
-
-import jd.captcha.LetterComperator;
-
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
 import jd.captcha.pixelgrid.PixelGrid;
 import jd.captcha.pixelobject.PixelObject;
-import jd.nutils.Colors;
 
 /**
  * 
