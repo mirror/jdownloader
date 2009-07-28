@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.gui.UserIO;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -29,7 +30,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision", interfaceVersion = 2, names = { "turkfile.com" }, urls = { "http://[\\w\\.]*?turkfile\\.com/[a-z|0-9]+/.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "turkfile.com" }, urls = { "http://[\\w\\.]*?turkfile\\.com/[a-z|0-9]+/.+" }, flags = { 0 })
 public class TurkFileCom extends PluginForHost {
 
     public TurkFileCom(PluginWrapper wrapper) {
@@ -67,13 +68,33 @@ public class TurkFileCom extends PluginForHost {
         if (DLForm0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         DLForm0.remove("method_premium");
         br.submitForm(DLForm0);
+        System.out.print(br.toString());
         // Form um auf "Datei herunterladen" zu klicken
         Form DLForm = br.getFormbyProperty("name", "F1");
         if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (br.containsHTML("<br><b>Password:</b>")) {
+                String pass = UserIO.getInstance().requestInputDialog("Password");
+                DLForm.put("password", pass);
+            
+        }
         sleep(25000l, downloadLink);
         br.openDownload(downloadLink, DLForm, false, 1);
-        dl.startDownload();
+        {
+            if (!(dl.getConnection().isContentDisposition())) {
+                br.followConnection();
+                dl.getConnection().disconnect();
 
+                {
+                    if (br.containsHTML("Wrong password")) throw new PluginException(LinkStatus.ERROR_RETRY);
+                    logger.warning("Wrong password!");
+                    dl.getConnection().disconnect();
+                }
+                dl.getConnection().disconnect();
+            } else {
+
+                dl.startDownload();
+            }
+        }
     }
 
     @Override
