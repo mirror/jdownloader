@@ -1862,8 +1862,10 @@ public class JAntiCaptcha {
         f.add(new JLabel("Seperated"), Utilities.getGBC(0, 5, 10, 1));
 
         for (int i = 0; i < letters.length; i++) {
-            f.add(new ImageComponent(letters[i].getImage((int) Math.ceil(jas.getDouble("simplifyFaktor")))), Utilities.getGBC(i + 1, 6, 1, 1));
-
+            f.add(new ImageComponent(letters[i].getImage((int) Math.ceil(jas.getDouble("simplifyFaktor")))), Utilities.getGBC(i*2 + 1, 6, 1, 1));
+            JLabel jl = new JLabel("|");
+            jl.setForeground(Color.RED);
+            f.add(jl,Utilities.getGBC(i*2 + 2, 6, 1, 1));
         }
         f.pack();
         // Decoden. checkCaptcha verwendet dabei die gecachte Erkennung der
@@ -1886,28 +1888,31 @@ public class JAntiCaptcha {
 
             for (int i = 0; i < lcs.length; i++) {
                 if (lcs[i] != null && lcs[i].getB() != null) {
-                    f.add(new ImageComponent(lcs[i].getB().getImage((int) Math.ceil(jas.getDouble("simplifyFaktor")))), Utilities.getGBC(i + 1, 8, 1, 1));
+                    f.add(new ImageComponent(lcs[i].getB().getImage((int) Math.ceil(jas.getDouble("simplifyFaktor")))), Utilities.getGBC(i*2 + 1, 8, 1, 1));
 
                 } else {
-                    f.add(new JLabel(""), Utilities.getGBC(i + 1, 8, 1, 1));
+                    f.add(new JLabel(""), Utilities.getGBC(i*2 + 1, 8, 1, 1));
 
                 }
+                JLabel jl = new JLabel("|");
+                jl.setForeground(Color.RED);
+                f.add(jl,Utilities.getGBC(i*2 + 2, 6, 1, 1));
                 // bw3.setImage(i + 1, 3, lcs[i].getB().getImage((int)
                 // Math.ceil(jas.getDouble("simplifyFaktor"))));
 
                 if (lcs[i] != null && lcs[i].getB() != null) {
-                    f.add(new JLabel("" + lcs[i].getDecodedValue()), Utilities.getGBC(i + 1, 9, 1, 1));
+                    f.add(new JLabel("" + lcs[i].getDecodedValue()), Utilities.getGBC(i*2 + 1, 9, 1, 1));
 
                     // bw3.setText(i + 1, 4, lcs[i].getDecodedValue());
                 } else {
-                    f.add(new JLabel(""), Utilities.getGBC(i + 1, 9, 1, 1));
+                    f.add(new JLabel(""), Utilities.getGBC(i*2 + 1, 9, 1, 1));
 
                 }
                 if (lcs[i] != null && lcs[i].getB() != null) {
-                    f.add(new JLabel("" + Math.round(10 * lcs[i].getValityPercent()) / 10.0), Utilities.getGBC(i + 1, 10, 1, 1));
+                    f.add(new JLabel("" + Math.round(10 * lcs[i].getValityPercent()) / 10.0), Utilities.getGBC(i*2 + 1, 10, 1, 1));
 
                 } else {
-                    f.add(new JLabel(""), Utilities.getGBC(i + 1, 10, 1, 1));
+                    f.add(new JLabel(""), Utilities.getGBC(i*2 + 1, 10, 1, 1));
 
                 }
             }
