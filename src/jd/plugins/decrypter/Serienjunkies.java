@@ -226,7 +226,8 @@ public class Serienjunkies extends PluginForDecrypt {
                         throw e;
                     }
                     active--;
-
+                    if(capTxt==null||capTxt.length()!=3)
+                    	continue;
                     htmlcode = postPage(br3, url, "s=" + captchaRegex.getMatch(0) + "&c=" + capTxt + "&action=Download");
 
                 } else {
@@ -946,7 +947,9 @@ public class Serienjunkies extends PluginForDecrypt {
         }
 
         // @Override
-        public void run() {
+        @SuppressWarnings("unchecked")
+		public void run() {
+        	 ArrayList<DownloadLink> down = null;
             try {
                 String link = downloadLink.getLink();
                 String[] mirrors = downloadLink.getMirrors();
@@ -960,6 +963,7 @@ public class Serienjunkies extends PluginForDecrypt {
                     }
                 }
                 ArrayList<DownloadLink> dls = getDLinks(link, cryptedLink);
+                down = (ArrayList<DownloadLink>) dls.clone();
                 if (dls != null && dls.size() > 0) {
                     ArrayList<DownloadLink> finaldls = null;
                     if (dls != null) {
@@ -1036,19 +1040,19 @@ public class Serienjunkies extends PluginForDecrypt {
                             }
                         }
                     }
-                    if (finaldls != null) {
+                    if (finaldls != null && finaldls.size()>0) {
                         for (DownloadLink downloadLink2 : finaldls) {
                             downloadLink2.addSourcePluginPasswordList(passwords);
                         }
                         result = finaldls;
                     } else {
-                        result = new ArrayList<DownloadLink>();
+                        result = down;
                     }
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                result = down;
             } catch (DecrypterException e) {
-                result = new ArrayList<DownloadLink>();
+                result = down;
             }
 
             synchronized (this) {
