@@ -148,7 +148,7 @@ public class LetitBitNet extends PluginForHost {
 
     // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 13;
+        return 1;
     }
 
     // @Override
