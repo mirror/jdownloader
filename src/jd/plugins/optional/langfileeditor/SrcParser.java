@@ -252,11 +252,13 @@ public class SrcParser {
 
                 m = m.replace(" ", "");
                 orgm = m;
-                m = new Regex(m, "\\((.*?\\,.*?)[\\)\\,]").getMatch(0);
-                if (m == null) {
+//                m = new Regex(m, "\\((.*?\\,.*?)[\\)\\,]").getMatch(0);
+                m=m.substring(m.indexOf("(")+1,m.lastIndexOf(")"));
+                if (m == null||m.length()==0) {
                     // JDLogger.getLogger().severe("unknown: " + orgm);
                     continue;
                 }
+              m=m.replace("%%%+%%%", "%%%%%%");
                 String[] parameter = m.split(",");
 
                 if (orgm.startsWith(".LF")) {
@@ -386,6 +388,7 @@ public class SrcParser {
                     /*
                      * merge expressions
                      */
+                   
                     while (parameter[0].contains("+")) {
                         try {
                             String[][] matches = new Regex(parameter[0], "(\\+([^%]+)\\+?)").getMatches();
@@ -401,6 +404,7 @@ public class SrcParser {
 
                                 }
                             }
+                           
 
                         } catch (Exception e) {
                             e.printStackTrace();
@@ -426,6 +430,7 @@ public class SrcParser {
                         }
 
                     }
+                    
                     for (int x = 0; x < parameter.length; x++) {
 
                         while (parameter[x].contains("%%%S%%%")) {
