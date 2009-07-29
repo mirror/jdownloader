@@ -40,7 +40,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 public class Moosharenet extends PluginForHost {
 
     public Moosharenet(PluginWrapper wrapper) {
-        super(wrapper);
+        super(wrapper);        
         enablePremium("http://mooshare.net/?section=becomemember");
     }
 
@@ -119,17 +119,19 @@ public class Moosharenet extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
-        br.getPage(downloadLink.getDownloadURL());
-
+        br.getPage(downloadLink.getDownloadURL());        
         Form form = br.getForm(2);
         if (form == null) {
             if (br.containsHTML("Sie haben Ihr Downloadlimit für den Moment erreicht!")) {
                 logger.info("DownloadLimit reached!");
-                return AvailableStatus.TRUE;
+                return AvailableStatus.UNCHECKABLE;
             }
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         br.submitForm(form);
+        if (br.containsHTML("keine Dateien parallel downloaden")){            
+            return AvailableStatus.UNCHECKABLE;
+        }
         String filename = br.getRegex(Pattern.compile(">Datei</td>.*?<td.*?>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         String filesize = br.getRegex(Pattern.compile(">Gr.*?e</td>.*?<td.*?>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -145,8 +147,11 @@ public class Moosharenet extends PluginForHost {
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
+        /*warten da nach einem download noch kurz die meldung kommt, gleichzeitiges download verboten*/
+        sleep(15000, downloadLink);
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
+        if (br.containsHTML("keine Dateien parallel downloaden")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
         if (br.containsHTML("Sie haben Ihr Downloadlimit für den Moment erreicht!")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l); }
         String wait = br.getRegex("var time = (.*?);").getMatch(0);
         if (wait != null) {
@@ -172,7 +177,7 @@ public class Moosharenet extends PluginForHost {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }
-        dl.startDownload();
+        dl.startDownload();        
     }
 
     // @Override
