@@ -118,6 +118,7 @@ gui.images.buy = default/premium
 gui.images.accounts = default/accounts
 gui.images.logomenu = default/logomenu
 gui.images.up = default/go-up
+gui.tab.close = default/x
 gui.images.down = default/go-down
 gui.images.taskpanes.download = default/go-down
 gui.images.go_bottom = default/go-bottom
