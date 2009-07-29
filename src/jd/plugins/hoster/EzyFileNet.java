@@ -26,6 +26,7 @@ import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -77,17 +78,28 @@ public class EzyFileNet extends PluginForHost {
         // Form um auf "Datei herunterladen" zu klicken
         Form DLForm1 = br.getFormbyProperty("name", "F1");
         if (DLForm1 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        String passCode = null;
         if (br.containsHTML("<br><b>Password:</b>")) {
-                String pass = UserIO.getInstance().requestInputDialog("Password");
-                DLForm1.put("password", pass);
+            if (downloadLink.getStringProperty("pass", null) == null) {
+                passCode = Plugin.getUserInput("Password?", downloadLink);
+            } else {
+                /* gespeicherten PassCode holen */
+                passCode = downloadLink.getStringProperty("pass", null);
+            }
+            DLForm1.put("password", passCode);
         }
         br.submitForm(DLForm1);
-        {
-            if (br.containsHTML("Wrong password")) throw new PluginException(LinkStatus.ERROR_RETRY);
+        if (br.containsHTML("Wrong password")) {
+            downloadLink.setProperty("pass", null);
             logger.warning("Wrong password!");
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+
+        }else{
+                downloadLink.setProperty("pass", passCode);
         }
+
         String dllink = br.getRegex("<a href=\"(http://ezy[0-9]+.*)\">http://").getMatch(0);
-        br.openDownload(downloadLink, dllink, true, -3);
+        br.openDownload(downloadLink, dllink, true, -2);
         dl.startDownload();
     }
 
