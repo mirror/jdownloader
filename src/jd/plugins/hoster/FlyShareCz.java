@@ -73,7 +73,6 @@ public class FlyShareCz extends PluginForHost {
                 dl.getConnection().disconnect();
 
                 {
-                    System.out.print(br.toString());
                     if (br.containsHTML("error: Invalid request")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     if (br.containsHTML("Too many simultaneous downloads")) {
                         int waittime = 10 * 60 * 1001;
