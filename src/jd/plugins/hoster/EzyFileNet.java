@@ -47,7 +47,7 @@ public class EzyFileNet extends PluginForHost {
     // @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setCookie("http://www.turkfile.com", "lang", "english");
+        br.setCookie("http://www.ezyfile.net", "lang", "english");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("No such file with this name")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("Software error")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

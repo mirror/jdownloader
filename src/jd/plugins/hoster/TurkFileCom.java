@@ -82,7 +82,8 @@ public class TurkFileCom extends PluginForHost {
             }
             DLForm.put("password", passCode);
         }
-        sleep(25000l, downloadLink);
+        int tt = Integer.parseInt(br.getRegex("countdown\">(\\d+)</span>").getMatch(0));
+        sleep(tt * 1001, downloadLink);
         br.openDownload(downloadLink, DLForm, false, 1);
         if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();
