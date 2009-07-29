@@ -145,6 +145,10 @@ public abstract class View extends SwitchPanel {
         if (this.content != null && isShown()) this.content.setShown();
     }
 
+    public SwitchPanel getContent() {
+        return content;
+    }
+
     /**
      * SIDEBAR WEST CONTENT sets the left sidebar
      * 

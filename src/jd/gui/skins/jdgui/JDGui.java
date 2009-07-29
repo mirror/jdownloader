@@ -20,11 +20,13 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Image;
 import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
 import java.awt.event.WindowEvent;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
+import javax.swing.AbstractAction;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
@@ -75,7 +77,6 @@ import jd.gui.skins.jdgui.views.TabbedPanelView;
 import jd.gui.skins.jdgui.views.linkgrabberview.LinkGrabberPanel;
 import jd.gui.skins.simple.components.ChartAPIEntity;
 import jd.gui.skins.simple.components.PieChartAPI;
-import jd.gui.skins.swing.Factory;
 import jd.gui.skins.swing.dialog.ContainerDialog;
 import jd.nutils.Formatter;
 import jd.nutils.JDFlags;
@@ -264,7 +265,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         this.menuBar = createMenuBar();
         statusBar = new JDStatusBar();
 
-        mainTabbedPane = new MainTabbedPane();
+        mainTabbedPane = MainTabbedPane.getInstance();
 
         multiProgressBar = new TabProgress();
         this.toolBar = MainToolBar.getInstance();
@@ -279,6 +280,14 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         // mainTabbedPane.add(new JLabel("III4"));
 
         mainTabbedPane.addTab(downloadView);
+        mainTabbedPane.setClosableAction(new AbstractAction() {
+
+            public void actionPerformed(ActionEvent e) {
+                System.out.println("KKK");
+
+            }
+
+        }, -1);
         mainTabbedPane.addTab(linkgrabberView);
         mainTabbedPane.addTab(configurationView);
 
@@ -553,7 +562,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
 
         this.mainTabbedPane.getSelectedView().setInfoPanel(JDCollapser.getInstance());
         ConfigPanel cp;
-    
+
         JDCollapser.getInstance().setContentPanel(cp = new ConfigPanel() {
 
             /**
@@ -563,8 +572,8 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
 
             @Override
             public void initPanel() {
-            
-               init(container);
+
+                init(container);
                 add(panel);
             }
 
@@ -574,8 +583,9 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
              * @param container
              */
             private void init(ConfigContainer container) {
-              
-//                panel.add(Factory.createHeader(container.getTitle(), UserIO.getInstance().getIcon(UserIO.ICON_INFO)),"growx,pushx,spanx,newline,wrap");
+
+                // panel.add(Factory.createHeader(container.getTitle(),
+                // UserIO.getInstance().getIcon(UserIO.ICON_INFO)),"growx,pushx,spanx,newline,wrap");
                 for (ConfigEntry cfgEntry : container.getEntries()) {
                     if (cfgEntry.getType() == ConfigContainer.TYPE_CONTAINER) {
                         init(cfgEntry.getContainer());
@@ -601,7 +611,8 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         });
         cp.initPanel();
         cp.load();
-//        this.mainTabbedPane.getSelectedView().setContent( JDCollapser.getInstance());
+        // this.mainTabbedPane.getSelectedView().setContent(
+        // JDCollapser.getInstance());
         this.mainTabbedPane.getSelectedView().setInfoPanel(JDCollapser.getInstance());
 
     }

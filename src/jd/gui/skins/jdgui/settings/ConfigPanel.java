@@ -117,7 +117,7 @@ public abstract class ConfigPanel extends SwitchPanel {
                     break;
 
                 default:
-                    panel.add(entry.getDecoration(), "spany " +  Math.max(1,entry.getInput().length) + (entry.getInput().length == 0 ? ",spanx" : ""));
+                    panel.add(entry.getDecoration(), "spany " + Math.max(1, entry.getInput().length) + (entry.getInput().length == 0 ? ",spanx" : ""));
 
                 }
             }
@@ -134,17 +134,18 @@ public abstract class ConfigPanel extends SwitchPanel {
                     break;
                 case ConfigContainer.TYPE_PREMIUMPANEL:
                     this.setLayout(new MigLayout("ins 0", "[fill,grow]", "[fill,grow]"));
-//                    panel.setLayout(new MigLayout("ins 0,wrap 2", "[fill,grow 10]10[fill,grow]"));
+                    // panel.setLayout(new MigLayout("ins 0,wrap 2",
+                    // "[fill,grow 10]10[fill,grow]"));
 
                     panel.add(c, "spanx,growy,pushy");
 
                     break;
                 case ConfigContainer.TYPE_CONTAINER:
-                  /**
-                   * TODO . handly different containers
-                   */
+                    /**
+                     * TODO . handly different containers
+                     */
                     break;
-             
+
                 default:
                     panel.add(c, entry.getDecoration() == null ? "spanx,gapright " + getGapRight() : "gapright " + getGapRight());
                     break;
@@ -194,7 +195,8 @@ public abstract class ConfigPanel extends SwitchPanel {
                 case ConfigContainer.TYPE_PREMIUMPANEL:
 
                     this.setLayout(new MigLayout("ins 0", "[fill,grow]", "[fill,grow]"));
-//                    panel.setLayout(new MigLayout("ins 0,wrap 2", "[fill,grow 10]10[fill,grow]"));
+                    // panel.setLayout(new MigLayout("ins 0,wrap 2",
+                    // "[fill,grow 10]10[fill,grow]"));
                     JScrollPane sp;
                     panel.add(sp = new JScrollPane(c), "spanx");
                     sp.setBorder(null);

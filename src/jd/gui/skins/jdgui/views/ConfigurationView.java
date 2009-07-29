@@ -2,7 +2,11 @@ package jd.gui.skins.jdgui.views;
 
 import javax.swing.Icon;
 
+import jd.config.ConfigEntry.PropertyType;
+import jd.gui.skins.jdgui.MainTabbedPane;
+import jd.gui.skins.jdgui.interfaces.SwitchPanel;
 import jd.gui.skins.jdgui.interfaces.View;
+import jd.gui.skins.jdgui.settings.ConfigPanel;
 import jd.gui.skins.jdgui.views.sidebars.configuration.ConfigSidebar;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
@@ -17,12 +21,13 @@ public class ConfigurationView extends View {
      */
     private static final String IDENT_PREFIX = "jd.gui.skins.jdgui.views.configurationview.";
 
+    private Thread changethread;
+
     public ConfigurationView() {
         super();
 
         this.setSideBar(new ConfigSidebar(this));
 
-     
     }
 
     @Override
@@ -42,14 +47,37 @@ public class ConfigurationView extends View {
 
     @Override
     protected void onHide() {
-        // TODO Auto-generated method stub
-        
+        MainTabbedPane.getInstance().setChanged(false, -1);
+        if (changethread != null) changethread.interrupt();
     }
 
     @Override
     protected void onShow() {
-        // TODO Auto-generated method stub
-        
+        if (changethread != null) changethread.interrupt();
+        changethread = new Thread() {
+            public void run() {
+                while (true) {
+                    SwitchPanel panel = getContent();
+                    if (panel instanceof ConfigPanel) {
+                        PropertyType changes = ((ConfigPanel) panel).hasChanges();
+                        if (changes != PropertyType.NONE) {
+                            MainTabbedPane.getInstance().setChanged(true, -1);
+                        } else {
+                            MainTabbedPane.getInstance().setChanged(false, -1);
+                        }
+                    }
+
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException e) {
+                        break;
+                    }
+                }
+
+            }
+        };
+        changethread.start();
+
     }
 
 }

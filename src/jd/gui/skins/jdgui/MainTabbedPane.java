@@ -2,23 +2,70 @@ package jd.gui.skins.jdgui;
 
 import java.awt.Component;
 
+import javax.swing.Action;
 import javax.swing.JTabbedPane;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import jd.gui.skins.SwingGui;
 import jd.gui.skins.jdgui.interfaces.View;
+import jd.gui.skins.jdgui.maintab.ChangeHeader;
+import jd.utils.JDUtilities;
 
 public class MainTabbedPane extends JTabbedPane {
 
     private static final long serialVersionUID = -1531827591735215594L;
+    private static MainTabbedPane INSTANCE;
+
+    public synchronized static MainTabbedPane getInstance() {
+        if (INSTANCE == null) INSTANCE = new MainTabbedPane();
+        return INSTANCE;
+    }
+
     // private Boolean extraHighlight;
     protected View latestSelection;
 
     public void addTab(View view) {
+        addTab(view, 0);
+
+    }
+
+    /**
+     * sets a * in the tab to show that the tab contains changes (has to be
+     * saved)
+     * 
+     * @since 1.6
+     * @param b
+     * @param index
+     *            if index <0 the selected tab is used
+     */
+    public void setChanged(boolean b, int index) {
+        if (JDUtilities.getJavaVersion() < 1.6) return;
+        if (index < 0) index = this.getSelectedIndex();
+        ((ChangeHeader) this.getTabComponentAt(index)).setChanged(b);
+    }
+
+    /**
+     * Sets an close Action to a tab.
+     * 
+     * @param a
+     *            Action. if a == null the close button dissapears
+     * @param index
+     *            if index <0 the selected tab is used
+     * @since 1.6
+     */
+    public void setClosableAction(Action a, int index) {
+        if (JDUtilities.getJavaVersion() < 1.6) return;
+        if (index < 0) index = this.getSelectedIndex();
+        ((ChangeHeader) this.getTabComponentAt(index)).setCloseEnabled(a);
+    }
+
+    public void addTab(View view, int flags) {
         SwingGui.checkEDT();
         super.addTab(view.getTitle(), view.getIcon(), view, view.getTooltip());
-       
+        if (JDUtilities.getJavaVersion() >= 1.6) {
+            this.setTabComponentAt(this.getTabCount() - 1, new ChangeHeader(view));
+        }
         this.setFocusable(false);
         // extraHighlight =
         // SubConfiguration.getConfig(JDGuiConstants.CONFIG_PARAMETER).getBooleanProperty(JDGuiConstants.CFG_KEY_MAIN_TABBED_HIGHLIGHT,
@@ -26,7 +73,7 @@ public class MainTabbedPane extends JTabbedPane {
         // initUI();
     }
 
-    public MainTabbedPane() {
+    private MainTabbedPane() {
         this.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
         this.addChangeListener(new ChangeListener() {
 
@@ -165,17 +212,17 @@ public class MainTabbedPane extends JTabbedPane {
         super.setSelectedComponent(getComponentEquals((View) e));
     }
 
-//    public String getTitleAt(int index) {
-//        System.out.println(index);
-//        try {
-//            return super.getTitleAt(index);
-//        } catch (Exception e) {
-//
-//            e.printStackTrace();
-//            return "";
-//        }
-//
-//    }
+    // public String getTitleAt(int index) {
+    // System.out.println(index);
+    // try {
+    // return super.getTitleAt(index);
+    // } catch (Exception e) {
+    //
+    // e.printStackTrace();
+    // return "";
+    // }
+    //
+    // }
 
     /**
      * returns the component in this tab that equals view
