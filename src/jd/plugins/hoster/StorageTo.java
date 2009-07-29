@@ -30,7 +30,7 @@ public class StorageTo extends PluginForHost {
 
     public StorageTo(PluginWrapper wrapper) {
         super(wrapper);
-        //premium http://www.storage.to/affiliate/Slh9BLxH
+        // premium http://www.storage.to/affiliate/Slh9BLxH
     }
 
     @Override
@@ -48,6 +48,7 @@ public class StorageTo extends PluginForHost {
             int wait = Integer.valueOf(br.getRegex("'countdown' : (.*?),").getMatch(0)).intValue();
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * wait);
         }
+        if (br.getRegex("'state' : '(.*?)'").getMatch(0).equals("failed")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE); }
         String time = br.getRegex("'countdown' : (.*?),").getMatch(0);
         long sleeptime = 0;
         try {
