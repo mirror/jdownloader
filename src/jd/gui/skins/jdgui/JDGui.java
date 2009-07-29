@@ -509,7 +509,14 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
 
     @Override
     public void setContent(SwitchPanel tabbedPanel) {
-        TabbedPanelView view = new TabbedPanelView(tabbedPanel);
+
+        View view;
+        if (tabbedPanel instanceof View) {
+            view = (View) tabbedPanel;
+        } else {
+            view = new TabbedPanelView(tabbedPanel);
+        }
+
         if (!mainTabbedPane.contains(view)) {
             mainTabbedPane.addTab(view);
         }

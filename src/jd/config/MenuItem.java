@@ -120,8 +120,10 @@ public class MenuItem extends AbstractAction {
     }
 
     public boolean isSelected() {
+        Object value = getValue(SELECTED_KEY);
+        if (value == null) return false;
+        return (Boolean) value;
 
-        return (Boolean) getValue(SELECTED_KEY);
     }
 
     public MenuItem setActionListener(ActionListener actionListener) {

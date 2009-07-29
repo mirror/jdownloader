@@ -615,7 +615,7 @@ public class JDChat extends PluginOptional implements ControlListener {
     // @Override
     public void actionPerformed(ActionEvent e) {
 
-        if (!((MenuItem) e.getSource()).isSelected()) {
+        if (((MenuItem) e.getSource()).isSelected()) {
 
             if (conn != null) conn.close();
 
@@ -624,7 +624,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         } else {
             setEnabled(false);
         }
-        ((MenuItem) e.getSource()).setSelected(!((MenuItem) e.getSource()).isSelected());
+//        ((MenuItem) e.getSource()).setSelected(!((MenuItem) e.getSource()).isSelected());
     }
 
     public void addToText(final User user, String style, String msg) {

@@ -34,7 +34,9 @@ public class TabbedPanelView extends View {
 
     @Override
     public Icon getIcon() {
+       
         return View.getDefaultIcon();
+        
     }
 
     @Override

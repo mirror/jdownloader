@@ -21,8 +21,7 @@ public class JDChatView extends View {
 
     @Override
     public Icon getIcon() {
-        // TODO Auto-generated method stub
-        return JDTheme.II("gui.images.config.tip", 16, 16);
+        return JDTheme.II("gui.images.chat", 16, 16);
     }
 
     @Override
