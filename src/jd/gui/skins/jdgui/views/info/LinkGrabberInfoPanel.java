@@ -21,8 +21,8 @@ public class LinkGrabberInfoPanel extends InfoPanel {
 
     private static final String JDL_PREFIX = "jd.gui.skins.jdgui.views.info.LinkGrabberInfoPanel.";
     private LinkGrabberController lgi;
-    protected int links;
-    protected int tot;
+    protected long links;
+    protected long tot;
     protected ArrayList<LinkGrabberFilePackage> fps = new ArrayList<LinkGrabberFilePackage>();
 
     public LinkGrabberInfoPanel() {
