@@ -46,7 +46,7 @@ public class MegaLoadedCom extends PluginForHost {
     // @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setCookie("http://www.megaloaded.com", "lang", "english");
+        br.setCookie("http://www.megaloaded.us", "lang", "english");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("No such file with this filename")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("No such user exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

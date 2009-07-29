@@ -35,11 +35,9 @@ public class Mega1280ComFolder extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        //Liste der Ergebnisse wird gemacht (Regex kann man hier eigentlich genauer machen, ging aber nich anderes bei divshare!)
         String[] links = br.getRegex(";text-decoration:none;\">(.*?)</a></td>").getColumn(0);
         if (links.length == 0) return null;
         for (String dl : links)
-            //fügt jedem Ergebnis der Liste ein "http://www.divshare.com" hinzu, damit die Links auch angenommen werden
             decryptedLinks.add(createDownloadlink(dl));
         
         return decryptedLinks;
