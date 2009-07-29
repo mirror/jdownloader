@@ -48,7 +48,6 @@ public class XvideosCom extends PluginForHost {
         link.setFinalFileName(null);
         dl = br.openDownload(link, dllink, true, -20);
         dl.startDownload();
-
     }
 
     @Override
@@ -58,9 +57,9 @@ public class XvideosCom extends PluginForHost {
         if (br.containsHTML("This video has been deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("Page not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename1 = br.getRegex("<title>XVIDEOS.COM  - (.*?) - XVIDEOS</title>").getMatch(0);
+        if (filename1==null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = filename1 + ".flv";
         parameter.setName(filename.trim());
-
         return AvailableStatus.TRUE;
     }
 

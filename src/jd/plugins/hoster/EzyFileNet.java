@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.gui.UserIO;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -93,12 +92,10 @@ public class EzyFileNet extends PluginForHost {
             downloadLink.setProperty("pass", null);
             logger.warning("Wrong password!");
             throw new PluginException(LinkStatus.ERROR_RETRY);
-
-        }else{
-                downloadLink.setProperty("pass", passCode);
         }
-
+        if (passCode != null) downloadLink.setProperty("pass", passCode);
         String dllink = br.getRegex("<a href=\"(http://ezy[0-9]+.*)\">http://").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_FATAL);
         br.openDownload(downloadLink, dllink, true, -2);
         dl.startDownload();
     }

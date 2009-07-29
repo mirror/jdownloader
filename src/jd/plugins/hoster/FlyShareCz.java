@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.gui.UserIO;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -40,7 +39,7 @@ public class FlyShareCz extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://mega.1280.com/terms.php";
+        return "http://www.flyshare.cz/jak-to-funguje";
     }
 
     // @Override
@@ -67,25 +66,18 @@ public class FlyShareCz extends PluginForHost {
         if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         // br.submitForm(DLForm);
         dl = br.openDownload(downloadLink, DLForm, false, 1);
-        {
-            if (!(dl.getConnection().isContentDisposition())) {
-                br.followConnection();
-                dl.getConnection().disconnect();
 
-                {
-                    if (br.containsHTML("error: Invalid request")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    if (br.containsHTML("Too many simultaneous downloads")) {
-                        int waittime = 10 * 60 * 1001;
-                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
-                    }
-                    dl.getConnection().disconnect();
-                }
-            } else {
-
-                dl.startDownload();
+        if (!(dl.getConnection().isContentDisposition())) {
+            br.followConnection();
+            if (br.containsHTML("error: Invalid request")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("Too many simultaneous downloads")) {                
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
             }
+            throw new PluginException(LinkStatus.ERROR_FATAL);
         }
+        dl.startDownload();
     }
+
     // @Override
     public void reset() {
     }
@@ -103,7 +95,4 @@ public class FlyShareCz extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
 }

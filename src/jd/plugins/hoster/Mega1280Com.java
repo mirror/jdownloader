@@ -93,7 +93,4 @@ public class Mega1280Com extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
 }

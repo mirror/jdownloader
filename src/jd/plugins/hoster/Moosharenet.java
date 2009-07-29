@@ -150,7 +150,7 @@ public class Moosharenet extends PluginForHost {
         /*warten da nach einem download noch kurz die meldung kommt, gleichzeitiges download verboten*/
         sleep(15000, downloadLink);
         /* Nochmals das File überprüfen */
-        requestFileInformation(downloadLink);
+        requestFileInformation(downloadLink);        
         if (br.containsHTML("keine Dateien parallel downloaden")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
         if (br.containsHTML("Sie haben Ihr Downloadlimit für den Moment erreicht!")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l); }
         String wait = br.getRegex("var time = (.*?);").getMatch(0);

@@ -117,11 +117,8 @@ public class TurboUploadCom extends PluginForHost {
                     logger.warning("Wrong password!");
                     downloadLink.setProperty("pass", null);
                     throw new PluginException(LinkStatus.ERROR_RETRY);
-                
-            }else{
-                
-                if (br.containsHTML("Wrong password")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-            }
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             }
             if (passCode != null) {
                 downloadLink.setProperty("pass", passCode);

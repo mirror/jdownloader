@@ -82,14 +82,20 @@ public class FlyFileUs extends PluginForHost {
             }
             DLForm.put("password", passCode);
         }
-        br.openDownload(downloadLink, DLForm, false, 1);
-        if (!(dl.getConnection().isContentDisposition())) {
+        br.setDebug(true);
+        br.openDownload(downloadLink, DLForm, true, 1);
+        if (!(dl.getConnection().getContentType().contains("octet"))) {
+            /*
+             * server does not send disposition header, therefore we must check
+             * content-type
+             */
             br.followConnection();
             if (br.containsHTML("Wrong password")) {
                 logger.warning("Wrong password!");
                 downloadLink.setProperty("pass", null);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
+            throw new PluginException(LinkStatus.ERROR_FATAL);
         }
         if (passCode != null) {
             downloadLink.setProperty("pass", passCode);
