@@ -45,8 +45,8 @@ public class DuckLoad extends PluginForHost {
         requestFileInformation(link);
         sleep(10 * 1000l, link);
         Form form = br.getForm(0);
-        String capurl = br.getRegex("src=\"(/design/Captcha.*?\\.php\\?.*?key=.*?)\"").getMatch(0);
-        if (capurl == null) capurl = br.getRegex("src='(/design/Captcha.*?\\.php.*?key=.*?)'").getMatch(0);
+        String capurl = "/design/Captcha"+br.getRegex("src=\"/design/Captcha\\d?(.*?\\.php\\?.*?key=.*?)\"").getMatch(0);
+        if (capurl == null) capurl = "/design/Captcha"+br.getRegex("src='/design/Captcha\\d?(.*?\\.php.*?key=.*?)'").getMatch(0);
         String code = getCaptchaCode(capurl, link);
         if (form.containsHTML("appl_code")) {
             form = new Form();
@@ -57,8 +57,8 @@ public class DuckLoad extends PluginForHost {
             stream = true;
         } else {
             form.put("cap", code);
-            form.put("_____download.x", "0");
-            form.put("_____download.y", "0");
+            form.put("_____download.x", ""+((int)(Math.random()*168)));
+            form.put("_____download.y", ""+((int)(Math.random()*44)));
         }
         br.submitForm(form);
         String url = null;
