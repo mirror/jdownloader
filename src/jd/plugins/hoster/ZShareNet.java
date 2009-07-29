@@ -44,7 +44,13 @@ public class ZShareNet extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL().replaceFirst("zshare.net/(download|video|audio|flash)", "zshare.net/image"));
+        if (downloadLink.getDownloadURL().contains(".html")) {
+            br.setFollowRedirects(false);
+            br.getPage(downloadLink.getDownloadURL());
+            br.getPage(br.getRedirectLocation().replaceFirst("zshare.net/(download|video|audio|flash)", "zshare.net/image"));
+        } else {
+            br.getPage(downloadLink.getDownloadURL().replaceFirst("zshare.net/(download|video|audio|flash)", "zshare.net/image"));
+        }
         if (br.containsHTML("File Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String[] fileInfo = br.getRegex("File Name: .*?<font color=\".666666\">(.*?)</font>.*?Image Size: <font color=\".666666\">(.*?)</font>").getRow(0);
         if (fileInfo[0] == null || fileInfo[1] == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -64,7 +70,13 @@ public class ZShareNet extends PluginForHost {
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
 
-        br.getPage(downloadLink.getDownloadURL().replaceFirst("zshare.net/(download|video|audio|flash)", "zshare.net/download"));
+        if (downloadLink.getDownloadURL().contains(".html")) {
+            br.setFollowRedirects(false);
+            br.getPage(downloadLink.getDownloadURL());
+            br.getPage(br.getRedirectLocation().replaceFirst("zshare.net/(download|video|audio|flash)", "zshare.net/download"));
+        } else {
+            br.getPage(downloadLink.getDownloadURL().replaceFirst("zshare.net/(download|video|audio|flash)", "zshare.net/download"));
+        }
         // Form abrufen
         Form download = br.getForm(0);
         // Formparameter setzen (zufällige Klickpositionen im Bild)
