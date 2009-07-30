@@ -35,7 +35,7 @@ import javax.swing.UIManager.LookAndFeelInfo;
 import jd.JDInitFlags;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
-import jd.gui.skins.jdgui.GUIUtils;
+import jd.gui.swing.jdgui.GUIUtils;
 import jd.nutils.OSDetector;
 import jd.parser.Regex;
 import jd.utils.JDUtilities;

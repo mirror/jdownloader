@@ -5,7 +5,7 @@ import java.util.ArrayList;
 
 import javax.swing.JFrame;
 
-import jd.gui.skins.SwingGui;
+import jd.gui.swing.SwingGui;
 import jd.nutils.JDImage;
 import jd.utils.JDUtilities;
 

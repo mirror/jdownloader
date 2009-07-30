@@ -33,8 +33,8 @@ import javax.swing.Timer;
 
 import jd.PluginWrapper;
 import jd.config.MenuItem;
-import jd.gui.skins.SwingGui;
-import jd.gui.skins.jdgui.interfaces.SwitchPanel;
+import jd.gui.swing.SwingGui;
+import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
 import jd.utils.locale.JDL;

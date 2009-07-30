@@ -22,7 +22,7 @@ import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
 import jd.controlling.DownloadController;
 import jd.controlling.DownloadWatchDog;
-import jd.gui.skins.SwingGui;
+import jd.gui.swing.SwingGui;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 

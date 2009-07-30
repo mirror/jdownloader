@@ -42,7 +42,7 @@ import jd.controlling.SingleDownloadController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.UserIO;
-import jd.gui.skins.SwingGui;
+import jd.gui.swing.SwingGui;
 import jd.gui.swing.components.JDFileChooser;
 import jd.nutils.Executer;
 import jd.nutils.Formatter;

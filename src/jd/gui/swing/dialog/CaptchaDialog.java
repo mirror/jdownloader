@@ -34,7 +34,7 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.CaptchaController;
 import jd.gui.UserIO;
-import jd.gui.skins.SwingGui;
+import jd.gui.swing.SwingGui;
 import jd.nutils.Screen;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;

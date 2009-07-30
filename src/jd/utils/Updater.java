@@ -31,7 +31,7 @@ import javax.swing.JOptionPane;
 
 import jd.config.CFGConfig;
 import jd.controlling.JDLogger;
-import jd.gui.skins.jdgui.userio.UserIOGui;
+import jd.gui.swing.jdgui.userio.UserIOGui;
 import jd.http.Browser;
 import jd.nutils.JDHash;
 import jd.nutils.SimpleFTP;

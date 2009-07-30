@@ -2,7 +2,7 @@ package jd.plugins.optional.jdchat;
 
 import javax.swing.Icon;
 
-import jd.gui.skins.jdgui.interfaces.View;
+import jd.gui.swing.jdgui.interfaces.View;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 

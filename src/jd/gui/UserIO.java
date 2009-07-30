@@ -23,8 +23,8 @@ import javax.swing.ImageIcon;
 import javax.swing.filechooser.FileFilter;
 
 import jd.config.SubConfiguration;
-import jd.gui.skins.jdgui.GUIUtils;
-import jd.gui.skins.jdgui.JDGuiConstants;
+import jd.gui.swing.jdgui.GUIUtils;
+import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.gui.userio.NoUserIO;
 import jd.utils.locale.JDL;
 

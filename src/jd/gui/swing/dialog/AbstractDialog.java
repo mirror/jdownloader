@@ -32,7 +32,7 @@ import javax.swing.WindowConstants;
 
 import jd.config.SubConfiguration;
 import jd.gui.UserIO;
-import jd.gui.skins.SwingGui;
+import jd.gui.swing.SwingGui;
 import jd.gui.userio.DummyFrame;
 import jd.nutils.JDFlags;
 import jd.nutils.JDHash;

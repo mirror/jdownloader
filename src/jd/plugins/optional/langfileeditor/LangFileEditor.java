@@ -23,8 +23,8 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.MenuItem;
-import jd.gui.skins.SwingGui;
-import jd.gui.skins.jdgui.SingletonPanel;
+import jd.gui.swing.SwingGui;
+import jd.gui.swing.jdgui.SingletonPanel;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
 

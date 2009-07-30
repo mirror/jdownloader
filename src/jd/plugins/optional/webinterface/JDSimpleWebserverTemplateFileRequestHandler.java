@@ -34,7 +34,7 @@ import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.PasswordListController;
-import jd.gui.skins.jdgui.views.linkgrabberview.LinkGrabberPanel;
+import jd.gui.swing.jdgui.views.linkgrabberview.LinkGrabberPanel;
 import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;

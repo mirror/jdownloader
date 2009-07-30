@@ -34,7 +34,7 @@ import javax.swing.WindowConstants;
 
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
-import jd.gui.skins.SwingGui;
+import jd.gui.swing.SwingGui;
 import jd.nutils.Screen;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;

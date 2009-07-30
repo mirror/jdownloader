@@ -26,9 +26,9 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
 
-import jd.gui.skins.jdgui.InfoPanelHandler;
-import jd.gui.skins.jdgui.interfaces.DroppedPanel;
-import jd.gui.skins.jdgui.interfaces.SwitchPanel;
+import jd.gui.swing.jdgui.InfoPanelHandler;
+import jd.gui.swing.jdgui.interfaces.DroppedPanel;
+import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;

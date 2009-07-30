@@ -168,7 +168,7 @@ public class SrcParser {
         currentContent=currentContent.replace("this.getClass().getSimpleName()","\""+simple+"\"");  
         currentContent=currentContent.replace("getClass().getSimpleName()","\""+simple+"\""); 
         currentContent=currentContent.replace("\"+\"",""); 
-        if (this.currentContent.contains("jd.gui.skins.jdgui.menu.actions;")) {
+        if (this.currentContent.contains("jd.gui.swing.jdgui.menu.actions;")) {
             String menukey = new Regex(currentContent, "super\\(\"(.*?)\",\\s*\".*?\"\\);").getMatch(0);
             if (menukey != null) {
                 currentContent = currentContent.replaceFirst("super\\(\"(.*?)\",\\s*\".*?\"\\);", "[[...]]");
@@ -176,7 +176,7 @@ public class SrcParser {
                 currentContent += "\r\nJDL.L(\"gui.menu." + menukey + ".mnem\",\"-\");";
                 currentContent += "\r\nJDL.L(\"gui.menu." + menukey + ".accel\",\"-\");";
             }
-        } else if (this.currentContent.contains("jd.gui.skins.jdgui.menu;")) {
+        } else if (this.currentContent.contains("jd.gui.swing.jdgui.menu;")) {
             String menukey = new Regex(currentContent, "super\\(\"(.*?)\",\\s*\".*?\"\\);").getMatch(0);
             currentContent = currentContent.replaceFirst("super\\(\"(.*?)\",\\s*\".*?\"\\);", "[[...]]");
             currentContent += "\r\nJDL.L(\"" + menukey + "\",\"" + menukey + "\");";

@@ -23,7 +23,7 @@ import java.util.Map;
 
 import javax.swing.JComponent;
 
-import jd.gui.skins.jdgui.interfaces.JDMouseAdapter;
+import jd.gui.swing.jdgui.interfaces.JDMouseAdapter;
 
 public class JDUnderlinedText extends JDMouseAdapter {
 

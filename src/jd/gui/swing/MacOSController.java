@@ -16,7 +16,6 @@
 
 package jd.gui.swing;
 
-import jd.gui.skins.SwingGui;
 import jd.gui.swing.components.AboutDialog;
 import jd.utils.JDUtilities;
 

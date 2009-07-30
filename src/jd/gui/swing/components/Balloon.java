@@ -29,12 +29,12 @@ import javax.swing.JSeparator;
 import javax.swing.JTextPane;
 import javax.swing.JWindow;
 
-import jd.gui.skins.SwingGui;
-import jd.gui.skins.jdgui.GUIUtils;
-import jd.gui.skins.jdgui.JDGuiConstants;
-import jd.gui.skins.jdgui.interfaces.JDMouseAdapter;
 import jd.gui.swing.GuiRunnable;
+import jd.gui.swing.SwingGui;
 import jd.gui.swing.components.linkbutton.JLink;
+import jd.gui.swing.jdgui.GUIUtils;
+import jd.gui.swing.jdgui.JDGuiConstants;
+import jd.gui.swing.jdgui.interfaces.JDMouseAdapter;
 import jd.nutils.JDImage;
 import jd.nutils.Screen;
 import jd.utils.JDTheme;

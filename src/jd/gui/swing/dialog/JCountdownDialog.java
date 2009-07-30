@@ -24,8 +24,8 @@ import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 
-import jd.gui.skins.jdgui.interfaces.JDMouseAdapter;
 import jd.gui.swing.GuiRunnable;
+import jd.gui.swing.jdgui.interfaces.JDMouseAdapter;
 import jd.nutils.Formatter;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;

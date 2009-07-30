@@ -22,9 +22,9 @@ import java.util.regex.Pattern;
 import javax.swing.JFileChooser;
 
 import jd.gui.UserIO;
-import jd.gui.skins.jdgui.userio.UserIOGui;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.components.JDFileChooser;
+import jd.gui.swing.jdgui.userio.UserIOGui;
 import jd.nutils.DiffMatchPatch;
 import jd.nutils.JDFlags;
 import jd.nutils.DiffMatchPatch.Diff;
