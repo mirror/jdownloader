@@ -18,7 +18,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megavideo.com" }, urls = { "http://[\\w\\.]*?megavideo\\.com/.*?v=[a-zA-Z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megavideo.com" }, urls = { "http://[\\w\\.]*?megavideo\\.com/.*?v=[a-zA-Z0-9]+" }, flags = { 2 })
 public class MegaVideo extends PluginForHost {
 
     public MegaVideo(PluginWrapper wrapper) {

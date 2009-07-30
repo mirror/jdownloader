@@ -16,12 +16,12 @@
 
 package jd.gui.swing.jdgui.settings.panels;
 
-import java.awt.Component;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -29,6 +29,7 @@ import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
+import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
@@ -43,20 +44,47 @@ import jd.gui.UserIF;
 import jd.gui.UserIO;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.jdgui.settings.ConfigPanel;
-import jd.nutils.Colors;
 import jd.nutils.JDFlags;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
-import org.jdesktop.swingx.JXTable;
-import org.jdesktop.swingx.decorator.ComponentAdapter;
-import org.jdesktop.swingx.decorator.HighlightPredicate;
-import org.jdesktop.swingx.decorator.PainterHighlighter;
-import org.jdesktop.swingx.painter.MattePainter;
+class AGBLink extends JLink {
+
+    private HostPluginWrapper plugin;
+    private URL tmpurl = null;
+
+    public AGBLink(HostPluginWrapper plugin) {
+        super(JDL.L("gui.config.plugin.host.readAGB", "AGB"));
+        this.plugin = plugin;
+    }
+
+    @Override
+    public URL getUrl() {
+        if (tmpurl != null) return tmpurl;
+        try {
+            tmpurl = new URL(plugin.getPlugin().getAGBLink());
+        } catch (Exception e) {
+            tmpurl = null;
+        }
+        return tmpurl;
+    }
+
+    public HostPluginWrapper getWrapper() {
+        return plugin;
+    }
+
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 3720972586239414387L;
+
+}
 
 public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListener, MouseListener {
+    private static ArrayList<AGBLink> agblinks = new ArrayList<AGBLink>();
+
     public String getBreadcrum() {
         return JDL.L(this.getClass().getName() + ".breadcrum", this.getClass().getSimpleName());
     }
@@ -77,7 +105,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         }
 
         public int getColumnCount() {
-            return 5;
+            return 7;
         }
 
         @Override
@@ -88,10 +116,14 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
             case 1:
                 return JDL.L("gui.column_version", "Version");
             case 2:
-                return JDL.L("gui.column_agbChecked", "akzeptieren");
+                return JDL.L("gui.column_premium", "Premium");
             case 3:
-                return JDL.L("gui.column_usePlugin", "verwenden");
+                return JDL.L("gui.column_settings", "Settings");
             case 4:
+                return JDL.L("gui.column_agbChecked", "akzeptieren");
+            case 5:
+                return JDL.L("gui.column_usePlugin", "verwenden");
+            case 6:
                 return JDL.L("gui.column_agb", "AGB");
             }
             return super.getColumnName(column);
@@ -108,29 +140,35 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
             case 1:
                 return pluginsForHost.get(rowIndex).getVersion();
             case 2:
-                return pluginsForHost.get(rowIndex).isAGBChecked();
+                return pluginsForHost.get(rowIndex).isLoaded() && pluginsForHost.get(rowIndex).isPremiumEnabled();
             case 3:
-                return pluginsForHost.get(rowIndex).usePlugin();
+                return pluginsForHost.get(rowIndex).hasConfig();
             case 4:
-                String agbLink = null;
-                try {
-                    agbLink = pluginsForHost.get(rowIndex).getPlugin().getAGBLink();
-                } catch (NullPointerException e) {
+                return pluginsForHost.get(rowIndex).isAGBChecked();
+            case 5:
+                return pluginsForHost.get(rowIndex).usePlugin();
+            case 6:
+                synchronized (agblinks) {
+                    HostPluginWrapper plugin = pluginsForHost.get(rowIndex);
+                    for (AGBLink link : agblinks) {
+                        if (link.getWrapper() == plugin) return link;
+                    }
+                    AGBLink link = new AGBLink(plugin);
+                    agblinks.add(link);
+                    return link;
                 }
-                JLink ret = new JLink(JDL.L("gui.config.plugin.host.readAGB", "AGB"), agbLink);
-                return ret;
             }
             return null;
         }
 
         @Override
         public boolean isCellEditable(int rowIndex, int columnIndex) {
-            return columnIndex >= 2;
+            return columnIndex >= 4;
         }
 
         @Override
         public void setValueAt(Object value, int row, int col) {
-            if (col == 2) {
+            if (col == 4) {
                 if ((Boolean) value) {
                     String ttl = JDL.L("userio.countdownconfirm", "Please confirm");
                     String msg = JDL.L("gui.config.plugin.host.desc", "Das JD Team übernimmt keine Verantwortung für die Einhaltung der AGB <br> der Hoster. Bitte lesen Sie die AGB aufmerksam und aktivieren Sie das Plugin nur,\r\nfalls Sie sich mit diesen Einverstanden erklären!\r\nDie Reihenfolge der Plugins bestimmt die Prioritäten der automatischen Mirrorauswahl\n\rBevorzugte Hoster sollten oben stehen!") + "\r\n\r\n" + JDL.LF("gui.config.plugin.abg_confirm", "Ich habe die AGB/TOS/FAQ von %s gelesen und erkläre mich damit einverstanden!", pluginsForHost.get(row).getHost());
@@ -140,7 +178,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
                 } else {
                     pluginsForHost.get(row).setAGBChecked((Boolean) value);
                 }
-            } else if (col == 3) {
+            } else if (col == 5) {
                 pluginsForHost.get(row).setUsePlugin((Boolean) value);
             }
         }
@@ -154,7 +192,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
     private ArrayList<HostPluginWrapper> pluginsForHost;
 
-    private JXTable table;
+    private JTable table;
 
     private InternalTableModel tableModel;
 
@@ -176,7 +214,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
     private void editEntry(HostPluginWrapper hpw) {
         hpw.getPlugin().getConfig().setGroup(new ConfigGroup(hpw.getPlugin().getHost(), JDTheme.II("gui.images.taskpanes.premium", 24, 24)));
-   
+
         UserIF.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL, hpw.getPlugin().getConfig());
     }
 
@@ -199,8 +237,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     @Override
     public void initPanel() {
         tableModel = new InternalTableModel();
-        table = new JXTable(tableModel);
-        table.setSortable(false);
+        table = new JTable(tableModel);
         table.addMouseListener(this);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
@@ -213,16 +250,6 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         });
         table.getTableHeader().setReorderingAllowed(false);
 
-        PainterHighlighter highlighter = new PainterHighlighter(new HighlightPredicate() {
-            public boolean isHighlighted(Component renderer, ComponentAdapter adapter) {
-                return pluginsForHost.get(adapter.row).hasConfig();
-            }
-        });
-        highlighter.setPainter(new MattePainter(Colors.getColor(getBackground().darker(), 50)));
-
-        table.addHighlighter(highlighter);
-        table.addHighlighter(new PainterHighlighter(HighlightPredicate.ROLLOVER_ROW, new MattePainter(Colors.getColor(getBackground().brighter(), 50))));
-
         TableColumn column = null;
 
         for (int c = 0; c < tableModel.getColumnCount(); c++) {
@@ -234,16 +261,27 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
             case 1:
                 column.setPreferredWidth(60);
                 column.setMinWidth(60);
+                column.setMaxWidth(60);
                 break;
             case 2:
+                column.setPreferredWidth(60);
+                column.setMinWidth(60);
+                column.setMaxWidth(60);
+                break;
+            case 3:
+                column.setPreferredWidth(60);
+                column.setMinWidth(60);
+                column.setMaxWidth(60);
+                break;
+            case 4:
                 column.setPreferredWidth(90);
                 column.setMaxWidth(90);
                 column.setMinWidth(90);
                 break;
-            case 3:
+            case 5:
                 column.setPreferredWidth(100);
                 break;
-            case 4:
+            case 6:
                 column.setPreferredWidth(70);
                 column.setMaxWidth(70);
                 column.setMinWidth(70);

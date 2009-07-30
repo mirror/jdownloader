@@ -28,7 +28,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision", interfaceVersion = 2, names = { "filer.cx" }, urls = { "http://[\\w\\.]*?filer.cx/file/\\d+/[0-9a-zA-Z-.]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filer.cx" }, urls = { "http://[\\w\\.]*?filer.cx/file/\\d+/[0-9a-zA-Z-.]+" }, flags = { 0 })
 public class FilerCx extends PluginForHost {
 
     public FilerCx(PluginWrapper wrapper) {

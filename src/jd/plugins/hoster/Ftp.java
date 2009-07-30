@@ -68,7 +68,7 @@ public class Ftp extends PluginForHost {
 
     // @Override
     /*
-     * /* public String getVersion() { return getVersion("$Revision: 6489 $"); }
+     * /* public String getVersion() { return getVersion("$Revision$"); }
      */
 
     // @Override

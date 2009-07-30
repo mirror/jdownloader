@@ -24,7 +24,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision", interfaceVersion = 2, names = { "endlessapps.net" }, urls = { "http://[\\w\\.]*?endlessapps\\.net/dl\\.php\\?file=.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "endlessapps.net" }, urls = { "http://[\\w\\.]*?endlessapps\\.net/dl\\.php\\?file=.+" }, flags = { 0 })
 public class EndlessAppsNet extends PluginForHost {
 
     public EndlessAppsNet(PluginWrapper wrapper) {
