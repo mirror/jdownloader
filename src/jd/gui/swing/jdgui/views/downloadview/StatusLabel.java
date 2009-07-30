@@ -53,16 +53,24 @@ public class StatusLabel extends JPanel {
         this.setOpaque(true);
     }
 
+    /* clears the icon for left, setIcon AFTER setText */
     public void setText(String text) {
+        left.setIcon(null);
         left.setText(text);
     }
 
     public void setIcon(int i, Icon icon) {
-        if (i < ICONCOUNT) rights[i].setIcon(icon);
-        if (i < ICONCOUNT) enabled[i] = true;
+        if (i < 0 && ICONCOUNT > 0) {
+            left.setIcon(icon);
+        } else {
+            if (i < 0) return;
+            if (i < ICONCOUNT) rights[i].setIcon(icon);
+            if (i < ICONCOUNT) enabled[i] = true;
+        }
     }
 
     public void setIcon(int i, Icon icon, boolean enabled) {
+        if (i < 0) return;
         if (i < ICONCOUNT) rights[i].setIcon(icon);
         if (i < ICONCOUNT) rights[i].setEnabled(enabled);
         if (i < ICONCOUNT) this.enabled[i] = enabled;

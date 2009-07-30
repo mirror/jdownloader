@@ -238,8 +238,7 @@ public class TableRenderer extends DefaultTableRenderer {
             } else {
                 if (dLink.getPlugin().hasHosterIcon()) {
                     statuspanel.setText(dLink.getPlugin().getSessionInfo());
-                    statuspanel.setIcon(counter, dLink.getPlugin().getHosterIcon());
-                    counter++;
+                    statuspanel.setIcon(-1, dLink.getPlugin().getHosterIcon());                    
                 } else {
                     clearSB();
                     sb.append(dLink.getPlugin().getHost());
