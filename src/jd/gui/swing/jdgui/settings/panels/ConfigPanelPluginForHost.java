@@ -188,8 +188,6 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
     private JButton btnEdit;
 
-    private JButton btnLoad;
-
     private ArrayList<HostPluginWrapper> pluginsForHost;
 
     private JTable table;
@@ -206,32 +204,21 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == btnEdit) {
-            editEntry();
-        } else if (e.getSource() == btnLoad) {
-            loadEntry();
-        }
+            editEntry(pluginsForHost.get(table.getSelectedRow()));
+        } 
     }
 
     private void editEntry(HostPluginWrapper hpw) {
         hpw.getPlugin().getConfig().setGroup(new ConfigGroup(hpw.getPlugin().getHost(), JDTheme.II("gui.images.taskpanes.premium", 24, 24)));
 
         UserIF.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL, hpw.getPlugin().getConfig());
-    }
-
-    private void editEntry() {
-        editEntry(pluginsForHost.get(table.getSelectedRow()));
-    }
+    } 
 
     private void loadEntry(HostPluginWrapper hpw) {
         int cur = table.getSelectedRow();
         hpw.getPlugin();
         tableModel.fireTableRowsUpdated(cur, cur);
-        btnEdit.setEnabled(hpw.hasConfig());
-        btnLoad.setEnabled(false);
-    }
-
-    private void loadEntry() {
-        loadEntry(pluginsForHost.get(table.getSelectedRow()));
+        btnEdit.setEnabled(hpw.hasConfig());        
     }
 
     @Override
@@ -244,8 +231,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
             public void valueChanged(ListSelectionEvent e) {
                 if (table.getSelectedRow() < 0) return;
                 HostPluginWrapper hpw = pluginsForHost.get(table.getSelectedRow());
-                btnEdit.setEnabled(hpw.hasConfig());
-                btnLoad.setEnabled(!hpw.isLoaded());
+                btnEdit.setEnabled(hpw.hasConfig());                
             }
         });
         table.getTableHeader().setReorderingAllowed(false);
@@ -295,13 +281,10 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         btnEdit.setEnabled(false);
         btnEdit.addActionListener(this);
 
-        btnLoad = new JButton(JDL.L("gui.config.plugin.host.btn_load", "Load Plugin"));
-        btnLoad.setEnabled(false);
-        btnLoad.addActionListener(this);
+
 
         JPanel bpanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
         bpanel.add(btnEdit);
-        bpanel.add(btnLoad);
 
         panel.setLayout(new MigLayout("ins 5,wrap 1", "[fill,grow]", "[fill,grow][]"));
         panel.add(new JScrollPane(table));
