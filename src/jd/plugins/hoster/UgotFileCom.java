@@ -25,7 +25,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ugotfile.com" }, urls = { "http://[\\w\\.]*?ugotfile.com/file/\\d+/[0-9A-Za-z.]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ugotfile.com" }, urls = { "http://[\\w\\.]*?ugotfile.com/file/\\d+/.+" }, flags = { 0 })
 public class UgotFileCom extends PluginForHost {
 
     public UgotFileCom(PluginWrapper wrapper) {
@@ -43,6 +43,7 @@ public class UgotFileCom extends PluginForHost {
         this.setBrowserExclusive();
         br.clearCookies(link.getDownloadURL());
         br.getPage(link.getDownloadURL());
+
         if (br.containsHTML("Your hourly traffic limit is exceeded.")) {
             int block = Integer.parseInt(br.getRegex("<div id='sessionCountDown' style='font-weight:bold; font-size:20px;'>(.*?)</div>").getMatch(0)) * 1000 + 1;
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, block);
@@ -64,6 +65,7 @@ public class UgotFileCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
         br.getPage(parameter.getDownloadURL());
+        
         if (br.containsHTML("FileId and filename mismatched or file does not exist!")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("has been deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<td>Filename:</td>\\s+<td>(.*?)</td>").getMatch(0);
