@@ -326,7 +326,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
         if (e.getSource() == mnuReload) {
             saveChanges();
 
-            SwingGui.getInstance().setWaiting(true);
+         
             new Thread(new Runnable() {
                 public void run() {
                     try {
@@ -336,7 +336,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
                         populateLngMenu();
                         initLocaleData();
                     } finally {
-                        SwingGui.getInstance().setWaiting(false);
+                    
                     }
                 }
             }).start();
@@ -431,7 +431,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
     }
 
     private void updateSVN(boolean revert) {
-        SwingGui.getInstance().setWaiting(true);
+      
 
         if (!dirLanguages.exists()) dirLanguages.mkdirs();
         if (!dirWorkingCopy.exists()) dirWorkingCopy.mkdirs();
@@ -500,7 +500,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
             progress.finalize(5 * 1000l);
         }
 
-        SwingGui.getInstance().setWaiting(false);
+    
 
     }
 
@@ -594,7 +594,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
     }
 
     private void initLocaleData() {
-        SwingGui.getInstance().setWaiting(true);
+      
         parseLanguageFile(languageFile, languageKeysFormFile);
 
         HashMap<String, String> dupeHelp = new HashMap<String, String>();
@@ -660,13 +660,13 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
 
         });
 
-        SwingGui.getInstance().setWaiting(false);
+
     }
 
     private void getSourceEntries() {
-        SwingGui.getInstance().setWaiting(true);
+        
         getSourceEntriesFromFolder();
-        SwingGui.getInstance().setWaiting(false);
+        
     }
 
     private void getSourceEntriesFromFolder() {

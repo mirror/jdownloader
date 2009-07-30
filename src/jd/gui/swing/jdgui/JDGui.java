@@ -33,7 +33,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
-import jd.config.ConfigContainer;
+import jd.config.ConfigContainer; 
 import jd.config.ConfigEntry;
 import jd.controlling.ClipboardHandler;
 import jd.controlling.DownloadController;

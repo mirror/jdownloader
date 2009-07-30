@@ -65,7 +65,7 @@ public abstract class ConfigPanel extends SwitchPanel {
     public void paint(Graphics g) {
 
         super.paint(g);
-        if (SwingGui.getInstance() != null) SwingGui.getInstance().setWaiting(false);
+       
     }
 
     public String getBreadcrum() {

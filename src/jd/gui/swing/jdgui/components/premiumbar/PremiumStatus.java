@@ -384,13 +384,13 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
     public void mouseClicked(MouseEvent e) {
         if (e.getSource() == premium) {
             if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
-                SwingGui.getInstance().setWaiting(true);
+            
                 if (popup == null) {
                     popup = new JPopupMenu();
                     HosterMenu.update(popup);
                 }
                 popup.show(premium, e.getPoint().x, e.getPoint().y);
-                SwingGui.getInstance().setWaiting(false);
+              
             }
             return;
         }

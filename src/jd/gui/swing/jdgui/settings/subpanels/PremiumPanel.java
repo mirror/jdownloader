@@ -206,7 +206,7 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
         add.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent arg0) {
-                SwingGui.getInstance().setWaiting(true);
+            
 
                 // Container p = PremiumPanel.this;
                 // main: while ((p = p.getParent()) != null) {
@@ -356,7 +356,7 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
                 @Override
                 public void paint(Graphics g) {
                     super.paint(g);
-                    SwingGui.getInstance().setWaiting(false);
+             
                 }
 
             };
@@ -430,7 +430,7 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
             }
             if (e.getSource() == btnCheck) {
                 if (info.isCollapsed()) {
-                    SwingGui.getInstance().setWaiting(true);
+           
                     AccountInfo ai;
                     try {
                         Account acc = getAccount();

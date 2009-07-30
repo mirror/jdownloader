@@ -124,7 +124,7 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
                                                                       JDL.L("gui.logger.askQuestion", "Please describe your Problem/Bug/Question!"), null, null, null, null);
 
             if (question == null) return;
-            SwingGui.getInstance().setWaiting(true);
+           
             String url = Upload.toJDownloader(content, name + "\r\n\r\n" + question);
 
             try {
@@ -140,7 +140,7 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
                 append(JDL.L("gui.logDialog.warning.uploadFailed", "Upload failed"));
             }
             append("\r\n\r\n-------------------------------------------------------------\r\n\r\n");
-            SwingGui.getInstance().setWaiting(false);
+          
             logField.setCaretPosition(logField.getText().length());
             break;
         }
@@ -165,7 +165,7 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
          * TODO: not synchronized properbly in loop.
          */
         try {
-            if (SwingGui.getInstance() != null) SwingGui.getInstance().setWaiting(true);
+        
             JDUtilities.getController().addControlListener(this);
             ArrayList<LogRecord> buff = new ArrayList<LogRecord>();
 
@@ -189,7 +189,7 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
             }
             logField.setText(sb.toString());
             System.out.println(sb.toString());
-            if (SwingGui.getInstance() != null) SwingGui.getInstance().setWaiting(false);
+          
             logField.setCaretPosition(logField.getDocument().getEndPosition().getOffset() - 1);
         } catch (Exception e) {
             e.printStackTrace();
