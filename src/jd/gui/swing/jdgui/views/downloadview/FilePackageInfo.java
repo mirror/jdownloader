@@ -24,8 +24,6 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingConstants;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 
 import jd.config.Configuration;
 import jd.controlling.DownloadController;
@@ -141,7 +139,7 @@ public class FilePackageInfo extends SwitchPanel implements ActionListener {
 
     private JPanel createFilePackageInfo() {
         txtName = new JDTextField(true);
-        addChangeListener(txtName);
+        txtName.addActionListener(this);
 
         brwSaveTo = new ComboBrowseFile("DownloadSaveTo");
         brwSaveTo.setEditable(true);
@@ -150,10 +148,10 @@ public class FilePackageInfo extends SwitchPanel implements ActionListener {
         brwSaveTo.addActionListener(this);
 
         txtPassword = new JDTextField(true);
-        addChangeListener(txtPassword);
+        txtPassword.addActionListener(this);
 
         txtComment = new JDTextField(true);
-        addChangeListener(txtComment);
+        txtComment.addActionListener(this);
 
         chbExtract = new JCheckBox(JDL.L("gui.fileinfopanel.packagetab.chb.extractAfterdownload", "Extract"));
         chbExtract.setSelected(true);
@@ -181,26 +179,6 @@ public class FilePackageInfo extends SwitchPanel implements ActionListener {
         panel.add(txtComment, "gapright 10, growx");
         panel.add(chbUseSubdirectory, "alignx right");
         return panel;
-    }
-
-    private void addChangeListener(final JDTextField txtName2) {
-        txtName2.getDocument().addDocumentListener(new DocumentListener() {
-
-            public void changedUpdate(DocumentEvent e) {
-                actionPerformed(new ActionEvent(txtName2, 0, null));
-            }
-
-            public void insertUpdate(DocumentEvent e) {
-                actionPerformed(new ActionEvent(txtName2, 0, null));
-            }
-
-            public void removeUpdate(DocumentEvent e) {
-                actionPerformed(new ActionEvent(txtName2, 0, null));
-
-            }
-
-        });
-
     }
 
     private JPanel createLinkInfo() {
@@ -322,8 +300,17 @@ public class FilePackageInfo extends SwitchPanel implements ActionListener {
         updater.start();
     }
 
+    private void onHideSave() {
+        if (fp == null || !notifyUpdate) return;
+        fp.setName(txtName.getText());
+        fp.setComment(txtComment.getText());
+        fp.setPassword(txtPassword.getText());
+    }
+
     // @Override
     public void onHide() {
+        if (fp == null && downloadLink == null) return;
+        onHideSave();
         hidden = true;
         if (updater != null) {
             updater.interrupt();

@@ -24,6 +24,8 @@ import javax.swing.JLabel;
 import javax.swing.SwingConstants;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.Document;
 
 import jd.config.Configuration;
 import jd.controlling.DownloadController;
@@ -95,29 +97,9 @@ public class LinkGrabberFilePackageInfo extends SwitchPanel implements ActionLis
         return fp;
     }
 
-    private void addChangeListener(final JDTextField txtName2) {
-        txtName2.getDocument().addDocumentListener(new DocumentListener() {
-
-            public void changedUpdate(DocumentEvent e) {
-                actionPerformed(new ActionEvent(txtName2, 0, null));
-            }
-
-            public void insertUpdate(DocumentEvent e) {
-                actionPerformed(new ActionEvent(txtName2, 0, null));
-            }
-
-            public void removeUpdate(DocumentEvent e) {
-                actionPerformed(new ActionEvent(txtName2, 0, null));
-
-            }
-
-        });
-
-    }
-
     private void buildGui() {
         txtName = new JDTextField(true);
-        addChangeListener(txtName);
+        txtName.addActionListener(this);
 
         brwSaveTo = new ComboBrowseFile("DownloadSaveTo");
         brwSaveTo.setEditable(true);
@@ -126,10 +108,11 @@ public class LinkGrabberFilePackageInfo extends SwitchPanel implements ActionLis
         brwSaveTo.addActionListener(this);
 
         txtPassword = new JDTextField(true);
-        addChangeListener(txtPassword);
+        txtPassword.addActionListener(this);
+        this.addChangeListener(txtPassword);
 
         txtComment = new JDTextField(true);
-        addChangeListener(txtComment);
+        txtComment.addActionListener(this);
 
         chbExtract = new JCheckBox(JDL.L("gui.linkgrabber.packagetab.chb.extractAfterdownload", "Extract"));
         chbExtract.setSelected(true);
@@ -158,6 +141,26 @@ public class LinkGrabberFilePackageInfo extends SwitchPanel implements ActionLis
         this.add(chbUseSubdirectory, "alignx right");
 
     }
+    
+    private void addChangeListener(final JDTextField txtName2) {
+        txtName2.getDocument().addDocumentListener(new DocumentListener() {
+
+            public void changedUpdate(DocumentEvent e) {
+                System.out.println(e);
+            }
+
+            public void insertUpdate(DocumentEvent e) {
+                System.out.println(e);
+            }
+
+            public void removeUpdate(DocumentEvent e) {
+                System.out.println(e);
+
+            }
+
+        });
+
+    }
 
     public void actionPerformed(ActionEvent e) {
         if (fp == null || !notifyUpdate) return;
@@ -182,9 +185,25 @@ public class LinkGrabberFilePackageInfo extends SwitchPanel implements ActionLis
         update();
     }
 
+    private void onHideSave() {
+        Document doc = txtPassword.getDocument();
+        String txt;
+        try {
+            txt = doc.getText(0, doc.getLength());
+        } catch (BadLocationException e) {
+            txt = null;
+        }
+        String txt2 = txtPassword.getText();
+        if (fp == null || !notifyUpdate) return;
+        fp.setName(txtName.getText());
+        fp.setComment(txtComment.getText());
+        fp.setPassword(txtPassword.getText());
+    }
+
     // @Override
     public void onHide() {
         if (this.fp == null) return;
+        onHideSave();
         PasswordListController.getInstance().addPassword(txtPassword.getText());
         actionPerformed(new ActionEvent(this.brwSaveTo, 0, null));
         fp = null;
