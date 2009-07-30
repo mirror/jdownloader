@@ -24,7 +24,7 @@ import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
-import jd.gui.skins.jdgui.swing.GuiRunnable;
+import jd.gui.swing.GuiRunnable;
 import jd.utils.locale.JDL;
 
 /**

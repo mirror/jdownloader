@@ -43,8 +43,8 @@ import javax.swing.SwingUtilities;
 import javax.swing.text.JTextComponent;
 
 import jd.gui.skins.jdgui.JDGui;
-import jd.gui.skins.jdgui.components.linkbutton.JLink;
 import jd.gui.skins.simple.MouseFollower;
+import jd.gui.swing.components.linkbutton.JLink;
 import jd.nutils.Formatter;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;

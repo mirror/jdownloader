@@ -18,7 +18,7 @@ package jd.gui.skins.jdgui.menu.actions;
 
 import java.awt.event.ActionEvent;
 
-import jd.gui.skins.jdgui.components.Balloon;
+import jd.gui.swing.components.Balloon;
 import jd.update.JDUpdateUtils;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;

@@ -1,4 +1,4 @@
-package jd.gui.skins.jdgui.components.linkbutton;
+package jd.gui.swing.components.linkbutton;
 
 import java.awt.Component;
 import java.awt.event.ActionEvent;

@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.gui.skins.jdgui.components;
+package jd.gui.swing.components;
 
 import java.awt.Dimension;
 import java.awt.Point;
@@ -32,9 +32,9 @@ import javax.swing.JWindow;
 import jd.gui.skins.SwingGui;
 import jd.gui.skins.jdgui.GUIUtils;
 import jd.gui.skins.jdgui.JDGuiConstants;
-import jd.gui.skins.jdgui.components.linkbutton.JLink;
 import jd.gui.skins.jdgui.interfaces.JDMouseAdapter;
-import jd.gui.skins.jdgui.swing.GuiRunnable;
+import jd.gui.swing.GuiRunnable;
+import jd.gui.swing.components.linkbutton.JLink;
 import jd.nutils.JDImage;
 import jd.nutils.Screen;
 import jd.utils.JDTheme;

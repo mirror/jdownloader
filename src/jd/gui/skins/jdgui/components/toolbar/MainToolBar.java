@@ -19,8 +19,8 @@ package jd.gui.skins.jdgui.components.toolbar;
 import jd.controlling.JDController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
-import jd.gui.skins.jdgui.swing.GuiRunnable;
-import jd.gui.skins.simple.components.SpeedMeterPanel;
+import jd.gui.swing.GuiRunnable;
+import jd.gui.swing.components.SpeedMeterPanel;
 
 public class MainToolBar extends ToolBar implements ControlListener {
     /**

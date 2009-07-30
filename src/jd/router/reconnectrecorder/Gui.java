@@ -34,7 +34,7 @@ import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.controlling.reconnect.ReconnectMethod;
 import jd.gui.UserIO;
-import jd.gui.skins.jdgui.components.linkbutton.JLink;
+import jd.gui.swing.components.linkbutton.JLink;
 import jd.nutils.JDFlags;
 import jd.nutils.Screen;
 import jd.parser.Regex;

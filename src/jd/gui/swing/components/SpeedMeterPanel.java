@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.gui.skins.simple.components;
+package jd.gui.swing.components;
 
 import java.awt.AlphaComposite;
 import java.awt.BasicStroke;

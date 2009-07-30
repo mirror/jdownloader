@@ -33,8 +33,8 @@ import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
 import jd.gui.UserIO;
-import jd.gui.skins.jdgui.components.linkbutton.JLink;
 import jd.gui.skins.swing.dialog.AbstractDialog;
+import jd.gui.swing.components.linkbutton.JLink;
 import jd.http.Browser;
 import jd.nutils.JDImage;
 import jd.nutils.OSDetector;

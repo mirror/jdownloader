@@ -18,7 +18,7 @@ package jd.gui.skins.jdgui.menu.actions;
 
 import java.awt.event.ActionEvent;
 
-import jd.gui.skins.simple.AboutDialog;
+import jd.gui.swing.components.AboutDialog;
 
 public class AboutAction extends StartAction {
 

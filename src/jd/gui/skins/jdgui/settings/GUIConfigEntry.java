@@ -48,11 +48,11 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.container.JDLabelContainer;
 import jd.controlling.JDLogger;
-import jd.gui.skins.jdgui.components.linkbutton.JLink;
 import jd.gui.skins.jdgui.settings.subpanels.PremiumPanel;
 import jd.gui.skins.simple.components.BrowseFile;
 import jd.gui.skins.simple.components.JDTextArea;
 import jd.gui.skins.simple.components.JDTextField;
+import jd.gui.swing.components.linkbutton.JLink;
 import jd.utils.locale.JDL;
 
 /**

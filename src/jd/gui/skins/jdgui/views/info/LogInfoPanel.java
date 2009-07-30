@@ -6,8 +6,8 @@ import java.awt.event.ActionListener;
 import javax.swing.JButton;
 
 import jd.controlling.JDLogger;
-import jd.gui.skins.jdgui.swing.GuiRunnable;
 import jd.gui.skins.swing.Factory;
+import jd.gui.swing.GuiRunnable;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 

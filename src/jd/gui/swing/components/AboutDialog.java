@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.gui.skins.simple;
+package jd.gui.swing.components;
 
 import java.awt.Color;
 import java.io.IOException;
@@ -33,8 +33,8 @@ import javax.swing.event.ListSelectionListener;
 
 import jd.controlling.JDLogger;
 import jd.gui.UserIO;
-import jd.gui.skins.jdgui.components.linkbutton.JLink;
 import jd.gui.skins.swing.dialog.AbstractDialog;
+import jd.gui.swing.components.linkbutton.JLink;
 import jd.http.Browser;
 import jd.nutils.JDImage;
 import jd.utils.JDUtilities;

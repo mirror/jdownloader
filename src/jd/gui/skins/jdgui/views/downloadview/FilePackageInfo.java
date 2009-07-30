@@ -34,7 +34,7 @@ import jd.gui.skins.jdgui.interfaces.SwitchPanel;
 import jd.gui.skins.simple.components.ComboBrowseFile;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.JDTextField;
-import jd.gui.skins.simple.components.multiprogressbar.MultiProgressBar;
+import jd.gui.swing.components.MultiProgressBar;
 import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;

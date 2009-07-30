@@ -50,7 +50,7 @@ import jd.gui.UserIO;
 import jd.gui.skins.SwingGui;
 import jd.gui.skins.jdgui.settings.ConfigPanel;
 import jd.gui.skins.jdgui.settings.GUIConfigEntry;
-import jd.gui.skins.jdgui.swing.GuiRunnable;
+import jd.gui.swing.GuiRunnable;
 import jd.http.Encoding;
 import jd.router.FindRouterIP;
 import jd.router.GetRouterInfo;

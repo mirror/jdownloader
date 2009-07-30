@@ -1,4 +1,4 @@
-package jd.gui.skins.jdgui.swing.menu;
+package jd.gui.swing.menu;
 
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenu;

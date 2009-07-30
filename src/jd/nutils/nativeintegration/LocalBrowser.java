@@ -22,8 +22,8 @@ import java.io.Serializable;
 import java.net.URL;
 import java.util.ArrayList;
 
-import jd.gui.skins.jdgui.swing.GuiRunnable;
 import jd.gui.skins.simple.components.DnDWebBrowser;
+import jd.gui.swing.GuiRunnable;
 import jd.nutils.Executer;
 import jd.nutils.OSDetector;
 import edu.stanford.ejalbert.BrowserLauncher;

@@ -25,7 +25,7 @@ import javax.swing.JPanel;
 import javax.swing.JTextPane;
 
 import jd.controlling.JDLogger;
-import jd.gui.skins.jdgui.components.linkbutton.JLink;
+import jd.gui.swing.components.linkbutton.JLink;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;

@@ -28,7 +28,7 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.event.JDBroadcaster;
 import jd.event.JDEvent;
-import jd.gui.skins.jdgui.components.Balloon;
+import jd.gui.swing.components.Balloon;
 import jd.plugins.Account;
 import jd.plugins.PluginForHost;
 import jd.utils.JDTheme;

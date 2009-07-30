@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.gui.skins.jdgui.components.linkbutton;
+package jd.gui.swing.components.linkbutton;
 
 import java.awt.Component;
 import java.awt.Cursor;

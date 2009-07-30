@@ -25,7 +25,7 @@ import javax.swing.JMenuItem;
 import jd.OptionalPluginWrapper;
 import jd.config.MenuItem;
 import jd.gui.UserIF;
-import jd.gui.skins.jdgui.swing.menu.Menu;
+import jd.gui.swing.menu.Menu;
 import jd.plugins.Plugin;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;

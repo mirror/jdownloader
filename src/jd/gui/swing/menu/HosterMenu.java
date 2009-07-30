@@ -1,4 +1,4 @@
-package jd.gui.skins.jdgui.swing.menu;
+package jd.gui.swing.menu;
 
 import java.util.ArrayList;
 import java.util.Collections;

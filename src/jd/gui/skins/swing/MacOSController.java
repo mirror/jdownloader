@@ -17,8 +17,8 @@
 package jd.gui.skins.swing;
 
 import jd.gui.skins.SwingGui;
-import jd.gui.skins.jdgui.swing.GuiRunnable;
-import jd.gui.skins.simple.AboutDialog;
+import jd.gui.swing.GuiRunnable;
+import jd.gui.swing.components.AboutDialog;
 import jd.utils.JDUtilities;
 
 import com.apple.eawt.Application;

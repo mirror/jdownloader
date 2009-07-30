@@ -33,7 +33,7 @@ import jd.controlling.LinkGrabberController;
 import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
 import jd.gui.UserIO;
-import jd.gui.skins.jdgui.components.linkbutton.JLink;
+import jd.gui.swing.components.linkbutton.JLink;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.nutils.Formatter;

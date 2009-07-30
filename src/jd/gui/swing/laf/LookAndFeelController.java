@@ -16,15 +16,19 @@ package jd.gui.swing.laf;
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import java.awt.Insets;
 import java.io.File;
 import java.io.FileInputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.Iterator;
 import java.util.Properties;
+import java.util.Map.Entry;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
+import javax.swing.UIDefaults;
 import javax.swing.UIManager;
 import javax.swing.UIManager.LookAndFeelInfo;
 
@@ -35,6 +39,9 @@ import jd.gui.skins.jdgui.GUIUtils;
 import jd.nutils.OSDetector;
 import jd.parser.Regex;
 import jd.utils.JDUtilities;
+
+import com.jtattoo.plaf.AbstractLookAndFeel;
+import com.jtattoo.plaf.BaseTheme;
 
 public class LookAndFeelController {
 
@@ -139,9 +146,10 @@ public class LookAndFeelController {
      * @return
      */
     private static LookAndFeelWrapper getDefaultLAFM() {
-        //de.javasoft.plaf.synthetica.SyntheticaSkyMetallicLookAndFeel
+        // de.javasoft.plaf.synthetica.SyntheticaSkyMetallicLookAndFeel
         return new LookAndFeelWrapper("de.javasoft.plaf.synthetica.SyntheticaSkyMetallicL2ookAndFeel");
-//        return new LookAndFeelWrapper("de.javasoft.plaf.synthetica.SyntheticaBlackStarLookAndFeel");
+        // return new
+        // LookAndFeelWrapper("de.javasoft.plaf.synthetica.SyntheticaBlackStarLookAndFeel");
 
         // LookAndFeelWrapper[] sup = getSupportedLookAndFeels();
         // if (sup.length == 0) return new
@@ -245,33 +253,33 @@ public class LookAndFeelController {
 
             // UIManager.put("Synthetica​.tabbedPane​.tab​.text​.position​.leading",
             // true);
-            UIManager.put("Synthetica.window.opaque", true);
+            // UIManager.put("Synthetica.window.opaque", true);
             // UIManager.put("Synthetica​.cache.enabled", true);
             // 
 
-//            UIManager.put("Synthetica​.tableHeader​.horizontalAlignment", JLabel.CENTER);
+            // UIManager.put("Synthetica​.tableHeader​.horizontalAlignment",
+            // JLabel.CENTER);
 
-//            UIManager.put("Synthetica.window.decoration", false);
+            // UIManager.put("Synthetica.window.decoration", false);
             // UIManager.put("Synthetica​.rootPane​.titlePane​.menuButton​.useOriginalImageSize",
             // Boolean.TRUE);
-//            UIManager.put("Synthetica​.tabbedPane​.tab​.animation​.cycles", 100);
-//            UIManager.put("Synthetica​.tabbedPane​.tabs​.stretch", Boolean.TRUE);
+            // UIManager.put("Synthetica​.tabbedPane​.tab​.animation​.cycles",
+            // 100);
+            // UIManager.put("Synthetica​.tabbedPane​.tabs​.stretch",
+            // Boolean.TRUE);
             UIManager.setLookAndFeel(getPlaf().getClassName());
             // UIManager.setLookAndFeel(new SyntheticaStandardLookAndFeel());
 
             // overwrite defaults
-            // SubConfiguration cfg = SubConfiguration.getConfig(DEFAULT_PREFIX
-            // + "." + LookAndFeelController.getPlaf().getClassName());
+            SubConfiguration cfg = SubConfiguration.getConfig(DEFAULT_PREFIX + "." + LookAndFeelController.getPlaf().getClassName());
 
-            // postSetup(getPlaf().getClassName());
-            //
-            // for (Iterator<Entry<String, Object>> it =
-            // cfg.getProperties().entrySet().iterator(); it.hasNext();) {
-            // Entry<String, Object> next = it.next();
-            // JDLogger.getLogger().info("Use special LAF Property: " +
-            // next.getKey() + " = " + next.getValue());
-            // UIManager.put(next.getKey(), next.getValue());
-            // }
+            postSetup(getPlaf().getClassName());
+
+            for (Iterator<Entry<String, Object>> it = cfg.getProperties().entrySet().iterator(); it.hasNext();) {
+                Entry<String, Object> next = it.next();
+                JDLogger.getLogger().info("Use special LAF Property: " + next.getKey() + " = " + next.getValue());
+                UIManager.put(next.getKey(), next.getValue());
+            }
 
         } catch (Exception e) {
             JDLogger.exception(e);
@@ -279,55 +287,46 @@ public class LookAndFeelController {
 
     }
 
-    // /**
-    // * Executes laf dependend commands AFTER setting the laf
-    // *
-    // * @param className
-    // */
-    // private static void postSetup(String className) {
-    // if (className.equals("com.jtattoo.plaf.acryl.AcrylLookAndFeel")) {
-    // AbstractLookAndFeel.setTheme(new
-    // jd.gui.swing.laf.ext.jtattoo.acryl.themes.AcrylJDTheme());
-    //
-    // // jd.gui.swing.laf.ext.jattoo.ui.BluredPopupUI
-    // // set own uis
-    // UIDefaults defaults = UIManager.getDefaults();
-    // defaults.put("PopupMenu.blurParameter", new int[] {
-    // 2, 2, 3
-    // });
-    // defaults.put("PopupMenuAlpha", 0.7f);
-    // defaults.put("PopupMenuUI",
-    // "jd.gui.swing.laf.ext.jattoo.ui.BluredPopupUI");
-    // defaults.put("RootPaneUI",
-    // "jd.gui.swing.laf.ext.jtattoo.acryl.ui.AcrylRootPaneUI");
-    // defaults.put("CheckBoxUI",
-    // "jd.gui.swing.laf.ext.jattoo.ui.BaseJDCheckBoxUI");
-    // defaults.put("ButtonUI",
-    // "jd.gui.swing.laf.ext.jattoo.ui.BaseJDButtonUI");
-    // defaults.put("ProgressBarUI",
-    // "jd.gui.swing.laf.ext.jtattoo.acryl.ui.AcrylProgressBarUI");
-    // defaults.put("TabbedPane.tabInsets", new Insets(0, 5, 0, 5));
-    // // defaults.put("ProgressBar.selectionForeground", new Color(100,
-    // // 100, 100));
-    // Properties props = new Properties();
-    // props.put("dynamicLayout", "on");
-    // props.put("logoString", "");
-    // props.put("textAntiAliasingMode", "GRAY");
-    // props.put("windowDecoration", "off");
-    // props.put("dynamicLayout", "on");
-    // props.put("textAntiAliasing", "off");
-    // BaseTheme.setProperties(props);
-    // }
-    // UIManager.put("Synthetica.dialog.icon.enabled", true);
-    //
-    // UIManager.put("Synthetica​.rootPane​.titlePane​.menuButton​.useOriginalImageSize",
-    // Boolean.TRUE);
-    // UIManager.put("Synthetica​.tabbedPane​.tab​.animation​.cycles", 100);
-    // UIManager.put("Synthetica​.tabbedPane​.tabs​.stretch", Boolean.TRUE);
-    // //
-    // // JTattooUtils.setJTattooRootPane(this);
-    //
-    // }
+    /**
+     * Executes laf dependend commands AFTER setting the laf
+     * 
+     * @param className
+     */
+    private static void postSetup(String className) {
+        if (className.equals("com.jtattoo.plaf.acryl.AcrylLookAndFeel")) {
+            AbstractLookAndFeel.setTheme(new jd.gui.swing.laf.ext.jtattoo.acryl.themes.AcrylJDTheme());
+
+            // jd.gui.swing.laf.ext.jattoo.ui.BluredPopupUI
+            // set own uis
+            UIDefaults defaults = UIManager.getDefaults();
+            defaults.put("PopupMenu.blurParameter", new int[] {
+                    2, 2, 3
+            });
+            defaults.put("PopupMenuAlpha", 0.7f);
+            defaults.put("PopupMenuUI", "jd.gui.swing.laf.ext.jattoo.ui.BluredPopupUI");
+            defaults.put("RootPaneUI", "jd.gui.swing.laf.ext.jtattoo.acryl.ui.AcrylRootPaneUI");
+            defaults.put("CheckBoxUI", "jd.gui.swing.laf.ext.jattoo.ui.BaseJDCheckBoxUI");
+            defaults.put("ButtonUI", "jd.gui.swing.laf.ext.jattoo.ui.BaseJDButtonUI");
+            defaults.put("ProgressBarUI", "jd.gui.swing.laf.ext.jtattoo.acryl.ui.AcrylProgressBarUI");
+            defaults.put("TabbedPane.tabInsets", new Insets(0, 5, 0, 5));
+            // defaults.put("ProgressBar.selectionForeground", new Color(100,
+            // 100, 100));
+            Properties props = new Properties();
+            props.put("dynamicLayout", "on");
+            props.put("logoString", "");
+            props.put("textAntiAliasingMode", "GRAY");
+            props.put("windowDecoration", "off");
+            props.put("dynamicLayout", "on");
+            props.put("textAntiAliasing", "off");
+            BaseTheme.setProperties(props);
+        }
+      
+        UIManager.put("Synthetica​.rootPane​.titlePane​.menuButton​.useOriginalImageSize", Boolean.TRUE);
+
+        //
+        // JTattooUtils.setJTattooRootPane(this);
+
+    }
 
     /*
      * Execvutes LAF dependen commands BEFORE initializing the LAF
@@ -368,8 +367,6 @@ public class LookAndFeelController {
         UIManager.installLookAndFeel("BernsteinLookAndFeel", "com.jtattoo.plaf.bernstein.BernsteinLookAndFeel");
         UIManager.installLookAndFeel("SmartLookAndFeel", "com.jtattoo.plaf.smart.SmartLookAndFeel");
     }
-
-
 
     // private static void installJGoodies() {
     // // com.jgoodies.plaf.plastic.PlasticXPLookAndFeel

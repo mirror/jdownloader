@@ -18,7 +18,7 @@ package jd.gui.skins.jdgui.menu.actions;
 
 import java.awt.event.ActionEvent;
 
-import jd.gui.skins.jdgui.components.linkbutton.JLink;
+import jd.gui.swing.components.linkbutton.JLink;
 
 public class LatestChanges extends StartAction {
 

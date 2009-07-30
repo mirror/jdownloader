@@ -23,7 +23,6 @@ import javax.swing.ImageIcon;
 import javax.swing.filechooser.FileFilter;
 
 import jd.gui.UserIO;
-import jd.gui.skins.jdgui.swing.GuiRunnable;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.swing.dialog.CaptchaDialog;
 import jd.gui.skins.swing.dialog.ClickPositionDialog;
@@ -33,6 +32,7 @@ import jd.gui.skins.swing.dialog.HtmlDialog;
 import jd.gui.skins.swing.dialog.InputDialog;
 import jd.gui.skins.swing.dialog.TextAreaDialog;
 import jd.gui.skins.swing.dialog.TwoTextFieldDialog;
+import jd.gui.swing.GuiRunnable;
 import jd.gui.userio.DummyFrame;
 import jd.nutils.JDFlags;
 import jd.utils.JDTheme;

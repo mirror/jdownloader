@@ -23,7 +23,7 @@ import javax.swing.JCheckBoxMenuItem;
 
 import jd.config.Configuration;
 import jd.gui.UserIO;
-import jd.gui.skins.jdgui.swing.menu.HosterMenu;
+import jd.gui.swing.menu.HosterMenu;
 import jd.nutils.JDFlags;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;

@@ -9,9 +9,9 @@ import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 
 import jd.gui.skins.jdgui.interfaces.SideBarPanel;
-import jd.gui.skins.jdgui.swing.GuiRunnable;
 import jd.gui.skins.jdgui.views.ConfigurationView;
 import jd.gui.skins.jdgui.views.sidebars.configuration.ConfigTreeModel.TreeEntry;
+import jd.gui.swing.GuiRunnable;
 import net.miginfocom.swing.MigLayout;
 
 public class ConfigSidebar extends SideBarPanel {

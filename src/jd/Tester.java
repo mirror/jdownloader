@@ -7,7 +7,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.UIManager;
 
-import jd.gui.skins.jdgui.components.linkbutton.JLink;
+import jd.gui.swing.components.linkbutton.JLink;
 import net.miginfocom.swing.MigLayout;
 import de.javasoft.plaf.synthetica.SyntheticaStandardLookAndFeel;
 

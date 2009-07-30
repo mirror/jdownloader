@@ -9,7 +9,7 @@ import javax.swing.JCheckBox;
 import jd.controlling.LinkGrabberController;
 import jd.gui.skins.jdgui.GUIUtils;
 import jd.gui.skins.jdgui.JDGuiConstants;
-import jd.gui.skins.jdgui.swing.GuiRunnable;
+import jd.gui.swing.GuiRunnable;
 import jd.nutils.Formatter;
 import jd.plugins.LinkGrabberFilePackage;
 import jd.utils.JDTheme;

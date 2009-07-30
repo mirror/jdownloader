@@ -24,8 +24,8 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 import jd.gui.UserIO;
-import jd.gui.skins.jdgui.components.linkbutton.JLink;
 import jd.gui.skins.swing.dialog.AbstractDialog;
+import jd.gui.swing.components.linkbutton.JLink;
 import jd.nutils.JDFlags;
 import jd.plugins.DownloadLink;
 import jd.utils.locale.JDL;

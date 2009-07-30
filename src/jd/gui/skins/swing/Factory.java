@@ -30,8 +30,8 @@ import javax.swing.JSeparator;
 
 import jd.config.ConfigGroup;
 import jd.controlling.JDLogger;
-import jd.gui.skins.jdgui.components.linkbutton.JLink;
 import jd.gui.skins.simple.components.JDUnderlinedText;
+import jd.gui.swing.components.linkbutton.JLink;
 import jd.utils.JDTheme;
 import net.miginfocom.swing.MigLayout;
 

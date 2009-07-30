@@ -17,16 +17,15 @@
 package jd.gui.skins.jdgui;
 
 import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Image;
 import java.awt.Toolkit;
-import java.awt.event.ActionEvent;
 import java.awt.event.WindowEvent;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
-import javax.swing.AbstractAction;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
@@ -50,8 +49,6 @@ import jd.gui.UIConstants;
 import jd.gui.UserIF;
 import jd.gui.UserIO;
 import jd.gui.skins.SwingGui;
-import jd.gui.skins.jdgui.components.Balloon;
-import jd.gui.skins.jdgui.components.JDCollapser;
 import jd.gui.skins.jdgui.components.JDStatusBar;
 import jd.gui.skins.jdgui.components.toolbar.MainToolBar;
 import jd.gui.skins.jdgui.events.EDTEventQueue;
@@ -68,7 +65,6 @@ import jd.gui.skins.jdgui.menu.actions.ExitAction;
 import jd.gui.skins.jdgui.menu.actions.RestartAction;
 import jd.gui.skins.jdgui.settings.ConfigPanel;
 import jd.gui.skins.jdgui.settings.GUIConfigEntry;
-import jd.gui.skins.jdgui.swing.GuiRunnable;
 import jd.gui.skins.jdgui.views.ConfigurationView;
 import jd.gui.skins.jdgui.views.DownloadView;
 import jd.gui.skins.jdgui.views.LinkgrabberView;
@@ -76,8 +72,11 @@ import jd.gui.skins.jdgui.views.LogView;
 import jd.gui.skins.jdgui.views.TabbedPanelView;
 import jd.gui.skins.jdgui.views.linkgrabberview.LinkGrabberPanel;
 import jd.gui.skins.simple.components.ChartAPIEntity;
-import jd.gui.skins.simple.components.PieChartAPI;
 import jd.gui.skins.swing.dialog.ContainerDialog;
+import jd.gui.swing.GuiRunnable;
+import jd.gui.swing.components.Balloon;
+import jd.gui.swing.components.JDCollapser;
+import jd.gui.swing.components.pieapi.PieChartAPI;
 import jd.nutils.Formatter;
 import jd.nutils.JDFlags;
 import jd.nutils.JDImage;
@@ -112,6 +111,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
 
     private LogView logView;
     private MainToolBar toolBar;
+    private JPanel waitingPane;
 
     private JDGui() {
         super("");
@@ -264,7 +264,8 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
     private void initComponents() {
         this.menuBar = createMenuBar();
         statusBar = new JDStatusBar();
-
+        this.waitingPane = new JPanel();
+        waitingPane.setOpaque(false);
         mainTabbedPane = MainTabbedPane.getInstance();
 
         multiProgressBar = new TabProgress();
@@ -280,14 +281,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         // mainTabbedPane.add(new JLabel("III4"));
 
         mainTabbedPane.addTab(downloadView);
-        mainTabbedPane.setClosableAction(new AbstractAction() {
 
-            public void actionPerformed(ActionEvent e) {
-                System.out.println("KKK");
-
-            }
-
-        }, -1);
         mainTabbedPane.addTab(linkgrabberView);
         mainTabbedPane.addTab(configurationView);
 
@@ -504,7 +498,11 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
 
     @Override
     public void setWaiting(boolean b) {
-        // TODO Auto-generated method stub
+        SwingGui.checkEDT();
+        this.getMainFrame().setGlassPane(this.waitingPane);
+        waitingPane.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+        this.getMainFrame().getGlassPane().setVisible(true);
+
     }
 
     @Override

@@ -2,7 +2,7 @@ package jd.gui.skins.jdgui.views.info;
 
 import jd.controlling.DownloadController;
 import jd.controlling.DownloadInformations;
-import jd.gui.skins.jdgui.swing.GuiRunnable;
+import jd.gui.swing.GuiRunnable;
 import jd.nutils.Formatter;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;

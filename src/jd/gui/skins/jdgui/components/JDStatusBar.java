@@ -30,6 +30,7 @@ import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
+import jd.gui.skins.jdgui.components.premiumbar.PremiumStatus;
 import jd.nutils.Formatter;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;

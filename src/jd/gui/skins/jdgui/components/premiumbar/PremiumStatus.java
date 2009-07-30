@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.gui.skins.jdgui.components;
+package jd.gui.skins.jdgui.components.premiumbar;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -44,10 +44,9 @@ import jd.controlling.AccountControllerListener;
 import jd.controlling.JDController;
 import jd.gui.UserIO;
 import jd.gui.skins.SwingGui;
-import jd.gui.skins.jdgui.swing.GuiRunnable;
-import jd.gui.skins.jdgui.swing.menu.HosterMenu;
-import jd.gui.skins.jdgui.swing.menu.Menu;
-import jd.gui.skins.simple.TinyProgressBar;
+import jd.gui.swing.GuiRunnable;
+import jd.gui.swing.menu.HosterMenu;
+import jd.gui.swing.menu.Menu;
 import jd.nutils.Formatter;
 import jd.nutils.JDFlags;
 import jd.plugins.Account;

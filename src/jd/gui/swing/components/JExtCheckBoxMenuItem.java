@@ -1,4 +1,4 @@
-package jd.gui.skins.jdgui.components;
+package jd.gui.swing.components;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
