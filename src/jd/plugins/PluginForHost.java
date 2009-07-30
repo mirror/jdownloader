@@ -45,7 +45,6 @@ import jd.controlling.CaptchaController;
 import jd.controlling.DownloadController;
 import jd.controlling.JDLogger;
 import jd.gui.UserIF;
-import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Browser;
 import jd.nutils.Formatter;
 import jd.nutils.JDImage;
