@@ -81,7 +81,7 @@ public class JDLocale implements Serializable, JDLabelContainer {
         }
     }
 
-    @Override
+
     public String getLabel() {
         return toString();
     }
