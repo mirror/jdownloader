@@ -49,9 +49,9 @@ import jd.config.ConfigEntry;
 import jd.config.container.JDLabelContainer;
 import jd.controlling.JDLogger;
 import jd.gui.skins.jdgui.settings.subpanels.PremiumPanel;
-import jd.gui.skins.simple.components.BrowseFile;
-import jd.gui.skins.simple.components.JDTextArea;
-import jd.gui.skins.simple.components.JDTextField;
+import jd.gui.swing.components.BrowseFile;
+import jd.gui.swing.components.JDTextArea;
+import jd.gui.swing.components.JDTextField;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.utils.locale.JDL;
 

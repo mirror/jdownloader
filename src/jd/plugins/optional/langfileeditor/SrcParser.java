@@ -29,7 +29,6 @@ import jd.nutils.Formatter;
 import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
-import jd.plugins.PluginOptional;
 import jd.utils.JDUtilities;
 
 public class SrcParser {

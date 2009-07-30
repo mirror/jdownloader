@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.gui.skins.swing;
+package jd.gui.swing;
 
 import java.awt.Cursor;
 import java.awt.event.ActionListener;
@@ -30,7 +30,7 @@ import javax.swing.JSeparator;
 
 import jd.config.ConfigGroup;
 import jd.controlling.JDLogger;
-import jd.gui.skins.simple.components.JDUnderlinedText;
+import jd.gui.swing.components.JDUnderlinedText;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.utils.JDTheme;
 import net.miginfocom.swing.MigLayout;

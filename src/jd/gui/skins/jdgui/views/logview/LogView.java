@@ -1,4 +1,4 @@
-package jd.gui.skins.jdgui.views;
+package jd.gui.skins.jdgui.views.logview;
 
 import java.util.ArrayList;
 import java.util.logging.Level;
@@ -11,7 +11,6 @@ import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.skins.jdgui.interfaces.View;
 import jd.gui.skins.jdgui.views.info.LogInfoPanel;
-import jd.gui.skins.simple.LogPane;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;

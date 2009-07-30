@@ -31,7 +31,7 @@ import javax.swing.border.Border;
 import javax.swing.table.TableColumn;
 
 import jd.controlling.JDController;
-import jd.gui.skins.simple.components.RowHighlighter;
+import jd.gui.swing.RowHighlighter;
 import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;

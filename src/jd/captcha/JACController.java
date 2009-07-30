@@ -28,7 +28,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 
 import jd.captcha.utils.Utilities;
-import jd.gui.skins.simple.components.BrowseFile;
+import jd.gui.swing.components.BrowseFile;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 

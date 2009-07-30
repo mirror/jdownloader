@@ -17,7 +17,7 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
-import jd.gui.skins.simple.ConvertDialog.ConversionMode;
+import jd.gui.swing.components.ConvertDialog.ConversionMode;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginForHost;

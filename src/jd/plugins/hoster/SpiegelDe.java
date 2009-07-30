@@ -20,7 +20,7 @@ import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.gui.skins.simple.ConvertDialog.ConversionMode;
+import jd.gui.swing.components.ConvertDialog.ConversionMode;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;

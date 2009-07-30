@@ -4,7 +4,6 @@ import javax.swing.Action;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.UIManager;
 
 import jd.gui.skins.jdgui.interfaces.View;
 import jd.utils.JDTheme;

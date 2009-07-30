@@ -33,8 +33,8 @@ import javax.swing.event.ListSelectionListener;
 
 import jd.controlling.JDLogger;
 import jd.gui.UserIO;
-import jd.gui.skins.swing.dialog.AbstractDialog;
 import jd.gui.swing.components.linkbutton.JLink;
+import jd.gui.swing.dialog.AbstractDialog;
 import jd.http.Browser;
 import jd.nutils.JDImage;
 import jd.utils.JDUtilities;

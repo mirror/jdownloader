@@ -19,7 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.gui.skins.simple.ConvertDialog.ConversionMode;
+import jd.gui.swing.components.ConvertDialog.ConversionMode;
 import jd.http.Encoding;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;

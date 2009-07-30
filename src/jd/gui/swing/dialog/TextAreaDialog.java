@@ -14,54 +14,44 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.gui.skins.swing.dialog;
+package jd.gui.swing.dialog;
 
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 import jd.gui.UserIO;
-import jd.gui.skins.simple.components.JDTextField;
+import jd.gui.swing.components.JDTextArea;
 import jd.utils.JDTheme;
 import net.miginfocom.swing.MigLayout;
 
-public class TwoTextFieldDialog extends AbstractDialog {
+public class TextAreaDialog extends AbstractDialog {
 
-    private static final long serialVersionUID = -7426399217833694784L;
+    private static final long serialVersionUID = 5129590048597691591L;
 
-    private String messageOne;
+    private String message;
 
-    private String defOne;
+    private String def;
 
-    private String messageTwo;
+    private JDTextArea txtArea;
 
-    private String defTwo;
-
-    private JDTextField txtFieldOne;
-
-    private JDTextField txtFieldTwo;
-
-    public TwoTextFieldDialog(String title, String messageOne, String defOne, String messageTwo, String defTwo) {
+    public TextAreaDialog(String title, String message, String def) {
         super(UserIO.NO_COUNTDOWN, title, JDTheme.II("gui.images.config.tip", 32, 32), null, null);
-        this.messageOne = messageOne;
-        this.defOne = defOne;
-        this.messageTwo = messageTwo;
-        this.defTwo = defTwo;
+        this.message = message;
+        this.def = def;
         init();
     }
 
     @Override
     public JComponent contentInit() {
-        JPanel panel = new JPanel(new MigLayout("ins 0, wrap 1", "[grow, fill]", "[]5[]10[]5[]"));
-        panel.add(new JLabel(messageOne));
-        panel.add(txtFieldOne = new JDTextField(defOne));
-        panel.add(new JLabel(messageTwo));
-        panel.add(txtFieldTwo = new JDTextField(defTwo));
+        JPanel panel = new JPanel(new MigLayout("ins 0, wrap 1", "[grow, fill]", "[]5[]"));
+        panel.add(new JLabel(message));
+        panel.add(txtArea = new JDTextArea(def), "h 100!");
         return panel;
     }
 
-    public String[] getResult() {
-        return new String[] { txtFieldOne.getText(), txtFieldTwo.getText() };
+    public String getResult() {
+        return txtArea.getText();
     }
 
 }

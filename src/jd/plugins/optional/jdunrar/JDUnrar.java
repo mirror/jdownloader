@@ -43,7 +43,7 @@ import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.UserIO;
 import jd.gui.skins.SwingGui;
-import jd.gui.skins.simple.components.JDFileChooser;
+import jd.gui.swing.components.JDFileChooser;
 import jd.nutils.Executer;
 import jd.nutils.Formatter;
 import jd.nutils.JDHash;

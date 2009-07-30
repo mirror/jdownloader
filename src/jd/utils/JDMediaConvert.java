@@ -20,7 +20,7 @@ import java.io.File;
 import java.util.logging.Logger;
 
 import jd.controlling.ProgressController;
-import jd.gui.skins.simple.ConvertDialog.ConversionMode;
+import jd.gui.swing.components.ConvertDialog.ConversionMode;
 import jd.plugins.DownloadLink;
 import jd.utils.locale.JDL;
 import de.savemytube.flv.FLV;

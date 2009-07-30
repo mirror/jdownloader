@@ -39,11 +39,12 @@ import jd.gui.skins.SwingGui;
 import jd.gui.skins.jdgui.GUIUtils;
 import jd.gui.skins.jdgui.JDGui;
 import jd.gui.skins.jdgui.JDGuiConstants;
-import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.nutils.ClassFinder;
+import jd.nutils.JDFlags;
 import jd.nutils.OSDetector;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
@@ -85,7 +86,16 @@ public class JDInit {
             if (!old.equals(JDUtilities.getRevision())) {
                 logger.info("Detected that JD just got updated");
                 JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_FINISH));
-                SimpleGUI.showChangelogDialog();
+                int status = UserIO.getInstance().requestHelpDialog(UserIO.NO_CANCEL_OPTION, JDL.LF("system.update.message.title", "Updated to version %s", JDUtilities.getRevision()),
+                                                                    JDL.L("system.update.message", "Update successfull"), JDL.L("system.update.showchangelogv2", "What's new?"),
+                                                                    "http://jdownloader.org/changes/index");
+                if (JDFlags.hasAllFlags(status, UserIO.RETURN_OK) && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_AUTO_SHOW_CHANGELOG, true)) {
+                    try {
+                        JLink.openURL("http://jdownloader.org/changes/index");
+                    } catch (Exception e) {
+                        JDLogger.exception(e);
+                    }
+                }
 
             }
         }

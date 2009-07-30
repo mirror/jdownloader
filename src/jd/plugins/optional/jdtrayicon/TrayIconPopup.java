@@ -40,8 +40,7 @@ import jd.controlling.ClipboardHandler;
 import jd.controlling.JDController;
 import jd.controlling.reconnect.Reconnecter;
 import jd.gui.skins.jdgui.actions.ActionController;
-import jd.gui.skins.simple.SimpleGUI;
-import jd.gui.skins.swing.Factory;
+import jd.gui.swing.Factory;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.WebUpdate;
@@ -263,7 +262,6 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
             break;
         case TrayIconPopup.ACTION_EXIT:
             // TODO
-            if (SimpleGUI.CURRENTGUI != null) SimpleGUI.CURRENTGUI.getContentPane().getRightPanel().setHidden();
             JDUtilities.getController().exit();
             break;
         case TrayIconPopup.ACTION_TOGGLE_PREMIUM:

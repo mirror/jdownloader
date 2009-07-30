@@ -18,12 +18,10 @@ package jd.captcha.specials;
 
 import java.awt.Color;
 
-import jd.nutils.Colors;
-
-import jd.captcha.pixelgrid.PixelGrid;
-
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
+import jd.captcha.pixelgrid.PixelGrid;
+import jd.nutils.Colors;
 
 /**
  * 

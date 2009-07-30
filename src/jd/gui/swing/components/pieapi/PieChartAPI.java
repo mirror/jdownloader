@@ -16,8 +16,6 @@
 
 package jd.gui.swing.components.pieapi;
 
-import jd.gui.skins.simple.components.ChartAPI;
-import jd.gui.skins.simple.components.ChartAPIEntity;
 
 
 public class PieChartAPI extends ChartAPI {

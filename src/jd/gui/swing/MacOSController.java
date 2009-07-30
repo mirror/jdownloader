@@ -14,10 +14,9 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.gui.skins.swing;
+package jd.gui.swing;
 
 import jd.gui.skins.SwingGui;
-import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.components.AboutDialog;
 import jd.utils.JDUtilities;
 

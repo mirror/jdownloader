@@ -36,7 +36,6 @@ import jd.OptionalPluginWrapper;
 import jd.config.Configuration;
 import jd.gui.UserIF;
 import jd.gui.skins.jdgui.settings.ConfigPanel;
-import jd.gui.skins.simple.SimpleGUI;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 

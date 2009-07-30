@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.gui.skins.simple;
+package jd.gui.swing.dialog;
 
 import java.awt.event.ActionEvent;
 
@@ -24,7 +24,6 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 import jd.gui.UserIO;
-import jd.gui.skins.swing.dialog.AbstractDialog;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.nutils.JDFlags;
 import jd.plugins.DownloadLink;

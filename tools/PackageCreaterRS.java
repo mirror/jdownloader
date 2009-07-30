@@ -25,7 +25,7 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 
 import jd.controlling.JDLogger;
-import jd.gui.skins.simple.components.JDFileChooser;
+import jd.gui.swing.components.JDFileChooser;
 import jd.nutils.io.JDIO;
 import jd.nutils.zip.Zip;
 import jd.parser.Regex;

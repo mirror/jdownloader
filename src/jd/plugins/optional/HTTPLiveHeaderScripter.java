@@ -56,7 +56,7 @@ import jd.controlling.reconnect.HTTPLiveHeader;
 import jd.gui.UserIO;
 import jd.gui.skins.SwingGui;
 import jd.gui.skins.jdgui.interfaces.SwitchPanel;
-import jd.gui.skins.simple.components.JDFileChooser;
+import jd.gui.swing.components.JDFileChooser;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.http.Encoding;
 import jd.nutils.io.JDFileFilter;

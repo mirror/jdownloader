@@ -17,7 +17,6 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
-import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.parser.Regex;
 import jd.parser.html.Form;

@@ -25,7 +25,7 @@ import javax.swing.JComponent;
 import javax.swing.JTable;
 import javax.swing.border.Border;
 
-import jd.gui.skins.simple.components.RowHighlighter;
+import jd.gui.swing.RowHighlighter;
 import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkGrabberFilePackage;

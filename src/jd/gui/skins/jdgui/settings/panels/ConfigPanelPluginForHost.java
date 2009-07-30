@@ -42,7 +42,6 @@ import jd.config.ConfigEntry.PropertyType;
 import jd.gui.UserIF;
 import jd.gui.UserIO;
 import jd.gui.skins.jdgui.settings.ConfigPanel;
-import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.nutils.Colors;
 import jd.nutils.JDFlags;

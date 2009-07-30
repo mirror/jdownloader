@@ -19,6 +19,7 @@ package jd.captcha.specials;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Vector;
+
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
 import jd.captcha.pixelobject.PixelObject;

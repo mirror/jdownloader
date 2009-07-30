@@ -21,7 +21,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.gui.skins.simple.ConvertDialog.ConversionMode;
+import jd.gui.swing.components.ConvertDialog.ConversionMode;
 import jd.http.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;

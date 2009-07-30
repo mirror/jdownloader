@@ -14,25 +14,39 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.gui.skins.swing.dialog;
+package jd.gui.swing.dialog;
 
 import javax.swing.JComponent;
-import javax.swing.JPanel;
+import javax.swing.JTextPane;
 
-public class ContainerDialog extends AbstractDialog {
+import jd.utils.JDTheme;
 
-    private static final long serialVersionUID = -348017625663435924L;
-    private JPanel panel;
+public class HtmlDialog extends AbstractDialog {
 
-    public ContainerDialog(int flags, String title, JPanel panel, String ok, String cancel) {
-        super(flags, title, null, ok, cancel);
-        this.panel = panel;
+    private static final long serialVersionUID = 5106956546862704641L;
+
+    private String message;
+
+    public HtmlDialog(int flag, String title, String message) {
+        super(flag, title, JDTheme.II("gui.images.config.tip", 32, 32), null, null);
+        this.message = message;
         init();
     }
 
     @Override
     public JComponent contentInit() {
-        return panel;
+        JTextPane htmlArea = new JTextPane();
+        htmlArea.setEditable(false);
+        htmlArea.setContentType("text/html");
+        htmlArea.setText(message);
+        htmlArea.setOpaque(false);
+        htmlArea.requestFocusInWindow();
+        /**
+         * TODO
+         */
+//        htmlArea.addHyperlinkListener(JLink.getHyperlinkListener());
+
+        return htmlArea;
     }
 
 }

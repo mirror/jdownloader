@@ -1,4 +1,4 @@
-package jd.gui.skins.simple.components;
+package jd.gui.swing;
 
 import java.awt.Color;
 

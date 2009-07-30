@@ -32,7 +32,7 @@ import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.UserIO;
 import jd.gui.skins.jdgui.userio.UserIOGui;
-import jd.gui.skins.swing.dialog.AbstractDialog;
+import jd.gui.swing.dialog.AbstractDialog;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.update.JDUpdateUtils;
 import jd.utils.JDTheme;
