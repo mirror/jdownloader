@@ -301,10 +301,11 @@ public class FilePackageInfo extends SwitchPanel implements ActionListener {
     }
 
     private void onHideSave() {
-        if (fp == null || !notifyUpdate) return;
+        notifyUpdate = false;
         fp.setName(txtName.getText());
         fp.setComment(txtComment.getText());
         fp.setPassword(txtPassword.getText());
+        notifyUpdate = true;
     }
 
     // @Override

@@ -18,9 +18,13 @@ package jd.utils.locale;
 
 import java.io.Serializable;
 
+import javax.swing.ImageIcon;
+
+import jd.config.container.JDLabelContainer;
+import jd.nutils.JDImage;
 import jd.utils.JDGeoCode;
 
-public class JDLocale implements Serializable {
+public class JDLocale implements Serializable, JDLabelContainer {
     /**
      * 
      */
@@ -61,5 +65,24 @@ public class JDLocale implements Serializable {
     public boolean equals(Object l) {
         if (l == null || !(l instanceof JDLocale)) return false;
         return this.getLngGeoCode().equals(((JDLocale) l).getLngGeoCode());
+    }
+
+    public ImageIcon getIcon() {
+        try {
+            ImageIcon img;
+            if (lngGeoCode.length() > 2) {
+                img = JDImage.getImageIcon("default/flags/" + lngGeoCode.substring(0, 2));
+            } else {
+                img = JDImage.getImageIcon("default/flags/" + lngGeoCode);
+            }
+            return img;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    @Override
+    public String getLabel() {
+        return toString();
     }
 }

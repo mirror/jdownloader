@@ -22,10 +22,6 @@ import java.awt.event.ActionListener;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.SwingConstants;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
-import javax.swing.text.BadLocationException;
-import javax.swing.text.Document;
 
 import jd.config.Configuration;
 import jd.controlling.DownloadController;
@@ -109,7 +105,6 @@ public class LinkGrabberFilePackageInfo extends SwitchPanel implements ActionLis
 
         txtPassword = new JDTextField(true);
         txtPassword.addActionListener(this);
-        this.addChangeListener(txtPassword);
 
         txtComment = new JDTextField(true);
         txtComment.addActionListener(this);
@@ -139,27 +134,6 @@ public class LinkGrabberFilePackageInfo extends SwitchPanel implements ActionLis
         this.add(new JLabel(JDL.L("gui.linkgrabber.packagetab.lbl.comment", "Kommentar")));
         this.add(txtComment, "gapright 10, growx");
         this.add(chbUseSubdirectory, "alignx right");
-
-    }
-    
-    private void addChangeListener(final JDTextField txtName2) {
-        txtName2.getDocument().addDocumentListener(new DocumentListener() {
-
-            public void changedUpdate(DocumentEvent e) {
-                System.out.println(e);
-            }
-
-            public void insertUpdate(DocumentEvent e) {
-                System.out.println(e);
-            }
-
-            public void removeUpdate(DocumentEvent e) {
-                System.out.println(e);
-
-            }
-
-        });
-
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -186,18 +160,11 @@ public class LinkGrabberFilePackageInfo extends SwitchPanel implements ActionLis
     }
 
     private void onHideSave() {
-        Document doc = txtPassword.getDocument();
-        String txt;
-        try {
-            txt = doc.getText(0, doc.getLength());
-        } catch (BadLocationException e) {
-            txt = null;
-        }
-        String txt2 = txtPassword.getText();
-        if (fp == null || !notifyUpdate) return;
+        notifyUpdate = false;
         fp.setName(txtName.getText());
         fp.setComment(txtComment.getText());
         fp.setPassword(txtPassword.getText());
+        notifyUpdate = true;
     }
 
     // @Override
