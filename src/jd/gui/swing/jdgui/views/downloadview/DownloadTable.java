@@ -71,6 +71,8 @@ public class DownloadTable extends JTable implements MouseListener, MouseMotionL
 
     protected static final String WIDTH_PREFIX = "WIDTH7_COL_";
 
+    public static final int ROWHEIGHT = 19;
+
     private TableRenderer cellRenderer;
 
     private TableColumn[] cols;
@@ -106,6 +108,7 @@ public class DownloadTable extends JTable implements MouseListener, MouseMotionL
         // setColumnControlVisible(true);
         // setColumnControl(new JColumnControlButton(this));
         setAutoscrolls(false);
+        this.setRowHeight(ROWHEIGHT);
         // setEditable(false);
         addMouseListener(this);
         addKeyListener(this);

@@ -136,7 +136,9 @@ public class SrcParser {
         prepareContent();
         currentContent = Pattern.compile("\\/\\*(.*?)\\*\\/", Pattern.DOTALL).matcher(currentContent).replaceAll("[[/*.....*/]]");
         currentContent = Pattern.compile("[^:]//(.*?)[\n|\r]", Pattern.DOTALL).matcher(currentContent).replaceAll("[[\\.....]]");
-
+       
+        
+        currentContent= Pattern.compile("JDL\\s*?\\.\\s*?L",Pattern.DOTALL).matcher(currentContent).replaceAll("JDL.L");
         String[] matches = new Regex(currentContent, "([^;^{^}]*JDL\\.LF?\\s*?\\(.*?\\)[^;^{^}]*)").getColumn(0);
 
         for (String match : matches) {

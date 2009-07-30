@@ -1,6 +1,7 @@
 package jd.gui.swing.jdgui;
 
 import java.awt.Component;
+import java.awt.Graphics;
 
 import javax.swing.Action;
 import javax.swing.JTabbedPane;
@@ -74,10 +75,12 @@ public class MainTabbedPane extends JTabbedPane {
     }
 
     private MainTabbedPane() {
+     
         this.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
         this.addChangeListener(new ChangeListener() {
 
             public void stateChanged(ChangeEvent e) {
+               if( SwingGui.getInstance()!=null) SwingGui.getInstance().setWaiting(true);
                 try {
                     View comp = (View) getSelectedComponent();
                     if (comp == latestSelection) return;
@@ -95,6 +98,10 @@ public class MainTabbedPane extends JTabbedPane {
         });
     }
 
+    public void paint(Graphics g) {
+        super.paint(g);
+        if( SwingGui.getInstance()!=null)SwingGui.getInstance().setWaiting(false);
+    }
     // /**
     // * inits the ui for special lafs
     // */

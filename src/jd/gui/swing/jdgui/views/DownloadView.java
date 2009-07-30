@@ -41,6 +41,8 @@ public class DownloadView extends View {
 
     @Override
     protected void onHide() {
+    
+    
     }
 
     @Override

@@ -18,6 +18,7 @@ package jd.gui.swing.jdgui.views.downloadview;
 
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 
@@ -44,7 +45,7 @@ import org.jdesktop.swingx.renderer.JRendererLabel;
 
 public class TableRenderer extends DefaultTableRenderer {
 
-    private static final long serialVersionUID = -3914572910439565199L;
+    private static final long serialVersionUID = -3916572910439565199L;
 
     private static final String NULL_BYTE_PROGRESS = "0.00% (0 B/* MB)";
 
@@ -140,17 +141,17 @@ public class TableRenderer extends DefaultTableRenderer {
         icon_fp_open_error = JDTheme.II("gui.images.package_open_error_tree", 16, 16);
         icon_fp_closed = JDTheme.II("gui.images.package_closed_tree", 16, 16);
         icon_fp_closed_error = JDTheme.II("gui.images.package_closed_error_tree", 16, 16);
-        imgFinished = JDTheme.II("gui.images.ok", 14, 14);
-        imgResume = JDTheme.II("gui.images.resume", 14, 14);
-        imgPremium = JDTheme.II("gui.images.premium", 14, 14);
-        imgFailed = JDTheme.II("gui.images.bad", 14, 14);
-        imgExtract = JDTheme.II("gui.images.update_manager", 14, 14);
-        imgStopMark = JDTheme.II("gui.images.stopmark", 14, 14);
-        imgPriorityS = JDTheme.II("gui.images.priority-1", 14, 14);
-        imgPriority1 = JDTheme.II("gui.images.priority1", 14, 14);
-        imgPriority2 = JDTheme.II("gui.images.priority2", 14, 14);
-        imgPriority3 = JDTheme.II("gui.images.priority3", 14, 14);
-        imgFileFailed = JDTheme.II("gui.images.offlinefile", 14, 14);
+        imgFinished = JDTheme.II("gui.images.ok", 16, 16);
+        imgResume = JDTheme.II("gui.images.resume", 16, 16);
+        imgPremium = JDTheme.II("gui.images.premium", 16, 16);
+        imgFailed = JDTheme.II("gui.images.bad", 16, 16);
+        imgExtract = JDTheme.II("gui.images.update_manager", 16, 16);
+        imgStopMark = JDTheme.II("gui.images.stopmark", 16, 16);
+        imgPriorityS = JDTheme.II("gui.images.priority-1", 16, 16);
+        imgPriority1 = JDTheme.II("gui.images.priority1", 16, 16);
+        imgPriority2 = JDTheme.II("gui.images.priority2", 16, 16);
+        imgPriority3 = JDTheme.II("gui.images.priority3", 16, 16);
+        imgFileFailed = JDTheme.II("gui.images.offlinefile", 16, 16);
     }
 
     private void initLocale() {
@@ -203,7 +204,7 @@ public class TableRenderer extends DefaultTableRenderer {
             ((JComponent) co).setBackground(UIManager.getColor("TableHeader.background").darker());
 
         }
-
+        co.setSize(new Dimension(200, 30));
         return co;
     }
 
@@ -238,7 +239,7 @@ public class TableRenderer extends DefaultTableRenderer {
             } else {
                 if (dLink.getPlugin().hasHosterIcon()) {
                     statuspanel.setText(dLink.getPlugin().getSessionInfo());
-                    statuspanel.setIcon(-1, dLink.getPlugin().getHosterIcon());                    
+                    statuspanel.setIcon(-1, dLink.getPlugin().getHosterIcon());
                 } else {
                     clearSB();
                     sb.append(dLink.getPlugin().getHost());
@@ -288,7 +289,8 @@ public class TableRenderer extends DefaultTableRenderer {
                 // progress.setToolTipText(null);
                 progress.setForeground(COL_PROGRESS_NORMAL);
                 return progress;
-            } else if ((dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED) && dLink.getPlugin().getRemainingHosterWaittime() > 0) || (dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) && dLink.getLinkStatus().getRemainingWaittime() > 0)) {
+            } else if ((dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED) && dLink.getPlugin().getRemainingHosterWaittime() > 0)
+                    || (dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) && dLink.getLinkStatus().getRemainingWaittime() > 0)) {
                 progress.setMaximum(dLink.getLinkStatus().getTotalWaitTime());
                 progress.setForeground(COL_PROGRESS_ERROR);
                 progress.setValue(dLink.getLinkStatus().getRemainingWaittime());
@@ -385,7 +387,8 @@ public class TableRenderer extends DefaultTableRenderer {
                 ((JRendererLabel) co).setBorder(null);
                 return co;
 
-            } else if ((dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED) && dLink.getPlugin().getRemainingHosterWaittime() > 0) || (dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) && dLink.getLinkStatus().getRemainingWaittime() > 0)) {
+            } else if ((dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED) && dLink.getPlugin().getRemainingHosterWaittime() > 0)
+                    || (dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) && dLink.getLinkStatus().getRemainingWaittime() > 0)) {
 
                 clearSB();
 

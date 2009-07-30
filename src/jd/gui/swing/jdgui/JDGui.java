@@ -33,7 +33,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
-import jd.config.ConfigContainer; 
+import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.controlling.ClipboardHandler;
 import jd.controlling.DownloadController;
@@ -75,7 +75,6 @@ import jd.gui.swing.jdgui.views.ConfigurationView;
 import jd.gui.swing.jdgui.views.DownloadView;
 import jd.gui.swing.jdgui.views.LinkgrabberView;
 import jd.gui.swing.jdgui.views.TabbedPanelView;
-import jd.gui.swing.jdgui.views.ClosableView;
 import jd.gui.swing.jdgui.views.linkgrabberview.LinkGrabberPanel;
 import jd.gui.swing.jdgui.views.logview.LogView;
 import jd.nutils.Formatter;
@@ -113,6 +112,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
     private LogView logView;
     private MainToolBar toolBar;
     private JPanel waitingPane;
+    private Thread waitingThread;
 
     private JDGui() {
         super("");
@@ -289,7 +289,6 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         mainTabbedPane.addTab(logView);
         // mainTabbedPane.addTab(new ClosableView());
         mainTabbedPane.setSelectedComponent(downloadView);
-        
 
     }
 
@@ -500,11 +499,26 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
     }
 
     @Override
-    public void setWaiting(boolean b) {
-        SwingGui.checkEDT();
-        this.getMainFrame().setGlassPane(this.waitingPane);
-        waitingPane.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-        this.getMainFrame().getGlassPane().setVisible(true);
+    public void setWaiting(final boolean b) {
+     
+        
+        
+            internalSetWaiting(b);
+        
+
+    }
+
+    protected void internalSetWaiting(final boolean b) {
+        new GuiRunnable() {
+            @Override
+            public Object runSave() {
+                getMainFrame().setGlassPane(waitingPane);
+                waitingPane.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+                getMainFrame().getGlassPane().setVisible(b);
+                return null;
+            }
+
+        }.waitForEDT();
 
     }
 
