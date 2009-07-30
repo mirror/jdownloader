@@ -705,8 +705,8 @@ public abstract class PluginForHost extends Plugin {
     }
 
     private final ImageIcon initHosterIcon() {
-        Image image = JDImage.getImage("hosterlogos/" + getHost());
-        if (image == null) image = createDefaultIcon();
+        Image image = JDImage.getScaledImage(JDImage.getImage("hosterlogos/" + getHost()),14,14);
+        if (image == null) image = JDImage.getScaledImage((BufferedImage)createDefaultIcon(),14,14);
         if (image != null) return new ImageIcon(image);
         return null;
     }

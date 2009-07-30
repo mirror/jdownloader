@@ -136,10 +136,10 @@ public class TableRenderer extends DefaultTableRenderer {
     }
 
     private void initIcons() {
-        icon_fp_open = JDTheme.II("gui.images.package_opened_tree", 14, 14);
-        icon_fp_open_error = JDTheme.II("gui.images.package_open_error_tree", 14, 14);
-        icon_fp_closed = JDTheme.II("gui.images.package_closed_tree", 14, 14);
-        icon_fp_closed_error = JDTheme.II("gui.images.package_closed_error_tree", 14, 14);
+        icon_fp_open = JDTheme.II("gui.images.package_opened_tree", 16, 16);
+        icon_fp_open_error = JDTheme.II("gui.images.package_open_error_tree", 16, 16);
+        icon_fp_closed = JDTheme.II("gui.images.package_closed_tree", 16, 16);
+        icon_fp_closed_error = JDTheme.II("gui.images.package_closed_error_tree", 16, 16);
         imgFinished = JDTheme.II("gui.images.ok", 14, 14);
         imgResume = JDTheme.II("gui.images.resume", 14, 14);
         imgPremium = JDTheme.II("gui.images.premium", 14, 14);
