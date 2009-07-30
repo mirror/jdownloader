@@ -291,7 +291,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         panel.add(bpanel, "w pref!");
 
         JTabbedPane tabbed = new JTabbedPane();
-        tabbed.add(getBreadcrum(), panel);
+       tabbed.setOpaque(false);  tabbed.add(getBreadcrum(), panel);
 
         this.add(tabbed);
     }

@@ -27,6 +27,7 @@ abstract public class ClosableView extends View {
             }
 
         };
+        //jetzt du
         fm.setIconifiable(false);
         fm.setResizable(true);
         fm.setClosable(true);

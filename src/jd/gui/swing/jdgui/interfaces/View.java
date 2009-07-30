@@ -32,7 +32,7 @@ public abstract class View extends SwitchPanel {
     private static final long serialVersionUID = 8661526331504317690L;
     public static final int ICON_SIZE = 16;
     private JPanel rightPane;
-    private JScrollPane sidebar;
+    protected JScrollPane sidebar;
     private SideBarPanel sidebarContent;
     private SwitchPanel content;
     private JPanel topContent;

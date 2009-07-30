@@ -151,7 +151,7 @@ public class AboutDialog extends AbstractDialog {
         devs.add(new DevEntry("Sna696", "-", "Italian Translation"));
         devs.add(new DevEntry("Giandena", "-", "Italian Translation"));
         devs.add(new DevEntry("nguyenkimvy", "-", "Vietnamese Translation"));
-
+        devs.add(new DevEntry("Mark James", "-", "Silky & Flag Icons from http://www.famfamfam.com"));
         return devs.toArray(new DevEntry[] {});
     }
 

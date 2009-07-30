@@ -37,7 +37,11 @@ import jd.utils.locale.JDL;
 public class ConfigPanelGeneral extends ConfigPanel {
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.ConfigPanelGeneral.";
 
-      public String getBreadcrum() {     return JDL.L(this.getClass().getName()+".breadcrum", this.getClass().getSimpleName()); }   public static String getTitle() {
+    public String getBreadcrum() {
+        return JDL.L(this.getClass().getName() + ".breadcrum", this.getClass().getSimpleName());
+    }
+
+    public static String getTitle() {
         return JDL.L(JDL_PREFIX + "general.title", "General");
     }
 
@@ -102,6 +106,8 @@ public class ConfigPanelGeneral extends ConfigPanel {
         }
 
         JTabbedPane tabbed = new JTabbedPane();
+
+        tabbed.setOpaque(false);
         tabbed.add(getBreadcrum(), panel);
 
         this.add(tabbed);

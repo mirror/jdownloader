@@ -227,7 +227,7 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
         setLayout(new MigLayout("ins 0,wrap 1", "[fill,grow 10]", "[fill,grow]"));
         // panel.add();
         JTabbedPane tabbed = new JTabbedPane();
-        tabbed.add(getBreadcrum(), method);
+       tabbed.setOpaque(false);  tabbed.add(getBreadcrum(), method);
 
         this.add(tabbed);
 

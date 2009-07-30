@@ -4,6 +4,7 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
 
+import javax.swing.JLabel;
 import javax.swing.JTree;
 import javax.swing.tree.DefaultTreeCellRenderer;
 
@@ -16,29 +17,37 @@ public class TreeRenderer extends DefaultTreeCellRenderer {
     private TreeEntry te;
     private Font orgFont;
     private Font boldFont;
+    private JLabel label;
+
+    public TreeRenderer() {
+        label = new JLabel();
+        label.setBackground(null);
+
+    }
 
     public Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel, boolean expanded, boolean leaf, int row, boolean hasFocus) {
+
         te = (TreeEntry) value;
-        if (orgFont == null && getFont() != null) {
-            orgFont = getFont();
-            boldFont = getFont().deriveFont(getFont().getStyle() ^ Font.BOLD);
+        if (orgFont == null && label.getFont() != null) {
+            orgFont = label.getFont();
+            boldFont = label.getFont().deriveFont(label.getFont().getStyle() ^ Font.BOLD);
         }
-      
-        setText(te.getTitle());
+
+        label.setText(te.getTitle());
         if (!sel && te.getIcon() != null) {
 
-            setFont(orgFont);
+            label.setFont(orgFont);
 
-            setIcon(JDTheme.II(te.getIconKey(), 16, 16));
+            label.setIcon(JDTheme.II(te.getIconKey(), 16, 16));
         } else {
-            setFont(boldFont);
+            label.setFont(boldFont);
 
-            setIcon(te.getIcon());
+            label.setIcon(te.getIcon());
         }
-        setToolTipText(te.getTooltip());
+        label.setToolTipText(te.getTooltip());
 
-        this.setPreferredSize(new Dimension(200, 20));
-        return this;
+        label.setPreferredSize(new Dimension(200, 20));
+        return label;
     }
 
 }

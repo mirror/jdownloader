@@ -239,7 +239,9 @@ public class SrcParser {
     private void parseCodeLine(String match, ArrayList<LngEntry> fileEntries, ArrayList<String> filePattern) {
         String[] calls = match.split("JDL\\.");
         String pat_string = "\"(.*?)(?<!\\\\)\"";
-
+if(match.contains("plugins.host.rapidshare.errors")){
+    match=match;
+}
         LngEntry entry;
         String m;
         main: for (String orgm : calls) {
@@ -258,10 +260,12 @@ public class SrcParser {
                 orgm = m;
 //                m = new Regex(m, "\\((.*?\\,.*?)[\\)\\,]").getMatch(0);
                 try{
-                    int end = m.indexOf(")");
-                    int com=m.indexOf(",");
-                    com= m.indexOf(",",com+1);
-                    if(com>0&&com<end)end=com;
+                   
+                    int com1=m.indexOf(",");
+                    int end = m.indexOf(")",com1+1);
+                    int com2;
+                    com2= m.indexOf(",",com1+1);
+                    if(com2>0&&com2<end)end=com2;
                     if(end<0){
                         m=m.substring(m.indexOf("(")+1).trim();
                     }else{
