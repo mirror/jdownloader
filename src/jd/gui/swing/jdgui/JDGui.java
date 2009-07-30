@@ -75,6 +75,7 @@ import jd.gui.swing.jdgui.views.ConfigurationView;
 import jd.gui.swing.jdgui.views.DownloadView;
 import jd.gui.swing.jdgui.views.LinkgrabberView;
 import jd.gui.swing.jdgui.views.TabbedPanelView;
+import jd.gui.swing.jdgui.views.ClosableView;
 import jd.gui.swing.jdgui.views.linkgrabberview.LinkGrabberPanel;
 import jd.gui.swing.jdgui.views.logview.LogView;
 import jd.nutils.Formatter;
@@ -286,8 +287,10 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         mainTabbedPane.addTab(configurationView);
 
         mainTabbedPane.addTab(logView);
-        // mainTabbedPane.addTab(new TestView());
+        // mainTabbedPane.addTab(new ClosableView());
         mainTabbedPane.setSelectedComponent(downloadView);
+        
+
     }
 
     private void layoutComponents() {

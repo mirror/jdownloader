@@ -2,11 +2,11 @@ package jd.plugins.optional.jdchat;
 
 import javax.swing.Icon;
 
-import jd.gui.swing.jdgui.interfaces.View;
+import jd.gui.swing.jdgui.views.ClosableView;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
-public class JDChatView extends View {
+public class JDChatView extends ClosableView {
 
     /**
      * 
@@ -16,7 +16,7 @@ public class JDChatView extends View {
 
     public JDChatView() {
         super();
-    
+
     }
 
     @Override
@@ -34,7 +34,7 @@ public class JDChatView extends View {
     public String getTooltip() {
         // TODO Auto-generated method stub
         return JDL.L(JDL_PREFIX + "tooltip", "JD Support Chat");
-        
+
     }
 
     @Override
