@@ -44,7 +44,6 @@ import jd.controlling.AccountControllerListener;
 import jd.controlling.JDController;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
-import jd.gui.swing.SwingGui;
 import jd.gui.swing.menu.HosterMenu;
 import jd.gui.swing.menu.Menu;
 import jd.nutils.Formatter;

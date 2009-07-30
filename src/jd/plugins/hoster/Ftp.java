@@ -54,12 +54,12 @@ public class Ftp extends PluginForHost {
             URL url = new URL(downloadLink.getDownloadURL());
             ftp.connect(url);
 
-            String[] list = ftp.getFileInfo(Encoding.urlDecode(url.getPath(),false));
+            String[] list = ftp.getFileInfo(Encoding.urlDecode(url.getPath(), false));
             if (list == null) return AvailableStatus.FALSE;
             downloadLink.setDownloadSize(Long.parseLong(list[4]));
-        }catch(Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
-        
+
         } finally {
             ftp.disconnect();
         }
@@ -103,7 +103,6 @@ public class Ftp extends PluginForHost {
             File tmp;
             dl = new RAFDownload(this, downloadLink, null);
             dl.setResume(false);
-            dl.setResumable(false);
 
             downloadLink.setDownloadInstance(dl);
             dl.addChunksDownloading(1);

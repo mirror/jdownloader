@@ -1054,8 +1054,6 @@ abstract public class DownloadInterface {
 
     private boolean resume = false;
 
-    private boolean resumable = false;
-
     private boolean fixWrongContentDispositionHeader = false;
 
     protected boolean speedDebug = false;
@@ -1757,6 +1755,7 @@ abstract public class DownloadInterface {
      * @param value
      */
     public void setResume(boolean value) {
+        downloadLink.getTransferStatus().setResumeSupport(value);
         if (checkResumabled()) {
 
             resume = value;
@@ -1764,14 +1763,6 @@ abstract public class DownloadInterface {
             logger.warning("Resumepoint not valid");
 
         }
-    }
-
-    public void setResumable(boolean b) {
-        resumable = b;
-    }
-
-    public boolean isResumable() {
-        return resumable;
     }
 
     /**
@@ -1833,10 +1824,8 @@ abstract public class DownloadInterface {
         if (connection != null && connection.getHeaderField("Content-Encoding") != null && connection.getHeaderField("Content-Encoding").equalsIgnoreCase("gzip")) {
             /* GZIP Encoding kann weder chunk noch resume */
             setResume(false);
-            setResumable(false);
             setChunkNum(1);
         }
-        if (downloadLink.getPlugin() != null) downloadLink.getPlugin().setResumable(isResumable());
         // Erst hier Dateinamen holen, somit umgeht man das Problem das bei
         // mehrfachAufruf von connect entstehen kann
         if (this.downloadLink.getFinalFileName() == null && connection != null && connection.isContentDisposition()) {

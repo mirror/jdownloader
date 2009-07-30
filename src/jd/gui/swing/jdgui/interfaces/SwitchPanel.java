@@ -92,7 +92,6 @@ public abstract class SwitchPanel extends JPanel {
     public void setHidden() {
         this.currentlyVisible = false;
         onHide();
-
         distributeHide(this);
     }
 

@@ -127,6 +127,8 @@ public class TableRenderer extends DefaultTableRenderer {
 
     private ArrayList<RowHighlighter<?>> highlighter;
 
+    private ImageIcon imgResume;
+
     public void addHighlighter(RowHighlighter<?> rh) {
         highlighter.add(rh);
     }
@@ -137,6 +139,7 @@ public class TableRenderer extends DefaultTableRenderer {
         icon_fp_closed = JDTheme.II("gui.images.package_closed_tree", 14, 14);
         icon_fp_closed_error = JDTheme.II("gui.images.package_closed_error_tree", 14, 14);
         imgFinished = JDTheme.II("gui.images.ok", 14, 14);
+        imgResume = JDTheme.II("gui.images.resume", 14, 14);
         imgFailed = JDTheme.II("gui.images.bad", 14, 14);
         imgExtract = JDTheme.II("gui.images.update_manager", 14, 14);
         imgStopMark = JDTheme.II("gui.images.stopmark", 14, 14);
@@ -269,8 +272,7 @@ public class TableRenderer extends DefaultTableRenderer {
                 // progress.setToolTipText(null);
                 progress.setForeground(COL_PROGRESS_NORMAL);
                 return progress;
-            } else if ((dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED) && dLink.getPlugin().getRemainingHosterWaittime() > 0)
-                    || (dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) && dLink.getLinkStatus().getRemainingWaittime() > 0)) {
+            } else if ((dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED) && dLink.getPlugin().getRemainingHosterWaittime() > 0) || (dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) && dLink.getLinkStatus().getRemainingWaittime() > 0)) {
                 progress.setMaximum(dLink.getLinkStatus().getTotalWaitTime());
                 progress.setForeground(COL_PROGRESS_ERROR);
                 progress.setValue(dLink.getLinkStatus().getRemainingWaittime());
@@ -367,8 +369,7 @@ public class TableRenderer extends DefaultTableRenderer {
                 ((JRendererLabel) co).setBorder(null);
                 return co;
 
-            } else if ((dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED) && dLink.getPlugin().getRemainingHosterWaittime() > 0)
-                    || (dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) && dLink.getLinkStatus().getRemainingWaittime() > 0)) {
+            } else if ((dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED) && dLink.getPlugin().getRemainingHosterWaittime() > 0) || (dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) && dLink.getLinkStatus().getRemainingWaittime() > 0)) {
 
                 clearSB();
 
@@ -472,6 +473,16 @@ public class TableRenderer extends DefaultTableRenderer {
             // }
 
             counter = 0;
+
+            if (dLink.getTransferStatus().supportsPremium()) {
+                statuspanel.setIcon(counter, dLink.getPlugin().getHosterIcon(), dLink.getTransferStatus().usesPremium());
+                counter++;
+            }
+
+            if (dLink.getTransferStatus().supportsResume()) {
+                statuspanel.setIcon(counter, imgResume);
+                counter++;
+            }
 
             if (JDController.getInstance().getWatchdog() != null && JDController.getInstance().getWatchdog().isStopMark(value)) {
                 statuspanel.setIcon(counter, imgStopMark);

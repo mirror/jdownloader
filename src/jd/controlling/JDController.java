@@ -485,7 +485,7 @@ public class JDController implements ControlListener {
         ArrayList<DownloadLink> links = DownloadWatchDog.getInstance().getRunningDownloads();
         for (DownloadLink link : links) {
             if (link.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
-                if (!(link.getPlugin().isResumable() && allowinterrupt)) ret++;
+                if (!(link.getTransferStatus().supportsResume() && allowinterrupt)) ret++;
             }
         }
         return ret;

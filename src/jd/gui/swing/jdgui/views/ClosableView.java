@@ -1,13 +1,6 @@
 package jd.gui.swing.jdgui.views;
 
-import java.awt.Container;
-import java.awt.Rectangle;
-import java.awt.event.MouseEvent;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-
 import javax.swing.BorderFactory;
-import javax.swing.Icon;
 import javax.swing.JComponent;
 import javax.swing.JDesktopPane;
 import javax.swing.JInternalFrame;
@@ -15,10 +8,7 @@ import javax.swing.WindowConstants;
 import javax.swing.plaf.basic.BasicInternalFrameUI;
 
 import jd.gui.swing.jdgui.MainTabbedPane;
-import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.interfaces.View;
-import jd.utils.JDTheme;
-import net.miginfocom.swing.MigLayout;
 
 abstract public class ClosableView extends View {
 

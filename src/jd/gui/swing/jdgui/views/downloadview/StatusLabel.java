@@ -33,10 +33,10 @@ import org.jdesktop.swingx.renderer.JRendererLabel;
 public class StatusLabel extends JPanel {
 
     private static final long serialVersionUID = -378709535509849986L;
-    public static final int ICONCOUNT = 3;
+    public static final int ICONCOUNT = 5;
     private JRendererLabel left;
-    private JRendererLabel[] rights = new JRendererLabel[3];
- 
+    private JRendererLabel[] rights = new JRendererLabel[ICONCOUNT];
+    private boolean enabled[] = new boolean[ICONCOUNT];
 
     public StatusLabel() {
         super(new MigLayout("ins 0", "[]0[fill,grow,align right]"));
@@ -46,6 +46,7 @@ public class StatusLabel extends JPanel {
         for (int i = 0; i < ICONCOUNT; i++) {
             add(rights[i] = new JRendererLabel(), "dock east");
             rights[i].setOpaque(false);
+            enabled[i] = true;
         }
 
         left.setOpaque(false);
@@ -58,11 +59,22 @@ public class StatusLabel extends JPanel {
 
     public void setIcon(int i, Icon icon) {
         if (i < ICONCOUNT) rights[i].setIcon(icon);
+        if (i < ICONCOUNT) enabled[i] = true;
+    }
+
+    public void setIcon(int i, Icon icon, boolean enabled) {
+        if (i < ICONCOUNT) rights[i].setIcon(icon);
+        if (i < ICONCOUNT) rights[i].setEnabled(enabled);
+        if (i < ICONCOUNT) this.enabled[i] = enabled;
     }
 
     public void setEnabled(boolean b) {
         for (int i = 0; i < ICONCOUNT; i++) {
-            rights[i].setEnabled(b);
+            if (!enabled[i]) {
+                rights[i].setEnabled(false);
+            } else {
+                rights[i].setEnabled(b);
+            }
         }
     }
 
@@ -78,5 +90,4 @@ public class StatusLabel extends JPanel {
         }
     }
 
-   
 }

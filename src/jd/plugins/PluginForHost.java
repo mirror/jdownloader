@@ -143,13 +143,7 @@ public abstract class PluginForHost extends Plugin {
 
     private String premiumurl = null;
 
-    private boolean canResume = false;
-
     private ImageIcon hosterIcon;
-
-    public void setResumable(boolean b) {
-        canResume = b;
-    }
 
     public boolean checkLinks(DownloadLink[] urls) {
         return false;
@@ -181,7 +175,7 @@ public abstract class PluginForHost extends Plugin {
     public void actionPerformed(ActionEvent e) {
         if (e.getID() == 1) {
             UserIF.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL, config);
-           
+
             return;
         }
         if (e.getID() == 2) {
@@ -477,10 +471,6 @@ public abstract class PluginForHost extends Plugin {
         link.getLinkStatus().setErrorMessage(JDL.L("plugins.hoster.nopremiumsupport", "Plugin has no handlePremium Method!"));
     }
 
-    public boolean isResumable() {
-        return canResume;
-    }
-
     public abstract void handleFree(DownloadLink link) throws Exception;
 
     public void handle(DownloadLink downloadLink) throws Exception {
@@ -507,6 +497,7 @@ public abstract class PluginForHost extends Plugin {
         if (account != null) {
             long before = downloadLink.getDownloadCurrent();
             try {
+                downloadLink.getTransferStatus().usePremium(true);
                 handlePremium(downloadLink, account);
                 if (dl != null && dl.getConnection() != null) {
                     try {
@@ -548,6 +539,7 @@ public abstract class PluginForHost extends Plugin {
                 DownloadController.getInstance().fireGlobalUpdate();
             }
             try {
+                downloadLink.getTransferStatus().usePremium(false);
                 handleFree(downloadLink);
                 if (dl != null && dl.getConnection() != null) {
                     try {

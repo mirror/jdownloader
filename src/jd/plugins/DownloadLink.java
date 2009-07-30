@@ -128,6 +128,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     private LinkStatus linkStatus;
 
+    private TransferStatus transferstatus;
+
     private int linkType = LINKTYPE_NORMAL;
 
     private int globalSpeedLimit = -1;
@@ -190,7 +192,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      *            Markiert diesen DownloadLink als aktiviert oder deaktiviert
      */
     public DownloadLink(PluginForHost plugin, String name, String host, String urlDownload, boolean isEnabled) {
-        this.plugin = plugin;
+        setLoadedPlugin(plugin);
         priority = 0;
         setName(name);
         sourcePluginPasswordList = new ArrayList<String>();
@@ -447,6 +449,13 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             linkStatus = new LinkStatus(this);
         }
         return linkStatus;
+    }
+
+    public TransferStatus getTransferStatus() {
+        if (transferstatus == null) {
+            transferstatus = new TransferStatus();
+        }
+        return transferstatus;
     }
 
     public int getLinkType() {
@@ -886,6 +895,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     public void setLoadedPlugin(PluginForHost plugin) {
         this.plugin = plugin;
+        if (plugin != null) getTransferStatus().setPremiumSupport(plugin.isPremiumEnabled());
     }
 
     public void setLoadedPluginForContainer(PluginsC pluginForContainer) {

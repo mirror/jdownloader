@@ -16,8 +16,13 @@
 
 package jd.plugins.hoster;
 
+import java.io.IOException;
+
 import jd.PluginWrapper;
+import jd.http.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -25,12 +30,12 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "storage.to" }, urls = { "http://[\\w\\.]*?storage.to/get/[a-zA-Z0-9]+/[a-zA-Z0-9-_.]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "storage.to" }, urls = { "http://[\\w\\.]*?storage.to/get/[a-zA-Z0-9]+/[a-zA-Z0-9-_.]+" }, flags = { 2 })
 public class StorageTo extends PluginForHost {
 
     public StorageTo(PluginWrapper wrapper) {
         super(wrapper);
-        // premium http://www.storage.to/affiliate/Slh9BLxH
+        this.enablePremium("http://www.storage.to/affiliate/Slh9BLxH");
     }
 
     @Override
@@ -38,11 +43,53 @@ public class StorageTo extends PluginForHost {
         return "http://www.storage.to/tos";
     }
 
+    public void login(Account account) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.getPage("http://www.storage.to/login?language=en");
+        br.postPage("http://storage.to/login", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&=Login");
+        br.getPage("http://www.storage.to/account");
+        if (!br.containsHTML("Status:</span> premium")) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    // @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo(this, account);
+        this.setBrowserExclusive();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            ai.setValid(false);
+            return ai;
+        }
+        String validUntil = br.getRegex("Your premium account expires in.*?</div>.*?premium_dark.>(.*?)days</span>").getMatch(0);
+        if (validUntil != null) {
+            long expire = System.currentTimeMillis() + (long) (Float.parseFloat(validUntil.trim()) * 1000l * 60 * 60 * 24);
+            ai.setValidUntil(expire);
+            ai.setValid(true);
+        }
+        return ai;
+    }
+
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        requestFileInformation(link);
+        login(account);
+        String infolink = link.getDownloadURL().replaceFirst("storage.to/get", "storage.to/getlink");
+        br.getPage(infolink);
+        if (br.getRegex("'state' : '(.*?)'").getMatch(0).equals("failed")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE); }
+        String dllink;
+        dllink = br.getRegex("'link' : '(.*?)',").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        link.setFinalFileName(null);
+        br.setDebug(true);
+        dl = br.openDownload(link, dllink, false, 1);
+        dl.startDownload();
+    }
+
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
         br.setFollowRedirects(false);
-        String infolink = link.getDownloadURL().replace("http://www.storage.to/get", "http://www.storage.to/getlink");
+        String infolink = link.getDownloadURL().replaceFirst("storage.to/get", "storage.to/getlink");
         br.getPage(infolink);
         if (br.getRegex("'state' : '(.*?)'").getMatch(0).equals("wait")) {
             int wait = Integer.valueOf(br.getRegex("'countdown' : (.*?),").getMatch(0)).intValue();
@@ -62,13 +109,12 @@ public class StorageTo extends PluginForHost {
         link.setFinalFileName(null);
         dl = br.openDownload(link, dllink, false, 1);
         dl.startDownload();
-
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
-        br.clearCookies("storage.to");
+        br.getPage("http://www.storage.to/login?language=en");
         br.getPage(parameter.getDownloadURL());
         if (br.containsHTML("File not found.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<span class=\"orange\">Downloading:</span>(.*?)<span class=\"light\">(.*?)</span>").getMatch(0);
@@ -87,10 +133,6 @@ public class StorageTo extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
