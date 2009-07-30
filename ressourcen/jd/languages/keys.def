@@ -1196,3 +1196,5 @@ jd.utils.webupdate.progresscontroller.text = Update is running
 #pattern: gui\.menu\.(.+?)\.name
 #pattern: gui\.menu\.(.+?)\.mnem
 #pattern: gui\.menu\.(.+?)\.accel
+#pattern: plugins\.host\.rapidshare\.errors\.(.+?)
+#pattern: plugins\.hoster\.rapidshareDE\.errors\.(.+?)
