@@ -789,6 +789,7 @@ jd.gui.swing.jdgui.settings.panels.reconnect.advanced.breadcrum = Modules - Reco
 jd.gui.swing.jdgui.settings.panels.reconnect.advanced.reconnect.advanced.title = Advanced
 jd.gui.swing.jdgui.settings.panels.reconnect.methodselection.breadcrum = Modules - Reconnection - Methods
 jd.gui.swing.jdgui.settings.panels.reconnect.methodselection.reconnect.title = Reconnection
+jd.gui.swing.jdgui.views.closableview.closebtn.tooltip = Close %s
 jd.gui.swing.jdgui.views.configtreemodel.basics.title = Basics
 jd.gui.swing.jdgui.views.configtreemodel.configuration.title = Settings
 jd.gui.swing.jdgui.views.configtreemodel.modules.title = Modules
