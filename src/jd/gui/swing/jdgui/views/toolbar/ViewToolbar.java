@@ -13,7 +13,6 @@ import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
 import javax.swing.JToggleButton;
-import javax.swing.KeyStroke;
 
 import jd.controlling.JDLogger;
 import jd.gui.swing.GuiRunnable;
@@ -44,7 +43,7 @@ public class ViewToolbar extends JPanel implements ActionControllerListener {
 
     private static final long serialVersionUID = 7533137014274040205L;
 
-    private static String BUTTON_CONSTRAINTS = "gaptop 2, gapleft 2";
+    public static final String BUTTON_CONSTRAINTS = "gaptop 2, gapleft 2";
 
     private static final String GUIINSTANCE = "GUI";
 
@@ -55,11 +54,15 @@ public class ViewToolbar extends JPanel implements ActionControllerListener {
     public static final int NORTH = 3;
     public static final int SOUTH = 4;
 
+    public static final int FIRST_COL = -1;
+
+    public static final int LAST_COL = -2;
+
     private String[] current = null;
 
     private boolean updateing = false;
 
-    private int halign = ViewToolbar.WEST;
+    protected int halign = ViewToolbar.WEST;
 
     private boolean contentPainted = true;
 
@@ -85,19 +88,39 @@ public class ViewToolbar extends JPanel implements ActionControllerListener {
         StringBuilder sb = new StringBuilder();
 
         if (halign == EAST) {
-            sb.append("[grow]");
+            sb.append(getColConstraint(FIRST_COL, null));
             for (int i = 0; i < list.length; ++i) {
-                sb.append("[]");
+                sb.append(getColConstraint(i, current[i]));
             }
-
+            sb.append(getColConstraint(LAST_COL, null));
         } else {
+            sb.append(getColConstraint(FIRST_COL, null));
             for (int i = 0; i < list.length; ++i) {
-                sb.append("[]");
+                sb.append(getColConstraint(i, current[i]));
             }
-            sb.append("[grow,fill]");
+            sb.append(getColConstraint(LAST_COL, null));
         }
 
         return sb.toString();
+    }
+
+    /**
+     * This method can be overridden to layout custom Toolbars.
+     * 
+     * @param i
+     * @param string
+     * @return
+     */
+    public String getColConstraint(int col, String string) {
+        switch (col) {
+        case FIRST_COL:
+            return halign == EAST ? "[grow]" : "";
+        case LAST_COL:
+            return halign == EAST ? "" : "[grow,fill]";
+        default:
+            return "[]";
+        }
+
     }
 
     private void initToolbar(String[] list) {
@@ -107,10 +130,10 @@ public class ViewToolbar extends JPanel implements ActionControllerListener {
             AbstractButton ab;
             if (list != null) {
 
-                if (halign == EAST) {
-                    BUTTON_CONSTRAINTS += ", alignx right";
-                }
+               
+                int i=-1;
                 for (String key : list) {
+                    i++;
                     ToolBarAction action = ActionController.getToolBarAction(key);
 
                     if (action == null) {
@@ -129,14 +152,14 @@ public class ViewToolbar extends JPanel implements ActionControllerListener {
                     ab = null;
                     switch (action.getType()) {
                     case NORMAL:
-                        add(ab = new JButton(action), BUTTON_CONSTRAINTS);
+                        add(ab = new JButton(action), getButtonConstraint(i,action));
                         break;
                     case SEPARATOR:
                         add(new JSeparator(JSeparator.VERTICAL), "height 32,gapleft 10,gapright 10");
                         break;
 
                     case TOGGLE:
-                        add(ab = new JToggleButton(action), BUTTON_CONSTRAINTS);
+                        add(ab = new JToggleButton(action), getButtonConstraint(i,action));
                         break;
 
                     }
@@ -162,7 +185,9 @@ public class ViewToolbar extends JPanel implements ActionControllerListener {
                         ab.setContentAreaFilled(contentPainted);
                         ab.setFocusPainted(false);
                         if (action.getValue(Action.MNEMONIC_KEY) != null) {
-                            ab.setToolTipText(action.getTooltipText() + " [Alt+" +new String(new byte[]{((Integer) action.getValue(Action.MNEMONIC_KEY)).byteValue()})+"]");
+                            ab.setToolTipText(action.getTooltipText() + " [Alt+" + new String(new byte[] {
+                                ((Integer) action.getValue(Action.MNEMONIC_KEY)).byteValue()
+                            }) + "]");
                         } else {
                             ab.setToolTipText(action.getTooltipText());
                         }
@@ -174,7 +199,7 @@ public class ViewToolbar extends JPanel implements ActionControllerListener {
                         ab.setToolTipText(action.getTooltipText());
                         ab.setEnabled(action.isEnabled());
                         ab.setSelected(action.isSelected());
-
+setDefaults(i,ab);
                         action.putValue(GUIINSTANCE, ab);
                         PropertyChangeListener pcl;
                         // external changes on the action get deligated to the
@@ -186,8 +211,10 @@ public class ViewToolbar extends JPanel implements ActionControllerListener {
                                     AbstractButton ab = ((AbstractButton) action.getValue(GUIINSTANCE));
                                     // ab.setText("");
                                     if (action.getValue(Action.MNEMONIC_KEY) != null) {
-                                        ab.setToolTipText(action.getTooltipText() + " [Alt+" + new String(new byte[]{((Integer) action.getValue(Action.MNEMONIC_KEY)).byteValue()}) + "]");
-                                  } else {
+                                        ab.setToolTipText(action.getTooltipText() + " [Alt+" + new String(new byte[] {
+                                            ((Integer) action.getValue(Action.MNEMONIC_KEY)).byteValue()
+                                        }) + "]");
+                                    } else {
                                         ab.setToolTipText(action.getTooltipText());
                                     }
                                     ab.setEnabled(action.isEnabled());
@@ -211,6 +238,29 @@ public class ViewToolbar extends JPanel implements ActionControllerListener {
                 }
             }
         }
+    }
+    /**
+     * May be overridden
+     * @param i
+     * @param ab
+     */
+public void setDefaults(int i, AbstractButton ab) {
+        // TODO Auto-generated method stub
+        
+    }
+
+/**
+ * This method may be overridden to create custum toolbars
+ * @param i
+ * @param action
+ * @return
+ */
+    public String getButtonConstraint(int i, ToolBarAction action) {
+        // TODO Auto-generated method stub
+        if (halign == EAST) {
+            return BUTTON_CONSTRAINTS+", alignx right";
+        }
+        return BUTTON_CONSTRAINTS;
     }
 
     public synchronized void onActionControlEvent(ActionControlEvent event) {

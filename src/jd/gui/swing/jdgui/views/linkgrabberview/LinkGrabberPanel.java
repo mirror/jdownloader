@@ -19,6 +19,9 @@ package jd.gui.swing.jdgui.views.linkgrabberview;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -26,9 +29,12 @@ import java.util.HashMap;
 import java.util.Set;
 import java.util.logging.Logger;
 
+import javax.swing.AbstractButton;
+import javax.swing.Action;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenuItem;
 import javax.swing.JScrollPane;
+import javax.swing.KeyStroke;
 import javax.swing.Timer;
 
 import jd.config.Configuration;
@@ -52,6 +58,7 @@ import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.InfoPanelHandler;
 import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.gui.swing.jdgui.actions.ThreadedAction;
+import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.toolbar.ViewToolbar;
 import jd.nutils.io.JDFileFilter;
@@ -101,6 +108,8 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
 
     private ViewToolbar toolbar;
 
+    public AbstractButton confirmButton;
+
     public static synchronized LinkGrabberPanel getLinkGrabber() {
         if (INSTANCE == null) INSTANCE = new LinkGrabberPanel();
         return INSTANCE;
@@ -134,11 +143,14 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         LGINSTANCE = LinkGrabberController.getInstance();
         LGINSTANCE.addListener(this);
         initActions();
-        toolbar = new ViewToolbar();
+        toolbar = new LinkGrabberToolbar();
+
         toolbar.setHorizontalAlign(ViewToolbar.EAST);
         // toolbar.setBorder(JDBorderFactory.createInsideShadowBorder(3, 0, 0,
         // 0));
-        toolbar.setList(new String[] { "action.linkgrabber.clearlist", "action.linkgrabber.addall" });
+        toolbar.setList(new String[] {
+                "action.linkgrabber.clearlist", "action.linkgrabber.addall"
+        });
         this.add(toolbar, "gapbottom 3,DOCK SOUTH");
     }
 
@@ -201,6 +213,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                 }
             }
         };
+
     }
 
     public JScrollPane getScrollPane() {
@@ -280,7 +293,8 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         addinginprogress = true;
         new Thread() {
             public void run() {
-                Balloon.showIfHidden(JDL.L("gui.config.gui.linkgrabber", "LinkGrabber"), JDTheme.II("gui.images.add", 32, 32), JDL.LF("gui.linkgrabber.adding", "Adding %s link(s) to LinkGrabber", "" + linkList.size()));
+                Balloon.showIfHidden(JDL.L("gui.config.gui.linkgrabber", "LinkGrabber"), JDTheme.II("gui.images.add", 32, 32), JDL.LF("gui.linkgrabber.adding", "Adding %s link(s) to LinkGrabber", ""
+                        + linkList.size()));
                 for (DownloadLink element : linkList) {
                     if (LGINSTANCE.isDupe(element)) continue;
                     addToWaitingList(element);
@@ -375,7 +389,9 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                 for (LinkGrabberFilePackage fp : fps) {
                     links += fp.getDownloadLinks().size();
                 }
-                Balloon.showIfHidden(JDL.L("gui.config.gui.linkgrabber", "LinkGrabber"), JDTheme.II("gui.images.add", 32, 32), JDL.LF("gui.linkgrabber.finished", "Grabbed %s link(s) in %s Package(s)", "" + links, "" + fps.size()));
+                Balloon.showIfHidden(JDL.L("gui.config.gui.linkgrabber", "LinkGrabber"), JDTheme.II("gui.images.add", 32, 32), JDL.LF("gui.linkgrabber.finished",
+                                                                                                                                      "Grabbed %s link(s) in %s Package(s)", "" + links, ""
+                                                                                                                                              + fps.size()));
                 fps = null;
             }
         };
@@ -713,7 +729,9 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
 
     private void addToDownloadDirs(String downloadDirectory, String packageName) {
         if (packageName.length() < 5 || downloadDirectory.equalsIgnoreCase(JDUtilities.getConfiguration().getDefaultDownloadDirectory())) return;
-        getDownloadDirList().add(new String[] { downloadDirectory, packageName });
+        getDownloadDirList().add(new String[] {
+                downloadDirectory, packageName
+        });
         GUIUtils.getConfig().save();
     }
 
@@ -835,5 +853,37 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         default:
             break;
         }
+    }
+
+    class LinkGrabberToolbar extends ViewToolbar {
+
+        /**
+             * 
+             */
+        private static final long serialVersionUID = 1L;
+
+        public void setDefaults(int i, AbstractButton ab) {
+            if (i == 0) {
+                ab.setContentAreaFilled(false);
+                ab.setText("");
+            } else {
+                ab.getAction().putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, InputEvent.CTRL_DOWN_MASK));
+               
+                confirmButton=ab;
+             
+
+            }
+        }
+
+        public String getButtonConstraint(int i, ToolBarAction action) {
+
+            if (i == 0) {
+                return BUTTON_CONSTRAINTS + ", alignx left, width 20!";
+            } else {
+                return BUTTON_CONSTRAINTS + ", alignx right";
+            }
+
+        }
+
     }
 }

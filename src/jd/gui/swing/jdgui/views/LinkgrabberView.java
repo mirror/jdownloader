@@ -1,5 +1,10 @@
 package jd.gui.swing.jdgui.views;
 
+import java.awt.AWTEvent;
+import java.awt.Toolkit;
+import java.awt.event.AWTEventListener;
+import java.awt.event.KeyEvent;
+
 import javax.swing.Icon;
 
 import jd.controlling.LinkGrabberController;
@@ -22,10 +27,10 @@ public class LinkgrabberView extends View {
      */
     private static final String IDENT_PREFIX = "jd.gui.swing.jdgui.views.linkgrabberview.";
 
-    
+    private AWTEventListener ael;
 
     public LinkgrabberView() {
-        
+
         super();
         this.setContent(LinkGrabberPanel.getLinkGrabber());
         this.setDefaultInfoPanel(new LinkGrabberInfoPanel());
@@ -34,8 +39,21 @@ public class LinkgrabberView extends View {
         toolbar.setList(new String[] {
                 "action.addurl", "action.load"
         });
-//        toolbar.setBorder(JDBorderFactory.createInsideShadowBorder(0, 0, 3, 0));
+      
         this.setToolBar(toolbar);
+//globaler keylistener
+        ael = new AWTEventListener() {
+            public void eventDispatched(AWTEvent event) {
+                if (event.getID() == KeyEvent.KEY_TYPED) {
+                    char keycode = ((KeyEvent) event).getKeyChar();
+                    if ( keycode== '\r'||keycode=='\n') {
+                        
+                        LinkGrabberPanel.getLinkGrabber().confirmButton.doClick(500);
+                    }
+
+                }
+            }
+        };
 
         LinkGrabberController.getInstance().addListener(new LinkGrabberControllerListener() {
             public void onLinkGrabberControllerEvent(LinkGrabberControllerEvent event) {
@@ -64,12 +82,14 @@ public class LinkgrabberView extends View {
     }
 
     @Override
-    protected void onHide() {        
+    protected void onHide() {
+        Toolkit.getDefaultToolkit().removeAWTEventListener(ael);
     }
 
     @Override
     protected void onShow() {
 
+        Toolkit.getDefaultToolkit().addAWTEventListener(ael, AWTEvent.KEY_EVENT_MASK);
     }
 
 }

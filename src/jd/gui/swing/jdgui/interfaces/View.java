@@ -9,6 +9,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.UIManager;
+import javax.swing.border.Border;
 import javax.swing.plaf.metal.MetalLookAndFeel;
 
 import jd.gui.swing.SwingGui;
@@ -31,6 +32,8 @@ public abstract class View extends SwitchPanel {
      */
     private static final long serialVersionUID = 8661526331504317690L;
     public static final int ICON_SIZE = 16;
+    public static final Border ORG_BORDER = BorderFactory.createEmptyBorder();
+
     private JPanel rightPane;
     protected JScrollPane sidebar;
     private SideBarPanel sidebarContent;
@@ -41,12 +44,13 @@ public abstract class View extends SwitchPanel {
     private DroppedPanel defaultInfoPanel;
     @SuppressWarnings("unused")
     private ViewToolbar toolbar;
+    private Border orgSidebarBorder;
 
     public View() {
         SwingGui.checkEDT();
         this.setLayout(new MigLayout("ins 0", "[]0[grow,fill]", "[grow,fill]"));
 
-        add(sidebar = new JScrollPane(), "width 200!,hidemode 1");
+        add(sidebar = new JScrollPane(), "width 200!,hidemode 1,gapright 3");
         Color line;
         if (UIManager.getLookAndFeel() instanceof AbstractLookAndFeel) {
             Color frameColor = AbstractLookAndFeel.getTheme().getBackgroundColor();
@@ -56,6 +60,7 @@ public abstract class View extends SwitchPanel {
             // MetalLookAndFeel.getControlHighlight() ;
             line = MetalLookAndFeel.getControl();
         }
+        orgSidebarBorder = sidebar.getBorder();
         sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, line));
         sidebar.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         sidebar.setVisible(false);
@@ -67,8 +72,22 @@ public abstract class View extends SwitchPanel {
         bottomContent.setVisible(false);
     }
 
+    /**
+     * Serts the sidebar's border
+     * View.ORG_BORDER  --> the LAF original Border
+     * 
+     * @param b
+     */
+    public void setSidebarBorder(Border b) {
+        if (ORG_BORDER == b) {
+            sidebar.setBorder(orgSidebarBorder);      
+          
+        } else {
+            sidebar.setBorder(b);
+        }
 
- 
+    }
+
     /**
      * Sets the default infopanel
      * 

@@ -425,8 +425,13 @@ public class Subversion implements ISVNEventHandler {
      * @throws SVNException
      */
     public void revert(File dstPath) throws SVNException {
+        try{
         getWCClient().doRevert(new File[] { dstPath }, SVNDepth.INFINITY, null);
-
+        }catch(Exception e){
+            e.printStackTrace();
+            cleanUp(dstPath,false);
+            
+        }
     }
 
     /**

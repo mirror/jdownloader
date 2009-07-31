@@ -16,7 +16,7 @@ public class JDChatView extends ClosableView {
 
     public JDChatView() {
         super();
-        
+      
         init();
 
     }
@@ -50,5 +50,7 @@ public class JDChatView extends ClosableView {
         // TODO Auto-generated method stub
 
     }
+
+
 
 }

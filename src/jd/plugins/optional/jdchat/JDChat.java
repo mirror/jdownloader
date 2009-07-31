@@ -25,8 +25,6 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -35,8 +33,9 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 
+import javax.swing.JButton;
 import javax.swing.JComboBox;
-import javax.swing.JLabel;
+import javax.swing.JMenuBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.JTextPane;
@@ -53,12 +52,14 @@ import jd.controlling.interaction.Interaction;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.UserIO;
+import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.jdgui.interfaces.SideBarPanel;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
+import jd.gui.swing.jdgui.interfaces.View;
 import jd.nutils.OSDetector;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
@@ -110,7 +111,7 @@ public class JDChat extends PluginOptional implements ControlListener {
     private static final int TEXT_BUFFER = 1024 * 600;
     public static final String USERLIST_STYLE = JDIO.getLocalFile(JDUtilities.getResourceFile("plugins/jdchat/userliststyles.css"));
     private static final String CHANNEL_LNG = "CHANNEL_LNG2";
-
+    protected JButton top;
     private boolean changed;
 
     private IRCConnection conn;
@@ -129,7 +130,7 @@ public class JDChat extends PluginOptional implements ControlListener {
     private JScrollPane scrollPane;
     private JTextPane textArea;
     private JTextField textField;
-    private JLabel top;
+
     private JComboBox lang;
 
     private SubConfiguration subConfig;
@@ -842,8 +843,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         NAMES = new ArrayList<User>();
         sb = new StringBuilder();
         this.activateAction = new MenuItem(MenuItem.TOGGLE, JDL.L("plugins.optional.jdchat.menu.windowstatus", "Chatwindow"), 0).setActionListener(this);
-        
-    
+
         return true;
     }
 
@@ -908,7 +908,7 @@ public class JDChat extends PluginOptional implements ControlListener {
 
     @SuppressWarnings("unchecked")
     private void initGUI() {
-        top = new JLabel();
+
         textArea = new JTextPane();
         HyperlinkListener hyp = new HyperlinkListener() {
 
@@ -1046,8 +1046,8 @@ public class JDChat extends PluginOptional implements ControlListener {
             public void onHide() {
             }
         };
-        frame.setLayout(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[][grow,fill][]"));
-        frame.add(top);
+        frame.setLayout(new MigLayout("ins 0, wrap 1", "[grow,fill]", "[grow,fill][]"));
+
         frame.add(scrollPane);
         frame.add(textField, "growx, split 2");
         frame.add(lang, "w pref!");
@@ -1112,7 +1112,7 @@ public class JDChat extends PluginOptional implements ControlListener {
     }
 
     private void initChannel() {
-   
+
         JDLocale id = JDL.getLocale();
         String lng = JDL.getInstance("en").toString();
         if (id.getLanguageCode().equals("es")) {
@@ -1130,14 +1130,14 @@ public class JDChat extends PluginOptional implements ControlListener {
             newChannel = "#jdownloader";
         }
         if (newChannel.equalsIgnoreCase(CHANNEL) && this.isLoggedIn()) {
-            if (conn != null&&conn.isConnected()) addToText(null, STYLE_NOTICE, "You are in channel: " + newChannel);
+            if (conn != null && conn.isConnected()) addToText(null, STYLE_NOTICE, "You are in channel: " + newChannel);
             return;
         }
         NAMES.clear();
-        if (conn != null&&conn.isConnected()) addToText(null, STYLE_NOTICE, "Change channel to: " + newChannel);
-        if (conn != null&&conn.isConnected()) conn.doPart(CHANNEL, " --> " + newChannel);
+        if (conn != null && conn.isConnected()) addToText(null, STYLE_NOTICE, "Change channel to: " + newChannel);
+        if (conn != null && conn.isConnected()) conn.doPart(CHANNEL, " --> " + newChannel);
         CHANNEL = newChannel;
-        if (conn != null&&conn.isConnected()) conn.doJoin(CHANNEL, null);
+        if (conn != null && conn.isConnected()) conn.doJoin(CHANNEL, null);
     }
 
     public boolean isLoggedIn() {
@@ -1157,7 +1157,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         this.setLoggedIn(false);
         this.updateNamesPanel();
         if (conn != null) conn.close();
-        conn=null;
+        conn = null;
     }
 
     public void onMode(char op, char mod, String arg) {
@@ -1366,10 +1366,19 @@ public class JDChat extends PluginOptional implements ControlListener {
     public void setEnabled(boolean b) {
 
         if (b) {
-         
+
             if (view == null) {
                 initGUI();
-                view = new JDChatView();
+                view = new JDChatView() {
+
+                    protected void initMenu(JMenuBar menubar) {
+                        menubar.add(top = new JButton(JDL.L("jd.plugins.optional.jdchat.JDChat.topic.default", "Loading Message of the day")));
+                        top.setContentAreaFilled(false);
+                        top.setToolTipText(JDL.L("jd.plugins.optional.jdchat.JDChat.topic.tooltip", "Message of the day"));
+
+                    }
+
+                };
                 view.getBroadcaster().addListener(new SwitchPanelListener() {
 
                     @Override
@@ -1380,7 +1389,7 @@ public class JDChat extends PluginOptional implements ControlListener {
                             onExit();
 
                         case SwitchPanelEvent.ON_SHOW:
-//                            activateAction.setSelected(true);
+                            // activateAction.setSelected(true);
                             break;
                         }
 
@@ -1404,13 +1413,20 @@ public class JDChat extends PluginOptional implements ControlListener {
 
                     @Override
                     protected void onShow() {
+
                         // TODO Auto-generated method stub
 
                     }
 
                 };
+
+                p.setLayout(new MigLayout("ins 2,wrap 1", "[grow,fill]", "[grow,fill]"));
+
                 p.add(right, "growx,pushx");
+                view.setSidebarBorder(View.ORG_BORDER);
+
                 view.setSideBar(p);
+
             }
             SwingGui.getInstance().setContent(view);
 
@@ -1465,11 +1481,15 @@ public class JDChat extends PluginOptional implements ControlListener {
 
     public void setTopic(final String msg) {
         addToText(null, STYLE_SYSTEM_MESSAGE, "<b>Topic is: " + msg + "</b>");
-        EventQueue.invokeLater(new Runnable() {
-            public void run() {
+        new GuiRunnable<Object>() {
+
+            @Override
+            public Object runSave() {
                 top.setText(msg);
+                return null;
             }
-        });
+
+        }.start();
 
     }
 
