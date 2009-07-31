@@ -26,6 +26,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.http.RandomUserAgent;
 import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision", interfaceVersion = 2, names = { "sharovar.com" }, urls = { "http://[\\w\\.]*?sharovar\\.com/files/.+{1,}" }, flags = { 0 })
@@ -43,6 +44,7 @@ public class SharovarCom extends PluginForHost {
     // @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = Encoding.htmlDecode(br.getRegex("http://sharovar.com/.*?/<b>(.*?)</b></div>").getMatch(0));
@@ -55,6 +57,7 @@ public class SharovarCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+
         Form DLForm = br.getForm(3);
         if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.submitForm(DLForm);
@@ -62,15 +65,8 @@ public class SharovarCom extends PluginForHost {
         dl = br.openDownload(downloadLink, dllink, false, 1);
         if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();
-            // check ob limit aktiv, falls ja wird auf reconnect gewartet
-            if (br.containsHTML("You have reached the download limit")) {
-                int minutes = 0;
-                String tmpmin = br.getRegex("ess! Or try again in about (\\d+) minutes.").getMatch(0);
-                if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
-                int waittime = minutes * 60 * 1001;
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL);
+            // check ob limit aktiv, falls ja wird ein neuer Versuch gestartet, da das Limit durch Änderung des useragents umgangen wird und dieser bei jedem Start per zufall generiert wird!
+            if (br.containsHTML("You have reached the download limit")) throw new PluginException(LinkStatus.ERROR_RETRY);
         }
         dl.startDownload();
     }
@@ -81,7 +77,7 @@ public class SharovarCom extends PluginForHost {
 
     // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return 20;
     }
 
     @Override
