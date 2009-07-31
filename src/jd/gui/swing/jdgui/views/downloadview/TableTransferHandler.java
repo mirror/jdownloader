@@ -126,18 +126,16 @@ public class TableTransferHandler extends TransferHandler {
         isDragging = false;
     }
 
-    @SuppressWarnings("unchecked")
     private boolean drop(int row, Point point) {
         if (!isDragging) return false;
         final Object current = table.getModel().getValueAt(row, 0);
         if (current == null) return false;
         JPopupMenu popup = new JPopupMenu();
-        
+
         JMenuItem m;
         synchronized (DownloadController.getInstance().getPackages()) {
             switch (draggingType) {
             case DRAG_LINKS:
-                final ArrayList<DownloadLink> downloadLinks = (ArrayList<DownloadLink>) draggingObjects;
                 if (current instanceof FilePackage) {
                     /* Links in Package */
                     String name = ((FilePackage) current).getName();
@@ -145,12 +143,7 @@ public class TableTransferHandler extends TransferHandler {
                     m.setIcon(JDTheme.II("gui.images.go_top", 16, 16));
                     m.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
-                            synchronized (DownloadController.ControllerLock) {
-                                synchronized (DownloadController.getInstance().getPackages()) {
-                                    FilePackage fp = ((FilePackage) current);
-                                    fp.addLinksAt(downloadLinks, 0);
-                                }
-                            }
+                            DownloadController.getInstance().move(draggingObjects, current, DownloadController.MOVE_BEGIN);
                         }
                     });
 
@@ -158,12 +151,7 @@ public class TableTransferHandler extends TransferHandler {
                     m.setIcon(JDTheme.II("gui.images.go_bottom", 16, 16));
                     m.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
-                            synchronized (DownloadController.ControllerLock) {
-                                synchronized (DownloadController.getInstance().getPackages()) {
-                                    FilePackage fp = ((FilePackage) current);
-                                    fp.addLinksAt(downloadLinks, fp.size());
-                                }
-                            }
+                            DownloadController.getInstance().move(draggingObjects, current, DownloadController.MOVE_END);
                         }
                     });
 
@@ -174,12 +162,7 @@ public class TableTransferHandler extends TransferHandler {
                     m.setIcon(JDTheme.II("gui.images.go_top", 16, 16));
                     m.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
-                            synchronized (DownloadController.ControllerLock) {
-                                synchronized (DownloadController.getInstance().getPackages()) {
-                                    FilePackage fp = ((DownloadLink) current).getFilePackage();
-                                    fp.addLinksAt(downloadLinks, fp.indexOf((DownloadLink) current));
-                                }
-                            }
+                            DownloadController.getInstance().move(draggingObjects, current, DownloadController.MOVE_BEFORE);
                         }
                     });
 
@@ -187,26 +170,17 @@ public class TableTransferHandler extends TransferHandler {
                     m.setIcon(JDTheme.II("gui.images.go_bottom", 16, 16));
                     m.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
-                            synchronized (DownloadController.ControllerLock) {
-                                synchronized (DownloadController.getInstance().getPackages()) {
-                                    FilePackage fp = ((DownloadLink) current).getFilePackage();
-                                    fp.addLinksAt(downloadLinks, fp.indexOf((DownloadLink) current) + 1);
-                                }
-                            }
+                            DownloadController.getInstance().move(draggingObjects, current, DownloadController.MOVE_AFTER);
                         }
                     });
                 }
                 break;
             case DRAG_PACKAGES:
-                final ArrayList<FilePackage> packages = (ArrayList<FilePackage>) draggingObjects;
-                final FilePackage fp;
                 final String name;
                 if (current instanceof FilePackage) {
                     name = ((FilePackage) current).getName();
-                    fp = ((FilePackage) current);
                 } else if (current instanceof DownloadLink) {
                     name = ((DownloadLink) current).getFilePackage().getName();
-                    fp = ((DownloadLink) current).getFilePackage();
                 } else
                     return false;
 
@@ -214,11 +188,7 @@ public class TableTransferHandler extends TransferHandler {
                 m.setIcon(JDTheme.II("gui.images.go_top", 16, 16));
                 m.addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
-                        synchronized (DownloadController.ControllerLock) {
-                            synchronized (DownloadController.getInstance().getPackages()) {
-                                DownloadController.getInstance().addAllAt(packages, DownloadController.getInstance().indexOf(fp));
-                            }
-                        }
+                        DownloadController.getInstance().move(draggingObjects, current, DownloadController.MOVE_BEFORE);
                     }
 
                 });
@@ -227,11 +197,7 @@ public class TableTransferHandler extends TransferHandler {
                 m.setIcon(JDTheme.II("gui.images.go_bottom", 16, 16));
                 m.addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
-                        synchronized (DownloadController.ControllerLock) {
-                            synchronized (DownloadController.getInstance().getPackages()) {
-                                DownloadController.getInstance().addAllAt(packages, DownloadController.getInstance().indexOf(fp) + 1);
-                            }
-                        }
+                        DownloadController.getInstance().move(draggingObjects, current, DownloadController.MOVE_AFTER);
                     }
                 });
 

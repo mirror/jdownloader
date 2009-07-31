@@ -124,7 +124,6 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
         isDragging = false;
     }
 
-    @SuppressWarnings("unchecked")
     private boolean drop(int row, Point point) {
         if (!isDragging) return false;
         final Object current = table.getModel().getValueAt(row, 0);
@@ -135,8 +134,6 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
         synchronized (DownloadController.getInstance().getPackages()) {
             switch (draggingType) {
             case DRAG_LINKS:
-                final ArrayList<DownloadLink> downloadLinks = (ArrayList<DownloadLink>) draggingObjects;
-
                 if (current instanceof LinkGrabberFilePackage) {
                     /* Links in Package */
                     String Name = ((LinkGrabberFilePackage) current).getName();
@@ -144,12 +141,7 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
                     m.setIcon(JDTheme.II("gui.images.go_top", 16, 16));
                     m.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
-                            synchronized (LinkGrabberController.ControllerLock) {
-                                synchronized (LinkGrabberController.getInstance().getPackages()) {
-                                    LinkGrabberFilePackage fp = ((LinkGrabberFilePackage) current);
-                                    fp.addAllAt(downloadLinks, 0);
-                                }
-                            }
+                            LinkGrabberController.getInstance().move(draggingObjects, current, LinkGrabberController.MOVE_BEGIN);
                         }
                     });
 
@@ -157,12 +149,7 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
                     m.setIcon(JDTheme.II("gui.images.go_bottom", 16, 16));
                     m.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
-                            synchronized (LinkGrabberController.ControllerLock) {
-                                synchronized (LinkGrabberController.getInstance().getPackages()) {
-                                    LinkGrabberFilePackage fp = ((LinkGrabberFilePackage) current);
-                                    fp.addAllAt(downloadLinks, fp.size());
-                                }
-                            }
+                            LinkGrabberController.getInstance().move(draggingObjects, current, LinkGrabberController.MOVE_END);
                         }
                     });
 
@@ -173,12 +160,7 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
                     m.setIcon(JDTheme.II("gui.images.go_top", 16, 16));
                     m.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
-                            synchronized (LinkGrabberController.ControllerLock) {
-                                synchronized (LinkGrabberController.getInstance().getPackages()) {
-                                    LinkGrabberFilePackage fp = LGINSTANCE.getFPwithLink(((DownloadLink) current));
-                                    if (fp != null) fp.addAllAt(downloadLinks, fp.indexOf((DownloadLink) current));
-                                }
-                            }
+                            LinkGrabberController.getInstance().move(draggingObjects, current, LinkGrabberController.MOVE_BEFORE);
                         }
                     });
 
@@ -186,27 +168,17 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
                     m.setIcon(JDTheme.II("gui.images.go_bottom", 16, 16));
                     m.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
-                            synchronized (LinkGrabberController.ControllerLock) {
-                                synchronized (LinkGrabberController.getInstance().getPackages()) {
-                                    LinkGrabberFilePackage fp = LGINSTANCE.getFPwithLink(((DownloadLink) current));
-                                    if (fp != null) fp.addAllAt(downloadLinks, fp.indexOf((DownloadLink) current) + 1);
-                                }
-                            }
+                            LinkGrabberController.getInstance().move(draggingObjects, current, LinkGrabberController.MOVE_AFTER);
                         }
                     });
                 }
                 break;
             case DRAG_PACKAGES:
-                final ArrayList<LinkGrabberFilePackage> packages = (ArrayList<LinkGrabberFilePackage>) draggingObjects;
-                final LinkGrabberFilePackage fp;
                 final String name;
                 if (current instanceof LinkGrabberFilePackage) {
                     name = ((LinkGrabberFilePackage) current).getName();
-                    fp = ((LinkGrabberFilePackage) current);
                 } else if (current instanceof DownloadLink) {
                     name = ((DownloadLink) current).getFilePackage().getName();
-                    fp = LGINSTANCE.getFPwithLink(((DownloadLink) current));
-                    if (fp == null) return false;
                 } else
                     return false;
 
@@ -214,11 +186,7 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
                 m.setIcon(JDTheme.II("gui.images.go_top", 16, 16));
                 m.addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
-                        synchronized (LinkGrabberController.ControllerLock) {
-                            synchronized (LinkGrabberController.getInstance().getPackages()) {
-                                LGINSTANCE.addAllAt(packages, LGINSTANCE.indexOf(fp));
-                            }
-                        }
+                        LinkGrabberController.getInstance().move(draggingObjects, current, LinkGrabberController.MOVE_BEFORE);
                     }
 
                 });
@@ -227,11 +195,7 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
                 m.setIcon(JDTheme.II("gui.images.go_bottom", 16, 16));
                 m.addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
-                        synchronized (LinkGrabberController.ControllerLock) {
-                            synchronized (LinkGrabberController.getInstance().getPackages()) {
-                                LGINSTANCE.addAllAt(packages, LGINSTANCE.indexOf(fp) + 1);
-                            }
-                        }
+                        LinkGrabberController.getInstance().move(draggingObjects, current, LinkGrabberController.MOVE_AFTER);
                     }
                 });
 

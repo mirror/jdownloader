@@ -114,13 +114,7 @@ public class LinkGrabberTable extends JTable implements MouseListener, MouseMoti
         getTableHeader().setPreferredSize(new Dimension(getColumnModel().getTotalColumnWidth(), 19));
         setTransferHandler(new LinkGrabberTableTransferHandler(this));
         this.setFillsViewportHeight(true);
-        prioDescs = new String[] {
-                JDL.L("gui.treetable.tooltip.priority-1", "Low Priority"),
-                JDL.L("gui.treetable.tooltip.priority0", "No Priority"),
-                JDL.L("gui.treetable.tooltip.priority1", "High Priority"),
-                JDL.L("gui.treetable.tooltip.priority2", "Higher Priority"),
-                JDL.L("gui.treetable.tooltip.priority3", "Highest Priority")
-        };
+        prioDescs = new String[] { JDL.L("gui.treetable.tooltip.priority-1", "Low Priority"), JDL.L("gui.treetable.tooltip.priority0", "No Priority"), JDL.L("gui.treetable.tooltip.priority1", "High Priority"), JDL.L("gui.treetable.tooltip.priority2", "Higher Priority"), JDL.L("gui.treetable.tooltip.priority3", "Highest Priority") };
     }
 
     public TableCellRenderer getCellRenderer(int row, int col) {
@@ -138,6 +132,7 @@ public class LinkGrabberTable extends JTable implements MouseListener, MouseMoti
                     Object elem = model.getValueAt(row, 0);
                     if (elem != null) selected.add(elem);
                 }
+                model.refreshModel();
                 model.fireTableStructureChanged();
                 SwingUtilities.invokeLater(new Runnable() {
                     public void run() {
@@ -207,8 +202,7 @@ public class LinkGrabberTable extends JTable implements MouseListener, MouseMoti
         if (e.getSource() == getTableHeader()) {
             if (e.getButton() == MouseEvent.BUTTON1) {
                 int col = getRealColumnAtPoint(e.getX());
-                LinkGrabberTableAction test = new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.sort", 16, 16), JDL.L("gui.table.contextmenu.packagesort", "Paket sortieren"),
-                        LinkGrabberTableAction.SORT_ALL, new Property("col", col));
+                LinkGrabberTableAction test = new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.sort", 16, 16), JDL.L("gui.table.contextmenu.packagesort", "Paket sortieren"), LinkGrabberTableAction.SORT_ALL, new Property("col", col));
                 test.actionPerformed(new ActionEvent(test, 0, ""));
             } else if (e.getButton() == MouseEvent.BUTTON3) {
                 JPopupMenu popup = new JPopupMenu();
@@ -287,8 +281,7 @@ public class LinkGrabberTable extends JTable implements MouseListener, MouseMoti
                 if (LinkGrabberController.getInstance().getFILTERPACKAGE().size() > 0 || LinkGrabberController.getInstance().size() > 0) {
                     JPopupMenu popup = new JPopupMenu();
                     popup.add(new JMenuItem(ActionController.getToolBarAction("action.linkgrabber.addall")));
-                    popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.removefailed", 16, 16), JDL.L("gui.linkgrabberv2.lg.rmoffline", "Remove all Offline"),
-                            LinkGrabberTableAction.DELETE_OFFLINE)));
+                    popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.removefailed", 16, 16), JDL.L("gui.linkgrabberv2.lg.rmoffline", "Remove all Offline"), LinkGrabberTableAction.DELETE_OFFLINE)));
                     addExtMenu(popup);
                     if (popup.getComponentCount() != 0) popup.show(this, point.x, point.y);
                 }
@@ -316,85 +309,40 @@ public class LinkGrabberTable extends JTable implements MouseListener, MouseMoti
 
             if (obj instanceof LinkGrabberFilePackage || obj instanceof DownloadLink) {
                 popup.add(new JMenuItem(ActionController.getToolBarAction("action.linkgrabber.addall")));
-                popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.removefailed", 16, 16), JDL.L("gui.linkgrabberv2.lg.rmoffline", "Remove all Offline"),
-                        LinkGrabberTableAction.DELETE_OFFLINE)));
+                popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.removefailed", 16, 16), JDL.L("gui.linkgrabberv2.lg.rmoffline", "Remove all Offline"), LinkGrabberTableAction.DELETE_OFFLINE)));
 
-                popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.delete", 16, 16), JDL.L("gui.table.contextmenu.delete", "entfernen")
-                        + " ("
-                        + alllinks.size()
-                        + ")", LinkGrabberTableAction.DELETE, new Property("links", alllinks))));
+                popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.delete", 16, 16), JDL.L("gui.table.contextmenu.delete", "entfernen") + " (" + alllinks.size() + ")", LinkGrabberTableAction.DELETE, new Property("links", alllinks))));
                 if (sfp.size() > 0) {
-                    popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.taskpanes.linkgrabber", 16, 16), JDL.L("gui.linkgrabberv2.lg.addselected",
-                                                                                                                                                  "Add selected package(s)")
-                            + " ("
-                            + sfp.size()
-                            + ")", LinkGrabberTableAction.ADD_SELECTED_PACKAGES)));
+                    popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.taskpanes.linkgrabber", 16, 16), JDL.L("gui.linkgrabberv2.lg.addselected", "Add selected package(s)") + " (" + sfp.size() + ")", LinkGrabberTableAction.ADD_SELECTED_PACKAGES)));
                 } else {
-                    popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.taskpanes.linkgrabber", 16, 16), JDL.L("gui.linkgrabberv2.lg.addselectedlinks",
-                                                                                                                                                  "Add selected link(s)")
-                            + " ("
-                            + alllinks.size()
-                            + ")", LinkGrabberTableAction.ADD_SELECTED_LINKS, new Property("links", alllinks))));
+                    popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.taskpanes.linkgrabber", 16, 16), JDL.L("gui.linkgrabberv2.lg.addselectedlinks", "Add selected link(s)") + " (" + alllinks.size() + ")", LinkGrabberTableAction.ADD_SELECTED_LINKS, new Property("links", alllinks))));
                 }
                 popup.addSeparator();
             }
             if (obj instanceof LinkGrabberFilePackage) {
-                popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.newpackage", 16, 16), JDL.L("gui.linkgrabberv2.splithoster", "Split by hoster")
-                        + " ("
-                        + sfp.size()
-                        + ")", LinkGrabberTableAction.SPLIT_HOSTER)));
-                popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.add_package", 16, 16), JDL.L("gui.table.contextmenu.editdownloadDir", "Zielordner ändern")
-                        + " ("
-                        + sfp.size()
-                        + ")", LinkGrabberTableAction.EDIT_DIR)));
+                popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.newpackage", 16, 16), JDL.L("gui.linkgrabberv2.splithoster", "Split by hoster") + " (" + sfp.size() + ")", LinkGrabberTableAction.SPLIT_HOSTER)));
+                popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.add_package", 16, 16), JDL.L("gui.table.contextmenu.editdownloadDir", "Zielordner ändern") + " (" + sfp.size() + ")", LinkGrabberTableAction.EDIT_DIR)));
             }
             if (obj instanceof LinkGrabberFilePackage || obj instanceof DownloadLink) {
-                popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.sort", 16, 16), JDL.L("gui.table.contextmenu.packagesort", "Paket sortieren")
-                        + " ("
-                        + sfp.size()
-                        + "), ("
-                        + model.getColumnName(col)
-                        + ")", LinkGrabberTableAction.SORT, new Property("col", model.toModel(col)))));
+                popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.sort", 16, 16), JDL.L("gui.table.contextmenu.packagesort", "Paket sortieren") + " (" + sfp.size() + "), (" + model.getColumnName(col) + ")", LinkGrabberTableAction.SORT, new Property("col", model.toModel(col)))));
                 popup.addSeparator();
-                popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.dlc", 16, 16), JDL.L("gui.table.contextmenu.dlc", "DLC erstellen")
-                        + " ("
-                        + alllinks.size()
-                        + ")", LinkGrabberTableAction.SAVE_DLC, new Property("links", alllinks))));
+                popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.dlc", 16, 16), JDL.L("gui.table.contextmenu.dlc", "DLC erstellen") + " (" + alllinks.size() + ")", LinkGrabberTableAction.SAVE_DLC, new Property("links", alllinks))));
                 popup.add(buildpriomenu(alllinks));
                 addExtMenu(popup);
                 Set<String> hoster = linkgrabber.getHosterList(alllinks);
-                popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.addselected", 16, 16), JDL
-                        .L("gui.linkgrabberv2.onlyselectedhoster", "Keep only selected Hoster")
-                        + " ("
-                        + hoster.size()
-                        + ")", LinkGrabberTableAction.SELECT_HOSTER, new Property("hoster", hoster))));
-                popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.newpackage", 16, 16), JDL.L("gui.table.contextmenu.newpackage2", "Move to new package")
-                        + " ("
-                        + alllinks.size()
-                        + ")", LinkGrabberTableAction.NEW_PACKAGE, new Property("links", alllinks))));
-                popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.newpackage", 16, 16), JDL.L("gui.table.contextmenu.mergepackage2", "Merge to one package")
-                        + " ("
-                        + alllinks.size()
-                        + ")", LinkGrabberTableAction.MERGE_PACKAGE, new Property("links", alllinks))));
-                popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.password", 16, 16), JDL.L("gui.table.contextmenu.setdlpw", "Set download password")
-                        + " ("
-                        + alllinks.size()
-                        + ")", LinkGrabberTableAction.SET_PW, new Property("links", alllinks))));
+                popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.addselected", 16, 16), JDL.L("gui.linkgrabberv2.onlyselectedhoster", "Keep only selected Hoster") + " (" + hoster.size() + ")", LinkGrabberTableAction.SELECT_HOSTER, new Property("hoster", hoster))));
+                popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.newpackage", 16, 16), JDL.L("gui.table.contextmenu.newpackage2", "Move to new package") + " (" + alllinks.size() + ")", LinkGrabberTableAction.NEW_PACKAGE, new Property("links", alllinks))));
+                popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.newpackage", 16, 16), JDL.L("gui.table.contextmenu.mergepackage2", "Merge to one package") + " (" + alllinks.size() + ")", LinkGrabberTableAction.MERGE_PACKAGE, new Property("links", alllinks))));
+                popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.password", 16, 16), JDL.L("gui.table.contextmenu.setdlpw", "Set download password") + " (" + alllinks.size() + ")", LinkGrabberTableAction.SET_PW, new Property("links", alllinks))));
                 popup.addSeparator();
                 HashMap<String, Object> prop = new HashMap<String, Object>();
                 prop.put("links", alllinks);
                 prop.put("boolean", true);
-                if (links_disabled > 0) popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.ok", 16, 16), JDL.L("gui.table.contextmenu.enable", "aktivieren")
-                        + " ("
-                        + links_disabled
-                        + ")", LinkGrabberTableAction.DE_ACTIVATE, new Property("infos", prop))));
+                if (links_disabled > 0) popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.ok", 16, 16), JDL.L("gui.table.contextmenu.enable", "aktivieren") + " (" + links_disabled + ")", LinkGrabberTableAction.DE_ACTIVATE, new Property("infos", prop))));
                 prop = new HashMap<String, Object>();
                 prop.put("links", alllinks);
                 prop.put("boolean", false);
-                if (links_enabled > 0) popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.bad", 16, 16), JDL.L("gui.table.contextmenu.disable", "deaktivieren")
-                        + " ("
-                        + links_enabled
-                        + ")", LinkGrabberTableAction.DE_ACTIVATE, new Property("infos", prop))));
+                if (links_enabled > 0) popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.bad", 16, 16), JDL.L("gui.table.contextmenu.disable", "deaktivieren") + " (" + links_enabled + ")", LinkGrabberTableAction.DE_ACTIVATE, new Property("infos", prop))));
             }
             if (popup.getComponentCount() != 0) popup.show(this, point.x, point.y);
         }
@@ -428,8 +376,7 @@ public class LinkGrabberTable extends JTable implements MouseListener, MouseMoti
             prop = new HashMap<String, Object>();
             prop.put("links", links);
             prop.put("prio", new Integer(i));
-            prioPopup.add(tmp = new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.priority" + i, 16, 16), prioDescs[i + 1], LinkGrabberTableAction.DOWNLOAD_PRIO,
-                    new Property("infos", prop))));
+            prioPopup.add(tmp = new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.priority" + i, 16, 16), prioDescs[i + 1], LinkGrabberTableAction.DOWNLOAD_PRIO, new Property("infos", prop))));
 
             if (prio != null && i == prio) {
                 tmp.setEnabled(false);
@@ -508,10 +455,7 @@ public class LinkGrabberTable extends JTable implements MouseListener, MouseMoti
     public void keyReleased(KeyEvent e) {
         if (e.getKeyCode() == KeyEvent.VK_DELETE) {
             ArrayList<DownloadLink> alllinks = getAllSelectedDownloadLinks();
-            LinkGrabberTableAction test = new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.delete", 16, 16), JDL.L("gui.table.contextmenu.delete", "entfernen")
-                    + " ("
-                    + alllinks.size()
-                    + ")", LinkGrabberTableAction.DELETE, new Property("links", alllinks));
+            LinkGrabberTableAction test = new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.delete", 16, 16), JDL.L("gui.table.contextmenu.delete", "entfernen") + " (" + alllinks.size() + ")", LinkGrabberTableAction.DELETE, new Property("links", alllinks));
             test.actionPerformed(new ActionEvent(test, 0, ""));
         }
     }

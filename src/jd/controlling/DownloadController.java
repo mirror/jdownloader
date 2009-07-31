@@ -90,6 +90,13 @@ class Optimizer {
 
 public class DownloadController implements FilePackageListener, DownloadControllerListener, ActionListener {
 
+    public static final byte MOVE_BEFORE = 1;
+    public static final byte MOVE_AFTER = 2;
+    public static final byte MOVE_BEGIN = 3;
+    public static final byte MOVE_END = 4;
+    public static final byte MOVE_TOP = 5;
+    public static final byte MOVE_BOTTOM = 6;
+
     public final static Object ControllerLock = new Object();
 
     private static DownloadController INSTANCE = null;
@@ -579,6 +586,116 @@ public class DownloadController implements FilePackageListener, DownloadControll
             }
         }
         return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    public void move(Object src2, Object dst, byte mode) {
+        boolean type = false; /* false=downloadLink,true=filepackage */
+        Object src = null;
+        FilePackage fp = null;
+        if (src2 instanceof ArrayList<?>) {
+            Object check = ((ArrayList<?>) src2).get(0);
+            if (check == null) {
+                logger.warning("Null src, cannot move!");
+                return;
+            }
+            if (check instanceof DownloadLink) {
+                src = src2;
+                type = false;
+            } else if (check instanceof FilePackage) {
+                src = src2;
+                type = true;
+            }
+        } else if (src2 instanceof DownloadLink) {
+            type = false;
+            src = new ArrayList<DownloadLink>();
+            ((ArrayList<DownloadLink>) src).add((DownloadLink) src2);
+        } else if (src2 instanceof FilePackage) {
+            type = true;
+            src = new ArrayList<FilePackage>();
+            ((ArrayList<FilePackage>) src).add((FilePackage) src2);
+        }
+        if (src == null) {
+            logger.warning("Unknown src, cannot move!");
+            return;
+        }
+        synchronized (DownloadController.ControllerLock) {
+            synchronized (packages) {
+                if (dst != null) {
+                    if (!type) {
+                        if (dst instanceof FilePackage) {
+                            /* src:DownloadLinks dst:filepackage */
+                            switch (mode) {
+                            case MOVE_BEGIN:
+                                fp = ((FilePackage) dst);
+                                fp.addLinksAt((ArrayList<DownloadLink>) src, 0);
+                                return;
+                            case MOVE_END:
+                                fp = ((FilePackage) dst);
+                                fp.addLinksAt((ArrayList<DownloadLink>) src, fp.size());
+                                return;
+                            default:
+                                logger.warning("Unsupported mode, cannot move!");
+                                return;
+                            }
+                        } else if (dst instanceof DownloadLink) {
+                            /* src:DownloadLinks dst:DownloadLinks */
+                            switch (mode) {
+                            case MOVE_BEFORE:
+                                fp = ((DownloadLink) dst).getFilePackage();
+                                fp.addLinksAt((ArrayList<DownloadLink>) src, fp.indexOf((DownloadLink) dst));
+                                return;
+                            case MOVE_AFTER:
+                                fp = ((DownloadLink) dst).getFilePackage();
+                                fp.addLinksAt((ArrayList<DownloadLink>) src, fp.indexOf((DownloadLink) dst) + 1);
+                                return;
+                            default:
+                                logger.warning("Unsupported mode, cannot move!");
+                                return;
+                            }
+                        } else {
+                            logger.warning("Unsupported dst, cannot move!");
+                            return;
+                        }
+                    } else {
+                        if (dst instanceof FilePackage) {
+                            /* src:FilePackages dst:filepackage */
+                            switch (mode) {
+                            case MOVE_BEFORE:
+                                addAllAt((ArrayList<FilePackage>) src, indexOf((FilePackage) dst));
+                                return;
+                            case MOVE_AFTER:
+                                addAllAt((ArrayList<FilePackage>) src, indexOf((FilePackage) dst) + 1);
+                                return;
+                            default:
+                                logger.warning("Unsupported mode, cannot move!");
+                                return;
+                            }
+                        } else if (dst instanceof DownloadLink) {
+                            /* src:FilePackages dst:DownloadLinks */
+                            logger.warning("Unsupported mode, cannot move!");
+                            return;
+                        }
+                    }
+                } else {
+                    /* dst==null, global moving */
+                    if (type) {
+                        /* src:FilePackages */
+                        switch (mode) {
+                        case MOVE_TOP:
+                            addAllAt((ArrayList<FilePackage>) src, 0);
+                            return;
+                        case MOVE_BOTTOM:
+                            addAllAt((ArrayList<FilePackage>) src, size() + 1);
+                            return;
+                        default:
+                            logger.warning("Unsupported mode, cannot move!");
+                            return;
+                        }
+                    }
+                }
+            }
+        }
     }
 
     public void actionPerformed(ActionEvent arg0) {

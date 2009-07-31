@@ -41,6 +41,7 @@ import jd.controlling.JDLogger;
 import jd.controlling.LinkCheck;
 import jd.controlling.LinkCheckEvent;
 import jd.controlling.LinkCheckListener;
+import jd.controlling.LinkGrabberController;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
@@ -50,6 +51,7 @@ import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.InfoPanelHandler;
 import jd.gui.swing.jdgui.JDGuiConstants;
+import jd.gui.swing.jdgui.actions.ThreadedAction;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.nutils.JDFlags;
 import jd.nutils.io.JDFileFilter;
@@ -107,6 +109,46 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
         asyncUpdate.setInitialDelay(UPDATE_TIMING);
         asyncUpdate.setRepeats(false);
         asyncUpdate.restart();
+        initActions();
+    }
+
+    public void initActions() {
+        new ThreadedAction("action.downloadview.movetobottom", "gui.images.go_bottom") {
+            private static final long serialVersionUID = 6181260839200699153L;
+
+            @Override
+            public void initDefaults() {
+                this.setToolTipText(JDL.L("gui.downloadview.movetobottom", "Move selected Packages to bottom"));
+            }
+
+            @Override
+            public void init() {
+            }
+
+            public void threadedActionPerformed(ActionEvent e) {
+                synchronized (LinkGrabberController.ControllerLock) {
+                    DownloadController.getInstance().move(internalTable.getSelectedFilePackages(), null, DownloadController.MOVE_BOTTOM);
+                }
+            }
+        };
+        new ThreadedAction("action.downloadview.movetotop", "gui.images.go_top") {
+            private static final long serialVersionUID = 6181260839200699153L;
+
+            @Override
+            public void initDefaults() {
+                this.setToolTipText(JDL.L("gui.downloadview.movetotop", "Move selected Packages to top"));
+            }
+
+            @Override
+            public void init() {
+            }
+
+            public void threadedActionPerformed(ActionEvent e) {
+                synchronized (LinkGrabberController.ControllerLock) {
+                    DownloadController.getInstance().move(internalTable.getSelectedFilePackages(), null, DownloadController.MOVE_TOP);
+                }
+            }
+        };
     }
 
     public boolean needsViewport() {
@@ -145,7 +187,6 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
         new Thread() {
             public void run() {
                 if (id2 != REFRESH_DATA_AND_STRUCTURE_CHANGED_FAST) tableRefreshInProgress = true;
-                if (id2 == REFRESH_DATA_AND_STRUCTURE_CHANGED || id2 == REFRESH_DATA_AND_STRUCTURE_CHANGED_FAST) internalTable.getTableModel().refreshModel();
                 try {
                     internalTable.fireTableChanged(id2, objs2);
                 } catch (Exception e) {
@@ -460,10 +501,10 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
                         sort(col);
                     break;
                 case TableAction.SORT:
-                	if (selectedLinks.size()>0) {
-                		selectedLinks.get(0).getFilePackage().sort(col);
-                		break;
-                	}
+                    if (selectedLinks.size() > 0) {
+                        selectedLinks.get(0).getFilePackage().sort(col);
+                        break;
+                    }
                     for (int i = 0; i < selectedPackages.size(); i++) {
                         selectedPackages.get(i).sort(col);
                     }
@@ -530,7 +571,7 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
             Collections.sort(packages, new Comparator<FilePackage>() {
 
                 public int compare(FilePackage a, FilePackage b) {
-                	FilePackage aa = a;
+                    FilePackage aa = a;
                     FilePackage bb = b;
                     if (lastSort) {
                         aa = b;

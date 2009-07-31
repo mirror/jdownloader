@@ -257,7 +257,6 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                             }
                         }
                     }
-                    internalTable.getTableModel().refreshModel();
                 }
                 try {
                     internalTable.fireTableChanged();
@@ -574,13 +573,13 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                             }
                             break;
                         case LinkGrabberTableAction.SORT:
-                        	if (selected_links.size()>0) {
-                        		LinkGrabberFilePackage fp2 = LGINSTANCE.getFPwithLink(selected_links.get(0));
-                        		if (fp2 != null) {
-                        			fp2.sort(col, false);
-                        		}
-                        		break;
-                        	}
+                            if (selected_links.size() > 0) {
+                                LinkGrabberFilePackage fp2 = LGINSTANCE.getFPwithLink(selected_links.get(0));
+                                if (fp2 != null) {
+                                    fp2.sort(col, false);
+                                }
+                                break;
+                            }
                             for (LinkGrabberFilePackage fp2 : selected_packages) {
                                 fp2.sort(col, false);
                             }

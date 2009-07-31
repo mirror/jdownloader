@@ -269,6 +269,7 @@ public class DownloadTable extends JTable implements MouseListener, MouseMotionL
                         Object elem = model.getValueAt(row, 0);
                         if (elem != null) selected.add(elem);
                     }
+                    model.refreshModel();
                     model.fireTableStructureChanged();
                     SwingUtilities.invokeLater(new Runnable() {
                         public void run() {

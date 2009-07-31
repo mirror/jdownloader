@@ -4,7 +4,6 @@ import javax.swing.Icon;
 
 import jd.config.ConfigEntry.PropertyType;
 import jd.gui.swing.jdgui.MainTabbedPane;
-import jd.gui.swing.jdgui.borders.JDBorderFactory;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.interfaces.View;
 import jd.gui.swing.jdgui.settings.ConfigPanel;

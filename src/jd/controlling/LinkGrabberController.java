@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.logging.Logger;
 
 import jd.config.ConfigPropertyListener;
 import jd.config.Property;
@@ -29,6 +30,7 @@ import jd.event.JDBroadcaster;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
+
 import jd.plugins.FilePackage;
 import jd.plugins.LinkGrabberFilePackage;
 import jd.plugins.LinkGrabberFilePackageEvent;
@@ -50,6 +52,13 @@ class LinkGrabberControllerBroadcaster extends JDBroadcaster<LinkGrabberControll
 public class LinkGrabberController implements LinkGrabberFilePackageListener, LinkGrabberControllerListener {
 
     public final static Object ControllerLock = new Object();
+
+    public static final byte MOVE_BEFORE = 1;
+    public static final byte MOVE_AFTER = 2;
+    public static final byte MOVE_BEGIN = 3;
+    public static final byte MOVE_END = 4;
+    public static final byte MOVE_TOP = 5;
+    public static final byte MOVE_BOTTOM = 6;
 
     public static final String PARAM_ONLINECHECK = "PARAM_ONLINECHECK";
     public static final String CONFIG = "LINKGRABBER";
@@ -73,6 +82,8 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
     private LinkGrabberFilePackage FP_OFFLINE;
     private LinkGrabberFilePackage FP_FILTERED;
     private LinkGrabberDistributeEvent distributer = null;
+
+    private Logger logger;
 
     public synchronized static LinkGrabberController getInstance() {
         if (INSTANCE == null) INSTANCE = new LinkGrabberController();
@@ -121,6 +132,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
     }
 
     private LinkGrabberController() {
+        logger = jd.controlling.JDLogger.getLogger();
         broadcaster = new LinkGrabberControllerBroadcaster();
         broadcaster.addListener(this);
 
@@ -218,11 +230,10 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
     public LinkGrabberFilePackage getFPwithName(String name) {
         synchronized (packages) {
             if (name == null) return null;
-            LinkGrabberFilePackage fp = null;
-            for (Iterator<LinkGrabberFilePackage> it = packages.iterator(); it.hasNext();) {
-                fp = it.next();
+            for (LinkGrabberFilePackage fp : packages) {
                 if (fp.getName().equalsIgnoreCase(name)) return fp;
             }
+            if (FP_FILTERED.getName().equalsIgnoreCase(name)) return FP_FILTERED;
             return null;
         }
     }
@@ -230,11 +241,10 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
     public LinkGrabberFilePackage getFPwithLink(DownloadLink link) {
         synchronized (packages) {
             if (link == null) return null;
-            ArrayList<LinkGrabberFilePackage> fps = new ArrayList<LinkGrabberFilePackage>(packages);
-            fps.add(this.FP_FILTERED);
-            for (LinkGrabberFilePackage fp : fps) {
+            for (LinkGrabberFilePackage fp : packages) {
                 if (fp.contains(link)) return fp;
             }
+            if (FP_FILTERED.contains(link)) return FP_FILTERED;
             return null;
         }
     }
@@ -606,6 +616,119 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
                 }
             }
             return false;
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public void move(Object src2, Object dst, byte mode) {
+        boolean type = false; /* false=downloadLink,true=LinkGrabberFilePackage */
+        Object src = null;
+        LinkGrabberFilePackage fp = null;
+        if (src2 instanceof ArrayList<?>) {
+            Object check = ((ArrayList<?>) src2).get(0);
+            if (check == null) {
+                logger.warning("Null src, cannot move!");
+                return;
+            }
+            if (check instanceof DownloadLink) {
+                src = src2;
+                type = false;
+            } else if (check instanceof LinkGrabberFilePackage) {
+                src = src2;
+                type = true;
+            }
+        } else if (src2 instanceof DownloadLink) {
+            type = false;
+            src = new ArrayList<DownloadLink>();
+            ((ArrayList<DownloadLink>) src).add((DownloadLink) src2);
+        } else if (src2 instanceof LinkGrabberFilePackage) {
+            type = true;
+            src = new ArrayList<LinkGrabberFilePackage>();
+            ((ArrayList<LinkGrabberFilePackage>) src).add((LinkGrabberFilePackage) src2);
+        }
+        if (src == null) {
+            logger.warning("Unknown src, cannot move!");
+            return;
+        }
+        synchronized (ControllerLock) {
+            synchronized (packages) {
+                if (dst != null) {
+                    if (!type) {
+                        if (dst instanceof LinkGrabberFilePackage) {
+                            /* src:DownloadLinks dst:LinkGrabberFilePackage */
+                            switch (mode) {
+                            case MOVE_BEGIN:
+                                fp = ((LinkGrabberFilePackage) dst);
+                                fp.addAllAt((ArrayList<DownloadLink>) src, 0);
+                                return;
+                            case MOVE_END:
+                                fp = ((LinkGrabberFilePackage) dst);
+                                fp.addAllAt((ArrayList<DownloadLink>) src, fp.size());
+                                return;
+                            default:
+                                logger.warning("Unsupported mode, cannot move!");
+                                return;
+                            }
+                        } else if (dst instanceof DownloadLink) {
+                            /* src:DownloadLinks dst:DownloadLinks */
+                            switch (mode) {
+                            case MOVE_BEFORE:
+                                fp = getFPwithLink((DownloadLink) dst);
+                                fp.addAllAt((ArrayList<DownloadLink>) src, fp.indexOf((DownloadLink) dst));
+                                return;
+                            case MOVE_AFTER:
+                                fp = getFPwithLink((DownloadLink) dst);
+                                fp.addAllAt((ArrayList<DownloadLink>) src, fp.indexOf((DownloadLink) dst) + 1);
+                                return;
+                            default:
+                                logger.warning("Unsupported mode, cannot move!");
+                                return;
+                            }
+                        } else {
+                            logger.warning("Unsupported dst, cannot move!");
+                            return;
+                        }
+                    } else {
+                        if (dst instanceof LinkGrabberFilePackage) {
+                            /*
+                             * src:LinkGrabberFilePackage
+                             * dst:LinkGrabberFilePackage
+                             */
+                            switch (mode) {
+                            case MOVE_BEFORE:
+                                addAllAt((ArrayList<LinkGrabberFilePackage>) src, indexOf((LinkGrabberFilePackage) dst));
+                                return;
+                            case MOVE_AFTER:
+                                addAllAt((ArrayList<LinkGrabberFilePackage>) src, indexOf((LinkGrabberFilePackage) dst) + 1);
+                                return;
+                            default:
+                                logger.warning("Unsupported mode, cannot move!");
+                                return;
+                            }
+                        } else if (dst instanceof DownloadLink) {
+                            /* src:LinkGrabberFilePackage dst:DownloadLinks */
+                            logger.warning("Unsupported mode, cannot move!");
+                            return;
+                        }
+                    }
+                } else {
+                    /* dst==null, global moving */
+                    if (type) {
+                        /* src:LinkGrabberFilePackage */
+                        switch (mode) {
+                        case MOVE_TOP:
+                            addAllAt((ArrayList<LinkGrabberFilePackage>) src, 0);
+                            return;
+                        case MOVE_BOTTOM:
+                            addAllAt((ArrayList<LinkGrabberFilePackage>) src, size() + 1);
+                            return;
+                        default:
+                            logger.warning("Unsupported mode, cannot move!");
+                            return;
+                        }
+                    }
+                }
+            }
         }
     }
 
