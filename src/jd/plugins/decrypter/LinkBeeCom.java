@@ -36,8 +36,14 @@ public class LinkBeeCom extends PluginForDecrypt {
         String parameter = param.toString();
 
         br.getPage(parameter);
+        // I don't know if this pattern still is valid. May be that there is a version for iframes, and one without iframes.
+        // Thats why I left it
         String found = br.getRegex("seconds\\s+or\\s+<a\\s+href=\"(.*)\"").getMatch(0);
-        if (found == null) return null;
+        if (found == null) {
+            found = br.getRegex("<iframe src=\"(.*?)\"").getMatch(0); 
+        }
+        if(found==null)return null;
+      
         decryptedLinks.add(createDownloadlink(found));
         return decryptedLinks;
     }
