@@ -10,6 +10,8 @@ import javax.swing.Icon;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.LinkGrabberControllerEvent;
 import jd.controlling.LinkGrabberControllerListener;
+import jd.gui.UserIF;
+import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.interfaces.View;
 import jd.gui.swing.jdgui.views.info.LinkGrabberInfoPanel;
 import jd.gui.swing.jdgui.views.linkgrabberview.LinkGrabberPanel;
@@ -36,18 +38,16 @@ public class LinkgrabberView extends View {
         this.setDefaultInfoPanel(new LinkGrabberInfoPanel());
         ViewToolbar toolbar = new ViewToolbar();
 
-        toolbar.setList(new String[] {
-                "action.addurl", "action.load"
-        });
-      
+        toolbar.setList(new String[] { "action.addurl", "action.load" });
+
         this.setToolBar(toolbar);
-//globaler keylistener
+        // globaler keylistener
         ael = new AWTEventListener() {
             public void eventDispatched(AWTEvent event) {
                 if (event.getID() == KeyEvent.KEY_TYPED) {
                     char keycode = ((KeyEvent) event).getKeyChar();
-                    if ( keycode== '\r'||keycode=='\n') {
-                        
+                    if (keycode == '\r' || keycode == '\n') {
+
                         LinkGrabberPanel.getLinkGrabber().confirmButton.doClick(500);
                     }
 
@@ -59,7 +59,7 @@ public class LinkgrabberView extends View {
             public void onLinkGrabberControllerEvent(LinkGrabberControllerEvent event) {
                 switch (event.getID()) {
                 case LinkGrabberControllerEvent.ADDED:
-                    // taskPane.switcher(dlTskPane);
+                    JDGui.getInstance().requestPanel(UserIF.Panels.DOWNLOADLIST, null);
                     break;
                 }
             }

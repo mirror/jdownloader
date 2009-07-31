@@ -86,8 +86,11 @@ public class UploadingCom extends PluginForHost {
         }
         br.getPage("http://www.uploading.com/profile/");
         String validUntil = br.getRegex("Premium Account access is valid until (.*?)\\.").getMatch(0);
-        ai.setValidUntil(Regex.getMilliSeconds(validUntil, "yyyy-MM-dd", null));
         ai.setValid(true);
+        /* Workaround for buggy expire date */
+        if (!validUntil.trim().equalsIgnoreCase("0000-00-00")) {
+            ai.setValidUntil(Regex.getMilliSeconds(validUntil, "yyyy-MM-dd", null));
+        }
         return ai;
     }
 
