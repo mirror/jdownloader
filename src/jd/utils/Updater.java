@@ -23,8 +23,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
@@ -211,7 +211,7 @@ public class Updater {
     }
 
     private void clone2(String branch) throws IOException {
-        HashMap<String, String> map = createHashList(this.workingDir);
+        LinkedHashMap<String, String> map = createHashList(this.workingDir);
         Browser br = new Browser();
         br.forceDebug(true);
 
@@ -230,7 +230,7 @@ public class Updater {
     }
 
     private void clone0(String branch) throws IOException {
-        HashMap<String, String> map = createHashList(this.workingDir);
+        LinkedHashMap<String, String> map = createHashList(this.workingDir);
         Browser br = new Browser();
         br.forceDebug(true);
 
@@ -262,7 +262,7 @@ public class Updater {
 
     private void checkHashes() throws IOException {
         while (true) {
-            HashMap<String, String> map = createHashList(this.workingDir);
+            LinkedHashMap<String, String> map = createHashList(this.workingDir);
             Browser br = new Browser();
             br.forceDebug(true);
 
@@ -279,7 +279,7 @@ public class Updater {
     private void uploadHashList() throws Exception {
         while (true) {
 
-            HashMap<String, String> map = createHashList(this.workingDir);
+            LinkedHashMap<String, String> map = createHashList(this.workingDir);
             Browser br = new Browser();
             br.forceDebug(true);
 
@@ -304,8 +304,8 @@ public class Updater {
      * @param dir
      * @return
      */
-    private HashMap<String, String> createHashList(File dir) {
-        HashMap<String, String> map = new HashMap<String, String>();
+    private LinkedHashMap<String, String> createHashList(File dir) {
+        LinkedHashMap<String, String> map = new LinkedHashMap<String, String>();
         ArrayList<File> list = getLocalFileList(dir, false);
 
         for (File f : list) {

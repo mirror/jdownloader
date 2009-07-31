@@ -17,7 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -73,14 +73,14 @@ public class Collectr extends PluginForDecrypt {
             if (saptcha != null) {
                 // Captcha on
                 String captchaCode = getCaptchaCode("http://collectr.net/img/saptcha" + saptcha + ".gif", param);
-                HashMap<String, String> post = new HashMap<String, String>();
+                LinkedHashMap<String, String> post = new LinkedHashMap<String, String>();
                 post.put("saptcha", captchaCode);
                 post.put("id", saptcha);
                 post.put("ordner", ordner);
                 br.postPage(JAMES_SAPTCHA, post);
             }
             for (String link : new Regex(page, PATTERN_GETLINK).getColumn(0)) {
-                HashMap<String, String> post = new HashMap<String, String>();
+                LinkedHashMap<String, String> post = new LinkedHashMap<String, String>();
                 post.put("id", link);
                 post.put("ordner", ordner);
                 String dUrl = new Regex(br.postPage(JAMES_GETLINK, post), PATTERN_DURL).getMatch(0);

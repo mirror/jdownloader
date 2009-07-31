@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -27,8 +28,10 @@ import jd.gui.swing.components.ConvertDialog;
 import jd.gui.swing.components.ConvertDialog.ConversionMode;
 import jd.http.Browser;
 import jd.http.Encoding;
+import jd.http.requests.Request;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -60,17 +63,25 @@ public class YouTubeCom extends PluginForDecrypt {
         return s;
     }
 
-    private void login(Account account) throws Exception {
-        br.setCookiesExclusive(true);
-        br.clearCookies("http://www.youtube.com/");
+    private boolean login(Account account) throws Exception {
+        this.setBrowserExclusive();        
         br.setFollowRedirects(true);
         br.getPage("http://www.youtube.com/");
-        br.getPage("http://www.youtube.com/signup?next=/index");
-        br.postPage("https://www.google.com/accounts/ServiceLoginAuth?service=youtube", "ltmpl=sso&continue=http%3A%2F%2Fwww.youtube.com%2Fsignup%3Fhl%3Den_US%26warned%3D%26nomobiletemp%3D1%26next%3D%2Findex&service=youtube&uilel=3&ltmpl=sso&hl=en_US&ltmpl=sso&GALX=IKTS6-HeUug&Email=" + Encoding.urlEncode(account.getUser()) + "&Passwd=" + Encoding.urlEncode(account.getPass()) + "&PersistentCookie=yes&rmShown=1&signIn=Sign+in&asts=");
-        br.getPage("http://www.youtube.com/index?hl=en-GB");
-        if (!br.getRegex("<title>YouTube - " + account.getUser() + "'s YouTube</title>").matches()) {
+        br.getPage("https://www.google.com/accounts/ServiceLogin?uilel=3&service=youtube&passive=true&continue=http%3A%2F%2Fwww.youtube.com%2Fsignup%3Fnomobiletemp%3D1%26hl%3Den_US%26next%3D%252F&hl=en_US&ltmpl=sso");
+        br.setFollowRedirects(false);
+        br.postPage("https://www.google.com/accounts/ServiceLoginAuth?service=youtube", "ltmpl=sso&continue=http%3A%2F%2Fwww.youtube.com%2Fsignup%3Fnomobiletemp%3D1%26hl%3Den_US%26next%3D%252F&service=youtube&uilel=3&ltmpl=sso&hl=en_US&ltmpl=sso&GALX=THv6dNUkoZc&Email=" + Encoding.urlEncode(account.getUser()) + "&Passwd=" + Encoding.urlEncode(account.getPass()) + "&PersistentCookie=yes&rmShown=1&signIn=Sign+in&asts=");
+        if (br.getRedirectLocation() == null) {
             account.setEnabled(false);
+            return false;
         }
+        br.setFollowRedirects(true);
+        br.getPage(br.getRedirectLocation());
+        if (br.getCookie("http://www.youtube.com", "LOGIN_INFO") == null) {
+            account.setEnabled(false);
+            return false;
+        }
+        br.getPage("http://www.youtube.com/index?hl=en");
+        return true;
     }
 
     private void addVideosCurrentPage(ArrayList<DownloadLink> links) {
@@ -99,8 +110,9 @@ public class YouTubeCom extends PluginForDecrypt {
                 }
             }
         } else {
+            boolean prem = false;
             ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts("youtube.com");
-            if (accounts != null && accounts.size() != 0) login(accounts.get(0));
+            if (accounts != null && accounts.size() != 0) prem = login(accounts.get(0));
 
             try {
                 if (StreamingShareLink.matcher(parameter).matches()) {
@@ -122,12 +134,20 @@ public class YouTubeCom extends PluginForDecrypt {
                 }
 
                 br.getPage(parameter);
-                Form f = br.getForms()[2];
-                if (f != null && f.getAction() == null) {
-                    br.submitForm(f);
-                } else {
-                    if (br.getURL().contains("verify_age?")) { throw new DecrypterException(DecrypterException.ACCOUNT); }
-                }
+                if (br.containsHTML("verify_age") && prem) {
+                    String session_token = br.getRegex("onLoadFunc.*?gXSRF_token = '(.*?)'").getMatch(0);
+                    String url = br.getURL();
+                    LinkedHashMap<String, String> p = Request.parseQuery(url);
+                    String next = p.get("next_url");
+                    Form form = new Form();
+                    form.setAction(url);
+                    form.setMethod(MethodType.POST);
+                    form.put("next_url", "%2F" + next.substring(1));
+                    form.put("action_confirm", "Confirm+Birth+Date");
+                    form.put("session_token", Encoding.urlEncode(session_token));
+                    br.submitForm(form);
+                    if (br.getCookie("http://www.youtube.com", "is_adult") == null) return null;
+                } else if (br.containsHTML("verify_age")) throw new DecrypterException(DecrypterException.ACCOUNT);
                 String video_id = "";
                 String t = "";
                 String match = br.getRegex(patternswfArgs).getMatch(0);

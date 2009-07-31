@@ -24,7 +24,6 @@ import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -58,9 +57,9 @@ public abstract class Request {
      * @throws MalformedURLException
      */
 
-    public static HashMap<String, String> parseQuery(String query) throws MalformedURLException {
+    public static LinkedHashMap<String, String> parseQuery(String query) throws MalformedURLException {
         if (query == null) { return null; }
-        HashMap<String, String> ret = new HashMap<String, String>();
+        LinkedHashMap<String, String> ret = new LinkedHashMap<String, String>();
         if (query.toLowerCase().trim().startsWith("http")) {
             query = new URL(query).getQuery();
         }
@@ -155,9 +154,15 @@ public abstract class Request {
                 break;
             }
             /* Key and Value */
-            StringTokenizer st2 = new StringTokenizer(cookieelement, "=");
-            if (st2.hasMoreTokens()) key = st2.nextToken().trim();
-            if (st2.hasMoreTokens()) value = st2.nextToken().trim();
+            String st2[] = new Regex(cookieelement, "(.*?)=(.+)").getRow(0);
+            if (st2 == null || st2.length == 0) {
+                key = null;
+            } else if (st2.length == 1) {
+                key = st2[0].trim();
+            } else if (st2.length == 2) {
+                key = st2[0].trim();
+                value = st2[1].trim();
+            }
 
             if (key != null) {
                 if (key.equalsIgnoreCase("path")) {
@@ -438,12 +443,12 @@ public abstract class Request {
         long tima = System.currentTimeMillis();
 
         if (!headers.contains("Host")) {
-            if(url.getPort()!=80&&url.getPort()>0){
-                headers.setAt(0, "Host", url.getHost()+":"+url.getPort());
-            }else{
+            if (url.getPort() != 80 && url.getPort() > 0) {
+                headers.setAt(0, "Host", url.getHost() + ":" + url.getPort());
+            } else {
                 headers.setAt(0, "Host", url.getHost());
             }
-         
+
         }
         if (proxy != null) {
 

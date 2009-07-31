@@ -22,6 +22,7 @@ import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 
 import jd.http.URLConnectionAdapter;
@@ -106,7 +107,7 @@ public class PostRequest extends Request {
 
     }
 
-    public static ArrayList<RequestVariable> variableMaptoArray(HashMap<String, String> post) {
+    public static ArrayList<RequestVariable> variableMaptoArray(LinkedHashMap<String, String> post) {
         ArrayList<RequestVariable> ret = new ArrayList<RequestVariable>();
         Entry<String, String> next = null;
         for (Iterator<Entry<String, String>> it = post.entrySet().iterator(); it.hasNext();) {

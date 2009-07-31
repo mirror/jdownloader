@@ -539,7 +539,7 @@ public class GetRouterInfo {
                 // HashMap<RInfo, Integer>();
                 int upnp = 0;
                 Browser br = new Browser();
-                HashMap<String, String> he = new HashMap<String, String>();
+                LinkedHashMap<String, String> he = new LinkedHashMap<String, String>();
                 if (infos.getRouterHost() != null) he.put("RouterHost", infos.getRouterHost());
                 if (infos.getRouterHost() != null) he.put("RouterMAC", infos.getRouterMAC());
                 if (infos.getPageHeader() != null) he.put("PageHeader", SQLRouterData.replaceTimeStamps(infos.getPageHeader()));
@@ -687,12 +687,12 @@ public class GetRouterInfo {
             public void go() throws Exception {
                 try {
 
-                    HashMap<RInfo, Integer> routers = new HashMap<RInfo, Integer>();
+                    LinkedHashMap<RInfo, Integer> routers = new LinkedHashMap<RInfo, Integer>();
                     // HashMap<RInfo, Integer> experimentalRouters = new
                     // HashMap<RInfo, Integer>();
                     int upnp = 0;
                     Browser br = new Browser();
-                    HashMap<String, String> he = new HashMap<String, String>();
+                    LinkedHashMap<String, String> he = new LinkedHashMap<String, String>();
                     if (infos.getRouterHost() != null) he.put("RouterHost", infos.getRouterHost());
                     if (infos.getRouterHost() != null) he.put("RouterMAC", infos.getRouterMAC());
                     if (infos.getPageHeader() != null) he.put("PageHeader", SQLRouterData.replaceTimeStamps(infos.getPageHeader()));
@@ -732,7 +732,7 @@ public class GetRouterInfo {
                         }
                     }
 
-                    routers = (HashMap<RInfo, Integer>) sortByIntegrety(routers);
+                    routers = (LinkedHashMap<RInfo, Integer>) sortByIntegrety(routers);
                     HashMap<String, RInfo> methodes = new HashMap<String, RInfo>();
                     Iterator<Entry<RInfo, Integer>> inter = routers.entrySet().iterator();
                     while (inter.hasNext()) {
@@ -744,7 +744,7 @@ public class GetRouterInfo {
                         } else
                             methodes.put(entry.getKey().getReconnectMethode(), entry.getKey());
                     }
-                    routers = (HashMap<RInfo, Integer>) sortByIntegrety(routers);
+                    routers = (LinkedHashMap<RInfo, Integer>) sortByIntegrety(routers);
                     /*
                      * experimentalRouters = (HashMap<RInfo, Integer>)
                      * sortByIntegrety(experimentalRouters); methodes = new

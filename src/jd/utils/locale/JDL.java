@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map.Entry;
 
@@ -330,7 +331,7 @@ public class JDL {
 
     public static String translate(String from, String to, String msg) {
         try {
-            HashMap<String, String> postData = new HashMap<String, String>();
+            LinkedHashMap<String, String> postData = new LinkedHashMap<String, String>();
             postData.put("hl", "de");
             postData.put("text", msg);
             postData.put("sl", from);

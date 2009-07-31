@@ -31,6 +31,7 @@ import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
@@ -721,7 +722,7 @@ public class Browser {
     /**
      * Opens a Post COnnection based on a variable hashmap
      */
-    public URLConnectionAdapter openPostConnection(String url, HashMap<String, String> post) throws IOException {
+    public URLConnectionAdapter openPostConnection(String url, LinkedHashMap<String, String> post) throws IOException {
 
         return this.openRequestConnection(this.createPostRequest(url, post));
 
@@ -795,7 +796,7 @@ public class Browser {
     /**
      * Creates a new POstrequest based on a variable hashmap
      */
-    public Request createPostRequest(String url, HashMap<String, String> post) throws IOException {
+    public Request createPostRequest(String url, LinkedHashMap<String, String> post) throws IOException {
 
         return this.createPostRequest(url, PostRequest.variableMaptoArray(post));
     }
@@ -855,7 +856,7 @@ public class Browser {
     /**
      * loads a new page (post)
      */
-    public String postPage(String url, HashMap<String, String> post) throws IOException {
+    public String postPage(String url, LinkedHashMap<String, String> post) throws IOException {
         openPostConnection(url, post);
         return loadConnection(null);
 

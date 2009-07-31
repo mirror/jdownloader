@@ -22,6 +22,7 @@ import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
 import java.net.URLEncoder;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 
 import jd.controlling.JDLogger;
 import jd.parser.Regex;
@@ -65,9 +66,9 @@ public class RInfo implements Serializable {
         return new Regex(routerPage, "<[^>]*>").count();
     }
 
-    public HashMap<String, String> getHashMap() {
+    public LinkedHashMap<String, String> getHashMap() {
         Class<? extends RInfo> infoc = getClass();
-        HashMap<String, String> ret = new HashMap<String, String>();
+        LinkedHashMap<String, String> ret = new LinkedHashMap<String, String>();
         for (Field field : infoc.getDeclaredFields()) {
             if (!field.getName().equals("setPlaceholder") && !field.getName().equals("serialVersionUID") && !field.getName().equals("id")) {
                 try {

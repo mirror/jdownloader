@@ -17,7 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -44,7 +44,7 @@ public class PaylesssoftsNet extends PluginForDecrypt {
         String[] worker = param.split("=");
         String code = worker[1].substring(0, 3);
         String id = worker[1].substring(3);
-        HashMap<String, String> post = new HashMap<String, String>();
+        LinkedHashMap<String, String> post = new LinkedHashMap<String, String>();
         post.put("code", code);
         post.put("id", id);
         String rsOrMega = new Regex(param, "\\.net\\/(.*?)\\/").getMatch(0);

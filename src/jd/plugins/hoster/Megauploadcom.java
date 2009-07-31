@@ -24,6 +24,7 @@ import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
@@ -285,7 +286,7 @@ public class Megauploadcom extends PluginForHost {
             websiteFileCheck(urls[0]);
             return true;
         }
-        HashMap<String, String> map = new HashMap<String, String>();
+        LinkedHashMap<String, String> map = new LinkedHashMap<String, String>();
         int i = 0;
         String id;
         for (DownloadLink u : urls) {
