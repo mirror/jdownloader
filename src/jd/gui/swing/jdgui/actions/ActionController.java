@@ -79,7 +79,7 @@ public class ActionController {
      */
     public static void initActions() {
 
-        new ToolBarAction("toolbar.separator", null) {
+        new ToolBarAction("toolbar.separator","-") {
             /**
              * 
              */
@@ -365,7 +365,7 @@ public class ActionController {
                 setPriority(900);
                 this.setEnabled(true);
                 this.type = ToolBarAction.Types.TOGGLE;
-                this.setToolTipText(JDL.L("gui.menu.action.clipboard.desc", null));
+                this.setToolTipText(JDL.L("gui.menu.action.clipboard.desc", "-"));
                 setSelected(JDUtilities.getConfiguration().getGenericProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, true));
                 setIcon(isSelected() ? "gui.images.clipboard_enabled" : "gui.images.clipboard_disabled");
             }
@@ -404,7 +404,7 @@ public class ActionController {
                 setPriority(899);
                 this.setEnabled(true);
                 this.type = ToolBarAction.Types.TOGGLE;
-                this.setToolTipText(JDL.L("gui.menu.action.reconnect.desc", null));
+                this.setToolTipText(JDL.L("gui.menu.action.reconnect.desc","-"));
                 setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true));
                 setIcon(isSelected() ? "gui.images.reconnect_enabled" : "gui.images.reconnect_disabled");
             }
