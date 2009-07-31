@@ -2,6 +2,7 @@ package jd.gui.swing.jdgui.views;
 
 import javax.swing.Icon;
 
+import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.interfaces.View;
 import jd.gui.swing.jdgui.views.downloadview.DownloadLinksPanel;
 import jd.gui.swing.jdgui.views.info.DownloadInfoPanel;
@@ -24,8 +25,13 @@ public class DownloadView extends View {
         this.setContent(new DownloadLinksPanel());
         this.setDefaultInfoPanel(new DownloadInfoPanel());
         ViewToolbar toolbar = new ViewToolbar();
-        toolbar.setList(new String[] { "action.downloadview.movetotop", "action.downloadview.movetobottom", "action.downloadview.moveup", "action.downloadview.movedown" });
-        this.setToolBar(toolbar);
+        // toolbar.setHorizontalAlign(ViewToolbar.WEST);
+        // toolbar.setContentPainted(false);
+        // toolbar.setTextPainted(false);
+        // toolbar.setList(new String[] { "action.downloadview.movetotop",
+        // "action.downloadview.movetobottom", "action.downloadview.moveup",
+        // "action.downloadview.movedown" });
+        // this.setToolBar(toolbar);
     }
 
     @Override
@@ -45,11 +51,20 @@ public class DownloadView extends View {
 
     @Override
     protected void onHide() {
-
+        ActionController.getToolBarAction("action.downloadview.movetotop").setEnabled(false);
+        ActionController.getToolBarAction("action.downloadview.moveup").setEnabled(false);
+        ActionController.getToolBarAction("action.downloadview.movedown").setEnabled(false);
+        ActionController.getToolBarAction("action.downloadview.movetobottom").setEnabled(false);
     }
 
     @Override
     protected void onShow() {
+        
+        
+        ActionController.getToolBarAction("action.downloadview.movetotop").setEnabled(true);
+        ActionController.getToolBarAction("action.downloadview.moveup").setEnabled(true);
+        ActionController.getToolBarAction("action.downloadview.movedown").setEnabled(true);
+        ActionController.getToolBarAction("action.downloadview.movetobottom").setEnabled(true);
     }
 
 }

@@ -51,6 +51,7 @@ import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.InfoPanelHandler;
 import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.gui.swing.jdgui.actions.ThreadedAction;
+import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.nutils.JDFlags;
 import jd.nutils.io.JDFileFilter;
@@ -109,6 +110,7 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
         asyncUpdate.setRepeats(false);
         asyncUpdate.restart();
         initActions();
+        MainToolBar.getInstance().updateToolbar();
     }
 
     public void initActions() {
@@ -417,7 +419,8 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
                             JDFileChooser fc = new JDFileChooser();
                             fc.setApproveButtonText(JDL.L("gui.btn_ok", "OK"));
                             fc.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
-                            fc.setCurrentDirectory(selected_packages2.get(0).getDownloadDirectory() != null ? new File(selected_packages2.get(0).getDownloadDirectory()) : JDUtilities.getResourceFile("downloads"));
+                            fc.setCurrentDirectory(selected_packages2.get(0).getDownloadDirectory() != null ? new File(selected_packages2.get(0).getDownloadDirectory()) : JDUtilities
+                                    .getResourceFile("downloads"));
                             if (fc.showOpenDialog(DownloadLinksPanel.this) == JDFileChooser.APPROVE_OPTION) {
                                 File ret = fc.getSelectedFile();
                                 if (ret != null) {
@@ -477,7 +480,12 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
                     final ArrayList<DownloadLink> links = selectedLinks;
                     new Thread() {
                         public void run() {
-                            if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, JDL.L("gui.downloadlist.reset", "Reset selected downloads?") + " (" + JDL.LF("gui.downloadlist.delete.size_packagev2", "%s links", links.size()) + ")"), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
+                            if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(
+                                                                                               0,
+                                                                                               JDL.L("gui.downloadlist.reset", "Reset selected downloads?")
+                                                                                                       + " ("
+                                                                                                       + JDL.LF("gui.downloadlist.delete.size_packagev2", "%s links", links.size())
+                                                                                                       + ")"), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
                                 for (int i = 0; i < links.size(); i++) {
                                     links.get(i).reset();
                                 }
@@ -583,7 +591,12 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
                     }
                     break;
                 case TableAction.DELETE: {
-                    if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, JDL.L("gui.downloadlist.delete", "Ausgewählte Links wirklich entfernen?") + " (" + JDL.LF("gui.downloadlist.delete.size_packagev2", "%s links", selectedLinks.size()) + ")"), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
+                    if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(
+                                                                                       0,
+                                                                                       JDL.L("gui.downloadlist.delete", "Ausgewählte Links wirklich entfernen?")
+                                                                                               + " ("
+                                                                                               + JDL.LF("gui.downloadlist.delete.size_packagev2", "%s links", selectedLinks.size())
+                                                                                               + ")"), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
                         for (int i = 0; i < selectedLinks.size(); i++) {
                             selectedLinks.get(i).setEnabled(false);
                             selectedLinks.get(i).getFilePackage().remove(selectedLinks.get(i));

@@ -156,8 +156,8 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
         keyChart.addEntity(entMissing = new ChartAPIEntity(JDL.L(LOCALE_PREFIX + "keychart.missing", "Missing"), 0, Color.RED));
         keyChart.addEntity(entOld = new ChartAPIEntity(JDL.L(LOCALE_PREFIX + "keychart.old", "Old"), 0, Color.ORANGE));
 
-        this.setLayout(new MigLayout("wrap 3", "[grow, fill]", "[][grow, fill][]"));
-        this.add(buildMenu(), "growx, spanx");
+        this.setLayout(new MigLayout("wrap 3", "[grow, fill]", "[grow, fill][]"));
+      
         this.add(new JScrollPane(table), "grow, spanx");
         this.add(keyChart, "w 225!, h 50!");
 
@@ -196,77 +196,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
         keyChart.fetchImage();
     }
 
-    private JMenuBar buildMenu() {
-
-        // Load Menü
-        mnuLoad = new JMenu(JDL.L(LOCALE_PREFIX + "load", "Load Language"));
-
-        populateLngMenu();
-
-        // File Menü
-        mnuFile = new JMenu(JDL.L(LOCALE_PREFIX + "file", "File"));
-
-        mnuFile.add(mnuLoad);
-        mnuFile.addSeparator();
-        mnuFile.add(mnuSave = new JMenuItem(JDL.L(LOCALE_PREFIX + "save", "Save")));
-        mnuFile.addSeparator();
-        mnuFile.add(mnuReload = new JMenuItem(JDL.L(LOCALE_PREFIX + "reload", "Revert/Reload")));
-
-        mnuReload.addActionListener(this);
-
-        mnuSave.addActionListener(this);
-
-        mnuSave.setEnabled(false);
-
-        mnuSave.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, KeyEvent.CTRL_DOWN_MASK));
-
-        // Key Menü
-        mnuKey = new JMenu(JDL.L(LOCALE_PREFIX + "key", "Key"));
-        mnuKey.setEnabled(false);
-
-        mnuKey.add(mnuAdd = new JMenuItem(JDL.L(LOCALE_PREFIX + "addKey", "Add Key")));
-        mnuKey.add(mnuDelete = new JMenuItem(JDL.L(LOCALE_PREFIX + "deleteKeys", "Delete Key(s)")));
-        mnuKey.add(mnuClear = new JMenuItem(JDL.L(LOCALE_PREFIX + "clearValues", "Clear Value(s)")));
-        mnuKey.addSeparator();
-        mnuKey.add(mnuAdopt = new JMenuItem(JDL.L(LOCALE_PREFIX + "adoptDefaults", "Adopt Default(s)")));
-        mnuKey.add(mnuAdoptMissing = new JMenuItem(JDL.L(LOCALE_PREFIX + "adoptDefaults.missing", "Adopt Defaults of Missing Entries")));
-        mnuKey.addSeparator();
-        mnuKey.add(mnuTranslate = new JMenuItem(JDL.L(LOCALE_PREFIX + "translate", "Translate with Google")));
-        mnuKey.add(mnuTranslateMissing = new JMenuItem(JDL.L(LOCALE_PREFIX + "translate.missing", "Translate Missing Entries with Google")));
-
-        mnuAdd.addActionListener(this);
-        mnuDelete.addActionListener(this);
-        mnuClear.addActionListener(this);
-        mnuAdopt.addActionListener(this);
-        mnuAdoptMissing.addActionListener(this);
-        mnuTranslate.addActionListener(this);
-        mnuTranslateMissing.addActionListener(this);
-
-        mnuDelete.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0));
-
-        // Entries Menü
-        mnuEntries = new JMenu(JDL.L(LOCALE_PREFIX + "entries", "Entries"));
-        mnuEntries.setEnabled(false);
-
-        mnuEntries.add(mnuShowDupes = new JMenuItem(JDL.L(LOCALE_PREFIX + "showDupes", "Show Dupes")));
-        mnuEntries.addSeparator();
-        mnuEntries.add(mnuOpenSearchDialog = new JMenuItem(JDL.L(LOCALE_PREFIX + "openSearchDialog", "Open Search Dialog")));
-
-        mnuShowDupes.addActionListener(this);
-        mnuOpenSearchDialog.addActionListener(this);
-
-        mnuShowDupes.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_D, KeyEvent.CTRL_DOWN_MASK));
-        mnuOpenSearchDialog.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F, KeyEvent.CTRL_DOWN_MASK));
-
-        // Menü-Bar zusammensetzen
-        JMenuBar menuBar = new JMenuBar();
-        menuBar.add(mnuFile);
-        menuBar.add(mnuKey);
-        menuBar.add(mnuEntries);
-
-        return menuBar;
-    }
-
+  
     private void populateLngMenu() {
         new GuiRunnable<Object>() {
 
@@ -1016,6 +946,78 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
     @Override
     public void onHide() {
         saveChanges();
+    }
+
+    public void initMenu(JMenuBar menubar) {
+
+        // Load Menü
+        mnuLoad = new JMenu(JDL.L(LOCALE_PREFIX + "load", "Load Language"));
+
+        populateLngMenu();
+
+        // File Menü
+        mnuFile = new JMenu(JDL.L(LOCALE_PREFIX + "file", "File"));
+
+        mnuFile.add(mnuLoad);
+        mnuFile.addSeparator();
+        mnuFile.add(mnuSave = new JMenuItem(JDL.L(LOCALE_PREFIX + "save", "Save")));
+        mnuFile.addSeparator();
+        mnuFile.add(mnuReload = new JMenuItem(JDL.L(LOCALE_PREFIX + "reload", "Revert/Reload")));
+
+        mnuReload.addActionListener(this);
+
+        mnuSave.addActionListener(this);
+
+        mnuSave.setEnabled(false);
+
+        mnuSave.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, KeyEvent.CTRL_DOWN_MASK));
+
+        // Key Menü
+        mnuKey = new JMenu(JDL.L(LOCALE_PREFIX + "key", "Key"));
+        mnuKey.setEnabled(false);
+
+        mnuKey.add(mnuAdd = new JMenuItem(JDL.L(LOCALE_PREFIX + "addKey", "Add Key")));
+        mnuKey.add(mnuDelete = new JMenuItem(JDL.L(LOCALE_PREFIX + "deleteKeys", "Delete Key(s)")));
+        mnuKey.add(mnuClear = new JMenuItem(JDL.L(LOCALE_PREFIX + "clearValues", "Clear Value(s)")));
+        mnuKey.addSeparator();
+        mnuKey.add(mnuAdopt = new JMenuItem(JDL.L(LOCALE_PREFIX + "adoptDefaults", "Adopt Default(s)")));
+        mnuKey.add(mnuAdoptMissing = new JMenuItem(JDL.L(LOCALE_PREFIX + "adoptDefaults.missing", "Adopt Defaults of Missing Entries")));
+        mnuKey.addSeparator();
+        mnuKey.add(mnuTranslate = new JMenuItem(JDL.L(LOCALE_PREFIX + "translate", "Translate with Google")));
+        mnuKey.add(mnuTranslateMissing = new JMenuItem(JDL.L(LOCALE_PREFIX + "translate.missing", "Translate Missing Entries with Google")));
+
+        mnuAdd.addActionListener(this);
+        mnuDelete.addActionListener(this);
+        mnuClear.addActionListener(this);
+        mnuAdopt.addActionListener(this);
+        mnuAdoptMissing.addActionListener(this);
+        mnuTranslate.addActionListener(this);
+        mnuTranslateMissing.addActionListener(this);
+
+        mnuDelete.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0));
+
+        // Entries Menü
+        mnuEntries = new JMenu(JDL.L(LOCALE_PREFIX + "entries", "Entries"));
+        mnuEntries.setEnabled(false);
+
+        mnuEntries.add(mnuShowDupes = new JMenuItem(JDL.L(LOCALE_PREFIX + "showDupes", "Show Dupes")));
+        mnuEntries.addSeparator();
+        mnuEntries.add(mnuOpenSearchDialog = new JMenuItem(JDL.L(LOCALE_PREFIX + "openSearchDialog", "Open Search Dialog")));
+
+        mnuShowDupes.addActionListener(this);
+        mnuOpenSearchDialog.addActionListener(this);
+
+        mnuShowDupes.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_D, KeyEvent.CTRL_DOWN_MASK));
+        mnuOpenSearchDialog.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F, KeyEvent.CTRL_DOWN_MASK));
+
+        // Menü-Bar zusammensetzen
+      
+        menubar.add(mnuFile);
+        menubar.add(mnuKey);
+        menubar.add(mnuEntries);
+
+    
+        
     }
 
 }

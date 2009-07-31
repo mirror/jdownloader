@@ -8,10 +8,12 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
 import javax.swing.AbstractButton;
+import javax.swing.Action;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
 import javax.swing.JToggleButton;
+import javax.swing.KeyStroke;
 
 import jd.controlling.JDLogger;
 import jd.gui.swing.GuiRunnable;
@@ -58,6 +60,10 @@ public class ViewToolbar extends JPanel implements ActionControllerListener {
     private boolean updateing = false;
 
     private int halign = ViewToolbar.WEST;
+
+    private boolean contentPainted = true;
+
+    private boolean textPainted = true;
 
     public void setList(String[] newlist) {
         if (newlist == current) return;
@@ -153,8 +159,18 @@ public class ViewToolbar extends JPanel implements ActionControllerListener {
                             }
 
                         });
+                        ab.setContentAreaFilled(contentPainted);
                         ab.setFocusPainted(false);
+                        if (action.getValue(Action.MNEMONIC_KEY) != null) {
+                            ab.setToolTipText(action.getTooltipText() + " [Alt+" +new String(new byte[]{((Integer) action.getValue(Action.MNEMONIC_KEY)).byteValue()})+"]");
+                        } else {
+                            ab.setToolTipText(action.getTooltipText());
+                        }
+
                         ab.setIcon(JDTheme.II(action.getValue(ToolBarAction.IMAGE_KEY) + "", 16, 16));
+                        if (!textPainted) {
+                            ab.setText("");
+                        }
                         ab.setToolTipText(action.getTooltipText());
                         ab.setEnabled(action.isEnabled());
                         ab.setSelected(action.isSelected());
@@ -169,7 +185,11 @@ public class ViewToolbar extends JPanel implements ActionControllerListener {
                                 try {
                                     AbstractButton ab = ((AbstractButton) action.getValue(GUIINSTANCE));
                                     // ab.setText("");
-                                    ab.setToolTipText(action.getTooltipText());
+                                    if (action.getValue(Action.MNEMONIC_KEY) != null) {
+                                        ab.setToolTipText(action.getTooltipText() + " [Alt+" + new String(new byte[]{((Integer) action.getValue(Action.MNEMONIC_KEY)).byteValue()}) + "]");
+                                  } else {
+                                        ab.setToolTipText(action.getTooltipText());
+                                    }
                                     ab.setEnabled(action.isEnabled());
                                     ab.setSelected(action.isSelected());
                                 } catch (Throwable w) {
@@ -210,6 +230,7 @@ public class ViewToolbar extends JPanel implements ActionControllerListener {
      * UPdates the toolbar
      */
     protected void updateToolbar() {
+        if (current == null) return;
         new GuiRunnable<Object>() {
             @Override
             public Object runSave() {
@@ -231,7 +252,47 @@ public class ViewToolbar extends JPanel implements ActionControllerListener {
 
     public void setHorizontalAlign(int align) {
         this.halign = align;
+        updateToolbar();
 
+    }
+
+    /**
+     * default:true Sets if the buttons should paint their content
+     * 
+     * @param b
+     */
+    public void setContentPainted(boolean b) {
+        contentPainted = b;
+        updateToolbar();
+
+    }
+
+    /**
+     * default:true returns if the action text is painted in the buttons
+     * 
+     * @return
+     */
+    public boolean isTextPainted() {
+        return textPainted;
+    }
+
+    /**
+     * Sets if the action text gets painted default:true
+     * 
+     * @param textPainted
+     */
+    public void setTextPainted(boolean textPainted) {
+        this.textPainted = textPainted;
+        updateToolbar();
+    }
+
+    /**
+     * returns if the button's content gets painted
+     * 
+     * @return
+     */
+    public boolean isContentPainted() {
+        return contentPainted;
     }
 
 }

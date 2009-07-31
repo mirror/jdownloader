@@ -643,7 +643,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
     public void disposeView(SwitchPanel view) {
         if (view instanceof View) {
             view = mainTabbedPane.getComponentEquals((View) view);
-            mainTabbedPane.remove(view);
+            mainTabbedPane.remove((View)view);
         }
     }
 

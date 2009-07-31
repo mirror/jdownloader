@@ -6,6 +6,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
 import javax.swing.AbstractButton;
+import javax.swing.Action;
 import javax.swing.JButton;
 import javax.swing.JSeparator;
 import javax.swing.JToggleButton;
@@ -26,12 +27,20 @@ public class ToolBar extends JToolBar implements ActionControllerListener {
             "toolbar.control.start",
             "toolbar.control.pause",
             "toolbar.control.stop",
+
+            "toolbar.separator",
+            "action.downloadview.movetotop",
+            "action.downloadview.moveup",
+            "action.downloadview.movedown",
+            "action.downloadview.movetobottom",
             "toolbar.separator",
             "toolbar.quickconfig.clipboardoberserver",
             "toolbar.quickconfig.reconnecttoggle",
+
             "toolbar.separator",
             "toolbar.interaction.reconnect",
-            "toolbar.interaction.update"
+            "toolbar.interaction.update",
+
     };
 
     private static final long serialVersionUID = 7533137014274040205L;
@@ -140,7 +149,13 @@ public class ToolBar extends JToolBar implements ActionControllerListener {
                     if (ab != null) {
                         ab.setText("");
                         ab.setIcon(JDTheme.II(action.getValue(ToolBarAction.IMAGE_KEY) + "", preferredIconSize, preferredIconSize));
-                        ab.setToolTipText(action.getTooltipText());
+
+                        if (action.getValue(Action.MNEMONIC_KEY) != null) {
+                            ab.setToolTipText(action.getTooltipText() + " [Alt+" + new String(new byte[]{((Integer) action.getValue(Action.MNEMONIC_KEY)).byteValue()}) + "]");
+                      } else {
+                            ab.setToolTipText(action.getTooltipText());
+                        }
+
                         ab.setEnabled(action.isEnabled());
                         ab.setSelected(action.isSelected());
 
@@ -154,7 +169,11 @@ public class ToolBar extends JToolBar implements ActionControllerListener {
                                 try {
                                     AbstractButton ab = ((AbstractButton) action.getValue(GUIINSTANCE));
                                     ab.setText("");
-                                    ab.setToolTipText(action.getTooltipText());
+                                    if (action.getValue(Action.MNEMONIC_KEY) != null) {
+                                        ab.setToolTipText(action.getTooltipText() + " [Alt+" + new String(new byte[]{((Integer) action.getValue(Action.MNEMONIC_KEY)).byteValue()}) + "]");
+                                  } else {
+                                        ab.setToolTipText(action.getTooltipText());
+                                    }
                                     ab.setEnabled(action.isEnabled());
                                     ab.setSelected(action.isSelected());
                                 } catch (Throwable w) {
@@ -194,7 +213,7 @@ public class ToolBar extends JToolBar implements ActionControllerListener {
     /**
      * UPdates the toolbar
      */
-    protected void updateToolbar() {
+    public void updateToolbar() {
         new GuiRunnable<Object>() {
             @Override
             public Object runSave() {

@@ -39,6 +39,7 @@ import jd.plugins.PluginOptional;
 public class LangFileEditor extends PluginOptional {
 
     private final SingletonPanel lfe;
+    protected MenuItem activateAction;
 
     public LangFileEditor(PluginWrapper wrapper) {
         super(wrapper);
@@ -61,12 +62,14 @@ public class LangFileEditor extends PluginOptional {
     @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() instanceof MenuItem && ((MenuItem) e.getSource()).getActionID() == 0) {
-            SwingGui.getInstance().setContent(lfe.getPanel());
+            SwingGui.getInstance().setContent(new LFEView(lfe.getPanel(),this));
         }
     }
 
     @Override
     public boolean initAddon() {
+        activateAction=new MenuItem(MenuItem.TOGGLE, "Show", 0).setActionListener(this);
+        activateAction.setSelected(false);
         return true;
     }
 
@@ -78,7 +81,7 @@ public class LangFileEditor extends PluginOptional {
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
 
-        menu.add(new MenuItem(MenuItem.NORMAL, "Show", 0).setActionListener(this));
+        menu.add(activateAction);
 
         return menu;
     }

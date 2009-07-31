@@ -121,7 +121,10 @@ public class MenuItem extends AbstractAction {
 
     public boolean isSelected() {
         Object value = getValue(SELECTED_KEY);
-        if (value == null) return false;
+        if (value == null) {
+            putValue(SELECTED_KEY, false);
+            return false;
+        }
         return (Boolean) value;
 
     }

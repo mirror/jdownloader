@@ -16,6 +16,8 @@ public class JDChatView extends ClosableView {
 
     public JDChatView() {
         super();
+        
+        init();
 
     }
 

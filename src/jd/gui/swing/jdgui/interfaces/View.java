@@ -67,6 +67,8 @@ public abstract class View extends SwitchPanel {
         bottomContent.setVisible(false);
     }
 
+
+ 
     /**
      * Sets the default infopanel
      * 

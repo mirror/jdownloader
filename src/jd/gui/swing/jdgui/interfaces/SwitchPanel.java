@@ -22,6 +22,8 @@ import java.awt.LayoutManager;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 
+import jd.event.JDBroadcaster;
+
 /**
  * a panel which gets informed if it gets displayed or removed from display
  * 
@@ -32,13 +34,35 @@ public abstract class SwitchPanel extends JPanel {
 
     private static final long serialVersionUID = -7856570342778191232L;
     private boolean currentlyVisible = false;
+    private JDBroadcaster<SwitchPanelListener, SwitchPanelEvent> broadcaster;
 
     public SwitchPanel(LayoutManager layout) {
         super(layout);
+        initBroadcaster();
     }
 
     public SwitchPanel() {
         super();
+
+        initBroadcaster();
+    }
+
+    private void initBroadcaster() {
+        broadcaster = new JDBroadcaster<SwitchPanelListener, SwitchPanelEvent>() {
+
+            @Override
+            protected void fireEvent(SwitchPanelListener listener, SwitchPanelEvent event) {
+                listener.onPanelEvent(event);
+            }
+
+        };
+    }
+/**
+ * returns the panels eventbroadcaster
+ * @return
+ */
+    public JDBroadcaster<SwitchPanelListener, SwitchPanelEvent> getBroadcaster() {
+        return broadcaster;
     }
 
     /**
@@ -57,7 +81,7 @@ public abstract class SwitchPanel extends JPanel {
     public void setShown() {
         this.currentlyVisible = true;
         onShow();
-
+        broadcaster.fireEvent(new SwitchPanelEvent(this, SwitchPanelEvent.ON_SHOW));
         distributeView(this);
     }
 
@@ -92,6 +116,7 @@ public abstract class SwitchPanel extends JPanel {
     public void setHidden() {
         this.currentlyVisible = false;
         onHide();
+        broadcaster.fireEvent(new SwitchPanelEvent(this, SwitchPanelEvent.ON_HIDE));
         distributeHide(this);
     }
 

@@ -9,6 +9,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import jd.gui.swing.SwingGui;
+import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
 import jd.gui.swing.jdgui.interfaces.View;
 import jd.gui.swing.jdgui.maintab.ChangeHeader;
 import jd.utils.JDUtilities;
@@ -23,11 +24,20 @@ public class MainTabbedPane extends JTabbedPane {
         return INSTANCE;
     }
 
+    public void remove(Component component) {
+        throw new RuntimeException(" This method is not allowed");
+
+    }
+    public void remove(View view) {
+       super.remove(view);
+       view.getBroadcaster().fireEvent(new SwitchPanelEvent(view,SwitchPanelEvent.ON_REMOVE));
+    }
     // private Boolean extraHighlight;
     protected View latestSelection;
 
     public void addTab(View view) {
         addTab(view, 0);
+       
 
     }
 
@@ -64,6 +74,9 @@ public class MainTabbedPane extends JTabbedPane {
     public void addTab(View view, int flags) {
         SwingGui.checkEDT();
         super.addTab(view.getTitle(), view.getIcon(), view, view.getTooltip());
+        
+ 
+        view.getBroadcaster().fireEvent(new SwitchPanelEvent(view,SwitchPanelEvent.ON_ADD));
         if (JDUtilities.getJavaVersion() >= 1.6) {
             this.setTabComponentAt(this.getTabCount() - 1, new ChangeHeader(view));
         }
@@ -75,12 +88,12 @@ public class MainTabbedPane extends JTabbedPane {
     }
 
     private MainTabbedPane() {
-     
+
         this.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
         this.addChangeListener(new ChangeListener() {
 
             public void stateChanged(ChangeEvent e) {
-               if( SwingGui.getInstance()!=null) SwingGui.getInstance().setWaiting(true);
+                if (SwingGui.getInstance() != null) SwingGui.getInstance().setWaiting(true);
                 try {
                     View comp = (View) getSelectedComponent();
                     if (comp == latestSelection) return;
@@ -91,6 +104,7 @@ public class MainTabbedPane extends JTabbedPane {
                     comp.setShown();
                     revalidate();
                 } catch (Exception e2) {
+                    e2.printStackTrace();
                 }
 
             }
@@ -100,8 +114,9 @@ public class MainTabbedPane extends JTabbedPane {
 
     public void paint(Graphics g) {
         super.paint(g);
-        if( SwingGui.getInstance()!=null)SwingGui.getInstance().setWaiting(false);
+        if (SwingGui.getInstance() != null) SwingGui.getInstance().setWaiting(false);
     }
+
     // /**
     // * inits the ui for special lafs
     // */

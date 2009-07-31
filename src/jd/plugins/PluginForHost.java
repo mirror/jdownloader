@@ -106,7 +106,7 @@ public abstract class PluginForHost extends Plugin {
             try {
                 BufferedImage img = ImageIO.read(file);
                 link.getLinkStatus().setStatusIcon(JDImage.getScaledImageIcon(img, 16, 16));
-            } catch (IOException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
             DownloadController.getInstance().fireDownloadLinkUpdate(link);

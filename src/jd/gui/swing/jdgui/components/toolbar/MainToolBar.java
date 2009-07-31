@@ -30,7 +30,6 @@ public class MainToolBar extends ToolBar implements ControlListener {
     private SpeedMeterPanel speedmeter;
     private static MainToolBar INSTANCE = null;
 
-
     public static synchronized MainToolBar getInstance() {
         if (INSTANCE == null) INSTANCE = new MainToolBar();
         return INSTANCE;
@@ -39,14 +38,12 @@ public class MainToolBar extends ToolBar implements ControlListener {
     private MainToolBar() {
         super();
 
-      
-
         INSTANCE = this;
         JDController.getInstance().addControlListener(this);
     }
 
     private void addSpeedMeter() {
-        if(speedmeter==null) speedmeter = new SpeedMeterPanel();
+        if (speedmeter == null) speedmeter = new SpeedMeterPanel();
         add(speedmeter, "dock east,hidemode 3,height 30!,width 30:200:300");
     }
 
@@ -61,13 +58,13 @@ public class MainToolBar extends ToolBar implements ControlListener {
         }
     }
 
-    protected void updateToolbar() {
+    public void updateToolbar() {
         super.updateToolbar();
-   
+
         new GuiRunnable<Object>() {
             @Override
             public Object runSave() {
-         
+
                 addSpeedMeter();
 
                 return null;
