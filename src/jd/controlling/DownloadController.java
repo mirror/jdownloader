@@ -96,6 +96,8 @@ public class DownloadController implements FilePackageListener, DownloadControll
     public static final byte MOVE_END = 4;
     public static final byte MOVE_TOP = 5;
     public static final byte MOVE_BOTTOM = 6;
+    public static final byte MOVE_UP = 7;
+    public static final byte MOVE_DOWN = 8;
 
     public final static Object ControllerLock = new Object();
 
@@ -594,6 +596,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
         Object src = null;
         FilePackage fp = null;
         if (src2 instanceof ArrayList<?>) {
+            if (((ArrayList<?>) src2).isEmpty()) return;
             Object check = ((ArrayList<?>) src2).get(0);
             if (check == null) {
                 logger.warning("Null src, cannot move!");
@@ -682,6 +685,23 @@ public class DownloadController implements FilePackageListener, DownloadControll
                     if (type) {
                         /* src:FilePackages */
                         switch (mode) {
+                        case MOVE_UP: {
+                            int curpos = 0;
+                            for (FilePackage item : (ArrayList<FilePackage>) src) {
+                                curpos = indexOf(item);
+                                addPackageAt(item, curpos - 1, 0);
+                            }
+                        }
+                            return;
+                        case MOVE_DOWN: {
+                            int curpos = 0;
+                            ArrayList<FilePackage> fps = ((ArrayList<FilePackage>) src);
+                            for (int i = fps.size() - 1; i >= 0; i--) {
+                                curpos = indexOf(fps.get(i));
+                                addPackageAt(fps.get(i), curpos + 2, 0);
+                            }
+                        }
+                            return;
                         case MOVE_TOP:
                             addAllAt((ArrayList<FilePackage>) src, 0);
                             return;
@@ -692,10 +712,74 @@ public class DownloadController implements FilePackageListener, DownloadControll
                             logger.warning("Unsupported mode, cannot move!");
                             return;
                         }
+                    } else {
+                        /* src:DownloadLinks */
+                        switch (mode) {
+                        case MOVE_UP: {
+                            int curpos = 0;
+                            for (DownloadLink item : (ArrayList<DownloadLink>) src) {
+                                curpos = item.getFilePackage().indexOf(item);
+                                item.getFilePackage().add(curpos - 1, item, 0);
+                            }
+                        }
+                            return;
+                        case MOVE_DOWN: {
+                            int curpos = 0;
+                            ArrayList<DownloadLink> links = ((ArrayList<DownloadLink>) src);
+                            for (int i = links.size() - 1; i >= 0; i--) {
+                                curpos = links.get(i).getFilePackage().indexOf(links.get(i));
+                                links.get(i).getFilePackage().add(curpos + 2, links.get(i), 0);
+                            }
+                        }
+                            return;
+                        case MOVE_TOP: {
+                            ArrayList<ArrayList<DownloadLink>> split = splitByFilePackage((ArrayList<DownloadLink>) src);
+                            for (ArrayList<DownloadLink> links : split) {
+                                links.get(0).getFilePackage().addLinksAt(links, 0);
+                            }
+                        }
+                            return;
+                        case MOVE_BOTTOM: {
+                            ArrayList<ArrayList<DownloadLink>> split = splitByFilePackage((ArrayList<DownloadLink>) src);
+                            for (ArrayList<DownloadLink> links : split) {
+                                links.get(0).getFilePackage().addLinksAt(links, links.get(0).getFilePackage().size() + 1);
+                            }
+                        }
+                            return;
+                        default:
+                            logger.warning("Unsupported mode, cannot move!");
+                            return;
+                        }
                     }
                 }
             }
         }
+    }
+
+    public static ArrayList<ArrayList<DownloadLink>> splitByFilePackage(ArrayList<DownloadLink> links) {
+        ArrayList<ArrayList<DownloadLink>> ret = new ArrayList<ArrayList<DownloadLink>>();
+        boolean added = false;
+        for (DownloadLink link : links) {
+            if (ret.size() == 0) {
+                ArrayList<DownloadLink> tmp = new ArrayList<DownloadLink>();
+                tmp.add(link);
+                ret.add(tmp);
+            } else {
+                added = false;
+                for (ArrayList<DownloadLink> check : ret) {
+                    if (link.getFilePackage() == check.get(0).getFilePackage()) {
+                        added = true;
+                        check.add(link);
+                    }
+                }
+                if (added == false) {
+                    ArrayList<DownloadLink> tmp = new ArrayList<DownloadLink>();
+                    tmp.add(link);
+                    ret.add(tmp);
+                }
+            }
+        }
+        return ret;
     }
 
     public void actionPerformed(ActionEvent arg0) {

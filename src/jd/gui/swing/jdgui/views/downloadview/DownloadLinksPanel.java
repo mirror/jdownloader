@@ -41,7 +41,6 @@ import jd.controlling.JDLogger;
 import jd.controlling.LinkCheck;
 import jd.controlling.LinkCheckEvent;
 import jd.controlling.LinkCheckListener;
-import jd.controlling.LinkGrabberController;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
@@ -118,7 +117,7 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
 
             @Override
             public void initDefaults() {
-                this.setToolTipText(JDL.L("gui.downloadview.movetobottom", "Move selected Packages to bottom"));
+                this.setToolTipText(JDL.L("gui.downloadview.movetobottom", "Move to bottom"));
             }
 
             @Override
@@ -126,9 +125,7 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
             }
 
             public void threadedActionPerformed(ActionEvent e) {
-                synchronized (LinkGrabberController.ControllerLock) {
-                    DownloadController.getInstance().move(internalTable.getSelectedFilePackages(), null, DownloadController.MOVE_BOTTOM);
-                }
+                move(DownloadController.MOVE_BOTTOM);
             }
         };
         new ThreadedAction("action.downloadview.movetotop", "gui.images.go_top") {
@@ -136,7 +133,7 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
 
             @Override
             public void initDefaults() {
-                this.setToolTipText(JDL.L("gui.downloadview.movetotop", "Move selected Packages to top"));
+                this.setToolTipText(JDL.L("gui.downloadview.movetotop", "Move to top"));
             }
 
             @Override
@@ -144,11 +141,49 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
             }
 
             public void threadedActionPerformed(ActionEvent e) {
-                synchronized (LinkGrabberController.ControllerLock) {
-                    DownloadController.getInstance().move(internalTable.getSelectedFilePackages(), null, DownloadController.MOVE_TOP);
-                }
+                move(DownloadController.MOVE_TOP);
             }
         };
+
+        new ThreadedAction("action.downloadview.moveup", "gui.images.up") {
+            private static final long serialVersionUID = 6181260839200699153L;
+
+            @Override
+            public void initDefaults() {
+                this.setToolTipText(JDL.L("gui.downloadview.moveup", "Move up"));
+            }
+
+            @Override
+            public void init() {
+            }
+
+            public void threadedActionPerformed(ActionEvent e) {
+                move(DownloadController.MOVE_UP);
+            }
+        };
+        new ThreadedAction("action.downloadview.movedown", "gui.images.down") {
+            private static final long serialVersionUID = 6181260839200699153L;
+
+            @Override
+            public void initDefaults() {
+                this.setToolTipText(JDL.L("gui.downloadview.movedown", "Move down"));
+            }
+
+            @Override
+            public void init() {
+            }
+
+            public void threadedActionPerformed(ActionEvent e) {
+                move(DownloadController.MOVE_DOWN);
+            }
+        };
+    }
+
+    public void move(byte mode) {
+        ArrayList<FilePackage> fps = internalTable.getSelectedFilePackages();
+        ArrayList<DownloadLink> links = internalTable.getSelectedDownloadLinks();
+        if (fps.size() > 0) DownloadController.getInstance().move(fps, null, mode);
+        if (links.size() > 0) DownloadController.getInstance().move(links, null, mode);
     }
 
     public boolean needsViewport() {

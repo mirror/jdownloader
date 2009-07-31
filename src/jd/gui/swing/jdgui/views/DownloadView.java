@@ -24,7 +24,7 @@ public class DownloadView extends View {
         this.setContent(new DownloadLinksPanel());
         this.setDefaultInfoPanel(new DownloadInfoPanel());
         ViewToolbar toolbar = new ViewToolbar();
-        toolbar.setList(new String[] { "action.downloadview.movetotop", "action.downloadview.movetobottom" });
+        toolbar.setList(new String[] { "action.downloadview.movetotop", "action.downloadview.movetobottom", "action.downloadview.moveup", "action.downloadview.movedown" });
         this.setToolBar(toolbar);
     }
 

@@ -2,6 +2,8 @@ package jd.gui.swing.jdgui.actions;
 
 import java.awt.event.ActionEvent;
 
+import jd.controlling.JDLogger;
+
 public abstract class ThreadedAction extends ToolBarAction {
 
     private boolean actionrunning = false;
@@ -31,6 +33,7 @@ public abstract class ThreadedAction extends ToolBarAction {
                 try {
                     threadedActionPerformed(e);
                 } catch (Exception e) {
+                    JDLogger.exception(e);
                 }
                 actionrunning = false;
             }
