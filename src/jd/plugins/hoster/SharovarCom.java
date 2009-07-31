@@ -45,7 +45,7 @@ public class SharovarCom extends PluginForHost {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = Encoding.htmlDecode(br.getRegex("http://sharovar.com/.../<b>(.*?)</b></div>").getMatch(0));
+        String filename = Encoding.htmlDecode(br.getRegex("http://sharovar.com/.*?/<b>(.*?)</b></div>").getMatch(0));
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         link.setName(filename);
         return AvailableStatus.TRUE;
@@ -59,9 +59,9 @@ public class SharovarCom extends PluginForHost {
         if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.submitForm(DLForm);
         String dllink = br.getRegex("Now you can download file</h3><form action=\"(.*)\" method=\"post\" enctype=\"application/").getMatch(0);
-        br.openDownload(downloadLink, dllink, false, 1);
-        {
-            if (!(dl.getConnection().isContentDisposition())) br.followConnection();
+        dl = br.openDownload(downloadLink, dllink, false, 1);
+        if (!(dl.getConnection().isContentDisposition())) {
+            br.followConnection();
             // check ob limit aktiv, falls ja wird auf reconnect gewartet
             if (br.containsHTML("You have reached the download limit")) {
                 int minutes = 0;
@@ -70,10 +70,9 @@ public class SharovarCom extends PluginForHost {
                 int waittime = minutes * 60 * 1001;
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
             }
-            dl.getConnection().disconnect();
+            throw new PluginException(LinkStatus.ERROR_FATAL);
         }
         dl.startDownload();
-
     }
 
     @Override
