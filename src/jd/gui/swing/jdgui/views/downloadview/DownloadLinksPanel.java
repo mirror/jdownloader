@@ -117,7 +117,7 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
 
             @Override
             public void initDefaults() {
-                this.setToolTipText(JDL.L("gui.downloadview.movetobottom", "Move to bottom"));
+                this.setToolTipText(JDL.L("action.downloadview.movetobottom.tooltip", "Move to bottom"));
             }
 
             @Override
@@ -133,7 +133,7 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
 
             @Override
             public void initDefaults() {
-                this.setToolTipText(JDL.L("gui.downloadview.movetotop", "Move to top"));
+                this.setToolTipText(JDL.L("action.downloadview.movetotop.tooltip", "Move to top"));
             }
 
             @Override
@@ -150,7 +150,7 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
 
             @Override
             public void initDefaults() {
-                this.setToolTipText(JDL.L("gui.downloadview.moveup", "Move up"));
+                this.setToolTipText(JDL.L("action.downloadview.moveup.tooltip", "Move up"));
             }
 
             @Override
@@ -166,7 +166,7 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
 
             @Override
             public void initDefaults() {
-                this.setToolTipText(JDL.L("gui.downloadview.movedown", "Move down"));
+                this.setToolTipText(JDL.L("action.downloadview.movedown.tooltip", "Move down"));
             }
 
             @Override
