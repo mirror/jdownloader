@@ -124,7 +124,7 @@ public class Installer {
 
                     protected void packed() {
                         dialog = this;
-                       
+
                         this.setSize(550, 400);
                     }
 
@@ -185,10 +185,9 @@ public class Installer {
                 }
                 if (def == null) def = "en";
                 JDLocale sel = (JDLocale) SubConfiguration.getConfig(JDL.CONFIG).getProperty(JDL.LOCALE_ID, JDL.getInstance(def));
-                
+
                 JDL.setLocale(sel);
-                
-                
+
                 JPanel p = getInstallerPanel();
                 JPanel content = new JPanel(new MigLayout("ins 0,wrap 1", "[grow,fill]"));
                 p.add(content);
@@ -223,12 +222,11 @@ public class Installer {
                 list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
                 if (error) list.setEnabled(false);
 
-              
                 list.setSelectedValue(sel, true);
                 list.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
 
                     public void valueChanged(ListSelectionEvent e) {
-                        JDL.setConfigLocale((JDLocale)list.getSelectedValue());
+                        JDL.setConfigLocale((JDLocale) list.getSelectedValue());
                         JDL.setLocale(JDL.getConfigLocale());
                         SubConfiguration.getConfig(JDL.CONFIG).save();
                         dialog.dispose();
@@ -310,11 +308,11 @@ public class Installer {
         f = f.deriveFont(f.getStyle() ^ Font.BOLD);
 
         lbl.setFont(f);
-        try{
-        c.add(new JLabel(JDImage.getScaledImageIcon(JDImage.getImage("logo/jd_logo_54_54"), 32, 32)), "alignx right");
-       
-        }catch(Exception e){
-            
+        try {
+            c.add(new JLabel(JDImage.getScaledImageIcon(JDImage.getImage("logo/jd_logo_54_54"), 32, 32)), "alignx right");
+
+        } catch (Exception e) {
+
             System.err.println("DEVELOPER WARNING! Please copy trunk/ressourcen/jd  to home/.jd_home/jd");
         }
         // c.add(new JSeparator(), "pushx,growx,gapbottom 5");

@@ -22,16 +22,19 @@ public class OSDetector {
     private static String OS_STRING;
     public static final byte OS_LINUX_OTHER = 6;
     public static final byte OS_MAC_OTHER = 5;
-    public static final byte OS_WINDOWS_2000 = 2;
-    public static final byte OS_WINDOWS_2003 = 7;
-    public static final byte OS_WINDOWS_NT = 3;
     public static final byte OS_WINDOWS_OTHER = 4;
-    public static final byte OS_WINDOWS_VISTA = 1;
+    public static final byte OS_WINDOWS_NT = 3;
+    public static final byte OS_WINDOWS_2000 = 2;
     public static final byte OS_WINDOWS_XP = 0;
+    public static final byte OS_WINDOWS_2003 = 7;
+    public static final byte OS_WINDOWS_VISTA = 1;
+    public static final byte OS_WINDOWS_7 = 8;
 
     private static void getOS() {
         String OS = getOSString().toLowerCase();
-        if (OS.indexOf("windows xp") > -1) {
+        if (OS.indexOf("windows 7") > 1) {
+            OS_ID = OS_WINDOWS_7;
+        } else if (OS.indexOf("windows xp") > -1) {
             OS_ID = OS_WINDOWS_XP;
         } else if (OS.indexOf("windows vista") > -1) {
             OS_ID = OS_WINDOWS_VISTA;
@@ -56,7 +59,6 @@ public class OSDetector {
             OSDetector.getOS();
         }
         return OS_ID;
-
     }
 
     public static boolean isLinux() {
@@ -86,6 +88,7 @@ public class OSDetector {
         case OS_WINDOWS_2003:
         case OS_WINDOWS_NT:
         case OS_WINDOWS_OTHER:
+        case OS_WINDOWS_7:
             return true;
         }
         return false;
@@ -135,12 +138,10 @@ public class OSDetector {
     public static String getOSString() {
         if (OS_STRING == null) OS_STRING = System.getProperty("os.name");
         return OS_STRING;
-
     }
 
     public static void setOSString(String property) {
         OS_STRING = property;
-
     }
 
 }

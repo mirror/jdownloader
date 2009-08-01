@@ -39,7 +39,8 @@ import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-@OptionalPlugin(rev="$Revision$", id="shutdown",interfaceversion=4)
+
+@OptionalPlugin(rev = "$Revision$", id = "shutdown", interfaceversion = 4)
 public class JDShutdown extends PluginOptional {
 
     private static final int count = 60;
@@ -47,7 +48,6 @@ public class JDShutdown extends PluginOptional {
     private static final String CONFIG_HIBERNATE = "HIBERNATE";
     private static final String CONFIG_FORCESHUTDOWN = "FORCE";
     private static Thread shutdown = null;
-
 
     private MenuItem menuItem;
 
@@ -193,14 +193,15 @@ public class JDShutdown extends PluginOptional {
             UserIO.setCountdownTime(count);
             int ret = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, JDL.L("interaction.shutdown.dialog.title", "Shutdown"), message, UserIO.getInstance().getIcon(UserIO.ICON_WARNING), null, null);
             UserIO.setCountdownTime(null);
-            logger.info("Return code: "+ret);
-            if (JDFlags.hasSomeFlags(ret, UserIO.RETURN_OK,UserIO.RETURN_COUNTDOWN_TIMEOUT)) {
+            logger.info("Return code: " + ret);
+            if (JDFlags.hasSomeFlags(ret, UserIO.RETURN_OK, UserIO.RETURN_COUNTDOWN_TIMEOUT)) {
                 logger.info("Prepare Shutdown");
                 JDUtilities.getController().prepareShutdown();
                 switch (OSDetector.getOSID()) {
                 case OSDetector.OS_WINDOWS_2003:
                 case OSDetector.OS_WINDOWS_VISTA:
                 case OSDetector.OS_WINDOWS_XP:
+                case OSDetector.OS_WINDOWS_7:
                     shutDownWin();
                     break;
                 case OSDetector.OS_WINDOWS_2000:
