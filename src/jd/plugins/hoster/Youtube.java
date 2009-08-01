@@ -35,6 +35,8 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "http://[\\w\\.]*?youtube\\.com/get_video\\?video_id=.+&t=.+(&fmt=\\d+)?" }, flags = { 2 })
 public class Youtube extends PluginForHost {
 
+    private static final Object lock = new Object();
+
     public Youtube(PluginWrapper wrapper) {
         super(wrapper);
         enablePremium("http://www.youtube.com/login?next=/index");
@@ -47,7 +49,8 @@ public class Youtube extends PluginForHost {
 
     // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException {
-        downloadLink.setFinalFileName(downloadLink.getStringProperty("finalname", "video.tmp"));
+        downloadLink.setFinalFileName(downloadLink.getStringProperty("name", "video.tmp"));
+        downloadLink.setDownloadSize((Long) downloadLink.getProperty("size", new Long(0)));
         // br.setFollowRedirects(true);
         // URLConnectionAdapter tmp =
         // br.openGetConnection(downloadLink.getDownloadURL());
@@ -89,8 +92,10 @@ public class Youtube extends PluginForHost {
 
     // @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        login(account);
-        dl = br.openDownload(downloadLink, downloadLink.getDownloadURL());
+        synchronized (lock) {
+            login(account);
+            dl = br.openDownload(downloadLink, downloadLink.getDownloadURL());
+        }
         if (dl.startDownload()) {
             if (downloadLink.getProperty("convertto") != null) {
                 ConversionMode convertto = ConversionMode.valueOf(downloadLink.getProperty("convertto").toString());
@@ -120,7 +125,7 @@ public class Youtube extends PluginForHost {
     }
 
     private void login(Account account) throws Exception {
-        this.setBrowserExclusive();        
+        this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage("http://www.youtube.com/");
         br.getPage("https://www.google.com/accounts/ServiceLogin?uilel=3&service=youtube&passive=true&continue=http%3A%2F%2Fwww.youtube.com%2Fsignup%3Fnomobiletemp%3D1%26hl%3Den_US%26next%3D%252F&hl=en_US&ltmpl=sso");
@@ -150,8 +155,8 @@ public class Youtube extends PluginForHost {
     }
 
     // @Override
-    public void resetDownloadlink(DownloadLink link) {
-        // TODO Auto-generated method stub
-
+    public void resetDownloadlink(DownloadLink downloadLink) {
+        downloadLink.setFinalFileName(downloadLink.getStringProperty("name", "video.tmp"));
+        downloadLink.setDownloadSize((Long) downloadLink.getProperty("size", new Long(0)));
     }
 }

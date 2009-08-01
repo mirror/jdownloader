@@ -220,7 +220,7 @@ public class JDController implements ControlListener {
      * @param listener
      *            Ein neuer Listener
      */
-    public synchronized void addControlListener(ControlListener listener) {
+    public void addControlListener(ControlListener listener) {
         if (listener == null) throw new NullPointerException();
         synchronized (controlListener) {
             synchronized (removeList) {

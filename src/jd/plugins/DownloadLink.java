@@ -685,7 +685,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
                 }
             }
         }
-        if (getPlugin() != null) getPlugin().resetDownloadlink(this);
+        
         // downloadMax = 0;
         priority = 0;
         chunksProgress = null;
@@ -707,6 +707,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         }
         finalFileName = null;
         getPlugin().resetHosterWaitTime();
+        if (getPlugin() != null) getPlugin().resetDownloadlink(this);
     }
 
     /**

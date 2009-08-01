@@ -53,7 +53,7 @@ public class ConvertDialog extends JFrame {
             this.ext = ext;
         }
 
-        //@Override
+        // @Override
         public String toString() {
             return text;
         }
@@ -91,9 +91,7 @@ public class ConvertDialog extends JFrame {
             ConvertDialog.keepformat = false;
             ConvertDialog.setForceKeep(false);
             ConvertDialog.keeped_availablemodes = new ArrayList<ConversionMode>();
-            ;
             ConvertDialog.keeped = new ArrayList<ConversionMode>();
-            ;
         } else {
             ConvertDialog.keepformat = true;
         }
@@ -123,6 +121,10 @@ public class ConvertDialog extends JFrame {
         }
     }
 
+    public static ArrayList<ConversionMode> getKeeped() {
+        return ConvertDialog.keeped;
+    }
+
     /**
      * Zeigt Auswahldialog an. wenn keepformat aktiviert ist wird gespeichtertes
      * Input zurückgegeben, es sei denn, andere Formate stehen zur Auswahl
@@ -133,7 +135,7 @@ public class ConvertDialog extends JFrame {
         if (displaymodes.size() == 1) // Bei einer einzigen Auswahl
         { return displaymodes.get(0); } // diese zurückgeben
         GuiRunnable<ConversionMode> run = new GuiRunnable<ConversionMode>() {
-            //@Override
+            // @Override
             public ConversionMode runSave() {
                 if (ConvertDialog.keepformat) {
                     boolean newFormatChoosable = false;
