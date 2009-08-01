@@ -507,6 +507,7 @@ public class JDInit {
         new DecryptPluginWrapper("deezer.com", "DeezerCom", "http://[\\w\\.]*?deezer.com/.*?music/.+", PluginWrapper.DEBUG_ONLY);
         new DecryptPluginWrapper("file2upload.net", "File2UploadNetFolder", "http://[\\w\\.]*?file2upload\\.(net|com)/folder/[A-Z|0-9]+/");
         new DecryptPluginWrapper("filestube.com", "FileStubeCom", "http://[\\w\\.]*?filestube\\.com/.+");
+        new DecryptPluginWrapper("mp3zr.com", "Mp3ZrCom", "http://[\\w\\.]*?mp3zr\\.com/file/[0-9a-zA-z]+/.+");
 
         // Decrypter from Extern
 
