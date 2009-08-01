@@ -32,7 +32,7 @@ public class OSDetector {
 
     private static void getOS() {
         String OS = getOSString().toLowerCase();
-        if (OS.indexOf("windows 7") > 1) {
+        if (OS.indexOf("windows 7") > -1) {
             OS_ID = OS_WINDOWS_7;
         } else if (OS.indexOf("windows xp") > -1) {
             OS_ID = OS_WINDOWS_XP;
