@@ -104,7 +104,7 @@ public class IFileIt extends PluginForHost {
 
     // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return 5;
     }
 
     // @Override
