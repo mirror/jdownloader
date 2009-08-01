@@ -19,8 +19,6 @@ package jd.gui.swing.jdgui.views.linkgrabberview;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.InputEvent;
-import java.awt.event.KeyEvent;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -29,11 +27,9 @@ import java.util.Set;
 import java.util.logging.Logger;
 
 import javax.swing.AbstractButton;
-import javax.swing.Action;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenuItem;
 import javax.swing.JScrollPane;
-import javax.swing.KeyStroke;
 import javax.swing.Timer;
 
 import jd.config.Configuration;
@@ -147,9 +143,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         toolbar.setHorizontalAlign(ViewToolbar.EAST);
         // toolbar.setBorder(JDBorderFactory.createInsideShadowBorder(3, 0, 0,
         // 0));
-        toolbar.setList(new String[] {
-                "action.linkgrabber.clearlist", "action.linkgrabber.addall"
-        });
+        toolbar.setList(new String[] { "action.linkgrabber.clearlist", "action.linkgrabber.addall" });
         this.add(toolbar, "gapbottom 3,DOCK SOUTH");
     }
 
@@ -291,8 +285,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         addinginprogress = true;
         new Thread() {
             public void run() {
-                Balloon.showIfHidden(JDL.L("gui.config.gui.linkgrabber", "LinkGrabber"), JDTheme.II("gui.images.add", 32, 32), JDL.LF("gui.linkgrabber.adding", "Adding %s link(s) to LinkGrabber", ""
-                        + linkList.size()));
+                Balloon.showIfHidden(JDL.L("gui.config.gui.linkgrabber", "LinkGrabber"), JDTheme.II("gui.images.add", 32, 32), JDL.LF("gui.linkgrabber.adding", "Adding %s link(s) to LinkGrabber", "" + linkList.size()));
                 for (DownloadLink element : linkList) {
                     if (LGINSTANCE.isDupe(element)) continue;
                     addToWaitingList(element);
@@ -387,9 +380,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                 for (LinkGrabberFilePackage fp : fps) {
                     links += fp.getDownloadLinks().size();
                 }
-                Balloon.showIfHidden(JDL.L("gui.config.gui.linkgrabber", "LinkGrabber"), JDTheme.II("gui.images.add", 32, 32), JDL.LF("gui.linkgrabber.finished",
-                                                                                                                                      "Grabbed %s link(s) in %s Package(s)", "" + links, ""
-                                                                                                                                              + fps.size()));
+                Balloon.showIfHidden(JDL.L("gui.config.gui.linkgrabber", "LinkGrabber"), JDTheme.II("gui.images.add", 32, 32), JDL.LF("gui.linkgrabber.finished", "Grabbed %s link(s) in %s Package(s)", "" + links, "" + fps.size()));
                 fps = null;
             }
         };
@@ -727,9 +718,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
 
     private void addToDownloadDirs(String downloadDirectory, String packageName) {
         if (packageName.length() < 5 || downloadDirectory.equalsIgnoreCase(JDUtilities.getConfiguration().getDefaultDownloadDirectory())) return;
-        getDownloadDirList().add(new String[] {
-                downloadDirectory, packageName
-        });
+        getDownloadDirList().add(new String[] { downloadDirectory, packageName });
         GUIUtils.getConfig().save();
     }
 
@@ -865,10 +854,8 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                 ab.setContentAreaFilled(false);
                 ab.setText("");
             } else {
-                ab.getAction().putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, InputEvent.CTRL_DOWN_MASK));
-               
-                confirmButton=ab;
-             
+
+                confirmButton = ab;
 
             }
         }

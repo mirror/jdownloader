@@ -103,7 +103,7 @@ public class SrcParser {
         File cachePattern = JDUtilities.getResourceFile("tmp/lfe/cache/" + JDHash.getMD5(currentContent) + ".pattern");
         ArrayList<LngEntry> fileEntries = new ArrayList<LngEntry>();
         ArrayList<String> filePattern = new ArrayList<String>();
-        if (cacheEntries.exists() && cachePattern.exists()) {
+        if (false && cacheEntries.exists() && cachePattern.exists()) {
 
             try {
                 fileEntries = (ArrayList<LngEntry>) JDIO.loadObject(null, cacheEntries, false);
@@ -136,9 +136,8 @@ public class SrcParser {
         prepareContent();
         currentContent = Pattern.compile("\\/\\*(.*?)\\*\\/", Pattern.DOTALL).matcher(currentContent).replaceAll("[[/*.....*/]]");
         currentContent = Pattern.compile("[^:]//(.*?)[\n|\r]", Pattern.DOTALL).matcher(currentContent).replaceAll("[[\\.....]]");
-       
-        
-        currentContent= Pattern.compile("JDL\\s*?\\.\\s*?L",Pattern.DOTALL).matcher(currentContent).replaceAll("JDL.L");
+
+        currentContent = Pattern.compile("JDL\\s*?\\.\\s*?L", Pattern.DOTALL).matcher(currentContent).replaceAll("JDL.L");
         String[] matches = new Regex(currentContent, "([^;^{^}]*JDL\\.LF?\\s*?\\(.*?\\)[^;^{^}]*)").getColumn(0);
 
         for (String match : matches) {
@@ -159,17 +158,20 @@ public class SrcParser {
     }
 
     private void prepareContent() {
-        
+
         String cl = this.currentFile.getAbsolutePath();
-        cl=cl.replace("\\", "/");
-        cl=cl.substring(cl.indexOf("/jd/")+1).replace('/', '.');
-        cl=cl.replace(".java", "");
-        currentContent=currentContent.replace("this.getClass().getName()","\""+cl+"\"");
-        currentContent=currentContent.replace("getClass().getName()","\""+cl+"\"");
-        String simple = cl.substring(cl.lastIndexOf(".")+1);
-        currentContent=currentContent.replace("this.getClass().getSimpleName()","\""+simple+"\"");  
-        currentContent=currentContent.replace("getClass().getSimpleName()","\""+simple+"\""); 
-        currentContent=currentContent.replace("\"+\"",""); 
+        cl = cl.replace("\\", "/");
+        cl = cl.substring(cl.indexOf("/jd/") + 1).replace('/', '.');
+        cl = cl.replace(".java", "");
+        currentContent = currentContent.replace("this.getClass().getName()", "\"" + cl + "\"");
+        currentContent = currentContent.replace("getClass().getName()", "\"" + cl + "\"");
+        String simple = cl.substring(cl.lastIndexOf(".") + 1);
+        currentContent = currentContent.replace("this.getClass().getSimpleName()", "\"" + simple + "\"");
+        currentContent = currentContent.replace("getClass().getSimpleName()", "\"" + simple + "\"");
+        currentContent = currentContent.replace("\"+\"", "");
+        if (this.currentFile.getAbsolutePath().toLowerCase().contains("actioncontroll")) {
+            System.out.println("I");
+        }
         if (this.currentContent.contains("jd.gui.swing.jdgui.menu.actions;")) {
             String menukey = new Regex(currentContent, "super\\(\"(.*?)\",\\s*\".*?\"\\);").getMatch(0);
             if (menukey != null) {
@@ -178,33 +180,37 @@ public class SrcParser {
                 currentContent += "\r\nJDL.L(\"gui.menu." + menukey + ".mnem\",\"-\");";
                 currentContent += "\r\nJDL.L(\"gui.menu." + menukey + ".accel\",\"-\");";
             }
-        } else if (this.currentContent.contains("jd.gui.swing.jdgui.menu;")) {
+        }
+        if (this.currentContent.contains("jd.gui.swing.jdgui.menu;")) {
             String menukey = new Regex(currentContent, "super\\(\"(.*?)\",\\s*\".*?\"\\);").getMatch(0);
             currentContent = currentContent.replaceFirst("super\\(\"(.*?)\",\\s*\".*?\"\\);", "[[...]]");
             currentContent += "\r\nJDL.L(\"" + menukey + "\",\"" + menukey + "\");";
 
-        } else if (this.currentContent.contains(" ThreadedAction")) {
-            String[] keys = new Regex(currentContent, "ThreadedAction\\s*\\(\"(.*?)\"\\,\\s*\"(.*?)\"").getColumn(0);
-
-            for (String k : keys) {
-                currentContent += "\r\nJDL.L(\"" + "gui.menu." + k + ".name" + "\",\"" + "gui.menu." + k + ".name" + "\");";
-                currentContent += "\r\nJDL.L(\"" + "gui.menu." + k + ".mnem" + "\",\"" + "gui.menu." + k + ".mnem" + "\");";
-                currentContent += "\r\nJDL.L(\"" + "gui.menu." + k + ".accel" + "\",\"" + "-" + "\");";
-            }
-
-        } else if (this.currentContent.contains(" ToolBarAction")) {
-            String[] keys = new Regex(currentContent, "ToolBarAction\\s*\\(\"(.*?)\"\\,\\s*\"(.*?)\"").getColumn(0);
-
-            for (String k : keys) {
-                currentContent += "\r\nJDL.L(\"" + "gui.menu." + k + ".name" + "\",\"" + "gui.menu." + k + ".name" + "\");";
-                currentContent += "\r\nJDL.L(\"" + "gui.menu." + k + ".mnem" + "\",\"" + "gui.menu." + k + ".mnem" + "\");";
-                currentContent += "\r\nJDL.L(\"" + "gui.menu." + k + ".accel" + "\",\"" + "-" + "\");";
-            }
-        } else if (this.currentContent.contains("extends PluginOptional")) {
-            currentContent += "\r\nJDL.L(\"" + cl + "\",\"" + simple + "\");";
-            
         }
-        //JDL.L(this.getClass().getName()
+        if (this.currentContent.contains(" ThreadedAction")) {
+            String[] keys = new Regex(currentContent, " ThreadedAction\\s*\\(\"(.*?)\"\\,\\s*\"(.*?)\"").getColumn(0);
+
+            for (String k : keys) {
+                currentContent += "\r\nJDL.L(\"" + "gui.menu." + k + ".name" + "\",\"" + "gui.menu." + k + ".name" + "\");";
+                currentContent += "\r\nJDL.L(\"" + "gui.menu." + k + ".mnem" + "\",\"" + "gui.menu." + k + ".mnem" + "\");";
+                currentContent += "\r\nJDL.L(\"" + "gui.menu." + k + ".accel" + "\",\"" + "-" + "\");";
+            }
+
+        }
+        if (this.currentContent.contains(" ToolBarAction")) {
+            String[] keys = new Regex(currentContent, " ToolBarAction\\s*\\(\"(.*?)\"\\,\\s*\"(.*?)\"").getColumn(0);
+
+            for (String k : keys) {
+                currentContent += "\r\nJDL.L(\"" + "gui.menu." + k + ".name" + "\",\"" + "gui.menu." + k + ".name" + "\");";
+                currentContent += "\r\nJDL.L(\"" + "gui.menu." + k + ".mnem" + "\",\"" + "gui.menu." + k + ".mnem" + "\");";
+                currentContent += "\r\nJDL.L(\"" + "gui.menu." + k + ".accel" + "\",\"" + "-" + "\");";
+            }
+        }
+        if (this.currentContent.contains("extends PluginOptional")) {
+            currentContent += "\r\nJDL.L(\"" + cl + "\",\"" + simple + "\");";
+
+        }
+        // JDL.L(this.getClass().getName()
 
     }
 
@@ -241,13 +247,13 @@ public class SrcParser {
     private void parseCodeLine(String match, ArrayList<LngEntry> fileEntries, ArrayList<String> filePattern) {
         String[] calls = match.split("JDL\\.");
         String pat_string = "\"(.*?)(?<!\\\\)\"";
-if(match.contains("plugins.host.rapidshare.errors")){
-    match=match;
-}
+        if (match.contains("plugins.host.rapidshare.errors")) {
+            match = match;
+        }
         LngEntry entry;
         String m;
         main: for (String orgm : calls) {
-           
+
             m = orgm;
             m = m.trim();
             if (m.startsWith("L")) {
@@ -260,33 +266,34 @@ if(match.contains("plugins.host.rapidshare.errors")){
 
                 m = m.replace(" ", "");
                 orgm = m;
-//                m = new Regex(m, "\\((.*?\\,.*?)[\\)\\,]").getMatch(0);
-                try{
-                   
-                    int com1=m.indexOf(",");
-                    int end = m.indexOf(")",com1+1);
+                // m = new Regex(m, "\\((.*?\\,.*?)[\\)\\,]").getMatch(0);
+                try {
+
+                    int com1 = m.indexOf(",");
+                    int end = m.indexOf(")", com1 + 1);
                     int com2;
-                    com2= m.indexOf(",",com1+1);
-                    if(com2>0&&com2<end)end=com2;
-                    if(end<0){
-                        m=m.substring(m.indexOf("(")+1).trim();
-                    }else{
-                        m=m.substring(m.indexOf("(")+1,end).trim(); 
+                    com2 = m.indexOf(",", com1 + 1);
+                    if (com2 > 0 && com2 < end) end = com2;
+                    if (end < 0) {
+                        m = m.substring(m.indexOf("(") + 1).trim();
+                    } else {
+                        m = m.substring(m.indexOf("(") + 1, end).trim();
                     }
-           
-                }catch(Exception e){
+
+                } catch (Exception e) {
                     e.printStackTrace();
-                    
+
                 }
-                while(m.charAt(m.length()-1)==',')m=m.substring(0,m.length()-1);
-                if (m == null||m.length()==0) {
+                while (m.charAt(m.length() - 1) == ',')
+                    m = m.substring(0, m.length() - 1);
+                if (m == null || m.length() == 0) {
                     // JDLogger.getLogger().severe("unknown: " + orgm);
                     continue;
                 }
-              m=m.replace("%%%+%%%", "%%%%%%");
+                m = m.replace("%%%+%%%", "%%%%%%");
                 String[] parameter = m.split(",");
 
-                if (orgm.startsWith("LF ")||orgm.startsWith("LF(")) {
+                if (orgm.startsWith("LF ") || orgm.startsWith("LF(")) {
 
                     if (orgm.substring(2).trim().charAt(0) != '(') {
 
@@ -359,15 +366,7 @@ if(match.contains("plugins.host.rapidshare.errors")){
 
                         int index = parameter[0].indexOf(error);
                         if (index >= 0) {
-                            JDLogger.getLogger().warning(
-                                                         "Unsupported chars ("
-                                                                 + parameter[0].substring(0, index)
-                                                                 + "<< |"
-                                                                 + parameter[0].substring(index + 1)
-                                                                 + ") in key:"
-                                                                 + currentFile
-                                                                 + " : "
-                                                                 + parameter[0]);
+                            JDLogger.getLogger().warning("Unsupported chars (" + parameter[0].substring(0, index) + "<< |" + parameter[0].substring(index + 1) + ") in key:" + currentFile + " : " + parameter[0]);
 
                         } else {
                             JDLogger.getLogger().warning("Unsupported chars in key: " + currentFile + " : " + parameter[0]);
@@ -392,7 +391,7 @@ if(match.contains("plugins.host.rapidshare.errors")){
                     if (!fileEntries.contains(entry)) {
                         fileEntries.add(entry);
                     }
-                } else if (orgm.startsWith("L ")||orgm.startsWith("L(")) {
+                } else if (orgm.startsWith("L ") || orgm.startsWith("L(")) {
 
                     if (orgm.substring(1).trim().charAt(0) != '(') {
 
@@ -413,7 +412,7 @@ if(match.contains("plugins.host.rapidshare.errors")){
                     /*
                      * merge expressions
                      */
-                   
+
                     while (parameter[0].contains("+")) {
                         try {
                             String[][] matches = new Regex(parameter[0], "(\\+([^%]+)\\+?)").getMatches();
@@ -429,7 +428,6 @@ if(match.contains("plugins.host.rapidshare.errors")){
 
                                 }
                             }
-                           
 
                         } catch (Exception e) {
                             e.printStackTrace();
@@ -455,7 +453,7 @@ if(match.contains("plugins.host.rapidshare.errors")){
                         }
 
                     }
-                    
+
                     for (int x = 0; x < parameter.length; x++) {
 
                         while (parameter[x].contains("%%%S%%%")) {
@@ -470,15 +468,7 @@ if(match.contains("plugins.host.rapidshare.errors")){
 
                         int index = parameter[0].indexOf(error);
                         if (index >= 0) {
-                            JDLogger.getLogger().warning(
-                                                         "Unsupported chars ("
-                                                                 + parameter[0].substring(0, index)
-                                                                 + "<< |"
-                                                                 + parameter[0].substring(index + 1)
-                                                                 + ") in key:"
-                                                                 + currentFile
-                                                                 + " : "
-                                                                 + parameter[0]);
+                            JDLogger.getLogger().warning("Unsupported chars (" + parameter[0].substring(0, index) + "<< |" + parameter[0].substring(index + 1) + ") in key:" + currentFile + " : " + parameter[0]);
 
                         } else {
                             JDLogger.getLogger().warning("Unsupported chars in key: " + currentFile + " : " + parameter[0]);

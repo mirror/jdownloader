@@ -20,15 +20,20 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.HierarchyEvent;
+import java.awt.event.HierarchyListener;
 import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
 
+import javax.swing.AbstractAction;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JRootPane;
+import javax.swing.KeyStroke;
+import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
 
 import jd.config.SubConfiguration;
@@ -97,35 +102,15 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
             }
 
         }
+
         this.setModal(true);
 
         this.setLayout(new MigLayout("ins 5", "[fill,grow]", "[fill,grow][]"));
 
         this.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         btnOK = new JButton(this.okOption);
+        JButton focus = btnOK;
 
-//        btnOK.addKeyListener(new KeyListener() {
-//
-//            
-//            public void keyPressed(KeyEvent e) {
-//                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-//                    btnOK.doClick();
-//                }
-//            }
-//
-//     
-//            public void keyReleased(KeyEvent e) {
-//              
-//
-//            }
-//
-//       
-//            public void keyTyped(KeyEvent e) {
-//                
-//
-//            }
-//
-//        });
         btnOK.addActionListener(this);
         btnCancel = new JButton(this.cancelOption);
         btnCancel.addActionListener(this);
@@ -150,7 +135,19 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
 
             // this.getRootPane().setDefaultButton(btnOK);
             getRootPane().setDefaultButton(btnOK);
-            btnOK.requestFocusInWindow();
+
+            btnOK.addHierarchyListener(new HierarchyListener() {
+                public void hierarchyChanged(HierarchyEvent e) {
+                    if ((e.getChangeFlags() & HierarchyEvent.PARENT_CHANGED) != 0) {
+                        JButton defaultButton = (JButton) e.getComponent();
+                        JRootPane root = SwingUtilities.getRootPane(defaultButton);
+                        if (root != null) {
+                            root.setDefaultButton(defaultButton);
+                        }
+                    }
+                }
+            });
+            focus = btnOK;
             add(btnOK, "alignx right");
         }
         if ((flag & UserIO.NO_CANCEL_OPTION) == 0) {
@@ -159,6 +156,7 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
             if ((flag & UserIO.NO_OK_OPTION) != 0) {
                 this.getRootPane().setDefaultButton(btnCancel);
                 btnCancel.requestFocusInWindow();
+                focus = btnCancel;
             }
         }
         this.setMinimumSize(new Dimension(300, -1));
@@ -174,7 +172,7 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
         this.pack();
         this.setResizable(true);
 
-        this.packed();
+      
         this.toFront();
         this.setMinimumSize(this.getPreferredSize());
         if (DEFAULT_DIMENSION != null) this.setSize(DEFAULT_DIMENSION);
@@ -186,9 +184,19 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
             this.setLocation(Screen.getCenterOfComponent(SwingGui.getInstance().getMainFrame(), this));
         }
 
+        KeyStroke ks = KeyStroke.getKeyStroke("ESCAPE");
+        focus.getInputMap().put(ks, "ESCAPE");
+        focus.getInputMap(JButton.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(ks, "ESCAPE");
+        focus.getInputMap(JButton.WHEN_IN_FOCUSED_WINDOW).put(ks, "ESCAPE");
+        focus.getActionMap().put("ESCAPE", new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
+                dispose();
+            }
+        });
+      
+       focus.requestFocus();
+       this.packed();
         this.setVisible(true);
-
-        this.pack();
 
     }
 

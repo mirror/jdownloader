@@ -81,8 +81,10 @@ public abstract class ToolBarAction extends AbstractAction {
     public abstract void init();
 
     public void setIcon(String key) {
-        putValue(IMAGE_KEY, key);
+        if (key.length() < 3) return;
         putValue(AbstractAction.SMALL_ICON, JDTheme.II(key, 24, 24));
+        putValue(IMAGE_KEY, key);
+
     }
 
     /**
