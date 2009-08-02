@@ -15,6 +15,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
@@ -40,11 +41,16 @@ public class CobraShareSk extends PluginForHost {
         return "http://www.cobrashare.sk/index.php?sid=2";
     }
 
+    public void correctDownloadLink(DownloadLink downloadLink) throws MalformedURLException {
+        if (downloadLink.getDownloadURL().contains("www.cobrashare.sk:38080")) {
+            downloadLink.setUrlDownload("http://www.cobrashare.sk/downloadFile.php?id=" + downloadLink.getDownloadURL().split("\\?id=")[1]);
+        }
+    }
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
-        br.setFollowRedirects(false);
         if (br.containsHTML("Poadovaný súbor sa na serveri nenachádza")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         String filename = Encoding.htmlDecode(br.getRegex("File name :&nbsp;</td>.*?<td class=\"data\">(.*?)</td>").getMatch(0));
