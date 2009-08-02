@@ -45,7 +45,7 @@ public class FileGuRu extends PluginForHost {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
         int retry = 0;
-        while (br.containsHTML("Ð­ÑÐ¾Ñ ÑÐ°Ð¹Ð» Ð·Ð°ÑÐ¸ÑÐµÐ½ Ð¿Ð°ÑÐ¾Ð»ÐµÐ¼. ÐÐ»Ñ ÑÐ¾Ð³Ð¾ ÑÑÐ¾Ð±Ñ ÐµÐ³Ð¾ ÑÐºÐ°ÑÐ°ÑÑ, ÐÐ°Ð¼ Ð¿Ð¾ÑÑÐµÐ±ÑÐµÑÑÑ Ð²Ð²ÐµÑÑÐ¸ Ð¿Ð°ÑÐ¾Ð»Ñ, ÑÐºÐ°Ð·Ð°Ð½Ð½ÑÐ¹ Ð¿ÑÐ¸ Ð·Ð°ÐºÐ°ÑÐºÐµ")) {
+        while (br.getForm(1).hasInputFieldByName("pass")) {
             String passCode = Plugin.getUserInput("Password?", link);
             br.getPage(link.getDownloadURL() + "?pass=" + passCode);
             if (retry >= 2) throw new PluginException(LinkStatus.ERROR_FATAL, "Wrong Password!");
