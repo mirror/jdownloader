@@ -101,7 +101,7 @@ public class UploadcellCom extends PluginForHost {
 
     // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 2;
+        return 20;
     }
 
     // @Override
