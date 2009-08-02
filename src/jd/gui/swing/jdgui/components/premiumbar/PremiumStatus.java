@@ -204,11 +204,11 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
                         bars[i].setVisible(false);
                     }
                     for (HostPluginWrapper wrapper : hosterplugins) {
-                        PluginForHost plugin = wrapper.getPlugin();
                         String host = wrapper.getHost();
                         if (wrapper.isLoaded() && wrapper.usePlugin()) {
                             ArrayList<Account> accs = AccountController.getInstance().getAllAccounts(host);
                             if (accs.size() > 0) {
+                                PluginForHost plugin = wrapper.getPlugin();
                                 long max = 0l;
                                 long left = 0l;
                                 long workingaccs = 0;

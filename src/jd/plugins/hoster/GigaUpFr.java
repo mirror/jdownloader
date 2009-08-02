@@ -51,9 +51,9 @@ public class GigaUpFr extends PluginForHost {
         if (br.containsHTML("Le fichier a été désigné illégal")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         String filename = Encoding.htmlDecode(br.getRegex("<td>Nom :</td>.*?<td>(.*?)</td>").getMatch(0));
-        String filesize = (br.getRegex("<td>Taille :</td>.*?<td>(.*?)</td>").getMatch(0));
+        String filesize = (br.getRegex("<td>Taille :</td>.*?<td>(.*?).</td>").getMatch(0));
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-
+        filesize = filesize + "b";
         link.setName(filename);
         link.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -71,10 +71,7 @@ public class GigaUpFr extends PluginForHost {
         br.submitForm(captchaForm);
         if (br.containsHTML("Le code de vÃ©rification entrÃ© est incorrecte")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
         String dllink = (br.getRegex("link_generator\"><center><a href=\"(.*?)\">Commencer le tÃ©lÃ©chargement").getMatch(0));
-        DownloadLink dl = new DownloadLink(null, null, "ftp", Encoding.urlDecode(dllink, true), true);
-        JDUtilities.getPluginForHost("ftp").handleFree(dl);
-//        dl = br.openDownload(downloadLink, dllink, false, 1);
-//        dl.startDownload();
+        ((Ftp) JDUtilities.getPluginForHost("ftp")).download(Encoding.urlDecode(dllink, true), downloadLink);
     }
 
     @Override

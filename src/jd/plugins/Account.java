@@ -31,11 +31,13 @@ public class Account extends Property {
 
     private transient boolean tempDisabled = false;
     private transient long tmpDisabledTime = 0;
+    private transient String hoster = null;
     private AccountInfo accinfo = null;
 
     public Account(String user, String pass) {
         this.user = user;
         this.pass = pass;
+        this.hoster = null;
         this.setTmpDisabledIntervalv3(10 * 60 * 1000l);
         if (this.user != null) this.user = this.user.trim();
         if (this.pass != null) this.pass = this.pass.trim();
@@ -44,6 +46,14 @@ public class Account extends Property {
     public String getPass() {
         if (pass != null) return pass.trim();
         return null;
+    }
+
+    public String getHoster() {
+        return hoster;
+    }
+
+    public void setHoster(String h) {
+        hoster = h;
     }
 
     public AccountInfo getAccountInfo() {
@@ -72,6 +82,7 @@ public class Account extends Property {
         stream.defaultReadObject();
         tmpDisabledIntervalv3 = 10 * 60 * 1000l;
         tempDisabled = false;
+        hoster = null;
         tmpDisabledTime = 0;
     }
 

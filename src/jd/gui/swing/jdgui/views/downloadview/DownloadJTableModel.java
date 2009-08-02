@@ -13,11 +13,11 @@ import jd.utils.locale.JDL;
 public class DownloadJTableModel extends AbstractTableModel {
 
     private static final long serialVersionUID = 1L;
-    public static final int COL_PART = 0;
-    public static final int COL_HOSTER = 1;
-    public static final int COL_STATUS = 2;
-    public static final int COL_STATUS_DETAILS = 3;
-    public static final int COL_PROGRESS = 4;
+    public static final byte COL_PART = 0;
+    public static final byte COL_HOSTER = 1;
+    public static final byte COL_STATUS = 2;
+    public static final byte COL_STATUS_DETAILS = 3;
+    public static final byte COL_PROGRESS = 4;
 
     protected static final String[] COLUMN_NAMES = { JDL.L("gui.treetable.header_1.tree", "F"), JDL.L("gui.treetable.header_3.hoster", "Anbieter"), JDL.L("gui.treetable.header_4.status", "Status"), JDL.L("jd.gui.swing.jdgui.views.downloadview.DownloadJTableModel.extendedstatus.status", "Details"), JDL.L("gui.treetable.header_5.progress", "Fortschritt") };
 

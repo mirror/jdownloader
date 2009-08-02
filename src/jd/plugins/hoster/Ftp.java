@@ -73,11 +73,14 @@ public class Ftp extends PluginForHost {
 
     // @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
+        download(downloadLink.getDownloadURL(), downloadLink);
+    }
 
+    public void download(String ftpurl, final DownloadLink downloadLink) throws IOException, PluginException {
         SimpleFTP ftp = new SimpleFTP();
         try {
             if (new File(downloadLink.getFileOutput()).exists()) throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
-            URL url = new URL(downloadLink.getDownloadURL());
+            URL url = new URL(ftpurl);
             ftp.connect(url);
             ftp.cwd(url.getPath().substring(0, url.getPath().lastIndexOf("/")));
 

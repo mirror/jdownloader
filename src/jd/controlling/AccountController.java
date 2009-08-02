@@ -206,9 +206,13 @@ public class AccountController extends SubConfiguration implements ActionListene
      * return hostername if account is under controll of AccountController
      */
     public String getHosterName(Account account) {
+        if (account.getHoster() != null) return account.getHoster();
         synchronized (hosteraccounts) {
             for (String host : hosteraccounts.keySet()) {
-                if (hosteraccounts.get(host).contains(account)) return host;
+                if (hosteraccounts.get(host).contains(account)) {
+                    account.setHoster(host);
+                    return host;
+                }
             }
         }
         return null;

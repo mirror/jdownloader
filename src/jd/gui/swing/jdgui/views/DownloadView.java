@@ -23,14 +23,6 @@ public class DownloadView extends View {
         super();
         this.setContent(new DownloadLinksPanel());
         this.setDefaultInfoPanel(new DownloadInfoPanel());
-        // ViewToolbar toolbar = new ViewToolbar();
-        // toolbar.setHorizontalAlign(ViewToolbar.WEST);
-        // toolbar.setContentPainted(false);
-        // toolbar.setTextPainted(false);
-        // toolbar.setList(new String[] { "action.downloadview.movetotop",
-        // "action.downloadview.movetobottom", "action.downloadview.moveup",
-        // "action.downloadview.movedown" });
-        // this.setToolBar(toolbar);
     }
 
     @Override

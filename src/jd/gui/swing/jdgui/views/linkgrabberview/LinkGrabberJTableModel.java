@@ -13,10 +13,10 @@ import jd.utils.locale.JDL;
 public class LinkGrabberJTableModel extends AbstractTableModel {
 
     private static final long serialVersionUID = 896882146491584908L;
-    public static final int COL_PACK_FILE = 0;
-    public static final int COL_SIZE = 1;
-    public static final int COL_HOSTER = 2;
-    public static final int COL_STATUS = 3;
+    public static final byte COL_PACK_FILE = 0;
+    public static final byte COL_SIZE = 1;
+    public static final byte COL_HOSTER = 2;
+    public static final byte COL_STATUS = 3;
 
     private static final String[] COLUMN_NAMES = { JDL.L("gui.linkgrabber.header.packagesfiles", "Pakete/Dateien"), JDL.L("gui.treetable.header.size", "Größe"), JDL.L("gui.treetable.header_3.hoster", "Anbieter"), JDL.L("gui.treetable.header_4.status", "Status") };
     private ArrayList<Object> addlist = new ArrayList<Object>();

@@ -15,11 +15,13 @@ public abstract class UserIF {
     public static void setInstance(UserIF instance) {
         INSTANCE = instance;
     }
-/** 
- * An Abstract panelrepresentation used in requestPanel(Panels.*,Parameter
- * @author Coalado
- *
- */
+
+    /**
+     * An Abstract panelrepresentation used in requestPanel(Panels.*,Parameter
+     * 
+     * @author Coalado
+     * 
+     */
     public static enum Panels {
         /**
          * REepresents the downloadlist view*
@@ -29,12 +31,18 @@ public abstract class UserIF {
          * Represents the linkgrabber view
          * 
          */
-        LINKGRABBER, 
+        LINKGRABBER,
         /**
-         * Represents a configview. Parameter is the Subconfiguration or Property instance/ConfigContainer
+         * Represents a configview. Parameter is the Subconfiguration or
+         * Property instance/ConfigContainer
          * 
          */
-        CONFIGPANEL
+        CONFIGPANEL,
+        /**
+         * Represents a premiumview
+         * 
+         */
+        PREMIUMPANEL
     };
 
     /**
