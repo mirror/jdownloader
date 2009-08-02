@@ -69,7 +69,7 @@ public class AddGui extends JPanel implements ActionListener, ChangeListener, Do
         
         JPanel date = new JPanel();
         date.setLayout(new MigLayout("ins 5, wrap 2", "[fill, grow]10[fill, grow]"));
-        date.setBorder(BorderFactory.createLineBorder(Color.black));
+        date.setBorder(BorderFactory.createLineBorder(getBackground().darker()));
         
         date.add(new JLabel(JDL.L("plugin.optional.scheduler.add.name", "Name")));
         
@@ -170,7 +170,7 @@ public class AddGui extends JPanel implements ActionListener, ChangeListener, Do
         
         JPanel actions = new JPanel();
         actions.setLayout(new MigLayout("ins 5, wrap 2", "[fill, grow]10[fill, grow]"));
-        actions.setBorder(BorderFactory.createLineBorder(Color.black));
+        actions.setBorder(BorderFactory.createLineBorder(getBackground().darker()));
         
         String[] list = new String[Schedule.getInstance().getModules().size()];
         for(int i = 0; i < Schedule.getInstance().getModules().size(); i++) {

@@ -39,6 +39,7 @@ public abstract class JDAction extends AbstractAction {
     public JDAction(String title, int actionID) {
         super(title);
         this.actionID = actionID;
+
     }
 
     /**
@@ -50,6 +51,7 @@ public abstract class JDAction extends AbstractAction {
      */
     public JDAction(String l, ImageIcon ii) {
         super(l, ii);
+
     }
 
     /**
@@ -60,6 +62,7 @@ public abstract class JDAction extends AbstractAction {
 
     public JDAction(String l) {
         this(l, -1);
+
     }
 
     // public String getAccelerator() {

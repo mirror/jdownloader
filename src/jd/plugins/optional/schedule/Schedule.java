@@ -23,11 +23,8 @@ import java.util.Calendar;
 import java.util.Date;
 
 import jd.PluginWrapper;
-
 import jd.config.MenuAction;
-
 import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.SingletonPanel;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
 import jd.plugins.optional.schedule.modules.SchedulerModuleInterface;
@@ -35,68 +32,68 @@ import jd.plugins.optional.schedule.modules.SetSpeed;
 import jd.plugins.optional.schedule.modules.StartDownloads;
 import jd.plugins.optional.schedule.modules.StopDownloads;
 
-@OptionalPlugin(rev="$Revision$", id="scheduler",interfaceversion=4)
+@OptionalPlugin(rev = "$Revision$", id = "scheduler", interfaceversion = 4)
 public class Schedule extends PluginOptional {
     private static Schedule instance;
-    
+
     private ArrayList<Actions> actions;
-    
+
     private ArrayList<SchedulerModuleInterface> modules;
 
-	private SingletonPanel sched;
+    private SimpleDateFormat time;
 
-	private SimpleDateFormat time;
+    private SimpleDateFormat date;
 
-	private SimpleDateFormat date;
+    private SchedulerView view;
 
     public Schedule(PluginWrapper wrapper) {
         super(wrapper);
-        sched = new SingletonPanel(MainGui.class, this.getPluginConfig());
+
         instance = this;
-        
+
         actions = this.getPluginConfig().getGenericProperty("Scheduler_Actions", new ArrayList<Actions>());
-        if(actions == null) {
+        if (actions == null) {
             actions = new ArrayList<Actions>();
             save();
         }
-        
+
         initModules();
-        
+
         time = new SimpleDateFormat("HH:mm");
         date = new SimpleDateFormat("dd.MM.yyyy");
-        
+
         new Schedulercheck().start();
     }
-    
+
     protected void save() {
-    	this.getPluginConfig().setProperty("Scheduler_Actions", actions);
+        this.getPluginConfig().setProperty("Scheduler_Actions", actions);
         this.getPluginConfig().save();
     }
-    
+
     private void initModules() {
         modules = new ArrayList<SchedulerModuleInterface>();
         modules.add(new StartDownloads());
         modules.add(new StopDownloads());
         modules.add(new SetSpeed());
     }
-    
+
     public ArrayList<SchedulerModuleInterface> getModules() {
         return modules;
     }
-    
+
     public static Schedule getInstance() {
         return instance;
     }
-    
+
     public ArrayList<Actions> getActions() {
         return actions;
     }
-    
+
     public void removeAction(int row) {
         actions.remove(row);
         save();
     }
-    
+
     public void addAction(Actions act) {
         actions.add(act);
         this.getPluginConfig().setProperty("Scheduler_Actions", actions);
@@ -110,10 +107,15 @@ public class Schedule extends PluginOptional {
     @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() instanceof MenuAction && ((MenuAction) e.getSource()).getActionID() == 0) {
-        	JDGui.getInstance().setContent(sched.getPanel());
+
+            if (view == null) {
+                view = new SchedulerView();
+                view.setContent(new MainGui(getPluginConfig()));
+            }
+            JDGui.getInstance().setContent(view);
         }
     }
-    
+
     public ArrayList<MenuAction> createMenuitems() {
         ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
         menu.add(new MenuAction(getHost(), 0).setActionListener(this));
@@ -126,46 +128,47 @@ public class Schedule extends PluginOptional {
 
     public boolean initAddon() {
         logger.info("Schedule OK");
+
         return true;
     }
 
     public void onExit() {
     }
-    
+
     public class Schedulercheck extends Thread {
         private Date today;
-        
+
         public Schedulercheck() {
-        	super("Schedulercheck");
+            super("Schedulercheck");
         }
 
-		public void run() {
+        public void run() {
             while (true) {
-            	logger.finest("Checking scheduler");
+                logger.finest("Checking scheduler");
                 today = new Date(System.currentTimeMillis());
                 String todaydate = date.format(today);
                 String todaytime = time.format(today);
-                
-                for(Actions a : actions) {
-                	if(a.isEnabled() && todaydate.equals(date.format(a.getDate())) && todaytime.equals(time.format(a.getDate()))) {
-            			for(Executions e : a.getExecutions()) {
-            				e.exceute();
-            			}
-            			
-            			Calendar newrepeat = Calendar.getInstance();
-            			newrepeat.setTime(a.getDate());
-            			newrepeat.add(Calendar.MINUTE, a.getRepeat());
-            			
-            			a.setDate(newrepeat.getTime());
-            			
-            			save();
-                	}
+
+                for (Actions a : actions) {
+                    if (a.isEnabled() && todaydate.equals(date.format(a.getDate())) && todaytime.equals(time.format(a.getDate()))) {
+                        for (Executions e : a.getExecutions()) {
+                            e.exceute();
+                        }
+
+                        Calendar newrepeat = Calendar.getInstance();
+                        newrepeat.setTime(a.getDate());
+                        newrepeat.add(Calendar.MINUTE, a.getRepeat());
+
+                        a.setDate(newrepeat.getTime());
+
+                        save();
+                    }
                 }
-                
-                
+
                 try {
                     Thread.sleep(60000);
-                } catch (InterruptedException e) {}
+                } catch (InterruptedException e) {
+                }
             }
         };
     }
