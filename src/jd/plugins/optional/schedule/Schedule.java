@@ -16,233 +16,155 @@
 
 package jd.plugins.optional.schedule;
 
-import java.awt.BorderLayout;
-import java.awt.Dimension;
-import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Vector;
-
-import javax.swing.BorderFactory;
-import javax.swing.JButton;
-import javax.swing.JComboBox;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.SwingUtilities;
-import javax.swing.Timer;
+import java.util.Calendar;
+import java.util.Date;
 
 import jd.PluginWrapper;
 import jd.config.MenuItem;
-import jd.gui.swing.SwingGui;
-import jd.gui.swing.jdgui.interfaces.SwitchPanel;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.SingletonPanel;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
-import jd.utils.locale.JDL;
-import net.miginfocom.swing.MigLayout;
+import jd.plugins.optional.schedule.modules.SchedulerModuleInterface;
+import jd.plugins.optional.schedule.modules.SetSpeed;
+import jd.plugins.optional.schedule.modules.StartDownloads;
+import jd.plugins.optional.schedule.modules.StopDownloads;
+
 @OptionalPlugin(rev="$Revision$", id="scheduler",interfaceversion=4)
 public class Schedule extends PluginOptional {
+    private static Schedule instance;
+    
+    private ArrayList<Actions> actions;
+    
+    private ArrayList<SchedulerModuleInterface> modules;
 
-    private static final String PROPERTY_SCHEDULES = "PROPERTY_SCHEDULES_V2";
+	private SingletonPanel sched;
 
-    private JPanel panel;
-    private JPanel aPanel;
-    private JPanel menu;
+	private SimpleDateFormat time;
 
-    private JComboBox list;
-    private JButton add;
-    private JButton remove;
-    private JButton show;
-
-    private Timer status;
-
-    private Vector<String> listData = new Vector<String>();
-    private Vector<ScheduleFrame> schedules = null;
-
-    private SwitchPanel tabbedPanel;
+	private SimpleDateFormat date;
 
     public Schedule(PluginWrapper wrapper) {
         super(wrapper);
+        sched = new SingletonPanel(MainGui.class, this.getPluginConfig());
+        instance = this;
+        
+        actions = this.getPluginConfig().getGenericProperty("Scheduler_Actions", new ArrayList<Actions>());
+        if(actions == null) {
+            actions = new ArrayList<Actions>();
+            save();
+        }
+        
+        initModules();
+        
+        time = new SimpleDateFormat("HH:mm");
+        date = new SimpleDateFormat("dd.MM.yyyy");
+        
+        new Schedulercheck().start();
+    }
+    
+    protected void save() {
+    	this.getPluginConfig().setProperty("Scheduler_Actions", actions);
+        this.getPluginConfig().save();
+    }
+    
+    private void initModules() {
+        modules = new ArrayList<SchedulerModuleInterface>();
+        modules.add(new StartDownloads());
+        modules.add(new StopDownloads());
+        modules.add(new SetSpeed());
+    }
+    
+    public ArrayList<SchedulerModuleInterface> getModules() {
+        return modules;
+    }
+    
+    public static Schedule getInstance() {
+        return instance;
+    }
+    
+    public ArrayList<Actions> getActions() {
+        return actions;
+    }
+    
+    public void removeAction(int row) {
+        actions.remove(row);
+        save();
+    }
+    
+    public void addAction(Actions act) {
+        actions.add(act);
+        this.getPluginConfig().setProperty("Scheduler_Actions", actions);
+        this.getPluginConfig().save();
     }
 
-    // @Override
     public String getIconKey() {
         return "gui.images.config.eventmanager";
     }
 
-    private void initGUI() {
-        if (tabbedPanel != null) return;
-
-        Vector<ScheduleFrameSettings> scheduleSettings = getPluginConfig().getGenericProperty(PROPERTY_SCHEDULES, new Vector<ScheduleFrameSettings>());
-        schedules = new Vector<ScheduleFrame>();
-        for (ScheduleFrameSettings scheduleSetting : scheduleSettings) {
-            schedules.add(new ScheduleFrame(scheduleSetting));
-        }
-        logger.finer("Scheduler: restored " + schedules.size() + " schedules");
-        reloadList();
-
-        tabbedPanel = new SwitchPanel() {
-
-            private static final long serialVersionUID = 4758934444244058336L;
-
-            // @Override
-            public void onShow() {
-            }
-
-            // @Override
-            public void onHide() {
-                Vector<ScheduleFrameSettings> scheduleSettings = new Vector<ScheduleFrameSettings>();
-                for (ScheduleFrame schedule : schedules) {
-                    scheduleSettings.add(schedule.getSettings());
-                }
-                getPluginConfig().setProperty(PROPERTY_SCHEDULES, scheduleSettings);
-                getPluginConfig().save();
-
-                status.stop();
-            }
-
-        };
-
-        Dimension size = new Dimension(150, 20);
-        list = new JComboBox(listData);
-        list.addActionListener(this);
-        list.setMinimumSize(size);
-        list.setPreferredSize(size);
-        list.setMaximumSize(size);
-
-        show = new JButton(JDL.L("addons.schedule.menu.edit", "Edit"));
-        show.addActionListener(this);
-        show.setEnabled(schedules.size() > 0);
-
-        add = new JButton(JDL.L("addons.schedule.menu.add", "Add"));
-        add.addActionListener(this);
-
-        remove = new JButton(JDL.L("addons.schedule.menu.remove", "Remove"));
-        remove.addActionListener(this);
-        remove.setEnabled(schedules.size() > 0);
-
-        JPanel buttons = new JPanel(new GridLayout(1, 3, 5, 5));
-        buttons.add(show);
-        buttons.add(add);
-        buttons.add(remove);
-
-        menu = new JPanel(new BorderLayout(5, 5));
-        menu.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-        menu.add(list, BorderLayout.CENTER);
-        menu.add(buttons, BorderLayout.EAST);
-
-        aPanel = new JPanel(new BorderLayout(0, 0));
-
-        panel = new JPanel(new BorderLayout(5, 5));
-        panel.add(menu, BorderLayout.NORTH);
-        panel.add(aPanel, BorderLayout.CENTER);
-
-        tabbedPanel.setLayout(new MigLayout("ins 0, wrap 1", "[fill,grow]", "[fill,grow]"));
-        tabbedPanel.add(panel);
-        status = new Timer(1 * 1000, this);
-        status.setInitialDelay(1000);
-        status.start();
-
-    }
-
-    // @Override
+    @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() instanceof MenuItem && ((MenuItem) e.getSource()).getActionID() == 0) {
-            initGUI();
-            SwingGui.getInstance().setContent(tabbedPanel);
-        } else if (e.getSource() == add) {
-            schedules.add(new ScheduleFrame(new ScheduleFrameSettings(JDL.L("addons.schedule.menu.schedule", "Schedule") + " " + (schedules.size() + 1), true)));
-            reloadList();
-            list.setSelectedIndex(schedules.size() - 1);
-            SwingUtilities.updateComponentTreeUI(aPanel);
-        } else if (e.getSource() == remove) {
-            schedules.remove(list.getSelectedIndex());
-            reloadList();
-            list.setSelectedIndex(Math.max(0, schedules.size() - 1));
-            setCenterPanel(null);
-            renameLabels();
-            SwingUtilities.updateComponentTreeUI(aPanel);
-        } else if (e.getSource() == show) {
-            if (show.getText().equals(JDL.L("addons.schedule.menu.edit", "Edit"))) {
-                show.setText(JDL.L("addons.schedule.menu.close", "Close"));
-                setCenterPanel(schedules.get(list.getSelectedIndex()));
-                status.stop();
-                changeControls(false);
-            } else {
-                show.setText(JDL.L("addons.schedule.menu.edit", "Edit"));
-                setCenterPanel(null);
-                status.start();
-                changeControls(true);
-            }
-            SwingUtilities.updateComponentTreeUI(aPanel);
-        } else if (e.getSource() == status) {
-            int size = schedules.size();
-
-            JPanel infoPanel = new JPanel(new GridLayout(size, 1, 10, 10));
-            for (int i = 0; i < size; ++i) {
-                ScheduleFrame s = schedules.get(i);
-                infoPanel.add(new JLabel(JDL.L("addons.schedule.menu.schedule", "Schedule") + " " + (i + 1) + " " + JDL.L("addons.schedule.menu.status", "Status") + ": " + s.getStatusLabel().getText()));
-            }
-            setCenterPanel(infoPanel);
-            SwingUtilities.updateComponentTreeUI(aPanel);
-        } else if (e.getSource() == list) {
-            show.setEnabled(schedules.size() > 0);
-            remove.setEnabled(schedules.size() > 0);
+        	JDGui.getInstance().setContent(sched.getPanel());
         }
     }
-
-    private void changeControls(boolean b) {
-        add.setEnabled(b);
-        remove.setEnabled(b);
-        list.setEnabled(b);
-    }
-
-    private void reloadList() {
-        listData.clear();
-        int size = schedules.size();
-
-        if (size == 0) {
-            listData.add(JDL.L("addons.schedule.menu.create", "Create"));
-        } else {
-            for (int i = 1; i <= size; ++i) {
-                listData.add(JDL.L("addons.schedule.menu.schedule", "Schedule") + " " + i);
-            }
-        }
-    }
-
-    private void renameLabels() {
-        for (int i = 0; i < schedules.size(); ++i) {
-            schedules.get(i).getLabel().setText(listData.get(i));
-        }
-    }
-
-    private void setCenterPanel(final JPanel newPanel) {
-        aPanel.removeAll();
-        if (newPanel != null) aPanel.add(newPanel, BorderLayout.CENTER);
-    }
-
- 
-
-    // @Override
+    
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
         menu.add(new MenuItem(getHost(), 0).setActionListener(this));
         return menu;
     }
 
-    // @Override
     public String getCoder() {
-        return "JD-Team / Tudels";
+        return "JD-Team ";
     }
 
-
-    // @Override
     public boolean initAddon() {
         logger.info("Schedule OK");
         return true;
     }
 
-    // @Override
     public void onExit() {
     }
+    
+    public class Schedulercheck extends Thread {
+        private Date today;
+        
+        public Schedulercheck() {
+        	super("Schedulercheck");
+        }
 
+		public void run() {
+            while (true) {
+            	logger.finest("Checking scheduler");
+                today = new Date(System.currentTimeMillis());
+                String todaydate = date.format(today);
+                String todaytime = time.format(today);
+                
+                for(Actions a : actions) {
+                	if(a.isEnabled() && todaydate.equals(date.format(a.getDate())) && todaytime.equals(time.format(a.getDate()))) {
+            			for(Executions e : a.getExecutions()) {
+            				e.exceute();
+            			}
+            			
+            			Calendar newrepeat = Calendar.getInstance();
+            			newrepeat.setTime(a.getDate());
+            			newrepeat.add(Calendar.MINUTE, a.getRepeat());
+            			
+            			a.setDate(newrepeat.getTime());
+            			
+            			save();
+                	}
+                }
+                
+                
+                try {
+                    Thread.sleep(60000);
+                } catch (InterruptedException e) {}
+            }
+        };
+    }
 }
