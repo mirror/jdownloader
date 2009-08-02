@@ -81,7 +81,7 @@ public class MidUploadCom extends PluginForHost {
         if (br.containsHTML("Datei nicht gefunden")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<h2>Datei herunterladen (.*?)</h2>").getMatch(0);
         String filesize = br.getRegex("Sie haben angefordert <font color=\"red\">.*</font> \\((.*?)\\)</font>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         parameter.setName(filename.trim());
         parameter.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
         return AvailableStatus.TRUE;

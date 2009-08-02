@@ -75,7 +75,7 @@ public class FileRackCom extends PluginForHost {
         br.getPage(parameter.getDownloadURL());
         String filename = br.getRegex("<h2>Download File (.*?)</h2>").getMatch(0);
         String filesize = br.getRegex("You have requested <i>http://www.file-rack.com/files/[0-9A-Za-z]+/(.*?)</i> <b>(.*?) </b><small>.*</font>").getMatch(1);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         parameter.setName(filename.trim());
         parameter.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
         return AvailableStatus.TRUE;

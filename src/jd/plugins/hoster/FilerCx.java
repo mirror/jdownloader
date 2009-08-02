@@ -65,7 +65,7 @@ public class FilerCx extends PluginForHost {
         br.getPage(parameter.getDownloadURL());
         String filename = br.getRegex(Pattern.compile("<b>File name:</b></td>.*<td align=left width=150px>(.*?)</td>", Pattern.DOTALL)).getMatch(0);
         String filesize = br.getRegex(Pattern.compile("<td align=left><b>File size:</b></td>.*<td align=left>(.*?)</td>.*<td align=left><b>Downloads:</b>", Pattern.DOTALL)).getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         parameter.setName(filename.trim());
         parameter.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
         return AvailableStatus.TRUE;

@@ -66,7 +66,7 @@ public class MilleDriveCom extends PluginForHost {
             filesize = br.getRegex("\\|\\s+<span style=[^>]*>(.*?)</span>").getMatch(0);
         }
         // System.out.println(filename+" "+filesize);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
         return AvailableStatus.TRUE;

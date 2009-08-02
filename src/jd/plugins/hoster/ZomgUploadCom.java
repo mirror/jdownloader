@@ -104,7 +104,7 @@ public class ZomgUploadCom extends PluginForHost {
         br.submitForm(forms[0]);
         String filename = br.getRegex("<tr><td align=right><b>Filename:</b></td><td nowrap>(.*?)</b></td></tr>").getMatch(0);
         String filesize = br.getRegex("<tr><td align=right><b>Size:</b></td><td>(.*?)<small>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         parameter.setName(filename.trim());
         parameter.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
         return AvailableStatus.TRUE;

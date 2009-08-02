@@ -119,7 +119,7 @@ public class BiggeruploadCom extends PluginForHost {
         if (br.containsHTML("(No such file)|(No such user)|(Datei nicht gefunden)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = Encoding.htmlDecode(br.getRegex("You\\shave\\srequested\\s<font\\scolor=\"red\">http://[\\w\\.]*?biggerupload\\.com/[a-z0-9]+/(.*?)</font>").getMatch(0));
         String filesize = br.getRegex("</font>\\s\\((.*?)\\)</font>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename);
         downloadLink.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;

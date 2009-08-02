@@ -70,7 +70,7 @@ public class UgotFileCom extends PluginForHost {
         if (br.containsHTML("has been deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<td>Filename:</td>\\s+<td>(.*?)</td>").getMatch(0);
         String filesize = br.getRegex("<td>Filesize:</td>\\s+<td>(.*?)</td>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         parameter.setName(filename.trim());
         parameter.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
         return AvailableStatus.TRUE;

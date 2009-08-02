@@ -76,7 +76,7 @@ public class DumpRo extends PluginForHost {
         Pattern.compile("REGEXP", Pattern.DOTALL);
         String filename = br.getRegex(Pattern.compile("<td width=\"30%\" align=\"left\"><b>Nume fisier:</b></td>.*<td width=\"70%\" align=\"left\">(.*?)</td>", Pattern.DOTALL)).getMatch(0);
         String filesize = br.getRegex(Pattern.compile("<td width=\"30%\" align=\"left\"><b>Marime:</b></td>.*<td align=\"left\">(.*?)</td>.*</tr>.*<tr>.*<td width=\"30%\" align=\"left\"><b>Tip:</b></td>", Pattern.DOTALL)).getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         parameter.setName(filename.trim());
         parameter.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
         return AvailableStatus.TRUE;

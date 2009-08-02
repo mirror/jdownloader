@@ -70,7 +70,7 @@ public class FileGuRu extends PluginForHost {
         if (br.toString().contains("http://filegu.ru/error:ERR_NO_ID")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<h1>Ð¡ÐºÐ°ÑÐ°ÑÑ ÑÐ°Ð¹Ð» <span class=\"bordeux\">(.*?)</span></h1>").getMatch(0);
         String filesize = br.getRegex("<dd><label>Ð Ð°Ð·Ð¼ÐµÑ</label> <strong>(.*?)</strong></dd>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         parameter.setName(filename.trim());
         parameter.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;

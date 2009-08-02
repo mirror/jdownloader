@@ -147,7 +147,7 @@ public class UploadlineCom extends PluginForHost {
             filename = Encoding.htmlDecode(br.getRegex("You\\shave\\srequested\\s<font\\scolor=\"red\">http://[\\w\\.]*?uploadline\\.com/\\d+/(.*?)</font>").getMatch(0));
             filesize = br.getRegex("</font>\\s\\((.*?)\\)</font>").getMatch(0);
         }
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename);
         downloadLink.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;

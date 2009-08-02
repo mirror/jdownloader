@@ -56,7 +56,7 @@ public class IfolderRu extends PluginForHost {
 
         String filename = br.getRegex("Название:\\s+<b>(.*?)</b>").getMatch(0);
         String filesize = br.getRegex("Размер:\\s+<b>(.*?)</b>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename);
         downloadLink.setDownloadSize(Regex.getSize(filesize.replace("Мб", "Mb").replace("кб", "Kb")));
         return AvailableStatus.TRUE;
