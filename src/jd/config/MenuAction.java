@@ -19,7 +19,6 @@ package jd.config;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
-import java.util.logging.Logger;
 
 import jd.controlling.JDLogger;
 import jd.gui.action.JDAction;
@@ -31,9 +30,7 @@ public class MenuAction extends JDAction {
     public static final int CONTAINER = 0;
     public static final int NORMAL = 1;
     public static final int SEPARATOR = 3;
-    /**
-     * 
-     */
+
     private static final long serialVersionUID = 9205555751462125274L;
     public static final int TOGGLE = 2;
     private static final String MENUITEMS = "MENUITEMS";
@@ -42,26 +39,22 @@ public class MenuAction extends JDAction {
     private ArrayList<MenuAction> items;
     private Plugin plugin;
 
-    private Logger logger;
-    private Property properties;
-
     public MenuAction(int id) {
         this(id, null, -1);
     }
-    
-    
+
     /**
-     * See JDAction.setActionListener
      * this is just a delegate to adjust return Type
+     * 
+     * @see JDAction#setActionListener(ActionListener)
      */
     public MenuAction setActionListener(ActionListener actionListener) {
-        return (MenuAction)super.setActionListener(actionListener);       
+        return (MenuAction) super.setActionListener(actionListener);
     }
+
     public MenuAction(int id, String title, int actionID) {
         super(title, actionID);
         this.id = id;
-
-        logger = JDLogger.getLogger();
     }
 
     public MenuAction(String title, int actionID) {
@@ -78,7 +71,7 @@ public class MenuAction extends JDAction {
 
     public void addMenuItem(MenuAction m) {
         if (id != CONTAINER) {
-            logger.severe("I am not a Container MenuAction!!");
+            JDLogger.getLogger().severe("I am not a Container MenuAction!!");
         }
         if (items == null) {
             items = new ArrayList<MenuAction>();
@@ -94,7 +87,6 @@ public class MenuAction extends JDAction {
     }
 
     public int getType() {
-
         return id;
     }
 
@@ -103,7 +95,6 @@ public class MenuAction extends JDAction {
     }
 
     public int getSize() {
-
         if (items == null) { return 0; }
         return items.size();
     }
@@ -111,7 +102,6 @@ public class MenuAction extends JDAction {
     public MenuAction setItems(ArrayList<MenuAction> createMenuitems) {
         items = createMenuitems;
         return this;
-
     }
 
     public MenuAction setPlugin(Plugin plugin) {
@@ -125,7 +115,6 @@ public class MenuAction extends JDAction {
             return;
         }
         getActionListener().actionPerformed(new ActionEvent(this, getActionID(), getTitle()));
-
     }
 
 }

@@ -19,24 +19,15 @@ package jd.gui.swing.jdgui.settings.panels.premium;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.config.Configuration;
-import jd.config.SubConfiguration;
 import jd.gui.swing.jdgui.settings.ConfigPanel;
-import jd.gui.swing.jdgui.settings.GUIConfigEntry;
 import jd.utils.locale.JDL;
 
 public class Premium extends ConfigPanel {
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = -39217675978744715L;
 
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.premium.Premium.";
-
-    private SubConfiguration subConfig;
 
     public Premium(Configuration configuration) {
         super();
@@ -64,7 +55,7 @@ public class Premium extends ConfigPanel {
 
     private void initPanel(JPanel panel) {
         // Hier kann jiaz sien Zeug reinkleben;-P
-        
+
     }
 
     @Override

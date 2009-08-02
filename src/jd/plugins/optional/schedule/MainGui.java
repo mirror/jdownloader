@@ -6,7 +6,6 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.text.SimpleDateFormat;
 
-import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -17,7 +16,6 @@ import javax.swing.table.AbstractTableModel;
 
 import jd.config.SubConfiguration;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
-import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 

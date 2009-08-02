@@ -151,7 +151,6 @@ public class PremiumTable extends JTable implements MouseListener {
         }.start();
     }
 
-    @Override
     public void mouseClicked(MouseEvent e) {
         if (e.getSource() == getTableHeader()) {
             if (e.getButton() == MouseEvent.BUTTON3) {
@@ -182,25 +181,21 @@ public class PremiumTable extends JTable implements MouseListener {
         }
     }
 
-    @Override
     public void mouseEntered(MouseEvent e) {
         // TODO Auto-generated method stub
 
     }
 
-    @Override
     public void mouseExited(MouseEvent e) {
         // TODO Auto-generated method stub
 
     }
 
-    @Override
     public void mousePressed(MouseEvent e) {
         // TODO Auto-generated method stub
 
     }
 
-    @Override
     public void mouseReleased(MouseEvent e) {
         // TODO Auto-generated method stub
 

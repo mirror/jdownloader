@@ -2,7 +2,6 @@ package jd.plugins.optional.schedule;
 
 import javax.swing.Icon;
 
-import jd.gui.swing.jdgui.SingletonPanel;
 import jd.gui.swing.jdgui.views.ClosableView;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;

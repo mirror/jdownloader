@@ -71,6 +71,7 @@ public class AccountDialog extends AbstractDialog implements ItemListener {
 
     public AccountDialog() {
         super(UserIO.NO_COUNTDOWN, JDL.L(JDL_PREFIX + "title", "Add new Account"), UserIO.getInstance().getIcon(UserIO.ICON_QUESTION), null, null);
+
         init();
     }
 
@@ -79,15 +80,15 @@ public class AccountDialog extends AbstractDialog implements ItemListener {
         JPanel panel = new JPanel(new MigLayout("ins 0"));
         panel.add(new JLabel(JDL.L(JDL_PREFIX + "hoster", "Hoster:")));
         ArrayList<HostPluginWrapper> plugins = JDUtilities.getPremiumPluginsForHost();
-        panel.add(hoster = new JComboBox(plugins.toArray(new HostPluginWrapper[plugins.size()])));
+        panel.add(hoster = new JComboBox(plugins.toArray(new HostPluginWrapper[plugins.size()])), "wrap");
         hoster.addItemListener(this);
         panel.add(link = new JLink(JDL.L(JDL_PREFIX + "buy", "Buy Account")), "wrap");
         itemStateChanged(null);
         hoster.setRenderer(new IconListRenderer());
         panel.add(new JLabel(JDL.L(JDL_PREFIX + "name", "Name:")));
-        panel.add(name = new JTextField(), "w 150");
+        panel.add(name = new JTextField(), "w 200, wrap");
         panel.add(new JLabel(JDL.L(JDL_PREFIX + "pass", "Pass:")));
-        panel.add(pass = new JPasswordField(), "w 150");
+        panel.add(pass = new JPasswordField(), "w 200, wrap");
         return panel;
     }
 

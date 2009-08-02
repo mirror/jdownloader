@@ -101,7 +101,6 @@ public class PremiumPanel extends SwitchPanel implements ActionListener, Account
         Update_Async.restart();
     }
 
-    @Override
     public void actionPerformed(ActionEvent arg0) {
         if (arg0.getSource() == Update_Async) {
             if (visible) fireTableChanged(false);
@@ -121,7 +120,6 @@ public class PremiumPanel extends SwitchPanel implements ActionListener, Account
         }
     }
 
-    @Override
     public boolean vetoAccountGetEvent(String host, Account account) {
         // TODO Auto-generated method stub
         return false;

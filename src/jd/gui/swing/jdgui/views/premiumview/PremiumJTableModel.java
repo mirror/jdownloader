@@ -53,7 +53,6 @@ public class PremiumJTableModel extends AbstractTableModel {
         }
     }
 
-    @Override
     public int getRowCount() {
         return list.size();
     }
