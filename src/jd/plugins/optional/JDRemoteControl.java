@@ -32,7 +32,7 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
-import jd.config.MenuItem;
+import jd.config.MenuAction;
 import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
@@ -485,11 +485,11 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
         }
     }
 
-    public ArrayList<MenuItem> createMenuitems() {
-        ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
+    public ArrayList<MenuAction> createMenuitems() {
+        ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
 
-        MenuItem m;
-        menu.add(m = new MenuItem(MenuItem.TOGGLE, JDL.L("plugins.optional.remotecontrol.activate", "Aktivieren"), 0).setActionListener(this));
+        MenuAction m;
+        menu.add(m = (MenuAction)new MenuAction(MenuAction.TOGGLE, JDL.L("plugins.optional.remotecontrol.activate", "Aktivieren"), 0).setActionListener(this));
         m.setSelected(subConfig.getBooleanProperty(PARAM_ENABLED, true));
 
         return menu;

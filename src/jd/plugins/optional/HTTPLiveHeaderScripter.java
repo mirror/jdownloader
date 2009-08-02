@@ -51,7 +51,7 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
 import jd.PluginWrapper;
-import jd.config.MenuItem;
+import jd.config.MenuAction;
 import jd.controlling.reconnect.HTTPLiveHeader;
 import jd.gui.UserIO;
 import jd.gui.swing.SwingGui;
@@ -88,7 +88,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
 
     @SuppressWarnings("unchecked")
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() instanceof MenuItem && ((MenuItem) e.getSource()).getActionID() == 0) {
+        if (e.getSource() instanceof MenuAction && ((MenuAction) e.getSource()).getActionID() == 0) {
             initGUI();
             SwingGui.getInstance().setContent(tabbedPanel);
         } else if (e.getSource() == menImportHTTPLive) {
@@ -274,10 +274,10 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
         return ret + "";
     }
 
-    public ArrayList<MenuItem> createMenuitems() {
-        ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
+    public ArrayList<MenuAction> createMenuitems() {
+        ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
 
-        menu.add(new MenuItem(getHost(), 0).setActionListener(this));
+        menu.add((MenuAction)new MenuAction(getHost(), 0).setActionListener(this));
 
         return menu;
     }

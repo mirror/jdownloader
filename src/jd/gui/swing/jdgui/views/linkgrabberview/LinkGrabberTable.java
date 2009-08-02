@@ -40,6 +40,7 @@ import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JTable;
+import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
@@ -146,6 +147,18 @@ public class LinkGrabberTable extends JTable implements MouseListener, MouseMoti
                 return null;
             }
         }.start();
+    }
+
+    protected boolean processKeyBinding(KeyStroke ks, KeyEvent e, int condition, boolean pressed) {
+
+        boolean ret = super.processKeyBinding(ks, e, condition, pressed);
+
+        if (ks.getKeyCode() == KeyEvent.VK_ENTER && !ks.isOnKeyRelease()) {
+            ActionController.getToolBarAction("action.linkgrabber.addall").actionPerformed(null);
+
+        }
+
+        return ret;
     }
 
     public ArrayList<DownloadLink> getSelectedDownloadLinks() {

@@ -13,6 +13,7 @@ import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.settings.panels.ConfigPanelAddons;
 import jd.gui.swing.jdgui.settings.panels.ConfigPanelGeneral;
 import jd.gui.swing.jdgui.settings.panels.ConfigPanelPluginForHost;
+import jd.gui.swing.jdgui.settings.panels.premium.Premium;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -22,6 +23,8 @@ public class ConfigTreeModel implements TreeModel {
 
     private TreeEntry root;
 
+    private TreeEntry addons;
+
     public ConfigTreeModel() {
         this.root = new TreeEntry(JDL.L(JDL_PREFIX + "configuration.title", "Settings"));
 
@@ -29,17 +32,14 @@ public class ConfigTreeModel implements TreeModel {
         root.add(basics = new TreeEntry(JDL.L(JDL_PREFIX + "basics.title", "Basics")).setIcon("gui.images.config.home"));
         basics.add(new TreeEntry(ConfigPanelGeneral.class, ConfigPanelGeneral.getTitle()).setIcon("gui.images.config.home"));
         TreeEntry dl;
-        basics.add(dl = new TreeEntry(jd.gui.swing.jdgui.settings.panels.downloadandnetwork.General.class, jd.gui.swing.jdgui.settings.panels.downloadandnetwork.General.getTitle())
-                .setIcon("gui.images.config.network_local"));
+        basics.add(dl = new TreeEntry(jd.gui.swing.jdgui.settings.panels.downloadandnetwork.General.class, jd.gui.swing.jdgui.settings.panels.downloadandnetwork.General.getTitle()).setIcon("gui.images.config.network_local"));
 
         // dl.add(new
         // TreeEntry(jd.gui.swing.jdgui.settings.panels.downloadandnetwork.General.class,
         // JDL.L(JDL_PREFIX + "download.general.title",
         // "Main")).setIcon("gui.images.package_opened"));
-        dl.add(new TreeEntry(jd.gui.swing.jdgui.settings.panels.downloadandnetwork.InternetAndNetwork.class, jd.gui.swing.jdgui.settings.panels.downloadandnetwork.InternetAndNetwork.getTitle())
-                .setIcon("gui.images.networkerror"));
-        dl.add(new TreeEntry(jd.gui.swing.jdgui.settings.panels.downloadandnetwork.Advanced.class, jd.gui.swing.jdgui.settings.panels.downloadandnetwork.Advanced.getTitle())
-                .setIcon("gui.images.network"));
+        dl.add(new TreeEntry(jd.gui.swing.jdgui.settings.panels.downloadandnetwork.InternetAndNetwork.class, jd.gui.swing.jdgui.settings.panels.downloadandnetwork.InternetAndNetwork.getTitle()).setIcon("gui.images.networkerror"));
+        dl.add(new TreeEntry(jd.gui.swing.jdgui.settings.panels.downloadandnetwork.Advanced.class, jd.gui.swing.jdgui.settings.panels.downloadandnetwork.Advanced.getTitle()).setIcon("gui.images.network"));
 
         basics.add(dl = new TreeEntry(jd.gui.swing.jdgui.settings.panels.gui.General.class, jd.gui.swing.jdgui.settings.panels.gui.General.getTitle()).setIcon("gui.images.config.gui"));
         // dl.add(new
@@ -62,8 +62,7 @@ public class ConfigTreeModel implements TreeModel {
         // "Method List")).setIcon("gui.images.config.ocr"));
         dl.add(new TreeEntry(jd.gui.swing.jdgui.settings.panels.ocr.Advanced.class, jd.gui.swing.jdgui.settings.panels.ocr.Advanced.getTitle()).setIcon("gui.images.config.ocr"));
 
-        modules.add(dl = new TreeEntry(jd.gui.swing.jdgui.settings.panels.reconnect.MethodSelection.class, jd.gui.swing.jdgui.settings.panels.reconnect.MethodSelection.getTitle())
-                .setIcon("gui.images.config.reconnect"));
+        modules.add(dl = new TreeEntry(jd.gui.swing.jdgui.settings.panels.reconnect.MethodSelection.class, jd.gui.swing.jdgui.settings.panels.reconnect.MethodSelection.getTitle()).setIcon("gui.images.config.reconnect"));
         // dl.add(new
         // TreeEntry(jd.gui.swing.jdgui.settings.panels.reconnect.MethodSelection.class,
         // JDL.L(JDL_PREFIX + "reconnect.methodselection.title",
@@ -72,8 +71,15 @@ public class ConfigTreeModel implements TreeModel {
 
         root.add(plugins = new TreeEntry(JDL.L(JDL_PREFIX + "plugins.title", "Plugins & Add-ons")).setIcon("gui.images.config.packagemanager"));
         plugins.add(new TreeEntry(ConfigPanelPluginForHost.class, ConfigPanelPluginForHost.getTitle()).setIcon("gui.images.config.host"));
-        plugins.add(new TreeEntry(ConfigPanelAddons.class, ConfigPanelAddons.getTitle()).setIcon("gui.images.config.packagemanager"));
 
+        plugins.add(new TreeEntry(Premium.class, Premium.getTitle()).setIcon("gui.images.premium"));
+        plugins.add(addons=new TreeEntry(ConfigPanelAddons.class, ConfigPanelAddons.getTitle()).setIcon("gui.images.config.packagemanager"));
+       initExtensions(addons);
+    }
+
+    private void initExtensions(TreeEntry addons2) {
+        // TODO Auto-generated method stub
+        
     }
 
     public void addTreeModelListener(TreeModelListener l) {
@@ -125,7 +131,7 @@ public class ConfigTreeModel implements TreeModel {
 
         public TreeEntry setIcon(String string) {
             // TODO Auto-generated method stub
-            iconKey=string;
+            iconKey = string;
             icon = JDTheme.II(string, 20, 20);
             return this;
         }

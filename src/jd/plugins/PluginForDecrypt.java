@@ -26,7 +26,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import jd.PluginWrapper;
-import jd.config.MenuItem;
+import jd.config.MenuAction;
 import jd.controlling.CaptchaController;
 import jd.controlling.JDLogger;
 import jd.controlling.LinkGrabberController;
@@ -120,7 +120,7 @@ public abstract class PluginForDecrypt extends Plugin {
     }
 
     // @Override
-    public ArrayList<MenuItem> createMenuitems() {
+    public ArrayList<MenuAction> createMenuitems() {
         return null;
     }
 

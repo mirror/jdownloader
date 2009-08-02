@@ -45,7 +45,7 @@ import javax.swing.event.HyperlinkListener;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.MenuItem;
+import jd.config.MenuAction;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.controlling.interaction.Interaction;
@@ -136,7 +136,7 @@ public class JDChat extends PluginOptional implements ControlListener {
     private SubConfiguration subConfig;
 
     private JDChatView view;
-    private MenuItem activateAction;
+    private MenuAction activateAction;
 
     public JDChat(PluginWrapper wrapper) {
         super(wrapper);
@@ -621,7 +621,7 @@ public class JDChat extends PluginOptional implements ControlListener {
     // @Override
     public void actionPerformed(ActionEvent e) {
 
-        if (((MenuItem) e.getSource()).isSelected()) {
+        if (((MenuAction) e.getSource()).isSelected()) {
 
             if (conn != null) conn.close();
 
@@ -630,7 +630,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         } else {
             setEnabled(false);
         }
-        // ((MenuItem) e.getSource()).setSelected(!((MenuItem)
+        // ((MenuAction) e.getSource()).setSelected(!((MenuAction)
         // e.getSource()).isSelected());
     }
 
@@ -754,9 +754,9 @@ public class JDChat extends PluginOptional implements ControlListener {
     }
 
     // @Override
-    public ArrayList<MenuItem> createMenuitems() {
-        ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
-        MenuItem m;
+    public ArrayList<MenuAction> createMenuitems() {
+        ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
+        MenuAction m;
 
         menu.add(m = activateAction);
         if (frame == null || !frame.isVisible()) {
@@ -834,7 +834,7 @@ public class JDChat extends PluginOptional implements ControlListener {
     public boolean initAddon() {
         NAMES = new ArrayList<User>();
         sb = new StringBuilder();
-        this.activateAction = new MenuItem(MenuItem.TOGGLE, JDL.L("plugins.optional.jdchat.menu.windowstatus", "Chatwindow"), 0).setActionListener(this);
+        this.activateAction = new MenuAction(MenuAction.TOGGLE, JDL.L("plugins.optional.jdchat.menu.windowstatus", "Chatwindow"), 0).setActionListener(this);
 
         return true;
     }

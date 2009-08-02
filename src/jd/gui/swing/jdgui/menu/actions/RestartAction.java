@@ -22,8 +22,8 @@ import jd.gui.UserIO;
 import jd.nutils.JDFlags;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-public class RestartAction extends StartAction {
+import jd.config.MenuAction;
+public class RestartAction extends MenuAction {
 
     private static final long serialVersionUID = 1333126351380171619L;
 

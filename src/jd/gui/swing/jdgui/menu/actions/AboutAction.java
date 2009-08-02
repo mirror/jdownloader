@@ -18,9 +18,10 @@ package jd.gui.swing.jdgui.menu.actions;
 
 import java.awt.event.ActionEvent;
 
+import jd.config.MenuAction;
 import jd.gui.swing.components.AboutDialog;
 
-public class AboutAction extends StartAction {
+public class AboutAction extends MenuAction {
 
     private static final long serialVersionUID = -353145605693194634L;
 
@@ -29,7 +30,7 @@ public class AboutAction extends StartAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-    
+
         new AboutDialog();
 
     }

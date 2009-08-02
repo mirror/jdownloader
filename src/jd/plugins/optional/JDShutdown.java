@@ -26,7 +26,7 @@ import jd.OptionalPluginWrapper;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.MenuItem;
+import jd.config.MenuAction;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.controlling.interaction.Interaction;
@@ -49,7 +49,7 @@ public class JDShutdown extends PluginOptional {
     private static final String CONFIG_FORCESHUTDOWN = "FORCE";
     private static Thread shutdown = null;
 
-    private MenuItem menuItem;
+    private MenuAction menuItem;
 
     public JDShutdown(PluginWrapper wrapper) {
         super(wrapper);
@@ -89,9 +89,9 @@ public class JDShutdown extends PluginOptional {
     }
 
     // @Override
-    public ArrayList<MenuItem> createMenuitems() {
-        ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
-        if (menuItem == null) menuItem = new MenuItem(MenuItem.TOGGLE, JDL.L("addons.jdshutdown.menu", "Shutdown after downloads finished"), 0).setActionListener(this);
+    public ArrayList<MenuAction> createMenuitems() {
+        ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
+        if (menuItem == null) menuItem = (MenuAction)new MenuAction(MenuAction.TOGGLE, JDL.L("addons.jdshutdown.menu", "Shutdown after downloads finished"), 0).setActionListener(this);
         menu.add(menuItem);
         return menu;
     }

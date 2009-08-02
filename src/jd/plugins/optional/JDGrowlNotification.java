@@ -23,7 +23,7 @@ import java.util.ArrayList;
 import java.util.Date;
 
 import jd.PluginWrapper;
-import jd.config.MenuItem;
+import jd.config.MenuAction;
 import jd.controlling.SingleDownloadController;
 import jd.event.ControlEvent;
 import jd.nutils.Executer;
@@ -59,7 +59,7 @@ public class JDGrowlNotification extends PluginOptional {
     }
 
     public void actionPerformed(ActionEvent e) {
-        MenuItem mi = (MenuItem) e.getSource();
+        MenuAction mi = (MenuAction) e.getSource();
         if (mi.getActionID() == 0) {
             getPluginConfig().setProperty(PROPERTY_ENABLED, !getPluginConfig().getBooleanProperty(PROPERTY_ENABLED, false));
             getPluginConfig().save();
@@ -67,11 +67,11 @@ public class JDGrowlNotification extends PluginOptional {
     }
 
     // @Override
-    public ArrayList<MenuItem> createMenuitems() {
-        ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
-        MenuItem m;
+    public ArrayList<MenuAction> createMenuitems() {
+        ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
+        MenuAction m;
 
-        menu.add(m = new MenuItem(MenuItem.TOGGLE, JDL.L("addons.jdgrowlnotification.menu", "Growl Messages"), 0).setActionListener(this));
+        menu.add(m = (MenuAction)new MenuAction(MenuAction.TOGGLE, JDL.L("addons.jdgrowlnotification.menu", "Growl Messages"), 0).setActionListener(this));
         m.setSelected(this.getPluginConfig().getBooleanProperty(PROPERTY_ENABLED, false));
 
         return menu;

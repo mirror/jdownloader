@@ -26,6 +26,7 @@ import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
+import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
@@ -142,6 +143,8 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         LinkGrabberController.getInstance().setDistributer(this);
     }
 
+ 
+
     @Override
     public void showAccountInformation(final PluginForHost pluginForHost, final Account account) {
         new GuiRunnable<Object>() {
@@ -250,6 +253,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
 
         multiProgressBar = new TabProgress();
         this.toolBar = MainToolBar.getInstance();
+        toolBar.registerAccelerators(this);
         downloadView = new DownloadView();
         linkgrabberView = new LinkgrabberView();
         configurationView = new ConfigurationView();
@@ -278,6 +282,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         contentPane.setLayout(mainLayout);
         mainFrame.setJMenuBar(menuBar);
         mainFrame.add(toolBar, "dock NORTH");
+        
         contentPane.add(mainTabbedPane);
 
         contentPane.add(multiProgressBar, "hidemode 3");

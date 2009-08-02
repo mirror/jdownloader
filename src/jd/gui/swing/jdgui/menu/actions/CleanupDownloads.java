@@ -23,8 +23,8 @@ import jd.controlling.DownloadController;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
-
-public class CleanupDownloads extends StartAction {
+import jd.config.MenuAction;
+public class CleanupDownloads extends MenuAction {
 
     private static final long serialVersionUID = -7185006215784212976L;
 

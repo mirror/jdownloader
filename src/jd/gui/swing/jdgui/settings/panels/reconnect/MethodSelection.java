@@ -222,7 +222,7 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
         // "Reconnect method"), JDTheme.II("gui.images.config.network_local",
         // 16, 16), method);
         // maintabbed.addTab(JDL.L("gui.config.reconnect.settingstab",
-        // "Advanced Settings"), JDTheme.II("gui.images.reconnect_settings", 16,
+        // "Premium Settings"), JDTheme.II("gui.images.reconnect_settings", 16,
         // 16), cep = new ConfigEntriesPanel(container));
         setLayout(new MigLayout("ins 0,wrap 1", "[fill,grow 10]", "[fill,grow]"));
         // panel.add();

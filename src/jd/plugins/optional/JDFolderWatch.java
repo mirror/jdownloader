@@ -24,7 +24,7 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
-import jd.config.MenuItem;
+import jd.config.MenuAction;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.plugins.OptionalPlugin;
@@ -130,11 +130,11 @@ public class JDFolderWatch extends PluginOptional {
     }
 
     // @Override
-    public ArrayList<MenuItem> createMenuitems() {
-        ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
-        menu.add(new MenuItem(JDL.L("plugins.optional.folderwatch.menu.startstop", "Start/Stop"), 0).setActionListener(this));
-        menu.add(new MenuItem(JDL.L("plugins.optional.folderwatch.menu.check", "Check"), 0).setActionListener(this));
-        menu.add(new MenuItem(JDL.L("plugins.optional.folderwatch.menu.reset", "Reset"), 0).setActionListener(this));
+    public ArrayList<MenuAction> createMenuitems() {
+        ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
+        menu.add((MenuAction)new MenuAction(JDL.L("plugins.optional.folderwatch.menu.startstop", "Start/Stop"), 0).setActionListener(this));
+        menu.add((MenuAction)new MenuAction(JDL.L("plugins.optional.folderwatch.menu.check", "Check"), 0).setActionListener(this));
+        menu.add((MenuAction)new MenuAction(JDL.L("plugins.optional.folderwatch.menu.reset", "Reset"), 0).setActionListener(this));
         return menu;
     }
 

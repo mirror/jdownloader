@@ -2,9 +2,15 @@ package jd.gui.swing.jdgui;
 
 import java.awt.Component;
 import java.awt.Graphics;
+import java.awt.event.KeyEvent;
 
 import javax.swing.Action;
+import javax.swing.ActionMap;
+import javax.swing.InputMap;
+import javax.swing.JComponent;
 import javax.swing.JTabbedPane;
+import javax.swing.KeyStroke;
+import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
@@ -28,16 +34,27 @@ public class MainTabbedPane extends JTabbedPane {
         throw new RuntimeException(" This method is not allowed");
 
     }
-    public void remove(View view) {
-       super.remove(view);
-       view.getBroadcaster().fireEvent(new SwitchPanelEvent(view,SwitchPanelEvent.ON_REMOVE));
+
+    protected boolean processKeyBinding(KeyStroke ks, KeyEvent e, int condition, boolean pressed) {
+
+       boolean ret = super.processKeyBinding(ks, e, condition, pressed);
+       
+       if (getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).get(ks) != null) { return false; }
+       if (getRootPane().getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).get(ks) != null) { return false; }
+     return ret;
     }
+
+    public void remove(View view) {
+
+        super.remove(view);
+        view.getBroadcaster().fireEvent(new SwitchPanelEvent(view, SwitchPanelEvent.ON_REMOVE));
+    }
+
     // private Boolean extraHighlight;
     protected View latestSelection;
 
     public void addTab(View view) {
         addTab(view, 0);
-       
 
     }
 
@@ -74,9 +91,8 @@ public class MainTabbedPane extends JTabbedPane {
     public void addTab(View view, int flags) {
         SwingGui.checkEDT();
         super.addTab(view.getTitle(), view.getIcon(), view, view.getTooltip());
-        
- 
-        view.getBroadcaster().fireEvent(new SwitchPanelEvent(view,SwitchPanelEvent.ON_ADD));
+
+        view.getBroadcaster().fireEvent(new SwitchPanelEvent(view, SwitchPanelEvent.ON_ADD));
         if (JDUtilities.getJavaVersion() >= 1.6) {
             this.setTabComponentAt(this.getTabCount() - 1, new ChangeHeader(view));
         }

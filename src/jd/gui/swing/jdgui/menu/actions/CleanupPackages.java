@@ -22,8 +22,8 @@ import java.util.Vector;
 import jd.controlling.DownloadController;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
-
-public class CleanupPackages extends StartAction {
+import jd.config.MenuAction;
+public class CleanupPackages extends MenuAction {
 
     private static final long serialVersionUID = -7185006215784212976L;
 

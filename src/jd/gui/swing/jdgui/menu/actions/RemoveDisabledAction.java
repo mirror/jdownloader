@@ -22,8 +22,8 @@ import java.util.Vector;
 import jd.controlling.DownloadController;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-
-public class RemoveDisabledAction extends StartAction {
+import jd.config.MenuAction;
+public class RemoveDisabledAction extends MenuAction {
 
     private static final long serialVersionUID = -5335194420202699757L;
 

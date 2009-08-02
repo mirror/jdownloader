@@ -38,7 +38,7 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
-import jd.config.MenuItem;
+import jd.config.MenuAction;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.CaptchaController;
@@ -228,14 +228,14 @@ public abstract class PluginForHost extends Plugin {
     }
 
     // @Override
-    public ArrayList<MenuItem> createMenuitems() {
+    public ArrayList<MenuAction> createMenuitems() {
 
         if (!this.enablePremium) return null;
-        ArrayList<MenuItem> menuList = new ArrayList<MenuItem>();
-        MenuItem account;
-        MenuItem m = new MenuItem(MenuItem.NORMAL, JDL.L("plugins.menu.configs", "Configuration"), 1);
+        ArrayList<MenuAction> menuList = new ArrayList<MenuAction>();
+        MenuAction account;
+        MenuAction m = new MenuAction(MenuAction.NORMAL, JDL.L("plugins.menu.configs", "Configuration"), 1);
         m.setActionListener(this);
-        MenuItem premium = new MenuItem(MenuItem.CONTAINER, JDL.L("plugins.menu.accounts", "Accounts"), 0);
+        MenuAction premium = new MenuAction(MenuAction.CONTAINER, JDL.L("plugins.menu.accounts", "Accounts"), 0);
         menuList.add(m);
         ArrayList<Account> accounts = getPremiumAccounts();
 
@@ -247,17 +247,17 @@ public abstract class PluginForHost extends Plugin {
                 c++;
                 if (getAccountwithoutUsername()) {
                     if (a.getPass() == null || a.getPass().trim().length() == 0) continue;
-                    account = new MenuItem(MenuItem.CONTAINER, i++ + ". " + "Account " + (i - 1), 0);
+                    account = new MenuAction(MenuAction.CONTAINER, i++ + ". " + "Account " + (i - 1), 0);
                 } else {
 
                     if (a.getUser() == null || a.getUser().trim().length() == 0) continue;
-                    account = new MenuItem(MenuItem.CONTAINER, i++ + ". " + a.getUser(), 0);
-                    m = new MenuItem(MenuItem.TOGGLE, JDL.L("plugins.menu.enable_premium", "Aktivieren"), 100 + c - 1);
+                    account = new MenuAction(MenuAction.CONTAINER, i++ + ". " + a.getUser(), 0);
+                    m = new MenuAction(MenuAction.TOGGLE, JDL.L("plugins.menu.enable_premium", "Aktivieren"), 100 + c - 1);
                     m.setSelected(a.isEnabled());
                     m.setActionListener(this);
                     account.addMenuItem(m);
 
-                    m = new MenuItem(JDL.L("plugins.menu.premiumInfo", "Accountinformationen abrufen"), 200 + c - 1);
+                    m = new MenuAction(JDL.L("plugins.menu.premiumInfo", "Accountinformationen abrufen"), 200 + c - 1);
                     m.setActionListener(this);
                     account.addMenuItem(m);
                     premium.addMenuItem(account);
@@ -269,7 +269,7 @@ public abstract class PluginForHost extends Plugin {
         if (premium.getSize() != 0) {
             menuList.add(premium);
         } else {
-            menuList.add(m = new MenuItem(JDL.L("plugins.menu.noaccounts", "Add account"), 2));
+            menuList.add(m = new MenuAction(JDL.L("plugins.menu.noaccounts", "Add account"), 2));
             m.setActionListener(this);
         }
 

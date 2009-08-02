@@ -51,7 +51,7 @@ public class Advanced extends ConfigPanel {
     }
 
     public static String getTitle() {
-        return JDL.L(JDL_PREFIX + "gui.advanced.title", "Advanced");
+        return JDL.L(JDL_PREFIX + "gui.advanced.title", "Premium");
     }
 
     private ConfigContainer setupContainer() {

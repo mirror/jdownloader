@@ -6,7 +6,7 @@ import java.net.URL;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
-import jd.config.MenuItem;
+import jd.config.MenuAction;
 import jd.controlling.DistributeData;
 import jd.controlling.JDLogger;
 import jd.controlling.LinkGrabberController;
@@ -64,7 +64,7 @@ public class JDExternInterface extends PluginOptional {
     }
 
     // @Override
-    public ArrayList<MenuItem> createMenuitems() {
+    public ArrayList<MenuAction> createMenuitems() {
         return null;
     }
 

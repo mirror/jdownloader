@@ -25,7 +25,7 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.MenuItem;
+import jd.config.MenuAction;
 import jd.config.SubConfiguration;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
@@ -74,7 +74,7 @@ public class JDWebinterface extends PluginOptional {
     }
 
     //@Override
-    public ArrayList<MenuItem> createMenuitems() {
+    public ArrayList<MenuAction> createMenuitems() {
         return null;
     }
 

@@ -37,7 +37,7 @@ import jd.Main;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.MenuItem;
+import jd.config.MenuAction;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.event.ControlEvent;
@@ -80,7 +80,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     }
 
     // @Override
-    public ArrayList<MenuItem> createMenuitems() {
+    public ArrayList<MenuAction> createMenuitems() {
         return null;
     }
 

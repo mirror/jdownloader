@@ -17,8 +17,8 @@
 package jd.gui.swing.jdgui.menu.actions;
 
 import java.awt.event.ActionEvent;
-
-public class RemoveFailedAction extends StartAction {
+import jd.config.MenuAction;
+public class RemoveFailedAction extends MenuAction {
 
     private static final long serialVersionUID = -5425871515927494136L;
 

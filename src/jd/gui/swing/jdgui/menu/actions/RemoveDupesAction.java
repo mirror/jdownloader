@@ -23,8 +23,8 @@ import jd.controlling.DownloadController;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
-
-public class RemoveDupesAction extends StartAction {
+import jd.config.MenuAction;
+public class RemoveDupesAction extends MenuAction {
 
     private static final long serialVersionUID = -4068088102973973923L;
 

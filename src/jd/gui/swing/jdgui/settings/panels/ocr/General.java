@@ -168,7 +168,7 @@ public class General extends ConfigPanel {
         // tabbed.setIconAt(0, JDTheme.II("gui.images.captcha.methods", 16,
         // 16));
         // tabbed.addTab(JDL.L("gui.config.panels.captcha.advancedtab",
-        // "Advanced settings"), cep = new ConfigEntriesPanel(container));
+        // "Premium settings"), cep = new ConfigEntriesPanel(container));
         // tabbed.setIconAt(1, JDTheme.II("gui.images.config.ocr", 16, 16));
 
         setLayout(new MigLayout("ins 0,wrap 1", "[fill,grow 10]", "[fill,grow]"));

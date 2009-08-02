@@ -34,7 +34,7 @@ public class Advanced extends ConfigPanel {
     }
 
     public static String getTitle() {
-        return JDL.L(JDL_PREFIX + "captcha.advanced.title", "Advanced");
+        return JDL.L(JDL_PREFIX + "captcha.advanced.title", "Premium");
     }
 
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.ocr.Advanced.";

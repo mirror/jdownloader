@@ -35,7 +35,7 @@ public class Advanced extends ConfigPanel {
     }
 
     public static String getTitle() {
-        return JDL.L(JDL_PREFIX + "reconnect.advanced.title", "Advanced");
+        return JDL.L(JDL_PREFIX + "reconnect.advanced.title", "Premium");
     }
 
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.reconnect.Advanced.";

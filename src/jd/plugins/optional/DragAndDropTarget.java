@@ -19,7 +19,7 @@ package jd.plugins.optional;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
-import jd.config.MenuItem;
+import jd.config.MenuAction;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
 import jd.utils.locale.JDL;
@@ -38,10 +38,10 @@ public class DragAndDropTarget extends PluginOptional {
     }
 
     @Override
-    public ArrayList<MenuItem> createMenuitems() {
-        ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
+    public ArrayList<MenuAction> createMenuitems() {
+        ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
 
-        MenuItem menuItem = new MenuItem(MenuItem.TOGGLE, JDL.L("jd.plugins.optional.draganddroptarget.menu.enable", "Enable"), 0).setActionListener(this);
+        MenuAction menuItem = (MenuAction)new MenuAction(MenuAction.TOGGLE, JDL.L("jd.plugins.optional.draganddroptarget.menu.enable", "Enable"), 0).setActionListener(this);
         menuItem.setSelected(this.gui != null);
         menu.add(menuItem);
 

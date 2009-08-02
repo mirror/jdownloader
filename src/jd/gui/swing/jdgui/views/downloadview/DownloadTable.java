@@ -33,12 +33,15 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import javax.swing.ActionMap;
 import javax.swing.DropMode;
 import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JComponent;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JTable;
+import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
 import javax.swing.ToolTipManager;
@@ -47,7 +50,7 @@ import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 
-import jd.config.MenuItem;
+import jd.config.MenuAction;
 import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.DownloadWatchDog;
@@ -55,6 +58,7 @@ import jd.event.ControlEvent;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.RowHighlighter;
 import jd.gui.swing.components.JExtCheckBoxMenuItem;
+import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.menu.Menu;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -85,6 +89,7 @@ public class DownloadTable extends JTable implements MouseListener, MouseMotionL
 
     public DownloadTable(DownloadJTableModel model, DownloadLinksPanel panel) {
         super(model);
+        
         this.cellRenderer = new TableRenderer(this);
         this.panel = panel;
         this.model = model;
@@ -94,13 +99,7 @@ public class DownloadTable extends JTable implements MouseListener, MouseMotionL
         createColumns();
         getTableHeader().setReorderingAllowed(false);
         getTableHeader().setResizingAllowed(true);
-        prioDescs = new String[] {
-                JDL.L("gui.treetable.tooltip.priority-1", "Low Priority"),
-                JDL.L("gui.treetable.tooltip.priority0", "No Priority"),
-                JDL.L("gui.treetable.tooltip.priority1", "High Priority"),
-                JDL.L("gui.treetable.tooltip.priority2", "Higher Priority"),
-                JDL.L("gui.treetable.tooltip.priority3", "Highest Priority")
-        };
+        prioDescs = new String[] { JDL.L("gui.treetable.tooltip.priority-1", "Low Priority"), JDL.L("gui.treetable.tooltip.priority0", "No Priority"), JDL.L("gui.treetable.tooltip.priority1", "High Priority"), JDL.L("gui.treetable.tooltip.priority2", "Higher Priority"), JDL.L("gui.treetable.tooltip.priority3", "Highest Priority") };
         setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
         setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         setColumnSelectionAllowed(false);
@@ -135,7 +134,22 @@ public class DownloadTable extends JTable implements MouseListener, MouseMotionL
         addPostErrorHighlighter();
         addWaitHighlighter();
         addPackageHighlighter();
+        
+//        ;
+//        ActionController.getToolBarAction("action.downloadview.moveup").setEnabled(true);
+//        ActionController.getToolBarAction("action.downloadview.movedown").setEnabled(true);
+//        ActionController.getToolBarAction("action.downloadview.movetobottom").setEnabled(true);
+
         this.setFillsViewportHeight(true);
+    }
+
+    protected boolean processKeyBinding(KeyStroke ks, KeyEvent e, int condition, boolean pressed) {
+      
+        boolean ret = super.processKeyBinding(ks, e, condition, pressed);
+
+        if (getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).get(ks) != null) { return false; }
+        if (getRootPane().getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).get(ks) != null) { return false; }
+        return ret;
     }
 
     public void createColumns() {
@@ -328,8 +342,7 @@ public class DownloadTable extends JTable implements MouseListener, MouseMotionL
     public void keyReleased(KeyEvent e) {
         if (e.getKeyCode() == KeyEvent.VK_DELETE) {
             ArrayList<DownloadLink> alllinks = getAllSelectedDownloadLinks();
-            TableAction test = new TableAction(panel, JDTheme.II("gui.images.delete", 16, 16), JDL.L("gui.table.contextmenu.delete", "entfernen") + " (" + alllinks.size() + ")", TableAction.DELETE,
-                    new Property("links", alllinks));
+            TableAction test = new TableAction(panel, JDTheme.II("gui.images.delete", 16, 16), JDL.L("gui.table.contextmenu.delete", "entfernen") + " (" + alllinks.size() + ")", TableAction.DELETE, new Property("links", alllinks));
             test.actionPerformed(new ActionEvent(test, 0, ""));
         }
     }
@@ -341,8 +354,7 @@ public class DownloadTable extends JTable implements MouseListener, MouseMotionL
         if (e.getSource() == getTableHeader()) {
             if (e.getButton() == MouseEvent.BUTTON1) {
                 int col = getRealColumnAtPoint(e.getX());
-                TableAction test = new TableAction(panel, JDTheme.II("gui.images.sort", 16, 16), JDL.L("gui.table.contextmenu.packagesort", "Paket sortieren"), TableAction.SORT_ALL, new Property(
-                        "col", col));
+                TableAction test = new TableAction(panel, JDTheme.II("gui.images.sort", 16, 16), JDL.L("gui.table.contextmenu.packagesort", "Paket sortieren"), TableAction.SORT_ALL, new Property("col", col));
                 test.actionPerformed(new ActionEvent(test, 0, ""));
             } else if (e.getButton() == MouseEvent.BUTTON3) {
                 JPopupMenu popup = new JPopupMenu();
@@ -428,88 +440,53 @@ public class DownloadTable extends JTable implements MouseListener, MouseMotionL
             JPopupMenu popup = new JPopupMenu();
 
             if (obj instanceof FilePackage || obj instanceof DownloadLink) {
-                popup.add(tmp = new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.stopsign", 16, 16), JDL.L("gui.table.contextmenu.stopmark", "Stop sign"), TableAction.STOP_MARK,
-                        new Property("item", obj))));
+                popup.add(tmp = new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.stopsign", 16, 16), JDL.L("gui.table.contextmenu.stopmark", "Stop sign"), TableAction.STOP_MARK, new Property("item", obj))));
                 if (DownloadWatchDog.getInstance().isStopMark(obj)) tmp.setIcon(tmp.getDisabledIcon());
-                popup.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.delete", 16, 16), JDL.L("gui.table.contextmenu.delete", "entfernen") + " (" + alllinks.size() + ")",
-                        TableAction.DELETE, new Property("links", alllinks))));
+                popup.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.delete", 16, 16), JDL.L("gui.table.contextmenu.delete", "entfernen") + " (" + alllinks.size() + ")", TableAction.DELETE, new Property("links", alllinks))));
 
                 popup.addSeparator();
             }
 
             popup.add(createExtrasMenu(obj));
             if (obj instanceof FilePackage) {
-                popup.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.package_opened", 16, 16), JDL.L("gui.table.contextmenu.downloadDir", "Zielordner öffnen"),
-                        TableAction.DOWNLOAD_DIR, new Property("folder", new File(((FilePackage) obj).getDownloadDirectory())))));
-                popup.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.sort", 16, 16), JDL.L("gui.table.contextmenu.packagesort", "Paket sortieren")
-                        + " ("
-                        + sfp.size()
-                        + "), ("
-                        + model.getColumnName(col)
-                        + ")", TableAction.SORT, new Property("col", model.toModel(col)))));
-                popup.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.edit", 16, 16), JDL.L("gui.table.contextmenu.editpackagename", "Paketname ändern") + " (" + sfp.size() + ")",
-                        TableAction.EDIT_NAME, new Property("packages", sfp))));
-                popup.add(tmp = new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.save", 16, 16), JDL.L("gui.table.contextmenu.editdownloadDir", "Zielordner ändern")
-                        + " ("
-                        + sfp.size()
-                        + ")", TableAction.EDIT_DIR, new Property("packages", sfp))));
+                popup.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.package_opened", 16, 16), JDL.L("gui.table.contextmenu.downloadDir", "Zielordner öffnen"), TableAction.DOWNLOAD_DIR, new Property("folder", new File(((FilePackage) obj).getDownloadDirectory())))));
+                popup.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.sort", 16, 16), JDL.L("gui.table.contextmenu.packagesort", "Paket sortieren") + " (" + sfp.size() + "), (" + model.getColumnName(col) + ")", TableAction.SORT, new Property("col", model.toModel(col)))));
+                popup.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.edit", 16, 16), JDL.L("gui.table.contextmenu.editpackagename", "Paketname ändern") + " (" + sfp.size() + ")", TableAction.EDIT_NAME, new Property("packages", sfp))));
+                popup.add(tmp = new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.save", 16, 16), JDL.L("gui.table.contextmenu.editdownloadDir", "Zielordner ändern") + " (" + sfp.size() + ")", TableAction.EDIT_DIR, new Property("packages", sfp))));
 
                 popup.addSeparator();
             }
             if (obj instanceof DownloadLink) {
-                popup.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.package_opened", 16, 16), JDL.L("gui.table.contextmenu.downloadDir", "Zielordner öffnen"),
-                        TableAction.DOWNLOAD_DIR, new Property("folder", new File(((DownloadLink) obj).getFileOutput()).getParentFile()))));
+                popup.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.package_opened", 16, 16), JDL.L("gui.table.contextmenu.downloadDir", "Zielordner öffnen"), TableAction.DOWNLOAD_DIR, new Property("folder", new File(((DownloadLink) obj).getFileOutput()).getParentFile()))));
 
-                popup.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.sort", 16, 16), JDL.L("gui.table.contextmenu.packagesort", "Paket sortieren")
-                        + " ("
-                        + sfp.size()
-                        + "), ("
-                        + model.getColumnName(col)
-                        + ")", TableAction.SORT, new Property("col", model.toModel(col)))));
+                popup.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.sort", 16, 16), JDL.L("gui.table.contextmenu.packagesort", "Paket sortieren") + " (" + sfp.size() + "), (" + model.getColumnName(col) + ")", TableAction.SORT, new Property("col", model.toModel(col)))));
 
-                popup.add(tmp = new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.browse", 16, 16), JDL.L("gui.table.contextmenu.browseLink", "im Browser öffnen"),
-                        TableAction.DOWNLOAD_BROWSE_LINK, new Property("downloadlink", obj))));
+                popup.add(tmp = new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.browse", 16, 16), JDL.L("gui.table.contextmenu.browseLink", "im Browser öffnen"), TableAction.DOWNLOAD_BROWSE_LINK, new Property("downloadlink", obj))));
                 if (((DownloadLink) obj).getLinkType() != DownloadLink.LINKTYPE_NORMAL) tmp.setEnabled(false);
             }
             if (obj instanceof FilePackage || obj instanceof DownloadLink) {
-                popup.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.dlc", 16, 16), JDL.L("gui.table.contextmenu.dlc", "DLC erstellen") + " (" + alllinks.size() + ")",
-                        TableAction.DOWNLOAD_DLC, new Property("links", alllinks))));
+                popup.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.dlc", 16, 16), JDL.L("gui.table.contextmenu.dlc", "DLC erstellen") + " (" + alllinks.size() + ")", TableAction.DOWNLOAD_DLC, new Property("links", alllinks))));
                 popup.add(buildpriomenu(alllinks));
-                popup.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.icons.copy", 16, 16), JDL.L("gui.table.contextmenu.copyPassword", "Copy Password") + " (" + alllinks.size() + ")",
-                        TableAction.DOWNLOAD_COPY_PASSWORD, new Property("links", alllinks))));
-                popup.add(tmp = new JMenuItem(new TableAction(panel, JDTheme.II("gui.icons.cut", 16, 16), JDL.L("gui.table.contextmenu.copyLink", "Copy URL") + " (" + allnoncon.size() + ")",
-                        TableAction.DOWNLOAD_COPY_URL, new Property("links", allnoncon))));
+                popup.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.icons.copy", 16, 16), JDL.L("gui.table.contextmenu.copyPassword", "Copy Password") + " (" + alllinks.size() + ")", TableAction.DOWNLOAD_COPY_PASSWORD, new Property("links", alllinks))));
+                popup.add(tmp = new JMenuItem(new TableAction(panel, JDTheme.II("gui.icons.cut", 16, 16), JDL.L("gui.table.contextmenu.copyLink", "Copy URL") + " (" + allnoncon.size() + ")", TableAction.DOWNLOAD_COPY_URL, new Property("links", allnoncon))));
                 if (allnoncon.size() == 0) tmp.setEnabled(false);
-                popup.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.config.network_local", 16, 16), JDL.L("gui.table.contextmenu.check", "Check OnlineStatus")
-                        + " ("
-                        + alllinks.size()
-                        + ")", TableAction.CHECK, new Property("links", alllinks))));
-                popup.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.newpackage", 16, 16), JDL.L("gui.table.contextmenu.newpackage", "In neues Paket verschieben")
-                        + " ("
-                        + alllinks.size()
-                        + ")", TableAction.NEW_PACKAGE, new Property("links", alllinks))));
-                popup.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.password", 16, 16), JDL.L("gui.table.contextmenu.setdlpw", "Set download password")
-                        + " ("
-                        + alllinks.size()
-                        + ")", TableAction.SET_PW, new Property("links", alllinks))));
+                popup.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.config.network_local", 16, 16), JDL.L("gui.table.contextmenu.check", "Check OnlineStatus") + " (" + alllinks.size() + ")", TableAction.CHECK, new Property("links", alllinks))));
+                popup.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.newpackage", 16, 16), JDL.L("gui.table.contextmenu.newpackage", "In neues Paket verschieben") + " (" + alllinks.size() + ")", TableAction.NEW_PACKAGE, new Property("links", alllinks))));
+                popup.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.password", 16, 16), JDL.L("gui.table.contextmenu.setdlpw", "Set download password") + " (" + alllinks.size() + ")", TableAction.SET_PW, new Property("links", alllinks))));
                 popup.addSeparator();
                 HashMap<String, Object> prop = new HashMap<String, Object>();
                 prop.put("links", alllinks);
                 prop.put("boolean", true);
-                popup.add(tmp = new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.ok", 16, 16), JDL.L("gui.table.contextmenu.enable", "aktivieren") + " (" + links_disabled + ")",
-                        TableAction.DE_ACTIVATE, new Property("infos", prop))));
+                popup.add(tmp = new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.ok", 16, 16), JDL.L("gui.table.contextmenu.enable", "aktivieren") + " (" + links_disabled + ")", TableAction.DE_ACTIVATE, new Property("infos", prop))));
                 if (links_disabled == 0) tmp.setEnabled(false);
                 prop = new HashMap<String, Object>();
                 prop.put("links", alllinks);
                 prop.put("boolean", false);
-                popup.add(tmp = new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.bad", 16, 16), JDL.L("gui.table.contextmenu.disable", "deaktivieren") + " (" + links_enabled + ")",
-                        TableAction.DE_ACTIVATE, new Property("infos", prop))));
+                popup.add(tmp = new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.bad", 16, 16), JDL.L("gui.table.contextmenu.disable", "deaktivieren") + " (" + links_enabled + ")", TableAction.DE_ACTIVATE, new Property("infos", prop))));
                 if (links_enabled == 0) tmp.setEnabled(false);
-                popup.add(tmp = new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.resume", 16, 16), JDL.L("gui.table.contextmenu.resume", "fortsetzen") + " (" + resumlinks.size() + ")",
-                        TableAction.DOWNLOAD_RESUME, new Property("links", resumlinks))));
+                popup.add(tmp = new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.resume", 16, 16), JDL.L("gui.table.contextmenu.resume", "fortsetzen") + " (" + resumlinks.size() + ")", TableAction.DOWNLOAD_RESUME, new Property("links", resumlinks))));
                 if (resumlinks.size() == 0) tmp.setEnabled(false);
-                popup.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.reset", 16, 16), JDL.L("gui.table.contextmenu.reset", "zurücksetzen") + " (" + alllinks.size() + ")",
-                        TableAction.DOWNLOAD_RESET, new Property("links", alllinks))));
+                popup.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.reset", 16, 16), JDL.L("gui.table.contextmenu.reset", "zurücksetzen") + " (" + alllinks.size() + ")", TableAction.DOWNLOAD_RESET, new Property("links", alllinks))));
             }
             if (popup.getComponentCount() != 0) popup.show(this, point.x, point.y);
         }
@@ -539,7 +516,7 @@ public class DownloadTable extends JTable implements MouseListener, MouseMotionL
 
     private JMenu createExtrasMenu(Object obj) {
         JMenu pluginPopup = new JMenu(JDL.L("gui.table.contextmenu.extrasSubmenu", "Extras"));
-        ArrayList<MenuItem> entries = new ArrayList<MenuItem>();
+        ArrayList<MenuAction> entries = new ArrayList<MenuAction>();
         if (obj instanceof FilePackage) {
             JDUtilities.getController().fireControlEventDirect(new ControlEvent((FilePackage) obj, ControlEvent.CONTROL_LINKLIST_CONTEXT_MENU, entries));
         } else if (obj instanceof DownloadLink) {
@@ -548,7 +525,7 @@ public class DownloadTable extends JTable implements MouseListener, MouseMotionL
             return null;
         }
         if (entries != null && entries.size() > 0) {
-            for (MenuItem next : entries) {
+            for (MenuAction next : entries) {
                 JMenuItem mi = Menu.getJMenuItem(next);
                 if (mi == null) {
                     pluginPopup.addSeparator();

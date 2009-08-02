@@ -20,6 +20,7 @@ import java.awt.Toolkit;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -28,8 +29,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.logging.Logger;
 
+import javax.swing.JComponent;
 import javax.swing.JMenuItem;
 import javax.swing.JScrollPane;
+import javax.swing.KeyStroke;
 import javax.swing.Timer;
 
 import jd.controlling.ClipboardHandler;
@@ -50,6 +53,8 @@ import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.InfoPanelHandler;
 import jd.gui.swing.jdgui.JDGuiConstants;
+import jd.gui.swing.jdgui.MainTabbedPane;
+import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.ThreadedAction;
 import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
@@ -110,6 +115,25 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
         asyncUpdate.setRepeats(false);
         asyncUpdate.restart();
         initActions();
+        internalTable.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).remove(ActionController.getToolBarAction("action.downloadview.movetotop").getKeyStroke());
+        internalTable.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).remove(ActionController.getToolBarAction("action.downloadview.moveup").getKeyStroke());
+        internalTable.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).remove(ActionController.getToolBarAction("action.downloadview.movedown").getKeyStroke());
+        internalTable.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).remove(ActionController.getToolBarAction("action.downloadview.movetobottom").getKeyStroke());
+        internalTable.getInputMap(JComponent.WHEN_FOCUSED).remove(ActionController.getToolBarAction("action.downloadview.movetotop").getKeyStroke());
+        internalTable.getInputMap(JComponent.WHEN_FOCUSED).remove(ActionController.getToolBarAction("action.downloadview.moveup").getKeyStroke());
+        internalTable.getInputMap(JComponent.WHEN_FOCUSED).remove(ActionController.getToolBarAction("action.downloadview.movedown").getKeyStroke());
+        internalTable.getInputMap(JComponent.WHEN_FOCUSED).remove(ActionController.getToolBarAction("action.downloadview.movetobottom").getKeyStroke());
+        internalTable.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).remove(ActionController.getToolBarAction("action.downloadview.movetotop").getKeyStroke());
+        internalTable.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).remove(ActionController.getToolBarAction("action.downloadview.moveup").getKeyStroke());
+        internalTable.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).remove(ActionController.getToolBarAction("action.downloadview.movedown").getKeyStroke());
+        internalTable.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).remove(ActionController.getToolBarAction("action.downloadview.movetobottom").getKeyStroke());
+        
+        
+       
+        MainTabbedPane.getInstance().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).remove(ActionController.getToolBarAction("action.downloadview.movetotop").getKeyStroke());
+        MainTabbedPane.getInstance().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).remove(ActionController.getToolBarAction("action.downloadview.moveup").getKeyStroke());
+        MainTabbedPane.getInstance().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).remove(ActionController.getToolBarAction("action.downloadview.movedown").getKeyStroke());
+        MainTabbedPane.getInstance().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).remove(ActionController.getToolBarAction("action.downloadview.movetobottom").getKeyStroke());
         MainToolBar.getInstance().updateToolbar();
     }
 
@@ -191,6 +215,7 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
     public boolean needsViewport() {
         return false;
     }
+
 
     public void showFilePackageInfo(FilePackage fp) {
         filePackageInfo.setPackage(fp);

@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.MenuItem;
+import jd.config.MenuAction;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.SingletonPanel;
 import jd.plugins.OptionalPlugin;
@@ -39,7 +39,7 @@ import jd.plugins.PluginOptional;
 public class LangFileEditor extends PluginOptional {
 
     private final SingletonPanel lfe;
-    protected MenuItem activateAction;
+    protected MenuAction activateAction;
 
     public LangFileEditor(PluginWrapper wrapper) {
         super(wrapper);
@@ -61,14 +61,14 @@ public class LangFileEditor extends PluginOptional {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() instanceof MenuItem && ((MenuItem) e.getSource()).getActionID() == 0) {
+        if (e.getSource() instanceof MenuAction && ((MenuAction) e.getSource()).getActionID() == 0) {
             SwingGui.getInstance().setContent(new LFEView(lfe.getPanel(),this));
         }
     }
 
     @Override
     public boolean initAddon() {
-        activateAction=new MenuItem(MenuItem.TOGGLE, "Show", 0).setActionListener(this);
+        activateAction=new MenuAction(MenuAction.TOGGLE, "Show", 0).setActionListener(this);
         activateAction.setSelected(false);
         return true;
     }
@@ -78,8 +78,8 @@ public class LangFileEditor extends PluginOptional {
     }
 
     @Override
-    public ArrayList<MenuItem> createMenuitems() {
-        ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
+    public ArrayList<MenuAction> createMenuitems() {
+        ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
 
         menu.add(activateAction);
 

@@ -5,27 +5,27 @@ import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.KeyStroke;
 
-import jd.config.MenuItem;
+import jd.config.MenuAction;
 
 public class Menu {
 
-    public static JMenuItem getJMenuItem(final MenuItem mi) {
+    public static JMenuItem getJMenuItem( MenuAction mi) {
         JMenuItem m;
         switch (mi.getType()) {
-        case MenuItem.SEPARATOR:
+        case MenuAction.SEPARATOR:
             return null;
-        case MenuItem.NORMAL:
+        case MenuAction.NORMAL:
 
             m = new JMenuItem(mi);
             return m;
-        case MenuItem.TOGGLE:
+        case MenuAction.TOGGLE:
 
             JCheckBoxMenuItem m2 = new JCheckBoxMenuItem(mi);
-            m2.setSelected(mi.isSelected());
+//            m2.setSelected(mi.isSelected());
 
-            if (mi.getAccelerator() != null) m2.setAccelerator(KeyStroke.getKeyStroke(mi.getAccelerator()));
+//            if (mi.getAccelerator() != null) m2.setAccelerator(KeyStroke.getKeyStroke(mi.getAccelerator()));
             return m2;
-        case MenuItem.CONTAINER:
+        case MenuAction.CONTAINER:
             JMenu m3 = new JMenu(mi.getTitle());
             m3.setIcon(mi.getIcon());
             JMenuItem c;

@@ -17,8 +17,8 @@
 package jd.gui.swing.jdgui.menu.actions;
 
 import java.awt.event.ActionEvent;
-
-public class AddonConfiguration extends StartAction {
+import jd.config.MenuAction;
+public class AddonConfiguration extends MenuAction {
 
     private static final long serialVersionUID = 5296731283280444433L;
 

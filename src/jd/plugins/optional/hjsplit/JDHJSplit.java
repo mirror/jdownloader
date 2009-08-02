@@ -26,7 +26,7 @@ import javax.swing.filechooser.FileFilter;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.MenuItem;
+import jd.config.MenuAction;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.controlling.SingleDownloadController;
@@ -110,12 +110,12 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
             break;
 
         case ControlEvent.CONTROL_LINKLIST_CONTEXT_MENU:
-            ArrayList<MenuItem> items = (ArrayList<MenuItem>) event.getParameter();
-            MenuItem m;
+            ArrayList<MenuAction> items = (ArrayList<MenuAction>) event.getParameter();
+            MenuAction m;
             if (event.getSource() instanceof DownloadLink) {
                 link = (DownloadLink) event.getSource();
 
-                items.add(m = new MenuItem(MenuItem.NORMAL, JDL.L("plugins.optional.jdhjsplit.linkmenu.merge", "Merge"), 1000).setActionListener(this));
+                items.add(m = (MenuAction)new MenuAction(MenuAction.NORMAL, JDL.L("plugins.optional.jdhjsplit.linkmenu.merge", "Merge"), 1000).setActionListener(this));
                 m.setEnabled(false);
                 if (link.getLinkStatus().hasStatus(LinkStatus.FINISHED) && this.isStartVolume(new File(link.getFileOutput()))) m.setEnabled(true);
                 if (new File(link.getFileOutput()).exists() && link.getName().matches(".*rar$")) m.setEnabled(true);
@@ -124,7 +124,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
 
             } else {
                 FilePackage fp = (FilePackage) event.getSource();
-                items.add(m = new MenuItem(MenuItem.NORMAL, JDL.L("plugins.optional.jdhjsplit.linkmenu.package.merge", "Merge package"), 1001).setActionListener(this));
+                items.add(m = (MenuAction)new MenuAction(MenuAction.NORMAL, JDL.L("plugins.optional.jdhjsplit.linkmenu.package.merge", "Merge package"), 1001).setActionListener(this));
                 m.setProperty("PACKAGE", fp);
             }
             break;
@@ -132,26 +132,26 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
     }
 
     // @Override
-    public ArrayList<MenuItem> createMenuitems() {
-        ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
-        MenuItem m;
+    public ArrayList<MenuAction> createMenuitems() {
+        ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
+        MenuAction m;
 
-        menu.add(m = new MenuItem(MenuItem.TOGGLE, JDL.L("plugins.optional.hjsplit.menu.toggle", "Activate"), 1).setActionListener(this));
+        menu.add(m = new MenuAction(MenuAction.TOGGLE, JDL.L("plugins.optional.hjsplit.menu.toggle", "Activate"), 1).setActionListener(this));
         m.setSelected(this.getPluginConfig().getBooleanProperty("ACTIVATED", true));
 
-        menu.add(new MenuItem(MenuItem.NORMAL, JDL.L("plugins.optional.hjsplit.menu.extract.singlefils", "Merge archive(s)"), 21).setActionListener(this));
+        menu.add(new MenuAction(MenuAction.NORMAL, JDL.L("plugins.optional.hjsplit.menu.extract.singlefils", "Merge archive(s)"), 21).setActionListener(this));
 
         return menu;
     }
 
     // @Override
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() instanceof MenuItem) {
-            menuitemActionPerformed((MenuItem) e.getSource());
+        if (e.getSource() instanceof MenuAction) {
+            menuitemActionPerformed((MenuAction) e.getSource());
         }
     }
 
-    private void menuitemActionPerformed(MenuItem source) {
+    private void menuitemActionPerformed(MenuAction source) {
         SubConfiguration cfg = this.getPluginConfig();
         switch (source.getActionID()) {
         case 1:

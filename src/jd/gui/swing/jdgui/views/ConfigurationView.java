@@ -21,7 +21,7 @@ public class ConfigurationView extends View {
      */
     private static final String IDENT_PREFIX = "jd.gui.swing.jdgui.views.configurationview.";
 
-    private Thread changethread;
+  
 
     public ConfigurationView() {
         super();
@@ -47,36 +47,12 @@ public class ConfigurationView extends View {
 
     @Override
     protected void onHide() {
-        MainTabbedPane.getInstance().setChanged(false, -1);
-        if (changethread != null) changethread.interrupt();
+      
     }
 
     @Override
     protected void onShow() {
-        if (changethread != null) changethread.interrupt();
-        changethread = new Thread() {
-            public void run() {
-                while (true) {
-                    SwitchPanel panel = getContent();
-                    if (panel instanceof ConfigPanel) {
-                        PropertyType changes = ((ConfigPanel) panel).hasChanges();
-                        if (changes != PropertyType.NONE) {
-                            MainTabbedPane.getInstance().setChanged(true, -1);
-                        } else {
-                            MainTabbedPane.getInstance().setChanged(false, -1);
-                        }
-                    }
-
-                    try {
-                        Thread.sleep(500);
-                    } catch (InterruptedException e) {
-                        break;
-                    }
-                }
-
-            }
-        };
-        changethread.start();
+        
 
     }
 

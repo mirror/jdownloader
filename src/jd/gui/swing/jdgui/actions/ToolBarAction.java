@@ -1,16 +1,11 @@
 package jd.gui.swing.jdgui.actions;
 
-import java.awt.event.KeyEvent;
-import java.lang.reflect.Field;
-
 import javax.swing.AbstractAction;
-import javax.swing.KeyStroke;
 
-import jd.controlling.JDLogger;
-import jd.utils.JDTheme;
+import jd.gui.action.JDAction;
 import jd.utils.locale.JDL;
 
-public abstract class ToolBarAction extends AbstractAction {
+public abstract class ToolBarAction extends JDAction {
     /**
      * Preferred ButtonType
      * 
@@ -30,7 +25,6 @@ public abstract class ToolBarAction extends AbstractAction {
     public static final String PRIORITY = "PRIORITY";
     public static final String ID = "ID";
     public static final String VISIBLE = "VISIBLE";
-    public static final String IMAGE_KEY = "IMAGE_KEY";
 
     protected Types type = Types.NORMAL;
 
@@ -56,11 +50,10 @@ public abstract class ToolBarAction extends AbstractAction {
     }
 
     public ToolBarAction(String menukey, String iconkey) {
-        super();
+        super(JDL.L("gui.menu." + menukey + ".name", menukey));
         setId(menukey);
         if (iconkey != null) setIcon(iconkey);
-        setName(JDL.L("gui.menu." + menukey + ".name", menukey));
-        setMnemonic(JDL.L("gui.menu." + menukey + ".mnem", "-"), JDL.L("gui.menu." + menukey + ".name", menukey));
+        setMnemonic(JDL.L("gui.menu." + menukey + ".mnem", "-"));
         setAccelerator(JDL.L("gui.menu." + menukey + ".accel", "-"));
         initDefaults();
         ActionController.register(this);
@@ -80,13 +73,6 @@ public abstract class ToolBarAction extends AbstractAction {
      */
     public abstract void init();
 
-    public void setIcon(String key) {
-        if (key.length() < 3) return;
-        putValue(AbstractAction.SMALL_ICON, JDTheme.II(key, 24, 24));
-        putValue(IMAGE_KEY, key);
-
-    }
-
     /**
      * Sets the tooltip text, or a long description
      * 
@@ -94,37 +80,6 @@ public abstract class ToolBarAction extends AbstractAction {
      */
     public void setToolTipText(String tt) {
         putValue(AbstractAction.LONG_DESCRIPTION, tt);
-    }
-
-    private void setAccelerator(String acceleratorString) {
-        if (acceleratorString != null && acceleratorString.length() > 0) {
-            putValue(AbstractAction.ACCELERATOR_KEY, KeyStroke.getKeyStroke(acceleratorString));
-        }
-    }
-
-    private void setMnemonic(String key, String keyname) {
-        char mnemonic = key.charAt(0);
-        if (mnemonic != 0 && !key.contentEquals("-")) {
-            Class<?> b = KeyEvent.class;
-            Field f;
-            try {
-                f = b.getField("VK_" + Character.toUpperCase(mnemonic));
-                int m = (Integer) f.get(null);
-                putValue(AbstractAction.MNEMONIC_KEY, m);
-
-                putValue(AbstractAction.DISPLAYED_MNEMONIC_INDEX_KEY, keyname.indexOf(m));
-            } catch (Exception e) {
-                JDLogger.exception(e);
-            }
-        }
-    }
-
-    private void setName(String string) {
-        putValue(AbstractAction.NAME, string);
-    }
-
-    public void setSelected(boolean b) {
-        putValue(SELECTED, b);
     }
 
     /**
@@ -136,29 +91,9 @@ public abstract class ToolBarAction extends AbstractAction {
         return this.getValue(ID).toString();
     }
 
-    /**
-     * Returns if the action is in "selected" State
-     * 
-     * @return
-     */
-    public boolean isSelected() {
-        try {
-            return (Boolean) this.getValue(SELECTED);
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
     public Types getType() {
         return type;
     }
 
-    public String getTooltipText() {
-        try {
-            return getValue(AbstractAction.LONG_DESCRIPTION).toString();
-        } catch (Exception e) {
-            return null;
-        }
-    }
 
 }

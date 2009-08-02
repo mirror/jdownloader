@@ -18,9 +18,10 @@ package jd.gui.swing.jdgui.menu.actions;
 
 import java.awt.event.ActionEvent;
 
+import jd.config.MenuAction;
 import jd.gui.swing.jdgui.actions.ActionController;
 
-public class AddContainerAction extends StartAction {
+public class AddContainerAction extends MenuAction {
 
     private static final long serialVersionUID = 4713690050852393405L;
 

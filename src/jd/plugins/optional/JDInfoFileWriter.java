@@ -25,7 +25,7 @@ import javax.swing.JComboBox;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.MenuItem;
+import jd.config.MenuAction;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.controlling.SingleDownloadController;
@@ -80,7 +80,7 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
     }
 
     // @Override
-    public ArrayList<MenuItem> createMenuitems() {
+    public ArrayList<MenuAction> createMenuitems() {
         return null;
     }
 

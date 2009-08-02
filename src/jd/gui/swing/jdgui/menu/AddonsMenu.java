@@ -23,7 +23,7 @@ import java.util.ArrayList;
 import javax.swing.JMenuItem;
 
 import jd.OptionalPluginWrapper;
-import jd.config.MenuItem;
+import jd.config.MenuAction;
 import jd.gui.UserIF;
 import jd.gui.swing.menu.Menu;
 import jd.plugins.Plugin;
@@ -54,22 +54,22 @@ public class AddonsMenu extends JStartMenu {
         for (final OptionalPluginWrapper plg : OptionalPluginWrapper.getOptionalWrapper()) {
             if (!plg.isLoaded() || !plg.isEnabled()) continue;
             boolean config = false;
-            ArrayList<MenuItem> mis = plg.getPlugin().createMenuitems();
+            ArrayList<MenuAction> mis = plg.getPlugin().createMenuitems();
             if (mis == null && plg.getPlugin().getConfig() != null && plg.getPlugin().getConfig().getEntries().size() > 0) {
-                mis = new ArrayList<MenuItem>();
+                mis = new ArrayList<MenuAction>();
                 config = true;
             }
             if (mis != null) {
                 if (plg.getPlugin().getConfig() != null && plg.getPlugin().getConfig().getEntries().size() > 0) {
-                    MenuItem mi;
-                    mis.add(0, mi = new MenuItem(JDL.LF("gui.startmenu.addons.config2", "%s's settings", plg.getHost()), -10000));
+                    MenuAction mi;
+                    mis.add(0, mi = new MenuAction(JDL.LF("gui.startmenu.addons.config2", "%s's settings", plg.getHost()), -10000));
                     mi.setProperty("PLUGIN", plg.getPlugin());
                     mi.setIcon(JDTheme.II(plg.getPlugin().getIconKey(), 16, 16));
                     mi.setActionListener(new ActionListener() {
 
                         public void actionPerformed(ActionEvent e) {
-                            UserIF.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL, ((Plugin) ((MenuItem) e.getSource()).getProperty("PLUGIN")).getConfig());
-//                            SimpleGUI.displayConfig(((Plugin) ((MenuItem) e.getSource()).getProperty("PLUGIN")).getConfig(), false);
+                            UserIF.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL, ((Plugin) ((MenuAction) e.getSource()).getProperty("PLUGIN")).getConfig());
+//                            SimpleGUI.displayConfig(((Plugin) ((MenuAction) e.getSource()).getProperty("PLUGIN")).getConfig(), false);
                         }
 
                     });
@@ -77,7 +77,7 @@ public class AddonsMenu extends JStartMenu {
                 }
                 if (mis.size() > 1) {
 
-                    MenuItem m = new MenuItem(MenuItem.CONTAINER, plg.getPlugin().getHost(), 0);
+                    MenuAction m = new MenuAction(MenuAction.CONTAINER, plg.getPlugin().getHost(), 0);
                     m.setIcon(JDTheme.II(plg.getPlugin().getIconKey(), 16, 16));
                     m.setItems(mis);
                     JMenuItem mi = Menu.getJMenuItem(m);
@@ -88,13 +88,13 @@ public class AddonsMenu extends JStartMenu {
                         addSeparator();
                     }
                 } else {
-                    for (MenuItem mi : mis) {
+                    for (MenuAction mi : mis) {
                         JMenuItem c = Menu.getJMenuItem(mi);
                         c.setDisabledIcon(null);
                         c.setIcon(JDTheme.II(plg.getPlugin().getIconKey(), 16, 16));
                         c.setSelectedIcon(JDTheme.II(plg.getPlugin().getIconKey(), 16, 16));
                         c.setDisabledSelectedIcon(null);
-                        if (mi.getType() == MenuItem.TOGGLE) {
+                        if (mi.getType() == MenuAction.TOGGLE) {
                             itemsToggle.add(c);
                         } else {
                             if (config) {

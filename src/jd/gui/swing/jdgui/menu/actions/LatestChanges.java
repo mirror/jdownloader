@@ -19,8 +19,8 @@ package jd.gui.swing.jdgui.menu.actions;
 import java.awt.event.ActionEvent;
 
 import jd.gui.swing.components.linkbutton.JLink;
-
-public class LatestChanges extends StartAction {
+import jd.config.MenuAction;
+public class LatestChanges extends MenuAction {
 
     private static final long serialVersionUID = 2705114922279833817L;
 

@@ -24,7 +24,7 @@ import java.util.Iterator;
 
 import jd.HostPluginWrapper;
 import jd.PluginWrapper;
-import jd.config.MenuItem;
+import jd.config.MenuAction;
 import jd.controlling.DistributeData;
 import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
@@ -88,7 +88,7 @@ public abstract class PluginsC extends Plugin {
     }
 
     // @Override
-    public ArrayList<MenuItem> createMenuitems() {
+    public ArrayList<MenuAction> createMenuitems() {
         return null;
     }
 

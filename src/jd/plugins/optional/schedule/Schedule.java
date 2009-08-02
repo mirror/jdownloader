@@ -23,7 +23,9 @@ import java.util.Calendar;
 import java.util.Date;
 
 import jd.PluginWrapper;
-import jd.config.MenuItem;
+
+import jd.config.MenuAction;
+
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.SingletonPanel;
 import jd.plugins.OptionalPlugin;
@@ -107,14 +109,14 @@ public class Schedule extends PluginOptional {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() instanceof MenuItem && ((MenuItem) e.getSource()).getActionID() == 0) {
+        if (e.getSource() instanceof MenuAction && ((MenuAction) e.getSource()).getActionID() == 0) {
         	JDGui.getInstance().setContent(sched.getPanel());
         }
     }
     
-    public ArrayList<MenuItem> createMenuitems() {
-        ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
-        menu.add(new MenuItem(getHost(), 0).setActionListener(this));
+    public ArrayList<MenuAction> createMenuitems() {
+        ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
+        menu.add(new MenuAction(getHost(), 0).setActionListener(this));
         return menu;
     }
 

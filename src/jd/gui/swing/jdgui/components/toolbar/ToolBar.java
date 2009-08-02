@@ -8,9 +8,13 @@ import java.beans.PropertyChangeListener;
 import javax.swing.AbstractButton;
 import javax.swing.Action;
 import javax.swing.JButton;
+import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JMenuItem;
+import javax.swing.JRootPane;
 import javax.swing.JSeparator;
 import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
+import javax.swing.KeyStroke;
 
 import jd.controlling.JDLogger;
 import jd.gui.swing.GuiRunnable;
@@ -23,23 +27,11 @@ import jd.utils.JDTheme;
 import net.miginfocom.swing.MigLayout;
 
 public class ToolBar extends JToolBar implements ActionControllerListener {
-    private static String[] defaultlist = new String[] {
-            "toolbar.control.start",
-            "toolbar.control.pause",
-            "toolbar.control.stop",
+    private static String[] defaultlist = new String[] { "toolbar.control.start", "toolbar.control.pause", "toolbar.control.stop",
 
-            "toolbar.separator",
-            "action.downloadview.movetotop",
-            "action.downloadview.moveup",
-            "action.downloadview.movedown",
-            "action.downloadview.movetobottom",
-            "toolbar.separator",
-            "toolbar.quickconfig.clipboardoberserver",
-            "toolbar.quickconfig.reconnecttoggle",
+    "toolbar.separator", "action.downloadview.movetotop", "action.downloadview.moveup", "action.downloadview.movedown", "action.downloadview.movetobottom", "toolbar.separator", "toolbar.quickconfig.clipboardoberserver", "toolbar.quickconfig.reconnecttoggle",
 
-            "toolbar.separator",
-            "toolbar.interaction.reconnect",
-            "toolbar.interaction.update",
+    "toolbar.separator", "toolbar.interaction.reconnect", "toolbar.interaction.update",
 
     };
 
@@ -57,6 +49,8 @@ public class ToolBar extends JToolBar implements ActionControllerListener {
 
     private int preferredIconSize;
 
+    private JRootPane rootpane;
+
     public ToolBar() {
         this(24);
 
@@ -73,7 +67,7 @@ public class ToolBar extends JToolBar implements ActionControllerListener {
 
         // this.updateToolbar();
         current = defaultlist;
-        this.updateToolbar();
+   
         // please add listener here. to avoid the toolbar beiong pained multible
         // times
         ActionController.getBroadcaster().addListener(this);
@@ -104,13 +98,20 @@ public class ToolBar extends JToolBar implements ActionControllerListener {
         sb.append("[grow,fill]");
         return sb.toString();
     }
-
+    /**
+     * USed to register the shortcuts to the rootpane during init
+     * @param jdGui
+     */
+    public void registerAccelerators(SwingGui jdGui) {
+       rootpane=jdGui.getMainFrame().getRootPane();
+        
+    }
     private void initToolbar(String[] list) {
         synchronized (list) {
             SwingGui.checkEDT();
             setLayout(new MigLayout("ins 0, gap 0", getColConstraints(list)));
             AbstractButton ab;
-            JToggleButton tbt;
+            JCheckBoxMenuItem tbt;
             if (list != null) {
                 for (String key : list) {
                     ToolBarAction action = ActionController.getToolBarAction(key);
@@ -132,64 +133,78 @@ public class ToolBar extends JToolBar implements ActionControllerListener {
                     switch (action.getType()) {
                     case NORMAL:
 
-                        add(ab = new JButton(action), BUTTON_CONSTRAINTS);
-                        ab.setText("");
+//                        add(ab = new JMenuItem(action), BUTTON_CONSTRAINTS);
+                        ab=add(action);
+//                        ab.setText("");
                         break;
                     case SEPARATOR:
                         add(new JSeparator(JSeparator.VERTICAL), "height 32,gapleft 10,gapright 10");
                         break;
 
                     case TOGGLE:
-
-                        add(ab = tbt = new JToggleButton(action), BUTTON_CONSTRAINTS);
-                        tbt.setText("");
+                        ab=add(action);
+//                        add(ab = tbt = new JCheckBoxMenuItem(action), BUTTON_CONSTRAINTS);
+//                        tbt.setText("");
                         break;
 
                     }
+            
                     if (ab != null) {
-                        ab.setText("");
-                        ab.setIcon(JDTheme.II(action.getValue(ToolBarAction.IMAGE_KEY) + "", preferredIconSize, preferredIconSize));
+                        
+                        KeyStroke ks = (KeyStroke)(action.getValue(Action.ACCELERATOR_KEY));
+                      rootpane.getInputMap(JButton.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(ks, action);
+                      rootpane.getInputMap(JButton.WHEN_IN_FOCUSED_WINDOW).put(ks, action);
+                      rootpane.getActionMap().put(action, action);
+//                        this.mainFrame.getRootPane().getActionMap().
+                        
+//                        getInputMap(JButton.WHEN_IN_FOCUSED_WINDOW).put(ks, action);
 
-                        if (action.getValue(Action.MNEMONIC_KEY) != null) {
-                            ab.setToolTipText(action.getTooltipText() + " [Alt+" + new String(new byte[]{((Integer) action.getValue(Action.MNEMONIC_KEY)).byteValue()}) + "]");
-                      } else {
-                            ab.setToolTipText(action.getTooltipText());
-                        }
-
-                        ab.setEnabled(action.isEnabled());
-                        ab.setSelected(action.isSelected());
-
-                        action.putValue(GUIINSTANCE, ab);
-                        PropertyChangeListener pcl;
-                        // external changes on the action get deligated to the
-                        // buttons
-                        action.addPropertyChangeListener(pcl = new PropertyChangeListener() {
-                            public void propertyChange(PropertyChangeEvent evt) {
-                                ToolBarAction action = (ToolBarAction) evt.getSource();
-                                try {
-                                    AbstractButton ab = ((AbstractButton) action.getValue(GUIINSTANCE));
-                                    ab.setText("");
-                                    if (action.getValue(Action.MNEMONIC_KEY) != null) {
-                                        ab.setToolTipText(action.getTooltipText() + " [Alt+" + new String(new byte[]{((Integer) action.getValue(Action.MNEMONIC_KEY)).byteValue()}) + "]");
-                                  } else {
-                                        ab.setToolTipText(action.getTooltipText());
-                                    }
-                                    ab.setEnabled(action.isEnabled());
-                                    ab.setSelected(action.isSelected());
-                                } catch (Throwable w) {
-                                    JDLogger.exception(w);
-                                    action.removePropertyChangeListener(this);
-
-                                }
-
-                            }
-
-                        });
-                        if (action.getValue(PROPERTY_CHANGE_LISTENER) != null) {
-
-                            action.removePropertyChangeListener((PropertyChangeListener) action.getValue(PROPERTY_CHANGE_LISTENER));
-                        }
-                        action.putValue(PROPERTY_CHANGE_LISTENER, pcl);
+//                        ab.setText("");
+//
+//                        ab.setIcon(JDTheme.II(action.getValue(ToolBarAction.IMAGE_KEY) + "", preferredIconSize, preferredIconSize));
+//
+//                        // if (action.getAccelerator() != null)
+//                        // ab.setAccelerator(KeyStroke.getKeyStroke(action.getAccelerator()));
+//                        if (action.getValue(Action.MNEMONIC_KEY) != null) {
+//                            ab.setToolTipText(action.getTooltipText() + " [Alt+" + new String(new byte[] { ((Integer) action.getValue(Action.MNEMONIC_KEY)).byteValue() }) + "]");
+//                        } else {
+//                            ab.setToolTipText(action.getTooltipText());
+//                        }
+//
+//                        ab.setEnabled(action.isEnabled());
+//                        ab.setSelected(action.isSelected());
+//
+//                        action.putValue(GUIINSTANCE, ab);
+//                        PropertyChangeListener pcl;
+//                        // external changes on the action get deligated to the
+//                        // buttons
+//                        action.addPropertyChangeListener(pcl = new PropertyChangeListener() {
+//                            public void propertyChange(PropertyChangeEvent evt) {
+//                                ToolBarAction action = (ToolBarAction) evt.getSource();
+//                                try {
+//                                    AbstractButton ab = ((AbstractButton) action.getValue(GUIINSTANCE));
+//                                    ab.setText("");
+//                                    if (action.getValue(Action.MNEMONIC_KEY) != null) {
+//                                        ab.setToolTipText(action.getTooltipText() + " [Alt+" + new String(new byte[] { ((Integer) action.getValue(Action.MNEMONIC_KEY)).byteValue() }) + "]");
+//                                    } else {
+//                                        ab.setToolTipText(action.getTooltipText());
+//                                    }
+//                                    ab.setEnabled(action.isEnabled());
+//                                    ab.setSelected(action.isSelected());
+//                                } catch (Throwable w) {
+//                                    JDLogger.exception(w);
+//                                    action.removePropertyChangeListener(this);
+//
+//                                }
+//
+//                            }
+//
+//                        });
+//                        if (action.getValue(PROPERTY_CHANGE_LISTENER) != null) {
+//
+//                            action.removePropertyChangeListener((PropertyChangeListener) action.getValue(PROPERTY_CHANGE_LISTENER));
+//                        }
+//                        action.putValue(PROPERTY_CHANGE_LISTENER, pcl);
 
                     }
                 }
@@ -214,6 +229,8 @@ public class ToolBar extends JToolBar implements ActionControllerListener {
      * UPdates the toolbar
      */
     public void updateToolbar() {
+        
+        
         new GuiRunnable<Object>() {
             @Override
             public Object runSave() {

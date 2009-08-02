@@ -39,7 +39,7 @@ public class Advanced extends ConfigPanel {
     }
 
     public static String getTitle() {
-        return JDL.L(JDL_PREFIX + "download.advanced.title", "Advanced");
+        return JDL.L(JDL_PREFIX + "download.advanced.title", "Premium");
     }
 
     private SubConfiguration config;

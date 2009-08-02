@@ -35,7 +35,7 @@ import jd.HostPluginWrapper;
 import jd.config.ConfigGroup;
 import jd.config.ConfigPropertyListener;
 import jd.config.Configuration;
-import jd.config.MenuItem;
+import jd.config.MenuAction;
 import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.controlling.AccountControllerEvent;
@@ -314,8 +314,8 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
 
                     JPopupMenu popup = new JPopupMenu();
 
-                    ArrayList<MenuItem> entries = bars[i].getPlugin().createMenuitems();
-                    for (MenuItem next : entries) {
+                    ArrayList<MenuAction> entries = bars[i].getPlugin().createMenuitems();
+                    for (MenuAction next : entries) {
                         JMenuItem mi = Menu.getJMenuItem(next);
                         if (mi == null) {
                             popup.addSeparator();

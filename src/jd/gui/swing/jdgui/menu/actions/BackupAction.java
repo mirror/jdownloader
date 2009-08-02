@@ -22,8 +22,8 @@ import jd.gui.swing.components.Balloon;
 import jd.update.JDUpdateUtils;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
-
-public class BackupAction extends StartAction {
+import jd.config.MenuAction;
+public class BackupAction extends MenuAction {
     /**
      * 
      */
