@@ -33,7 +33,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import javax.swing.ActionMap;
 import javax.swing.DropMode;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComponent;
@@ -58,7 +57,6 @@ import jd.event.ControlEvent;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.RowHighlighter;
 import jd.gui.swing.components.JExtCheckBoxMenuItem;
-import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.menu.Menu;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -89,7 +87,7 @@ public class DownloadTable extends JTable implements MouseListener, MouseMotionL
 
     public DownloadTable(DownloadJTableModel model, DownloadLinksPanel panel) {
         super(model);
-        
+
         this.cellRenderer = new TableRenderer(this);
         this.panel = panel;
         this.model = model;
@@ -134,17 +132,17 @@ public class DownloadTable extends JTable implements MouseListener, MouseMotionL
         addPostErrorHighlighter();
         addWaitHighlighter();
         addPackageHighlighter();
-        
-//        ;
-//        ActionController.getToolBarAction("action.downloadview.moveup").setEnabled(true);
-//        ActionController.getToolBarAction("action.downloadview.movedown").setEnabled(true);
-//        ActionController.getToolBarAction("action.downloadview.movetobottom").setEnabled(true);
+
+        // ;
+        // ActionController.getToolBarAction("action.downloadview.moveup").setEnabled(true);
+        // ActionController.getToolBarAction("action.downloadview.movedown").setEnabled(true);
+        // ActionController.getToolBarAction("action.downloadview.movetobottom").setEnabled(true);
 
         this.setFillsViewportHeight(true);
     }
 
     protected boolean processKeyBinding(KeyStroke ks, KeyEvent e, int condition, boolean pressed) {
-      
+
         boolean ret = super.processKeyBinding(ks, e, condition, pressed);
 
         if (getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).get(ks) != null) { return false; }

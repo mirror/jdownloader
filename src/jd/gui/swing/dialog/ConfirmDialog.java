@@ -16,7 +16,6 @@
 
 package jd.gui.swing.dialog;
 
-import java.awt.Color;
 import java.awt.Dimension;
 
 import javax.swing.ImageIcon;
@@ -58,7 +57,7 @@ public class ConfirmDialog extends AbstractDialog {
         textField.setEditable(false);
         textField.setBackground(null);
         textField.putClientProperty("Synthetica.opaque", Boolean.FALSE);
-      
+
         // cp.add(textField, "width n:n:450");
         textField.setBounds(0, 0, 450, 600);
         textField.setMaximumSize(new Dimension(450, 600));

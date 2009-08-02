@@ -18,11 +18,12 @@ package jd.gui.swing.jdgui.menu.actions;
 
 import java.awt.event.ActionEvent;
 
+import jd.config.MenuAction;
 import jd.gui.UserIO;
 import jd.nutils.JDFlags;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-import jd.config.MenuAction;
+
 public class RestartAction extends MenuAction {
 
     private static final long serialVersionUID = 1333126351380171619L;
@@ -33,7 +34,7 @@ public class RestartAction extends MenuAction {
 
     public void actionPerformed(ActionEvent e) {
         if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, JDL.L("sys.ask.rlyrestart", "Wollen Sie jDownloader wirklich neustarten?")), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
-                   
+
             JDUtilities.restartJD();
         }
     }

@@ -18,8 +18,9 @@ package jd.gui.swing.jdgui.menu.actions;
 
 import java.awt.event.ActionEvent;
 
-import jd.gui.swing.SwingGui;
 import jd.config.MenuAction;
+import jd.gui.swing.SwingGui;
+
 public class ExitAction extends MenuAction {
 
     private static final long serialVersionUID = -1428029294638573437L;

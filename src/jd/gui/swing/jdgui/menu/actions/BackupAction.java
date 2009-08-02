@@ -18,11 +18,12 @@ package jd.gui.swing.jdgui.menu.actions;
 
 import java.awt.event.ActionEvent;
 
+import jd.config.MenuAction;
 import jd.gui.swing.components.Balloon;
 import jd.update.JDUpdateUtils;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
-import jd.config.MenuAction;
+
 public class BackupAction extends MenuAction {
     /**
      * 
@@ -41,7 +42,7 @@ public class BackupAction extends MenuAction {
             public void run() {
                 inprogress = true;
                 JDUpdateUtils.backupDataBase();
-                Balloon.show(JDL.L("gui.balloon.backup.title","Backup"), JDTheme.II("gui.images.save", 32, 32), JDL.LF("gui.backup.finished", "Linklist successfully backuped!"));
+                Balloon.show(JDL.L("gui.balloon.backup.title", "Backup"), JDTheme.II("gui.images.save", 32, 32), JDL.LF("gui.backup.finished", "Linklist successfully backuped!"));
                 inprogress = false;
             }
         }.start();

@@ -5,12 +5,9 @@ import java.awt.Graphics;
 import java.awt.event.KeyEvent;
 
 import javax.swing.Action;
-import javax.swing.ActionMap;
-import javax.swing.InputMap;
 import javax.swing.JComponent;
 import javax.swing.JTabbedPane;
 import javax.swing.KeyStroke;
-import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
@@ -37,11 +34,11 @@ public class MainTabbedPane extends JTabbedPane {
 
     protected boolean processKeyBinding(KeyStroke ks, KeyEvent e, int condition, boolean pressed) {
 
-       boolean ret = super.processKeyBinding(ks, e, condition, pressed);
-       
-       if (getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).get(ks) != null) { return false; }
-       if (getRootPane().getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).get(ks) != null) { return false; }
-     return ret;
+        boolean ret = super.processKeyBinding(ks, e, condition, pressed);
+
+        if (getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).get(ks) != null) { return false; }
+        if (getRootPane().getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).get(ks) != null) { return false; }
+        return ret;
     }
 
     public void remove(View view) {

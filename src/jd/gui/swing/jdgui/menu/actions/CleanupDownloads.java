@@ -19,11 +19,12 @@ package jd.gui.swing.jdgui.menu.actions;
 import java.awt.event.ActionEvent;
 import java.util.Vector;
 
+import jd.config.MenuAction;
 import jd.controlling.DownloadController;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
-import jd.config.MenuAction;
+
 public class CleanupDownloads extends MenuAction {
 
     private static final long serialVersionUID = -7185006215784212976L;

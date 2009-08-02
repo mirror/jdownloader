@@ -198,7 +198,7 @@ public class JLink extends JLabel {
             public void mouseClicked(MouseEvent e) {
                 try {
                     if (getUrl() != null) JLink.openURL(getUrl());
-                    broadcaster.fireEvent(null);
+                    getBroadcaster().fireEvent(null);
                 } catch (Exception e1) {
                     JDLogger.exception(e1);
                 }

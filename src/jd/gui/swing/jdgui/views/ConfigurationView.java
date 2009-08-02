@@ -2,11 +2,7 @@ package jd.gui.swing.jdgui.views;
 
 import javax.swing.Icon;
 
-import jd.config.ConfigEntry.PropertyType;
-import jd.gui.swing.jdgui.MainTabbedPane;
-import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.interfaces.View;
-import jd.gui.swing.jdgui.settings.ConfigPanel;
 import jd.gui.swing.jdgui.views.sidebars.configuration.ConfigSidebar;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
@@ -20,8 +16,6 @@ public class ConfigurationView extends View {
      * LFE to parse JDL Keys correct
      */
     private static final String IDENT_PREFIX = "jd.gui.swing.jdgui.views.configurationview.";
-
-  
 
     public ConfigurationView() {
         super();
@@ -47,12 +41,11 @@ public class ConfigurationView extends View {
 
     @Override
     protected void onHide() {
-      
+
     }
 
     @Override
     protected void onShow() {
-        
 
     }
 

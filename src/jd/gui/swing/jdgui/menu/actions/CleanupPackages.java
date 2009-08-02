@@ -19,10 +19,11 @@ package jd.gui.swing.jdgui.menu.actions;
 import java.awt.event.ActionEvent;
 import java.util.Vector;
 
+import jd.config.MenuAction;
 import jd.controlling.DownloadController;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
-import jd.config.MenuAction;
+
 public class CleanupPackages extends MenuAction {
 
     private static final long serialVersionUID = -7185006215784212976L;
@@ -36,7 +37,7 @@ public class CleanupPackages extends MenuAction {
         Vector<FilePackage> packagestodelete = new Vector<FilePackage>();
         synchronized (dlc.getPackages()) {
             for (FilePackage fp : dlc.getPackages()) {
-                if (fp.getLinksListbyStatus(LinkStatus.FINISHED|LinkStatus.ERROR_ALREADYEXISTS).size() == fp.size()) packagestodelete.add(fp);
+                if (fp.getLinksListbyStatus(LinkStatus.FINISHED | LinkStatus.ERROR_ALREADYEXISTS).size() == fp.size()) packagestodelete.add(fp);
             }
         }
         for (FilePackage fp : packagestodelete) {

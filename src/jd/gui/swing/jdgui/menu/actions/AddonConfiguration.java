@@ -17,7 +17,9 @@
 package jd.gui.swing.jdgui.menu.actions;
 
 import java.awt.event.ActionEvent;
+
 import jd.config.MenuAction;
+
 public class AddonConfiguration extends MenuAction {
 
     private static final long serialVersionUID = 5296731283280444433L;
@@ -27,9 +29,10 @@ public class AddonConfiguration extends MenuAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-//        GUIUtils.getConfig().setProperty("LAST_CONFIG_PANEL", ConfigTaskPane.ACTION_ADDONS);
-        //TODO
-//        SwingGui.getInstance().getTaskPane().switcher(SwingGui.getInstance().getCfgTskPane());
+        // GUIUtils.getConfig().setProperty("LAST_CONFIG_PANEL",
+        // ConfigTaskPane.ACTION_ADDONS);
+        // TODO
+        // SwingGui.getInstance().getTaskPane().switcher(SwingGui.getInstance().getCfgTskPane());
     }
 
 }
