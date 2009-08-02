@@ -45,7 +45,7 @@ public class CobraShareSk extends PluginForHost {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
         br.setFollowRedirects(false);
-        if (br.containsHTML("Požadovaný súbor sa na serveri nenachádza")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("Poadovaný súbor sa na serveri nenachádza")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         String filename = Encoding.htmlDecode(br.getRegex("File name :&nbsp;</td>.*?<td class=\"data\">(.*?)</td>").getMatch(0));
         Regex reg = br.getRegex("Size :&nbsp;</td>.*?<td class=\"data\">(.*?)&nbsp;(.*?)</td>");
@@ -68,7 +68,6 @@ public class CobraShareSk extends PluginForHost {
         dl = br.openDownload(downloadLink, captchaForm, false, 1);
         if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();
-            System.out.print(br.toString());
             if (br.containsHTML("window.open")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l); }
             if (br.containsHTML("content=\"0;url=http://www.cobrashare.sk/down")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA);
 
