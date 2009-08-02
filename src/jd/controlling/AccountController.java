@@ -130,7 +130,15 @@ public class AccountController extends SubConfiguration implements ActionListene
 
         @Override
         public int compare(Account o1, Account o2) {
-
+            AccountInfo I1 = o1.getAccountInfo();
+            AccountInfo I2 = o2.getAccountInfo();
+            if (I1 != null && I2 != null) {
+                if (I1.getTrafficLeft() < I2.getTrafficLeft()) {
+                    return -1;
+                } else {
+                    return +1;
+                }
+            }
             return 0;
         }
 
