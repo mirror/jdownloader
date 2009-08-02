@@ -47,28 +47,17 @@ public class LoadTo extends PluginForHost {
     }
 
     // @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        String url = downloadLink.getDownloadURL();
-        String downloadName = null;
-        String downloadSize = null;
-        for (int i = 1; i < 3; i++) {
-            try {
-                br.getPage(url);
-            } catch (Exception e) {
-                continue;
-            }
-            if (!br.containsHTML("Can't find file")) {
-                downloadName = Encoding.htmlDecode(br.getRegex(Pattern.compile("<b>(.*?)</b></a><br /><br /><table", Pattern.CASE_INSENSITIVE)).getMatch(0));
-                downloadSize = (br.getRegex(Pattern.compile(">([0-9]*? Bytes)</td>", Pattern.CASE_INSENSITIVE)).getMatch(0));
-                if (!(downloadName == null || downloadSize == null)) {
-                    downloadLink.setName(downloadName);
-                    downloadLink.setDownloadSize(Regex.getSize(downloadSize.replaceAll(",", "\\.")));
-                    return AvailableStatus.TRUE;
-                }
-            }
-        }
-        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("Can't find file")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = Encoding.htmlDecode(br.getRegex("<head><title>(.*?) // Load.to Uploadservice</title>").getMatch(0));
+        String filesize = br.getRegex("Size:</div>.*?download_table_right\">(.*?)</div>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+
+        link.setName(filename);
+        link.setDownloadSize(Regex.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     // @Override
@@ -100,7 +89,7 @@ public class LoadTo extends PluginForHost {
 
     // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 8;
+        return 20;
     }
 
     // @Override
