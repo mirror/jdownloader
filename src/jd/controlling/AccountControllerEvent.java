@@ -38,9 +38,12 @@ public class AccountControllerEvent extends JDEvent {
         return account;
     }
 
-    public static final int ACCOUNT_ADDED = 1;
-    public static final int ACCOUNT_REMOVED = 2;
-    public static final int ACCOUNT_GET = 3;
-    public static final int ACCOUNT_UPDATE = 4;
+    public static final byte ACCOUNT_ADDED = 1;
+    public static final byte ACCOUNT_REMOVED = 2;
+    public static final byte ACCOUNT_GET = 3;
+    public static final byte ACCOUNT_UPDATE = 4;
+    
+    public static final byte ACCOUNT_INVALID=100;
+    public static final byte ACCOUNT_EXPIRED=101;    
 
 }

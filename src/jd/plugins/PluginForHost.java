@@ -203,40 +203,16 @@ public abstract class PluginForHost extends Plugin {
             // frische INstanz
             return null;
         }
-        if (account.getProperty(AccountInfo.PARAM_INSTANCE) != null) {
-            AccountInfo ai = (AccountInfo) account.getProperty(AccountInfo.PARAM_INSTANCE);
-            if ((System.currentTimeMillis() - ai.getCreateTime()) < 5 * 60 * 1000) return ai;
+        AccountInfo ret = fetchAccountInfo(account);
+        if (ret == null) return null;
+        if (ret.isExpired()) {
+            String shortWarn = JDL.LF("gui.shortwarn.accountdisabled.expired", "Account %s(%s) got disabled(expired)", this.getHost(), account.getUser());
+            UserIF.getInstance().displayMiniWarning(JDL.L("gui.ballon.accountmanager.title", "Accountmanager"), shortWarn);
+        } else if (!ret.isValid()) {
+            String shortWarn = JDL.LF("gui.shortwarn.accountdisabled.invalid", "Account %s(%s) got disabled(invalid)", this.getHost(), account.getUser());
+            UserIF.getInstance().displayMiniWarning(JDL.L("gui.ballon.accountmanager.title", "Accountmanager"), shortWarn);
         }
-        try {
-            AccountInfo ret = fetchAccountInfo(account);
-
-            if (ret == null) return null;
-
-            if (ret.isExpired()) {
-                account.setEnabled(false);
-                account.setProperty(AccountInfo.PARAM_INSTANCE, null);
-                String shortWarn = JDL.LF("gui.shortwarn.accountdisabled.expired", "Account %s(%s) got disabled(expired)", this.getHost(), account.getUser());
-
-                UserIF.getInstance().displayMiniWarning(JDL.L("gui.ballon.accountmanager.title", "Accountmanager"), shortWarn);
-            } else if (!ret.isValid()) {
-                account.setEnabled(false);
-                account.setProperty(AccountInfo.PARAM_INSTANCE, null);
-                String shortWarn = JDL.LF("gui.shortwarn.accountdisabled.invalid", "Account %s(%s) got disabled(invalid)", this.getHost(), account.getUser());
-
-                UserIF.getInstance().displayMiniWarning(JDL.L("gui.ballon.accountmanager.title", "Accountmanager"), shortWarn);
-            }
-
-            account.setProperty(AccountInfo.PARAM_INSTANCE, ret);
-            return ret;
-        } catch (PluginException e) {
-            account.setEnabled(false);
-            account.setProperty(AccountInfo.PARAM_INSTANCE, null);
-            String shortWarn = JDL.LF("gui.shortwarn.accountdisabled", "Account %s(%s) got disabled: %s", this.getHost(), account.getUser(), e.getMessage());
-
-            UserIF.getInstance().displayMiniWarning(shortWarn, shortWarn);
-            throw e;
-        }
-
+        return ret;
     }
 
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
@@ -285,9 +261,7 @@ public abstract class PluginForHost extends Plugin {
                     m.setActionListener(this);
                     account.addMenuItem(m);
                     premium.addMenuItem(account);
-
                 }
-
             } catch (Exception e) {
                 JDLogger.exception(e);
             }
@@ -511,9 +485,14 @@ public abstract class PluginForHost extends Plugin {
             }
 
             long traffic = downloadLink.getDownloadCurrent() - before;
-            if (traffic > 0 && account.getProperty(AccountInfo.PARAM_INSTANCE) != null) {
-                AccountInfo ai = (AccountInfo) account.getProperty(AccountInfo.PARAM_INSTANCE);
-                ai.setTrafficLeft(ai.getTrafficLeft() - traffic);
+            if (traffic > 0 && account.getAccountInfo() != null) {
+                AccountInfo ai = account.getAccountInfo();
+                long left = Math.max(0, ai.getTrafficLeft() - traffic);
+                ai.setTrafficLeft(left);
+                if (left == 0) {
+                    logger.severe("Premium Account " + account.getUser() + ": Traffic Limit reached");
+                    account.setTempDisabled(true);
+                }
             }
 
             if (downloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_PREMIUM)) {
@@ -748,6 +727,10 @@ public abstract class PluginForHost extends Plugin {
 
         return image;
 
+    }
+
+    public PluginForHost getNewInstance() {
+        return (PluginForHost) wrapper.getNewPluginInstance();
     }
 
     public HosterInfo getHosterInfo() {

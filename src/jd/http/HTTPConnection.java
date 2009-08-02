@@ -46,6 +46,8 @@ public class HTTPConnection extends sun.net.www.protocol.http.HttpURLConnection 
 
     private Request request;
 
+    private String customcharset = null;
+
     public boolean isConnected() {
 
         return connectionnEstabilished;
@@ -204,7 +206,7 @@ public class HTTPConnection extends sun.net.www.protocol.http.HttpURLConnection 
         sb.append("----------------Request------------------\r\n");
 
         sb.append(getRequestMethod() + " " + getURL().getPath() + (getURL().getQuery() != null ? "?" + getURL().getQuery() : "") + " HTTP/1.1\r\n");
-   
+
         for (Iterator<Entry<String, List<String>>> it = this.getRequestProperties().entrySet().iterator(); it.hasNext();) {
             Entry<String, List<String>> next = it.next();
             StringBuilder value = new StringBuilder();
@@ -217,16 +219,14 @@ public class HTTPConnection extends sun.net.www.protocol.http.HttpURLConnection 
             sb.append(next.getKey());
             sb.append(new char[] { ':', ' ' });
             sb.append(v);
-//            if(next.getKey().equalsIgnoreCase("host")){
-//              sb.append(':');
-//              sb.append(this.getURL().getPort());
-//            }
+            // if(next.getKey().equalsIgnoreCase("host")){
+            // sb.append(':');
+            // sb.append(this.getURL().getPort());
+            // }
             sb.append(new char[] { '\r', '\n' });
         }
         sb.append(new char[] { '\r', '\n' });
 
-        
-     
         if (this.getRequest() != null) {
             if (getRequest() instanceof PostRequest) {
                 sb.append(((PostRequest) getRequest()).getPostDataString());
@@ -273,8 +273,14 @@ public class HTTPConnection extends sun.net.www.protocol.http.HttpURLConnection 
 
     public String getCharset() {
         int i;
+        if (customcharset != null) return customcharset;
         return (getContentType() != null && (i = getContentType().toLowerCase().indexOf("charset=")) > 0) ? getContentType().substring(i + 8).trim() : null;
 
+    }
+
+    @Override
+    public void setCharset(String Charset) {
+        this.customcharset = Charset;
     }
 
 }

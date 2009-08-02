@@ -255,6 +255,7 @@ public class Browser {
     private int readTimeout = -1;
 
     private Request request;
+    private String customCharset = null;
     private boolean snifferDetection = false;
     private boolean cookiesExclusive = true;
     private JDProxy proxy;
@@ -292,6 +293,10 @@ public class Browser {
 
         return Form.getForms(this);
 
+    }
+
+    public void setCustomCharset(String charset) {
+        this.customCharset = charset;
     }
 
     /**
@@ -494,16 +499,16 @@ public class Browser {
             // throw new IOException("Sniffer found");
         }
         if (request != null) base = request.getUrl().toString();
-        try{
-        //find base in source
-        String sourceBase = this.getRegex("<base.*?href=\"(.+?)\"").getMatch(0).trim();
-        //check if valid url
-        new URL(sourceBase);
-        base=sourceBase;
-    }catch(Throwable e){
-        
-    }
-        
+        try {
+            // find base in source
+            String sourceBase = this.getRegex("<base.*?href=\"(.+?)\"").getMatch(0).trim();
+            // check if valid url
+            new URL(sourceBase);
+            base = sourceBase;
+        } catch (Throwable e) {
+
+        }
+
         String action = form.getAction(base);
         switch (form.getMethod()) {
 
@@ -604,6 +609,7 @@ public class Browser {
             // throw new IOException("Sniffer found");
         }
         GetRequest request = new GetRequest((string));
+        request.setCustomCharset(this.customCharset);
         if (selectProxy() != null) request.setProxy(selectProxy());
         // doAuth(request);
         if (connectTimeout > 0) {
@@ -666,6 +672,7 @@ public class Browser {
             // throw new IOException("Sniffer found");
         }
         GetRequest request = new GetRequest((string));
+        request.setCustomCharset(this.customCharset);
         if (selectProxy() != null) request.setProxy(selectProxy());
         request.setCookies(oldrequest.getCookies());
         // doAuth(request);
@@ -740,6 +747,7 @@ public class Browser {
             // throw new IOException("Sniffer found");
         }
         PostRequest request = new PostRequest((url));
+        request.setCustomCharset(this.customCharset);
         if (selectProxy() != null) request.setProxy(selectProxy());
         request.setCookies(oldrequest.getCookies());
         // doAuth(request);
@@ -774,6 +782,7 @@ public class Browser {
             // throw new IOException("Sniffer found");
         }
         PostFormDataRequest request = new PostFormDataRequest((url));
+        request.setCustomCharset(this.customCharset);
         if (selectProxy() != null) request.setProxy(selectProxy());
 
         request.getHeaders().put("Accept-Language", acceptLanguage);
@@ -815,6 +824,7 @@ public class Browser {
             // throw new IOException("Sniffer found");
         }
         PostRequest request = new PostRequest((url));
+        request.setCustomCharset(this.customCharset);
         if (selectProxy() != null) request.setProxy(selectProxy());
         // doAuth(request);
         request.getHeaders().put("Accept-Language", acceptLanguage);
@@ -883,6 +893,7 @@ public class Browser {
      */
     public String postPageRaw(String url, String post) throws IOException {
         PostRequest request = (PostRequest) this.createPostRequest(url, new ArrayList<RequestVariable>());
+        request.setCustomCharset(this.customCharset);
         if (post != null) request.setPostDataString(post);
         this.openRequestConnection(request);
         return this.loadConnection(null);
@@ -1100,6 +1111,7 @@ public class Browser {
         br.connectTimeout = connectTimeout;
         br.currentURL = currentURL;
         br.doRedirects = doRedirects;
+        br.setCustomCharset(this.customCharset);
         br.getHeaders().putAll(getHeaders());
         br.limit = limit;
         br.readTimeout = readTimeout;

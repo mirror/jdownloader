@@ -156,7 +156,6 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
 
     public void loadAccounts() {
         try {
-     
 
             synchronized (Lock) {
                 ArrayList<Account> accounts = new ArrayList<Account>(AccountController.getInstance().getAllAccounts(host));
@@ -206,7 +205,6 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
         add.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent arg0) {
-            
 
                 // Container p = PremiumPanel.this;
                 // main: while ((p = p.getParent()) != null) {
@@ -301,9 +299,8 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
             this.setOpaque(false);
 
             this.setBackground(null);
-            
-                chkEnable = new JCheckBox();
-            
+
+            chkEnable = new JCheckBox();
 
             if (premiumActivated) {
                 chkEnable.setText(JDL.LF("plugins.config.premium.accountnum", "<html><b>Premium Account #%s</b></html>", nr));
@@ -356,7 +353,7 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
                 @Override
                 public void paint(Graphics g) {
                     super.paint(g);
-             
+
                 }
 
             };
@@ -430,7 +427,7 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
             }
             if (e.getSource() == btnCheck) {
                 if (info.isCollapsed()) {
-           
+
                     AccountInfo ai;
                     try {
                         Account acc = getAccount();
@@ -549,7 +546,8 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
                 if (acc != null && (acc.getUser().length() > 0 || acc.getPass().length() > 0)) {
                     try {
                         accCounter++;
-                        AccountInfo ai = host.getAccountInformation(acc);
+                        AccountInfo ai = AccountController.getInstance().UpdateAccountInfo(host, acc, false);
+                        if (ai == null) continue;
                         Long tleft = new Long(ai.getTrafficLeft());
                         if (tleft >= 0 && ai.isExpired() == false) {
                             freeTrafficChart.addEntity(new ChartAPIEntity(acc.getUser() + " [" + (Math.round(tleft.floatValue() / 1024 / 1024 / 1024 * 100) / 100.0) + " GB]", tleft, new Color(50, 255 - ((255 / (accs.size() + 1)) * accCounter), 50)));
@@ -557,7 +555,6 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
                             if (rest > 0) collectTraffic = collectTraffic + rest;
                         }
                     } catch (Exception e) {
-                        JDLogger.getLogger().finest("Not able to load Traffic-Limit for ChartAPI");
                     }
                 }
             }

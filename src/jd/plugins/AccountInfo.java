@@ -17,15 +17,11 @@
 package jd.plugins;
 
 import jd.config.Property;
-import jd.controlling.AccountController;
 import jd.parser.Regex;
 
 public class AccountInfo extends Property {
 
     private static final long serialVersionUID = 1825140346023286206L;
-    public static final String PARAM_INSTANCE = "accountinfo";
-    private transient PluginForHost plugin;
-    private Account account;
     private boolean account_valid = true;
     private long account_validUntil = -1;
     private long account_trafficLeft = -1;
@@ -41,8 +37,6 @@ public class AccountInfo extends Property {
     private long account_createTime;
 
     public AccountInfo(PluginForHost plugin, Account account) {
-        this.plugin = plugin;
-        this.account = account;
         this.account_createTime = System.currentTimeMillis();
     }
 
@@ -52,10 +46,6 @@ public class AccountInfo extends Property {
 
     public void setCreateTime(long createTime) {
         this.account_createTime = createTime;
-    }
-
-    public Account getAccount() {
-        return account;
     }
 
     /**
@@ -78,10 +68,6 @@ public class AccountInfo extends Property {
 
     public long getNewPremiumPoints() {
         return account_newPremiumPoints;
-    }
-
-    public PluginForHost getPlugin() {
-        return plugin;
     }
 
     /**
@@ -160,11 +146,6 @@ public class AccountInfo extends Property {
         return account_valid;
     }
 
-    public void setAccount(Account account) {
-        this.account = account;
-
-    }
-
     public void setAccountBalance(long parseInt) {
         if (account_accountBalance == parseInt) return;
         this.account_accountBalance = parseInt;
@@ -180,7 +161,6 @@ public class AccountInfo extends Property {
         if (b) {
             this.setTrafficLeft(-1);
         }
-        AccountController.getInstance().throwUpdateEvent(plugin, account);
     }
 
     public void setFilesNum(long parseInt) {
@@ -191,10 +171,6 @@ public class AccountInfo extends Property {
     public void setNewPremiumPoints(long newPremiumPoints) {
         if (account_newPremiumPoints == newPremiumPoints) return;
         this.account_newPremiumPoints = newPremiumPoints;
-    }
-
-    public void setPlugin(PluginForHost plugin) {
-        this.plugin = plugin;
     }
 
     public void setPremiumPoints(long parseInt) {
@@ -244,7 +220,6 @@ public class AccountInfo extends Property {
     public void setValid(boolean b) {
         if (account_valid == b) return;
         this.account_valid = b;
-        AccountController.getInstance().throwUpdateEvent(plugin, account);
     }
 
     /**

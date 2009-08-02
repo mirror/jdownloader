@@ -7,28 +7,25 @@ import jd.http.Browser;
 import jd.parser.html.Form;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
 /**
- * LIttle helper calss to make recaptcha easier. 
+ * LIttle helper calss to make recaptcha easier.
  * 
- * Examplecode:
- *       try{
-                Recaptcha rc = new Recaptcha(br);
-                rc.parse();
-                rc.load();
-                File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                
-            
-                String c = getCaptchaCode(cf, param);
-               
-                rc.setCode(c);   
-                
-            }catch(Exception e){
-                
-            }
+ * Examplecode: try{ Recaptcha rc = new Recaptcha(br); rc.parse(); rc.load();
+ * File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+ * 
+ * 
+ * String c = getCaptchaCode(cf, param);
+ * 
+ * rc.setCode(c);
+ * 
+ * }catch(Exception e){
+ * 
+ * }
  * 
  * 
  * @author Coalado
- *
+ * 
  */
 public class Recaptcha {
 
@@ -106,12 +103,14 @@ public class Recaptcha {
     }
 
     public Browser setCode(String code) throws Exception {
-        //  <textarea name="recaptcha_challenge_field" rows="3" cols="40"></textarea>\n         <input type="hidden" name="recaptcha_response_field" value="manual_challenge"/>
+        // <textarea name="recaptcha_challenge_field" rows="3"
+        // cols="40"></textarea>\n <input type="hidden"
+        // name="recaptcha_response_field" value="manual_challenge"/>
         form.put("recaptcha_challenge_field", challenge);
         form.put("recaptcha_response_field", code);
         br.submitForm(form);
         return br;
-      
+
     }
 
     public Form getForm() {

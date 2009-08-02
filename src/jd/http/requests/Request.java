@@ -91,6 +91,7 @@ public abstract class Request {
     private URL url;
     private JDProxy proxy;
     private URL orgURL;
+    private String customCharset = null;
 
     private static String http2JDP(String string) {
         if (string.startsWith("http")) { return ("jdp" + string.substring(4)); }
@@ -100,6 +101,10 @@ public abstract class Request {
     private static String jdp2http(String string) {
         if (string.startsWith("jdp")) { return ("http" + string.substring(3)); }
         return string;
+    }
+
+    public void setCustomCharset(String charset) {
+        this.customCharset = charset;
     }
 
     public Request(String url) throws MalformedURLException {
@@ -484,6 +489,7 @@ public abstract class Request {
 
     public String read() throws IOException {
         long tima = System.currentTimeMillis();
+        httpConnection.setCharset(this.customCharset);
         this.htmlCode = read(httpConnection);
         readTime = System.currentTimeMillis() - tima;
         return htmlCode.toString();

@@ -85,4 +85,6 @@ public interface URLConnectionAdapter {
 
     public String getCharset();
 
+    public void setCharset(String charset);
+
 }

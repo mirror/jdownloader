@@ -31,6 +31,7 @@ public class Account extends Property {
 
     private transient boolean tempDisabled = false;
     private transient long tmpDisabledTime = 0;
+    private AccountInfo accinfo = null;
 
     public Account(String user, String pass) {
         this.user = user;
@@ -43,6 +44,14 @@ public class Account extends Property {
     public String getPass() {
         if (pass != null) return pass.trim();
         return null;
+    }
+
+    public AccountInfo getAccountInfo() {
+        return accinfo;
+    }
+
+    public void setAccountInfo(AccountInfo info) {
+        accinfo = info;
     }
 
     public String getStatus() {
@@ -82,7 +91,8 @@ public class Account extends Property {
         if (pass != null) pass = pass.trim();
         if (this.pass != null && this.pass.equals(pass)) return;
         this.pass = pass;
-        setProperty(AccountInfo.PARAM_INSTANCE, null);
+        this.accinfo = null;
+        AccountController.getInstance().throwUpdateEvent(null, this);
     }
 
     public void setStatus(String status) {
@@ -103,7 +113,8 @@ public class Account extends Property {
         if (user != null) user = user.trim();
         if (this.user != null && this.user.equals(user)) return;
         this.user = user;
-        setProperty(AccountInfo.PARAM_INSTANCE, null);
+        this.accinfo = null;
+        AccountController.getInstance().throwUpdateEvent(null, this);
     }
 
     // @Override

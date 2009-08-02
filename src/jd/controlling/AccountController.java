@@ -19,6 +19,8 @@ package jd.controlling;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.TreeMap;
 
 import javax.swing.Timer;
@@ -30,6 +32,8 @@ import jd.event.JDBroadcaster;
 import jd.event.JDEvent;
 import jd.gui.swing.components.Balloon;
 import jd.plugins.Account;
+import jd.plugins.AccountInfo;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -89,9 +93,10 @@ class AccountProviderBroadcaster extends JDBroadcaster<AccountProvider, AccountP
 
 public class AccountController extends SubConfiguration implements ActionListener, AccountControllerListener {
 
-    /**
-     * 
-     */
+    public static enum ProviderMode {
+        FIFO, RR
+    };
+
     private static final long serialVersionUID = -7560087582989096645L;
 
     private static TreeMap<String, ArrayList<Account>> hosteraccounts = null;
@@ -108,21 +113,106 @@ public class AccountController extends SubConfiguration implements ActionListene
 
     private long lastballoon = 0;
 
+    private long waittimeAccountInfoUpdate = 15 * 60 * 1000l;
+
     private long ballooninterval = 30 * 60 * 1000l;
+    private ProviderMode providemode = ProviderMode.RR;
+
+    public long getUpdateTime() {
+        return waittimeAccountInfoUpdate;
+    }
+
+    public void setUpdateTime(long time) {
+        this.waittimeAccountInfoUpdate = time;
+    }
+
+    private static Comparator<Account> compare_RR = new Comparator<Account>() {
+
+        @Override
+        public int compare(Account o1, Account o2) {
+
+            return 0;
+        }
+
+    };
 
     private AccountController() {
         super("AccountController");
         hosteraccounts = loadAccounts();
-        try {
-            importOldAccounts();
-            importOldAccounts2();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        importOld();
         asyncSaveIntervalTimer = new Timer(2000, this);
         asyncSaveIntervalTimer.setInitialDelay(2000);
         asyncSaveIntervalTimer.setRepeats(false);
         broadcaster.addListener(this);
+    }
+
+    public AccountInfo UpdateAccountInfo(PluginForHost host, Account account, boolean forceupdate) {
+        return UpdateAccountInfo(host.getHost(), account, forceupdate);
+    }
+
+    public AccountInfo UpdateAccountInfo(String host, Account account, boolean forceupdate) {
+        String hostname = host != null ? host : getHosterName(account);
+        if (hostname == null) {
+            account.setAccountInfo(null);
+            logger.severe("Cannot update AccountInfo, no Hostername available!");
+            return null;
+        }
+        PluginForHost plugin = JDUtilities.getPluginForHost(hostname);
+        if (plugin == null) {
+            account.setAccountInfo(null);
+            logger.severe("Cannot update AccountInfo, no HosterPlugin available!");
+            return null;
+        }
+        AccountInfo ai = account.getAccountInfo();
+        if (ai != null) {
+            System.out.println("Update acc for " + ai.getCreateTime());
+            if (!forceupdate && (System.currentTimeMillis() - ai.getCreateTime()) < waittimeAccountInfoUpdate) return ai;
+        }
+        try {
+            System.out.println("Update acc for " + plugin.getHost());
+            ai = plugin.getNewInstance().fetchAccountInfo(account);
+            if (ai == null) {
+                /* not every plugin has fetchAccountInfo */
+                account.setAccountInfo(null);
+                return null;
+            }
+            account.setAccountInfo(ai);
+            if (ai.isExpired()) {
+                System.out.println("expired acc for " + plugin.getHost());
+                account.setEnabled(false);
+            } else if (!ai.isValid()) {
+                System.out.println("invalid acc for " + plugin.getHost());
+                account.setEnabled(false);
+            }
+        } catch (PluginException e) {
+            System.out.println("pexception disabled acc for " + plugin.getHost());
+            account.setEnabled(false);
+            account.setAccountInfo(null);
+        } catch (Exception e) {
+            System.out.println("exception disabled acc for " + plugin.getHost());
+            account.setAccountInfo(null);
+        }
+        return ai;
+    }
+
+    /*
+     * return hostername if account is under controll of AccountController
+     */
+    public String getHosterName(Account account) {
+        synchronized (hosteraccounts) {
+            for (String host : hosteraccounts.keySet()) {
+                if (hosteraccounts.get(host).contains(account)) return host;
+            }
+        }
+        return null;
+    }
+
+    public void setProviderMode(ProviderMode mode) {
+        this.providemode = mode;
+    }
+
+    public ProviderMode getProviderMode() {
+        return this.providemode;
     }
 
     public synchronized static AccountController getInstance() {
@@ -148,6 +238,19 @@ public class AccountController extends SubConfiguration implements ActionListene
 
     private TreeMap<String, ArrayList<Account>> loadAccounts() {
         return getGenericProperty("accountlist", new TreeMap<String, ArrayList<Account>>());
+    }
+
+    private void importOld() {
+        try {
+            importOldAccounts();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        try {
+            importOldAccounts2();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void importOldAccounts() {
@@ -300,7 +403,6 @@ public class AccountController extends SubConfiguration implements ActionListene
         } else {
             this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.ACCOUNT_UPDATE, null, account));
         }
-
     }
 
     public void saveAsync() {
@@ -312,7 +414,7 @@ public class AccountController extends SubConfiguration implements ActionListene
         saveinprogress = true;
         new Thread() {
             public void run() {
-                this.setName("AccountController: Saving");                
+                this.setName("AccountController: Saving");
                 synchronized (hosteraccounts) {
                     save();
                 }
@@ -337,6 +439,15 @@ public class AccountController extends SubConfiguration implements ActionListene
             accounts.addAll(provider.collectAccountsFor(pluginForHost));
             accounts.addAll(getAllAccounts(pluginForHost));
             Account ret = null;
+            switch (this.providemode) {
+            case FIFO:
+                break;
+            case RR:
+                Collections.sort(accounts, compare_RR);
+                break;
+            default:
+                break;
+            }
             synchronized (accounts) {
                 for (int i = 0; i < accounts.size(); i++) {
                     Account next = accounts.get(i);
