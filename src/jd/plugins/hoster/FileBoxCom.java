@@ -31,7 +31,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
 //filebox by pspzockerscene
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filebox.com" }, urls = { "http://[\\w\\.]*?filebox\\.com/[a-zA-Z|0-9|/]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filebox.com" }, urls = { "http://[\\w\\.]*?filebox\\.com/[a-z|0-9]+/.+" }, flags = { 0 })
 public class FileBoxCom extends PluginForHost {
 
     public FileBoxCom(PluginWrapper wrapper) {
