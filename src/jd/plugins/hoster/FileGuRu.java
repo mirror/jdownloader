@@ -45,11 +45,13 @@ public class FileGuRu extends PluginForHost {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
         int retry = 0;
-        while (br.getForm(1).hasInputFieldByName("pass")) {
-            String passCode = Plugin.getUserInput("Password?", link);
-            br.getPage(link.getDownloadURL() + "?pass=" + passCode);
-            if (retry >= 2) throw new PluginException(LinkStatus.ERROR_FATAL, "Wrong Password!");
-            retry++;
+        if (br.getForms().length> 1) {
+            while (br.getForm(1).hasInputFieldByName("pass")) {
+                String passCode = Plugin.getUserInput("Password?", link);
+                br.getPage(link.getDownloadURL() + "?pass=" + passCode);
+                if (retry >= 2) throw new PluginException(LinkStatus.ERROR_FATAL, "Wrong Password!");
+                retry++;
+            }
         }
         sleep(20 * 1001, link);
         String id = br.getRegex("var dl = new Download\\( '(.*?)', '(.*?)', '(.*?)', (.*?) \\);").getMatch(0);
@@ -65,7 +67,7 @@ public class FileGuRu extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
-        this.setBrowserExclusive();        
+        this.setBrowserExclusive();
         br.setCustomCharset("UTF-8");
         br.getPage(parameter.getDownloadURL());
         if (br.toString().contains("http://filegu.ru/error:ERR_NO_ID")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
