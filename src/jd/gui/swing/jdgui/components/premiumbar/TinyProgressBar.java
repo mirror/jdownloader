@@ -24,6 +24,7 @@ import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 
 import jd.gui.swing.jdgui.views.downloadview.JDProgressBar;
+import jd.plugins.PluginForHost;
 import net.miginfocom.swing.MigLayout;
 
 public class TinyProgressBar extends JPanel {
@@ -31,6 +32,7 @@ public class TinyProgressBar extends JPanel {
     private static final long serialVersionUID = 8385631080915257786L;
     private JLabel lbl;
     private JDProgressBar prg;
+    private PluginForHost plugin;
 
     public TinyProgressBar() {
         this.setLayout(new MigLayout("ins 0", "[grow,fill]1[grow,fill]", "[grow,fill]"));
@@ -40,10 +42,8 @@ public class TinyProgressBar extends JPanel {
         lbl.setOpaque(false);
         prg.setOpaque(false);
         prg.setOrientation(SwingConstants.VERTICAL);
-        // this.setBorder(prg.getBorder());
         prg.setBorder(null);
         this.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-
     }
 
     public void setEnabled(boolean b) {
@@ -51,8 +51,6 @@ public class TinyProgressBar extends JPanel {
         lbl.setEnabled(b);
         prg.setEnabled(b);
     }
-
-
 
     public void setIcon(ImageIcon hosterIcon) {
         lbl.setIcon(hosterIcon);
@@ -64,6 +62,14 @@ public class TinyProgressBar extends JPanel {
 
     public void setValue(long left) {
         prg.setValue(left);
+    }
+
+    public void setPlugin(PluginForHost plugin) {
+        this.plugin = plugin;
+    }
+
+    public PluginForHost getPlugin() {
+        return plugin;
     }
 
 }

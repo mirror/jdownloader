@@ -21,6 +21,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.ArrayList;
+
 import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
@@ -31,6 +32,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
 import jd.HostPluginWrapper;
+import jd.config.ConfigGroup;
 import jd.config.ConfigPropertyListener;
 import jd.config.Configuration;
 import jd.config.MenuItem;
@@ -39,6 +41,7 @@ import jd.controlling.AccountController;
 import jd.controlling.AccountControllerEvent;
 import jd.controlling.AccountControllerListener;
 import jd.controlling.JDController;
+import jd.gui.UserIF;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.menu.HosterMenu;
@@ -58,7 +61,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
     private static final long serialVersionUID = 7290466989514173719L;
     private static final int BARCOUNT = 15;
     private static final long ACCOUNT_UPDATE_DELAY = 15 * 60 * 1000;
-    private PremiumBar[] bars;
+    private TinyProgressBar[] bars;
     private JLabel lbl;
 
     private boolean redrawinprogress = false;
@@ -72,7 +75,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
     public PremiumStatus() {
         super();
         hosterplugins = JDUtilities.getPluginsForHost();
-        bars = new PremiumBar[BARCOUNT];
+        bars = new TinyProgressBar[BARCOUNT];
         lbl = new JLabel(JDL.L("gui.statusbar.premiumloadlabel", "< Add Accounts"));
         setName(JDL.L("quickhelp.premiumstatusbar", "Premium statusbar"));
         this.setLayout(new MigLayout("ins 0", "", "[::20, center]"));
@@ -105,7 +108,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
         add(lbl, "hidemode 3");
 
         for (int i = 0; i < BARCOUNT; i++) {
-            bars[i] = new PremiumBar();
+            bars[i] = new TinyProgressBar();
             bars[i].setOpaque(false);
             bars[i].addMouseListener(this);
             bars[i].setEnabled(premium.isSelected());
@@ -323,29 +326,9 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
                     popup.show(bars[i], e.getPoint().x, e.getPoint().y);
 
                 } else {
-                    /**
-                     * TODO
-                     */
-                    // if (JDCollapser.getInstance().getContentPanel() != null
-                    // && JDCollapser.getInstance().getContentPanel() instanceof
-                    // ConfigEntriesPanel) {
-                    // ConfigContainer cfg = ((ConfigEntriesPanel)
-                    // JDCollapser.getInstance().getContentPanel()).getConfigContainer();
-                    // if (cfg != null && cfg ==
-                    // bars[i].getPlugin().getConfig()) {
-                    // new GuiRunnable<Object>() {
-                    // // @Override
-                    // public Object runSave() {
-                    // InfoPanelHandler.setPanel(null);
-                    //                                    
-                    // return null;
-                    // }
-                    // }.start();
-                    // return;
-                    // }
-                    // }
-                    // SimpleGUI.displayConfig(bars[i].getPlugin().getConfig(),
-                    // true);
+                    bars[i].getPlugin().getConfig().setGroup(new ConfigGroup(bars[i].getPlugin().getHost(), JDTheme.II("gui.images.taskpanes.premium", 24, 24)));
+
+                    UserIF.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL, bars[i].getPlugin().getConfig());
                 }
                 return;
             }
@@ -363,22 +346,6 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
     }
 
     public void mouseReleased(MouseEvent e) {
-    }
-
-    private class PremiumBar extends TinyProgressBar {
-
-        private static final long serialVersionUID = 1212293549298358656L;
-
-        private PluginForHost plugin;
-
-        public void setPlugin(PluginForHost plugin) {
-            this.plugin = plugin;
-        }
-
-        public PluginForHost getPlugin() {
-            return plugin;
-        }
-
     }
 
 }

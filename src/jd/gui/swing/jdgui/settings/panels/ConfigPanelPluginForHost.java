@@ -205,20 +205,13 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == btnEdit) {
             editEntry(pluginsForHost.get(table.getSelectedRow()));
-        } 
+        }
     }
 
     private void editEntry(HostPluginWrapper hpw) {
         hpw.getPlugin().getConfig().setGroup(new ConfigGroup(hpw.getPlugin().getHost(), JDTheme.II("gui.images.taskpanes.premium", 24, 24)));
 
         UserIF.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL, hpw.getPlugin().getConfig());
-    } 
-
-    private void loadEntry(HostPluginWrapper hpw) {
-        int cur = table.getSelectedRow();
-        hpw.getPlugin();
-        tableModel.fireTableRowsUpdated(cur, cur);
-        btnEdit.setEnabled(hpw.hasConfig());        
     }
 
     @Override
@@ -231,7 +224,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
             public void valueChanged(ListSelectionEvent e) {
                 if (table.getSelectedRow() < 0) return;
                 HostPluginWrapper hpw = pluginsForHost.get(table.getSelectedRow());
-                btnEdit.setEnabled(hpw.hasConfig());                
+                btnEdit.setEnabled(hpw.hasConfig());
             }
         });
         table.getTableHeader().setReorderingAllowed(false);
@@ -281,8 +274,6 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         btnEdit.setEnabled(false);
         btnEdit.addActionListener(this);
 
-
-
         JPanel bpanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
         bpanel.add(btnEdit);
 
@@ -291,7 +282,8 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         panel.add(bpanel, "w pref!");
 
         JTabbedPane tabbed = new JTabbedPane();
-       tabbed.setOpaque(false);  tabbed.add(getBreadcrum(), panel);
+        tabbed.setOpaque(false);
+        tabbed.add(getBreadcrum(), panel);
 
         this.add(tabbed);
     }
@@ -302,11 +294,8 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
     public void mouseClicked(MouseEvent e) {
         if (e.getClickCount() > 1) {
-            int row = table.getSelectedRow();
-            HostPluginWrapper hpw = pluginsForHost.get(row);
-            if (!hpw.isLoaded()) {
-                loadEntry(hpw);
-            } else if (hpw.hasConfig()) {
+            HostPluginWrapper hpw = pluginsForHost.get(table.getSelectedRow());
+            if (hpw.hasConfig()) {
                 editEntry(hpw);
             }
         }

@@ -202,7 +202,7 @@ public class AccountController extends SubConfiguration implements ActionListene
         return ai;
     }
 
-    /*
+    /**
      * return hostername if account is under controll of AccountController
      */
     public String getHosterName(Account account) {
