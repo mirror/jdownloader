@@ -640,6 +640,14 @@ public class JDUtilities {
     public static ArrayList<HostPluginWrapper> getPluginsForHost() {
         return new ArrayList<HostPluginWrapper>(HostPluginWrapper.getHostWrapper());
     }
+    
+    public static ArrayList<HostPluginWrapper> getPremiumPluginsForHost() {
+        ArrayList<HostPluginWrapper> plugins = getPluginsForHost();
+        for (int i = plugins.size() - 1 ; i >= 0; --i) {
+            if (!plugins.get(i).isPremiumEnabled()) plugins.remove(i);
+        }
+        return plugins;
+    }
 
     /**
      * Parsed den Revision-String ins Format 0.000
