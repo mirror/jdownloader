@@ -1,0 +1,92 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2009  JD-Team support@jdownloader.org & pspzockerscene
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+package jd.plugins.hoster;
+
+import java.io.IOException;
+
+import jd.PluginWrapper;
+import jd.http.Encoding;
+import jd.parser.Regex;
+import jd.parser.html.Form;
+import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.JDUtilities;
+
+//cobrashare.sk by pspzockerscene
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gigaup.fr" }, urls = { "http://[\\w\\.]*?gigaup\\.fr/\\?g=[A-Z|0-9]+" }, flags = { 0 })
+public class GigaUpFr extends PluginForHost {
+
+    public GigaUpFr(PluginWrapper wrapper) {
+        super(wrapper);
+    }
+
+    @Override
+    public String getAGBLink() {
+        return "http://www.gigaup.fr/contact/";
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.getPage(link.getDownloadURL());
+        br.setFollowRedirects(true);
+        if (br.containsHTML("Le fichier que vous tentez de télécharger n'existe pas")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("Fichier supprimé car non utilisé sur une période trop longue")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("Le fichier a été désigné illégal")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+
+        String filename = Encoding.htmlDecode(br.getRegex("<td>Nom :</td>.*?<td>(.*?)</td>").getMatch(0));
+        String filesize = (br.getRegex("<td>Taille :</td>.*?<td>(.*?)</td>").getMatch(0));
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+
+        link.setName(filename);
+        link.setDownloadSize(Regex.getSize(filesize));
+        return AvailableStatus.TRUE;
+    }
+
+    // @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        String captchaid = (br.getRegex("<img src=\".*?uid=(.*?)\" style=\"margi").getMatch(0));
+        String captchaurl = "http://www.gigaup.fr/constru/images/bot_sucker/bot_sucker.php?uid=" + captchaid;
+        String code = getCaptchaCode(captchaurl, downloadLink);
+        Form captchaForm = br.getForm(1);
+        if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        captchaForm.put("bot_sucker", code);
+        br.submitForm(captchaForm);
+        if (br.containsHTML("Le code de vÃ©rification entrÃ© est incorrecte")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
+        String dllink = (br.getRegex("link_generator\"><center><a href=\"(.*?)\">Commencer le tÃ©lÃ©chargement").getMatch(0));
+        DownloadLink dl = new DownloadLink(null, null, "ftp", Encoding.urlDecode(dllink, true), true);
+        JDUtilities.getPluginForHost("ftp").handleFree(dl);
+//        dl = br.openDownload(downloadLink, dllink, false, 1);
+//        dl.startDownload();
+    }
+
+    @Override
+    public void reset() {
+    }
+
+    // @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
+
+    @Override
+    public void resetDownloadlink(DownloadLink link) {
+    }
+}
