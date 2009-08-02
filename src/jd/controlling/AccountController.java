@@ -128,7 +128,6 @@ public class AccountController extends SubConfiguration implements ActionListene
 
     private static Comparator<Account> compare_RR = new Comparator<Account>() {
 
-        @Override
         public int compare(Account o1, Account o2) {
             AccountInfo I1 = o1.getAccountInfo();
             AccountInfo I2 = o2.getAccountInfo();
@@ -154,11 +153,11 @@ public class AccountController extends SubConfiguration implements ActionListene
         broadcaster.addListener(this);
     }
 
-    public AccountInfo UpdateAccountInfo(PluginForHost host, Account account, boolean forceupdate) {
-        return UpdateAccountInfo(host.getHost(), account, forceupdate);
+    public AccountInfo updateAccountInfo(PluginForHost host, Account account, boolean forceupdate) {
+        return updateAccountInfo(host.getHost(), account, forceupdate);
     }
 
-    public AccountInfo UpdateAccountInfo(String host, Account account, boolean forceupdate) {
+    public AccountInfo updateAccountInfo(String host, Account account, boolean forceupdate) {
         String hostname = host != null ? host : getHosterName(account);
         if (hostname == null) {
             account.setAccountInfo(null);

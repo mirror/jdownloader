@@ -68,7 +68,7 @@ public class WebUpdate {
     }
 
     public static boolean updateUpdater() {
-        final ProgressController progress = new ProgressController(JDL.LF("wrapper.webupdate.updatenewupdater", "Downloading new jdupdate.jar"));
+        final ProgressController progress = new ProgressController(JDL.L("wrapper.webupdate.updatenewupdater", "Downloading new jdupdate.jar"));
         progress.increase(1);
         Thread ttmp = new Thread() {
             public void run() {

@@ -33,7 +33,6 @@ import jd.config.SubConfiguration;
 import jd.config.ConfigEntry.PropertyType;
 import jd.gui.UserIO;
 import jd.gui.swing.Factory;
-import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.nutils.JDFlags;
 import jd.utils.JDUtilities;
@@ -65,7 +64,7 @@ public abstract class ConfigPanel extends SwitchPanel {
     public void paint(Graphics g) {
 
         super.paint(g);
-       
+
     }
 
     public String getBreadcrum() {
@@ -253,9 +252,7 @@ public abstract class ConfigPanel extends SwitchPanel {
         PropertyType changes = hasChanges();
         this.save();
         if (changes == PropertyType.NEEDS_RESTART) {
-            int answer = UserIO.getInstance().requestConfirmDialog(0, JDL.L("jd.gui.swing.jdgui.settings.ConfigPanel.restartquestion.title", "Restart required!"),
-                                                                   JDL.L("jd.gui.swing.jdgui.settings.ConfigPanel.restartquestion", "This option needs a JDownloader restart."), null,
-                                                                   JDL.L("jd.gui.swing.jdgui.settings.ConfigPanel.restartquestion.ok", "Restart NOW!"), null);
+            int answer = UserIO.getInstance().requestConfirmDialog(0, JDL.L("jd.gui.swing.jdgui.settings.ConfigPanel.restartquestion.title", "Restart required!"), JDL.L("jd.gui.swing.jdgui.settings.ConfigPanel.restartquestion", "This option needs a JDownloader restart."), null, JDL.L("jd.gui.swing.jdgui.settings.ConfigPanel.restartquestion.ok", "Restart NOW!"), null);
 
             if (JDFlags.hasSomeFlags(answer, UserIO.RETURN_DONT_SHOW_AGAIN | UserIO.RETURN_OK)) {
                 JDUtilities.restartJD();

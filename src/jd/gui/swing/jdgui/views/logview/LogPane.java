@@ -39,7 +39,6 @@ import jd.controlling.LogFormatter;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.UserIO;
-import jd.gui.swing.SwingGui;
 import jd.gui.swing.components.JDFileChooser;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
@@ -101,13 +100,7 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
             Level level = JDLogger.getLogger().getLevel();
 
             if (!level.equals(Level.ALL)) {
-                int status = UserIO.getInstance().requestHelpDialog(
-                                                                    UserIO.NO_COUNTDOWN,
-                                                                    JDL.L("gui.logdialog.loglevelwarning.title", "Wrong Loglevel for Uploading selected!"),
-                                                                    JDL
-                                                                            .LF("gui.logdialog.loglevelwarning",
-                                                                                "The selected loglevel (%s) isn't preferred to upload a log! Please change it to ALL and create a new log!", level
-                                                                                        .getName()), null, "http://jdownloader.org/knowledge/wiki/support/create-a-jd-log");
+                int status = UserIO.getInstance().requestHelpDialog(UserIO.NO_COUNTDOWN, JDL.L("gui.logdialog.loglevelwarning.title", "Wrong Loglevel for Uploading selected!"), JDL.LF("gui.logdialog.loglevelwarning", "The selected loglevel (%s) isn't preferred to upload a log! Please change it to ALL and create a new log!", level.getName()), null, "http://jdownloader.org/knowledge/wiki/support/create-a-jd-log");
                 if (JDFlags.hasSomeFlags(status, UserIO.RETURN_CANCEL, UserIO.RETURN_COUNTDOWN_TIMEOUT)) return;
             }
 
@@ -120,11 +113,10 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
 
             String name = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN, JDL.L("userio.input.title", "Please enter!"), JDL.L("gui.askName", "Your name?"), null, null, null, null);
             if (name == null) return;
-            String question = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN, JDL.L("userio.input.title", "Please enter!"),
-                                                                      JDL.L("gui.logger.askQuestion", "Please describe your Problem/Bug/Question!"), null, null, null, null);
+            String question = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN, JDL.L("userio.input.title", "Please enter!"), JDL.L("gui.logger.askQuestion", "Please describe your Problem/Bug/Question!"), null, null, null, null);
 
             if (question == null) return;
-           
+
             String url = Upload.toJDownloader(content, name + "\r\n\r\n" + question);
 
             try {
@@ -140,7 +132,7 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
                 append(JDL.L("gui.logDialog.warning.uploadFailed", "Upload failed"));
             }
             append("\r\n\r\n-------------------------------------------------------------\r\n\r\n");
-          
+
             logField.setCaretPosition(logField.getText().length());
             break;
         }
@@ -165,7 +157,7 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
          * TODO: not synchronized properbly in loop.
          */
         try {
-        
+
             JDUtilities.getController().addControlListener(this);
             ArrayList<LogRecord> buff = new ArrayList<LogRecord>();
 
@@ -189,7 +181,7 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
             }
             logField.setText(sb.toString());
             System.out.println(sb.toString());
-          
+
             logField.setCaretPosition(logField.getDocument().getEndPosition().getOffset() - 1);
         } catch (Exception e) {
             e.printStackTrace();

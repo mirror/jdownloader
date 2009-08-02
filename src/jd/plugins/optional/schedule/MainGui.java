@@ -15,12 +15,11 @@ import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.table.AbstractTableModel;
 
-import net.miginfocom.swing.MigLayout;
-
 import jd.config.SubConfiguration;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.interfaces.View;
 import jd.utils.locale.JDL;
+import net.miginfocom.swing.MigLayout;
 
 public class MainGui extends View implements ActionListener, MouseListener {
     private static final long serialVersionUID = 3439995751143746593L;

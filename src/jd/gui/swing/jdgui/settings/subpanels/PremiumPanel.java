@@ -546,7 +546,7 @@ public class PremiumPanel extends JPanel implements ControlListener, ActionListe
                 if (acc != null && (acc.getUser().length() > 0 || acc.getPass().length() > 0)) {
                     try {
                         accCounter++;
-                        AccountInfo ai = AccountController.getInstance().UpdateAccountInfo(host, acc, false);
+                        AccountInfo ai = AccountController.getInstance().updateAccountInfo(host, acc, false);
                         if (ai == null) continue;
                         Long tleft = new Long(ai.getTrafficLeft());
                         if (tleft >= 0 && ai.isExpired() == false) {

@@ -1,10 +1,5 @@
 package jd.gui.swing.jdgui.views;
 
-import java.awt.AWTEvent;
-import java.awt.Toolkit;
-import java.awt.event.AWTEventListener;
-import java.awt.event.KeyEvent;
-
 import javax.swing.Icon;
 
 import jd.controlling.LinkGrabberController;
@@ -29,8 +24,6 @@ public class LinkgrabberView extends View {
      */
     private static final String IDENT_PREFIX = "jd.gui.swing.jdgui.views.linkgrabberview.";
 
-   
-
     public LinkgrabberView() {
 
         super();
@@ -41,8 +34,6 @@ public class LinkgrabberView extends View {
         toolbar.setList(new String[] { "action.addurl", "action.load" });
 
         this.setToolBar(toolbar);
-
-
 
         LinkGrabberController.getInstance().addListener(new LinkGrabberControllerListener() {
             public void onLinkGrabberControllerEvent(LinkGrabberControllerEvent event) {
@@ -72,13 +63,12 @@ public class LinkgrabberView extends View {
 
     @Override
     protected void onHide() {
-      
+
     }
 
     @Override
     protected void onShow() {
 
-  
     }
 
 }

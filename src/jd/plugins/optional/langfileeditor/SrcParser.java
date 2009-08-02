@@ -247,9 +247,9 @@ public class SrcParser {
     private void parseCodeLine(String match, ArrayList<LngEntry> fileEntries, ArrayList<String> filePattern) {
         String[] calls = match.split("JDL\\.");
         String pat_string = "\"(.*?)(?<!\\\\)\"";
-        if (match.contains("plugins.host.rapidshare.errors")) {
-            match = match;
-        }
+        // if (match.contains("plugins.host.rapidshare.errors")) {
+        // match = match;
+        // }
         LngEntry entry;
         String m;
         main: for (String orgm : calls) {

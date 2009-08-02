@@ -112,7 +112,8 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
     private LogView logView;
     private MainToolBar toolBar;
     private JPanel waitingPane;
-    private Thread waitingThread;
+
+    // private Thread waitingThread;
 
     private JDGui() {
         super("");
@@ -161,45 +162,23 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
                 }
                 if (!ai.isValid()) {
                     account.setEnabled(false);
-                    UserIO.getInstance().requestMessageDialog(
-                                                              JDL.LF("plugins.host.premium.info.notValid", "The account for '%s' isn't valid! Please check username and password!\r\n%s", account
-                                                                      .getUser(), ai.getStatus() != null ? ai.getStatus() : ""));
+                    UserIO.getInstance().requestMessageDialog(JDL.LF("plugins.host.premium.info.notValid", "The account for '%s' isn't valid! Please check username and password!\r\n%s", account.getUser(), ai.getStatus() != null ? ai.getStatus() : ""));
                     return null;
                 }
                 if (ai.isExpired()) {
                     account.setEnabled(false);
-                    UserIO.getInstance().requestMessageDialog(
-                                                              JDL.LF("plugins.host.premium.info.expired", "The account for '%s' is expired! Please extend the account or buy a new one!\r\n%s", account
-                                                                      .getUser(), ai.getStatus() != null ? ai.getStatus() : ""));
+                    UserIO.getInstance().requestMessageDialog(JDL.LF("plugins.host.premium.info.expired", "The account for '%s' is expired! Please extend the account or buy a new one!\r\n%s", account.getUser(), ai.getStatus() != null ? ai.getStatus() : ""));
                     return null;
                 }
 
                 String def = JDL.LF("plugins.host.premium.info.title", "Accountinformation from %s for %s", account.getUser(), pluginForHost.getHost());
-                String[] label = new String[] {
-                        JDL.L("plugins.host.premium.info.validUntil", "Valid until"),
-                        JDL.L("plugins.host.premium.info.trafficLeft", "Traffic left"),
-                        JDL.L("plugins.host.premium.info.files", "Files"),
-                        JDL.L("plugins.host.premium.info.premiumpoints", "PremiumPoints"),
-                        JDL.L("plugins.host.premium.info.usedSpace", "Used Space"),
-                        JDL.L("plugins.host.premium.info.cash", "Cash"),
-                        JDL.L("plugins.host.premium.info.trafficShareLeft", "Traffic Share left"),
-                        JDL.L("plugins.host.premium.info.status", "Info")
-                };
+                String[] label = new String[] { JDL.L("plugins.host.premium.info.validUntil", "Valid until"), JDL.L("plugins.host.premium.info.trafficLeft", "Traffic left"), JDL.L("plugins.host.premium.info.files", "Files"), JDL.L("plugins.host.premium.info.premiumpoints", "PremiumPoints"), JDL.L("plugins.host.premium.info.usedSpace", "Used Space"), JDL.L("plugins.host.premium.info.cash", "Cash"), JDL.L("plugins.host.premium.info.trafficShareLeft", "Traffic Share left"), JDL.L("plugins.host.premium.info.status", "Info") };
 
                 DateFormat formater = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM);
                 String validUntil = (ai.isExpired() ? JDL.L("plugins.host.premium.info.expiredInfo", "[expired]") + " " : "") + formater.format(new Date(ai.getValidUntil())) + "";
                 if (ai.getValidUntil() == -1) validUntil = null;
                 String premiumPoints = ai.getPremiumPoints() + ((ai.getNewPremiumPoints() > 0) ? " [+" + ai.getNewPremiumPoints() + "]" : "");
-                String[] data = new String[] {
-                        validUntil,
-                        Formatter.formatReadable(ai.getTrafficLeft()),
-                        ai.getFilesNum() + "",
-                        premiumPoints,
-                        Formatter.formatReadable(ai.getUsedSpace()),
-                        ai.getAccountBalance() < 0 ? null : (ai.getAccountBalance() / 100.0) + " €",
-                        Formatter.formatReadable(ai.getTrafficShareLeft()),
-                        ai.getStatus()
-                };
+                String[] data = new String[] { validUntil, Formatter.formatReadable(ai.getTrafficLeft()), ai.getFilesNum() + "", premiumPoints, Formatter.formatReadable(ai.getUsedSpace()), ai.getAccountBalance() < 0 ? null : (ai.getAccountBalance() / 100.0) + " €", Formatter.formatReadable(ai.getTrafficShareLeft()), ai.getStatus() };
 
                 JPanel panel = new JPanel(new MigLayout("ins 5", "[right]10[grow,fill]10[]"));
                 panel.add(new JXTitledSeparator("<html><b>" + def + "</b></html>"), "spanx, pushx, growx, gapbottom 15");
@@ -492,24 +471,20 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
     }
 
     public void closeWindow() {
-        if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_COUNTDOWN, JDL.L("sys.ask.rlyclose", "Wollen Sie jDownloader wirklich schließen?")),
-                                 UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
+        if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_COUNTDOWN, JDL.L("sys.ask.rlyclose", "Wollen Sie jDownloader wirklich schließen?")), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
             JDUtilities.getController().exit();
         }
     }
 
     @Override
     public void setWaiting(final boolean b) {
-     
-        
-        
-            internalSetWaiting(b);
-        
+
+        internalSetWaiting(b);
 
     }
 
     protected void internalSetWaiting(final boolean b) {
-        new GuiRunnable() {
+        new GuiRunnable<Object>() {
             @Override
             public Object runSave() {
                 getMainFrame().setGlassPane(waitingPane);
@@ -643,7 +618,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
     public void disposeView(SwitchPanel view) {
         if (view instanceof View) {
             view = mainTabbedPane.getComponentEquals((View) view);
-            mainTabbedPane.remove((View)view);
+            mainTabbedPane.remove((View) view);
         }
     }
 

@@ -6,7 +6,6 @@ import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.interfaces.View;
 import jd.gui.swing.jdgui.views.downloadview.DownloadLinksPanel;
 import jd.gui.swing.jdgui.views.info.DownloadInfoPanel;
-import jd.gui.swing.jdgui.views.toolbar.ViewToolbar;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
@@ -24,7 +23,7 @@ public class DownloadView extends View {
         super();
         this.setContent(new DownloadLinksPanel());
         this.setDefaultInfoPanel(new DownloadInfoPanel());
-        ViewToolbar toolbar = new ViewToolbar();
+        // ViewToolbar toolbar = new ViewToolbar();
         // toolbar.setHorizontalAlign(ViewToolbar.WEST);
         // toolbar.setContentPainted(false);
         // toolbar.setTextPainted(false);
@@ -59,8 +58,7 @@ public class DownloadView extends View {
 
     @Override
     protected void onShow() {
-        
-        
+
         ActionController.getToolBarAction("action.downloadview.movetotop").setEnabled(true);
         ActionController.getToolBarAction("action.downloadview.moveup").setEnabled(true);
         ActionController.getToolBarAction("action.downloadview.movedown").setEnabled(true);

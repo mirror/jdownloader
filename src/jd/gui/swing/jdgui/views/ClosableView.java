@@ -7,18 +7,13 @@ import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.JButton;
-import javax.swing.JInternalFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
-import javax.swing.UIDefaults;
 import javax.swing.UIManager;
-import javax.swing.plaf.synth.SynthContext;
 
 import jd.gui.swing.jdgui.MainTabbedPane;
 import jd.gui.swing.jdgui.interfaces.View;
 import jd.utils.locale.JDL;
-import de.javasoft.plaf.synthetica.SyntheticaLookAndFeel;
-import de.javasoft.plaf.synthetica.SyntheticaState.State;
 
 abstract public class ClosableView extends View {
 
@@ -55,16 +50,20 @@ abstract public class ClosableView extends View {
         // SyntheticaBlackMoonLookAndFeel();
 
         panel.add(bt = new JButton(closeAction));
-//        if (UIManager.getLookAndFeel() instanceof SyntheticaLookAndFeel) {
-//            SyntheticaLookAndFeel synth = ((SyntheticaLookAndFeel) UIManager.getLookAndFeel());
-//            UIDefaults def = synth.getDefaults();
-//
-////           SynthContext reag = SyntheticaLookAndFeel.createContext(new JInternalFrame(), javax.swing.plaf.synth.Region.INTERNAL_FRAME_TITLE_PANE, State.HOVER.toInt());
-//            // Synthetica.docking.titlebar.close.hover
-//UIDefaults defs2 = UIManager.getDefaults();
-//;
-//            def = null;
-//        }
+        // if (UIManager.getLookAndFeel() instanceof SyntheticaLookAndFeel) {
+        // SyntheticaLookAndFeel synth = ((SyntheticaLookAndFeel)
+        // UIManager.getLookAndFeel());
+        // UIDefaults def = synth.getDefaults();
+        //
+        // // SynthContext reag = SyntheticaLookAndFeel.createContext(new
+        // JInternalFrame(),
+        // javax.swing.plaf.synth.Region.INTERNAL_FRAME_TITLE_PANE,
+        // State.HOVER.toInt());
+        // // Synthetica.docking.titlebar.close.hover
+        // UIDefaults defs2 = UIManager.getDefaults();
+        // ;
+        // def = null;
+        // }
         bt.setPreferredSize(new Dimension(20, 14));
         bt.setContentAreaFilled(false);
         bt.setToolTipText(JDL.LF("jd.gui.swing.jdgui.views.ClosableView.closebtn.tooltip", "Close %s", this.getTitle()));
@@ -117,9 +116,10 @@ abstract public class ClosableView extends View {
         private static final long serialVersionUID = -771203720364300914L;
 
         public CloseAction() {
-            
-//            this.putValue(AbstractAction.SMALL_ICON, UIManager.getIcon("Synthetica.docking.titlebar.close.hover"));
-        
+
+            // this.putValue(AbstractAction.SMALL_ICON,
+            // UIManager.getIcon("Synthetica.docking.titlebar.close.hover"));
+
             this.putValue(AbstractAction.SMALL_ICON, UIManager.getIcon("InternalFrame.closeIcon"));
         }
 

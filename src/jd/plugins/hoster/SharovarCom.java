@@ -20,13 +20,13 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
+import jd.http.RandomUserAgent;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.http.RandomUserAgent;
 import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision", interfaceVersion = 2, names = { "sharovar.com" }, urls = { "http://[\\w\\.]*?sharovar\\.com/files/.+{1,}" }, flags = { 0 })
@@ -65,7 +65,9 @@ public class SharovarCom extends PluginForHost {
         dl = br.openDownload(downloadLink, dllink, false, 1);
         if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();
-            // check ob limit aktiv, falls ja wird ein neuer Versuch gestartet, da das Limit durch Änderung des useragents umgangen wird und dieser bei jedem Start per zufall generiert wird!
+            // check ob limit aktiv, falls ja wird ein neuer Versuch gestartet,
+            // da das Limit durch Änderung des useragents umgangen wird und
+            // dieser bei jedem Start per zufall generiert wird!
             if (br.containsHTML("You have reached the download limit")) throw new PluginException(LinkStatus.ERROR_RETRY);
         }
         dl.startDownload();

@@ -11,6 +11,8 @@ import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
 public class LFEView extends ClosableView {
+
+    private static final long serialVersionUID = -1676038853735547928L;
     private static final String JDL_PREFIX = "jd.plugins.optional.langfileeditor.LFEView.";
     private LangFileEditor lfe;
     private LFEGui lfeGui;
@@ -41,32 +43,26 @@ public class LFEView extends ClosableView {
 
     @Override
     public Icon getIcon() {
-
         return JDTheme.II(lfe.getIconKey(), 16, 16);
     }
 
     @Override
     public String getTitle() {
-
         return JDL.L(JDL_PREFIX + "title", "Translation Editor");
     }
 
     @Override
     public String getTooltip() {
-        // TODO Auto-generated method stub
         return JDL.L(JDL_PREFIX + "tooltip", "Edit a translation file");
-
     }
 
     @Override
     protected void onHide() {
-        // TODO Auto-generated method stub
 
     }
 
     @Override
     protected void onShow() {
-        // TODO Auto-generated method stub
 
     }
 

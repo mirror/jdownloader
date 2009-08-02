@@ -278,7 +278,6 @@ public class HTTPConnection extends sun.net.www.protocol.http.HttpURLConnection 
 
     }
 
-    @Override
     public void setCharset(String Charset) {
         this.customcharset = Charset;
     }

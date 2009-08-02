@@ -189,6 +189,8 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
         focus.getInputMap(JButton.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(ks, "ESCAPE");
         focus.getInputMap(JButton.WHEN_IN_FOCUSED_WINDOW).put(ks, "ESCAPE");
         focus.getActionMap().put("ESCAPE", new AbstractAction() {
+            private static final long serialVersionUID = -4143073679291503041L;
+
             public void actionPerformed(ActionEvent e) {
                 dispose();
             }

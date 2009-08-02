@@ -8,17 +8,13 @@ import jd.utils.locale.JDL;
 
 public class JDChatView extends ClosableView {
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = -7876057076125402969L;
     private static final String JDL_PREFIX = "jd.plugins.optional.jdchat.JDChatView.";
 
     public JDChatView() {
         super();
-      
-        init();
 
+        init();
     }
 
     @Override
@@ -28,29 +24,23 @@ public class JDChatView extends ClosableView {
 
     @Override
     public String getTitle() {
-        // TODO Auto-generated method stub
         return JDL.L(JDL_PREFIX + "title", "JD Support Chat");
     }
 
     @Override
     public String getTooltip() {
-        // TODO Auto-generated method stub
         return JDL.L(JDL_PREFIX + "tooltip", "JD Support Chat");
 
     }
 
     @Override
     protected void onHide() {
-        // TODO Auto-generated method stub
 
     }
 
     @Override
     protected void onShow() {
-        // TODO Auto-generated method stub
 
     }
-
-
 
 }

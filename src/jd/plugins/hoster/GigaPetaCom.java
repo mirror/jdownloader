@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
@@ -46,11 +45,11 @@ public class GigaPetaCom extends PluginForHost {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
 
-        if(br.containsHTML("<div id=\"page_error\">")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);  
+        if (br.containsHTML("<div id=\"page_error\">")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         Regex infos = br.getRegex(Pattern.compile("<img src=\".*\" alt=\"file\" />(.*?)</td>.*?</tr>.*?<tr>.*?<th>.*?</th>.*?<td>(.*?)</td>", Pattern.DOTALL));
         String fileName = infos.getMatch(0);
         String fileSize = infos.getMatch(1);
-        if(fileName == null || fileSize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (fileName == null || fileSize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(fileName.trim());
         downloadLink.setDownloadSize(Regex.getSize(fileSize.trim()));
 
@@ -61,7 +60,7 @@ public class GigaPetaCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
 
-        String captchaKey = (int)(Math.random()*100000000) + "";
+        String captchaKey = (int) (Math.random() * 100000000) + "";
         String captchaUrl = "http://gigapeta.com/img/captcha.gif?x=" + captchaKey;
 
         Form form = br.getForm(1);

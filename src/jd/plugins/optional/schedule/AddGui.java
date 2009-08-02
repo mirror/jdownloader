@@ -27,7 +27,6 @@ import javax.swing.table.AbstractTableModel;
 
 import jd.plugins.optional.schedule.modules.SchedulerModuleInterface;
 import jd.utils.locale.JDL;
-
 import net.miginfocom.swing.MigLayout;
 
 public class AddGui extends JPanel implements ActionListener, ChangeListener, DocumentListener, MouseListener {

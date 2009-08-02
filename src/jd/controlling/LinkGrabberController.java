@@ -30,7 +30,6 @@ import jd.event.JDBroadcaster;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
-
 import jd.plugins.FilePackage;
 import jd.plugins.LinkGrabberFilePackage;
 import jd.plugins.LinkGrabberFilePackageEvent;

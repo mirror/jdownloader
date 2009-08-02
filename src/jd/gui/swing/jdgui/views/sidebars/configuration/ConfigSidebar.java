@@ -25,8 +25,10 @@ public class ConfigSidebar extends SideBarPanel {
         this.setLayout(new MigLayout("ins 0 ", "[grow,fill]", "[grow,fill]"));
 
         this.add(tree = new JTree(getTreeModel()) {
+            private static final long serialVersionUID = -5018817191000357595L;
+
             /**
-             * woraround a synthetica layout bug with doubleclick
+             * workaround a synthetica layout bug with doubleclick
              */
             public void processMouseEvent(MouseEvent m) {
                 if (m.getClickCount() > 1) return;

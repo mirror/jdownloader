@@ -180,7 +180,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
                 ArrayList<Account> accs = AccountController.getInstance().getAllAccounts(host);
                 for (Account a : accs) {
                     if (a.isEnabled()) {
-                        AccountController.getInstance().UpdateAccountInfo(host, a, false);
+                        AccountController.getInstance().updateAccountInfo(host, a, false);
                     }
                 }
             }
