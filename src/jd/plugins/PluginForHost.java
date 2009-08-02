@@ -144,6 +144,7 @@ public abstract class PluginForHost extends Plugin {
     private String premiumurl = null;
 
     private ImageIcon hosterIcon;
+    private MenuAction premiumAction;
 
     public boolean checkLinks(DownloadLink[] urls) {
         return false;
@@ -235,39 +236,43 @@ public abstract class PluginForHost extends Plugin {
         MenuAction account;
         MenuAction m = new MenuAction(MenuAction.NORMAL, JDL.L("plugins.menu.configs", "Configuration"), 1);
         m.setActionListener(this);
-        MenuAction premium = new MenuAction(MenuAction.CONTAINER, JDL.L("plugins.menu.accounts", "Accounts"), 0);
         menuList.add(m);
-        ArrayList<Account> accounts = getPremiumAccounts();
+        if (premiumAction == null) {
+            premiumAction = new MenuAction(MenuAction.CONTAINER, JDL.L("plugins.menu.accounts", "Accounts"), 0);
 
-        int i = 1;
-        int c = 0;
-        for (Account a : accounts) {
-            if (a == null) continue;
-            try {
-                c++;
-                if (getAccountwithoutUsername()) {
-                    if (a.getPass() == null || a.getPass().trim().length() == 0) continue;
-                    account = new MenuAction(MenuAction.CONTAINER, i++ + ". " + "Account " + (i - 1), 0);
-                } else {
+            ArrayList<Account> accounts = getPremiumAccounts();
 
-                    if (a.getUser() == null || a.getUser().trim().length() == 0) continue;
-                    account = new MenuAction(MenuAction.CONTAINER, i++ + ". " + a.getUser(), 0);
-                    m = new MenuAction(MenuAction.TOGGLE, JDL.L("plugins.menu.enable_premium", "Aktivieren"), 100 + c - 1);
-                    m.setSelected(a.isEnabled());
-                    m.setActionListener(this);
-                    account.addMenuItem(m);
+            int i = 1;
+            int c = 0;
+            for (Account a : accounts) {
+                if (a == null) continue;
+                try {
+                    c++;
+                    if (getAccountwithoutUsername()) {
+                        if (a.getPass() == null || a.getPass().trim().length() == 0) continue;
+                        account = new MenuAction(MenuAction.CONTAINER, i++ + ". " + "Account " + (i - 1), 0);
+                    } else {
 
-                    m = new MenuAction(JDL.L("plugins.menu.premiumInfo", "Accountinformationen abrufen"), 200 + c - 1);
-                    m.setActionListener(this);
-                    account.addMenuItem(m);
-                    premium.addMenuItem(account);
+                        if (a.getUser() == null || a.getUser().trim().length() == 0) continue;
+                        account = new MenuAction(MenuAction.CONTAINER, i++ + ". " + a.getUser(), 0);
+                        m = new MenuAction(MenuAction.TOGGLE, JDL.L("plugins.menu.enable_premium", "Aktivieren"), 100 + c - 1);
+                        m.setSelected(a.isEnabled());
+                        m.setActionListener(this);
+                        account.addMenuItem(m);
+
+                        m = new MenuAction(JDL.L("plugins.menu.premiumInfo", "Accountinformationen abrufen"), 200 + c - 1);
+                        m.setActionListener(this);
+                        account.addMenuItem(m);
+                        premiumAction.addMenuItem(account);
+                    }
+                } catch (Exception e) {
+                    JDLogger.exception(e);
                 }
-            } catch (Exception e) {
-                JDLogger.exception(e);
             }
+
         }
-        if (premium.getSize() != 0) {
-            menuList.add(premium);
+        if (premiumAction.getSize() != 0) {
+            menuList.add(premiumAction);
         } else {
             menuList.add(m = new MenuAction(JDL.L("plugins.menu.noaccounts", "Add account"), 2));
             m.setActionListener(this);
