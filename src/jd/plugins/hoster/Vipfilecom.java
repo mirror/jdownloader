@@ -54,7 +54,7 @@ public class Vipfilecom extends PluginForHost {
         if (br.containsHTML("This file not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String fileSize = br.getRegex("<span.*?Size:.*?<b style=.*?>(.*?)</b>").getMatch(0);
         if (fileSize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String fileName = new Regex(downloadURL, "http://[\\w\\.]*?vip-file\\.com/download/[a-zA-z0-9]+/(.*?)\\.html").getMatch(0);
+        String fileName = br.getRegex("<input type=\"hidden\" name=\"name\" value=\"(.*?)\" />").getMatch(0);
         downloadLink.setDownloadSize(Regex.getSize(fileSize));
         downloadLink.setName(fileName);
         String link = Encoding.htmlDecode(br.getRegex(Pattern.compile("<a href=\"(http://vip-file\\.com/download.*?)\">", Pattern.CASE_INSENSITIVE)).getMatch(0));
