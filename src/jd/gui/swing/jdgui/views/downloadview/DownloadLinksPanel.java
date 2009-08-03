@@ -260,15 +260,13 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
     // @Override
     public void onShow() {
         updateTableTask(REFRESH_DATA_AND_STRUCTURE_CHANGED_FAST, null);
-        fireTableTask();
-        asyncUpdate.restart();
         JDUtilities.getDownloadController().addListener(this);
         internalTable.removeKeyListener(internalTable);
         internalTable.addKeyListener(internalTable);
     }
 
     // @Override
-    public void onHide() {
+    public void onHide() {        
         JDUtilities.getDownloadController().removeListener(this);
         asyncUpdate.stop();
         internalTable.removeKeyListener(internalTable);

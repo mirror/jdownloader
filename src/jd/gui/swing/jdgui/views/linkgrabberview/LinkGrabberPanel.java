@@ -398,11 +398,9 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
 
     // @Override
     public void onShow() {
-        fireTableChanged(false);
         LGINSTANCE.addListener(this);
         visible = true;
         fireTableChanged(true);
-        Update_Async.restart();
     }
 
     public Set<String> getHosterList(ArrayList<DownloadLink> links) {

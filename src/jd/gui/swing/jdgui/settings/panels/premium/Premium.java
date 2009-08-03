@@ -93,6 +93,11 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
         initActions();
 
         ViewToolbar vt = new ViewToolbar() {
+            /**
+             * 
+             */
+            private static final long serialVersionUID = 583469943193290056L;
+
             public void setDefaults(int i, AbstractButton ab) {
                 ab.setForeground(new JLabel().getForeground());
 
@@ -170,9 +175,9 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
 
     @Override
     public void onHide() {
+        visible = false;
         AccountController.getInstance().removeListener(this);
         Update_Async.stop();
-        visible = false;
     }
 
     public void fireTableChanged(final boolean fast) {
@@ -197,7 +202,6 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
         AccountController.getInstance().addListener(this);
         visible = true;
         fireTableChanged(true);
-        Update_Async.restart();
     }
 
     public void actionPerformed(ActionEvent arg0) {
