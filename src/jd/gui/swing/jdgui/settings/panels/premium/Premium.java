@@ -19,12 +19,10 @@ package jd.gui.swing.jdgui.settings.panels.premium;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 
-import net.miginfocom.swing.MigLayout;
-
 import jd.config.Configuration;
 import jd.gui.swing.jdgui.settings.ConfigPanel;
-import jd.gui.swing.jdgui.views.premiumview.PremiumPanel;
 import jd.utils.locale.JDL;
+import net.miginfocom.swing.MigLayout;
 
 public class Premium extends ConfigPanel {
 
@@ -56,7 +54,7 @@ public class Premium extends ConfigPanel {
         this.add(tabbed);
     }
 
-    private void initPanel(JPanel panel) {        
+    private void initPanel(JPanel panel) {
     }
 
     @Override

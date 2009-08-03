@@ -15,16 +15,13 @@ import jd.plugins.Account;
 
 public class PremiumTableEditor extends AbstractCellEditor implements TableCellEditor, ActionListener {
 
-    JCheckBox checkbox;
-    JComponent co;
-    private PremiumTable table;
+    private JCheckBox checkbox;
+    private JComponent co;
 
-    /**
-     * 
-     */
+    // private PremiumTable table;
 
     public PremiumTableEditor(PremiumTable table) {
-        this.table = table;
+        // this.table = table;
         checkbox = new JCheckBox();
         checkbox.setHorizontalAlignment(JCheckBox.CENTER);
 
@@ -32,7 +29,6 @@ public class PremiumTableEditor extends AbstractCellEditor implements TableCellE
 
     private static final long serialVersionUID = 5282897873177369728L;
 
-    @Override
     public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
         Account ac = (Account) value;
         switch (column) {
@@ -54,7 +50,6 @@ public class PremiumTableEditor extends AbstractCellEditor implements TableCellE
 
     }
 
-    @Override
     public Object getCellEditorValue() {
         if (co == null) return null;
         if (co instanceof JCheckBox) {
@@ -78,7 +73,6 @@ public class PremiumTableEditor extends AbstractCellEditor implements TableCellE
 
     }
 
-    @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == checkbox) {
             checkbox.removeActionListener(this);

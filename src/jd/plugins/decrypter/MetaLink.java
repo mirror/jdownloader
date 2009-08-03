@@ -75,7 +75,7 @@ public class MetaLink extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision: 6448 $");
+        return getVersion("$Revision$");
     }
 
     public class MetalinkSAXHandler extends DefaultHandler {

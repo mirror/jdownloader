@@ -13,7 +13,6 @@ import javax.swing.plaf.UIResource;
 import javax.swing.table.TableCellRenderer;
 
 import jd.controlling.AccountController;
-import jd.gui.swing.jdgui.views.downloadview.StatusLabel;
 import jd.nutils.Formatter;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -23,6 +22,8 @@ import org.jdesktop.swingx.renderer.DefaultTableRenderer;
 import org.jdesktop.swingx.renderer.JRendererLabel;
 
 class BooleanRenderer extends JCheckBox implements TableCellRenderer, UIResource {
+
+    private static final long serialVersionUID = 8136614456518376700L;
     private static final Border noFocusBorder = new EmptyBorder(1, 1, 1, 1);
 
     public BooleanRenderer() {
@@ -57,7 +58,7 @@ public class PremiumTableRenderer extends DefaultTableRenderer {
 
     private Component co;
 
-    private StatusLabel statuspanel;
+//    private StatusLabel statuspanel;
 
     private PremiumTable table;
 
@@ -65,7 +66,7 @@ public class PremiumTableRenderer extends DefaultTableRenderer {
 
     public PremiumTableRenderer(PremiumTable table) {
         this.table = table;
-        statuspanel = new StatusLabel();
+//        statuspanel = new StatusLabel();
         boolrend = new BooleanRenderer();
     }
 

@@ -13,7 +13,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision: 6781 $", interfaceVersion = 2, names = { "sharehub.com" }, urls = { "http://(go.sharehub.com|sharehub.me|follow.to|kgt.com|krt.com)/.*" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharehub.com" }, urls = { "http://(go.sharehub.com|sharehub.me|follow.to|kgt.com|krt.com)/.*" }, flags = { 0 })
 public class ShareHubCom extends PluginForHost {
 
     public ShareHubCom(PluginWrapper wrapper) {

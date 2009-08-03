@@ -20,7 +20,6 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -61,7 +60,7 @@ public class R1OneCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
 
-        if(br.containsHTML("You're trying to download again too soon!")) {
+        if (br.containsHTML("You're trying to download again too soon!")) {
             long waittime = Long.parseLong(br.getRegex(Pattern.compile(">You're trying to download again too soon!  Wait (.*?) seconds.")).getMatch(0));
             sleep(waittime * 1000, downloadLink);
         }

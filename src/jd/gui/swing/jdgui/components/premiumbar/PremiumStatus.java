@@ -181,7 +181,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
         }
     }
 
-    private synchronized void updatePremium() {        
+    private synchronized void updatePremium() {
         updating = true;
         for (HostPluginWrapper wrapper : hosterplugins) {
             String host = wrapper.getHost();
@@ -354,7 +354,6 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
     public void mouseReleased(MouseEvent e) {
     }
 
-    @Override
     public void controlEvent(ControlEvent event) {
         if (event.getID() == ControlEvent.CONTROL_INIT_COMPLETE && event.getSource() instanceof Main) {
             guiInitComplete = true;

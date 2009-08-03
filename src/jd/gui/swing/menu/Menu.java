@@ -3,7 +3,6 @@ package jd.gui.swing.menu;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
-import javax.swing.KeyStroke;
 
 import jd.config.MenuAction;
 

@@ -29,22 +29,21 @@ public class DeezerCom extends PluginForDecrypt {
     public DeezerCom(PluginWrapper wrapper) {
         super(wrapper);
     }
-   
+
     // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         setBrowserExclusive();
         // No language cookie
-     
+
         br.getPage(parameter);
 
-       
         return decryptedLinks;
     }
 
     // @Override
     public String getVersion() {
-        return getVersion("$Revision: 6784 $");
+        return getVersion("$Revision$");
     }
 }

@@ -28,7 +28,6 @@ public class QooyCom extends PluginForDecrypt {
 
     public QooyCom(PluginWrapper wrapper) {
         super(wrapper);
-        // TODO Auto-generated constructor stub
     }
 
     @Override
@@ -50,7 +49,7 @@ public class QooyCom extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision: 6424 $");
+        return getVersion("$Revision$");
     }
 
 }
