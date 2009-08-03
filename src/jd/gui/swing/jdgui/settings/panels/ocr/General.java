@@ -174,7 +174,8 @@ public class General extends ConfigPanel {
         setLayout(new MigLayout("ins 0,wrap 1", "[fill,grow 10]", "[fill,grow]"));
 
         JTabbedPane tabbed = new JTabbedPane();
-       tabbed.setOpaque(false);  tabbed.add(getBreadcrum(), new JScrollPane(table));
+        tabbed.setOpaque(false);
+        tabbed.add(getBreadcrum(), new JScrollPane(table));
 
         this.add(tabbed);
     }

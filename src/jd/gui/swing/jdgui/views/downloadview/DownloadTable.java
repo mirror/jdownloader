@@ -157,27 +157,21 @@ public class DownloadTable extends JTable implements MouseListener, MouseMotionL
             tcm.removeColumn(tcm.getColumn(0));
         }
 
-        final SubConfiguration config = SubConfiguration.getConfig("gui");
+        final SubConfiguration config = SubConfiguration.getConfig("downloadview");
         cols = new TableColumn[getModel().getColumnCount()];
-
         for (int i = 0; i < getModel().getColumnCount(); ++i) {
             final int j = i;
             TableColumn tableColumn = new TableColumn(i);
-
             cols[i] = tableColumn;
             tableColumn.addPropertyChangeListener(new PropertyChangeListener() {
                 public void propertyChange(PropertyChangeEvent evt) {
                     if (evt.getPropertyName().equals("width")) {
-                        config.setProperty(WIDTH_PREFIX + model.toModel(j), evt.getNewValue());
+                        config.setProperty("WIDTH_COL_" + model.toModel(j), evt.getNewValue());
                         config.save();
                     }
                 }
             });
-            int defWidth = DownloadJTableModel.COL_WIDTHS[i];
-
-            if (defWidth <= 0) defWidth = tableColumn.getWidth();
-            tableColumn.setPreferredWidth(config.getIntegerProperty(WIDTH_PREFIX + model.toModel(j), defWidth));
-            tableColumn.setPreferredWidth(defWidth);
+            tableColumn.setPreferredWidth(config.getIntegerProperty("WIDTH_COL_" + model.toModel(j), tableColumn.getWidth()));
             addColumn(tableColumn);
         }
     }

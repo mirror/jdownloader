@@ -149,7 +149,8 @@ public class PremiumJTableModel extends AbstractTableModel {
         System.out.println(rowIndex + " " + columnIndex + " " + (Boolean) value);
         switch (columnIndex) {
         case COL_ENABLED:
-            ((Account) getValueAt(rowIndex, columnIndex)).setEnabled((Boolean) value);
+            boolean b = (Boolean) value;
+            ((Account) getValueAt(rowIndex, columnIndex)).setEnabled(b);
             break;
         }
     }

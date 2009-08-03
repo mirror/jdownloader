@@ -300,11 +300,13 @@ public class FilePackageInfo extends SwitchPanel implements ActionListener {
         updater.start();
     }
 
-    private void onHideSave() {
+    public void onHideSave() {
         notifyUpdate = false;
+        PasswordListController.getInstance().addPassword(txtPassword.getText());
         fp.setName(txtName.getText());
         fp.setComment(txtComment.getText());
         fp.setPassword(txtPassword.getText());
+        fp.setDownloadDirectory(brwSaveTo.getText());
         notifyUpdate = true;
     }
 
@@ -317,8 +319,6 @@ public class FilePackageInfo extends SwitchPanel implements ActionListener {
             updater.interrupt();
             updater = null;
         }
-        PasswordListController.getInstance().addPassword(txtPassword.getText());
-        actionPerformed(new ActionEvent(this.brwSaveTo, 0, null));
         this.progressBarFilePackage.setMaximums(null);
         this.progressBarDownloadLink.setMaximums(null);
         downloadLink = null;

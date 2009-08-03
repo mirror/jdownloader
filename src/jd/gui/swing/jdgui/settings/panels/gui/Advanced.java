@@ -96,7 +96,8 @@ public class Advanced extends ConfigPanel {
         }
 
         JTabbedPane tabbed = new JTabbedPane();
-       tabbed.setOpaque(false);  tabbed.add(getBreadcrum(), panel);
+        tabbed.setOpaque(false);
+        tabbed.add(getBreadcrum(), panel);
 
         this.add(tabbed);
     }

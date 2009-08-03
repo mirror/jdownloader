@@ -117,7 +117,11 @@ public class PremiumTableRenderer extends DefaultTableRenderer {
             if (ai == null) {
                 value = "Unkown";
             } else {
-                value = Formatter.formatTime(ai.getValidUntil());
+                if (ai.getValidUntil() < 0 || ai.getValidUntil() < System.currentTimeMillis()) {
+                    value = "Expired";
+                } else {
+                    value = Formatter.formatTime(ai.getValidUntil());
+                }
             }
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             return co;
@@ -137,5 +141,4 @@ public class PremiumTableRenderer extends DefaultTableRenderer {
         co = super.getTableCellRendererComponent(table, "", isSelected, hasFocus, row, column);
         return co;
     }
-
 }

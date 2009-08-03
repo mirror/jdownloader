@@ -159,11 +159,13 @@ public class LinkGrabberFilePackageInfo extends SwitchPanel implements ActionLis
         update();
     }
 
-    private void onHideSave() {
+    public void onHideSave() {
         notifyUpdate = false;
+        PasswordListController.getInstance().addPassword(txtPassword.getText());
         fp.setName(txtName.getText());
         fp.setComment(txtComment.getText());
         fp.setPassword(txtPassword.getText());
+        fp.setDownloadDirectory(brwSaveTo.getText());
         notifyUpdate = true;
     }
 
@@ -171,8 +173,6 @@ public class LinkGrabberFilePackageInfo extends SwitchPanel implements ActionLis
     public void onHide() {
         if (this.fp == null) return;
         onHideSave();
-        PasswordListController.getInstance().addPassword(txtPassword.getText());
-        actionPerformed(new ActionEvent(this.brwSaveTo, 0, null));
         fp = null;
     }
 

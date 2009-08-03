@@ -170,14 +170,15 @@ public class ConfigPanelAddons extends ConfigPanel implements ActionListener, Mo
         panel.add(btnEdit, "w pref!");
 
         JTabbedPane tabbed = new JTabbedPane();
-       tabbed.setOpaque(false);  tabbed.add(getBreadcrum(), panel);
+        tabbed.setOpaque(false);
+        tabbed.add(getBreadcrum(), panel);
 
         this.add(tabbed);
     }
 
     private void editEntry() {
         UserIF.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL, pluginsOptional.get(table.getSelectedRow()).getPlugin().getConfig());
-      
+
     }
 
     public void actionPerformed(ActionEvent e) {

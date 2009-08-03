@@ -172,11 +172,9 @@ public class AccountController extends SubConfiguration implements ActionListene
         }
         AccountInfo ai = account.getAccountInfo();
         if (ai != null) {
-            System.out.println("Update acc for " + ai.getCreateTime());
             if (!forceupdate && (System.currentTimeMillis() - ai.getCreateTime()) < waittimeAccountInfoUpdate) return ai;
         }
         try {
-            System.out.println("Update acc for " + plugin.getHost());
             ai = plugin.getNewInstance().fetchAccountInfo(account);
             if (ai == null) {
                 /* not every plugin has fetchAccountInfo */
@@ -185,18 +183,14 @@ public class AccountController extends SubConfiguration implements ActionListene
             }
             account.setAccountInfo(ai);
             if (ai.isExpired()) {
-                System.out.println("expired acc for " + plugin.getHost());
                 account.setEnabled(false);
             } else if (!ai.isValid()) {
-                System.out.println("invalid acc for " + plugin.getHost());
                 account.setEnabled(false);
             }
         } catch (PluginException e) {
-            System.out.println("pexception disabled acc for " + plugin.getHost());
             account.setEnabled(false);
             account.setAccountInfo(null);
         } catch (Exception e) {
-            System.out.println("exception disabled acc for " + plugin.getHost());
             account.setAccountInfo(null);
         }
         return ai;

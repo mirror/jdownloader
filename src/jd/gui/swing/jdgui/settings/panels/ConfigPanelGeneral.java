@@ -62,9 +62,7 @@ public class ConfigPanelGeneral extends ConfigPanel {
 
         ConfigGroup logging = new ConfigGroup(JDL.L("gui.config.general.logging", "Logging"), JDTheme.II("gui.images.terminal", 32, 32));
 
-        addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, configuration, Configuration.PARAM_LOGGER_LEVEL, new Level[] {
-                Level.ALL, Level.FINEST, Level.FINER, Level.FINE, Level.INFO, Level.WARNING, Level.SEVERE, Level.OFF
-        }, JDL.L("gui.config.general.loggerLevel", "Level für's Logging")).setDefaultValue(Level.WARNING).setGroup(logging)));
+        addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, configuration, Configuration.PARAM_LOGGER_LEVEL, new Level[] { Level.ALL, Level.FINEST, Level.FINER, Level.FINE, Level.INFO, Level.WARNING, Level.SEVERE, Level.OFF }, JDL.L("gui.config.general.loggerLevel", "Level für's Logging")).setDefaultValue(Level.WARNING).setGroup(logging)));
         // addGUIConfigEntry(new GUIConfigEntry(new
         // ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration,
         // Configuration.LOGGER_FILELOG,
@@ -73,13 +71,9 @@ public class ConfigPanelGeneral extends ConfigPanel {
 
         ConfigGroup update = new ConfigGroup(JDL.L("gui.config.general.update", "Update"), JDTheme.II("gui.splash.update", 32, 32));
 
-        addGUIConfigEntry(new GUIConfigEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, SubConfiguration.getConfig("WEBUPDATE"), Configuration.PARAM_WEBUPDATE_DISABLE, JDL
-                .L("gui.config.general.webupdate.disable", "Update nur manuell durchführen")).setDefaultValue(false).setGroup(update)));
-        addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_WEBUPDATE_AUTO_RESTART, JDL.L("gui.config.general.webupdate.auto",
-                                                                                                                                                             "automatisch, ohne Nachfrage ausführen"))
-                .setDefaultValue(false).setEnabledCondidtion(conditionEntry, "==", false).setGroup(update)));
-        addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_WEBUPDATE_AUTO_SHOW_CHANGELOG, JDL
-                .L("gui.config.general.changelog.auto", "Open Changelog after update")).setDefaultValue(true).setGroup(update)));
+        addGUIConfigEntry(new GUIConfigEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, SubConfiguration.getConfig("WEBUPDATE"), Configuration.PARAM_WEBUPDATE_DISABLE, JDL.L("gui.config.general.webupdate.disable", "Update nur manuell durchführen")).setDefaultValue(false).setGroup(update)));
+        addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_WEBUPDATE_AUTO_RESTART, JDL.L("gui.config.general.webupdate.auto", "automatisch, ohne Nachfrage ausführen")).setDefaultValue(false).setEnabledCondidtion(conditionEntry, "==", false).setGroup(update)));
+        addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_WEBUPDATE_AUTO_SHOW_CHANGELOG, JDL.L("gui.config.general.changelog.auto", "Open Changelog after update")).setDefaultValue(true).setGroup(update)));
 
         if (OSDetector.isWindows()) {
             ConfigGroup cnl = new ConfigGroup(JDL.L("gui.config.general.cnl", "Click'n'Load"), JDTheme.II("gui.clicknload", 32, 32));
@@ -91,17 +85,14 @@ public class ConfigPanelGeneral extends ConfigPanel {
                     JDFileReg.registerFileExts();
                 }
 
-            }, JDL.L("gui.config.general.cnl.install", "Install now"), JDL.L("gui.config.general.cnl.install.long", "Install Click'n'load (req. admin)"), JDTheme.II("gui.images.install", 16, 16))
-                    .setDefaultValue(false).setGroup(cnl).setEnabled(OSDetector.isWindows())));
+            }, JDL.L("gui.config.general.cnl.install", "Install now"), JDL.L("gui.config.general.cnl.install.long", "Install Click'n'load (req. admin)"), JDTheme.II("gui.images.install", 16, 16)).setDefaultValue(false).setGroup(cnl).setEnabled(OSDetector.isWindows())));
             addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
 
                 public void actionPerformed(ActionEvent e) {
                     JDFileReg.unregisterFileExts();
                 }
 
-            }, JDL.L("gui.config.general.cnl.uninstall", "Uninstall now"), JDL.L("gui.config.general.cnl.uninstall.long", "Uninstall Click'n'load (req. admin)"), JDTheme.II("gui.images.uninstall",
-                                                                                                                                                                             16, 16))
-                    .setDefaultValue(false).setGroup(cnl).setEnabled(OSDetector.isWindows())));
+            }, JDL.L("gui.config.general.cnl.uninstall", "Uninstall now"), JDL.L("gui.config.general.cnl.uninstall.long", "Uninstall Click'n'load (req. admin)"), JDTheme.II("gui.images.uninstall", 16, 16)).setDefaultValue(false).setGroup(cnl).setEnabled(OSDetector.isWindows())));
 
         }
 

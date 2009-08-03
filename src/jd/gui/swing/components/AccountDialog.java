@@ -16,13 +16,13 @@ import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 
 import jd.HostPluginWrapper;
-import jd.JDInit;
 import jd.controlling.AccountController;
 import jd.gui.UserIO;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.dialog.AbstractDialog;
 import jd.nutils.JDFlags;
 import jd.plugins.Account;
+import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
@@ -52,11 +52,6 @@ public class AccountDialog extends AbstractDialog implements ItemListener {
         }
     }
 
-    public static void main(String[] args) {
-        new JDInit().loadPluginForHost();
-        new AccountDialog();
-    }
-
     private static final long serialVersionUID = -2099080199110932990L;
 
     private static final String JDL_PREFIX = "jd.gui.swing.components.AccountDialog.";
@@ -70,7 +65,7 @@ public class AccountDialog extends AbstractDialog implements ItemListener {
     private JPasswordField pass;
 
     public AccountDialog() {
-        super(UserIO.NO_COUNTDOWN, JDL.L(JDL_PREFIX + "title", "Add new Account"), UserIO.getInstance().getIcon(UserIO.ICON_QUESTION), null, null);
+        super(UserIO.NO_COUNTDOWN, JDL.L(JDL_PREFIX + "title", "Add new Account"), JDTheme.II("gui.images.premium", 32, 32), null, null);
 
         init();
     }
@@ -109,6 +104,9 @@ public class AccountDialog extends AbstractDialog implements ItemListener {
             String agb = getHoster().getPlugin().getAGBLink();
             if (agb != null) {
                 link.setUrl(new URL(agb));
+                link.setEnabled(true);
+            } else {
+                link.setEnabled(false);
             }
             return;
         } catch (Exception e) {

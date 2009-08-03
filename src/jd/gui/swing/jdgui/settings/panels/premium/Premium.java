@@ -19,8 +19,11 @@ package jd.gui.swing.jdgui.settings.panels.premium;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 
+import net.miginfocom.swing.MigLayout;
+
 import jd.config.Configuration;
 import jd.gui.swing.jdgui.settings.ConfigPanel;
+import jd.gui.swing.jdgui.views.premiumview.PremiumPanel;
 import jd.utils.locale.JDL;
 
 public class Premium extends ConfigPanel {
@@ -31,7 +34,6 @@ public class Premium extends ConfigPanel {
 
     public Premium(Configuration configuration) {
         super();
-
         initPanel();
         load();
     }
@@ -48,14 +50,13 @@ public class Premium extends ConfigPanel {
     public void initPanel() {
         initPanel(panel);
         JTabbedPane tabbed = new JTabbedPane();
+        panel.setLayout(new MigLayout("ins 5,wrap 1", "[fill,grow]", "[fill,grow][]"));
         tabbed.setOpaque(false);
         tabbed.add(getBreadcrum(), panel);
         this.add(tabbed);
     }
 
-    private void initPanel(JPanel panel) {
-        // Hier kann jiaz sien Zeug reinkleben;-P
-
+    private void initPanel(JPanel panel) {        
     }
 
     @Override

@@ -30,6 +30,7 @@ import java.io.InterruptedIOException;
 import java.io.OutputStreamWriter;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.util.StringTokenizer;
 
@@ -128,13 +129,13 @@ public class SimpleFTP {
         sendLine("PASS " + pass);
         response = readLine();
         if (!response.startsWith("230")) { throw new IOException("SimpleFTP was unable to log in with the supplied password: " + response); }
-  
+
         sendLine("PWD");
-      while((  response = readLine()).startsWith("230")){
-            
+        while ((response = readLine()).startsWith("230")) {
+
         }
-//        
-      if (!response.startsWith("257 ")) { throw new IOException("PWD COmmand not understood " + response); }
+        //        
+        if (!response.startsWith("257 ")) { throw new IOException("PWD COmmand not understood " + response); }
 
         // Response: 257 "/" is the current directory
         dir = new Regex(response, "\"(.*)\"").getMatch(0);
@@ -527,22 +528,32 @@ public class SimpleFTP {
         long counter = 0;
         while ((bytesRead = input.read(buffer)) != -1) {
             if (Thread.currentThread().isInterrupted()) {
+                /* max 10 seks wait for buggy servers */
+                socket.setSoTimeout(10 * 1000);
                 out.close();
-                input.close();
                 shutDownSocket(dataSocket);
-                response = readLine();
+                input.close();
+                try {
+                    response = readLine();
+                } catch (SocketTimeoutException e) {
+                    response = "SocketTimeout because of buggy Server";
+                }
                 throw new InterruptedIOException();
             }
             counter += bytesRead;
             out.write(buffer, 0, bytesRead);
             broadcaster.fireEvent(new FtpEvent(this, FtpEvent.DOWNLOAD_PROGRESS, counter));
-
         }
+        /* max 10 seks wait for buggy servers */
+        socket.setSoTimeout(10 * 1000);
         out.close();
-        input.close();
         shutDownSocket(dataSocket);
-
-        response = readLine();
+        input.close();
+        try {
+            response = readLine();
+        } catch (SocketTimeoutException e) {
+            response = "SocketTimeout because of buggy Server";
+        }
         if (!response.startsWith("226")) { throw new IOException("Download failed: " + response); }
 
     }
@@ -550,12 +561,16 @@ public class SimpleFTP {
     private void shutDownSocket(Socket dataSocket) {
         try {
             dataSocket.shutdownOutput();
+        } catch (Throwable e) {
+        }
+        try {
             dataSocket.shutdownInput();
+        } catch (Throwable e) {
+        }
+        try {
             dataSocket.close();
         } catch (Throwable e) {
-//            e.printStackTrace();
         }
-
     }
 
     public static void download(String ip, int port, String user, String password, String filepath, String name, File file) throws IOException {
@@ -616,7 +631,7 @@ public class SimpleFTP {
      * @throws IOException
      */
     public String[] getFileInfo(String path) throws IOException {
-      
+
         String name = path.substring(path.lastIndexOf("/") + 1);
         path = path.substring(0, path.lastIndexOf("/"));
 

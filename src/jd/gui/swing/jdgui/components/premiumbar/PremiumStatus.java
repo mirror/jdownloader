@@ -32,6 +32,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
 import jd.HostPluginWrapper;
+import jd.Main;
 import jd.config.ConfigGroup;
 import jd.config.ConfigPropertyListener;
 import jd.config.Configuration;
@@ -41,6 +42,8 @@ import jd.controlling.AccountController;
 import jd.controlling.AccountControllerEvent;
 import jd.controlling.AccountControllerListener;
 import jd.controlling.JDController;
+import jd.event.ControlEvent;
+import jd.event.ControlListener;
 import jd.gui.UserIF;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
@@ -56,7 +59,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
-public class PremiumStatus extends JPanel implements AccountControllerListener, ActionListener, MouseListener {
+public class PremiumStatus extends JPanel implements AccountControllerListener, ActionListener, MouseListener, ControlListener {
 
     private static final long serialVersionUID = 7290466989514173719L;
     private static final int BARCOUNT = 15;
@@ -71,6 +74,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
     private boolean updateinprogress = false;
     private JPopupMenu popup;
     private ArrayList<HostPluginWrapper> hosterplugins;
+    private boolean guiInitComplete = false;
 
     public PremiumStatus() {
         super();
@@ -120,6 +124,8 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
         updateIntervalTimer.setInitialDelay(5000);
         updateIntervalTimer.setRepeats(false);
         updateIntervalTimer.stop();
+
+        JDUtilities.getController().addControlListener(this);
 
         Thread updateTimer = new Thread("PremiumStatusUpdateTimer") {
             public void run() {
@@ -175,7 +181,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
         }
     }
 
-    private synchronized void updatePremium() {
+    private synchronized void updatePremium() {        
         updating = true;
         for (HostPluginWrapper wrapper : hosterplugins) {
             String host = wrapper.getHost();
@@ -273,7 +279,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
     }
 
     private void doUpdate() {
-        if (updateinprogress) return;
+        if (updateinprogress || !guiInitComplete) return;
         new Thread() {
             public void run() {
                 this.setName("PremiumStatus: update");
@@ -346,6 +352,15 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
     }
 
     public void mouseReleased(MouseEvent e) {
+    }
+
+    @Override
+    public void controlEvent(ControlEvent event) {
+        if (event.getID() == ControlEvent.CONTROL_INIT_COMPLETE && event.getSource() instanceof Main) {
+            guiInitComplete = true;
+            JDUtilities.getController().removeControlListener(this);
+            requestUpdate();
+        }
     }
 
 }

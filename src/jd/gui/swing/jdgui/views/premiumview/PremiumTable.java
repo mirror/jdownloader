@@ -27,19 +27,6 @@ import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.components.JExtCheckBoxMenuItem;
 import jd.gui.swing.jdgui.views.downloadview.DownloadTable;
 
-class BooleanEditor extends DefaultCellEditor {
-    /**
-     * 
-     */
-    private static final long serialVersionUID = -8304524732068025942L;
-
-    public BooleanEditor() {
-        super(new JCheckBox());
-        JCheckBox checkBox = (JCheckBox) getComponent();
-        checkBox.setHorizontalAlignment(JCheckBox.CENTER);
-    }
-}
-
 public class PremiumTable extends JTable implements MouseListener {
 
     /**
@@ -50,7 +37,7 @@ public class PremiumTable extends JTable implements MouseListener {
     private PremiumJTableModel model;
     private TableColumn[] cols;
     private PremiumTableRenderer cellRenderer;
-    private BooleanEditor booleditor;
+    private PremiumTableEditor mycellEditor;
 
     public PremiumTable(PremiumJTableModel model, PremiumPanel panel) {
         super(model);
@@ -59,7 +46,8 @@ public class PremiumTable extends JTable implements MouseListener {
         createColumns();
         setShowGrid(false);
         addMouseListener(this);
-        this.cellRenderer = new PremiumTableRenderer(this);
+        cellRenderer = new PremiumTableRenderer(this);
+        mycellEditor = new PremiumTableEditor(this);
         getTableHeader().addMouseListener(this);
         getTableHeader().setReorderingAllowed(false);
         getTableHeader().setResizingAllowed(true);
@@ -70,7 +58,6 @@ public class PremiumTable extends JTable implements MouseListener {
         this.setRowHeight(DownloadTable.ROWHEIGHT);
         getTableHeader().setPreferredSize(new Dimension(getColumnModel().getTotalColumnWidth(), 19));
         this.setFillsViewportHeight(true);
-        booleditor = new BooleanEditor();
     }
 
     public PremiumJTableModel getTableModel() {
@@ -84,7 +71,7 @@ public class PremiumTable extends JTable implements MouseListener {
     public TableCellEditor getCellEditor(int row, int column) {
         switch (column) {
         case PremiumJTableModel.COL_ENABLED:
-            return booleditor;
+            return mycellEditor;
         default:
             return super.getCellEditor(row, column);
         }
@@ -105,7 +92,7 @@ public class PremiumTable extends JTable implements MouseListener {
             tcm.removeColumn(tcm.getColumn(0));
         }
 
-        final SubConfiguration config = SubConfiguration.getConfig("linkgrabber");
+        final SubConfiguration config = SubConfiguration.getConfig("premiumview");
         cols = new TableColumn[getModel().getColumnCount()];
         for (int i = 0; i < getModel().getColumnCount(); ++i) {
             final int j = i;

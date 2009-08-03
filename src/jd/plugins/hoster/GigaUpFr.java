@@ -15,6 +15,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.io.InterruptedIOException;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
@@ -71,7 +72,17 @@ public class GigaUpFr extends PluginForHost {
         br.submitForm(captchaForm);
         if (br.containsHTML("Le code de vÃ©rification entrÃ© est incorrecte")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
         String dllink = (br.getRegex("link_generator\"><center><a href=\"(.*?)\">Commencer le tÃ©lÃ©chargement").getMatch(0));
-        ((Ftp) JDUtilities.getPluginForHost("ftp")).download(Encoding.urlDecode(dllink, true), downloadLink);
+        try {
+            ((Ftp) JDUtilities.getPluginForHost("ftp")).download(Encoding.urlDecode(dllink, true), downloadLink);
+        } catch (InterruptedIOException e) {
+            if (downloadLink.isAborted()) return;
+            throw e;
+        } catch (IOException e) {
+            if (e.toString().contains("maximum number of clients")) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
+            } else
+                throw e;
+        }
     }
 
     @Override

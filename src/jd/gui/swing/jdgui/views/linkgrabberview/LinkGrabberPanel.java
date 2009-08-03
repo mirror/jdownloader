@@ -728,6 +728,9 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
 
     public void confirmPackage(LinkGrabberFilePackage fpv2, String host, int index) {
         if (fpv2 == null) return;
+        if (filePackageInfo.getPackage() != null && filePackageInfo.getPackage() == fpv2) {
+            filePackageInfo.onHideSave();
+        }
         ArrayList<DownloadLink> linkList = fpv2.getDownloadLinks();
         if (linkList.isEmpty()) return;
 
