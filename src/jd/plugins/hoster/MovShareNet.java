@@ -49,6 +49,7 @@ public class MovShareNet extends PluginForHost {
             if (IAmAHuman == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             br.submitForm(IAmAHuman);
         }
+        if (br.containsHTML("The file is beeing transfered to our other servers")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
         if (br.containsHTML("This file no longer exists on our servers")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename0 = (br.getRegex("Title: </strong>(.*?)</td> <td>").getMatch(0));
         if (filename0 == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -66,6 +67,7 @@ public class MovShareNet extends PluginForHost {
             if (IAmAHuman == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             br.submitForm(IAmAHuman);
         }
+        if (br.containsHTML("The file is beeing transfered to our other servers")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
         String dllink = br.getRegex(Pattern.compile("<embed src=\"(.*?)\" width")).getMatch(0);
         if (dllink != null) {
             dl = br.openDownload(downloadLink, dllink, true, -20);

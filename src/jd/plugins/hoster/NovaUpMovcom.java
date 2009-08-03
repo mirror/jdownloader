@@ -75,6 +75,7 @@ public class NovaUpMovcom extends PluginForHost {
             String filename1 = br.getRegex("<h3>(.*?)</h3>").getMatch(0);
             String filename = filename1 + ".flv";
             parameter.setName(filename.trim());
+            if (filename1 == null ) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         } else {
           //Onlinecheck für "nicht"-video Links
