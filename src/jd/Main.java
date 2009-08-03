@@ -179,6 +179,7 @@ public class Main {
                         LOGGER.info("Switching back to default JDownloader branch");
                     }
                 } else {
+                 
                     webConfig.setProperty("BRANCH", args[i + 1]);
                     if (webConfig.hasChanges()) {
                         webConfig.save();
