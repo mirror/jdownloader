@@ -51,7 +51,7 @@ public class FreeLoadTo extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String dllink = br.getRegex(Pattern.compile("ideo/divx\" src=\"(.*?)\" custo")).getMatch(0);
-        dl = br.openDownload(downloadLink, dllink, true, -20);
+        dl = br.openDownload(downloadLink, dllink, true, 1);
         dl.startDownload();
     }
 
