@@ -46,8 +46,6 @@ public class R1OneCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         br.getPage(downloadLink.getDownloadURL());
 
-        System.out.print(br);
-
         if (br.containsHTML("Invalid download link.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         Regex info = br.getRegex(Pattern.compile("<h1>(.*?) - (.*?)</h1>"));
         String name = info.getMatch(0);
