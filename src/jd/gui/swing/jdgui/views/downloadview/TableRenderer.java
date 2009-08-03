@@ -201,7 +201,9 @@ public class TableRenderer extends DefaultTableRenderer {
                 }
             }
         } else {
-            ((JComponent) co).setBackground(UIManager.getColor("TableHeader.background").darker());
+            Color color = UIManager.getColor("TableHeader.background");
+            if(color==null)color=co.getBackground();
+            ((JComponent) co).setBackground(color.darker());
 
         }
         co.setSize(new Dimension(200, 30));

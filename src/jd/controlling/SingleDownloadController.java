@@ -253,8 +253,15 @@ public class SingleDownloadController extends Thread {
 
     private void onErrorLinkBlock(DownloadLink downloadLink, PluginForHost currentPlugin) {
         LinkStatus status = downloadLink.getLinkStatus();
-        status.resetWaitTime();
-        downloadLink.setEnabled(false);
+        if (status.hasStatus(LinkStatus.ERROR_ALREADYEXISTS)) {
+
+            onErrorFileExists(downloadLink, currentPlugin);
+        } else {
+
+            status.resetWaitTime();
+            downloadLink.setEnabled(false);
+        }
+
     }
 
     private void onErrorPluginDefect(DownloadLink downloadLink2, PluginForHost currentPlugin2) {
@@ -377,7 +384,7 @@ public class SingleDownloadController extends Thread {
         String title = JDL.L("jd.controlling.SingleDownloadController.askexists.title", "File exists");
         String msg = JDL.LF("jd.controlling.SingleDownloadController.askexists", "The file \r\n%s\r\n already exists. What do you want to do?", downloadLink.getFileOutput());
         int doit = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_FILE_EXISTS);
-        if (doit == 2) {
+        if (doit == 4) {
 
             // ask
             doit = UserIO.getInstance().requestComboDialog(UserIO.NO_COUNTDOWN, title, msg, fileExists, 0, null, null, null);
@@ -407,6 +414,7 @@ public class SingleDownloadController extends Thread {
         case 1:
             status.setErrorMessage(JDL.L("controller.status.fileexists.skip", "File already exists."));
             downloadLink.setEnabled(false);
+            break;
         case 2:
             // auto rename
             status.reset();
@@ -418,12 +426,18 @@ public class SingleDownloadController extends Thread {
             try {
                 String[] num = new Regex(name, "(.*)_(\\d+)").getRow(0);
                 copy = Integer.parseInt(num[1]) + 1;
+                downloadLink.setFinalFileName(name + "_" + copy + "." + extension);
+                while (new File(downloadLink.getFileOutput()).exists()) {
+                    copy++;
+                    downloadLink.setFinalFileName(name + "_" + copy + "." + extension);
+                }
                 name = num[0];
             } catch (Exception e) {
                 copy = 2;
+                downloadLink.setFinalFileName(name + "_" + copy + "." + extension);
             }
-            downloadLink.setFinalFileName(name + "_" + copy + "." + extension);
 
+            break;
         default:
 
             if (new File(downloadLink.getFileOutput()).delete()) {
