@@ -1,4 +1,4 @@
-package jd.gui.swing.jdgui.views.premiumview;
+package jd.gui.swing.jdgui.settings.panels.premium;
 
 import java.awt.Dimension;
 import java.awt.Rectangle;
@@ -32,13 +32,13 @@ public class PremiumTable extends JTable implements MouseListener {
      * 
      */
     private static final long serialVersionUID = 9049514723238421532L;
-    private PremiumPanel panel;
+    private Premium panel;
     private PremiumJTableModel model;
     private TableColumn[] cols;
     private PremiumTableRenderer cellRenderer;
     private PremiumTableEditor mycellEditor;
 
-    public PremiumTable(PremiumJTableModel model, PremiumPanel panel) {
+    public PremiumTable(PremiumJTableModel model, Premium panel) {
         super(model);
         this.panel = panel;
         this.model = model;
@@ -46,7 +46,7 @@ public class PremiumTable extends JTable implements MouseListener {
         setShowGrid(false);
         addMouseListener(this);
         cellRenderer = new PremiumTableRenderer(this);
-        mycellEditor = new PremiumTableEditor(this);        
+        mycellEditor = new PremiumTableEditor(this);
         getTableHeader().addMouseListener(this);
         getTableHeader().setReorderingAllowed(false);
         getTableHeader().setResizingAllowed(true);
@@ -56,8 +56,8 @@ public class PremiumTable extends JTable implements MouseListener {
 
         this.setRowHeight(DownloadTable.ROWHEIGHT);
         getTableHeader().setPreferredSize(new Dimension(getColumnModel().getTotalColumnWidth(), 19));
-      //This method is 1.6 only
-        if(JDUtilities.getJavaVersion()>=1.6)this.setFillsViewportHeight(true);
+        // This method is 1.6 only
+        if (JDUtilities.getJavaVersion() >= 1.6) this.setFillsViewportHeight(true);
     }
 
     public PremiumJTableModel getTableModel() {

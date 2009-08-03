@@ -74,7 +74,6 @@ import jd.gui.swing.jdgui.settings.GUIConfigEntry;
 import jd.gui.swing.jdgui.views.ConfigurationView;
 import jd.gui.swing.jdgui.views.DownloadView;
 import jd.gui.swing.jdgui.views.LinkgrabberView;
-import jd.gui.swing.jdgui.views.PremiumView;
 import jd.gui.swing.jdgui.views.TabbedPanelView;
 import jd.gui.swing.jdgui.views.linkgrabberview.LinkGrabberPanel;
 import jd.gui.swing.jdgui.views.logview.LogView;
@@ -114,8 +113,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
     private MainToolBar toolBar;
     private JPanel waitingPane;
 
-    // private Thread waitingThread;
-    private PremiumView premiumView;
+ 
 
     private JDGui() {
         super("");
@@ -256,7 +254,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         downloadView = new DownloadView();
         linkgrabberView = new LinkgrabberView();
         configurationView = new ConfigurationView();
-        premiumView = new PremiumView();
+    
 
         logView = new LogView();
         // mainTabbedPane.add());
@@ -268,7 +266,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
 
         mainTabbedPane.addTab(linkgrabberView);
         mainTabbedPane.addTab(configurationView);
-        mainTabbedPane.addTab(premiumView);
+     
 
         mainTabbedPane.addTab(logView);
         // mainTabbedPane.addTab(new ClosableView());
@@ -531,9 +529,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
             public Object runSave() {
 
                 switch (panel) {
-                case PREMIUMPANEL:
-                    mainTabbedPane.setSelectedComponent(premiumView);
-                    break;
+            
                 case DOWNLOADLIST:
                     mainTabbedPane.setSelectedComponent(downloadView);
                     break;

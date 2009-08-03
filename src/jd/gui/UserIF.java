@@ -38,11 +38,7 @@ public abstract class UserIF {
          * 
          */
         CONFIGPANEL,
-        /**
-         * Represents a premiumview
-         * 
-         */
-        PREMIUMPANEL
+      
     };
 
     /**

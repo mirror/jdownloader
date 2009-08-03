@@ -1,4 +1,4 @@
-package jd.gui.swing.jdgui.views.premiumview;
+package jd.gui.swing.jdgui.settings.panels.premium;
 
 import java.awt.Component;
 import java.awt.event.ActionEvent;
