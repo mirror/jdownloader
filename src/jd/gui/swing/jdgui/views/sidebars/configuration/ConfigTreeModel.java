@@ -7,9 +7,11 @@ import javax.swing.event.TreeModelListener;
 import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 
+import jd.OptionalPluginWrapper;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.SingletonPanel;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
+import jd.gui.swing.jdgui.settings.ConfigPanel;
 import jd.gui.swing.jdgui.settings.panels.ConfigPanelAddons;
 import jd.gui.swing.jdgui.settings.panels.ConfigPanelGeneral;
 import jd.gui.swing.jdgui.settings.panels.ConfigPanelPluginForHost;
@@ -71,16 +73,20 @@ public class ConfigTreeModel implements TreeModel {
 
         root.add(plugins = new TreeEntry(JDL.L(JDL_PREFIX + "plugins.title", "Plugins & Add-ons")).setIcon("gui.images.config.packagemanager"));
         TreeEntry hoster;
-        plugins.add(hoster=new TreeEntry(ConfigPanelPluginForHost.class, ConfigPanelPluginForHost.getTitle()).setIcon("gui.images.config.host"));
+        plugins.add(hoster = new TreeEntry(ConfigPanelPluginForHost.class, ConfigPanelPluginForHost.getTitle()).setIcon("gui.images.config.host"));
 
         hoster.add(new TreeEntry(Premium.class, Premium.getTitle()).setIcon("gui.images.premium"));
-        plugins.add(addons=new TreeEntry(ConfigPanelAddons.class, ConfigPanelAddons.getTitle()).setIcon("gui.images.config.packagemanager"));
-       initExtensions(addons);
+        plugins.add(addons = new TreeEntry(ConfigPanelAddons.class, ConfigPanelAddons.getTitle()).setIcon("gui.images.config.packagemanager"));
+        initExtensions(addons);
     }
 
     private void initExtensions(TreeEntry addons2) {
-        // TODO Auto-generated method stub
-        
+        for (final OptionalPluginWrapper plg : OptionalPluginWrapper.getOptionalWrapper()) {
+            if (!plg.isLoaded() || !plg.isEnabled()||plg.getPlugin().getConfig().getEntries().size()==0) continue;
+
+            addons2.add(new TreeEntry(new AddonConfig(plg), plg.getHost()).setIcon(plg.getPlugin().getIconKey()));
+        }
+
     }
 
     public void addTreeModelListener(TreeModelListener l) {
@@ -177,6 +183,7 @@ public class ConfigTreeModel implements TreeModel {
         private String tooltip;
         private ArrayList<TreeEntry> entries;
         private SingletonPanel panel;
+    
 
         public TreeEntry(final Class<? extends SwitchPanel> class1, String l) {
             this.clazz = class1;
@@ -235,8 +242,22 @@ public class ConfigTreeModel implements TreeModel {
         }
 
         public TreeEntry(String l) {
-            this(null, l);
+            this((Class<? extends SwitchPanel>) null, l);
         }
+
+        /**
+         * Adds a configpanel
+         * 
+         * @param panel
+         * @param host
+         */
+        public TreeEntry(ConfigPanel panel, String host) {
+            this.panel=new SingletonPanel(panel);           
+            this.title = host;
+            this.entries = new ArrayList<TreeEntry>();
+        }
+
+     
 
     }
 

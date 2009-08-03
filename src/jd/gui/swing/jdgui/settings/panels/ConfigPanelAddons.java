@@ -43,6 +43,8 @@ import net.miginfocom.swing.MigLayout;
  * @author JD-Team
  * 
  */
+
+
 public class ConfigPanelAddons extends ConfigPanel implements ActionListener, MouseListener {
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.ConfigPanelAddons.";
 
