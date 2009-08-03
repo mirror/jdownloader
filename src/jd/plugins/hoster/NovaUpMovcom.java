@@ -45,7 +45,6 @@ public class NovaUpMovcom extends PluginForHost {
         br.getPage(infolink);
         //Handling für Videolinks
         if (link.getDownloadURL().contains("video")) {
-            //String dllink = br.getRegex("addVariable(\"file\",\"(.*?)\");").getMatch(0);
             String dllink = br.getRegex("\"file\",\"(.*?)\"").getMatch(0);
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             link.setFinalFileName(null);
@@ -53,7 +52,7 @@ public class NovaUpMovcom extends PluginForHost {
             dl.startDownload();
 
         } else {
-//handling für "nicht"-video Links
+            //handling für "nicht"-video Links
             String dllink1 = br.getRegex("> <strong><a href=\"(.*?)\"><span class=\"dwl_novaup").getMatch(0);
             String dllink = "http://www.novaup.com" + dllink1;
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
@@ -68,14 +67,14 @@ public class NovaUpMovcom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
         br.getPage(parameter.getDownloadURL());
-//onlinecheck für Videolinks
+        //onlinecheck für Videolinks
         if (parameter.getDownloadURL().contains("video")) {
             if (br.containsHTML("This file no longer exists on our servers.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             if (br.containsHTML("The file is beeing transfered to our other servers. This may take few minutes.")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             String filename1 = br.getRegex("<h3>(.*?)</h3>").getMatch(0);
+            if (filename1 == null ) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             String filename = filename1 + ".flv";
             parameter.setName(filename.trim());
-            if (filename1 == null ) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         } else {
           //Onlinecheck für "nicht"-video Links
