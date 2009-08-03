@@ -65,8 +65,8 @@ public class FisierulMeuRo extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
 
-        Form downloadForm = br.getFormbyProperty("name", "F1");
-        dl = br.openDownload(downloadLink, downloadForm, true, 1);
+        String downloadUrl = br.getRegex(Pattern.compile("action=!!!(.*?)!!!")).getMatch(0);
+        dl = br.openDownload(downloadLink, downloadUrl, true, 1);
         dl.startDownload();
     }
 
