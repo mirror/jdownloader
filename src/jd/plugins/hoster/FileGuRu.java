@@ -41,17 +41,27 @@ public class FileGuRu extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink link) throws Exception {
+        String passCode = null;
         requestFileInformation(link);
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
         int retry = 0;
-        if (br.getForms().length> 1) {
-            while (br.getForm(1).hasInputFieldByName("pass")) {
-                String passCode = Plugin.getUserInput("Password?", link);
+        if (br.getForms().length > 1) {
+            if (link.getStringProperty("pass", null) == null) {
+                while (br.getForm(1).hasInputFieldByName("pass")) {
+                    passCode = Plugin.getUserInput("Password?", link);
+                    br.getPage(link.getDownloadURL() + "?pass=" + passCode);
+                    if (retry >= 2) throw new PluginException(LinkStatus.ERROR_FATAL, "Wrong Password!");
+                    retry++;
+                }
+            } else {
+
+                passCode = link.getStringProperty("pass", null);
                 br.getPage(link.getDownloadURL() + "?pass=" + passCode);
-                if (retry >= 2) throw new PluginException(LinkStatus.ERROR_FATAL, "Wrong Password!");
-                retry++;
             }
+        }
+        if (passCode != null) {
+            link.setProperty("pass", passCode);
         }
         sleep(20 * 1001, link);
         String id = br.getRegex("var dl = new Download\\( '(.*?)', '(.*?)', '(.*?)', (.*?) \\);").getMatch(0);
