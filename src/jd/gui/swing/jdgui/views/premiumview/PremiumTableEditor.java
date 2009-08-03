@@ -1,20 +1,19 @@
 package jd.gui.swing.jdgui.views.premiumview;
 
 import java.awt.Component;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.EventObject;
 
 import javax.swing.AbstractCellEditor;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JTable;
-import javax.swing.event.CellEditorListener;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 import javax.swing.table.TableCellEditor;
 
 import jd.plugins.Account;
 
-public class PremiumTableEditor extends AbstractCellEditor implements TableCellEditor {
+public class PremiumTableEditor extends AbstractCellEditor implements TableCellEditor, ActionListener {
 
     JCheckBox checkbox;
     JComponent co;
@@ -38,18 +37,15 @@ public class PremiumTableEditor extends AbstractCellEditor implements TableCellE
         Account ac = (Account) value;
         switch (column) {
         case PremiumJTableModel.COL_ENABLED:
+            checkbox.removeActionListener(this);
             checkbox.setSelected(ac.isEnabled());
+            checkbox.addActionListener(this);
             co = checkbox;
             break;
         default:
             co = null;
         }
         return co;
-    }
-
-    @Override
-    public void addCellEditorListener(CellEditorListener l) {
-
     }
 
     @Override
@@ -63,6 +59,7 @@ public class PremiumTableEditor extends AbstractCellEditor implements TableCellE
         if (co == null) return null;
         if (co instanceof JCheckBox) {
             boolean b = ((JCheckBox) co).isSelected();
+            System.out.println("set to " + b);
             return b;
         }
         return null;
@@ -75,21 +72,19 @@ public class PremiumTableEditor extends AbstractCellEditor implements TableCellE
     }
 
     @Override
-    public void removeCellEditorListener(CellEditorListener l) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
     public boolean shouldSelectCell(EventObject anEvent) {
         // TODO Auto-generated method stub
-        return true;
+        return false;
+
     }
 
     @Override
-    public boolean stopCellEditing() {
-        System.out.println("stop");
-        return true;
+    public void actionPerformed(ActionEvent e) {
+        if (e.getSource() == checkbox) {
+            checkbox.removeActionListener(this);
+            this.fireEditingStopped();
+        }
+
     }
 
 }

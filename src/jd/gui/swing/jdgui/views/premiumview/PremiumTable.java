@@ -10,8 +10,6 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 
-import javax.swing.DefaultCellEditor;
-import javax.swing.JCheckBox;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JTable;
@@ -47,7 +45,7 @@ public class PremiumTable extends JTable implements MouseListener {
         setShowGrid(false);
         addMouseListener(this);
         cellRenderer = new PremiumTableRenderer(this);
-        mycellEditor = new PremiumTableEditor(this);
+        mycellEditor = new PremiumTableEditor(this);        
         getTableHeader().addMouseListener(this);
         getTableHeader().setReorderingAllowed(false);
         getTableHeader().setResizingAllowed(true);
