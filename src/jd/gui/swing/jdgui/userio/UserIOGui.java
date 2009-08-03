@@ -27,6 +27,7 @@ import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.components.JDFileChooser;
 import jd.gui.swing.dialog.CaptchaDialog;
 import jd.gui.swing.dialog.ClickPositionDialog;
+import jd.gui.swing.dialog.ComboDialog;
 import jd.gui.swing.dialog.ConfirmDialog;
 import jd.gui.swing.dialog.HelpDialog;
 import jd.gui.swing.dialog.HtmlDialog;
@@ -175,6 +176,19 @@ public class UserIOGui extends UserIO {
         if (multiSelection != null) fc.setMultiSelectionEnabled(multiSelection);
         if (fc.showOpenDialog(DummyFrame.getDialogParent()) == JDFileChooser.APPROVE_OPTION) return fc.getSelectedFiles();
         return null;
+    }
+
+    @Override
+    public int requestComboDialog(final int flag, final String title,final String question, final String[] options, final int defaultSelection,final  ImageIcon icon, final String okText, final String cancelText) {
+        if ((flag & UserIO.NO_USER_INTERACTION) > 0) return defaultSelection;
+        return new GuiRunnable<Integer>() {
+
+            @Override
+            public Integer runSave() {
+                return new ComboDialog(flag, title, question, options, defaultSelection,icon, okText, cancelText).getReturnID();
+            }
+
+        }.getReturnValue();
     }
 
 }

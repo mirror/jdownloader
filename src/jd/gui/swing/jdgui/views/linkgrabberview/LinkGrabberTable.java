@@ -114,7 +114,8 @@ public class LinkGrabberTable extends JTable implements MouseListener, MouseMoti
 
         getTableHeader().setPreferredSize(new Dimension(getColumnModel().getTotalColumnWidth(), 19));
         setTransferHandler(new LinkGrabberTableTransferHandler(this));
-        this.setFillsViewportHeight(true);
+      //This method is 1.6 only
+        if(JDUtilities.getJavaVersion()>=1.6)this.setFillsViewportHeight(true);
         prioDescs = new String[] { JDL.L("gui.treetable.tooltip.priority-1", "Low Priority"), JDL.L("gui.treetable.tooltip.priority0", "No Priority"), JDL.L("gui.treetable.tooltip.priority1", "High Priority"), JDL.L("gui.treetable.tooltip.priority2", "Higher Priority"), JDL.L("gui.treetable.tooltip.priority3", "Highest Priority") };
     }
 

@@ -239,4 +239,20 @@ public abstract class UserIO {
         return this.requestInputDialog(0, JDL.L("jd.gui.userio.defaulttitle.input", "Please enter!"), question, defaultvalue, this.getDefaultIcon(question), null, null);
     }
 
+    /**
+     * Shows a combobox dialog. returns the options id if the user confirmed, or
+     * -1 if the user canceled
+     * 
+     * @param flag
+     * @param title
+     * @param question
+     * @param options
+     * @param defaultSelection
+     * @param icon
+     * @param okText
+     * @param cancelText
+     * @return
+     */
+    public abstract int requestComboDialog(int flag, String title, String question, String[] options, int defaultSelection, ImageIcon icon, String okText, String cancelText);
+
 }

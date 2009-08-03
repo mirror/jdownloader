@@ -74,4 +74,10 @@ public class NoUserIO extends UserIO {
         return null;
     }
 
+    @Override
+    public int requestComboDialog(int flag, String title, String question, String[] options, int defaultSelection, ImageIcon icon, String okText, String cancelText) {
+        System.out.println("NoUserIO set!");
+        return 0;
+    }
+
 }

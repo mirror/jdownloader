@@ -1,18 +1,16 @@
 package jd;
 
-import java.awt.BorderLayout;
-import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.io.IOException;
 
 import javax.swing.AbstractAction;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
@@ -20,7 +18,14 @@ import javax.swing.JPanel;
 import javax.swing.JTextPane;
 import javax.swing.JToolBar;
 import javax.swing.KeyStroke;
-import javax.swing.border.BevelBorder;
+
+import jd.config.Configuration;
+import jd.config.SubConfiguration;
+import jd.gui.UserIO;
+import jd.gui.swing.jdgui.userio.UserIOGui;
+import jd.http.Browser;
+import jd.parser.html.Form;
+import jd.utils.locale.JDL;
 
 public class Tester extends JPanel {
 
@@ -86,21 +91,32 @@ public class Tester extends JPanel {
         fullJustifyAction.setEnabled(false);
       }
 
-    public static void main(String s[]) {
+    public static void main(String s[]) throws Exception {
+        
+        String title = JDL.L("jd.controlling.SingleDownloadController.askexists.title", "File exists");
+        String msg = JDL.LF("jd.controlling.SingleDownloadController.askexists", "The file \r\n%s\r\n already exists. What do you want to do?", "bla");
+     
+        UserIO.setInstance(UserIOGui.getInstance());
+            // ask
+            int doit = UserIO.getInstance().requestComboDialog(UserIO.NO_COUNTDOWN, title, msg, new String[]{"a","b","c"}, 1, null, null, null);
+//        
+        System.out.println(doit);
 
-        Tester example = new Tester();
-        example.pane = new JTextPane();
-        example.pane.setPreferredSize(new Dimension(250, 250));
-        example.pane.setBorder(new BevelBorder(BevelBorder.LOWERED));
-        example.toolBar.setMaximumSize(example.toolBar.getSize());
-
-        JFrame frame = new JFrame("Menu Example");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setJMenuBar(example.menuBar);
-        frame.getContentPane().add(example.toolBar, BorderLayout.NORTH);
-        frame.getContentPane().add(example.pane, BorderLayout.CENTER);
-        frame.pack();
-        frame.setVisible(true);
+        
+//
+//        Tester example = new Tester();
+//        example.pane = new JTextPane();
+//        example.pane.setPreferredSize(new Dimension(250, 250));
+//        example.pane.setBorder(new BevelBorder(BevelBorder.LOWERED));
+//        example.toolBar.setMaximumSize(example.toolBar.getSize());
+//
+//        JFrame frame = new JFrame("Menu Example");
+//        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+//        frame.setJMenuBar(example.menuBar);
+//        frame.getContentPane().add(example.toolBar, BorderLayout.NORTH);
+//        frame.getContentPane().add(example.pane, BorderLayout.CENTER);
+//        frame.pack();
+//        frame.setVisible(true);
     }
 
     class DemoAction extends AbstractAction {

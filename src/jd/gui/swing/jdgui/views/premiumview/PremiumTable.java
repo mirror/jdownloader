@@ -24,6 +24,7 @@ import jd.config.SubConfiguration;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.components.JExtCheckBoxMenuItem;
 import jd.gui.swing.jdgui.views.downloadview.DownloadTable;
+import jd.utils.JDUtilities;
 
 public class PremiumTable extends JTable implements MouseListener {
 
@@ -55,7 +56,8 @@ public class PremiumTable extends JTable implements MouseListener {
 
         this.setRowHeight(DownloadTable.ROWHEIGHT);
         getTableHeader().setPreferredSize(new Dimension(getColumnModel().getTotalColumnWidth(), 19));
-        this.setFillsViewportHeight(true);
+      //This method is 1.6 only
+        if(JDUtilities.getJavaVersion()>=1.6)this.setFillsViewportHeight(true);
     }
 
     public PremiumJTableModel getTableModel() {

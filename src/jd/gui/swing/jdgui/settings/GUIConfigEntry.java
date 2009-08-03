@@ -140,7 +140,7 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
             decoration = new JLabel(configEntry.getLabel());
 
             input[0] = new JDTextArea();
-            input[0].setBorder(BorderFactory.createLineBorder(input[0].getBackground().darker()));
+//            input[0].setBorder(BorderFactory.createLineBorder(input[0].getBackground().darker()));
             input[0].setEnabled(configEntry.isEnabled());
             // Dimension dim = input[0].getPreferredSize();
             // dim.height = 20;

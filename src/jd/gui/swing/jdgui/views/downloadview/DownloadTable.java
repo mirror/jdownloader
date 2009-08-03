@@ -137,8 +137,8 @@ public class DownloadTable extends JTable implements MouseListener, MouseMotionL
         // ActionController.getToolBarAction("action.downloadview.moveup").setEnabled(true);
         // ActionController.getToolBarAction("action.downloadview.movedown").setEnabled(true);
         // ActionController.getToolBarAction("action.downloadview.movetobottom").setEnabled(true);
-
-        this.setFillsViewportHeight(true);
+//This method is 1.6 only
+        if(JDUtilities.getJavaVersion()>=1.6)this.setFillsViewportHeight(true);
     }
 
     protected boolean processKeyBinding(KeyStroke ks, KeyEvent e, int condition, boolean pressed) {

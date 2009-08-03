@@ -26,11 +26,14 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.interaction.Interaction;
 import jd.event.ControlEvent;
+import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.components.Balloon;
 import jd.gui.swing.dialog.AgbDialog;
 import jd.http.Browser.BrowserException;
 import jd.nutils.Formatter;
+import jd.nutils.io.JDIO;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -370,10 +373,59 @@ public class SingleDownloadController extends Thread {
 
     private void onErrorFileExists(DownloadLink downloadLink, PluginForHost plugin) {
         LinkStatus status = downloadLink.getLinkStatus();
-        if (SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_FILE_EXISTS) == 1) {
+        String[] fileExists = new String[] { JDL.L("system.download.triggerfileexists.overwrite", "Datei überschreiben"), JDL.L("system.download.triggerfileexists.skip", "Link überspringen"), JDL.L("system.download.triggerfileexists.rename", "Auto rename") };
+        String title = JDL.L("jd.controlling.SingleDownloadController.askexists.title", "File exists");
+        String msg = JDL.LF("jd.controlling.SingleDownloadController.askexists", "The file \r\n%s\r\n already exists. What do you want to do?", downloadLink.getFileOutput());
+        int doit = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_FILE_EXISTS);
+        if (doit == 2) {
+
+            // ask
+            doit = UserIO.getInstance().requestComboDialog(UserIO.NO_COUNTDOWN, title, msg, fileExists, 0, null, null, null);
+
+        }
+        if (doit == 3) {
+            if (downloadLink.getFilePackage().getIntegerProperty("DO_WHEN_EXISTS", -1) > 0) {
+
+                doit = downloadLink.getFilePackage().getIntegerProperty("DO_WHEN_EXISTS", -1);
+
+                int cd = UserIO.getCountdownTime();
+                try {
+                    UserIO.setCountdownTime(10);
+                    doit = UserIO.getInstance().requestComboDialog(0, title, msg, fileExists, doit, null, null, null);
+                    downloadLink.getFilePackage().setProperty("DO_WHEN_EXISTS", doit);
+                } finally {
+                    UserIO.setCountdownTime(cd);
+                }
+            } else {
+                // ask
+                doit = UserIO.getInstance().requestComboDialog(0, title, msg, fileExists, 0, null, null, null);
+                downloadLink.getFilePackage().setProperty("DO_WHEN_EXISTS", doit);
+            }
+
+        }
+        switch (doit) {
+        case 1:
             status.setErrorMessage(JDL.L("controller.status.fileexists.skip", "File already exists."));
             downloadLink.setEnabled(false);
-        } else {
+        case 2:
+            // auto rename
+            status.reset();
+            File file = new File(downloadLink.getFileOutput());
+            String filename = file.getName();
+            String extension = JDIO.getFileExtension(file);
+            String name = filename.substring(0, filename.length() - extension.length() - 1);
+            int copy = 2;
+            try {
+                String[] num = new Regex(name, "(.*)_(\\d+)").getRow(0);
+                copy = Integer.parseInt(num[1]) + 1;
+                name = num[0];
+            } catch (Exception e) {
+                copy = 2;
+            }
+            downloadLink.setFinalFileName(name + "_" + copy + "." + extension);
+
+        default:
+
             if (new File(downloadLink.getFileOutput()).delete()) {
                 status.reset();
             } else {

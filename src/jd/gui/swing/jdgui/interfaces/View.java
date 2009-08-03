@@ -8,7 +8,6 @@ import javax.swing.Icon;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
-import javax.swing.UIManager;
 import javax.swing.border.Border;
 import javax.swing.plaf.metal.MetalLookAndFeel;
 
@@ -16,9 +15,6 @@ import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.views.toolbar.ViewToolbar;
 import jd.utils.JDTheme;
 import net.miginfocom.swing.MigLayout;
-
-import com.jtattoo.plaf.AbstractLookAndFeel;
-import com.jtattoo.plaf.ColorHelper;
 
 /**
  * A view is an abstract class for a contentpanel in JDGui
@@ -52,14 +48,11 @@ public abstract class View extends SwitchPanel {
 
         add(sidebar = new JScrollPane(), "width 200!,hidemode 1,gapright 3");
         Color line;
-        if (UIManager.getLookAndFeel() instanceof AbstractLookAndFeel) {
-            Color frameColor = AbstractLookAndFeel.getTheme().getBackgroundColor();
-            line = ColorHelper.darker(frameColor, 20);
-        } else {
-            // MetalLookAndFeel.getControlDarkShadow();
-            // MetalLookAndFeel.getControlHighlight() ;
-            line = MetalLookAndFeel.getControl();
-        }
+
+        // MetalLookAndFeel.getControlDarkShadow();
+        // MetalLookAndFeel.getControlHighlight() ;
+        line = MetalLookAndFeel.getControl();
+
         orgSidebarBorder = sidebar.getBorder();
         sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, line));
         sidebar.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
@@ -73,15 +66,14 @@ public abstract class View extends SwitchPanel {
     }
 
     /**
-     * Serts the sidebar's border
-     * View.ORG_BORDER  --> the LAF original Border
+     * Serts the sidebar's border View.ORG_BORDER --> the LAF original Border
      * 
      * @param b
      */
     public void setSidebarBorder(Border b) {
         if (ORG_BORDER == b) {
-            sidebar.setBorder(orgSidebarBorder);      
-          
+            sidebar.setBorder(orgSidebarBorder);
+
         } else {
             sidebar.setBorder(b);
         }
