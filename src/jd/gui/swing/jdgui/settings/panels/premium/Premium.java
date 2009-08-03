@@ -18,6 +18,7 @@ package jd.gui.swing.jdgui.settings.panels.premium;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
 import java.util.logging.Logger;
 
 import javax.swing.AbstractButton;
@@ -31,10 +32,12 @@ import jd.config.Configuration;
 import jd.controlling.AccountController;
 import jd.controlling.AccountControllerEvent;
 import jd.controlling.AccountControllerListener;
+import jd.gui.UserIO;
 import jd.gui.swing.components.AccountDialog;
 import jd.gui.swing.jdgui.actions.ThreadedAction;
 import jd.gui.swing.jdgui.settings.ConfigPanel;
 import jd.gui.swing.jdgui.views.toolbar.ViewToolbar;
+import jd.nutils.JDFlags;
 import jd.plugins.Account;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
@@ -72,7 +75,7 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
         panel.setLayout(new MigLayout("ins 5,wrap 1", "[fill,grow]", "[fill,grow]"));
         initPanel(panel);
         JTabbedPane tabbed = new JTabbedPane();
-//        
+        //        
         tabbed.setOpaque(false);
         tabbed.add(getBreadcrum(), panel);
         this.add(tabbed);
@@ -82,7 +85,7 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
 
         internalTable = new PremiumTable(new PremiumJTableModel(), this);
         scrollPane = new JScrollPane(internalTable);
-     
+
         Update_Async = new Timer(250, this);
         Update_Async.setInitialDelay(250);
         Update_Async.setRepeats(false);
@@ -123,7 +126,7 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
 
             @Override
             public void initDefaults() {
-                this.setToolTipText(JDL.L("action.premiumview.addacc", "Clear List"));
+                this.setToolTipText(JDL.L("action.premiumview.addacc.tooltip", "Add a new Account"));
             }
 
             @Override
@@ -143,7 +146,7 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
 
             @Override
             public void initDefaults() {
-                this.setToolTipText(JDL.L("action.premiumview.addacc", "Clear List"));
+                this.setToolTipText(JDL.L("action.premiumview.removeacc.tooltip", "Remove selected Account(s)"));
             }
 
             @Override
@@ -151,7 +154,12 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
             }
 
             public void threadedActionPerformed(ActionEvent e) {
-                AccountDialog.showDialog();
+                ArrayList<Account> accs = internalTable.getSelectedAccounts();
+                if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, JDL.L("action.premiumview.removeacc.ask", "Remove selected ") + " (" + JDL.LF("action.premiumview.removeacc.accs", "%s Account(s)", accs.size()) + ")"), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
+                    for (Account acc : accs) {
+                        AccountController.getInstance().removeAccount((String) null, acc);
+                    }
+                }
             }
         };
     }
@@ -187,8 +195,8 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
     @Override
     public void onShow() {
         AccountController.getInstance().addListener(this);
-        fireTableChanged(false);
         visible = true;
+        fireTableChanged(true);
         Update_Async.restart();
     }
 

@@ -209,6 +209,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
                     for (int i = 0; i < BARCOUNT; i++) {
                         bars[i].setVisible(false);
                     }
+                    boolean enabled = false;
                     for (HostPluginWrapper wrapper : hosterplugins) {
                         String host = wrapper.getHost();
                         if (wrapper.isLoaded() && wrapper.usePlugin()) {
@@ -218,8 +219,10 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
                                 long max = 0l;
                                 long left = 0l;
                                 long workingaccs = 0;
+                                enabled = false;
                                 for (Account a : accs) {
                                     if (a.isEnabled()) {
+                                        enabled = true;
                                         AccountInfo ai = a.getAccountInfo();
                                         if (ai == null) continue;
                                         max += ai.getTrafficMax();
@@ -227,6 +230,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
                                         if (!a.isTempDisabled()) workingaccs++;
                                     }
                                 }
+                                if (!enabled) continue;
                                 bars[ii].setVisible(true);
                                 bars[ii].setIcon(plugin.getHosterIcon());
                                 bars[ii].setAlignmentX(RIGHT_ALIGNMENT);

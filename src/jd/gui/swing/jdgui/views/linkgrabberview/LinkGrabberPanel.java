@@ -401,6 +401,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         fireTableChanged(false);
         LGINSTANCE.addListener(this);
         visible = true;
+        fireTableChanged(true);
         Update_Async.restart();
     }
 

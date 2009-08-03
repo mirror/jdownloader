@@ -355,10 +355,11 @@ public class AccountController extends SubConfiguration implements ActionListene
         }
     }
 
-    public boolean removeAccount(PluginForHost pluginForHost, Account account) {
-        if (pluginForHost == null) return false;
+    public boolean removeAccount(String hostname, Account account) {
         if (account == null) return false;
-        String host = pluginForHost.getHost();
+        String host = hostname;
+        if (host == null) host = getHosterName(account);
+        if (host == null) return false;
         synchronized (hosteraccounts) {
             if (!hosteraccounts.containsKey(host)) return false;
             ArrayList<Account> haccounts = hosteraccounts.get(host);
@@ -378,6 +379,12 @@ public class AccountController extends SubConfiguration implements ActionListene
                 return b;
             }
         }
+    }
+
+    public boolean removeAccount(PluginForHost pluginForHost, Account account) {
+        if (account == null) return false;
+        if (pluginForHost == null) return removeAccount((String) null, account);
+        return removeAccount(pluginForHost.getHost(), account);
     }
 
     public void actionPerformed(ActionEvent arg0) {

@@ -24,6 +24,8 @@ import jd.config.SubConfiguration;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.components.JExtCheckBoxMenuItem;
 import jd.gui.swing.jdgui.views.downloadview.DownloadTable;
+import jd.plugins.Account;
+import jd.plugins.DownloadLink;
 import jd.utils.JDUtilities;
 
 public class PremiumTable extends JTable implements MouseListener {
@@ -45,6 +47,7 @@ public class PremiumTable extends JTable implements MouseListener {
         createColumns();
         setShowGrid(false);
         addMouseListener(this);
+
         cellRenderer = new PremiumTableRenderer(this);
         mycellEditor = new PremiumTableEditor(this);
         getTableHeader().addMouseListener(this);
@@ -77,12 +80,16 @@ public class PremiumTable extends JTable implements MouseListener {
         }
     }
 
-    public void setValueAt(Object value, int rowIndex, int columnIndex) {
-        model.setValueAt(value, rowIndex, columnIndex);
-    }
-
-    public boolean isCellEditable(int rowIndex, int columnIndex) {
-        return model.isCellEditable(rowIndex, columnIndex);
+    public ArrayList<Account> getSelectedAccounts() {
+        int[] rows = getSelectedRows();
+        ArrayList<Account> ret = new ArrayList<Account>();
+        for (int row : rows) {
+            Object element = this.getModel().getValueAt(row, 0);
+            if (element != null && element instanceof Account) {
+                ret.add((Account) element);
+            }
+        }
+        return ret;
     }
 
     public void createColumns() {
