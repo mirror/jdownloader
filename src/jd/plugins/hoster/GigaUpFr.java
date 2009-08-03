@@ -30,7 +30,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 
 //cobrashare.sk by pspzockerscene
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gigaup.fr" }, urls = { "http://[\\w\\.]*?gigaup\\.fr/\\?g=[A-Z|0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gigaup.fr" }, urls = { "http://[\\w\\.]*?gigaup\\.fr/(\\?g=[A-Z|0-9]+|get_file/[A-Z|0-9]+/.+\\.html)" }, flags = { 0 })
 public class GigaUpFr extends PluginForHost {
 
     public GigaUpFr(PluginWrapper wrapper) {
@@ -91,7 +91,7 @@ public class GigaUpFr extends PluginForHost {
 
     // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return 4;
     }
 
     @Override

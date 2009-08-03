@@ -72,7 +72,7 @@ public class R1OneCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return 7;
     }
 
     @Override
