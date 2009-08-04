@@ -41,6 +41,7 @@ public class AnimeLoadsorg extends PluginForDecrypt {
         br.setCookiesExclusive(true);
         br.clearCookies(host);
 
+
         if (parameter.contains("crypt")) {
             links.add(parameter);
         } else {
@@ -48,7 +49,7 @@ public class AnimeLoadsorg extends PluginForDecrypt {
             String[][] help = br.getRegex("<a href=\"(crypt\\.php.*?)\"").getMatches();
 
             for (String[] help1 : help)
-                links.add(help1[0]);
+                links.add((help1[0]).replace("');</script>", ""));
         }
 
         for (String link : links) {
