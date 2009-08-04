@@ -32,6 +32,7 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
+import javax.swing.ToolTipManager;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -94,8 +95,6 @@ import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingx.JXTitledSeparator;
 
-import de.javasoft.plaf.synthetica.SyntheticaRootPaneUI;
-
 public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
 
     private static final long serialVersionUID = 1048792964102830601L;
@@ -112,8 +111,6 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
     private LogView logView;
     private MainToolBar toolBar;
     private JPanel waitingPane;
-
- 
 
     private JDGui() {
         super("");
@@ -134,8 +131,8 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         mainFrame.pack();
         initLocationAndDimension();
         mainFrame.setVisible(true);
-        if (mainFrame.getRootPane().getUI() instanceof SyntheticaRootPaneUI) {
-            ((SyntheticaRootPaneUI) mainFrame.getRootPane().getUI()).setMaximizedBounds(mainFrame);
+        if (mainFrame.getRootPane().getUI().toString().contains("SyntheticaRootPaneUI")) {
+            ((de.javasoft.plaf.synthetica.SyntheticaRootPaneUI) mainFrame.getRootPane().getUI()).setMaximizedBounds(mainFrame);
         }
         mainFrame.setExtendedState(GUIUtils.getConfig().getIntegerProperty("MAXIMIZED_STATE_OF_" + mainFrame.getName(), JFrame.NORMAL));
         ClipboardHandler.getClipboard().setTempDisabled(false);
@@ -235,8 +232,8 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         mainFrame.setLocation(GUIUtils.getLastLocation(null, null, mainFrame));
         mainFrame.setExtendedState(GUIUtils.getConfig().getIntegerProperty("MAXIMIZED_STATE_OF_" + mainFrame.getName(), JFrame.NORMAL));
 
-        if (mainFrame.getRootPane().getUI() instanceof SyntheticaRootPaneUI) {
-            ((SyntheticaRootPaneUI) mainFrame.getRootPane().getUI()).setMaximizedBounds(mainFrame);
+        if (mainFrame.getRootPane().getUI().toString().contains("SyntheticaRootPaneUI")) {
+            ((de.javasoft.plaf.synthetica.SyntheticaRootPaneUI) mainFrame.getRootPane().getUI()).setMaximizedBounds(mainFrame);
         }
 
     }
@@ -254,7 +251,6 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         downloadView = new DownloadView();
         linkgrabberView = new LinkgrabberView();
         configurationView = new ConfigurationView();
-    
 
         logView = new LogView();
         // mainTabbedPane.add());
@@ -266,7 +262,6 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
 
         mainTabbedPane.addTab(linkgrabberView);
         mainTabbedPane.addTab(configurationView);
-     
 
         mainTabbedPane.addTab(logView);
         // mainTabbedPane.addTab(new ClosableView());
@@ -293,6 +288,9 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         Toolkit.getDefaultToolkit().getSystemEventQueue().push(new EDTEventQueue());
         mainFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         mainFrame.addWindowListener(this);
+
+        ToolTipManager.sharedInstance().setReshowDelay(0);
+
     }
 
     /**
@@ -368,6 +366,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
             INSTANCE = new GuiRunnable<JDGui>() {
                 @Override
                 public JDGui runSave() {
+                    Thread.currentThread().setContextClassLoader(JDUtilities.getJDClassLoader());
                     return new JDGui();
                 }
 
@@ -529,7 +528,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
             public Object runSave() {
 
                 switch (panel) {
-            
+
                 case DOWNLOADLIST:
                     mainTabbedPane.setSelectedComponent(downloadView);
                     break;

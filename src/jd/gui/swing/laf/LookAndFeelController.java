@@ -18,6 +18,7 @@ package jd.gui.swing.laf;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -26,6 +27,8 @@ import java.util.Map.Entry;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
+import javax.swing.LookAndFeel;
+import javax.swing.UIDefaults;
 import javax.swing.UIManager;
 import javax.swing.UIManager.LookAndFeelInfo;
 
@@ -33,6 +36,7 @@ import jd.JDInitFlags;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.gui.swing.jdgui.GUIUtils;
+import jd.nutils.JDFlags;
 import jd.nutils.OSDetector;
 import jd.parser.Regex;
 import jd.utils.JDUtilities;
@@ -183,51 +187,6 @@ public class LookAndFeelController {
     }
 
     /**
-     * INstalls all Synthetica Look and Feels (if found)
-     */
-    public static void installSynthetica() {
-        // de.javasoft.plaf.synthetica.SyntheticaStandardLookAndFeel
-        String pkg = "de/javasoft/plaf/synthetica";
-        try {
-            Enumeration<URL> res = JDUtilities.getJDClassLoader().getResources(pkg);
-            while (res.hasMoreElements()) {
-
-                String url = new Regex(res.nextElement(), "(.*)\\!.*").getMatch(0);
-                if (url == null) return;
-                url = url.substring(4);
-
-                File file = new File(new URL(url).toURI());
-
-                JarInputStream jarFile = new JarInputStream(new FileInputStream(file));
-                JarEntry e;
-                while ((e = jarFile.getNextJarEntry()) != null) {
-                    if (e.getName().startsWith(pkg)) {
-                        String laf = new Regex(e.getName(), "de/javasoft/plaf/synthetica/(.*?)LookAndFeel\\.class").getMatch(0);
-
-                        if (laf != null) {
-
-                            UIManager.installLookAndFeel(laf, "de.javasoft.plaf.synthetica." + laf + "LookAndFeel");
-                        }
-                    }
-
-                }
-                // de.javasoft.plaf.synthetica.SyntheticaSkyMetallicLookAndFeel
-                // de.javasoft.plaf.synthetica.SyntheticaWhiteVisionLookAndFeel
-
-                // UIManager.installLookAndFeel("SkyMetallic",
-                // "de.javasoft.plaf.synthetica.SyntheticaSkyMetallicLookAndFeel");
-                // UIManager.installLookAndFeel("WhiteVision",
-                // "de.javasoft.plaf.synthetica.SyntheticaWhiteVisionLookAndFeel");
-                // UIManager.installLookAndFeel("SyntheticaBlackMoon",
-                // "de.javasoft.plaf.synthetica.SyntheticaBlackMoonLookAndFeel");
-
-            }
-        } catch (Exception e) {
-            JDLogger.exception(e);
-        }
-    }
-
-    /**
      * setups the correct Look and Feel
      */
     public static void setUIManager() {
@@ -235,33 +194,19 @@ public class LookAndFeelController {
 
         uiInitated = true;
 
-        // installJGoodies();
-        installJTattoo();
-        // if (JDUtilities.getJavaVersion() >= 1.6) installSubstance();
-        installSynthetica();
-
+        install();
         try {
+        
             JDLogger.getLogger().info("Use Look & Feel: " + getPlaf().getClassName());
+         Thread.currentThread().setContextClassLoader(JDUtilities.getJDClassLoader());
+         
+         preSetup(getPlaf().getClassName());
 
-            preSetup(getPlaf().getClassName());
-
-            // UIManager.put("Synthetica​.tabbedPane​.tab​.text​.position​.leading",
-            // true);
-            // UIManager.put("Synthetica.window.opaque", true);
-            // UIManager.put("Synthetica​.cache.enabled", true);
-            // 
-
-            // UIManager.put("Synthetica​.tableHeader​.horizontalAlignment",
-            // JLabel.CENTER);
-
-            // UIManager.put("Synthetica.window.decoration", false);
-            // UIManager.put("Synthetica​.rootPane​.titlePane​.menuButton​.useOriginalImageSize",
-            // Boolean.TRUE);
-            // UIManager.put("Synthetica​.tabbedPane​.tab​.animation​.cycles",
-            // 100);
-            // UIManager.put("Synthetica​.tabbedPane​.tabs​.stretch",
-            // Boolean.TRUE);
+            UIManager.put("ClassLoader", JDUtilities.getJDClassLoader());
             UIManager.setLookAndFeel(getPlaf().getClassName());
+            UIManager.put("ClassLoader", JDUtilities.getJDClassLoader());
+      
+   
             // UIManager.setLookAndFeel(new SyntheticaStandardLookAndFeel());
 
             // overwrite defaults
@@ -274,9 +219,49 @@ public class LookAndFeelController {
                 JDLogger.getLogger().info("Use special LAF Property: " + next.getKey() + " = " + next.getValue());
                 UIManager.put(next.getKey(), next.getValue());
             }
-
-        } catch (Exception e) {
+           
+        } catch (Throwable e) {
+            
+            
             JDLogger.exception(e);
+        }
+
+    }
+/**
+ * INstalls all Look and feels founmd in libs/laf/
+ */
+    private static void install() {
+        for (File file : JDUtilities.getJDClassLoader().getLafs()) {        
+            try {
+                           JarInputStream jarFile = new JarInputStream(new FileInputStream(file));
+                JarEntry e;
+                String cl;
+                while ((e = jarFile.getNextJarEntry()) != null) {
+                    if (!e.getName().endsWith(".class") || e.getName().contains("$")) continue;
+                    cl = e.getName().replace("/", ".");
+                    cl = cl.substring(0, cl.length() - 6);
+                    if (!cl.toLowerCase().endsWith("lookandfeel")) continue;
+                    Class<?> clazz = JDUtilities.getJDClassLoader().loadClass(cl);
+                    try {
+                    
+                        if (LookAndFeel.class.isAssignableFrom(clazz)&&!Modifier.isAbstract(clazz.getModifiers())) {
+
+                            String name = clazz.getSimpleName().replace("LookAndFeel", "");
+                            UIManager.installLookAndFeel(name, cl);
+                         
+                            
+                           
+                        }
+                    } catch (Throwable t) {
+
+                        t.printStackTrace();
+                    }
+
+                }
+
+            } catch (Exception e) {
+                JDLogger.exception(e);
+            }
         }
 
     }
@@ -308,31 +293,14 @@ public class LookAndFeelController {
             UIManager.put("Synthetica​.tabbedPane​.tabs​.stretch", Boolean.TRUE);
 
         }
+       
+        if (className.equalsIgnoreCase("de.javasoft.plaf.synthetica.SyntheticaStandardLookAndFeel")) {
 
+            UIManager.put("Synthetica.window.decoration", false);
+        }
     }
 
-    private static void installJTattoo() {
 
-        UIManager.installLookAndFeel("AluminiumLookAndFeel", "com.jtattoo.plaf.aluminium.AluminiumLookAndFeel");
-        UIManager.installLookAndFeel("AcrylLookAndFeel", "com.jtattoo.plaf.acryl.AcrylLookAndFeel");
-        UIManager.installLookAndFeel("AeroLookAndFeel", "com.jtattoo.plaf.aero.AeroLookAndFeel");
-        UIManager.installLookAndFeel("NoireLookAndFeel", "com.jtattoo.plaf.noire.NoireLookAndFeel");
-        UIManager.installLookAndFeel("MintLookAndFeel", "com.jtattoo.plaf.mint.MintLookAndFeel");
-        UIManager.installLookAndFeel("McWinLookAndFeel", "com.jtattoo.plaf.mcwin.McWinLookAndFeel");
-        UIManager.installLookAndFeel("LunaLookAndFeel", "com.jtattoo.plaf.luna.LunaLookAndFeel");
-        UIManager.installLookAndFeel("HiFiLookAndFeel", "com.jtattoo.plaf.hifi.HiFiLookAndFeel");
-        UIManager.installLookAndFeel("FastLookAndFeel", "com.jtattoo.plaf.fast.FastLookAndFeel");
-        UIManager.installLookAndFeel("BernsteinLookAndFeel", "com.jtattoo.plaf.bernstein.BernsteinLookAndFeel");
-        UIManager.installLookAndFeel("SmartLookAndFeel", "com.jtattoo.plaf.smart.SmartLookAndFeel");
-    }
 
-    // private static void installJGoodies() {
-    // // com.jgoodies.plaf.plastic.PlasticXPLookAndFeel
-    //
-    // UIManager.installLookAndFeel("JDownloaderDefault",
-    // "com.jgoodies.looks.plastic.PlasticXPLookAndFeel");
-    // UIManager.installLookAndFeel("JDownloaderWindows",
-    // "com.jgoodies.looks.windows.WindowsLookAndFeel");
-    // }
 
 }

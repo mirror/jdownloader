@@ -129,13 +129,15 @@ public abstract class SwingGui extends UserIF implements ControlListener, Window
     /**
      * Throws an RuntimeException if the current thread is not the edt
      */
-    public static void checkEDT() {
-        if (!JDInitFlags.SWITCH_DEBUG) return;
+    public static boolean checkEDT() {
+        if (!JDInitFlags.SWITCH_DEBUG) return true;
         Thread th = Thread.currentThread();
         String name = th.toString();
         if (!name.contains("EventQueue")) {
             JDLogger.exception(new RuntimeException("EDT Violation! Runs in " + th));
+            return false;
         }
+        return true;
 
     }
 

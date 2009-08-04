@@ -143,14 +143,15 @@ public abstract class View extends SwitchPanel {
      */
     public synchronized void setContent(SwitchPanel right) {
         SwingGui.checkEDT();
-
+        boolean found = false;
         for (Component c : rightPane.getComponents()) {
             c.setVisible(false);
+            if(c==right)found=true;
         }
-
+       
         if (right != null) {
             right.setVisible(true);
-            rightPane.add(right, "hidemode 3");
+           if(!found) rightPane.add(right, "hidemode 3");
         }
         if (this.content != null && isShown()) this.content.setHidden();
         this.content = right;

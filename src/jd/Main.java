@@ -44,6 +44,7 @@ import java.util.logging.Logger;
 
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
+import javax.tools.ToolProvider;
 
 import jd.captcha.JACController;
 import jd.captcha.JACMethod;
@@ -297,7 +298,7 @@ public class Main {
                     }.waitForEDT();
                 }
             }
-
+         
             LOGGER.info("init Eventmanager");
             Interaction.initTriggers();
             LOGGER.info("init Localisation");

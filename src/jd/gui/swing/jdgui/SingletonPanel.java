@@ -20,6 +20,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
 import jd.controlling.JDLogger;
+import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 
 /**
@@ -69,12 +70,16 @@ public class SingletonPanel {
     }
 
     private void createPanel() throws SecurityException, NoSuchMethodException, IllegalArgumentException, InstantiationException, IllegalAccessException, InvocationTargetException {
-        Class<?>[] classes = new Class[objs.length];
-        for (int i = 0; i < objs.length; i++)
-            classes[i] = objs[i].getClass();
+       
+                    Class<?>[] classes = new Class[objs.length];
+                    for (int i = 0; i < objs.length; i++)
+                        classes[i] = objs[i].getClass();
 
-        Constructor<? extends SwitchPanel> c = clazz.getConstructor(classes);
-        panel = c.newInstance(objs);
+                    Constructor<? extends SwitchPanel> c = clazz.getConstructor(classes);
+                    panel = c.newInstance(objs);
+                
+
+        
 
     }
 

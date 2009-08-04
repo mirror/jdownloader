@@ -20,6 +20,7 @@ public class OSDetector {
 
     private static byte OS_ID = -1;
     private static String OS_STRING;
+    
     public static final byte OS_LINUX_OTHER = 6;
     public static final byte OS_MAC_OTHER = 5;
     public static final byte OS_WINDOWS_OTHER = 4;

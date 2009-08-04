@@ -49,6 +49,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
     private Logger logger = jd.controlling.JDLogger.getLogger();
     private URLClassLoader rootClassLoader;
     private String rootDir;
+    private ArrayList<File> lafs;
     private static byte[] S = new byte[] { (byte) 2, (byte) 1, (byte) 1, (byte) 49, (byte) 11, (byte) 48, (byte) 9, (byte) 6, (byte) 5, (byte) 43, (byte) 14, (byte) 3, (byte) 2, (byte) 26, (byte) 5, (byte) 0, (byte) 48, (byte) 11, (byte) 6, (byte) 9, (byte) 42, (byte) -122, (byte) 72, (byte) -122, (byte) -9, (byte) 13, (byte) 1, (byte) 7, (byte) 1, (byte) -96, (byte) -126, (byte) 2, (byte) -111, (byte) 48, (byte) -126, (byte) 2, (byte) -115, (byte) 48, (byte) -126, (byte) 2, (byte) 75, (byte) 2, (byte) 4, (byte) 70, (byte) -60, (byte) 21, (byte) -27, (byte) 48, (byte) 11, (byte) 6, (byte) 7, (byte) 42, (byte) -122, (byte) 72, (byte) -50, (byte) 56, (byte) 4, (byte) 3, (byte) 5, (byte) 0, (byte) 48, (byte) 44, (byte) 49, (byte) 24, (byte) 48, (byte) 22, (byte) 6, (byte) 3, (byte) 85, (byte) 4, (byte) 10, (byte) 19, (byte) 15, (byte) 103, (byte) 117, (byte) 108, (byte) 108, (byte) 105,
             (byte) 32, (byte) 67, (byte) 111, (byte) 109, (byte) 109, (byte) 117, (byte) 110, (byte) 105, (byte) 116, (byte) 121, (byte) 49, (byte) 16, (byte) 48, (byte) 14, (byte) 6, (byte) 3, (byte) 85, (byte) 4, (byte) 3, (byte) 19, (byte) 7, (byte) 97, (byte) 115, (byte) 116, (byte) 97, (byte) 108, (byte) 100, (byte) 111, (byte) 48, (byte) 30, (byte) 23, (byte) 13, (byte) 48, (byte) 55, (byte) 48, (byte) 56, (byte) 49, (byte) 54, (byte) 48, (byte) 57, (byte) 49, (byte) 54, (byte) 50, (byte) 49, (byte) 90, (byte) 23, (byte) 13, (byte) 48, (byte) 57, (byte) 48, (byte) 56, (byte) 48, (byte) 53, (byte) 48, (byte) 57, (byte) 49, (byte) 54, (byte) 50, (byte) 49, (byte) 90, (byte) 48, (byte) 44, (byte) 49, (byte) 24, (byte) 48, (byte) 22, (byte) 6, (byte) 3, (byte) 85, (byte) 4, (byte) 10, (byte) 19, (byte) 15, (byte) 103, (byte) 117, (byte) 108, (byte) 108, (byte) 105, (byte) 32,
             (byte) 67, (byte) 111, (byte) 109, (byte) 109, (byte) 117, (byte) 110, (byte) 105, (byte) 116, (byte) 121, (byte) 49, (byte) 16, (byte) 48, (byte) 14, (byte) 6, (byte) 3, (byte) 85, (byte) 4, (byte) 3, (byte) 19, (byte) 7, (byte) 97, (byte) 115, (byte) 116, (byte) 97, (byte) 108, (byte) 100, (byte) 111, (byte) 48, (byte) -126, (byte) 1, (byte) -72, (byte) 48, (byte) -126, (byte) 1, (byte) 44, (byte) 6, (byte) 7, (byte) 42, (byte) -122, (byte) 72, (byte) -50, (byte) 56, (byte) 4, (byte) 1, (byte) 48, (byte) -126, (byte) 1, (byte) 31, (byte) 2, (byte) -127, (byte) -127, (byte) 0, (byte) -3, (byte) 127, (byte) 83, (byte) -127, (byte) 29, (byte) 117, (byte) 18, (byte) 41, (byte) 82, (byte) -33, (byte) 74, (byte) -100, (byte) 46, (byte) -20, (byte) -28, (byte) -25, (byte) -10, (byte) 17, (byte) -73, (byte) 82, (byte) 60, (byte) -17, (byte) 68, (byte) 0, (byte) -61, (byte) 30,
@@ -88,7 +89,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
 
                     try {
                         if (!files[i].getAbsolutePath().endsWith("webupdater.jar") || !files[i].getAbsolutePath().endsWith("jdupdate.jar")) {
-                            if (JDUtilities.getRunType()==JDUtilities.RUNTYPE_LOCAL_JARED&&!comp(getSig(files[i].getAbsolutePath()))) {
+                            if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED && !comp(getSig(files[i].getAbsolutePath()))) {
                                 logger.severe("Not loaded due to sig violation: " + files[i]);
                                 continue;
                             }
@@ -120,7 +121,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
                         if (!files[i].getAbsolutePath().endsWith("webupdater.jar") && !files[i].getAbsolutePath().endsWith("jdupdate.jar")) {
                             if (!comp(getSig(files[i].getAbsolutePath()))) {
                                 logger.severe("Not loaded due to sig violation: " + files[i]);
-                               continue;
+                                continue;
                             }
                             if (names.contains(files[i].getName())) {
                                 logger.severe("Duplicate Jars found: " + files[i].getAbsolutePath());
@@ -137,8 +138,46 @@ public class JDClassLoader extends java.lang.ClassLoader {
                     }
                 }
             }
+
+            // und hier folgen die LAFS
+
+            // Hier werden lokale JAR Dateien ausgelesen
+            files = new File(rootDir, "libs/laf").listFiles(new JDFileFilter(null, ".jar", false));
+            lafs = new ArrayList<File>();
+            if (files != null) {
+                // jars = new JarFile[files.length];
+                for (int i = 0; i < files.length; i++) {
+
+                    try {
+
+                        if (!files[i].getAbsolutePath().endsWith("webupdater.jar") && !files[i].getAbsolutePath().endsWith("jdupdate.jar")) {
+                            // if (!comp(getSig(files[i].getAbsolutePath()))) {
+                            // logger.severe("Not loaded due to sig violation: "
+                            // + files[i]);
+                            // continue;
+                            // }
+                            if (names.contains(files[i].getName())) {
+                                logger.severe("Duplicate Jars found: " + files[i].getAbsolutePath());
+                            } else {
+                                names.add(files[i].getName());
+                                logger.finer("Look and Feel JAR loaded: " + files[i].getAbsolutePath());
+                                jarFile.add(files[i]);
+                                lafs.add(files[i]);
+                                jarFiles.add(new JarFile(files[i]));
+                            }
+                        }
+
+                    } catch (IOException e) {
+                        JDLogger.exception(e);
+                    }
+                }
+            }
             jars = jarFiles.toArray(new JarFile[] {});
         }
+    }
+
+    public ArrayList<File> getLafs() {
+        return lafs;
     }
 
     private boolean comp(byte[] sig) {
@@ -181,7 +220,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
         return null;
     }
 
-    //@Override
+    // @Override
     protected URL findResource(String name) {
 
         URL url;
@@ -232,7 +271,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
         return null;
     }
 
-    //@Override
+    // @Override
     public URL getResource(String name) {
 
         if (jars != null) {
@@ -268,7 +307,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
         return null;
     }
 
-    //@Override
+    // @Override
     public Enumeration<URL> getResources(String name) throws IOException {
         Vector<URL> urls = new Vector<URL>();
 
@@ -279,7 +318,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
 
             urls.add(tmp);
         }
-//        if (urls.size() > 0) { return urls.elements(); }
+        // if (urls.size() > 0) { return urls.elements(); }
         if (jars != null) {
             JarEntry entry;
             for (JarFile element : jars) {
@@ -313,7 +352,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
      * System-Classloader geladen werden kann. Erst zum Schluß wird versucht,
      * diese Klasse selbst zu laden.
      */
-    //@Override
+    // @Override
     protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
         Class<?> c = findLoadedClass(name);
         if (c == null) {
