@@ -126,6 +126,10 @@ public class OptionalPluginWrapper extends PluginWrapper {
         return null;
 
     }
+    
+    public String getID(){
+        return id;
+    }
 
     public String getConfigParamKey() {
         return "OPTIONAL_PLUGIN2_" + id;

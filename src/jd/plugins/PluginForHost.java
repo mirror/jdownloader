@@ -735,10 +735,6 @@ public abstract class PluginForHost extends Plugin {
 
     }
 
-    public PluginForHost getNewInstance() {
-        return (PluginForHost) wrapper.getNewPluginInstance();
-    }
-
     public HosterInfo getHosterInfo() {
         return null;
     }

@@ -86,9 +86,7 @@ public class JDInit {
             if (!old.equals(JDUtilities.getRevision())) {
                 logger.info("Detected that JD just got updated");
                 JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_FINISH));
-                int status = UserIO.getInstance().requestHelpDialog(UserIO.NO_CANCEL_OPTION, JDL.LF("system.update.message.title", "Updated to version %s", JDUtilities.getRevision()),
-                                                                    JDL.L("system.update.message", "Update successfull"), JDL.L("system.update.showchangelogv2", "What's new?"),
-                                                                    "http://jdownloader.org/changes/index");
+                int status = UserIO.getInstance().requestHelpDialog(UserIO.NO_CANCEL_OPTION, JDL.LF("system.update.message.title", "Updated to version %s", JDUtilities.getRevision()), JDL.L("system.update.message", "Update successfull"), JDL.L("system.update.showchangelogv2", "What's new?"), "http://jdownloader.org/changes/index");
                 if (JDFlags.hasAllFlags(status, UserIO.RETURN_OK) && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_AUTO_SHOW_CHANGELOG, true)) {
                     try {
                         JLink.openURL("http://jdownloader.org/changes/index");
@@ -592,47 +590,6 @@ public class JDInit {
         } catch (Throwable e) {
             JDLogger.exception(e);
         }
-        // if (JDUtilities.getJavaVersion() >= 1.6) new
-        // OptionalPluginWrapper("jdtrayicon.JDLightTray", 1.6, "trayicon",
-        // JDL.L("plugins.optional.trayicon.name", "Tray Icon (Minimizer)"));
-        // new OptionalPluginWrapper("webinterface.JDWebinterface", 1.5,
-        // "webinterface", JDL.L("plugins.optional.webinterface.name",
-        // "WebInterface"));
-        // new OptionalPluginWrapper("schedule.Schedule", 1.5, "scheduler",
-        // JDL.L("addons.schedule.name", "Schedule"));
-        // new OptionalPluginWrapper("JDFolderWatch", 1.5, "folderwatch",
-        // JDL.L("plugins.optional.folderwatch.name", "JDFolderWatch"));
-        // new OptionalPluginWrapper("JDShutdown", 1.5, "shutdown",
-        // JDL.L("plugins.optional.jdshutdown.name", "JDShutdown"));
-        // new OptionalPluginWrapper("JDRemoteControl", 1.5, "remotecontrol",
-        // JDL.L("plugins.optional.remotecontrol.name", "RemoteControl"));
-        // new OptionalPluginWrapper("jdchat.JDChat", 1.5, "chat",
-        // JDL.L("plugins.optional.jdchat.name2", "JD Support Chat"));
-        // new OptionalPluginWrapper("Newsfeeds", 1.5, "newsfeed",
-        // JDL.L("plugins.optional.newsfeeds.pluginTitle", "Newsfeed Check"));
-        // new OptionalPluginWrapper("JDInfoFileWriter", 1.5, "infofilewriter",
-        // JDL.L("plugins.optional.infoFileWriter.name", "Info File Writer"));
-        // new OptionalPluginWrapper("langfileeditor.LangFileEditor", 1.5,
-        // "langfileditor", JDL.L("plugins.optional.langfileeditor.name",
-        // "Language File Editor"));
-        // new OptionalPluginWrapper("jdunrar.JDUnrar", 1.5, "unrar",
-        // JDL.L("plugins.optional.jdunrar.name", "JD-Unrar"));
-        // new OptionalPluginWrapper("hjsplit.JDHJSplit", 1.5, "hjsplit",
-        // JDL.L("plugins.optional.jdhjsplit.name", "JD-HJMerge"));
-        // new OptionalPluginWrapper("premcol.JDPremiumCollector", 1.5,
-        // "premcol", JDL.L("plugins.optional.premiumcollector.name",
-        // "PremiumCollector"));
-        // new OptionalPluginWrapper("interfaces.JDExternInterface", 1.5,
-        // "flashgot", JDL.L("plugins.optional.flashgot.name",
-        // "FlashGot Integration"));
-        // if (OSDetector.isMac()) new
-        // OptionalPluginWrapper("JDGrowlNotification", 1.5, "growl",
-        // JDL.L("plugins.optional.jdgrowlnotification.name",
-        // "JDGrowlNotification"));
-        // new OptionalPluginWrapper("HTTPLiveHeaderScripter", 1.5,
-        // "livescripter", JDL.L("plugins.optional.httpliveheaderscripter.name",
-        // "HTTPLiveHeaderScripter"));
-
     }
 
     public void removeFiles() {

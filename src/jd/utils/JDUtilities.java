@@ -60,6 +60,7 @@ import javax.xml.transform.stream.StreamResult;
 import jd.CPluginWrapper;
 import jd.HostPluginWrapper;
 import jd.JDClassLoader;
+import jd.OptionalPluginWrapper;
 import jd.config.Configuration;
 import jd.config.DatabaseConnector;
 import jd.config.SubConfiguration;
@@ -612,7 +613,8 @@ public class JDUtilities {
     }
 
     /**
-     * Sucht ein passendes Plugin für einen Anbieter
+     * Sucht ein passendes Plugin für einen Anbieter Please dont use the
+     * returned Plugin to start any function
      * 
      * @param host
      *            Der Host, von dem das Plugin runterladen kann
@@ -632,6 +634,13 @@ public class JDUtilities {
         return null;
     }
 
+    public static OptionalPluginWrapper getOptionalPlugin(String id) {
+        for (OptionalPluginWrapper wrapper : OptionalPluginWrapper.getOptionalWrapper()) {
+            if (wrapper.getID() != null && wrapper.getID().equalsIgnoreCase(id)) return wrapper;
+        }
+        return null;
+    }
+
     /**
      * Liefert alle Plugins zum Downloaden von einem Anbieter zurück.
      * 
@@ -640,10 +649,10 @@ public class JDUtilities {
     public static ArrayList<HostPluginWrapper> getPluginsForHost() {
         return new ArrayList<HostPluginWrapper>(HostPluginWrapper.getHostWrapper());
     }
-    
+
     public static ArrayList<HostPluginWrapper> getPremiumPluginsForHost() {
         ArrayList<HostPluginWrapper> plugins = getPluginsForHost();
-        for (int i = plugins.size() - 1 ; i >= 0; --i) {
+        for (int i = plugins.size() - 1; i >= 0; --i) {
             if (!plugins.get(i).isPremiumEnabled()) plugins.remove(i);
         }
         return plugins;

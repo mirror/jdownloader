@@ -164,7 +164,7 @@ public class AccountController extends SubConfiguration implements ActionListene
             logger.severe("Cannot update AccountInfo, no Hostername available!");
             return null;
         }
-        PluginForHost plugin = JDUtilities.getPluginForHost(hostname);
+        PluginForHost plugin = JDUtilities.getNewPluginForHostInstance(hostname);
         if (plugin == null) {
             account.setAccountInfo(null);
             logger.severe("Cannot update AccountInfo, no HosterPlugin available!");
@@ -175,7 +175,7 @@ public class AccountController extends SubConfiguration implements ActionListene
             if (!forceupdate && (System.currentTimeMillis() - ai.getCreateTime()) < waittimeAccountInfoUpdate) return ai;
         }
         try {
-            ai = plugin.getNewInstance().fetchAccountInfo(account);
+            ai = plugin.fetchAccountInfo(account);
             if (ai == null) {
                 /* not every plugin has fetchAccountInfo */
                 account.setAccountInfo(null);

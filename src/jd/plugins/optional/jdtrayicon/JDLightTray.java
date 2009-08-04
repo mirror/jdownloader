@@ -73,6 +73,8 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
 
     private TrayIconTooltip trayIconTooltip;
 
+    private TrayMouseAdapter ma;
+
     public JDLightTray(PluginWrapper wrapper) {
         super(wrapper);
         subConfig = SubConfiguration.getConfig("ADDONS_JDLIGHTTRAY");
@@ -147,7 +149,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
         trayIcon = new TrayIcon(img);
         trayIcon.addActionListener(this);
 
-        TrayMouseAdapter ma = new TrayMouseAdapter(this, trayIcon);
+        ma = new TrayMouseAdapter(this, trayIcon);
         trayIcon.addMouseListener(ma);
         trayIcon.addMouseMotionListener(ma);
 
@@ -223,8 +225,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
 
     // @Override
     public void onExit() {
-        if (trayIcon != null) SystemTray.getSystemTray().remove(trayIcon);
-        JDUtilities.getController().removeControlListener(this);
+        removeTrayIcon();
         if (guiFrame != null) guiFrame.removeWindowListener(this);
     }
 
@@ -318,5 +319,36 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
 
         trayIconTooltip.show(((TrayMouseAdapter) e.getSource()).getEstimatedTopLeft(), this.trayIcon);
 
+    }
+
+    private void removeTrayIcon() {
+        try {
+            if (trayIcon != null) {
+                trayIcon.removeActionListener(this);
+                SystemTray.getSystemTray().remove(trayIcon);
+                if (ma != null) {
+                    trayIcon.removeMouseListener(ma);
+                    trayIcon.removeMouseMotionListener(ma);
+                }
+            }
+        } catch (Exception e) {
+        }
+    }
+
+    
+    public Object interact(String command, Object parameter) {
+        if (command == null) return null;
+        if (command.equalsIgnoreCase("refresh")) {
+            new GuiRunnable<Boolean>() {
+
+                @Override
+                public Boolean runSave() {                    
+                    removeTrayIcon();                    
+                    initGUI();
+                    return null;
+                }
+            }.start();
+        }
+        return null;
     }
 }

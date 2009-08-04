@@ -134,7 +134,10 @@ public class ParameterManager {
                 logger.info(currentArg + " parameter");
 
             } else if (currentArg.equals("--focus") || currentArg.equals("-f")) {
-
+                OptionalPluginWrapper addon = JDUtilities.getOptionalPlugin("trayicon");
+                if (addon != null && addon.isEnabled()) {
+                    addon.getPlugin().interact("refresh", null);
+                }
                 addLinksSwitch = false;
                 addContainersSwitch = false;
                 addPasswordsSwitch = false;
@@ -223,5 +226,4 @@ public class ParameterManager {
             }
         }
     }
-
 }

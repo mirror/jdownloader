@@ -91,7 +91,7 @@ public class JDShutdown extends PluginOptional {
     // @Override
     public ArrayList<MenuAction> createMenuitems() {
         ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
-        if (menuItem == null) menuItem = (MenuAction)new MenuAction(MenuAction.TOGGLE, JDL.L("addons.jdshutdown.menu", "Shutdown after downloads finished"), 0).setActionListener(this);
+        if (menuItem == null) menuItem = (MenuAction) new MenuAction(MenuAction.TOGGLE, JDL.L("addons.jdshutdown.menu", "Shutdown after downloads finished"), 0).setActionListener(this);
         menu.add(menuItem);
         return menu;
     }
@@ -168,26 +168,19 @@ public class JDShutdown extends PluginOptional {
          * Wait for JD-Unrar
          */
         public void run() {
-            for (OptionalPluginWrapper wrapper : OptionalPluginWrapper.getOptionalWrapper()) {
-                if (wrapper.isEnabled() && wrapper.getPlugin().getClass().getName().endsWith("JDUnrar")) {
-                    boolean logged = false;
-                    while (true) {
-                        try {
-                            Thread.sleep(1000);
-                        } catch (InterruptedException e) {
-                            JDLogger.exception(e);
-                        }
-                        Object obj = wrapper.getPlugin().interact("isWorking", null);
-                        if (obj == null || (obj instanceof Boolean && obj.equals(false))) break;
-                        if (!logged) {
-                            logger.info("JD-Unrar is working - wait before shutting down");
-                            logged = true;
-                        }
+            OptionalPluginWrapper addon = JDUtilities.getOptionalPlugin("unrar");
+            if (addon != null && addon.isEnabled()) {
+                while (true) {
+                    Object obj = addon.getPlugin().interact("isWorking", null);
+                    if (obj == null || (obj instanceof Boolean && obj.equals(false))) break;
+                    logger.info("JD-Unrar is working - wait before shutting down");
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        JDLogger.exception(e);
                     }
-                    break;
                 }
             }
-
             logger.info("Shutting down now");
             String message = JDL.L("interaction.shutdown.dialog.msg", "<h2><font color=\"red\">Achtung ihr Betriebssystem wird heruntergefahren!</font></h2>");
             UserIO.setCountdownTime(count);

@@ -1316,7 +1316,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
     // @Override
     public Object interact(String command, Object parameter) {
-        if (command.equals("isWorking")) {
+        if (command.equals("isWorking")) {            
             return queue.isAlive();
         } else {
             return null;
