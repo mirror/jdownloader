@@ -24,7 +24,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.logging.Logger;
 
-import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -139,7 +138,7 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
             decoration = new JLabel(configEntry.getLabel());
 
             input[0] = new JDTextArea();
-//            input[0].setBorder(BorderFactory.createLineBorder(input[0].getBackground().darker()));
+            // input[0].setBorder(BorderFactory.createLineBorder(input[0].getBackground().darker()));
             input[0].setEnabled(configEntry.isEnabled());
             // Dimension dim = input[0].getPreferredSize();
             // dim.height = 20;

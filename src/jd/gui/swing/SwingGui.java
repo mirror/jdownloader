@@ -1,7 +1,5 @@
 package jd.gui.swing;
 
-import java.awt.EventQueue;
-import java.awt.Toolkit;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowFocusListener;
 import java.awt.event.WindowListener;
@@ -14,7 +12,6 @@ import jd.JDInitFlags;
 import jd.controlling.JDLogger;
 import jd.event.ControlListener;
 import jd.gui.UserIF;
-import jd.gui.swing.jdgui.events.EDTEventQueue;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 
 public abstract class SwingGui extends UserIF implements ControlListener, WindowListener, WindowStateListener, WindowFocusListener {

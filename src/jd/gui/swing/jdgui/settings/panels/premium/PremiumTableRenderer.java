@@ -15,7 +15,6 @@ import javax.swing.plaf.UIResource;
 import javax.swing.table.TableCellRenderer;
 
 import jd.controlling.AccountController;
-import jd.gui.swing.jdgui.views.downloadview.DownloadTable;
 import jd.nutils.Formatter;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;

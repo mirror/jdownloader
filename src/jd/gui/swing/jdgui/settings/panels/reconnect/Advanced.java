@@ -35,7 +35,7 @@ public class Advanced extends ConfigPanel {
     }
 
     public static String getTitle() {
-        return JDL.L(JDL_PREFIX + "reconnect.advanced.title", "Premium");
+        return JDL.L(JDL_PREFIX + "reconnect.advanced.title", "Advanced");
     }
 
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.reconnect.Advanced.";
@@ -68,7 +68,8 @@ public class Advanced extends ConfigPanel {
         }
 
         JTabbedPane tabbed = new JTabbedPane();
-       tabbed.setOpaque(false);  tabbed.add(getBreadcrum(), panel);
+        tabbed.setOpaque(false);
+        tabbed.add(getBreadcrum(), panel);
 
         this.add(tabbed);
     }

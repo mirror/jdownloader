@@ -31,7 +31,6 @@ import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
 import jd.config.SubConfiguration;
 import jd.config.ConfigEntry.PropertyType;
-import jd.controlling.JDController;
 import jd.gui.UserIO;
 import jd.gui.swing.Factory;
 import jd.gui.swing.jdgui.JDGui;

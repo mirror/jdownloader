@@ -44,7 +44,6 @@ import java.util.logging.Logger;
 
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
-import javax.tools.ToolProvider;
 
 import jd.captcha.JACController;
 import jd.captcha.JACMethod;

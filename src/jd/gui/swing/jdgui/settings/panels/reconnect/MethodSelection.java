@@ -25,8 +25,6 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingConstants;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -232,24 +230,25 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
         JTabbedPane tabbed = new JTabbedPane();
         tabbed.setOpaque(false);
         tabbed.add(getBreadcrum(), method);
-//        this.tabbed.addChangeListener(new ChangeListener() {
-//
-//            private ConfigPanel selection;
-//
-//            public void stateChanged(ChangeEvent e) {
-//
-//                try {
-//                    if(selection!=null)selection.save();
-//                    ConfigPanel comp = (ConfigPanel) MethodSelection.this.tabbed.getSelectedComponent();
-//                    comp.load();
-//                    this.selection=comp;
-//                } catch (Exception e2) {
-//                    e2.printStackTrace();
-//                }
-//
-//            }
-//
-//        });
+        // this.tabbed.addChangeListener(new ChangeListener() {
+        //
+        // private ConfigPanel selection;
+        //
+        // public void stateChanged(ChangeEvent e) {
+        //
+        // try {
+        // if(selection!=null)selection.save();
+        // ConfigPanel comp = (ConfigPanel)
+        // MethodSelection.this.tabbed.getSelectedComponent();
+        // comp.load();
+        // this.selection=comp;
+        // } catch (Exception e2) {
+        // e2.printStackTrace();
+        // }
+        //
+        // }
+        //
+        // });
         this.add(tabbed);
 
     }
@@ -294,7 +293,7 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
 
         });
         cp.initPanel();
-//        cp.load();
+        // cp.load();
 
     }
 
@@ -331,7 +330,7 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
 
         });
         cp.initPanel();
-//        cp.load();
+        // cp.load();
 
     }
 
@@ -353,12 +352,14 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
         ConfigEntry.PropertyType ret = tabbed.getSelectedIndex() != configuration.getIntegerProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, ReconnectMethod.LIVEHEADER) ? PropertyType.NORMAL : PropertyType.NONE;
         return PropertyType.getMax(ret, super.hasChanges(), ((ConfigPanel) tabbed.getSelectedComponent()).hasChanges());
     }
+
     public void setHidden() {
 
         save();
         getBroadcaster().fireEvent(new SwitchPanelEvent(this, SwitchPanelEvent.ON_HIDE));
-       
+
     }
+
     @Override
     public void save() {
 

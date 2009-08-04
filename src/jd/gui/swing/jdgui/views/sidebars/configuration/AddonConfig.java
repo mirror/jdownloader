@@ -11,6 +11,7 @@ import jd.utils.locale.JDL;
 
 public class AddonConfig extends ConfigPanel {
 
+    private static final long serialVersionUID = 5561326475681668634L;
     private OptionalPluginWrapper pluginWrapper;
 
     public AddonConfig(OptionalPluginWrapper plg) {

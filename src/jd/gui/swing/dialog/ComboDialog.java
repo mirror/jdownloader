@@ -29,7 +29,7 @@ import net.miginfocom.swing.MigLayout;
 
 public class ComboDialog extends AbstractDialog {
 
-    private String defaultMessage;
+    private static final long serialVersionUID = 3817208838787228122L;
     private String message;
     private JTextPane messageArea;
     private JComboBox input;

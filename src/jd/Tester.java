@@ -4,7 +4,6 @@ import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
-import java.io.IOException;
 
 import javax.swing.AbstractAction;
 import javax.swing.Icon;
@@ -19,12 +18,8 @@ import javax.swing.JTextPane;
 import javax.swing.JToolBar;
 import javax.swing.KeyStroke;
 
-import jd.config.Configuration;
-import jd.config.SubConfiguration;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.userio.UserIOGui;
-import jd.http.Browser;
-import jd.parser.html.Form;
 import jd.utils.locale.JDL;
 
 public class Tester extends JPanel {
@@ -41,14 +36,10 @@ public class Tester extends JPanel {
         menuBar = new JMenuBar();
 
         // Create a set of actions to use in both the menu and toolbar
-        DemoAction leftJustifyAction = new DemoAction("Left", new ImageIcon(
-"1.gif"), "Left justify text", "LEFT");
-        DemoAction rightJustifyAction = new DemoAction("Right", new ImageIcon(
-            "2.gif"), "Right justify text", "RIGHT");
-        DemoAction centerJustifyAction = new DemoAction("Center",
-            new ImageIcon("3.gif"), "Center justify text", "UP");
-        DemoAction fullJustifyAction = new DemoAction("Full", new ImageIcon(
-            "4.gif"), "Full justify text", "DOWN");
+        DemoAction leftJustifyAction = new DemoAction("Left", new ImageIcon("1.gif"), "Left justify text", "LEFT");
+        DemoAction rightJustifyAction = new DemoAction("Right", new ImageIcon("2.gif"), "Right justify text", "RIGHT");
+        DemoAction centerJustifyAction = new DemoAction("Center", new ImageIcon("3.gif"), "Center justify text", "UP");
+        DemoAction fullJustifyAction = new DemoAction("Full", new ImageIcon("4.gif"), "Full justify text", "DOWN");
 
         JMenu formatMenu = new JMenu("Justify");
         formatMenu.add(leftJustifyAction);
@@ -56,10 +47,10 @@ public class Tester extends JPanel {
         formatMenu.add(centerJustifyAction);
         formatMenu.add(fullJustifyAction);
 
-//        menuBar.add(formatMenu);
+        // menuBar.add(formatMenu);
 
         toolBar = new JToolBar("Formatting");
-       JButton bt = toolBar.add(leftJustifyAction);
+        JButton bt = toolBar.add(leftJustifyAction);
 
         toolBar.add(rightJustifyAction);
         toolBar.add(centerJustifyAction);
@@ -72,51 +63,45 @@ public class Tester extends JPanel {
         toolBar.addSeparator();
         JComboBox combo = new JComboBox(fonts);
         combo.addActionListener(new ActionListener() {
-          public void actionPerformed(ActionEvent e) {
-            try {
-              pane.getStyledDocument().insertString(
-                  0,
-                  "Font ["
-                      + ((JComboBox) e.getSource())
-                          .getSelectedItem() + "] chosen!\n",
-                  null);
-            } catch (Exception ex) {
-              ex.printStackTrace();
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    pane.getStyledDocument().insertString(0, "Font [" + ((JComboBox) e.getSource()).getSelectedItem() + "] chosen!\n", null);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
             }
-          }
         });
         toolBar.add(combo);
 
-        //  Disable one of the Actions
+        // Disable one of the Actions
         fullJustifyAction.setEnabled(false);
-      }
+    }
 
     public static void main(String s[]) throws Exception {
-        
+
         String title = JDL.L("jd.controlling.SingleDownloadController.askexists.title", "File exists");
         String msg = JDL.LF("jd.controlling.SingleDownloadController.askexists", "The file \r\n%s\r\n already exists. What do you want to do?", "bla");
-     
+
         UserIO.setInstance(UserIOGui.getInstance());
-            // ask
-            int doit = UserIO.getInstance().requestComboDialog(UserIO.NO_COUNTDOWN, title, msg, new String[]{"a","b","c"}, 1, null, null, null);
-//        
+        // ask
+        int doit = UserIO.getInstance().requestComboDialog(UserIO.NO_COUNTDOWN, title, msg, new String[] { "a", "b", "c" }, 1, null, null, null);
+        //        
         System.out.println(doit);
 
-        
-//
-//        Tester example = new Tester();
-//        example.pane = new JTextPane();
-//        example.pane.setPreferredSize(new Dimension(250, 250));
-//        example.pane.setBorder(new BevelBorder(BevelBorder.LOWERED));
-//        example.toolBar.setMaximumSize(example.toolBar.getSize());
-//
-//        JFrame frame = new JFrame("Menu Example");
-//        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-//        frame.setJMenuBar(example.menuBar);
-//        frame.getContentPane().add(example.toolBar, BorderLayout.NORTH);
-//        frame.getContentPane().add(example.pane, BorderLayout.CENTER);
-//        frame.pack();
-//        frame.setVisible(true);
+        //
+        // Tester example = new Tester();
+        // example.pane = new JTextPane();
+        // example.pane.setPreferredSize(new Dimension(250, 250));
+        // example.pane.setBorder(new BevelBorder(BevelBorder.LOWERED));
+        // example.toolBar.setMaximumSize(example.toolBar.getSize());
+        //
+        // JFrame frame = new JFrame("Menu Example");
+        // frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        // frame.setJMenuBar(example.menuBar);
+        // frame.getContentPane().add(example.toolBar, BorderLayout.NORTH);
+        // frame.getContentPane().add(example.pane, BorderLayout.CENTER);
+        // frame.pack();
+        // frame.setVisible(true);
     }
 
     class DemoAction extends AbstractAction {

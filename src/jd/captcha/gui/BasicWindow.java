@@ -21,7 +21,6 @@ import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Image;
-import java.awt.Window;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
@@ -111,10 +110,10 @@ public class BasicWindow extends JFrame {
             // @Override
             @Override
             public void windowClosing(WindowEvent event) {
-//                Window window = event.getWindow();
-//                window.setVisible(false);
-//                window.dispose();
-            	destroy();
+                // Window window = event.getWindow();
+                // window.setVisible(false);
+                // window.dispose();
+                destroy();
             }
         });
 
