@@ -34,6 +34,7 @@ import jd.controlling.AccountController;
 import jd.controlling.AccountControllerEvent;
 import jd.controlling.AccountControllerListener;
 import jd.gui.UserIO;
+import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.components.AccountDialog;
 import jd.gui.swing.jdgui.actions.ThreadedAction;
 import jd.gui.swing.jdgui.settings.ConfigPanel;
@@ -139,7 +140,15 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
             }
 
             public void threadedActionPerformed(ActionEvent e) {
-                AccountDialog.showDialog();
+                new GuiRunnable<Object>() {
+
+                    @Override
+                    public Object runSave() {
+                        AccountDialog.showDialog();
+                        return null;
+                    }
+                }.start();
+              
             }
         };
         new ThreadedAction("action.premiumview.removeacc", "gui.images.delete") {

@@ -22,7 +22,7 @@ public class ConfigSidebar extends SideBarPanel {
 
     public ConfigSidebar(ConfigurationView configurationView) {
         this.view = configurationView;
-        this.setLayout(new MigLayout("ins 0 ", "[grow,fill]", "[grow,fill]"));
+        this.setLayout(new MigLayout("ins 0", "[grow,fill]", "[grow,fill]"));
 
         this.add(tree = new JTree(getTreeModel()) {
             private static final long serialVersionUID = -5018817191000357595L;
@@ -36,6 +36,7 @@ public class ConfigSidebar extends SideBarPanel {
             }
 
         });
+   
         tree.setCellRenderer(new TreeRenderer());
         tree.setOpaque(false);
         tree.setRootVisible(false);
