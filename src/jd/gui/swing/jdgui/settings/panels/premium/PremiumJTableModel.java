@@ -1,6 +1,7 @@
 package jd.gui.swing.jdgui.settings.panels.premium;
 
 import java.util.ArrayList;
+import java.util.TreeMap;
 
 import javax.swing.table.AbstractTableModel;
 
@@ -8,6 +9,7 @@ import jd.HostPluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -32,23 +34,49 @@ public class PremiumJTableModel extends AbstractTableModel {
     private ArrayList<Object> list = new ArrayList<Object>();
     private SubConfiguration config;
     private ArrayList<HostPluginWrapper> plugins;
+    private TreeMap<String, HostAccounts> hosts;
 
     public PremiumJTableModel() {
         super();
         config = SubConfiguration.getConfig("premiumview");
         plugins = JDUtilities.getPluginsForHost();
-        refreshModel();
+        hosts = config.getGenericProperty("hostaccounts", new TreeMap<String, HostAccounts>());
     }
 
     public void refreshModel() {
         synchronized (list) {
             list.clear();
+            long traffic = 0;
+            boolean gotenabled = false;
+            boolean expand = false;
             for (HostPluginWrapper plugin : plugins) {
                 ArrayList<Account> accs = AccountController.getInstance().getAllAccounts(plugin.getHost());
                 if (accs.size() == 0) continue;
-                for (Account acc : accs) {
-                    list.add(acc);
+                HostAccounts ha = hosts.get(plugin.getHost());
+                if (ha == null) {
+                    ha = new HostAccounts(plugin.getHost());
+                    hosts.put(plugin.getHost(), ha);
                 }
+                list.add(ha);
+                traffic = 0;
+                gotenabled = false;
+                ha.hasAccountInfos(false);
+                expand = ha.getBooleanProperty(PremiumTable.PROPERTY_EXPANDED, true);
+                for (Account acc : accs) {
+                    if (expand) list.add(acc);
+                    if (acc.isEnabled()) gotenabled = true;
+                    AccountInfo ai = acc.getAccountInfo();
+                    if (ai != null) {
+                        ha.hasAccountInfos(true);
+                        if (ai.isUnlimitedTraffic()) {
+                            traffic = -1;
+                        } else {
+                            if (traffic != -1) traffic += ai.getTrafficLeft();
+                        }
+                    }
+                }
+                ha.setTraffic(traffic);
+                ha.setEnabled(gotenabled);
             }
         }
     }
@@ -150,7 +178,17 @@ public class PremiumJTableModel extends AbstractTableModel {
         switch (columnIndex) {
         case COL_ENABLED:
             boolean b = (Boolean) value;
-            ((Account) getValueAt(rowIndex, columnIndex)).setEnabled(b);
+            Object o = this.getValueAt(rowIndex, columnIndex);
+            if (o == null) return;
+            if (o instanceof Account) {
+                ((Account) getValueAt(rowIndex, columnIndex)).setEnabled(b);
+            } else if (o instanceof HostAccounts) {
+                ArrayList<Account> accs = AccountController.getInstance().getAllAccounts(((HostAccounts) o).getHost());
+                if (accs == null) return;
+                for (Account acc : accs) {
+                    acc.setEnabled(b);
+                }
+            }
             break;
         }
     }

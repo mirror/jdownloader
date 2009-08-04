@@ -150,7 +150,6 @@ public class Youtube extends PluginForHost {
         ai.setStatus(JDL.L("plugins.hoster.youtube.accountok", "Account is OK."));
         ai.setValidUntil(-1);
         ai.setValid(true);
-
         return ai;
     }
 

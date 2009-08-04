@@ -17,6 +17,7 @@ public class PremiumTableEditor extends AbstractCellEditor implements TableCellE
 
     private JCheckBox checkbox;
     private JComponent co;
+    private boolean enabled;
 
     // private PremiumTable table;
 
@@ -24,17 +25,21 @@ public class PremiumTableEditor extends AbstractCellEditor implements TableCellE
         // this.table = table;
         checkbox = new JCheckBox();
         checkbox.setHorizontalAlignment(JCheckBox.CENTER);
-
+        enabled = false;
     }
 
     private static final long serialVersionUID = 5282897873177369728L;
 
     public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
-        Account ac = (Account) value;
+        if (value instanceof Account) {
+            enabled = ((Account) value).isEnabled();
+        } else {
+            enabled = ((HostAccounts) value).isEnabled();
+        }
         switch (column) {
         case PremiumJTableModel.COL_ENABLED:
             checkbox.removeActionListener(this);
-            checkbox.setSelected(ac.isEnabled());
+            checkbox.setSelected(enabled);
             checkbox.addActionListener(this);
             co = checkbox;
             break;

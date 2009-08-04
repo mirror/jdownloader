@@ -21,11 +21,13 @@ import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 
 import jd.config.SubConfiguration;
+import jd.controlling.LinkGrabberController;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.components.JExtCheckBoxMenuItem;
 import jd.gui.swing.jdgui.views.downloadview.DownloadTable;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkGrabberFilePackage;
 import jd.utils.JDUtilities;
 
 public class PremiumTable extends JTable implements MouseListener {
@@ -39,6 +41,8 @@ public class PremiumTable extends JTable implements MouseListener {
     private TableColumn[] cols;
     private PremiumTableRenderer cellRenderer;
     private PremiumTableEditor mycellEditor;
+
+    public static final String PROPERTY_EXPANDED = "expanded";
 
     public PremiumTable(PremiumJTableModel model, Premium panel) {
         super(model);
@@ -190,8 +194,34 @@ public class PremiumTable extends JTable implements MouseListener {
 
     }
 
-    public void mouseReleased(MouseEvent e) {
-        // TODO Auto-generated method stub
+    private int getRealColumnAtPoint(int x) {
+        /*
+         * diese funktion gibt den echten columnindex zurück, da durch
+         * an/ausschalten dieser anders kann
+         */
+        x = getColumnModel().getColumnIndexAtX(x);
+        return model.toModel(x);
+    }
 
+    public void mouseReleased(MouseEvent e) {
+        /* nicht auf headerclicks reagieren */
+        if (e.getSource() != this) return;
+        int row = rowAtPoint(e.getPoint());
+        if (row == -1) return;
+        int column = getRealColumnAtPoint(e.getX());
+        System.out.println("TOGGLE1 " + column + " == " + e.getX());
+        if (column == 0 && e.getButton() == MouseEvent.BUTTON1 && e.getX() < 20 && e.getClickCount() == 1) {
+            Object element = this.getModel().getValueAt(row, 0);
+            System.out.println("TOGGLE2");
+            if (element != null && element instanceof HostAccounts) {
+                System.out.println("TOGGLE3");
+                toggleHostAccountsExpand((HostAccounts) element);
+            }
+        }
+    }
+
+    public void toggleHostAccountsExpand(HostAccounts ha) {
+        ha.setProperty(PROPERTY_EXPANDED, !ha.getBooleanProperty(PROPERTY_EXPANDED, false));
+        panel.fireTableChanged(true);
     }
 }

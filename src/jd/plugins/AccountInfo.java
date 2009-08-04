@@ -32,16 +32,22 @@ public class AccountInfo extends Property {
     private long account_accountBalance = -1;
     private long account_usedSpace = -1;
     private long account_trafficShareLeft = -1;
+    private boolean unlimitedTraffic = true;
     private boolean account_expired = false;
     private String account_status;
-    private long account_createTime;
+    private long account_createTime = 0;
+    private long lastupdate = 0;
 
     public AccountInfo(PluginForHost plugin, Account account) {
-        this.account_createTime = System.currentTimeMillis();
+        this.lastupdate = System.currentTimeMillis();
     }
 
     public long getCreateTime() {
         return account_createTime;
+    }
+
+    public long lastUpdate() {
+        return lastupdate;
     }
 
     public void setCreateTime(long createTime) {
@@ -147,7 +153,6 @@ public class AccountInfo extends Property {
     }
 
     public void setAccountBalance(long parseInt) {
-        if (account_accountBalance == parseInt) return;
         this.account_accountBalance = parseInt;
     }
 
@@ -163,18 +168,15 @@ public class AccountInfo extends Property {
         }
     }
 
-    public void setFilesNum(long parseInt) {
-        if (account_filesNum == parseInt) return;
+    public void setFilesNum(long parseInt) {        
         this.account_filesNum = parseInt;
     }
 
-    public void setNewPremiumPoints(long newPremiumPoints) {
-        if (account_newPremiumPoints == newPremiumPoints) return;
+    public void setNewPremiumPoints(long newPremiumPoints) {        
         this.account_newPremiumPoints = newPremiumPoints;
     }
 
-    public void setPremiumPoints(long parseInt) {
-        if (account_premiumPoints == parseInt) return;
+    public void setPremiumPoints(long parseInt) {        
         this.account_premiumPoints = parseInt;
     }
 
@@ -188,9 +190,19 @@ public class AccountInfo extends Property {
         this.account_status = string;
     }
 
+    /*
+     * -1 = unlimited Traffic
+     */
     public void setTrafficLeft(long size) {
         if (account_trafficLeft == size) return;
         this.account_trafficLeft = size;
+        if (account_trafficLeft != -1) {
+            unlimitedTraffic = false;
+        }
+    }
+
+    public boolean isUnlimitedTraffic() {
+        return unlimitedTraffic;
     }
 
     public void setTrafficLeft(String freeTraffic) {
@@ -198,17 +210,14 @@ public class AccountInfo extends Property {
     }
 
     public void setTrafficMax(long trafficMax) {
-        if (account_trafficMax == trafficMax) return;
         this.account_trafficMax = trafficMax;
     }
 
     public void setTrafficShareLeft(long size) {
-        if (account_trafficShareLeft == size) return;
         this.account_trafficShareLeft = size;
     }
 
     public void setUsedSpace(long usedSpace) {
-        if (account_usedSpace == usedSpace) return;
         this.account_usedSpace = usedSpace;
     }
 
@@ -218,7 +227,6 @@ public class AccountInfo extends Property {
     }
 
     public void setValid(boolean b) {
-        if (account_valid == b) return;
         this.account_valid = b;
     }
 

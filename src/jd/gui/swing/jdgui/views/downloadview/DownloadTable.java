@@ -157,7 +157,7 @@ public class DownloadTable extends JTable implements MouseListener, MouseMotionL
             tcm.removeColumn(tcm.getColumn(0));
         }
 
-        final SubConfiguration config = SubConfiguration.getConfig("downloadview");
+        final SubConfiguration config = SubConfiguration.getConfig("gui");
         cols = new TableColumn[getModel().getColumnCount()];
         for (int i = 0; i < getModel().getColumnCount(); ++i) {
             final int j = i;

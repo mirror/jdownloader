@@ -50,12 +50,11 @@ public class Shareplacecom extends PluginForHost {
         br.setCustomCharset("UTF-8");
         br.setFollowRedirects(true);
         br.getPage(url);
-        if(br.containsHTML("Your requested file is not found"))
-        {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
+        if (br.containsHTML("Your requested file is not found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         if (br.getRedirectLocation() == null) {
-            downloadLink.setName(Encoding.htmlDecode(br.getRegex(Pattern.compile("File name: </b>(.*?)<b>", Pattern.CASE_INSENSITIVE)).getMatch(0)));
+            String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("File name: </b>(.*?)<b>", Pattern.CASE_INSENSITIVE)).getMatch(0));
+            if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            downloadLink.setName(filename.trim());
             String filesize = null;
             if ((filesize = br.getRegex("File size: </b>(.*)MB<b>").getMatch(0)) != null) {
                 downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize)) * 1024 * 1024);
@@ -81,7 +80,9 @@ public class Shareplacecom extends PluginForHost {
         url = Encoding.UTF8Decode(br.getRegex(Pattern.compile("document.location=\"(.*?)\";", Pattern.CASE_INSENSITIVE)).getMatch(0));
 
         /* Zwangswarten */
-        long wait = new Long(br.getRegex(Pattern.compile("var timeout='([0-9]+)';",Pattern.CASE_INSENSITIVE)).getMatch(0));
+        String waittime = br.getRegex(Pattern.compile("var timeout='([0-9]+)';", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        long wait = 10;
+        if (waittime != null) wait = Long.parseLong(waittime);
         sleep(wait * 1000l, downloadLink);
         br.setFollowRedirects(true);
         dl = br.openDownload(downloadLink, url);

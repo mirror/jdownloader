@@ -3,6 +3,8 @@ package jd.gui.swing.jdgui.settings.panels.premium;
 import java.awt.Component;
 import java.awt.Dimension;
 
+import javax.swing.BorderFactory;
+import javax.swing.ImageIcon;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JTable;
@@ -13,9 +15,11 @@ import javax.swing.plaf.UIResource;
 import javax.swing.table.TableCellRenderer;
 
 import jd.controlling.AccountController;
+import jd.gui.swing.jdgui.views.downloadview.DownloadTable;
 import jd.nutils.Formatter;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
+import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 import org.jdesktop.swingx.renderer.DefaultTableRenderer;
@@ -58,33 +62,51 @@ public class PremiumTableRenderer extends DefaultTableRenderer {
 
     private Component co;
 
-//    private StatusLabel statuspanel;
+    // private StatusLabel statuspanel;
 
     private PremiumTable table;
 
     private BooleanRenderer boolrend;
 
+    private Border leftGap;
+
+    private ImageIcon icon_fp_open;
+
+    private ImageIcon icon_fp_closed;
+
     public PremiumTableRenderer(PremiumTable table) {
         this.table = table;
-//        statuspanel = new StatusLabel();
+        // statuspanel = new StatusLabel();
         boolrend = new BooleanRenderer();
+        leftGap = BorderFactory.createEmptyBorder(0, 30, 0, 0);
+        icon_fp_open = JDTheme.II("gui.images.package_opened_tree", 16, 16);
+        icon_fp_closed = JDTheme.II("gui.images.package_closed_tree", 16, 16);
     }
 
     // @Override
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         hasFocus = false;
         column = this.table.getTableModel().toModel(column);
-        co = getDownloadLinkCell(table, value, isSelected, hasFocus, row, column);
-        if (!((Account) value).isEnabled()) {
-            co.setEnabled(false);
+        if (value instanceof Account) {
+            co = getAccountCell(table, value, isSelected, hasFocus, row, column);
+            if (!((Account) value).isEnabled()) {
+                co.setEnabled(false);
+            } else {
+                co.setEnabled(true);
+            }
         } else {
-            co.setEnabled(true);
+            co = getHostAccountsCell(table, value, isSelected, hasFocus, row, column);
+            if (!((HostAccounts) value).isEnabled()) {
+                co.setEnabled(false);
+            } else {
+                co.setEnabled(true);
+            }
         }
         co.setSize(new Dimension(200, 30));
         return co;
     }
 
-    private Component getDownloadLinkCell(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+    private Component getAccountCell(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         Account ac = (Account) value;
         AccountInfo ai = ac.getAccountInfo();
         String host = AccountController.getInstance().getHosterName(ac);
@@ -93,6 +115,7 @@ public class PremiumTableRenderer extends DefaultTableRenderer {
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             ((JRendererLabel) co).setIcon(JDUtilities.getPluginForHost(host).getHosterIcon());
             ((JRendererLabel) co).setText(host);
+            ((JRendererLabel) co).setBorder(leftGap);
             return co;
         case PremiumJTableModel.COL_ENABLED:
             value = ac.isEnabled();
@@ -118,7 +141,9 @@ public class PremiumTableRenderer extends DefaultTableRenderer {
             if (ai == null) {
                 value = "Unkown";
             } else {
-                if (ai.getValidUntil() < 0 || ai.getValidUntil() < System.currentTimeMillis()) {
+                if (ai.getValidUntil() == -1) {
+                    value = "Unlimited";
+                } else if (ai.getValidUntil() < System.currentTimeMillis()) {
                     value = "Expired";
                 } else {
                     value = Formatter.formatTime(ai.getValidUntil());
@@ -134,6 +159,42 @@ public class PremiumTableRenderer extends DefaultTableRenderer {
                     value = "Unlimited";
                 } else {
                     value = Formatter.formatReadable(ai.getTrafficLeft());
+                }
+            }
+            co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            return co;
+        }
+        co = super.getTableCellRendererComponent(table, "", isSelected, hasFocus, row, column);
+        return co;
+    }
+
+    private Component getHostAccountsCell(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+        HostAccounts ha = (HostAccounts) value;
+        String host = ha.getHost();
+        switch (column) {
+        case PremiumJTableModel.COL_HOSTER:
+            co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            ((JRendererLabel) co).setIcon(!ha.getBooleanProperty(PremiumTable.PROPERTY_EXPANDED, false) ? icon_fp_closed : icon_fp_open);
+            ((JRendererLabel) co).setText(host);
+            return co;
+        case PremiumJTableModel.COL_ENABLED:
+            value = ha.isEnabled();
+            co = boolrend.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            return co;
+        case PremiumJTableModel.COL_USER:
+        case PremiumJTableModel.COL_PASS:
+        case PremiumJTableModel.COL_STATUS:
+        case PremiumJTableModel.COL_EXPIREDATE:
+            co = super.getTableCellRendererComponent(table, "", isSelected, hasFocus, row, column);
+            return co;
+        case PremiumJTableModel.COL_TRAFFICLEFT:
+            if (!ha.gotAccountInfos()) {
+                value = "Unknown";
+            } else {
+                if (ha.getTraffic() < 0) {
+                    value = "Unlimited";
+                } else {
+                    value = Formatter.formatReadable(ha.getTraffic());
                 }
             }
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);

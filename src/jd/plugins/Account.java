@@ -117,6 +117,7 @@ public class Account extends Property {
         if (this.tempDisabled == tempDisabled) return;
         this.tmpDisabledTime = System.currentTimeMillis();
         this.tempDisabled = tempDisabled;
+        AccountController.getInstance().throwUpdateEvent(null, this);
     }
 
     public void setUser(String user) {

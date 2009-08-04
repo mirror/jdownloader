@@ -218,16 +218,33 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
                                 PluginForHost plugin = wrapper.getPlugin();
                                 long max = 0l;
                                 long left = 0l;
-                                long workingaccs = 0;
                                 enabled = false;
                                 for (Account a : accs) {
                                     if (a.isEnabled()) {
                                         enabled = true;
                                         AccountInfo ai = a.getAccountInfo();
                                         if (ai == null) continue;
-                                        max += ai.getTrafficMax();
-                                        left += ai.getTrafficLeft();
-                                        if (!a.isTempDisabled()) workingaccs++;
+                                        if (!ai.isUnlimitedTraffic()) {
+                                            /* no unlimited traffic */
+                                            if (!a.isTempDisabled()) {
+                                                /*
+                                                 * only increase data if not
+                                                 * temp. disabled
+                                                 */
+                                                max += ai.getTrafficMax();
+                                                if (left != -1) {
+                                                    /*
+                                                     * only add TrafficLeft if
+                                                     * no unlimted account
+                                                     * available TODO: seperate
+                                                     * normal and premium accs
+                                                     */
+                                                    left += ai.getTrafficLeft();
+                                                }
+                                            }
+                                        } else {
+                                            left = -1;/* left <0 for unlimited */
+                                        }
                                     }
                                 }
                                 if (!enabled) continue;
@@ -236,7 +253,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
                                 bars[ii].setAlignmentX(RIGHT_ALIGNMENT);
                                 bars[ii].setPlugin(plugin);
 
-                                if (left == 0 || workingaccs == 0) {
+                                if (left == 0) {
                                     bars[ii].setMaximum(10);
                                     bars[ii].setValue(0);
                                     bars[ii].setToolTipText(JDL.LF("gui.premiumstatus.expired_traffic.tooltip", "%s - %s account(s) -- At the moment no premium traffic is available.", host, accs.size()));
@@ -245,6 +262,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
                                     bars[ii].setValue(left);
                                     bars[ii].setToolTipText(JDL.LF("gui.premiumstatus.traffic.tooltip", "%s - %s account(s) -- You can download up to %s today.", host, accs.size(), Formatter.formatReadable(left)));
                                 } else {
+                                    /* left <0 for unlimited */
                                     bars[ii].setMaximum(10);
                                     bars[ii].setValue(10);
                                     bars[ii].setToolTipText(JDL.LF("gui.premiumstatus.unlimited_traffic.tooltip", "%s -- Unlimited traffic! You can download as much as you want to.", host));

@@ -172,7 +172,7 @@ public class AccountController extends SubConfiguration implements ActionListene
         }
         AccountInfo ai = account.getAccountInfo();
         if (ai != null) {
-            if (!forceupdate && (System.currentTimeMillis() - ai.getCreateTime()) < waittimeAccountInfoUpdate) return ai;
+            if (!forceupdate && (System.currentTimeMillis() - ai.lastUpdate()) < waittimeAccountInfoUpdate) return ai;
         }
         try {
             ai = plugin.fetchAccountInfo(account);

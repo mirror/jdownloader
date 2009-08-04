@@ -28,6 +28,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.Timer;
 
+import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.controlling.AccountController;
 import jd.controlling.AccountControllerEvent;
@@ -55,11 +56,9 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
     protected Logger logger = jd.controlling.JDLogger.getLogger();
 
     public Premium(Configuration configuration) {
-
         super();
         initPanel();
         load();
-
     }
 
     public String getBreadcrum() {
@@ -71,21 +70,17 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
     }
 
     public void initPanel() {
-        // super(new MigLayout("ins 0,wrap 1", "[fill,grow]", "[fill,grow]"));
         panel.setLayout(new MigLayout("ins 5,wrap 1", "[fill,grow]", "[fill,grow]"));
         initPanel(panel);
         JTabbedPane tabbed = new JTabbedPane();
-        //        
         tabbed.setOpaque(false);
         tabbed.add(getBreadcrum(), panel);
         this.add(tabbed);
     }
 
     private void initPanel(JPanel panel) {
-
         internalTable = new PremiumTable(new PremiumJTableModel(), this);
         scrollPane = new JScrollPane(internalTable);
-
         Update_Async = new Timer(250, this);
         Update_Async.setInitialDelay(250);
         Update_Async.setRepeats(false);
@@ -119,6 +114,11 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
     public void save() {
         saveConfigEntries();
 
+    }
+
+    @Override
+    public ConfigEntry.PropertyType hasChanges() {
+        return ConfigEntry.PropertyType.NORMAL;
     }
 
     private void initActions() {

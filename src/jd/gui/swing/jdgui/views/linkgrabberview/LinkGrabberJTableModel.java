@@ -24,8 +24,7 @@ public class LinkGrabberJTableModel extends AbstractTableModel {
 
     public LinkGrabberJTableModel() {
         super();
-        config = SubConfiguration.getConfig("linkgrabber");
-        refreshModel();
+        config = SubConfiguration.getConfig("linkgrabber");        
     }
 
     public int getRowCount() {

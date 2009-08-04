@@ -490,8 +490,8 @@ public abstract class PluginForHost extends Plugin {
             }
 
             long traffic = downloadLink.getDownloadCurrent() - before;
-            if (traffic > 0 && account.getAccountInfo() != null) {
-                AccountInfo ai = account.getAccountInfo();
+            AccountInfo ai = account.getAccountInfo();
+            if (traffic >= 0 && ai != null && !ai.isUnlimitedTraffic()) {
                 long left = Math.max(0, ai.getTrafficLeft() - traffic);
                 ai.setTrafficLeft(left);
                 if (left == 0) {

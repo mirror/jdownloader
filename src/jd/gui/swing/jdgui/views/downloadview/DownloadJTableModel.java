@@ -38,8 +38,7 @@ public class DownloadJTableModel extends AbstractTableModel {
 
     public DownloadJTableModel() {
         super();
-        config = SubConfiguration.getConfig("gui");
-        refreshModel();
+        config = SubConfiguration.getConfig("gui");        
     }
 
     public int getRowCount() {
