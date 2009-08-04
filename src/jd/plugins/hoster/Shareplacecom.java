@@ -80,9 +80,9 @@ public class Shareplacecom extends PluginForHost {
         /* Link holen */
         url = Encoding.UTF8Decode(br.getRegex(Pattern.compile("document.location=\"(.*?)\";", Pattern.CASE_INSENSITIVE)).getMatch(0));
 
-        /* Zwangswarten, 10seks */
-        sleep(10000, downloadLink);
-        br.setDebug(true);
+        /* Zwangswarten */
+        long wait = new Long(br.getRegex(Pattern.compile("var timeout='([0-9]+)';",Pattern.CASE_INSENSITIVE)).getMatch(0));
+        sleep(wait * 1000l, downloadLink);
         br.setFollowRedirects(true);
         dl = br.openDownload(downloadLink, url);
         if (dl.getConnection().isContentDisposition()) {
