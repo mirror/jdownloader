@@ -45,9 +45,76 @@ public class ChooseC extends BasicWindow {
 	private Vector<cPoint> ret = new Vector<cPoint>();
 	private JSpinner tollerance;
 	protected Captcha captcha;
+	private void addPix(final cPoint p)
+	{
+		BufferedImage image = new BufferedImage(9, 9,
+				BufferedImage.TYPE_INT_RGB);
+		Graphics2D graphics = image.createGraphics();
+		for (int y = 0; y < image.getHeight(); y++) {
+			for (int x = 0; x < image.getWidth(); x++) {
+				graphics.setColor(new Color(p.color));
+				graphics.fillRect(x, y, 1, 1);
+			}
+		}
+		for (int x = 0; x < image.getWidth(); x++) {
+			graphics.setColor(Color.black);
+			graphics.fillRect(x, 0, 1, 1);
+			graphics.fillRect(x, image.getHeight(), 1, 1);
+		}
+		for (int y = 0; y < image.getHeight(); y++) {
+			graphics.setColor(Color.black);
+			graphics.fillRect(0, y, 1, 1);
+			graphics.fillRect(image.getWidth(), y, 1, 1);
+		}
+		if (icdb == 10) {
+			icd++;
+			icdb = 0;
+		}
+		final ImageComponent px = new ImageComponent(image);
+		px.setBackground(new Color(p.color));
+		px.addMouseListener(new MouseListener() {
 
+			public void mouseClicked(MouseEvent e) {
+				Cpanel.remove(px);
+				ret.remove(p);
+				Cpanel.repaint();
+				Cpanel.revalidate();
+				if (icdb > 0)
+					icdb--;
+				else {
+					icdb = 10;
+					icd--;
+				}
+				panel.remove(ic);
+				createIc();
+				panel.repaint();
+				panel.revalidate();
+			}
+
+			public void mouseEntered(MouseEvent e) {
+				// TODO Auto-generated method stub
+
+			}
+
+			public void mouseExited(MouseEvent e) {
+				// TODO Auto-generated method stub
+
+			}
+
+			public void mousePressed(MouseEvent e) {
+				// TODO Auto-generated method stub
+
+			}
+
+			public void mouseReleased(MouseEvent e) {
+				// TODO Auto-generated method stub
+
+			}
+		});
+		setComponent(icdb++, icd, px);
+	}
 	private void createIc() {
-		Captcha captchaImage = new Captcha(captcha.getWidth(), captcha
+		final Captcha captchaImage = new Captcha(captcha.getWidth(), captcha
 				.getHeight());
 		captchaImage.grid = new int[captcha.getWidth()][captcha.getHeight()];
 
@@ -58,10 +125,10 @@ public class ChooseC extends BasicWindow {
 				for (cPoint cp : ret) {
 					if (cp.distance == 0) {
 						if (captcha.getPixelValue(x, y) == cp.color)
-							captchaImage.grid[x][y] = 0xFF0000;
+							captchaImage.grid[x][y] = 0xff00ff;
 					} else if (Colors.getColorDifference(captcha.getPixelValue(
 									x, y), cp.color) < cp.distance) {
-						captchaImage.grid[x][y] = 0xFF0000;
+						captchaImage.grid[x][y] = 0xff00ff;
 					}
 				}
 
@@ -79,65 +146,27 @@ public class ChooseC extends BasicWindow {
 						(Integer) tollerance.getValue(), captcha);
 				if (!ret.contains(p)) {
 					ret.add(p);
-					BufferedImage image = new BufferedImage(8, 8,
-							BufferedImage.TYPE_INT_RGB);
-					Graphics2D graphics = image.createGraphics();
-					for (int y = 0; y < image.getHeight(); y++) {
-						for (int x = 0; x < image.getWidth(); x++) {
-							graphics.setColor(new Color(p.color));
-							graphics.fillRect(x, y, 1, 1);
-						}
-					}
-					if (icdb == 10) {
-						icd++;
-						icdb = 0;
-					}
-					final ImageComponent px = new ImageComponent(image);
-					px.setBackground(new Color(p.color));
-					px.addMouseListener(new MouseListener() {
-
-						public void mouseClicked(MouseEvent e) {
-							Cpanel.remove(px);
-							ret.remove(p);
-							Cpanel.repaint();
-							Cpanel.revalidate();
-							if (icdb > 0)
-								icdb--;
-							else {
-								icdb = 10;
-								icd--;
-							}
-							panel.remove(ic);
-							createIc();
-							panel.repaint();
-							panel.revalidate();
-						}
-
-						public void mouseEntered(MouseEvent e) {
-							// TODO Auto-generated method stub
-
-						}
-
-						public void mouseExited(MouseEvent e) {
-							// TODO Auto-generated method stub
-
-						}
-
-						public void mousePressed(MouseEvent e) {
-							// TODO Auto-generated method stub
-
-						}
-
-						public void mouseReleased(MouseEvent e) {
-							// TODO Auto-generated method stub
-
-						}
-					});
-					setComponent(icdb++, icd, px);
+					addPix(p);
 					Cpanel.repaint();
 					Cpanel.revalidate();
-					panel.remove(ic);
-					createIc();
+					for (int x = 0; x < captchaImage.getWidth(); x++) {
+						for (int y = 0; y < captchaImage.getHeight(); y++) {
+							captchaImage.grid[x][y] = captchaImage.getPixelValue(x, y);
+
+								if (p.distance == 0) {
+									if (captcha.getPixelValue(x, y) == p.color)
+										captchaImage.grid[x][y] = 0xff00ff;
+								} else if (Colors.getColorDifference(captcha.getPixelValue(
+												x, y), p.color) < p.distance) {
+									captchaImage.grid[x][y] = 0xff00ff;
+								}
+
+						}
+
+					}
+					ic.image=captchaImage.getImage().getScaledInstance(
+							captchaImage.getWidth() * 2, captchaImage.getHeight() * 2,
+							Image.SCALE_DEFAULT);
 					panel.repaint();
 					panel.revalidate();
 				}
@@ -163,7 +192,7 @@ public class ChooseC extends BasicWindow {
 
 			}
 		});
-		panel.add(ic, getGBC(0, 1, 1, 1));
+		panel.add(ic, getGBC(0, 2, 1, 1));
 
 	}
 	private ChooseC() {
@@ -182,7 +211,7 @@ public class ChooseC extends BasicWindow {
 		Cpanel = new JPanel();
 		Cpanel.setLayout(new GridBagLayout());
 
-		panel.add(Cpanel, getGBC(0, 2, 1, 1));
+		panel.add(Cpanel, getGBC(0, 3, 1, 1));
 		JButton bt = new JButton("OK");
 		bt.addActionListener(new ActionListener() {
 
@@ -192,16 +221,22 @@ public class ChooseC extends BasicWindow {
 			}
 		});
 		setTitle("new ScrollPaneWindow");
+		panel.add(new ImageComponent(captcha.getImage().getScaledInstance(
+				captcha.getWidth() * 2, captcha.getHeight() * 2,
+				Image.SCALE_DEFAULT)), getGBC(0, 1, 1, 1));
 		if (captcha != null) {
 			createIc();
+			for (cPoint p : ret) {
+				addPix(p);
+			}
 		}
-		GridBagConstraints gb = Utilities.getGBC(0, 3, 1, 1);
+		GridBagConstraints gb = Utilities.getGBC(0, 4, 1, 1);
 		gb.anchor = GridBagConstraints.WEST;
 
 		panel.add(bt, gb);
 		gb.anchor = GridBagConstraints.EAST;
 
-		tollerance = new JSpinner(new SpinnerNumberModel(25, 0, 100, 1));
+		tollerance = new JSpinner(new SpinnerNumberModel(25, 0, 255, 1));
 		panel.add(tollerance, gb);
 		// refreshUI();
 		setVisible(true);
@@ -248,7 +283,7 @@ public class ChooseC extends BasicWindow {
 	public static void main(String[] args) {
 		String path = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath();
 		System.out.println(path);
-		File folder = new File(path+"/captchas/hotfile.com");
+		File folder = new File(path+"/captchas/underground cms");
 		File[] list = folder.listFiles();
 		Captcha[] cs = new Captcha[7 < list.length ? 7 : list.length];
 
