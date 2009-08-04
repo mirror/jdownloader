@@ -45,10 +45,15 @@ public class Shareplacecom extends PluginForHost {
 
     // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        String url = downloadLink.getDownloadURL();
+        url = downloadLink.getDownloadURL();
         setBrowserExclusive();
+        br.setCustomCharset("UTF-8");
         br.setFollowRedirects(true);
         br.getPage(url);
+        if(br.containsHTML("Your requested file is not found"))
+        {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (br.getRedirectLocation() == null) {
             downloadLink.setName(Encoding.htmlDecode(br.getRegex(Pattern.compile("File name: </b>(.*?)<b>", Pattern.CASE_INSENSITIVE)).getMatch(0)));
             String filesize = null;
@@ -73,10 +78,10 @@ public class Shareplacecom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         /* Link holen */
-        url = Encoding.htmlDecode(br.getRegex(Pattern.compile("document.location=\"(.*?)\";", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        url = Encoding.UTF8Decode(br.getRegex(Pattern.compile("document.location=\"(.*?)\";", Pattern.CASE_INSENSITIVE)).getMatch(0));
 
-        /* Zwangswarten, 20seks */
-        sleep(20000, downloadLink);
+        /* Zwangswarten, 10seks */
+        sleep(10000, downloadLink);
         br.setDebug(true);
         br.setFollowRedirects(true);
         dl = br.openDownload(downloadLink, url);
