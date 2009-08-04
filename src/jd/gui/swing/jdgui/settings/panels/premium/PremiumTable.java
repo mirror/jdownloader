@@ -21,13 +21,10 @@ import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 
 import jd.config.SubConfiguration;
-import jd.controlling.LinkGrabberController;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.components.JExtCheckBoxMenuItem;
 import jd.gui.swing.jdgui.views.downloadview.DownloadTable;
 import jd.plugins.Account;
-import jd.plugins.DownloadLink;
-import jd.plugins.LinkGrabberFilePackage;
 import jd.utils.JDUtilities;
 
 public class PremiumTable extends JTable implements MouseListener {
@@ -50,6 +47,8 @@ public class PremiumTable extends JTable implements MouseListener {
         this.model = model;
         createColumns();
         setShowGrid(false);
+        setShowHorizontalLines(false);
+        setShowVerticalLines(false);
         addMouseListener(this);
 
         cellRenderer = new PremiumTableRenderer(this);
@@ -78,6 +77,8 @@ public class PremiumTable extends JTable implements MouseListener {
     public TableCellEditor getCellEditor(int row, int column) {
         switch (column) {
         case PremiumJTableModel.COL_ENABLED:
+        case PremiumJTableModel.COL_PASS:
+        case PremiumJTableModel.COL_USER:
             return mycellEditor;
         default:
             return super.getCellEditor(row, column);

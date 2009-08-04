@@ -52,7 +52,6 @@ import jd.gui.swing.components.BrowseFile;
 import jd.gui.swing.components.JDTextArea;
 import jd.gui.swing.components.JDTextField;
 import jd.gui.swing.components.linkbutton.JLink;
-import jd.gui.swing.jdgui.settings.subpanels.PremiumPanel;
 import jd.utils.locale.JDL;
 
 /**
@@ -260,11 +259,6 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
 
             }
             break;
-        case ConfigContainer.TYPE_PREMIUMPANEL:
-            input = new JComponent[1];
-            input[0] = new PremiumPanel(this);
-            input[0].setEnabled(configEntry.isEnabled());
-            break;
         case ConfigContainer.TYPE_LABEL:
             input = new JComponent[0];
             decoration = new JLabel(configEntry.getLabel());
@@ -327,9 +321,6 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
             return ((JDTextArea) input[0]).getText();
         case ConfigContainer.TYPE_CHECKBOX:
             return ((JCheckBox) input[0]).isSelected();
-        case ConfigContainer.TYPE_PREMIUMPANEL:
-            ((PremiumPanel) input[0]).saveAccounts();
-            return null;
         case ConfigContainer.TYPE_LISTCONTROLLED:
             configEntry.getListController().setList(((JDTextArea) input[0]).getText());
             return null;
@@ -430,9 +421,6 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
             break;
         case ConfigContainer.TYPE_TEXTAREA:
             ((JDTextArea) input[0]).setText(text == null ? "" : text.toString());
-            break;
-        case ConfigContainer.TYPE_PREMIUMPANEL:
-            ((PremiumPanel) input[0]).loadAccounts();
             break;
         case ConfigContainer.TYPE_CHECKBOX:
             if (text == null) {

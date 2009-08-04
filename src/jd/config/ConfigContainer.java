@@ -97,7 +97,6 @@ public class ConfigContainer implements Serializable {
     public static final int TYPE_PASSWORDFIELD = 11;
     public static final int TYPE_LINK = 12;
     public static final int TYPE_CONTAINER = 13;
-    public static final int TYPE_PREMIUMPANEL = 14;
 
     /**
      * ConfigElement ist ein Textbereich, welcher von einem eigenen Controller

@@ -168,20 +168,25 @@ public class PremiumJTableModel extends AbstractTableModel {
         switch (columnIndex) {
         case COL_ENABLED:
             return true;
+        case COL_PASS:
+        case COL_USER: {
+            Object ob = this.getValueAt(rowIndex, columnIndex);
+            if (ob != null && ob instanceof Account) return true;
+        }
         default:
             return false;
         }
     }
 
     public void setValueAt(Object value, int rowIndex, int columnIndex) {
-        System.out.println(rowIndex + " " + columnIndex + " " + (Boolean) value);
+        System.out.println(rowIndex + " " + columnIndex + " " + value);
+        Object o = this.getValueAt(rowIndex, columnIndex);
+        if (o == null) return;
         switch (columnIndex) {
-        case COL_ENABLED:
+        case COL_ENABLED: {
             boolean b = (Boolean) value;
-            Object o = this.getValueAt(rowIndex, columnIndex);
-            if (o == null) return;
             if (o instanceof Account) {
-                ((Account) getValueAt(rowIndex, columnIndex)).setEnabled(b);
+                ((Account) o).setEnabled(b);
             } else if (o instanceof HostAccounts) {
                 ArrayList<Account> accs = AccountController.getInstance().getAllAccounts(((HostAccounts) o).getHost());
                 if (accs == null) return;
@@ -189,7 +194,16 @@ public class PremiumJTableModel extends AbstractTableModel {
                     acc.setEnabled(b);
                 }
             }
-            break;
+            return;
+        }
+        case COL_PASS: {
+            String pw = (String) value;
+            // if (o instanceof Account) ((Account) o).setPass(pw);
+        }
+        case COL_USER: {
+            String pw = (String) value;
+            // if (o instanceof Account) ((Account) o).setUser(pw);
+        }
         }
     }
 }

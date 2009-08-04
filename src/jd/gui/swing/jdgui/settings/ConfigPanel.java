@@ -132,14 +132,6 @@ public abstract class ConfigPanel extends SwitchPanel {
                     panel.add(new JScrollPane(c), "spanx,gapright " + getGapRight() + ",growy,pushy");
 
                     break;
-                case ConfigContainer.TYPE_PREMIUMPANEL:
-                    this.setLayout(new MigLayout("ins 0", "[fill,grow]", "[fill,grow]"));
-                    // panel.setLayout(new MigLayout("ins 0,wrap 2",
-                    // "[fill,grow 10]10[fill,grow]"));
-
-                    panel.add(c, "spanx,growy,pushy");
-
-                    break;
                 case ConfigContainer.TYPE_CONTAINER:
                     /**
                      * TODO . handly different containers
@@ -191,17 +183,7 @@ public abstract class ConfigPanel extends SwitchPanel {
                     // "spanx,gapleft 35,gapright 20");
                     panel.add(new JScrollPane(c), "spanx,gapright " + getGapRight() + ",growy,pushy,gapleft " + getGapLeft());
                     header.setVisible(true);
-                    break;
-                case ConfigContainer.TYPE_PREMIUMPANEL:
-
-                    this.setLayout(new MigLayout("ins 0", "[fill,grow]", "[fill,grow]"));
-                    // panel.setLayout(new MigLayout("ins 0,wrap 2",
-                    // "[fill,grow 10]10[fill,grow]"));
-                    JScrollPane sp;
-                    panel.add(sp = new JScrollPane(c), "spanx");
-                    sp.setBorder(null);
-                    header.setVisible(true);
-                    break;
+                    break;                
                 default:
                     panel.add(c, entry.getDecoration() == null ? "spanx,gapright " + this.getGapRight() + ",gapleft " + this.getGapLeft() : "gapright " + this.getGapRight());
                     header.setVisible(true);
