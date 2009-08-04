@@ -21,14 +21,14 @@ import java.io.FileInputStream;
 import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
+import javax.swing.JDialog;
+import javax.swing.JFrame;
 import javax.swing.LookAndFeel;
-import javax.swing.UIDefaults;
 import javax.swing.UIManager;
 import javax.swing.UIManager.LookAndFeelInfo;
 
@@ -36,7 +36,7 @@ import jd.JDInitFlags;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.gui.swing.jdgui.GUIUtils;
-import jd.nutils.JDFlags;
+import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.nutils.OSDetector;
 import jd.parser.Regex;
 import jd.utils.JDUtilities;
@@ -46,7 +46,7 @@ public class LookAndFeelController {
     /**
      *Config parameter to store the users laf selection
      */
-    public static final String PARAM_PLAF = "PLAF4";
+    public static final String PARAM_PLAF = "PLAF5";
     public static final String DEFAULT_PREFIX = "LAF_CFG";
     private static boolean uiInitated = false;
 
@@ -196,17 +196,16 @@ public class LookAndFeelController {
 
         install();
         try {
-        
+
             JDLogger.getLogger().info("Use Look & Feel: " + getPlaf().getClassName());
-         Thread.currentThread().setContextClassLoader(JDUtilities.getJDClassLoader());
-         
-         preSetup(getPlaf().getClassName());
+            Thread.currentThread().setContextClassLoader(JDUtilities.getJDClassLoader());
+
+            preSetup(getPlaf().getClassName());
 
             UIManager.put("ClassLoader", JDUtilities.getJDClassLoader());
             UIManager.setLookAndFeel(getPlaf().getClassName());
             UIManager.put("ClassLoader", JDUtilities.getJDClassLoader());
-      
-   
+
             // UIManager.setLookAndFeel(new SyntheticaStandardLookAndFeel());
 
             // overwrite defaults
@@ -219,23 +218,25 @@ public class LookAndFeelController {
                 JDLogger.getLogger().info("Use special LAF Property: " + next.getKey() + " = " + next.getValue());
                 UIManager.put(next.getKey(), next.getValue());
             }
-           
+
         } catch (Throwable e) {
-            
-            
+
             JDLogger.exception(e);
         }
 
     }
-/**
- * INstalls all Look and feels founmd in libs/laf/
- */
+
+    /**
+     * INstalls all Look and feels founmd in libs/laf/
+     */
     private static void install() {
-        for (File file : JDUtilities.getJDClassLoader().getLafs()) {        
+        for (File file : JDUtilities.getJDClassLoader().getLafs()) {
             try {
-                           JarInputStream jarFile = new JarInputStream(new FileInputStream(file));
+                JarInputStream jarFile = new JarInputStream(new FileInputStream(file));
                 JarEntry e;
                 String cl;
+                ArrayList<String> names = new ArrayList<String>();
+                ArrayList<String> classes = new ArrayList<String>();
                 while ((e = jarFile.getNextJarEntry()) != null) {
                     if (!e.getName().endsWith(".class") || e.getName().contains("$")) continue;
                     cl = e.getName().replace("/", ".");
@@ -243,14 +244,14 @@ public class LookAndFeelController {
                     if (!cl.toLowerCase().endsWith("lookandfeel")) continue;
                     Class<?> clazz = JDUtilities.getJDClassLoader().loadClass(cl);
                     try {
-                    
-                        if (LookAndFeel.class.isAssignableFrom(clazz)&&!Modifier.isAbstract(clazz.getModifiers())) {
+
+                        if (LookAndFeel.class.isAssignableFrom(clazz) && !Modifier.isAbstract(clazz.getModifiers())) {
 
                             String name = clazz.getSimpleName().replace("LookAndFeel", "");
+                            names.add(name);
+                            classes.add(cl);
                             UIManager.installLookAndFeel(name, cl);
-                         
-                            
-                           
+
                         }
                     } catch (Throwable t) {
 
@@ -258,7 +259,11 @@ public class LookAndFeelController {
                     }
 
                 }
-
+                // first collect all. Of the jar contaisn errors, an exception
+                // gets thrown and no laf is added (e.gh. substance for 1.5
+                for (int i = 0; i < names.size(); i++) {
+                    UIManager.installLookAndFeel(names.get(i), classes.get(i));
+                }
             } catch (Exception e) {
                 JDLogger.exception(e);
             }
@@ -284,23 +289,13 @@ public class LookAndFeelController {
      * Execvutes LAF dependen commands BEFORE initializing the LAF
      */
     private static void preSetup(String className) {
-        if (className.contains("ynth")) {
-            // System.setProperty("swing.aatext", "true");
-            UIManager.put("Synthetica.dialog.icon.enabled", true);
-
-            UIManager.put("Synthetica​.rootPane​.titlePane​.menuButton​.useOriginalImageSize", Boolean.TRUE);
-            UIManager.put("Synthetica​.tabbedPane​.tab​.animation​.cycles", 100);
-            UIManager.put("Synthetica​.tabbedPane​.tabs​.stretch", Boolean.TRUE);
-
-        }
-       
+        Boolean windowDeco = GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.DECORATION_ENABLED, true);
+        UIManager.put("Synthetica.window.decoration", windowDeco);
+        JFrame.setDefaultLookAndFeelDecorated(windowDeco);
+        JDialog.setDefaultLookAndFeelDecorated(windowDeco);
         if (className.equalsIgnoreCase("de.javasoft.plaf.synthetica.SyntheticaStandardLookAndFeel")) {
-
             UIManager.put("Synthetica.window.decoration", false);
         }
     }
-
-
-
 
 }

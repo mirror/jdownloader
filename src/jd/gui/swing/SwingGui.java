@@ -1,16 +1,20 @@
 package jd.gui.swing;
 
+import java.awt.EventQueue;
+import java.awt.Toolkit;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowFocusListener;
 import java.awt.event.WindowListener;
 import java.awt.event.WindowStateListener;
 
 import javax.swing.JFrame;
+import javax.swing.SwingUtilities;
 
 import jd.JDInitFlags;
 import jd.controlling.JDLogger;
 import jd.event.ControlListener;
 import jd.gui.UserIF;
+import jd.gui.swing.jdgui.events.EDTEventQueue;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 
 public abstract class SwingGui extends UserIF implements ControlListener, WindowListener, WindowStateListener, WindowFocusListener {
@@ -91,14 +95,15 @@ public abstract class SwingGui extends UserIF implements ControlListener, Window
         mainFrame = new JFrame(string);
 
     }
-/**
- * Returns the gui's mainjframe
- * @return
- */
+
+    /**
+     * Returns the gui's mainjframe
+     * 
+     * @return
+     */
     public JFrame getMainFrame() {
         return mainFrame;
     }
-
 
     /**
      * Has to return the current used gui
@@ -132,8 +137,14 @@ public abstract class SwingGui extends UserIF implements ControlListener, Window
     public static boolean checkEDT() {
         if (!JDInitFlags.SWITCH_DEBUG) return true;
         Thread th = Thread.currentThread();
-        String name = th.toString();
-        if (!name.contains("EventQueue")) {
+
+        if (!SwingUtilities.isEventDispatchThread()) {
+     
+           boolean dip = EDTEventQueue.isDispatchThread();
+           boolean isedt = SwingUtilities.isEventDispatchThread();
+
+//           isedt=isedt;
+
             JDLogger.exception(new RuntimeException("EDT Violation! Runs in " + th));
             return false;
         }

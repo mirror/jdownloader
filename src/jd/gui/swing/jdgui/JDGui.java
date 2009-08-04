@@ -111,6 +111,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
     private LogView logView;
     private MainToolBar toolBar;
     private JPanel waitingPane;
+    private boolean exitRequested=false;
 
     private JDGui() {
         super("");
@@ -285,7 +286,8 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
     }
 
     private void initDefaults() {
-        Toolkit.getDefaultToolkit().getSystemEventQueue().push(new EDTEventQueue());
+       
+    
         mainFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         mainFrame.addWindowListener(this);
 
@@ -366,7 +368,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
             INSTANCE = new GuiRunnable<JDGui>() {
                 @Override
                 public JDGui runSave() {
-                    Thread.currentThread().setContextClassLoader(JDUtilities.getJDClassLoader());
+                    
                     return new JDGui();
                 }
 
@@ -433,6 +435,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
             break;
 
         case ControlEvent.CONTROL_SYSTEM_EXIT:
+            this.exitRequested=true;
             JDController.requestDelayExit();
             new GuiRunnable<Object>() {
                 @Override
@@ -467,6 +470,13 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
             Balloon.showIfHidden(JDL.L("ballon.download.title", "Download"), JDTheme.II("gui.images.next", 32, 32), JDL.L("ballon.download.finished.stopped", "Download stopped"));
             break;
         }
+    }
+/**
+ * returns true, if the user requested the app to close
+ * @return
+ */
+    public boolean isExitRequested() {
+        return exitRequested;
     }
 
     public void windowClosing(WindowEvent e) {

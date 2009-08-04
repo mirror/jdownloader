@@ -34,6 +34,7 @@ import jd.config.ConfigEntry.PropertyType;
 import jd.controlling.JDController;
 import jd.gui.UserIO;
 import jd.gui.swing.Factory;
+import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.nutils.JDFlags;
 import jd.utils.JDUtilities;
@@ -235,7 +236,7 @@ public abstract class ConfigPanel extends SwitchPanel {
         PropertyType changes = hasChanges();
         this.save();
         if (changes == PropertyType.NEEDS_RESTART) {
-            if (!JDController.getInstance().isExitRequested()) {
+            if (!JDGui.getInstance().isExitRequested()) {
                 int answer = UserIO.getInstance().requestConfirmDialog(0, JDL.L("jd.gui.swing.jdgui.settings.ConfigPanel.restartquestion.title", "Restart required!"), JDL.L("jd.gui.swing.jdgui.settings.ConfigPanel.restartquestion", "This option needs a JDownloader restart."), null, JDL.L("jd.gui.swing.jdgui.settings.ConfigPanel.restartquestion.ok", "Restart NOW!"), null);
 
                 if (JDFlags.hasSomeFlags(answer, UserIO.RETURN_DONT_SHOW_AGAIN | UserIO.RETURN_OK)) {
@@ -276,20 +277,30 @@ public abstract class ConfigPanel extends SwitchPanel {
         }
         return ret;
     }
-
-    public void saveConfigEntries() {
+/**
+ * Saves the configentries in THIS panel. 
+ */
+    public final void saveConfigEntries() {
         ArrayList<SubConfiguration> subs = new ArrayList<SubConfiguration>();
         for (GUIConfigEntry akt : entries) {
+            String ndame = akt.getConfigEntry().getPropertyName();
+            System.out.println(ndame+" - "+akt.getConfigEntry().getPropertyInstance());
+
+           
             if (akt.getConfigEntry().getPropertyInstance() instanceof SubConfiguration && subs.indexOf(akt.getConfigEntry().getPropertyInstance()) < 0) {
                 subs.add((SubConfiguration) akt.getConfigEntry().getPropertyInstance());
             }
             if (akt.getConfigEntry().getPropertyInstance() != null && akt.getConfigEntry().getPropertyName() != null) {
                 akt.getConfigEntry().getPropertyInstance().setProperty(akt.getConfigEntry().getPropertyName(), akt.getText());
+                System.out.println("saved "+akt.getText());
             }
+           
         }
 
         for (SubConfiguration subConfiguration : subs) {
             subConfiguration.save();
+            
+            System.out.println(subConfiguration+" - "+subConfiguration.getProperties());
         }
     }
 

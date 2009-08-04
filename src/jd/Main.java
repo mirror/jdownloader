@@ -180,7 +180,7 @@ public class Main {
                         LOGGER.info("Switching back to default JDownloader branch");
                     }
                 } else {
-                 
+
                     webConfig.setProperty("BRANCH", args[i + 1]);
                     if (webConfig.hasChanges()) {
                         webConfig.save();
@@ -298,7 +298,7 @@ public class Main {
                     }.waitForEDT();
                 }
             }
-         
+
             LOGGER.info("init Eventmanager");
             Interaction.initTriggers();
             LOGGER.info("init Localisation");

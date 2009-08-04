@@ -16,6 +16,7 @@
 
 package jd;
 
+import java.awt.Toolkit;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -40,6 +41,7 @@ import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.JDGuiConstants;
+import jd.gui.swing.jdgui.events.EDTEventQueue;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.http.Browser;
 import jd.http.Encoding;
@@ -150,6 +152,8 @@ public class JDInit {
 
     public void initGUI(JDController controller) {
         LookAndFeelController.setUIManager();
+        
+        Toolkit.getDefaultToolkit().getSystemEventQueue().push(new EDTEventQueue());
         SwingGui.setInstance(JDGui.getInstance());
         UserIF.setInstance(SwingGui.getInstance());
         controller.addControlListener(SwingGui.getInstance());

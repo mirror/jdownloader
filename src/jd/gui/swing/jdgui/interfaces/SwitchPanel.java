@@ -79,8 +79,10 @@ public abstract class SwitchPanel extends JPanel {
      * invokes the view chain of this panel. all nestes views get informed, too
      */
     public void setShown() {
+        if(currentlyVisible)return;
         this.currentlyVisible = true;
         onShow();
+        System.err.println("Shown "+this);
         broadcaster.fireEvent(new SwitchPanelEvent(this, SwitchPanelEvent.ON_SHOW));
         distributeView(this);
     }
@@ -114,8 +116,10 @@ public abstract class SwitchPanel extends JPanel {
      * invokes the view chain of this panel. all nestes views get informed, too
      */
     public void setHidden() {
+        if(!currentlyVisible)return;
         this.currentlyVisible = false;
         onHide();
+        System.err.println("Hidden "+this);
         broadcaster.fireEvent(new SwitchPanelEvent(this, SwitchPanelEvent.ON_HIDE));
         distributeHide(this);
     }

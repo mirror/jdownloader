@@ -86,6 +86,8 @@ public class General extends ConfigPanel {
             ce.setDefaultValue("default");
             ce.setPropertyType(PropertyType.NEEDS_RESTART);
         }
+
+
         if (LookAndFeelController.getSupportedLookAndFeels().length > 1) {
             look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, LookAndFeelController.PARAM_PLAF, LookAndFeelController.getSupportedLookAndFeels(), JDL.L("gui.config.gui.plaf", "Style(benötigt JD-Neustart)")).setGroup(lookGroup));
             ce.setDefaultValue(LookAndFeelController.getPlaf());
@@ -99,21 +101,11 @@ public class General extends ConfigPanel {
         ce.setDefaultValue(true);
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDGuiConstants.PARAM_SHOW_BALLOON, JDL.L("gui.config.gui.showBalloon", "Show Balloon infos")).setGroup(feel));
         ce.setDefaultValue(true);
-        // ConfigGroup perf = new
-        // ConfigGroup(JDL.L("gui.config.gui.performance", "Performance"),
-        // JDTheme.II("gui.images.performance", 32, 32));
-        // look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX,
-        // subConfig, JDGuiConstants.ANIMATION_ENABLED,
-        // JDL.L("gui.config.gui.animationenabled",
-        // "Enable extended effects.")).setGroup(perf));
-        // ce.setDefaultValue(false);
-        // ce.setPropertyType(PropertyType.NEEDS_RESTART);
-        // look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX,
-        // subConfig, JDGuiConstants.DECORATION_ENABLED,
-        // JDL.L("gui.config.gui.decoration",
-        // "Enable Windowdecoration")).setGroup(perf));
-        // ce.setDefaultValue(true);
-        // ce.setPropertyType(PropertyType.NEEDS_RESTART);
+        ConfigGroup perf = new ConfigGroup(JDL.L("gui.config.gui.performance", "Performance"), JDTheme.II("gui.images.performance", 32, 32));
+  
+        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDGuiConstants.DECORATION_ENABLED, JDL.L("gui.config.gui.decoration", "Enable Windowdecoration")).setGroup(perf));
+        ce.setDefaultValue(true);
+        ce.setPropertyType(PropertyType.NEEDS_RESTART);
         return look;
     }
 

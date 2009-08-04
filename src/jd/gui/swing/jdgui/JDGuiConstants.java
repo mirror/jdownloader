@@ -1,8 +1,6 @@
 package jd.gui.swing.jdgui;
 
-
 public class JDGuiConstants {
-
 
     public static final String CONFIG_PARAMETER = "jdgui";
     public static final String CFG_KEY_MAIN_TABBED_HIGHLIGHT = "jdgui.maintab.high.extrahighlight";
@@ -19,11 +17,12 @@ public class JDGuiConstants {
     public static final String PARAM_SHOW_SPLASH = "SHOW_SPLASH";
     public static final String PARAM_JAC_LOG = "JAC_DOLOG";
     public static final String PARAM_BROWSER = "BROWSER2";
-//    public static final String GUICONFIGNAME = "simpleGUI";
+    // public static final String GUICONFIGNAME = "simpleGUI";
     public static final String PARAM_SIDEBAR_COLLAPSED = "PARAM_SIDEBAR_COLLAPSED";
     public static final String ANIMATION_ENABLED = "ANIMATION_ENABLED3";
     public static final String DECORATION_ENABLED = "DECORATION_ENABLED2";
     public static final String PARAM_INSERT_NEW_LINKS_AT = "PARAM_INSERT_NEW_LINKS_AT2";
     public static final String PARAM_START_AFTER_ADDING_LINKS = "PARAM_START_AFTER_ADDING_LINKS";
-    public static final String PARAM_SHOW_BALLOON = "PARAM_SHOW_BALLOON";    
+    public static final String PARAM_SHOW_BALLOON = "PARAM_SHOW_BALLOON";
+
 }

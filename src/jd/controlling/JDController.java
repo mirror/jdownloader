@@ -203,7 +203,7 @@ public class JDController implements ControlListener {
     private DownloadWatchDog watchdog;
 
     private Integer StartStopSync = new Integer(0);
-    private boolean exitRequested = false;
+
     private static Integer delayExit = new Integer(0);
     private static JDController INSTANCE;
 
@@ -341,19 +341,12 @@ public class JDController implements ControlListener {
      * Beendet das Programm
      */
     public void exit() {
-        this.exitRequested = true;
+      
         prepareShutdown();
         System.exit(0);
     }
 
-    /**
-     * Is only true, if a termination is in progress
-     * 
-     * @return
-     */
-    public boolean isExitRequested() {
-        return exitRequested;
-    }
+ 
 
     public void prepareShutdown() {
         logger.info("Stop all runing downloads");
