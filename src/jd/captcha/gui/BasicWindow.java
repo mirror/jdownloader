@@ -111,9 +111,10 @@ public class BasicWindow extends JFrame {
             // @Override
             @Override
             public void windowClosing(WindowEvent event) {
-                Window window = event.getWindow();
-                window.setVisible(false);
-                window.dispose();
+//                Window window = event.getWindow();
+//                window.setVisible(false);
+//                window.dispose();
+            	destroy();
             }
         });
 
