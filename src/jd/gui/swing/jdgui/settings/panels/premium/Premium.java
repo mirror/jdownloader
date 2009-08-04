@@ -184,6 +184,7 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
 
     @Override
     public void onHide() {
+        super.onHide();
         visible = false;
         AccountController.getInstance().removeListener(this);
         Update_Async.stop();
@@ -208,6 +209,7 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
 
     @Override
     public void onShow() {
+        super.onShow();
         AccountController.getInstance().addListener(this);
         visible = true;
         fireTableChanged(true);
