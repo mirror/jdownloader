@@ -67,7 +67,7 @@ public class UpdateDevWorkspace {
     public static void main(String[] args) {
         try {
             System.out.println("Update ressources at  " + JDUtilities.getJDHomeDirectoryFromEnvironment());
-
+            updateSVN("svn://svn.jdownloader.org/jdownloader/trunk/ressourcen/libs/", "libs");
             updateSVN("svn://svn.jdownloader.org/jdownloader/trunk/ressourcen/jd/", "jd");
             updateSVN("svn://svn.jdownloader.org/jdownloader/trunk/ressourcen/tools/", "tools");
 
