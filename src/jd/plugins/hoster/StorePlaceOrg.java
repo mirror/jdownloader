@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2008  JD-Team support@jdownloader.org
+//    Copyright (C) 2009  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-//uploadmachine by pspzockerscene
+//storeplace by pspzockerscene
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "storeplace.org" }, urls = { "http://[\\w\\.]*?storeplace\\.org/\\?d=[A-Z|0-9]+" }, flags = { 0 })
 public class StorePlaceOrg extends PluginForHost {
 
