@@ -1,12 +1,5 @@
 package jd.captcha.easy;
 
-import org.lobobrowser.html.test.*;
-import org.lobobrowser.html.parser.*;
-import org.lobobrowser.html.domimpl.*;
-
-import org.w3c.dom.*;
-import org.w3c.dom.html2.*;
-
 import jd.captcha.utils.Utilities;
 
 import jd.utils.JDUtilities;
@@ -17,7 +10,6 @@ import jd.captcha.gui.ImageComponent;
 
 import jd.captcha.gui.BasicWindow;
 
-import java.net.*;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -45,7 +37,8 @@ public class LoadCaptchas extends BasicWindow {
 						.compile(
 								"(?s)<[ ]?input[^>]*?type=.?image[^>]*?src=['|\"]?([^>\\s'\"]*)['|\">\\s]",
 								Pattern.CASE_INSENSITIVE),
-				Pattern.compile("(?s)<[ ]?IMG[^>]*?src=['|\"]?([^>\\s'\"]*)['|\">\\s]",
+				Pattern.compile(
+						"(?s)<[ ]?IMG[^>]*?src=['|\"]?([^>\\s'\"]*)['|\">\\s]",
 						Pattern.CASE_INSENSITIVE) };
 		for (Pattern element : basePattern) {
 			Matcher m = element.matcher(br.toString().toLowerCase());
@@ -54,9 +47,9 @@ public class LoadCaptchas extends BasicWindow {
 					String src = m.group(1);
 					if (!src.startsWith("http")) {
 						if (src.charAt(0) == '/') {
-							src = "http://"+br.getHost() + src;
+							src = "http://" + br.getHost() + src;
 						} else if (src.charAt(0) == '#') {
-							src = "http://"+br.getURL() + src;
+							src = "http://" + br.getURL() + src;
 						} else {
 							src = br.getBaseURL() + src;
 						}
@@ -67,7 +60,6 @@ public class LoadCaptchas extends BasicWindow {
 					// TODO: handle exception
 				}
 
-
 			}
 		}
 
@@ -77,7 +69,8 @@ public class LoadCaptchas extends BasicWindow {
 	public LoadCaptchas() throws Exception {
 		super();
 		final String link = JOptionPane.showInputDialog("Bitte Link eingeben:");
-		final int menge = Integer.parseInt(JOptionPane.showInputDialog("Wieviele Captchas sollen heruntergeladen werden:","500" ));
+		final int menge = Integer.parseInt(JOptionPane.showInputDialog(
+				"Wieviele Captchas sollen heruntergeladen werden:", "500"));
 
 		final Browser br = new Browser();
 		br.getPage(link);
@@ -89,11 +82,11 @@ public class LoadCaptchas extends BasicWindow {
 		setLocation(0, 0);
 		setTitle("Klicken sie auf das Captcha");
 		String host = br.getHost().toLowerCase();
-		if(host.matches(".*\\..*\\..*"))
-			host=host.substring(host.indexOf('.')+1);
+		if (host.matches(".*\\..*\\..*"))
+			host = host.substring(host.indexOf('.') + 1);
 		final String dir = JDUtilities.getJDHomeDirectoryFromEnvironment()
 				.getAbsolutePath()
-				+ "/captchas/" + host  + "/";
+				+ "/captchas/" + host + "/";
 		new File(dir).mkdir();
 		final String[] images = getImages(br);
 		panel.setLayout(new GridLayout(images.length / 5 + 1, 5));
@@ -118,13 +111,12 @@ public class LoadCaptchas extends BasicWindow {
 			int area = captchaImage.getHeight(null)
 					* captchaImage.getHeight(null);
 			if (area < 50 || area > 50000 || captchaImage.getHeight(null) > 400
-					|| captchaImage.getWidth(null) > 400)
-			{
+					|| captchaImage.getWidth(null) > 400) {
 				f.delete();
 
 				continue;
 			}
-				ImageComponent ic0 = new ImageComponent(captchaImage);
+			ImageComponent ic0 = new ImageComponent(captchaImage);
 
 			panel.add(ic0);
 			ic0.addMouseListener(new MouseListener() {
