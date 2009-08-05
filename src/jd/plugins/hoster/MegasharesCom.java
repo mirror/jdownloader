@@ -67,12 +67,12 @@ public class MegasharesCom extends PluginForHost {
         try {
             login(account);
         } catch (PluginException e) {
-            ai.setValid(false);
+            account.setValid(false);
             return ai;
         }
         String expires = br.getRegex("</font> Expires: <font.*?>(.*?)</font>").getMatch(0);
         if (expires == null) {
-            ai.setValid(false);
+            account.setValid(false);
             return ai;
         }
         SimpleDateFormat dateFormat = new SimpleDateFormat("MMM dd, yyyy", Locale.UK);

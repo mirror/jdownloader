@@ -71,11 +71,11 @@ public class FileHostMecom extends PluginForHost {
         try {
             login(account);
         } catch (PluginException e) {
-            ai.setValid(false);
+            account.setValid(false);
             return ai;
         }
         if (!isPremium()) {
-            ai.setValid(false);
+            account.setValid(false);
             ai.setStatus("No Premium Account!");
             return ai;
         }
@@ -83,9 +83,9 @@ public class FileHostMecom extends PluginForHost {
         String points = br.getRegex(Pattern.compile("<TR><TD>You have collected:</TD><TD><b>(.*?)premium points</b>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         if (points != null) ai.setPremiumPoints(points);
         String expire = br.getRegex(Pattern.compile("<TR><TD>Premium-Account expire:</TD><TD><b>(.*?)</b>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+        account.setValid(true);
         ai.setValidUntil(Regex.getMilliSeconds(expire, "dd MMMMM yyyy", Locale.ENGLISH));
         ai.setTrafficLeft(-1);
-        ai.setValid(true);
         return ai;
     }
 

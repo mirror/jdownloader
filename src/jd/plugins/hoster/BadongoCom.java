@@ -37,7 +37,7 @@ import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "badongo.com" }, urls = { "http://[\\w\\.]*?badongo\\.viajd.*/.*(file|vid)/[0-9]+/?\\d?/?\\w?\\w?" }, flags = { PluginWrapper.LOAD_ON_INIT })
 public class BadongoCom extends PluginForHost {
-   
+
     public BadongoCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.badongo.com/compare");
@@ -273,18 +273,18 @@ public class BadongoCom extends PluginForHost {
         try {
             login(account);
         } catch (PluginException e) {
-            ai.setValid(false);
+            account.setValid(false);
             return ai;
         }
         try {
             isPremium();
         } catch (PluginException e) {
             ai.setStatus("Not Premium Membership");
-            ai.setValid(false);
+            account.setValid(false);
             return ai;
         }
         ai.setStatus("Account ok");
-        ai.setValid(true);
+        account.setValid(true);
         return ai;
     }
 

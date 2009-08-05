@@ -89,7 +89,7 @@ public class DataHu extends PluginForHost {
         try {
             login(account);
         } catch (PluginException e) {
-            ai.setValid(false);
+            account.setValid(false);
             return ai;
         }
 
@@ -98,12 +98,12 @@ public class DataHu extends PluginForHost {
             ai.setValidUntil(Regex.getMilliSeconds(days, "yyyy-MM-dd hh:mm:ss", Locale.ENGLISH));
         } else if (days == null || days.equals("0")) {
             ai.setExpired(true);
-            ai.setValid(false);
+            account.setValid(false);
             return ai;
         }
         String points = br.getRegex(Pattern.compile("leftpanel_datapont_pont\">(\\d+)</span>", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (points != null) ai.setPremiumPoints(Long.parseLong(points.trim().replaceAll(",|\\.", "")));
-        ai.setValid(true);
+        account.setValid(true);
         return ai;
     }
 

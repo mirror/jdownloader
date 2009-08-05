@@ -142,17 +142,17 @@ public class MeinUpload extends PluginForHost {
         try {
             login(account);
         } catch (Exception e) {
-            ai.setValid(false);
+            account.setValid(false);
             return ai;
         }
         if (!isPremium()) {
             ai.setStatus("Free Member Account");
-            ai.setValid(true);
+            account.setValid(true);
             return ai;
         }
         String expire = br.getRegex("<td><strong>G&uuml;ltig bis:</strong>(.*?)</td>").getMatch(0);
         if (expire == null) {
-            ai.setValid(false);
+            account.setValid(false);
             ai.setStatus("Expired?");
             return ai;
         }

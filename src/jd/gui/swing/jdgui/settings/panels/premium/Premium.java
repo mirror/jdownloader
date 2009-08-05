@@ -16,9 +16,12 @@
 
 package jd.gui.swing.jdgui.settings.panels.premium;
 
+import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.text.DateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.logging.Logger;
 
 import javax.swing.AbstractButton;
@@ -26,7 +29,10 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
+import javax.swing.JTextField;
 import javax.swing.Timer;
+
+import org.jdesktop.swingx.JXTitledSeparator;
 
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
@@ -36,11 +42,17 @@ import jd.controlling.AccountControllerListener;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.components.AccountDialog;
+import jd.gui.swing.components.pieapi.ChartAPIEntity;
+import jd.gui.swing.components.pieapi.PieChartAPI;
+import jd.gui.swing.dialog.ContainerDialog;
 import jd.gui.swing.jdgui.actions.ThreadedAction;
 import jd.gui.swing.jdgui.settings.ConfigPanel;
 import jd.gui.swing.jdgui.views.toolbar.ViewToolbar;
+import jd.nutils.Formatter;
 import jd.nutils.JDFlags;
 import jd.plugins.Account;
+import jd.plugins.AccountInfo;
+import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
@@ -52,7 +64,6 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
     private PremiumTable internalTable;
     private JScrollPane scrollPane;
     private Timer Update_Async;
-    private boolean visible = false;
     private boolean tablerefreshinprogress = false;
     protected Logger logger = jd.controlling.JDLogger.getLogger();
 
@@ -148,7 +159,7 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
                         return null;
                     }
                 }.start();
-              
+
             }
         };
         new ThreadedAction("action.premiumview.removeacc", "gui.images.delete") {
@@ -185,9 +196,8 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
     @Override
     public void onHide() {
         super.onHide();
-        visible = false;
-        AccountController.getInstance().removeListener(this);
         Update_Async.stop();
+        AccountController.getInstance().removeListener(this);
     }
 
     public void fireTableChanged(final boolean fast) {
@@ -211,13 +221,12 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
     public void onShow() {
         super.onShow();
         AccountController.getInstance().addListener(this);
-        visible = true;
         fireTableChanged(true);
     }
 
     public void actionPerformed(ActionEvent arg0) {
         if (arg0.getSource() == Update_Async) {
-            if (visible) fireTableChanged(false);
+            fireTableChanged(false);
             return;
         }
     }
@@ -227,6 +236,8 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
         case AccountControllerEvent.ACCOUNT_ADDED:
         case AccountControllerEvent.ACCOUNT_REMOVED:
         case AccountControllerEvent.ACCOUNT_UPDATE:
+        case AccountControllerEvent.ACCOUNT_EXPIRED:
+        case AccountControllerEvent.ACCOUNT_INVALID:
             Update_Async.restart();
             break;
         default:
@@ -237,6 +248,67 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
     public boolean vetoAccountGetEvent(String host, Account account) {
         // TODO Auto-generated method stub
         return false;
+    }
+
+    public static void showAccountInformation(final PluginForHost pluginForHost, final Account account) {
+        new GuiRunnable<Object>() {
+            // @Override
+            public Object runSave() {
+                AccountInfo ai = AccountController.getInstance().updateAccountInfo(pluginForHost, account, false);
+                if (ai == null) {
+                    UserIO.getInstance().requestMessageDialog(JDL.LF("plugins.host.premium.info.error", "The %s plugin does not support the Accountinfo feature yet.", pluginForHost.getHost()));
+                    return null;
+                }
+                if (!account.isValid()) {
+                    UserIO.getInstance().requestMessageDialog(JDL.LF("plugins.host.premium.info.notValid", "The account for '%s' isn't valid! Please check username and password!\r\n%s", account.getUser(), ai.getStatus() != null ? ai.getStatus() : ""));
+                    return null;
+                }
+                if (ai.isExpired()) {
+                    UserIO.getInstance().requestMessageDialog(JDL.LF("plugins.host.premium.info.expired", "The account for '%s' is expired! Please extend the account or buy a new one!\r\n%s", account.getUser(), ai.getStatus() != null ? ai.getStatus() : ""));
+                    return null;
+                }
+
+                String def = JDL.LF("plugins.host.premium.info.title", "Accountinformation from %s for %s", account.getUser(), pluginForHost.getHost());
+                String[] label = new String[] { JDL.L("plugins.host.premium.info.validUntil", "Valid until"), JDL.L("plugins.host.premium.info.trafficLeft", "Traffic left"), JDL.L("plugins.host.premium.info.files", "Files"), JDL.L("plugins.host.premium.info.premiumpoints", "PremiumPoints"), JDL.L("plugins.host.premium.info.usedSpace", "Used Space"), JDL.L("plugins.host.premium.info.cash", "Cash"), JDL.L("plugins.host.premium.info.trafficShareLeft", "Traffic Share left"), JDL.L("plugins.host.premium.info.status", "Info") };
+
+                DateFormat formater = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM);
+                String validUntil = (ai.isExpired() ? JDL.L("plugins.host.premium.info.expiredInfo", "[expired]") + " " : "") + formater.format(new Date(ai.getValidUntil())) + "";
+                if (ai.getValidUntil() == -1) validUntil = null;
+                String premiumPoints = ai.getPremiumPoints() + ((ai.getNewPremiumPoints() > 0) ? " [+" + ai.getNewPremiumPoints() + "]" : "");
+                String[] data = new String[] { validUntil, Formatter.formatReadable(ai.getTrafficLeft()), ai.getFilesNum() + "", premiumPoints, Formatter.formatReadable(ai.getUsedSpace()), ai.getAccountBalance() < 0 ? null : (ai.getAccountBalance() / 100.0) + " €", Formatter.formatReadable(ai.getTrafficShareLeft()), ai.getStatus() };
+
+                JPanel panel = new JPanel(new MigLayout("ins 5", "[right]10[grow,fill]10[]"));
+                panel.add(new JXTitledSeparator("<html><b>" + def + "</b></html>"), "spanx, pushx, growx, gapbottom 15");
+
+                for (int j = 0; j < data.length; j++) {
+                    if (data[j] != null && !data[j].equals("-1") && !data[j].equals("-1 B")) {
+                        panel.add(new JLabel(label[j]), "gapleft 20");
+
+                        JTextField tf = new JTextField(data[j]);
+                        tf.setBorder(null);
+                        tf.setBackground(null);
+                        tf.setEditable(false);
+                        tf.setOpaque(false);
+
+                        if (label[j].equals(JDL.L("plugins.host.premium.info.trafficLeft", "Traffic left"))) {
+                            PieChartAPI freeTrafficChart = new PieChartAPI("", 150, 60);
+                            freeTrafficChart.addEntity(new ChartAPIEntity(JDL.L("plugins.host.premium.info.freeTraffic", "Free"), ai.getTrafficLeft(), new Color(50, 200, 50)));
+                            freeTrafficChart.addEntity(new ChartAPIEntity("", ai.getTrafficMax() - ai.getTrafficLeft(), new Color(150, 150, 150)));
+                            freeTrafficChart.fetchImage();
+
+                            panel.add(tf);
+                            panel.add(freeTrafficChart, "spany, wrap");
+                        } else {
+                            panel.add(tf, "span 2, wrap");
+                        }
+                    }
+
+                }
+                new ContainerDialog(UserIO.NO_CANCEL_OPTION, def, panel, null, null);
+
+                return null;
+            }
+        }.start();
     }
 
 }

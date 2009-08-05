@@ -66,12 +66,12 @@ public class Moosharenet extends PluginForHost {
         try {
             login(account);
         } catch (PluginException e) {
-            ai.setValid(false);
+            account.setValid(false);
             return ai;
         }
         String expires = br.getRegex(Pattern.compile("<td class=.*?>Ende der Mitgliedschaft</td>.*?<td class=.*?>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         if (expires == null) {
-            ai.setValid(false);
+            account.setValid(false);
             return ai;
         }
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy - hh:mm", Locale.UK);

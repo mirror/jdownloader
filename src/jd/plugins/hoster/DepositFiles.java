@@ -138,19 +138,19 @@ public class DepositFiles extends PluginForHost {
             login(account);
         } catch (PluginException e) {
             ai.setStatus(JDL.L("plugins.hoster.depositfilescom.accountbad", "Account expired or not valid."));
-            ai.setValid(false);
+            account.setValid(false);
             return ai;
         }
         if (isFreeAccount()) {
             ai.setStatus(JDL.L("plugins.hoster.depositfilescom.accountok", "Account is OK."));
-            ai.setValid(true);
+            account.setValid(true);
             return ai;
         }
         String expire = br.getRegex("<div class=\"access\">Ihr Gold- Account ist.*?bis zum: <b>(.*?)</b></div>").getMatch(0);
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.UK);
         if (expire == null) {
             ai.setStatus(JDL.L("plugins.hoster.depositfilescom.accountbad", "Account expitred or not valid."));
-            ai.setValid(false);
+            account.setValid(false);
             return ai;
         }
         ai.setStatus(JDL.L("plugins.hoster.depositfilescom.accountok", "Account is OK."));

@@ -29,10 +29,7 @@ public class PremiumTableEditor extends AbstractCellEditor implements TableCellE
     private JDPasswordField passw;
     private JTextField user;
 
-    // private PremiumTable table;
-
-    public PremiumTableEditor(PremiumTable table) {
-        // this.table = table;
+    public PremiumTableEditor() {        
         checkbox = new JCheckBox();
         user = new JTextField();
         checkbox.setHorizontalAlignment(JCheckBox.CENTER);
@@ -100,7 +97,7 @@ public class PremiumTableEditor extends AbstractCellEditor implements TableCellE
     @Override
     public boolean shouldSelectCell(EventObject anEvent) {
         // TODO Auto-generated method stub
-        return false;
+        return true;
 
     }
 

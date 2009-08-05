@@ -92,7 +92,7 @@ public class AccountDialog extends AbstractDialog implements ActionListener {
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == link) {
             try {
-                JLink.openURL(getHoster().getPlugin().getAGBLink());
+                JLink.openURL(getHoster().getPlugin().getBuyPremiumUrl());
             } catch (Exception ex) {
             }
         } else {

@@ -177,11 +177,11 @@ public class QshareCom extends PluginForHost {
         }
 
         if (apiMap.get("ACTIVE") == 0) {
-            ai.setValid(false);
+            account.setValid(false);
             ai.setStatus("Invalid account");
             return ai;
         } else
-            ai.setValid(true);
+            account.setValid(true);
 
         if (apiMap.get("FLAT") == 1) {
             ai.setTrafficLeft(-1l);

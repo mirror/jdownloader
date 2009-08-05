@@ -98,12 +98,12 @@ public class CZShareCom extends PluginForHost {
         try {
             login(account);
         } catch (PluginException e) {
-            ai.setValid(false);
+            account.setValid(false);
             return ai;
         }
         br.getPage("http://czshare.com/profi/platnost.php");
         if (br.containsHTML("Nemáte žádný platný kredit")) {
-            ai.setValid(false);
+            account.setValid(false);
             ai.setStatus(JDL.L("plugins.hoster.CZShareCom.nocreditleft", "No traffic credit left"));
             return ai;
         }

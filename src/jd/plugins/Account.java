@@ -26,13 +26,16 @@ public class Account extends Property {
     private String pass;
 
     private boolean enabled = true;
-    private String status = null;
-    private transient long tmpDisabledIntervalv3 = 10 * 60 * 1000;
+    private boolean valid = true;
 
+    private transient long tmpDisabledIntervalv3 = 10 * 60 * 1000;
     private transient boolean tempDisabled = false;
     private transient long tmpDisabledTime = 0;
+
     private transient String hoster = null;
     private AccountInfo accinfo = null;
+
+    private long updatetime = 0;
 
     public Account(String user, String pass) {
         this.user = user;
@@ -41,11 +44,28 @@ public class Account extends Property {
         this.setTmpDisabledIntervalv3(10 * 60 * 1000l);
         if (this.user != null) this.user = this.user.trim();
         if (this.pass != null) this.pass = this.pass.trim();
+        valid = true;
     }
 
     public String getPass() {
         if (pass != null) return pass.trim();
         return null;
+    }
+
+    public boolean isValid() {
+        return valid;
+    }
+
+    public void setValid(boolean b) {
+        valid = b;
+    }
+
+    public long lastUpdateTime() {
+        return updatetime;
+    }
+
+    public void setUpdateTime(long l) {
+        updatetime = l;
     }
 
     public String getHoster() {
@@ -62,10 +82,6 @@ public class Account extends Property {
 
     public void setAccountInfo(AccountInfo info) {
         accinfo = info;
-    }
-
-    public String getStatus() {
-        return status;
     }
 
     public String getUser() {
@@ -94,6 +110,7 @@ public class Account extends Property {
     public void setEnabled(boolean enabled) {
         if (this.enabled == enabled) return;
         this.enabled = enabled;
+        if (enabled && !isValid()) setUpdateTime(0);
         AccountController.getInstance().throwUpdateEvent(null, this);
     }
 
@@ -102,15 +119,8 @@ public class Account extends Property {
         if (pass != null) pass = pass.trim();
         if (this.pass != null && this.pass.equals(pass)) return;
         this.pass = pass;
-        this.accinfo = null;
+        setUpdateTime(0);
         AccountController.getInstance().throwUpdateEvent(null, this);
-    }
-
-    public void setStatus(String status) {
-        if (this.status == status) return;
-        if (status != null) status = status.trim();
-        if (this.status != null && this.status.equals(status)) return;
-        this.status = status;
     }
 
     public void setTempDisabled(boolean tempDisabled) {
@@ -125,13 +135,12 @@ public class Account extends Property {
         if (user != null) user = user.trim();
         if (this.user != null && this.user.equals(user)) return;
         this.user = user;
-        this.accinfo = null;
         AccountController.getInstance().throwUpdateEvent(null, this);
     }
 
     // @Override
     public String toString() {
-        return user + ":" + pass + " " + status + " " + enabled + " " + super.toString();
+        return user + ":" + pass + " " + enabled + " " + super.toString();
     }
 
     /**

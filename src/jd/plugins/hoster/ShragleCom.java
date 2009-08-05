@@ -86,15 +86,15 @@ public class ShragleCom extends PluginForHost {
         br.getPage("http://www.shragle.com/api.php?key=" + apikey + "&action=checkUser&useMD5=true&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(JDHash.getMD5(account.getPass())));
         String accountinfos[] = br.getRegex("(.*?)\\|(.*?)\\|(.+)").getRow(0);
         if (accountinfos == null) {
-            ai.setValid(false);
+            account.setValid(false);
             return ai;
         }
         ai.setPremiumPoints(Long.parseLong(accountinfos[2].trim()));
         if (accountinfos[0].trim().equalsIgnoreCase("1")) {
-            ai.setValid(false);
+            account.setValid(false);
             ai.setStatus("No Premium Account");
         } else if (accountinfos[0].trim().equalsIgnoreCase("2")) {
-            ai.setValid(true);
+            account.setValid(true);
         }
         ai.setValidUntil(Long.parseLong(accountinfos[1]) * 1000l);
         return ai;

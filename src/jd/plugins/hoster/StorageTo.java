@@ -58,14 +58,14 @@ public class StorageTo extends PluginForHost {
         try {
             login(account);
         } catch (PluginException e) {
-            ai.setValid(false);
+            account.setValid(false);
             return ai;
         }
         String validUntil = br.getRegex("Your premium account expires in.*?</div>.*?premium_dark.>(.*?)days</span>").getMatch(0);
         if (validUntil != null) {
             long expire = System.currentTimeMillis() + (long) (Float.parseFloat(validUntil.trim()) * 1000l * 60 * 60 * 24);
+            account.setValid(true);
             ai.setValidUntil(expire);
-            ai.setValid(true);
         }
         return ai;
     }
@@ -93,7 +93,7 @@ public class StorageTo extends PluginForHost {
         br.getPage(infolink);
         if (br.getRegex("'state' : '(.*?)'").getMatch(0).equals("wait")) {
             int wait = Integer.valueOf(br.getRegex("'countdown' : (.*?),").getMatch(0)).intValue();
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * wait);
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 1000 * wait);
         }
         if (br.getRegex("'state' : '(.*?)'").getMatch(0).equals("failed")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE); }
         String time = br.getRegex("'countdown' : (.*?),").getMatch(0);

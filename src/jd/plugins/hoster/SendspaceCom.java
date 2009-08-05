@@ -72,7 +72,7 @@ public class SendspaceCom extends PluginForHost {
         try {
             login(account);
         } catch (PluginException e) {
-            ai.setValid(false);
+            account.setValid(false);
             return ai;
         }
         String left = br.getRegex("You have downloaded (.*?)GB today").getMatch(0);
@@ -85,12 +85,12 @@ public class SendspaceCom extends PluginForHost {
             ai.setValidUntil(System.currentTimeMillis() + (Long.parseLong(days) * 24 * 50 * 50 * 1000));
         } else if (days == null || days.equals("0")) {
             ai.setExpired(true);
-            ai.setValid(false);
+            account.setValid(false);
             return ai;
         }
         String points = br.getRegex(Pattern.compile("You have([\\d+, ]+)<a href=\"maxpoints", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (points != null) ai.setPremiumPoints(Long.parseLong(points.trim().replaceAll(",|\\.", "")));
-        ai.setValid(true);
+        account.setValid(true);
         return ai;
     }
 

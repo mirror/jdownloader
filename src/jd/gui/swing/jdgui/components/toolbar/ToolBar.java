@@ -2,28 +2,21 @@ package jd.gui.swing.jdgui.components.toolbar;
 
 import static jd.controlling.JDLogger.warning;
 
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-
 import javax.swing.AbstractButton;
 import javax.swing.Action;
 import javax.swing.JButton;
 import javax.swing.JCheckBoxMenuItem;
-import javax.swing.JMenuItem;
 import javax.swing.JRootPane;
 import javax.swing.JSeparator;
-import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
 import javax.swing.KeyStroke;
 
-import jd.controlling.JDLogger;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.actions.ActionControlEvent;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.actions.event.ActionControllerListener;
-import jd.utils.JDTheme;
 import net.miginfocom.swing.MigLayout;
 
 public class ToolBar extends JToolBar implements ActionControllerListener {

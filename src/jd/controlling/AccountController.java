@@ -33,7 +33,6 @@ import jd.event.JDEvent;
 import jd.gui.swing.components.Balloon;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
-import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -171,12 +170,24 @@ public class AccountController extends SubConfiguration implements ActionListene
             return null;
         }
         AccountInfo ai = account.getAccountInfo();
-        if (ai != null) {
-            if (!forceupdate && (System.currentTimeMillis() - ai.lastUpdate()) < waittimeAccountInfoUpdate) return ai;
+        if (!forceupdate) {
+            if (!account.isValid() && account.lastUpdateTime() != 0) {
+                System.out.println(" no update because invalid " + hostname);
+                return ai;
+            }
+            if ((System.currentTimeMillis() - account.lastUpdateTime()) < waittimeAccountInfoUpdate) {
+                System.out.println(" no update because waittime " + hostname);
+                return ai;
+            }
         }
         try {
+            System.out.println("update " + hostname);
+            account.setUpdateTime(System.currentTimeMillis());
+            /* not every plugin sets this info correct */
+            account.setValid(true);
             ai = plugin.fetchAccountInfo(account);
             if (ai == null) {
+                System.out.println("plugin no update " + hostname);
                 /* not every plugin has fetchAccountInfo */
                 account.setAccountInfo(null);
                 return null;
@@ -184,14 +195,17 @@ public class AccountController extends SubConfiguration implements ActionListene
             account.setAccountInfo(ai);
             if (ai.isExpired()) {
                 account.setEnabled(false);
-            } else if (!ai.isValid()) {
+                this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.ACCOUNT_EXPIRED, hostname, account));
+            } else if (!account.isValid()) {
                 account.setEnabled(false);
+                this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.ACCOUNT_INVALID, hostname, account));
             }
-        } catch (PluginException e) {
-            account.setEnabled(false);
-            account.setAccountInfo(null);
         } catch (Exception e) {
+            System.out.println("error update " + hostname);
             account.setAccountInfo(null);
+            account.setEnabled(false);
+            account.setValid(false);
+            this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.ACCOUNT_INVALID, hostname, account));
         }
         return ai;
     }
@@ -398,10 +412,10 @@ public class AccountController extends SubConfiguration implements ActionListene
         case AccountControllerEvent.ACCOUNT_ADDED:
             JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true);
             JDUtilities.getConfiguration().save();
-            Balloon.show(JDL.L("gui.ballon.accountmanager.title", "Accountmanager"), JDTheme.II("gui.images.add", 32, 32), JDL.LF("gui.ballon.addaccount", "Added Account: %s(%s)", event.getHost(), event.getAccount().getUser()));
-            saveAsync();
-            break;
         case AccountControllerEvent.ACCOUNT_REMOVED:
+        case AccountControllerEvent.ACCOUNT_UPDATE:
+        case AccountControllerEvent.ACCOUNT_EXPIRED:
+        case AccountControllerEvent.ACCOUNT_INVALID:
             saveAsync();
             break;
         default:
@@ -463,7 +477,7 @@ public class AccountController extends SubConfiguration implements ActionListene
             synchronized (accounts) {
                 for (int i = 0; i < accounts.size(); i++) {
                     Account next = accounts.get(i);
-                    if (!next.isTempDisabled() && next.isEnabled()) {
+                    if (!next.isTempDisabled() && next.isEnabled() && next.isValid()) {
                         if (!this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.ACCOUNT_GET, pluginForHost.getHost(), next))) {
                             ret = next;
                             break;

@@ -123,7 +123,7 @@ public class FilerNet extends PluginForHost {
         try {
             login(account);
         } catch (PluginException e) {
-            ai.setValid(false);
+            account.setValid(false);
             return ai;
         }
         String trafficleft = br.getRegex(Pattern.compile("<th>Traffic</th>.*?<td>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
@@ -135,7 +135,7 @@ public class FilerNet extends PluginForHost {
         Date date = dateFormat.parse(splitted[2] + "." + splitted[1] + "." + splitted[0]);
         ai.setValidUntil(date.getTime());
 
-        ai.setValid(true);
+        account.setValid(true);
         return ai;
     }
 

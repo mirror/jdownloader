@@ -68,17 +68,17 @@ public class Freaksharenet extends PluginForHost {
         try {
             login(account);
         } catch (PluginException e) {
-            ai.setValid(false);
+            account.setValid(false);
             return ai;
         }
         String left = br.getRegex(">Traffic left:</td>.*?<td>(.*?)</td>").getMatch(0);
         ai.setTrafficLeft(left);
         String validUntil = br.getRegex(">valid until:</td>.*?<td><b>(.*?)</b></td>").getMatch(0);
         if (validUntil == null) {
-            ai.setValid(false);
+            account.setValid(false);
         } else {
             ai.setValidUntil(Regex.getMilliSeconds(validUntil, "dd.MM.yyyy - HH:mm", null));
-            ai.setValid(true);
+            account.setValid(true);
         }
         return ai;
     }

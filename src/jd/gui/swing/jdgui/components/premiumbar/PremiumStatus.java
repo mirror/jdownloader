@@ -188,9 +188,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
             if (wrapper.isLoaded() && wrapper.usePlugin()) {
                 ArrayList<Account> accs = AccountController.getInstance().getAllAccounts(host);
                 for (Account a : accs) {
-                    if (a.isEnabled()) {
-                        AccountController.getInstance().updateAccountInfo(host, a, false);
-                    }
+                    AccountController.getInstance().updateAccountInfo(host, a, false);
                 }
             }
         }
@@ -289,6 +287,8 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
         case AccountControllerEvent.ACCOUNT_ADDED:
         case AccountControllerEvent.ACCOUNT_REMOVED:
         case AccountControllerEvent.ACCOUNT_UPDATE:
+        case AccountControllerEvent.ACCOUNT_EXPIRED:
+        case AccountControllerEvent.ACCOUNT_INVALID:
             requestUpdate();
             break;
         default:

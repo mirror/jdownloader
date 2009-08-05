@@ -40,7 +40,7 @@ public class PremiumJTableModel extends AbstractTableModel {
         super();
         config = SubConfiguration.getConfig("premiumview");
         plugins = JDUtilities.getPluginsForHost();
-        hosts = config.getGenericProperty("hostaccounts", new TreeMap<String, HostAccounts>());
+        hosts = new TreeMap<String, HostAccounts>();
     }
 
     public void refreshModel() {
@@ -48,7 +48,6 @@ public class PremiumJTableModel extends AbstractTableModel {
             list.clear();
             long traffic = 0;
             boolean gotenabled = false;
-            boolean expand = false;
             for (HostPluginWrapper plugin : plugins) {
                 ArrayList<Account> accs = AccountController.getInstance().getAllAccounts(plugin.getHost());
                 if (accs.size() == 0) continue;
@@ -61,17 +60,18 @@ public class PremiumJTableModel extends AbstractTableModel {
                 traffic = 0;
                 gotenabled = false;
                 ha.hasAccountInfos(false);
-                expand = ha.getBooleanProperty(PremiumTable.PROPERTY_EXPANDED, true);
                 for (Account acc : accs) {
-                    if (expand) list.add(acc);
+                    list.add(acc);
                     if (acc.isEnabled()) gotenabled = true;
                     AccountInfo ai = acc.getAccountInfo();
                     if (ai != null) {
                         ha.hasAccountInfos(true);
-                        if (ai.isUnlimitedTraffic()) {
-                            traffic = -1;
-                        } else {
-                            if (traffic != -1) traffic += ai.getTrafficLeft();
+                        if (acc.isValid()) {
+                            if (ai.isUnlimitedTraffic()) {
+                                traffic = -1;
+                            } else {
+                                if (traffic != -1) traffic += ai.getTrafficLeft();
+                            }
                         }
                     }
                 }
@@ -198,11 +198,13 @@ public class PremiumJTableModel extends AbstractTableModel {
         }
         case COL_PASS: {
             String pw = (String) value;
-            // if (o instanceof Account) ((Account) o).setPass(pw);
+            if (o instanceof Account) ((Account) o).setPass(pw);
+            return;
         }
         case COL_USER: {
             String pw = (String) value;
-            // if (o instanceof Account) ((Account) o).setUser(pw);
+            if (o instanceof Account) ((Account) o).setUser(pw);
+            return;
         }
         }
     }

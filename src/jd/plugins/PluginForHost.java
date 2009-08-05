@@ -45,6 +45,7 @@ import jd.controlling.CaptchaController;
 import jd.controlling.DownloadController;
 import jd.controlling.JDLogger;
 import jd.gui.UserIF;
+import jd.gui.swing.jdgui.settings.panels.premium.Premium;
 import jd.http.Browser;
 import jd.nutils.Formatter;
 import jd.nutils.JDImage;
@@ -187,7 +188,7 @@ public abstract class PluginForHost extends Plugin {
         if (e.getID() >= 200) {
             int accountID = e.getID() - 200;
             Account account = accounts.get(accountID);
-            UserIF.getInstance().showAccountInformation(this, account);
+            Premium.showAccountInformation(this, account);
         } else if (e.getID() >= 100) {
             int accountID = e.getID() - 100;
             Account account = accounts.get(accountID);
@@ -195,28 +196,9 @@ public abstract class PluginForHost extends Plugin {
         }
     }
 
-    public AccountInfo getAccountInformation(Account account) throws Exception {
-        if (account.getPass() == null || account.getUser() == null) {
-            // frische INstanz
-            return null;
-        }
-        if (account.getPass().trim().length() == 0 && account.getUser().trim().length() == 0) {
-            // frische INstanz
-            return null;
-        }
-        AccountInfo ret = fetchAccountInfo(account);
-        if (ret == null) return null;
-        if (ret.isExpired()) {
-            String shortWarn = JDL.LF("gui.shortwarn.accountdisabled.expired", "Account %s(%s) got disabled(expired)", this.getHost(), account.getUser());
-            UserIF.getInstance().displayMiniWarning(JDL.L("gui.ballon.accountmanager.title", "Accountmanager"), shortWarn);
-        } else if (!ret.isValid()) {
-            String shortWarn = JDL.LF("gui.shortwarn.accountdisabled.invalid", "Account %s(%s) got disabled(invalid)", this.getHost(), account.getUser());
-            UserIF.getInstance().displayMiniWarning(JDL.L("gui.ballon.accountmanager.title", "Accountmanager"), shortWarn);
-        }
-        return ret;
-    }
-
+    /* default fetchAccountInfo, set account valid to true */
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        account.setValid(true);
         return null;
     }
 

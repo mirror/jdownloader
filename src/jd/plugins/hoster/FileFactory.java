@@ -147,14 +147,14 @@ public class FileFactory extends PluginForHost {
         try {
             login(account);
         } catch (PluginException e) {
-            ai.setValid(false);
+            account.setValid(false);
             return ai;
         }
 
         br.getPage("http://www.filefactory.com/member/");
         String expire = br.getMatch("Your account is valid until the <strong>(.*?)</strong>");
         if (expire == null) {
-            ai.setValid(false);
+            account.setValid(false);
             return ai;
         }
         expire = expire.replace("th", "");

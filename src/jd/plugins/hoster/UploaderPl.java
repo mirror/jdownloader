@@ -96,17 +96,17 @@ public class UploaderPl extends PluginForHost {
         try {
             login(account);
         } catch (PluginException e) {
-            ai.setValid(false);
+            account.setValid(false);
             return ai;
         }
         if (!isPremium()) {
             ai.setStatus(JDL.L("plugins.hoster.UploaderPl.freememberacc", "Free registered user account"));
-            ai.setValid(true);
+            account.setValid(true);
             return ai;
         }
         String expired = br.getRegex("<b>Expired\\?</b></td>\\s*<td[^>]*>(.*?) <a href").getMatch(0);
         if (!expired.equalsIgnoreCase("No")) {
-            ai.setValid(false);
+            account.setValid(false);
             ai.setStatus(JDL.L("plugins.hoster.UploaderPl.accountexpired", "Account expired"));
             return ai;
         }

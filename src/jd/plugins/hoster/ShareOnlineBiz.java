@@ -82,11 +82,11 @@ public class ShareOnlineBiz extends PluginForHost {
         try {
             login(account);
         } catch (PluginException e) {
-            ai.setValid(false);
+            account.setValid(false);
             return ai;
         }
         if (!isPremium()) {
-            ai.setValid(false);
+            account.setValid(false);
             ai.setStatus("No Premium Account!");
             return ai;
         }
@@ -96,7 +96,7 @@ public class ShareOnlineBiz extends PluginForHost {
         String expire = br.getRegex(Pattern.compile("<b>Package Expire Date:</b></td>.*?<td align=\"left\">(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         ai.setValidUntil(Regex.getMilliSeconds(expire, "MM/dd/yy", null));
         ai.setTrafficLeft(-1);
-        ai.setValid(true);
+        account.setValid(true);
         return ai;
     }
 

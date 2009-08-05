@@ -85,7 +85,7 @@ public class ShareBaseTo extends PluginForHost {
         try {
             login(account);
         } catch (PluginException e) {
-            ai.setValid(false);
+            account.setValid(false);
             return ai;
         }
         String points = br.getRegex(Pattern.compile("<td>Premiumpunkte:</td>.*?<td><input.*cleanform.*value=\"([\\d\\.]+) Punkte\"></td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);

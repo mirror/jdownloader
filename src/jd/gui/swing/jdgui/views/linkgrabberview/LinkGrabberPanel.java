@@ -92,7 +92,6 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
     private LinkCheck lc = LinkCheck.getLinkChecker();
     private Timer Update_Async;
     private static LinkGrabberPanel INSTANCE;
-    private boolean visible = false;
 
     private LinkGrabberController LGINSTANCE = null;
 
@@ -116,10 +115,6 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
 
     public boolean needsViewport() {
         return false;
-    }
-
-    public boolean isVisible() {
-        return visible;
     }
 
     private LinkGrabberPanel() {
@@ -277,8 +272,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
     // @Override
     public void onHide() {
         LGINSTANCE.removeListener(this);
-        Update_Async.stop();
-        visible = false;
+        Update_Async.stop();       
     }
 
     public void addLinks(final ArrayList<DownloadLink> linkList) {
@@ -398,8 +392,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
 
     // @Override
     public void onShow() {
-        LGINSTANCE.addListener(this);
-        visible = true;
+        LGINSTANCE.addListener(this);        
         fireTableChanged(true);
     }
 
@@ -419,7 +412,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
             public void run() {
                 this.setName("LinkGrabberPanel: actionPerformed");
                 if (arg0.getSource() == INSTANCE.Update_Async) {
-                    if (visible) fireTableChanged(false);
+                    fireTableChanged(false);
                     return;
                 }
 

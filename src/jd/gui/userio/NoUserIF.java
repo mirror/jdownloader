@@ -1,8 +1,6 @@
 package jd.gui.userio;
 
 import jd.gui.UserIF;
-import jd.plugins.Account;
-import jd.plugins.PluginForHost;
 
 public class NoUserIF extends UserIF {
 
@@ -12,11 +10,6 @@ public class NoUserIF extends UserIF {
 
     @Override
     public void requestPanel(Panels panelID, Object parameter) {
-        System.out.println("NoUserIF set!");
-    }
-
-    @Override
-    public void showAccountInformation(PluginForHost pluginForHost, Account account) {
         System.out.println("NoUserIF set!");
     }
 

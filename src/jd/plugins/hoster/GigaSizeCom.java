@@ -70,12 +70,12 @@ public class GigaSizeCom extends PluginForHost {
         try {
             login(account);
         } catch (PluginException e) {
-            ai.setValid(false);
+            account.setValid(false);
             return ai;
         }
         if (!isPremium()) {
             ai.setStatus("Free Membership");
-            ai.setValid(true);
+            account.setValid(true);
             return ai;
         }
         br.getPage("http://www.gigasize.com/myfiles.php");
@@ -87,7 +87,7 @@ public class GigaSizeCom extends PluginForHost {
         if (points != null) {
             ai.setPremiumPoints(points);
         }
-        ai.setValid(true);
+        account.setValid(true);
         return ai;
     }
 

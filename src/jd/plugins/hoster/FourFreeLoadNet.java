@@ -154,14 +154,14 @@ public class FourFreeLoadNet extends PluginForHost {
         try {
             login(account);
         } catch (PluginException e) {
-            ai.setValid(false);
+            account.setValid(false);
             return ai;
         }
         try {
             isPremium();
         } catch (PluginException e) {
             ai.setStatus("Not a premium membership");
-            ai.setValid(false);
+            account.setValid(false);
             return ai;
         }
 
@@ -199,7 +199,7 @@ public class FourFreeLoadNet extends PluginForHost {
         }
 
         ai.setStatus("Account OK");
-        ai.setValid(true);
+        account.setValid(true);
 
         return ai;
     }

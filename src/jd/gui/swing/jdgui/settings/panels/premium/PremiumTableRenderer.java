@@ -4,7 +4,6 @@ import java.awt.Component;
 import java.awt.Dimension;
 
 import javax.swing.BorderFactory;
-import javax.swing.ImageIcon;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JTable;
@@ -15,10 +14,10 @@ import javax.swing.plaf.UIResource;
 import javax.swing.table.TableCellRenderer;
 
 import jd.controlling.AccountController;
+import jd.gui.swing.jdgui.views.downloadview.JDProgressBar;
 import jd.nutils.Formatter;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
-import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 import org.jdesktop.swingx.renderer.DefaultTableRenderer;
@@ -69,17 +68,16 @@ public class PremiumTableRenderer extends DefaultTableRenderer {
 
     private Border leftGap;
 
-    private ImageIcon icon_fp_open;
-
-    private ImageIcon icon_fp_closed;
+    private JDProgressBar progress;
 
     public PremiumTableRenderer(PremiumTable table) {
         this.table = table;
         // statuspanel = new StatusLabel();
         boolrend = new BooleanRenderer();
         leftGap = BorderFactory.createEmptyBorder(0, 30, 0, 0);
-        icon_fp_open = JDTheme.II("gui.images.package_opened_tree", 16, 16);
-        icon_fp_closed = JDTheme.II("gui.images.package_closed_tree", 16, 16);
+        progress = new JDProgressBar();
+        progress.setStringPainted(true);
+        progress.setOpaque(true);
     }
 
     // @Override
@@ -112,7 +110,6 @@ public class PremiumTableRenderer extends DefaultTableRenderer {
         switch (column) {
         case PremiumJTableModel.COL_HOSTER:
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-            ((JRendererLabel) co).setIcon(JDUtilities.getPluginForHost(host).getHosterIcon());
             ((JRendererLabel) co).setText(host);
             ((JRendererLabel) co).setBorder(leftGap);
             return co;
@@ -137,12 +134,14 @@ public class PremiumTableRenderer extends DefaultTableRenderer {
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             return co;
         case PremiumJTableModel.COL_EXPIREDATE:
-            if (ai == null) {
+            if (!ac.isValid()) {
+                value = "Invalid account";
+            } else if (ai == null) {
                 value = "Unkown";
             } else {
                 if (ai.getValidUntil() == -1) {
                     value = "Unlimited";
-                } else if (ai.getValidUntil() < System.currentTimeMillis()) {
+                } else if (ai.isExpired()) {
                     value = "Expired";
                 } else {
                     value = Formatter.formatTime(ai.getValidUntil());
@@ -151,16 +150,27 @@ public class PremiumTableRenderer extends DefaultTableRenderer {
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             return co;
         case PremiumJTableModel.COL_TRAFFICLEFT:
-            if (ai == null) {
+            if (!ac.isValid()) {
+                value = "Invalid account";
+                progress.setMaximum(10);
+                progress.setValue(0);
+            } else if (ai == null) {
                 value = "Unknown";
+                progress.setMaximum(10);
+                progress.setValue(0);
             } else {
                 if (ai.getTrafficLeft() < 0) {
                     value = "Unlimited";
+                    progress.setMaximum(10);
+                    progress.setValue(10);
                 } else {
                     value = Formatter.formatReadable(ai.getTrafficLeft());
+                    progress.setMaximum(ai.getTrafficMax());
+                    progress.setValue(ai.getTrafficLeft());
                 }
             }
-            co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            progress.setString((String) value);
+            co = progress;
             return co;
         }
         co = super.getTableCellRendererComponent(table, "", isSelected, hasFocus, row, column);
@@ -173,7 +183,7 @@ public class PremiumTableRenderer extends DefaultTableRenderer {
         switch (column) {
         case PremiumJTableModel.COL_HOSTER:
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-            ((JRendererLabel) co).setIcon(!ha.getBooleanProperty(PremiumTable.PROPERTY_EXPANDED, false) ? icon_fp_closed : icon_fp_open);
+            ((JRendererLabel) co).setIcon(JDUtilities.getPluginForHost(host).getHosterIcon());
             ((JRendererLabel) co).setText(host);
             return co;
         case PremiumJTableModel.COL_ENABLED:

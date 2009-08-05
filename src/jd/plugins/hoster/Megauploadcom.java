@@ -120,11 +120,11 @@ public class Megauploadcom extends PluginForHost {
         try {
             login(account);
         } catch (PluginException e) {
-            ai.setValid(false);
+            account.setValid(false);
             return ai;
         }
         if (!isPremium()) {
-            ai.setValid(true);
+            account.setValid(true);
             ai.setStatus("Free Membership");
             return ai;
         }
@@ -135,13 +135,13 @@ public class Megauploadcom extends PluginForHost {
                 ai.setValidUntil(System.currentTimeMillis() + (Long.parseLong(days) * 24 * 50 * 50 * 1000));
             } else if (days == null || days.equals("0")) {
                 ai.setExpired(true);
-                ai.setValid(false);
+                account.setValid(false);
                 return ai;
             }
         }
         String points = br.getRegex(Pattern.compile("<TD>Reward points available:</TD>.*?<TD><b>(\\d+)</b> ", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (points != null) ai.setPremiumPoints(Long.parseLong(points));
-        ai.setValid(true);
+        account.setValid(true);
         return ai;
     }
 

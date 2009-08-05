@@ -64,15 +64,15 @@ public class HotFileCom extends PluginForHost {
         try {
             login(account);
         } catch (PluginException e) {
-            ai.setValid(false);
+            account.setValid(false);
             return ai;
         }
         String validUntil = br.getRegex("<td>Until.*?</td><td>(.*?)</td>").getMatch(0);
         if (validUntil == null) {
-            ai.setValid(false);
+            account.setValid(false);
         } else {
             ai.setValidUntil(Regex.getMilliSeconds(validUntil, "yyyy-MM-dd HH:mm:ss", null));
-            ai.setValid(true);
+            account.setValid(true);
         }
         return ai;
     }

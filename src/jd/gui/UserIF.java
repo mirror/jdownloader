@@ -55,16 +55,6 @@ public abstract class UserIF {
      */
     public abstract void requestPanel(Panels panelID, Object parameter);
 
-    /**
-     * Zeigt die AccountInformationen an
-     * 
-     * @param pluginForHost
-     *            Das HostPlugin für den der Account gilt
-     * @param account
-     *            Der Account für den die Informationen geholt werden soll
-     */
-    public abstract void showAccountInformation(PluginForHost pluginForHost, Account account);
-
     public abstract void displayMiniWarning(String shortWarn, String longWarn);
 
     /**

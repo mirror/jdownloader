@@ -22,7 +22,6 @@ import jd.parser.Regex;
 public class AccountInfo extends Property {
 
     private static final long serialVersionUID = 1825140346023286206L;
-    private boolean account_valid = true;
     private long account_validUntil = -1;
     private long account_trafficLeft = -1;
     private long account_trafficMax = -1;
@@ -36,18 +35,12 @@ public class AccountInfo extends Property {
     private boolean account_expired = false;
     private String account_status;
     private long account_createTime = 0;
-    private long lastupdate = 0;
 
     public AccountInfo(PluginForHost plugin, Account account) {
-        this.lastupdate = System.currentTimeMillis();
     }
 
     public long getCreateTime() {
         return account_createTime;
-    }
-
-    public long lastUpdate() {
-        return lastupdate;
     }
 
     public void setCreateTime(long createTime) {
@@ -142,16 +135,6 @@ public class AccountInfo extends Property {
         return account_expired;
     }
 
-    /**
-     * Gibt zurück ob es sich um einen Gültigen Account handelt, logins richtige
-     * etc.
-     * 
-     * @return
-     */
-    public boolean isValid() {
-        return account_valid;
-    }
-
     public void setAccountBalance(long parseInt) {
         this.account_accountBalance = parseInt;
     }
@@ -160,23 +143,22 @@ public class AccountInfo extends Property {
         this.setAccountBalance((long) (Double.parseDouble(string) * 100));
     }
 
-    public void setExpired(boolean b) {
-        if (account_expired == b) return;
+    public void setExpired(boolean b) {        
         this.account_expired = b;
         if (b) {
             this.setTrafficLeft(-1);
         }
     }
 
-    public void setFilesNum(long parseInt) {        
+    public void setFilesNum(long parseInt) {
         this.account_filesNum = parseInt;
     }
 
-    public void setNewPremiumPoints(long newPremiumPoints) {        
+    public void setNewPremiumPoints(long newPremiumPoints) {
         this.account_newPremiumPoints = newPremiumPoints;
     }
 
-    public void setPremiumPoints(long parseInt) {        
+    public void setPremiumPoints(long parseInt) {
         this.account_premiumPoints = parseInt;
     }
 
@@ -184,17 +166,14 @@ public class AccountInfo extends Property {
         this.setPremiumPoints(Integer.parseInt(string.trim()));
     }
 
-    public void setStatus(String string) {
-        if (account_status == string) return;
-        if (account_status != null && account_status.equals(string)) return;
+    public void setStatus(String string) {        
         this.account_status = string;
     }
 
     /*
      * -1 = unlimited Traffic
      */
-    public void setTrafficLeft(long size) {
-        if (account_trafficLeft == size) return;
+    public void setTrafficLeft(long size) {        
         this.account_trafficLeft = size;
         if (account_trafficLeft != -1) {
             unlimitedTraffic = false;
@@ -224,10 +203,6 @@ public class AccountInfo extends Property {
     public void setUsedSpace(String string) {
         this.setUsedSpace(Regex.getSize(string));
 
-    }
-
-    public void setValid(boolean b) {
-        this.account_valid = b;
     }
 
     /**

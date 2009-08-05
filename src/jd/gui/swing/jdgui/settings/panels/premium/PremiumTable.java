@@ -1,5 +1,6 @@
 package jd.gui.swing.jdgui.settings.panels.premium;
 
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
@@ -39,20 +40,18 @@ public class PremiumTable extends JTable implements MouseListener {
     private PremiumTableRenderer cellRenderer;
     private PremiumTableEditor mycellEditor;
 
-    public static final String PROPERTY_EXPANDED = "expanded";
-
     public PremiumTable(PremiumJTableModel model, Premium panel) {
         super(model);
         this.panel = panel;
         this.model = model;
+        cellRenderer = new PremiumTableRenderer(this);
+        mycellEditor = new PremiumTableEditor();
         createColumns();
         setShowGrid(false);
         setShowHorizontalLines(false);
         setShowVerticalLines(false);
         addMouseListener(this);
 
-        cellRenderer = new PremiumTableRenderer(this);
-        mycellEditor = new PremiumTableEditor(this);
         getTableHeader().addMouseListener(this);
         getTableHeader().setReorderingAllowed(false);
         getTableHeader().setResizingAllowed(true);
@@ -195,34 +194,7 @@ public class PremiumTable extends JTable implements MouseListener {
 
     }
 
-    private int getRealColumnAtPoint(int x) {
-        /*
-         * diese funktion gibt den echten columnindex zurück, da durch
-         * an/ausschalten dieser anders kann
-         */
-        x = getColumnModel().getColumnIndexAtX(x);
-        return model.toModel(x);
-    }
-
     public void mouseReleased(MouseEvent e) {
-        /* nicht auf headerclicks reagieren */
-        if (e.getSource() != this) return;
-        int row = rowAtPoint(e.getPoint());
-        if (row == -1) return;
-        int column = getRealColumnAtPoint(e.getX());
-        System.out.println("TOGGLE1 " + column + " == " + e.getX());
-        if (column == 0 && e.getButton() == MouseEvent.BUTTON1 && e.getX() < 20 && e.getClickCount() == 1) {
-            Object element = this.getModel().getValueAt(row, 0);
-            System.out.println("TOGGLE2");
-            if (element != null && element instanceof HostAccounts) {
-                System.out.println("TOGGLE3");
-                toggleHostAccountsExpand((HostAccounts) element);
-            }
-        }
     }
 
-    public void toggleHostAccountsExpand(HostAccounts ha) {
-        ha.setProperty(PROPERTY_EXPANDED, !ha.getBooleanProperty(PROPERTY_EXPANDED, false));
-        panel.fireTableChanged(true);
-    }
 }

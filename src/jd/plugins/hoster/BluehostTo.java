@@ -59,7 +59,7 @@ public class BluehostTo extends PluginForHost {
         try {
             login(account);
         } catch (PluginException e) {
-            ai.setValid(false);
+            account.setValid(false);
             return ai;
         }
         ai.setTrafficLeft(Long.parseLong(br.getCookie("http://bluehost.to", "bluehost_traffic_check")));
