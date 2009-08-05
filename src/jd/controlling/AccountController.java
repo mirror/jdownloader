@@ -171,6 +171,10 @@ public class AccountController extends SubConfiguration implements ActionListene
         }
         AccountInfo ai = account.getAccountInfo();
         if (!forceupdate) {
+            if (account.lastUpdateTime() != 0 && ai != null && ai.isExpired()) {
+                System.out.println(" no update because expired " + hostname);
+                return ai;
+            }
             if (!account.isValid() && account.lastUpdateTime() != 0) {
                 System.out.println(" no update because invalid " + hostname);
                 return ai;
