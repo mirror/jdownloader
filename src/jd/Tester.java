@@ -8,7 +8,6 @@ import java.awt.event.KeyEvent;
 import javax.swing.AbstractAction;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
-import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
@@ -23,6 +22,8 @@ import jd.gui.swing.jdgui.userio.UserIOGui;
 import jd.utils.locale.JDL;
 
 public class Tester extends JPanel {
+
+    private static final long serialVersionUID = 4530213543834994877L;
 
     public JTextPane pane;
 
@@ -50,7 +51,7 @@ public class Tester extends JPanel {
         // menuBar.add(formatMenu);
 
         toolBar = new JToolBar("Formatting");
-        JButton bt = toolBar.add(leftJustifyAction);
+        toolBar.add(leftJustifyAction);
 
         toolBar.add(rightJustifyAction);
         toolBar.add(centerJustifyAction);
@@ -105,6 +106,8 @@ public class Tester extends JPanel {
     }
 
     class DemoAction extends AbstractAction {
+
+        private static final long serialVersionUID = 7119074607207399938L;
 
         public DemoAction(String text, Icon icon, String description, String event) {
             super(text, icon);

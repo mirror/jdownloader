@@ -1,12 +1,12 @@
 package jd.gui.swing.components;
 
 import java.awt.Component;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
-import java.net.URL;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.ArrayList;
 
 import javax.swing.DefaultListCellRenderer;
+import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -42,7 +42,7 @@ class IconListRenderer extends DefaultListCellRenderer {
     }
 }
 
-public class AccountDialog extends AbstractDialog implements ItemListener {
+public class AccountDialog extends AbstractDialog implements ActionListener {
 
     public static void showDialog() {
         AccountDialog dialog = new AccountDialog();
@@ -58,7 +58,7 @@ public class AccountDialog extends AbstractDialog implements ItemListener {
 
     private JComboBox hoster;
 
-    private JLink link;
+    private JButton link;
 
     private JTextField name;
 
@@ -76,15 +76,27 @@ public class AccountDialog extends AbstractDialog implements ItemListener {
         panel.add(new JLabel(JDL.L(JDL_PREFIX + "hoster", "Hoster:")));
         ArrayList<HostPluginWrapper> plugins = JDUtilities.getPremiumPluginsForHost();
         panel.add(hoster = new JComboBox(plugins.toArray(new HostPluginWrapper[plugins.size()])), "wrap");
-        hoster.addItemListener(this);
-        panel.add(link = new JLink(JDL.L(JDL_PREFIX + "buy", "Buy Account")), "wrap");
-        itemStateChanged(null);
         hoster.setRenderer(new IconListRenderer());
+        panel.add(link = new JButton(JDL.L(JDL_PREFIX + "buy", "Buy Account")), "wrap");
+        link.addActionListener(this);
+
         panel.add(new JLabel(JDL.L(JDL_PREFIX + "name", "Name:")));
         panel.add(name = new JTextField(), "w 200, wrap");
         panel.add(new JLabel(JDL.L(JDL_PREFIX + "pass", "Pass:")));
         panel.add(pass = new JPasswordField(), "w 200, wrap");
         return panel;
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        if (e.getSource() == link) {
+            try {
+                JLink.openURL(getHoster().getPlugin().getAGBLink());
+            } catch (Exception ex) {
+            }
+        } else {
+            super.actionPerformed(e);
+        }
     }
 
     public HostPluginWrapper getHoster() {
@@ -97,22 +109,6 @@ public class AccountDialog extends AbstractDialog implements ItemListener {
 
     public String getPassword() {
         return new String(pass.getPassword());
-    }
-
-    public void itemStateChanged(ItemEvent arg0) {
-        try {
-            String agb = getHoster().getPlugin().getAGBLink();
-            if (agb != null) {
-                link.setUrl(new URL(agb));
-                link.setEnabled(true);
-            } else {
-                link.setEnabled(false);
-            }
-            return;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        link.setEnabled(false);
     }
 
 }
