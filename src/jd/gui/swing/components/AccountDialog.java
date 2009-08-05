@@ -78,6 +78,7 @@ public class AccountDialog extends AbstractDialog implements ActionListener {
         panel.add(hoster = new JComboBox(plugins.toArray(new HostPluginWrapper[plugins.size()])), "wrap");
         hoster.setRenderer(new IconListRenderer());
         panel.add(link = new JButton(JDL.L(JDL_PREFIX + "buy", "Buy Account")), "wrap");
+        link.setIcon(JDTheme.II("gui.images.buy", 16, 16));
         link.addActionListener(this);
 
         panel.add(new JLabel(JDL.L(JDL_PREFIX + "name", "Name:")));
