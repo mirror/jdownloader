@@ -103,7 +103,7 @@ public class SrcParser {
         File cachePattern = JDUtilities.getResourceFile("tmp/lfe/cache/" + JDHash.getMD5(currentContent) + ".pattern");
         ArrayList<LngEntry> fileEntries = new ArrayList<LngEntry>();
         ArrayList<String> filePattern = new ArrayList<String>();
-        if (false && cacheEntries.exists() && cachePattern.exists()) {
+        if (cacheEntries.exists() && cachePattern.exists()) {
 
             try {
                 fileEntries = (ArrayList<LngEntry>) JDIO.loadObject(null, cacheEntries, false);

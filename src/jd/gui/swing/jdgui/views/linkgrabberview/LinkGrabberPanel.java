@@ -212,8 +212,8 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         new GuiRunnable<Object>() {
             // @Override
             public Object runSave() {
-                JDCollapser.getInstance().setContentPanel(filePackageInfo, null, null);
-                JDCollapser.getInstance().setTitle(JDL.L("gui.linkgrabber.packagetab.title", "File package"));
+                JDCollapser.getInstance().setContentPanel(filePackageInfo, JDL.L("gui.linkgrabber.packagetab.title", "File package"), null);
+        
                 InfoPanelHandler.setPanel(JDCollapser.getInstance());
 
                 return null;

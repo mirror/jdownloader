@@ -53,7 +53,7 @@ public class JDCollapser extends DroppedPanel {
     }
 
     private SwitchPanel panel;
-    private JLabel title;
+ 
     private JPanel content;
     private JMenuBar menubar;
     private JButton closeButton;
@@ -114,15 +114,9 @@ public class JDCollapser extends DroppedPanel {
         return panel;
     }
 
-    public void setTitle(String l) {
-        title.setText(l);
+ 
 
-    }
-
-    public void setIcon(ImageIcon ii) {
-        title.setIcon(ii);
-
-    }
+ 
 
     @Override
     /**
