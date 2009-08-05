@@ -441,6 +441,7 @@ action.premiumview.addacc.tooltip = Add a new Account
 action.premiumview.removeacc.tooltip = Remove selected Account(s)
 action.premiumview.removeacc.ask = Remove selected 
 action.premiumview.removeacc.accs = %s Account(s)
+jd.gui.swing.jdgui.settings.panels.premium.premium.buy.tooltip = Buy a new premium account.
 jd.gui.swing.jdgui.settings.panels.premium.premium.buy.title = Buy Premium
 jd.gui.swing.jdgui.settings.panels.premium.premium.buy.message = Which hoster are you interested in?
 jd.gui.swing.jdgui.settings.panels.premium.premium.continue = Continue
