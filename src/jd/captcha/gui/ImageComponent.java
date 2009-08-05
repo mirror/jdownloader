@@ -28,7 +28,7 @@ import javax.swing.JComponent;
 public class ImageComponent extends JComponent {
 
     private static final long serialVersionUID = -1497469256400862388L;
-    private Image image;
+    public Image image;
 
     public Image getImage() {
         return image;
