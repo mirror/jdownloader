@@ -85,7 +85,7 @@ public class Tester extends JPanel {
 
         UserIO.setInstance(UserIOGui.getInstance());
         // ask
-        int doit = UserIO.getInstance().requestComboDialog(UserIO.NO_COUNTDOWN, title, msg, new String[] { "a", "b", "c" }, 1, null, null, null);
+        int doit = UserIO.getInstance().requestComboDialog(UserIO.NO_COUNTDOWN, title, msg, new String[] { "a", "b", "c" }, 1, null, null, null, null);
         //        
         System.out.println(doit);
 

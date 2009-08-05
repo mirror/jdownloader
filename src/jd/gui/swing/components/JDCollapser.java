@@ -16,26 +16,31 @@
 
 package jd.gui.swing.components;
 
+import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 
+import javax.swing.AbstractAction;
+import javax.swing.BorderFactory;
+import javax.swing.Box;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
+import javax.swing.JMenuBar;
 import javax.swing.JPanel;
-import javax.swing.JSeparator;
+import javax.swing.UIManager;
 
 import jd.gui.swing.jdgui.InfoPanelHandler;
 import jd.gui.swing.jdgui.interfaces.DroppedPanel;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
-import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
+
 /**
  * class for an infopanel with close button.
+ * 
  * @author Coalado
- *
+ * 
  */
 public class JDCollapser extends DroppedPanel {
 
@@ -50,29 +55,35 @@ public class JDCollapser extends DroppedPanel {
     private SwitchPanel panel;
     private JLabel title;
     private JPanel content;
+    private JMenuBar menubar;
+    private JButton closeButton;
+    private JButton menutitle;
 
     private JDCollapser() {
         super();
-        this.setLayout(new MigLayout("ins 0,wrap 1", "[fill,grow]", "[]5[fill,grow]"));
-        add(title = new JLabel(""), "split 3,gapleft 5,gapbottom 0,gaptop 0");
-        title.setIcon(JDTheme.II("gui.images.sort", 24, 24));
-        title.setIconTextGap(15);
-        add(new JSeparator(), "growx,pushx,gapright 5");
+        this.setLayout(new MigLayout("ins 0 5 0 0,wrap 1", "[fill,grow]", "[fill,grow]"));
+
+        menubar = new JMenuBar();
+        menubar.add(menutitle = new JButton(""));
+        menutitle.setContentAreaFilled(false);
+        menutitle.setBorderPainted(false);
+        menubar.add(Box.createHorizontalGlue());
+
+        CloseAction closeAction = new CloseAction();
+        Box panel = new Box(1);
         JButton bt;
-        add(bt = new JButton(JDTheme.II("gui.images.close", 16, 16)), "gapright 10");
-        bt.setContentAreaFilled(false);
-        bt.setBorder(null);
-        bt.setOpaque(false);
-        bt.setBorderPainted(false);
-        bt.setToolTipText(JDL.L("gui.tooltips.infocollapser", "Click to close and save"));
-        bt.addActionListener(new ActionListener() {
 
-            public void actionPerformed(ActionEvent e) {
-                InfoPanelHandler.setPanel(null);
-                
-            }
+        panel.add(closeButton = new JButton(closeAction));
 
-        });
+        closeButton.setPreferredSize(new Dimension(20, 14));
+//        closeButton.setContentAreaFilled(false);
+        closeButton.setToolTipText(JDL.LF("jd.gui.swing.components.JDCollapser.closetooltip", "Close %s", ""));
+        panel.setOpaque(false);
+        panel.setBorder(BorderFactory.createEmptyBorder(0, 0, 1, 5));
+        menubar.add(panel);
+
+        add(menubar, "dock NORTH,height 18!,gapbottom 2");
+
         content = new JPanel();
         add(content);
         this.setVisible(true);
@@ -84,16 +95,17 @@ public class JDCollapser extends DroppedPanel {
 
     }
 
-
-
-    public void setContentPanel(SwitchPanel panel2) {
-        if (panel2 == this.panel) return;     
+    public void setContentPanel(SwitchPanel panel2, String name, ImageIcon icon) {
+        if (panel2 == this.panel) return;
+        menutitle.setText(name);
+        menutitle.setIcon(icon);
+        this.closeButton.setToolTipText(JDL.LF("jd.gui.swing.components.JDCollapser.closetooltip", "Close %s", name));
         content.removeAll();
         this.panel = panel2;
         if (panel == null) return;
-        content.setLayout(new MigLayout("ins 0,wrap 1", "[fill,grow]", "[fill,grow]"));      
+        content.setLayout(new MigLayout("ins 0,wrap 1", "[fill,grow]", "[fill,grow]"));
 
-        content.add(panel);     
+        content.add(panel);
         revalidate();
         content.revalidate();
     }
@@ -117,7 +129,7 @@ public class JDCollapser extends DroppedPanel {
      * deligates the onHidevenet to the contentpanel
      */
     public void onHide() {
-        if(panel!=null)panel.setHidden();
+        if (panel != null) panel.setHidden();
     }
 
     @Override
@@ -125,7 +137,27 @@ public class JDCollapser extends DroppedPanel {
      * deligates the onShow event to the contentpanel
      */
     public void onShow() {
-     if(panel!=null)panel.setShown();
-        
+        if (panel != null) panel.setShown();
+
     }
+
+    public class CloseAction extends AbstractAction {
+        /**
+         * 
+         */
+        private static final long serialVersionUID = -771203720364300914L;
+
+        public CloseAction() {
+
+            // this.putValue(AbstractAction.SMALL_ICON,
+            // UIManager.getIcon("Synthetica.docking.titlebar.close.hover"));
+
+            this.putValue(AbstractAction.SMALL_ICON, UIManager.getIcon("InternalFrame.closeIcon"));
+        }
+
+        public void actionPerformed(ActionEvent e) {
+            InfoPanelHandler.setPanel(null);
+        }
+    }
+
 }

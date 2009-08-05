@@ -19,6 +19,7 @@ package jd.gui.swing.jdgui.userio;
 import java.awt.Point;
 import java.io.File;
 
+import javax.swing.DefaultListCellRenderer;
 import javax.swing.ImageIcon;
 import javax.swing.filechooser.FileFilter;
 
@@ -179,13 +180,13 @@ public class UserIOGui extends UserIO {
     }
 
     @Override
-    public int requestComboDialog(final int flag, final String title,final String question, final String[] options, final int defaultSelection,final  ImageIcon icon, final String okText, final String cancelText) {
+    public int requestComboDialog(final int flag, final String title, final String question, final Object[] options, final int defaultSelection, final ImageIcon icon, final String okText, final String cancelText, final Object renderer) {
         if ((flag & UserIO.NO_USER_INTERACTION) > 0) return defaultSelection;
         return new GuiRunnable<Integer>() {
 
             @Override
             public Integer runSave() {
-                return new ComboDialog(flag, title, question, options, defaultSelection,icon, okText, cancelText).getReturnID();
+                return new ComboDialog(flag, title, question, options, defaultSelection, icon, okText, cancelText, (DefaultListCellRenderer) renderer).getReturnID();
             }
 
         }.getReturnValue();

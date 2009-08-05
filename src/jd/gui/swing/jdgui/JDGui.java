@@ -62,12 +62,14 @@ import jd.gui.swing.jdgui.menu.actions.ExitAction;
 import jd.gui.swing.jdgui.menu.actions.RestartAction;
 import jd.gui.swing.jdgui.settings.ConfigPanel;
 import jd.gui.swing.jdgui.settings.GUIConfigEntry;
+import jd.gui.swing.jdgui.settings.panels.premium.Premium;
 import jd.gui.swing.jdgui.views.ConfigurationView;
 import jd.gui.swing.jdgui.views.DownloadView;
 import jd.gui.swing.jdgui.views.LinkgrabberView;
 import jd.gui.swing.jdgui.views.TabbedPanelView;
 import jd.gui.swing.jdgui.views.linkgrabberview.LinkGrabberPanel;
 import jd.gui.swing.jdgui.views.logview.LogView;
+import jd.gui.swing.jdgui.views.sidebars.configuration.ConfigSidebar;
 import jd.nutils.JDFlags;
 import jd.nutils.JDImage;
 import jd.plugins.DownloadLink;
@@ -123,7 +125,6 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         ClipboardHandler.getClipboard().setTempDisabled(false);
         LinkGrabberController.getInstance().setDistributer(this);
     }
-    
 
     @Override
     public void displayMiniWarning(String shortWarn, String longWarn) {
@@ -459,8 +460,14 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
                 case LINKGRABBER:
                     mainTabbedPane.setSelectedComponent(linkgrabberView);
                     break;
+                case PREMIUMCONFIG:
+                    ((ConfigSidebar) JDGui.this.configurationView.getSidebar()).setSelectedTreeEntry(Premium.class);
+                    mainTabbedPane.setSelectedComponent(JDGui.this.configurationView);
+                    // Premium.showAccountInformation(this, account);
+                    break;
                 case CONFIGPANEL:
                     if (param instanceof ConfigContainer) {
+                        if (((ConfigContainer) param).getEntries().size() == 0) return null;
                         showConfigPanel((ConfigContainer) param);
                     }
                     break;
@@ -489,6 +496,10 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
              * 
              */
             private static final long serialVersionUID = -5264498535270934888L;
+
+           
+        
+            
 
             @Override
             public void initPanel() {
@@ -528,7 +539,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
 
             }
 
-        });
+        }, JDL.LF("jd.gui.swing.jdgui.JDGui.showConfigPanel.title","Setting for %s", container.getGroup().getName()), container.getGroup().getIcon());
         cp.initPanel();
         cp.load();
         // this.mainTabbedPane.getSelectedView().setContent(

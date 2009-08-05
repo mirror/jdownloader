@@ -28,7 +28,7 @@ public class PremiumJTableModel extends AbstractTableModel {
      * DO NOT MOVE THIS CONSTANT. IT's important to have it in this file for the
      * LFE to parse JDL Keys correct
      */
-    private static final String IDENT_PREFIX = "jd.gui.swing.jdgui.views.downloadview.";
+    private static final String IDENT_PREFIX = "jd.gui.swing.jdgui.settings.panels.premium.PremiumJTableModel.";
 
     private static final String[] COLUMN_NAMES = { JDL.L(IDENT_PREFIX + "hoster", "Hoster"), JDL.L(IDENT_PREFIX + "enabled", "Enabled"), JDL.L(IDENT_PREFIX + "user", "User"), JDL.L(IDENT_PREFIX + "pass", "Password"), JDL.L(IDENT_PREFIX + "status", "Status"), JDL.L(IDENT_PREFIX + "expiredate", "ExpireDate"), JDL.L(IDENT_PREFIX + "trafficleft", "Trafficleft") };
     private ArrayList<Object> list = new ArrayList<Object>();

@@ -26,13 +26,6 @@ abstract public class ClosableView extends View {
 
     }
 
-    public JMenu createMenu(String title) {
-        JMenu m = new JMenu(title);
-        m.add("Menu item #1 in " + title);
-        m.add("Menu item #2 in " + title);
-        m.add("Menu item #3 in " + title);
-        return m;
-    }
 
     /**
      * has to be called to init the close menu

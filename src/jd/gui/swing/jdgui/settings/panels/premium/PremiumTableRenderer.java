@@ -7,6 +7,7 @@ import javax.swing.BorderFactory;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JTable;
+import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
@@ -15,23 +16,25 @@ import javax.swing.table.TableCellRenderer;
 
 import jd.controlling.AccountController;
 import jd.gui.swing.jdgui.views.downloadview.JDProgressBar;
+import jd.gui.swing.laf.LookAndFeelController;
 import jd.nutils.Formatter;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 import org.jdesktop.swingx.renderer.DefaultTableRenderer;
 import org.jdesktop.swingx.renderer.JRendererLabel;
 
 class BooleanRenderer extends JCheckBox implements TableCellRenderer, UIResource {
 
-    private static final long serialVersionUID = 8136614456518376700L;
-    private static final Border noFocusBorder = new EmptyBorder(1, 1, 1, 1);
 
     public BooleanRenderer() {
         super();
         setHorizontalAlignment(JLabel.CENTER);
-        setBorderPainted(true);
+        setBorderPainted(false);
+if(LookAndFeelController.isSubstance()) this.setOpaque(false);
+       this.setFocusable(false);
     }
 
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
@@ -44,11 +47,11 @@ class BooleanRenderer extends JCheckBox implements TableCellRenderer, UIResource
         }
         setSelected((value != null && ((Boolean) value).booleanValue()));
 
-        if (hasFocus) {
-            setBorder(UIManager.getBorder("Table.focusCellHighlightBorder"));
-        } else {
-            setBorder(noFocusBorder);
-        }
+//        if (hasFocus) {
+//            setBorder(UIManager.getBorder("Table.focusCellHighlightBorder"));
+//        } else {
+//            setBorder(noFocusBorder);
+//        }
 
         return this;
     }
@@ -91,6 +94,8 @@ public class PremiumTableRenderer extends DefaultTableRenderer {
             } else {
                 co.setEnabled(true);
             }
+            co.setBackground(null);
+
         } else {
             co = getHostAccountsCell(table, value, isSelected, hasFocus, row, column);
             if (!((HostAccounts) value).isEnabled()) {
@@ -98,6 +103,7 @@ public class PremiumTableRenderer extends DefaultTableRenderer {
             } else {
                 co.setEnabled(true);
             }
+            co.setBackground(table.getBackground().darker());
         }
         co.setSize(new Dimension(200, 30));
         return co;
@@ -110,8 +116,9 @@ public class PremiumTableRenderer extends DefaultTableRenderer {
         switch (column) {
         case PremiumJTableModel.COL_HOSTER:
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-            ((JRendererLabel) co).setText(host);
+            ((JRendererLabel) co).setText(JDL.L("jd.gui.swing.jdgui.settings.panels.premium.PremiumTableRenderer.account", "Account"));
             ((JRendererLabel) co).setBorder(leftGap);
+            ((JRendererLabel) co).setHorizontalAlignment(SwingConstants.RIGHT);
             return co;
         case PremiumJTableModel.COL_ENABLED:
             value = ac.isEnabled();

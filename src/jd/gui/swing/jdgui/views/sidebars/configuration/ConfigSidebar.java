@@ -10,6 +10,7 @@ import javax.swing.tree.TreePath;
 
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.interfaces.SideBarPanel;
+import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.ConfigurationView;
 import jd.gui.swing.jdgui.views.sidebars.configuration.ConfigTreeModel.TreeEntry;
 import net.miginfocom.swing.MigLayout;
@@ -36,10 +37,11 @@ public class ConfigSidebar extends SideBarPanel {
             }
 
         });
-   
+
         tree.setCellRenderer(new TreeRenderer());
         tree.setOpaque(false);
         tree.setRootVisible(false);
+        tree.setRowHeight(24);
         tree.setExpandsSelectedPaths(true);
         tree.setBackground(null);
         tree.getSelectionModel().addTreeSelectionListener(new TreeSelectionListener() {
@@ -105,6 +107,32 @@ public class ConfigSidebar extends SideBarPanel {
 
     @Override
     protected void onShow() {
+    }
+
+    public void setSelectedTreeEntry(Class<? extends SwitchPanel> class1) {
+
+        TreeEntry root = (TreeEntry) tree.getModel().getRoot();
+        TreePath path = getEntry(new TreePath(root), TreeEntry.getTreeByClass(class1));
+        tree.setSelectionPath(path);
+
+    }
+
+    private TreePath getEntry(TreePath parent, TreeEntry treeEntry) {
+        TreeEntry node = (TreeEntry) parent.getLastPathComponent();
+        if(node==treeEntry)return parent;
+        if (node.size() >= 0) {
+            for (TreeEntry n : node.getEntries()) {
+                TreePath path = parent.pathByAddingChild(n);
+          
+                    TreePath res = getEntry(path, treeEntry);
+                    if(res!=null)return res;
+                }
+            }
+
+        
+
+        return null;
+
     }
 
 }

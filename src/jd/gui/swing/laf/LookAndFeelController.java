@@ -298,4 +298,15 @@ public class LookAndFeelController {
         }
     }
 
+    /**
+     * Returns if currently a substance look and feel is selected. Not very
+     * fast.. do not use this in often used methods
+     * 
+     * @return
+     */
+    public static boolean isSubstance() {
+
+        return UIManager.getLookAndFeel().getName().toLowerCase().contains("substance");
+    }
+
 }

@@ -251,8 +251,9 @@ public abstract class UserIO {
      * @param icon
      * @param okText
      * @param cancelText
+     * @param renderer TODO
      * @return
      */
-    public abstract int requestComboDialog(int flag, String title, String question, String[] options, int defaultSelection, ImageIcon icon, String okText, String cancelText);
+    public abstract int requestComboDialog(int flag, String title, String question, Object[] options, int defaultSelection, ImageIcon icon, String okText, String cancelText, Object renderer);
 
 }

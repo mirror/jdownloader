@@ -18,6 +18,7 @@ package jd.gui.swing.dialog;
 
 import java.awt.Dimension;
 
+import javax.swing.DefaultListCellRenderer;
 import javax.swing.ImageIcon;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
@@ -34,11 +35,13 @@ public class ComboDialog extends AbstractDialog {
     private JTextPane messageArea;
     private JComboBox input;
     private int defaultAnswer;
-    private String[] options;
+    private Object[] options;
+    private DefaultListCellRenderer renderer;
 
-    public ComboDialog(int flag, String title, String question, String[] options, int defaultSelection, ImageIcon icon, String okText, String cancelText) {
+    public ComboDialog(int flag, String title, String question, Object[] options, int defaultSelection, ImageIcon icon, String okText, String cancelText, DefaultListCellRenderer renderer) {
         super(flag, title, icon, okText, cancelText);
         message = question;
+        this.renderer = renderer;
         this.defaultAnswer = defaultSelection;
         this.options = options;
         init();
@@ -57,7 +60,7 @@ public class ComboDialog extends AbstractDialog {
         contentpane.add(messageArea);
 
         input = new JComboBox(options);
-
+        if (renderer != null) input.setRenderer(renderer);
         input.setSelectedIndex(this.defaultAnswer);
 
         if (AbstractDialog.getDefaultDimension() != null) {

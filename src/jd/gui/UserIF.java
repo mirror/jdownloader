@@ -38,6 +38,11 @@ public abstract class UserIF {
          * 
          */
         CONFIGPANEL,
+        
+        /**
+         * Premium configpanel. has account as parameter
+         */
+      PREMIUMCONFIG,
       
     };
 

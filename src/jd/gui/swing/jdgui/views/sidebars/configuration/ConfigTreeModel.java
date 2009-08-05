@@ -1,6 +1,7 @@
 package jd.gui.swing.jdgui.views.sidebars.configuration;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import javax.swing.ImageIcon;
 import javax.swing.event.TreeModelListener;
@@ -82,7 +83,7 @@ public class ConfigTreeModel implements TreeModel {
 
     private void initExtensions(TreeEntry addons2) {
         for (final OptionalPluginWrapper plg : OptionalPluginWrapper.getOptionalWrapper()) {
-            if (!plg.isLoaded() || !plg.isEnabled()||plg.getPlugin().getConfig().getEntries().size()==0) continue;
+            if (!plg.isLoaded() || !plg.isEnabled() || plg.getPlugin().getConfig().getEntries().size() == 0) continue;
 
             addons2.add(new TreeEntry(new AddonConfig(plg), plg.getHost()).setIcon(plg.getPlugin().getIconKey()));
         }
@@ -125,7 +126,7 @@ public class ConfigTreeModel implements TreeModel {
 
     }
 
-    class TreeEntry {
+    static class TreeEntry {
 
         private Class<? extends SwitchPanel> clazz;
         private String title;
@@ -183,7 +184,19 @@ public class ConfigTreeModel implements TreeModel {
         private String tooltip;
         private ArrayList<TreeEntry> entries;
         private SingletonPanel panel;
-    
+        private static final HashMap<Class<? extends SwitchPanel>, TreeEntry> PANELS = new HashMap<Class<? extends SwitchPanel>, TreeEntry>();
+
+        /**
+         * Returns the TreeEntry to a class if it has been added using the
+         * public static TreeEntry getTreeByClass(Class<? extends SwitchPanel>
+         * cl) constructor
+         * 
+         * @param cl
+         * @return
+         */
+        public static TreeEntry getTreeByClass(Class<? extends SwitchPanel> cl) {
+            return PANELS.get(cl);
+        }
 
         public TreeEntry(final Class<? extends SwitchPanel> class1, String l) {
             this.clazz = class1;
@@ -207,6 +220,8 @@ public class ConfigTreeModel implements TreeModel {
             }
             this.title = l;
             this.entries = new ArrayList<TreeEntry>();
+            PANELS.put(class1, this);
+
         }
 
         public SingletonPanel getPanel() {
@@ -252,12 +267,11 @@ public class ConfigTreeModel implements TreeModel {
          * @param host
          */
         public TreeEntry(ConfigPanel panel, String host) {
-            this.panel=new SingletonPanel(panel);           
+            this.panel = new SingletonPanel(panel);
             this.title = host;
             this.entries = new ArrayList<TreeEntry>();
-        }
 
-     
+        }
 
     }
 

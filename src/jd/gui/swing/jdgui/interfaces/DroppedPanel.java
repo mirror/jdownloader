@@ -1,5 +1,6 @@
 package jd.gui.swing.jdgui.interfaces;
 
+import jd.gui.swing.jdgui.borders.InsideShadowBorder;
 import jd.gui.swing.jdgui.borders.JDBorderFactory;
 
 /**
@@ -10,6 +11,8 @@ public abstract class DroppedPanel extends SwitchPanel {
     private static final long serialVersionUID = -4849858185626557726L;
 
     public DroppedPanel() {
-        this.setBorder(JDBorderFactory.createInsideShadowBorder(5, 0, 0, 0));
+        InsideShadowBorder border = new InsideShadowBorder(5, 0, 0, 0);
+      
+        this.setBorder(border);
     }
 }

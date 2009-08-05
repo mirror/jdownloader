@@ -387,7 +387,7 @@ public class SingleDownloadController extends Thread {
         if (doit == 4) {
 
             // ask
-            doit = UserIO.getInstance().requestComboDialog(UserIO.NO_COUNTDOWN, title, msg, fileExists, 0, null, null, null);
+            doit = UserIO.getInstance().requestComboDialog(UserIO.NO_COUNTDOWN, title, msg, fileExists, 0, null, null, null, null);
 
         }
         if (doit == 3) {
@@ -398,14 +398,14 @@ public class SingleDownloadController extends Thread {
                 int cd = UserIO.getCountdownTime();
                 try {
                     UserIO.setCountdownTime(10);
-                    doit = UserIO.getInstance().requestComboDialog(0, title, msg, fileExists, doit, null, null, null);
+                    doit = UserIO.getInstance().requestComboDialog(0, title, msg, fileExists, doit, null, null, null, null);
                     downloadLink.getFilePackage().setProperty("DO_WHEN_EXISTS", doit);
                 } finally {
                     UserIO.setCountdownTime(cd);
                 }
             } else {
                 // ask
-                doit = UserIO.getInstance().requestComboDialog(0, title, msg, fileExists, 0, null, null, null);
+                doit = UserIO.getInstance().requestComboDialog(0, title, msg, fileExists, 0, null, null, null, null);
                 downloadLink.getFilePackage().setProperty("DO_WHEN_EXISTS", doit);
             }
 
