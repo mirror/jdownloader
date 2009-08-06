@@ -62,7 +62,7 @@ public class AccountDialog extends AbstractDialog {
         panel.add(hoster = new JComboBox(array), "w 200!");
         if (plugin != null) {
             try {
-                hoster.setSelectedItem(plugin);
+                hoster.setSelectedItem(plugin.getWrapper());
             } catch (Exception e) {
             }
         }
