@@ -511,6 +511,7 @@ public class JDInit {
         new DecryptPluginWrapper("filestube.com", "FileStubeCom", "http://[\\w\\.]*?filestube\\.com/.+");
         new DecryptPluginWrapper("mp3zr.com", "Mp3ZrCom", "http://[\\w\\.]*?mp3zr\\.com/file/[0-9a-zA-Z]+/.+");
         new DecryptPluginWrapper("multiupload.com", "MultiuploadCom", "http://[\\w\\.]*?multiupload\\.com/[0-9A-Z]+");
+        new DecryptPluginWrapper("yourfileplace.Com", "YourFilePlaceCom", "http://[\\w\\.]*?yourfileplace\\.com/files/\\d+/.+\\.html");
 
         // Decrypter from Extern
         new DecryptPluginWrapper("rapidlibrary.com", "RapidLibrary", "http://rapidlibrary\\.com/download_file_i\\.php\\?.+");
