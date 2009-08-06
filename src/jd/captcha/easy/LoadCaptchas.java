@@ -65,7 +65,12 @@ public class LoadCaptchas extends BasicWindow {
 
 		return ret.toArray(new String[] {});
 	}
+	private void openDir(String dir)
+	{
+		if(JOptionPane.showConfirmDialog(null, "Captcha Ordner:"+dir+" jetzt öffnen?")==JOptionPane.YES_OPTION)
+            JDUtilities.openExplorer(new File(dir));
 
+	}
 	public LoadCaptchas() throws Exception {
 		super();
 		final String link = JOptionPane.showInputDialog("Bitte Link eingeben:");
@@ -105,6 +110,7 @@ public class LoadCaptchas extends BasicWindow {
 				}
 
 			}
+			openDir(dir);
 			return;
 		}
 		this.setAlwaysOnTop(true);
@@ -215,7 +221,7 @@ public class LoadCaptchas extends BasicWindow {
 						// TODO Auto-generated catch block
 						e1.printStackTrace();
 					}
-
+					openDir(dir);
 				}
 
 				public void mouseEntered(MouseEvent e) {
