@@ -41,13 +41,15 @@ public class UploadComUa extends PluginForHost {
         return "http://upload.com.ua/rules.php";
     }
 
+    public void correctDownloadLink(DownloadLink link) throws Exception {
+        String downloadlinklink = link.getDownloadURL().replaceAll("(link|get|stat)", "get");
+        link.setUrlDownload(downloadlinklink + "?mode=free");
+    }
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        String downloadlinklink = link.getDownloadURL().replaceAll("(link|get|stat)","get");
-        String freepage = downloadlinklink + "?mode=free";
-        br.getPage(freepage);
-        System.out.print(br.toString());
+        br.getPage(link.getDownloadURL());
         if (br.containsHTML("Файл не найден")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("\">Скачать (.*?)</a>").getMatch(0);
         String filesize = br.getRegex("file_size\">(.*?)</div>").getMatch(0);
@@ -61,9 +63,7 @@ public class UploadComUa extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
-        String downloadlinklink = downloadLink.getDownloadURL().replaceAll("(link|get|stat)","get");
-        String freepage = downloadlinklink + "?mode=free";
-        br.getPage(freepage);
+        br.getPage(downloadLink.getDownloadURL());
         // Link zum Captcha (kann bei anderen Hostern auch mit ID sein)
         String captchaurl = "http://upload.com.ua/confirm.php";
         String code = getCaptchaCode(captchaurl, downloadLink);
@@ -79,11 +79,12 @@ public class UploadComUa extends PluginForHost {
         // per Downloadmanager zu erschweren
         String dllink0 = br.getRegex("var pf_url = 'http://bs.upload.com.ua/banners/upload_popander.html.*?new Array\\((.*?)\\);").getMatch(0);
         if (dllink0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        String dllink = dllink0.replaceAll("(,|\"| |\r\n)", "");
+        String dllink = dllink0.replaceAll("(,|\"| |\r|\n)", "");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();
-            if (br.containsHTML("503 Service Temporarily Unavailable")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, null, 1 * 60 * 1001l); }
+            if (br.containsHTML("503 Service Temporarily Unavailable")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, null, 5 * 60 * 1001l); }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
         dl.startDownload();
     }

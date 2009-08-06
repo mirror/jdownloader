@@ -61,30 +61,26 @@ public class AnyFilesNet extends PluginForHost {
         String dllink = br.getRegex("<frame src=\"/tmpl/tmpl_frame_top.php\\?link=(.*?)\" name=\"topFrame\"").getMatch(0);
 
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,link, dllink, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
         dl.startDownload();
-
     }
 
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    // @Override
     public String getAGBLink() {
         return "http://www.anyfiles.net/page/terms.php";
     }
 
-    // @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        //cookie needs to be set!
+        br.postPage("http://anyfiles.net/", "de.x=10&de.y=9&vote_cr=de");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("was not found on this server.") || br.containsHTML("The requested file was not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("Der Besitzer der Datei begrenzte Anzahl von kostenlosen Downloads pro Tag")) {
             logger.warning(JDL.L("plugins.host.anyfilesnet.premiumonly", "Anyfiles.net: The owner of the file limited the number of free downloads per day, you will have to buy a premium account or wait till you can download the file as free user again!"));
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "See log");
+            throw new PluginException(LinkStatus.ERROR_FATAL, "See log");
         }
         String filename = Encoding.htmlDecode(br.getRegex("DATEI:</td><td width=\"500\" valign=\"top\"><h2 style=\"margin-top:1px; margin-bottom:0px;\">(.*?)</h2></td></tr>").getMatch(0));
         String filesize = br.getRegex("SSE:</td><td width=\"500\" valign=\"top\">(.*?( Mb| b| Gb| Kb))  &nbsp;&nbsp;&nbsp").getMatch(0);
@@ -94,20 +90,12 @@ public class AnyFilesNet extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    public String getVersion() {
-        return getVersion("$Revision$");
-    }
-
-    // @Override
     public void reset() {
     }
 
-    // @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 
