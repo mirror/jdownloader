@@ -6,6 +6,7 @@ import jd.config.MenuAction;
 import jd.controlling.AccountController;
 import jd.controlling.AccountControllerEvent;
 import jd.controlling.AccountControllerListener;
+import jd.gui.swing.GuiRunnable;
 
 /**
  * This calss maps a MenItem to an account, and help to synchronize states like
@@ -34,9 +35,20 @@ public class AccountMenuItemSyncer implements AccountControllerListener {
 
     }
 
-    public void onAccountControllerEvent(AccountControllerEvent event) {
-        MenuAction item = map.get(event.getAccount());
-        item.setSelected(event.getAccount().isEnabled());
+    public void onAccountControllerEvent(final AccountControllerEvent event) {
+        
+        new GuiRunnable<Object>(){
+
+            @Override
+            public Object runSave() {
+                MenuAction item = map.get(event.getAccount());
+                item.setSelected(event.getAccount().isEnabled());
+                return null;
+            }
+            
+            
+        }.start();
+       
 
     }
 
