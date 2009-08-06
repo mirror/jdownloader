@@ -72,6 +72,7 @@ import jd.gui.swing.jdgui.views.logview.LogView;
 import jd.gui.swing.jdgui.views.sidebars.configuration.ConfigSidebar;
 import jd.nutils.JDFlags;
 import jd.nutils.JDImage;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -462,7 +463,13 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
                     break;
                 case PREMIUMCONFIG:
                     ((ConfigSidebar) JDGui.this.configurationView.getSidebar()).setSelectedTreeEntry(Premium.class);
+
+                    Premium p = (Premium) configurationView.getContent();
+   
+                    p.setSelectedAccount((Account) param);
+
                     mainTabbedPane.setSelectedComponent(JDGui.this.configurationView);
+
                     // Premium.showAccountInformation(this, account);
                     break;
                 case CONFIGPANEL:

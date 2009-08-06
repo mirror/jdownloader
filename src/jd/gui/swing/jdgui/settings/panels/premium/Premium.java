@@ -267,8 +267,7 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
                 if (!fast) tablerefreshinprogress = false;
             }
         }.start();
-        
-       
+
     }
 
     @Override
@@ -365,4 +364,11 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
         }.start();
     }
 
+    public void setSelectedAccount(Account param) {
+        int row = ((PremiumJTableModel) internalTable.getModel()).getRowforObject(param);
+
+        this.internalTable.getSelectionModel().setSelectionInterval(row, row);
+    }
+
+  
 }

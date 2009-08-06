@@ -27,6 +27,10 @@ public abstract class JDAction extends AbstractAction {
     public static final String IMAGE_KEY = "IMAGE_KEY";
     private ActionListener actionListener;
     private int actionID = -1;
+    public void setActionID(int actionID) {
+        this.actionID = actionID;
+    }
+
     private Property properties;
 
     /**

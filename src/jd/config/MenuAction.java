@@ -57,6 +57,15 @@ public class MenuAction extends JDAction {
         this.id = id;
     }
 
+    public int getId() {
+        
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
     public MenuAction(String title, int actionID) {
         this(NORMAL, title, actionID);
     }

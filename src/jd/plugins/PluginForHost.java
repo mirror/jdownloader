@@ -204,8 +204,8 @@ public abstract class PluginForHost extends Plugin {
         if (e.getID() >= 200) {
             int accountID = e.getID() - 200;
             Account account = accounts.get(accountID);
-
-            Premium.showAccountInformation(this, account);
+            UserIF.getInstance().requestPanel(UserIF.Panels.PREMIUMCONFIG, account);
+      
         } else if (e.getID() >= 100) {
             int accountID = e.getID() - 100;
             Account account = accounts.get(accountID);
@@ -257,16 +257,24 @@ public abstract class PluginForHost extends Plugin {
 
                         if (a.getUser() == null || a.getUser().trim().length() == 0) continue;
                         account = new MenuAction(MenuAction.CONTAINER, i++ + ". " + a.getUser(), 0);
-                        m = new MenuAction(MenuAction.TOGGLE, JDL.L("plugins.menu.enable_premium", "Aktivieren"), 100 + c - 1);
+                        m = AccountMenuItemSyncer.getInstance().get(a);
+
+                        if (m == null) {
+                            m = new MenuAction(MenuAction.TOGGLE, JDL.L("jd.plugins.PluginForHost.enable_premium", "Aktivieren"), 100 + c - 1);
+                        }
+                        m.setActionID(100 + c - 1);
                         m.setSelected(a.isEnabled());
                         m.setActionListener(this);
                         account.addMenuItem(m);
 
-                        m = new MenuAction(JDL.L("plugins.menu.premiumInfo", "Accountinformationen abrufen"), 200 + c - 1);
+                        AccountMenuItemSyncer.getInstance().map(a, m);
+
+                        m = new MenuAction(JDL.L("jd.plugins.PluginForHost.premiumInfo", "Details"), 200 + c - 1);
                         m.setActionListener(this);
                         account.addMenuItem(m);
                         premiumAction.addMenuItem(account);
                     }
+
                 } catch (Exception e) {
                     JDLogger.exception(e);
                 }
