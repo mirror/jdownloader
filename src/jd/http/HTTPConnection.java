@@ -30,7 +30,6 @@ import java.util.Map.Entry;
 
 import jd.http.requests.PostFormDataRequest;
 import jd.http.requests.PostRequest;
-import jd.http.requests.Request;
 import jd.parser.Regex;
 import sun.net.www.protocol.http.Handler;
 

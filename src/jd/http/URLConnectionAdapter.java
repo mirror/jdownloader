@@ -24,7 +24,6 @@ import java.net.URL;
 import java.util.List;
 import java.util.Map;
 
-import jd.http.requests.Request;
 
 public interface URLConnectionAdapter {
 

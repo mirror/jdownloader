@@ -24,7 +24,7 @@ import java.net.URLConnection;
 import jd.http.Browser;
 import jd.http.HTTPsConnection;
 import jd.http.JDProxy;
-import jd.http.requests.Request;
+import jd.http.Request;
 
 public class Handler extends sun.net.www.protocol.https.Handler {
 

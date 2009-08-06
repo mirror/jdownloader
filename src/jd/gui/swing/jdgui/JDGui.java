@@ -29,7 +29,6 @@ import javax.swing.JPanel;
 import javax.swing.ToolTipManager;
 
 import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.controlling.ClipboardHandler;
 import jd.controlling.DownloadController;
 import jd.controlling.JDController;
@@ -61,7 +60,6 @@ import jd.gui.swing.jdgui.menu.SaveMenu;
 import jd.gui.swing.jdgui.menu.actions.ExitAction;
 import jd.gui.swing.jdgui.menu.actions.RestartAction;
 import jd.gui.swing.jdgui.settings.ConfigPanel;
-import jd.gui.swing.jdgui.settings.GUIConfigEntry;
 import jd.gui.swing.jdgui.settings.panels.premium.Premium;
 import jd.gui.swing.jdgui.views.ConfigurationView;
 import jd.gui.swing.jdgui.views.DownloadView;
@@ -69,6 +67,7 @@ import jd.gui.swing.jdgui.views.LinkgrabberView;
 import jd.gui.swing.jdgui.views.TabbedPanelView;
 import jd.gui.swing.jdgui.views.linkgrabberview.LinkGrabberPanel;
 import jd.gui.swing.jdgui.views.logview.LogView;
+import jd.gui.swing.jdgui.views.sidebars.configuration.AddonConfig;
 import jd.gui.swing.jdgui.views.sidebars.configuration.ConfigSidebar;
 import jd.nutils.JDFlags;
 import jd.nutils.JDImage;
@@ -464,9 +463,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
                 case PREMIUMCONFIG:
                     ((ConfigSidebar) JDGui.this.configurationView.getSidebar()).setSelectedTreeEntry(Premium.class);
 
-              
-  
-                    if(param!=null){
+                    if (param != null) {
                         Premium p = (Premium) configurationView.getContent();
                         p.setSelectedAccount((Account) param);
                     }
@@ -498,56 +495,13 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
     protected void showConfigPanel(final ConfigContainer container) {
 
         this.mainTabbedPane.getSelectedView().setInfoPanel(JDCollapser.getInstance());
-        ConfigPanel cp;
-
-        JDCollapser.getInstance().setContentPanel(cp = new ConfigPanel() {
-
-            /**
-             * 
-             */
-            private static final long serialVersionUID = -5264498535270934888L;
-
-            @Override
-            public void initPanel() {
-
-                init(container);
-                add(panel);
-            }
-
-            /**
-             * TODO handle tabs
-             * 
-             * @param container
-             */
-            private void init(ConfigContainer container) {
-
-                // panel.add(Factory.createHeader(container.getTitle(),
-                // UserIO.getInstance().getIcon(UserIO.ICON_INFO)),"growx,pushx,spanx,newline,wrap");
-                for (ConfigEntry cfgEntry : container.getEntries()) {
-                    if (cfgEntry.getType() == ConfigContainer.TYPE_CONTAINER) {
-                        init(cfgEntry.getContainer());
-                        continue;
-                    }
-                    GUIConfigEntry ce = new GUIConfigEntry(cfgEntry);
-                    if (ce != null) addGUIConfigEntry(ce);
-                }
-
-            }
-
-            @Override
-            public void load() {
-                loadConfigEntries();
-            }
-
-            @Override
-            public void save() {
-                saveConfigEntries();
-
-            }
-
-        }, JDL.LF("jd.gui.swing.jdgui.JDGui.showConfigPanel.title", "Setting for %s", container.getGroup().getName()), container.getGroup().getIcon());
-        cp.initPanel();
-        cp.load();
+       
+        String name = "";
+        if (container.getTitle() != null) {
+            name = container.getTitle();
+        }
+        JDCollapser.getInstance().setContentPanel(AddonConfig.getInstance(container, name), JDL.LF("jd.gui.swing.jdgui.JDGui.showConfigPanel.title", "Setting for %s", name), container.getGroup() == null ? null : container.getGroup().getIcon());
+       
         // this.mainTabbedPane.getSelectedView().setContent(
         // JDCollapser.getInstance());
         this.mainTabbedPane.getSelectedView().setInfoPanel(JDCollapser.getInstance());

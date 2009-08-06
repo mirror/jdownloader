@@ -25,6 +25,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 
+import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.parser.html.Form;
 

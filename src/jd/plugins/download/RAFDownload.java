@@ -26,7 +26,7 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.ByteBufferEntry;
 import jd.controlling.JDLogger;
-import jd.http.requests.Request;
+import jd.http.Request;
 import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;

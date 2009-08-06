@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.http.requests;
+package jd.http;
 
 import java.io.BufferedReader;
 import java.io.EOFException;
@@ -34,13 +34,6 @@ import java.util.Map.Entry;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
-import jd.http.Browser;
-import jd.http.Cookie;
-import jd.http.Cookies;
-import jd.http.Encoding;
-import jd.http.JDProxy;
-import jd.http.RequestHeader;
-import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 
 public abstract class Request {
@@ -222,8 +215,10 @@ public abstract class Request {
             cookies.add(parseCookies(header, host, Date));
         }
     }
-
-    public Request connect() throws IOException {
+/**
+ * DO NEVER call this method directly... use browser.connect
+ */
+    protected Request connect() throws IOException {
         requested = true;
         openConnection();
         postRequest(httpConnection);

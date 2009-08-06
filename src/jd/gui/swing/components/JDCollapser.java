@@ -23,6 +23,7 @@ import java.awt.event.ActionEvent;
 import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
+import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JMenuBar;
@@ -69,19 +70,20 @@ public class JDCollapser extends DroppedPanel {
         menubar.add(Box.createHorizontalGlue());
 
         CloseAction closeAction = new CloseAction();
+        
         Box panel = new Box(1);
         // JButton bt;
 
         panel.add(closeButton = new JButton(closeAction));
 
-        closeButton.setPreferredSize(new Dimension(20, 14));
+        closeButton.setPreferredSize(new Dimension(closeAction.getWidth(), closeAction.getHeight()));
         // closeButton.setContentAreaFilled(false);
         closeButton.setToolTipText(JDL.LF("jd.gui.swing.components.JDCollapser.closetooltip", "Close %s", ""));
         panel.setOpaque(false);
         panel.setBorder(BorderFactory.createEmptyBorder(0, 0, 1, 5));
         menubar.add(panel);
 
-        add(menubar, "dock NORTH,height 18!,gapbottom 2");
+        add(menubar, "dock NORTH,height "+Math.max(closeAction.getHeight()+3, 18)+"!,gapbottom 2");
 
         content = new JPanel();
         add(content);
@@ -135,13 +137,27 @@ public class JDCollapser extends DroppedPanel {
          * 
          */
         private static final long serialVersionUID = -771203720364300914L;
+        private int height;
+        private int width;
+
+        public int getHeight() {
+            return height;
+        }
+
+        public int getWidth() {
+            // TODO Auto-generated method stub
+            return width;
+        }
 
         public CloseAction() {
 
             // this.putValue(AbstractAction.SMALL_ICON,
             // UIManager.getIcon("Synthetica.docking.titlebar.close.hover"));
+            Icon ic = UIManager.getIcon("InternalFrame.closeIcon");
 
-            this.putValue(AbstractAction.SMALL_ICON, UIManager.getIcon("InternalFrame.closeIcon"));
+            this.height = ic.getIconHeight();
+            this.width=ic.getIconWidth();
+            this.putValue(AbstractAction.SMALL_ICON, ic);
         }
 
         public void actionPerformed(ActionEvent e) {

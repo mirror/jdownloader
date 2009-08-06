@@ -28,9 +28,9 @@ import java.util.Set;
 import java.util.Map.Entry;
 
 import jd.http.Browser;
+import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.PostRequest;
-import jd.http.requests.Request;
 import jd.nutils.jobber.JDRunnable;
 import jd.utils.locale.JDL;
 
@@ -100,7 +100,8 @@ public class DownloadChunk extends DownloadChunkInterface implements JDRunnable 
         if (connectionRequested) throw new IllegalStateException("Already Connected");
         this.connectionRequested = true;
         if (request.getHttpConnection() == null) {
-            request.connect();
+
+            owner.getBrowser().openRequestConnection(request);
             this.connection = request.getHttpConnection();
         } else {
             URLConnectionAdapter connection = request.getHttpConnection();

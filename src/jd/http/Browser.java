@@ -40,7 +40,6 @@ import jd.http.requests.FormData;
 import jd.http.requests.GetRequest;
 import jd.http.requests.PostFormDataRequest;
 import jd.http.requests.PostRequest;
-import jd.http.requests.Request;
 import jd.http.requests.RequestVariable;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -336,7 +335,12 @@ public class Browser {
         return this.loadConnection(null);
 
     }
-
+/**
+ * Connects a request.
+ * and sets the requests as the browsers latest request
+ * @param request
+ * @throws IOException
+ */
     private void connect(Request request) throws IOException {
         // sets request BEVOR connection. this enhables to find the request in
         // the protocol handlers
@@ -347,16 +351,12 @@ public class Browser {
             throw new IOException("requestIntervalTime Exception");
         }
 
-        URL preurl = request.getJDPUrl();
+      
         try {
-
             assignURLToBrowserInstance(request.getJDPUrl(), this);
             request.connect();
-        } finally {
-            if (preurl != request.getHttpConnection().getURL()) {
-
-                System.err.println("H. wir haben ein Problem");
-            }
+        } finally { 
+            assignURLToBrowserInstance(request.getJDPUrl(), null);
             assignURLToBrowserInstance(request.getHttpConnection().getURL(), null);
         }
 

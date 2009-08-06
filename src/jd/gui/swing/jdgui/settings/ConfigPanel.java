@@ -40,7 +40,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
-public abstract class ConfigPanel extends SwitchPanel {
+public class ConfigPanel extends SwitchPanel {
 
     private static final long serialVersionUID = 3383448498625377495L;
 
@@ -59,6 +59,22 @@ public abstract class ConfigPanel extends SwitchPanel {
         panel = new JPanel();
         panel.setLayout(new MigLayout("ins 0 10 10 10,wrap 2", "[fill,grow 10]10[fill,grow]"));
 
+    }
+/**
+ * Constructor to display a COnfigpanel with contents of container
+ * @param container
+ */
+    public ConfigPanel(ConfigContainer container) {
+        this();
+        for (ConfigEntry cfgEntry : container.getEntries()) {
+
+            GUIConfigEntry ce = new GUIConfigEntry(cfgEntry);
+            if (ce != null) addGUIConfigEntry(ce);
+
+        }
+        
+        this.load();
+        this.add(panel);
     }
 
     @Override
@@ -209,9 +225,16 @@ public abstract class ConfigPanel extends SwitchPanel {
         addGUIConfigEntry(entry, panel);
     }
 
-    public abstract void initPanel();
+    public  void initPanel(){
+        
+        
+        
+    }
 
-    public abstract void load();
+    public  void load(){
+       this.loadConfigEntries();
+        
+    }
 
     public void loadConfigEntries() {
         for (GUIConfigEntry akt : entries) {
@@ -220,7 +243,10 @@ public abstract class ConfigPanel extends SwitchPanel {
         }
     }
 
-    public abstract void save();
+    public  void save(){
+        this.saveConfigEntries();
+        
+    }
 
     @Override
     public void onShow() {

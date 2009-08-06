@@ -19,6 +19,7 @@ package jd.http.requests;
 import java.io.IOException;
 import java.net.MalformedURLException;
 
+import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 
 public class GetRequest extends Request {

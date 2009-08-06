@@ -29,7 +29,7 @@ import jd.gui.swing.components.ConvertDialog;
 import jd.gui.swing.components.ConvertDialog.ConversionMode;
 import jd.http.Browser;
 import jd.http.Encoding;
-import jd.http.requests.Request;
+import jd.http.Request;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.Form.MethodType;

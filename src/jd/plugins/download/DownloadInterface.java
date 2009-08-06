@@ -44,9 +44,9 @@ import jd.controlling.JDLogger;
 import jd.controlling.SpeedMeter;
 import jd.http.Browser;
 import jd.http.Encoding;
+import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.PostRequest;
-import jd.http.requests.Request;
 import jd.nutils.Formatter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -1078,6 +1078,8 @@ abstract public class DownloadInterface {
 
     private int chunksStarted = 0;
 
+    private Browser browser;
+
     // public DownloadInterface(PluginForHost plugin, DownloadLink downloadLink,
     // HTTPConnection urlConnection) {
     // this(plugin, downloadLink);
@@ -1116,7 +1118,7 @@ abstract public class DownloadInterface {
         this.downloadLink = downloadLink;
         linkStatus = downloadLink.getLinkStatus();
         linkStatus.setStatusText(JDL.L("download.connection.normal", "Download"));
-
+browser=plugin.getBrowser().cloneBrowser();
         downloadLink.setDownloadInstance(this);
         this.plugin = plugin;
         requestTimeout = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT, 100000);
@@ -1126,6 +1128,7 @@ abstract public class DownloadInterface {
     public DownloadInterface(PluginForHost plugin, DownloadLink downloadLink, Request request) throws IOException, PluginException {
         this(plugin, downloadLink);
         this.request = request;
+        browser=plugin.getBrowser().cloneBrowser();
         requestTimeout = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT, 100000);
         readTimeout = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, 100000);
     }
@@ -1169,8 +1172,9 @@ abstract public class DownloadInterface {
     public long headFake(String value) throws IOException, PluginException {
         request.getHeaders().put("Range", value == null ? "bytes=" : value);
 
-        request.connect();
-
+      
+        browser.openRequestConnection(request);
+    
         if (this.plugin.getBrowser().isDebug()) logger.finest(request.printHeaders());
 
         // if (request.getHttpConnection().getResponseCode() != 416) {
@@ -1289,7 +1293,8 @@ abstract public class DownloadInterface {
                 connectFirstRange();
             } else {
                 request.getHeaders().remove("Range");
-                request.connect();
+              
+                browser.openRequestConnection(request);
             }
 
         }
@@ -1317,7 +1322,7 @@ abstract public class DownloadInterface {
     private void connectFirstRange() throws IOException {
         long part = downloadLink.getDownloadSize() / this.getChunkNum();
         request.getHeaders().put("Range", "bytes=" + (0) + "-" + (part - 1));
-        request.connect();
+        browser.openRequestConnection(request);
         if (request.getHttpConnection().getResponseCode() == 416) {
             logger.warning("HTTP/1.1 416 Requested Range Not Satisfiable");
             if (this.plugin.getBrowser().isDebug()) logger.finest(request.printHeaders());
@@ -1361,9 +1366,16 @@ abstract public class DownloadInterface {
         } else {
             request.getHeaders().put("Range", "bytes=" + start + "-" + end);
         }
-        request.connect();
+        browser.openRequestConnection(request);
     }
 
+    public Browser getBrowser() {
+        return browser;
+    } 
+
+    public void setBrowser(Browser browser) {
+        this.browser = browser;
+    }
     /**
      * Fügt einen Chunk hinzu und startet diesen
      * 

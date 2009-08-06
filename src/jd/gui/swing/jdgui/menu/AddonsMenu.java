@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import javax.swing.JMenuItem;
 
 import jd.OptionalPluginWrapper;
+import jd.config.ConfigContainer;
 import jd.config.MenuAction;
 import jd.gui.UserIF;
 import jd.gui.swing.menu.Menu;
@@ -68,7 +69,10 @@ public class AddonsMenu extends JStartMenu {
                     mi.setActionListener(new ActionListener() {
 
                         public void actionPerformed(ActionEvent e) {
-                            UserIF.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL, ((Plugin) ((MenuAction) e.getSource()).getProperty("PLUGIN")).getConfig());
+                            
+                            ConfigContainer cfg = ((Plugin) ((MenuAction) e.getSource()).getProperty("PLUGIN")).getConfig();
+                            cfg.setTitle(plg.getPlugin().getHost());
+                            UserIF.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL,cfg);
 //                            SimpleGUI.displayConfig(((Plugin) ((MenuAction) e.getSource()).getProperty("PLUGIN")).getConfig(), false);
                         }
 

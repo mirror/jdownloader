@@ -28,6 +28,7 @@ import java.util.ArrayList;
 
 
 import jd.http.Browser;
+import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 
 /**

@@ -23,7 +23,7 @@ import java.util.logging.Level;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.http.requests.Request;
+import jd.http.Request;
 import jd.parser.html.Form;
 import jd.parser.html.Form.MethodType;
 import jd.plugins.CryptedLink;

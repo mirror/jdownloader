@@ -26,7 +26,7 @@ import java.util.Comparator;
 
 import jd.controlling.JDLogger;
 import jd.http.Browser;
-import jd.http.requests.Request;
+import jd.http.Request;
 import jd.nutils.Threader;
 import jd.nutils.Threader.Worker;
 import jd.nutils.jobber.JDRunnable;
