@@ -35,8 +35,6 @@ import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
 import jd.config.Configuration;
 import jd.config.MenuAction;
@@ -50,6 +48,7 @@ import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.settings.panels.premium.Premium;
 import jd.http.Browser;
+import jd.http.Encoding;
 import jd.nutils.Formatter;
 import jd.nutils.JDImage;
 import jd.parser.Regex;
@@ -237,8 +236,8 @@ public abstract class PluginForHost extends Plugin {
         MenuAction m = new MenuAction(MenuAction.NORMAL, JDL.L("plugins.menu.configs", "Configuration"), 1);
         m.setActionListener(this);
         if (this.config == null || config.getEntries().size() == 0) m.setEnabled(false);
-        
-        config.setGroup(new ConfigGroup(this.getHost(),this.getHosterIcon()));
+
+        config.setGroup(new ConfigGroup(this.getHost(), this.getHosterIcon()));
         menuList.add(m);
         if (premiumAction == null) {
             premiumAction = new MenuAction(MenuAction.CONTAINER, JDL.L("plugins.menu.accounts", "Accounts"), 0);
@@ -294,18 +293,8 @@ public abstract class PluginForHost extends Plugin {
     }
 
     protected void enablePremium(String url) {
-
         this.premiumurl = url;
-
         enablePremium = true;
-        ConfigEntry cfg;
-
-//        ConfigContainer premiumConfig = new ConfigContainer(JDL.L("plugins.hoster.premiumtab", "Premium Einstellungen"));
-//        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CONTAINER, premiumConfig));
-
-//        cfg.setActionListener(this);
-//        cfg.setDefaultValue(new ArrayList<Account>());
-
     }
 
     public synchronized int getCurrentConnections() {
@@ -664,6 +653,7 @@ public abstract class PluginForHost extends Plugin {
      * @return
      */
     public String getBuyPremiumUrl() {
+        if (this.premiumurl != null) return "http://jdownloader.org/r.php?u=" + Encoding.urlEncode(premiumurl);
         return this.premiumurl;
     }
 

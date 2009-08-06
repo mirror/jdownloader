@@ -349,7 +349,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
 
         case ControlEvent.CONTROL_SYSTEM_EXIT:
             this.exitRequested = true;
-            JDController.requestDelayExit();
+            final String id = JDController.requestDelayExit("JDGUI");
             new GuiRunnable<Object>() {
                 @Override
                 public Object runSave() {
@@ -357,7 +357,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
                     GUIUtils.saveLastLocation(getMainFrame(), null);
                     GUIUtils.saveLastDimension(getMainFrame(), null);
                     GUIUtils.getConfig().save();
-                    JDController.releaseDelayExit();
+                    JDController.releaseDelayExit(id);
                     getMainFrame().setVisible(false);
                     getMainFrame().dispose();
                     return null;
@@ -497,10 +497,6 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
              */
             private static final long serialVersionUID = -5264498535270934888L;
 
-           
-        
-            
-
             @Override
             public void initPanel() {
 
@@ -539,7 +535,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
 
             }
 
-        }, JDL.LF("jd.gui.swing.jdgui.JDGui.showConfigPanel.title","Setting for %s", container.getGroup().getName()), container.getGroup().getIcon());
+        }, JDL.LF("jd.gui.swing.jdgui.JDGui.showConfigPanel.title", "Setting for %s", container.getGroup().getName()), container.getGroup().getIcon());
         cp.initPanel();
         cp.load();
         // this.mainTabbedPane.getSelectedView().setContent(

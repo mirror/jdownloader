@@ -30,6 +30,7 @@ import jd.PluginWrapper;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.DownloadController;
+import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.event.MessageEvent;
@@ -165,6 +166,8 @@ public class WebUpdate {
             return;
         }
         UPDATE_IN_PROGRESS = true;
+
+        final String id = JDController.requestDelayExit("doUpdateCheck");
         final ProgressController progress = new ProgressController(JDL.L("init.webupdate.progress.0_title", "Webupdate"), 100);
 
         final WebUpdater updater = new WebUpdater();
@@ -196,6 +199,7 @@ public class WebUpdate {
             progress.setStatusText("Update failed");
             progress.finalize(15000l);
             UPDATE_IN_PROGRESS = false;
+            JDController.releaseDelayExit(id);
             return;
         }
         boolean pluginRestartRequired = false;
@@ -243,6 +247,7 @@ public class WebUpdate {
                     progress.finalize();
                     if (doPluginRestart) JDUtilities.restartJD();
                     UPDATE_IN_PROGRESS = false;
+                    JDController.releaseDelayExit(id);
                     return;
                 }
                 if (!forceguiCall && SubConfiguration.getConfig("WEBUPDATE").getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false)) {
@@ -250,6 +255,7 @@ public class WebUpdate {
                     progress.finalize();
                     if (doPluginRestart) JDUtilities.restartJD();
                     UPDATE_IN_PROGRESS = false;
+                    JDController.releaseDelayExit(id);
                     return;
                 }
 
@@ -258,6 +264,7 @@ public class WebUpdate {
                     progress.finalize();
                     if (doPluginRestart) JDUtilities.restartJD();
                     UPDATE_IN_PROGRESS = false;
+                    JDController.releaseDelayExit(id);
                     return;
                 }
                 int org;
@@ -294,6 +301,7 @@ public class WebUpdate {
                 }
                 updater.getBroadcaster().removeListener(messageListener);
                 progress.finalize();
+                JDController.releaseDelayExit(id);
             }
         }.start();
     }
@@ -302,6 +310,7 @@ public class WebUpdate {
 
         new Thread() {
             public void run() {
+                final String id = JDController.requestDelayExit("doUpdate");
                 try {
                     int i = 0;
                     while (DYNAMIC_PLUGINS_FINISHED == false) {
@@ -322,6 +331,7 @@ public class WebUpdate {
 
                     if (!WebUpdate.updateUpdater()) {
                         UPDATE_IN_PROGRESS = false;
+                        JDController.releaseDelayExit(id);
                         if (doPluginRestart) JDUtilities.restartJD();
                         return;
                     }
@@ -343,7 +353,7 @@ public class WebUpdate {
                         System.out.println("UPdate: " + files);
 
                         updater.updateFiles(files, pc);
-
+                        JDController.releaseDelayExit(id);
                         JDUtilities.restartJD();
 
                     } catch (Exception e) {
@@ -353,6 +363,7 @@ public class WebUpdate {
                     pc.finalize();
 
                 } finally {
+                    JDController.releaseDelayExit(id);
                     UPDATE_IN_PROGRESS = false;
                 }
 

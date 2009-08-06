@@ -162,7 +162,7 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
                     @Override
                     public Object runSave() {
                         if (e.getSource() instanceof PluginForHost) {
-                            AccountDialog.showDialog((PluginForHost)e.getSource());
+                            AccountDialog.showDialog((PluginForHost) e.getSource());
                         } else {
                             AccountDialog.showDialog(null);
                         }
@@ -191,6 +191,7 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
 
             public void threadedActionPerformed(ActionEvent e) {
                 ArrayList<Account> accs = internalTable.getSelectedAccounts();
+                if (accs.size() == 0) return;
                 if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, JDL.L("action.premiumview.removeacc.ask", "Remove selected ") + " (" + JDL.LF("action.premiumview.removeacc.accs", "%s Account(s)", accs.size()) + ")"), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
                     for (Account acc : accs) {
                         AccountController.getInstance().removeAccount((String) null, acc);

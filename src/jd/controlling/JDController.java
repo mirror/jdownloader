@@ -204,7 +204,7 @@ public class JDController implements ControlListener {
 
     private Integer StartStopSync = new Integer(0);
 
-    private static Integer delayExit = new Integer(0);
+    private static ArrayList<String> delayMap = new ArrayList<String>();
     private static JDController INSTANCE;
 
     public JDController() {
@@ -341,12 +341,10 @@ public class JDController implements ControlListener {
      * Beendet das Programm
      */
     public void exit() {
-      
+
         prepareShutdown();
         System.exit(0);
     }
-
- 
 
     public void prepareShutdown() {
         logger.info("Stop all runing downloads");
@@ -371,20 +369,34 @@ public class JDController implements ControlListener {
 
     /*
      * hiermit kann ein Thread den Exit von JD verzögern (zb. speichern von db
-     * sachen)
+     * sachen) gibt eine ID zurück, mit welcher wieder der request freigegeben
+     * werden kann
      */
-    public static void requestDelayExit() {
-        synchronized (delayExit) {
-            delayExit++;
+    public static String requestDelayExit(String name) {
+        if (name == null) name = "unknown";
+        synchronized (delayMap) {
+            String id = "ID: " + name + " TIME: " + System.currentTimeMillis();
+            while (delayMap.contains(id)) {
+                try {
+                    Thread.sleep(50);
+                } catch (InterruptedException e) {
+                }
+                id = "ID: " + name + " TIME: " + System.currentTimeMillis();
+            }
+            delayMap.add(id);
+            return id;
         }
     }
 
     /*
-     * hiermit signalisiert ein Thread das es nun okay ist zu beenden
+     * hiermit signalisiert ein Thread das es nun okay ist zu beenden benötigt
+     * eine gültige ID
      */
-    public static void releaseDelayExit() {
-        synchronized (delayExit) {
-            delayExit--;
+    public static void releaseDelayExit(String id) {
+        synchronized (delayMap) {
+            if (!delayMap.remove(id)) {
+                JDLogger.getLogger().severe(id + " not found in delayMap!");
+            }
         }
     }
 
@@ -394,16 +406,14 @@ public class JDController implements ControlListener {
     private void waitDelayExit() {
         long maxdelay = 10000;
         while (maxdelay > 0) {
-            synchronized (delayExit) {
-                if (delayExit <= 0) return;
-            }
+            if (delayMap.size() <= 0) return;
             try {
                 Thread.sleep(200);
             } catch (InterruptedException e) {
             }
             maxdelay -= 200;
         }
-        logger.severe("Unable to satisfy all delayExit requests!");
+        logger.severe("Unable to satisfy all delayExit requests! " + delayMap);
     }
 
     /**

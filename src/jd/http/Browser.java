@@ -1399,7 +1399,7 @@ public class Browser {
     }
 
     public void setProxy(JDProxy proxy) {
-        JDLogger.getLogger().info("Use local proxy: " + proxy);
+        if (debug) JDLogger.getLogger().info("Use local proxy: " + proxy);
         if (proxy == null) {
             System.err.println("Browser:No proxy");
             this.proxy = null;

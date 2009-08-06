@@ -37,13 +37,13 @@ public abstract class PluginOptional extends Plugin implements ControlListener {
 
         // Deaktiviert das PLugin beim beenden
         if (event.getID() == ControlEvent.CONTROL_SYSTEM_EXIT) {
-            JDController.requestDelayExit();
+            final String id = JDController.requestDelayExit(((OptionalPluginWrapper) wrapper).getID());
             try {
                 onExit();
             } catch (Exception e) {
                 JDLogger.exception(e);
             }
-            JDController.releaseDelayExit();
+            JDController.releaseDelayExit(id);
         }
 
     }

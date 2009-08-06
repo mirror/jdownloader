@@ -8,13 +8,10 @@ import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JTable;
 import javax.swing.SwingConstants;
-import javax.swing.UIManager;
 import javax.swing.border.Border;
-import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.UIResource;
 import javax.swing.table.TableCellRenderer;
 
-import jd.controlling.AccountController;
 import jd.gui.swing.jdgui.views.downloadview.JDProgressBar;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.nutils.Formatter;
@@ -111,8 +108,7 @@ public class PremiumTableRenderer extends DefaultTableRenderer {
 
     private Component getAccountCell(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         Account ac = (Account) value;
-        AccountInfo ai = ac.getAccountInfo();
-        String host = AccountController.getInstance().getHosterName(ac);
+        AccountInfo ai = ac.getAccountInfo();        
         switch (column) {
         case PremiumJTableModel.COL_HOSTER:
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
