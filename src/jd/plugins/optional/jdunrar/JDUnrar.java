@@ -644,10 +644,10 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDUnrarConstants.CONFIG_KEY_OVERWRITE, JDL.L("gui.config.unrar.overwrite", "Overwrite existing files?")));
         ce.setDefaultValue(false);
 
-        this.passwordConfig = new ConfigContainer(JDL.L("plugins.optional.jdunrar.config.passwordtab", "List of passwords"));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, passwordConfig));
-
-        passwordConfig.addEntry(new ConfigEntry(ConfigContainer.TYPE_LISTCONTROLLED, (ListController) PasswordListController.getInstance(), JDL.LF("plugins.optional.jdunrar.config.passwordlist2", "List of all passwords. Each line one password. Available passwords: %s", "")));
+//        this.passwordConfig = new ConfigContainer(JDL.L("plugins.optional.jdunrar.config.passwordtab", "List of passwords"));
+//        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, passwordConfig));
+//
+//        passwordConfig.addEntry(new ConfigEntry(ConfigContainer.TYPE_LISTCONTROLLED, (ListController) PasswordListController.getInstance(), JDL.LF("plugins.optional.jdunrar.config.passwordlist2", "List of all passwords. Each line one password. Available passwords: %s", "")));
 
         ConfigContainer ext = new ConfigContainer(JDL.L("plugins.optional.jdunrar.config.advanced", "Premium settings"));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, ext));

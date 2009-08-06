@@ -464,9 +464,12 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
                 case PREMIUMCONFIG:
                     ((ConfigSidebar) JDGui.this.configurationView.getSidebar()).setSelectedTreeEntry(Premium.class);
 
-                    Premium p = (Premium) configurationView.getContent();
-   
-                    p.setSelectedAccount((Account) param);
+              
+  
+                    if(param!=null){
+                        Premium p = (Premium) configurationView.getContent();
+                        p.setSelectedAccount((Account) param);
+                    }
 
                     mainTabbedPane.setSelectedComponent(JDGui.this.configurationView);
 

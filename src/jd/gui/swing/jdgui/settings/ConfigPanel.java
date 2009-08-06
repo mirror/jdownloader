@@ -215,9 +215,8 @@ public abstract class ConfigPanel extends SwitchPanel {
 
     public void loadConfigEntries() {
         for (GUIConfigEntry akt : entries) {
-            if (akt.getConfigEntry().getPropertyInstance() != null && akt.getConfigEntry().getPropertyName() != null) {
-                akt.setData(akt.getConfigEntry().getPropertyInstance().getProperty(akt.getConfigEntry().getPropertyName()));
-            }
+            akt.load();
+           
         }
     }
 
@@ -226,7 +225,8 @@ public abstract class ConfigPanel extends SwitchPanel {
     @Override
     public void onShow() {
 
-        loadConfigEntries();
+//        loadConfigEntries();
+        load();
     }
 
     @Override
@@ -281,19 +281,11 @@ public abstract class ConfigPanel extends SwitchPanel {
  */
     public final void saveConfigEntries() {
         ArrayList<SubConfiguration> subs = new ArrayList<SubConfiguration>();
-        for (GUIConfigEntry akt : entries) {
-            String ndame = akt.getConfigEntry().getPropertyName();
-            System.out.println(ndame+" - "+akt.getConfigEntry().getPropertyInstance());
-
-           
+        for (GUIConfigEntry akt : entries) {  
             if (akt.getConfigEntry().getPropertyInstance() instanceof SubConfiguration && subs.indexOf(akt.getConfigEntry().getPropertyInstance()) < 0) {
                 subs.add((SubConfiguration) akt.getConfigEntry().getPropertyInstance());
             }
-            if (akt.getConfigEntry().getPropertyInstance() != null && akt.getConfigEntry().getPropertyName() != null) {
-                akt.getConfigEntry().getPropertyInstance().setProperty(akt.getConfigEntry().getPropertyName(), akt.getText());
-                System.out.println("saved "+akt.getText());
-            }
-           
+          akt.save();
         }
 
         for (SubConfiguration subConfiguration : subs) {
@@ -302,5 +294,5 @@ public abstract class ConfigPanel extends SwitchPanel {
             System.out.println(subConfiguration+" - "+subConfiguration.getProperties());
         }
     }
-
+ 
 }

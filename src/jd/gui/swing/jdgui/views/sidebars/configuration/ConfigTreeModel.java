@@ -9,6 +9,10 @@ import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 
 import jd.OptionalPluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
+import jd.controlling.ListController;
+import jd.controlling.PasswordListController;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.SingletonPanel;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
@@ -72,6 +76,12 @@ public class ConfigTreeModel implements TreeModel {
         // "Reconnect")).setIcon("gui.images.config.reconnect"));
         dl.add(new TreeEntry(jd.gui.swing.jdgui.settings.panels.reconnect.Advanced.class, jd.gui.swing.jdgui.settings.panels.reconnect.Advanced.getTitle()).setIcon("gui.images.reconnect_settings"));
 
+        
+        modules.add(dl = new TreeEntry(jd.gui.swing.jdgui.settings.panels.PasswordList.class, jd.gui.swing.jdgui.settings.panels.PasswordList.getTitle()).setIcon("gui.images.list"));
+        
+        
+        
+     
         root.add(plugins = new TreeEntry(JDL.L(JDL_PREFIX + "plugins.title", "Plugins & Add-ons")).setIcon("gui.images.config.packagemanager"));
         TreeEntry hoster;
         plugins.add(hoster = new TreeEntry(ConfigPanelPluginForHost.class, ConfigPanelPluginForHost.getTitle()).setIcon("gui.images.config.host"));

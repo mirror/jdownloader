@@ -321,8 +321,8 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
         case ConfigContainer.TYPE_CHECKBOX:
             return ((JCheckBox) input[0]).isSelected();
         case ConfigContainer.TYPE_LISTCONTROLLED:
-            configEntry.getListController().setList(((JDTextArea) input[0]).getText());
-            return null;
+          
+            return ((JDTextArea) input[0]).getText();
         case ConfigContainer.TYPE_BUTTON:
             return null;
         case ConfigContainer.TYPE_COMBOBOX:
@@ -416,7 +416,7 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
             ((JDTextField) input[0]).setText(text == null ? "" : text.toString());
             break;
         case ConfigContainer.TYPE_LISTCONTROLLED:
-            ((JDTextArea) input[0]).setText(configEntry.getListController().getList());
+            ((JDTextArea) input[0]).setText(text == null ? "" : text.toString());
             break;
         case ConfigContainer.TYPE_TEXTAREA:
             ((JDTextArea) input[0]).setText(text == null ? "" : text.toString());
@@ -481,6 +481,31 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
 
     public void stateChanged(ChangeEvent e) {
         getConfigEntry().valueChanged(getText());
+    }
+
+    /**
+     * updates config--> guiO
+     */
+    public void load() {
+        if (getConfigEntry().getPropertyInstance() != null && getConfigEntry().getPropertyName() != null) {
+            setData(getConfigEntry().getPropertyInstance().getProperty(getConfigEntry().getPropertyName()));
+        } else if (getConfigEntry().getListController() != null) {
+            setData(getConfigEntry().getListController().getList());
+        }
+
+    }
+
+    /**
+     * Saves the gui to config
+     */
+    public void save() {
+
+        if (getConfigEntry().getPropertyInstance() != null && getConfigEntry().getPropertyName() != null) {
+            getConfigEntry().getPropertyInstance().setProperty(getConfigEntry().getPropertyName(), getText());
+        } else if (getConfigEntry().getListController() != null) {
+            getConfigEntry().getListController().setList(getText() + "");
+        }
+
     }
 
 }

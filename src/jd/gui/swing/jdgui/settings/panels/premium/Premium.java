@@ -139,7 +139,7 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
     }
 
     private void initActions() {
-        new ThreadedAction("action.premiumview.addacc", "gui.images.premium") {
+        new ThreadedAction("action.premiumview.addacc", "gui.images.newlogins") {
 
             /**
              * 
