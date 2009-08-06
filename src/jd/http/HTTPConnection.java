@@ -42,8 +42,6 @@ public class HTTPConnection extends sun.net.www.protocol.http.HttpURLConnection 
     protected long[] ranges;
     protected boolean connectionnEstabilished = false;
 
-    protected JDProxy proxy = null;
-
     private Request request;
 
     private String customcharset = null;
@@ -56,7 +54,6 @@ public class HTTPConnection extends sun.net.www.protocol.http.HttpURLConnection 
     public HTTPConnection(URL url, Proxy p, Handler handler) {
 
         super(url, p, handler);
-        this.proxy = (JDProxy) p;
         requestProperties = new HashMap<String, List<String>>();
 
         Map<String, List<String>> tmp = getRequestProperties();
@@ -66,15 +63,6 @@ public class HTTPConnection extends sun.net.www.protocol.http.HttpURLConnection 
             requestProperties.put(next.getKey(), next.getValue());
         }
 
-    }
-
-    /**
-     * Returns the proxy that has been used for this connection
-     * 
-     * @return
-     */
-    public JDProxy getProxy() {
-        return proxy;
     }
 
     public void connect() throws IOException {

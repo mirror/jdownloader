@@ -47,8 +47,6 @@ public class HTTPsConnection extends HTTPConnection {
     public HTTPsConnection(URLConnection openConnection, Proxy p) {
         super(openConnection.getURL(), p, null);
         delegate = (HttpsURLConnectionImpl) openConnection;
-
-        this.proxy = (JDProxy) p;
         requestProperties = new HashMap<String, List<String>>();
 
         Map<String, List<String>> tmp = delegate.getRequestProperties();
