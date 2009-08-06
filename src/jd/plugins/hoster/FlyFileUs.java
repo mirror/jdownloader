@@ -82,7 +82,6 @@ public class FlyFileUs extends PluginForHost {
             }
             DLForm.put("password", passCode);
         }
-        br.setDebug(true);
         jd.plugins.BrowserAdapter.openDownload(br,downloadLink, DLForm, true, 1);
         if (!(dl.getConnection().getContentType().contains("octet"))) {
             /*
