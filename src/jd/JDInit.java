@@ -509,10 +509,10 @@ public class JDInit {
         new DecryptPluginWrapper("deezer.com", "DeezerCom", "http://[\\w\\.]*?deezer.com/.*?music/.+", PluginWrapper.DEBUG_ONLY);
         new DecryptPluginWrapper("file2upload.net", "File2UploadNetFolder", "http://[\\w\\.]*?file2upload\\.(net|com)/folder/[A-Z|0-9]+/");
         new DecryptPluginWrapper("filestube.com", "FileStubeCom", "http://[\\w\\.]*?filestube\\.com/.+");
-        new DecryptPluginWrapper("mp3zr.com", "Mp3ZrCom", "http://[\\w\\.]*?mp3zr\\.com/file/[0-9a-zA-z]+/.+");
+        new DecryptPluginWrapper("mp3zr.com", "Mp3ZrCom", "http://[\\w\\.]*?mp3zr\\.com/file/[0-9a-zA-Z]+/.+");
+        new DecryptPluginWrapper("multiupload.com", "MultiuploadCom", "http://[\\w\\.]*?multiupload\\.com/[0-9A-Z]+");
 
         // Decrypter from Extern
-
         new DecryptPluginWrapper("rapidlibrary.com", "RapidLibrary", "http://rapidlibrary\\.com/download_file_i\\.php\\?.+");
     }
 
