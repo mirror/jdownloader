@@ -1118,7 +1118,7 @@ abstract public class DownloadInterface {
         this.downloadLink = downloadLink;
         linkStatus = downloadLink.getLinkStatus();
         linkStatus.setStatusText(JDL.L("download.connection.normal", "Download"));
-browser=plugin.getBrowser().cloneBrowser();
+        browser = plugin.getBrowser().cloneBrowser();
         downloadLink.setDownloadInstance(this);
         this.plugin = plugin;
         requestTimeout = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT, 100000);
@@ -1128,7 +1128,7 @@ browser=plugin.getBrowser().cloneBrowser();
     public DownloadInterface(PluginForHost plugin, DownloadLink downloadLink, Request request) throws IOException, PluginException {
         this(plugin, downloadLink);
         this.request = request;
-        browser=plugin.getBrowser().cloneBrowser();
+        browser = plugin.getBrowser().cloneBrowser();
         requestTimeout = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT, 100000);
         readTimeout = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, 100000);
     }
@@ -1172,9 +1172,8 @@ browser=plugin.getBrowser().cloneBrowser();
     public long headFake(String value) throws IOException, PluginException {
         request.getHeaders().put("Range", value == null ? "bytes=" : value);
 
-      
         browser.openRequestConnection(request);
-    
+
         if (this.plugin.getBrowser().isDebug()) logger.finest(request.printHeaders());
 
         // if (request.getHttpConnection().getResponseCode() != 416) {
@@ -1293,8 +1292,8 @@ browser=plugin.getBrowser().cloneBrowser();
                 connectFirstRange();
             } else {
                 request.getHeaders().remove("Range");
-              
-                browser.openRequestConnection(request);
+
+                browser.connect(request);
             }
 
         }
@@ -1322,7 +1321,7 @@ browser=plugin.getBrowser().cloneBrowser();
     private void connectFirstRange() throws IOException {
         long part = downloadLink.getDownloadSize() / this.getChunkNum();
         request.getHeaders().put("Range", "bytes=" + (0) + "-" + (part - 1));
-        browser.openRequestConnection(request);
+        browser.connect(request);
         if (request.getHttpConnection().getResponseCode() == 416) {
             logger.warning("HTTP/1.1 416 Requested Range Not Satisfiable");
             if (this.plugin.getBrowser().isDebug()) logger.finest(request.printHeaders());
@@ -1366,16 +1365,17 @@ browser=plugin.getBrowser().cloneBrowser();
         } else {
             request.getHeaders().put("Range", "bytes=" + start + "-" + end);
         }
-        browser.openRequestConnection(request);
+        browser.connect(request);
     }
 
     public Browser getBrowser() {
         return browser;
-    } 
+    }
 
     public void setBrowser(Browser browser) {
         this.browser = browser;
     }
+
     /**
      * Fügt einen Chunk hinzu und startet diesen
      * 

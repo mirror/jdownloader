@@ -335,13 +335,14 @@ public class Browser {
         return this.loadConnection(null);
 
     }
-/**
- * Connects a request.
- * and sets the requests as the browsers latest request
- * @param request
- * @throws IOException
- */
-    private void connect(Request request) throws IOException {
+
+    /**
+     * Connects a request. and sets the requests as the browsers latest request
+     * 
+     * @param request
+     * @throws IOException
+     */
+    public void connect(Request request) throws IOException {
         // sets request BEVOR connection. this enhables to find the request in
         // the protocol handlers
         this.request = request;
@@ -351,11 +352,10 @@ public class Browser {
             throw new IOException("requestIntervalTime Exception");
         }
 
-      
         try {
             assignURLToBrowserInstance(request.getJDPUrl(), this);
             request.connect();
-        } finally { 
+        } finally {
             assignURLToBrowserInstance(request.getJDPUrl(), null);
             assignURLToBrowserInstance(request.getHttpConnection().getURL(), null);
         }
@@ -577,7 +577,6 @@ public class Browser {
 
     /**
      * Opens a connection based on the requets object
-     * 
      */
     public URLConnectionAdapter openRequestConnection(Request request) throws IOException {
         connect(request);
@@ -588,7 +587,6 @@ public class Browser {
         if (this.doRedirects && request.getLocation() != null) {
             this.openGetConnection(null);
         } else {
-
             currentURL = request.getUrl();
         }
         return this.request.getHttpConnection();
