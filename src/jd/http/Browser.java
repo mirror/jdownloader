@@ -42,7 +42,6 @@ import jd.http.requests.PostFormDataRequest;
 import jd.http.requests.PostRequest;
 import jd.http.requests.Request;
 import jd.http.requests.RequestVariable;
-
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.InputField;
@@ -348,9 +347,18 @@ public class Browser {
             throw new IOException("requestIntervalTime Exception");
         }
 
-        assignURLToBrowserInstance(request.getJDPUrl(), this);
-        request.connect();
-        assignURLToBrowserInstance(request.getHttpConnection().getURL(), null);
+        URL preurl = request.getJDPUrl();
+        try {
+
+            assignURLToBrowserInstance(request.getJDPUrl(), this);
+            request.connect();
+        } finally {
+            if (preurl != request.getHttpConnection().getURL()) {
+
+                System.err.println("H. wir haben ein Problem");
+            }
+            assignURLToBrowserInstance(request.getHttpConnection().getURL(), null);
+        }
 
     }
 
