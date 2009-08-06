@@ -14,7 +14,6 @@ import java.util.Vector;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -369,7 +368,8 @@ public class ChooseC extends BasicWindow {
 		saveColors(c, file);
 		return c;
 	}
-	private static Vector<CPoint> load(File file)
+	@SuppressWarnings("unchecked")
+	public static Vector<CPoint> load(File file)
 	{
 		if(file.exists())
 		{
@@ -385,8 +385,9 @@ public class ChooseC extends BasicWindow {
 	public static void main(String[] args) {
 		String path = JDUtilities.getJDHomeDirectoryFromEnvironment()
 				.getAbsolutePath();
-		File folder = new File(path + "/captchas/duckload.com");
-		getColors(folder, "duckload.com", null);
+		String hoster="canna.to";
+		File folder = new File(path + "/captchas/"+hoster);
+		getColors(folder, hoster, null);
 	}
 
 }
