@@ -79,6 +79,7 @@ public class AnyFilesNet extends PluginForHost {
     // @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        //cookie needs to be set!
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("was not found on this server.") || br.containsHTML("The requested file was not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("Der Besitzer der Datei begrenzte Anzahl von kostenlosen Downloads pro Tag")) {
