@@ -179,7 +179,7 @@ public class LoadCaptchas extends BasicWindow {
 						br.getDownload(f2, im[i]);
 						for (File file : files) {
 							if (!file.equals(f))
-								file.delete();
+								file.deleteOnExit();
 						}
 						if (im[i].equals(images[i])) {
 							for (int k = 0; k < menge - 2; k++) {
