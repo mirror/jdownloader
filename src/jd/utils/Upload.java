@@ -64,7 +64,8 @@ public class Upload {
             r.addFormData(new FormData("filecontent", file.getName(), file));
             r.addFormData(new FormData("freeaccountid", userid));
             r.addFormData(new FormData("password", pass));
-            r.connect();
+           br.openRequestConnection(r);
+           
             String code = r.read();
             System.out.println(code);
             String[] lines = Regex.getLines(code);
