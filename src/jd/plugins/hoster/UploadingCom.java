@@ -143,38 +143,27 @@ public class UploadingCom extends PluginForHost {
 
     // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
-        try {
-            setBrowserExclusive();
-            br.setFollowRedirects(true);
-            br.setCookie("http://www.uploading.com/", "_lang", "en");
-            br.setCookie("http://www.uploading.com/", "setlang", "en");
-            br.getPage(downloadLink.getDownloadURL());
-            br.cloneBrowser().getPage("http://img.uploading.com/css/blue.main.css");
-            String quant = br.getRegex("<img src=\"(http://pixel.quantserve.com/pixel/.*?)\"").getMatch(0);
-            Browser brc = br.cloneBrowser();
-            URLConnectionAdapter con = brc.openGetConnection(quant);
-            con.disconnect();
-            con = brc.openGetConnection("http://img.uploading.com/bb_bg_big.png");
-            con.disconnect();
-            Regex info = br.getRegex(Pattern.compile("<img src=\"http://uploading.com/images/ico_big_download_file.gif\" class=\"big_ico\" alt=\"\"/>.*<h2>(.*?)</h2><br/>.*<b>Size:</b>(.*?)<br/><br/>", Pattern.DOTALL));
-            String filesize = info.getMatch(1);
-            String filename = info.getMatch(0);
-            if (filesize == null || filename == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-            downloadLink.setName(filename.trim());
-            downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
-            return AvailableStatus.TRUE;
-        } catch (Exception e) {
-
-            throw e;
-        }
+        setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.setCookie("http://www.uploading.com/", "_lang", "en");
+        br.setCookie("http://www.uploading.com/", "setlang", "en");
+        br.getPage(downloadLink.getDownloadURL());
+        br.cloneBrowser().getPage("http://img.uploading.com/css/blue.main.css");
+        String quant = br.getRegex("<img src=\"(http://pixel.quantserve.com/pixel/.*?)\"").getMatch(0);
+        Browser brc = br.cloneBrowser();
+        URLConnectionAdapter con = brc.openGetConnection(quant);
+        con.disconnect();
+        con = brc.openGetConnection("http://img.uploading.com/bb_bg_big.png");
+        con.disconnect();
+        Regex info = br.getRegex(Pattern.compile("<img src=\"http://uploading.com/images/ico_big_download_file.gif\" class=\"big_ico\" alt=\"\"/>.*<h2>(.*?)</h2><br/>.*<b>Size:</b>(.*?)<br/><br/>", Pattern.DOTALL));
+        String filesize = info.getMatch(1);
+        String filename = info.getMatch(0);
+        if (filesize == null || filename == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        downloadLink.setName(filename.trim());
+        downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
+        return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
