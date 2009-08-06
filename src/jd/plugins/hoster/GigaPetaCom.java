@@ -35,12 +35,12 @@ public class GigaPetaCom extends PluginForHost {
         super(wrapper);
     }
 
-    @Override
+    // @Override
     public String getAGBLink() {
         return "http://gigapeta.com/rules/";
     }
 
-    @Override
+    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
@@ -56,7 +56,7 @@ public class GigaPetaCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    @Override
+    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
 
@@ -80,15 +80,15 @@ public class GigaPetaCom extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
+    // @Override
     public void reset() {
     }
 
-    @Override
+    // @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    @Override
+    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 3;
     }
