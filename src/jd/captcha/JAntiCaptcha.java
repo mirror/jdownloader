@@ -1512,7 +1512,7 @@ public class JAntiCaptcha {
     /**
      * Speichert die MTH File
      */
-    public void saveMTHFile() {
+    public synchronized void saveMTHFile() {
         String xmlString = JDUtilities.createXmlString(createXMLFromLetterDB());
         if (!JDIO.writeLocalFile(getResourceFile("letters.mth"), xmlString)) {
             if (Utilities.isLoggerActive()) {
@@ -1770,7 +1770,7 @@ public class JAntiCaptcha {
 
     }
 
-    int trainCaptcha(File captchafile, int letterNum) {
+    int trainCaptcha(final File captchafile, int letterNum) {
 
         if (!captchafile.exists()) {
             if (Utilities.isLoggerActive()) {
@@ -1784,7 +1784,7 @@ public class JAntiCaptcha {
         // Lade das Bild
         Image captchaImage = Utilities.loadImage(captchafile);
         // Erstelle hashwert
-        String captchaHash = JDHash.getMD5(captchafile);
+        final String captchaHash = JDHash.getMD5(captchafile);
 
         // Prüfe ob dieser captcha schon aufgenommen wurde und überspringe ihn
         // falls ja
@@ -1798,7 +1798,6 @@ public class JAntiCaptcha {
         Captcha captcha = createCaptcha(captchaImage);
         if (captcha == null) return -1;
         String code = null;
-        String guess = "";
         // Zeige das OriginalBild
         if (f != null) {
             f.dispose();
@@ -1818,7 +1817,7 @@ public class JAntiCaptcha {
         // Führe das Prepare aus
         // jas.executePrepareCommands(captcha);
         // Hole die letters aus dem neuen captcha
-        guess = checkCaptcha(captchafile, captcha);
+        final String guess = checkCaptcha(captchafile, captcha);
         Letter[] letters = captcha.getLetters(letterNum);
         // Utilities.wait(40000);
         // prüfe auf Erfolgreiche Lettererkennung
@@ -1852,7 +1851,37 @@ public class JAntiCaptcha {
         // return -1;
         // }
         // }
+        class myRunnable implements Runnable
+        {
+        	public String code =null;
+			public void run() {
+		        if (getCodeFromFileName(captchafile.getName()) == null) {
+		            code = JOptionPane.showInputDialog("Bitte Captcha Code eingeben (Press enter to confirm " + guess, guess);
+		            if (code != null && code.equals(guess)) {
+		                code = "";
+		            } else if (code == null) {
+		                boolean doIt = JOptionPane.showConfirmDialog(new JFrame(), "Ja (yes) = beenden (close) \t Nein (no) = nächstes Captcha (next captcha)") == JOptionPane.OK_OPTION;
+		                if (doIt) {
+		                    System.exit(0);
+		                }
+		            }
 
+		        } else {
+		            code = getCodeFromFileName(captchafile.getName());
+		            if (Utilities.isLoggerActive()) {
+		                logger.warning("captcha code für " + captchaHash + " verwendet: " + code);
+		            }
+
+		        }
+		        synchronized (this) {
+					this.notify();
+				}
+			}
+        	
+        }
+        myRunnable run = new myRunnable();
+        Thread inpThread = new Thread(run);
+        inpThread.start();
         // Zeige das After-prepare Bild an
 
         f.add(new JLabel("Letter Detection"), Utilities.getGBC(0, 3, 10, 1));
@@ -1870,6 +1899,7 @@ public class JAntiCaptcha {
         f.pack();
         // Decoden. checkCaptcha verwendet dabei die gecachte Erkennung der
         // letters
+         
 
         LetterComperator[] lcs = captcha.getLetterComperators();
         if (lcs == null) {
@@ -1929,26 +1959,18 @@ public class JAntiCaptcha {
         if (Utilities.isLoggerActive()) {
             logger.info("Decoded Captcha: " + guess + " Vality: " + captcha.getValityPercent());
         }
-
-        if (getCodeFromFileName(captchafile.getName()) == null) {
-            code = JOptionPane.showInputDialog("Bitte Captcha Code eingeben (Press enter to confirm " + guess, guess);
-            if (code != null && code.equals(guess)) {
-                code = "";
-            } else if (code == null) {
-                boolean doIt = JOptionPane.showConfirmDialog(new JFrame(), "Ja (yes) = beenden (close) \t Nein (no) = nächstes Captcha (next captcha)") == JOptionPane.OK_OPTION;
-                if (doIt) {
-                    System.exit(0);
-                }
-            }
-
-        } else {
-            code = getCodeFromFileName(captchafile.getName());
-            if (Utilities.isLoggerActive()) {
-                logger.warning("captcha code für " + captchaHash + " verwendet: " + code);
-            }
-
+        if(inpThread.isAlive())
+        {
+        synchronized (run) {
+        	try {
+				run.wait();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
         }
-
+        code=run.code;
         if (code == null) {
             File file = getResourceFile("detectionErrors3/" + System.currentTimeMillis() + "_" + captchafile.getName());
             file.getParentFile().mkdirs();
@@ -2029,7 +2051,12 @@ public class JAntiCaptcha {
             // mth.appendChild(element);
         }
         sortLetterDB();
-        saveMTHFile();
+        //das syncroniced kann das jetzt auch mit einem thread gemacht werden
+        new Thread(new Runnable() {
+			public void run() {
+		        saveMTHFile();
+			}
+		}).start();
         return ret;
     }
 
