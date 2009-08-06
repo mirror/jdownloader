@@ -61,7 +61,7 @@ public abstract class View extends SwitchPanel {
         add(rightPane);
         add(topContent = new JPanel(new MigLayout("ins 0", "[grow,fill]", "[]")), "gapbottom 3,dock NORTH,hidemode 3");
         topContent.setVisible(false);
-        add(bottomContent = new JPanel(new MigLayout("ins 0 3 0 0", "[grow,fill]", "[]")), "dock SOUTH,hidemode 3");
+        add(bottomContent = new JPanel(new MigLayout("ins 0 0 0 0", "[grow,fill]", "[]")), "dock SOUTH,hidemode 3");
         bottomContent.setVisible(false);
     }
 

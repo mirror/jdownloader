@@ -33,12 +33,19 @@ public class PremiumMenu extends JStartMenu implements ActionListener {
 
     private static final long serialVersionUID = 5075413754334671773L;
 
+    private static PremiumMenu INSTANCE;
+
     private JCheckBoxMenuItem premium;
 
-    public PremiumMenu() {
+    private PremiumMenu() {
         super("gui.menu.premium", "gui.images.taskpanes.premium");
 
         updateMenu();
+    }
+
+    public static PremiumMenu getInstance() {
+        if (INSTANCE == null) INSTANCE = new PremiumMenu();
+        return INSTANCE;
     }
 
     private void updateMenu() {
@@ -64,6 +71,12 @@ public class PremiumMenu extends JStartMenu implements ActionListener {
             JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, premium.isSelected());
             JDUtilities.getConfiguration().save();
         }
+    }
+
+    public void update() {
+        this.removeAll();
+        updateMenu();
+
     }
 
 }

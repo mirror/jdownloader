@@ -42,7 +42,12 @@ public abstract class UserIF {
          */
 
 
-        PREMIUMCONFIG
+        PREMIUMCONFIG,
+        
+        /**
+         * Addon manager panel
+         */
+        ADDON_MANAGER
 
 
     };

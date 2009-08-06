@@ -11,7 +11,7 @@ import javax.swing.JLabel;
 import javax.swing.event.EventListenerList;
 
 import jd.gui.swing.SwingGui;
-import jd.gui.swing.jdgui.borders.JDBorderFactory;
+import jd.gui.swing.jdgui.borders.InsideShadowBorder;
 import jd.gui.swing.jdgui.interfaces.DroppedPanel;
 import net.miginfocom.swing.MigLayout;
 
@@ -32,7 +32,10 @@ public abstract class InfoPanel extends DroppedPanel {
     public InfoPanel() {
         super();
         SwingGui.checkEDT();
-        this.setBorder(JDBorderFactory.createInsideShadowBorder(5, 0, 0, 0));
+        InsideShadowBorder b;
+        b = new InsideShadowBorder(5, 0, 0, 0);
+        b.setBorderInsets(0, 3, 0, 0);
+        this.setBorder(b);
         listenerList = new EventListenerList();
         map = new HashMap<String, JComponent>();
         this.setLayout(new MigLayout("ins 5", "[]5[]", "[][]"));
@@ -84,7 +87,7 @@ public abstract class InfoPanel extends DroppedPanel {
      * @param key
      * @param string
      */
-    protected void updateInfo(String key, Object value) {        
+    protected void updateInfo(String key, Object value) {
         SwingGui.checkEDT();
         JComponent c = map.get(key);
 
@@ -122,7 +125,7 @@ public abstract class InfoPanel extends DroppedPanel {
         SwingGui.checkEDT();
         x *= 2;
         x += 1;
-        JLabel myTitle = new JLabel((title!=null&&title.length()>0) ?title + ":":"");
+        JLabel myTitle = new JLabel((title != null && title.length() > 0) ? title + ":" : "");
         myTitle.setForeground(titleColor);
         myComponent.setForeground(valueColor);
         add(myTitle, "gapleft 20,alignx right,cell " + x + " " + y);

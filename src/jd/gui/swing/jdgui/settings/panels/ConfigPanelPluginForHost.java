@@ -43,6 +43,7 @@ import jd.config.ConfigEntry.PropertyType;
 import jd.gui.UserIF;
 import jd.gui.UserIO;
 import jd.gui.swing.components.linkbutton.JLink;
+import jd.gui.swing.jdgui.menu.PremiumMenu;
 import jd.gui.swing.jdgui.settings.ConfigPanel;
 import jd.nutils.JDFlags;
 import jd.utils.JDTheme;
@@ -180,6 +181,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
                 }
             } else if (col == 5) {
                 pluginsForHost.get(row).setUsePlugin((Boolean) value);
+                PremiumMenu.getInstance().update();
             }
         }
     }
@@ -315,6 +317,9 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
     @Override
     public void save() {
+        
+        
+        
     }
 
     @Override

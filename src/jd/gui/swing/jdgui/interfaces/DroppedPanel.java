@@ -11,7 +11,7 @@ public abstract class DroppedPanel extends SwitchPanel {
 
     public DroppedPanel() {
         InsideShadowBorder border = new InsideShadowBorder(5, 0, 0, 0);
-
+        border.setBorderInsets(0, 3, 0, 0);
         this.setBorder(border);
     }
 }

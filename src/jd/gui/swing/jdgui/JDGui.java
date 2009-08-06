@@ -59,7 +59,7 @@ import jd.gui.swing.jdgui.menu.PremiumMenu;
 import jd.gui.swing.jdgui.menu.SaveMenu;
 import jd.gui.swing.jdgui.menu.actions.ExitAction;
 import jd.gui.swing.jdgui.menu.actions.RestartAction;
-import jd.gui.swing.jdgui.settings.ConfigPanel;
+import jd.gui.swing.jdgui.settings.panels.ConfigPanelAddons;
 import jd.gui.swing.jdgui.settings.panels.premium.Premium;
 import jd.gui.swing.jdgui.views.ConfigurationView;
 import jd.gui.swing.jdgui.views.DownloadView;
@@ -260,9 +260,9 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         ret.add(file);
         ret.add(edit);
         JStartMenu m;
-        ret.add(m = new PremiumMenu());
+        ret.add(m = PremiumMenu.getInstance());
         m.setIcon(null);
-        ret.add(m = new AddonsMenu());
+        ret.add(m = AddonsMenu.getInstance());
         m.setIcon(null);
         ret.add(m = new AboutMenu());
         m.setIcon(null);
@@ -472,6 +472,15 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
 
                     // Premium.showAccountInformation(this, account);
                     break;
+
+                case ADDON_MANAGER:
+                    ((ConfigSidebar) JDGui.this.configurationView.getSidebar()).setSelectedTreeEntry(ConfigPanelAddons.class);
+
+                    mainTabbedPane.setSelectedComponent(JDGui.this.configurationView);
+
+                    // Premium.showAccountInformation(this, account);
+                    break;
+
                 case CONFIGPANEL:
                     if (param instanceof ConfigContainer) {
                         if (((ConfigContainer) param).getEntries().size() == 0) return null;
@@ -495,13 +504,13 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
     protected void showConfigPanel(final ConfigContainer container) {
 
         this.mainTabbedPane.getSelectedView().setInfoPanel(JDCollapser.getInstance());
-       
+
         String name = "";
         if (container.getTitle() != null) {
             name = container.getTitle();
         }
         JDCollapser.getInstance().setContentPanel(AddonConfig.getInstance(container, name), JDL.LF("jd.gui.swing.jdgui.JDGui.showConfigPanel.title", "Setting for %s", name), container.getGroup() == null ? null : container.getGroup().getIcon());
-       
+
         // this.mainTabbedPane.getSelectedView().setContent(
         // JDCollapser.getInstance());
         this.mainTabbedPane.getSelectedView().setInfoPanel(JDCollapser.getInstance());

@@ -26,6 +26,7 @@ import jd.OptionalPluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.MenuAction;
 import jd.gui.UserIF;
+import jd.gui.swing.SwingGui;
 import jd.gui.swing.menu.Menu;
 import jd.plugins.Plugin;
 import jd.utils.JDTheme;
@@ -34,11 +35,21 @@ import jd.utils.locale.JDL;
 public class AddonsMenu extends JStartMenu {
 
     private static final long serialVersionUID = 1019851981865519325L;
+    private static AddonsMenu INSTANCE = null;
 
-    public AddonsMenu() {
+    private AddonsMenu() {
         super("gui.menu.addons", "gui.images.config.addons");
 
         updateMenu();
+    }
+    public void update() {
+        this.removeAll();
+        updateMenu();
+
+    }
+    public static AddonsMenu getInstance() {
+        if (INSTANCE == null) INSTANCE = new AddonsMenu();
+        return INSTANCE;
     }
 
     private void updateMenu() {
@@ -46,7 +57,14 @@ public class AddonsMenu extends JStartMenu {
          * 
          * TODO
          */
-//        this.add(new AddonConfiguration());
+        MenuAction cfg = new MenuAction(JDL.L("jd.gui.swing.jdgui.menu.AddonsMenu.configuration", "Addon Manager"), -9999) {
+            public void actionPerformed(ActionEvent e) {
+                SwingGui.getInstance().requestPanel(UserIF.Panels.ADDON_MANAGER, null);
+            }
+
+        };
+
+        this.add(cfg);
 
         ArrayList<JMenuItem> itemsWithSubmenu = new ArrayList<JMenuItem>();
         ArrayList<JMenuItem> itemsToggle = new ArrayList<JMenuItem>();
@@ -69,11 +87,13 @@ public class AddonsMenu extends JStartMenu {
                     mi.setActionListener(new ActionListener() {
 
                         public void actionPerformed(ActionEvent e) {
-                            
+
                             ConfigContainer cfg = ((Plugin) ((MenuAction) e.getSource()).getProperty("PLUGIN")).getConfig();
                             cfg.setTitle(plg.getPlugin().getHost());
-                            UserIF.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL,cfg);
-//                            SimpleGUI.displayConfig(((Plugin) ((MenuAction) e.getSource()).getProperty("PLUGIN")).getConfig(), false);
+                            UserIF.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL, cfg);
+                            // SimpleGUI.displayConfig(((Plugin) ((MenuAction)
+                            // e.getSource()).getProperty("PLUGIN")).getConfig(),
+                            // false);
                         }
 
                     });

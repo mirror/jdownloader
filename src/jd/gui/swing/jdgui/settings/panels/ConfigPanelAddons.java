@@ -35,7 +35,9 @@ import javax.swing.table.AbstractTableModel;
 import jd.OptionalPluginWrapper;
 import jd.config.Configuration;
 import jd.gui.UserIF;
+import jd.gui.swing.jdgui.menu.AddonsMenu;
 import jd.gui.swing.jdgui.settings.ConfigPanel;
+import jd.gui.swing.jdgui.views.sidebars.configuration.ConfigSidebar;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
@@ -43,7 +45,6 @@ import net.miginfocom.swing.MigLayout;
  * @author JD-Team
  * 
  */
-
 
 public class ConfigPanelAddons extends ConfigPanel implements ActionListener, MouseListener {
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.ConfigPanelAddons.";
@@ -122,6 +123,8 @@ public class ConfigPanelAddons extends ConfigPanel implements ActionListener, Mo
                 } else {
                     plgWrapper.getPlugin().onExit();
                 }
+                AddonsMenu.getInstance().update();
+                ConfigSidebar.getInstance(null).updateAddons();
                 // TODO
                 // SwingGui.getInstance().getAddonPanel().initGUI();
             }

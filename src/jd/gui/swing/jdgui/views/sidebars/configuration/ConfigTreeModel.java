@@ -4,16 +4,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import javax.swing.ImageIcon;
+import javax.swing.event.EventListenerList;
+import javax.swing.event.TreeModelEvent;
 import javax.swing.event.TreeModelListener;
 import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 
 import jd.OptionalPluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
-import jd.controlling.HTACCESSController;
-import jd.controlling.ListController;
-import jd.controlling.PasswordListController;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.SingletonPanel;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
@@ -30,13 +27,16 @@ public class ConfigTreeModel implements TreeModel {
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.views.ConfigTreeModel.";
 
     private TreeEntry root;
-
+    /** Listeners. */
+    protected EventListenerList listenerList = new EventListenerList();
     private TreeEntry addons;
+
+    private TreeEntry plugins;
 
     public ConfigTreeModel() {
         this.root = new TreeEntry(JDL.L(JDL_PREFIX + "configuration.title", "Settings"));
 
-        TreeEntry basics, modules, plugins;
+        TreeEntry basics, modules;
         root.add(basics = new TreeEntry(JDL.L(JDL_PREFIX + "basics.title", "Basics")).setIcon("gui.images.config.home"));
         basics.add(new TreeEntry(ConfigPanelGeneral.class, ConfigPanelGeneral.getTitle()).setIcon("gui.images.config.home"));
         TreeEntry dl;
@@ -79,7 +79,7 @@ public class ConfigTreeModel implements TreeModel {
 
         modules.add(dl = new TreeEntry("Passwords & Logins").setIcon("gui.images.list"));
         dl.add(new TreeEntry(jd.gui.swing.jdgui.settings.panels.passwords.PasswordList.class, jd.gui.swing.jdgui.settings.panels.passwords.PasswordList.getTitle()).setIcon("gui.images.addons.unrar"));
-        
+
         dl.add(new TreeEntry(jd.gui.swing.jdgui.settings.panels.passwords.PasswordListHTAccess.class, jd.gui.swing.jdgui.settings.panels.passwords.PasswordListHTAccess.getTitle()).setIcon("gui.images.htaccess"));
 
         root.add(plugins = new TreeEntry(JDL.L(JDL_PREFIX + "plugins.title", "Plugins & Add-ons")).setIcon("gui.images.config.packagemanager"));
@@ -95,12 +95,31 @@ public class ConfigTreeModel implements TreeModel {
         for (final OptionalPluginWrapper plg : OptionalPluginWrapper.getOptionalWrapper()) {
             if (!plg.isLoaded() || !plg.isEnabled() || plg.getPlugin().getConfig().getEntries().size() == 0) continue;
 
-            addons2.add(new TreeEntry( AddonConfig.getInstance(plg.getPlugin().getConfig(),plg.getHost()), plg.getHost()).setIcon(plg.getPlugin().getIconKey()));
+            addons2.add(new TreeEntry(AddonConfig.getInstance(plg.getPlugin().getConfig(), plg.getHost()), plg.getHost()).setIcon(plg.getPlugin().getIconKey()));
         }
 
     }
 
+    /**
+     * Adds a listener for the TreeModelEvent posted after the tree changes.
+     * 
+     * @see #removeTreeModelListener
+     * @param l
+     *            the listener to add
+     */
     public void addTreeModelListener(TreeModelListener l) {
+        listenerList.add(TreeModelListener.class, l);
+    }
+
+    /**
+     * Removes a listener previously added with <B>addTreeModelListener()</B>.
+     * 
+     * @see #addTreeModelListener
+     * @param l
+     *            the listener to remove
+     */
+    public void removeTreeModelListener(TreeModelListener l) {
+        listenerList.remove(TreeModelListener.class, l);
     }
 
     public Object getChild(Object parent, int index) {
@@ -126,9 +145,6 @@ public class ConfigTreeModel implements TreeModel {
     public boolean isLeaf(Object node) {
 
         return ((TreeEntry) node).size() == 0;
-    }
-
-    public void removeTreeModelListener(TreeModelListener l) {
     }
 
     public void valueForPathChanged(TreePath path, Object newValue) {
@@ -247,17 +263,17 @@ public class ConfigTreeModel implements TreeModel {
         }
 
         public int indexOf(Object child) {
-            // TODO Auto-generated method stub
+          
             return entries.indexOf(child);
         }
 
         public int size() {
-            // TODO Auto-generated method stub
+           
             return entries.size();
         }
 
         public Object get(int index) {
-            // TODO Auto-generated method stub
+          
             return entries.get(index);
         }
 
@@ -285,4 +301,29 @@ public class ConfigTreeModel implements TreeModel {
 
     }
 
+    private void fireTreeStructureChanged(TreePath path) {
+
+        Object[] listeners = listenerList.getListenerList();
+        TreeModelEvent e = null;
+        for (int i = listeners.length - 2; i >= 0; i -= 2) {
+            if (listeners[i] == TreeModelListener.class) {
+
+                if (e == null) e = new TreeModelEvent(this, path);
+                ((TreeModelListener) listeners[i + 1]).treeStructureChanged(e);
+            }
+        }
+    }
+
+    /**
+     * Is called to update The Addons subtree after changes
+     * 
+     * @return
+     */
+    public TreePath updateAddons() {
+        addons.getEntries().clear();
+        initExtensions(addons);
+        TreePath path = new TreePath(new Object[] { getRoot(), plugins, addons });
+        fireTreeStructureChanged(path);
+        return path;
+    }
 }

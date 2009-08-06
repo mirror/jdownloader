@@ -35,6 +35,7 @@ public class HosterMenu extends Menu {
 
         for (HostPluginWrapper wrapper : hosts) {
             if (!wrapper.isLoaded() || !wrapper.isPremiumEnabled() || !AccountController.getInstance().hasAccounts(wrapper.getHost())) continue;
+            if(!wrapper.usePlugin())continue;
             plugin = wrapper.getPlugin();
             pluginPopup = new JMenu(wrapper.getHost());
             if (plugin.hasHosterIcon()) pluginPopup.setIcon(plugin.getHosterIcon());

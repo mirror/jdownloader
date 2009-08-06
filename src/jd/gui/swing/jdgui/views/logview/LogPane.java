@@ -30,6 +30,7 @@ import javax.swing.JFileChooser;
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
 import javax.swing.text.BadLocationException;
+import javax.swing.text.Document;
 import javax.swing.text.EditorKit;
 import javax.swing.text.html.HTMLDocument;
 
@@ -72,7 +73,7 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
         this.setLayout(new MigLayout("ins 3", "[fill,grow]", "[fill,grow]"));
 
         logField = new JTextPane();
-        logField.setContentType("text/html");
+//        logField.setContentType("text/html");
         logField.setEditable(true);
         logField.setAutoscrolls(true);
 
@@ -166,12 +167,12 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
             LogFormatter formater = (LogFormatter) JDLogHandler.getHandler().getFormatter();
             StringBuilder sb = new StringBuilder();
 
-            sb.append("<style type=\"text/css\">");
-            sb.append(".warning { background-color:yellow;}");
-            sb.append(".severe { background-color:red;}");
-            sb.append(".exception { background-color:red;}");
-            // sb.append(".normal { background-color:black;}");
-            sb.append("</style>");
+//            sb.append("<style type=\"text/css\">");
+//            sb.append(".warning { background-color:yellow;}");
+//            sb.append(".severe { background-color:red;}");
+//            sb.append(".exception { background-color:red;}");
+//            // sb.append(".normal { background-color:black;}");
+//            sb.append("</style>");
 
             for (LogRecord lr : buff) {
                 // if (lr.getLevel().intValue() >=
@@ -191,10 +192,10 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
     private String format(LogRecord lr, LogFormatter formater) {
         if (lr.getThrown() != null) {
 
-            return ("<span class='exception'>" + HTMLEntities.htmlTotal(formater.format(lr)).trim().replace("\r\n", "<br>") + "</span><br>");
+            return ("EXCEPTION   " + formater.format(lr));
 
         } else {
-            return ("<span class='" + lr.getLevel().getName().toLowerCase() + "'>" + HTMLEntities.htmlTotal(formater.format(lr)).trim().replace("\r\n", "<br>") + "</span><br>");
+            return (formater.format(lr));
         }
     }
 
@@ -204,7 +205,7 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
     }
 
     public void append(String sb) {
-        HTMLDocument doc = (HTMLDocument) logField.getDocument();
+       Document doc = logField.getDocument();
 
         EditorKit editorkit = logField.getEditorKit();
         Reader r = new StringReader(sb);
@@ -217,12 +218,7 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
             // TODO Auto-generated catch block
             e1.printStackTrace();
         }
-        // if (doc != null) {
-        // try {
-        // doc.insertString(doc.getLength(), sb, null);
-        // } catch (BadLocationException e) {
-        // }
-        // }
+      
 
     }
 

@@ -20,7 +20,7 @@ public class ConfigurationView extends View {
     public ConfigurationView() {
         super();
         sidebar.setBorder(null);
-        this.setSideBar(new ConfigSidebar(this));
+        this.setSideBar(ConfigSidebar.getInstance(this));
 
     }
 

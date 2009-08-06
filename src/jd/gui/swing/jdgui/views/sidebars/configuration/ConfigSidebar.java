@@ -18,10 +18,11 @@ import net.miginfocom.swing.MigLayout;
 public class ConfigSidebar extends SideBarPanel {
 
     private static final long serialVersionUID = 6456662020047832983L;
+    private static ConfigSidebar INSTANCE = null;
     private JTree tree;
     private ConfigurationView view;
 
-    public ConfigSidebar(ConfigurationView configurationView) {
+    private ConfigSidebar(ConfigurationView configurationView) {
         this.view = configurationView;
         this.setLayout(new MigLayout("ins 0", "[grow,fill]", "[grow,fill]"));
 
@@ -119,19 +120,37 @@ public class ConfigSidebar extends SideBarPanel {
 
     private TreePath getEntry(TreePath parent, TreeEntry treeEntry) {
         TreeEntry node = (TreeEntry) parent.getLastPathComponent();
-        if(node==treeEntry)return parent;
+        if (node == treeEntry) return parent;
         if (node.size() >= 0) {
             for (TreeEntry n : node.getEntries()) {
                 TreePath path = parent.pathByAddingChild(n);
-          
-                    TreePath res = getEntry(path, treeEntry);
-                    if(res!=null)return res;
-                }
-            }
 
-        
+                TreePath res = getEntry(path, treeEntry);
+                if (res != null) return res;
+            }
+        }
 
         return null;
+
+    }
+
+    /**
+     * CReate a singlton instance of the config sidebar
+     * 
+     * @param configurationView
+     * @return
+     */
+    public static ConfigSidebar getInstance(ConfigurationView configurationView) {
+        if (INSTANCE == null && configurationView != null) INSTANCE = new ConfigSidebar(configurationView);
+        return INSTANCE;
+    }
+
+    /**
+     * Updates The addon subtree
+     */
+    public void updateAddons() {
+        TreePath path = ((ConfigTreeModel) tree.getModel()).updateAddons();
+        expandAll(tree, path, true);
 
     }
 
