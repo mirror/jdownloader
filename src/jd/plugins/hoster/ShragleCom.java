@@ -112,11 +112,11 @@ public class ShragleCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.getRedirectLocation() != null) {
             br.setFollowRedirects(true);
-            dl = br.openDownload(downloadLink, br.getRedirectLocation(), true, -4);
+            dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, br.getRedirectLocation(), true, -4);
         } else {
             Form form = br.getFormbyProperty("name", "download");
             br.setFollowRedirects(true);
-            dl = br.openDownload(downloadLink, form, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, form, true, 0);
         }
         URLConnectionAdapter con = dl.getConnection();
         if (!con.isContentDisposition()) {
@@ -167,7 +167,7 @@ public class ShragleCom extends PluginForHost {
         br.setFollowRedirects(true);
 
         form.setAction(form.getAction() + "?jd=1");
-        dl = br.openDownload(downloadLink, form, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, form, true, 1);
         URLConnectionAdapter con = dl.getConnection();
         if (!con.isContentDisposition()) {
             con.disconnect();

@@ -76,7 +76,7 @@ public class HyperFileShareCom extends PluginForHost {
         url = br.getRegex("href=\"(download\\.php\\?code=[a-f0-9]+&sid=[a-f0-9]+&s=\\d)\"").getMatch(0);
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         url = "http://download.hyperfileshare.com/" + url;
-        dl = br.openDownload(downloadLink, url, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, url, true, 1);
         dl.startDownload();
     }
 

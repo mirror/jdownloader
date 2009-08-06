@@ -65,7 +65,7 @@ public class RomHustlerNet extends PluginForHost {
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = br.openDownload(downloadLink, downloadUrl, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, downloadUrl, true, 1);
         dl.startDownload();
     }
 

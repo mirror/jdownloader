@@ -83,7 +83,7 @@ public class QshareCom extends PluginForHost {
         if (link == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
 
         br.setFollowRedirects(false);
-        dl = br.openDownload(downloadLink, link, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, link, true, 1);
         if (!dl.getConnection().isContentDisposition()) {
             dl.getConnection().disconnect();
             if (dl.getConnection().getContentType().contains("html")) {
@@ -112,7 +112,7 @@ public class QshareCom extends PluginForHost {
 
         if (br.getRedirectLocation() != null) {
             logger.info("QSHARE.COM: Direct Download is activ");
-            dl = br.openDownload(downloadLink, br.getRedirectLocation(), true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, br.getRedirectLocation(), true, 0);
         } else {
             logger.warning("QSHARE.COM: Indirect Download is activ (is much slower... you should active direct downloading in the configs(qshare configs)");
             // Keine errors gefunden, deshalb folgendes Regex evtl falsch
@@ -127,7 +127,7 @@ public class QshareCom extends PluginForHost {
             url = br.getRegex("(http://\\w{1,5}.qshare.com/\\w{1,10}/\\w{1,50}/\\w{1,50}/\\w{1,50}/\\w{1,50}/" + account.getUser() + "/" + account.getPass() + "/.*?)\"").getMatch(0);
             if (links.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             br.setFollowRedirects(true);
-            dl = br.openDownload(downloadLink, url, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, url, true, 0);
 
         }
 

@@ -71,7 +71,7 @@ public class Przeslijnet extends PluginForHost {
         sleep(15000, downloadLink);
 
         /* Datei herunterladen */
-        br.openDownload(downloadLink, Encoding.htmlDecode(br.getRegex("onClick=\"window\\.location=\\\\\'(.*?)\\\\\'").getMatch(0))).startDownload();
+        jd.plugins.BrowserAdapter.openDownload(br,downloadLink, Encoding.htmlDecode(br.getRegex("onClick=\"window\\.location=\\\\\'(.*?)\\\\\'").getMatch(0))).startDownload();
     }
 
     // @Override

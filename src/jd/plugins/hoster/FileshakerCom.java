@@ -69,7 +69,7 @@ public class FileshakerCom extends PluginForHost {
         /* Link holen */
         Form form = br.getForm(0);
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        dl = br.openDownload(downloadLink, form);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, form);
         URLConnectionAdapter con = dl.getConnection();
         if (con.getResponseCode() != 200 && con.getResponseCode() != 206) {
             con.disconnect();

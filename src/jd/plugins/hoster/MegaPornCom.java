@@ -188,7 +188,7 @@ public class MegaPornCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.setDebug(true);
         try {
-            dl = br.openDownload(link, url, resume, chunks);
+            dl = jd.plugins.BrowserAdapter.openDownload(br,link, url, resume, chunks);
             if (!dl.getConnection().isOK()) {
                 dl.getConnection().disconnect();
                 if (dl.getConnection().getResponseCode() == 503) {

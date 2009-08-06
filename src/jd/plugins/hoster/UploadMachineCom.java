@@ -89,7 +89,7 @@ public class UploadMachineCom extends PluginForHost {
 
         if (br.containsHTML("You have reached the maximum")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l); }
         String dllink = br.getRegex(Pattern.compile("document.location=\"(.*?)\";this.disabled=true")).getMatch(0);
-        dl = br.openDownload(downloadLink, dllink, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, dllink, true, 1);
         dl.startDownload();
     }
 

@@ -101,7 +101,7 @@ public class RapidShareDe extends PluginForHost {
         code = getCaptchaCode(captchaFile, downloadLink);
         form.put("captcha", code);
 
-        br.openDownload(downloadLink, form).startDownload();
+        jd.plugins.BrowserAdapter.openDownload(br,downloadLink, form).startDownload();
 
         File l = new File(downloadLink.getFileOutput());
         if (l.length() < 10240) {
@@ -146,7 +146,7 @@ public class RapidShareDe extends PluginForHost {
         URLConnectionAdapter urlConnection;
         GetRequest req = new GetRequest(url);
         r.getCookies().add(new Cookie(getHost(), "user", user + "-" + formatPass));
-        /** TODO: Umbauen auf br.openDownload(...) **/
+        /** TODO: Umbauen auf jd.plugins.BrowserAdapter.openDownload(br,...) **/
         dl = RAFDownload.download(downloadLink, req, true, 0);
         dl.connect(br);
         urlConnection = req.getHttpConnection();

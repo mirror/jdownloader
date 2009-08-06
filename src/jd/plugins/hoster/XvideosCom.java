@@ -46,7 +46,7 @@ public class XvideosCom extends PluginForHost {
         String dllink = br.getRegex("default&amp;flv_url=(.*?)&amp;url_bigthu").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         link.setFinalFileName(null);
-        dl = br.openDownload(link, dllink, true, -20);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,link, dllink, true, -20);
         dl.startDownload();
     }
 

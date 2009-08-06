@@ -77,7 +77,7 @@ public class MegaVideo extends PluginForHost {
             this.handleFree(downloadLink);
             return;
         } else {
-            dl = br.openDownload(downloadLink, url, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, url, true, 0);
             dl.startDownload();
         }
     }
@@ -101,7 +101,7 @@ public class MegaVideo extends PluginForHost {
             url = "http://www" + s + ".megavideo.com/files/" + decrypt(un, Integer.parseInt(k1), Integer.parseInt(k2)) + "/";
         }
         if (url == null) throw new PluginException(LinkStatus.ERROR_FATAL);
-        dl = br.openDownload(link, url, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,link, url, false, 1);
         dl.startDownload();
     }
 

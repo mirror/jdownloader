@@ -24,6 +24,7 @@ import jd.http.Encoding;
 import jd.http.RandomUserAgent;
 import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
+import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -78,7 +79,7 @@ public class Zippysharecom extends PluginForHost {
         for (String link : links) {
             if (!new Regex(link, ".*?www\\d*\\.zippyshare\\.com/[^\\?]*\\..{1,4}$").matches()) continue;
             Browser brc = br.cloneBrowser();
-            dl = brc.openDownload(downloadLink, link);
+            dl = BrowserAdapter.openDownload(brc, downloadLink, link);
             if (dl.getConnection().isContentDisposition()) {
                 found = true;
                 break;

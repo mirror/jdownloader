@@ -74,7 +74,7 @@ public class PrzeklejPl extends PluginForHost {
             if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             linkurl = "http://www.przeklej.pl" + linkurl;
             br.setFollowRedirects(true);
-            dl = br.openDownload(downloadLink, linkurl, false, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, linkurl, false, 1);
             dl.startDownload();
         } else {
             if (downloadLink.getStringProperty("pass", null) == null) {
@@ -97,7 +97,7 @@ public class PrzeklejPl extends PluginForHost {
             } else {
                 con.disconnect();
                 downloadLink.setProperty("pass", passCode);
-                dl = br.openDownload(downloadLink, form, false, 1);
+                dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, form, false, 1);
                 dl.startDownload();
             }
         }

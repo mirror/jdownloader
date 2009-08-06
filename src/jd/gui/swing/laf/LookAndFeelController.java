@@ -198,8 +198,7 @@ public class LookAndFeelController {
         try {
 
             JDLogger.getLogger().info("Use Look & Feel: " + getPlaf().getClassName());
-            Thread.currentThread().setContextClassLoader(JDUtilities.getJDClassLoader());
-
+          
             preSetup(getPlaf().getClassName());
 
             UIManager.put("ClassLoader", JDUtilities.getJDClassLoader());

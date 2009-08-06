@@ -70,7 +70,7 @@ public class WyslijToPl extends PluginForHost {
         br.setFollowRedirects(true);
         // this.sleep(60000, downloadLink); // uncomment when they find a better
         // way to force wait time
-        dl = br.openDownload(downloadLink, linkurl);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, linkurl);
         dl.startDownload();
 
     }

@@ -65,7 +65,7 @@ public class MegaShareCom extends PluginForHost {
         form.remove("yesss");
         form.remove("yesss");
         form.put("yesss", "Download");
-        dl = br.openDownload(downloadLink, form, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, form, true, 1);
         dl.startDownload();
     }
 

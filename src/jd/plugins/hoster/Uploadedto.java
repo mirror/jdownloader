@@ -180,7 +180,7 @@ public class Uploadedto extends PluginForHost {
         }
 
         br.setDebug(true);
-        dl = br.openDownload(downloadLink, br.getRedirectLocation(), true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, br.getRedirectLocation(), true, 0);
 
         dl.setFileSizeVerified(true);
         if (dl.getConnection().getLongContentLength() == 0 || !dl.getConnection().isContentDisposition()) {
@@ -285,7 +285,7 @@ public class Uploadedto extends PluginForHost {
         if (form != null) {
             form.put("download_submit", "Download");
             sleep(10000l, downloadLink);
-            dl = br.openDownload(downloadLink, form, false, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, form, false, 1);
         } else {
             String dlLink = br.getRedirectLocation();
             if (dlLink == null) {
@@ -293,7 +293,7 @@ public class Uploadedto extends PluginForHost {
                 logger.severe("Fatal error 1\r\n" + br);
                 throw new PluginException(LinkStatus.ERROR_FATAL);
             }
-            dl = br.openDownload(downloadLink, dlLink, false, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, dlLink, false, 1);
         }
         dl.fakeContentRangeHeader(false);
         dl.setFileSizeVerified(true);

@@ -68,7 +68,7 @@ public class HotShareNet extends PluginForHost {
         br.submitForm(downloadForm);
         String downloadUrl = br.getRegex(Pattern.compile("<a class=\"link_v3\" href=\"(.*?)\">")).getMatch(0);
 
-        dl = br.openDownload(downloadLink, downloadUrl, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, downloadUrl, false, 1);
         dl.startDownload();
     }
 

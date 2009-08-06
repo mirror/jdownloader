@@ -89,7 +89,7 @@ public class FileboxRo extends PluginForHost {
         String prefix = br.getRegex("http://(\\w+)\\.filebox\\.ro/get_file\\.php\\?key=[0-9a-z]{32}").getMatch(0);
         String linkurl = "http://" + prefix + ".filebox.ro/get_file.php?key=" + id;
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        dl = br.openDownload(downloadLink, linkurl, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, linkurl, false, 1);
         URLConnectionAdapter con = dl.getConnection();
         if (con.getResponseCode() != 200 && con.getResponseCode() != 206) {
             con.disconnect();

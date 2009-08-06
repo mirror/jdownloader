@@ -94,7 +94,7 @@ public class FilerNet extends PluginForHost {
         page = br.submitForm(forms[1]);
         sleep(61000, downloadLink);
 
-        dl = br.openDownload(downloadLink, (String) null);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, (String) null);
         dl.startDownload();
     }
 
@@ -152,7 +152,7 @@ public class FilerNet extends PluginForHost {
         String url = br.getRegex("url=(http.*?)\"").getMatch(0);
         if (url == null) throw new PluginException(LinkStatus.ERROR_FATAL);
         br.setFollowRedirects(true);
-        dl = br.openDownload(downloadLink, url, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, url, true, 0);
         if (dl.getConnection().getContentType().contains("text")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE); }
         dl.startDownload();
     }

@@ -55,7 +55,7 @@ public class FilerCx extends PluginForHost {
         String dllink = null;
         dllink = br.getRegex("onclick=\"highlight\\('downloadurl'\\);\" ondblclick=\"ClipBoard\\('downloadurl'\\);\">(.*?)</textarea>").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        dl = br.openDownload(link, dllink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,link, dllink, false, 1);
         dl.startDownload();
     }
 

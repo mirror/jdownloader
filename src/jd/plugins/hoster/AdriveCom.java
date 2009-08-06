@@ -81,7 +81,7 @@ public class AdriveCom extends PluginForHost {
         String linkurl = Encoding.htmlDecode(new Regex(br, Pattern.compile("<a href=\"(.*?)\">here</a>", Pattern.CASE_INSENSITIVE)).getMatch(0));
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         /* Datei herunterladen */
-        dl = br.openDownload(downloadLink, linkurl, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, linkurl, true, 1);
         URLConnectionAdapter con = dl.getConnection();
         if (!con.isContentDisposition()) {
             br.followConnection();

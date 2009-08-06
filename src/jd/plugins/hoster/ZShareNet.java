@@ -87,7 +87,7 @@ public class ZShareNet extends PluginForHost {
         br.submitForm(download);
         String fnc = br.getRegex("var link_enc\\=new Array\\(\\'(.*?)\\'\\)").getMatch(0);
         fnc = fnc.replaceAll("\\'\\,\\'", "");
-        dl = br.openDownload(downloadLink, fnc, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, fnc, true, 1);
 
         // Möglicherweise serverfehler...
         if (!dl.getConnection().isContentDisposition()) {

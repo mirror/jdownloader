@@ -25,7 +25,6 @@ import java.net.Authenticator;
 import java.net.CookieHandler;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
-import java.net.Proxy;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.ArrayList;
@@ -33,30 +32,21 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map.Entry;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
-import jd.config.Configuration;
-import jd.config.SubConfiguration;
-import jd.controlling.JDLogger;
 import jd.http.requests.FormData;
 import jd.http.requests.GetRequest;
 import jd.http.requests.PostFormDataRequest;
 import jd.http.requests.PostRequest;
 import jd.http.requests.Request;
 import jd.http.requests.RequestVariable;
-import jd.parser.JavaScript;
+
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.InputField;
 import jd.parser.html.XPath;
-import jd.plugins.DownloadLink;
-import jd.plugins.PluginException;
-import jd.plugins.download.DownloadInterface;
-import jd.plugins.download.RAFDownload;
-import jd.utils.JDUtilities;
-import jd.utils.SnifferException;
-import jd.utils.Sniffy;
 
 public class Browser {
     public class BrowserException extends IOException {
@@ -105,9 +95,18 @@ public class Browser {
     }
 
     private static JDProxy GLOBAL_PROXY = null;
+    private static Logger LOGGER;
+
+    public static Logger getLogger() {
+        return LOGGER;
+    }
+
+    public static void setLogger(Logger logger) {
+        Browser.LOGGER = logger;
+    }
 
     public static void setGlobalProxy(JDProxy p) {
-        JDLogger.getLogger().info("Use global proxy: " + p);
+        if (LOGGER != null) LOGGER.info("Use global proxy: " + p);
         GLOBAL_PROXY = p;
     }
 
@@ -265,11 +264,13 @@ public class Browser {
     private static HashMap<String, Integer> REQUEST_INTERVAL_LIMIT_MAP;
     private static HashMap<String, Long> REQUESTTIME_MAP;
     private static boolean VERBOSE = false;
+    private static int TIMEOUT_READ;
+    private static int TIMEOUT_CONNECT;
     private static final Authenticator AUTHENTICATOR = new Authenticator() {
         protected PasswordAuthentication getPasswordAuthentication() {
             Browser br = Browser.getAssignedBrowserInstance(this.getRequestingURL());
             if (br == null) {
-                JDLogger.getLogger().warning("Browser Auth Error!");
+                if (LOGGER != null) LOGGER.warning("Browser Auth Error!");
                 return null;
             }
             return br.getPasswordAuthentication(this.getRequestingHost(), this.getRequestingPort());
@@ -286,7 +287,7 @@ public class Browser {
     }
 
     public int getConnectTimeout() {
-        return connectTimeout;
+        return connectTimeout <= 0 ? connectTimeout : TIMEOUT_CONNECT;
     }
 
     public Form[] getForms() {
@@ -331,15 +332,6 @@ public class Browser {
         return headers;
     }
 
-    private boolean snifferCheck() throws SnifferException {
-        if (!snifferDetection) return false;
-        if (Sniffy.hasSniffer()) {
-            JDLogger.getLogger().severe("Sniffer Software detected");
-            throw new SnifferException();
-        }
-        return false;
-    }
-
     public String getPage(String string) throws IOException {
 
         this.openRequestConnection(this.createGetRequest(string));
@@ -349,6 +341,9 @@ public class Browser {
     }
 
     private void connect(Request request) throws IOException {
+        // sets request BEVOR connection. this enhables to find the request in
+        // the protocol handlers
+        this.request = request;
         try {
             waitForPageAccess(this, request);
         } catch (InterruptedException e) {
@@ -397,6 +392,7 @@ public class Browser {
             if (browser.requestTimeMap != null) {
                 browser.requestTimeMap.put(request.getUrl().getHost(), System.currentTimeMillis());
             }
+
             if (REQUESTTIME_MAP != null) {
                 REQUESTTIME_MAP.put(request.getUrl().getHost(), System.currentTimeMillis());
             }
@@ -439,7 +435,7 @@ public class Browser {
     private void checkContentLengthLimit(Request request) throws BrowserException {
         if (request == null || request.getHttpConnection() == null || request.getHttpConnection().getHeaderField("Content-Length") == null) return;
         if (Long.parseLong(request.getHttpConnection().getHeaderField("Content-Length")) > limit) {
-            JDLogger.getLogger().severe(request.printHeaders());
+            if (LOGGER != null) LOGGER.severe(request.printHeaders());
             throw new BrowserException("Content-length too big", request.getHttpConnection());
         }
     }
@@ -450,7 +446,7 @@ public class Browser {
      * @return
      */
     public int getReadTimeout() {
-        return readTimeout;
+        return readTimeout <= 0 ? TIMEOUT_READ : readTimeout;
     }
 
     /**
@@ -495,9 +491,7 @@ public class Browser {
      */
     public Request createFormRequest(Form form) throws Exception {
         String base = null;
-        if (snifferCheck()) {
-            // throw new IOException("Sniffer found");
-        }
+
         if (request != null) base = request.getUrl().toString();
         try {
             // find base in source
@@ -581,7 +575,7 @@ public class Browser {
      */
     public URLConnectionAdapter openRequestConnection(Request request) throws IOException {
         connect(request);
-        if (isDebug()) JDLogger.getLogger().finest("\r\n" + request.printHeaders());
+        if (isDebug()) if (LOGGER != null) LOGGER.finest("\r\n" + request.printHeaders());
 
         updateCookies(request);
         this.request = request;
@@ -605,9 +599,7 @@ public class Browser {
             sendref = false;
             currentURL = new URL(string);
         }
-        if (snifferCheck()) {
-            // throw new IOException("Sniffer found");
-        }
+
         GetRequest request = new GetRequest((string));
         request.setCustomCharset(this.customCharset);
         if (selectProxy() != null) request.setProxy(selectProxy());
@@ -661,16 +653,14 @@ public class Browser {
         return GLOBAL_PROXY;
     }
 
-    private Request createGetRequestfromOldRequest(Request oldrequest) throws IOException {
+    public Request createGetRequestRedirectedRequest(Request oldrequest) throws IOException {
         String string = getURL(oldrequest.getLocation());
         boolean sendref = true;
         if (currentURL == null) {
             sendref = false;
             currentURL = new URL(string);
         }
-        if (snifferCheck()) {
-            // throw new IOException("Sniffer found");
-        }
+
         GetRequest request = new GetRequest((string));
         request.setCustomCharset(this.customCharset);
         if (selectProxy() != null) request.setProxy(selectProxy());
@@ -735,7 +725,7 @@ public class Browser {
 
     }
 
-    private Request createPostRequestfromOldRequest(Request oldrequest, String postdata) throws IOException {
+    public Request createPostRequestfromRedirectedRequest(Request oldrequest, String postdata) throws IOException {
         String url = getURL(oldrequest.getLocation());
         boolean sendref = true;
         if (currentURL == null) {
@@ -743,9 +733,7 @@ public class Browser {
             currentURL = new URL(url);
         }
         HashMap<String, String> post = Request.parseQuery(postdata);
-        if (snifferCheck()) {
-            // throw new IOException("Sniffer found");
-        }
+
         PostRequest request = new PostRequest((url));
         request.setCustomCharset(this.customCharset);
         if (selectProxy() != null) request.setProxy(selectProxy());
@@ -778,9 +766,7 @@ public class Browser {
             sendref = false;
             currentURL = new URL(url);
         }
-        if (snifferCheck()) {
-            // throw new IOException("Sniffer found");
-        }
+
         PostFormDataRequest request = new PostFormDataRequest((url));
         request.setCustomCharset(this.customCharset);
         if (selectProxy() != null) request.setProxy(selectProxy());
@@ -820,9 +806,7 @@ public class Browser {
             sendref = false;
             currentURL = new URL(url);
         }
-        if (snifferCheck()) {
-            // throw new IOException("Sniffer found");
-        }
+
         PostRequest request = new PostRequest((url));
         request.setCustomCharset(this.customCharset);
         if (selectProxy() != null) request.setProxy(selectProxy());
@@ -872,12 +856,7 @@ public class Browser {
 
     }
 
-    /**
-     * Returns a new Javscriptobject for the current loaded page
-     */
-    public JavaScript getJavaScript() {
-        return new JavaScript(this);
-    }
+
 
     /**
      * loads a new page (POST)
@@ -999,7 +978,7 @@ public class Browser {
         } catch (IOException e) {
             throw new BrowserException(e.getMessage(), con, e).closeConnection();
         }
-        if (isVerbose()) JDLogger.getLogger().finest("\r\n" + ret + "\r\n");
+        if (isVerbose()) if (LOGGER != null) LOGGER.finest("\r\n" + ret + "\r\n");
 
         return ret;
 
@@ -1179,7 +1158,7 @@ public class Browser {
         String ret = null;
 
         if (request.getHtmlCode() != null) {
-            JDLogger.getLogger().warning("Request has already been read");
+            if (LOGGER != null) LOGGER.warning("Request has already been read");
             return null;
         }
         checkContentLengthLimit(request);
@@ -1195,7 +1174,9 @@ public class Browser {
     }
 
     public void setDebug(boolean debug) {
-        if (JDUtilities.getRunType() != JDUtilities.RUNTYPE_LOCAL_JARED) {
+        String caller = (Thread.currentThread().getContextClassLoader().getResource("jd") + "");
+
+        if (!caller.matches("jar\\:.*\\.jar\\!.*")) {
             this.debug = debug;
         }
     }
@@ -1261,145 +1242,8 @@ public class Browser {
 
     }
 
-    public DownloadInterface openDownload(DownloadLink downloadLink, String link) throws Exception {
-
-        DownloadInterface dl = RAFDownload.download(downloadLink, this.createGetRequest(link));
-        try {
-            dl.connect(this);
-        } catch (PluginException e) {
-            if (e.getValue() == DownloadInterface.ERROR_REDIRECTED) {
-
-                int maxRedirects = 10;
-                while (maxRedirects-- > 0) {
-                    dl = RAFDownload.download(downloadLink, this.createGetRequestfromOldRequest(dl.getRequest()));
-                    try {
-                        dl.connect(this);
-                        break;
-                    } catch (PluginException e2) {
-                        continue;
-                    }
-                }
-                if (maxRedirects <= 0) { throw new BrowserException("Redirectloop", this.getHttpConnection()); }
-
-            }
-        }
-        if (downloadLink.getPlugin().getBrowser() == this) {
-            downloadLink.getPlugin().setDownloadInterface(dl);
-        }
-        return dl;
-    }
-
-    public DownloadInterface openDownload(DownloadLink downloadLink, String url, String postdata) throws MalformedURLException, IOException, Exception {
-        DownloadInterface dl = RAFDownload.download(downloadLink, this.createPostRequest(url, postdata));
-        try {
-            dl.connect(this);
-        } catch (PluginException e) {
-            if (e.getValue() == DownloadInterface.ERROR_REDIRECTED) {
-
-                int maxRedirects = 10;
-                while (maxRedirects-- > 0) {
-                    dl = RAFDownload.download(downloadLink, this.createPostRequestfromOldRequest(dl.getRequest(), postdata));
-                    try {
-                        dl.connect(this);
-                        break;
-                    } catch (PluginException e2) {
-                        continue;
-                    }
-                }
-                if (maxRedirects <= 0) { throw new BrowserException("Redirectloop", this.getHttpConnection()); }
-            }
-        }
-        if (downloadLink.getPlugin().getBrowser() == this) {
-            downloadLink.getPlugin().setDownloadInterface(dl);
-        }
-        return dl;
-    }
-
-    public DownloadInterface openDownload(DownloadLink downloadLink, String link, boolean b, int c) throws Exception {
-
-        DownloadInterface dl = RAFDownload.download(downloadLink, this.createRequest(link), b, c);
-        try {
-            dl.connect(this);
-        } catch (PluginException e) {
-            if (e.getValue() == DownloadInterface.ERROR_REDIRECTED) {
-
-                int maxRedirects = 10;
-                while (maxRedirects-- > 0) {
-                    dl = RAFDownload.download(downloadLink, this.createGetRequestfromOldRequest(dl.getRequest()), b, c);
-                    try {
-                        dl.connect(this);
-                        break;
-                    } catch (PluginException e2) {
-                        continue;
-                    }
-                }
-                if (maxRedirects <= 0) { throw new BrowserException("Redirectloop", this.getHttpConnection()); }
-
-            }
-        }
-        if (downloadLink.getPlugin().getBrowser() == this) {
-            downloadLink.getPlugin().setDownloadInterface(dl);
-        }
-        return dl;
-    }
-
-    public DownloadInterface openDownload(DownloadLink downloadLink, Form form, boolean resume, int chunks) throws Exception {
-
-        DownloadInterface dl = RAFDownload.download(downloadLink, this.createRequest(form), resume, chunks);
-        try {
-            dl.connect(this);
-        } catch (PluginException e) {
-            if (e.getValue() == DownloadInterface.ERROR_REDIRECTED) {
-
-                int maxRedirects = 10;
-                while (maxRedirects-- > 0) {
-                    dl = RAFDownload.download(downloadLink, this.createGetRequestfromOldRequest(dl.getRequest()), resume, chunks);
-                    try {
-                        dl.connect(this);
-                        break;
-                    } catch (PluginException e2) {
-                        continue;
-                    }
-                }
-                if (maxRedirects <= 0) { throw new BrowserException("Redirectloop", this.getHttpConnection()); }
-
-            }
-        }
-        if (downloadLink.getPlugin().getBrowser() == this) {
-            downloadLink.getPlugin().setDownloadInterface(dl);
-        }
-        return dl;
-    }
-
-    public DownloadInterface openDownload(DownloadLink downloadLink, Form form) throws Exception {
-
-        DownloadInterface dl = RAFDownload.download(downloadLink, this.createRequest(form));
-        try {
-            dl.connect(this);
-        } catch (PluginException e) {
-            if (e.getValue() == DownloadInterface.ERROR_REDIRECTED) {
-
-                int maxRedirects = 10;
-                while (maxRedirects-- > 0) {
-                    dl = RAFDownload.download(downloadLink, this.createGetRequestfromOldRequest(dl.getRequest()));
-                    try {
-                        dl.connect(this);
-                        break;
-                    } catch (PluginException e2) {
-                        continue;
-                    }
-                }
-                if (maxRedirects <= 0) { throw new BrowserException("Redirectloop", this.getHttpConnection()); }
-            }
-        }
-        if (downloadLink.getPlugin().getBrowser() == this) {
-            downloadLink.getPlugin().setDownloadInterface(dl);
-        }
-        return dl;
-    }
-
     public void setProxy(JDProxy proxy) {
-        if (debug) JDLogger.getLogger().info("Use local proxy: " + proxy);
+        if (debug) if (LOGGER != null) LOGGER.info("Use local proxy: " + proxy);
         if (proxy == null) {
             System.err.println("Browser:No proxy");
             this.proxy = null;
@@ -1438,7 +1282,7 @@ public class Browser {
         if (port <= 0) port = 80;
         String[] auth = this.getAuth(host + ":" + port);
         if (auth == null) return null;
-        JDLogger.getLogger().finest("Use Authentication for: " + host + ":" + port + ": " + auth[0] + " - " + auth[1]);
+        if (LOGGER != null) LOGGER.finest("Use Authentication for: " + host + ":" + port + ": " + auth[0] + " - " + auth[1]);
         return new PasswordAuthentication(auth[0], auth[1].toCharArray());
     }
 
@@ -1446,74 +1290,7 @@ public class Browser {
         Authenticator.setDefault(AUTHENTICATOR);
         CookieHandler.setDefault(null);
         XTrustProvider.install();
-        // JDProxy p = new JDProxy(JDProxy.Type.SOCKS, "localhost", 1080);
-        // this.setProxy(p);
-        if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_PROXY, false)) {
-            // http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
-            // http://java.sun.com/j2se/1.5.0/docs/guide/net/properties.html
-            // für evtl authentifizierung:
-            // http://www.softonaut.com/2008/06/09/using-javanetauthenticator-for
-            // -proxy-authentication/
-            // nonProxy Liste ist unnötig, da ja eh kein reconnect möglich
-            // wäre
-            String host = SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_HOST, "");
-            int port = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PROXY_PORT, 8080);
-            String user = SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_USER, "");
-            String pass = SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_PASS, "");
-            if (host.trim().equals("")) {
-                JDLogger.getLogger().warning("Proxy disabled. No host");
-                SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.USE_PROXY, false);
-                return;
-            }
 
-            JDProxy pr = new JDProxy(Proxy.Type.HTTP, host, port);
-
-            if (user != null && user.trim().length() > 0) {
-                pr.setUser(user);
-            }
-            if (pass != null && pass.trim().length() > 0) {
-                pr.setPass(pass);
-            }
-            Browser.setGlobalProxy(pr);
-
-        }
-        if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_SOCKS, false)) {
-            // http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
-            // http://java.sun.com/j2se/1.5.0/docs/guide/net/properties.html
-
-            String user = SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_USER_SOCKS, "");
-            String pass = SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_PASS_SOCKS, "");
-            String host = SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.SOCKS_HOST, "");
-            int port = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.SOCKS_PORT, 1080);
-            if (host.trim().equals("")) {
-                JDLogger.getLogger().warning("Socks Proxy disabled. No host");
-                SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.USE_SOCKS, false);
-                return;
-            }
-            JDProxy pr = new JDProxy(Proxy.Type.SOCKS, host, port);
-
-            if (user != null && user.trim().length() > 0) {
-                pr.setUser(user);
-            }
-            if (pass != null && pass.trim().length() > 0) {
-                pr.setPass(pass);
-            }
-            Browser.setGlobalProxy(pr);
-        }
-    }
-
-    /**
-     * Downloads a get connection to a temfile and returns this tempfile
-     * 
-     * @param adr
-     * @return
-     * @throws IOException
-     */
-    public File getDownloadTemp(String adr) throws IOException {
-        File file = JDUtilities.getResourceFile("tmp/" + System.currentTimeMillis() + "_" + (TEMP_INDEX++) + ".tmp");
-        file.deleteOnExit();
-        download(file, openRequestConnection(createGetRequest(adr)));
-        return file;
     }
 
     public void setRequestIntervalLimit(String host, int i) {
@@ -1543,4 +1320,32 @@ public class Browser {
 
     }
 
+    /**
+     * Sets the global readtimeout in ms
+     * 
+     * @param integerProperty
+     */
+    public static void setGlobalReadTimeout(int valueMS) {
+        TIMEOUT_READ = valueMS;
+
+    }
+
+    public static int getGlobalReadTimeout() {
+        return TIMEOUT_READ;
+    }
+
+    /**
+     * Sets the global connect timeout
+     * 
+     * @param valueMS
+     */
+    public static void setGlobalConnectTimeout(int valueMS) {
+        TIMEOUT_CONNECT = valueMS;
+
+    }
+
+    public static int getGlobalConnectTimeout() {
+        return TIMEOUT_CONNECT;
+
+    }
 }

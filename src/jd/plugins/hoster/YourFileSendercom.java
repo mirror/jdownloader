@@ -82,7 +82,7 @@ public class YourFileSendercom extends PluginForHost {
         sleep(10000, downloadLink);
 
         /* Datei herunterladen */
-        dl = br.openDownload(downloadLink, link);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, link);
         dl.setFilesizeCheck(false);
         dl.startDownload();
     }

@@ -60,7 +60,7 @@ public class DnbShareCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.submitForm(dlform);
 
-        dl = br.openDownload(link, br.getRedirectLocation(), true, -20);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,link, br.getRedirectLocation(), true, -20);
         dl.startDownload();
 
     }

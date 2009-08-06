@@ -70,7 +70,7 @@ public class CZShareCom extends PluginForHost {
         if (br.containsHTML("Nesouhlasi kontrolni kod")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         Form down2 = br.getFormbyProperty("name", "pre_download_form");
         if (down2 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        dl = br.openDownload(downloadLink, down2, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, down2, false, 1);
         dl.startDownload();
     }
 
@@ -158,7 +158,7 @@ public class CZShareCom extends PluginForHost {
 
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
 
-        dl = br.openDownload(downloadLink, linkurl, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, linkurl, true, 0);
         URLConnectionAdapter con = dl.getConnection();
         if (!con.isOK()) {
             con.disconnect();

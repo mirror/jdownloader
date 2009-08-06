@@ -48,7 +48,7 @@ public class NovaUpMovcom extends PluginForHost {
             String dllink = br.getRegex("\"file\",\"(.*?)\"").getMatch(0);
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             link.setFinalFileName(null);
-            dl = br.openDownload(link, dllink, true, -20);
+            dl = jd.plugins.BrowserAdapter.openDownload(br,link, dllink, true, -20);
             dl.startDownload();
 
         } else {
@@ -57,7 +57,7 @@ public class NovaUpMovcom extends PluginForHost {
             String dllink = "http://www.novaup.com" + dllink1;
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             link.setFinalFileName(null);
-            dl = br.openDownload(link, dllink, true, -20);
+            dl = jd.plugins.BrowserAdapter.openDownload(br,link, dllink, true, -20);
             dl.startDownload();
         }
 

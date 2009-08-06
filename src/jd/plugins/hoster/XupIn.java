@@ -77,7 +77,7 @@ public class XupIn extends PluginForHost {
             }
             download.put("vpass", passCode);
         }
-        br.openDownload(downloadLink, download);
+        jd.plugins.BrowserAdapter.openDownload(br,downloadLink, download);
 
         if (!dl.getConnection().isContentDisposition()) {
             String page = br.loadConnection(dl.getConnection());

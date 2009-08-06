@@ -50,7 +50,7 @@ public class DivShareCom extends PluginForHost {
             dllink = br.getRedirectLocation();
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             link.setFinalFileName(null);
-            dl = br.openDownload(link, dllink, false, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br,link, dllink, false, 1);
             dl.startDownload();
 
         } else {
@@ -87,7 +87,7 @@ public class DivShareCom extends PluginForHost {
             dllink = br.getRegex("refresh\" content=\"1; url=(.*?)\" />").getMatch(0);
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             link.setFinalFileName(null);
-            dl = br.openDownload(link, dllink, false, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br,link, dllink, false, 1);
             dl.startDownload();
 
         }

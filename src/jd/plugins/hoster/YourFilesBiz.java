@@ -69,7 +69,7 @@ public class YourFilesBiz extends PluginForHost {
         requestFileInformation(downloadLink);
         String url = br.getRegex(Pattern.compile("document.location=\"(http.*?getfile\\.php.*?)\"'>", Pattern.CASE_INSENSITIVE)).getMatch(0);
         br.setFollowRedirects(true);
-        dl = br.openDownload(downloadLink, url);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, url);
         URLConnectionAdapter con = dl.getConnection();
         if (!con.isContentDisposition()) {
             con.disconnect();

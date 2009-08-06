@@ -76,16 +76,16 @@ public class ProtectorTO extends PluginForDecrypt {
                 return decryptedLinks;
             }
             if (br.containsHTML("Source was protected")) {
-                JavaScript js = br.getJavaScript();
+                JavaScript js = new JavaScript(br);
                 try {
                     br.getPage(new Regex(js.getVar(br.getRegex("document.write\\((.*?)\\)").getMatch(0)), "<iframe src=[\"']([^\"']*)[\"']").getMatch(0));
                     String link = null;
                     if (br.toString().contains("rapidshare")) {
                         link = br.getForm(1).getAction();
                     } else {
-                        js = br.getJavaScript();
+                        js = new JavaScript(br);
                         br.getRequest().setHtmlCode(js.getVar(br.getRegex("document.write\\((.*?)\\)").getMatch(0)));
-                        js = br.getJavaScript();
+                        js = new JavaScript(br);
                         link = js.getVar(br.getRegex("location.href='\"\\+(.*?)\\+\"").getMatch(0));
                     }
                     decryptedLinks.add(createDownloadlink(link));

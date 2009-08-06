@@ -141,6 +141,7 @@ public class ConfigContainer implements Serializable {
         if (entry.getContainer() != null) {
             containers++;
         }
+      
         if (entry.getPropertyInstance() == null) {
             entry.setPropertyInstance(propertyInstance);
         }

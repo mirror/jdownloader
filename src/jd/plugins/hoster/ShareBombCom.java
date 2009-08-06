@@ -95,7 +95,7 @@ public class ShareBombCom extends PluginForHost {
         }
         /* Datei herunterladen */
         br.setFollowRedirects(true);
-        dl = br.openDownload(downloadLink, linkurl, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, linkurl, false, 1);
         URLConnectionAdapter con = dl.getConnection();
         if (con.getResponseCode() != 200 && con.getResponseCode() != 206) {
             con.disconnect();

@@ -74,7 +74,7 @@ public class Youtube extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
-        dl = br.openDownload(downloadLink, downloadLink.getDownloadURL());
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, downloadLink.getDownloadURL());
         if (dl.startDownload()) {
             if (downloadLink.getProperty("convertto") != null) {
                 ConversionMode convertto = ConversionMode.valueOf(downloadLink.getProperty("convertto").toString());
@@ -94,7 +94,7 @@ public class Youtube extends PluginForHost {
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         synchronized (lock) {
             login(account);
-            dl = br.openDownload(downloadLink, downloadLink.getDownloadURL());
+            dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, downloadLink.getDownloadURL());
         }
         if (dl.startDownload()) {
             if (downloadLink.getProperty("convertto") != null) {

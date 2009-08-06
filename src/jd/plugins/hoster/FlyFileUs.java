@@ -83,7 +83,7 @@ public class FlyFileUs extends PluginForHost {
             DLForm.put("password", passCode);
         }
         br.setDebug(true);
-        br.openDownload(downloadLink, DLForm, true, 1);
+        jd.plugins.BrowserAdapter.openDownload(br,downloadLink, DLForm, true, 1);
         if (!(dl.getConnection().getContentType().contains("octet"))) {
             /*
              * server does not send disposition header, therefore we must check

@@ -74,7 +74,7 @@ public class ArchivTo extends PluginForHost {
         String link = br.getRegex("<a href=\"http://ww\\.archiv\\.to/(Get.*?)\" style=").getMatch(0);
         String dlLink = "http://archiv.to/" + Encoding.htmlDecode(link);
 
-        dl = br.openDownload(downloadLink, dlLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, dlLink);
         dl.startDownload();
     }
 

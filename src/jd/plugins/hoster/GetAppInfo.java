@@ -103,7 +103,7 @@ public class GetAppInfo extends PluginForHost {
         br.submitForm(captchaForm);
         if (!br.containsHTML("Download!</font>")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         String downloadURL = br.getRegex("href='(.*?)'>").getMatch(0);
-        dl = br.openDownload(downloadLink, downloadURL, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, downloadURL, false, 1);
         dl.startDownload();
     }
 

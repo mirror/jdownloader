@@ -79,7 +79,7 @@ public class ActionController {
      */
     public static void initActions() {
 
-        new ToolBarAction("toolbar.separator","-") {
+        new ToolBarAction("toolbar.separator", "-") {
             /**
              * 
              */
@@ -119,16 +119,25 @@ public class ActionController {
                 if (inited) return;
                 this.inited = true;
                 JDUtilities.getController().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOAD_START, ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED, ControlEvent.CONTROL_DOWNLOAD_STOP) {
-                    public void controlIDEvent(ControlEvent event) {
-                        switch (event.getID()) {
-                        case ControlEvent.CONTROL_DOWNLOAD_START:
-                            setEnabled(false);
-                            break;
-                        case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
-                        case ControlEvent.CONTROL_DOWNLOAD_STOP:
-                            setEnabled(true);
-                            break;
-                        }
+                    public void controlIDEvent(final ControlEvent event) {
+                        new GuiRunnable<Object>() {
+
+                            @Override
+                            public Object runSave() {
+                                switch (event.getID()) {
+                                case ControlEvent.CONTROL_DOWNLOAD_START:
+                                    setEnabled(false);
+                                    break;
+                                case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
+                                case ControlEvent.CONTROL_DOWNLOAD_STOP:
+                                    setEnabled(true);
+                                    break;
+                                }
+                                return null;
+                            }
+
+                        }.start();
+
                     }
                 });
             }
@@ -184,18 +193,25 @@ public class ActionController {
                 if (inited) return;
                 this.inited = true;
                 JDUtilities.getController().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOAD_START, ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED, ControlEvent.CONTROL_DOWNLOAD_STOP) {
-                    public void controlIDEvent(ControlEvent event) {
-                        switch (event.getID()) {
-                        case ControlEvent.CONTROL_DOWNLOAD_START:
-                            setEnabled(true);
-                            setSelected(false);
-                            break;
-                        case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
-                        case ControlEvent.CONTROL_DOWNLOAD_STOP:
-                            setEnabled(false);
-                            setSelected(false);
-                            break;
-                        }
+                    public void controlIDEvent(final ControlEvent event) {
+                        new GuiRunnable<Object>() {
+
+                            @Override
+                            public Object runSave() {
+                                switch (event.getID()) {
+                                case ControlEvent.CONTROL_DOWNLOAD_START:
+                                    setEnabled(true);
+                                    setSelected(false);
+                                    break;
+                                case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
+                                case ControlEvent.CONTROL_DOWNLOAD_STOP:
+                                    setEnabled(false);
+                                    setSelected(false);
+                                    break;
+                                }
+                                return null;
+                            }
+                        }.start();
                     }
                 });
                 JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_DOWNLOAD_PAUSE_SPEED) {
@@ -231,16 +247,24 @@ public class ActionController {
                 if (inited) return;
                 this.inited = true;
                 JDUtilities.getController().addControlListener(new ControlIDListener(ControlEvent.CONTROL_DOWNLOAD_START, ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED, ControlEvent.CONTROL_DOWNLOAD_STOP) {
-                    public void controlIDEvent(ControlEvent event) {
-                        switch (event.getID()) {
-                        case ControlEvent.CONTROL_DOWNLOAD_START:
-                            setEnabled(true);
-                            break;
-                        case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
-                        case ControlEvent.CONTROL_DOWNLOAD_STOP:
-                            setEnabled(false);
-                            break;
-                        }
+                    public void controlIDEvent(final ControlEvent event) {
+
+                        new GuiRunnable<Object>() {
+
+                            @Override
+                            public Object runSave() {
+                                switch (event.getID()) {
+                                case ControlEvent.CONTROL_DOWNLOAD_START:
+                                    setEnabled(true);
+                                    break;
+                                case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
+                                case ControlEvent.CONTROL_DOWNLOAD_STOP:
+                                    setEnabled(false);
+                                    break;
+                                }
+                                return null;
+                            }
+                        }.start();
                     }
                 });
             }
@@ -404,7 +428,7 @@ public class ActionController {
                 setPriority(899);
                 this.setEnabled(true);
                 this.type = ToolBarAction.Types.TOGGLE;
-                this.setToolTipText(JDL.L("gui.menu.action.reconnect.desc","-"));
+                this.setToolTipText(JDL.L("gui.menu.action.reconnect.desc", "-"));
                 setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true));
                 setIcon(isSelected() ? "gui.images.reconnect_enabled" : "gui.images.reconnect_disabled");
             }

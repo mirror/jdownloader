@@ -84,7 +84,7 @@ public class Vipfilecom extends PluginForHost {
         if (!link.contains("vip-file.com")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.vipfilecom.errors.nofreedownloadlink", "No free download link for this file"));
         // link = link.replaceAll("file.com.*?/", "file.com:8080/");
         br.setFollowRedirects(true);
-        br.openDownload(downloadLink, link, true, 1).startDownload();
+        jd.plugins.BrowserAdapter.openDownload(br,downloadLink, link, true, 1).startDownload();
     }
 
     // @Override
@@ -95,7 +95,7 @@ public class Vipfilecom extends PluginForHost {
         br.submitForm(form);
         String url = Encoding.htmlDecode(br.getRegex(Pattern.compile("<a href=\"(.*?vip-file\\.com/download.*?)\">", Pattern.CASE_INSENSITIVE)).getMatch(0));
         if (url == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
-        dl = br.openDownload(downloadLink, url, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, url, true, 0);
         dl.startDownload();
     }
 

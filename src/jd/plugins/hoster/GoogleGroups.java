@@ -108,7 +108,7 @@ public class GoogleGroups extends PluginForHost {
         String na = downloadLink.getDownloadURL().replaceFirst("\\?gda=.*", "");
         na = na.replaceFirst("googlegroups.com/web/.*", "googlegroups.com/web/") + URLEncoder.encode(na.replaceFirst("http://.*?\\.googlegroups.com/web/", ""), "UTF-8");
         br.setFollowRedirects(true);
-        dl = br.openDownload(downloadLink, na);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, na);
         dl.setFilesizeCheck(false);
         dl.startDownload();
     }

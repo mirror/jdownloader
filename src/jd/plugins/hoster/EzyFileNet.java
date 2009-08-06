@@ -96,7 +96,7 @@ public class EzyFileNet extends PluginForHost {
         if (passCode != null) downloadLink.setProperty("pass", passCode);
         String dllink = br.getRegex("<a href=\"(http://ezy[0-9]+.*)\">http://").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_FATAL);
-        br.openDownload(downloadLink, dllink, true, -2);
+        jd.plugins.BrowserAdapter.openDownload(br,downloadLink, dllink, true, -2);
         dl.startDownload();
     }
 

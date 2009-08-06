@@ -93,7 +93,7 @@ public class MegaLoadedCom extends PluginForHost {
                 }
                 DLForm.put("password", passCode);
             }
-            br.openDownload(downloadLink, DLForm, false, 1);
+            jd.plugins.BrowserAdapter.openDownload(br,downloadLink, DLForm, false, 1);
             if (!(dl.getConnection().isContentDisposition())) {
                 br.followConnection();
                 if (br.containsHTML("Wrong password")) {

@@ -85,7 +85,7 @@ public class SpeedShareOrg extends PluginForHost {
         sleep(15000l, downloadLink);
         br.setFollowRedirects(true);
         /* Datei herunterladen */
-        dl = br.openDownload(downloadLink, url);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, url);
         if (!dl.getConnection().isContentDisposition()) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 60 * 1000l);

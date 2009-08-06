@@ -65,7 +65,7 @@ public class FisierulMeuRo extends PluginForHost {
         requestFileInformation(downloadLink);
 
         String downloadUrl = br.getRegex(Pattern.compile("action=!!!(.*?)!!!")).getMatch(0);
-        dl = br.openDownload(downloadLink, downloadUrl, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, downloadUrl, true, 1);
         dl.startDownload();
     }
 

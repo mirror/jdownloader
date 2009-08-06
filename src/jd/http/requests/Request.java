@@ -34,8 +34,6 @@ import java.util.Map.Entry;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
-import jd.config.Configuration;
-import jd.config.SubConfiguration;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -111,10 +109,6 @@ public abstract class Request {
 
         this.url = new URL(Encoding.urlEncode_light(http2JDP(url)));
         this.orgURL = new URL(jdp2http(url));
-        readTimeout = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, 100000);
-
-        connectTimeout = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT, 100000);
-
         initDefaultHeader();
 
     }

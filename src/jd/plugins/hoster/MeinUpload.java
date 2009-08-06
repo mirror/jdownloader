@@ -105,7 +105,7 @@ public class MeinUpload extends PluginForHost {
             captcha.put("code", code);
             captcha.put("down_script", "1");
             this.sleep((Integer.parseInt(br.getRegex("(\\d+)</span> Sekunden</span>").getMatch(0)) * 1000), downloadLink);
-            br.openDownload(downloadLink, captcha);
+            jd.plugins.BrowserAdapter.openDownload(br,downloadLink, captcha);
         } else {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
@@ -189,7 +189,7 @@ public class MeinUpload extends PluginForHost {
         String url = br.getRegex(Pattern.compile("Dieser Direktlink.*?href=\"(.*?)\"", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.setFollowRedirects(true);
-        dl = br.openDownload(downloadLink, url, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, url, true, 0);
         if (dl.getConnection().getContentType().equalsIgnoreCase("text/html")) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.meinupload.errors.serverdefect", "Serivce not available"), 10 * 60 * 1000l);

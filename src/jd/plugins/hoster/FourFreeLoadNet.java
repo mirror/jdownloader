@@ -113,7 +113,7 @@ public class FourFreeLoadNet extends PluginForHost {
         sleep(20000, downloadLink);
         br.setFollowRedirects(true);
         /* Datei herunterladen */
-        dl = br.openDownload(downloadLink, finalurl, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, finalurl, false, 1);
         if (!dl.getConnection().isContentDisposition()) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -127,7 +127,7 @@ public class FourFreeLoadNet extends PluginForHost {
         login(account);
         isPremium();
         br.getPage(parameter.getDownloadURL());
-        dl = br.openDownload(parameter, br.getRedirectLocation(), false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,parameter, br.getRedirectLocation(), false, 1);
         dl.startDownload();
     }
 

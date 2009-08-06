@@ -86,12 +86,12 @@ public class FormData {
     }
 
     public Type getType() {
-        // TODO Auto-generated method stub
+    
         return type;
     }
 
     public String getDataType() {
-        // TODO Auto-generated method stub
+     
         return this.mime;
     }
 

@@ -62,7 +62,7 @@ public class SuborySk extends PluginForHost {
         Form captchaForm = br.getForm(0);
         if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         captchaForm.put("str", code);
-        dl = br.openDownload(downloadLink, captchaForm, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, captchaForm, false, 1);
         if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();
             if (br.containsHTML("Zadal si")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA);

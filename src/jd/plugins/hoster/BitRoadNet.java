@@ -71,7 +71,7 @@ public class BitRoadNet extends PluginForHost {
         br.submitForm(dl1);
         String url = br.getRedirectLocation();
         if (url == null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-        dl = br.openDownload(downloadLink, url, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, url, false, 1);
         dl.startDownload();
     }
 

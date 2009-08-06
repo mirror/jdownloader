@@ -61,7 +61,7 @@ public class UploadStube extends PluginForHost {
         this.requestFileInformation(downloadLink);
         br.getPage(downloadLink.getDownloadURL());
         String link = br.getRegex("onClick=\"window\\.location=..(http://www.uploadstube.de/.*?)..\"").getMatch(0);
-        dl = br.openDownload(downloadLink, link);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, link);
         dl.startDownload();
     }
 

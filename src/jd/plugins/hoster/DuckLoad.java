@@ -73,7 +73,7 @@ public class DuckLoad extends PluginForHost {
             if (url == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         br.setFollowRedirects(true);
-        dl = br.openDownload(link, url, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,link, url, true, 0);
         dl.startDownload();
     }
 

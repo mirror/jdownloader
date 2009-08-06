@@ -70,7 +70,7 @@ public class FileGuRu extends PluginForHost {
         if (id == null || slot == null || hash == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.getPage(slot + "/link/" + id + "/" + hash);
         String dllink = slot + "/link/" + id + "/" + hash;
-        dl = br.openDownload(link, dllink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,link, dllink, false, 1);
         dl.startDownload();
 
     }

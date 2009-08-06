@@ -219,7 +219,7 @@ public class Megauploadcom extends PluginForHost {
         }
         if (waittime > 0) this.sleep(waittime * 1000, link);
         try {
-            dl = br.openDownload(link, url, resume, chunks);
+            dl = jd.plugins.BrowserAdapter.openDownload(br,link, url, resume, chunks);
             if (!dl.getConnection().isOK()) {
                 dl.getConnection().disconnect();
                 if (dl.getConnection().getResponseCode() == 503) {

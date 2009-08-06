@@ -27,6 +27,7 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
+import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -124,7 +125,7 @@ public class BadongoCom extends PluginForHost {
             br.getPage(link + "/ifr?zenc=");
         }
         if (link == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        dl = br.openDownload(parameter, link, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, link, true, 0);
         if (!dl.getConnection().isContentDisposition()) {
             String page = br.loadConnection(dl.getConnection());
             br.getRequest().setHtmlCode(page);
@@ -168,7 +169,7 @@ public class BadongoCom extends PluginForHost {
             handleErrors(br);
             br.getPage(link + "/loc?pr=1");
             if (br.getRedirectLocation() == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-            dl = br.openDownload(downloadLink, br.getRedirectLocation(), true, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), true, 1);
             if (!dl.getConnection().isContentDisposition()) {
                 String page = br.loadConnection(dl.getConnection());
                 br.getRequest().setHtmlCode(page);
@@ -215,7 +216,7 @@ public class BadongoCom extends PluginForHost {
             handleErrors(ajax);
             ajax.getPage((link + "/loc?pr=1").replace("/1/", "/0/"));
 
-            dl = ajax.openDownload(downloadLink, ajax.getRedirectLocation(), true, 1);
+            dl = BrowserAdapter.openDownload(ajax, downloadLink, ajax.getRedirectLocation(), true, 1);
             if (!dl.getConnection().isContentDisposition()) {
                 String page = ajax.loadConnection(dl.getConnection());
                 ajax.getRequest().setHtmlCode(page);

@@ -49,7 +49,7 @@ public class EndlessAppsNet extends PluginForHost {
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         link.setFinalFileName(null);
         br.setDebug(true);
-        dl = br.openDownload(link, dllink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,link, dllink, false, 1);
         dl.startDownload();
         
 

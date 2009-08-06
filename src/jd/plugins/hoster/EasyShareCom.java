@@ -141,7 +141,7 @@ public class EasyShareCom extends PluginForHost {
         }
         /* Datei herunterladen */
         br.setFollowRedirects(true);
-        dl = br.openDownload(downloadLink, form, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, form, true, 1);
         if (!dl.getConnection().isContentDisposition()) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
         dl.startDownload();
     }
@@ -152,7 +152,7 @@ public class EasyShareCom extends PluginForHost {
         login(account);
         isExpired(account);
         br.setFollowRedirects(true);
-        dl = br.openDownload(downloadLink, downloadLink.getDownloadURL(), true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, downloadLink.getDownloadURL(), true, 0);
         dl.startDownload();
     }
 

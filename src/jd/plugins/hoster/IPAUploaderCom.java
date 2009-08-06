@@ -60,7 +60,7 @@ public class IPAUploaderCom extends PluginForHost {
         Form DLForm = br.getForm(0);
         if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
 
-        br.openDownload(downloadLink, DLForm, false, 1);
+        jd.plugins.BrowserAdapter.openDownload(br,downloadLink, DLForm, false, 1);
         if (!dl.getConnection().isContentDisposition()) {
             dl.getConnection().disconnect();
             logger.warning("The link you added isn't valid!");

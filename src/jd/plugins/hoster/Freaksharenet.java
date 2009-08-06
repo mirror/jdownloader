@@ -96,7 +96,7 @@ public class Freaksharenet extends PluginForHost {
             url = br.getRedirectLocation();
         }
         if (url == null) throw new PluginException(LinkStatus.ERROR_FATAL);
-        dl = br.openDownload(downloadLink, url, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, url, true, 0);
         dl.startDownload();
     }
 
@@ -131,7 +131,7 @@ public class Freaksharenet extends PluginForHost {
         sleep(50 * 1000l, downloadLink);
         br.submitForm(form);
         form = br.getForm(0);
-        dl = br.openDownload(downloadLink, form, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, form, false, 1);
 
         URLConnectionAdapter con = dl.getConnection();
         if (!con.isContentDisposition()) {

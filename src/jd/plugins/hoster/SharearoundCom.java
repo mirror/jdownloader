@@ -80,7 +80,7 @@ public class SharearoundCom extends PluginForHost {
                 if (br.containsHTML("Link Generated")) dllink = br.getRegex("next\\s+\\d+\\s+hours<br><br>\\s+\\s+<a\\s+href=\"(.*?)\">").getMatch(0);
             }
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-            dl = br.openDownload(downloadLink, dllink, false, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, dllink, false, 1);
             dl.startDownload();
         }
     }

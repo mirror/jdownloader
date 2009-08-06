@@ -85,7 +85,7 @@ public class BluehostTo extends PluginForHost {
             logger.info("Not enough Traffic left for PremiumDownload");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE);
         }
-        dl = br.openDownload(downloadLink, downloadLink.getDownloadURL(), true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, downloadLink.getDownloadURL(), true, 0);
         if (dl.getConnection().getContentType().contains("text")) {
             dl.getConnection().disconnect();
             login(account);
@@ -112,7 +112,7 @@ public class BluehostTo extends PluginForHost {
         Form form = br.getForm(1);
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.setFollowRedirects(true);
-        dl = br.openDownload(downloadLink, form);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, form);
         if (!dl.getConnection().isContentDisposition()) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "IP already loading", 5 * 60 * 1000l);

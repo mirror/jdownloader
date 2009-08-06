@@ -60,7 +60,7 @@ public class Indowebster extends PluginForHost {
         if (dl_url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.setDebug(true);
         br.setFollowRedirects(true);
-        dl = br.openDownload(link, dl_url, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,link, dl_url, true, 1);
         dl.startDownload();
     }
 

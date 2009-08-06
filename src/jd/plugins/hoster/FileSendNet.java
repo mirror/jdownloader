@@ -73,7 +73,7 @@ public class FileSendNet extends PluginForHost {
         br.setFollowRedirects(false);
         // this.sleep(24000, downloadLink); // uncomment when they find a better
         // way to force wait time
-        dl = br.openDownload(downloadLink, linkaction, linkname + "=" + linkvalue + "&download=");
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, linkaction, linkname + "=" + linkvalue + "&download=");
         dl.startDownload();
 
     }

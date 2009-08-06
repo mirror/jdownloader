@@ -58,7 +58,7 @@ public class AppSceneOrg extends PluginForHost {
         captchaForm.put("captcha", code);
         br.submitForm(captchaForm);
         if (br.getRedirectLocation().contains("appscene.org/download.php?id=")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        dl = br.openDownload(downloadLink, br.getRedirectLocation(), false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, br.getRedirectLocation(), false, 1);
         if (br.containsHTML("This download session doesn't exist or has been deleted")) throw new PluginException(LinkStatus.ERROR_RETRY);
         dl.startDownload();
     }

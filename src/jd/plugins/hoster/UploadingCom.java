@@ -113,10 +113,10 @@ public class UploadingCom extends PluginForHost {
         Form form = br.getForm(2);
         br.setDebug(true);
         br.setFollowRedirects(true);
-        dl = br.openDownload(link, form, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,link, form, true, 1);
         if (!dl.getConnection().isContentDisposition()) {
             dl.getConnection().disconnect();
-            dl = br.openDownload(link, form, true, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br,link, form, true, 1);
         }
         dl.startDownload();
     }
@@ -137,7 +137,7 @@ public class UploadingCom extends PluginForHost {
         br.submitForm(form);
         if (br.getRedirectLocation() == null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
         br.setFollowRedirects(true);
-        dl = br.openDownload(link, br.getRedirectLocation(), false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,link, br.getRedirectLocation(), false, 1);
         dl.startDownload();
     }
 
@@ -181,7 +181,7 @@ public class UploadingCom extends PluginForHost {
         br.submitForm(form);
         if (br.getRedirectLocation() == null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
         br.setFollowRedirects(true);
-        dl = br.openDownload(downloadLink, br.getRedirectLocation(), false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, br.getRedirectLocation(), false, 1);
         dl.setFilenameFix(true);
         dl.startDownload();
     }

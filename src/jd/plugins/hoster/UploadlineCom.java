@@ -112,7 +112,7 @@ public class UploadlineCom extends PluginForHost {
         }
 
         if (dllink != null && dllink != "") {
-            dl = br.openDownload(downloadLink, dllink, true, -4);
+            dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, dllink, true, -4);
             dl.startDownload();
         } else
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);

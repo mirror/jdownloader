@@ -64,7 +64,7 @@ public class PlikusPl extends PluginForHost {
         Form form = br.getForm(0);
         br.setFollowRedirects(false);
         if (br.getRedirectLocation() != null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
-        dl = br.openDownload(downloadLink, form, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, form, true, 0);
         dl.startDownload();
     }
 

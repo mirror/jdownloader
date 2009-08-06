@@ -76,7 +76,7 @@ public class GigaPetaCom extends PluginForHost {
         }
         if (br.getRedirectLocation() == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
 
-        dl = br.openDownload(downloadLink, br.getRedirectLocation(), false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, br.getRedirectLocation(), false, 1);
         dl.startDownload();
     }
 

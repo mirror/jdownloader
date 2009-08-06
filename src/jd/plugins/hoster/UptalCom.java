@@ -85,7 +85,7 @@ public class UptalCom extends PluginForHost {
         br.setFollowRedirects(true);
         getlink = getlink.replaceAll(" ", "%20");
         this.sleep(3000, downloadLink);
-        dl = br.openDownload(downloadLink, getlink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, getlink, false, 1);
         downloadLink.setFinalFileName(filename);
         URLConnectionAdapter con = dl.getConnection();
         if (!con.isOK()) {

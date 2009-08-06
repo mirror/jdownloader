@@ -111,7 +111,7 @@ public class IfolderRu extends PluginForHost {
             }
             String directLink = br.getRegex("id=\"download_file_href\"\\s+href=\"(.*?)\"").getMatch(0);
             if (directLink != null) {
-                dl = br.openDownload(downloadLink, directLink, true, -2);
+                dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, directLink, true, -2);
                 do_download = true;
                 break;
             }

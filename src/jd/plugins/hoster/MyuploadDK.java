@@ -51,7 +51,7 @@ public class MyuploadDK extends PluginForHost {
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.setFollowRedirects(true);
         br.setDebug(true);
-        dl = br.openDownload(link, url);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,link, url);
         dl.startDownload();
     }
 

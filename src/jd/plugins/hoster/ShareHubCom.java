@@ -31,7 +31,7 @@ public class ShareHubCom extends PluginForHost {
         Form form = br.getForm(0);
         form.setProperty("x", (int) (Math.random() * 134));
         form.setProperty("y", (int) (Math.random() * 25));
-        dl = br.openDownload(downloadLink, form, true, 2);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, form, true, 2);
         dl.setFilesizeCheck(false);
         dl.startDownload();
 

@@ -98,11 +98,11 @@ public class MilleDriveCom extends PluginForHost {
             String downurl = br.getRegex("name=\"down-url\" value=\"(.*?)\"").getMatch(0);
             String ticket = br.getRegex("name=\"ticket\" value=\"(.*?)\"").getMatch(0);
             if (downurl == null || ticket == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-            dl = br.openDownload(downloadLink, down2, true, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, down2, true, 1);
 
         } else {
             String finalfilename = downloadLink.getName();
-            dl = br.openDownload(downloadLink, directlink, true, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, directlink, true, 1);
             downloadLink.setFinalFileName(finalfilename);
         }
         dl.startDownload();

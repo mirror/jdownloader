@@ -78,7 +78,7 @@ public class VimeoCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         br.setDebug(true);
         requestFileInformation(downloadLink);
-        br.openDownload(downloadLink, finalURL, true, 0).startDownload();
+        jd.plugins.BrowserAdapter.openDownload(br,downloadLink, finalURL, true, 0).startDownload();
 
     }
 

@@ -62,7 +62,7 @@ public class DumpRo extends PluginForHost {
         InputField nv2 = new InputField("actiune", "download");
         forms.addInputField(nv2);
 
-        dl = br.openDownload(link, forms, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,link, forms, false, 1);
         dl.startDownload();
 
     }

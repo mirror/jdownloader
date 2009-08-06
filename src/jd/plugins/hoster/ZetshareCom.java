@@ -84,7 +84,7 @@ public class ZetshareCom extends PluginForHost {
         String linkurl = Encoding.htmlDecode(new Regex(br, Pattern.compile("<a href=\"(http://www\\.zetshare\\.com/(download/|url/)*?download2\\.php\\?a=.*?)\"><", Pattern.CASE_INSENSITIVE)).getMatch(0));
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.setFollowRedirects(true);
-        dl = br.openDownload(downloadLink, linkurl);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, linkurl);
         dl.startDownload();
     }
 

@@ -84,7 +84,7 @@ public class EnteruploadCom extends PluginForHost {
             br.setFollowRedirects(true);
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             downloadLink.setFinalFileName(null);
-            dl = br.openDownload(downloadLink, dllink, false, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, dllink, false, 1);
             dl.startDownload();
         }
     }

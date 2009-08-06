@@ -50,7 +50,7 @@ public class RomsZopharNet extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
-        br.openDownload(downloadLink, br.getRedirectLocation()).startDownload();
+        jd.plugins.BrowserAdapter.openDownload(br,downloadLink, br.getRedirectLocation()).startDownload();
     }
 
     // @Override

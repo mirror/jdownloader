@@ -83,7 +83,7 @@ public class Speedy_ShareCom extends PluginForHost {
         sleep(30000, downloadLink);
 
         /* Datei herunterladen */
-        br.openDownload(downloadLink, downloadLink.getDownloadURL(), postdata).startDownload();
+        jd.plugins.BrowserAdapter.openDownload(br,downloadLink, downloadLink.getDownloadURL(), postdata).startDownload();
     }
 
     // @Override

@@ -70,7 +70,7 @@ public class RuTubeRu extends PluginForHost {
         linkurl = Encoding.urlDecode(linkurl, true);
         System.out.println(linkurl);
         br.setFollowRedirects(true);
-        dl = br.openDownload(downloadLink, linkurl, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, linkurl, true, 0);
         dl.startDownload();
     }
 

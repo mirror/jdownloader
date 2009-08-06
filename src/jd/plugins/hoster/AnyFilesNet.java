@@ -61,7 +61,7 @@ public class AnyFilesNet extends PluginForHost {
         String dllink = br.getRegex("<frame src=\"/tmpl/tmpl_frame_top.php\\?link=(.*?)\" name=\"topFrame\"").getMatch(0);
 
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        dl = br.openDownload(link, dllink, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,link, dllink, true, 1);
         dl.startDownload();
 
     }

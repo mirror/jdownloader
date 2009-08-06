@@ -85,7 +85,7 @@ public class Shareplacecom extends PluginForHost {
         if (waittime != null) wait = Long.parseLong(waittime);
         sleep(wait * 1000l, downloadLink);
         br.setFollowRedirects(true);
-        dl = br.openDownload(downloadLink, url);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, url);
         if (dl.getConnection().isContentDisposition()) {
             /* Workaround für fehlerhaften Filename Header */
             String name = Plugin.getFileNameFormHeader(dl.getConnection());

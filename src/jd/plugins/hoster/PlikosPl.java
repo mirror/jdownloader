@@ -66,7 +66,7 @@ public class PlikosPl extends PluginForHost {
         String linkurl = br.getRegex("</script>\\s*</div>\\s*<p style[^>]*><a href=\"(.*?)\">Pobierz plik</a></p").getMatch(0);
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.setFollowRedirects(true);
-        dl = br.openDownload(downloadLink, linkurl);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, linkurl);
         dl.startDownload();
     }
 

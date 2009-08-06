@@ -90,7 +90,7 @@ public class File2UploadNet extends PluginForHost {
             downloadLink.setProperty("pass", passCode);
         }
         String dllink = br.getRegex("class=\"important\" href=\"(.*?)\">Click to download! <").getMatch(0);
-        dl = br.openDownload(downloadLink, dllink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, dllink, false, 1);
 
         dl.startDownload();
     }

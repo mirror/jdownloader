@@ -114,7 +114,7 @@ public class GigaSizeCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage("http://www.gigasize.com/form.php");
         Form download = br.getForm(0);
-        dl = br.openDownload(parameter, download, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,parameter, download, true, 0);
         if (!dl.getConnection().isContentDisposition()) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
         dl.startDownload();
     }
@@ -149,7 +149,7 @@ public class GigaSizeCom extends PluginForHost {
             }
         }
         Form download = br.getFormbyProperty("id", "formDownload");
-        dl = br.openDownload(downloadLink, download, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, download, true, 1);
         if (!dl.getConnection().isContentDisposition()) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
         dl.startDownload();
     }

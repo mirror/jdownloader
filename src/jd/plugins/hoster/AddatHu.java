@@ -80,7 +80,7 @@ public class AddatHu extends PluginForHost {
         br.setFollowRedirects(true);
         requestFileInformation(downloadLink);
         String link = br.getRegex(Pattern.compile("<a href=\"(.*)\"><img border=\"0\" src=\"/images/letoltes_btn.jpg\"></a>", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        br.openDownload(downloadLink, link, true, 1).startDownload();
+        jd.plugins.BrowserAdapter.openDownload(br,downloadLink, link, true, 1).startDownload();
     }
 
     // @Override

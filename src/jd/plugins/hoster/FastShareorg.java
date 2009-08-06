@@ -88,7 +88,7 @@ public class FastShareorg extends PluginForHost {
         /* Zwangswarten, 10seks */
         sleep(10000, downloadLink);
 
-        dl = br.openDownload(downloadLink, url, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, url, false, 1);
         dl.startDownload();
 
     }

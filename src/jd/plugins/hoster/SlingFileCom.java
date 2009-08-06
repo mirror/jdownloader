@@ -68,7 +68,7 @@ public class SlingFileCom extends PluginForHost {
         br.submitForm(downloadForm);
         String downloadUrl = br.getRegex(Pattern.compile("<a class=\"link_v3\" href=\"(.*?)\">here</a>")).getMatch(0);
 
-        dl = br.openDownload(downloadLink, downloadUrl, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, downloadUrl, true, 0);
         dl.startDownload();
     }
 

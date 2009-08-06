@@ -112,7 +112,7 @@ public class QuickUploadNet extends PluginForHost {
         if (br.containsHTML("Wrong captcha")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
         String dllink = br.getRegex("dotted #bbb;padding:7px;\">.*?<a href=\"(.*?)\">.*?</a>.*?</span>.*?<br><br><br>").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        br.openDownload(downloadLink, dllink, true, -20);
+        jd.plugins.BrowserAdapter.openDownload(br,downloadLink, dllink, true, -20);
         dl.startDownload();
     }
 

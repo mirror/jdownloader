@@ -57,7 +57,7 @@ public class UgotFileCom extends PluginForHost {
         String dllink = null;
         dllink = br.getRegex("(http://.*)").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        dl = br.openDownload(link, dllink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,link, dllink, false, 1);
         dl.startDownload();
     }
 

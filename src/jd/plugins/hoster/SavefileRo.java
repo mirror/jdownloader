@@ -80,7 +80,7 @@ public class SavefileRo extends PluginForHost {
                 if (br.containsHTML("Download Link Generated")) dllink = br.getRegex("Download:</font><br>\\s+<a\\s+href=\"(.*?)\"\\s+class").getMatch(0);
             }
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-            dl = br.openDownload(downloadLink, dllink, false, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, dllink, false, 1);
             dl.startDownload();
         }
     }

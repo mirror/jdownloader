@@ -140,7 +140,7 @@ public class RbaDe extends PluginForHost {
 
         String path = new Regex(link.getDownloadURL(), getSupportedLinks()).getColumn(2)[0];
         if (path.equals("5")) {
-            br.openDownload(link, link.getDownloadURL()).startDownload();
+            jd.plugins.BrowserAdapter.openDownload(br,link, link.getDownloadURL()).startDownload();
         } else {
             logger.finer("Path = " + path + "nicht supported? Möglicherweise zu unrecht?!?");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, ERR_FILE_NOT_FOUND);

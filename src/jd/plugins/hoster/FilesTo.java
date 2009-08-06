@@ -73,7 +73,7 @@ public class FilesTo extends PluginForHost {
 
         if (br.containsHTML("Der eingegebene code ist falsch")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         String url = br.getRegex("<form id=\"dlform\".*?action\\=\"(http://.*?files\\.to/.*?)\">").getMatch(0);
-        br.openDownload(downloadLink, url, true, 1).startDownload();
+        jd.plugins.BrowserAdapter.openDownload(br,downloadLink, url, true, 1).startDownload();
     }
 
     // @Override

@@ -50,7 +50,7 @@ public class BoxNet extends PluginForHost {
         if (link.getDownloadURL().matches(REDIRECT_DOWNLOAD_LINK)) {
             br.getPage(link.getBrowserUrl());
         }
-        dl = br.openDownload(link, link.getDownloadURL(), true, -20);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,link, link.getDownloadURL(), true, -20);
         if (!dl.getConnection().isContentDisposition()) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);

@@ -67,7 +67,7 @@ public class HostPlikCom extends PluginForHost {
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.setFollowRedirects(true);
         this.sleep(5000, downloadLink);
-        dl = br.openDownload(downloadLink, linkurl);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, linkurl);
         dl.startDownload();
 
     }

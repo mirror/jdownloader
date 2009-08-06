@@ -83,11 +83,11 @@ public class FileBaseTo extends PluginForHost {
         String dlAction = br.getRegex("<form action=\"(http.*?)\"").getMatch(0);
         try {
             if (dlAction != null) {
-                dl = br.openDownload(downloadLink, dlAction, "wait=" + Encoding.urlEncode("Download - " + downloadLink.getName()));
+                dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, dlAction, "wait=" + Encoding.urlEncode("Download - " + downloadLink.getName()));
             } else {
                 dlAction = br.getRegex("value=\"(http.*?/download/ticket.*?)\"").getMatch(0);
                 if (dlAction == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-                dl = br.openDownload(downloadLink, dlAction);
+                dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, dlAction);
             }
             br.setDebug(true);
             URLConnectionAdapter con = dl.getConnection();

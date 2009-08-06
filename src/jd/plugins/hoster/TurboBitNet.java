@@ -86,7 +86,7 @@ public class TurboBitNet extends PluginForHost {
 
         String downloadUrl = br.getRegex("<a href='(.*?)'>").getMatch(0);
 
-        dl = br.openDownload(downloadLink, downloadUrl, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, downloadUrl, true, 0);
         dl.startDownload();
     }
 

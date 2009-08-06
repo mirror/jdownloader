@@ -109,7 +109,7 @@ public class FileFactory extends PluginForHost {
         if (waittime > 60000l) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime); }
         waittime += 1000;
         sleep(waittime, parameter);
-        dl = br.openDownload(parameter, downloadUrl);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,parameter, downloadUrl);
 
         // Prüft ob content disposition header da sind
         if (dl.getConnection().isContentDisposition()) {
@@ -173,7 +173,7 @@ public class FileFactory extends PluginForHost {
         login(account);
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
-        dl = br.openDownload(downloadLink, br.getRedirectLocation(), true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, br.getRedirectLocation(), true, 0);
         if (dl.getConnection().isContentDisposition()) {
             br.followConnection();
             if (br.containsHTML(NOT_AVAILABLE)) {
@@ -183,7 +183,7 @@ public class FileFactory extends PluginForHost {
             } else {
                 String red = br.getRegex(Pattern.compile("10px 0;\">.*<a href=\"(.*?)\">Download with FileFactory Premium", Pattern.DOTALL)).getMatch(0);
                 logger.finer("Indirect download");
-                dl = br.openDownload(downloadLink, red, true, 0);
+                dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, red, true, 0);
             }
         } else {
             logger.finer("DIRECT download");

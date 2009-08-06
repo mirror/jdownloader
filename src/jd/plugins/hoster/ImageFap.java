@@ -128,7 +128,7 @@ public class ImageFap extends PluginForHost {
         // String filename = Plugin.extractFileNameFromURL(imagelink);
         // downloadLink.setFinalFileName(filename);
         if (gallery_name != null) downloadLink.addSubdirectory(gallery_name);
-        dl = br.openDownload(downloadLink, imagelink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, imagelink);
         if (dl.getConnection().getResponseCode() == 404) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

@@ -89,7 +89,7 @@ public class NarodRu extends PluginForHost {
         String downloadSuffix = br.getRegex(Pattern.compile("<a class=\"h-link\" rel=\"yandex_bar\" href=\"(.*?)\">")).getMatch(0);
         String dlLink = Encoding.htmlDecode("http://narod.ru" + downloadSuffix);
 
-        dl = br.openDownload(downloadLink, dlLink, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, dlLink, true, 1);
         dl.startDownload();
 
     }

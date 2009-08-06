@@ -54,7 +54,7 @@ public class ZidduCom extends PluginForHost {
 
         form.put("securitycode", code);
         br.setFollowRedirects(true);
-        dl = br.openDownload(downloadLink, form, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, form, false, 1);
         /*
          * Folgendes nicht optimal da bei .isContentDisposition == false immer
          * angenommen wird dass das Captcha falsch war.

@@ -51,7 +51,7 @@ public class YouPornCom extends PluginForHost {
     // @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
-        br.openDownload(link, link.getDownloadURL()).startDownload();
+        jd.plugins.BrowserAdapter.openDownload(br,link, link.getDownloadURL()).startDownload();
     }
 
     // @Override

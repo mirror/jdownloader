@@ -70,7 +70,7 @@ public class FileFrontCom extends PluginForHost {
         String linkurl = br.getRegex("it\\sdoesn.t,\\s<a href=\"(.*?)\"").getMatch(0);
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.setFollowRedirects(true);
-        dl = br.openDownload(downloadLink, linkurl, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, linkurl, false, 1);
         dl.startDownload();
 
     }

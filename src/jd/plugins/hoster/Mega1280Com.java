@@ -74,7 +74,7 @@ public class Mega1280Com extends PluginForHost {
         String dllink2 = br.getRegex("<div id=\"hdcode\" style=\"display:none\">(.*?)</div>").getMatch(0);
         String dllink3 = br.getRegex("<div id=\"hdfilename\" style=\"display:none\">(.*?)</div>").getMatch(0);
         String downloadURL = dllink0 + dllink1 + dllink2 + "/" + dllink3 ;
-        dl = br.openDownload(downloadLink, downloadURL, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, downloadURL, true, 1);
         
         
         dl.startDownload();

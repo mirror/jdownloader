@@ -80,7 +80,7 @@ public class DlFreeFr extends PluginForHost {
         if (dlLink == null) { throw new PluginException(LinkStatus.ERROR_FATAL); }
         br.setFollowRedirects(true);
         /* Datei herunterladen */
-        dl = br.openDownload(downloadLink, dlLink, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, dlLink, true, 1);
         if (!dl.getConnection().isContentDisposition()) {
             dl.getConnection().disconnect();
             if (br.getURL().contains("overload")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l); }

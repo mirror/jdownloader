@@ -66,7 +66,7 @@ public class R1OneCom extends PluginForHost {
         }
 
         String downloadUrl = br.getRegex(Pattern.compile("<a href=\"(.*?)\">Download</a>")).getMatch(0);
-        dl = br.openDownload(downloadLink, downloadUrl, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, downloadUrl, true, 1);
         dl.startDownload();
     }
 

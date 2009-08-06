@@ -51,7 +51,7 @@ public class UploaderPl extends PluginForHost {
         br.setFollowRedirects(true);
         // this.sleep(30000, downloadLink); // uncomment when they find a better
         // way to force wait time
-        dl = br.openDownload(downloadLink, linkurl);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, linkurl);
         dl.startDownload();
     }
 
@@ -67,7 +67,7 @@ public class UploaderPl extends PluginForHost {
         br.setFollowRedirects(true);
         // this.sleep(15000, downloadLink); // uncomment when they find a better
         // way to force wait time
-        dl = br.openDownload(downloadLink, linkurl);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, linkurl);
         dl.startDownload();
     }
 
@@ -141,7 +141,7 @@ public class UploaderPl extends PluginForHost {
         br.setFollowRedirects(true);
         // this.sleep(30000, downloadLink); // uncomment when they find a better
         // way to force wait time
-        dl = br.openDownload(downloadLink, linkurl);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, linkurl);
         dl.startDownload();
     }
 

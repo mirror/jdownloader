@@ -267,6 +267,8 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
                 if (!fast) tablerefreshinprogress = false;
             }
         }.start();
+        
+       
     }
 
     @Override

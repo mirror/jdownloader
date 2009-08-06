@@ -77,7 +77,7 @@ public class SwoopshareCom extends PluginForHost {
         String country = redirectLocation.substring(0, redirectLocation.lastIndexOf(".swoopshare.com/"));
 
         String link = country + ".swoopshare.com" + br.getRegex("&#187;</span> <a href=\"(.*?)\"").getMatch(0);
-        dl = br.openDownload(downloadLink, link);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, link);
         dl.startDownload();
     }
 

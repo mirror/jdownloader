@@ -72,7 +72,7 @@ public class BigShareEu extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
         br.setFollowRedirects(false);
-        dl = br.openDownload(downloadLink, linkurl, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, linkurl, false, 1);
         if (!(dl.getConnection().isContentDisposition())) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

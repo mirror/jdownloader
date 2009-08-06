@@ -65,7 +65,7 @@ public class FlyShareCz extends PluginForHost {
         Form DLForm = br.getForm(1);
         if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         // br.submitForm(DLForm);
-        dl = br.openDownload(downloadLink, DLForm, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, DLForm, false, 1);
 
         if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();

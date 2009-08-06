@@ -70,7 +70,7 @@ public class SuperSharePl extends PluginForHost {
         br.setFollowRedirects(true);
         // this.sleep(10000, downloadLink); // uncomment when they find a better
         // way to force wait time
-        dl = br.openDownload(downloadLink, getlink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, getlink, false, 1);
         downloadLink.setFinalFileName(filename);
         dl.startDownload();
 

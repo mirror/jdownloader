@@ -68,7 +68,7 @@ public class WrzucajCom extends PluginForHost {
         br.setFollowRedirects(true);
         // this.sleep(40000, downloadLink); //Remove if they find a better way
         // to force wait time
-        dl = br.openDownload(downloadLink, linkurl);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, linkurl);
         dl.startDownload();
 
     }

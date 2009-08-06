@@ -80,7 +80,7 @@ public class UlozToNet extends PluginForHost {
         }
 
         br.setFollowRedirects(true);
-        dl = br.openDownload(downloadLink, dlLink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, dlLink, false, 1);
         dl.startDownload();
     }
 

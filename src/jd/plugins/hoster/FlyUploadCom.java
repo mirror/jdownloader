@@ -65,7 +65,7 @@ public class FlyUploadCom extends PluginForHost {
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         linkurl = "http://www28.flyupload.com/dl?fid=" + linkurl;
         br.setFollowRedirects(true);
-        dl = br.openDownload(downloadLink, linkurl, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, linkurl, false, 1);
         URLConnectionAdapter con = dl.getConnection();
         if (con.getResponseCode() != 200 && con.getResponseCode() != 206) {
             con.disconnect();

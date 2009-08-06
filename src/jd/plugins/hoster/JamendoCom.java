@@ -110,7 +110,7 @@ public class JamendoCom extends PluginForHost {
             dlurl = prepareDownload("track", TrackID, link);
         }
         if (dlurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        dl = br.openDownload(link, dlurl, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,link, dlurl, true, 1);
         dl.startDownload();
     }
 

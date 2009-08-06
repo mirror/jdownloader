@@ -19,6 +19,7 @@ package jd;
 import java.awt.Toolkit;
 import java.io.File;
 import java.net.MalformedURLException;
+import java.net.Proxy;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
@@ -26,6 +27,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import jd.config.Configuration;
+import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.ByteBufferController;
 import jd.controlling.DownloadController;
@@ -45,6 +47,7 @@ import jd.gui.swing.jdgui.events.EDTEventQueue;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.http.Browser;
 import jd.http.Encoding;
+import jd.http.JDProxy;
 import jd.nutils.ClassFinder;
 import jd.nutils.JDFlags;
 import jd.nutils.OSDetector;
@@ -138,7 +141,61 @@ public class JDInit {
     }
 
     public void init() {
-        Browser.init();
+        initBrowser();
+
+    }
+
+    public void initBrowser() {
+        Browser.setLogger(JDLogger.getLogger());
+        
+        
+        Browser.setGlobalReadTimeout(SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, 100000));
+        Browser.setGlobalConnectTimeout(SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT, 100000));
+
+        if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_PROXY, false)) {
+
+            String host = SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_HOST, "");
+            int port = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PROXY_PORT, 8080);
+            String user = SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_USER, "");
+            String pass = SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_PASS, "");
+            if (host.trim().equals("")) {
+                JDLogger.getLogger().warning("Proxy disabled. No host");
+                SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.USE_PROXY, false);
+                return;
+            }
+
+            JDProxy pr = new JDProxy(Proxy.Type.HTTP, host, port);
+
+            if (user != null && user.trim().length() > 0) {
+                pr.setUser(user);
+            }
+            if (pass != null && pass.trim().length() > 0) {
+                pr.setPass(pass);
+            }
+            Browser.setGlobalProxy(pr);
+
+        }
+        if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_SOCKS, false)) {
+
+            String user = SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_USER_SOCKS, "");
+            String pass = SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_PASS_SOCKS, "");
+            String host = SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.SOCKS_HOST, "");
+            int port = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.SOCKS_PORT, 1080);
+            if (host.trim().equals("")) {
+                JDLogger.getLogger().warning("Socks Proxy disabled. No host");
+                SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.USE_SOCKS, false);
+                return;
+            }
+            JDProxy pr = new JDProxy(Proxy.Type.SOCKS, host, port);
+
+            if (user != null && user.trim().length() > 0) {
+                pr.setUser(user);
+            }
+            if (pass != null && pass.trim().length() > 0) {
+                pr.setPass(pass);
+            }
+            Browser.setGlobalProxy(pr);
+        }
     }
 
     public void initControllers() {
@@ -152,7 +209,7 @@ public class JDInit {
 
     public void initGUI(JDController controller) {
         LookAndFeelController.setUIManager();
-        
+
         Toolkit.getDefaultToolkit().getSystemEventQueue().push(new EDTEventQueue());
         SwingGui.setInstance(JDGui.getInstance());
         UserIF.setInstance(SwingGui.getInstance());

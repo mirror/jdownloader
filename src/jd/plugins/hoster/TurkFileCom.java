@@ -84,7 +84,7 @@ public class TurkFileCom extends PluginForHost {
         }
         int tt = Integer.parseInt(br.getRegex("countdown\">(\\d+)</span>").getMatch(0));
         sleep(tt * 1001, downloadLink);
-        br.openDownload(downloadLink, DLForm, false, 1);
+        jd.plugins.BrowserAdapter.openDownload(br,downloadLink, DLForm, false, 1);
         if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();
             if (br.containsHTML("Wrong password")) {

@@ -69,7 +69,7 @@ public class LeteckaPostaCz extends PluginForHost {
         br.setFollowRedirects(true);
         // this.sleep(40000, downloadLink); //Remove if they find a better way
         // to force wait time
-        dl = br.openDownload(downloadLink, linkurl, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, linkurl, false, 1);
         dl.startDownload();
 
     }

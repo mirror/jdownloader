@@ -75,7 +75,7 @@ public class QuickShareCz extends PluginForHost {
         br.setFollowRedirects(true);
         // this.sleep(10000, downloadLink); // uncomment when they find a better
         // way to force wait time
-        dl = br.openDownload(downloadLink, server + "/download.php", param);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, server + "/download.php", param);
         URLConnectionAdapter con = dl.getConnection();
         if (con.getContentType().contains("text")) {
             String herror = br.getURL();

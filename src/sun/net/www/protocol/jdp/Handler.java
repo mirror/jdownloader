@@ -23,6 +23,8 @@ import java.net.URLConnection;
 
 import jd.http.Browser;
 import jd.http.HTTPConnection;
+import jd.http.JDProxy;
+import jd.http.requests.Request;
 
 public class Handler extends sun.net.www.protocol.http.Handler {
 
@@ -42,6 +44,7 @@ public class Handler extends sun.net.www.protocol.http.Handler {
 
     @Override
     protected URLConnection openConnection(URL u, Proxy p) throws IOException {
+
         String urlCorrect = u.toString();
         if (urlCorrect.startsWith("jdp")) {
             urlCorrect = "http" + urlCorrect.substring(3);
@@ -50,8 +53,16 @@ public class Handler extends sun.net.www.protocol.http.Handler {
             String[] logins = u.getUserInfo().split(":");
             Browser.getAssignedBrowserInstance(u).setAuth(u.getHost(), logins[0], logins.length > 1 ? logins[1] : "");
         }
+        if (p == null) {
+            return new HTTPConnection(Browser.reAssignUrlToBrowserInstance(u, new URL(urlCorrect)), (Proxy) null, this);
 
-        return new HTTPConnection(Browser.reAssignUrlToBrowserInstance(u, new URL(urlCorrect)), p, this);
+        } else {
+            JDProxy pr = Browser.getAssignedBrowserInstance(u).getRequest().getProxy();
+          
+            if (pr == null) throw new IOException("Proxy Mapping failed.");
+            return new HTTPConnection(Browser.reAssignUrlToBrowserInstance(u, new URL(urlCorrect)), pr, this);
+
+        }
+
     }
-
 }

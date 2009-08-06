@@ -131,7 +131,7 @@ public class SimpleFTP {
         if (!response.startsWith("230")) { throw new IOException("SimpleFTP was unable to log in with the supplied password: " + response); }
 
         sendLine("PWD");
-        while ((response = readLine()).startsWith("230")) {
+        while ((response = readLine()).startsWith("230")||response.charAt(0)>='9'||response.charAt(0)<='0') {
 
         }
         //        

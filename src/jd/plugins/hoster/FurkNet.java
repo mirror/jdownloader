@@ -49,7 +49,7 @@ public class FurkNet extends PluginForHost {
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         form.remove(null);
         br.setFollowRedirects(false);
-        dl = br.openDownload(link, form, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,link, form, false, 1);
         URLConnectionAdapter con = dl.getConnection();
         if (!con.isContentDisposition()) {
             br.followConnection();

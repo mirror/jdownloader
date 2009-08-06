@@ -97,11 +97,11 @@ public class FileUploadnet extends PluginForHost {
 
         if (new Regex(downloadLink.getDownloadURL(), Pattern.compile(PAT_Download.pattern() + "|" + PAT_Member.pattern(), Pattern.CASE_INSENSITIVE)).matches()) {
             /* DownloadFiles */
-            dl = br.openDownload(downloadLink, br.getForm(0));
+            dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, br.getForm(0));
         } else if (new Regex(downloadLink.getDownloadURL(), PAT_VIEW).matches()) {
             /* DownloadFiles */
             String downloadurl = br.getRegex("<center>\n<a href=\"(.*?)\" rel=\"lightbox\"").getMatch(0);
-            dl = br.openDownload(downloadLink, downloadurl);
+            dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, downloadurl);
         } else {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }

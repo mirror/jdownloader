@@ -26,7 +26,9 @@ import java.util.regex.Pattern;
 
 import jd.controlling.JDLogger;
 
-public class Regex {
+
+
+public class Regex{
     public static String[] getLines(String arg) {
         if (arg == null) { return new String[] {}; }
         String[] temp = arg.split("[\r\n]{1,2}");
@@ -281,9 +283,9 @@ public class Regex {
             date = dateFormat.parse(expire);
             return (date.getTime());
         } catch (ParseException e) {
-            JDLogger.getLogger().severe("Could not format date " + expire + " with formater " + timeformat + ": " + dateFormat.format(new Date()));
-
-            JDLogger.exception(e);
+//            ("Could not format date " + expire + " with formater " + timeformat + ": " + dateFormat.format(new Date()));
+            e.printStackTrace();
+//            JDLogger.exception(e);
         }
         return -1;
 

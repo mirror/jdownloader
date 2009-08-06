@@ -81,7 +81,7 @@ public class LetitBitNet extends PluginForHost {
         br.submitForm(form);
         String url = br.getRegex("middle.*?href='(.*?letit.*?download.*?)'").getMatch(0);
         if (url == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
-        dl = br.openDownload(downloadLink, url, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, url, true, 0);
         dl.startDownload();
     }
 
@@ -133,7 +133,7 @@ public class LetitBitNet extends PluginForHost {
         if (url == null) url = br.getRegex("DownloadClick\\(\\).*?href=\"(.*?letit.*?)\">").getMatch(0);
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         this.sleep(2000, downloadLink);
-        dl = br.openDownload(downloadLink, url, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, url, true, 1);
         con = dl.getConnection();
         if (con.getResponseCode() == 404) {
             con.disconnect();

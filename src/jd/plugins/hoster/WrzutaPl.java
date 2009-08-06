@@ -100,7 +100,7 @@ public class WrzutaPl extends PluginForHost {
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.setDebug(true);
         br.setFollowRedirects(true);
-        dl = br.openDownload(downloadLink, linkurl);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, linkurl);
         URLConnectionAdapter con = dl.getConnection();
         if (!con.getContentType().equalsIgnoreCase("unknown") && addext != false) {
             if (con.getContentType().contains("mpeg3") || con.getContentType().contains("audio/mpeg")) {

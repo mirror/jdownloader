@@ -115,7 +115,7 @@ public class EgoshareCom extends PluginForHost {
         sleep(5000, downloadLink);
         br.setFollowRedirects(true);
         /* Datei herunterladen */
-        dl = br.openDownload(downloadLink, url);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, url);
         if (!dl.getConnection().isContentDisposition()) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

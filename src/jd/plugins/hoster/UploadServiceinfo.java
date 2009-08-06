@@ -82,7 +82,7 @@ public class UploadServiceinfo extends PluginForHost {
         sleep(10000, downloadLink);
 
         /* Datei herunterladen */
-        dl = br.openDownload(downloadLink, url, postdata);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, url, postdata);
 
         dl.startDownload();
     }

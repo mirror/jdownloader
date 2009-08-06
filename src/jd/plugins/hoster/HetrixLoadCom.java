@@ -63,7 +63,7 @@ public class HetrixLoadCom extends PluginForHost {
         requestFileInformation(downloadLink);
         String linkurl = br.getRegex(Pattern.compile("var dwnsrc = \"(.*?)\"")).getMatch(0);
         String downloadURL = Encoding.htmlDecode(linkurl);
-        dl = br.openDownload(downloadLink, downloadURL, false, -1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, downloadURL, false, -1);
         dl.startDownload();
     }
 

@@ -93,7 +93,7 @@ public class RemixShareCom extends PluginForHost {
         br.submitForm(down);
         // br.openGetConnection(downloadLink.getDownloadURL());
         br.setFollowRedirects(true);
-        dl = br.openDownload(downloadLink, br.getRedirectLocation(), false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, br.getRedirectLocation(), false, 1);
         dl.startDownload();
 
     }

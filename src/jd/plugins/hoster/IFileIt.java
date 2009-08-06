@@ -87,7 +87,7 @@ public class IFileIt extends PluginForHost {
         }
         br.setDebug(true);
         /* Datei herunterladen */
-        dl = br.openDownload(downloadLink, dlLink, true, -2);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, dlLink, true, -2);
         URLConnectionAdapter con = dl.getConnection();
         if (!con.isOK()) {
             if (previousLink != null) {

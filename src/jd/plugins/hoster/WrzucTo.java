@@ -60,7 +60,7 @@ public class WrzucTo extends PluginForHost {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
         String link = br.getRegex(Pattern.compile("<a href=\"(.*?)\">Pobierz plik | Download File</a>")).getMatch(0);
-        dl = br.openDownload(downloadLink, link, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, link, false, 1);
         dl.startDownload();
     }
 

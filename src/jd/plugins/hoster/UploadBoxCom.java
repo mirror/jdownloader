@@ -78,7 +78,7 @@ public class UploadBoxCom extends PluginForHost {
         br.setDebug(true);
         String dlUrl = br.getRegex("please <a href=\"(.*?)\">click").getMatch(0);
         if (dlUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        dl = br.openDownload(link, dlUrl, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,link, dlUrl, true, 1);
         dl.startDownload();
     }
 

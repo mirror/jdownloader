@@ -147,7 +147,7 @@ public class DirectHTTP extends PluginForHost {
         if (downloadLink.getBooleanProperty("nochunk", false) == true || resume == false) {
             chunks = 1;
         }
-        dl = br.openDownload(downloadLink, downloadLink.getDownloadURL(), resume, chunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, downloadLink.getDownloadURL(), resume, chunks);
 
         if (!dl.startDownload()) {
             if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().startsWith(JDL.L("download.error.message.rangeheaderparseerror", "Unexpected rangeheader format:"))) {

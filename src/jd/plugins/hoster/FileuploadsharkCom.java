@@ -80,7 +80,7 @@ public class FileuploadsharkCom extends PluginForHost {
                 if (br.containsHTML("Download Link Generated")) dllink = br.getRegex("padding:7px;\">\\s+<a\\s+href=\"(.*?)\">").getMatch(0);
             }
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-            dl = br.openDownload(downloadLink, dllink, false, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, dllink, false, 1);
             dl.startDownload();
         }
     }

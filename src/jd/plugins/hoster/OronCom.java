@@ -104,7 +104,7 @@ public class OronCom extends PluginForHost {
                 downloadLink.setProperty("pass", passCode);
             }
             String dllink = br.getRegex("center\"><a href=\"(.*?)\" class=\"atitle\">Download File").getMatch(0);
-            br.openDownload(downloadLink, dllink, true, 1);
+            jd.plugins.BrowserAdapter.openDownload(br,downloadLink, dllink, true, 1);
 
             dl.startDownload();
         }

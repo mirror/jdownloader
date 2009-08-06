@@ -75,7 +75,7 @@ public class OnlyFourFilesCom extends PluginForHost {
                     }
                 }
             }
-            dl = br.openDownload(downloadLink, form, false, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, form, false, 1);
             dl.startDownload();
         }
     }

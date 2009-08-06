@@ -47,7 +47,7 @@ public class FileZoneRo extends PluginForHost {
         if (br.containsHTML("pfile.php")) dllink = "http://filezone.ro/pfile.php?" + br.getRegex("pfile.php\\?(file_id=\\d+&d_id=\\d+&action=download)").getMatch(0);
         if (br.containsHTML("getfile.php")) dllink = "http://filezone.ro/" + br.getRegex("<a title=\".*\" alt=\".*\" href=\"(.*?)\" style=\"text-decoration:none;font-weight:bold;\">").getMatch(0);
         if (dllink.equals("http://filezone.ro/pfile.php?null") || dllink.equals("http://filezone.ro/null")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        dl = br.openDownload(link, dllink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,link, dllink, false, 1);
         dl.startDownload();
 
     }

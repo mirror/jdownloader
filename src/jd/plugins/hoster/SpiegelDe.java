@@ -78,7 +78,7 @@ public class SpiegelDe extends PluginForHost {
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         this.requestFileInformation(downloadLink);
-        dl = br.openDownload(downloadLink, downloadLink.getDownloadURL(), false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, downloadLink.getDownloadURL(), false, 1);
 
         if (new Regex(downloadLink.getDownloadURL(), PATTERN_SUPPORTED_FOTOSTRECKE).matches()) {
             dl.startDownload();

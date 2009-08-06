@@ -147,7 +147,7 @@ public class Netloadin extends PluginForHost {
 
             String finalURL = br.getRegex(NEW_HOST_URL).getMatch(0);
             sleep(20000, downloadLink);
-            dl = br.openDownload(downloadLink, finalURL);
+            dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, finalURL);
             dl.startDownload();
         } catch (IOException e) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30000);
@@ -217,7 +217,7 @@ public class Netloadin extends PluginForHost {
         br.getPage(url);
         logger.finest(br.toString());
         if (br.getRedirectLocation() != null) {
-            dl = br.openDownload(downloadLink, br.getRedirectLocation());
+            dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, br.getRedirectLocation());
             dl.startDownload();
         } else {
             handleErrors(downloadLink);
@@ -339,7 +339,7 @@ public class Netloadin extends PluginForHost {
             if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT, JDL.L("plugins.hoster.netloadin.errors.dlnotfound", "Download link not found"));
 
             con = br.createRequest(url);
-            /** TODO: Umbauen auf br.openDownload(...) **/
+            /** TODO: Umbauen auf jd.plugins.BrowserAdapter.openDownload(br,...) **/
             dl = RAFDownload.download(downloadLink, con, resume, chunks);
             // dl.headFake(null);
             dl.setFirstChunkRangeless(true);

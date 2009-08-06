@@ -466,7 +466,7 @@ public class Rapidshare extends PluginForHost {
 
             Request request = br.createPostRequest(postTarget, "mirror=on&x=" + Math.random() * 40 + "&y=" + Math.random() * 40);
 
-            /** TODO: Umbauen auf br.openDownload(...) **/
+            /** TODO: Umbauen auf jd.plugins.BrowserAdapter.openDownload(br,...) **/
             // Download
             dl = new RAFDownload(this, downloadLink, request);
             // long startTime = System.currentTimeMillis();
@@ -588,7 +588,7 @@ public class Rapidshare extends PluginForHost {
                 logger.finest("Direct-Download: Server-Selection not available!");
                 request = br.createGetRequest(directurl);
             }
-            /** TODO: Umbauen auf br.openDownload(...) **/
+            /** TODO: Umbauen auf jd.plugins.BrowserAdapter.openDownload(br,...) **/
             // Download
             dl = new RAFDownload(this, downloadLink, request);
             // Premiumdownloads sind resumefähig

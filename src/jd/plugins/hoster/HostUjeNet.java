@@ -71,7 +71,7 @@ public class HostUjeNet extends PluginForHost {
         String link = null;
         link = br.getRedirectLocation();
         if (link == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA, JDL.L("downloadlink.status.error.captcha_wrong", "Captcha wrong"));
-        dl = br.openDownload(downloadLink, link, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, link, false, 1);
         dl.startDownload();
     }
 

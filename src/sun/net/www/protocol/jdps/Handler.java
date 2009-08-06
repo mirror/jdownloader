@@ -22,7 +22,10 @@ import java.net.URL;
 import java.net.URLConnection;
 
 import jd.http.Browser;
+import jd.http.HTTPConnection;
 import jd.http.HTTPsConnection;
+import jd.http.JDProxy;
+import jd.http.requests.Request;
 
 public class Handler extends sun.net.www.protocol.https.Handler {
 
@@ -52,8 +55,23 @@ public class Handler extends sun.net.www.protocol.https.Handler {
         }
 
         URL nurl = Browser.reAssignUrlToBrowserInstance(u, new URL(urlCorrect));
+        
+        
+        
         URLConnection con = p == null ? nurl.openConnection() : nurl.openConnection(p);
-        return new HTTPsConnection(con, p);
+        if (p == null) {
+            return new HTTPsConnection(con, (JDProxy)null);
+        } else {
+            Browser br = Browser.getAssignedBrowserInstance(u);
+            Request request = br.getRequest();
+            JDProxy pr = request.getProxy();
+            if (pr == null) throw new IOException("Proxy Mapping failed.");
+            return new HTTPsConnection(con, pr);
+
+        }
+        
+        
+       
     }
 
 }

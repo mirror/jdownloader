@@ -75,7 +75,7 @@ public class UpMusicIn extends PluginForHost {
         } else {
             linkurl = previousLink;
         }
-        dl = br.openDownload(downloadLink, linkurl, true, -7);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, linkurl, true, -7);
         URLConnectionAdapter con = dl.getConnection();
         if (!con.isOK()) {
             if (previousLink != null) {
@@ -113,7 +113,7 @@ public class UpMusicIn extends PluginForHost {
      * PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
      * br.setFollowRedirects(true); // this.sleep(15000, downloadLink); //
      * uncomment when they find a better // way to force wait time dl =
-     * br.openDownload(downloadLink, linkurl); dl.startDownload(); }
+     * jd.plugins.BrowserAdapter.openDownload(br,downloadLink, linkurl); dl.startDownload(); }
      * 
      * private void login(Account account) throws Exception {
      * this.setBrowserExclusive(); br.clearCookies("uploader.pl");
@@ -161,7 +161,7 @@ public class UpMusicIn extends PluginForHost {
      * PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
      * br.setFollowRedirects(true); // this.sleep(30000, downloadLink); //
      * uncomment when they find a better // way to force wait time dl =
-     * br.openDownload(downloadLink, linkurl); dl.startDownload(); }
+     * jd.plugins.BrowserAdapter.openDownload(br,downloadLink, linkurl); dl.startDownload(); }
      */
     // @Override
     public String getAGBLink() {

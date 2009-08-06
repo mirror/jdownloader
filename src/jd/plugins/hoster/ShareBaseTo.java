@@ -116,7 +116,7 @@ public class ShareBaseTo extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
         }
 
-        dl = br.openDownload(downloadLink, br.getForm(1));
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, br.getForm(1));
         if (dl.getConnection() == null) {
             logger.severe("ServerError");
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.sharebaseto.errors.servicenotavailable", "Service not available"), 10 * 60 * 1000l);
@@ -152,7 +152,7 @@ public class ShareBaseTo extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitTime);
         }
         br.setFollowRedirects(true);
-        dl = br.openDownload(downloadLink, br.getRedirectLocation(), true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, br.getRedirectLocation(), true, 0);
         if (dl.getConnection() == null) {
             logger.severe("ServerError");
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.sharebaseto.errors.servicenotavailable", "Service not available"), 10 * 60 * 1000l);

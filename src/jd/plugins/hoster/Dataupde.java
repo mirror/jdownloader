@@ -81,7 +81,7 @@ public class Dataupde extends PluginForHost {
         }
         this.sleep(10000, downloadLink);
 
-        dl = br.openDownload(downloadLink, form, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, form, true, 1);
 
         if (dl.getConnection().getLongContentLength() == 0) {
             dl.getConnection().disconnect();

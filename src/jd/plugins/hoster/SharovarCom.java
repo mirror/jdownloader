@@ -61,7 +61,7 @@ public class SharovarCom extends PluginForHost {
         if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.submitForm(DLForm);
         String dllink = br.getRegex("Now you can download file</h3><form action=\"(.*)\" method=\"post\" enctype=\"application/").getMatch(0);
-        dl = br.openDownload(downloadLink, dllink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, dllink, false, 1);
         if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();
             // check ob limit aktiv, falls ja wird ein neuer Versuch gestartet,

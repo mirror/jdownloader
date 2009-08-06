@@ -84,7 +84,7 @@ public class DumpRu extends PluginForHost {
         // final filename can't be taken from the header due to encoding
         // problems, set it here
         downloadLink.setFinalFileName(downloadLink.toString());
-        dl = br.openDownload(downloadLink, link);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, link);
         dl.startDownload();
     }
 

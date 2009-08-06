@@ -82,7 +82,7 @@ public class SavefileCom extends PluginForHost {
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         /* Datei herunterladen */
         br.setFollowRedirects(true);
-        dl = br.openDownload(downloadLink, linkurl, true, -10);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, linkurl, true, -10);
         URLConnectionAdapter con = dl.getConnection();
         if (con.getResponseCode() == 416) {
             // HTTP/1.1 416 Requested Range Not Satisfiable

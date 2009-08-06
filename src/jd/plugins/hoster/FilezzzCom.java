@@ -71,7 +71,7 @@ public class FilezzzCom extends PluginForHost {
         /* Link holen */
         String linkurl = br.getRegex("<br>\\s+<br>\\s+<a href=\"(.*?)\"").getMatch(0);
         if (linkurl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
-        dl = br.openDownload(downloadLink, linkurl, true, -2);
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, linkurl, true, -2);
         URLConnectionAdapter con = dl.getConnection();
         if (con.getResponseCode() != 200 && con.getResponseCode() != 206) {
             con.disconnect();
