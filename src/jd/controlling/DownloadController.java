@@ -292,12 +292,18 @@ public class DownloadController implements FilePackageListener, DownloadControll
                 it = fp.getDownloadLinkList().iterator();
                 while (it.hasNext()) {
                     localLink = it.next();
-
-                    if (!localLink.getLinkStatus().isFinished()) {
+                    
+                    int curState = LinkStatus.TODO;
+                    if (localLink.getLinkStatus().isFinished()) {
+                        /* if link is finished, save old status and message */
+                        curState = localLink.getLinkStatus().getStatus();
                         tmp2 = localLink.getLinkStatus().getErrorMessage();
-                        localLink.getLinkStatus().reset();
-                        localLink.getLinkStatus().setErrorMessage(tmp2);
                     }
+                    /* reset and if needed restore the old state */
+                    localLink.getLinkStatus().reset();
+                    localLink.getLinkStatus().setStatus(curState);
+                    localLink.getLinkStatus().setErrorMessage(tmp2);
+
                     if (localLink.getLinkStatus().isFinished() && JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION) == 1) {
                         it.remove();
                         if (fp.getDownloadLinkList().size() == 0) {
