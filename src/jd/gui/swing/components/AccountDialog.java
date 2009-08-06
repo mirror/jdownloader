@@ -55,31 +55,28 @@ public class AccountDialog extends AbstractDialog {
 
     @Override
     public JComponent contentInit() {
-        JPanel panel = new JPanel(new MigLayout("ins 0"));
+        JPanel panel = new JPanel(new MigLayout("ins 0, wrap 2"));
         panel.add(new JLabel(JDL.L(JDL_PREFIX + "hoster", "Hoster:")));
         ArrayList<HostPluginWrapper> plugins = JDUtilities.getPremiumPluginsForHost();
-        HostPluginWrapper[] array;
-        panel.add(hoster = new JComboBox(array = plugins.toArray(new HostPluginWrapper[plugins.size()])), "wrap");
+        HostPluginWrapper[] array = plugins.toArray(new HostPluginWrapper[plugins.size()]);
+        panel.add(hoster = new JComboBox(array), "w 200!");
         if (plugin != null) {
             try {
-                int i = 0;
-                for (HostPluginWrapper w : array) {
-                    if (w.getPlugin() == this.plugin) break;
-                    i++;
-                }
-                hoster.setSelectedIndex(i);
+                hoster.setSelectedItem(plugin);
             } catch (Exception e) {
             }
         }
-
         hoster.setRenderer(new IconListRenderer());
+
         panel.add(new JLabel());
-        panel.add(link = new JButton(ActionController.getToolBarAction("action.premium.buy")), "wrap,w 200");
-        link.setIcon(JDTheme.II("gui.images.buy",16,16));
+        panel.add(link = new JButton(ActionController.getToolBarAction("action.premium.buy")), "w 200!");
+        link.setIcon(JDTheme.II("gui.images.buy", 16, 16));
+
         panel.add(new JLabel(JDL.L(JDL_PREFIX + "name", "Name:")));
-        panel.add(name = new JTextField(), "w 200, wrap");
+        panel.add(name = new JTextField(), "w 200!");
+
         panel.add(new JLabel(JDL.L(JDL_PREFIX + "pass", "Pass:")));
-        panel.add(pass = new JPasswordField(), "w 200, wrap");
+        panel.add(pass = new JPasswordField(), "w 200!");
         return panel;
     }
 

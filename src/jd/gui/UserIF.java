@@ -1,8 +1,6 @@
 package jd.gui;
 
 import jd.gui.userio.NoUserIF;
-import jd.plugins.Account;
-import jd.plugins.PluginForHost;
 
 public abstract class UserIF {
     protected static UserIF INSTANCE = null;
@@ -38,12 +36,12 @@ public abstract class UserIF {
          * 
          */
         CONFIGPANEL,
-        
+
         /**
          * Premium configpanel. has account as parameter
          */
-      PREMIUMCONFIG,
-      
+        PREMIUMCONFIG,
+
     };
 
     /**

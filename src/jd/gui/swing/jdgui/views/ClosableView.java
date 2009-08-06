@@ -7,7 +7,6 @@ import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.JButton;
-import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.UIManager;
 
@@ -25,7 +24,6 @@ abstract public class ClosableView extends View {
         super();
 
     }
-
 
     /**
      * has to be called to init the close menu

@@ -25,7 +25,6 @@ import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.JLabel;
 import javax.swing.JMenuBar;
 import javax.swing.JPanel;
 import javax.swing.UIManager;
@@ -53,7 +52,7 @@ public class JDCollapser extends DroppedPanel {
     }
 
     private SwitchPanel panel;
- 
+
     private JPanel content;
     private JMenuBar menubar;
     private JButton closeButton;
@@ -71,12 +70,12 @@ public class JDCollapser extends DroppedPanel {
 
         CloseAction closeAction = new CloseAction();
         Box panel = new Box(1);
-        JButton bt;
+        // JButton bt;
 
         panel.add(closeButton = new JButton(closeAction));
 
         closeButton.setPreferredSize(new Dimension(20, 14));
-//        closeButton.setContentAreaFilled(false);
+        // closeButton.setContentAreaFilled(false);
         closeButton.setToolTipText(JDL.LF("jd.gui.swing.components.JDCollapser.closetooltip", "Close %s", ""));
         panel.setOpaque(false);
         panel.setBorder(BorderFactory.createEmptyBorder(0, 0, 1, 5));
@@ -113,10 +112,6 @@ public class JDCollapser extends DroppedPanel {
     public SwitchPanel getContentPanel() {
         return panel;
     }
-
- 
-
- 
 
     @Override
     /**

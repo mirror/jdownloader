@@ -237,38 +237,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
     }
 
     public URL getResource(byte[] key) {
-
-        if (jars != null) {
-            // An dieser Stelle werden die JAR Dateien überprüft
-            JarEntry entry;
-            for (JarFile element : jars) {
-
-                if (element != null && (entry = element.getJarEntry(new String(key))) != null) {
-                    try {
-                        System.out.println("getResource:" + entry.getName());
-                        return new URL(entry.getName());
-                    } catch (MalformedURLException e) {
-                    }
-                }
-            }
-        }
-        URL url = rootClassLoader.getResource(new String(key));
-
-        if (url != null) { return url; }
-        url = super.getResource(new String(key));
-
-        if (url != null) { return url; }
-        url = classLoaderParent.getResource(new String(key));
-        if (url != null) { return url; }
-        try {
-            // Falls immer noch nichts vorhanden, wird ein neu erzeugtes File
-            // Objekt zurückgegeben
-            // Ist für das Abspeichern der Captcha notwendig
-
-            return new File(new File(rootDir), new String(key)).toURI().toURL();
-        } catch (MalformedURLException e) {
-        }
-        return null;
+        return getResource(new String(key));
     }
 
     // @Override
@@ -281,7 +250,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
 
                 if (element != null && (entry = element.getJarEntry(name)) != null) {
                     try {
-                        System.out.println("getResource:" + entry.getName());
+//                        System.out.println("getResource:" + entry.getName());
                         return new URL(entry.getName());
                     } catch (MalformedURLException e) {
                     }

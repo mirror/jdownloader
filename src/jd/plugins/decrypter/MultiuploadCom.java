@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.parser.html.Form;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -40,11 +39,10 @@ public class MultiuploadCom extends PluginForDecrypt {
 
         String[] redirectLinks = br.getRegex(Pattern.compile("id=\"urlhref_.*?\">(.*?)</a></div>")).getColumn(0);
 
-        for(String redirectLink: redirectLinks) {
+        for (String redirectLink : redirectLinks) {
             br.getPage(redirectLink);
             decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
         }
-
 
         return decryptedLinks;
     }
