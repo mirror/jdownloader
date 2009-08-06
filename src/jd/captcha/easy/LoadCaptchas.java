@@ -72,8 +72,41 @@ public class LoadCaptchas extends BasicWindow {
 		final int menge = Integer.parseInt(JOptionPane.showInputDialog(
 				"Wieviele Captchas sollen heruntergeladen werden:", "500"));
 
+
 		final Browser br = new Browser();
 		br.getPage(link);
+		String host = br.getHost().toLowerCase();
+		if (host.matches(".*\\..*\\..*"))
+			host = host.substring(host.indexOf('.') + 1);
+		final String dir = JDUtilities.getJDHomeDirectoryFromEnvironment()
+		.getAbsolutePath()
+		+ "/captchas/" + host + "/";
+		new File(dir).mkdir();
+		String ct = br.getHttpConnection().getContentType().toLowerCase();
+		if(ct !=null && ct.contains("image"))
+		{
+			for (int k = 0; k < menge; k++) {
+				try {
+					String ft = ".jpg";
+					if (ct.equals("image/jpeg"))
+						ft = ".jpg";
+					else
+					{
+						ft=ct.replaceFirst("image/", ".");
+					}
+					File f2 = new File(dir
+							+ System.currentTimeMillis()
+							+ ft);
+					br.getDownload(f2, link);
+
+				} catch (Exception ev) {
+					// TODO Auto-generated catch block
+					ev.printStackTrace();
+				}
+
+			}
+			return;
+		}
 		this.setAlwaysOnTop(true);
 		JPanel panel = new JPanel();
 
@@ -81,13 +114,7 @@ public class LoadCaptchas extends BasicWindow {
 		add(new JScrollPane(panel), BorderLayout.CENTER);
 		setLocation(0, 0);
 		setTitle("Klicken sie auf das Captcha");
-		String host = br.getHost().toLowerCase();
-		if (host.matches(".*\\..*\\..*"))
-			host = host.substring(host.indexOf('.') + 1);
-		final String dir = JDUtilities.getJDHomeDirectoryFromEnvironment()
-				.getAbsolutePath()
-				+ "/captchas/" + host + "/";
-		new File(dir).mkdir();
+
 		final String[] images = getImages(br);
 		panel.setLayout(new GridLayout(images.length / 5 + 1, 5));
 		final File[] files = new File[images.length];
@@ -98,6 +125,20 @@ public class LoadCaptchas extends BasicWindow {
 				ft = ".png";
 			else if (images[i].toLowerCase().contains("gif"))
 				ft = ".gif";
+			else
+			{
+				br.getPage(images[i]);
+				ct = br.getHttpConnection().getContentType().toLowerCase();
+				if(ct !=null && ct.contains("image"))
+				{
+					if (ct.equals("image/jpeg"))
+						ft = ".jpg";
+					else
+					{
+						ft=ct.replaceFirst("image/", ".");
+					}
+				}
+			}
 			final String filetype = ft;
 			final File f = new File(dir, System.currentTimeMillis() + filetype);
 			files[i] = f;
