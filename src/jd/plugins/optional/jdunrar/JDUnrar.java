@@ -35,7 +35,6 @@ import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
-import jd.controlling.ListController;
 import jd.controlling.PasswordListController;
 import jd.controlling.ProgressController;
 import jd.controlling.SingleDownloadController;
@@ -70,7 +69,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
      * Wird als reihe für anstehende extracthjobs verwendet
      */
     private Jobber queue;
-    private ConfigContainer passwordConfig;
+    // private ConfigContainer passwordConfig;
     static String CODEPAGE = OSDetector.isWindows() ? "ISO-8859-1" : "UTF-8";
 
     // private ConfigEntry pwField;
@@ -644,10 +643,18 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDUnrarConstants.CONFIG_KEY_OVERWRITE, JDL.L("gui.config.unrar.overwrite", "Overwrite existing files?")));
         ce.setDefaultValue(false);
 
-//        this.passwordConfig = new ConfigContainer(JDL.L("plugins.optional.jdunrar.config.passwordtab", "List of passwords"));
-//        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, passwordConfig));
-//
-//        passwordConfig.addEntry(new ConfigEntry(ConfigContainer.TYPE_LISTCONTROLLED, (ListController) PasswordListController.getInstance(), JDL.LF("plugins.optional.jdunrar.config.passwordlist2", "List of all passwords. Each line one password. Available passwords: %s", "")));
+        // this.passwordConfig = new
+        // ConfigContainer(JDL.L("plugins.optional.jdunrar.config.passwordtab",
+        // "List of passwords"));
+        // config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER,
+        // passwordConfig));
+        //
+        // passwordConfig.addEntry(new
+        // ConfigEntry(ConfigContainer.TYPE_LISTCONTROLLED, (ListController)
+        // PasswordListController.getInstance(),
+        // JDL.LF("plugins.optional.jdunrar.config.passwordlist2",
+        // "List of all passwords. Each line one password. Available passwords: %s",
+        // "")));
 
         ConfigContainer ext = new ConfigContainer(JDL.L("plugins.optional.jdunrar.config.advanced", "Premium settings"));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, ext));
@@ -1316,7 +1323,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
     // @Override
     public Object interact(String command, Object parameter) {
-        if (command.equals("isWorking")) {            
+        if (command.equals("isWorking")) {
             return queue.isAlive();
         } else {
             return null;

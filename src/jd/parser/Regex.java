@@ -24,11 +24,7 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jd.controlling.JDLogger;
-
-
-
-public class Regex{
+public class Regex {
     public static String[] getLines(String arg) {
         if (arg == null) { return new String[] {}; }
         String[] temp = arg.split("[\r\n]{1,2}");
@@ -192,7 +188,7 @@ public class Regex{
             }
             ar.add(group);
         }
-        if(ar.size()==0)return new String[][] {};
+        if (ar.size() == 0) return new String[][] {};
         return ar.toArray(new String[][] {});
     }
 
@@ -220,7 +216,7 @@ public class Regex{
         this.matcher = matcher;
     }
 
-    //@Override
+    // @Override
     public String toString() {
         StringBuilder ret = new StringBuilder();
         String[][] match = getMatches();
@@ -283,9 +279,10 @@ public class Regex{
             date = dateFormat.parse(expire);
             return (date.getTime());
         } catch (ParseException e) {
-//            ("Could not format date " + expire + " with formater " + timeformat + ": " + dateFormat.format(new Date()));
+            // ("Could not format date " + expire + " with formater " +
+            // timeformat + ": " + dateFormat.format(new Date()));
             e.printStackTrace();
-//            JDLogger.exception(e);
+            // JDLogger.exception(e);
         }
         return -1;
 

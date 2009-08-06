@@ -24,7 +24,6 @@ import java.net.URLConnection;
 import jd.http.Browser;
 import jd.http.HTTPConnection;
 import jd.http.JDProxy;
-import jd.http.requests.Request;
 
 public class Handler extends sun.net.www.protocol.http.Handler {
 
@@ -58,7 +57,7 @@ public class Handler extends sun.net.www.protocol.http.Handler {
 
         } else {
             JDProxy pr = Browser.getAssignedBrowserInstance(u).getRequest().getProxy();
-          
+
             if (pr == null) throw new IOException("Proxy Mapping failed.");
             return new HTTPConnection(Browser.reAssignUrlToBrowserInstance(u, new URL(urlCorrect)), pr, this);
 

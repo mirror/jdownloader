@@ -255,12 +255,10 @@ public class Browser {
 
     private Request request;
     private String customCharset = null;
-    private boolean snifferDetection = false;
     private boolean cookiesExclusive = true;
     private JDProxy proxy;
     private HashMap<String, Integer> requestIntervalLimitMap;
     private HashMap<String, Long> requestTimeMap;
-    private static int TEMP_INDEX = 0;
     private static HashMap<String, Integer> REQUEST_INTERVAL_LIMIT_MAP;
     private static HashMap<String, Long> REQUESTTIME_MAP;
     private static boolean VERBOSE = false;
@@ -856,8 +854,6 @@ public class Browser {
 
     }
 
-
-
     /**
      * loads a new page (POST)
      */
@@ -1118,14 +1114,6 @@ public class Browser {
     public String getMatch(String string) {
         return getRegex(string).getMatch(0);
 
-    }
-
-    public boolean isSnifferDetection() {
-        return snifferDetection;
-    }
-
-    public void setSnifferDetection(boolean snifferDetection) {
-        this.snifferDetection = snifferDetection;
     }
 
     public String getURL() {

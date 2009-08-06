@@ -46,7 +46,6 @@ import jd.controlling.JDLogger;
 import jd.gui.UserIF;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.jdgui.actions.ActionController;
-import jd.gui.swing.jdgui.settings.panels.premium.Premium;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.nutils.Formatter;
@@ -205,7 +204,7 @@ public abstract class PluginForHost extends Plugin {
             int accountID = e.getID() - 200;
             Account account = accounts.get(accountID);
             UserIF.getInstance().requestPanel(UserIF.Panels.PREMIUMCONFIG, account);
-      
+
         } else if (e.getID() >= 100) {
             int accountID = e.getID() - 100;
             Account account = accounts.get(accountID);
