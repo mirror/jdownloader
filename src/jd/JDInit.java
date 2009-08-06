@@ -147,8 +147,7 @@ public class JDInit {
 
     public void initBrowser() {
         Browser.setLogger(JDLogger.getLogger());
-        
-        
+
         Browser.setGlobalReadTimeout(SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, 100000));
         Browser.setGlobalConnectTimeout(SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT, 100000));
 
@@ -196,6 +195,7 @@ public class JDInit {
             }
             Browser.setGlobalProxy(pr);
         }
+        Browser.init();
     }
 
     public void initControllers() {
