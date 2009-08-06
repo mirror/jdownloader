@@ -25,13 +25,17 @@ import org.jdesktop.swingx.renderer.JRendererLabel;
 
 class BooleanRenderer extends JCheckBox implements TableCellRenderer, UIResource {
 
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 5635326369148415608L;
 
     public BooleanRenderer() {
         super();
         setHorizontalAlignment(JLabel.CENTER);
         setBorderPainted(false);
-if(LookAndFeelController.isSubstance()) this.setOpaque(false);
-       this.setFocusable(false);
+        if (LookAndFeelController.isSubstance()) this.setOpaque(false);
+        this.setFocusable(false);
     }
 
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
@@ -44,11 +48,11 @@ if(LookAndFeelController.isSubstance()) this.setOpaque(false);
         }
         setSelected((value != null && ((Boolean) value).booleanValue()));
 
-//        if (hasFocus) {
-//            setBorder(UIManager.getBorder("Table.focusCellHighlightBorder"));
-//        } else {
-//            setBorder(noFocusBorder);
-//        }
+        // if (hasFocus) {
+        // setBorder(UIManager.getBorder("Table.focusCellHighlightBorder"));
+        // } else {
+        // setBorder(noFocusBorder);
+        // }
 
         return this;
     }
@@ -91,8 +95,7 @@ public class PremiumTableRenderer extends DefaultTableRenderer {
             } else {
                 co.setEnabled(true);
             }
-            co.setBackground(null);
-
+            // co.setBackground(null);
         } else {
             co = getHostAccountsCell(table, value, isSelected, hasFocus, row, column);
             if (!((HostAccounts) value).isEnabled()) {
@@ -108,7 +111,7 @@ public class PremiumTableRenderer extends DefaultTableRenderer {
 
     private Component getAccountCell(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         Account ac = (Account) value;
-        AccountInfo ai = ac.getAccountInfo();        
+        AccountInfo ai = ac.getAccountInfo();
         switch (column) {
         case PremiumJTableModel.COL_HOSTER:
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);

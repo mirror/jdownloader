@@ -25,11 +25,13 @@ public class JDProgressBar extends JProgressBar {
 
     private static final long serialVersionUID = 7787146508749392032L;
 
-    private int faktor = 1;
+    private int scale = 1;
 
     private long realMax = 0;
 
     private long realCur = 0;
+
+    private boolean autofaktor = true;
 
     public JDProgressBar() {
         super();
@@ -41,18 +43,32 @@ public class JDProgressBar extends JProgressBar {
 
     public void setMaximum(long value) {
         realMax = value;
-        while ((value / faktor) >= Integer.MAX_VALUE) {
-            faktor *= 2;
-        }
-
         update();
-
     }
 
- 
+    /*enable/disable autoscaling*/
+    public void setAutoScaling(boolean b) {
+        autofaktor = b;
+    }
+
+    public void setScale(int f) {
+        scale = f;
+    }
+
+    public int getScale() {
+        return scale;
+    }
+
     private void update() {
-        super.setMaximum((int) (realMax / faktor));
-        super.setValue((int) (realCur / faktor));
+        long biggest = Math.max(realMax, realCur);
+        if (autofaktor) {
+            scale = 1;
+            while ((biggest / scale) >= Integer.MAX_VALUE) {
+                scale *= 2;
+            }
+        }
+        super.setMaximum((int) (realMax / scale));
+        super.setValue((int) (realCur / scale));
     }
 
     public void setValue(int value) {
@@ -61,13 +77,8 @@ public class JDProgressBar extends JProgressBar {
 
     public void setValue(long value) {
         realCur = value;
-        while ((value / faktor) >= Integer.MAX_VALUE) {
-            faktor *= 2;
-        }
         update();
     }
-
-
 
     public long getRealValue() {
         return realCur;
