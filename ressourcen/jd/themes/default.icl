@@ -118,6 +118,7 @@ gui.images.taskpanes.log =  default/utilities-terminal
 gui.images.vip = default/contact-new
 gui.images.buy = default/premium
 gui.images.premium = default/key
+gui.images.htaccess = default/key
 gui.images.accounts = default/accounts
 gui.images.logomenu = default/logomenu
 gui.images.up = default/go-up

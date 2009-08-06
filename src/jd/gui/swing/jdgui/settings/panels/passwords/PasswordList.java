@@ -1,4 +1,4 @@
-package jd.gui.swing.jdgui.settings.panels;
+package jd.gui.swing.jdgui.settings.panels.passwords;
 
 import javax.swing.JTabbedPane;
 
