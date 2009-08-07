@@ -68,8 +68,6 @@ public class JokeAroundOrg extends PluginForDecrypt {
     }
 
     //@Override
-    public String getVersion() {
-        return getVersion("$Revision$");
-    }
+    
 
 }

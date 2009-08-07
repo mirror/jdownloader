@@ -87,7 +87,5 @@ public class ClipfishDe extends PluginForDecrypt {
     }
 
     //@Override
-    public String getVersion() {
-        return getVersion("$Revision$");
-    }
+    
 }

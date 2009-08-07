@@ -72,9 +72,7 @@ public class RapidLibrary extends PluginForDecrypt {
     }
 
     // @Override
-    public String getVersion() {
-        return getVersion("$Revision$");
-    }
+    
 
     private void waitQueue() throws InterruptedException {
         while (RapidLibrary.decryptRunning)

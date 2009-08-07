@@ -51,8 +51,6 @@ public class MovieTown extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    public String getVersion() {
-        return getVersion("$Revision$");
-    }
+    
 
 }

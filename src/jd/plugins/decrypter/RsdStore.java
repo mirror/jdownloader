@@ -49,8 +49,6 @@ public class RsdStore extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    public String getVersion() {
-        return getVersion("$Revision$");
-    }
+    
 
 }

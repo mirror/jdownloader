@@ -283,10 +283,8 @@ public class DDLWarez extends PluginForDecrypt {
     //
     // }
 
-    @Override
-    public String getVersion() {
-        return getVersion("$Revision$");
-    }
+
+    
 
     public static String getCode(String id, Browser br, int what) throws IOException {
         Browser brc = br.cloneBrowser();

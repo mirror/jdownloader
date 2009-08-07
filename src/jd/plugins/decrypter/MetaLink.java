@@ -76,10 +76,7 @@ public class MetaLink extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    @Override
-    public String getVersion() {
-        return getVersion("$Revision$");
-    }
+    
 
     public class MetalinkSAXHandler extends DefaultHandler {
         private CharArrayWriter text = new CharArrayWriter();

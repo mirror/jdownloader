@@ -74,8 +74,6 @@ public class Charts4You extends PluginForDecrypt {
     }
 
     // @Override
-    public String getVersion() {
-        return getVersion("$Revision$");
-    }
+    
 
 }

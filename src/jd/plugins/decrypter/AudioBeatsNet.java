@@ -55,9 +55,7 @@ public class AudioBeatsNet extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    @Override
-    public String getVersion() {
-        return getVersion("$Revision$");
-    }
+ 
+    
 
 }

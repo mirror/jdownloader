@@ -81,7 +81,5 @@ public class LinkShareOrg extends PluginForDecrypt {
     }
 
     //@Override
-    public String getVersion() {
-        return getVersion("$Revision$");
-    }
+    
 }

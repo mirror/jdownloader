@@ -81,7 +81,5 @@ public class Mp3LinkOrg extends PluginForDecrypt {
             return null;
     }
     //@Override
-    public String getVersion() {
-        return getVersion("$Revision$");
-    }
+    
 }

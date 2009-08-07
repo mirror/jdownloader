@@ -220,7 +220,5 @@ public class SealedIn extends PluginForDecrypt {
     }
 
     // @Override
-    public String getVersion() {
-        return getVersion("$Revision$");
-    }
+    
 }

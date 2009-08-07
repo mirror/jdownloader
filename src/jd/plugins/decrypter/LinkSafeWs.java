@@ -58,7 +58,5 @@ public class LinkSafeWs extends PluginForDecrypt {
     }
 
     //@Override
-    public String getVersion() {
-        return getVersion("$Revision$");
-    }
+    
 }

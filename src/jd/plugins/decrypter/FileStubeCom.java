@@ -49,9 +49,7 @@ public class FileStubeCom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    @Override
-    public String getVersion() {
-        return getVersion("$Revision$");
-    }
+   
+    
 
 }

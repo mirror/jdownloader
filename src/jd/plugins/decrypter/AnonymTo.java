@@ -42,9 +42,7 @@ public class AnonymTo extends PluginForDecrypt {
         return links;
     }
 
-    @Override
-    public String getVersion() {
-        return getVersion("$Revision$");
-    }
+    
+    
 
 }

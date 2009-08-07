@@ -45,9 +45,7 @@ public class HiddenIPnet extends PluginForDecrypt {
         return ret;
     }
 
-    @Override
-    public String getVersion() {
-        return getVersion("$Revision$");
-    }
+   
+    
 
 }

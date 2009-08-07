@@ -64,7 +64,5 @@ public class ShareProtect extends PluginForDecrypt {
     }
 
     //@Override
-    public String getVersion() {
-        return getVersion("$Revision$");
-    }
+    
 }

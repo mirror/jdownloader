@@ -57,8 +57,6 @@ public class AnimeANet extends PluginForDecrypt {
     }
 
     //@Override
-    public String getVersion() {
-        return getVersion("$Revision$");
-    }
+    
 
 }

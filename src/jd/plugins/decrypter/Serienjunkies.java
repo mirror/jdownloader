@@ -935,9 +935,7 @@ public class Serienjunkies extends PluginForDecrypt {
     }
 
     // @Override
-    public String getVersion() {
-        return getVersion("$Revision$");
-    }
+    
 
     private class SerienjunkiesThread extends Thread {
         private SerienjunkiesLinks downloadLink;

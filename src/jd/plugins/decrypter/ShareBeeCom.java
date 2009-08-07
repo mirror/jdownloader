@@ -50,8 +50,6 @@ public class ShareBeeCom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    @Override
-    public String getVersion() {
-        return getVersion("$Revision$");
-    }
+  
+    
 }

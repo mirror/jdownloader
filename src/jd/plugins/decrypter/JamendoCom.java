@@ -82,9 +82,7 @@ public class JamendoCom extends PluginForDecrypt {
     }
 
     //@Override
-    public String getVersion() {
-        return getVersion("$Revision$");
-    }
+    
 
     /**
      * TODO: Umbauen!

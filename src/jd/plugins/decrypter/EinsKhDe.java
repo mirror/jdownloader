@@ -94,7 +94,5 @@ public class EinsKhDe extends PluginForDecrypt {
     }
 
     //@Override
-    public String getVersion() {
-        return getVersion("$Revision$");
-    }
+    
 }

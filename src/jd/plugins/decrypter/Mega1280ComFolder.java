@@ -47,8 +47,6 @@ public class Mega1280ComFolder extends PluginForDecrypt {
     }
 
     // @Override
-    public String getVersion() {
-        return getVersion("$Revision$");
-    }
+    
 
 }

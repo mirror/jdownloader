@@ -48,7 +48,5 @@ public class GoFourDownNet extends PluginForDecrypt {
     }
 
     // @Override
-    public String getVersion() {
-        return getVersion("$Revision$");
-    }
+    
 }

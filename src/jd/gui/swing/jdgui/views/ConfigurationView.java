@@ -2,6 +2,7 @@ package jd.gui.swing.jdgui.views;
 
 import javax.swing.Icon;
 
+import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.interfaces.View;
 import jd.gui.swing.jdgui.views.sidebars.configuration.ConfigSidebar;
 import jd.utils.JDTheme;
@@ -20,7 +21,27 @@ public class ConfigurationView extends View {
     public ConfigurationView() {
         super();
         sidebar.setBorder(null);
-        this.setSideBar(ConfigSidebar.getInstance(this));
+        // init config with 2 seconds delay to avoid gui locks at startup
+        new Thread() {
+            public void run() {
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+                new GuiRunnable<Object>() {
+
+                    @Override
+                    public Object runSave() {
+                        setSideBar(ConfigSidebar.getInstance(ConfigurationView.this));
+                        return null;
+                    }
+
+                }.start();
+            }
+        }.start();
+  
 
     }
 

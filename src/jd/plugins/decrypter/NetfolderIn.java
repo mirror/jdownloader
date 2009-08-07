@@ -68,7 +68,5 @@ public class NetfolderIn extends PluginForDecrypt {
     }
 
     //@Override
-    public String getVersion() {
-        return getVersion("$Revision$");
-    }
+    
 }

@@ -147,10 +147,8 @@ public class YouCryptCom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    @Override
-    public String getVersion() {
-        return getVersion("$Revision$");
-    }
+    
+    
 
     private String get_easy_Captcha() {
         String captcha = null;

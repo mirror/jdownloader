@@ -60,9 +60,7 @@ public class DepositFilesCom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    @Override
-    public String getVersion() {
-        return getVersion("$Revision$");
-    }
+ 
+    
 
 }

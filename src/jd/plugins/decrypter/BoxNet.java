@@ -131,8 +131,5 @@ public class BoxNet extends PluginForDecrypt {
         return !br.containsHTML("RSS channel not found");
     }
 
-    @Override
-    public String getVersion() {
-        return "$Revision$";
-    }
+    
 }

@@ -74,6 +74,11 @@ public abstract class PluginForDecrypt extends Plugin {
     public void setStartIntervall(long interval) {
         WAIT_BETWEEN_STARTS = interval;
     }
+    @Override
+    public String getVersion() {
+        // TODO Auto-generated method stub
+        return this.getWrapper().getVersion();
+    }
 
     public boolean waitForNextStartAllowed(CryptedLink link) throws InterruptedException {
         String temp = link.getProgressController().getStatusText();

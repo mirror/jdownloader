@@ -55,8 +55,6 @@ public class NewzFindCom extends PluginForDecrypt {
     }
 
     // @Override
-    public String getVersion() {
-        return getVersion("$Revision$");
-    }
+    
 
 }

@@ -18,6 +18,7 @@ package jd;
 
 import java.util.ArrayList;
 
+import jd.nutils.Formatter;
 import jd.plugins.PluginForDecrypt;
 
 public class DecryptPluginWrapper extends PluginWrapper {
@@ -27,22 +28,30 @@ public class DecryptPluginWrapper extends PluginWrapper {
         return DECRYPT_WRAPPER;
     }
 
-    public DecryptPluginWrapper(String host, String classNamePrefix, String className, String patternSupported, int flags) {
+    private String revision;
+
+    public DecryptPluginWrapper(String host, String classNamePrefix, String className,  String patternSupported,int flags,String revision) {
         super(host, classNamePrefix, className, patternSupported, flags);
+        this.revision = Formatter.getRevision(revision);;
         DECRYPT_WRAPPER.add(this);
     }
 
-    public DecryptPluginWrapper(String host, String className, String patternSupported) {
-        this(host, "jd.plugins.decrypter.", className, patternSupported, 0);
-    }
+//    public DecryptPluginWrapper(String host, String className, String patternSupported) {
+//        this(host, "jd.plugins.decrypter.", className, patternSupported, 0);
+//    }
 
-    public DecryptPluginWrapper(String host, String className, String patternSupported, int flags) {
-        this(host, "jd.plugins.decrypter.", className, patternSupported, flags);
+    public DecryptPluginWrapper(String host, String className, String patternSupported, int flags,String revision) {
+        this(host, "jd.plugins.decrypter.", className,patternSupported, flags,revision);
     }
 
     // @Override
     public PluginForDecrypt getPlugin() {
         return (PluginForDecrypt) super.getPlugin();
+    }
+    
+    @Override
+    public String getVersion() {
+        return revision;
     }
 
 }

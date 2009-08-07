@@ -73,8 +73,6 @@ public class PspIsosOrg extends PluginForDecrypt {
     }
 
     // @Override
-    public String getVersion() {
-        return getVersion("$Revision$");
-    }
+    
 
 }

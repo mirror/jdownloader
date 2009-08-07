@@ -45,7 +45,5 @@ public class RnB4Uin extends PluginForDecrypt {
     }
 
     //@Override
-    public String getVersion() {
-        return getVersion("$Revision$");
-    }
+    
 }

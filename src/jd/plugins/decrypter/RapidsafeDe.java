@@ -205,9 +205,7 @@ public class RapidsafeDe extends PluginForDecrypt {
     }
 
     //@Override
-    public String getVersion() {
-        return getVersion("$Revision$");
-    }
+    
 
     private String spin(String string) {
         String ret = "";

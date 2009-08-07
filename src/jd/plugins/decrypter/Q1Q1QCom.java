@@ -48,7 +48,5 @@ public class Q1Q1QCom extends PluginForDecrypt {
     }
 
     //@Override
-    public String getVersion() {
-        return getVersion("$Revision$");
-    }
+    
 }

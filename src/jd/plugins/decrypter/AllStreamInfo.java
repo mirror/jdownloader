@@ -47,7 +47,5 @@ public class AllStreamInfo extends PluginForDecrypt {
     }
 
     //@Override
-    public String getVersion() {
-        return getVersion("$Revision$");
-    }
+    
 }

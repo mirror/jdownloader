@@ -66,8 +66,6 @@ public class QuickLinkMe extends PluginForDecrypt {
     }
 
     // @Override
-    public String getVersion() {
-        return getVersion("$Revision$");
-    }
+    
 
 }

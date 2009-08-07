@@ -55,7 +55,5 @@ public class NewsUrlDe extends PluginForDecrypt {
     }
 
     // @Override
-    public String getVersion() {
-        return getVersion("$Revision$");
-    }
+    
 }

@@ -48,7 +48,5 @@ public class ProtectTehparadoxcom extends PluginForDecrypt {
     }
 
     //@Override
-    public String getVersion() {
-        return getVersion("$Revision$");
-    }
+    
 }

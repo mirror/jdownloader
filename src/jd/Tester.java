@@ -4,6 +4,8 @@ import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.io.File;
+import java.util.regex.Pattern;
 
 import javax.swing.AbstractAction;
 import javax.swing.Icon;
@@ -17,9 +19,7 @@ import javax.swing.JTextPane;
 import javax.swing.JToolBar;
 import javax.swing.KeyStroke;
 
-import jd.gui.UserIO;
-import jd.gui.swing.jdgui.userio.UserIOGui;
-import jd.utils.locale.JDL;
+import jd.nutils.io.JDIO;
 
 public class Tester extends JPanel {
 
@@ -80,14 +80,26 @@ public class Tester extends JPanel {
 
     public static void main(String s[]) throws Exception {
 
-        String title = JDL.L("jd.controlling.SingleDownloadController.askexists.title", "File exists");
-        String msg = JDL.LF("jd.controlling.SingleDownloadController.askexists", "The file \r\n%s\r\n already exists. What do you want to do?", "bla");
+        File dec = new File("C:/Users/Coalado/workspace/JDownloader/src/jd/plugins/decrypter");
+        File init = new File("C:/Users/Coalado/workspace/JDownloader/src/jd/JDInit.java");
 
-        UserIO.setInstance(UserIOGui.getInstance());
-        // ask
-        int doit = UserIO.getInstance().requestComboDialog(UserIO.NO_COUNTDOWN, title, msg, new String[] { "a", "b", "c" }, 1, null, null, null, null);
-        //        
-        System.out.println(doit);
+        String i = JDIO.getLocalFile(init);
+
+        // String[][] matches = new Regex(i,
+        // "new DecryptPluginWrapper\\(\"([^\"]*?)\"\\, \"([^\"]*?)\"\\, \"([^\"]*?)\"\\)").getMatches();
+        // String[][] matches = new Regex(i,
+        // "new DecryptPluginWrapper\\(\"([^\"]*?)\"\\, \"([^\"]*?)\"\\, \"([^\"]*?)\",([^\"]*?)\\)").getMatches();
+
+        for (File f : dec.listFiles()) {
+            if (f.getAbsolutePath().endsWith(".java") && !f.getAbsolutePath().contains(".svn")) {
+                String clt = JDIO.getLocalFile(f);
+
+                clt = Pattern.compile("public String getVersion\\(\\)\\s*?\\{.*?\\}",Pattern.DOTALL).matcher(clt).replaceAll("");
+                
+              
+                JDIO.writeLocalFile(f, clt);
+            }
+        }
 
         //
         // Tester example = new Tester();
