@@ -37,6 +37,7 @@ public class LinksaveIn extends PluginForDecrypt {
 
     public LinksaveIn(PluginWrapper wrapper) {
         super(wrapper);
+        br.setRequestIntervalLimit(this.getHost(), 1000);
     }
 
     // @Override
