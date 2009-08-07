@@ -47,6 +47,7 @@ public class AboutDialog extends AbstractDialog {
     }
 
     private static final String JDL_PREFIX = "jd.gui.swing.components.AboutDialog.";
+    private final boolean SHOW_MAIL = false;
 
     public AboutDialog() {
         super(UserIO.NO_COUNTDOWN | UserIO.NO_OK_OPTION | UserIO.NO_CANCEL_OPTION, JDL.L(JDL_PREFIX + "title", "About JDownloader"), null, null, null);
@@ -164,12 +165,12 @@ public class AboutDialog extends AbstractDialog {
     private class Entry implements Comparable<Entry> {
 
         private String name;
-        // private String mail;
+        private String mail;
         private String desc;
 
         public Entry(String name, String mail, String desc) {
             this.name = name;
-            // this.mail = mail;
+            this.mail = mail;
             this.desc = desc;
         }
 
@@ -187,30 +188,15 @@ public class AboutDialog extends AbstractDialog {
         }
 
         public JComponent toJComponent() {
-            JLabel label = new JLabel(name);
-            label.setToolTipText(desc);
-            return label;
+            JComponent comp;
+            if (SHOW_MAIL && mail != null && !mail.equals("-")) {
+                comp = new JLink(name, "mailto:" + mail);
+            } else {
+                comp = new JLabel(name);
+            }
+            comp.setToolTipText(desc);
+            return comp;
         }
-        // public String getHTML() {
-        // StringBuilder ret = new StringBuilder();
-        // ret.append("<h2>");
-        // ret.append(name);
-        // ret.append("</h2>");
-        // if (mail != null && !mail.equals("-")) {
-        // ret.append("<h3>Email</h3>");
-        // ret.append(mail);
-        // }
-        // ret.append("<h3>Section</h3>");
-        // ret.append("<ul>");
-        // for (String d : descs) {
-        // ret.append("<li>");
-        // ret.append(d.trim());
-        // ret.append("</li>");
-        // }
-        // ret.append("</ul>");
-        //
-        // return ret.toString();
-        // }
 
     }
 
