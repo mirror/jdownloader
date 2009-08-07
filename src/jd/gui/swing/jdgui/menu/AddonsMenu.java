@@ -42,26 +42,26 @@ public class AddonsMenu extends JStartMenu {
 
         updateMenu();
     }
+
     public void update() {
         this.removeAll();
         updateMenu();
 
     }
+
     public static AddonsMenu getInstance() {
         if (INSTANCE == null) INSTANCE = new AddonsMenu();
         return INSTANCE;
     }
 
     private void updateMenu() {
-        /**
-         * 
-         * TODO
-         */
+
         MenuAction cfg = new MenuAction(JDL.L("jd.gui.swing.jdgui.menu.AddonsMenu.configuration", "Addon Manager"), -9999) {
+            private static final long serialVersionUID = -3613887193435347389L;
+
             public void actionPerformed(ActionEvent e) {
                 SwingGui.getInstance().requestPanel(UserIF.Panels.ADDON_MANAGER, null);
             }
-
         };
 
         this.add(cfg);
