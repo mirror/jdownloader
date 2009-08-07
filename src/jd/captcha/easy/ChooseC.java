@@ -1,6 +1,7 @@
 package jd.captcha.easy;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Image;
@@ -12,6 +13,8 @@ import java.io.File;
 import java.util.Iterator;
 import java.util.Vector;
 
+import javax.swing.Box;
+import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
@@ -38,13 +41,13 @@ import jd.captcha.utils.Utilities;
 
 public class ChooseC extends BasicWindow {
 	private static final long serialVersionUID = 1L;
-	private JPanel panel;
+	private JPanel panel, images;
 	private ImageComponent ic;
 	private Vector<CPoint> ret = new Vector<CPoint>(),
 			lastRet = new Vector<CPoint>();
 	private int tollerance = 25;
 	protected Captcha captcha;
-	private boolean foreground = true, add = true, close=true;
+	private boolean foreground = true, add = true, close = true;
 	public int zoom = 400;
 	protected Captcha captchaImage, lastCaptcha;
 	JButton back;
@@ -224,11 +227,30 @@ public class ChooseC extends BasicWindow {
 		ic = new ImageComponent(captchaImage.getImage().getScaledInstance(
 				captchaImage.getWidth() * zoom / 100,
 				captchaImage.getHeight() * zoom / 100, Image.SCALE_DEFAULT));
-		panel.add(ic, getGBC(0, 2, 1, 1));
+		images.add(ic, getGBC(0, 2, 1, 1));
 	}
 
 	private ChooseC() {
 		super();
+	}
+
+	private void addImages() {
+		images = new JPanel();
+		images.setLayout(new BoxLayout(images, BoxLayout.Y_AXIS));
+		images.add(new JLabel("Original:"), getGBC(0, 1, 1, 1));
+
+		ImageComponent ic0 = new ImageComponent(captcha.getImage()
+				.getScaledInstance(captcha.getWidth() * zoom / 100,
+						captcha.getHeight() * zoom / 100, Image.SCALE_DEFAULT));
+		images.add(ic0, getGBC(0, 1, 1, 1));
+		images.add(Box.createRigidArea(new Dimension(0, 10)));
+
+		images.add(new JLabel("Labeled:"), getGBC(0, 1, 1, 1));
+
+		createIc();
+		MouseListener icl = getICListener();
+		ic.addMouseListener(icl);
+		ic0.addMouseListener(icl);
 	}
 
 	private void init(Captcha captcha) {
@@ -242,18 +264,8 @@ public class ChooseC extends BasicWindow {
 		setLocation(0, 0);
 
 		setTitle("Layerrecognition Trainer");
-
-		panel.add(new JLabel("Original:"), getGBC(0, 1, 1, 1));
-		ImageComponent ic0 = new ImageComponent(captcha.getImage()
-				.getScaledInstance(captcha.getWidth() * zoom / 100,
-						captcha.getHeight() * zoom / 100, Image.SCALE_DEFAULT));
-		panel.add(ic0, getGBC(0, 1, 1, 1));
-
-		createIc();
-		MouseListener icl = getICListener();
-		ic.addMouseListener(icl);
-		ic0.addMouseListener(icl);
-
+		addImages();
+		panel.add(images);
 		GridBagConstraints gb = Utilities.getGBC(0, 3, 1, 1);
 
 		final JCheckBox ground = new JCheckBox(foreground ? "foreground"
@@ -308,7 +320,7 @@ public class ChooseC extends BasicWindow {
 		bt.addActionListener(new ActionListener() {
 
 			public void actionPerformed(ActionEvent e) {
-				close=false;
+				close = false;
 				destroy();
 			}
 		});
@@ -328,8 +340,11 @@ public class ChooseC extends BasicWindow {
 		}
 	}
 
-	public static Vector<CPoint> getColors(File folder, String hoster, Vector<CPoint> c) {
-		File file =new File(JDUtilities.getJDHomeDirectoryFromEnvironment()+"/"+JDUtilities.getJACMethodsDirectory()+hoster+"/CPoints.xml");
+	public static Vector<CPoint> getColors(File folder, String hoster,
+			Vector<CPoint> c) {
+		File file = new File(JDUtilities.getJDHomeDirectoryFromEnvironment()
+				+ "/" + JDUtilities.getJACMethodsDirectory() + hoster
+				+ "/CPoints.xml");
 
 		File[] list = folder.listFiles();
 		Captcha[] cs = new Captcha[15 < list.length ? 15 : list.length];
@@ -363,30 +378,31 @@ public class ChooseC extends BasicWindow {
 				}
 			}
 			lastCC = cc;
-			if(cc.close)break;
+			if (cc.close)
+				break;
 		}
 		saveColors(c, file);
 		return c;
 	}
+
 	@SuppressWarnings("unchecked")
-	public static Vector<CPoint> load(File file)
-	{
-		if(file.exists())
-		{
+	public static Vector<CPoint> load(File file) {
+		if (file.exists()) {
 			return (Vector<CPoint>) JDIO.loadObject(null, file, true);
 		}
 		return new Vector<CPoint>();
 	}
-	public static void saveColors(Vector<CPoint> cc, File file)
-	{
+
+	public static void saveColors(Vector<CPoint> cc, File file) {
 		file.getParentFile().mkdirs();
 		JDIO.saveObject(null, cc, file, null, null, true);
 	}
+
 	public static void main(String[] args) {
 		String path = JDUtilities.getJDHomeDirectoryFromEnvironment()
 				.getAbsolutePath();
-		String hoster="canna.to";
-		File folder = new File(path + "/captchas/"+hoster);
+		String hoster = "ugotfile.com";
+		File folder = new File(path + "/captchas/" + hoster);
 		getColors(folder, hoster, null);
 	}
 

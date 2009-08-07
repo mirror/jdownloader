@@ -34,26 +34,27 @@ import jd.captcha.pixelobject.PixelObject;
  */
 public class EasyCaptcha {
 
-	private static void mergeObjects(Vector<PixelObject> os, Captcha captcha, int[] pixels) {
+	private static void mergeObjects(Vector<PixelObject> os, Captcha captcha,
+			int[] pixels) {
 		if (os.size() <= captcha.owner.getLetterNum())
 			return;
-		int minh = pixels[1] *2/ 3;
-		int minw = pixels[0] / (captcha.owner.getLetterNum()  *2/ 3);
+		int minh = pixels[1] * 2 / 3;
+		int minw = pixels[0] / (captcha.owner.getLetterNum() * 2 / 3);
+		int gab = pixels[2] / (captcha.owner.getLetterNum());
 		for (PixelObject a : os) {
 			for (PixelObject b : os) {
 				if (a == b)
 					continue;
-				if(!(b.getWidth()<minw || b.getHeight()<minh || a.getWidth()<minw || a.getHeight()<minh))
+
+				if (!(b.getWidth() < minw || b.getHeight() < minh
+						|| a.getWidth() < minw || a.getHeight() < minh))
 					continue;
 				int xMin = Math.max(a.getXMin(), b.getXMin());
 				int xMax = Math.min(a.getXMin() + a.getWidth(), b.getXMin()
 						+ b.getWidth());
-				if (xMax < xMin)
+				if (Math.abs(xMax - xMin) > gab / 3 && xMax < xMin)
 					continue;
-				int yMin = Math.max(a.getYMin(), b.getYMin());
-				int yMax = Math.min(a.getYMin() + a.getHeight(), b.getYMin()
-						+ b.getHeight());
-				if (((xMax - xMin) < minw) && ((yMax - yMin) < minh)) {
+				if (Math.abs(xMax - xMin) < minw) {
 					a.add(b);
 					os.remove(b);
 					mergeObjects(os, captcha, pixels);
@@ -63,43 +64,48 @@ public class EasyCaptcha {
 		}
 
 	}
-    private static Vector<PixelObject> getRightletters(Vector<PixelObject> os, Captcha captcha, int[] pixels)
-    {
-    	if(os.size()>=captcha.owner.getLetterNum())
-    		return os;
-		int minw = pixels[0] / (captcha.owner.getLetterNum()  *3/ 2);
-    	PixelObject biggest = os.get(0);
-    	for (int i = 1; i < os.size(); i++) {
-    		PixelObject po = os.get(i);
-			if(po.getWidth()>biggest.getWidth())
-				biggest=po;
+
+	private static Vector<PixelObject> getRightletters(Vector<PixelObject> os,
+			Captcha captcha, int[] pixels) {
+		if (os.size() >= captcha.owner.getLetterNum())
+			return os;
+		int minw = pixels[0] / (captcha.owner.getLetterNum() * 3 / 2);
+		PixelObject biggest = os.get(0);
+		for (int i = 1; i < os.size(); i++) {
+			PixelObject po = os.get(i);
+			if (po.getWidth() > biggest.getWidth())
+				biggest = po;
 		}
-    	if(biggest.getWidth()>minw)
-    	{
-    		PixelObject[] bs = biggest.cut(biggest.getWidth()/2, biggest.getWidth(), 0);
-    		os.remove(biggest);
-    		
-    		for (PixelObject pixelObject : bs) {
-    			if(pixelObject!=null)
-    			os.add(pixelObject);
+		if (biggest.getWidth() > minw) {
+			PixelObject[] bs = biggest.cut(biggest.getWidth() / 2, biggest
+					.getWidth(), 0);
+			os.remove(biggest);
+
+			for (PixelObject pixelObject : bs) {
+				if (pixelObject != null)
+					os.add(pixelObject);
 			}
-    		return getRightletters(os, captcha, pixels);
-    	}
-    	return os;
-    }
+			return getRightletters(os, captcha, pixels);
+		}
+		return os;
+	}
+
 	private static int[] clean(Captcha captcha) {
 		File file = captcha.owner.getResourceFile("CPoints.xml");
+		// System.out.println(file);
 		Vector<CPoint> ret = ChooseC.load(file);
-		//Hintergrund entfernen
+		// Hintergrund entfernen
 		CPoint cpc = new CPoint(-1, -1, 25, -1);
 		if (ret.contains(cpc)) {
 			captcha.cleanBackgroundByColor(captcha.getAverage());
 			ret.remove(cpc);
 		}
-		//gibt an welche höhe der größte Buchstabe hat
+		// gibt an welche höhe der größte Buchstabe hat
 		int retYmax = 0;
-		//breite aller Buchstaben
+		// breite aller Buchstaben
 		int retx = 0;
+		int gap = 0;
+		int lastgap = -1;
 
 		// farbunterscheidung durch ebenen einbauen
 		for (int x = 0; x < captcha.getWidth(); x++) {
@@ -146,12 +152,20 @@ public class EasyCaptcha {
 				}
 
 			}
-			if(bcuy>retYmax)
-				retYmax+=bcuy;
-			if(bcuy>0)retx++;
+			if (bcuy > retYmax)
+				retYmax += bcuy;
+			if (bcuy > 0) {
+				if (lastgap == -1) {
+					lastgap = 0;
+				} else
+					lastgap += gap;
+				retx++;
+				gap = 0;
+			} else
+				gap++;
 
 		}
-		return new int[] {retx, retYmax};
+		return new int[] { retx, retYmax, lastgap };
 	}
 
 	public static Letter[] getLetters(Captcha captcha) {
