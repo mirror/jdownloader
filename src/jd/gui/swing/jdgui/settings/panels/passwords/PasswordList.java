@@ -28,12 +28,12 @@ public class PasswordList extends ConfigPanel {
         super();
 
         initPanel();
-//        load();
+        // load();
     }
 
     @Override
     public void initPanel() {
-        ConfigEntry conditionEntry;
+        // ConfigEntry conditionEntry;
 
         // this.passwordConfig = new
         // ConfigContainer(JDL.L("plugins.optional.jdunrar.config.passwordtab",

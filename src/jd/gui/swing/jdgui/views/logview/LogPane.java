@@ -32,7 +32,6 @@ import javax.swing.JTextPane;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import javax.swing.text.EditorKit;
-import javax.swing.text.html.HTMLDocument;
 
 import jd.controlling.JDLogHandler;
 import jd.controlling.JDLogger;
@@ -45,7 +44,6 @@ import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.info.LogInfoPanel;
 import jd.http.Encoding;
-import jd.http.HTMLEntities;
 import jd.nutils.JDFlags;
 import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;

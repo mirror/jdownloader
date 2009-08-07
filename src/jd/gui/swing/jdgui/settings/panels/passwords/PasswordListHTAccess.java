@@ -33,7 +33,7 @@ public class PasswordListHTAccess extends ConfigPanel {
 
     @Override
     public void initPanel() {
-        ConfigEntry conditionEntry;
+        // ConfigEntry conditionEntry;
 
         // this.passwordConfig = new
         // ConfigContainer(JDL.L("plugins.optional.jdunrar.config.passwordtab",

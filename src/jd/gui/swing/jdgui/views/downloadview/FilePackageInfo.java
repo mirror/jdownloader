@@ -50,8 +50,14 @@ public class FilePackageInfo extends SwitchPanel implements ActionListener {
     private JDTextField txtComment;
     private JDTextField txtCommentDl;
     private JDTextField txtName;
+    private JDTextField txtNameDl;
     private JDTextField txtPasswordDl;
     private JDTextField txtPassword;
+    private JDTextField txtStatusDl;
+    private JDTextField txtSize;
+    private JDTextField txtSizeDl;
+    private JDTextField txtURL;
+    private JDTextField txtPathLabel;
 
     private JCheckBox chbExtract;
 
@@ -69,8 +75,6 @@ public class FilePackageInfo extends SwitchPanel implements ActionListener {
 
     private MultiProgressBar progressBarFilePackage;
 
-    private JDTextField txtpathlabel;
-
     private JLabel hosterlabel;
 
     private DownloadLink downloadLink;
@@ -84,10 +88,6 @@ public class FilePackageInfo extends SwitchPanel implements ActionListener {
     private JLabel eta;
 
     private JLabel speed;
-
-    private JDTextField txtSize;
-
-    private JDTextField txtURL;
 
     public FilePackageInfo() {
         buildGui();
@@ -115,6 +115,7 @@ public class FilePackageInfo extends SwitchPanel implements ActionListener {
          * wiederum ein updatevent aufrufen würden
          */
         notifyUpdate = false;
+        if (!txtSize.isFocusOwner()) txtSize.setText(Formatter.formatReadable(fp.getTotalEstimatedPackageSize()));
         if (!txtName.isFocusOwner()) txtName.setText(fp.getName());
         if (!txtComment.isFocusOwner()) txtComment.setText(fp.getComment());
         if (!txtPassword.isFocusOwner()) txtPassword.setText(fp.getPassword());
@@ -166,7 +167,10 @@ public class FilePackageInfo extends SwitchPanel implements ActionListener {
         progressBarFilePackage = new MultiProgressBar();
         panel = new JPanel();
         panel.setLayout(new MigLayout("ins 10, wrap 3", "[]10[grow,fill][]", "[]5[]5[]5[]"));
-        panel.add(progressBarFilePackage, "spanx,growx,pushx");
+        panel.add(progressBarFilePackage, "spanx,growx,pushx,split 2");
+        panel.add(txtSize = new JDTextField(true), "alignx right");
+        txtSize.setEditable(false);
+        txtSize.setBorder(null);
         panel.add(new JLabel(JDL.L("gui.fileinfopanel.packagetab.lbl.name", "Paketname")));
         panel.add(txtName, "span 2,growx,spanx");
         panel.add(new JLabel(JDL.L("gui.fileinfopanel.packagetab.lbl.saveto", "Speichern unter")));
@@ -188,24 +192,30 @@ public class FilePackageInfo extends SwitchPanel implements ActionListener {
         panel.add(hosterlabel = new JLabel(JDTheme.II("gui.images.sort", 16, 16)), "split 2");
         panel.add(typeicon = new JLabel(JDTheme.II("gui.images.sort", 16, 16)), "");
         typeicon.setText(JDL.L("gui.fileinfopanel.linktab.chunks", "Chunks"));
-        panel.add(progressBarDownloadLink, "spanx,growx,pushx");
+        panel.add(progressBarDownloadLink, "spanx,growx,pushx,split 2");
+        panel.add(txtSizeDl = new JDTextField(true), "alignx right");
+        txtSizeDl.setEditable(false);
+        txtSizeDl.setBorder(null);
         panel.add(eta = new JLabel(JDL.LF("gui.fileinfopanel.linktab.eta", "ETA: %s mm:ss", "0")));
         panel.add(speed = new JLabel(JDL.LF("gui.fileinfopanel.linktab.speed", "Speed: %s/s", "0 kb")), "skip,alignx right");
+        panel.add(new JLabel(JDL.L("gui.fileinfopanel.linktab.name", "Linkname")));
+        panel.add(txtNameDl = new JDTextField(true), "growx, span 2");
+        txtNameDl.setEditable(false);
         panel.add(new JLabel(JDL.L("gui.fileinfopanel.linktab.saveto", "Save to")));
-        panel.add(txtpathlabel = new JDTextField(true), "growx, span 2");
-        txtpathlabel.setEditable(false);
+        panel.add(txtPathLabel = new JDTextField(true), "growx, span 2");
+        txtPathLabel.setEditable(false);
         panel.add(new JLabel(JDL.L("gui.fileinfopanel.linktab.url", "URL")));
         panel.add(txtURL = new JDTextField(true), "growx, span 2");
         txtURL.setEditable(false);
-        panel.add(new JLabel(JDL.L("gui.fileinfopanel.linktab.filesize", "Filesize")));
-        panel.add(txtSize = new JDTextField(true), "growx, span 2");
-        txtSize.setEditable(false);
         panel.add(new JLabel(JDL.L("gui.fileinfopanel.linktab.comment", "Comment")));
         panel.add(txtCommentDl = new JDTextField(true), "growx, span 2");
         txtCommentDl.setEditable(false);
         panel.add(new JLabel(JDL.L("gui.fileinfopanel.linktab.password", "Password")));
         panel.add(txtPasswordDl = new JDTextField(true), "growx, span 2");
         txtPasswordDl.setEditable(false);
+        panel.add(new JLabel(JDL.L("gui.fileinfopanel.linktab.status", "Status")));
+        panel.add(txtStatusDl = new JDTextField(true), "growx, span 2");
+        txtStatusDl.setEditable(false);
 
         return panel;
     }
@@ -267,16 +277,18 @@ public class FilePackageInfo extends SwitchPanel implements ActionListener {
                             FilePackageInfo.this.progressBarDownloadLink.setMaximums(new long[] { 10 });
                             FilePackageInfo.this.progressBarDownloadLink.setValues(new long[] { 0 });
                         }
+                        txtNameDl.setText(downloadLink.getName());
                         if (downloadLink.getSourcePluginComment() != null && downloadLink.getSourcePluginComment().trim().length() > 0) {
                             txtCommentDl.setText(downloadLink.getSourcePluginComment());
                         } else {
                             txtCommentDl.setText(downloadLink.getFilePackage().getComment());
                         }
                         if (downloadLink.getSourcePluginPasswordList() != null && downloadLink.getSourcePluginPasswordList().size() > 0) {
-                            txtPasswordDl.setText(downloadLink.getSourcePluginPasswordList() + "");
+                            txtPasswordDl.setText(downloadLink.getSourcePluginPasswordList().toString());
                         } else {
                             txtPasswordDl.setText(downloadLink.getFilePackage().getPassword());
                         }
+                        txtStatusDl.setText(downloadLink.getLinkStatus().getStatusString());
 
                         if (downloadLink.getDownloadSpeed() <= 0) {
                             eta.setVisible(false);
@@ -336,7 +348,7 @@ public class FilePackageInfo extends SwitchPanel implements ActionListener {
         this.downloadLink = downloadLink;
         if (downloadLink != null) {
             fp = downloadLink.getFilePackage();
-            this.txtpathlabel.setText(downloadLink.getFileOutput());
+            this.txtPathLabel.setText(downloadLink.getFileOutput());
             this.typeicon.setIcon(downloadLink.getIcon());
             if (downloadLink.getPlugin() != null && downloadLink.getPlugin().hasHosterIcon()) {
                 this.hosterlabel.setIcon(downloadLink.getPlugin().getHosterIcon());
@@ -346,7 +358,7 @@ public class FilePackageInfo extends SwitchPanel implements ActionListener {
 
             hosterlabel.setToolTipText(downloadLink.getHost());
             typeicon.setToolTipText(downloadLink.getHost());
-            this.txtSize.setText(Formatter.formatReadable(downloadLink.getDownloadSize()));
+            this.txtSizeDl.setText(Formatter.formatReadable(downloadLink.getDownloadSize()));
             if (downloadLink.getLinkType() == DownloadLink.LINKTYPE_NORMAL) {
                 this.txtURL.setText(downloadLink.getBrowserUrl());
             } else {
