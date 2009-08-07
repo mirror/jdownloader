@@ -70,8 +70,8 @@ public class GigaUpFr extends PluginForHost {
         if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         captchaForm.put("bot_sucker", code);
         br.submitForm(captchaForm);
-        if (br.containsHTML("Le code de vÃ©rification entrÃ© est incorrecte")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
-        String dllink = (br.getRegex("link_generator\"><center><a href=\"(.*?)\">Commencer le tÃ©lÃ©chargement").getMatch(0));
+        if (br.containsHTML("Le code de v..rification entr.. est incorrecte")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
+        String dllink = (br.getRegex("link_generator\"><center><a href=\"(.*?)\">Commencer le t..l..chargement").getMatch(0));
         try {
             ((Ftp) JDUtilities.getNewPluginForHostInstance("ftp")).download(Encoding.urlDecode(dllink, true), downloadLink);
         } catch (InterruptedIOException e) {

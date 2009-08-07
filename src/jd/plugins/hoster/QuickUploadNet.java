@@ -100,7 +100,7 @@ public class QuickUploadNet extends PluginForHost {
         int tt = Integer.parseInt(br.getRegex("countdown\">(\\d+)</span>").getMatch(0));
         sleep(tt * 1001, downloadLink);
         br.submitForm(DLForm);
-        if (br.containsHTML("Wrong password")) {
+        if (br.containsHTML("Wrong password")||br.containsHTML("Wrong captcha")) {
             logger.warning("Wrong password!");
             downloadLink.setProperty("pass", null);
             throw new PluginException(LinkStatus.ERROR_RETRY);

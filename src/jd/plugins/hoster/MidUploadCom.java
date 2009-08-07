@@ -59,7 +59,8 @@ public class MidUploadCom extends PluginForHost {
             }
         }
         form = br.getForm(0);
-        sleep(40 * 1001, link);
+        int tt = Integer.parseInt(br.getRegex("countdown\">(\\d+)</span>").getMatch(0));
+        sleep(tt * 1001, link);
         String captcha = null;
         captcha = br.getRegex(Pattern.compile("Bitte Code eingeben:</b></td></tr>.*<tr><td align=right>.*<img src=\"(.*?)\">.*class=\"captcha_code\">", Pattern.DOTALL)).getMatch(0);
         if (captcha == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
@@ -79,6 +80,7 @@ public class MidUploadCom extends PluginForHost {
         br.getPage(parameter.getDownloadURL());
         if (br.containsHTML("No such user exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("Datei nicht gefunden")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("No such file with this filename")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<h2>Datei herunterladen (.*?)</h2>").getMatch(0);
         String filesize = br.getRegex("Sie haben angefordert <font color=\"red\">.*</font> \\((.*?)\\)</font>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
