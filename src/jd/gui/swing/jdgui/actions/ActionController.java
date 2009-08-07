@@ -144,7 +144,7 @@ public class ActionController {
 
             @Override
             public void threadedActionPerformed(ActionEvent e) {
-                if (LinkGrabberPanel.getLinkGrabber().isVisible()) {
+                if (!LinkGrabberPanel.getLinkGrabber().isNotVisible()) {
                     ArrayList<LinkGrabberFilePackage> fps = new ArrayList<LinkGrabberFilePackage>(LinkGrabberController.getInstance().getPackages());
                     synchronized (LinkGrabberController.ControllerLock) {
                         synchronized (LinkGrabberPanel.getLinkGrabber()) {

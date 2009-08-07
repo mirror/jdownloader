@@ -32,19 +32,23 @@ public class Formatter {
     private static SimpleDateFormat DATE_FORMAT = null;
 
     /**
-     * Formatiert Sekunden in das zeitformat stunden:minuten:sekunden
-     * returns "~" vor values <0
+     * Formatiert Sekunden in das zeitformat stunden:minuten:sekunden returns
+     * "~" vor values <0
+     * 
      * @param eta
      * @return formatierte Zeit
      */
     public static String formatSeconds(long eta) {
-        if(eta<0)return "~";
+        if (eta < 0) return "~";
         long hours = eta / (60 * 60);
         eta -= hours * 60 * 60;
         long minutes = eta / 60;
         long seconds = eta - minutes * 60;
-        if (hours == 0) return Formatter.fillInteger(minutes, 2, "0") + ":" + Formatter.fillInteger(seconds, 2, "0");
-        return Formatter.fillInteger(hours, 2, "0") + ":" + Formatter.fillInteger(minutes, 2, "0") + ":" + Formatter.fillInteger(seconds, 2, "0");
+        String ret = "";
+        if (hours != 0) ret += hours + "h:";
+        if (minutes != 0) ret += Formatter.fillInteger(minutes, 2, "0") + "m:";
+        ret += Formatter.fillInteger(seconds, 2, "0") + "s";
+        return ret;
     }
 
     /**

@@ -362,14 +362,7 @@ public class Rapidshare extends PluginForHost {
             freeOrPremiumSelectPostURL = new Regex(br, PATTERN_FIND_MIRROR_URL).getMatch(0);
             // Fehlerbehandlung auf der ersten Seite
             if (freeOrPremiumSelectPostURL == null) {
-                String error = null;
-                if ((error = findError(br + "")) != null) {
-                    if (Regex.matches(error, Pattern.compile("Der Server .*? ist momentan nicht verf.*"))) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.LF("plugin.rapidshare.error.serverunavailable", "The Server %s is currently unavailable.", error.substring(11, error.indexOf(" ist"))), 3600 * 1000l); }
-                    throw new PluginException(LinkStatus.ERROR_FATAL, dynTranslate(error));
-                }
-                reportUnknownError(br, 1);
-                logger.warning("could not get newURL");
-                throw new PluginException(LinkStatus.ERROR_RETRY);
+                handleErrorsFree();
             }
 
             // Post um freedownload auszuwählen
@@ -379,34 +372,7 @@ public class Rapidshare extends PluginForHost {
             // PostRequest pReq = new PostRequest(freeOrPremiumSelectPostURL);
             // pReq.setPostVariable("dl.start", "free");
             // pReq.load();
-            String error = null;
-            if ((error = findError(br + "")) != null) {
-                if (Regex.matches(error, Pattern.compile("(als 200 Megabyte)"))) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugin.rapidshare.error.filetolarge", "This file is larger than 200 MB, you need a premium-account to download this file."));
-                if (Regex.matches(error, Pattern.compile("(weder einem Premiumaccount)"))) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-                if (Regex.matches(error, Pattern.compile("(keine freien Slots)"))) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "All free slots in use", 120000l); }
-                if (Regex.matches(error, Pattern.compile("(in 2 Minuten)"))) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many users are currently downloading this file", 120 * 1000l); }
-                if (Regex.matches(error, Pattern.compile("(Die Datei konnte nicht gefunden werden)"))) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-                if (Regex.matches(error, Pattern.compile("Der Server .*? ist momentan nicht verf.*"))) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.LF("plugin.rapidshare.error.serverunavailable", "The Server %s is currently unavailable.", error.substring(11, error.indexOf(" ist"))), 3600 * 1000l); }
-                if (Regex.matches(error, PATTERM_MATCHER_ALREADY_LOADING)) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Already a download from your ip in progress!", 120 * 1000l); }
-                // für java 1.5
-                if (new Regex(error, "(kostenlose Nutzung erreicht)|(.*download.{0,3}limit.{1,50}free.{0,3}users.*)").matches()) {
-
-                    String waitfor = new Regex(br, "es in ca\\.(.*?)Minuten wieder").getMatch(0);
-                    if (waitfor == null) {
-                        waitfor = new Regex(br, "Or try again in about(.*?)minutes").getMatch(0);
-
-                    }
-                    long waitTime = 15 * 60 * 1000l;
-                    try {
-                        waitTime = new Long(waitfor.trim()) * 60 * 1000l;
-                    } catch (Exception e) {
-                        logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
-                    }
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitTime);
-                }
-                reportUnknownError(br, 2);
-                throw new PluginException(LinkStatus.ERROR_FATAL, dynTranslate(error));
-            }
+            handleErrorsFree();
             // Ticketwartezeit wird gesucht
             String ticketTime = new Regex(br, PATTERN_FIND_TICKET_WAITTIME).getMatch(0);
             if (ticketTime != null && ticketTime.equals("0")) {
@@ -510,7 +476,7 @@ public class Rapidshare extends PluginForHost {
         return "";
     }
 
-    private void handleErrors(Account account) throws PluginException {
+    private void handleErrorsPremium(Account account) throws PluginException {
         String error = null;
         if ((error = findError(br.toString())) != null) {
             logger.warning(error);
@@ -525,16 +491,47 @@ public class Rapidshare extends PluginForHost {
             if (Regex.matches(error, Pattern.compile("IP"))) { throw new PluginException(LinkStatus.ERROR_PREMIUM, dynTranslate(error), LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE); }
             if (Regex.matches(error, Pattern.compile("Der Server .*? ist momentan nicht verf.*"))) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.LF("plugin.rapidshare.error.serverunavailable", "The Server %s is currently unavailable.", error.substring(11, error.indexOf(" ist"))), 3600 * 1000l); }
             if (Regex.matches(error, Pattern.compile("(Ihr Cookie wurde nicht erkannt)"))) {
-                account.setProperty("cookies", null);
+                if (account != null) account.setProperty("cookies", null);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
             if (Regex.matches(error, Pattern.compile("(Account wurde nicht gefunden|Your Premium Account has not been found)"))) {
-                account.setProperty("cookies", null);
+                if (account != null) account.setProperty("cookies", null);
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, JDL.L("plugin.rapidshare.error.accountnotfound", "Your Premium Account has not been found."), LinkStatus.VALUE_ID_PREMIUM_DISABLE);
             } else {
-                account.setProperty("cookies", null);
+                if (account != null) account.setProperty("cookies", null);
                 throw new PluginException(LinkStatus.ERROR_FATAL, dynTranslate(error));
             }
+        }
+    }
+
+    private void handleErrorsFree() throws PluginException {
+        String error = null;
+        if ((error = findError(br.toString())) != null) {
+            if (Regex.matches(error, Pattern.compile("(als 200 Megabyte)"))) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugin.rapidshare.error.filetolarge", "This file is larger than 200 MB, you need a premium-account to download this file."));
+            if (Regex.matches(error, Pattern.compile("(weder einem Premiumaccount)"))) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+            if (Regex.matches(error, Pattern.compile("(keine freien Slots)"))) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "All free slots in use", 120000l); }
+            if (Regex.matches(error, Pattern.compile("(in 2 Minuten)"))) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many users are currently downloading this file", 120 * 1000l); }
+            if (Regex.matches(error, Pattern.compile("(Die Datei konnte nicht gefunden werden)"))) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+            if (Regex.matches(error, Pattern.compile("Der Server .*? ist momentan nicht verf.*"))) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.LF("plugin.rapidshare.error.serverunavailable", "The Server %s is currently unavailable.", error.substring(11, error.indexOf(" ist"))), 3600 * 1000l); }
+            if (Regex.matches(error, PATTERM_MATCHER_ALREADY_LOADING)) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Already a download from your ip in progress!", 120 * 1000l); }
+            // für java 1.5
+            if (new Regex(error, "(kostenlose Nutzung erreicht)|(.*download.{0,3}limit.{1,50}free.{0,3}users.*)").matches()) {
+
+                String waitfor = new Regex(br, "es in ca\\.(.*?)Minuten wieder").getMatch(0);
+                if (waitfor == null) {
+                    waitfor = new Regex(br, "Or try again in about(.*?)minutes").getMatch(0);
+
+                }
+                long waitTime = 15 * 60 * 1000l;
+                try {
+                    waitTime = new Long(waitfor.trim()) * 60 * 1000l;
+                } catch (Exception e) {
+                    logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+                }
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitTime);
+            }
+            reportUnknownError(br, 2);
+            throw new PluginException(LinkStatus.ERROR_FATAL, dynTranslate(error));
         }
     }
 
@@ -566,13 +563,13 @@ public class Rapidshare extends PluginForHost {
                     logger.info("LOGIN ERROR");
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
                 }
-                handleErrors(account);
+                handleErrorsPremium(account);
 
                 // posturl für auswahl wird gesucht
                 freeOrPremiumSelectPostURL = new Regex(br, PATTERN_FIND_MIRROR_URL).getMatch(0);
                 // Fehlerbehandlung auf der ersten Seite
                 if (freeOrPremiumSelectPostURL == null) {
-                    handleErrors(account);
+                    handleErrorsPremium(account);
                     reportUnknownError(br, 1);
                     logger.warning("could not get newURL");
                     throw new PluginException(LinkStatus.ERROR_RETRY);
@@ -580,7 +577,7 @@ public class Rapidshare extends PluginForHost {
                 // Post um Premium auszuwählen
                 Form[] forms = br.getForms();
                 br.submitForm(forms[1]);
-                handleErrors(account);
+                handleErrorsPremium(account);
                 String postTarget = getDownloadTarget(downloadLink, br.toString());
                 if (postTarget == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
                 request = br.createGetRequest(postTarget);
@@ -625,7 +622,7 @@ public class Rapidshare extends PluginForHost {
                 /*
                  * Achtung! keine Parsing arbeiten an diesem String!!!
                  */
-                handleErrors(account);
+                handleErrorsPremium(account);
                 reportUnknownError(br.toString(), 6);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }

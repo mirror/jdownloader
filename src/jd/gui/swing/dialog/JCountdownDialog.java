@@ -97,7 +97,7 @@ public abstract class JCountdownDialog extends JDialog {
 
                         // @Override
                         public Object runSave() {
-                            countDownLabel.setText(JDL.LF("gui.dialogs.countdown.label", "%s sec", left));
+                            countDownLabel.setText(left);
                             return null;
                         }
 

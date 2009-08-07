@@ -627,7 +627,7 @@ public abstract class PluginForHost extends Plugin {
         try {
             while (i > 0 && downloadLink.getDownloadLinkController() != null && !downloadLink.getDownloadLinkController().isAborted()) {
                 i -= 1000;
-                downloadLink.getLinkStatus().setStatusText(message + JDL.LF("gui.downloadlink.status.wait", "wait %s min", Formatter.formatSeconds(i / 1000)));
+                downloadLink.getLinkStatus().setStatusText(message + JDL.LF("gui.download.waittime_status2", "Wait %s", Formatter.formatSeconds(i / 1000)));
                 downloadLink.requestGuiUpdate();
                 Thread.sleep(1000);
             }

@@ -104,6 +104,8 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
 
     public AbstractButton confirmButton;
 
+    private boolean notvisible = true;
+
     public static synchronized LinkGrabberPanel getLinkGrabber() {
         if (INSTANCE == null) INSTANCE = new LinkGrabberPanel();
         return INSTANCE;
@@ -115,6 +117,10 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
 
     public boolean needsViewport() {
         return false;
+    }
+
+    public boolean isNotVisible() {
+        return notvisible;
     }
 
     private LinkGrabberPanel() {
@@ -213,7 +219,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
             // @Override
             public Object runSave() {
                 JDCollapser.getInstance().setContentPanel(filePackageInfo, JDL.L("gui.linkgrabber.packagetab.title", "File package"), null);
-        
+
                 InfoPanelHandler.setPanel(JDCollapser.getInstance());
 
                 return null;
@@ -271,8 +277,9 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
 
     // @Override
     public void onHide() {
+        notvisible = true;
         LGINSTANCE.removeListener(this);
-        Update_Async.stop();       
+        Update_Async.stop();
     }
 
     public void addLinks(final ArrayList<DownloadLink> linkList) {
@@ -392,7 +399,8 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
 
     // @Override
     public void onShow() {
-        LGINSTANCE.addListener(this);        
+        notvisible = false;
+        LGINSTANCE.addListener(this);
         fireTableChanged(true);
     }
 

@@ -294,7 +294,7 @@ public class FilePackageInfo extends SwitchPanel implements ActionListener {
                             eta.setVisible(false);
                             speed.setVisible(false);
                         } else {
-                            eta.setText(JDL.LF("gui.fileinfopanel.linktab.eta", "ETA: %s mm:ss", Formatter.formatSeconds((downloadLink.getDownloadSize() - downloadLink.getDownloadCurrent()) / downloadLink.getDownloadSpeed())));
+                            eta.setText(JDL.LF("gui.fileinfopanel.linktab.eta2", "ETA: %s", Formatter.formatSeconds((downloadLink.getDownloadSize() - downloadLink.getDownloadCurrent()) / downloadLink.getDownloadSpeed())));
                             speed.setText(JDL.LF("gui.fileinfopanel.linktab.speed", "Speed: %s/s", Formatter.formatReadable(Math.max(0, downloadLink.getDownloadSpeed()))));
                             speed.setVisible(true);
                             eta.setVisible(true);

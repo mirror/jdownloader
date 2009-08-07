@@ -202,7 +202,7 @@ public class TableRenderer extends DefaultTableRenderer {
             }
         } else {
             Color color = UIManager.getColor("TableHeader.background");
-            if(color==null)color=co.getBackground();
+            if (color == null) color = co.getBackground();
             ((JComponent) co).setBackground(color.darker());
 
         }
@@ -291,8 +291,7 @@ public class TableRenderer extends DefaultTableRenderer {
                 // progress.setToolTipText(null);
                 progress.setForeground(COL_PROGRESS_NORMAL);
                 return progress;
-            } else if ((dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED) && dLink.getPlugin().getRemainingHosterWaittime() > 0)
-                    || (dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) && dLink.getLinkStatus().getRemainingWaittime() > 0)) {
+            } else if ((dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED) && dLink.getPlugin().getRemainingHosterWaittime() > 0) || (dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) && dLink.getLinkStatus().getRemainingWaittime() > 0)) {
                 progress.setMaximum(dLink.getLinkStatus().getTotalWaitTime());
                 progress.setForeground(COL_PROGRESS_ERROR);
                 progress.setValue(dLink.getLinkStatus().getRemainingWaittime());
@@ -389,17 +388,10 @@ public class TableRenderer extends DefaultTableRenderer {
                 ((JRendererLabel) co).setBorder(null);
                 return co;
 
-            } else if ((dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED) && dLink.getPlugin().getRemainingHosterWaittime() > 0)
-                    || (dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) && dLink.getLinkStatus().getRemainingWaittime() > 0)) {
-
+            } else if ((dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED) && dLink.getPlugin().getRemainingHosterWaittime() > 0) || (dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) && dLink.getLinkStatus().getRemainingWaittime() > 0)) {
                 clearSB();
-
                 col = this.table.getColumn(column);
-                if (col.getWidth() < 100) {
-                    sb.append(c.format(10000 * progress.getPercentComplete() / 100.0)).append('%');
-                } else {
-                    sb.append(progress.getRealValue() / 1000).append('/').append(progress.getRealMax() / 1000).append(strSecondsAbrv);
-                }
+                sb.append(Formatter.formatSeconds(dLink.getLinkStatus().getRemainingWaittime() / 1000));
                 ((JRendererLabel) co).setIcon(null);
                 ((JRendererLabel) co).setText(sb.toString());
                 ((JRendererLabel) co).setBorder(null);

@@ -217,6 +217,10 @@ public class LinkStatus implements Serializable {
         return lastestStatus;
     }
 
+    public void setLatestStatus(int s) {
+        lastestStatus = s;
+    }
+
     public long getRemainingWaittime() {
         long now = System.currentTimeMillis();
         long ab = waitUntil - now;
@@ -242,7 +246,8 @@ public class LinkStatus implements Serializable {
             return ret;
         }
         if (hasStatus(LinkStatus.FINISHED)) return this.getStatusText() != null ? "> " + this.getStatusText() : "";
-
+        if (hasStatus(LinkStatus.ERROR_FILE_NOT_FOUND)) return this.getLongErrorMessage();
+        
         if (!downloadLink.isEnabled() && !hasStatus(LinkStatus.FINISHED)) {
             if (downloadLink.isAborted() && (statusText == null || statusText.trim().length() == 0)) {
                 ret += JDL.L("gui.downloadlink.aborted", "[interrupted]") + " ";
@@ -259,9 +264,9 @@ public class LinkStatus implements Serializable {
 
         if (hasStatus(ERROR_IP_BLOCKED) && downloadLink.getPlugin().getRemainingHosterWaittime() > 0) {
             if (errorMessage == null) {
-                ret = JDL.LF("gui.download.waittime_status", "Wait %s min", Formatter.formatSeconds((downloadLink.getPlugin().getRemainingHosterWaittime() / 1000)));
+                ret = JDL.LF("gui.download.waittime_status2", "Wait %s", Formatter.formatSeconds((downloadLink.getPlugin().getRemainingHosterWaittime() / 1000)));
             } else {
-                ret = JDL.LF("gui.download.waittime_status", "Wait %s min", Formatter.formatSeconds((downloadLink.getPlugin().getRemainingHosterWaittime() / 1000))) + errorMessage;
+                ret = JDL.LF("gui.download.waittime_status2", "Wait %s", Formatter.formatSeconds((downloadLink.getPlugin().getRemainingHosterWaittime() / 1000))) + errorMessage;
 
             }
             return ret;

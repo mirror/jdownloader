@@ -97,7 +97,7 @@ public abstract class PluginForDecrypt extends Plugin {
         String before = link.getProgressController().getStatusText();
         while (i > 0) {
             i -= 1000;
-            link.getProgressController().setStatusText(before + " " + JDL.LF("gui.downloadlink.status.wait", "wait %s min", Formatter.formatSeconds(i / 1000)));
+            link.getProgressController().setStatusText(before + " " + JDL.LF("gui.download.waittime_status2", "Wait %s", Formatter.formatSeconds(i / 1000)));
             Thread.sleep(1000);
         }
         link.getProgressController().setStatusText(before);

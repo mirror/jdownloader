@@ -255,7 +255,7 @@ public class Reconnecter {
             @Override
             public void run() {
                 while (true) {
-                    progress.setStatusText(JDL.LF("gui.reconnect.progress.status", "Reconnect running: %s m:s", Formatter.formatSeconds((System.currentTimeMillis() - startTime) / 1000)));
+                    progress.setStatusText(JDL.LF("gui.reconnect.progress.status2", "Reconnect running: %s", Formatter.formatSeconds((System.currentTimeMillis() - startTime) / 1000)));
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
