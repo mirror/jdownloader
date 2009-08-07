@@ -21,8 +21,11 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "audiobeats.net" }, urls = { "http://[\\w\\.]*?audiobeats\\.net/app/(parties|livesets|artists)/show/[0-9a-zA-Z]+"}, flags = { 0 })
+
 
 public class AudioBeatsNet extends PluginForDecrypt {
 

@@ -24,8 +24,11 @@ import jd.controlling.ProgressController;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linkr.at|rapidblogger.com" }, urls = { "http://[\\w\\.]*?(linkr\\.at/\\?p=|rapidblogger\\.com/link/)\\w+"}, flags = { 0 })
+
 
 public class LinkrAt extends PluginForDecrypt {
     private static final Pattern PATTERN_MAIN_FRAME = Pattern.compile("<frame src=\"(.+?)\" name=\"Mainframe\" scrolling=\"no\">");

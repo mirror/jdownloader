@@ -23,9 +23,12 @@ import jd.controlling.ProgressController;
 import jd.http.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "urlcut.com" }, urls = { "http://[\\w\\.]*?urlcut\\.com/[0-9a-zA-Z]+"}, flags = { 0 })
+
 
 public class UrlCutCom extends PluginForDecrypt {
 

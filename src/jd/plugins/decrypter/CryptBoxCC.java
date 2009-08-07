@@ -24,8 +24,11 @@ import jd.controlling.ProgressController;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cryptbox.cc" }, urls = { "http://[\\w\\.]*?.cryptbox\\.cc/ordner/[0-9a-zA-z]+"}, flags = { 0 })
+
 
 public class CryptBoxCC extends PluginForDecrypt {
 

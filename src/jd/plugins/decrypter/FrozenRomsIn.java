@@ -23,8 +23,11 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "frozen-roms.in" }, urls = { "http://[\\w\\.]*?frozen-roms\\.in/(details_[0-9]+|get_[0-9]+_[0-9]+)\\.html"}, flags = { 0 })
+
 
 public class FrozenRomsIn extends PluginForDecrypt {
 

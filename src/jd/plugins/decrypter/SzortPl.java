@@ -22,8 +22,11 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "Szort.pl" }, urls = { "http://[\\w\\.]*(tini\\.us|justlink\\.us|poourl\\.com|szort\\.pl)/.+"}, flags = { 0 })
+
 
 public class SzortPl extends PluginForDecrypt {
 

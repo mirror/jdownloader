@@ -57,12 +57,15 @@ import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "Serienjunkies.org" }, urls = { "http://[\\w\\.]*?serienjunkies\\.org.*(rc[_-]|rs[_-]|nl[_-]|u[tl][_-]|ff[_-]|p=[\\d]+|cat=[\\d]+).*"}, flags = { 0 })
+
 
 public class Serienjunkies extends PluginForDecrypt {
 

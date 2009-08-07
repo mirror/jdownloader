@@ -23,8 +23,11 @@ import jd.controlling.ProgressController;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protectlinks.com" }, urls = { "http://[\\w\\.]*?protectlinks\\.com/\\d+"}, flags = { 0 })
+
 
 public class ProtectLinksCom extends PluginForDecrypt {
 

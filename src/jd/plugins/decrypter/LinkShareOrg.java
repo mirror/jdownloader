@@ -25,9 +25,12 @@ import jd.http.Browser;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "link-share.org" }, urls = { "http://[\\w\\.]*?link-share\\.org/view.php\\?url=[\\w]{32}"}, flags = { 0 })
+
 
 public class LinkShareOrg extends PluginForDecrypt {
 

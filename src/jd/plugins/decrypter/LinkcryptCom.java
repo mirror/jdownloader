@@ -23,8 +23,11 @@ import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linkcrypt.com" }, urls = { "http://[\\w\\.]*?linkcrypt\\.com/[a-zA-Z]-[\\w]+"}, flags = { 0 })
+
 
 public class LinkcryptCom extends PluginForDecrypt {
 

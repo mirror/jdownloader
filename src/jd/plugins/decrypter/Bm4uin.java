@@ -22,8 +22,11 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Encoding;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bm4u.in" }, urls = { "http://[\\w\\.]*?bm4u\\.in/index\\.php\\?do=show_download&id=\\d+"}, flags = { 0 })
+
 
 public class Bm4uin extends PluginForDecrypt {
 

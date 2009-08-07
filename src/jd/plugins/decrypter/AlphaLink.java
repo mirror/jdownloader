@@ -23,8 +23,11 @@ import jd.controlling.ProgressController;
 import jd.http.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "alpha-link.eu" }, urls = { "http://[\\w\\.]*?alpha\\-link\\.eu/\\?id=[a-fA-F0-9]+"}, flags = { 0 })
+
 
 public class AlphaLink extends PluginForDecrypt {
 

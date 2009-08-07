@@ -22,8 +22,11 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "q1q1q.com" }, urls = { "http://[\\w\\.]*?q1q1q\\.com/\\d+"}, flags = { 0 })
+
 
 public class Q1Q1QCom extends PluginForDecrypt {
 

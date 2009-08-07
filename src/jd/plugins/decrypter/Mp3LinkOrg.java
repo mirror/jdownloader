@@ -22,9 +22,12 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.HTMLEntities;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mp3link.org" }, urls = { "http://[\\w\\.]*?mp3link\\.org/.*?/(song|album).+"}, flags = { 0 })
+
 
 public class Mp3LinkOrg extends PluginForDecrypt {
 

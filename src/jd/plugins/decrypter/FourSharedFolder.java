@@ -22,11 +22,14 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "http://[\\w\\.]*?4shared\\.com/dir/\\d+/[\\w]+/?"}, flags = { 0 })
+
 
 public class FourSharedFolder extends PluginForDecrypt {
 

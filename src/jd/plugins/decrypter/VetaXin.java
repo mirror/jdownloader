@@ -24,9 +24,12 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vetax.in" }, urls = { "http://[\\w\\.]*?vetax\\.in/view/\\d+|http://[\\w\\.]*?vetax\\.in/(dload|mirror)/[\\w]+"}, flags = { 0 })
+
 
 public class VetaXin extends PluginForDecrypt {
 

@@ -21,8 +21,11 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xup.in" }, urls = { "http://[\\w\\.]*?xup\\.in/a,[0-9]+(/.+)?(/(list|mini))?"}, flags = { 0 })
+
 
 public class XupInFolder extends PluginForDecrypt {
 

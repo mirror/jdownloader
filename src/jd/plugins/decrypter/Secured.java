@@ -23,8 +23,11 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "secured.in" }, urls = { "http://[\\w\\.]*?secured\\.in/download-[\\d]+-[\\w]{8}\\.html"}, flags = { 0 })
+
 
 public class Secured extends PluginForDecrypt {
     class Cypher {

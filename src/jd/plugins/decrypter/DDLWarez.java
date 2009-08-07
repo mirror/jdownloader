@@ -34,9 +34,12 @@ import jd.parser.html.Form;
 import jd.parser.html.InputField;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ddl-warez.org" }, urls = { "http://[\\w\\.]*?ddl-warez\\.org/detail\\.php\\?id=.+&cat=[\\w]+"}, flags = { 0 })
+
 
 public class DDLWarez extends PluginForDecrypt {
     static class DDLWarez_Linkgrabber extends Thread {

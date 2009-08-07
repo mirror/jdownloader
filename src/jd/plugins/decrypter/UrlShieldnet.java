@@ -25,11 +25,14 @@ import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "urlshield.net" }, urls = { "http://[\\w\\.]*?urlshield\\.net/l/[\\w]+"}, flags = { 0 })
+
 
 public class UrlShieldnet extends PluginForDecrypt {
 

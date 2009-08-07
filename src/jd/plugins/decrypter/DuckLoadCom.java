@@ -21,8 +21,11 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "Duckload.com" }, urls = { "http://[\\w\\.]*?(duckload\\.com|youload\\.to)/(?!(download|divx))[a-zA-Z0-9]+(?!\\.html)$"}, flags = { 0 })
+
 
 public class DuckLoadCom extends PluginForDecrypt {
 

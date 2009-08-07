@@ -23,10 +23,13 @@ import jd.controlling.ProgressController;
 import jd.http.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "badongo.com" }, urls = { "http://[\\w\\.]*?badongo\\.com/.*(file|vid|audio)/[0-9]+"}, flags = { 0 })
+
 
 public class BadongoCom extends PluginForDecrypt {
     static private String host = "badongo.com";

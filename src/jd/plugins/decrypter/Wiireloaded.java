@@ -23,8 +23,11 @@ import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wii-reloaded.info" }, urls = { "http://[\\w\\.]*?wii-reloaded\\.(info|org)(/protect)?/get\\.php\\?i=.+"}, flags = { 0 })
+
 
 public class Wiireloaded extends PluginForDecrypt {
 

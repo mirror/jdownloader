@@ -22,8 +22,11 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "crystal-warez.in" }, urls = { "http://[\\w\\.]*?crystal-(warez|board)\\.in//?(show_download|protect)/.*?\\.html"}, flags = { 0 })
+
 
 public class CrystalWarezIN extends PluginForDecrypt {
 

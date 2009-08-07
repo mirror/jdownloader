@@ -28,9 +28,12 @@ import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidsafe.de" }, urls = { "http://.+rapidsafe\\.de"}, flags = { 0 })
+
 
 public class RapidsafeDe extends PluginForDecrypt {
 

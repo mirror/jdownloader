@@ -23,10 +23,13 @@ import jd.controlling.ProgressController;
 import jd.parser.html.Form;
 import jd.parser.html.InputField;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidlibrary.com" }, urls = { "http://rapidlibrary\\.com/download_file_i\\.php\\?.+"}, flags = { 0 })
+
 
 public class RapidLibrary extends PluginForDecrypt {
 

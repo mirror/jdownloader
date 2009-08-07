@@ -22,8 +22,11 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Encoding;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadjockey.com" }, urls = { "http://[\\w\\.]*?uploadjockey\\.com/download/[\\w]+/(.*)"}, flags = { 0 })
+
 
 public class UploadJockeycom extends PluginForDecrypt {
 

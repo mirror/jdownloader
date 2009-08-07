@@ -29,8 +29,11 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linkbase.biz" }, urls = { "http://[\\w\\.]*?linkbase\\.biz/\\?v=[\\w]+"}, flags = { 0 })
+
 
 public class LinkbaseBiz extends PluginForDecrypt {
 

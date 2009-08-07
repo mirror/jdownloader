@@ -27,9 +27,12 @@ import jd.http.Browser;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rom-news.org" }, urls = { "http://[\\w\\.]*?download\\.rom-news\\.org/[\\w]+"}, flags = { 0 })
+
 
 public class RomNewsOrg extends PluginForDecrypt {
 

@@ -22,8 +22,11 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chaoz.ws" }, urls = { "http://[\\w\\.]*?chaoz\\.ws/woireless/page/album_\\d+\\.html"}, flags = { 0 })
+
 
 public class Woireless6xTo extends PluginForDecrypt {
 

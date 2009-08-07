@@ -25,11 +25,14 @@ import jd.controlling.ProgressController;
 import jd.gui.swing.components.ConvertDialog.ConversionMode;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spiegel.de" }, urls = { "(http://[\\w\\.]*?spiegel\\.de/video/video-\\d+.html|http://[\\w\\.]*?spiegel\\.de/fotostrecke/fotostrecke-\\d+(-\\d+)?.html)"}, flags = { 0 })
+
 
 public class SpiegelDe extends PluginForDecrypt {
 

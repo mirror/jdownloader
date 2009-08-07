@@ -22,8 +22,11 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Encoding;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xaili.com" }, urls = { "http://[\\w\\.]*?xaili\\.com/\\?site=protect&id=[0-9]+"}, flags = { 0 })
+
 
 public class Xailicom extends PluginForDecrypt {
 

@@ -26,8 +26,11 @@ import jd.http.Encoding;
 import jd.http.HTMLEntities;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cryptlink.ws" }, urls = { "http://[\\w\\.]*?cryptlink\\.ws/\\?file=[\\w]+|http://[\\w\\.]*?cryptlink\\.ws/crypt\\.php\\?file=[0-9]+"}, flags = { 0 })
+
 
 public class Cryptlinkws extends PluginForDecrypt {
 

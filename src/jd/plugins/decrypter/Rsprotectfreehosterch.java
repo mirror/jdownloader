@@ -22,8 +22,11 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Encoding;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rs-protect.freehoster.ch" }, urls = { "http://[\\w\\.]*?rs-protect\\.freehoster\\.ch/r[sc]-[\\w]{11}/.*"}, flags = { 0 })
+
 
 public class Rsprotectfreehosterch extends PluginForDecrypt {
 

@@ -24,8 +24,11 @@ import jd.controlling.ProgressController;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hubupload.com" }, urls = { "http://[\\w\\.]*?hubupload\\.com/files/[\\w]+/[\\w]+/(.*)"}, flags = { 0 })
+
 
 public class Hubuploadcom extends PluginForDecrypt {
 

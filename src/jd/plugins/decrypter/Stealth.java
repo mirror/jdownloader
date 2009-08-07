@@ -28,11 +28,14 @@ import jd.parser.html.Form;
 import jd.parser.html.Form.MethodType;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "Stealth.to" }, urls = { "http://[\\w\\.]*?stealth\\.to/(\\?id\\=[\\w]+|index\\.php\\?id\\=[\\w]+|\\?go\\=captcha&id=[\\w]+)|http://[\\w\\.]*?stealth\\.to/folder/[\\w]+"}, flags = { 0 })
+
 
 public class Stealth extends PluginForDecrypt {
 

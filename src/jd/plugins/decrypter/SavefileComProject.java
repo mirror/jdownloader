@@ -21,8 +21,11 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "savefile.com Project" }, urls = { "http://[\\w\\.]*?savefile\\.com/projects/[0-9]+"}, flags = { 0 })
+
 
 public class SavefileComProject extends PluginForDecrypt {
 

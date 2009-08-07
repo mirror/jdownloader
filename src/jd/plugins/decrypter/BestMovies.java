@@ -27,9 +27,12 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "best-movies.us" }, urls = { "http://crypt\\.(best-movies\\.us|capcrypt\\.info)/go\\.php\\?id\\=\\d+"}, flags = { 0 })
+
 
 public class BestMovies extends PluginForDecrypt {
 

@@ -24,8 +24,11 @@ import jd.gui.UserIO;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "Snurl.com" }, urls = { "http://[\\w\\.]*?(snurl\\.com|snipurl\\.com|sn\\.im|snipr\\.com)/.+"}, flags = { 0 })
+
 
 public class SnurlCom extends PluginForDecrypt {
 

@@ -22,11 +22,14 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Encoding;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidlayer.in" }, urls = { "http://[\\w\\.]*?rapidlayer\\.in/go/[\\w]+"}, flags = { 0 })
+
 
 public class Rapidlayerin extends PluginForDecrypt {
 

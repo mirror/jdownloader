@@ -25,8 +25,11 @@ import jd.controlling.ProgressController;
 import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zerosec.ws" }, urls = { "(http://[\\w\\.]*?zerosec\\.ws(/.+/.+/#comments|/.+/#comments|/.+/.*))"}, flags = { 0 })
+
 
 public class ZeroSecWs extends PluginForDecrypt {
 

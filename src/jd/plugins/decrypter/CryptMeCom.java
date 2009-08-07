@@ -30,6 +30,7 @@ import jd.parser.html.Form;
 import jd.parser.html.Form.MethodType;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
@@ -37,6 +38,8 @@ import jd.utils.locale.JDL;
 
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "crypt-me.com" }, urls = { "http://[\\w\\.]*?crypt-me\\.com/folder/[\\w]+\\.html"}, flags = { 0 })
+
 
 public class CryptMeCom extends PluginForDecrypt {
 

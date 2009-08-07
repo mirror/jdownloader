@@ -26,10 +26,13 @@ import jd.http.Browser;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.pluginUtils.Recaptcha;
 import jd.utils.JDUtilities;
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gwarez.cc" }, urls = { "http://[\\w\\.]*?gwarez\\.cc/(\\d+|mirror/\\d+/checked/game/\\d+/|mirror/\\d+/parts/game/\\d+/|download/dlc/\\d+/)"}, flags = { 0 })
+
 
 public class Gwarezcc extends PluginForDecrypt {
 

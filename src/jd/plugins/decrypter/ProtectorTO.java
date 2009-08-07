@@ -29,11 +29,14 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
 import org.xml.sax.SAXException;
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protector.to" }, urls = { "http://[\\w\\.]*?protector\\.to/.*"}, flags = { 0 })
+
 
 public class ProtectorTO extends PluginForDecrypt {
     private static Integer lock = new Integer(0);

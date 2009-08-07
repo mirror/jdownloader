@@ -25,9 +25,12 @@ import jd.controlling.ProgressController;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "box.net" }, urls = { "http://www\\.box\\.net/shared/(\\w+\\b(?<!\\bstatic))(/rss\\.xml|#\\w*)?"}, flags = { 0 })
+
 
 public class BoxNet extends PluginForDecrypt {
     private static final String BASE_URL_PATTERN = "(http://www\\.box\\.net/shared/\\w+)(#\\w*)?";

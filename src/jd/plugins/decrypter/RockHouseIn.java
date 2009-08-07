@@ -22,8 +22,11 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Encoding;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rock-house.in" }, urls = { "http://[\\w\\.]*?rock-house\\.in/warez/warez_download\\.php\\?id=\\d+"}, flags = { 0 })
+
 
 public class RockHouseIn extends PluginForDecrypt {
 

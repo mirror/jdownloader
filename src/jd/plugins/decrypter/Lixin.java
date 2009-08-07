@@ -22,8 +22,11 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lix.in" }, urls = { "http://[\\w\\.]*?lix\\.in/[-]{0,1}[\\w]{6,10}"}, flags = { 0 })
+
 
 public class Lixin extends PluginForDecrypt {
 

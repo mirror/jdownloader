@@ -24,10 +24,13 @@ import jd.config.ConfigEntry;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jamendo.com" }, urls = { "http://[\\w\\.]*?jamendo\\.com/.?.?/?(album/\\d+|artist/.+)"}, flags = { 0 })
+
 
 public class JamendoCom extends PluginForDecrypt {
 

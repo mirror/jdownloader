@@ -26,6 +26,7 @@ import javax.xml.parsers.SAXParserFactory;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
@@ -34,6 +35,8 @@ import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "metalinker.org" }, urls = { "http://[\\d\\w\\.:\\-@]*/.*?\\.metalink"}, flags = { 0 })
+
 
 public class MetaLink extends PluginForDecrypt {
 

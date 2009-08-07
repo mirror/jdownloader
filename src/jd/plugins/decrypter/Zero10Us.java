@@ -23,8 +23,13 @@ import jd.controlling.ProgressController;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "h-link.us","zero10.us" }, urls = { "http://[\\w\\.]*?h-link\\.us/\\d+", "http://[\\w\\.]*?zero10\\.us/\\d+"}, flags = { 0,0 })
+
+
+
 
 public class Zero10Us extends PluginForDecrypt {
 

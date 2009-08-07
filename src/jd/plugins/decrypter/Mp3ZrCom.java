@@ -21,8 +21,11 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mp3zr.com" }, urls = { "http://[\\w\\.]*?mp3zr\\.com/file/[0-9a-zA-Z]+/.+"}, flags = { 0 })
+
 
 public class Mp3ZrCom extends PluginForDecrypt {
 

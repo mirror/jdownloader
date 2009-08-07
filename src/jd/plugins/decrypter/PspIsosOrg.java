@@ -21,10 +21,13 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pspisos.org" }, urls = { "http://[\\w\\.]*?pspisos\\.org/(d\\d\\d?wn|d3741l5)/.+(/\\d+)?"}, flags = { 0 })
+
 
 public class PspIsosOrg extends PluginForDecrypt {
 
