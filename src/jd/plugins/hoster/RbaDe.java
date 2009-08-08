@@ -30,7 +30,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "r-b-a.de" }, urls = { "http://www[\\d]?\\.przeslij\\.net/download\\.php\\?file=(.*)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "r-b-a.de" }, urls = { "http://[\\w\\.]*?r-b-a\\.de/(index\\.php\\?ID=4101&(amp;)?BATTLE=\\d+(&sid=\\w+)?)|http://[\\w\\.]*?r-b-a\\.de/index\\.php\\?ID=4100(&direction=last)?&MEMBER=\\d+(&sid=\\w+)?" }, flags = { 0 })
 public class RbaDe extends PluginForHost {
 
     private static final String AGB_LINK = "http://www.r-b-a.de/index.php?ID=3003";
