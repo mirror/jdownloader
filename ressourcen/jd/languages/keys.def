@@ -139,11 +139,8 @@ jd.gui.swing.components.aboutdialog.version = Version %s
 jd.gui.swing.components.aboutdialog.license = Show license
 jd.gui.swing.components.aboutdialog.license.title = JDownloader License
 jd.gui.swing.components.aboutdialog.homepage = Homepage
-gui.dialog.about.homeurl = http://www.jdownloader.org/home?lng=en
 jd.gui.swing.components.aboutdialog.forum = Support board
-gui.dialog.about.forumurl = http://board.jdownloader.org
-jd.gui.swing.components.aboutdialog.developers = Developers
-jd.gui.swing.components.aboutdialog.othercontributers = Other contributers
+jd.gui.swing.components.aboutdialog.contributers = Contributers
 jd.gui.swing.components.accountdialog.title = Add new Account
 jd.gui.swing.components.accountdialog.hoster = Hoster:
 jd.gui.swing.components.accountdialog.name = Name:
