@@ -45,6 +45,7 @@ public abstract class UserIO {
     public static final int DONT_SHOW_AGAIN = 1 << 5;
     public static final int STYLE_LARGE = 1 << 6;
     public static final int STYLE_HTML = 1 << 7;
+    public static final int NO_ICON = 1 << 8;
     /**
      * Return IDS
      */
@@ -57,7 +58,6 @@ public abstract class UserIO {
     public static final int ICON_WARNING = 1;
     public static final int ICON_ERROR = 2;
     public static final int ICON_QUESTION = 3;
-    public static final String ICON_NONE = "NULLICONDUMMY";
 
     protected static UserIO INSTANCE = null;
     private static Integer COUNTDOWN_TIME = null;
@@ -107,7 +107,6 @@ public abstract class UserIO {
         synchronized (INSTANCE) {
             if (icon == null) {
                 icon = getDefaultIcon(title + message);
-
             }
             return showConfirmDialog(flag, title, message, icon, okOption, cancelOption);
         }
@@ -183,7 +182,6 @@ public abstract class UserIO {
     }
 
     private ImageIcon getDefaultIcon(String text) {
-        if (text == UserIO.ICON_NONE) return null;
         if (text.contains("?")) {
             return this.getIcon(ICON_QUESTION);
         } else if (text.matches(JDL.L("userio.errorregex", ".*(error|failed).*"))) {
@@ -251,7 +249,8 @@ public abstract class UserIO {
      * @param icon
      * @param okText
      * @param cancelText
-     * @param renderer TODO
+     * @param renderer
+     *            TODO
      * @return
      */
     public abstract int requestComboDialog(int flag, String title, String question, Object[] options, int defaultSelection, ImageIcon icon, String okText, String cancelText, Object renderer);

@@ -78,7 +78,7 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
         this.flag = flag;
         setTitle(title);
 
-        this.icon = icon;
+        this.icon = (JDFlags.hasAllFlags(flag, UserIO.NO_ICON)) ? null : icon;
         this.okOption = (okOption == null) ? JDL.L("gui.btn_ok", null) : okOption;
         this.cancelOption = (cancelOption == null) ? JDL.L("gui.btn_cancel", null) : cancelOption;
 
@@ -172,7 +172,6 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
         this.pack();
         this.setResizable(true);
 
-      
         this.toFront();
         this.setMinimumSize(this.getPreferredSize());
         if (DEFAULT_DIMENSION != null) this.setSize(DEFAULT_DIMENSION);
@@ -195,9 +194,9 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
                 dispose();
             }
         });
-      
-       focus.requestFocus();
-       this.packed();
+
+        focus.requestFocus();
+        this.packed();
         this.setVisible(true);
 
     }

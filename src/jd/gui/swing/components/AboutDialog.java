@@ -73,7 +73,7 @@ public class AboutDialog extends AbstractDialog {
 
             public void actionPerformed(ActionEvent e) {
                 String license = JDIO.getLocalFile(JDUtilities.getResourceFile("licenses/jdownloader.license"));
-                UserIO.getInstance().requestMessageDialog(JDL.L(JDL_PREFIX + "license.title", "JDownloader License"), license);
+                UserIO.getInstance().requestConfirmDialog(UserIO.NO_CANCEL_OPTION | UserIO.STYLE_LARGE | UserIO.NO_ICON, JDL.L(JDL_PREFIX + "license.title", "JDownloader License"), license, null, null, null);
             }
 
         }), "gaptop 15, spanx, split 4");
