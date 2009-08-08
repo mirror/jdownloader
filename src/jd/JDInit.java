@@ -343,7 +343,10 @@ public class JDInit {
     }
 
     public void loadCPlugins() {
-
+        if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL) {
+            logger.info("Not loaded Containerplugins due to developeredition");
+            return;
+        }
         new CPluginWrapper("ccf", "C", ".+\\.ccf");
         new CPluginWrapper("rsdf", "R", ".+\\.rsdf");
         new CPluginWrapper("dlc", "D", ".+\\.dlc");

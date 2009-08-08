@@ -58,7 +58,7 @@ public class AboutDialog extends AbstractDialog {
     public JComponent contentInit() {
         JPanel cp = new JPanel(new MigLayout("ins 10 10 0 10, wrap 2"));
 
-        cp.add(new JLabel(JDImage.getImageIcon("logo/jd_logo_128_128")), "spany 4, gapright 10");
+        cp.add(new JLabel(JDImage.getImageIcon("logo/jd_logo_128_128")), "spany 3, gapright 10");
 
         JLabel lbl;
         cp.add(lbl = new JLabel(JDL.L(JDL_PREFIX + "name", "JDownloader")), "gaptop 15");
@@ -76,12 +76,13 @@ public class AboutDialog extends AbstractDialog {
                 UserIO.getInstance().requestMessageDialog(JDL.L(JDL_PREFIX + "license.title", "JDownloader License"), license);
             }
 
-        }), "gaptop 15, split 3");
+        }), "gaptop 15, spanx, split 4");
         btn.setBorder(null);
 
         try {
             cp.add(new JLink(JDL.L(JDL_PREFIX + "homepage", "Homepage"), JDTheme.II("gui.images.config.host", 16, 16), new URL("http://www.jdownloader.org/home?lng=en")), "gapleft 10");
             cp.add(new JLink(JDL.L(JDL_PREFIX + "forum", "Support board"), JDTheme.II("gui.images.list", 16, 16), new URL("http://board.jdownloader.org")), "gapleft 10");
+            cp.add(new JLink(JDL.L(JDL_PREFIX + "contributers", "Contributers"), JDTheme.II("gui.images.accounts", 16, 16), new URL("http://jdownloader.org/knowledge/wiki/contributers")), "gapleft 10");
         } catch (MalformedURLException e1) {
             e1.printStackTrace();
         }
