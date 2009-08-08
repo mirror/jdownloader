@@ -30,7 +30,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "enterupload.com" }, urls = { "http://[\\w\\.]*?fileload\\.us/[\\w]+/?" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "enterupload.com" }, urls = { "http://[\\w\\.]*?enterupload\\.com/[\\w]+/?" }, flags = { 0 })
 public class EnteruploadCom extends PluginForHost {
 
     public EnteruploadCom(PluginWrapper wrapper) {
@@ -91,7 +91,7 @@ public class EnteruploadCom extends PluginForHost {
 
     // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 10;
+        return 20;
     }
 
     // @Override
@@ -104,7 +104,9 @@ public class EnteruploadCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setCookie("http://www.enterupload.com/", "lang", "english");
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("No such file")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("No such file with this filename")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("No such user exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = Encoding.htmlDecode(br.getRegex("<center><h2>Download File(.*?)</h2>").getMatch(0));
         String filesize = br.getRegex("</font>.*?\\((.*?)\\)</font>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
