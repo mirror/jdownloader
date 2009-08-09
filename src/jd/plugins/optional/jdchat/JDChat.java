@@ -30,7 +30,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.regex.Pattern;
 
 import javax.swing.JButton;
@@ -93,10 +92,10 @@ public class JDChat extends PluginOptional implements ControlListener {
 
     private static final String PARAM_HOST = "PARAM_HOST";
     private static final String PARAM_NICK = "PARAM_NICK";
-    private static final String PARAM_DESLANGUAGE = "PARAM_DESLANGUAGE";
+    private static final String PARAM_DESLANGUAGE = "PARAM_DESLANGUAGE2";
     private static final String PARAM_DOAUTOTRANSLAT = "PARAM_DOAUTOTRANSLAT";
     private static final String PARAM_DOAUTOTRANSLATSELF = "PARAM_DOAUTOTRANSLATSELF";
-    private static final String PARAM_NATIVELANGUAGE = "PARAM_NATIVELANGUAGE";
+    private static final String PARAM_NATIVELANGUAGE = "PARAM_NATIVELANGUAGE2";
     private static final String PARAM_PERFORM = "PARAM_PERFORM";
     private static final String PARAM_PORT = "PARAM_PORT";
 
@@ -119,7 +118,7 @@ public class JDChat extends PluginOptional implements ControlListener {
     private long lastAction;
     private String lastCommand;
     private boolean loggedIn;
-    private HashMap<String, String> map;
+    private ArrayList<JDLocale> lngmap = new ArrayList<JDLocale>();
     private ArrayList<User> NAMES;
     private String nick;
     private boolean nickaway;
@@ -635,19 +634,18 @@ public class JDChat extends PluginOptional implements ControlListener {
     }
 
     public void addToText(final User user, String style, String msg) {
-        String dest = subConfig.getStringProperty(PARAM_NATIVELANGUAGE, map.get(System.getProperty("user.country")));
+        JDLocale dest = subConfig.getGenericProperty(PARAM_NATIVELANGUAGE, new JDLocale("en"));
         if (subConfig.getBooleanProperty(PARAM_DOAUTOTRANSLAT, false) && dest != null && !msg.contains("<")) {
 
-            for (String next : map.keySet()) {
-                if (map.get(next).equals(dest)) {
-                    String tmp = JDL.translate(next, msg);
-                    if (!tmp.equalsIgnoreCase(msg)) {
+            for (JDLocale loc : lngmap) {
+                if (loc.getLanguageCode().equalsIgnoreCase(dest.getLanguageCode())) {
+                    String tmp = JDL.translate(loc.getLanguageCode(), msg);
+                    if (tmp != null && !tmp.equalsIgnoreCase(msg)) {
                         tmp += "(" + msg + ")";
                         msg = tmp;
                     }
                     break;
                 }
-
             }
 
         }
@@ -853,46 +851,39 @@ public class JDChat extends PluginOptional implements ControlListener {
         cfg.setDefaultValue(false);
         ConfigEntry conditionEntry = cfg;
 
-        map = new HashMap<String, String>();
-        map.put("ar", JDL.L("locale.lngs.arabic", "Arabic"));
-        map.put("bg", JDL.L("locale.lngs.bulgarian", "Bulgarian"));
-        map.put("zh-CN", JDL.L("locale.lngs.chinese_simplified_", "Chinese (Simplified)"));
-        map.put("zh-TW", JDL.L("locale.lngs.chinese_traditional_", "Chinese (Traditional)"));
-        map.put("hr", JDL.L("locale.lngs.croatian", "Croatian"));
-        map.put("cs", JDL.L("locale.lngs.czech", "Czech"));
-        map.put("da", JDL.L("locale.lngs.danish", "Danish"));
-        map.put("nl", JDL.L("locale.lngs.dutch", "Dutch"));
-        map.put("en", JDL.L("locale.lngs.english", "English"));
-        map.put("fi", JDL.L("locale.lngs.finnish", "Finnish"));
-        map.put("fr", JDL.L("locale.lngs.french", "French"));
-        map.put("de", JDL.L("locale.lngs.german", "German"));
-        map.put("el", JDL.L("locale.lngs.greek", "Greek"));
-        map.put("hi", JDL.L("locale.lngs.hindi", "Hindi"));
-        map.put("it", JDL.L("locale.lngs.italian", "Italian"));
-        map.put("ja", JDL.L("locale.lngs.japanese", "Japanese"));
-        map.put("ko", JDL.L("locale.lngs.korean", "Korean"));
-        map.put("no", JDL.L("locale.lngs.norwegian", "Norwegian"));
-        map.put("pl", JDL.L("locale.lngs.polish", "Polish"));
-        map.put("pt", JDL.L("locale.lngs.portuguese", "Portuguese"));
-        map.put("ro", JDL.L("locale.lngs.romanian", "Romanian"));
-        map.put("ru", JDL.L("locale.lngs.russian", "Russian"));
-        map.put("es", JDL.L("locale.lngs.spanish", "Spanish"));
-        map.put("sv", JDL.L("locale.lngs.swedish", "Swedish"));
+        lngmap.add(new JDLocale("ar"));
+        lngmap.add(new JDLocale("bg"));
+        lngmap.add(new JDLocale("zh-CN"));
+        lngmap.add(new JDLocale("zh-TW"));
+        lngmap.add(new JDLocale("hr"));
+        lngmap.add(new JDLocale("cs"));
+        lngmap.add(new JDLocale("da"));
+        lngmap.add(new JDLocale("nl"));
+        lngmap.add(new JDLocale("en"));
+        lngmap.add(new JDLocale("fi"));
+        lngmap.add(new JDLocale("fr"));
+        lngmap.add(new JDLocale("de"));
+        lngmap.add(new JDLocale("el"));
+        lngmap.add(new JDLocale("hi"));
+        lngmap.add(new JDLocale("it"));
+        lngmap.add(new JDLocale("ja"));
+        lngmap.add(new JDLocale("ko"));
+        lngmap.add(new JDLocale("no"));
+        lngmap.add(new JDLocale("pl"));
+        lngmap.add(new JDLocale("pt"));
+        lngmap.add(new JDLocale("ro"));
+        lngmap.add(new JDLocale("ru"));
+        lngmap.add(new JDLocale("es"));
+        lngmap.add(new JDLocale("sv"));
 
-        ArrayList<String> ar = new ArrayList<String>();
-
-        for (String string : map.keySet()) {
-            ar.add(map.get(string));
-        }
-
-        lngse.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, PARAM_NATIVELANGUAGE, ar.toArray(new String[] {}), JDL.L("interaction.jdchat.native", "to: ")));
-        cfg.setEnabledCondidtion(conditionEntry, "==", true);
+        lngse.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, PARAM_NATIVELANGUAGE, lngmap.toArray(new JDLocale[] {}), JDL.L("interaction.jdchat.native", "to: ")));
+        cfg.setDefaultValue(JDL.DEFAULT_LOCALE);
 
         lngse.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PARAM_DOAUTOTRANSLATSELF, JDL.L("plugins.optional.jdchat.doautotranslateself", "Translate everything I say")));
         conditionEntry.setDefaultValue(false);
 
-        lngse.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, PARAM_DESLANGUAGE, ar.toArray(new String[] {}), JDL.L("interaction.jdchat.deslanguage", "to: ")));
-        cfg.setEnabledCondidtion(conditionEntry, "==", true);
+        lngse.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, PARAM_DESLANGUAGE, lngmap.toArray(new JDLocale[] {}), JDL.L("interaction.jdchat.deslanguage", "to: ")));
+        cfg.setDefaultValue(JDL.DEFAULT_LOCALE);
 
     }
 
@@ -1181,21 +1172,18 @@ public class JDChat extends PluginOptional implements ControlListener {
     }
 
     private String prepareToSend(String trim) {
-        String dest = subConfig.getStringProperty(PARAM_DESLANGUAGE, map.get(System.getProperty("user.country")));
+        JDLocale dest = subConfig.getGenericProperty(PARAM_DESLANGUAGE, new JDLocale("en"));
         if (subConfig.getBooleanProperty(PARAM_DOAUTOTRANSLATSELF, false) && dest != null) {
 
-            for (String next : map.keySet()) {
-                if (map.get(next).equals(dest)) {
-                    trim = JDL.translate(next, trim);
-
-                    String tmp = JDL.translate(next, trim);
-                    if (!tmp.equalsIgnoreCase(trim)) {
+            for (JDLocale loc : lngmap) {
+                if (loc.getLanguageCode().equalsIgnoreCase(dest.getLanguageCode())) {
+                    String tmp = JDL.translate(loc.getLanguageCode(), trim);
+                    if (tmp != null && !tmp.equalsIgnoreCase(trim)) {
                         tmp += "(" + trim + ")";
                         trim = tmp;
                     }
                     break;
                 }
-
             }
 
         }

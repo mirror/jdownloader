@@ -75,10 +75,9 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
         downloadDirectory = JDUtilities.getConfiguration().getDefaultDownloadDirectory();
         name = JDUtilities.removeEndingPoints(JDL.L("controller.packages.defaultname", "various"));
         useSubDir = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false);
-        for (OptionalPluginWrapper wrapper : OptionalPluginWrapper.getOptionalWrapper()) {
-            if (wrapper.isEnabled() && wrapper.getPlugin() != null && wrapper.getPlugin().getClass().getName().endsWith("JDUnrar")) {
-                extractAfterDownload = wrapper.getPluginConfig().getBooleanProperty("ACTIVATED", true);
-            }
+        OptionalPluginWrapper addon = JDUtilities.getOptionalPlugin("unrar");
+        if (addon != null && addon.isEnabled()) {
+            extractAfterDownload = addon.getPluginConfig().getBooleanProperty("ACTIVATED", true);
         }
         broadcaster = new LinkGrabberFilePackageBroadcaster();
         broadcaster.addListener(this);

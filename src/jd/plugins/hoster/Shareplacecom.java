@@ -38,12 +38,10 @@ public class Shareplacecom extends PluginForHost {
         super(wrapper);
     }
 
-    // @Override
     public String getAGBLink() {
         return "http://shareplace.com/rules.php";
     }
 
-    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         url = downloadLink.getDownloadURL();
         setBrowserExclusive();
@@ -68,12 +66,6 @@ public class Shareplacecom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         /* Link holen */
@@ -85,7 +77,7 @@ public class Shareplacecom extends PluginForHost {
         if (waittime != null) wait = Long.parseLong(waittime);
         sleep(wait * 1000l, downloadLink);
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, url);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url);
         if (dl.getConnection().isContentDisposition()) {
             /* Workaround für fehlerhaften Filename Header */
             String name = Plugin.getFileNameFormHeader(dl.getConnection());
@@ -94,20 +86,16 @@ public class Shareplacecom extends PluginForHost {
         dl.startDownload();
     }
 
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    // @Override
     public void reset() {
     }
 
-    // @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
     public void resetDownloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 
