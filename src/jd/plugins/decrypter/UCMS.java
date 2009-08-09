@@ -38,8 +38,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-
 //create this patterns with UCMS.main
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ddl-kingz.in", "oxygen-warez.com", "filefox.in", "alphawarez.us", "pirate-loads.com", "fettrap.com", "omega-music.com", "hardcoremetal.biz", "flashload.org", "twin-warez.com", "oneload.org", "steelwarez.com", "fullstreams.info", "lionwarez.com", "1dl.in", "chrome-database.com", "oneload.org", "youwarez.biz", "saugking.net", "leetpornz.com", "freefiles4u.com", "dark-load.net", "crimeland.de", "get-warez.in", "meinsound.com", "projekt-tempel-news.de.vu", "datensau.org", "musik.am", "spreaded.net", "relfreaks.com", "babevidz.com", "serien24.com", "porn-freaks.net", "xxx-4-free.net", "porn-traffic.net", "chili-warez.net", "game-freaks.net", "isos.at", "your-load.com", "mov-world.net", "xtreme-warez.net", "sceneload.to", "epicspeedload.in", "serienfreaks.to", "serienfreaks.in", "warez-load.com",
         "ddl-scene.com", "mp3king.cinipac-hosting.biz", "sauggirls.com", "pornfox.in", "xflat24.com", "alben.ws", "worldofxxx.org", "gamegalaxy.ws", "ddl.byte.to", "interload.biz", "xwebb.extra.hu/1dl", "jokermovie.org", "xtreme-warez.biz", "your-load.com", "top-hitz.com", "wii-reloaded.ath.cx/sites/epic", "wankingking.com", "projekt-tempel-news.org", "porn-ox.in", "music-dome.cc", "sound-load.com", "hoerspiele.to", "jim2008.extra.hu", "ex-yu.extra.hu", "firefiles.in", "gez-load.net", "wrzunlimited.1gb.in", "streamload.in", "toxic.to", "mp3z.to", "sexload.to", "sound-load.com", "sfulc.exofire.net/cms", "fickdiehure.com", "dream-team.bz/cms", "omega-warez.com", "ddl-scene.cc", "xxxstreams.org", "scene-warez.com", "dokuh.tv", "titanload.to", "ddlshock.com", "xtreme-warez.us", "crunkwarez.com", "serienking.in", "stream.szenepic.us", "gate-warez.com", "gateload.info", "hot-porn-ddl.com" }, urls = {
         "http://[\\w\\.]*?ddl-kingz.in/(\\?id=.+|[\\?]*?/.*?\\.html|category/.*?/.*?\\.html|download/.*?/.*?\\.html|.*?/.*?\\.html)", "http://[\\w\\.]*?oxygen-warez.com/(\\?id=.+|[\\?]*?/.*?\\.html|category/.*?/.*?\\.html|download/.*?/.*?\\.html|.*?/.*?\\.html)", "http://[\\w\\.]*?filefox.in/(\\?id=.+|[\\?]*?/.*?\\.html|category/.*?/.*?\\.html|download/.*?/.*?\\.html|.*?/.*?\\.html)", "http://[\\w\\.]*?alphawarez.us/(\\?id=.+|[\\?]*?/.*?\\.html|category/.*?/.*?\\.html|download/.*?/.*?\\.html|.*?/.*?\\.html)", "http://[\\w\\.]*?pirate-loads.com/(\\?id=.+|[\\?]*?/.*?\\.html|category/.*?/.*?\\.html|download/.*?/.*?\\.html|.*?/.*?\\.html)", "http://[\\w\\.]*?fettrap.com/(\\?id=.+|[\\?]*?/.*?\\.html|category/.*?/.*?\\.html|download/.*?/.*?\\.html|.*?/.*?\\.html)", "http://[\\w\\.]*?omega-music.com/(\\?id=.+|[\\?]*?/.*?\\.html|category/.*?/.*?\\.html|download/.*?/.*?\\.html|.*?/.*?\\.html)",
@@ -66,31 +66,49 @@ public class UCMS extends PluginForDecrypt {
     public UCMS(PluginWrapper wrapper) {
         super(wrapper);
     }
+
+    /**
+     * CReates the annotation
+     * 
+     * @param s
+     * @throws Exception
+     */
     public static void main(String s[]) throws Exception {
 
         String[] list = { "ddl-kingz.in", "oxygen-warez.com", "filefox.in", "alphawarez.us", "pirate-loads.com", "fettrap.com", "omega-music.com", "hardcoremetal.biz", "flashload.org", "twin-warez.com", "oneload.org", "steelwarez.com", "fullstreams.info", "lionwarez.com", "1dl.in", "chrome-database.com", "oneload.org", "youwarez.biz", "saugking.net", "leetpornz.com", "freefiles4u.com", "dark-load.net", "crimeland.de", "get-warez.in", "meinsound.com", "projekt-tempel-news.de.vu", "datensau.org", "musik.am", "spreaded.net", "relfreaks.com", "babevidz.com", "serien24.com", "porn-freaks.net", "xxx-4-free.net", "porn-traffic.net", "chili-warez.net", "game-freaks.net", "isos.at", "your-load.com", "mov-world.net", "xtreme-warez.net", "sceneload.to", "epicspeedload.in", "serienfreaks.to", "serienfreaks.in", "warez-load.com", "ddl-scene.com", "mp3king.cinipac-hosting.biz", "sauggirls.com",
                 "pornfox.in", "xflat24.com", "alben.ws", "worldofxxx.org", "gamegalaxy.ws", "ddl.byte.to", "interload.biz", "xwebb.extra.hu/1dl", "jokermovie.org", "xtreme-warez.biz", "your-load.com", "top-hitz.com", "wii-reloaded.ath.cx/sites/epic", "wankingking.com", "projekt-tempel-news.org", "porn-ox.in", "music-dome.cc", "sound-load.com", "hoerspiele.to", "jim2008.extra.hu", "ex-yu.extra.hu", "firefiles.in", "gez-load.net", "wrzunlimited.1gb.in", "streamload.in", "toxic.to", "mp3z.to", "sexload.to", "sound-load.com", "sfulc.exofire.net/cms", "fickdiehure.com", "dream-team.bz/cms", "omega-warez.com", "ddl-scene.cc", "xxxstreams.org", "scene-warez.com", "dokuh.tv", "titanload.to", "ddlshock.com", "xtreme-warez.us", "crunkwarez.com", "serienking.in", "stream.szenepic.us", "gate-warez.com", "gateload.info", "hot-porn-ddl.com" };
+
+        System.out.print("@DecrypterPlugin(revision = \"$Revision$\", interfaceVersion = 2, names = {");
+
+        boolean f = true;
         for (String pattern : list) {
-
-            System.out.print(", ");
-
-            System.out.println("\"http://[\\\\w\\\\.]*?" + pattern.replaceAll("\\\\.", "\\\\\\\\.") + "/(\\\\?id=.+|[\\\\?]*?/.*?\\\\.html|category/.*?/.*?\\\\.html|download/.*?/.*?\\\\.html|.*?/.*?\\\\.html)\"");
-
-        }
-        for (String pattern : list) {
-
-            System.out.print(", ");
-
+            if (!f) System.out.print(", ");
+            f = false;
             System.out.println("\"" + pattern + "\"");
 
         }
+        System.out.print("}, urls = {");
+        f = true;
         for (String pattern : list) {
 
-            System.out.println(", 0");
-
+            if (!f) System.out.print(", ");
+            f = false;
+            System.out.println("\"http://[\\\\w\\\\.]*?" + pattern.replaceAll("\\\\.", "\\\\\\\\.") + "/(\\\\?id=.+|[\\\\?]*?/.*?\\\\.html|category/.*?/.*?\\\\.html|download/.*?/.*?\\\\.html|.*?/.*?\\\\.html)\"");
 
         }
+        System.out.print("}, flags = {");
+        f = true;
+        for (String pattern : list) {
+
+            if (!f) System.out.println(",");
+            f = false;
+            System.out.print("0");
+
+        }
+
+        System.out.print("})");
     }
+
     // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
