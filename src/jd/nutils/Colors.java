@@ -204,7 +204,10 @@ public class Colors {
         Color aa = new Color(a);
         return new int[] { aa.getRed(), aa.getGreen(), aa.getBlue() };
     }
+    public static double getHsbColorDifference(int a, int b) {
+        return getHsbColorDifference(getRGB(a), getRGB(b));
 
+    }
     public static double getHsbColorDifference(int[] rgbA, int[] rgbB) {
         float hsbA = rgb2hsb(rgbA[0], rgbA[1], rgbA[2])[0] * 100;
         float hsbB = rgb2hsb(rgbB[0], rgbB[1], rgbB[2])[0] * 100;
@@ -218,7 +221,7 @@ public class Colors {
         int dif0 = labA[0] - labB[0];
         int dif1 = labA[1] - labB[1];
         int dif2 = labA[2] - labB[2];
-        return Math.sqrt(dif0 * dif0 + dif1 * dif1 + dif2 * dif2);
+        return Math.sqrt(Math.pow(dif0, 2) + Math.pow(dif1, 2) + Math.pow(dif2, 2));
     }
 
     public static double getColorDifference(int a, int b) {
@@ -233,6 +236,34 @@ public class Colors {
 
         return (br + bg + rg) / 3;
 
+    }
+    /**
+     * Schnell berrechneter Farbunterschied im RGB Raum
+     * @param color
+     * @param color2
+     * @return
+     */
+    public static double getRGBColorDifference2(int color, int color2) {
+        Color c = new Color(color);
+        Color c2  = new Color(color2);
+        int dif0 = c.getRed() - c2.getRed();
+        int dif1 = c.getGreen() - c2.getGreen();
+        int dif2 = c.getBlue() - c2.getBlue();
+        return (Math.abs(dif0)+Math.abs(dif1)+Math.abs(dif2))/3;
+    }
+    /**
+     * exakt berrechneter Farbunterschied im RGB Raum
+     * @param color
+     * @param color2
+     * @return
+     */
+    public static double getRGBColorDifference1(int color, int color2) {
+        Color c = new Color(color);
+        Color c2  = new Color(color2);
+        int dif0 = c.getRed() - c2.getRed();
+        int dif1 = c.getGreen() - c2.getGreen();
+        int dif2 = c.getBlue() - c2.getBlue();
+        return Math.sqrt(Math.pow(dif0, 2) + Math.pow(dif1, 2) + Math.pow(dif2, 2));
     }
 
 }
