@@ -60,7 +60,7 @@ public class MidUploadCom extends PluginForHost {
         }
         form = br.getForm(0);
         int tt = Integer.parseInt(br.getRegex("countdown\">(\\d+)</span>").getMatch(0));
-        sleep(tt * 1001, link);
+        sleep(tt * 1001l, link);
         String captcha = null;
         captcha = br.getRegex(Pattern.compile("Bitte Code eingeben:</b></td></tr>.*<tr><td align=right>.*<img src=\"(.*?)\">.*class=\"captcha_code\">", Pattern.DOTALL)).getMatch(0);
         if (captcha == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);

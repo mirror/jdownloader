@@ -47,10 +47,9 @@ public class GigaUpFr extends PluginForHost {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
         br.setFollowRedirects(true);
-        if (br.containsHTML("Le fichier que vous tentez de télécharger n'existe pas")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("Le fichier que vous tentez.*?harger.*?existe pas")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("Fichier supprimé car non utilisé sur une période trop longue")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("Le fichier a été désigné illégal")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-
+        if (br.containsHTML("Le fichier a.*?sign.*?ill.*?gal")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = Encoding.htmlDecode(br.getRegex("<td>Nom :</td>.*?<td>(.*?)</td>").getMatch(0));
         String filesize = (br.getRegex("<td>Taille :</td>.*?<td>(.*?).</td>").getMatch(0));
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -70,7 +69,7 @@ public class GigaUpFr extends PluginForHost {
         if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         captchaForm.put("bot_sucker", code);
         br.submitForm(captchaForm);
-        if (br.containsHTML("Le code de v..rification entr.. est incorrecte")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
+        if (br.containsHTML("Le code de.*?v.*?ication.*?est incorrecte")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
         String dllink = (br.getRegex("link_generator\"><center><a href=\"(.*?)\">Commencer le t..l..chargement").getMatch(0));
         try {
             ((Ftp) JDUtilities.getNewPluginForHostInstance("ftp")).download(Encoding.urlDecode(dllink, true), downloadLink);

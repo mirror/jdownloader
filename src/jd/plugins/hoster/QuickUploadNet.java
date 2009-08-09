@@ -100,9 +100,9 @@ public class QuickUploadNet extends PluginForHost {
         int tt = Integer.parseInt(br.getRegex("countdown\">(\\d+)</span>").getMatch(0));
         sleep(tt * 1001, downloadLink);
         br.submitForm(DLForm);
-        if (br.containsHTML("Wrong password")||br.containsHTML("Wrong captcha")) {
+        if (br.containsHTML("Wrong password") || br.containsHTML("Wrong captcha")) {
             logger.warning("Wrong password!");
-            downloadLink.setProperty("pass", null);
+            if (br.containsHTML("Wrong captcha")) downloadLink.setProperty("pass", null);
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }
         if (passCode != null) {
@@ -112,7 +112,7 @@ public class QuickUploadNet extends PluginForHost {
         if (br.containsHTML("Wrong captcha")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
         String dllink = br.getRegex("dotted #bbb;padding:7px;\">.*?<a href=\"(.*?)\">.*?</a>.*?</span>.*?<br><br><br>").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        jd.plugins.BrowserAdapter.openDownload(br,downloadLink, dllink, true, -20);
+        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -20);
         dl.startDownload();
     }
 
