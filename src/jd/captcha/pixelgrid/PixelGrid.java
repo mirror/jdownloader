@@ -795,7 +795,7 @@ public class PixelGrid extends Property {
                             d = 0;
                             int[] bv = Colors.hexToRgb(key);
                             boolean found = false;
-                            if (last != null && Colors.getHsbColorDifference(bv, Colors.hexToRgb(map.get(last).getAverage())) < intensivity) {
+                            if (last != null && Colors.getHueColorDifference(bv, Colors.hexToRgb(map.get(last).getAverage())) < intensivity) {
                                 map.get(last).add(x, y, key);
                                 found = true;
                             } else {
@@ -808,7 +808,7 @@ public class PixelGrid extends Property {
                                     Integer[] key2 = iterator.next();
                                     PixelObject object = valsiter.next();
                                     if (Math.abs((double) (x - key2[1] - object.getWidth())) < h) {
-                                        dif = Colors.getHsbColorDifference(bv, Colors
+                                        dif = Colors.getHueColorDifference(bv, Colors
 
                                         .hexToRgb(object.getAverage()));
 
@@ -924,7 +924,7 @@ public class PixelGrid extends Property {
 
                 }
                 if (bestKey != null) {
-                    dif = Colors.getHsbColorDifference(Colors
+                    dif = Colors.getHueColorDifference(Colors
 
                     .hexToRgb(bestobj.getAverage()), Colors
 

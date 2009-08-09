@@ -94,12 +94,6 @@ public class EasyCaptcha {
 		File file = captcha.owner.getResourceFile("CPoints.xml");
 		// System.out.println(file);
 		Vector<CPoint> ret = ChooseC.load(file);
-		// Hintergrund entfernen
-		CPoint cpc = new CPoint(-1, -1, 25, -1);
-		if (ret.contains(cpc)) {
-			captcha.cleanBackgroundByColor(captcha.getAverage());
-			ret.remove(cpc);
-		}
 		// gibt an welche höhe der größte Buchstabe hat
 		int retYmax = 0;
 		// breite aller Buchstaben

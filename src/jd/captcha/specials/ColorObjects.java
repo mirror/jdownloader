@@ -72,7 +72,7 @@ public class ColorObjects {
         }
         
     }
-    private static ArrayList<PixelObject> getObjects(PixelGrid grid, int tollerance,int neighbourradius) {
+    static ArrayList<PixelObject> getObjects(PixelGrid grid, int tollerance,int neighbourradius) {
         ArrayList<PixelObject> ret = new ArrayList<PixelObject>();
         ArrayList<PixelObject> merge;
         for (int x = 0; x < grid.getWidth(); x++) {

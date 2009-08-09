@@ -10,9 +10,27 @@ public class CPoint extends Point implements Serializable {
 	/**
 	 * 
 	 */
+	public final static short LAB_DISTANCE = 1;
+	public final static short RGB_DISTANCE1 = 2;
+	public final static short RGB_DISTANCE2 = 3;
+	public final static short HUE_DISTANCE = 4;
+	public final static short SATURATION_DISTANCE = 5;
+	public final static short BRIGHTNESS_DISTANCE = 6;
+	public final static short RED_DISTANCE = 7;
+	public final static short GREEN_DISTANCE = 8;
+	public final static short BLUE_DISTANCE = 9;
+
 	private static final long serialVersionUID = 333616481245029882L;
 	private int color, distance;
 	private boolean foreground = true;
+	private short colorDistanceMode = LAB_DISTANCE;
+	public short getColorDistanceMode() {
+		return colorDistanceMode;
+	}
+
+	public void setColorDistanceMode(short colorDistanceMode) {
+		this.colorDistanceMode = colorDistanceMode;
+	}
 
 	public boolean isForeground() {
 		return foreground;
@@ -33,7 +51,7 @@ public class CPoint extends Point implements Serializable {
 	public int getDistance() {
 		return distance;
 	}
-
+	
 	public void setDistance(int distance) {
 		this.distance = distance;
 	}
