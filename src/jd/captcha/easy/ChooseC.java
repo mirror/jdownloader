@@ -25,6 +25,8 @@ import javax.swing.SpinnerNumberModel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import com.sun.xml.internal.ws.org.objectweb.asm.Label;
+
 import jd.nutils.io.JDIO;
 
 import jd.utils.JDUtilities;
@@ -49,6 +51,7 @@ public class ChooseC extends BasicWindow {
 	protected Captcha captcha;
 	private boolean foreground = true, add = true, close = true;
 	public int zoom = 400;
+	private short colorDifferenceMode = CPoint.LAB_DIFFERENCE;
 	protected Captcha captchaImage, lastCaptcha;
 	JButton back;
 	private int foregroundColor1 = 0xff00ff, foregroundColor2 = 0xFF99FF,
@@ -252,7 +255,15 @@ public class ChooseC extends BasicWindow {
 		ic.addMouseListener(icl);
 		ic0.addMouseListener(icl);
 	}
-
+	private void setStatus(int color, int x, int y)
+	{
+		
+	}
+	private JPanel addStatus() {
+		JPanel status = new JPanel();
+		status.add(new JLabel("color"));
+		return status;
+	}
 	private void init(Captcha captcha) {
 
 		this.captcha = captcha;
@@ -266,7 +277,11 @@ public class ChooseC extends BasicWindow {
 		setTitle("Layerrecognition Trainer");
 		addImages();
 		panel.add(images);
-		GridBagConstraints gb = Utilities.getGBC(0, 3, 1, 1);
+
+		GridBagConstraints gb = Utilities.getGBC(0, 2, 1, 1);
+
+		panel.add(addStatus(),  gb);
+		gb = Utilities.getGBC(0, 3, 1, 1);
 
 		final JCheckBox ground = new JCheckBox(foreground ? "foreground"
 				: "background", foreground);
