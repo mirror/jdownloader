@@ -310,8 +310,6 @@ public class Netloadin extends PluginForHost {
             resume = false;
             chunks = 1;
         }
-        this.setBrowserExclusive();
-        br.getPage("http://netload.in/index.php?lang=de");
         br.openGetConnection(downloadLink.getDownloadURL());
         Request con;
         if (br.getRedirectLocation() == null) {
