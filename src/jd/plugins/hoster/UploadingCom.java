@@ -131,9 +131,14 @@ public class UploadingCom extends PluginForHost {
             return;
         }
         br.submitForm(form);
-        this.sleep(70000l, link);
+        if (br.containsHTML("Only Premium users can download files larger than")) {
+            logger.warning(JDL.L("plugins.host.UploadingCom.premiumonly", "Anyfiles.net: Only Premium users can download files larger than 100 MB!"));
+            throw new PluginException(LinkStatus.ERROR_FATAL, "See log!");
+        }
         br.setFollowRedirects(false);
         form = br.getFormbyProperty("id", "downloadform");
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        this.sleep(70000l, link);
         br.submitForm(form);
         if (br.getRedirectLocation() == null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
         br.setFollowRedirects(true);
@@ -175,9 +180,14 @@ public class UploadingCom extends PluginForHost {
             return;
         }
         br.submitForm(form);
-        this.sleep(100000l, downloadLink);
+        if (br.containsHTML("Only Premium users can download files larger than")) {
+            logger.warning(JDL.L("plugins.host.UploadingCom.premiumonly", "Uploading.com: Only Premium users can download files larger than 100 MB!"));
+            throw new PluginException(LinkStatus.ERROR_FATAL, "See log!");
+        }
         br.setFollowRedirects(false);
         form = br.getFormbyProperty("id", "downloadform");
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        this.sleep(100000l, downloadLink);
         br.submitForm(form);
         if (br.getRedirectLocation() == null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
         br.setFollowRedirects(true);
