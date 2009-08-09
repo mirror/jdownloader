@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -69,10 +70,10 @@ public class TeraDepotCom extends PluginForHost {
             if (br.containsHTML("minute")) {
                 int minute = Integer.parseInt(br.getRegex("You have to wait (\\d+) minute, (\\d+) seconds till next download").getMatch(0));
                 int sec = Integer.parseInt(br.getRegex("You have to wait (\\d+) minute, (\\d+) seconds till next download").getMatch(1));
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (minute * 60 + sec) * 1001);
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (minute * 60 + sec) * 1001l);
             } else {
                 int sec = Integer.parseInt(br.getRegex("You have to wait (\\d+) minute, (\\d+) seconds till next download").getMatch(1));
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, sec * 1001);
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, sec * 1001l);
             }
         }
         Form captchaForm = br.getFormbyProperty("name", "F1");
@@ -91,7 +92,7 @@ public class TeraDepotCom extends PluginForHost {
         String code = getCaptchaCode(captchaurl, link);
         // Captcha Usereingabe in die Form einfügen
         captchaForm.put("code", code);
-        jd.plugins.BrowserAdapter.openDownload(br, link, captchaForm, true, -20);
+        BrowserAdapter.openDownload(br, link, captchaForm, true, -20);
         if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();
             if (br.containsHTML("Wrong password")) {
@@ -99,12 +100,11 @@ public class TeraDepotCom extends PluginForHost {
                 link.setProperty("pass", null);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
-            if (passCode != null) {
-                link.setProperty("pass", passCode);
-            }
-            if (br.containsHTML("Wrong captcha")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            }
+            if (br.containsHTML("Wrong captcha")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        }
+        if (passCode != null) {
+            link.setProperty("pass", passCode);
         }
         dl.startDownload();
     }
