@@ -66,6 +66,9 @@ public class TeraDepotCom extends PluginForHost {
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         form.remove("method_premium");
         br.submitForm(form);
+        if (br.containsHTML("reached the download-limit")) {                
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 120 * 60 * 1001l);
+        }
         if (br.containsHTML("You have to wait")) {
             if (br.containsHTML("minute")) {
                 int minute = Integer.parseInt(br.getRegex("You have to wait (\\d+) minute, (\\d+) seconds till next download").getMatch(0));
@@ -92,7 +95,7 @@ public class TeraDepotCom extends PluginForHost {
         String code = getCaptchaCode(captchaurl, link);
         // Captcha Usereingabe in die Form einfügen
         captchaForm.put("code", code);
-        BrowserAdapter.openDownload(br, link, captchaForm, true, -20);
+        BrowserAdapter.openDownload(br, link, captchaForm, false, 1);
         if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();
             if (br.containsHTML("Wrong password")) {

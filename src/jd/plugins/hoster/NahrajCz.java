@@ -37,7 +37,7 @@ public class NahrajCz extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "";
+        return "http://nahraj.cz/";
     }
 
     public void correctDownloadLink(DownloadLink link) throws Exception {

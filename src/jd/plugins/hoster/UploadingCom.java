@@ -132,13 +132,14 @@ public class UploadingCom extends PluginForHost {
         }
         br.submitForm(form);
         if (br.containsHTML("Only Premium users can download files larger than")) {
-            logger.warning(JDL.L("plugins.host.UploadingCom.premiumonly", "Anyfiles.net: Only Premium users can download files larger than 100 MB!"));
-            throw new PluginException(LinkStatus.ERROR_FATAL, "See log!");
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium");
         }
         br.setFollowRedirects(false);
         form = br.getFormbyProperty("id", "downloadform");
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        this.sleep(70000l, link);
+//        this.sleep(70000l, link);
+        int tt = Integer.parseInt(br.getRegex("<script>.*?var.*?=(\\d+);").getMatch(0));
+        sleep(tt * 1001l, link);
         br.submitForm(form);
         if (br.getRedirectLocation() == null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
         br.setFollowRedirects(true);
@@ -181,13 +182,14 @@ public class UploadingCom extends PluginForHost {
         }
         br.submitForm(form);
         if (br.containsHTML("Only Premium users can download files larger than")) {
-            logger.warning(JDL.L("plugins.host.UploadingCom.premiumonly", "Uploading.com: Only Premium users can download files larger than 100 MB!"));
-            throw new PluginException(LinkStatus.ERROR_FATAL, "See log!");
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium");
         }
         br.setFollowRedirects(false);
         form = br.getFormbyProperty("id", "downloadform");
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        this.sleep(100000l, downloadLink);
+//        this.sleep(100000l, downloadLink);
+        int tt = Integer.parseInt(br.getRegex("<script>.*?var.*?=(\\d+);").getMatch(0));
+        sleep(tt * 1001l, downloadLink);
         br.submitForm(form);
         if (br.getRedirectLocation() == null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
         br.setFollowRedirects(true);
