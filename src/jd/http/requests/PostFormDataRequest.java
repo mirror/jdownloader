@@ -188,7 +188,8 @@ public class PostFormDataRequest extends Request {
     }
 
     private void write(FormData formData, StringBuffer sb) {
-
+        sb.append(this.boundary);
+        sb.append("\r\n");
         switch (formData.getType()) {
         case VARIABLE:
             sb.append("Content-Disposition: form-data; name=\"" + formData.getName() + "\"");

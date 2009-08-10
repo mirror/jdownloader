@@ -526,7 +526,7 @@ public class Browser {
             return this.createGetRequest(action);
 
         case POST:
-            if (form.getInputFieldByType("file") == null) {
+            if (form.getEncoding()==null||!form.getEncoding().toLowerCase().endsWith("form-data")) {
 
                 return this.createPostRequest(action, form.getRequestVariables());
             } else {
