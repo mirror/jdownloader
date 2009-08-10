@@ -43,7 +43,7 @@ public class UgotFileCom extends PluginForHost {
         this.setBrowserExclusive();
         br.clearCookies(link.getDownloadURL());
         br.getPage(link.getDownloadURL());
-
+        int sleep = Integer.parseInt(br.getRegex("seconds: (\\d+)").getMatch(0));
         if (br.containsHTML("Your hourly traffic limit is exceeded.")) {
             int block = Integer.parseInt(br.getRegex("<div id='sessionCountDown' style='font-weight:bold; font-size:20px;'>(.*?)</div>").getMatch(0)) * 1000 + 1;
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, block);
@@ -51,13 +51,12 @@ public class UgotFileCom extends PluginForHost {
         String Captcha = getCaptchaCode(br.getRegex("<img style=\"cursor: pointer\" onclick=\"captchaReload\\(\\);\" id=\"captchaImage\" src=\"(.*?)\" alt=\"captcha key\" />").getMatch(0), link);
         br.getPage("http://ugotfile.com/captcha?key=" + Captcha);
         if (br.containsHTML("invalid key")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        sleep(7001, link);
+        sleep(sleep * 1001, link);
         br.getPage("http://ugotfile.com/file/get-file");
-        if (br.containsHTML("Get premium")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 1000 * 30);
         String dllink = null;
-        dllink = br.getRegex("(http://.*)").getMatch(0);
+        dllink = br.getRegex("(.*)").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,link, dllink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         dl.startDownload();
     }
 
@@ -65,7 +64,7 @@ public class UgotFileCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
         br.getPage(parameter.getDownloadURL());
-        
+
         if (br.containsHTML("FileId and filename mismatched or file does not exist!")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("has been deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<td>Filename:</td>\\s+<td>(.*?)</td>").getMatch(0);
