@@ -228,8 +228,8 @@ public class Colors {
 	 * @return
 	 */
 	public static double getHueColorDifference(int[] rgbA, int[] rgbB) {
-		float hsbA = rgb2hsb(rgbA[0], rgbA[1], rgbA[2])[0] * 100;
-		float hsbB = rgb2hsb(rgbB[0], rgbB[1], rgbB[2])[0] * 100;
+		float hsbA = rgb2hsb(rgbA[0], rgbA[1], rgbA[2])[0] * 360;
+		float hsbB = rgb2hsb(rgbB[0], rgbB[1], rgbB[2])[0] * 360;
 		double dif = Math.abs((double) (hsbA - hsbB));
 		return dif;
 	}
