@@ -1,14 +1,20 @@
 package jd.captcha.easy;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.GridLayout;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.Iterator;
 import java.util.Vector;
@@ -17,36 +23,68 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
+import javax.swing.border.TitledBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import jd.captcha.JAntiCaptcha;
-import jd.captcha.gui.BasicWindow;
+import jd.nutils.io.JDIO;
+
+import jd.utils.JDUtilities;
+
+import jd.nutils.Colors;
+
 import jd.captcha.gui.ImageComponent;
+
+import jd.captcha.gui.BasicWindow;
+
+import jd.captcha.JAntiCaptcha;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.utils.Utilities;
-import jd.nutils.Colors;
-import jd.nutils.io.JDIO;
-import jd.utils.JDUtilities;
 
 public class ChooseC extends BasicWindow {
     private static final long serialVersionUID = 1L;
     private JPanel panel, images;
-    private ImageComponent ic;
+    private ImageComponent ic, icColorImage;
     private Vector<CPoint> ret = new Vector<CPoint>(), lastRet = new Vector<CPoint>();
     private int tollerance = 25;
     protected Captcha captcha;
     private boolean foreground = true, add = true, close = true;
     public int zoom = 400;
-    private short colorDifferenceMode = CPoint.LAB_DIFFERENCE;
     protected Captcha captchaImage, lastCaptcha;
     JButton back;
+    BufferedImage colorImage;
+    private JLabel colorState;
     private int foregroundColor1 = 0xff00ff, foregroundColor2 = 0xFF99FF, backgroundColor1 = 0x0000ff, backgroundColor2 = 0x00ffff;
+
+    class ColorMode {
+        short mode;
+        String modeString;
+
+        public ColorMode(short mode, String modestString) {
+            this.mode = mode;
+            this.modeString = modestString;
+        }
+
+        @Override
+        public boolean equals(Object arg0) {
+            // TODO Auto-generated method stub
+            return mode == ((ColorMode) arg0).mode;
+        }
+
+        public String toString() {
+            return modeString;
+        }
+    }
+
+    final ColorMode[] cModes = new ColorMode[] { new ColorMode(CPoint.LAB_DIFFERENCE, "LAB Difference"), new ColorMode(CPoint.RGB_DIFFERENCE1, "RGB1 Difference"), new ColorMode(CPoint.RGB_DIFFERENCE2, "RGB2 Difference"), new ColorMode(CPoint.HUE_DIFFERENCE, "Hue Difference"), new ColorMode(CPoint.SATURATION_DIFFERENCE, "Saturation Difference"), new ColorMode(CPoint.BRIGHTNESS_DIFFERENCE, "Brightness Difference"), new ColorMode(CPoint.RED_DIFFERENCE, "Red Difference"), new ColorMode(CPoint.GREEN_DIFFERENCE, "Green Difference"), new ColorMode(CPoint.BLUE_DIFFERENCE, "Blue Difference") };
+    final JComboBox mode = new JComboBox(cModes);
 
     private void removePixelAbsolut(CPoint cp) {
         backUP();
@@ -98,7 +136,7 @@ public class ChooseC extends BasicWindow {
                     break;
                 }
 
-            } else if ((dist = Colors.getColorDifference(co, p.getColor())) < p.getDistance()) {
+            } else if ((dist = p.getColorDifference(co)) < p.getDistance()) {
                 if (dist < bestDist) {
                     bestPX = p;
                     bestDist = dist;
@@ -122,10 +160,7 @@ public class ChooseC extends BasicWindow {
             for (int x = 0; x < captchaImage.getWidth(); x++) {
                 for (int y = 0; y < captchaImage.getHeight(); y++) {
                     captchaImage.grid[x][y] = captchaImage.getPixelValue(x, y);
-
-                    if (p.getDistance() == 0) {
-                        if (captcha.getPixelValue(x, y) == p.getColor()) captchaImage.grid[x][y] = p.isForeground() ? foregroundColor1 : backgroundColor1;
-                    } else if (Colors.getColorDifference(captcha.getPixelValue(x, y), p.getColor()) < p.getDistance()) {
+                    if (p.getColorDifference(captcha.getPixelValue(x, y)) < p.getDistance()) {
                         captchaImage.grid[x][y] = p.isForeground() ? foregroundColor1 : backgroundColor1;
                     }
 
@@ -144,6 +179,7 @@ public class ChooseC extends BasicWindow {
 
             public void mouseClicked(MouseEvent e) {
                 final CPoint p = new CPoint(e.getX() * 100 / zoom, e.getY() * 100 / zoom, (Integer) tollerance, captcha);
+                p.setColorDistanceMode(((ColorMode) mode.getSelectedItem()).mode);
                 p.setForeground(foreground);
                 if (add)
                     addPixel(p);
@@ -178,7 +214,7 @@ public class ChooseC extends BasicWindow {
                 double bestDist2 = Double.MAX_VALUE;
                 CPoint cpBestDist2 = null;
                 for (CPoint cp : ret) {
-                    double dist = Colors.getColorDifference(captcha.getPixelValue(x, y), cp.getColor());
+                    double dist = cp.getColorDifference(captcha.getPixelValue(x, y));
                     if (bestDist1 > dist) {
                         bestDist1 = dist;
                         cpBestDist1 = cp;
@@ -210,6 +246,8 @@ public class ChooseC extends BasicWindow {
 
     private void addImages() {
         images = new JPanel();
+        images.setBorder(new TitledBorder("Image:"));
+
         images.setLayout(new BoxLayout(images, BoxLayout.Y_AXIS));
         images.add(new JLabel("Original:"), getGBC(0, 1, 1, 1));
 
@@ -221,18 +259,134 @@ public class ChooseC extends BasicWindow {
 
         createIc();
         MouseListener icl = getICListener();
+        MouseMotionListener mml = new MouseMotionListener() {
+
+            public void mouseDragged(MouseEvent e) {
+                // TODO Auto-generated method stub
+
+            }
+
+            public void mouseMoved(MouseEvent e) {
+                setStatus(e.getX(), e.getY());
+
+            }
+        };
         ic.addMouseListener(icl);
         ic0.addMouseListener(icl);
+        ic.addMouseMotionListener(mml);
+        ic0.addMouseMotionListener(mml);
+
     }
 
-    private void setStatus(int color, int x, int y) {
+    private void setStatus(int xc, int yc) {
+        Graphics2D graphics = colorImage.createGraphics();
+        xc = xc * 100 / zoom;
+        yc = yc * 100 / zoom;
 
+        Color c = new Color(captcha.getPixelValue(xc, yc));
+        for (int y = 0; y < colorImage.getHeight(); y++) {
+
+            for (int x = 0; x < colorImage.getWidth(); x++) {
+
+                graphics.setColor(c);
+
+                graphics.fillRect(x, y, 1, 1);
+
+            }
+
+        }
+        for (int x = 0; x < colorImage.getWidth(); x++) {
+
+            graphics.setColor(Color.black);
+
+            graphics.fillRect(x, 0, 1, 1);
+
+            graphics.fillRect(x, colorImage.getHeight(), 1, 1);
+
+        }
+
+        for (int y = 0; y < colorImage.getHeight(); y++) {
+
+            graphics.setColor(Color.black);
+
+            graphics.fillRect(0, y, 1, 1);
+
+            graphics.fillRect(colorImage.getWidth(), y, 1, 1);
+
+        }
+        icColorImage.setImage(colorImage);
+        icColorImage.revalidate();
+        icColorImage.repaint();
+        float[] hsb = Colors.rgb2hsb(c.getRed(), c.getGreen(), c.getBlue());
+        colorState.setText("<HTML><BODY>Color:#" + Integer.toHexString(c.getRGB() & 0x00ffffff) + "<BR>\r\n" + "Position:" + xc + ":" + yc + "<BR>\r\n" + "<span style=\"color:#" + Integer.toHexString(new Color(c.getRed(), 0, 0).getRGB() & 0x00ffffff) + "\">R:" + getDigit(c.getRed()) + "</span><span style=\"color:#" + Integer.toHexString(new Color(0, c.getGreen(), 0).getRGB() & 0x00ffffff) + "\"> G:" + getDigit(c.getGreen()) + "</span><span style=\"color:#" + Integer.toHexString(new Color(0, 0, c.getBlue()).getRGB() & 0x00ffffff) + "\"> B:" + getDigit(c.getBlue()) + "</span><BR>\r\n" + "H:" + getDigit(Math.round(hsb[0] * 360)) + " S:" + getDigit(Math.round(hsb[1] * 100)) + " B:" + getDigit(Math.round(hsb[2] * 100)) + "\r\n</BODY></HTML>");
     }
 
-    private JPanel addStatus() {
-        JPanel status = new JPanel();
-        status.add(new JLabel("color"));
-        return status;
+    private String getDigit(int i) {
+        String ret = "";
+        if (i < 10)
+            ret = "&nbsp;&nbsp;&nbsp;&nbsp;" + i;
+        else if (i < 100)
+            ret = "&nbsp;&nbsp;" + i;
+        else
+            ret += i;
+        return ret;
+    }
+
+    private Box addStatus() {
+        Box box = new Box(BoxLayout.Y_AXIS);
+        colorImage = new BufferedImage(14, 14, BufferedImage.TYPE_INT_RGB);
+        icColorImage = new ImageComponent(colorImage);
+        colorState = new JLabel();
+        setStatus(1, 1);
+        box.add(icColorImage);
+        box.add(colorState);
+        box.setBorder(new TitledBorder("Color:"));
+        return box;
+    }
+
+    private JPanel getTools() {
+        JPanel box = new JPanel(new GridLayout(4, 1));
+        box.add(mode);
+
+        final JCheckBox ground = new JCheckBox(foreground ? "foreground" : "background", foreground);
+        ground.addActionListener(new ActionListener() {
+
+            public void actionPerformed(ActionEvent e) {
+                foreground = !foreground;
+                ground.setText(foreground ? "foreground" : "background");
+            }
+        });
+        box.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        box.add(ground);
+        final JCheckBox addb = new JCheckBox(add ? "add" : "remove", foreground);
+        addb.addActionListener(new ActionListener() {
+
+            public void actionPerformed(ActionEvent e) {
+                add = !add;
+                addb.setText(add ? "add" : "remove");
+            }
+        });
+
+        box.add(addb);
+
+        JPanel pen = new JPanel();
+        final JSpinner tolleranceSP = new JSpinner(new SpinnerNumberModel(tollerance, 0, 360, 1));
+        tolleranceSP.setToolTipText("Threshold");
+        tolleranceSP.addChangeListener(new ChangeListener() {
+
+            public void stateChanged(ChangeEvent e) {
+                tollerance = (Integer) tolleranceSP.getValue();
+            }
+        });
+        pen.add(new JLabel("Threshold:"));
+        pen.add(tolleranceSP);
+
+        box.add(pen);
+        box.setBorder(new TitledBorder("Tools:"));
+
+        return box;
+
     }
 
     private void init(Captcha captcha) {
@@ -248,45 +402,12 @@ public class ChooseC extends BasicWindow {
         setTitle("Layerrecognition Trainer");
         addImages();
         panel.add(images);
+        JPanel pen = new JPanel();
 
         GridBagConstraints gb = Utilities.getGBC(0, 2, 1, 1);
-
-        panel.add(addStatus(), gb);
-        gb = Utilities.getGBC(0, 3, 1, 1);
-
-        final JCheckBox ground = new JCheckBox(foreground ? "foreground" : "background", foreground);
-        ground.addActionListener(new ActionListener() {
-
-            public void actionPerformed(ActionEvent e) {
-                foreground = !foreground;
-                ground.setText(foreground ? "foreground" : "background");
-            }
-        });
-        gb.anchor = GridBagConstraints.WEST;
-        panel.add(ground, gb);
-
-        final JCheckBox addb = new JCheckBox(add ? "add" : "remove", foreground);
-        addb.addActionListener(new ActionListener() {
-
-            public void actionPerformed(ActionEvent e) {
-                add = !add;
-                addb.setText(add ? "add" : "remove");
-            }
-        });
-        gb.anchor = GridBagConstraints.CENTER;
-        panel.add(addb, gb);
-
-        final JSpinner tolleranceSP = new JSpinner(new SpinnerNumberModel(tollerance, 0, 255, 1));
-        tolleranceSP.setToolTipText("Threshold");
-        tolleranceSP.addChangeListener(new ChangeListener() {
-
-            public void stateChanged(ChangeEvent e) {
-                tollerance = (Integer) tolleranceSP.getValue();
-            }
-        });
-        gb.anchor = GridBagConstraints.EAST;
-        panel.add(tolleranceSP, gb);
-
+        pen.add(addStatus());
+        pen.add(getTools());
+        panel.add(pen, gb);
         gb = Utilities.getGBC(0, 4, 1, 1);
 
         back = new JButton("back");
@@ -297,8 +418,21 @@ public class ChooseC extends BasicWindow {
                 goBack();
             }
         });
+        Box box = new Box(BoxLayout.X_AXIS);
+        box.add(back);
+        Component glue = Box.createGlue();
+        glue.setSize(10, 1);
+        box.add(glue);
+        JButton btf = new JButton("Finish");
+        btf.addActionListener(new ActionListener() {
+
+            public void actionPerformed(ActionEvent e) {
+                destroy();
+            }
+        });
+        box.add(btf);
         gb.anchor = GridBagConstraints.WEST;
-        panel.add(back, gb);
+        panel.add(box, gb);
 
         JButton bt = new JButton("OK");
         bt.addActionListener(new ActionListener() {
@@ -359,7 +493,7 @@ public class ChooseC extends BasicWindow {
             lastCC = cc;
             if (cc.close) break;
         }
-        saveColors(c, file);
+        if (JOptionPane.showConfirmDialog(null, "Save?", "Save?", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) saveColors(c, file);
         return c;
     }
 

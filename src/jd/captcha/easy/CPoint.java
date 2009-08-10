@@ -68,7 +68,7 @@ public class CPoint extends Point implements Serializable {
 			dst=Colors.getRGBColorDifference2(color, this.color);
 			break;
 		case HUE_DIFFERENCE:
-			dst=Colors.getHueColorDifference(color, this.color);
+			dst=Colors.getHueColorDifference360(color, this.color);
 			break;
 		case SATURATION_DIFFERENCE:
 			dst=Colors.getSaturationColorDifference(color, this.color);
