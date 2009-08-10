@@ -324,17 +324,17 @@ public class ChooseC extends BasicWindow {
     private String getDigit(int i) {
         String ret = "";
         if (i < 10)
-            ret = "&nbsp;&nbsp;&nbsp;&nbsp;" + i;
+            ret = i+"&nbsp;&nbsp;&nbsp;&nbsp;";
         else if (i < 100)
-            ret = "&nbsp;&nbsp;" + i;
+            ret = i+"&nbsp;&nbsp;";
         else
             ret += i;
         return ret;
     }
 
-    private Box addStatus() {
-        Box box = new Box(BoxLayout.Y_AXIS);
-        colorImage = new BufferedImage(14, 14, BufferedImage.TYPE_INT_RGB);
+    private JPanel addStatus() {
+        JPanel box = new JPanel(new GridLayout(2, 1));
+        colorImage = new BufferedImage(28, 28, BufferedImage.TYPE_INT_RGB);
         icColorImage = new ImageComponent(colorImage);
         colorState = new JLabel();
         setStatus(1, 1);
@@ -344,7 +344,7 @@ public class ChooseC extends BasicWindow {
         return box;
     }
 
-    private JPanel getTools() {
+    private JPanel addSettings() {
         JPanel box = new JPanel(new GridLayout(4, 1));
         box.add(mode);
 
@@ -383,7 +383,7 @@ public class ChooseC extends BasicWindow {
         pen.add(tolleranceSP);
 
         box.add(pen);
-        box.setBorder(new TitledBorder("Tools:"));
+        box.setBorder(new TitledBorder("Settings:"));
 
         return box;
 
@@ -406,7 +406,7 @@ public class ChooseC extends BasicWindow {
 
         GridBagConstraints gb = Utilities.getGBC(0, 2, 1, 1);
         pen.add(addStatus());
-        pen.add(getTools());
+        pen.add(addSettings());
         panel.add(pen, gb);
         gb = Utilities.getGBC(0, 4, 1, 1);
 
@@ -479,6 +479,7 @@ public class ChooseC extends BasicWindow {
                 cc.foreground = lastCC.foreground;
                 cc.add = lastCC.add;
                 cc.tollerance = lastCC.tollerance;
+                cc.mode.setSelectedItem(lastCC.mode.getSelectedItem());
             }
             cc.ret = c;
             cc.init(captcha);

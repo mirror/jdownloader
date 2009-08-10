@@ -112,8 +112,8 @@ public class EasyCaptcha {
 				double bestDist2 = Double.MAX_VALUE;
 				CPoint cpBestDist2 = null;
 				for (CPoint cp : ret) {
-					double dist = Colors.getColorDifference(captcha
-							.getPixelValue(x, y), cp.getColor());
+                    double dist = cp.getColorDifference(captcha.getPixelValue(x, y));
+
 					if (bestDist1 > dist) {
 						bestDist1 = dist;
 						cpBestDist1 = cp;
