@@ -25,226 +25,205 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 
 public class LoadCaptchas extends BasicWindow {
-	/**
+    /**
 	 * 
 	 */
-	private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
-	private String[] getImages(Browser br) throws Exception {
-		ArrayList<String> ret = new ArrayList<String>();
-		Pattern[] basePattern = new Pattern[] {
-				Pattern
-						.compile(
-								"(?s)<[ ]?input[^>]*?type=.?image[^>]*?src=['|\"]?([^>\\s'\"]*)['|\">\\s]",
-								Pattern.CASE_INSENSITIVE),
-				Pattern.compile(
-						"(?s)<[ ]?IMG[^>]*?src=['|\"]?([^>\\s'\"]*)['|\">\\s]",
-						Pattern.CASE_INSENSITIVE) };
-		for (Pattern element : basePattern) {
-			Matcher m = element.matcher(br.toString().toLowerCase());
-			while (m.find()) {
-				try {
-					String src = m.group(1);
-					if (!src.startsWith("http")) {
-						if (src.charAt(0) == '/') {
-							src = "http://" + br.getHost() + src;
-						} else if (src.charAt(0) == '#') {
-							src = "http://" + br.getURL() + src;
-						} else {
-							src = br.getBaseURL() + src;
-						}
-					}
-					if (!ret.contains(src))
-						ret.add(src);
-				} catch (Exception e) {
-					// TODO: handle exception
-				}
+    private String[] getImages(Browser br) throws Exception {
+        ArrayList<String> ret = new ArrayList<String>();
+        Pattern[] basePattern = new Pattern[] { Pattern.compile("(?s)<[ ]?input[^>]*?type=.?image[^>]*?src=['|\"]?([^>\\s'\"]*)['|\">\\s]", Pattern.CASE_INSENSITIVE), Pattern.compile("(?s)<[ ]?IMG[^>]*?src=['|\"]?([^>\\s'\"]*)['|\">\\s]", Pattern.CASE_INSENSITIVE) };
+        for (Pattern element : basePattern) {
+            Matcher m = element.matcher(br.toString().toLowerCase());
+            while (m.find()) {
+                try {
+                    String src = m.group(1);
+                    if (!src.startsWith("http")) {
+                        if (src.charAt(0) == '/') {
+                            src = "http://" + br.getHost() + src;
+                        } else if (src.charAt(0) == '#') {
+                            src = "http://" + br.getURL() + src;
+                        } else {
+                            src = br.getBaseURL() + src;
+                        }
+                    }
+                    if (!ret.contains(src)) ret.add(src);
+                } catch (Exception e) {
+                    // TODO: handle exception
+                }
 
-			}
-		}
+            }
+        }
 
-		return ret.toArray(new String[] {});
-	}
-	private void openDir(String dir)
-	{
-		if(JOptionPane.showConfirmDialog(null, "Captcha Ordner:"+dir+" jetzt öffnen?")==JOptionPane.YES_OPTION)
-            JDUtilities.openExplorer(new File(dir));
+        return ret.toArray(new String[] {});
+    }
 
-	}
-	public LoadCaptchas() throws Exception {
-		super();
-		final String link = JOptionPane.showInputDialog("Bitte Link eingeben:");
-		final int menge = Integer.parseInt(JOptionPane.showInputDialog(
-				"Wieviele Captchas sollen heruntergeladen werden:", "500"));
+    private void openDir(String dir) {
+        if (JOptionPane.showConfirmDialog(null, "Captcha Ordner:" + dir + " jetzt öffnen?") == JOptionPane.YES_OPTION) JDUtilities.openExplorer(new File(dir));
 
+    }
 
-		final Browser br = new Browser();
-		br.getPage(link);
-		String host = br.getHost().toLowerCase();
-		if (host.matches(".*\\..*\\..*"))
-			host = host.substring(host.indexOf('.') + 1);
-		final String dir = JDUtilities.getJDHomeDirectoryFromEnvironment()
-		.getAbsolutePath()
-		+ "/captchas/" + host + "/";
-		new File(dir).mkdir();
-		String ct = br.getHttpConnection().getContentType().toLowerCase();
-		if(ct !=null && ct.contains("image"))
-		{
-			for (int k = 0; k < menge; k++) {
-				try {
-					String ft = ".jpg";
-					if (ct.equals("image/jpeg"))
-						ft = ".jpg";
-					else
-					{
-						ft=ct.replaceFirst("image/", ".");
-					}
-					File f2 = new File(dir
-							+ System.currentTimeMillis()
-							+ ft);
-					br.getDownload(f2, link);
+    public LoadCaptchas() throws Exception {
+        this(null);
+    }
 
-				} catch (Exception ev) {
-					// TODO Auto-generated catch block
-					ev.printStackTrace();
-				}
+    public LoadCaptchas(String host) throws Exception {
+        super();
+        final String link = JOptionPane.showInputDialog("Bitte Link eingeben:");
+        final int menge = Integer.parseInt(JOptionPane.showInputDialog("Wieviele Captchas sollen heruntergeladen werden:", "500"));
 
-			}
-			openDir(dir);
-			return;
-		}
-		this.setAlwaysOnTop(true);
-		JPanel panel = new JPanel();
+        final Browser br = new Browser();
+        br.getPage(link);
+        if(host==null)
+        {
+        host = br.getHost().toLowerCase();
+        if (host.matches(".*\\..*\\..*")) host = host.substring(host.indexOf('.') + 1);
+        }
+        final String dir = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/captchas/" + host + "/";
+        new File(dir).mkdir();
+        String ct = br.getHttpConnection().getContentType().toLowerCase();
+        if (ct != null && ct.contains("image")) {
+            for (int k = 0; k < menge; k++) {
+                try {
+                    String ft = ".jpg";
+                    if (ct.equals("image/jpeg"))
+                        ft = ".jpg";
+                    else {
+                        ft = ct.replaceFirst("image/", ".");
+                    }
+                    File f2 = new File(dir + System.currentTimeMillis() + ft);
+                    br.getDownload(f2, link);
 
-		setLayout(new BorderLayout());
-		add(new JScrollPane(panel), BorderLayout.CENTER);
-		setLocation(0, 0);
-		setTitle("Klicken sie auf das Captcha");
+                } catch (Exception ev) {
+                    // TODO Auto-generated catch block
+                    ev.printStackTrace();
+                }
 
-		final String[] images = getImages(br);
-		panel.setLayout(new GridLayout(images.length / 5 + 1, 5));
-		final File[] files = new File[images.length];
-		for (int j = 0; j < images.length; j++) {
-			final int i = j;
-			String ft = ".jpg";
-			if (images[i].toLowerCase().contains("png"))
-				ft = ".png";
-			else if (images[i].toLowerCase().contains("gif"))
-				ft = ".gif";
-			else
-			{
-				br.getPage(images[i]);
-				ct = br.getHttpConnection().getContentType().toLowerCase();
-				if(ct !=null && ct.contains("image"))
-				{
-					if (ct.equals("image/jpeg"))
-						ft = ".jpg";
-					else
-					{
-						ft=ct.replaceFirst("image/", ".");
-					}
-				}
-			}
-			final String filetype = ft;
-			final File f = new File(dir, System.currentTimeMillis() + filetype);
-			files[i] = f;
-			try {
-				br.getDownload(f, images[i]);
-			} catch (Exception e) {
-				f.delete();
-				continue;
-			}
-			Image captchaImage = Utilities.loadImage(f);
-			int area = captchaImage.getHeight(null)
-					* captchaImage.getHeight(null);
-			if (area < 50 || area > 50000 || captchaImage.getHeight(null) > 400
-					|| captchaImage.getWidth(null) > 400) {
-				f.delete();
+            }
+            openDir(dir);
+            return;
+        }
+        this.setAlwaysOnTop(true);
+        JPanel panel = new JPanel();
 
-				continue;
-			}
-			ImageComponent ic0 = new ImageComponent(captchaImage);
+        setLayout(new BorderLayout());
+        add(new JScrollPane(panel), BorderLayout.CENTER);
+        setLocation(0, 0);
+        setTitle("Klicken sie auf das Captcha");
 
-			panel.add(ic0);
-			ic0.addMouseListener(new MouseListener() {
+        final String[] images = getImages(br);
+        panel.setLayout(new GridLayout(images.length / 5 + 1, 5));
+        final File[] files = new File[images.length];
+        for (int j = 0; j < images.length; j++) {
+            final int i = j;
+            String ft = ".jpg";
+            if (images[i].toLowerCase().contains("png"))
+                ft = ".png";
+            else if (images[i].toLowerCase().contains("gif"))
+                ft = ".gif";
+            else {
+                br.getPage(images[i]);
+                ct = br.getHttpConnection().getContentType().toLowerCase();
+                if (ct != null && ct.contains("image")) {
+                    if (ct.equals("image/jpeg"))
+                        ft = ".jpg";
+                    else {
+                        ft = ct.replaceFirst("image/", ".");
+                    }
+                }
+            }
+            final String filetype = ft;
+            final File f = new File(dir, System.currentTimeMillis() + filetype);
+            files[i] = f;
+            try {
+                br.getDownload(f, images[i]);
+            } catch (Exception e) {
+                f.delete();
+                continue;
+            }
+            Image captchaImage = Utilities.loadImage(f);
+            int area = captchaImage.getHeight(null) * captchaImage.getHeight(null);
+            if (area < 50 || area > 50000 || captchaImage.getHeight(null) > 400 || captchaImage.getWidth(null) > 400) {
+                f.delete();
 
-				public void mouseClicked(MouseEvent e) {
-					destroy();
-					try {
-						Browser brss = br.cloneBrowser();
-						brss.getPage(link);
-						String[] im = getImages(brss);
-						File f2 = new File(dir + System.currentTimeMillis()
-								+ filetype);
-						br.getDownload(f2, im[i]);
-						for (File file : files) {
-							if (!file.equals(f))
-								file.deleteOnExit();
-						}
-						if (im[i].equals(images[i])) {
-							for (int k = 0; k < menge - 2; k++) {
-								final Browser brs = br.cloneBrowser();
-								try {
-									f2 = new File(dir
-											+ System.currentTimeMillis()
-											+ filetype);
-									brs.getDownload(f2, images[i]);
+                continue;
+            }
+            ImageComponent ic0 = new ImageComponent(captchaImage);
 
-								} catch (Exception ev) {
-									// TODO Auto-generated catch block
-									ev.printStackTrace();
-								}
+            panel.add(ic0);
+            ic0.addMouseListener(new MouseListener() {
 
-							}
-						} else {
-							for (int k = 0; k < menge - 2; k++) {
+                public void mouseClicked(MouseEvent e) {
+                    destroy();
+                    try {
+                        Browser brss = br.cloneBrowser();
+                        brss.getPage(link);
+                        String[] im = getImages(brss);
+                        File f2 = new File(dir + System.currentTimeMillis() + filetype);
+                        br.getDownload(f2, im[i]);
+                        for (File file : files) {
+                            if (!file.equals(f)) file.deleteOnExit();
+                        }
+                        if (im[i].equals(images[i])) {
+                            for (int k = 0; k < menge - 2; k++) {
+                                final Browser brs = br.cloneBrowser();
+                                try {
+                                    f2 = new File(dir + System.currentTimeMillis() + filetype);
+                                    brs.getDownload(f2, images[i]);
 
-								final Browser brs = br.cloneBrowser();
+                                } catch (Exception ev) {
+                                    // TODO Auto-generated catch block
+                                    ev.printStackTrace();
+                                }
 
-								brs.getPage(link);
+                            }
+                        } else {
+                            for (int k = 0; k < menge - 2; k++) {
 
-								try {
-									f2 = new File(dir
-											+ System.currentTimeMillis()
-											+ filetype);
+                                final Browser brs = br.cloneBrowser();
 
-									brs.getDownload(f2, getImages(brs)[i]);
+                                brs.getPage(link);
 
-								} catch (Exception ev) {
-									// TODO Auto-generated catch block
-									ev.printStackTrace();
-								}
+                                try {
+                                    f2 = new File(dir + System.currentTimeMillis() + filetype);
 
-							}
-						}
-					} catch (Exception e1) {
-						// TODO Auto-generated catch block
-						e1.printStackTrace();
-					}
-					openDir(dir);
-				}
+                                    brs.getDownload(f2, getImages(brs)[i]);
 
-				public void mouseEntered(MouseEvent e) {
-				}
+                                } catch (Exception ev) {
+                                    // TODO Auto-generated catch block
+                                    ev.printStackTrace();
+                                }
 
-				public void mouseExited(MouseEvent e) {
-				}
+                            }
+                        }
+                    } catch (Exception e1) {
+                        // TODO Auto-generated catch block
+                        e1.printStackTrace();
+                    }
+                    openDir(dir);
+                }
 
-				public void mousePressed(MouseEvent e) {
-				}
+                public void mouseEntered(MouseEvent e) {
+                }
 
-				public void mouseReleased(MouseEvent e) {
-				}
-			});
-		}
+                public void mouseExited(MouseEvent e) {
+                }
 
-		this.pack();
+                public void mousePressed(MouseEvent e) {
+                }
 
-		setVisible(true);
-	}
+                public void mouseReleased(MouseEvent e) {
+                }
+            });
+        }
 
-	public static void main(String[] args) throws Exception {
+        this.pack();
 
-		new LoadCaptchas();
-	}
+        setVisible(true);
+    }
+
+    public static void main(String[] args) throws Exception {
+
+        new LoadCaptchas();
+    }
 }

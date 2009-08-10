@@ -55,14 +55,14 @@ public class ChooseC extends BasicWindow {
     private Vector<CPoint> ret = new Vector<CPoint>(), lastRet = new Vector<CPoint>();
     private int tollerance = 25;
     protected Captcha captcha;
-    private boolean foreground = true, add = true, close = true;
+    private boolean foreground = true, add = true, close = true, fastSelection = false;
     public int zoom = 400;
     protected Captcha captchaImage, lastCaptcha;
     JButton back;
     BufferedImage colorImage;
     private JLabel colorState;
     private int foregroundColor1 = 0xff00ff, foregroundColor2 = 0xFF99FF, backgroundColor1 = 0x0000ff, backgroundColor2 = 0x00ffff;
-
+    
     class ColorMode {
         short mode;
         String modeString;
@@ -89,7 +89,8 @@ public class ChooseC extends BasicWindow {
     private void removePixelAbsolut(CPoint cp) {
         backUP();
         ret.remove(cp);
-
+        if(fastSelection)
+        {
         for (int x = 0; x < captchaImage.getWidth(); x++) {
             for (int y = 0; y < captchaImage.getHeight(); y++) {
                 double dist = Colors.getColorDifference(captcha.getPixelValue(x, y), cp.getColor());
@@ -99,6 +100,11 @@ public class ChooseC extends BasicWindow {
 
             }
 
+        }
+        }
+        else
+        {
+            paintImage();
         }
     }
 
@@ -157,6 +163,8 @@ public class ChooseC extends BasicWindow {
         if (!ret.contains(p)) {
             backUP();
             ret.add(p);
+            if(fastSelection)
+            {
             for (int x = 0; x < captchaImage.getWidth(); x++) {
                 for (int y = 0; y < captchaImage.getHeight(); y++) {
                     captchaImage.grid[x][y] = captchaImage.getPixelValue(x, y);
@@ -166,6 +174,11 @@ public class ChooseC extends BasicWindow {
 
                 }
 
+            }
+            }
+            else
+            {
+                paintImage();
             }
             ic.image = captchaImage.getImage().getScaledInstance(captchaImage.getWidth() * zoom / 100, captchaImage.getHeight() * zoom / 100, Image.SCALE_DEFAULT);
             panel.repaint();
@@ -200,12 +213,8 @@ public class ChooseC extends BasicWindow {
             }
         };
     }
-
-    private void createIc() {
-        captchaImage = new Captcha(captcha.getWidth(), captcha.getHeight());
-
-        captchaImage.grid = new int[captcha.getWidth()][captcha.getHeight()];
-
+    private void paintImage()
+    {
         for (int x = 0; x < captchaImage.getWidth(); x++) {
             for (int y = 0; y < captchaImage.getHeight(); y++) {
                 captchaImage.grid[x][y] = captcha.getPixelValue(x, y);
@@ -235,6 +244,13 @@ public class ChooseC extends BasicWindow {
             }
 
         }
+    }
+    private void createIc() {
+        captchaImage = new Captcha(captcha.getWidth(), captcha.getHeight());
+
+        captchaImage.grid = new int[captcha.getWidth()][captcha.getHeight()];
+
+        paintImage();
 
         ic = new ImageComponent(captchaImage.getImage().getScaledInstance(captchaImage.getWidth() * zoom / 100, captchaImage.getHeight() * zoom / 100, Image.SCALE_DEFAULT));
         images.add(ic, getGBC(0, 2, 1, 1));
@@ -345,7 +361,7 @@ public class ChooseC extends BasicWindow {
     }
 
     private JPanel addSettings() {
-        JPanel box = new JPanel(new GridLayout(4, 1));
+        JPanel box = new JPanel(new GridLayout(5, 1));
         box.add(mode);
 
         final JCheckBox ground = new JCheckBox(foreground ? "foreground" : "background", foreground);
@@ -356,7 +372,6 @@ public class ChooseC extends BasicWindow {
                 ground.setText(foreground ? "foreground" : "background");
             }
         });
-        box.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         box.add(ground);
         final JCheckBox addb = new JCheckBox(add ? "add" : "remove", foreground);
@@ -367,8 +382,16 @@ public class ChooseC extends BasicWindow {
                 addb.setText(add ? "add" : "remove");
             }
         });
-
         box.add(addb);
+
+        JCheckBox fst = new JCheckBox("Fast selection", fastSelection);
+        fst.addActionListener(new ActionListener() {
+
+            public void actionPerformed(ActionEvent e) {
+                fastSelection = !fastSelection;
+            }
+        });
+        box.add(fst);
 
         JPanel pen = new JPanel();
         final JSpinner tolleranceSP = new JSpinner(new SpinnerNumberModel(tollerance, 0, 360, 1));
@@ -476,6 +499,7 @@ public class ChooseC extends BasicWindow {
             cs[i] = captcha;
             ChooseC cc = new ChooseC();
             if (lastCC != null) {
+                cc.fastSelection = lastCC.fastSelection;
                 cc.foreground = lastCC.foreground;
                 cc.add = lastCC.add;
                 cc.tollerance = lastCC.tollerance;
