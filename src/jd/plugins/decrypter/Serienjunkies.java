@@ -435,7 +435,6 @@ public class Serienjunkies extends PluginForDecrypt {
 				if (captchaRegex.matches()) {
 					String captchaAdress = "http://"+br3.getHost()
 							+ captchaRegex.getMatch(1);
-					System.out.println(captchaAdress);
 					captchaFile = getLocalCaptchaFile(".png");
 					try {
 						Browser.download(captchaFile, captchaAdress);
