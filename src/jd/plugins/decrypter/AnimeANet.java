@@ -22,23 +22,32 @@ import jd.PluginPattern;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
+// new DecryptPluginWrapper("animea.net", "AnimeANet",
+// PluginPattern.DECRYPTER_ANIMEANET_PLUGIN);
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {"animea.net"}, urls = {"http://[\\w\\.]*?animea\\.net/download/[\\d]+/(.*?)\\.html|http://[\\w\\.]*?animea\\.net/download/[\\d]+-[\\d]+/(.*?)\\.html"}, flags = {0})
 public class AnimeANet extends PluginForDecrypt {
+
+
+
+    static public final String DECRYPTER_ANIMEANET_SERIES = "http://[\\w\\.]*?animea\\.net/download/[\\d]+/(.*?)\\.html";
+    
 
     public AnimeANet(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         parameter = parameter.replaceAll(" ", "+");
 
         br.getPage(parameter);
-        if (parameter.matches(PluginPattern.DECRYPTER_ANIMEANET_SERIES)) {
+        if (parameter.matches(DECRYPTER_ANIMEANET_SERIES)) {
             String[] links = br.getRegex("<a href=\"/download/(.*?)\\.html\"").getColumn(0);
             progress.setRange(links.length);
             for (String element : links) {
@@ -56,7 +65,6 @@ public class AnimeANet extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    //@Override
-    
+    // @Override
 
 }

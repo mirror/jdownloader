@@ -366,9 +366,34 @@ public class JDInit {
                             logger.warning("Outdated Plugin found: " + help);
                             continue;
                         }
-                        for (int i = 0; i < help.names().length; i++) {
+                        String[] names = help.names();
+                        String[] patterns = help.urls();
+                        int[] flags = help.flags();
+
+                        // See if there are cached annotations
+                        if (names.length == 0) {
+                            SubConfiguration cfg = SubConfiguration.getConfig("jd.JDInit.loadPluginForDecrypt");
+                            names = cfg.getGenericProperty(c.getName() + "_names_" + help.revision(), names);
+                            patterns = cfg.getGenericProperty(c.getName() + "_pattern_" + help.revision(), patterns);
+                            flags = cfg.getGenericProperty(c.getName() + "_flags_" + help.revision(), flags);
+                        }
+                        // if not, try to load them from static functions
+                        if (names.length == 0) {
+                            names = (String[]) c.getMethod("getAnnotationNames", new Class[] {}).invoke(null, new Object[] {});
+                            patterns = (String[]) c.getMethod("getAnnotationUrls", new Class[] {}).invoke(null, new Object[] {});
+                            flags = (int[]) c.getMethod("getAnnotationFlags", new Class[] {}).invoke(null, new Object[] {});
+                            SubConfiguration cfg = SubConfiguration.getConfig("jd.JDInit.loadPluginForDecrypt");
+                            cfg.setProperty(c.getName() + "_names_" + help.revision(), names);
+                            cfg.setProperty(c.getName() + "_pattern_" + help.revision(), patterns);
+                            cfg.setProperty(c.getName() + "_flags_" + help.revision(), flags);
+                            cfg.save();
+
+                        }
+                        for (int i = 0; i < names.length; i++) {
                             try {
-                                new DecryptPluginWrapper(help.names()[i], c.getSimpleName(), help.urls()[i], help.flags()[i], help.revision());
+
+                                new DecryptPluginWrapper(names[i], c.getSimpleName(), patterns[i], flags[i], help.revision());
+                                System.out.println("Add decrypter for " + help.names()[i]);
                             } catch (Throwable e) {
                                 JDLogger.exception(e);
                             }
@@ -382,28 +407,7 @@ public class JDInit {
             JDLogger.exception(e);
         }
 
-        //
-        // new DecryptPluginWrapper("animea.net", "AnimeANet",
-        // PluginPattern.DECRYPTER_ANIMEANET_PLUGIN);
-        //       
-        // new DecryptPluginWrapper("ddl-music.org", "DDLMusicOrg",
-        // PluginPattern.DECRYPTER_DDLMSC_PLUGIN);
-        //
-        // new DecryptPluginWrapper("3dl.am", "DreiDlAm",
-        // PluginPattern.DECRYPTER_3DLAM_PLUGIN);
-        // new DecryptPluginWrapper("Redirect Services", "Redirecter",
-        // PluginPattern.decrypterPattern_Redirecter_Plugin());
-        //       
-        // new DecryptPluginWrapper("Underground CMS", "UCMS",
-        // PluginPattern.decrypterPattern_UCMS_Plugin());
-        //        
-        // new DecryptPluginWrapper("urlcash.net", "URLCash",
-        // "(http://[\\w\\.]*?" + PluginPattern.URLCASH +
-        // "/.+)|(http://[\\w\\-]{5,16}\\." + PluginPattern.URLCASH + ")");
-        //       
-        // new DecryptPluginWrapper("Wordpress Parser", "Wordpress",
-        // PluginPattern.decrypterPattern_Wordpress_Plugin());
-
+      
     }
 
     /**

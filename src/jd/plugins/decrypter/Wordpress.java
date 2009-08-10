@@ -25,10 +25,66 @@ import jd.controlling.DistributeData;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {}, flags = {})
 public class Wordpress extends PluginForDecrypt {
+    /**
+     * Returns the annotations names array
+     * 
+     * @return
+     */
+    public static String[] getAnnotationNames() {
+        return new String[] { "Wordpress" };
+    }
+
+    /**
+     * returns the annotation pattern array
+     * 
+     * @return
+     */
+    public static String[] getAnnotationUrls() {
+
+        StringBuilder completePattern = new StringBuilder();
+        completePattern.append("http://[\\w\\.]*?(");
+        completePattern.append("(game-blog\\.us/game-.+\\.html)");
+        completePattern.append("|(cinetopia\\.ws/.*\\.html)");
+        completePattern.append("|(ladekabel\\.us/\\?p=\\d+.*)");
+        completePattern.append("|(load-it\\.biz/[^/]*/?)");
+        completePattern.append("|(guru-world\\.net/wordpress/\\d+.*)");
+        completePattern.append("|(klee\\.tv/blog/\\d+.*)");
+        completePattern.append("|(blogload\\.org/\\d+.*)");
+        completePattern.append("|(pressefreiheit\\.ws/[\\d]+/.+\\.html)");
+        completePattern.append("|(zeitungsjunge\\.info/.*?/.*?/.*?/)");
+        completePattern.append("|(serien-blog\\.com/download/[\\d]+/.+\\.html)");
+        String[] listType1 = { "hd-area.org", "movie-blog.org", "doku.cc", "sound-blog.org" };
+        for (String pattern : listType1) {
+            completePattern.append("|(" + pattern.replaceAll("\\.", "\\\\.") + "/\\d{4}/\\d{2}/\\d{2}/.+)");
+        }
+        String[] listType2 = { "hoerbuch.in", "xxx-blog.org", "serien-blog.com" };
+        for (String pattern : listType2) {
+            completePattern.append("|(" + pattern.replaceAll("\\.", "\\\\.") + "/blog\\.php\\?id=[\\d]+)");
+        }
+        String[] listType3 = { "sky-porn.info/blog", "best-movies.us/enter", "ladekabel.us/enter" };
+        for (String pattern : listType3) {
+            completePattern.append("|(" + pattern.replaceAll("\\.", "\\\\.") + "/\\?p=[\\d]+)");
+        }
+        completePattern.append(")");
+        logger.finest("Wordpress: " + (12 + listType1.length + listType2.length + listType3.length) + " Pattern added!");
+        return new String[] { completePattern.toString() };
+    }
+
+    /**
+     * Returns the annotations flags array
+     * 
+     * @return
+     */
+    public static int[] getAnnotationFlags() {
+
+        return new int[] { 0 };
+    }
 
     private HashMap<String, String[]> defaultPasswords = new HashMap<String, String[]>();
 
@@ -86,5 +142,5 @@ public class Wordpress extends PluginForDecrypt {
     }
 
     // @Override
-    
+
 }

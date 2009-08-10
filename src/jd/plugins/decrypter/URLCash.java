@@ -24,10 +24,56 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bat5.com" }, urls = { "http://.+bat5\\.com"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = { "http://.+bat5\\.com" }, flags = { 0 })
+//        
+// new DecryptPluginWrapper("urlcash.net", "URLCash",
+// "(http://[\\w\\.]*?" + PluginPattern.URLCASH +
+// "/.+)|(http://[\\w\\-]{5,16}\\." + PluginPattern.URLCASH + ")");
+//       
 public class URLCash extends PluginForDecrypt {
+    private static final String[] ANNOTATION_NAMES = new String[] { "urlcash.net", "bat5.com", "sealed.in", "urlcash.org", "clb1.com", "urlgalleries.com", "celebclk.com", "smilinglinks\\.com", "peekatmygirlfriend.com", "looble.net" };
+
+    /**
+     * Returns the annotations names array
+     * 
+     * @return
+     */
+    public static String[] getAnnotationNames() {
+        return ANNOTATION_NAMES;
+    }
+
+    /**
+     * returns the annotation pattern array
+     * 
+     * @return
+     */
+    public static String[] getAnnotationUrls() {
+        String[] names = getAnnotationNames();
+        String[] ret = new String[names.length];
+
+        for (int i = 0; i < ret.length; i++) {
+            ret[i] = "(http://[\\w\\.]*?" + names[i].replaceAll("\\.", "\\\\.")+"/.+)|(http://[\\w\\-]{5,16}\\." + names[i].replaceAll("\\.", "\\\\.") + ")";
+                
+        }
+        return ret;
+    }
+
+    /**
+     * Returns the annotations flags array
+     * 
+     * @return
+     */
+    public static int[] getAnnotationFlags() {
+        String[] names = getAnnotationNames();
+        int[] ret = new int[names.length];
+
+        for (int i = 0; i < ret.length; i++) {
+            ret[i] = 0;
+
+        }
+        return ret;
+    }
 
     public URLCash(PluginWrapper wrapper) {
         super(wrapper);
@@ -49,5 +95,5 @@ public class URLCash extends PluginForDecrypt {
     }
 
     // @Override
-    
+
 }

@@ -29,13 +29,18 @@ import jd.parser.html.InputField;
 import jd.parser.html.Form.MethodType;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {"3dl.am"}, urls = {"http://[\\w\\.]*?3dl\\.am/link/[a-zA-Z0-9]+|http://[\\w\\.]*?3dl\\.am/download/start/[0-9]+/|http://[\\w\\.]*?3dl\\.am/download/[0-9]+/.+\\.html|http://[\\w\\.]*?3dl\\.am/\\?action=entrydetail&entry_id=[0-9]+"}, flags = {})
 public class DreiDlAm extends PluginForDecrypt {
     private String password;
     private CryptedLink link;
-
+    static public final String DECRYPTER_3DLAM_1 = "http://[\\w\\.]*?3dl\\.am/link/[a-zA-Z0-9]+";
+    static public final String DECRYPTER_3DLAM_2 = "http://[\\w\\.]*?3dl\\.am/download/start/[0-9]+/";
+    static public final String DECRYPTER_3DLAM_3 = "http://[\\w\\.]*?3dl\\.am/download/[0-9]+/.+\\.html";
+//    static public final String DECRYPTER_3DLAM_4 = "http://[\\w\\.]*?3dl\\.am/\\?action=entrydetail&entry_id=[0-9]+";
+ 
     public DreiDlAm(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -81,7 +86,7 @@ public class DreiDlAm extends PluginForDecrypt {
         ArrayList<String> linksReturn = new ArrayList<String>();
         if (parameter != null) br.getPage(parameter);
         if (br.containsHTML("/failed.html")) {
-            String url = br.getRegex(PluginPattern.DECRYPTER_3DLAM_3).getMatch(-1);
+            String url = br.getRegex(DECRYPTER_3DLAM_3).getMatch(-1);
             decryptFromDownload(url);
         }
         String[] links = br.getRegex(Pattern.compile("value=\"(http://.*?3dl\\.am/link/.*?/)\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
@@ -102,7 +107,7 @@ public class DreiDlAm extends PluginForDecrypt {
         br.postPage("http://3dl.am/?", "set_enter_ts=true");
         Thread.sleep(500);
         link = param;
-        if (new Regex(parameter, PluginPattern.DECRYPTER_3DLAM_2).matches()) {
+        if (new Regex(parameter, DECRYPTER_3DLAM_2).matches()) {
             ArrayList<String> links = decryptFromStart(parameter);
             progress.setRange(links.size());
             for (int i = 0; i < links.size(); i++) {
@@ -112,7 +117,7 @@ public class DreiDlAm extends PluginForDecrypt {
                 dl_link.addSourcePluginPassword(password);
                 decryptedLinks.add(dl_link);
             }
-        } else if (new Regex(parameter, PluginPattern.DECRYPTER_3DLAM_1).matches()) {
+        } else if (new Regex(parameter, DECRYPTER_3DLAM_1).matches()) {
             progress.setRange(1);
             String link = decryptFromLink(parameter);
             decryptedLinks.add(createDownloadlink(link));

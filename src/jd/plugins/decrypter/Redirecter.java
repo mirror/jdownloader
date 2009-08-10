@@ -22,10 +22,42 @@ import jd.controlling.ProgressController;
 import jd.gui.UserIO;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {}, flags = {})
 public class Redirecter extends PluginForDecrypt {
+/**
+* Returns the annotations names array
+* @return
+*/
+public static String[] getAnnotationNames() {
+    return new String[]{"Redirecter Service"};
+}
+/**
+* returns the annotation pattern array
+* @return
+*/
+public static String[] getAnnotationUrls() {
+    StringBuilder completePattern = new StringBuilder();
+    String[] list = { "http://[\\w\\.]*?readthis\\.ca(/[a-zA-Z0-9]+)?", "http://[\\w\\.]*?redirects\\.ca(/[a-zA-Z0-9]+)?", "http://[\\w\\.]*?goshrink\\.com(/[a-zA-Z0-9]+)?", "http://[\\w\\.]*?clickthru\\.ca(/[a-zA-Z0-9]+)?", "http://[\\w\\.]*?atu\\.ca(/[a-zA-Z0-9]+)?", "http://[\\w\\.]*?easyurl\\.net(/[a-zA-Z0-9]+)?", "http://[\\w\\.]*?fyad\\.org(/[a-zA-Z0-9]+)?", "http://[\\w\\.]*?is\\.gd(/[a-zA-Z0-9]+)?", "http://[\\w\\.]*?redirect\\.wayaround\\.org/[a-zA-Z0-9]+/(.*)", "http://[\\w\\.]*?rurl\\.org(/[a-zA-Z0-9]+)?", "http://[\\w\\.]*?tinyurl\\.com/[a-zA-Z0-9\\-]+", "http://[\\w\\.]*?smarturl\\.eu/\\?[a-zA-Z0-9]+", "http://[\\w\\.]*?linkmize\\.com(/[a-zA-Z0-9]+)?", "http://go2\\.u6e\\.de/[a-zA-Z0-9]+", "http://[\\w\\.]*?shrinkify\\.com/[a-zA-Z0-9]+", "http://[\\w\\.]*?s7y\\.com/[a-zA-Z0-9]+", "http://[\\w\\.]*?rln\\.me/[0-9a-zA-Z]+", "http://[\\w\\.]*?sp2\\.ro/[0-9a-zA-Z]+",
+            "http://[\\w\\.]*?s7y.us/[a-zA-Z0-9]+", "http://[\\w\\.]*?ow\\.ly/[\\w]+", "http://[\\w\\.]*?bit\\.ly/[\\w]+", "http://[\\w\\.]*?ponyurl\\.com/[\\w]+", "http://skracaj.org/[\\w]+", "http://l-x.pl/[\\w]+", "http://[\\w\\.]*?budurl.com/[a-zA-Z0-9]+" };
+    for (String pattern : list) {
+        if (completePattern.length() > 0) {
+            completePattern.append("|");
+        }
+        completePattern.append(pattern);
+    }
+    logger.finest("Redirecter: " + list.length + " Pattern added!");
+    return new String[]{completePattern.toString()};
+}
+/**
+* Returns the annotations flags array
+* @return
+*/
+public static int[] getAnnotationFlags() {  
+    return new int[]{0};
+}
 
     public Redirecter(PluginWrapper wrapper) {
         super(wrapper);
