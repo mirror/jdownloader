@@ -25,12 +25,12 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 
-public class RemoveFailedAction extends MenuAction {
+public class RemoveOfflineAction extends MenuAction {
 
-    private static final long serialVersionUID = -5425871515927494136L;
+    private static final long serialVersionUID = -5335194420202699757L;
 
-    public RemoveFailedAction() {
-        super("action.remove_failed", "gui.images.remove_failed");
+    public RemoveOfflineAction() {
+        super("action.remove_offline", "gui.images.remove_failed");
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -40,7 +40,7 @@ public class RemoveFailedAction extends MenuAction {
             for (FilePackage fp : dlc.getPackages()) {
                 synchronized (fp.getDownloadLinkList()) {
                     for (DownloadLink dl : fp.getDownloadLinkList()) {
-                        if (dl.getLinkStatus().isFailed()) downloadstodelete.add(dl);
+                        if (dl.getLinkStatus().hasStatus(LinkStatus.ERROR_FILE_NOT_FOUND)) downloadstodelete.add(dl);
                     }
                 }
             }
@@ -49,5 +49,4 @@ public class RemoveFailedAction extends MenuAction {
             dl.getFilePackage().remove(dl);
         }
     }
-
 }

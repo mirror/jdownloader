@@ -20,6 +20,8 @@ import jd.gui.swing.jdgui.menu.actions.CleanupDownloads;
 import jd.gui.swing.jdgui.menu.actions.CleanupPackages;
 import jd.gui.swing.jdgui.menu.actions.RemoveDisabledAction;
 import jd.gui.swing.jdgui.menu.actions.RemoveDupesAction;
+import jd.gui.swing.jdgui.menu.actions.RemoveFailedAction;
+import jd.gui.swing.jdgui.menu.actions.RemoveOfflineAction;
 
 public class CleanupMenu extends JStartMenu {
 
@@ -32,6 +34,8 @@ public class CleanupMenu extends JStartMenu {
         this.add(new CleanupPackages());
         this.add(new RemoveDupesAction());
         this.add(new RemoveDisabledAction());
+        this.add(new RemoveOfflineAction());
+        this.add(new RemoveFailedAction());
     }
 
 }
