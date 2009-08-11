@@ -40,7 +40,7 @@ import jd.controlling.JDLogger;
 import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlListener;
 import jd.gui.UserIO;
-import jd.http.Encoding;
+import jd.nutils.encoding.Encoding;
 import jd.http.IPCheck;
 import jd.nutils.Formatter;
 import jd.nutils.httpserver.Handler;

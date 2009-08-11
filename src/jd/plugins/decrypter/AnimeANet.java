@@ -18,7 +18,6 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;

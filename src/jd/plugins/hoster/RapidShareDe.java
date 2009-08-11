@@ -21,7 +21,7 @@ import java.net.URI;
 
 import jd.PluginWrapper;
 import jd.http.Cookie;
-import jd.http.Encoding;
+import jd.nutils.encoding.Encoding;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.GetRequest;
 import jd.http.requests.PostRequest;

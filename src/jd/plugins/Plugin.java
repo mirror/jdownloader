@@ -36,7 +36,7 @@ import jd.event.ControlEvent;
 import jd.gui.swing.components.ConvertDialog;
 import jd.gui.swing.components.ConvertDialog.ConversionMode;
 import jd.http.Browser;
-import jd.http.Encoding;
+import jd.nutils.encoding.Encoding;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.Formatter;
 import jd.parser.Regex;

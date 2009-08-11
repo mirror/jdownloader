@@ -22,7 +22,7 @@ import java.net.URLEncoder;
 
 import jd.controlling.JDLogger;
 import jd.http.Browser;
-import jd.http.Encoding;
+import jd.nutils.encoding.Encoding;
 import jd.http.requests.FormData;
 import jd.http.requests.PostFormDataRequest;
 import jd.nutils.JDHash;

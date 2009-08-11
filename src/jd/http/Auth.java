@@ -16,6 +16,8 @@
 
 package jd.http;
 
+import jd.nutils.encoding.Encoding;
+
 public class Auth {
 
     @SuppressWarnings("unused")

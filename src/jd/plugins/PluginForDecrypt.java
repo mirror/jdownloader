@@ -35,7 +35,7 @@ import jd.event.ControlEvent;
 import jd.gui.UserIO;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.http.Browser;
-import jd.http.Encoding;
+import jd.nutils.encoding.Encoding;
 import jd.nutils.Formatter;
 import jd.nutils.JDFlags;
 import jd.nutils.jobber.JDRunnable;

@@ -21,7 +21,7 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.controlling.HTACCESSController;
 import jd.controlling.ListController;
-import jd.http.Encoding;
+import jd.nutils.encoding.Encoding;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;

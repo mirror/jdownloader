@@ -34,6 +34,7 @@ import java.util.Map.Entry;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 
 public abstract class Request {

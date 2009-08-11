@@ -47,7 +47,7 @@ import jd.gui.UserIF;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.http.Browser;
-import jd.http.Encoding;
+import jd.nutils.encoding.Encoding;
 import jd.nutils.Formatter;
 import jd.nutils.JDImage;
 import jd.parser.Regex;

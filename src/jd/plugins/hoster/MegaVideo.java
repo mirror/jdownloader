@@ -7,7 +7,7 @@ import java.util.LinkedList;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.Encoding;
+import jd.nutils.encoding.Encoding;
 import jd.http.Request;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;

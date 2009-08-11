@@ -20,7 +20,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
 
-import jd.http.Encoding;
+import jd.nutils.encoding.Encoding;
 
 public class JDSimpleWebserverResponseCreator {
 

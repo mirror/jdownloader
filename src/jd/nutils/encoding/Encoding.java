@@ -14,16 +14,14 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.http;
+package jd.nutils.encoding;
 
-import java.io.IOException;
+
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 
 import jd.controlling.JDLogger;
-import sun.misc.BASE64Decoder;
-import sun.misc.BASE64Encoder;
 
 public class Encoding {
 
@@ -190,10 +188,11 @@ public class Encoding {
     public static String Base64Decode(String base64) {
         if (base64 == null) { return null; }
         try {
-            byte[] plain = new BASE64Decoder().decodeBuffer(base64);
+            
+            byte[] plain = Base64.decode(base64);
             if (Encoding.filterString(new String(plain)).length() < plain.length / 1.5) { return base64; }
             return new String(plain);
-        } catch (IOException e) {
+        } catch (Exception e) {
             return base64;
         }
     }
@@ -201,9 +200,10 @@ public class Encoding {
     public static String Base64Encode(String plain) {
 
         if (plain == null) { return null; }
-        String base64 = new BASE64Encoder().encode(plain.getBytes());
-        base64 = Encoding.filterString(base64, "qwertzuiopasdfghjklyxcvbnmMNBVCXYASDFGHJKLPOIUZTREWQ1234567890=/");
-
+        
+        
+//        String base64 = new BASE64Encoder().encode(plain.getBytes());
+      String  base64 = new String(Base64.encodeToByte(plain.getBytes(), false));
         return base64;
     }
 

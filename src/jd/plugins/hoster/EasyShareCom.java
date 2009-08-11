@@ -23,7 +23,7 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.http.Cookie;
 import jd.http.Cookies;
-import jd.http.Encoding;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;

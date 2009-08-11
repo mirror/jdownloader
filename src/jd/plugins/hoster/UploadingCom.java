@@ -21,7 +21,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.Encoding;
+import jd.nutils.encoding.Encoding;
 import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;

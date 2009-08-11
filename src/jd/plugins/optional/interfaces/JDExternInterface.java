@@ -12,7 +12,7 @@ import jd.controlling.JDLogger;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.PasswordListController;
 import jd.gui.UserIO;
-import jd.http.Encoding;
+import jd.nutils.encoding.Encoding;
 import jd.nutils.JDFlags;
 import jd.nutils.httpserver.Handler;
 import jd.nutils.httpserver.HttpServer;

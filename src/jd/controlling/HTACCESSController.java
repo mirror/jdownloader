@@ -24,7 +24,7 @@ import javax.swing.Timer;
 
 import jd.config.SubConfiguration;
 import jd.http.Browser;
-import jd.http.Encoding;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 
 public class HTACCESSController implements ActionListener, ListController {

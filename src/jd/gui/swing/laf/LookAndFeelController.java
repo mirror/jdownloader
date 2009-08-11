@@ -292,9 +292,9 @@ public class LookAndFeelController {
         UIManager.put("Synthetica.window.decoration", windowDeco);
         JFrame.setDefaultLookAndFeelDecorated(windowDeco);
         JDialog.setDefaultLookAndFeelDecorated(windowDeco);
-        if (className.equalsIgnoreCase("de.javasoft.plaf.synthetica.SyntheticaStandardLookAndFeel")) {
-            UIManager.put("Synthetica.window.decoration", false);
-        }
+//        if (className.equalsIgnoreCase("de.javasoft.plaf.synthetica.SyntheticaStandardLookAndFeel")) {
+//            UIManager.put("Synthetica.window.decoration", false);
+//        }
     }
 
     /**

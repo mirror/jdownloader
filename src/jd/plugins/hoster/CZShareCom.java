@@ -20,7 +20,7 @@ import java.io.IOException;
 import java.util.Locale;
 
 import jd.PluginWrapper;
-import jd.http.Encoding;
+import jd.nutils.encoding.Encoding;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.parser.html.Form;

@@ -46,7 +46,7 @@ import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.gui.swing.jdgui.events.EDTEventQueue;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.http.Browser;
-import jd.http.Encoding;
+import jd.nutils.encoding.Encoding;
 import jd.http.JDProxy;
 import jd.nutils.ClassFinder;
 import jd.nutils.JDFlags;

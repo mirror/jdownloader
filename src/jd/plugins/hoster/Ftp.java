@@ -21,7 +21,7 @@ import java.io.IOException;
 import java.net.URL;
 
 import jd.PluginWrapper;
-import jd.http.Encoding;
+import jd.nutils.encoding.Encoding;
 import jd.nutils.FtpEvent;
 import jd.nutils.FtpListener;
 import jd.nutils.JDHash;

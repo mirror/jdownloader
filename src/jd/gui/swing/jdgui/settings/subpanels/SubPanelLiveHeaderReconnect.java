@@ -51,7 +51,7 @@ import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.settings.ConfigPanel;
 import jd.gui.swing.jdgui.settings.GUIConfigEntry;
-import jd.http.Encoding;
+import jd.nutils.encoding.Encoding;
 import jd.router.FindRouterIP;
 import jd.router.GetRouterInfo;
 import jd.router.reconnectrecorder.Gui;

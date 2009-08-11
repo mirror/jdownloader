@@ -25,7 +25,7 @@ import java.util.Locale;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.Encoding;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;

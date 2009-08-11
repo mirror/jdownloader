@@ -32,7 +32,7 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.http.Browser;
-import jd.http.Encoding;
+import jd.nutils.encoding.Encoding;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.http.Browser.BrowserException;

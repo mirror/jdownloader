@@ -1,4 +1,4 @@
-package jd.http;
+package jd.nutils.encoding;
 
 import java.util.Hashtable;
 

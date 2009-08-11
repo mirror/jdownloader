@@ -19,7 +19,7 @@ package jd.parser.html;
 import java.io.File;
 
 import jd.config.Property;
-import jd.http.Encoding;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 
 public class InputField extends Property {

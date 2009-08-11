@@ -32,7 +32,7 @@ import javax.swing.JComponent;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.http.Browser;
-import jd.http.Encoding;
+import jd.nutils.encoding.Encoding;
 import jd.nutils.io.JDFileFilter;
 import jd.utils.EditDistance;
 import jd.utils.JDGeoCode;

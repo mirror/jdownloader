@@ -43,7 +43,7 @@ import jd.controlling.ByteBufferEntry;
 import jd.controlling.JDLogger;
 import jd.controlling.SpeedMeter;
 import jd.http.Browser;
-import jd.http.Encoding;
+import jd.nutils.encoding.Encoding;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.PostRequest;

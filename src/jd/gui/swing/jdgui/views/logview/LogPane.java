@@ -43,7 +43,7 @@ import jd.gui.swing.components.JDFileChooser;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.info.LogInfoPanel;
-import jd.http.Encoding;
+import jd.nutils.encoding.Encoding;
 import jd.nutils.JDFlags;
 import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;

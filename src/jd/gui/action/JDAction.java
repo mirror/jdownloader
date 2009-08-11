@@ -200,7 +200,8 @@ public abstract class JDAction extends AbstractAction {
     public boolean isSelected() {
         Object value = getValue(SELECTED_KEY);
         if (value == null) {
-            putValue(SELECTED_KEY, false);
+            
+//            putValue(SELECTED_KEY, false);
             return false;
         }
         return (Boolean) value;

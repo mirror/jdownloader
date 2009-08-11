@@ -31,7 +31,7 @@ import jd.config.Configuration;
 import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.http.Encoding;
+import jd.nutils.encoding.Encoding;
 import jd.http.JDProxy;
 import jd.http.RequestHeader;
 import jd.nutils.Formatter;
@@ -47,7 +47,7 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import sun.misc.BASE64Encoder;
+
 
 /**
  * Diese Klasse kann mehrere HTTPrequests durchführen. Um damit einen reconnect
@@ -101,7 +101,7 @@ public class HTTPLiveHeader extends ReconnectMethod {
         variables = new HashMap<String, String>();
         variables.put("user", user);
         variables.put("pass", pass);
-        variables.put("basicauth", new BASE64Encoder().encode((user + ":" + pass).getBytes()));
+        variables.put("basicauth", Encoding.Base64Encode(user + ":" + pass));
         variables.put("routerip", ip);
         headerProperties = new HashMap<String, String>();
 
@@ -459,7 +459,7 @@ public class HTTPLiveHeader extends ReconnectMethod {
             } else if (fnc.equalsIgnoreCase("MD5")) {
                 ret = JDHash.getMD5(ret);
             } else if (fnc.equalsIgnoreCase("BASE64")) {
-                ret = new BASE64Encoder().encode(ret.getBytes());
+                ret = Encoding.Base64Encode(ret);
             }
         }
         return ret;

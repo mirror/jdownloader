@@ -38,7 +38,7 @@ import javax.net.ssl.TrustManagerFactory;
 
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
-import jd.http.Encoding;
+import jd.nutils.encoding.Encoding;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.utils.JDHexUtils;

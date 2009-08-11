@@ -31,7 +31,7 @@ import jd.controlling.JDLogger;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
-import jd.http.Encoding;
+import jd.nutils.encoding.Encoding;
 
 import org.lobobrowser.html.io.WritableLineReader;
 import org.lobobrowser.html.js.Executor;

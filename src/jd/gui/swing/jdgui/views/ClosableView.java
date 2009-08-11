@@ -6,10 +6,12 @@ import java.awt.event.ActionEvent;
 import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
+import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JMenuBar;
 import javax.swing.UIManager;
 
+import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.MainTabbedPane;
 import jd.gui.swing.jdgui.interfaces.View;
 import jd.utils.locale.JDL;
@@ -99,6 +101,21 @@ abstract public class ClosableView extends View {
         // TODO Auto-generated method stub
 
     }
+    /**
+     * CLoses this view
+     */
+    public void close(){
+        new GuiRunnable<Object>(){
+
+            @Override
+            public Object runSave() {
+                closeAction.actionPerformed(null);
+                return null;
+            }
+            
+        }.start();
+     
+    }
 
     public class CloseAction extends AbstractAction {
         /**
@@ -110,8 +127,8 @@ abstract public class ClosableView extends View {
 
             // this.putValue(AbstractAction.SMALL_ICON,
             // UIManager.getIcon("Synthetica.docking.titlebar.close.hover"));
-
-            this.putValue(AbstractAction.SMALL_ICON, UIManager.getIcon("InternalFrame.closeIcon"));
+Icon icon = UIManager.getIcon("InternalFrame.closeIcon");
+ this.putValue(AbstractAction.SMALL_ICON, UIManager.getIcon("InternalFrame.closeIcon"));
         }
 
         public void actionPerformed(ActionEvent e) {

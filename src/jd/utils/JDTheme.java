@@ -27,7 +27,7 @@ import java.util.logging.Logger;
 import javax.swing.ImageIcon;
 
 import jd.controlling.JDLogger;
-import jd.http.Encoding;
+import jd.nutils.encoding.Encoding;
 import jd.nutils.JDImage;
 import jd.nutils.io.JDFileFilter;
 import jd.nutils.io.JDIO;

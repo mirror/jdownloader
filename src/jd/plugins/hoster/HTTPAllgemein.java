@@ -19,7 +19,7 @@ package jd.plugins.hoster;
 import jd.HostPluginWrapper;
 import jd.PluginWrapper;
 import jd.controlling.HTACCESSController;
-import jd.http.Encoding;
+import jd.nutils.encoding.Encoding;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
