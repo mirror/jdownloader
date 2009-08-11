@@ -49,8 +49,6 @@ public class TableRenderer extends DefaultTableRenderer {
 
     private static final String NULL_BYTE_PROGRESS = "0.00% (0 B/* MB)";
 
-
-
     private DecimalFormat c = new DecimalFormat("0.00");
 
     private Component co;
@@ -126,8 +124,8 @@ public class TableRenderer extends DefaultTableRenderer {
         progress.setOpaque(true);
         COL_PROGRESS_NORMAL = progress.getForeground();
         statuspanel = new StatusLabel();
-        
-        ERROR_BORDER=BorderFactory.createLineBorder(COL_PROGRESS_ERROR);
+
+        ERROR_BORDER = BorderFactory.createLineBorder(COL_PROGRESS_ERROR);
     }
 
     private ArrayList<RowHighlighter<?>> highlighter;
@@ -236,6 +234,7 @@ public class TableRenderer extends DefaultTableRenderer {
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 
             statuspanel.setBackground(co.getBackground());
+            statuspanel.setEnabled(co.isEnabled());
             statuspanel.setForeground(co.getForeground());
             statuspanel.setText(dLink.getLinkStatus().getStatusString());
 
@@ -396,7 +395,8 @@ public class TableRenderer extends DefaultTableRenderer {
             } else if ((dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED) && dLink.getPlugin().getRemainingHosterWaittime() > 0) || (dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) && dLink.getLinkStatus().getRemainingWaittime() > 0)) {
                 clearSB();
                 col = this.table.getColumn(column);
-//                sb.append(Formatter.formatSeconds(dLink.getLinkStatus().getRemainingWaittime() / 1000));
+                // sb.append(Formatter.formatSeconds(dLink.getLinkStatus().getRemainingWaittime()
+                // / 1000));
                 ((JRendererLabel) co).setIcon(null);
                 ((JRendererLabel) co).setText("");
                 ((JRendererLabel) co).setBorder(null);
@@ -476,6 +476,7 @@ public class TableRenderer extends DefaultTableRenderer {
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 
             statuspanel.setBackground(co.getBackground());
+            statuspanel.setEnabled(co.isEnabled());
             statuspanel.setForeground(co.getForeground());
             // if (dLink.getPluginProgress() != null &&
             // dLink.getPluginProgress().getPercent() > 0.0 &&
@@ -620,6 +621,7 @@ public class TableRenderer extends DefaultTableRenderer {
         case DownloadJTableModel.COL_STATUS:
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             statuspanel.setBackground(co.getBackground());
+            statuspanel.setEnabled(co.isEnabled());
             statuspanel.setForeground(co.getForeground());
             if (fp.isFinished()) {
                 statuspanel.setText("");

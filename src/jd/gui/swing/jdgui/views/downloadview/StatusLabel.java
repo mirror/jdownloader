@@ -63,13 +63,14 @@ public class StatusLabel extends JPanel {
 
     public void setForeground(Color fg) {
         super.setForeground(fg);
-       if(left!=null) left.setForeground(fg);
-        if(rights!=null){
+        if (left != null) left.setForeground(fg);
+        if (rights != null) {
             for (int i = 0; i < rights.length; i++) {
-   
-           if( rights[i]!=null) rights[i].setForeground(fg); 
-        }      }    
-       
+
+                if (rights[i] != null) rights[i].setForeground(fg);
+            }
+        }
+
     }
 
     public void setIcon(int i, Icon icon) {
@@ -90,13 +91,16 @@ public class StatusLabel extends JPanel {
     }
 
     public void setEnabled(boolean b) {
-        for (int i = 0; i < ICONCOUNT; i++) {
-            if (!enabled[i]) {
-                rights[i].setEnabled(false);
-            } else {
-                rights[i].setEnabled(b);
+        if (rights != null) {
+            for (int i = 0; i < ICONCOUNT; i++) {
+                if (!enabled[i]) {
+                    rights[i].setEnabled(false);
+                } else {
+                    rights[i].setEnabled(b);
+                }
             }
         }
+        if (left != null) left.setEnabled(b);
     }
 
     /**
