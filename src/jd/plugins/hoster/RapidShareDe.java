@@ -17,27 +17,22 @@
 package jd.plugins.hoster;
 
 import java.io.File;
-import java.net.URI;
+import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.http.Cookie;
 import jd.nutils.encoding.Encoding;
-import jd.http.URLConnectionAdapter;
-import jd.http.requests.GetRequest;
-import jd.http.requests.PostRequest;
-import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
+import jd.plugins.AccountInfo;
+import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.download.RAFDownload;
-import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidshare.de" }, urls = { "http://[\\w\\.]*?rapidshare.de/files/[\\d]{3,9}/.*" }, flags = { 2 })
 public class RapidShareDe extends PluginForHost {
@@ -47,61 +42,69 @@ public class RapidShareDe extends PluginForHost {
         this.enablePremium("http://rapidshare.de/en/premium.html");
     }
 
-    // @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
+    public void login(Account account) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.getPage("https://ssl.rapidshare.de/cgi-bin/premiumzone.cgi");
+        br.postPage("https://ssl.rapidshare.de/cgi-bin/premiumzone.cgi", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&german=on");
+        if (br.getCookie("http://rapidshare.de", "user") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+    }
 
-        br.setCookiesExclusive(true);
-        br.clearCookies(getHost());
-        br.setFollowRedirects(false);
-        Form[] forms = br.getForms(downloadLink.getDownloadURL());
-        if (forms.length < 2) {
-            logger.severe("konnte den Download nicht finden");
-            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            return;
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo(this, account);
+        this.setBrowserExclusive();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
         }
-        Form form = forms[1];
-        form.remove("dl.start");
-        form.put("dl.start", "Free");
-        br.submitForm(form);
+        String validUntil = br.getRegex("Account ist g.*?bis (.*?)\\. Wenn").getMatch(0);
+        if (validUntil == null) {
+            account.setValid(false);
+        } else {
+            ai.setValidUntil(Regex.getMilliSeconds(validUntil.trim(), "EEE, dd. MMM yyyy", null));
+            account.setValid(true);
+        }
+        String left = br.getRegex("Derzeit sind noch <b>(.*?)</b>").getMatch(0);
+        ai.setTrafficLeft(left);
+        ai.setTrafficMax(Regex.getSize("20 GB"));
+        return ai;
+    }
+
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
 
         long waittime;
         try {
-            waittime = Long.parseLong(new Regex(br, "<script>var.*?\\= ([\\d]+)").getMatch(0)) * 1000;
+            waittime = Long.parseLong(br.getRegex("<script>var.*?\\= ([\\d]+)").getMatch(0)) * 1000;
 
             this.sleep((int) waittime, downloadLink);
         } catch (Exception e) {
             try {
-                waittime = Long.parseLong(new Regex(br, "Oder warte (\\d*?) Minute").getMatch(0)) * 60000;
-                linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
-                linkStatus.setValue(waittime);
-                return;
+                waittime = Long.parseLong(br.getRegex("Oder warte (\\d*?) Minute").getMatch(0)) * 60000;
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime);
+            } catch (PluginException e2) {
+                throw e2;
             } catch (Exception es) {
-                logger.severe("kann wartezeit nicht setzen");
-                linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
-                linkStatus.setErrorMessage(JDL.L("plugins.hoster.rapidsharede.errors.cannotsetwaittime", "Wait time could not be set"));
-                return;
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             }
         }
 
         String ticketCode = Encoding.htmlDecode(new Regex(br, "unescape\\(\\'(.*?)\\'\\)").getMatch(0));
 
-        form = Form.getForms(ticketCode)[0];
+        Form form = Form.getForms(ticketCode)[0];
         File captchaFile = getLocalCaptchaFile(".png");
         String captchaAdress = new Regex(ticketCode, "<img src=\"(.*?)\">").getMatch(0);
         logger.info("CaptchaAdress:" + captchaAdress);
         br.getDownload(captchaFile, captchaAdress);
-        if (!captchaFile.exists() || captchaFile.length() == 0) {
-            logger.severe("Captcha not found");
-            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
-            return;
-        }
+        if (!captchaFile.exists() || captchaFile.length() == 0) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+
         String code = null;
 
-        code = getCaptchaCode(captchaFile, downloadLink);
+        code = getCaptchaCode("none", captchaFile, downloadLink);
         form.put("captcha", code);
-
-        jd.plugins.BrowserAdapter.openDownload(br,downloadLink, form).startDownload();
+        br.setFollowRedirects(true);
+        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form).startDownload();
 
         File l = new File(downloadLink.getFileOutput());
         if (l.length() < 10240) {
@@ -109,68 +112,44 @@ public class RapidShareDe extends PluginForHost {
             if (Regex.matches(local, "Zugriffscode falsch")) {
                 l.delete();
                 l.deleteOnExit();
-                linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
-                return;
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
 
         }
     }
 
-    // @Override
-    /**
-     * Komplett umbauen auf neuen Browser!
-     */
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        String user = account.getUser();
-        String pass = account.getPass();
-        br.setCookiesExclusive(true);
-        br.clearCookies(getHost());
+        requestFileInformation(downloadLink);
+        login(account);
+        br.getPage(downloadLink.getDownloadURL());
         br.setFollowRedirects(false);
-        String formatPass = "";
-        for (int i = 0; i < pass.length(); i++) {
-            formatPass += "%" + Integer.toString(pass.charAt(i), 16);
+        String url = null;
+        if (br.getRedirectLocation() == null) {
+            Form form = br.getForm(1);
+            form.getInputFields().remove(2);
+            br.submitForm(form);
+            url = br.getRegex("Download.*?>.*?</font>:</b>.*?href=\"(http://.*?rapidshare.*?)\">").getMatch(0);
+        } else {
+            url = br.getRedirectLocation();
         }
-
-        String path = new URI(downloadLink.getDownloadURL()).getPath();
-        PostRequest r = new PostRequest("http://rapidshare.de");
-        r.addVariable("uri", Encoding.urlEncode(path));
-        r.addVariable("dl.start", "PREMIUM");
-        r.getCookies().add(new Cookie(getHost(), "user", user + "-" + formatPass));
-
-        String page = r.load();
-        if (page.contains("Premium-Cookie nicht gefunden")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, JDL.L("plugins.hoster.rapidsharede.errors.accountbad", "Account not found or password wrong"), LinkStatus.VALUE_ID_PREMIUM_DISABLE); }
-        String error = new Regex(page, "alert\\(\"(.*)\"\\)<\\/script>").getMatch(0);
-        if (error != null) { throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.rapidshareDE.errors." + JDHash.getMD5(error), error)); }
-        String url = new Regex(page, "\\:<\\/b> <a href\\=\"([^\"].*)\">.*?.rapidshare.de").getMatch(0);
-
-        URLConnectionAdapter urlConnection;
-        GetRequest req = new GetRequest(url);
-        r.getCookies().add(new Cookie(getHost(), "user", user + "-" + formatPass));
-        /** TODO: Umbauen auf jd.plugins.BrowserAdapter.openDownload(br,...) **/
-        dl = RAFDownload.download(downloadLink, req, true, 0);
-        dl.connect(br);
-        urlConnection = req.getHttpConnection();
-        if (urlConnection.getHeaderField("content-disposition") == null) {
-            page = req.read();
-            throw new PluginException(LinkStatus.ERROR_FATAL, page);
-        }
+        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        br.setFollowRedirects(true);
+        dl = BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
         dl.startDownload();
     }
 
-    // @Override
     public String getAGBLink() {
         return "http://rapidshare.de/de/faq.html";
     }
 
-    // @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException {
         try {
             br.setCookiesExclusive(true);
             br.clearCookies(getHost());
             br.setFollowRedirects(false);
             br.getPage(downloadLink.getDownloadURL());
             Form[] forms = br.getForms();
-            if (forms.length < 2) { return AvailableStatus.FALSE; }
+            if (forms.length < 2) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
             br.submitForm(forms[1]);
 
@@ -179,33 +158,20 @@ public class RapidShareDe extends PluginForHost {
             downloadLink.setName(regExp[0][0]);
             return AvailableStatus.TRUE;
         } catch (Exception e) {
-            logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
         }
-        return AvailableStatus.FALSE;
-
+        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
-    // @Override
-    /*
-     * public String getVersion() {
-     * 
-     * return getVersion("$Revision$"); }
-     */
-
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    // @Override
     public void reset() {
     }
 
-    // @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
     public void resetDownloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 

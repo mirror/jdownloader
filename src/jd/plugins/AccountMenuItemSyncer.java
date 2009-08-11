@@ -36,19 +36,17 @@ public class AccountMenuItemSyncer implements AccountControllerListener {
     }
 
     public void onAccountControllerEvent(final AccountControllerEvent event) {
-        
-        new GuiRunnable<Object>(){
+
+        new GuiRunnable<Object>() {
 
             @Override
             public Object runSave() {
                 MenuAction item = map.get(event.getAccount());
-                item.setSelected(event.getAccount().isEnabled());
+                if (item != null) item.setSelected(event.getAccount().isEnabled());
                 return null;
             }
-            
-            
+
         }.start();
-       
 
     }
 
