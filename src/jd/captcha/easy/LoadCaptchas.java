@@ -8,7 +8,10 @@ import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.awt.BorderLayout;
+import java.awt.Dialog;
 import java.awt.Image;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.WindowEvent;
@@ -17,10 +20,13 @@ import java.io.*;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
+
+import jd.gui.swing.GuiRunnable;
 
 import jd.gui.swing.dialog.ProgressDialog;
 import jd.gui.userio.DummyFrame;
@@ -93,7 +99,12 @@ public class LoadCaptchas {
             new File(dir).mkdir();
             final String ct = br.getHttpConnection().getContentType().toLowerCase();
             if (ct != null && ct.contains("image")) {
-                dialog.dispose();
+                new GuiRunnable<Object>() {
+                    public Object runSave() {
+                        dialog.dispose();
+                        return null;
+                    }
+                }.waitForEDT();
                 Runnable runnable = new Runnable() {
                     public void run() {
                         for (int k = 0; k < menge; k++) {
@@ -203,6 +214,7 @@ public class LoadCaptchas {
 
                     continue;
                 }
+                System.out.println(f);
                 ImageComponent ic0 = new ImageComponent(captchaImage);
 
                 panel.add(ic0);
@@ -295,7 +307,6 @@ public class LoadCaptchas {
 
             dialog.pack();
             dialog.setVisible(true);
-            dialog.validate();
             synchronized (dialog) {
                 dialog.wait();
             }
@@ -310,7 +321,18 @@ public class LoadCaptchas {
     }
 
     public static void main(String[] args) throws Exception {
+        JDialog d = new JDialog();
+        JButton b = new JButton("test");
+        b.addActionListener(new ActionListener() {
 
-        load();
+            public void actionPerformed(ActionEvent e) {
+                LoadCaptchas.load();
+                
+            }});
+        d.add(b);
+        d.pack();
+        d.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        d.setVisible(true);
+        
     }
 }
