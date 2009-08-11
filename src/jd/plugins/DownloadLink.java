@@ -617,8 +617,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
                     // Level.SEVERE,"Exception occurred",e);
                     break;
                 }
-                
-            
+
             } catch (Exception e) {
                 // logger.severe("Hoster Plugin Version: " +
                 // getPlugin().getVersion());
@@ -688,7 +687,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
                 }
             }
         }
-        
+
         // downloadMax = 0;
         priority = 0;
         chunksProgress = null;
@@ -697,7 +696,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         linkStatus.reset();
         this.availableStatus = null;
         this.setEnabled(true);
-        linkStatus = new LinkStatus(this);
         if (new File(this.getFileOutput()).exists()) {
             if (!new File(this.getFileOutput()).delete()) {
                 logger.severe(JDL.L("system.download.errors.couldnotoverwrite", "Could not overwrite existing file"));
@@ -724,7 +722,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             return;
         }
         if (getDownloadLinkController() == null) {
-            
+
             linkStatus.setInProgress(false);
             return;
 

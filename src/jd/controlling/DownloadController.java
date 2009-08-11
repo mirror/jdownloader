@@ -296,6 +296,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
 
                     int curState = LinkStatus.TODO;
                     int curLState = LinkStatus.TODO;
+                    tmp2 = null;
                     if (localLink.getLinkStatus().isFinished() || localLink.getLinkStatus().hasStatus(LinkStatus.ERROR_FILE_NOT_FOUND)) {
                         /*
                          * if link is finished or offline, save old status and
@@ -306,17 +307,12 @@ public class DownloadController implements FilePackageListener, DownloadControll
                         tmp2 = localLink.getLinkStatus().getErrorMessage();
                     }
                     // filter flags
-                    curState=JDFlags.filterFlags(curState,LinkStatus.ERROR_FILE_NOT_FOUND|LinkStatus.FINISHED|LinkStatus.ERROR_ALREADYEXISTS|LinkStatus.TODO);
-                    curLState=JDFlags.filterFlags(curLState,LinkStatus.ERROR_FILE_NOT_FOUND|LinkStatus.FINISHED|LinkStatus.ERROR_ALREADYEXISTS|LinkStatus.TODO);
-                    
-                    if(curState==0)curState=LinkStatus.TODO;
-                    if(curLState==0)curLState=LinkStatus.TODO;
-                    
+                    curState = JDFlags.filterFlags(curState, LinkStatus.ERROR_FILE_NOT_FOUND | LinkStatus.FINISHED | LinkStatus.ERROR_ALREADYEXISTS | LinkStatus.TODO);
+                    curLState = JDFlags.filterFlags(curLState, LinkStatus.ERROR_FILE_NOT_FOUND | LinkStatus.FINISHED | LinkStatus.ERROR_ALREADYEXISTS | LinkStatus.TODO);
                     /* reset and if needed restore the old state */
                     localLink.getLinkStatus().reset();
                     localLink.getLinkStatus().setStatus(curState);
                     localLink.getLinkStatus().setLatestStatus(curLState);
-               
                     localLink.getLinkStatus().setErrorMessage(tmp2);
 
                     if (localLink.getLinkStatus().isFinished() && JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION) == 1) {

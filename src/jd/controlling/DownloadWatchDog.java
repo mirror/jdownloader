@@ -27,6 +27,7 @@ import jd.controlling.interaction.Interaction;
 import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
+import jd.nutils.JDFlags;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -193,16 +194,30 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
         PluginForHost.resetStatics();
         ArrayList<FilePackage> fps;
         fps = dlc.getPackages();
+        int curState;
+        int curLState;
+        String tmp2;
         synchronized (fps) {
             for (FilePackage filePackage : fps) {
                 links = filePackage.getDownloadLinkList();
                 for (int i = 0; i < links.size(); i++) {
-                    if (!(links.get(i).getLinkStatus().isFinished() || links.get(i).getLinkStatus().hasStatus(LinkStatus.ERROR_FILE_NOT_FOUND))) {
-                        links.get(i).getLinkStatus().setStatusText(null);
-                        links.get(i).setAborted(false);
-                        links.get(i).getLinkStatus().setStatus(LinkStatus.TODO);
-                        links.get(i).getLinkStatus().resetWaitTime();
+                    DownloadLink link = links.get(i);
+                    curState = LinkStatus.TODO;
+                    curLState = LinkStatus.TODO;
+                    tmp2 = null;
+                    if (link.getLinkStatus().isFinished() || link.getLinkStatus().hasStatus(LinkStatus.ERROR_FILE_NOT_FOUND)) {
+                        curState = link.getLinkStatus().getStatus();
+                        curLState = link.getLinkStatus().getLatestStatus();
+                        tmp2 = link.getLinkStatus().getErrorMessage();
                     }
+                    curState = JDFlags.filterFlags(curState, LinkStatus.ERROR_FILE_NOT_FOUND | LinkStatus.FINISHED | LinkStatus.ERROR_ALREADYEXISTS | LinkStatus.TODO);
+                    curLState = JDFlags.filterFlags(curLState, LinkStatus.ERROR_FILE_NOT_FOUND | LinkStatus.FINISHED | LinkStatus.ERROR_ALREADYEXISTS | LinkStatus.TODO);
+                    link.getLinkStatus().setStatusText(null);
+                    link.getLinkStatus().setErrorMessage(tmp2);
+                    link.setAborted(false);
+                    link.getLinkStatus().setStatus(curState);
+                    link.getLinkStatus().setLatestStatus(curLState);
+                    link.getLinkStatus().resetWaitTime();
                 }
             }
         }

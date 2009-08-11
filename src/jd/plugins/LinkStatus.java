@@ -247,7 +247,7 @@ public class LinkStatus implements Serializable {
         }
         if (hasStatus(LinkStatus.FINISHED)) return this.getStatusText() != null ? "> " + this.getStatusText() : "";
         if (hasStatus(LinkStatus.ERROR_FILE_NOT_FOUND)) return this.getLongErrorMessage();
-        
+
         if (!downloadLink.isEnabled() && !hasStatus(LinkStatus.FINISHED)) {
             if (downloadLink.isAborted() && (statusText == null || statusText.trim().length() == 0)) {
                 ret += JDL.L("gui.downloadlink.aborted", "[interrupted]") + " ";
@@ -348,6 +348,7 @@ public class LinkStatus implements Serializable {
 
     public void reset() {
         setStatus(TODO);
+        setLatestStatus(TODO);
         errorMessage = null;
         statusText = null;
         retryCount = 0;

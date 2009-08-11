@@ -341,9 +341,12 @@ public class JDController implements ControlListener {
      * Beendet das Programm
      */
     public void exit() {
-
-        prepareShutdown();
-        System.exit(0);
+        new Thread(new Runnable() {
+            public void run() {
+                prepareShutdown();
+                System.exit(0);
+            }
+        }).start();
     }
 
     public void prepareShutdown() {

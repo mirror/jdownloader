@@ -196,7 +196,7 @@ public class Main {
             } else if (args[i].equals("--new-instance") || args[i].equals("-n")) {
 
                 if (!JDInitFlags.ENOUGH_MEMORY) {
-                    JDUtilities.restartJD();
+                    JDUtilities.restartJDandWait();
                 }
 
                 LOGGER.finer(args[i] + " parameter");
@@ -321,7 +321,7 @@ public class Main {
     private static void start(final String args[]) {
 
         if (!JDInitFlags.STOP && !JDInitFlags.ENOUGH_MEMORY) {
-            JDUtilities.restartJD();
+            JDUtilities.restartJDandWait();
             return;
         }
         if (!JDInitFlags.STOP) {

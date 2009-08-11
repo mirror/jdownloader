@@ -171,8 +171,7 @@ public class WebUpdate {
         final ProgressController progress = new ProgressController(JDL.L("init.webupdate.progress.0_title", "Webupdate"), 100);
 
         final WebUpdater updater = new WebUpdater();
-        
-    
+
         // if
         // (SubConfiguration.getConfig("WEBUPDATE").getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE,
         // false)) {
@@ -232,7 +231,7 @@ public class WebUpdate {
         final boolean doPluginRestart = pluginRestartRequired;
         new Thread() {
             public void run() {
-                MessageListener messageListener=null;
+                MessageListener messageListener = null;
                 if (files != null) {
                     updater.filterAvailableUpdates(files);
                     JDUtilities.getController().setWaitingUpdates(files);
@@ -247,40 +246,40 @@ public class WebUpdate {
                 }
                 if (!guiCall) {
                     progress.finalize();
-                    if (doPluginRestart) JDUtilities.restartJD();
-                    UPDATE_IN_PROGRESS = false;
                     JDController.releaseDelayExit(id);
+                    if (doPluginRestart) JDUtilities.restartJDandWait();
+                    UPDATE_IN_PROGRESS = false;
                     return;
                 }
                 if (!forceguiCall && SubConfiguration.getConfig("WEBUPDATE").getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false)) {
                     logger.severe("Webupdater disabled");
                     progress.finalize();
-                    if (doPluginRestart) JDUtilities.restartJD();
-                    UPDATE_IN_PROGRESS = false;
                     JDController.releaseDelayExit(id);
+                    if (doPluginRestart) JDUtilities.restartJDandWait();
+                    UPDATE_IN_PROGRESS = false;
                     return;
                 }
 
                 if (files.size() == 0) {
                     logger.severe("Webupdater offline or nothing to update");
-                    
-                    // ask to restart if there are updates left in the /update/ folder
-                    if (JDUtilities.getResourceFile("update").listFiles().length>0) {
+                    // ask to restart if there are updates left in the /update/
+                    // folder
+                    File[] updates = JDUtilities.getResourceFile("update").listFiles();
+                    if (updates != null && updates.length > 0) {
 
-                        int ret = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN|UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, JDL.L("jd.update.Main.error.title.old", "Updates found!"), JDL.L("jd.update.Main.error.message.old", "There are are uninstalled updates. Install them now?"), null, null, null);
-                        if(JDFlags.hasAllFlags(ret, UserIO.RETURN_OK)){
+                        int ret = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, JDL.L("jd.update.Main.error.title.old", "Updates found!"), JDL.L("jd.update.Main.error.message.old", "There are are uninstalled updates. Install them now?"), null, null, null);
+                        if (JDFlags.hasAllFlags(ret, UserIO.RETURN_OK)) {
                             JDController.releaseDelayExit(id);
-                            JDUtilities.restartJD();
+                            JDUtilities.restartJDandWait();
                             return;
                         }
-                    
+
                     }
-                    
-                    
+
                     progress.finalize();
-                    if (doPluginRestart) JDUtilities.restartJD();
-                    UPDATE_IN_PROGRESS = false;
                     JDController.releaseDelayExit(id);
+                    if (doPluginRestart) JDUtilities.restartJDandWait();
+                    UPDATE_IN_PROGRESS = false;
                     return;
                 }
                 int org;
@@ -315,7 +314,7 @@ public class WebUpdate {
                     }
 
                 }
-               if(messageListener!=null) updater.getBroadcaster().removeListener(messageListener);
+                if (messageListener != null) updater.getBroadcaster().removeListener(messageListener);
                 progress.finalize();
                 JDController.releaseDelayExit(id);
             }
@@ -348,7 +347,7 @@ public class WebUpdate {
                     if (!WebUpdate.updateUpdater()) {
                         UPDATE_IN_PROGRESS = false;
                         JDController.releaseDelayExit(id);
-                        if (doPluginRestart) JDUtilities.restartJD();
+                        if (doPluginRestart) JDUtilities.restartJDandWait();
                         return;
                     }
 
@@ -369,16 +368,15 @@ public class WebUpdate {
                         System.out.println("UPdate: " + files);
 
                         updater.updateFiles(files, pc);
-                        if (updater.getErrors() > 0||true) {
+                        if (updater.getErrors() > 0 || true) {
 
-                            int ret = UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN|UserIO.DONT_SHOW_AGAIN|UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, JDL.L("jd.update.Main.error.title", "Errors occured"), JDL.LF("jd.update.Main.error.message", "Errors occured!\r\nThere were %s error(s) while updating. Do you want to update anyway?",updater.getErrors()+""), UserIO.getInstance().getIcon(UserIO.ICON_WARNING), null, null);
-                            if(JDFlags.hasAllFlags(ret, UserIO.RETURN_OK)){
+                            int ret = UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN | UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, JDL.L("jd.update.Main.error.title", "Errors occured"), JDL.LF("jd.update.Main.error.message", "Errors occured!\r\nThere were %s error(s) while updating. Do you want to update anyway?", updater.getErrors() + ""), UserIO.getInstance().getIcon(UserIO.ICON_WARNING), null, null);
+                            if (JDFlags.hasAllFlags(ret, UserIO.RETURN_OK)) {
                                 JDController.releaseDelayExit(id);
-                                JDUtilities.restartJD();
+                                JDUtilities.restartJDandWait();
                             }
-                        
+
                         }
-                 
 
                     } catch (Exception e) {
                         JDLogger.exception(e);
