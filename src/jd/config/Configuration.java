@@ -69,6 +69,8 @@ public class Configuration extends SubConfiguration implements Serializable {
 
     public static final String PARAM_GLOBAL_IP_DISABLE = "GLOBAL_IP_DISABLE";
 
+    public static final String PARAM_GLOBAL_IP_BALANCE = "GLOBAL_IP_BALANCE";
+
     public static final String PARAM_GLOBAL_IP_MASK = "PARAM_GLOBAL_IP_MASK";
 
     public static final String PARAM_GLOBAL_IP_PATTERN = "GLOBAL_IP_PATTERN";

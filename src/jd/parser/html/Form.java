@@ -92,21 +92,23 @@ public class Form extends Property {
     private void parseHeader(String[][] headerEntries) {
         String key;
         String value;
+        String lowvalue;
         for (String[] entry : headerEntries) {
             key = entry[0];
             value = entry[1];
-            if (key.toLowerCase().equalsIgnoreCase("action")) {
+            lowvalue = value.toLowerCase();
+            if (key.equalsIgnoreCase("action")) {
                 setAction(value);
-            } else if (key.toLowerCase().equalsIgnoreCase("enctype")) {
+            } else if (key.equalsIgnoreCase("enctype")) {
                 this.setEncoding(value);
 
-            } else if (key.toLowerCase().equalsIgnoreCase("method")) {
+            } else if (key.equalsIgnoreCase("method")) {
 
-                if (value.matches(".*post.*")) {
+                if (lowvalue.matches(".*post.*")) {
                     setMethod(MethodType.POST);
-                } else if (value.matches(".*get.*")) {
+                } else if (lowvalue.matches(".*get.*")) {
                     setMethod(MethodType.GET);
-                } else if (value.matches(".*put.*")) {
+                } else if (lowvalue.matches(".*put.*")) {
                     setMethod(MethodType.PUT);
                 } else {
                     setMethod(MethodType.POST);
@@ -370,6 +372,8 @@ public class Form extends Property {
         StringBuilder stbuffer = new StringBuilder();
         boolean first = true;
         for (InputField ipf : this.inputfields) {
+            /* nameless key-value are not being sent, see firefox */
+            if (ipf.getKey() == null) continue;
             if (first) {
                 first = false;
             } else {
@@ -426,16 +430,9 @@ public class Form extends Property {
     public HashMap<String, String> getVarsMap() {
         HashMap<String, String> ret = new HashMap<String, String>();
         for (InputField ipf : this.inputfields) {
-
-            if (ipf.getKey() != null) {/*
-                                        * namenlose Values werden nicht
-                                        * uebermittelt (siehe Liveheader im
-                                        * Firefox)
-                                        */
-
-                ret.put(ipf.getKey(), ipf.getValue());
-            }
-
+            /* nameless key-value are not being sent, see firefox */
+            if (ipf.getKey() == null) continue;
+            ret.put(ipf.getKey(), ipf.getValue());
         }
         return ret;
     }
@@ -509,6 +506,10 @@ public class Form extends Property {
     public ArrayList<RequestVariable> getRequestVariables() {
         ArrayList<RequestVariable> ret = new ArrayList<RequestVariable>();
         for (InputField ipf : this.inputfields) {
+            if (ipf.getKey() == null) continue;/*
+                                                * nameless key-value are not
+                                                * being sent, see firefox
+                                                */
             if (ipf.getValue() == null) continue;
             if (ipf.getType() != null && ipf.getType().equalsIgnoreCase("image")) {
                 ret.add(new RequestVariable(ipf.getKey() + ".x", new Random().nextInt(100) + ""));

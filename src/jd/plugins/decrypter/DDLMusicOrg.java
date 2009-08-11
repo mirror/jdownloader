@@ -19,7 +19,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
-import jd.PluginPattern;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.html.Form;
@@ -27,7 +26,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {"ddl-music.org"}, urls = {"http://[\\w\\.]*?ddl-music\\.org/index\\.php\\?site=view_download&cat=.+&id=\\d+|http://[\\w\\.]*?ddl-music\\.org/captcha/ddlm_cr\\d\\.php\\?\\d+\\?\\d+"}, flags = {0})
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ddl-music.org" }, urls = { "http://[\\w\\.]*?ddl-music\\.org/index\\.php\\?site=view_download&cat=.+&id=\\d+|http://[\\w\\.]*?ddl-music\\.org/captcha/ddlm_cr\\d\\.php\\?\\d+\\?\\d+" }, flags = { 0 })
 public class DDLMusicOrg extends PluginForDecrypt {
     static public final String DECRYPTER_DDLMSC_MAIN = "http://[\\w\\.]*?ddl-music\\.org/index\\.php\\?site=view_download&cat=.+&id=\\d+";
     static public final String DECRYPTER_DDLMSC_CRYPT = "http://[\\w\\.]*?ddl-music\\.org/captcha/ddlm_cr\\d\\.php\\?\\d+\\?\\d+";
@@ -36,12 +36,12 @@ public class DDLMusicOrg extends PluginForDecrypt {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        if (parameter.matches(PluginPattern.DECRYPTER_DDLMSC_CRYPT)) {
+        if (parameter.matches(DECRYPTER_DDLMSC_CRYPT)) {
             int add = 0;
             for (int i = 1; i < 5; i++) {
                 br.getPage(parameter);
@@ -64,7 +64,7 @@ public class DDLMusicOrg extends PluginForDecrypt {
                 }
                 add += 500;
             }
-        } else if (parameter.matches(PluginPattern.DECRYPTER_DDLMSC_MAIN)) {
+        } else if (parameter.matches(DECRYPTER_DDLMSC_MAIN)) {
             br.getPage(parameter);
 
             String password = br.getRegex(Pattern.compile("<td class=\"normalbold\"><div align=\"center\">Passwort</div></td>.*?<td class=\"normal\"><div align=\"center\">(.*?)</div></td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
@@ -86,6 +86,6 @@ public class DDLMusicOrg extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    //@Override
-    
+    // @Override
+
 }

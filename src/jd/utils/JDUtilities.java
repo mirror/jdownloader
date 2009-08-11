@@ -37,6 +37,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -69,6 +70,7 @@ import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.gui.UserIO;
 import jd.http.Browser;
+import jd.http.RandomUserAgent;
 import jd.nutils.Executer;
 import jd.nutils.Formatter;
 import jd.nutils.OSDetector;
@@ -99,6 +101,25 @@ public class JDUtilities {
     private static DatabaseConnector dbconnect = null;
 
     private static HashMap<String, PluginsC> containerPlugins = new HashMap<String, PluginsC>();
+
+    private static ArrayList<String[]> ipchecks = new ArrayList<String[]>();
+    private static Integer ipcheckIndex = new Integer(0);
+
+    static {
+        /* setup fallback ipcheck services */
+        ipchecks.add(new String[] { "http://www.wieistmeineip.de/", "Ihre IP-Adresse.*?class=\"ip\">([\\d+\\.]+?)</h1>" });
+        ipchecks.add(new String[] { "http://www.whatismyip.com/", "<h1>Your IP Address Is: ([\\d+\\.]+?)</h1>" });
+        ipchecks.add(new String[] { "http://www.whatsmyip.org/", "<title>What.*?Your IP is ([\\d+\\.]+?)</title>" });
+        ipchecks.add(new String[] { "http://whatismyipaddress.com/", "<B>Your IP address is ([\\d+\\.]+?)</B>" });
+        ipchecks.add(new String[] { "http://www.ipaddressworld.com/", "Your computer.*?size=\\+6>([\\d+\\.]+?)</FONT>" });
+        ipchecks.add(new String[] { "http://www.showmyip.com/", "IP Address properties of your Internet Connection ([\\d+\\.]+?) --> " });
+        ipchecks.add(new String[] { "http://www.myip.ch/", "Current IP Address: ([\\d+\\.]+?)</body>" });
+        ipchecks.add(new String[] { "http://ipcheckit.com/", "Your IP address is:<br/><B>([\\d+\\.]+?)</B>" });
+        ipchecks.add(new String[] { "http://www.findmyipaddress.info/", "My IP is.*?class=\"heading_color\">([\\d+\\.]+?)<" });
+        ipchecks.add(new String[] { "http://www.meineip.de/", "<th>Das ist Deine IP-Adresse.*?>([\\d+\\.]+?) </td>" });
+        ipchecks.add(new String[] { "http://checkip.dyndns.org/", "Current IP Address: ([\\d+\\.]+?)</body" });
+        Collections.shuffle(ipchecks);
+    }
 
     /**
      * Der DownloadController
@@ -406,6 +427,32 @@ public class JDUtilities {
 
     }
 
+    public static String getIPAdressFallBack(Browser br) {
+        if (ipchecks.size() == 0) return null;
+        if (br == null) {
+            br = new Browser();
+            br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+            br.setConnectTimeout(10000);
+            br.setReadTimeout(10000);
+        }
+        synchronized (ipcheckIndex) {
+            ipcheckIndex = ipcheckIndex % ipchecks.size();
+            String[] ipcheck = ipchecks.get(ipcheckIndex);
+            ipcheckIndex++;
+            if (ipcheck.length != 2) return null;
+            try {
+                Pattern pattern = Pattern.compile(ipcheck[1], Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+                Matcher matcher = pattern.matcher(br.getPage(ipcheck[0]));
+                if (matcher.find()) {
+                    if (matcher.groupCount() > 0) return LATEST_IP = matcher.group(1);
+                }
+            } catch (Exception e) {
+            }
+            JDLogger.getLogger().finer("Balance IP Check failed. IP not found via regex: " + ipcheck[1] + " on " + ipcheck[0]);
+        }
+        return null;
+    }
+
     /**
      * Prüft anhand der Globalen IP Check einstellungen die IP
      * 
@@ -415,35 +462,41 @@ public class JDUtilities {
      * @return ip oder /offline
      */
     public static String getIPAddress(Browser br) {
-        if (br == null) {
-            br = new Browser();
-            // br.setProxy(JDProxy.NO_PROXY);
-            br.setConnectTimeout(10000);
-            br.setReadTimeout(10000);
-        }
         if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
             JDLogger.getLogger().finer("IP Check is disabled. return current Milliseconds");
             return System.currentTimeMillis() + "";
         }
-
-        String site = SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_CHECK_SITE, "http://checkip.dyndns.org");
-        String patt = SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_PATTERN, "Address\\: ([0-9.]*)\\<\\/body\\>");
-
-        try {
-            JDLogger.getLogger().finer("Primary IP Check via " + site);
-            Pattern pattern = Pattern.compile(patt);
-            Matcher matcher = pattern.matcher(br.getPage(site));
-            if (matcher.find()) {
-                if (matcher.groupCount() > 0) return LATEST_IP = matcher.group(1);
-            }
-        } catch (Exception e1) {
+        if (br == null) {
+            br = new Browser();
+            br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+            br.setConnectTimeout(10000);
+            br.setReadTimeout(10000);
         }
-        LATEST_IP = null;
-        JDLogger.getLogger().finer("Primary IP Check failed. IP not found via regex: " + patt + " on " + site);
+        if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_BALANCE, true)) {
+            /* use ipcheck balancer */
+            String ip = getIPAdressFallBack(br);
+            if (ip != null) return LATEST_IP = ip;
+        } else {
+            /* use userdefined ipcheck */
+            String site = SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_CHECK_SITE, "http://checkip.dyndns.org");
+            String patt = SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_PATTERN, "Address\\: ([0-9.]*)\\<\\/body\\>");
 
+            try {
+                JDLogger.getLogger().finer("UserDefined IP Check via " + site);
+                Pattern pattern = Pattern.compile(patt);
+                Matcher matcher = pattern.matcher(br.getPage(site));
+                if (matcher.find()) {
+                    if (matcher.groupCount() > 0) return LATEST_IP = matcher.group(1);
+                }
+            } catch (Exception e1) {
+            }
+            LATEST_IP = null;
+            JDLogger.getLogger().finer("UserDefined IP Check failed. IP not found via regex: " + patt + " on " + site);
+        }
+        /* fallback ipcheck */
         try {
-            JDLogger.getLogger().finer("Secondary IP Check via JDownloader-IPCheck");
-            Pattern pattern = Pattern.compile(patt);
+            JDLogger.getLogger().finer("Fallback IP Check via JDownloader-IPCheck");
+            Pattern pattern = Pattern.compile("<ip>([\\d+\\.]+?)</ip>");
             Matcher matcher = pattern.matcher(br.getPage("http://service.jdownloader.org/tools/getip.php"));
             if (matcher.find()) {
                 if (matcher.groupCount() > 0) return LATEST_IP = matcher.group(1);
@@ -451,7 +504,8 @@ public class JDUtilities {
         } catch (Exception e1) {
         }
         LATEST_IP = null;
-        JDLogger.getLogger().finer("Secondary IP Check failed. IP not found via regex: " + patt + " on JDownloader-IPChek");
+        JDLogger.getLogger().finer("Fallback IP Check failed.");
+
         return "offline";
     }
 

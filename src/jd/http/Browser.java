@@ -526,7 +526,7 @@ public class Browser {
             return this.createGetRequest(action);
 
         case POST:
-            if (form.getEncoding()==null||!form.getEncoding().toLowerCase().endsWith("form-data")) {
+            if (form.getEncoding() == null || !form.getEncoding().toLowerCase().endsWith("form-data")) {
 
                 return this.createPostRequest(action, form.getRequestVariables());
             } else {
@@ -585,6 +585,7 @@ public class Browser {
         updateCookies(request);
         this.request = request;
         if (this.doRedirects && request.getLocation() != null) {
+            if (request.getLocation().toLowerCase().startsWith("ftp://")) throw new BrowserException("Cannot redirect to FTP");
             this.openGetConnection(null);
         } else {
             currentURL = request.getUrl();

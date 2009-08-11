@@ -56,6 +56,7 @@ public class Advanced extends ConfigPanel {
 
         ConfigEntry ce;
         ConfigEntry conditionEntry;
+        ConfigEntry conditionEntry2;
 
         // Extended Tab
 
@@ -64,24 +65,26 @@ public class Advanced extends ConfigPanel {
         extended.setGroup(new ConfigGroup(JDL.L("gui.config.download.ipcheck", "Reconnect IP-Check"), JDTheme.II("gui.images.network", 32, 32)));
 
         extended.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.PARAM_GLOBAL_IP_DISABLE, JDL.L("gui.config.download.ipcheck.disable", "IP Überprüfung deaktivieren")));
-
         conditionEntry.setDefaultValue(false);
+
+        extended.addEntry(conditionEntry2 = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.PARAM_GLOBAL_IP_BALANCE, JDL.L("gui.config.download.ipcheck.balance", "Use balanced IP-Check")));
+        conditionEntry2.setDefaultValue(true);
 
         extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PARAM_GLOBAL_IP_CHECK_SITE, JDL.L("gui.config.download.ipcheck.website", "IP prüfen über (Website)")));
         ce.setDefaultValue("http://checkip.dyndns.org");
-        ce.setEnabledCondidtion(conditionEntry, "==", false);
+        ce.setEnabledCondidtion(conditionEntry2, "==", false);
 
         extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PARAM_GLOBAL_IP_PATTERN, JDL.L("gui.config.download.ipcheck.regex", "RegEx zum filtern der IP")));
         ce.setDefaultValue("Address\\: ([0-9.]*)\\<\\/body\\>");
-        ce.setEnabledCondidtion(conditionEntry, "==", false);
+        ce.setEnabledCondidtion(conditionEntry2, "==", false);
 
         extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PARAM_GLOBAL_IP_MASK, JDL.L("gui.config.download.ipcheck.mask", "Erlaubte IPs")));
         ce.setDefaultValue("\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).)" + "{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b");
-        ce.setEnabledCondidtion(conditionEntry, "==", false);
+        ce.setEnabledCondidtion(conditionEntry2, "==", false);
 
         extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, "EXTERNAL_IP_CHECK_INTERVAL", JDL.L("gui.config.download.ipcheck.externalinterval", "External IP Check Interval [sec]"), 10, 60 * 60));
         ce.setDefaultValue(10 * 60);
-        ce.setEnabledCondidtion(conditionEntry, "==", false);
+        ce.setEnabledCondidtion(conditionEntry2, "==", false);
 
         extended.setGroup(new ConfigGroup(JDL.L("gui.config.download.write", "File writing"), JDTheme.II("gui.images.save", 32, 32)));
 

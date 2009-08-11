@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
-import jd.PluginPattern;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;

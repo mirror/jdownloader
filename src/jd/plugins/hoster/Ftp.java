@@ -42,12 +42,10 @@ public class Ftp extends PluginForHost {
         super(wrapper);
     }
 
-    // @Override
     public String getAGBLink() {
         return "http://jdownloader.org";
     }
 
-    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         SimpleFTP ftp = new SimpleFTP();
         try {
@@ -66,12 +64,6 @@ public class Ftp extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * /* public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         download(downloadLink.getDownloadURL(), downloadLink);
     }
@@ -136,20 +128,16 @@ public class Ftp extends PluginForHost {
         }
     }
 
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    // @Override
     public void reset() {
     }
 
-    // @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
     public void resetDownloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
 
