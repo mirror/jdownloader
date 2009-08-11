@@ -128,7 +128,7 @@ public class UCMS extends PluginForDecrypt {
                         if (matcher.find()) {
                             logger.finest("Captcha Protected");
                             String captchaAdress = host + new Regex(element[2], Pattern.compile("<IMG SRC=\"(/.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
-                            capTxt = getCaptchaCode(captchaAdress, param);
+                            capTxt = getCaptchaCode("cms",captchaAdress, param);
 
                             String posthelp = HTMLParser.getFormInputHidden(element[2]);
                             if (element[0].startsWith("http")) {
@@ -216,7 +216,7 @@ public class UCMS extends PluginForDecrypt {
                             String captchaAdress = host + tform.getRegex(Pattern.compile("<img src=\"(/captcha/.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
                             captchaFile = getLocalCaptchaFile();
                             Browser.download(captchaFile, captchaAdress);                            
-                            capTxt = getCaptchaCode("hardcoremetal.biz", captchaFile, UserIO.NO_JAC, param, null, null);
+                            capTxt = getCaptchaCode("cms", captchaFile, UserIO.NO_JAC, param, null, null);
                             tform.put("code", capTxt);
                             brc.submitForm(tform);
                         } else {

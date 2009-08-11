@@ -63,7 +63,7 @@ public class Wiireloaded extends PluginForDecrypt {
 
             progress.addToMax(1);
 
-            String capTxt = getCaptchaCode(adr, param);
+            String capTxt = getCaptchaCode("wii",adr, param);
             Form post = br.getForm(0);
             post.put("sicherheitscode", capTxt);
             try {

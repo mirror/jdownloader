@@ -45,7 +45,7 @@ public class UUCannaTo extends PluginForDecrypt {
         for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
             Form captchaForm = br.getFormbyProperty("name", "download_form");
             String captchaUrl = br.getRegex("<img\\s+src=\"(captcha/captcha\\.php\\?id=[\\d]+)\"").getMatch(0);
-            String captchaCode = getCaptchaCode("canna",captchaUrl, param);
+            String captchaCode = getCaptchaCode("ucan",captchaUrl, param);
             captchaForm.put("sicherheitscode", captchaCode);
             br.submitForm(captchaForm);
 

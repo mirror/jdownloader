@@ -127,7 +127,7 @@ public class RaubkopiererWs extends PluginForDecrypt {
                 File captchaFile = this.getLocalCaptchaFile();
                 Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaURL));
                 Raubkopierer.prepareCaptcha(captchaFile);
-                String code = getCaptchaCode(captchaFile, param);
+                String code = getCaptchaCode("rbkprrws",captchaFile, param);
                 br.postPage(parameter, "captcha=" + code + "&" + mirrors.get(i).getKey() + "=");
                 if (!br.containsHTML("Fehler: Der Sicherheits-Code")) {
                     break;

@@ -1,7 +1,7 @@
 #####-------------------------------------JAC-Script------------------------------------#####
 ##### Dieses Script beinhaltet alle Parameter und Funktioenen die für die captcha      #####
 ##### erkennung nötig sind                                                             #####
-#####################################---raubkopierer.ws---###################################
+#####################################---rbkprrws---###################################
 ##############Set parameter
 
 
@@ -49,7 +49,7 @@ param.splitGapsOverlap=0;
 
 
 ##################Prepare captcha Funktionen
-#captcha.prepare.doSpecial(Raubkopierer.prepareCaptcha);
+#captcha.prepare.doSpecial(Rbkprr.prepareCaptcha);
 
 #################Letter Prepare Funktionen
 letter.prepare.resizetoHeight(20);
