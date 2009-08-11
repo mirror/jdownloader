@@ -7,7 +7,6 @@ import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
 public class SchedulerView extends ClosableView {
-
     private static final long serialVersionUID = -7876057076125402969L;
     private static final String JDL_PREFIX = "jd.plugins.optional.schedule.SchedulerView.";
 
@@ -16,9 +15,7 @@ public class SchedulerView extends ClosableView {
 
         init();
     }
-
-   
-
+    
     public Icon getIcon() {
         return JDTheme.II("gui.images.config.eventmanager", 16, 16);
     }
@@ -32,13 +29,8 @@ public class SchedulerView extends ClosableView {
     }
 
     @Override
-    protected void onHide() {
-
-    }
+    protected void onHide() {}
 
     @Override
-    protected void onShow() {
-
-    }
-
+    protected void onShow() {}
 }

@@ -27,10 +27,19 @@ import jd.config.MenuAction;
 import jd.gui.swing.jdgui.JDGui;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
+import jd.plugins.optional.schedule.modules.DisablePremium;
+import jd.plugins.optional.schedule.modules.DisableReconnect;
+import jd.plugins.optional.schedule.modules.DoReconnect;
+import jd.plugins.optional.schedule.modules.EnablePremium;
+import jd.plugins.optional.schedule.modules.EnableReconnect;
+import jd.plugins.optional.schedule.modules.PauseDownloads;
 import jd.plugins.optional.schedule.modules.SchedulerModuleInterface;
+import jd.plugins.optional.schedule.modules.SetChunck;
+import jd.plugins.optional.schedule.modules.SetMaxDownloads;
 import jd.plugins.optional.schedule.modules.SetSpeed;
 import jd.plugins.optional.schedule.modules.StartDownloads;
 import jd.plugins.optional.schedule.modules.StopDownloads;
+import jd.plugins.optional.schedule.modules.UnPauseDownloads;
 
 @OptionalPlugin(rev = "$Revision$", id = "scheduler", interfaceversion = 4)
 public class Schedule extends PluginOptional {
@@ -45,6 +54,10 @@ public class Schedule extends PluginOptional {
     private SimpleDateFormat date;
 
     private SchedulerView view;
+    
+    private Schedulercheck sc;
+    
+    private boolean running = false;
 
     public Schedule(PluginWrapper wrapper) {
         super(wrapper);
@@ -62,7 +75,7 @@ public class Schedule extends PluginOptional {
         time = new SimpleDateFormat("HH:mm");
         date = new SimpleDateFormat("dd.MM.yyyy");
 
-        new Schedulercheck().start();
+        startCheck();
     }
 
     protected void save() {
@@ -75,6 +88,15 @@ public class Schedule extends PluginOptional {
         modules.add(new StartDownloads());
         modules.add(new StopDownloads());
         modules.add(new SetSpeed());
+        modules.add(new SetChunck());
+        modules.add(new SetMaxDownloads());
+        modules.add(new PauseDownloads());
+        modules.add(new UnPauseDownloads());
+        modules.add(new EnablePremium());
+        modules.add(new DisablePremium());
+        modules.add(new EnableReconnect());
+        modules.add(new DisableReconnect());
+        modules.add(new DoReconnect());
     }
 
     public ArrayList<SchedulerModuleInterface> getModules() {
@@ -91,11 +113,21 @@ public class Schedule extends PluginOptional {
 
     public void removeAction(int row) {
         actions.remove(row);
-        save();
+
+        saveActions();
+        
+        stopCheck();
     }
 
     public void addAction(Actions act) {
         actions.add(act);
+        
+        saveActions();
+        
+        startCheck();
+    }
+    
+    private void saveActions() {
         this.getPluginConfig().setProperty("Scheduler_Actions", actions);
         this.getPluginConfig().save();
     }
@@ -104,11 +136,9 @@ public class Schedule extends PluginOptional {
         return "gui.images.config.eventmanager";
     }
 
-    @Override
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() instanceof MenuAction && ((MenuAction) e.getSource()).getActionID() == 0) {
-
-            if (view == null) {
+        if(e.getSource() instanceof MenuAction && ((MenuAction) e.getSource()).getActionID() == 0) {
+            if(view == null) {
                 view = new SchedulerView();
                 view.setContent(new MainGui(getPluginConfig()));
             }
@@ -134,6 +164,38 @@ public class Schedule extends PluginOptional {
 
     public void onExit() {
     }
+    
+    public void startCheck() {
+        if(sc == null)
+            sc = new Schedulercheck();
+        
+        if(sc.isAlive() || !shouldStart())
+            return;
+        
+        logger.info("Starting scheduler");
+        running = true;
+        sc.start();
+    }
+    
+    public void stopCheck() {
+        if(sc == null || !sc.isAlive() || shouldStart())
+            return;
+        
+        logger.info("Stoping scheduler");
+        running = false;
+    }
+    
+    private boolean shouldStart() {
+        if(actions.size() == 0)
+            return false;
+        
+        for(Actions a : actions) {
+            if(a.isEnabled())
+                return true;
+        }
+        
+        return false;
+    }
 
     public class Schedulercheck extends Thread {
         private Date today;
@@ -143,15 +205,15 @@ public class Schedule extends PluginOptional {
         }
 
         public void run() {
-            while (true) {
+            while (running) {
                 logger.finest("Checking scheduler");
                 today = new Date(System.currentTimeMillis());
                 String todaydate = date.format(today);
                 String todaytime = time.format(today);
 
-                for (Actions a : actions) {
-                    if (a.isEnabled() && todaydate.equals(date.format(a.getDate())) && todaytime.equals(time.format(a.getDate()))) {
-                        for (Executions e : a.getExecutions()) {
+                for(Actions a : actions) {
+                    if(a.isEnabled() && todaydate.equals(date.format(a.getDate())) && todaytime.equals(time.format(a.getDate()))) {
+                        for(Executions e : a.getExecutions()) {
                             e.exceute();
                         }
 
@@ -167,8 +229,7 @@ public class Schedule extends PluginOptional {
 
                 try {
                     Thread.sleep(60000);
-                } catch (InterruptedException e) {
-                }
+                } catch (InterruptedException e) {}
             }
         };
     }

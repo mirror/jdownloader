@@ -172,12 +172,7 @@ public class AddGui extends JPanel implements ActionListener, ChangeListener, Do
         actions.setLayout(new MigLayout("ins 5, wrap 2", "[fill, grow]10[fill, grow]"));
         actions.setBorder(BorderFactory.createLineBorder(getBackground().darker()));
         
-        String[] list = new String[Schedule.getInstance().getModules().size()];
-        for(int i = 0; i < Schedule.getInstance().getModules().size(); i++) {
-            list[i] = Schedule.getInstance().getModules().get(i).getTranslation();
-        }
-        
-        cboActions = new JComboBox(list);
+        cboActions = new JComboBox();
         cboActions.addActionListener(this);
         actions.add(cboActions, "w 80%");
         
@@ -243,6 +238,8 @@ public class AddGui extends JPanel implements ActionListener, ChangeListener, Do
             
             tableModel.fireTableRowsInserted(0, act.getExecutions().size());
         }
+
+        fillComboBox();
         
         add(date);
         add(actions);
@@ -328,7 +325,10 @@ public class AddGui extends JPanel implements ActionListener, ChangeListener, Do
         } else if(e.getSource() == cboActions) {
             for(SchedulerModuleInterface smi : Schedule.getInstance().getModules()) {
                 if(smi.getTranslation().equals(cboActions.getSelectedItem())) {
-                    parameter.setText("");
+                    if(smi.needParameter())
+                        parameter.setText("");
+                    else
+                        parameter.setText(JDL.L("plugin.optional.scheduler.add.noparameter", "No Parameter needed"));
                     parameter.setEnabled(smi.needParameter());
                     parameter.requestFocus();
                     return;
@@ -341,9 +341,12 @@ public class AddGui extends JPanel implements ActionListener, ChangeListener, Do
                         problems.setText(JDL.L("plugin.optional.scheduler.add.problem.badparameter", "No correct Parameter"));
                         return;
                     }
-                    
-                    act.addExecutions(new Executions(smi, (String) parameter.getText()));
+                    if(parameter.getText().equals(JDL.L("plugin.optional.scheduler.add.noparameter", "No Parameter needed")))
+                        act.addExecutions(new Executions(smi, ""));
+                    else
+                        act.addExecutions(new Executions(smi, (String) parameter.getText()));
                     tableModel.fireTableRowsInserted(act.getExecutions().size(), act.getExecutions().size());
+                    fillComboBox();
                     return;
                 }
             }
@@ -351,8 +354,24 @@ public class AddGui extends JPanel implements ActionListener, ChangeListener, Do
             act.removeExecution(table.getSelectedRow());
             tableModel.fireTableRowsDeleted(table.getSelectedRow(), table.getSelectedRow());
             delete.setEnabled(false);
+            fillComboBox();
         } else if(e.getSource() == cancel) {
             MainGui.getInstance().removeTab(act);
+        }
+    }
+    
+    private void fillComboBox() {
+        cboActions.removeAllItems();
+        
+        for(int i = 0; i < Schedule.getInstance().getModules().size(); i++) {
+            boolean found = false;
+            for(Executions e : act.getExecutions()) {
+                if(e.getModule().getTranslation().equals(Schedule.getInstance().getModules().get(i).getTranslation()))
+                    found = true;
+            }
+            
+            if(!found)
+                cboActions.addItem(Schedule.getInstance().getModules().get(i).getTranslation());
         }
     }
 
