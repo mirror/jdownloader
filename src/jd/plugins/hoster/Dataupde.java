@@ -28,7 +28,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dataup.de" }, urls = { "http://[\\w\\.]*?dataup\\.de/\\d+/(.*)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dataup.de", "dataup.to" }, urls = { "http://[\\w\\.]*?dataup\\.de/\\d+/(.*)", "http://[\\w\\.]*?dataup\\.to/\\d+/(.*)" }, flags = { 0, 0 })
 public class Dataupde extends PluginForHost {
     public Dataupde(PluginWrapper wrapper) {
         super(wrapper);
@@ -42,15 +42,20 @@ public class Dataupde extends PluginForHost {
 
     // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
+        correctURL(downloadLink);
         this.setBrowserExclusive();
-        String id = new Regex(downloadLink.getDownloadURL(), "dataup\\.de/(\\d+)").getMatch(0);
-        br.getPage("http://dataup.de/data/api/status.php?id=" + id.trim());
-        String[] data = br.getRegex("(.*?)#(\\d+)#(\\d+)#(.*)").getRow(0);
-        downloadLink.setFinalFileName(data[0]);
-        downloadLink.setDownloadSize(Long.parseLong(data[1]));
-        if (data[2].equalsIgnoreCase("0")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setMD5Hash(data[3].trim());
-        return AvailableStatus.TRUE;
+        try {
+            String id = new Regex(downloadLink.getDownloadURL(), "dataup\\.de|to/(\\d+)").getMatch(0);
+            br.getPage("http://dataup.to/data/api/status.php?id=" + id.trim());
+            String[] data = br.getRegex("(.*?)#(\\d+)#(\\d+)#(.*)").getRow(0);
+            downloadLink.setFinalFileName(data[0]);
+            downloadLink.setDownloadSize(Long.parseLong(data[1]));
+            if (data[2].equalsIgnoreCase("0")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            downloadLink.setMD5Hash(data[3].trim());
+            return AvailableStatus.TRUE;
+        } catch (NullPointerException e) {
+            return AvailableStatus.FALSE;
+        }
     }
 
     // @Override
@@ -60,16 +65,16 @@ public class Dataupde extends PluginForHost {
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
+   
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         requestFileInformation(downloadLink);
         this.setBrowserExclusive();
-        br.setCookie("http://www.dataup.de/", "language", "en");
+        br.setCookie("http://www.dataup.to/", "language", "en");
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
 
         if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
-        /* 10 seks warten, kann weggelassen werden */
-
+      
         /* DownloadLink holen */
         Form form;
         if (br.containsHTML("class=\"button_divx\" value")) {
@@ -79,9 +84,11 @@ public class Dataupde extends PluginForHost {
         } else {
             form = br.getForms()[2];
         }
-        this.sleep(10000, downloadLink);
+        /* 10 seks warten, kann weggelassen werden */
 
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, form, true, 1);
+//        this.sleep(10000, downloadLink);
+
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, true, 1);
 
         if (dl.getConnection().getLongContentLength() == 0) {
             dl.getConnection().disconnect();
@@ -95,6 +102,11 @@ public class Dataupde extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 180000);
         }
         dl.startDownload();
+    }
+
+    private void correctURL(DownloadLink downloadLink) {
+        downloadLink.setUrlDownload(downloadLink.getDownloadURL().replace(".de/", ".to/"));
+        
     }
 
     // @Override

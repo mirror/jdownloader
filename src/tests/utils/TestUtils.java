@@ -90,17 +90,21 @@ public abstract class TestUtils {
     public static String getStringProperty(String string) {
         SubConfiguration cfg = SubConfiguration.getConfig("UNITTEST");
         String ret = cfg.getStringProperty(string);
-
-        ret = UserIOGui.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN, "PLease enter String", string, ret, null, null, null);
-        ;
+        if (ret != null) {
+            UserIO.setCountdownTime(1);
+        }
+        ret = UserIOGui.getInstance().requestInputDialog(0, "Please enter String", string, ret, null, null, null);
+        UserIO.setCountdownTime(20);
         cfg.setProperty(string, ret);
         cfg.save();
         return ret;
     }
-/**
- * logs in the browser to jd wiki
- * @param br
- */
+
+    /**
+     * logs in the browser to jd wiki
+     * 
+     * @param br
+     */
     public static void wikiLogin(Browser br) {
         try {
             br.setFollowRedirects(true);

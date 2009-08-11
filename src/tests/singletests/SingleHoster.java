@@ -43,7 +43,7 @@ public class SingleHoster {
      * http://jdownloader
      * .net:8081/knowledge/wiki/development/intern/testlinks/hoster/HOST
      */
-    private static final String HOST = "badongo.com";
+    private static final String HOST = "ftp";
 
     @Before
     public void setUp() {
@@ -135,6 +135,11 @@ public class SingleHoster {
             while (true) {
 
                 Thread.sleep(1000);
+                if(dlink.getLinkStatus().getStatusString().trim().length()==0){
+                    fail(TestUtils.log("Download did not start correctly. Statusstring is empty"));
+                    download.abortDownload();
+                    return;
+                }
                 System.out.println(dlink.getLinkStatus().getStatusString());
 
                 if (dlink.getDownloadCurrent() > 0 && !dlink.getLinkStatus().getStatusString().startsWith("Connecting")) {

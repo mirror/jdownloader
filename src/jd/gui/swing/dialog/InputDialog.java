@@ -46,6 +46,7 @@ public class InputDialog extends AbstractDialog implements KeyListener, MouseLis
         super(flag, title, icon, okOption, cancelOption);
         this.defaultMessage = defaultMessage;
         this.message = message;
+       
         init();
     }
 
@@ -105,9 +106,10 @@ public class InputDialog extends AbstractDialog implements KeyListener, MouseLis
         input.requestFocusInWindow();
 
     }
-
+ 
     public String getReturnID() {
-        if ((this.getReturnValue() & UserIO.RETURN_OK) == 0) { return null; }
+        if ((this.getReturnValue() & (UserIO.RETURN_OK|UserIO.RETURN_COUNTDOWN_TIMEOUT)) == 0) { return null; }
+        if(input.getText()==null||input.getText().equals(""))return null;
         return input.getText();
     }
 
