@@ -215,7 +215,7 @@ public class UCMS extends PluginForDecrypt {
                             logger.finest("Captcha Protected");
                             String captchaAdress = host + tform.getRegex(Pattern.compile("<img src=\"(/captcha/.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
                             captchaFile = getLocalCaptchaFile();
-                            Browser.download(captchaFile, captchaAdress);
+                            Browser.download(captchaFile, captchaAdress);                            
                             capTxt = getCaptchaCode("hardcoremetal.biz", captchaFile, UserIO.NO_JAC, param, null, null);
                             tform.put("code", capTxt);
                             brc.submitForm(tform);

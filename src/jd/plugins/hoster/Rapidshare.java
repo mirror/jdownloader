@@ -325,7 +325,8 @@ public class Rapidshare extends PluginForHost {
     }
 
     private String getName(String downloadURL) {
-        return new Regex(downloadURL, "files/\\d+/(.*)").getMatch(0);
+        /* remove html ending, because rs now checks the complete filename */
+        return new Regex(downloadURL, "files/\\d+/(.*?)(\\.html?|$)").getMatch(0);
     }
 
     private String getID(String downloadURL) {
