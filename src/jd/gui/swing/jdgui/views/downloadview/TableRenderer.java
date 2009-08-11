@@ -49,6 +49,8 @@ public class TableRenderer extends DefaultTableRenderer {
 
     private static final String NULL_BYTE_PROGRESS = "0.00% (0 B/* MB)";
 
+
+
     private DecimalFormat c = new DecimalFormat("0.00");
 
     private Component co;
@@ -108,7 +110,7 @@ public class TableRenderer extends DefaultTableRenderer {
     private StatusLabel statuspanel;
 
     private int counter;
-
+    private static Border ERROR_BORDER;
     private static Color COL_PROGRESS_ERROR = new Color(0xCC3300);
 
     private static Color COL_PROGRESS_NORMAL = null;
@@ -124,6 +126,8 @@ public class TableRenderer extends DefaultTableRenderer {
         progress.setOpaque(true);
         COL_PROGRESS_NORMAL = progress.getForeground();
         statuspanel = new StatusLabel();
+        
+        ERROR_BORDER=BorderFactory.createLineBorder(COL_PROGRESS_ERROR);
     }
 
     private ArrayList<RowHighlighter<?>> highlighter;
@@ -261,7 +265,7 @@ public class TableRenderer extends DefaultTableRenderer {
             statuspanel.setBorder(null);
             return statuspanel;
         case DownloadJTableModel.COL_PROGRESS:
-
+            progress.setBorder(null);
             if (dLink.getPlugin() == null) {
                 co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
                 ((JRendererLabel) co).setIcon(null);
@@ -294,6 +298,7 @@ public class TableRenderer extends DefaultTableRenderer {
             } else if ((dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED) && dLink.getPlugin().getRemainingHosterWaittime() > 0) || (dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) && dLink.getLinkStatus().getRemainingWaittime() > 0)) {
                 progress.setMaximum(dLink.getLinkStatus().getTotalWaitTime());
                 progress.setForeground(COL_PROGRESS_ERROR);
+                progress.setBorder(ERROR_BORDER);
                 progress.setValue(dLink.getLinkStatus().getRemainingWaittime());
                 clearSB();
                 col = this.table.getColumn(column);
@@ -391,9 +396,9 @@ public class TableRenderer extends DefaultTableRenderer {
             } else if ((dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED) && dLink.getPlugin().getRemainingHosterWaittime() > 0) || (dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) && dLink.getLinkStatus().getRemainingWaittime() > 0)) {
                 clearSB();
                 col = this.table.getColumn(column);
-                sb.append(Formatter.formatSeconds(dLink.getLinkStatus().getRemainingWaittime() / 1000));
+//                sb.append(Formatter.formatSeconds(dLink.getLinkStatus().getRemainingWaittime() / 1000));
                 ((JRendererLabel) co).setIcon(null);
-                ((JRendererLabel) co).setText(sb.toString());
+                ((JRendererLabel) co).setText("");
                 ((JRendererLabel) co).setBorder(null);
                 return co;
             } else if (dLink.getDownloadCurrent() > 0) {
@@ -559,6 +564,7 @@ public class TableRenderer extends DefaultTableRenderer {
             value = fp.getHoster();
             break;
         case DownloadJTableModel.COL_PROGRESS:
+            progress.setBorder(null);
             if (fp.isFinished()) {
                 progress.setMaximum(100);
                 progress.setValue(100);
