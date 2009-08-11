@@ -26,7 +26,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "extrashare.us" }, urls = { "http://[\\w\\.]*?extrashare.us/file/.+/.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "extrashare.us" }, urls = { "http://[\\w\\.]*?extrashare.us/(\\w\\w/)?file/.+/.+" }, flags = { 0 })
 public class ExtraShareUs extends PluginForHost {
 
     public ExtraShareUs(PluginWrapper wrapper) {

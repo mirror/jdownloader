@@ -33,12 +33,10 @@ public class AddatHu extends PluginForHost {
         super(wrapper);
     }
 
-    // @Override
     public String getAGBLink() {
         return "http://www.addat.hu/";
     }
 
-    // @Override
     public String getCoder() {
         return "TnS";
     }
@@ -50,63 +48,43 @@ public class AddatHu extends PluginForHost {
         link.setUrlDownload("http://addat.hu/" + id + "/freedownload");
     }
 
-    private String getFreePageLink(DownloadLink link) {
-        String url = link.getDownloadURL();
-        Regex regex = new Regex(url, ".*addat.hu/(.*)/");
-        String id = regex.getMatch(0);
-        return "http://addat.hu/" + id + "/freedownload";
-    }
-
-    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException {
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
-        br.getPage(getFreePageLink(downloadLink));
-        String[] dat = br.getRegex("<b>http://addat.hu/.*/(.*).html</b> \\((.*)\\)").getRow(0);
-        long length = Regex.getSize(dat[1].trim());
-        downloadLink.setDownloadSize(length);
-        downloadLink.setName(dat[0].trim());
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("Sajnáljuk, de a keresett fájl nem található\\.")) return AvailableStatus.FALSE;
+
+        String name = br.getRegex(Pattern.compile("<span style=\"font-size: 13px; font-weight: bolder;\">(.*)</span>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        downloadLink.setName(name);
+
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * /* /* public String getVersion() { return
-     * getVersion("$Revision$"); }
-     */
-
-    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         br.setFollowRedirects(true);
         requestFileInformation(downloadLink);
-        String link = br.getRegex(Pattern.compile("<a href=\"(.*)\"><img border=\"0\" src=\"/images/letoltes_btn.jpg\"></a>", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        jd.plugins.BrowserAdapter.openDownload(br,downloadLink, link, true, 1).startDownload();
+        String link = br.getRegex(Pattern.compile("<a href=\"(.*)\">\\s*<img border=\"0\" src=\"/images/letoltes_btn.jpg\">", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, 1).startDownload();
     }
 
-    // @Override
     public int getTimegapBetweenConnections() {
         return 500;
     }
 
-    // @Override
     public int getMaxConnections() {
         return 1;
     }
 
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    // @Override
     public void reset() {
     }
 
-    // @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 }
