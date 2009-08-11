@@ -35,6 +35,7 @@
 				<exclude name="jd/plugins/optional/**" />
 				<exclude name="sun/net/www/protocol/**" />
 				<include name="jd/plugins/hoster/HTTPAllgemein*" />
+				<exclude name="tests/**" />
 			</fileset>
 			<fileset dir="${res}">
 				<include name="*.properties" />
@@ -153,6 +154,7 @@
 				<exclude name="jd/plugins/optional/**" />
 				<exclude name="sun/net/www/protocol/**" />
 				<include name="jd/plugins/hoster/HTTPAllgemein*" />
+				<exclude name="tests/**" />
 			</fileset>
 		</jar>
 		<delete file="Manifest.MF" failonerror="false" />
