@@ -44,17 +44,21 @@ import jd.utils.JDUtilities;
 public class UCMS extends PluginForDecrypt {
     private static final String[] ANNOTATION_NAMES = new String[] { "ddl-kingz.in", "oxygen-warez.com", "filefox.in", "alphawarez.us", "pirate-loads.com", "fettrap.com", "omega-music.com", "hardcoremetal.biz", "flashload.org", "twin-warez.com", "oneload.org", "steelwarez.com", "fullstreams.info", "lionwarez.com", "1dl.in", "chrome-database.com", "oneload.org", "youwarez.biz", "saugking.net", "leetpornz.com", "freefiles4u.com", "dark-load.net", "crimeland.de", "get-warez.in", "meinsound.com", "projekt-tempel-news.de.vu", "datensau.org", "musik.am", "spreaded.net", "relfreaks.com", "babevidz.com", "serien24.com", "porn-freaks.net", "xxx-4-free.net", "porn-traffic.net", "chili-warez.net", "game-freaks.net", "isos.at", "your-load.com", "mov-world.net", "xtreme-warez.net", "sceneload.to", "epicspeedload.in", "serienfreaks.to", "serienfreaks.in", "warez-load.com", "ddl-scene.com",
             "mp3king.cinipac-hosting.biz", "sauggirls.com", "pornfox.in", "xflat24.com", "alben.ws", "worldofxxx.org", "gamegalaxy.ws", "ddl.byte.to", "interload.biz", "xwebb.extra.hu/1dl", "jokermovie.org", "xtreme-warez.biz", "your-load.com", "top-hitz.com", "wii-reloaded.ath.cx/sites/epic", "wankingking.com", "projekt-tempel-news.org", "porn-ox.in", "music-dome.cc", "sound-load.com", "hoerspiele.to", "jim2008.extra.hu", "ex-yu.extra.hu", "firefiles.in", "gez-load.net", "wrzunlimited.1gb.in", "streamload.in", "toxic.to", "mp3z.to", "sexload.to", "sound-load.com", "sfulc.exofire.net/cms", "fickdiehure.com", "dream-team.bz/cms", "omega-warez.com", "ddl-scene.cc", "xxxstreams.org", "scene-warez.com", "dokuh.tv", "titanload.to", "ddlshock.com", "xtreme-warez.us", "crunkwarez.com", "serienking.in", "stream.szenepic.us", "gate-warez.com", "gateload.info", "hot-porn-ddl.com" };
-/**
- * Returns the annotations names array
- * @return
- */
+
+    /**
+     * Returns the annotations names array
+     * 
+     * @return
+     */
     public static String[] getAnnotationNames() {
         return ANNOTATION_NAMES;
     }
-/**
- * returns the annotation pattern array
- * @return
- */
+
+    /**
+     * returns the annotation pattern array
+     * 
+     * @return
+     */
     public static String[] getAnnotationUrls() {
         String[] names = getAnnotationNames();
         String[] ret = new String[names.length];
@@ -65,10 +69,12 @@ public class UCMS extends PluginForDecrypt {
         }
         return ret;
     }
-/**
- * Returns the annotations flags array
- * @return
- */
+
+    /**
+     * Returns the annotations flags array
+     * 
+     * @return
+     */
     public static int[] getAnnotationFlags() {
         String[] names = getAnnotationNames();
         int[] ret = new int[names.length];
@@ -86,48 +92,6 @@ public class UCMS extends PluginForDecrypt {
 
     public UCMS(PluginWrapper wrapper) {
         super(wrapper);
-    }
-
-    /**
-     * CReates the annotation
-     * 
-     * @param s
-     * @throws Exception
-     */
-    public static void main(String s[]) throws Exception {
-
-        String[] list = { "ddl-kingz.in", "oxygen-warez.com", "filefox.in", "alphawarez.us", "pirate-loads.com", "fettrap.com", "omega-music.com", "hardcoremetal.biz", "flashload.org", "twin-warez.com", "oneload.org", "steelwarez.com", "fullstreams.info", "lionwarez.com", "1dl.in", "chrome-database.com", "oneload.org", "youwarez.biz", "saugking.net", "leetpornz.com", "freefiles4u.com", "dark-load.net", "crimeland.de", "get-warez.in", "meinsound.com", "projekt-tempel-news.de.vu", "datensau.org", "musik.am", "spreaded.net", "relfreaks.com", "babevidz.com", "serien24.com", "porn-freaks.net", "xxx-4-free.net", "porn-traffic.net", "chili-warez.net", "game-freaks.net", "isos.at", "your-load.com", "mov-world.net", "xtreme-warez.net", "sceneload.to", "epicspeedload.in", "serienfreaks.to", "serienfreaks.in", "warez-load.com", "ddl-scene.com", "mp3king.cinipac-hosting.biz", "sauggirls.com",
-                "pornfox.in", "xflat24.com", "alben.ws", "worldofxxx.org", "gamegalaxy.ws", "ddl.byte.to", "interload.biz", "xwebb.extra.hu/1dl", "jokermovie.org", "xtreme-warez.biz", "your-load.com", "top-hitz.com", "wii-reloaded.ath.cx/sites/epic", "wankingking.com", "projekt-tempel-news.org", "porn-ox.in", "music-dome.cc", "sound-load.com", "hoerspiele.to", "jim2008.extra.hu", "ex-yu.extra.hu", "firefiles.in", "gez-load.net", "wrzunlimited.1gb.in", "streamload.in", "toxic.to", "mp3z.to", "sexload.to", "sound-load.com", "sfulc.exofire.net/cms", "fickdiehure.com", "dream-team.bz/cms", "omega-warez.com", "ddl-scene.cc", "xxxstreams.org", "scene-warez.com", "dokuh.tv", "titanload.to", "ddlshock.com", "xtreme-warez.us", "crunkwarez.com", "serienking.in", "stream.szenepic.us", "gate-warez.com", "gateload.info", "hot-porn-ddl.com" };
-
-        System.out.print("@DecrypterPlugin(revision = \"$Revision$\", interfaceVersion = 2, names = {");
-
-        boolean f = true;
-        for (String pattern : list) {
-            if (!f) System.out.print(", ");
-            f = false;
-            System.out.println("\"" + pattern + "\"");
-
-        }
-        System.out.print("}, urls = {");
-        f = true;
-        for (String pattern : list) {
-
-            if (!f) System.out.print(", ");
-            f = false;
-            System.out.println("\"http://[\\\\w\\\\.]*?" + pattern.replaceAll("\\\\.", "\\\\\\\\.") + "/(\\\\?id=.+|[\\\\?]*?/.*?\\\\.html|category/.*?/.*?\\\\.html|download/.*?/.*?\\\\.html|.*?/.*?\\\\.html)\"");
-
-        }
-        System.out.print("}, flags = {");
-        f = true;
-        for (String pattern : list) {
-
-            if (!f) System.out.println(",");
-            f = false;
-            System.out.print("0");
-
-        }
-
-        System.out.print("})");
     }
 
     // @Override

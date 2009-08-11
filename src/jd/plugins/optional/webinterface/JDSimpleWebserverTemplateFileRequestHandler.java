@@ -21,7 +21,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -171,27 +170,19 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
 
     }
 
-    @SuppressWarnings("unchecked")
     private void add_password_list(Template t, HashMap<String, String> requestParameter) {
-        String pwlist = "";
+        StringBuilder pwlist = new StringBuilder();
 
-        for (OptionalPluginWrapper wrapper : OptionalPluginWrapper.getOptionalWrapper()) {
-            if (wrapper.isEnabled() && wrapper.getPlugin().getClass().getName().endsWith("JDUnrar")) {
-                Object obj = PasswordListController.getInstance().getPasswordList();
-                if (obj != null && obj instanceof ArrayList) {
-                    ArrayList<String> arrayList = new ArrayList<String>();
-                    arrayList.addAll((Collection<? extends String>) obj);
-                    for (String pw : arrayList) {
-                        if (!pw.trim().equals("")) {
-                            pwlist += System.getProperty("line.separator") + pw;
-                        }
-                    }
+        ArrayList<String> arrayList = PasswordListController.getInstance().getPasswordList();
+        if (arrayList != null) {
+            for (String pw : arrayList) {
+                if (!pw.trim().equals("")) {
+                    pwlist.append(System.getProperty("line.separator")).append(pw);
                 }
-                break;
             }
         }
 
-        t.setParam("password_list", pwlist);
+        t.setParam("password_list", pwlist.toString());
     }
 
     private void add_single_info(Template t, HashMap<String, String> requestParameter) {

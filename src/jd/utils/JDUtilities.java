@@ -37,7 +37,6 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -45,7 +44,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.CRC32;
 import java.util.zip.CheckedInputStream;
@@ -99,8 +97,6 @@ public class JDUtilities {
     private static DatabaseConnector DB_CONNECT = null;
 
     private static HashMap<String, PluginsC> CONTAINER_PLUGINS = new HashMap<String, PluginsC>();
-
- 
 
     /**
      * Der DownloadController

@@ -10,15 +10,10 @@ import javax.swing.JCheckBoxMenuItem;
 /**
  * This is an extended JCheckBoxMenuItem
  * 
- * 
  * @author Coalado
- * 
  */
 public class JExtCheckBoxMenuItem extends JCheckBoxMenuItem {
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = 1L;
     private boolean hideOnClick = true;
 
@@ -35,7 +30,7 @@ public class JExtCheckBoxMenuItem extends JCheckBoxMenuItem {
     }
 
     /**
-     * Defauklt: true
+     * Default: true
      * 
      * if set to false, the menu does not close when clicking this icon.
      * 
@@ -46,20 +41,12 @@ public class JExtCheckBoxMenuItem extends JCheckBoxMenuItem {
     }
 
     protected void processMouseEvent(MouseEvent e) {
-        if (hideOnClick) {
-            super.processMouseEvent(e);
-            return;
-        }
-        int id = e.getID();
-        switch (id) {
-        case MouseEvent.MOUSE_RELEASED:
+        if (!hideOnClick && e.getID() == MouseEvent.MOUSE_RELEASED) {
             for (ActionListener al : this.getActionListeners()) {
                 al.actionPerformed(new ActionEvent(this, 0, null));
             }
             doClick(0);
-
-            break;
-        default:
+        } else {
             super.processMouseEvent(e);
         }
     }

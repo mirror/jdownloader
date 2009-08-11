@@ -25,12 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = { "http://.+bat5\\.com" }, flags = { 0 })
-//        
-// new DecryptPluginWrapper("urlcash.net", "URLCash",
-// "(http://[\\w\\.]*?" + PluginPattern.URLCASH +
-// "/.+)|(http://[\\w\\-]{5,16}\\." + PluginPattern.URLCASH + ")");
-//       
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {}, flags = {})
 public class URLCash extends PluginForDecrypt {
     private static final String[] ANNOTATION_NAMES = new String[] { "urlcash.net", "bat5.com", "sealed.in", "urlcash.org", "clb1.com", "urlgalleries.com", "celebclk.com", "smilinglinks\\.com", "peekatmygirlfriend.com", "looble.net" };
 
@@ -53,8 +48,8 @@ public class URLCash extends PluginForDecrypt {
         String[] ret = new String[names.length];
 
         for (int i = 0; i < ret.length; i++) {
-            ret[i] = "(http://[\\w\\.]*?" + names[i].replaceAll("\\.", "\\\\.")+"/.+)|(http://[\\w\\-]{5,16}\\." + names[i].replaceAll("\\.", "\\\\.") + ")";
-                
+            ret[i] = "(http://[\\w\\.]*?" + names[i].replaceAll("\\.", "\\\\.") + "/.+)|(http://[\\w\\-]{5,16}\\." + names[i].replaceAll("\\.", "\\\\.") + ")";
+
         }
         return ret;
     }

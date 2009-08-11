@@ -1,8 +1,5 @@
 package jd.plugins;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-
 import jd.http.Browser;
 import jd.parser.html.Form;
 import jd.plugins.download.DownloadInterface;
@@ -37,7 +34,7 @@ public class BrowserAdapter {
         return dl;
     }
 
-    public static DownloadInterface openDownload(Browser br, DownloadLink downloadLink, String url, String postdata) throws MalformedURLException, IOException, Exception {
+    public static DownloadInterface openDownload(Browser br, DownloadLink downloadLink, String url, String postdata) throws Exception {
         DownloadInterface dl = RAFDownload.download(downloadLink, br.createPostRequest(url, postdata));
         try {
             dl.connect(br);
