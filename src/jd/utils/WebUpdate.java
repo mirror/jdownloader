@@ -171,15 +171,8 @@ public class WebUpdate {
         final ProgressController progress = new ProgressController(JDL.L("init.webupdate.progress.0_title", "Webupdate"), 100);
 
         final WebUpdater updater = new WebUpdater();
-        final MessageListener messageListener;
-        updater.getBroadcaster().addListener(messageListener = new MessageListener() {
-
-            public void onMessage(MessageEvent event) {
-                progress.setStatusText(event.getSource() + ": " + event.getMessage());
-
-            }
-
-        });
+        
+    
         // if
         // (SubConfiguration.getConfig("WEBUPDATE").getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE,
         // false)) {
@@ -239,9 +232,18 @@ public class WebUpdate {
         final boolean doPluginRestart = pluginRestartRequired;
         new Thread() {
             public void run() {
+                MessageListener messageListener=null;
                 if (files != null) {
                     updater.filterAvailableUpdates(files);
                     JDUtilities.getController().setWaitingUpdates(files);
+                    updater.getBroadcaster().addListener(messageListener = new MessageListener() {
+
+                        public void onMessage(MessageEvent event) {
+                            progress.setStatusText(event.getSource() + ": " + event.getMessage());
+
+                        }
+
+                    });
                 }
                 if (!guiCall) {
                     progress.finalize();
@@ -261,6 +263,20 @@ public class WebUpdate {
 
                 if (files.size() == 0) {
                     logger.severe("Webupdater offline or nothing to update");
+                    
+                    // ask to restart if there are updates left in the /update/ folder
+                    if (JDUtilities.getResourceFile("update").listFiles().length>0) {
+
+                        int ret = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN|UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, JDL.L("jd.update.Main.error.title.old", "Updates found!"), JDL.L("jd.update.Main.error.message.old", "There are are uninstalled updates. Install them now?"), null, null, null);
+                        if(JDFlags.hasAllFlags(ret, UserIO.RETURN_OK)){
+                            JDController.releaseDelayExit(id);
+                            JDUtilities.restartJD();
+                            return;
+                        }
+                    
+                    }
+                    
+                    
                     progress.finalize();
                     if (doPluginRestart) JDUtilities.restartJD();
                     UPDATE_IN_PROGRESS = false;
@@ -285,7 +301,7 @@ public class WebUpdate {
                         }
                     } else {
                         try {
-                            int answer = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, JDL.L("system.dialogs.update", "Updates available"), JDL.LF("jd.utils.webupdate.message", "<font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\">%s update(s) available. Install now?</font>", files.size()), JDTheme.II("gui.splash.update", 32, 32), null, null);
+                            int answer = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, JDL.L("system.dialogs.update", "Updates available"), JDL.LF("jd.utils.webupdate.message2", "<font size=\"4\" face=\"Verdana, Arial, Helvetica, sans-serif\">%s update(s) available. Install now?</font>", files.size()), JDTheme.II("gui.splash.update", 32, 32), null, null);
 
                             if (JDFlags.hasAllFlags(answer, UserIO.RETURN_OK)) {
                                 doUpdate(updater, files, doPluginRestart);
@@ -299,7 +315,7 @@ public class WebUpdate {
                     }
 
                 }
-                updater.getBroadcaster().removeListener(messageListener);
+               if(messageListener!=null) updater.getBroadcaster().removeListener(messageListener);
                 progress.finalize();
                 JDController.releaseDelayExit(id);
             }
@@ -353,8 +369,16 @@ public class WebUpdate {
                         System.out.println("UPdate: " + files);
 
                         updater.updateFiles(files, pc);
-                        JDController.releaseDelayExit(id);
-                        JDUtilities.restartJD();
+                        if (updater.getErrors() > 0||true) {
+
+                            int ret = UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN|UserIO.DONT_SHOW_AGAIN|UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, JDL.L("jd.update.Main.error.title", "Errors occured"), JDL.LF("jd.update.Main.error.message", "Errors occured!\r\nThere were %s error(s) while updating. Do you want to update anyway?",updater.getErrors()+""), UserIO.getInstance().getIcon(UserIO.ICON_WARNING), null, null);
+                            if(JDFlags.hasAllFlags(ret, UserIO.RETURN_OK)){
+                                JDController.releaseDelayExit(id);
+                                JDUtilities.restartJD();
+                            }
+                        
+                        }
+                 
 
                     } catch (Exception e) {
                         JDLogger.exception(e);

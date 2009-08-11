@@ -39,26 +39,69 @@ public abstract class UserIO {
      * TO not query user. Try to fill automaticly, or return null
      */
     public static final int NO_USER_INTERACTION = 1 << 1;
+    /**
+     * do not display a countdown
+     */
     public static final int NO_COUNTDOWN = 1 << 2;
+    /**
+     * do not display ok option
+     */
     public static final int NO_OK_OPTION = 1 << 3;
+    /**
+     * do not display cancel option
+     */
     public static final int NO_CANCEL_OPTION = 1 << 4;
+    /**
+     * displays a do not show this question again checkbox
+     */
     public static final int DONT_SHOW_AGAIN = 1 << 5;
+    /**
+     * IF available a large evrsion of the dialog is used
+     */
     public static final int STYLE_LARGE = 1 << 6;
+    /**
+     * Render html
+     */
     public static final int STYLE_HTML = 1 << 7;
+    /**
+     * Does not display an icon
+     */
     public static final int NO_ICON = 1 << 8;
     /**
      * Return IDS
      */
+    /**
+     * pressed ok
+     */
     public static final int RETURN_OK = 1 << 1;
+    /**
+     * pressed cancel
+     */
     public static final int RETURN_CANCEL = 1 << 2;
+    /**
+     * don'tz sho again flag ahs been set. the dialog may has been visible. if RETURN_SKIPPED_BY_DONT_SHOW is not set. the user set this flag latly
+     */
     public static final int RETURN_DONT_SHOW_AGAIN = 1 << 3;
+    /**
+     * don't show again flag has been set the dialog has not been visible
+     */
     public static final int RETURN_SKIPPED_BY_DONT_SHOW = 1 << 4;
+    /**
+     * Timeout has run out. Returns current settings or default values
+     */
     public static final int RETURN_COUNTDOWN_TIMEOUT = 1 << 5;
     public static final int ICON_INFO = 0;
     public static final int ICON_WARNING = 1;
     public static final int ICON_ERROR = 2;
     public static final int ICON_QUESTION = 3;
-
+    /**
+     * Cancle option ignores Don't show again checkbox
+     */
+    public static final int DONT_SHOW_AGAIN_IGNORES_CANCEL = 1<<6;
+    /**
+     * If user selects OK Option, the don't show again option is ignored
+     */
+    public static final int DONT_SHOW_AGAIN_IGNORES_OK = 1<<7;
     protected static UserIO INSTANCE = null;
     private static Integer COUNTDOWN_TIME = null;
 

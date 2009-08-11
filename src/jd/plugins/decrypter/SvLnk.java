@@ -51,8 +51,6 @@ public class SvLnk extends PluginForDecrypt {
         try {
             String[] slParameters = null;
             String sl = br.getRegex("<meta\\s+?name\\s*?=\\s*?\"savelink\"\\s*?content=\"(.+?)\"\\s*?/?\\s*?>").getMatch(0);
-            //Workaround. remove after 15.8
-            if ( br.containsHTML("Weiter")&&parameter.getCryptedUrl().contains("valid")) sl = "Link:Weiter";
             if (sl != null) {
                 slParameters = sl.split(":");
             }
