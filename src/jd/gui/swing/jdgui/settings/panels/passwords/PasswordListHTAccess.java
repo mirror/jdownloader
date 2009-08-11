@@ -50,7 +50,7 @@ public class PasswordListHTAccess extends ConfigPanel {
 
         addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_LISTCONTROLLED, (ListController) HTACCESSController.getInstance(), JDL.L("plugins.http.htaccess", "List of all HTAccess passwords. Each line one password."))));
         // addGUIConfigEntry(new GUIConfigEntry(new
-        // ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration,
+        // ConfigEntry(ConfigContainer.TYPE_CHECKBOX, CONFIGURATION,
         // Configuration.LOGGER_FILELOG,
         // JDLocale.L("gui.config.general.filelogger",
         // "Erstelle Logdatei im ./logs/ Ordner")).setDefaultValue(false).setGroup(logging)));

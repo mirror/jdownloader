@@ -69,8 +69,6 @@ import jd.controlling.DownloadController;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.gui.UserIO;
-import jd.http.Browser;
-import jd.http.RandomUserAgent;
 import jd.nutils.Executer;
 import jd.nutils.Formatter;
 import jd.nutils.OSDetector;
@@ -96,35 +94,18 @@ public class JDUtilities {
     /**
      * Die Konfiguration
      */
-    public static Configuration configuration = null;
+    public static Configuration CONFIGURATION = null;
 
-    private static DatabaseConnector dbconnect = null;
+    private static DatabaseConnector DB_CONNECT = null;
 
-    private static HashMap<String, PluginsC> containerPlugins = new HashMap<String, PluginsC>();
+    private static HashMap<String, PluginsC> CONTAINER_PLUGINS = new HashMap<String, PluginsC>();
 
-    private static ArrayList<String[]> ipchecks = new ArrayList<String[]>();
-    private static Integer ipcheckIndex = new Integer(0);
-
-    static {
-        /* setup fallback ipcheck services */
-        ipchecks.add(new String[] { "http://www.wieistmeineip.de/", "Ihre IP-Adresse.*?class=\"ip\">([\\d+\\.]+?)</h1>" });
-        ipchecks.add(new String[] { "http://www.whatismyip.com/", "<h1>Your IP Address Is: ([\\d+\\.]+?)</h1>" });
-        ipchecks.add(new String[] { "http://www.whatsmyip.org/", "<title>What.*?Your IP is ([\\d+\\.]+?)</title>" });
-        ipchecks.add(new String[] { "http://whatismyipaddress.com/", "<B>Your IP address is ([\\d+\\.]+?)</B>" });
-        ipchecks.add(new String[] { "http://www.ipaddressworld.com/", "Your computer.*?size=\\+6>([\\d+\\.]+?)</FONT>" });
-        ipchecks.add(new String[] { "http://www.showmyip.com/", "IP Address properties of your Internet Connection ([\\d+\\.]+?) --> " });
-        ipchecks.add(new String[] { "http://www.myip.ch/", "Current IP Address: ([\\d+\\.]+?)</body>" });
-        ipchecks.add(new String[] { "http://ipcheckit.com/", "Your IP address is:<br/><B>([\\d+\\.]+?)</B>" });
-        ipchecks.add(new String[] { "http://www.findmyipaddress.info/", "My IP is.*?class=\"heading_color\">([\\d+\\.]+?)<" });
-        ipchecks.add(new String[] { "http://www.meineip.de/", "<th>Das ist Deine IP-Adresse.*?>([\\d+\\.]+?) </td>" });
-        ipchecks.add(new String[] { "http://checkip.dyndns.org/", "Current IP Address: ([\\d+\\.]+?)</body" });
-        Collections.shuffle(ipchecks);
-    }
+ 
 
     /**
      * Der DownloadController
      */
-    private static JDController controller = null;
+    private static JDController CONTROLLER = null;
 
     /**
      * Versionsstring der Applikation
@@ -139,7 +120,7 @@ public class JDUtilities {
     /**
      * Ein URLClassLoader, um Dateien aus dem HomeVerzeichnis zu holen
      */
-    private static JDClassLoader jdClassLoader = null;
+    private static JDClassLoader JD_CLASSLOADER = null;
 
     public static final int RUNTYPE_LOCAL = 1;
 
@@ -150,13 +131,11 @@ public class JDUtilities {
     /**
      * nur 1 UserIO Dialog gleichzeitig (z.b. PW, Captcha)
      */
-    public static Integer userio_lock = new Integer(0);
-
-    private static String LATEST_IP = null;
+    public static Integer USERIO_LOCK = new Integer(0);
 
     private static String REVISION;
 
-    private static String[] jdArgs = new String[1];
+    private static String[] JD_ARGUMENTS = new String[1];
 
     public static <K extends Comparable<K>, V> TreeMap<K, V> revSortByKey(Map<K, V> map) {
         TreeMap<K, V> a = new TreeMap<K, V>(new Comparator<K>() {
@@ -347,7 +326,7 @@ public class JDUtilities {
     }
 
     public static String getUserInput(String message, String defaultmessage) throws InterruptedException {
-        synchronized (userio_lock) {
+        synchronized (USERIO_LOCK) {
             if (message == null) message = JDL.L("gui.linkgrabber.password", "Password?");
             if (defaultmessage == null) defaultmessage = "";
             String password = UserIO.getInstance().requestInputDialog(0, message, defaultmessage);
@@ -359,17 +338,17 @@ public class JDUtilities {
      * @return Configuration instanz
      */
     public static Configuration getConfiguration() {
-        if (configuration == null) configuration = new Configuration();
-        return configuration;
+        if (CONFIGURATION == null) CONFIGURATION = new Configuration();
+        return CONFIGURATION;
     }
 
     /**
      * Gibt den verwendeten Controller zurück
      * 
-     * @return gerade verwendete controller-instanz
+     * @return gerade verwendete CONTROLLER-instanz
      */
     public static JDController getController() {
-        return controller;
+        return CONTROLLER;
     }
 
     public static long getCRC(File file) {
@@ -427,93 +406,6 @@ public class JDUtilities {
 
     }
 
-    public static String getIPAdressFallBack(Browser br) {
-        if (ipchecks.size() == 0) return null;
-        if (br == null) {
-            br = new Browser();
-            br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-            br.setConnectTimeout(10000);
-            br.setReadTimeout(10000);
-        }
-        synchronized (ipcheckIndex) {
-            ipcheckIndex = ipcheckIndex % ipchecks.size();
-            String[] ipcheck = ipchecks.get(ipcheckIndex);
-            ipcheckIndex++;
-            if (ipcheck.length != 2) return null;
-            try {
-                Pattern pattern = Pattern.compile(ipcheck[1], Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
-                Matcher matcher = pattern.matcher(br.getPage(ipcheck[0]));
-                if (matcher.find()) {
-                    if (matcher.groupCount() > 0) return LATEST_IP = matcher.group(1);
-                }
-            } catch (Exception e) {
-            }
-            JDLogger.getLogger().finer("Balance IP Check failed. IP not found via regex: " + ipcheck[1] + " on " + ipcheck[0]);
-        }
-        return null;
-    }
-
-    /**
-     * Prüft anhand der Globalen IP Check einstellungen die IP
-     * 
-     * @param br
-     *            TODO
-     * 
-     * @return ip oder /offline
-     */
-    public static String getIPAddress(Browser br) {
-        if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
-            JDLogger.getLogger().finer("IP Check is disabled. return current Milliseconds");
-            return System.currentTimeMillis() + "";
-        }
-        if (br == null) {
-            br = new Browser();
-            br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-            br.setConnectTimeout(10000);
-            br.setReadTimeout(10000);
-        }
-        if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_BALANCE, true)) {
-            /* use ipcheck balancer */
-            String ip = getIPAdressFallBack(br);
-            if (ip != null) return LATEST_IP = ip;
-        } else {
-            /* use userdefined ipcheck */
-            String site = SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_CHECK_SITE, "http://checkip.dyndns.org");
-            String patt = SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_PATTERN, "Address\\: ([0-9.]*)\\<\\/body\\>");
-
-            try {
-                JDLogger.getLogger().finer("UserDefined IP Check via " + site);
-                Pattern pattern = Pattern.compile(patt);
-                Matcher matcher = pattern.matcher(br.getPage(site));
-                if (matcher.find()) {
-                    if (matcher.groupCount() > 0) return LATEST_IP = matcher.group(1);
-                }
-            } catch (Exception e1) {
-            }
-            LATEST_IP = null;
-            JDLogger.getLogger().finer("UserDefined IP Check failed. IP not found via regex: " + patt + " on " + site);
-        }
-        /* fallback ipcheck */
-        try {
-            JDLogger.getLogger().finer("Fallback IP Check via JDownloader-IPCheck");
-            Pattern pattern = Pattern.compile("<ip>([\\d+\\.]+?)</ip>");
-            Matcher matcher = pattern.matcher(br.getPage("http://service.jdownloader.org/tools/getip.php"));
-            if (matcher.find()) {
-                if (matcher.groupCount() > 0) return LATEST_IP = matcher.group(1);
-            }
-        } catch (Exception e1) {
-        }
-        LATEST_IP = null;
-        JDLogger.getLogger().finer("Fallback IP Check failed.");
-
-        return "offline";
-    }
-
-    public static String getLatestIP() {
-        if (LATEST_IP == null) getIPAddress(null);
-        return LATEST_IP;
-    }
-
     /**
      * Diese Funktion gibt den Pfad zum JAC-Methodenverzeichniss zurück
      * 
@@ -543,15 +435,15 @@ public class JDUtilities {
      */
 
     public static JDClassLoader getJDClassLoader() {
-        if (jdClassLoader == null) {
+        if (JD_CLASSLOADER == null) {
             File homeDir = JDUtilities.getJDHomeDirectoryFromEnvironment();
             // String url = null;
             // Url Encode des pfads für den Classloader
             JDLogger.getLogger().finest("Create Classloader: for: " + homeDir.getAbsolutePath());
-            jdClassLoader = new JDClassLoader(homeDir.getAbsolutePath(), Thread.currentThread().getContextClassLoader());
+            JD_CLASSLOADER = new JDClassLoader(homeDir.getAbsolutePath(), Thread.currentThread().getContextClassLoader());
 
         }
-        return jdClassLoader;
+        return JD_CLASSLOADER;
     }
 
     /**
@@ -650,14 +542,14 @@ public class JDUtilities {
      * @return Ein passendes Plugin oder null
      */
     public static PluginsC getPluginForContainer(String container, String containerPath) {
-        if (containerPath != null && containerPlugins.containsKey(containerPath)) { return containerPlugins.get(containerPath); }
+        if (containerPath != null && CONTAINER_PLUGINS.containsKey(containerPath)) { return CONTAINER_PLUGINS.get(containerPath); }
         PluginsC ret = null;
         for (CPluginWrapper act : CPluginWrapper.getCWrapper()) {
             if (act.getHost().equalsIgnoreCase(container)) {
 
                 ret = (PluginsC) act.getNewPluginInstance();
                 if (containerPath != null) {
-                    containerPlugins.put(containerPath, ret);
+                    CONTAINER_PLUGINS.put(containerPath, ret);
                 }
                 return ret;
 
@@ -744,7 +636,7 @@ public class JDUtilities {
     }
 
     public static void setJDargs(String[] args) {
-        jdArgs = args;
+        JD_ARGUMENTS = args;
     }
 
     public static void restartJD() {
@@ -788,9 +680,9 @@ public class JDUtilities {
         jargs.add("JDownloader.jar");
 
         String[] javaArgs = jargs.toArray(new String[jargs.size()]);
-        String[] finalArgs = new String[jdArgs.length + javaArgs.length];
+        String[] finalArgs = new String[JD_ARGUMENTS.length + javaArgs.length];
         System.arraycopy(javaArgs, 0, finalArgs, 0, javaArgs.length);
-        System.arraycopy(jdArgs, 0, finalArgs, javaArgs.length, jdArgs.length);
+        System.arraycopy(JD_ARGUMENTS, 0, finalArgs, javaArgs.length, JD_ARGUMENTS.length);
 
         ArrayList<File> restartfiles = JDIO.listFiles(JDUtilities.getResourceFile("update"));
         if (restartfiles != null && restartfiles.size() > 0) {
@@ -898,20 +790,20 @@ public class JDUtilities {
     /**
      * Setzt die Konfigurations instanz
      * 
-     * @param configuration
+     * @param CONFIGURATION
      */
     public static void setConfiguration(Configuration configuration) {
-        JDUtilities.configuration = configuration;
+        JDUtilities.CONFIGURATION = configuration;
     }
 
     /**
      * Setzt den Controller
      * 
      * @param con
-     *            controller
+     *            CONTROLLER
      */
     public static void setController(JDController con) {
-        controller = con;
+        CONTROLLER = con;
     }
 
     public static DownloadController getDownloadController() {
@@ -973,10 +865,10 @@ public class JDUtilities {
 
     public synchronized static DatabaseConnector getDatabaseConnector() {
 
-        if (dbconnect == null) {
+        if (DB_CONNECT == null) {
 
             try {
-                dbconnect = new DatabaseConnector();
+                DB_CONNECT = new DatabaseConnector();
             } catch (Exception e) {
                 // TODO Auto-generated catch block
                 JDLogger.exception(e);
@@ -993,7 +885,7 @@ public class JDUtilities {
                 }
 
                 try {
-                    dbconnect = new DatabaseConnector();
+                    DB_CONNECT = new DatabaseConnector();
                 } catch (Exception e1) {
                     JDLogger.exception(e1);
                     UserIO.getInstance().requestMessageDialog("Could not create database. Please remove the JD_HOME/config directory and restart JD");
@@ -1003,7 +895,7 @@ public class JDUtilities {
             }
 
         }
-        return dbconnect;
+        return DB_CONNECT;
 
     }
 

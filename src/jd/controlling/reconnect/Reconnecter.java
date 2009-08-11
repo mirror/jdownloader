@@ -29,6 +29,7 @@ import jd.controlling.LinkCheck;
 import jd.controlling.ProgressController;
 import jd.controlling.interaction.Interaction;
 import jd.gui.UserIF;
+import jd.http.IPCheck;
 import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -63,7 +64,7 @@ public class Reconnecter {
     private static boolean checkExternalIPChange() {
         LAST_UP_UPDATE_TIME = System.currentTimeMillis();
         String tmp = CURRENT_IP;
-        CURRENT_IP = JDUtilities.getIPAddress(null);
+        CURRENT_IP = IPCheck.getIPAddress(null);
         if (CURRENT_IP != null && tmp.length() > 0 && !tmp.equals(CURRENT_IP)) {
             logger.info("Detected external IP Change.");
             return true;
@@ -133,7 +134,7 @@ public class Reconnecter {
             link.setEnabled(true);
         }
         LAST_UP_UPDATE_TIME = System.currentTimeMillis();
-        CURRENT_IP = JDUtilities.getIPAddress(null);
+        CURRENT_IP = IPCheck.getIPAddress(null);
         return ipChangeSuccess;
     }
 

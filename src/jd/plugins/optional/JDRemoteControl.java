@@ -41,6 +41,7 @@ import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlListener;
 import jd.gui.UserIO;
 import jd.http.Encoding;
+import jd.http.IPCheck;
 import jd.nutils.Formatter;
 import jd.nutils.httpserver.Handler;
 import jd.nutils.httpserver.HttpServer;
@@ -188,7 +189,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 response.addContent("</table><br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;</p></body></html>");
             } else if (request.getRequestUrl().equals("/get/ip")) {
                 // Get IP
-                response.addContent(JDUtilities.getIPAddress(null));
+                response.addContent(IPCheck.getIPAddress(null));
             } else if (request.getRequestUrl().equals("/get/config")) {
                 // Get Config
                 Property config = JDUtilities.getConfiguration();

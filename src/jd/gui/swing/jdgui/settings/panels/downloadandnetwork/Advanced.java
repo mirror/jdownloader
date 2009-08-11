@@ -26,6 +26,7 @@ import jd.config.SubConfiguration;
 import jd.controlling.ByteBufferController;
 import jd.gui.swing.jdgui.settings.ConfigPanel;
 import jd.gui.swing.jdgui.settings.GUIConfigEntry;
+import jd.http.IPCheck;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
@@ -71,11 +72,11 @@ public class Advanced extends ConfigPanel {
         conditionEntry2.setDefaultValue(true);
 
         extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PARAM_GLOBAL_IP_CHECK_SITE, JDL.L("gui.config.download.ipcheck.website", "IP prüfen über (Website)")));
-        ce.setDefaultValue("http://checkip.dyndns.org");
+        ce.setDefaultValue(IPCheck.IP_CHECK_SERVICES.get(0)[0]);
         ce.setEnabledCondidtion(conditionEntry2, "==", false);
 
         extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PARAM_GLOBAL_IP_PATTERN, JDL.L("gui.config.download.ipcheck.regex", "RegEx zum filtern der IP")));
-        ce.setDefaultValue("Address\\: ([0-9.]*)\\<\\/body\\>");
+        ce.setDefaultValue(IPCheck.IP_CHECK_SERVICES.get(0)[1]);
         ce.setEnabledCondidtion(conditionEntry2, "==", false);
 
         extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PARAM_GLOBAL_IP_MASK, JDL.L("gui.config.download.ipcheck.mask", "Erlaubte IPs")));

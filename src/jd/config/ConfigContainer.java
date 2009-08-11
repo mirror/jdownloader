@@ -177,7 +177,7 @@ public class ConfigContainer implements Serializable {
      * Gibt die Propertyinstanz zurück die dieser container zum speichern
      * verwendet(Es werden nur die einstellungen überdeckt bei denen die
      * propertyinstanz bei den COnfigEntries null ist Default ist die
-     * configuration
+     * CONFIGURATION
      * 
      * @return
      */

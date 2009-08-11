@@ -23,8 +23,8 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 
 import jd.http.Browser;
+import jd.http.IPCheck;
 import jd.http.JDProxy;
-import jd.utils.JDUtilities;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -60,7 +60,7 @@ public class ProxyAuthTest {
         br.setReadTimeout(10000);
         try {
 
-            String ip = JDUtilities.getIPAddress(br);
+            String ip = IPCheck.getIPAddress(br);
             InetSocketAddress proxyadress = new InetSocketAddress(pr.getHost(), pr.getPort());
             String proxyip = proxyadress.getAddress().getHostAddress();
 

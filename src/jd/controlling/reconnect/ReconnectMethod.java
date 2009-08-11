@@ -23,6 +23,7 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.gui.UserIF;
+import jd.http.IPCheck;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -61,7 +62,7 @@ public abstract class ReconnectMethod {
         int waitForIp = JDUtilities.getConfiguration().getIntegerProperty(PARAM_WAITFORIPCHANGE, 10);
 
         logger.info("Starting " + this.toString() + " #" + retries);
-        String preIp = JDUtilities.getIPAddress(null);
+        String preIp = IPCheck.getIPAddress(null);
 
         progress.increase(1);
         progress.setStatusText(JDL.L("reconnect.progress.2_oldIP", "Reconnect Old IP:") + preIp);
@@ -74,7 +75,7 @@ public abstract class ReconnectMethod {
             Thread.sleep(waittime * 1000);
         } catch (InterruptedException e) {
         }
-        String afterIP = JDUtilities.getIPAddress(null);
+        String afterIP = IPCheck.getIPAddress(null);
         progress.setStatusText(JDL.LF("reconnect.progress.3_ipcheck", "Reconnect New IP: %s / %s", afterIP, preIp));
         long endTime = System.currentTimeMillis() + waitForIp * 1000;
         logger.info("Wait " + waitForIp + " sec for new ip");
@@ -84,7 +85,7 @@ public abstract class ReconnectMethod {
                 Thread.sleep(5 * 1000);
             } catch (InterruptedException e) {
             }
-            afterIP = JDUtilities.getIPAddress(null);
+            afterIP = IPCheck.getIPAddress(null);
             progress.setStatusText(JDL.LF("reconnect.progress.3_ipcheck", "Reconnect New IP: %s / %s", afterIP, preIp));
         }
 
@@ -98,7 +99,7 @@ public abstract class ReconnectMethod {
                     Thread.sleep(5 * 1000);
                 } catch (InterruptedException e) {
                 }
-                afterIP = JDUtilities.getIPAddress(null);
+                afterIP = IPCheck.getIPAddress(null);
                 progress.setStatusText(JDL.LF("reconnect.progress.3_ipcheck", "Reconnect New IP: %s / %s", preIp, afterIP));
             }
         }

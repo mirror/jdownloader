@@ -259,7 +259,7 @@ public abstract class PluginForDecrypt extends Plugin {
     private void tryClickNLoad(CryptedLink cryptedLink) {
 
         if (this.isClickNLoadEnabled() && OPEN_CLICK_N_LOAD >= 0 && OPEN_CLICK_N_LOAD <= 25) {
-            synchronized (JDUtilities.userio_lock) {
+            synchronized (JDUtilities.USERIO_LOCK) {
                 if (OPEN_CLICK_N_LOAD < 0) return;
                 boolean open = JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, JDL.LF("gui.plugins.decrypt.askclicknload", "The decrypter %s seems to be outdated, but supports Click'n'Load. Open the website now?", this.getHost())), UserIO.RETURN_OK);
                 if (open) {

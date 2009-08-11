@@ -393,7 +393,7 @@ public class JDInit {
                             try {
 
                                 new DecryptPluginWrapper(names[i], c.getSimpleName(), patterns[i], flags[i], help.revision());
-                                System.out.println("Add decrypter for " + help.names()[i]);
+                                System.out.println("Add decrypter for " + names[i]);
                             } catch (Throwable e) {
                                 JDLogger.exception(e);
                             }

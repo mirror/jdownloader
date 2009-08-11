@@ -298,7 +298,7 @@ public class SingleDownloadController extends Thread {
     private void onErrorAGBNotSigned(DownloadLink downloadLink2, PluginForHost plugin) throws InterruptedException {
         downloadLink2.getLinkStatus().setStatusText(JDL.L("controller.status.agb_tos", "TOS haven't been accepted."));
         if (!plugin.isAGBChecked()) {
-            synchronized (JDUtilities.userio_lock) {
+            synchronized (JDUtilities.USERIO_LOCK) {
                 if (!plugin.isAGBChecked()) {
                     showAGBDialog(downloadLink2);
                 } else {

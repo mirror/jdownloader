@@ -84,7 +84,7 @@ public class DatabaseConnector implements Serializable {
         con.createStatement().executeUpdate("SET LOGSIZE 1");
 
         if (!new File(configpath + "database.script").exists()) {
-            logger.finer("No configuration database found. Creating new one.");
+            logger.finer("No CONFIGURATION database found. Creating new one.");
 
             con.createStatement().executeUpdate("CREATE TABLE config (name VARCHAR(256), obj OTHER)");
             con.createStatement().executeUpdate("CREATE TABLE links (name VARCHAR(256), obj OTHER)");
@@ -206,7 +206,7 @@ public class DatabaseConnector implements Serializable {
     }
 
     /**
-     * Returns a configuration
+     * Returns a CONFIGURATION
      */
     public synchronized Object getData(String name) {
         Object ret = dbdata.get(name);
@@ -260,7 +260,7 @@ public class DatabaseConnector implements Serializable {
     }
 
     /**
-     * Saves a configuration into the database
+     * Saves a CONFIGURATION into the database
      */
     public void saveConfiguration(String name, Object data) {
         dbdata.put(name, data);

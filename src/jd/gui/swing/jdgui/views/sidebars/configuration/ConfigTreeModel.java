@@ -34,7 +34,7 @@ public class ConfigTreeModel implements TreeModel {
     private TreeEntry plugins;
 
     public ConfigTreeModel() {
-        this.root = new TreeEntry(JDL.L(JDL_PREFIX + "configuration.title", "Settings"));
+        this.root = new TreeEntry(JDL.L(JDL_PREFIX + "CONFIGURATION.title", "Settings"));
 
         TreeEntry basics, modules;
         root.add(basics = new TreeEntry(JDL.L(JDL_PREFIX + "basics.title", "Basics")).setIcon("gui.images.config.home"));

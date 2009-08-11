@@ -45,6 +45,7 @@ import jd.gui.swing.jdgui.settings.ConfigPanel;
 import jd.gui.swing.jdgui.settings.GUIConfigEntry;
 import jd.gui.swing.jdgui.settings.subpanels.SubPanelCLRReconnect;
 import jd.gui.swing.jdgui.settings.subpanels.SubPanelLiveHeaderReconnect;
+import jd.http.IPCheck;
 import jd.nutils.Formatter;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -144,7 +145,7 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
                         message.setText(JDL.L("gui.warning.reconnectSuccess", "Reconnect successfull"));
                         success.setIcon(JDTheme.II("gui.images.selected", 32, 32));
                         success.setEnabled(true);
-                        currentip.setText(JDUtilities.getIPAddress(null));
+                        currentip.setText(IPCheck.getIPAddress(null));
                     } else {
                         progress.setStatusText(JDL.L("gui.warning.reconnectFailed", "Reconnect failed!"));
                         progress.setColor(Color.RED);
@@ -152,7 +153,7 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
                         message.setText(JDL.L("gui.warning.reconnectFailed", "Reconnect failed!"));
                         success.setIcon(JDTheme.II("gui.images.unselected", 32, 32));
                         success.setEnabled(true);
-                        currentip.setText(JDUtilities.getIPAddress(null));
+                        currentip.setText(IPCheck.getIPAddress(null));
                     }
 
                     timer.interrupt();
@@ -181,7 +182,7 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
         addExtern();
         addBatch();
         addCLR();
-        // tabbed.setSelectedIndex(configuration.getIntegerProperty(
+        // tabbed.setSelectedIndex(CONFIGURATION.getIntegerProperty(
         // ReconnectMethod.PARAM_RECONNECT_TYPE, ReconnectMethod.LIVEHEADER));
         method.add(Factory.createHeader(new ConfigGroup(JDL.L("gui.config.reconnect.test", "Showcase"), JDTheme.II("gui.images.config.network_local", 32, 32))), "spanx,gaptop 15,gapleft 20,gapright 15");
         JPanel p = new JPanel(new MigLayout(" ins 0,wrap 7", "[]5[fill]5[align right]20[align right]20[align right]20[align right]20[align right]", "[][]"));
@@ -214,7 +215,7 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
         new Thread() {
             @Override
             public void run() {
-                String ip = JDUtilities.getIPAddress(null);
+                String ip = IPCheck.getIPAddress(null);
                 currentip.setText(ip);
             }
         }.start();

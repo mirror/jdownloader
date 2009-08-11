@@ -35,6 +35,7 @@ import jd.controlling.JDLogger;
 import jd.controlling.reconnect.ReconnectMethod;
 import jd.gui.UserIO;
 import jd.gui.swing.components.linkbutton.JLink;
+import jd.http.IPCheck;
 import jd.nutils.JDFlags;
 import jd.nutils.Screen;
 import jd.parser.Regex;
@@ -140,7 +141,7 @@ public class Gui extends JDialog implements ActionListener {
                 host = host.replaceAll("http://", "").replaceAll("https://", "");
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_IP, host);
 
-                ip_before = JDUtilities.getIPAddress(null);
+                ip_before = IPCheck.getIPAddress(null);
                 ReconnectRecorder.startServer(host, rawmode.isSelected());
 
                 try {
@@ -201,7 +202,7 @@ public class Gui extends JDialog implements ActionListener {
                             Thread.sleep(check_intervall);
                         } catch (Exception e) {
                         }
-                        ip_after = JDUtilities.getIPAddress(null);
+                        ip_after = IPCheck.getIPAddress(null);
                         if (ip_after.contains("offline") && reconnect_timer == 0) {
                             reconnect_timer = System.currentTimeMillis();
                         }
@@ -249,7 +250,7 @@ public class Gui extends JDialog implements ActionListener {
                 public void run() {
                     btnStop.setEnabled(false);
 
-                    ip_after = JDUtilities.getIPAddress(null);
+                    ip_after = IPCheck.getIPAddress(null);
                     if (!ip_after.contains("offline") && !ip_after.equalsIgnoreCase(ip_before)) {
                         if (reconnect_timer == 0) {
                             /*

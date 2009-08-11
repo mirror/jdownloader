@@ -73,7 +73,7 @@ public class RandomUserAgent {
     private static ArrayList<System> system = new ArrayList<System>();
 
     /**
-     * Fill in the values (the "configuration")
+     * Fill in the values (the "CONFIGURATION")
      */
     private static final void initData() {
 
