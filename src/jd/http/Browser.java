@@ -708,18 +708,35 @@ public class Browser {
             new URL(string);
         } catch (Exception e) {
             if (request == null || request.getHttpConnection() == null) return string;
-            String path = request.getHttpConnection().getURL().getPath();
-            if (string.startsWith("/") || string.startsWith("\\")) return "http://" + request.getHttpConnection().getURL().getHost() + string;
-            int id;
-            if ((id = path.lastIndexOf("/")) >= 0) {
-                path = path.substring(0, id);
-            }
-            if (path.trim().length() == 0) path = "/";
+            String base = getBase(string);
+            if (string.startsWith("/") || string.startsWith("\\")) {
+                try {
+                    string = "http://" + new URL(base).getHost() + string;
+                } catch (MalformedURLException e1) {
+                    // TODO Auto-generated catch block
+                    e1.printStackTrace();
 
-            // path.substring(path.lastIndexOf("/"))
-            string = "http://" + request.getHttpConnection().getURL().getHost() + path + "/" + string;
+                }
+            } else {
+                string = base + string;
+            }
         }
         return Encoding.urlEncode_light(string);
+    }
+
+    private String getBase(String string) {
+        if (string == null) return "";
+        String base = getRegex("<base\\s*href=\"(.*?)\">").getMatch(0);
+        if (base != null) return base;
+        String path = request.getHttpConnection().getURL().getPath();
+        int id;
+        if ((id = path.lastIndexOf("/")) >= 0) {
+            path = path.substring(0, id);
+        }
+
+        // path.substring(path.lastIndexOf("/"))
+        string = "http://" + request.getHttpConnection().getURL().getHost() + path + "/";
+        return string;
     }
 
     /**

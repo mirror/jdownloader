@@ -103,4 +103,11 @@ public class HostPluginWrapper extends PluginWrapper {
         return getHost();
     }
 
+    public static boolean hasPlugin(String s) {
+        for(HostPluginWrapper w:getHostWrapper()){
+            if(w.canHandle(s))return true;
+        }
+        return false;
+    }
+
 }

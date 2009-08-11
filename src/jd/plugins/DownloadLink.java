@@ -35,6 +35,7 @@ import jd.controlling.DownloadController;
 import jd.controlling.JDLogger;
 import jd.controlling.SingleDownloadController;
 import jd.event.JDBroadcaster;
+import jd.http.Browser.BrowserException;
 import jd.nutils.Formatter;
 import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
@@ -616,6 +617,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
                     // Level.SEVERE,"Exception occurred",e);
                     break;
                 }
+                
+            
             } catch (Exception e) {
                 // logger.severe("Hoster Plugin Version: " +
                 // getPlugin().getVersion());

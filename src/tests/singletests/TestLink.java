@@ -41,7 +41,7 @@ public class TestLink {
     }
    
     @Test
-    public void checkIPTable() {
+    public void getTestLinks() {
 
         String d = UserIOGui.getInstance().requestInputDialog(0, "Please enter Domain. e.g. rapidshare.de", null, null, null, null, null);
 

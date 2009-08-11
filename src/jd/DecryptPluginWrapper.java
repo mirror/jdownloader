@@ -30,28 +30,37 @@ public class DecryptPluginWrapper extends PluginWrapper {
 
     private String revision;
 
-    public DecryptPluginWrapper(String host, String classNamePrefix, String className,  String patternSupported,int flags,String revision) {
+    public DecryptPluginWrapper(String host, String classNamePrefix, String className, String patternSupported, int flags, String revision) {
         super(host, classNamePrefix, className, patternSupported, flags);
-        this.revision = Formatter.getRevision(revision);;
+        this.revision = Formatter.getRevision(revision);
+        ;
         DECRYPT_WRAPPER.add(this);
     }
 
-//    public DecryptPluginWrapper(String host, String className, String patternSupported) {
-//        this(host, "jd.plugins.decrypter.", className, patternSupported, 0);
-//    }
+    // public DecryptPluginWrapper(String host, String className, String
+    // patternSupported) {
+    // this(host, "jd.plugins.decrypter.", className, patternSupported, 0);
+    // }
 
-    public DecryptPluginWrapper(String host, String className, String patternSupported, int flags,String revision) {
-        this(host, "jd.plugins.decrypter.", className,patternSupported, flags,revision);
+    public DecryptPluginWrapper(String host, String className, String patternSupported, int flags, String revision) {
+        this(host, "jd.plugins.decrypter.", className, patternSupported, flags, revision);
     }
 
     // @Override
     public PluginForDecrypt getPlugin() {
         return (PluginForDecrypt) super.getPlugin();
     }
-    
+
     @Override
     public String getVersion() {
         return revision;
+    }
+
+    public static boolean hasPlugin(String s) {
+        for (DecryptPluginWrapper w : getDecryptWrapper()) {
+            if (w.canHandle(s)) return true;
+        }
+        return false;
     }
 
 }
