@@ -47,4 +47,15 @@ public class JDFlags {
         return false;
     }
 
+    /**
+     * &-Operation returns only bits which are set in both integers
+     * 
+     * @param curState
+     * @param filtermask
+     * @return curState&filtermask
+     */
+    public static int filterFlags(int curState, int filtermask) {      
+        return curState &= filtermask;
+    }
+
 }

@@ -30,6 +30,7 @@ import javax.swing.Timer;
 import jd.Main;
 import jd.config.Configuration;
 import jd.event.JDBroadcaster;
+import jd.nutils.JDFlags;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.FilePackageEvent;
@@ -304,10 +305,14 @@ public class DownloadController implements FilePackageListener, DownloadControll
                         curLState = localLink.getLinkStatus().getLatestStatus();
                         tmp2 = localLink.getLinkStatus().getErrorMessage();
                     }
+                    // filter flags
+                    curState=JDFlags.filterFlags(curState,LinkStatus.ERROR_FILE_NOT_FOUND|LinkStatus.FINISHED|LinkStatus.ERROR_ALREADYEXISTS);
+                    curLState=JDFlags.filterFlags(curLState,LinkStatus.ERROR_FILE_NOT_FOUND|LinkStatus.FINISHED|LinkStatus.ERROR_ALREADYEXISTS);
                     /* reset and if needed restore the old state */
                     localLink.getLinkStatus().reset();
                     localLink.getLinkStatus().setStatus(curState);
                     localLink.getLinkStatus().setLatestStatus(curLState);
+                    if(localLink.getLinkStatus().isFailed())
                     localLink.getLinkStatus().setErrorMessage(tmp2);
 
                     if (localLink.getLinkStatus().isFinished() && JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION) == 1) {
