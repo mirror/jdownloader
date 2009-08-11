@@ -16,6 +16,8 @@
 
 package jd.gui.swing.jdgui.views.downloadview;
 
+import java.awt.Color;
+
 import javax.swing.Icon;
 import javax.swing.JPanel;
 
@@ -57,6 +59,17 @@ public class StatusLabel extends JPanel {
     public void setText(String text) {
         left.setIcon(null);
         left.setText(text);
+    }
+
+    public void setForeground(Color fg) {
+        super.setForeground(fg);
+       if(left!=null) left.setForeground(fg);
+        if(rights!=null){
+            for (int i = 0; i < rights.length; i++) {
+   
+           if( rights[i]!=null) rights[i].setForeground(fg); 
+        }      }    
+       
     }
 
     public void setIcon(int i, Icon icon) {

@@ -232,7 +232,7 @@ public class TableRenderer extends DefaultTableRenderer {
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 
             statuspanel.setBackground(co.getBackground());
-
+            statuspanel.setForeground(co.getForeground());
             statuspanel.setText(dLink.getLinkStatus().getStatusString());
 
             counter = 0;
@@ -471,7 +471,7 @@ public class TableRenderer extends DefaultTableRenderer {
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 
             statuspanel.setBackground(co.getBackground());
-
+            statuspanel.setForeground(co.getForeground());
             // if (dLink.getPluginProgress() != null &&
             // dLink.getPluginProgress().getPercent() > 0.0 &&
             // dLink.getPluginProgress().getPercent() < 100.0) {
@@ -614,7 +614,7 @@ public class TableRenderer extends DefaultTableRenderer {
         case DownloadJTableModel.COL_STATUS:
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             statuspanel.setBackground(co.getBackground());
-
+            statuspanel.setForeground(co.getForeground());
             if (fp.isFinished()) {
                 statuspanel.setText("");
             } else if (fp.getTotalDownloadSpeed() > 0) {
