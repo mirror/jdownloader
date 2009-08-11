@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.io.InterruptedIOException;
 
 import jd.PluginWrapper;
+import jd.http.RandomUserAgent;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -47,6 +49,7 @@ public class BigUploadCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("search.php")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         Regex reg = br.getRegex("You have requested:</b>&nbsp;<br>.*?(.*?) \\((.*?)\\)\\..*?</font></td></tr>");
@@ -54,8 +57,6 @@ public class BigUploadCom extends PluginForHost {
         String filename0 = reg.getMatch(0);
         if (filename0 == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = filename0.replaceAll("(\r|\n|\t)", "");
-        // String filename = br.getRegex("\">Скачать (.*?)</a>").getMatch(0);
-        // String filesize = br.getRegex("file_size\">(.*?)</div>").getMatch(0);
         link.setName(filename);
         link.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -65,23 +66,29 @@ public class BigUploadCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        String dlpage0 = br.getRegex("<td><form method=\"GET\" action=\"(.*?)\"><input type=\"hidden\" name=\"sid").getMatch(0);
-        if (dlpage0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        String dlpage1 = "http://www3.bigupload.com" + dlpage0;
-        br.getPage(dlpage1);
+        Form form = br.getForm(2);
+        form.setAction("/download_frame.php");
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        this.sleep(5 * 1001l, downloadLink);
+        br.submitForm(form);
+        this.sleep(10 * 1001l, downloadLink);
+        URLConnectionAdapter con = br.cloneBrowser().openGetConnection("http://www3.bigupload.com/images/test.bmp?" + System.currentTimeMillis());
+        con.disconnect();
         // Link zum Captcha (kann bei anderen Hostern auch mit ID sein)
         String captchaid = br.getRegex("/faq\\.php\\?sid=(.*?)\">Full FAQ").getMatch(0);
         if (captchaid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         String captchaurl = "http://www3.bigupload.com/load_security_code.php?app=download_frame&parent=&obj=sec_img&sid=" + captchaid;
         String code = getCaptchaCode(captchaurl, downloadLink);
+        this.sleep(10 * 1001l, downloadLink);
         Form captchaForm = br.getForm(1);
         if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         // Captcha Usereingabe in die Form einfügen
         captchaForm.put("sec_img", code);
+        br.setFollowRedirects(false);
         br.submitForm(captchaForm);
         String dllink = br.getRedirectLocation();
         if (br.containsHTML("Enter Code")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         try {
             ((Ftp) JDUtilities.getNewPluginForHostInstance("ftp")).download(Encoding.urlDecode(dllink, true), downloadLink);
         } catch (InterruptedIOException e) {

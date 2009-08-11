@@ -154,7 +154,7 @@ public class HTMLParser {
      */
     public static String[] getHttpLinks(String data, String url) {
         data = data.trim();
-        String protocolPattern = "(h.{2,3}|httpviajd|httpsviajd|https|ccf|dlc|ftp|jd|rsdf|jdlist)";
+        String protocolPattern = "(flashget|h.{2,3}|httpviajd|httpsviajd|https|ccf|dlc|ftp|jd|rsdf|jdlist)";
         if (!data.matches(".*<.*>.*")) {
             int c = new Regex(data, "(" + protocolPattern + "://|(?<!://)www\\.)").count();
             if (c == 0)
@@ -213,6 +213,9 @@ public class HTMLParser {
             }
             if (url.startsWith("ftp://")) {
                 pro = "ftp";
+            }
+            if (url.startsWith("flashget://")) {
+                pro = "flashget";
             }
             url = url.replace(pro + "://", "");
             int dot = url.lastIndexOf('/');
@@ -276,8 +279,8 @@ public class HTMLParser {
         data = data.replaceAll("(?s)\\[(url|link)\\].*?\\[/(url|link)\\]", "");
         m = Pattern.compile("(" + protocolPattern + "://|www\\.)[^\\s<>'\"]*(((?!\\s" + protocolPattern + "://|\\swww\\.)[^<>'\"]){0,20}([\\?|\\&][^<>'\\s\"]{1,10}\\=[^<>'\\s\"]+|\\.(htm[^<>'\\s\"]*|php|cgi|rar|zip|exe|avi|mpe?g|7z|bz2|doc|jpg|bmp|m4a|mdf|mkv|wav|mp[34]|pdf|wm[^<>'\\s\"]*|xcf|jar|swf|class|cue|bin|dll|cab|png|ico|gif|iso)[^<>'\\s\"]*))?", Pattern.CASE_INSENSITIVE).matcher(data);
         while (m.find()) {
-            link = m.group(0);
-            link = link.replaceAll("h.{2,3}://", "http://");
+            link = m.group(0);            
+            link = link.replaceAll("^h.{2,3}://", "http://");
             link = link.replaceFirst("^www\\.", "http://www\\.");
             link = link.trim();
             if (!set.contains(link)) {

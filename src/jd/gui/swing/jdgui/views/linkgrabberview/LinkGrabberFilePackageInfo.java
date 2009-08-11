@@ -72,7 +72,7 @@ public class LinkGrabberFilePackageInfo extends SwitchPanel implements ActionLis
     }
 
     public void update() {
-        if (fp == null) return;
+        if (fp == null || notifyUpdate == false) return;
         /*
          * wichtig: die set funktionen lösen eine action aus , welche ansonsten
          * wiederum ein updatevent aufrufen würden

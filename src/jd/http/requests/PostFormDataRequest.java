@@ -139,7 +139,7 @@ public class PostFormDataRequest extends Request {
     private void generateBoundary() {
         long range = (999999999999999l - 100000000000000l);
         long rand = (long) (Math.random() * range) + 100000000000000l;
-        boundary = "----------" + rand;
+        boundary = "---------------------" + rand;
 
         // boundary="-----------------------------41184676334";
 

@@ -121,17 +121,13 @@ public class SimpleFTP {
         this.host = host;
         reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
-        String response = readLine();
-        if (!response.startsWith("220 ")) { throw new IOException("SimpleFTP received an unknown response when connecting to the FTP server: " + response); }
+        String response = readLines(220, "SimpleFTP received an unknown response when connecting to the FTP server: ");
         sendLine("USER " + user);
-        response = readLine();
-        if (!response.startsWith("331 ")) { throw new IOException("SimpleFTP received an unknown response after sending the user: " + response); }
+        response = readLines(331, "SimpleFTP received an unknown response after sending the user: ");
         sendLine("PASS " + pass);
-        response = readLine();
-        if (!response.startsWith("230")) { throw new IOException("SimpleFTP was unable to log in with the supplied password: " + response); }
-
+        response = readLines(230, "SimpleFTP was unable to log in with the supplied password: ");
         sendLine("PWD");
-        while ((response = readLine()).startsWith("230")||response.charAt(0)>='9'||response.charAt(0)<='0') {
+        while ((response = readLine()).startsWith("230") || response.charAt(0) >= '9' || response.charAt(0) <= '0') {
 
         }
         //        
@@ -198,6 +194,20 @@ public class SimpleFTP {
             System.out.println(host + " < " + line);
         }
         return line;
+    }
+
+    /* read response and check if it matches expectcode */
+    private String readLines(int expectcode, String errormsg) throws IOException {
+        StringBuilder sb = new StringBuilder();
+        String response = null;
+        while (true) {
+            response = readLine();
+            if (response == null) return sb.toString();
+            sb.append(response + "\r\n");
+            if (response.startsWith("" + expectcode + " ")) return sb.toString();
+            if (response.startsWith("" + expectcode)) continue;
+            throw new IOException((errormsg != null ? errormsg : "revieved unexpected responsecode ") + sb.toString());
+        }
     }
 
     public boolean remove(String string) throws IOException {

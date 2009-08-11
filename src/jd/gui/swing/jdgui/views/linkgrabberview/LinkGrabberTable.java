@@ -386,7 +386,7 @@ public class LinkGrabberTable extends JTable implements MouseListener, MouseMoti
         if (links.size() == 1) prio = links.get(0).getPriority();
         prioPopup.setIcon(JDTheme.II("gui.images.priority0", 16, 16));
         HashMap<String, Object> prop = null;
-        for (int i = 3; i >= 1; i--) {
+        for (int i = 3; i >= -1; i--) {
             prop = new HashMap<String, Object>();
             prop.put("links", links);
             prop.put("prio", new Integer(i));
