@@ -44,10 +44,10 @@ public class PasswordListener implements ProcessListener {
         }
 
         if (new Regex(lastLine, Pattern.compile(".*?password.{0,200}: $", Pattern.CASE_INSENSITIVE)).matches()) {
-            exec.writetoOutputStream(this.password);
+            if (!new Regex(lastLine, Pattern.compile("CRC failed in")).matches()) exec.writetoOutputStream(this.password);
         }
         if (new Regex(lastLine, Pattern.compile(".*?password incorrect", Pattern.CASE_INSENSITIVE)).matches()) {
-            exec.interrupt();
+            if (!new Regex(lastLine, Pattern.compile("CRC failed in")).matches()) exec.interrupt();
         } else if (new Regex(lastLine, ".*?current.*?password.*?ll ").matches()) {
             exec.writetoOutputStream("A");
         }

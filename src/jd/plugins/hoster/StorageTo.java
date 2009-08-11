@@ -81,7 +81,12 @@ public class StorageTo extends PluginForHost {
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         link.setFinalFileName(null);
         br.setDebug(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,link, dllink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
+        if (!dl.getConnection().isContentDisposition()) {
+            br.followConnection();
+            if (br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw new PluginException(LinkStatus.ERROR_FATAL);
+        }
         dl.startDownload();
     }
 
@@ -107,7 +112,12 @@ public class StorageTo extends PluginForHost {
         dllink = br.getRegex("'link' : '(.*?)',").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         link.setFinalFileName(null);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,link, dllink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
+        if (!dl.getConnection().isContentDisposition()) {
+            br.followConnection();
+            if (br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw new PluginException(LinkStatus.ERROR_FATAL);
+        }
         dl.startDownload();
     }
 

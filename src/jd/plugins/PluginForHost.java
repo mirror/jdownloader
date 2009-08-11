@@ -453,6 +453,8 @@ public abstract class PluginForHost extends Plugin {
     public abstract void handleFree(DownloadLink link) throws Exception;
 
     public void handle(DownloadLink downloadLink) throws Exception {
+        downloadLink.getTransferStatus().usePremium(false);
+        downloadLink.getTransferStatus().setResumeSupport(false);
         try {
             while (waitForNextStartAllowed(downloadLink)) {
             }

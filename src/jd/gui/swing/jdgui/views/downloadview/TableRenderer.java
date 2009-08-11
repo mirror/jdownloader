@@ -75,8 +75,6 @@ public class TableRenderer extends DefaultTableRenderer {
 
     private String strPluginError;
 
-    private String strSecondsAbrv;
-
     private TableColumn col;
 
     private Border leftGap;
@@ -161,7 +159,6 @@ public class TableRenderer extends DefaultTableRenderer {
         strDownloadLinkActive = JDL.L("gui.treetable.packagestatus.links_active", "aktiv");
         strETA = JDL.L("gui.eta", "ETA");
         strPluginError = JDL.L("gui.treetable.error.plugin", "Plugin error");
-        strSecondsAbrv = JDL.L("gui.treetable.seconds", "sec");
         strWaitIO = JDL.L("gui.linkgrabber.waitinguserio", "Waiting for user input");
     }
 
@@ -279,19 +276,8 @@ public class TableRenderer extends DefaultTableRenderer {
                 return co;
             } else if (dLink.getPluginProgress() != null) {
                 col = this.table.getColumn(column);
-                // if (col.getWidth() < 40) {
-                //
-                // } else if (col.getWidth() < 170) {
-                // progress.setString(dLink.getPluginProgress().getPercent() +
-                // "%");
-                // } else {
-                // progress.setString(dLink.getPluginProgress().getPercent() +
-                // "%");
-                // }
-
                 progress.setMaximum(dLink.getPluginProgress().getTotal());
                 progress.setValue(dLink.getPluginProgress().getCurrent());
-                // progress.setToolTipText(null);
                 progress.setForeground(COL_PROGRESS_NORMAL);
                 return progress;
             } else if ((dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED) && dLink.getPlugin().getRemainingHosterWaittime() > 0) || (dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) && dLink.getLinkStatus().getRemainingWaittime() > 0)) {
@@ -299,52 +285,8 @@ public class TableRenderer extends DefaultTableRenderer {
                 progress.setForeground(COL_PROGRESS_ERROR);
                 progress.setBorder(ERROR_BORDER);
                 progress.setValue(dLink.getLinkStatus().getRemainingWaittime());
-                clearSB();
-                col = this.table.getColumn(column);
-                if (col.getWidth() < 100) {
-                    sb.append(c.format(10000 * progress.getPercentComplete() / 100.0)).append('%');
-                } else {
-                    sb.append(progress.getRealValue() / 1000).append('/').append(progress.getRealMax() / 1000).append(strSecondsAbrv);
-                }
-                // progress.setString(sb.toString());
                 return progress;
             } else if (dLink.getDownloadCurrent() > 0) {
-                if (!dLink.getLinkStatus().isPluginActive()) {
-                    if (dLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
-                        clearSB();
-                        col = this.table.getColumn(column);
-                        if (col.getWidth() < 100) {
-                            sb.append("100%");
-                        } else {
-                            sb.append(Formatter.formatReadable(Math.max(0, dLink.getDownloadSize())));
-                        }
-                        // progress.setString(sb.toString());
-
-                    } else {
-                        clearSB();
-                        col = this.table.getColumn(column);
-                        if (col.getWidth() < 100) {
-                            sb.append(c.format(dLink.getPercent() / 100.0)).append('%');
-                        } else {
-                            sb.append(Formatter.formatReadable(dLink.getDownloadCurrent())).append('/').append(Formatter.formatReadable(Math.max(0, dLink.getDownloadSize())));
-                        }
-                        // progress.setString(sb.toString());
-                    }
-                } else {
-
-                    if (dLink.getLinkStatus().hasStatus(LinkStatus.WAITING_USERIO)) {
-                        // progress.setString(strWaitIO);
-                    } else {
-                        clearSB();
-                        col = this.table.getColumn(column);
-                        if (col.getWidth() < 100) {
-                            sb.append(c.format(dLink.getPercent() / 100.0)).append('%');
-                        } else {
-                            sb.append(Formatter.formatReadable(dLink.getDownloadCurrent())).append('/').append(Formatter.formatReadable(Math.max(0, dLink.getDownloadSize())));
-                        }
-                        // progress.setString(sb.toString());
-                    }
-                }
                 progress.setMaximum(10000);
                 progress.setValue(dLink.getPercent());
                 progress.setForeground(COL_PROGRESS_NORMAL);
@@ -352,18 +294,6 @@ public class TableRenderer extends DefaultTableRenderer {
             }
             progress.setMaximum(10000);
             progress.setValue(0);
-            if (dLink.getDownloadSize() > 1) {
-                clearSB();
-                col = this.table.getColumn(column);
-                if (col.getWidth() < 100) {
-                    sb.append(c.format(dLink.getPercent() / 100.0)).append('%');
-                } else {
-                    sb.append(Formatter.formatReadable(dLink.getDownloadCurrent())).append('/').append(Formatter.formatReadable(Math.max(0, dLink.getDownloadSize())));
-                }
-                // progress.setString(sb.toString());
-            } else {
-                // progress.setString(NULL_BYTE_PROGRESS);
-            }
             progress.setForeground(COL_PROGRESS_NORMAL);
             return progress;
 
@@ -389,16 +319,6 @@ public class TableRenderer extends DefaultTableRenderer {
 
                 ((JRendererLabel) co).setIcon(null);
                 ((JRendererLabel) co).setText(dLink.getPluginProgress().getPercent() + "%");
-                ((JRendererLabel) co).setBorder(null);
-                return co;
-
-            } else if ((dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED) && dLink.getPlugin().getRemainingHosterWaittime() > 0) || (dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) && dLink.getLinkStatus().getRemainingWaittime() > 0)) {
-                clearSB();
-                col = this.table.getColumn(column);
-                // sb.append(Formatter.formatSeconds(dLink.getLinkStatus().getRemainingWaittime()
-                // / 1000));
-                ((JRendererLabel) co).setIcon(null);
-                ((JRendererLabel) co).setText("");
                 ((JRendererLabel) co).setBorder(null);
                 return co;
             } else if (dLink.getDownloadCurrent() > 0) {
@@ -569,25 +489,9 @@ public class TableRenderer extends DefaultTableRenderer {
             if (fp.isFinished()) {
                 progress.setMaximum(100);
                 progress.setValue(100);
-                clearSB();
-                col = this.table.getColumn(column);
-                if (col.getWidth() < 100) {
-                    sb.append("100%");
-                } else {
-                    sb.append("100% (").append(Formatter.formatReadable(Math.max(0, fp.getTotalEstimatedPackageSize()))).append(')');
-                }
-                progress.setString(sb.toString());
             } else {
                 progress.setMaximum(Math.max(1, fp.getTotalEstimatedPackageSize()));
                 progress.setValue(fp.getTotalKBLoaded());
-                clearSB();
-                col = this.table.getColumn(column);
-                if (col.getWidth() < 100) {
-                    sb.append(c.format(fp.getPercent())).append('%');
-                } else {
-                    sb.append(Formatter.formatReadable(progress.getRealValue())).append('/').append(Formatter.formatReadable(Math.max(0, progress.getRealMax())));
-                }
-                progress.setString(sb.toString());
             }
             progress.setForeground(COL_PROGRESS_NORMAL);
             return progress;

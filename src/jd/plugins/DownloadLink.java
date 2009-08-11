@@ -35,7 +35,6 @@ import jd.controlling.DownloadController;
 import jd.controlling.JDLogger;
 import jd.controlling.SingleDownloadController;
 import jd.event.JDBroadcaster;
-import jd.http.Browser.BrowserException;
 import jd.nutils.Formatter;
 import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
@@ -696,6 +695,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         linkStatus.reset();
         this.availableStatus = null;
         this.setEnabled(true);
+        this.getTransferStatus().usePremium(false);
+        this.getTransferStatus().setResumeSupport(false);
         if (new File(this.getFileOutput()).exists()) {
             if (!new File(this.getFileOutput()).delete()) {
                 logger.severe(JDL.L("system.download.errors.couldnotoverwrite", "Could not overwrite existing file"));

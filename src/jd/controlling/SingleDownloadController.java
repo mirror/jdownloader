@@ -515,12 +515,15 @@ public class SingleDownloadController extends Thread {
         if (status.getErrorMessage() == null) status.setErrorMessage(JDL.L("controller.status.tempUnavailable", "kurzzeitig nicht verfügbar"));
 
         /*
-         * Value<=0 bedeutet das der link dauerhauft deaktiviert bleiben soll.
+         * Value<0 bedeutet das der link dauerhauft deaktiviert bleiben soll.
          * value>0 gibt die zeit an die der link deaktiviert bleiben muss in ms.
-         * Der DownloadWatchdoggibt den Link wieder frei ewnn es zeit ist.
+         * value==0 macht default 30 mins Der DownloadWatchdoggibt den Link
+         * wieder frei ewnn es zeit ist.
          */
         if (status.getValue() > 0) {
             status.setWaitTime(status.getValue());
+        } else if (status.getValue() == 0) {
+            status.setWaitTime(30 * 60 * 1000l);
         } else {
             status.resetWaitTime();
             downloadLink.setEnabled(false);

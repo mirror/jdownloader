@@ -260,17 +260,21 @@ public class LinkStatus implements Serializable {
             }
             return ret;
         }
-        if (isFailed()) { return getLongErrorMessage(); }
 
+        /* ip blocked */
         if (hasStatus(ERROR_IP_BLOCKED) && downloadLink.getPlugin().getRemainingHosterWaittime() > 0) {
-            if (errorMessage == null) {
-                ret = JDL.LF("gui.download.waittime_status2", "Wait %s", Formatter.formatSeconds((downloadLink.getPlugin().getRemainingHosterWaittime() / 1000)));
-            } else {
-                ret = JDL.LF("gui.download.waittime_status2", "Wait %s", Formatter.formatSeconds((downloadLink.getPlugin().getRemainingHosterWaittime() / 1000))) + errorMessage;
-
-            }
+            ret = JDL.LF("gui.download.waittime_status2", "Wait %s", Formatter.formatSeconds((downloadLink.getPlugin().getRemainingHosterWaittime() / 1000)));
+            if (errorMessage != null) ret = errorMessage + " " + ret;
             return ret;
         }
+        /* temp unavail */
+        if (hasStatus(ERROR_TEMPORARILY_UNAVAILABLE) && getRemainingWaittime() > 0) {
+            ret = JDL.LF("gui.download.waittime_status2", "Wait %s", Formatter.formatSeconds(getRemainingWaittime() / 1000));
+            if (errorMessage != null) ret = errorMessage + " " + ret;
+            return ret;
+        }
+
+        if (isFailed()) { return getLongErrorMessage(); }
         if (downloadLink.getPlugin() != null && downloadLink.getPlugin().getRemainingHosterWaittime() > 0 && !downloadLink.getLinkStatus().isPluginActive()) { return JDL.L("gui.downloadlink.hosterwaittime", "[wait for new ip]"); }
 
         if (downloadLink.getDownloadInstance() == null && hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
