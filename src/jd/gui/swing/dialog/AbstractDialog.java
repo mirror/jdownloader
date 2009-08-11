@@ -76,6 +76,8 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
 
     private JCheckBox dont;
 
+    private JLabel dontlabel;
+
     public AbstractDialog(int flag, String title, ImageIcon icon, String okOption, String cancelOption) {
         super(DummyFrame.getDialogParent());
 
@@ -142,7 +144,7 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
 
             dont.setHorizontalAlignment(JCheckBox.TRAILING);
 
-            add(new JLabel(JDL.L("gui.dialogs.dontshowthisagain", "Don't show this again")));
+            add(dontlabel=new JLabel(JDL.L("gui.dialogs.dontshowthisagain", "Don't show this again")));
             add(dont, "alignx right");
         }
 
@@ -187,11 +189,13 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
             public void mouseEntered(MouseEvent e) {
                 if(JDFlags.hasAllFlags(flag, UserIO.DONT_SHOW_AGAIN_IGNORES_OK)){
                    dont.setEnabled(false);
+                   dontlabel.setEnabled(false);
                 }
                 
             }
             public void mouseExited(MouseEvent e) {
                 dont.setEnabled(true);
+                dontlabel.setEnabled(true);
             }
           
             
@@ -202,11 +206,13 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
             public void mouseEntered(MouseEvent e) {
                 if(JDFlags.hasAllFlags(flag, UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL)){
                     dont.setEnabled(false);
+                    dontlabel.setEnabled(false);
                 }
                 
             }
             public void mouseExited(MouseEvent e) {
                 dont.setEnabled(true);
+                dontlabel.setEnabled(true);
             }
           
             
