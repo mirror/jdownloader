@@ -43,7 +43,7 @@ public class SingleDecrypter {
      * http://jdownloader
      * .net:8081/knowledge/wiki/development/intern/testlinks/decrypter/DECRYPT
      */
-    private static final String DECRYPT = "mediafire.com";
+    private static final String DECRYPT = "crypt-me.com";
 
     @Before
     public void setUp() {
