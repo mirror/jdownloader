@@ -93,7 +93,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
     @SuppressWarnings("unchecked")
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() instanceof MenuAction && ((MenuAction) e.getSource()).getActionID() == 0) {
-             if (!action.isSelected()) {
+             if (action.isSelected()) {
              initGUI();
              SwingGui.getInstance().setContent(tabbedPanel);
              } else {
@@ -284,7 +284,10 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
 
     public ArrayList<MenuAction> createMenuitems() {
         ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
-        if (action == null) action = (MenuAction) new MenuAction(MenuAction.TOGGLE, getHost(), 0).setActionListener(this);
+        if (action == null){
+            action = (MenuAction) new MenuAction(MenuAction.TOGGLE, getHost(), 0).setActionListener(this);
+            action.setSelected(false);
+        }
         menu.add(action);
 
         return menu;

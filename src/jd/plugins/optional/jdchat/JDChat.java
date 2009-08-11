@@ -833,7 +833,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         NAMES = new ArrayList<User>();
         sb = new StringBuilder();
         this.activateAction = new MenuAction(MenuAction.TOGGLE, JDL.L("plugins.optional.jdchat.menu.windowstatus", "Chatwindow"), 0).setActionListener(this);
-
+        activateAction.setSelected(false);
         return true;
     }
 

@@ -40,6 +40,7 @@ public class LangFileEditor extends PluginOptional {
 
     private final SingletonPanel lfe;
     protected MenuAction activateAction;
+    private LFEView lfeView;
 
     public LangFileEditor(PluginWrapper wrapper) {
         super(wrapper);
@@ -51,8 +52,7 @@ public class LangFileEditor extends PluginOptional {
         ConfigEntry cfg;
         ConfigEntry cond;
 
-        config.addEntry(cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), LFEGui.PROPERTY_SVN_ACCESS_ANONYMOUS, "Do not upload (SVN) changes on save")
-                .setDefaultValue(true));
+        config.addEntry(cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), LFEGui.PROPERTY_SVN_ACCESS_ANONYMOUS, "Do not upload (SVN) changes on save").setDefaultValue(true));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), LFEGui.PROPERTY_SVN_ACCESS_USER, "Upload (SVN) Username"));
         cfg.setEnabledCondidtion(cond, "==", false);
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, getPluginConfig(), LFEGui.PROPERTY_SVN_ACCESS_PASS, "Upload (SVN) Password"));
@@ -62,13 +62,21 @@ public class LangFileEditor extends PluginOptional {
     @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() instanceof MenuAction && ((MenuAction) e.getSource()).getActionID() == 0) {
-            SwingGui.getInstance().setContent(new LFEView(lfe.getPanel(),this));
+      if (lfeView == null) lfeView = new LFEView(lfe.getPanel(), this);
+
+            if (((MenuAction) e.getSource()).isSelected()) {
+
+                SwingGui.getInstance().setContent(lfeView);
+           } else {
+                lfeView.close();
+            }
+
         }
     }
 
     @Override
     public boolean initAddon() {
-        activateAction=new MenuAction(MenuAction.TOGGLE, "Show", 0).setActionListener(this);
+        activateAction = new MenuAction(MenuAction.TOGGLE, "Show", 0).setActionListener(this);
         activateAction.setSelected(false);
         return true;
     }

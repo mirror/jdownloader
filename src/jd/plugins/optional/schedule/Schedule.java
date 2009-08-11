@@ -59,6 +59,8 @@ public class Schedule extends PluginOptional {
     
     private boolean running = false;
 
+    private MenuAction activateAction;
+
     public Schedule(PluginWrapper wrapper) {
         super(wrapper);
 
@@ -137,18 +139,25 @@ public class Schedule extends PluginOptional {
     }
 
     public void actionPerformed(ActionEvent e) {
-        if(e.getSource() instanceof MenuAction && ((MenuAction) e.getSource()).getActionID() == 0) {
-            if(view == null) {
-                view = new SchedulerView();
-                view.setContent(new MainGui(getPluginConfig()));
+
+        if (e.getSource() instanceof MenuAction && ((MenuAction) e.getSource()).getActionID() == 0) {
+
+            if (((MenuAction) e.getSource()).isSelected()) {
+                if (view == null) {
+                    view = new SchedulerView();
+                    view.setContent(new MainGui(getPluginConfig()));
+                }
+                JDGui.getInstance().setContent(view);
+            } else {
+                view.close();
+
             }
-            JDGui.getInstance().setContent(view);
         }
     }
 
     public ArrayList<MenuAction> createMenuitems() {
         ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
-        menu.add(new MenuAction(getHost(), 0).setActionListener(this));
+        menu.add(activateAction);
         return menu;
     }
 
@@ -158,7 +167,8 @@ public class Schedule extends PluginOptional {
 
     public boolean initAddon() {
         logger.info("Schedule OK");
-
+        this.activateAction = new MenuAction(MenuAction.TOGGLE,getHost(), 0).setActionListener(this);
+        activateAction.setSelected(false);
         return true;
     }
 

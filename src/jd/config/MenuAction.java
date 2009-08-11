@@ -55,6 +55,9 @@ public class MenuAction extends JDAction {
     public MenuAction(int id, String title, int actionID) {
         super(title, actionID);
         this.id = id;
+        if(id==TOGGLE){
+            setSelected(false);
+        }
     }
 
     public int getId() {

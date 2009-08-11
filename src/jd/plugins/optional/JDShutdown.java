@@ -90,7 +90,12 @@ public class JDShutdown extends PluginOptional {
     // @Override
     public ArrayList<MenuAction> createMenuitems() {
         ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
-        if (menuItem == null) menuItem = (MenuAction) new MenuAction(MenuAction.TOGGLE, JDL.L("addons.jdshutdown.menu", "Shutdown after downloads finished"), 0).setActionListener(this);
+        if (menuItem == null){
+            
+            menuItem = (MenuAction) new MenuAction(MenuAction.TOGGLE, JDL.L("addons.jdshutdown.menu", "Shutdown after downloads finished"), 0).setActionListener(this);
+            
+        
+        }
         menu.add(menuItem);
         return menu;
     }
