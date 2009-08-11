@@ -399,8 +399,12 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
     }
 
     public void closeWindow() {
-        if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_COUNTDOWN, JDL.L("sys.ask.rlyclose", "Wollen Sie jDownloader wirklich schließen?")), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
-            JDUtilities.getController().exit();
+        if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_COUNTDOWN|UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, JDL.L("sys.ask.rlyclose", "Wollen Sie jDownloader wirklich schließen?")), UserIO.RETURN_OK)) {
+            new Thread(){
+                public void run(){
+                    JDUtilities.getController().exit();
+                }
+            }.start(); 
         }
     }
 
