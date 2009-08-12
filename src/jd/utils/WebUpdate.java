@@ -368,9 +368,9 @@ public class WebUpdate {
                         System.out.println("UPdate: " + files);
 
                         updater.updateFiles(files, pc);
-                        if (updater.getErrors() > 0 || true) {
+                        if (updater.getErrors() > 0) {
 
-                            int ret = UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN | UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, JDL.L("jd.update.Main.error.title", "Errors occured"), JDL.LF("jd.update.Main.error.message", "Errors occured!\r\nThere were %s error(s) while updating. Do you want to update anyway?", updater.getErrors() + ""), UserIO.getInstance().getIcon(UserIO.ICON_WARNING), null, null);
+                            int ret = UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN | UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, JDL.L("jd.update.Main.error.title", "Errors occured"), JDL.LF("jd.update.Main.error.message", "Errors occured!\r\nThere were %s error(s) while updating. Do you want to update anyway?", updater.getErrors()), UserIO.getInstance().getIcon(UserIO.ICON_WARNING), null, null);
                             if (JDFlags.hasAllFlags(ret, UserIO.RETURN_OK)) {
                                 JDController.releaseDelayExit(id);
                                 JDUtilities.restartJDandWait();
