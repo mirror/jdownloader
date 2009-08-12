@@ -17,7 +17,9 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
+import jd.controlling.JDLogger;
 import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
@@ -26,6 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.PluginUtils;
 import jd.plugins.DownloadLink.AvailableStatus;
 
 //divshareCom by pspzockerscene+Maniac
@@ -47,10 +50,10 @@ public class DivShareCom extends PluginForHost {
         br.setFollowRedirects(true);
         if (link.getDownloadURL().contains("direct")) {
             String dllink;
-            dllink = br.getRedirectLocation();
+            dllink = br.getURL();
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             link.setFinalFileName(null);
-            dl = jd.plugins.BrowserAdapter.openDownload(br,link, dllink, false, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
             dl.startDownload();
 
         } else {
@@ -60,26 +63,26 @@ public class DivShareCom extends PluginForHost {
             // wird der Link sofort geändert und geladen (unten ists dann
             // infolink2)!
             if (br.containsHTML("This file is password protected.")) {
-              Form form = br.getForm(0);
-              if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-              String passCode = null;
+                Form form = br.getForm(0);
+                if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                String passCode = null;
                 if (link.getStringProperty("pass", null) == null) {
                     passCode = Plugin.getUserInput("Password?", link);
-                    
+
                 } else {
                     /* gespeicherten PassCode holen */
                     passCode = link.getStringProperty("pass", null);
                 }
                 form.put("gallery_password", passCode);
                 br.submitForm(form);
-              if (br.containsHTML("This file is password protected.")) {
-              logger.warning("Wrong password!");
-              link.setProperty("pass", null);
-              throw new PluginException(LinkStatus.ERROR_RETRY);
-              }
-              if (passCode != null) {
-                  link.setProperty("pass", passCode);
-              }
+                if (br.containsHTML("This file is password protected.")) {
+                    logger.warning("Wrong password!");
+                    link.setProperty("pass", null);
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+                if (passCode != null) {
+                    link.setProperty("pass", passCode);
+                }
             }
             String infolink2 = link.getDownloadURL().replaceAll("divshare.com/(download|image)", "divshare.com/download/launch");
             br.getPage(infolink2);
@@ -87,7 +90,7 @@ public class DivShareCom extends PluginForHost {
             dllink = br.getRegex("refresh\" content=\"1; url=(.*?)\" />").getMatch(0);
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             link.setFinalFileName(null);
-            dl = jd.plugins.BrowserAdapter.openDownload(br,link, dllink, false, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
             dl.startDownload();
 
         }
@@ -98,11 +101,60 @@ public class DivShareCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
+
+        br.setDebug(true);
+        if (br.containsHTML("<title>DivShare - Password-Protected File</title>")) {
+            Form pw = br.getForm(0);
+            String password = null;
+            // first look plugin
+            password = this.getPluginConfig().getStringProperty("pass", password);
+            // then downloadlink
+            password = downloadLink.getStringProperty("pass", password);
+            if (password == null) password = PluginUtils.askPassword(this);
+            pw.put("gallery_password", password);
+            br.submitForm(pw);
+
+            pw = br.getFormbyKey("gallery_password");
+            if (pw != null) {
+                password = PluginUtils.askPassword(this);
+                pw.put("gallery_password", password);
+                br.submitForm(pw);
+                pw = br.getFormbyKey("gallery_password");
+                if (pw != null) {
+                    JDLogger.getLogger().warning("Wrong Password for " + downloadLink + ". YOu will need the correct password to download.");
+                } else {
+                    downloadLink.setProperty("pass", password);
+                    getPluginConfig().setProperty("pass", password);
+                    getPluginConfig().save();
+                }
+
+            } else {
+                downloadLink.setProperty("pass", password);
+                getPluginConfig().setProperty("pass", password);
+                getPluginConfig().save();
+            }
+
+        }
         // handling für die links, die "direct" beinhalten (diese starten
         // sofort)
         if (downloadLink.getDownloadURL().contains("direct")) {
+
+            String redirect = br.getRegex("If it doesn\\'t\\, <a href=\"(.*?)\">click here<").getMatch(0);
+            br.setFollowRedirects(true);
+            URLConnectionAdapter con = br.openGetConnection(redirect);
+            con.disconnect();
+            br.setFollowRedirects(false);
+
+            if (con.isContentDisposition()) {
+                downloadLink.setFinalFileName(Plugin.getFileNameFromDispositionHeader(con.getHeaderField("Content-Disposition")));
+                downloadLink.setDownloadSize(con.getContentLength());
+                return AvailableStatus.TRUE;
+            }
+
+            if (br.containsHTML("This file is unavailable until")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             if (br.containsHTML("Sorry, we couldn't find this file.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             if (br.containsHTML("This file is secured by Divshare.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw new PluginException(LinkStatus.ERROR_FATAL);
 
         } else {
             // handling für die anderen Links (mit "download" bzw. "image" im
@@ -119,8 +171,10 @@ public class DivShareCom extends PluginForHost {
             String filesize = reg.getMatch(0) + " " + reg.getMatch(1);
             if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             // parameter.setName(filename.trim());
+
             downloadLink.setName(filename.replaceAll("\\)|\\(", ""));
             downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
+            // http://www.divshare.com/download/718676-89e
         }
         return AvailableStatus.TRUE;
     }

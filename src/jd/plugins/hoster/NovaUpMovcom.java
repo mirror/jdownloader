@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
@@ -73,14 +74,22 @@ public class NovaUpMovcom extends PluginForHost {
             if (br.containsHTML("The file is beeing transfered to our other servers. This may take few minutes.")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             String filename1 = br.getRegex("<h3>(.*?)</h3>").getMatch(0);
             if (filename1 == null ) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            String dllink = br.getRegex("\"file\",\"(.*?)\"").getMatch(0);
+           
+            URLConnectionAdapter con = br.openGetConnection(dllink);
+            try{
+            parameter.setDownloadSize(con.getContentLength());
             String filename = filename1 + ".flv";
             parameter.setName(filename.trim());
+        }finally{
+            con.disconnect();
+        }
 
         } else {
           //Onlinecheck für "nicht"-video Links
             if (br.containsHTML("This file no longer exists on our servers.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             if (br.containsHTML("The file is beeing transfered to our other servers. This may take few minutes.")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            String filename = br.getRegex("/([^/]*)\"><span class=\"dwl_novaup\">Click here to download</span>").getMatch(0);
+            String filename = br.getRegex("/([^/]{1,})/?\"><span class=\"dwl_novaup\">Click here to download</span>").getMatch(0);
             String filesize = br.getRegex("strong>File size : </strong>(.*?)</td>").getMatch(0);
             if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             parameter.setName(filename.trim());

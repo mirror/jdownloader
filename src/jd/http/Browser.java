@@ -1361,4 +1361,15 @@ public class Browser {
         return TIMEOUT_CONNECT;
 
     }
+/**
+ * Returns the first form that has an inputfiled with name key
+ * @param key
+ * @return
+ */
+    public Form getFormbyKey(String key) {
+       for(Form f:getForms()){
+           if(f.hasInputFieldByName(key))return f;
+       }
+        return null;
+    }
 }

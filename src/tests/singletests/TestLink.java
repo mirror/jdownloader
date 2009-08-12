@@ -44,7 +44,7 @@ public class TestLink {
 
         try {
             br.setDebug(true);
-            br.getPage("http://www.google.de/search?as_q=rar&num=100&as_qdr=m&as_epq=intext%3A" + Encoding.urlEncode(d));
+            br.getPage("http://www.google.de/search?as_q=&num=250&as_qdr=m&as_epq=intext%3A" + Encoding.urlEncode(d));
 
             String source = Encoding.htmlDecode(br.toString().replace("<em>", "").replace("</em>", ""));
 
