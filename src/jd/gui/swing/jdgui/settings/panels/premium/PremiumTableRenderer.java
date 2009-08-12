@@ -34,6 +34,7 @@ class BooleanRenderer extends JCheckBox implements TableCellRenderer, UIResource
         super();
         setHorizontalAlignment(JLabel.CENTER);
         setBorderPainted(false);
+        setOpaque(true);
         if (LookAndFeelController.isSubstance()) this.setOpaque(false);
         this.setFocusable(false);
     }
@@ -48,11 +49,6 @@ class BooleanRenderer extends JCheckBox implements TableCellRenderer, UIResource
         }
         setSelected((value != null && ((Boolean) value).booleanValue()));
 
-        // if (hasFocus) {
-        // setBorder(UIManager.getBorder("Table.focusCellHighlightBorder"));
-        // } else {
-        // setBorder(noFocusBorder);
-        // }
 
         return this;
     }

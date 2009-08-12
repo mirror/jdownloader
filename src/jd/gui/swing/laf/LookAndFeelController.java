@@ -308,4 +308,9 @@ public class LookAndFeelController {
         return UIManager.getLookAndFeel().getName().toLowerCase().contains("substance");
     }
 
+    public static boolean isSynthetica() {
+        // TODO Auto-generated method stub
+        return UIManager.getLookAndFeel().getName().toLowerCase().contains("synthetica");
+    }
+
 }
