@@ -608,7 +608,6 @@ gui.downloadlink.plugindisabled = [Plugin disabled]
 gui.treetable.packagestatus.links_active = aktiv
 gui.eta = ETA
 gui.treetable.error.plugin = Plugin error
-gui.treetable.seconds = sec
 gui.linkgrabber.waitinguserio = Waiting for user input
 gui.table.draganddrop.insertinpackagestart = In Paket '%s' am Anfang einfügen
 gui.table.draganddrop.insertinpackageend = In Paket '%s' am Ende einfügen
