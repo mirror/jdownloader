@@ -315,10 +315,8 @@ public class ConfigPanel extends SwitchPanel {
         }
 
         for (SubConfiguration subConfiguration : subs) {
-            subConfiguration.save();
-            
-            System.out.println(subConfiguration+" - "+subConfiguration.getProperties());
-        }
+            subConfiguration.save();            
+       }
     }
  
 }
