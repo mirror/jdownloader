@@ -54,7 +54,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
     private static final Object hiddenstopMark = new Object();
     private Object stopMark = nostopMark;
 
-    private HashMap<Class<?>, Integer> activeHosts = new HashMap<Class<?>, Integer>();
+    private HashMap<String, Integer> activeHosts = new HashMap<String, Integer>();
 
     private Logger logger = JDLogger.getLogger();
 
@@ -246,7 +246,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
      */
     private int activeDownloadsbyHosts(PluginForHost plugin) {
         synchronized (this.activeHosts) {
-            if (activeHosts.containsKey(plugin.getClass())) { return activeHosts.get(plugin.getClass()); }
+            if (activeHosts.containsKey(plugin.getHost())) { return activeHosts.get(plugin.getHost()); }
         }
         return 0;
     }
@@ -259,7 +259,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                 this.activeDownloads++;
             }
         }
-        Class<?> cl = link.getPlugin().getClass();
+        String cl = link.getHost();
         synchronized (this.activeHosts) {
             if (activeHosts.containsKey(cl)) {
                 int count = activeHosts.get(cl);
@@ -281,7 +281,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                 this.activeDownloads--;
             }
         }
-        Class<?> cl = link.getPlugin().getClass();
+        String cl = link.getHost();
         synchronized (this.activeHosts) {
             if (activeHosts.containsKey(cl)) {
                 int count = activeHosts.get(cl);
