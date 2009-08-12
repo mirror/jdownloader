@@ -241,8 +241,7 @@ public final class JavaScript {
 
     public String runJavaScript() throws SAXException, IOException {
         runPage();
-        
-        
+
         Object result = cx.evaluateString(scope, javaScript, "<cmd>", 1, null);
         String ret = Context.toString(result);
         return ret;
@@ -259,7 +258,7 @@ public final class JavaScript {
         } catch (SAXException e) {
         } catch (IOException e) {
         }
-        return null;
+        return "Parse Error " + d.getInnerHTML();
     }
 
 }

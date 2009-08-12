@@ -16,12 +16,16 @@
 
 package jd.plugins.hoster;
 
+import java.io.IOException;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.controlling.HTACCESSController;
 import jd.controlling.ListController;
 import jd.nutils.encoding.Encoding;
+import jd.http.Browser;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -66,20 +70,40 @@ public class DirectHTTP extends PluginForHost {
     }
 
     private void BasicAuthfromURL(DownloadLink link) {
-        String url = link.getDownloadURL();
-        String basicauth = new Regex(url, "http.*?/([^/]{1}.*?)@").getMatch(0);
+        String url = null;
+        String basicauth = new Regex(link.getDownloadURL(), "http.*?/([^/]{1}.*?)@").getMatch(0);
         if (basicauth != null && basicauth.contains(":")) {
-            url = new Regex(url, "https.*?@(.+)").getMatch(0);
-            if (url != null) link.setUrlDownload("https://" + url);
-            if (url == null) url = new Regex(url, "http.*?@(.+)").getMatch(0);
-            if (url != null) link.setUrlDownload("http://" + url);
+            /* https */
+            url = new Regex(link.getDownloadURL(), "https.*?@(.+)").getMatch(0);
+            if (url != null) {
+                link.setUrlDownload("https://" + url);
+            } else {
+                /* http */
+                url = new Regex(link.getDownloadURL(), "http.*?@(.+)").getMatch(0);
+                if (url != null) {
+                    link.setUrlDownload("http://" + url);
+                } else {
+                    logger.severe("Could not parse basicAuth from " + link.getDownloadURL());
+                }
+            }
             HTACCESSController.getInstance().add(link.getDownloadURL(), Encoding.Base64Encode(basicauth));
         }
     }
 
+    private URLConnectionAdapter prepareConnection(Browser br, DownloadLink downloadLink) throws IOException {
+        URLConnectionAdapter urlConnection = null;
+        if (downloadLink.getStringProperty("referer", null) != null) br.getHeaders().put("Referer", downloadLink.getStringProperty("referer", null));
+        if (downloadLink.getStringProperty("cookies", null) != null) br.getCookies(downloadLink.getDownloadURL()).add(Cookies.parseCookies(downloadLink.getStringProperty("cookies", null), Browser.getHost(downloadLink.getDownloadURL()), null));
+        if (downloadLink.getStringProperty("post", null) != null) {
+            urlConnection = br.openPostConnection(downloadLink.getDownloadURL(), downloadLink.getStringProperty("post", null));
+        } else {
+            urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
+        }
+        return urlConnection;
+    }
+
     // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException {
-
         this.setBrowserExclusive();
         String basicauth = HTACCESSController.getInstance().get(downloadLink.getDownloadURL());
         if (basicauth == null) {
@@ -90,10 +114,9 @@ public class DirectHTTP extends PluginForHost {
             br.getHeaders().put("Authorization", basicauth);
         }
         br.setFollowRedirects(true);
-
         URLConnectionAdapter urlConnection = null;
         try {
-            urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
+            urlConnection = prepareConnection(br, downloadLink);
             if (urlConnection.getResponseCode() == 401 || urlConnection.getResponseCode() == 403) {
                 if (basicauth != null) {
                     HTACCESSController.getInstance().remove(downloadLink.getDownloadURL());
@@ -102,7 +125,7 @@ public class DirectHTTP extends PluginForHost {
                 basicauth = getBasicAuth(downloadLink);
                 if (basicauth == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, JDL.L("plugins.hoster.httplinks.errors.basicauthneeded", "BasicAuth needed"));
                 br.getHeaders().put("Authorization", basicauth);
-                urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
+                urlConnection = prepareConnection(br, downloadLink);
                 if (urlConnection.getResponseCode() == 401) {
                     urlConnection.disconnect();
                     HTACCESSController.getInstance().remove(downloadLink.getDownloadURL());
@@ -124,7 +147,7 @@ public class DirectHTTP extends PluginForHost {
             throw e2;
         } catch (Exception e) {
         } finally {
-            if (urlConnection != null && urlConnection.isConnected() == true) urlConnection.disconnect();
+            if (urlConnection != null) urlConnection.disconnect();
         }
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
@@ -136,7 +159,7 @@ public class DirectHTTP extends PluginForHost {
     }
 
     // @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {        
+    public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
         br.setDebug(true);
@@ -147,19 +170,25 @@ public class DirectHTTP extends PluginForHost {
         if (downloadLink.getBooleanProperty("nochunk", false) == true || resume == false) {
             chunks = 1;
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, downloadLink.getDownloadURL(), resume, chunks);
 
+        if (downloadLink.getStringProperty("referer", null) != null) br.getHeaders().put("Referer", downloadLink.getStringProperty("referer", null));
+        if (downloadLink.getStringProperty("cookies", null) != null) br.getCookies(downloadLink.getDownloadURL()).add(Cookies.parseCookies(downloadLink.getStringProperty("cookies", null), Browser.getHost(downloadLink.getDownloadURL()), null));
+        if (downloadLink.getStringProperty("post", null) != null) {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), downloadLink.getStringProperty("post", null), resume, chunks);
+        } else {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), resume, chunks);
+        }
         if (!dl.startDownload()) {
             if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().startsWith(JDL.L("download.error.message.rangeheaderparseerror", "Unexpected rangeheader format:"))) {
                 if (downloadLink.getBooleanProperty("nochunk", false) == false) {
-                    downloadLink.setProperty("nochunk", new Boolean(true));
+                    downloadLink.setProperty("nochunk", Boolean.valueOf(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
             }
             if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload"))) {
                 if (downloadLink.getBooleanProperty("nochunkload", false) == false) {
                     downloadLink.setChunksProgress(null);
-                    downloadLink.setProperty("nochunkload", new Boolean(true));
+                    downloadLink.setProperty("nochunkload", Boolean.valueOf(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
             }
@@ -182,7 +211,7 @@ public class DirectHTTP extends PluginForHost {
     // @Override
     public void resetDownloadlink(DownloadLink link) {
         link.setProperty("nochunkload", false);
-        link.setProperty("nochunk", false);        
+        link.setProperty("nochunk", false);
     }
 
     // @Override

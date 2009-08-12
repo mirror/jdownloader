@@ -67,13 +67,22 @@ public class HTTPAllgemein extends PluginForHost {
     }
 
     private void BasicAuthfromURL(DownloadLink link) {
-        String url = link.getDownloadURL();
-        String basicauth = new Regex(url, "http.*?/([^/]{1}.*?)@").getMatch(0);
+        String url = null;
+        String basicauth = new Regex(link.getDownloadURL(), "http.*?/([^/]{1}.*?)@").getMatch(0);
         if (basicauth != null && basicauth.contains(":")) {
-            url = new Regex(url, "https.*?@(.+)").getMatch(0);
-            if (url != null) link.setUrlDownload("https://" + url);
-            if (url == null) url = new Regex(url, "http.*?@(.+)").getMatch(0);
-            if (url != null) link.setUrlDownload("http://" + url);
+            /* https */
+            url = new Regex(link.getDownloadURL(), "https.*?@(.+)").getMatch(0);
+            if (url != null) {
+                link.setUrlDownload("https://" + url);
+            } else {
+                /* http */
+                url = new Regex(link.getDownloadURL(), "http.*?@(.+)").getMatch(0);
+                if (url != null) {
+                    link.setUrlDownload("http://" + url);
+                } else {
+                    logger.severe("Could not parse basicAuth from " + link.getDownloadURL());
+                }
+            }
             HTACCESSController.getInstance().add(link.getDownloadURL(), Encoding.Base64Encode(basicauth));
         }
     }

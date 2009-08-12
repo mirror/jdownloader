@@ -8,7 +8,7 @@ import jd.parser.html.Form;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-public class hotfilecollector {
+public class Hotfilecollector {
 
 	/**
 	 * @param args

@@ -114,7 +114,7 @@ public class Template {
         for (Object name : v) {
             Hashtable<String, Object> h = (Hashtable<String, Object>) name;
             if (h == null) {
-                v2.addElement(h);
+                v2.addElement(null);
                 continue;
             }
             Hashtable<String, Object> h2 = new Hashtable<String, Object>();

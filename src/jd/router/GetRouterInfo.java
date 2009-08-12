@@ -499,9 +499,8 @@ public class GetRouterInfo {
                     if (upnp.met != null && upnp.met.size() != 0) {
                         isalv.SCPDs = upnp.SCPDs;
                         isalv.meths = upnp.met;
-
                     }
-                    JDLogger.getLogger().info(upnp.met.toString());
+                    if (upnp.met != null) JDLogger.getLogger().info(upnp.met.toString());
                 } catch (Exception e) {
                     JDLogger.getLogger().info("NO UPNP");
                 }

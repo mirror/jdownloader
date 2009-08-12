@@ -345,7 +345,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
             exec.setRunin(file.getParentFile().getAbsolutePath());
         }
         exec.setWaitTimeout(-1);
-        exec.addProcessListener(new ExtractListener(), Executer.LISTENER_ERRORSTREAM | Executer.LISTENER_ERRORSTREAM);
+        exec.addProcessListener(new ExtractListener(), Executer.LISTENER_ERRORSTREAM);
         exec.addProcessListener(new PasswordListener(password), Executer.LISTENER_ERRORSTREAM);
 
         exec.start();

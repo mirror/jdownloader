@@ -31,21 +31,24 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7182 $", interfaceVersion = 2, names = {"3dl.am"}, urls = {"http://[\\w\\.]*?3dl\\.am/link/[a-zA-Z0-9]+|http://[\\w\\.]*?3dl\\.am/download/start/[0-9]+/|http://[\\w\\.]*?3dl\\.am/download/[0-9]+/.+\\.html|http://[\\w\\.]*?3dl\\.am/\\?action=entrydetail&entry_id=[0-9]+"}, flags = {0})
+
+@DecrypterPlugin(revision = "$Revision: 7182 $", interfaceVersion = 2, names = { "3dl.am" }, urls = { "http://[\\w\\.]*?3dl\\.am/link/[a-zA-Z0-9]+|http://[\\w\\.]*?3dl\\.am/download/start/[0-9]+/|http://[\\w\\.]*?3dl\\.am/download/[0-9]+/.+\\.html|http://[\\w\\.]*?3dl\\.am/\\?action=entrydetail&entry_id=[0-9]+" }, flags = { 0 })
 public class DrDlm extends PluginForDecrypt {
     private String password;
     private CryptedLink link;
     static public final String DECRYPTER_3DLAM_1 = "http://[\\w\\.]*?3dl\\.am/link/[a-zA-Z0-9]+";
     static public final String DECRYPTER_3DLAM_2 = "http://[\\w\\.]*?3dl\\.am/download/start/[0-9]+/";
     static public final String DECRYPTER_3DLAM_3 = "http://[\\w\\.]*?3dl\\.am/download/[0-9]+/.+\\.html";
-//    static public final String DECRYPTER_3DLAM_4 = "http://[\\w\\.]*?3dl\\.am/\\?action=entrydetail&entry_id=[0-9]+";
- 
+
+    // static public final String DECRYPTER_3DLAM_4 =
+    // "http://[\\w\\.]*?3dl\\.am/\\?action=entrydetail&entry_id=[0-9]+";
+
     public DrDlm(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     private void decryptFromDownload(String parameter) throws Exception {
-        parameter.replace("&quot;", "\"");
+        parameter = parameter.replace("&quot;", "\"");
         br.getPage(parameter);
         Thread.sleep(500);
         // passwort auslesen
@@ -95,7 +98,6 @@ public class DrDlm extends PluginForDecrypt {
         return linksReturn;
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -136,6 +138,4 @@ public class DrDlm extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    // @Override
-    
 }

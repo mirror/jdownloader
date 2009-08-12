@@ -126,7 +126,7 @@ public class Utils {
                         continue;
                     }
                     if (key == null) {
-                        hlh.append("        " + headers.get(key) + "\r\n");
+                        hlh.append("        " + headers.get(null) + "\r\n");
                     } else
                         hlh.append("        " + key + ": " + headers.get(key) + "\r\n");
                 }

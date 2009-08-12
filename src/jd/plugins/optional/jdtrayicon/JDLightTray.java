@@ -339,10 +339,10 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     public Object interact(String command, Object parameter) {
         if (command == null) return null;
         if (command.equalsIgnoreCase("refresh")) {
-            new GuiRunnable<Boolean>() {
+            new GuiRunnable<Object>() {
 
                 @Override
-                public Boolean runSave() {                    
+                public Object runSave() {                    
                     removeTrayIcon();                    
                     initGUI();
                     return null;

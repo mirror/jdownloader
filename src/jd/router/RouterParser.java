@@ -119,15 +119,14 @@ public class RouterParser {
      */
     public RouterData parseSingleRouter(InputStream is) throws IOException {
         RouterData routerData = new RouterData();
-        @SuppressWarnings("unused")
-        int routerPort;
+
         String ipAddressPre;
         String ipAddressPost;
         String disconnectString;
         String connectString;
         String login;
 
-        routerPort = readInt(is);
+        readInt(is);
         readByte(is);
         login = readNextString(is);
 

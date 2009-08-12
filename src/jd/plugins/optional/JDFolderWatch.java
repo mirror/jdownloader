@@ -36,7 +36,7 @@ import jd.utils.locale.JDL;
 public class JDFolderWatch extends PluginOptional {
     
 
-    public class check extends Thread {
+    public class Check extends Thread {
         // @Override
         public void run() {
             threadend = true;
@@ -54,7 +54,7 @@ public class JDFolderWatch extends PluginOptional {
 
     private SubConfiguration subConfig = null;
     private ArrayList<String> added = null;
-    private check i;
+    private Check i;
 
     private boolean running = true;
 
@@ -89,7 +89,7 @@ public class JDFolderWatch extends PluginOptional {
                 running = false;
             } else {
                 logger.info("Folderwatch: Starting");
-                i = new check();
+                i = new Check();
                 i.start();
                 running = true;
             }
@@ -154,7 +154,7 @@ public class JDFolderWatch extends PluginOptional {
                 subConfig.save();
             }
 
-            i = new check();
+            i = new Check();
             i.setName("FolderWatch");
             i.start();
             return true;

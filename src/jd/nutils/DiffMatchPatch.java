@@ -213,7 +213,8 @@ public class DiffMatchPatch {
             diffs.add(new Diff(op, longtext.substring(i + shorttext.length())));
             return diffs;
         }
-        longtext = shorttext = null; // Garbage collect
+        longtext = null;
+        shorttext = null; // Garbage collect
 
         // Check to see if the problem can be split in two.
         String[] hm = diffHalfMatch(text1, text2);
@@ -768,7 +769,7 @@ public class DiffMatchPatch {
         boolean changes = false;
         Stack<Diff> equalities = new Stack<Diff>(); // Stack of qualities.
         String lastequality = null; // Always equal to
-                                    // equalities.lastElement().text
+        // equalities.lastElement().text
         ListIterator<Diff> pointer = diffs.listIterator();
         // Number of characters that changed prior to the equality.
         int lengthChanges1 = 0;
@@ -799,7 +800,7 @@ public class DiffMatchPatch {
                     pointer.add(new Diff(Operation.INSERT, lastequality));
 
                     equalities.pop(); // Throw away the equality we just
-                                      // deleted.
+                    // deleted.
                     if (!equalities.empty()) {
                         // Throw away the previous equality (it needs to be
                         // reevaluated).
@@ -977,7 +978,7 @@ public class DiffMatchPatch {
         boolean changes = false;
         Stack<Diff> equalities = new Stack<Diff>(); // Stack of equalities.
         String lastequality = null; // Always equal to
-                                    // equalities.lastElement().text
+        // equalities.lastElement().text
         ListIterator<Diff> pointer = diffs.listIterator();
         // Is there an insertion operation before the last equality.
         boolean pre_ins = false;
@@ -989,7 +990,7 @@ public class DiffMatchPatch {
         boolean postDel = false;
         Diff thisDiff = pointer.next();
         Diff safeDiff = thisDiff; // The last Diff that is known to be
-                                  // unsplitable.
+        // unsplitable.
         while (thisDiff != null) {
             if (thisDiff.operation == Operation.EQUAL) {
                 // equality found
@@ -1035,7 +1036,7 @@ public class DiffMatchPatch {
                     pointer.add(thisDiff = new Diff(Operation.INSERT, lastequality));
 
                     equalities.pop(); // Throw away the equality we just
-                                      // deleted.
+                    // deleted.
                     lastequality = null;
                     if (pre_ins && preDel) {
                         // No changes made which could affect previous entry,
@@ -1083,7 +1084,7 @@ public class DiffMatchPatch {
      */
     public void diffCleanupMerge(LinkedList<Diff> diffs) {
         diffs.add(new Diff(Operation.EQUAL, "")); // Add a dummy entry at the
-                                                  // end.
+        // end.
         ListIterator<Diff> pointer = diffs.listIterator();
         int countDelete = 0;
         int count_insert = 0;
@@ -2140,7 +2141,7 @@ public class DiffMatchPatch {
                 }
                 line = text.getFirst().substring(1);
                 line = line.replace("+", "%2B"); // decode would change all "+"
-                                                 // to " "
+                // to " "
                 try {
                     line = URLDecoder.decode(line, "UTF-8");
                 } catch (UnsupportedEncodingException e) {

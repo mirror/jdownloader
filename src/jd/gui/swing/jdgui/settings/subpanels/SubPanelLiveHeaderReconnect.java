@@ -122,7 +122,7 @@ public class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionLi
                             jd.setModal(true);
                             jd.setVisible(true);
                             if (jd.saved) {
-                                ((JTextField) ip.getInput()[0]).setText(jd.RouterIP);
+                                ((JTextField) ip.getInput()[0]).setText(jd.routerIP);
                                 if (jd.user != null) ((JTextField) user.getInput()[0]).setText(jd.user);
                                 if (jd.pass != null) ((JTextField) pass.getInput()[0]).setText(jd.pass);
                                 ((JTextArea) script.getInput()[0]).setText(jd.methode);

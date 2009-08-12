@@ -624,7 +624,7 @@ public class SimpleFTP {
 
         input.close();
         shutDownSocket(dataSocket);
-        response = readLine();
+        readLine();
         // if (!response.startsWith("226")) { throw new
         // IOException("Download failed: " + response); }
         // return null;

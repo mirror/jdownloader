@@ -73,25 +73,21 @@ public class SpeedMeterPanel extends JPanel implements ActionListener, MouseList
         setBorder(show ? BorderFactory.createEtchedBorder() : null);
         addMouseListener(this);
 
-        JDUtilities.getController().addControlListener(
-                                                       new ConfigPropertyListener(
-                                                               Configuration.PARAM_DOWNLOAD_MAX_SPEED,
-                                                               JDGuiConstants.PARAM_SHOW_SPEEDMETER_WINDOWSIZE,
-                                                               JDGuiConstants.PARAM_SHOW_SPEEDMETER) {
+        JDUtilities.getController().addControlListener(new ConfigPropertyListener(Configuration.PARAM_DOWNLOAD_MAX_SPEED, JDGuiConstants.PARAM_SHOW_SPEEDMETER_WINDOWSIZE, JDGuiConstants.PARAM_SHOW_SPEEDMETER) {
 
-                                                           @Override
-                                                           public void onPropertyChanged(Property source, String key) {
-                                                               if (key == Configuration.PARAM_DOWNLOAD_MAX_SPEED) {
-                                                                   update();
-                                                               } else if (key == JDGuiConstants.PARAM_SHOW_SPEEDMETER_WINDOWSIZE) {
-                                                                   window = GUIUtils.getConfig().getIntegerProperty(JDGuiConstants.PARAM_SHOW_SPEEDMETER_WINDOWSIZE, 60);
-                                                               } else if (key == JDGuiConstants.PARAM_SHOW_SPEEDMETER) {
-                                                                   show = GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_SHOW_SPEEDMETER, true);
-                                                                   setBorder(show ? BorderFactory.createEtchedBorder() : null);
-                                                               }
-                                                           }
+            @Override
+            public void onPropertyChanged(Property source, String key) {
+                if (key == Configuration.PARAM_DOWNLOAD_MAX_SPEED) {
+                    update();
+                } else if (key == JDGuiConstants.PARAM_SHOW_SPEEDMETER_WINDOWSIZE) {
+                    window = GUIUtils.getConfig().getIntegerProperty(JDGuiConstants.PARAM_SHOW_SPEEDMETER_WINDOWSIZE, 60);
+                } else if (key == JDGuiConstants.PARAM_SHOW_SPEEDMETER) {
+                    show = GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_SHOW_SPEEDMETER, true);
+                    setBorder(show ? BorderFactory.createEtchedBorder() : null);
+                }
+            }
 
-                                                       });
+        });
 
     }
 

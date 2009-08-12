@@ -24,8 +24,8 @@ public class ChangeHeader extends JPanel {
         JLabel l1 = new JLabel(view.getTitle());
         change = new JLabel("*");
         closeIcon = new JButton(JDTheme.II("gui.tab.close", 12, 12));
-       closeIcon.setContentAreaFilled(false);
-//        closeIcon.setBorderPainted(false);
+        closeIcon.setContentAreaFilled(false);
+        // closeIcon.setBorderPainted(false);
 
         closeIcon.setText(null);
         closeIcon.setVisible(false);
@@ -55,15 +55,15 @@ public class ChangeHeader extends JPanel {
      * @param a
      */
     public void setCloseEnabled(Action a) {
-        if(action!=null){
+        if (action != null) {
             closeIcon.removeActionListener(action);
         }
         if (a != null) {
-            action=a;
+            action = a;
             closeIcon.addActionListener(a);
             closeIcon.setVisible(true);
         } else {
-            action=a;
+            action = null;
             closeIcon.setVisible(false);
         }
 

@@ -183,7 +183,7 @@ public class Scrd extends PluginForDecrypt {
 
         private int[] ylomiktb(String lofiuzmq) {
 
-            int plokimqw = (int) Math.ceil(lofiuzmq.length() / 4);
+            int plokimqw = (int) Math.ceil(lofiuzmq.length() / 4.0f);
             int[] lopkisdq = new int[plokimqw];
             for (int ypoqlktz = 0; ypoqlktz < plokimqw; ypoqlktz++) {
                 lopkisdq[ypoqlktz] = lofiuzmq.charAt((ypoqlktz << 2) + 3) + (lofiuzmq.charAt((ypoqlktz << 2) + 2) << 8) + (lofiuzmq.charAt((ypoqlktz << 2) + 1) << 16) + (lofiuzmq.charAt((ypoqlktz << 2)) << 24);

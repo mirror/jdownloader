@@ -52,7 +52,7 @@ public class DumpRo extends PluginForHost {
         br.submitForm(form[2]);
         br.setFollowRedirects(false);
 
-        String dlform = new String();
+        String dlform = null;
         if (br.getRegex("download_file\\('(.*?)','(.*?)',.*?\\);").matches() == false) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         dlform = "download.php?action=download&type=file&id=" + br.getRegex("download_file\\('(.*?)','(.*?)',.*?\\);").getMatch(0) + "&act=" + br.getRegex("download_file\\('(.*?)','(.*?)',.*?\\);").getMatch(1);
 
@@ -62,7 +62,7 @@ public class DumpRo extends PluginForHost {
         InputField nv2 = new InputField("actiune", "download");
         forms.addInputField(nv2);
 
-        dl = jd.plugins.BrowserAdapter.openDownload(br,link, forms, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, forms, false, 1);
         dl.startDownload();
 
     }

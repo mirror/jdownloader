@@ -24,13 +24,10 @@ import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.StringTokenizer;
-import java.util.Map.Entry;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
@@ -125,80 +122,6 @@ public abstract class Request {
         collectCookiesFromConnection();
     }
 
-    public static Cookies parseCookies(String cookieString, String host, String Date) {
-        Cookies cookies = new Cookies();
-
-        String header = cookieString;
-
-        String path = null;
-        String expires = null;
-        String domain = null;
-        LinkedHashMap<String, String> tmp = new LinkedHashMap<String, String>();
-        /* einzelne Cookie Elemente */
-        StringTokenizer st = new StringTokenizer(header, ";");
-        while (true) {
-
-            String key = null;
-            String value = null;
-            String cookieelement = null;
-            if (st.hasMoreTokens()) {
-                cookieelement = st.nextToken().trim();
-            } else {
-                break;
-            }
-            /* Key and Value */
-            String st2[] = new Regex(cookieelement, "(.*?)=(.+)").getRow(0);
-            if (st2 == null || st2.length == 0) {
-                key = null;
-            } else if (st2.length == 1) {
-                key = st2[0].trim();
-            } else if (st2.length == 2) {
-                key = st2[0].trim();
-                value = st2[1].trim();
-            }
-
-            if (key != null) {
-                if (key.equalsIgnoreCase("path")) {
-                    path = value;
-                    continue;
-                }
-                if (key.equalsIgnoreCase("expires")) {
-                    expires = value;
-                    continue;
-                }
-                if (key.equalsIgnoreCase("domain")) {
-                    domain = value;
-                    continue;
-                }
-
-                tmp.put(key, value);
-            } else {
-                break;
-            }
-
-        }
-
-        for (Iterator<Entry<String, String>> it = tmp.entrySet().iterator(); it.hasNext();) {
-            Entry<String, String> next = it.next();
-            Cookie cookie = new Cookie();
-            /*
-             * cookies ohne value sind keine cookies
-             */
-            if (next.getValue() == null) continue;
-            cookies.add(cookie);
-            cookie.setHost(host);
-            cookie.setPath(path);
-            cookie.setDomain(domain);
-            cookie.setExpires(expires);
-            cookie.setValue(next.getValue());
-            cookie.setKey(next.getKey());
-            cookie.setHostTime(Date);
-        }
-
-        return cookies;
-
-    }
-
     @SuppressWarnings("unchecked")
     private void collectCookiesFromConnection() {
 
@@ -213,12 +136,13 @@ public abstract class Request {
 
         for (int i = cookieHeaders.size() - 1; i >= 0; i--) {
             String header = cookieHeaders.get(i);
-            cookies.add(parseCookies(header, host, Date));
+            cookies.add(Cookies.parseCookies(header, host, Date));
         }
     }
-/**
- * DO NEVER call this method directly... use browser.connect
- */
+
+    /**
+     * DO NEVER call this method directly... use browser.connect
+     */
     protected Request connect() throws IOException {
         requested = true;
         openConnection();
@@ -240,8 +164,7 @@ public abstract class Request {
         // openConnection();
         // postRequest(httpConnection);
         // }
-        
-    
+
         return this;
     }
 

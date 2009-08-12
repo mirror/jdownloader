@@ -155,8 +155,6 @@ public class LoadCaptchas {
                 }
 
                 public void windowClosing(WindowEvent e) {
-                    synchronized (dialog) {
-                    }
                     dialog.dispose();
                 }
 
@@ -327,12 +325,13 @@ public class LoadCaptchas {
 
             public void actionPerformed(ActionEvent e) {
                 LoadCaptchas.load();
-                
-            }});
+
+            }
+        });
         d.add(b);
         d.pack();
         d.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         d.setVisible(true);
-        
+
     }
 }

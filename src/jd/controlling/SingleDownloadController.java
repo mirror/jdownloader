@@ -431,7 +431,6 @@ public class SingleDownloadController extends Thread {
                     copy++;
                     downloadLink.setFinalFileName(name + "_" + copy + "." + extension);
                 }
-                name = num[0];
             } catch (Exception e) {
                 copy = 2;
                 downloadLink.setFinalFileName(name + "_" + copy + "." + extension);

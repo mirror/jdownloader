@@ -60,7 +60,7 @@ public class MegaPornCom extends PluginForHost {
 
     private String user;
 
-    private static Boolean DL = false;
+    private static Object DL = new Object();
 
     public MegaPornCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -188,7 +188,7 @@ public class MegaPornCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.setDebug(true);
         try {
-            dl = jd.plugins.BrowserAdapter.openDownload(br,link, url, resume, chunks);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, resume, chunks);
             if (!dl.getConnection().isOK()) {
                 dl.getConnection().disconnect();
                 if (dl.getConnection().getResponseCode() == 503) {

@@ -669,13 +669,13 @@ public class JACScript {
      */
     public long getLong(String key) {
         Object ret = get(key);
-        if (!(ret instanceof Integer)) {
-            if (Utilities.isLoggerActive()) {
-                logger.severe("Kein Long Parameter für " + key);
-            }
-            return 0;
+        if (ret instanceof Long) return (Long) ret;
+        if (ret instanceof Integer) {
+            logger.severe("Casting Integer to Long");
+            return (Integer) ret;
         }
-        return (Long) ret;
+        logger.severe("No Long,Integer found!");
+        return 0;
     }
 
     /**

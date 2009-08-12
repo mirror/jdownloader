@@ -57,7 +57,7 @@ public class Gui extends JDialog implements ActionListener {
     public boolean saved = false;
     private String ip_before;
     private String ip_after;
-    public String RouterIP = null;
+    public String routerIP = null;
     private JButton btnStop;
     public String methode = null, user = null, pass = null;
     private static long check_intervall = 3000;
@@ -66,9 +66,9 @@ public class Gui extends JDialog implements ActionListener {
     public Gui(JFrame frame, String ip) {
         super(frame);
 
-        RouterIP = ip;
+        routerIP = ip;
 
-        routerip = new JTextField(RouterIP);
+        routerip = new JTextField(routerIP);
 
         btnCancel = new JButton(JDL.L("gui.btn_cancel", "Abbrechen"));
         btnCancel.addActionListener(this);

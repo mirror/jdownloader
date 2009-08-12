@@ -110,8 +110,10 @@ public class JACMethod implements Comparable<JACMethod> {
         }
 
         Vector<JACMethod> methods = new Vector<JACMethod>();
-        for (String service : services) {
-            methods.add(new JACMethod(dir.getName(), service, author));
+        if (services != null) {
+            for (String service : services) {
+                methods.add(new JACMethod(dir.getName(), service, author));
+            }
         }
         return methods;
     }

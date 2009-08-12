@@ -36,7 +36,7 @@ public class ByteBufferController {
         }
     };
 
-    protected long BufferEntries = 0;
+    protected long bufferEntries = 0;
 
     public synchronized static ByteBufferController getInstance() {
         if (INSTANCE == null) INSTANCE = new ByteBufferController();
@@ -50,7 +50,7 @@ public class ByteBufferController {
                 free += entry.capacity();
             }
         }
-        JDLogger.getLogger().info("ByteBufferController: Used: " + Formatter.formatReadable(BufferEntries - free) + " Free: " + Formatter.formatReadable(free));
+        JDLogger.getLogger().info("ByteBufferController: Used: " + Formatter.formatReadable(bufferEntries - free) + " Free: " + Formatter.formatReadable(free));
     }
 
     private ByteBufferController() {
@@ -81,7 +81,7 @@ public class ByteBufferController {
                 }
             }
         }
-        BufferEntries += size;
+        bufferEntries += size;
         return null;
     }
 

@@ -320,7 +320,7 @@ public class DDLWrz extends PluginForDecrypt {
             for (String c : codes.keySet()) {
                 if (c.equalsIgnoreCase(code)) continue;
                 for (int i = 0; i < c.length(); i++) {
-                    retcode.replaceAll("" + c.charAt(i), "");
+                    retcode=retcode.replaceAll("" + c.charAt(i), "");
                 }
             }
             return retcode;

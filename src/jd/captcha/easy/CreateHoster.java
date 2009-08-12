@@ -1,4 +1,5 @@
 package jd.captcha.easy;
+
 import java.io.File;
 import javax.swing.JOptionPane;
 
@@ -15,7 +16,7 @@ public class CreateHoster {
         if (!folder2.exists() || folder2.list().length < 1) {
             if (JOptionPane.showConfirmDialog(null, "You need Captchas do you wanna load Captchas?", "Load Captchas", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_NO_OPTION) {
 
-                boolean b= new GuiRunnable<Boolean>() {
+                new GuiRunnable<Boolean>() {
                     public Boolean runSave() {
                         return LoadCaptchas.load(ef.toString());
                     }

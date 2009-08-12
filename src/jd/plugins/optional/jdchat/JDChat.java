@@ -807,7 +807,8 @@ public class JDChat extends PluginOptional implements ControlListener {
             if ((nick != null) && (!nick.equalsIgnoreCase(""))) {
                 nick += "[" + loc + "]";
             }
-            subConfig.setProperty(PARAM_NICK, nick.trim());
+            if (nick != null) nick = nick.trim();
+            subConfig.setProperty(PARAM_NICK, nick);
             subConfig.save();
         }
         if (nick == null) {

@@ -219,6 +219,7 @@ public class HTTPDownload extends DownloadInterface {
                 break;
             }
         }
+        if (slowest == null) return;
         System.out.println("Disconnect chunk " + slowest + " remaining: " + slowest.getRemainingChunkBytes() + " " + slowest.getChunkBytes());
         slowest.setChunkEnd(slowest.getChunkStart() + slowest.getChunkBytes());
 

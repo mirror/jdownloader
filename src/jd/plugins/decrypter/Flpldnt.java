@@ -25,16 +25,14 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "File-Upload.net" }, urls = { "http://[\\w\\.]*?member\\.file-upload\\.net/(.*?)/(.*)"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "File-Upload.net" }, urls = { "http://[\\w\\.]*?member\\.file-upload\\.net/(.*?)/(.*)" }, flags = { 0 })
 public class Flpldnt extends PluginForDecrypt {
 
     public Flpldnt(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    //@Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -43,7 +41,7 @@ public class Flpldnt extends PluginForDecrypt {
         String file = new Regex(parameter, user + "/(.*)").getMatch(0);
         String link = "http://www.file-upload.net/member/data3.php?user=" + user + "&name=" + file;
         if (link != null) {
-            link.replaceAll(" ", "%20");
+            link = link.replaceAll(" ", "%20");
             decryptedLinks.add(createDownloadlink(link));
             return decryptedLinks;
         } else {
@@ -51,6 +49,4 @@ public class Flpldnt extends PluginForDecrypt {
         }
     }
 
-    //@Override
-    
 }

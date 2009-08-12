@@ -18,7 +18,7 @@ package jd.utils;
 
 import jd.controlling.JDLogger;
 
-public class binCode {
+public class BinCode {
     private static String addZero(String bin, int minCount) {
         for (int j = bin.length(); j < minCount; j++) {
             bin = "0" + bin;
@@ -29,7 +29,7 @@ public class binCode {
     private static String[] binArrayToCodeArray(String[] binArray) {
         String[] codeArray = new String[binArray.length];
         for (int i = 0; i < binArray.length; i++) {
-            codeArray[i] = binCode.prBinToCode(binArray[i]);
+            codeArray[i] = BinCode.prBinToCode(binArray[i]);
         }
         return codeArray;
     }
@@ -37,7 +37,7 @@ public class binCode {
     public static String binToCode(String bin) {
         try {
             String[] sts = bin.split("\\|");
-            String[] codeArray = binCode.binArrayToCodeArray(sts);
+            String[] codeArray = BinCode.binArrayToCodeArray(sts);
             int minCount = sts[0].length();
             StringBuilder ret = new StringBuilder();
             ret.append(minCount);
@@ -55,14 +55,14 @@ public class binCode {
         String[] binArray = new String[codeArray.length - 1];
         int minCount = Integer.parseInt(codeArray[0]);
         for (int i = 1; i < codeArray.length; i++) {
-            binArray[i - 1] = binCode.addZero(binCode.prCodeToBin(codeArray[i]), minCount);
+            binArray[i - 1] = BinCode.addZero(BinCode.prCodeToBin(codeArray[i]), minCount);
         }
         return binArray;
     }
 
     public static String codeToString(String code) {
         try {
-            String[] binArray = binCode.codeToStringArray(code);
+            String[] binArray = BinCode.codeToStringArray(code);
             StringBuilder ret = new StringBuilder();
             boolean last = false;
             for (String element : binArray) {
@@ -77,7 +77,7 @@ public class binCode {
     }
 
     public static String[] codeToStringArray(String code) {
-        return binCode.codeArrayToBinArray(code.split("\\|"));
+        return BinCode.codeArrayToBinArray(code.split("\\|"));
     }
 
     private static String prBinToCode(String bin) {

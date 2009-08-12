@@ -78,6 +78,7 @@ class Server implements Runnable, ConnectionListener {
      */
     public Server(String id, MessageHandler messageHandler) {
         this.messageHandler = messageHandler;
+        this.id = id;
     }
 
     /**

@@ -54,7 +54,6 @@ public class FilerNet extends PluginForHost {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         int maxCaptchaTries = 5;
         String code;
-        String page = null;
 
         br.setCookiesExclusive(true);
         br.clearCookies("filer.net");
@@ -64,19 +63,19 @@ public class FilerNet extends PluginForHost {
             File captchaFile = getLocalCaptchaFile(".png");
             Browser.download(captchaFile, br.openGetConnection("http://www.filer.net/captcha.png"));
             code = getCaptchaCode(captchaFile, downloadLink);
-            page = br.postPage(downloadLink.getDownloadURL(), "captcha=" + code);
+            br.postPage(downloadLink.getDownloadURL(), "captcha=" + code);
             tries++;
-            if (!page.contains("captcha.png")) {
+            if (!br.containsHTML("captcha.png")) {
                 break;
             }
         }
-        if (page != null && page.contains("captcha.png")) {
+        if (br.containsHTML("captcha.png")) {
             linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
             return;
         }
 
-        if (Regex.matches(page, PATTERN_MATCHER_ERROR)) {
-            String error = new Regex(page, "folgende Fehler und versuchen sie es erneut.*?<ul>.*?<li>(.*?)<\\/li>").getMatch(0);
+        if (br.getRegex(PATTERN_MATCHER_ERROR).matches()) {
+            String error = br.getRegex("folgende Fehler und versuchen sie es erneut.*?<ul>.*?<li>(.*?)<\\/li>").getMatch(0);
             logger.severe("Error: " + error);
             linkStatus.addStatus(LinkStatus.ERROR_RETRY);
             return;
@@ -84,17 +83,17 @@ public class FilerNet extends PluginForHost {
         }
 
         br.setFollowRedirects(false);
-        if (br.toString().contains("Momentan sind die Limits f")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.filernet.errors.nofreeslots", "All free user slots occupied"), 10 * 1000 * 60l);
+        if (br.containsHTML("Momentan sind die Limits f")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.filernet.errors.nofreeslots", "All free user slots occupied"), 10 * 1000 * 60l);
         String wait = new Regex(br, "Bitte warten Sie ([\\d]*?) Min bis zum").getMatch(0);
         if (wait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, new Long(wait) * 1000 * 60l);
 
         }
         Form[] forms = br.getForms();
         if (forms.length < 2) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 1000 * 60l); }
-        page = br.submitForm(forms[1]);
+        br.submitForm(forms[1]);
         sleep(61000, downloadLink);
 
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, (String) null);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, (String) null);
         dl.startDownload();
     }
 
@@ -152,7 +151,7 @@ public class FilerNet extends PluginForHost {
         String url = br.getRegex("url=(http.*?)\"").getMatch(0);
         if (url == null) throw new PluginException(LinkStatus.ERROR_FATAL);
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, url, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
         if (dl.getConnection().getContentType().contains("text")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE); }
         dl.startDownload();
     }

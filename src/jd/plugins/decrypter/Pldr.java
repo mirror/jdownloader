@@ -30,9 +30,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "uploadr.eu" }, urls = { "http://[\\w\\.]*?uploadr\\.eu/(link/[\\w]+|folder/\\d+/)"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "uploadr.eu" }, urls = { "http://[\\w\\.]*?uploadr\\.eu/(link/[\\w]+|folder/\\d+/)" }, flags = { 0 })
 public class Pldr extends PluginForDecrypt {
 
     public Pldr(PluginWrapper wrapper) {
@@ -88,6 +87,7 @@ public class Pldr extends PluginForDecrypt {
                         if (captchaurl == null) captchaurl = br.getRegex("captchaimage'><img src='(.*?)'").getMatch(0);
                         if (captchaurl == null) captchaurl = br.getRegex("captcha.src=\"(.*?)\"").getMatch(0);
                         if (captchaurl != null) captchaurl = captchaurl.replaceFirst("\\.\\./", "http://uploadr.eu/");
+                        if (captchaurl == null) return null;
                         File captchaFile = this.getLocalCaptchaFile();
                         try {
                             Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaurl));
@@ -129,5 +129,5 @@ public class Pldr extends PluginForDecrypt {
     }
 
     // @Override
-    
+
 }

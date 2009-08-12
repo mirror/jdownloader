@@ -36,9 +36,8 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-@DecrypterPlugin(revision = "$Revision: 7185 $", interfaceVersion = 2, names = { "crypt-it.com" }, urls = { "(http|ccf)://[\\w\\.]*?crypt-it\\.com/(s|e|d|c)/[\\w]+"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision: 7185 $", interfaceVersion = 2, names = { "crypt-it.com" }, urls = { "(http|ccf)://[\\w\\.]*?crypt-it\\.com/(s|e|d|c)/[\\w]+" }, flags = { 0 })
 public class CrpttCm extends PluginForDecrypt {
 
     private static final String PATTERN_PASSWORD_FOLDER = "<input type=\"password\"";
@@ -107,7 +106,7 @@ public class CrpttCm extends PluginForDecrypt {
 
         AESdecrypt aes = new AESdecrypt(key, 6);
         int blockSize = 16;
-        byte[] input = new byte[blockSize];
+        byte[] input;
         byte[] output = new byte[blockSize];
         int blocks = 0;
         int rest = 0;
@@ -126,7 +125,7 @@ public class CrpttCm extends PluginForDecrypt {
         return new String(cipher).trim();
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
@@ -195,6 +194,6 @@ public class CrpttCm extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    //@Override
-    
+    // @Override
+
 }

@@ -94,13 +94,12 @@ public class FileUtils {
         if (!file.isAbsolute()) {
             JDLogger.getLogger().warning("ATTENTION! Deleting file without absolute path (unrecommended): " + file);
         }
-            if(!file.delete())
-            {
-                JDLogger.getLogger().warning("Couldn't delete file instantly, deleteOnExit instead.");
-                file.deleteOnExit();
-            }
-            JDLogger.getLogger().fine("File deleted: " + file);
-            return true;
+        if (!file.delete()) {
+            JDLogger.getLogger().warning("Couldn't delete file instantly, deleteOnExit instead.");
+            file.deleteOnExit();
+        }
+        JDLogger.getLogger().fine("File deleted: " + file);
+        return true;
     }
 
     private static String getWin_RecyclePath() {
@@ -116,16 +115,14 @@ public class FileUtils {
                 ex.run();
                 if (ex.getExitValue() == 1) {
                     success = true;
-                }
-                else
-                {
+                } else {
                     JDLogger.getLogger().warning("recycle.exe returned with exit code " + ex.getExitValue());
                 }
             }
         }
         /*
-         * else if(OSDetector.isLinux()) { success = true; }
-         * else if(OSDetector.isMac()) { success = true; }
+         * else if(OSDetector.isLinux()) { success = true; } else
+         * if(OSDetector.isMac()) { success = true; }
          */
 
         if (success) {
@@ -157,20 +154,20 @@ public class FileUtils {
      *            the method for deleting the file
      */
     public static boolean delete(File file, int method) {
-        if(!file.exists()){
-            JDLogger.getLogger().warning("Trying to delete a nonexisting file: "+file.getAbsolutePath());
-            return true;}
-        if ((method == MoveToRecycleBin)       // if recycle method is specified
-                && (OShasRecycleBinSupport())  // and is available on the OS
+        if (!file.exists()) {
+            JDLogger.getLogger().warning("Trying to delete a nonexisting file: " + file.getAbsolutePath());
+            return true;
+        }
+        if ((method == MoveToRecycleBin) // if recycle method is specified
+                && (OShasRecycleBinSupport()) // and is available on the OS
                 && (movetoRecycleBin(file))) { // and is successful
-            return true;                       // return success, otherwise
-        } else {                               // delete permanently
+            return true; // return success, otherwise
+        } else { // delete permanently
             if ((method == MoveToRecycleBin) && (!OShasRecycleBinSupport())) {
                 JDLogger.getLogger().fine("No RecycleBin support for " + OSDetector.getOSString() + ". Deleting permanently instead.");
             }
-            if((method == MoveToRecycleBin) && (OShasRecycleBinSupport()))
-            {
-                JDLogger.getLogger().fine("Moving to recycle bin failed. OS[" + OSDetector.getOSString() + "] File["+file.getAbsolutePath()+"]. Deleting permanently instead.");
+            if ((method == MoveToRecycleBin) && (OShasRecycleBinSupport())) {
+                JDLogger.getLogger().fine("Moving to recycle bin failed. OS[" + OSDetector.getOSString() + "] File[" + file.getAbsolutePath() + "]. Deleting permanently instead.");
             }
             return deletePermanently(file);
         }
@@ -219,13 +216,12 @@ public class FileUtils {
     public static boolean delete(String file) {
         return delete(file, DefaultDeleteAction);
     }
-    
-    private static void copy( InputStream in, OutputStream out ) throws IOException 
-    { 
-      byte[] buffer = new byte[ 0xFFFF ]; 
-      for ( int len; (len = in.read(buffer)) != -1; ) 
-        out.write( buffer, 0, len ); 
-    } 
+
+    private static void copy(InputStream in, OutputStream out) throws IOException {
+        byte[] buffer = new byte[0xFFFF];
+        for (int len; (len = in.read(buffer)) != -1;)
+            out.write(buffer, 0, len);
+    }
 
     /**
      * Copies a file with specified options
@@ -254,34 +250,34 @@ public class FileUtils {
         }
 
         boolean success = true;
-        FileInputStream  fis = null; 
-        FileOutputStream fos = null; 
-     
-        try 
-        { 
-          fis = new FileInputStream( src ); 
-          fos = new FileOutputStream( dest ); 
-     
-          copy( fis, fos ); 
-        } 
-        catch ( IOException e ) { 
-          success = false;
-          e.printStackTrace(); 
-        } 
-        finally { 
-          if ( fis != null ) 
-            try { fis.close(); } catch ( IOException e ) { success = false; } 
-          if ( fos != null ) 
-            try { fos.close(); } catch ( IOException e ) { success = false; } 
-        } 
-        
-        if(success)
-        {
+        FileInputStream fis = null;
+        FileOutputStream fos = null;
+
+        try {
+            fis = new FileInputStream(src);
+            fos = new FileOutputStream(dest);
+
+            copy(fis, fos);
+        } catch (IOException e) {
+            success = false;
+            e.printStackTrace();
+        } finally {
+            if (fis != null) try {
+                fis.close();
+            } catch (IOException e) {
+                success = false;
+            }
+            if (fos != null) try {
+                fos.close();
+            } catch (IOException e) {
+                success = false;
+            }
+        }
+
+        if (success) {
             JDLogger.getLogger().fine(src.getAbsolutePath() + " has been copied to " + dest.getAbsolutePath());
             return true;
-        }
-        else
-        {
+        } else {
             JDLogger.getLogger().warning("Couldn't copy file " + src.getAbsolutePath() + " to " + dest.getAbsolutePath());
         }
         return false;
@@ -316,7 +312,7 @@ public class FileUtils {
      */
     public static boolean move(File src, File dest, boolean allowOverwrite) {
 
-        if ((src == null) || (!src.exists())) { throw new IllegalStateException("File [" + src.getAbsolutePath() + "] to move doesnt exist."); }
+        if ((src == null) || (!src.exists())) { throw new IllegalStateException("File [" + src != null ? src.getAbsolutePath() : "" + "] to move doesnt exist."); }
 
         if (dest.exists()) {
             if (allowOverwrite) {
@@ -334,14 +330,13 @@ public class FileUtils {
         if (src != null) {
             moved = src.renameTo(dest);
             if (!moved) {
-                JDLogger.getLogger().fine("renameTo failed, trying to copy file now src["+src.getAbsolutePath()+"] dest["+dest.getAbsolutePath()+"]");
+                JDLogger.getLogger().fine("renameTo failed, trying to copy file now src[" + src.getAbsolutePath() + "] dest[" + dest.getAbsolutePath() + "]");
                 if (copy(src, dest, allowOverwrite)) {
                     if (dest.exists() && (dest.length() == src.length())) {
                         delete(src, FileUtils.DeletePermanently);
                         moved = true;
-                    }
-                    else if (dest.exists() && (dest.length() != src.length())) {
-                        JDLogger.getLogger().warning("Error while copying file: new file has a diffent lenght! src["+src.getAbsolutePath()+","+src.length()+"] dest["+dest.getAbsolutePath()+","+dest.length()+"]");
+                    } else if (dest.exists() && (dest.length() != src.length())) {
+                        JDLogger.getLogger().warning("Error while copying file: new file has a diffent lenght! src[" + src.getAbsolutePath() + "," + src.length() + "] dest[" + dest.getAbsolutePath() + "," + dest.length() + "]");
                     }
                 }
             }
@@ -369,53 +364,45 @@ public class FileUtils {
         return move(src, dest, MoveOverwriteAllowedByDefault);
     }
 
-    /* Use this for testing
-     * Tested on:
-     * Windows Vista, 32bit
+    /*
+     * Use this for testing Tested on: Windows Vista, 32bit
      * 
-    public static void main(String[] args) {
-
-        String a = "C:\\test.txt"; // only this file exists at the beginning of
-        // the test (and afterwards)
-        String b = "C:\\test2.txt"; // same hard drive as a
-        String c = "K:\\test3.txt"; // different hard drive than a and b
-        
-        if (!new File(a).exists() || new File(b).exists() || new File(c).exists()) {
-            JDLogger.getLogger().warning("only testfile a has to exist!");
-            return;
-        }
-
-        // tests
-        
-        JDLogger.getLogger().warning("Test Copy on same hd");
-        if (copy(new File(a), new File(b), false)) {
-
-            JDLogger.getLogger().warning("Test Delete (Permanently)");
-            if (delete(new File(a), FileUtils.DeletePermanently)) {
-
-                JDLogger.getLogger().warning("Test Move on same hd");
-                if (move(new File(b), new File(a), false)) {
-
-                    JDLogger.getLogger().warning("Test Copy to different hd");
-                    if (copy(new File(a), new File(c), false)) {
-
-                        JDLogger.getLogger().warning("Test Delete (Recycle Bin)");
-                        if (delete(new File(a), FileUtils.MoveToRecycleBin)) {
-
-                            JDLogger.getLogger().warning("Test Move to different hd");
-                            if (move(new File(c), new File(a), false)) {
-                                JDLogger.getLogger().warning("Tests finished successfull!");
-                                System.exit(0);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        JDLogger.getLogger().warning("Error!");
-        
-    }
-    
-    /**/
+     * public static void main(String[] args) {
+     * 
+     * String a = "C:\\test.txt"; // only this file exists at the beginning of
+     * // the test (and afterwards) String b = "C:\\test2.txt"; // same hard
+     * drive as a String c = "K:\\test3.txt"; // different hard drive than a and
+     * b
+     * 
+     * if (!new File(a).exists() || new File(b).exists() || new
+     * File(c).exists()) {
+     * JDLogger.getLogger().warning("only testfile a has to exist!"); return; }
+     * 
+     * // tests
+     * 
+     * JDLogger.getLogger().warning("Test Copy on same hd"); if (copy(new
+     * File(a), new File(b), false)) {
+     * 
+     * JDLogger.getLogger().warning("Test Delete (Permanently)"); if (delete(new
+     * File(a), FileUtils.DeletePermanently)) {
+     * 
+     * JDLogger.getLogger().warning("Test Move on same hd"); if (move(new
+     * File(b), new File(a), false)) {
+     * 
+     * JDLogger.getLogger().warning("Test Copy to different hd"); if (copy(new
+     * File(a), new File(c), false)) {
+     * 
+     * JDLogger.getLogger().warning("Test Delete (Recycle Bin)"); if (delete(new
+     * File(a), FileUtils.MoveToRecycleBin)) {
+     * 
+     * JDLogger.getLogger().warning("Test Move to different hd"); if (move(new
+     * File(c), new File(a), false)) {
+     * JDLogger.getLogger().warning("Tests finished successfull!");
+     * System.exit(0); } } } } } } JDLogger.getLogger().warning("Error!");
+     * 
+     * }
+     * 
+     * /*
+     */
 
 }

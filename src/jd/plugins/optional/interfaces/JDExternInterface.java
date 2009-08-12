@@ -162,7 +162,7 @@ public class JDExternInterface extends PluginOptional {
                     String cookies = null;
                     if (request.getParameters().get("cookies") != null) cookies = Encoding.urlDecode(request.getParameters().get("cookies"), false);
                     String post = null;
-                    if (request.getParameters().get("post") != null) cookies = Encoding.urlDecode(request.getParameters().get("post"), false);
+                    if (request.getParameters().get("postData") != null) post = Encoding.urlDecode(request.getParameters().get("postData"), false);
                     boolean autostart = false;
                     if (request.getParameters().get("autostart") != null && request.getParameter("autostart").startsWith("1")) autostart = true;
                     String referer = Encoding.urlDecode(request.getParameter("referer"), false);

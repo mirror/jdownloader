@@ -402,20 +402,23 @@ public class GifDecoder {
     public int read(BufferedInputStream is) {
         init();
         if (is != null) {
-            in = is;
-            readHeader();
-            if (!err()) {
-                readContents();
-                if (frameCount < 0) {
-                    status = STATUS_FORMAT_ERROR;
+            try {
+                in = is;
+                readHeader();
+                if (!err()) {
+                    readContents();
+                    if (frameCount < 0) {
+                        status = STATUS_FORMAT_ERROR;
+                    }
+                }
+            } finally {
+                try {
+                    is.close();
+                } catch (IOException e) {
                 }
             }
         } else {
             status = STATUS_OPEN_ERROR;
-        }
-        try {
-            is.close();
-        } catch (IOException e) {
         }
         return status;
     }
@@ -430,23 +433,26 @@ public class GifDecoder {
     public int read(InputStream is) {
         init();
         if (is != null) {
-            if (!(is instanceof BufferedInputStream)) {
-                is = new BufferedInputStream(is);
-            }
-            in = (BufferedInputStream) is;
-            readHeader();
-            if (!err()) {
-                readContents();
-                if (frameCount < 0) {
-                    status = STATUS_FORMAT_ERROR;
+            try {
+                if (!(is instanceof BufferedInputStream)) {
+                    is = new BufferedInputStream(is);
+                }
+                in = (BufferedInputStream) is;
+                readHeader();
+                if (!err()) {
+                    readContents();
+                    if (frameCount < 0) {
+                        status = STATUS_FORMAT_ERROR;
+                    }
+                }
+            } finally {
+                try {
+                    is.close();
+                } catch (IOException e) {
                 }
             }
         } else {
             status = STATUS_OPEN_ERROR;
-        }
-        try {
-            is.close();
-        } catch (IOException e) {
         }
         return status;
     }

@@ -516,7 +516,7 @@ public class Letter extends PixelGrid {
         // long akt;
         int x = 0;
         int y = 0;
-        int[][] map = new int[3][3];
+        int[][] map;
         int i = 1000000;
         while (true) {
 
@@ -739,7 +739,7 @@ public class Letter extends PixelGrid {
     public void resizetoHeight(int newHeight) {
         double faktor = (double) newHeight / (double) getHeight();
 
-        int newWidth = (int) Math.ceil((int) (getWidth() * faktor));
+        int newWidth = (int) Math.ceil(getWidth() * faktor);
 
         int[][] newGrid = new int[newWidth][newHeight];
         int elementPixel = 0;

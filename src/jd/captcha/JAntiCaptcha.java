@@ -124,7 +124,7 @@ public class JAntiCaptcha {
         if (Utilities.isLoggerActive()) {
             logger.info("Test Method: " + methodName + " at " + methodsPath);
         }
-        JAntiCaptcha jac = new JAntiCaptcha(methodsPath, methodName);
+        new JAntiCaptcha(methodsPath, methodName);
         File[] entries = captchaDir.listFiles(new FileFilter() {
             public boolean accept(File pathname) {
                 // if(Utilities.isLoggerActive())logger.info(pathname.getName(
@@ -160,7 +160,7 @@ public class JAntiCaptcha {
 
             w.repack();
 
-            jac = new JAntiCaptcha(methodsPath, methodName);
+            JAntiCaptcha jac = new JAntiCaptcha(methodsPath, methodName);
             // BasicWindow.showImage(img);
             Captcha cap = jac.createCaptcha(img);
             if (cap == null) {

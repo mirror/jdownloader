@@ -16,7 +16,13 @@
 
 package jd.http;
 
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
+import java.util.StringTokenizer;
+import java.util.Map.Entry;
+
+import jd.parser.Regex;
 
 public class Cookies {
 
@@ -88,6 +94,80 @@ public class Cookies {
 
     public boolean isEmpty() {
         return cookies.isEmpty();
+    }
+
+    public static Cookies parseCookies(String cookieString, String host, String Date) {
+        Cookies cookies = new Cookies();
+
+        String header = cookieString;
+
+        String path = null;
+        String expires = null;
+        String domain = null;
+        LinkedHashMap<String, String> tmp = new LinkedHashMap<String, String>();
+        /* einzelne Cookie Elemente */
+        StringTokenizer st = new StringTokenizer(header, ";");
+        while (true) {
+
+            String key = null;
+            String value = null;
+            String cookieelement = null;
+            if (st.hasMoreTokens()) {
+                cookieelement = st.nextToken().trim();
+            } else {
+                break;
+            }
+            /* Key and Value */
+            String st2[] = new Regex(cookieelement, "(.*?)=(.+)").getRow(0);
+            if (st2 == null || st2.length == 0) {
+                key = null;
+            } else if (st2.length == 1) {
+                key = st2[0].trim();
+            } else if (st2.length == 2) {
+                key = st2[0].trim();
+                value = st2[1].trim();
+            }
+
+            if (key != null) {
+                if (key.equalsIgnoreCase("path")) {
+                    path = value;
+                    continue;
+                }
+                if (key.equalsIgnoreCase("expires")) {
+                    expires = value;
+                    continue;
+                }
+                if (key.equalsIgnoreCase("domain")) {
+                    domain = value;
+                    continue;
+                }
+
+                tmp.put(key, value);
+            } else {
+                break;
+            }
+
+        }
+
+        for (Iterator<Entry<String, String>> it = tmp.entrySet().iterator(); it.hasNext();) {
+            Entry<String, String> next = it.next();
+            Cookie cookie = new Cookie();
+            /*
+             * cookies ohne value sind keine cookies
+             */
+            if (next.getValue() == null) continue;
+            cookies.add(cookie);
+            cookie.setHost(host);
+            cookie.setPath(path);
+            cookie.setDomain(domain);
+            cookie.setExpires(expires);
+            cookie.setValue(next.getValue());
+            cookie.setKey(next.getKey());
+            cookie.setHostTime(Date);
+        }
+
+        return cookies;
+
     }
 
 }

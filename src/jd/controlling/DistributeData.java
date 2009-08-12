@@ -256,7 +256,15 @@ public class DistributeData extends Thread {
      * @return Link-ArrayList
      */
     public ArrayList<DownloadLink> findLinks() {
-        ArrayList<DownloadLink> ret = quickHosterCheck();
+        /* normal quickcheck */
+        ArrayList<DownloadLink> ret = quickHosterCheck(data);
+        if (ret != null && ret.size() == 1) return ret;
+        if (!filterNormalHTTP) {
+            /* quickcheck for http */
+            String newdata = data.replaceAll("http://", "httpviajd://");
+            newdata = newdata.replaceAll("https://", "httpsviajd://");
+            ret = quickHosterCheck(newdata);
+        }
         if (ret != null && ret.size() == 1) return ret;
         foundPasswords.addAll(HTMLParser.findPasswords(data));
         data = HTMLEntities.unhtmlentities(data);
@@ -283,7 +291,7 @@ public class DistributeData extends Thread {
      * 
      * @return
      */
-    private ArrayList<DownloadLink> quickHosterCheck() {
+    private ArrayList<DownloadLink> quickHosterCheck(String data) {
         for (HostPluginWrapper pw : JDUtilities.getPluginsForHost()) {
             Pattern pattern = pw.getPattern();
             String match = new Regex(data, pattern).getMatch(-1);

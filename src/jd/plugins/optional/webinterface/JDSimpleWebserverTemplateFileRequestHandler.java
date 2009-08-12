@@ -117,8 +117,8 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
     }
 
     private void add_linkadder_page(Template t, HashMap<String, String> requestParameter) {
-        Vector<Object> v, v2 = new Vector<Object>();
-        Hashtable<Object, Object> h, h2 = new Hashtable<Object, Object>();
+        Vector<Object> v, v2;
+        Hashtable<Object, Object> h, h2;
         v = new Vector<Object>();
 
         LinkGrabberFilePackage filePackage;
@@ -287,8 +287,8 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
      * }
      */
     private void add_status_page(Template t, HashMap<String, String> requestParameter) {
-        Vector<Object> v, v2 = new Vector<Object>();
-        Hashtable<Object, Object> h, h2 = new Hashtable<Object, Object>();
+        Vector<Object> v, v2;
+        Hashtable<Object, Object> h, h2;
         v = new Vector<Object>();
         String value;
         FilePackage filePackage;

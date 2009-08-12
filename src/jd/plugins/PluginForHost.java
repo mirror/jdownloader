@@ -236,7 +236,7 @@ public abstract class PluginForHost extends Plugin {
         m.setActionListener(this);
         if (this.config == null || config.getEntries().size() == 0) m.setEnabled(false);
 
-        config.setGroup(new ConfigGroup(this.getHost(), this.getHosterIcon()));
+        if (config != null) config.setGroup(new ConfigGroup(this.getHost(), this.getHosterIcon()));
         menuList.add(m);
         if (premiumAction == null) {
             premiumAction = new MenuAction(MenuAction.CONTAINER, JDL.L("plugins.menu.accounts", "Accounts"), 0);
@@ -251,9 +251,8 @@ public abstract class PluginForHost extends Plugin {
                     c++;
                     if (getAccountwithoutUsername()) {
                         if (a.getPass() == null || a.getPass().trim().length() == 0) continue;
-                        account = new MenuAction(MenuAction.CONTAINER, i++ + ". " + "Account " + (i - 1), 0);
+                        new MenuAction(MenuAction.CONTAINER, i++ + ". " + "Account " + (i - 1), 0);
                     } else {
-
                         if (a.getUser() == null || a.getUser().trim().length() == 0) continue;
                         account = new MenuAction(MenuAction.CONTAINER, i++ + ". " + a.getUser(), 0);
                         m = AccountMenuItemSyncer.getInstance().get(a);

@@ -55,7 +55,7 @@ public class JDFlags {
      * @return curState&filtermask
      */
     public static int filterFlags(int curState, int filtermask) {      
-        return curState &= filtermask;
+        return curState & filtermask;
     }
 
 }

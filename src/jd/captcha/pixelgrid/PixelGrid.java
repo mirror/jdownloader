@@ -1640,8 +1640,8 @@ public class PixelGrid extends Property {
      *            Grobheit
      */
     public void sampleDown(int faktor) {
-        int newWidth = (int) Math.ceil(getWidth() / faktor);
-        int newHeight = (int) Math.ceil(getHeight() / faktor);
+        int newWidth = (int) Math.ceil(getWidth() / (double)faktor);
+        int newHeight = (int) Math.ceil(getHeight() / (double)faktor);
 
         int[][] newGrid = new int[getWidth()][getHeight()];
 

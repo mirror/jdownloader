@@ -19,18 +19,18 @@ package jd.crypt;
 // AESdecrypt: AES decryption
 public class AESdecrypt {
     public final int Nb = 4; // words in a block, always 4 for now
-    public int Nk; // key length in words
-    public int Nr; // number of rounds, = Nk + 6
+    public int nk; // key length in words
+    public int nr; // number of rounds, = Nk + 6
     AEStables tab; // all the tables needed for AES
     byte[] w; // the expanded key
     private int wCount; // position in w (= 4*Nb*(Nr+1) each encrypt)
 
     // AESdecrypt: constructor for class. Mainly expands key
     public AESdecrypt(byte[] key, int NkIn) {
-        Nk = NkIn; // words in a key, = 4, or 6, or 8
-        Nr = Nk + 6; // corresponding number of rounds
+        nk = NkIn; // words in a key, = 4, or 6, or 8
+        nr = nk + 6; // corresponding number of rounds
         tab = new AEStables(); // class to give values of various functions
-        w = new byte[4 * Nb * (Nr + 1)]; // room for expanded key
+        w = new byte[4 * Nb * (nr + 1)]; // room for expanded key
         KeyExpansion(key, w); // length of w depends on Nr
     }
 
@@ -45,11 +45,11 @@ public class AESdecrypt {
 
     // InvCipher: actual AES decryption
     public void InvCipher(byte[] in, byte[] out) {
-        wCount = 4 * Nb * (Nr + 1); // count bytes during decryption
+        wCount = 4 * Nb * (nr + 1); // count bytes during decryption
         byte[][] state = new byte[4][Nb]; // the state array
         Copy.copy(state, in); // actual component-wise copy
         InvAddRoundKey(state); // xor with expanded key
-        for (int round = Nr - 1; round >= 1; round--) {
+        for (int round = nr - 1; round >= 1; round--) {
             // Print.printArray("Start round " + (Nr - round) + ":", state);
             InvShiftRows(state); // mix up rows
             InvSubBytes(state); // inverse S-box substitution
@@ -109,18 +109,18 @@ public class AESdecrypt {
         byte[] temp = new byte[4];
         // first just copy key to w
         int j = 0;
-        while (j < 4 * Nk) {
+        while (j < 4 * nk) {
             w[j] = key[j++];
         }
         // here j == 4*Nk;
         int i;
-        while (j < 4 * Nb * (Nr + 1)) {
+        while (j < 4 * Nb * (nr + 1)) {
             i = j / 4; // j is always multiple of 4 here
             // handle everything word-at-a time, 4 bytes at a time
             for (int iTemp = 0; iTemp < 4; iTemp++) {
                 temp[iTemp] = w[j - 4 + iTemp];
             }
-            if (i % Nk == 0) {
+            if (i % nk == 0) {
                 byte ttemp, tRcon;
                 byte oldtemp0 = temp[0];
                 for (int iTemp = 0; iTemp < 4; iTemp++) {
@@ -130,19 +130,19 @@ public class AESdecrypt {
                         ttemp = temp[iTemp + 1];
                     }
                     if (iTemp == 0) {
-                        tRcon = tab.Rcon(i / Nk);
+                        tRcon = tab.Rcon(i / nk);
                     } else {
                         tRcon = 0;
                     }
                     temp[iTemp] = (byte) (tab.SBox(ttemp) ^ tRcon);
                 }
-            } else if (Nk > 6 && i % Nk == 4) {
+            } else if (nk > 6 && i % nk == 4) {
                 for (int iTemp = 0; iTemp < 4; iTemp++) {
                     temp[iTemp] = tab.SBox(temp[iTemp]);
                 }
             }
             for (int iTemp = 0; iTemp < 4; iTemp++) {
-                w[j + iTemp] = (byte) (w[j - 4 * Nk + iTemp] ^ temp[iTemp]);
+                w[j + iTemp] = (byte) (w[j - 4 * nk + iTemp] ^ temp[iTemp]);
             }
             j = j + 4;
         }

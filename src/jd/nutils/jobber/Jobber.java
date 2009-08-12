@@ -129,7 +129,7 @@ public class Jobber {
     }
 
     private JDRunnable getNextJDRunnable() {
-        if (!this.isAlive()) return null;
+        if (!this.isAlive() || jobList == null) return null;
         synchronized (jobList) {
             if (jobList.size() == 0) {
                 synchronized (listener) {
@@ -189,7 +189,10 @@ public class Jobber {
      * @return
      */
     public int add(JDRunnable runnable) {
-        if (jobList == null) System.out.println("Dhoo...No joblist available!?");
+        if (jobList == null) {
+            System.out.println("Dhoo...No joblist available!?");
+            return -1;
+        }
         synchronized (jobList) {
             jobList.add(runnable);
             synchronized (this.jobsAdded) {
