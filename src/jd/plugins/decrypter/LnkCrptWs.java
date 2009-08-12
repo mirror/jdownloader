@@ -25,6 +25,7 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.gui.UserIO;
 import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
@@ -46,10 +47,7 @@ public class LnkCrptWs extends PluginForDecrypt {
         super(wrapper);
     }
 
-    /**
-     * TODO: könntet ihr aus linkcrypt.ws/dirl/id linkcrypt.ws/dlc/id machen?
-     * (bezogen auf CNL Links im browser)
-     */
+
     // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -58,6 +56,8 @@ public class LnkCrptWs extends PluginForDecrypt {
         String containerId = new Regex(parameter, "dir/([a-zA-Z0-9]+)").getMatch(0);
 
         br.getPage("http://linkcrypt.ws/dlc/" + containerId);
+        
+        //check for a password. STore latest password in DB
         Form password = br.getForm(0);
         if (password != null && password.hasInputFieldByName("password")) {
             // Password Protected
@@ -84,8 +84,8 @@ public class LnkCrptWs extends PluginForDecrypt {
             }
 
         }
-        logger.finest("Captcha Protected");
-
+   
+//Different captcha types
         boolean valid = true;
         for (int i = 0; i < 5; ++i) {
             Form captcha = br.getForm(0);
@@ -117,26 +117,21 @@ public class LnkCrptWs extends PluginForDecrypt {
         }
 
         if (valid == false) throw new DecrypterException(DecrypterException.CAPTCHA);
-
+// Look for containers
         String[] containers = br.getRegex("eval\\((.*?\\,\\{\\}\\))\\)").getColumn(0);
-
         HashMap<String, String> map = new HashMap<String, String>();
-
         for (String c : containers) {
             Context cx = Context.enter();
             Scriptable scope = cx.initStandardObjects();
             c = c.replace("return p}(", " return p}  f(").replace("function(p,a,c,k,e,d)", "function f(p,a,c,k,e,d)");
             Object result = cx.evaluateString(scope, c, "<cmd>", 1, null);
-
             String code = Context.toString(result);
             String[] row = new Regex(code, "href=\"(.*?)\"><img.*?image/(.*?)\\.").getRow(0);
-
             if (row != null) {
                 map.put(row[1], row[0]);
             } else {
                 System.out.println(code);
             }
-
         }
         File container = null;
         if (map.containsKey("dlc")) {
@@ -157,18 +152,69 @@ public class LnkCrptWs extends PluginForDecrypt {
             Browser.download(container, map.get("rsdf"));
         }
         if (container != null) {
-            //container available
+            // container available
             decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
 
             container.delete();
             if (decryptedLinks.size() > 0) return decryptedLinks;
 
         }
-        
-        // webdecryption
-        return null;
-    }
+        // IF container decryption failed, try webdecryption
+        Form[] forms = br.getForms();
+        progress.setRange(forms.length/2);
+        for (Form form :forms) {
+            Browser clone;
+            if (form.getInputField("key").getValue() != null && form.getInputField("key").getValue().length() > 0) {
+                progress.increase(1);
+                clone = br.cloneBrowser();
+                clone.submitForm(form);
+                clone.setDebug(true);
+                
+                String[] srcs = clone.getRegex("<iframe.*?src\\s*?=\\s*?\"?([^\"> ]{20,})\"?\\s?").getColumn(0);
+                for (String col : srcs) {
+                    col = Encoding.htmlDecode(col);
+ 
+                    clone.getPage(col);
+                    if (clone.containsHTML("eval")) {
+                        String[] evals = clone.getRegex("eval\\((.*?\\,\\{\\}\\))\\)").getColumn(0);
 
+                        for (String c : evals) {
+                            Context cx = Context.enter();
+                            Scriptable scope = cx.initStandardObjects();
+                            c = c.replace("return p}(", " return p}  f(").replace("function(p,a,c,k,e", "function f(p,a,c,k,e");
+                            Object result = cx.evaluateString(scope, c, "<cmd>", 1, null);
+                            String code = Context.toString(result);
+                            if (code.startsWith("var versch")) {
+                                String versch = new Regex(code, "versch='(.*?)'").getMatch(0);
+                                versch = Encoding.Base64Decode(versch);
+                                versch = new Regex(versch, "<iframe.*?src\\s*?=\\s*?\"?([^\"> ]{20,})\"?\\s?").getMatch(0);
+                                versch = Encoding.htmlDecode(versch);
+                                decryptedLinks.add(this.createDownloadlink(versch));
+
+                            } else {
+
+                                // is only a base64 encoder
+                            }
+                            String[] row = new Regex(code, "href=\"(.*?)\"><img.*?image/(.*?)\\.").getRow(0);
+
+                            if (row != null) {
+                                map.put(row[1], row[0]);
+                            } else {
+                                System.out.println(code);
+                            }
+
+                        }
+
+                    }
+
+                }
+
+            }
+
+        }
+        // webdecryption
+        return decryptedLinks;
+    }
     // @Override
 
 }
