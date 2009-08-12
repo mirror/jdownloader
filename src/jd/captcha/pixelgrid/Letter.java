@@ -625,7 +625,7 @@ public class Letter extends PixelGrid {
         int newWidth = (int) Math.ceil(getWidth() / faktor);
         int newHeight = (int) Math.ceil(getHeight() / faktor);
         Letter ret = new Letter();
-        ;
+
         ret.setOwner(owner);
         int avg = getAverage();
 

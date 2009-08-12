@@ -169,14 +169,14 @@ public class HTTPAllgemein extends PluginForHost {
         if (!dl.startDownload()) {
             if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().startsWith(JDL.L("download.error.message.rangeheaderparseerror", "Unexpected rangeheader format:"))) {
                 if (downloadLink.getBooleanProperty("nochunk", false) == false) {
-                    downloadLink.setProperty("nochunk", new Boolean(true));
+                    downloadLink.setProperty("nochunk", Boolean.valueOf(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
             }
             if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload"))) {
                 if (downloadLink.getBooleanProperty("nochunkload", false) == false) {
                     downloadLink.setChunksProgress(null);
-                    downloadLink.setProperty("nochunkload", new Boolean(true));
+                    downloadLink.setProperty("nochunkload", Boolean.valueOf(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
             }

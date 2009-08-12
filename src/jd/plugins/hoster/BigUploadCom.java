@@ -66,9 +66,9 @@ public class BigUploadCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
-        Form form = br.getForm(2);
-        form.setAction("/download_frame.php");
+        Form form = br.getForm(2);        
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        form.setAction("/download_frame.php");
         this.sleep(5 * 1001l, downloadLink);
         br.submitForm(form);
         this.sleep(10 * 1001l, downloadLink);

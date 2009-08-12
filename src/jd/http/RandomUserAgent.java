@@ -177,7 +177,7 @@ public class RandomUserAgent {
         /* Get optional strings */
         if (system.get(i).osName.equalsIgnoreCase("Windows")) {
             winAddon = dotNetString();
-            if (winAddon.trim() != "") winAddon = (" (" + winAddon.trim() + ")").replace("(; ", "(");
+            if (winAddon.trim().length()>0) winAddon = (" (" + winAddon.trim() + ")").replace("(; ", "(");
         } else if (system.get(i).osName.equalsIgnoreCase("Linux")) {
             linuxAddon = linuxAddons.get(rand.nextInt(linuxAddons.size()));
             if (linuxAddon != " ") linuxAddon = " " + linuxAddon.trim() + " ";

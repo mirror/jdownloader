@@ -96,7 +96,7 @@ public class NetGullCom extends PluginForHost {
         }
 
         /* Downloadlimit erreicht */
-        if (br.containsHTML("max allowed download sessions") | br.containsHTML("this download is too big")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l); }
+        if (br.containsHTML("max allowed download sessions") || br.containsHTML("this download is too big")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l); }
 
         /* PassCode war richtig, also Speichern */
         downloadLink.setProperty("pass", passCode);

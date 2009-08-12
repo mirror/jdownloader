@@ -90,7 +90,7 @@ public class BadongoCom extends PluginForHost {
             String parts = Formatter.fillString(downloadLink.getIntegerProperty("part", 1) + "", "0", "", 3);
             downloadLink.setName(filename.trim() + "." + parts);
             if (downloadLink.getIntegerProperty("part", 1) == downloadLink.getIntegerProperty("parts", 1)) {
-                downloadLink.setDownloadSize(bytes - (downloadLink.getIntegerProperty("parts", 1) - 1) * 102400000);
+                downloadLink.setDownloadSize(bytes - (downloadLink.getIntegerProperty("parts", 1) - 1) * 102400000l);
             } else {
                 downloadLink.setDownloadSize(102400000);
             }

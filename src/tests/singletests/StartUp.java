@@ -87,11 +87,10 @@ public class StartUp {
     }
 
     @Test
-    public void JDInit() {
+    public static void JDInit() {
         jdi = new JDInit();
-        jdi.init();
-
         assertTrue(jdi != null);
+        jdi.init();
     }
 
     @Test

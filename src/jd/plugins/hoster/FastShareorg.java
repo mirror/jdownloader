@@ -51,9 +51,9 @@ public class FastShareorg extends PluginForHost {
                 downloadLink.setName(Encoding.htmlDecode(br.getRegex("Wenn sie die Datei \"<b>(.*?)<\\/b>\"").getMatch(0)));
                 String filesize = null;
                 if ((filesize = br.getRegex("<i>\\((.*)MB\\)</i>").getMatch(0)) != null) {
-                    downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize)) * 1024 * 1024);
+                    downloadLink.setDownloadSize(Math.round(Double.parseDouble(filesize)) * 1024 * 1024l);
                 } else if ((filesize = br.getRegex("<i>\\((.*)KB\\)</i>").getMatch(0)) != null) {
-                    downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize)) * 1024);
+                    downloadLink.setDownloadSize(Math.round(Double.parseDouble(filesize)) * 1024l);
                 }
                 return AvailableStatus.TRUE;
             }

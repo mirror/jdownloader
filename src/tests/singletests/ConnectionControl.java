@@ -69,7 +69,7 @@ public class ConnectionControl {
         TestUtils.log("Endtime: " + System.currentTimeMillis());
         long dif = System.currentTimeMillis() - start;
         TestUtils.log("Test took " + dif + " ms");
-        assertTrue((requests * interval) < dif + interval);
+        assertTrue(((long)requests * interval) < dif + interval);
         // if () { throw new UnitTestException("time error"); }
 
     }
@@ -108,7 +108,7 @@ public class ConnectionControl {
         TestUtils.log("Endtime: " + System.currentTimeMillis());
         long dif = System.currentTimeMillis() - start;
         TestUtils.log("Test took " + dif + " ms");
-        assertTrue((requests * interval) < dif + interval);
+        assertTrue(((long)requests * interval) < dif + interval);
 
     }
 

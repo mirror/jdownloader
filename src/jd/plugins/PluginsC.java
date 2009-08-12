@@ -371,9 +371,9 @@ public abstract class PluginsC extends Plugin {
             doDecryption(filename);
             progress.increase(1);
 
-            progress.setStatusText(JDL.LF("plugins.container.found", "Prozess %s links", cls.size()));
             logger.info(filename + " Parse");
             if (cls != null && dlU != null) {
+                progress.setStatusText(JDL.LF("plugins.container.found", "Prozess %s links", cls.size()));
                 decryptLinkProtectorLinks();
                 progress.setStatusText(JDL.LF("plugins.container.exit", "Finished. Found %s links", cls.size()));
                 Iterator<DownloadLink> it = cls.iterator();

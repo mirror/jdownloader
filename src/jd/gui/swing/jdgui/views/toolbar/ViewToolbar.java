@@ -86,21 +86,11 @@ public class ViewToolbar extends JPanel implements ActionControllerListener {
 
     private String getColConstraints(String[] list) {
         StringBuilder sb = new StringBuilder();
-
-        if (halign == EAST) {
-            sb.append(getColConstraint(FIRST_COL, null));
-            for (int i = 0; i < list.length; ++i) {
-                sb.append(getColConstraint(i, current[i]));
-            }
-            sb.append(getColConstraint(LAST_COL, null));
-        } else {
-            sb.append(getColConstraint(FIRST_COL, null));
-            for (int i = 0; i < list.length; ++i) {
-                sb.append(getColConstraint(i, current[i]));
-            }
-            sb.append(getColConstraint(LAST_COL, null));
+        sb.append(getColConstraint(FIRST_COL, null));
+        for (int i = 0; i < list.length; ++i) {
+            sb.append(getColConstraint(i, current[i]));
         }
-
+        sb.append(getColConstraint(LAST_COL, null));
         return sb.toString();
     }
 
@@ -124,142 +114,137 @@ public class ViewToolbar extends JPanel implements ActionControllerListener {
     }
 
     private void initToolbar(String[] list) {
+        if (list == null) return;
         synchronized (list) {
             SwingGui.checkEDT();
             setLayout(new MigLayout("ins 0, gap 0", getColConstraints(list)));
             AbstractButton ab;
-            if (list != null) {
 
-               
-                int i=-1;
-                for (String key : list) {
-                    i++;
-                    ToolBarAction action = ActionController.getToolBarAction(key);
+            int i = -1;
+            for (String key : list) {
+                i++;
+                ToolBarAction action = ActionController.getToolBarAction(key);
 
-                    if (action == null) {
-                        warning("The Action " + key + " is not available");
-                        continue;
+                if (action == null) {
+                    warning("The Action " + key + " is not available");
+                    continue;
 
-                    }
+                }
 
-                    action.init();
-                    if (!action.isVisible()) {
-                        warning("Action " + action + " is set to invisble");
-                        continue;
+                action.init();
+                if (!action.isVisible()) {
+                    warning("Action " + action + " is set to invisble");
+                    continue;
 
-                    }
+                }
 
-                    ab = null;
-                    switch (action.getType()) {
-                    case NORMAL:
-                        add(ab = new JButton(action), getButtonConstraint(i,action));
-                        break;
-                    case SEPARATOR:
-                        add(new JSeparator(JSeparator.VERTICAL), "height 32,gapleft 10,gapright 10");
-                        break;
+                ab = null;
+                switch (action.getType()) {
+                case NORMAL:
+                    add(ab = new JButton(action), getButtonConstraint(i, action));
+                    break;
+                case SEPARATOR:
+                    add(new JSeparator(JSeparator.VERTICAL), "height 32,gapleft 10,gapright 10");
+                    break;
 
-                    case TOGGLE:
-                        add(ab = new JToggleButton(action), getButtonConstraint(i,action));
-                        break;
+                case TOGGLE:
+                    add(ab = new JToggleButton(action), getButtonConstraint(i, action));
+                    break;
 
-                    }
-                    if (ab != null) {
-                        ab.addMouseListener(new MouseListener() {
+                }
+                if (ab != null) {
+                    ab.addMouseListener(new MouseListener() {
 
-                            public void mouseClicked(MouseEvent e) {
-                            }
-
-                            public void mouseEntered(MouseEvent e) {
-                            }
-
-                            public void mouseExited(MouseEvent e) {
-                            }
-
-                            public void mousePressed(MouseEvent e) {
-                            }
-
-                            public void mouseReleased(MouseEvent e) {
-                            }
-
-                        });
-                        ab.setContentAreaFilled(contentPainted);
-                        ab.setFocusPainted(false);
-                        if (action.getValue(Action.MNEMONIC_KEY) != null) {
-                            ab.setToolTipText(action.getTooltipText() + " [Alt+" + new String(new byte[] {
-                                ((Integer) action.getValue(Action.MNEMONIC_KEY)).byteValue()
-                            }) + "]");
-                        } else {
-                            ab.setToolTipText(action.getTooltipText());
+                        public void mouseClicked(MouseEvent e) {
                         }
 
-                        ab.setIcon(JDTheme.II(action.getValue(ToolBarAction.IMAGE_KEY) + "", 16, 16));
-                        if (!textPainted) {
-                            ab.setText("");
+                        public void mouseEntered(MouseEvent e) {
                         }
+
+                        public void mouseExited(MouseEvent e) {
+                        }
+
+                        public void mousePressed(MouseEvent e) {
+                        }
+
+                        public void mouseReleased(MouseEvent e) {
+                        }
+
+                    });
+                    ab.setContentAreaFilled(contentPainted);
+                    ab.setFocusPainted(false);
+                    if (action.getValue(Action.MNEMONIC_KEY) != null) {
+                        ab.setToolTipText(action.getTooltipText() + " [Alt+" + new String(new byte[] { ((Integer) action.getValue(Action.MNEMONIC_KEY)).byteValue() }) + "]");
+                    } else {
                         ab.setToolTipText(action.getTooltipText());
-                        ab.setEnabled(action.isEnabled());
-                        ab.setSelected(action.isSelected());
-setDefaults(i,ab);
-                        action.putValue(GUIINSTANCE, ab);
-                        PropertyChangeListener pcl;
-                        // external changes on the action get deligated to the
-                        // buttons
-                        action.addPropertyChangeListener(pcl = new PropertyChangeListener() {
-                            public void propertyChange(PropertyChangeEvent evt) {
-                                ToolBarAction action = (ToolBarAction) evt.getSource();
-                                try {
-                                    AbstractButton ab = ((AbstractButton) action.getValue(GUIINSTANCE));
-                                    // ab.setText("");
-                                    if (action.getValue(Action.MNEMONIC_KEY) != null) {
-                                        ab.setToolTipText(action.getTooltipText() + " [Alt+" + new String(new byte[] {
-                                            ((Integer) action.getValue(Action.MNEMONIC_KEY)).byteValue()
-                                        }) + "]");
-                                    } else {
-                                        ab.setToolTipText(action.getTooltipText());
-                                    }
-                                    ab.setEnabled(action.isEnabled());
-                                    ab.setSelected(action.isSelected());
-                                } catch (Throwable w) {
-                                    JDLogger.exception(w);
-                                    action.removePropertyChangeListener(this);
+                    }
 
+                    ab.setIcon(JDTheme.II(action.getValue(ToolBarAction.IMAGE_KEY) + "", 16, 16));
+                    if (!textPainted) {
+                        ab.setText("");
+                    }
+                    ab.setToolTipText(action.getTooltipText());
+                    ab.setEnabled(action.isEnabled());
+                    ab.setSelected(action.isSelected());
+                    setDefaults(i, ab);
+                    action.putValue(GUIINSTANCE, ab);
+                    PropertyChangeListener pcl;
+                    // external changes on the action get deligated to the
+                    // buttons
+                    action.addPropertyChangeListener(pcl = new PropertyChangeListener() {
+                        public void propertyChange(PropertyChangeEvent evt) {
+                            ToolBarAction action = (ToolBarAction) evt.getSource();
+                            try {
+                                AbstractButton ab = ((AbstractButton) action.getValue(GUIINSTANCE));
+                                // ab.setText("");
+                                if (action.getValue(Action.MNEMONIC_KEY) != null) {
+                                    ab.setToolTipText(action.getTooltipText() + " [Alt+" + new String(new byte[] { ((Integer) action.getValue(Action.MNEMONIC_KEY)).byteValue() }) + "]");
+                                } else {
+                                    ab.setToolTipText(action.getTooltipText());
                                 }
+                                ab.setEnabled(action.isEnabled());
+                                ab.setSelected(action.isSelected());
+                            } catch (Throwable w) {
+                                JDLogger.exception(w);
+                                action.removePropertyChangeListener(this);
 
                             }
 
-                        });
-                        if (action.getValue(PROPERTY_CHANGE_LISTENER) != null) {
-
-                            action.removePropertyChangeListener((PropertyChangeListener) action.getValue(PROPERTY_CHANGE_LISTENER));
                         }
-                        action.putValue(PROPERTY_CHANGE_LISTENER, pcl);
 
+                    });
+                    if (action.getValue(PROPERTY_CHANGE_LISTENER) != null) {
+
+                        action.removePropertyChangeListener((PropertyChangeListener) action.getValue(PROPERTY_CHANGE_LISTENER));
                     }
+                    action.putValue(PROPERTY_CHANGE_LISTENER, pcl);
+
                 }
             }
         }
     }
+
     /**
      * May be overridden
+     * 
      * @param i
      * @param ab
      */
-public void setDefaults(int i, AbstractButton ab) {
+    public void setDefaults(int i, AbstractButton ab) {
         // TODO Auto-generated method stub
-        
+
     }
 
-/**
- * This method may be overridden to create custum toolbars
- * @param i
- * @param action
- * @return
- */
+    /**
+     * This method may be overridden to create custum toolbars
+     * 
+     * @param i
+     * @param action
+     * @return
+     */
     public String getButtonConstraint(int i, ToolBarAction action) {
         // TODO Auto-generated method stub
-        if (halign == EAST) {
-            return BUTTON_CONSTRAINTS+", alignx right";
-        }
+        if (halign == EAST) { return BUTTON_CONSTRAINTS + ", alignx right"; }
         return BUTTON_CONSTRAINTS;
     }
 

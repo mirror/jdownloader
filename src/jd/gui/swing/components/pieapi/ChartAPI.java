@@ -66,7 +66,7 @@ public abstract class ChartAPI extends JComponent {
         }
     }
 
-    private final String serverAdress = "chart.apis.google.com";
+    private static final String serverAdress = "chart.apis.google.com";
     private Logger logger = jd.controlling.JDLogger.getLogger();
     private HashMap<String, ChartAPIEntity> collData = new HashMap<String, ChartAPIEntity>();
     private int width;

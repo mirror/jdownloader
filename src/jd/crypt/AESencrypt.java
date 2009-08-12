@@ -18,7 +18,7 @@ package jd.crypt;
 
 // AESencrypt: AES encryption
 public class AESencrypt {
-    private final int Nb = 4; // words in a block, always 4 for now
+    private static final int Nb = 4; // words in a block, always 4 for now
     private int Nk; // key length in words
     private int Nr; // number of rounds, = Nk + 6
     private AEStables tab; // all the tables needed for AES

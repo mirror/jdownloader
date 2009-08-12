@@ -264,12 +264,12 @@ public class LetterComperator {
                         break;
                     case 2:
                         if (hasNeighbour(x, y, xx, yy, left, top, pixelType) > overlayNoiseSize) {
-
                             g[x][y] = 0;
-                        } else {
-                            g[x][y] = 0;
-                            // g[x][y] = 0x00ff00;
                         }
+                        // else {
+                        // g[x][y] = 0;
+                        // g[x][y] = 0x00ff00;
+                        // }
                         break;
                     default:
 

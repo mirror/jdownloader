@@ -81,9 +81,9 @@ public class SendspaceCom extends PluginForHost {
             ai.setTrafficLeft((long) (1024l * 1024l * 1024 * (tleft / 100.0)));
         }
         String days = br.getRegex("Your membership is valid for (\\d+) days").getMatch(0);
-        if (days != null) {
+        if (days != null && !days.equals("0")) {
             ai.setValidUntil(System.currentTimeMillis() + (Long.parseLong(days) * 24 * 50 * 50 * 1000));
-        } else if (days == null || days.equals("0")) {
+        } else {
             ai.setExpired(true);
             account.setValid(false);
             return ai;
@@ -102,7 +102,7 @@ public class SendspaceCom extends PluginForHost {
         String linkurl = br.getRegex("<a id=\"downlink\" class=\"mango\" href=\"(.*?)\"").getMatch(0);
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,link, linkurl, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, linkurl, true, 0);
         dl.startDownload();
     }
 
@@ -147,7 +147,7 @@ public class SendspaceCom extends PluginForHost {
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         /* Datei herunterladen */
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, linkurl, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, true, 1);
         URLConnectionAdapter con = dl.getConnection();
         if (con.getURL().toExternalForm().contains("?e=") || con.getContentType().contains("html")) {
             con.disconnect();

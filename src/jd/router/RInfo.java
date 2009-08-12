@@ -102,7 +102,7 @@ public class RInfo implements Serializable {
                             }
 
                         }
-                        if (StrCont.length() == 0) StrCont = null;
+                        if (StrCont == null || StrCont.length() == 0) StrCont = null;
                     }
                     if (StrCont != null) {
                         try {

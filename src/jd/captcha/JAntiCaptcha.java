@@ -326,6 +326,9 @@ public class JAntiCaptcha {
         Letter[] letters = captcha.getLetters(getLetterNum());
         if (letters == null) {
             captcha.setValityPercent(100.0);
+            if (Utilities.isLoggerActive()) {
+                logger.severe("Captcha konnte nicht erkannt werden!");
+            }
             return null;
         }
         // LetterComperator[] newLetters = new LetterComperator[letters.length];
@@ -333,13 +336,6 @@ public class JAntiCaptcha {
         double correct = 0;
         LetterComperator akt;
 
-        if (letters == null) {
-            captcha.setValityPercent(100.0);
-            if (Utilities.isLoggerActive()) {
-                logger.severe("Captcha konnte nicht erkannt werden!");
-            }
-            return null;
-        }
         // if (letters.length != this.getLetterNum()) {
         // captcha.setValityPercent(100.0);
         // if(Utilities.isLoggerActive())logger.severe("Captcha konnte nicht
@@ -1362,7 +1358,7 @@ public class JAntiCaptcha {
             letter.removeSmallObjects(0.3, 0.5, 10);
             letter = letter.getSimplified(getJas().getDouble("simplifyFaktor"));
             letter.setDecodedValue(let);
-            if (letter == null) continue;
+
             // BasicWindow.showImage(letter.getImage(1),element.getName());
 
             letterDB.add(letter);
@@ -1851,33 +1847,33 @@ public class JAntiCaptcha {
         // return -1;
         // }
         // }
-        class myRunnable implements Runnable
-        {
-        	public String code =null;
-			public void run() {
-		        if (getCodeFromFileName(captchafile.getName()) == null) {
-		            code = JOptionPane.showInputDialog("Bitte Captcha Code eingeben (Press enter to confirm " + guess, guess);
-		            if (code != null && code.equals(guess)) {
-		                code = "";
-		            } else if (code == null) {
-		                boolean doIt = JOptionPane.showConfirmDialog(new JFrame(), "Ja (yes) = beenden (close) \t Nein (no) = nächstes Captcha (next captcha)") == JOptionPane.OK_OPTION;
-		                if (doIt) {
-		                    System.exit(0);
-		                }
-		            }
+        class myRunnable implements Runnable {
+            public String code = null;
 
-		        } else {
-		            code = getCodeFromFileName(captchafile.getName());
-		            if (Utilities.isLoggerActive()) {
-		                logger.warning("captcha code für " + captchaHash + " verwendet: " + code);
-		            }
+            public void run() {
+                if (getCodeFromFileName(captchafile.getName()) == null) {
+                    code = JOptionPane.showInputDialog("Bitte Captcha Code eingeben (Press enter to confirm " + guess, guess);
+                    if (code != null && code.equals(guess)) {
+                        code = "";
+                    } else if (code == null) {
+                        boolean doIt = JOptionPane.showConfirmDialog(new JFrame(), "Ja (yes) = beenden (close) \t Nein (no) = nächstes Captcha (next captcha)") == JOptionPane.OK_OPTION;
+                        if (doIt) {
+                            System.exit(0);
+                        }
+                    }
 
-		        }
-		        synchronized (this) {
-					this.notify();
-				}
-			}
-        	
+                } else {
+                    code = getCodeFromFileName(captchafile.getName());
+                    if (Utilities.isLoggerActive()) {
+                        logger.warning("captcha code für " + captchaHash + " verwendet: " + code);
+                    }
+
+                }
+                synchronized (this) {
+                    this.notify();
+                }
+            }
+
         }
         myRunnable run = new myRunnable();
         Thread inpThread = new Thread(run);
@@ -1891,15 +1887,14 @@ public class JAntiCaptcha {
         f.add(new JLabel("Seperated"), Utilities.getGBC(0, 5, 10, 1));
 
         for (int i = 0; i < letters.length; i++) {
-            f.add(new ImageComponent(letters[i].getImage((int) Math.ceil(jas.getDouble("simplifyFaktor")))), Utilities.getGBC(i*2 + 1, 6, 1, 1));
+            f.add(new ImageComponent(letters[i].getImage((int) Math.ceil(jas.getDouble("simplifyFaktor")))), Utilities.getGBC(i * 2 + 1, 6, 1, 1));
             JLabel jl = new JLabel("|");
             jl.setForeground(Color.RED);
-            f.add(jl,Utilities.getGBC(i*2 + 2, 6, 1, 1));
+            f.add(jl, Utilities.getGBC(i * 2 + 2, 6, 1, 1));
         }
         f.pack();
         // Decoden. checkCaptcha verwendet dabei die gecachte Erkennung der
         // letters
-         
 
         LetterComperator[] lcs = captcha.getLetterComperators();
         if (lcs == null) {
@@ -1918,31 +1913,31 @@ public class JAntiCaptcha {
 
             for (int i = 0; i < lcs.length; i++) {
                 if (lcs[i] != null && lcs[i].getB() != null) {
-                    f.add(new ImageComponent(lcs[i].getB().getImage((int) Math.ceil(jas.getDouble("simplifyFaktor")))), Utilities.getGBC(i*2 + 1, 8, 1, 1));
+                    f.add(new ImageComponent(lcs[i].getB().getImage((int) Math.ceil(jas.getDouble("simplifyFaktor")))), Utilities.getGBC(i * 2 + 1, 8, 1, 1));
 
                 } else {
-                    f.add(new JLabel(""), Utilities.getGBC(i*2 + 1, 8, 1, 1));
+                    f.add(new JLabel(""), Utilities.getGBC(i * 2 + 1, 8, 1, 1));
 
                 }
                 JLabel jl = new JLabel("|");
                 jl.setForeground(Color.RED);
-                f.add(jl,Utilities.getGBC(i*2 + 2, 6, 1, 1));
+                f.add(jl, Utilities.getGBC(i * 2 + 2, 6, 1, 1));
                 // bw3.setImage(i + 1, 3, lcs[i].getB().getImage((int)
                 // Math.ceil(jas.getDouble("simplifyFaktor"))));
 
                 if (lcs[i] != null && lcs[i].getB() != null) {
-                    f.add(new JLabel("" + lcs[i].getDecodedValue()), Utilities.getGBC(i*2 + 1, 9, 1, 1));
+                    f.add(new JLabel("" + lcs[i].getDecodedValue()), Utilities.getGBC(i * 2 + 1, 9, 1, 1));
 
                     // bw3.setText(i + 1, 4, lcs[i].getDecodedValue());
                 } else {
-                    f.add(new JLabel(""), Utilities.getGBC(i*2 + 1, 9, 1, 1));
+                    f.add(new JLabel(""), Utilities.getGBC(i * 2 + 1, 9, 1, 1));
 
                 }
                 if (lcs[i] != null && lcs[i].getB() != null) {
-                    f.add(new JLabel("" + Math.round(10 * lcs[i].getValityPercent()) / 10.0), Utilities.getGBC(i*2 + 1, 10, 1, 1));
+                    f.add(new JLabel("" + Math.round(10 * lcs[i].getValityPercent()) / 10.0), Utilities.getGBC(i * 2 + 1, 10, 1, 1));
 
                 } else {
-                    f.add(new JLabel(""), Utilities.getGBC(i*2 + 1, 10, 1, 1));
+                    f.add(new JLabel(""), Utilities.getGBC(i * 2 + 1, 10, 1, 1));
 
                 }
             }
@@ -1959,18 +1954,17 @@ public class JAntiCaptcha {
         if (Utilities.isLoggerActive()) {
             logger.info("Decoded Captcha: " + guess + " Vality: " + captcha.getValityPercent());
         }
-        if(inpThread.isAlive())
-        {
-        synchronized (run) {
-        	try {
-				run.wait();
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
+        if (inpThread.isAlive()) {
+            synchronized (run) {
+                try {
+                    run.wait();
+                } catch (InterruptedException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+            }
         }
-        code=run.code;
+        code = run.code;
         if (code == null) {
             File file = getResourceFile("detectionErrors3/" + System.currentTimeMillis() + "_" + captchafile.getName());
             file.getParentFile().mkdirs();
@@ -2051,12 +2045,12 @@ public class JAntiCaptcha {
             // mth.appendChild(element);
         }
         sortLetterDB();
-        //das syncroniced kann das jetzt auch mit einem thread gemacht werden
+        // das syncroniced kann das jetzt auch mit einem thread gemacht werden
         new Thread(new Runnable() {
-			public void run() {
-		        saveMTHFile();
-			}
-		}).start();
+            public void run() {
+                saveMTHFile();
+            }
+        }).start();
         return ret;
     }
 

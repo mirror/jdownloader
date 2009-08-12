@@ -156,8 +156,8 @@ class ProxyThread extends Thread {
                         if (headers.get("content-type").compareToIgnoreCase("application/x-www-form-urlencoded") == 0) {
                             if (headers.containsKey("content-length")) {
                                 int post_len = new Integer(headers.get("content-length"));
-                                int post_len_toread = new Integer(post_len);
-                                int post_len_read = new Integer(0);
+                                int post_len_toread = post_len;
+                                int post_len_read = 0;
                                 byte[] cbuf = new byte[post_len];
                                 int indexstart = 0;
                                 while (post_len_toread > 0) {

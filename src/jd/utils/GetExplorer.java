@@ -77,7 +77,7 @@ public class GetExplorer {
     public boolean openExplorer(File path) {
         if (path == null) return false;
         getExplorerCommand();
-        while (!path.isDirectory())
+        while (path != null && !path.isDirectory())
             path = path.getParentFile();
         if (path != null && explorer != null) {
 

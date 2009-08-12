@@ -53,7 +53,7 @@ public class UploadServiceinfo extends PluginForHost {
             downloadLink.setName(Encoding.htmlDecode(new Regex(br, Pattern.compile("<input type=\"text\" value=\"(.*?)\" /></td>", Pattern.CASE_INSENSITIVE)).getMatch(0)));
             String filesize = null;
             if ((filesize = new Regex(br, "<td style=\"font-weight: bold;\">(\\d+) MB</td>").getMatch(0)) != null) {
-                downloadLink.setDownloadSize(new Integer(filesize) * 1024 * 1024);
+                downloadLink.setDownloadSize(new Integer(filesize) * 1024 * 1024l);
             }
             return AvailableStatus.TRUE;
         }

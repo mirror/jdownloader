@@ -199,13 +199,14 @@ public class DistributeData extends Thread {
                             }
 
                             ArrayList<DownloadLink> dLinks = plg.decryptLinks(decryptableLinks);
-                            // Reicht die Passwörter weiter
-                            for (DownloadLink dLink : dLinks) {
-                                dLink.addSourcePluginPasswordList(link.getSourcePluginPasswordList());
-                            }
+
                             /* Das Plugin konnte arbeiten */
                             coulddecrypt = true;
                             if (dLinks != null && dLinks.size() > 0) {
+                                // Reicht die Passwörter weiter
+                                for (DownloadLink dLink : dLinks) {
+                                    dLink.addSourcePluginPasswordList(link.getSourcePluginPasswordList());
+                                }
                                 synchronized (newdecryptedLinks) {
                                     newdecryptedLinks.addAll(dLinks);
                                 }

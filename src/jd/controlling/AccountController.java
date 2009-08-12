@@ -416,6 +416,8 @@ public class AccountController extends SubConfiguration implements ActionListene
         case AccountControllerEvent.ACCOUNT_ADDED:
             JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true);
             JDUtilities.getConfiguration().save();
+            saveAsync();
+            break;
         case AccountControllerEvent.ACCOUNT_REMOVED:
         case AccountControllerEvent.ACCOUNT_UPDATE:
         case AccountControllerEvent.ACCOUNT_EXPIRED:

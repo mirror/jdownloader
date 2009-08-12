@@ -145,7 +145,7 @@ public class GigaSizeCom extends PluginForHost {
             String temp = br.getRegex("Please retry after\\s(\\d+)\\sMinu").getMatch(0);
             if (temp != null) {
                 int waitTime = Integer.parseInt(temp) + 1;
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitTime * 60 * 1000);
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitTime * 60 * 1000l);
             }
         }
         Form download = br.getFormbyProperty("id", "formDownload");

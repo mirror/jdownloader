@@ -1286,7 +1286,7 @@ public class Captcha extends PixelGrid {
                 logger.severe("Das Gaps Array wurde nicht erstellt");
             }
         }
-        if (letterId > gaps.length - 1) {
+        if (gaps != null && letterId > gaps.length - 1) {
             if (Utilities.isLoggerActive()) {
                 logger.severe("LetterNum und Gaps Array passen nicht zusammen. Siemüssen die selbe Länge haben!");
             }
@@ -1775,10 +1775,9 @@ public class Captcha extends PixelGrid {
                 Color c = new Color(p);
                 int min = Math.min(c.getRed(), Math.min(c.getGreen(), c.getBlue()));
                 int max = Math.max(c.getRed(), Math.max(c.getGreen(), c.getBlue()));
-                int v= 0;
-                if(max>0)
-                {
-                	v=(max-min)*100/max;
+                int v = 0;
+                if (max > 0) {
+                    v = (max - min) * 100 / max;
                 }
                 if (mode == 1) {
                     if (v > tollerance) {
@@ -1801,6 +1800,7 @@ public class Captcha extends PixelGrid {
         grid = newgrid;
 
     }
+
     /**
      * Entfernt bildbereiche deren RGB distance größe bzw kleiner der tollerance
      * ist

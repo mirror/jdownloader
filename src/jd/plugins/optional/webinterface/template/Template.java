@@ -759,7 +759,7 @@ public class Template {
      * @see #setParams(Hashtable)
      */
     public boolean setParam(String name, boolean value) throws IllegalArgumentException, NullPointerException {
-        return setParam(name, new Boolean(value)).booleanValue();
+        return setParam(name, Boolean.valueOf(value)).booleanValue();
     }
 
     /**

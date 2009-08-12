@@ -1383,13 +1383,7 @@ abstract public class DownloadInterface {
      */
     protected void addChunk(Chunk chunk) {
         chunks.add(chunk);
-
-        if (chunkNum == 1) {
-            chunk.startChunk();
-        } else {
-            chunk.startChunk();
-        }
-
+        chunk.startChunk();
     }
 
     /**

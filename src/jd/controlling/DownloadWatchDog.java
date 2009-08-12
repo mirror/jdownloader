@@ -650,7 +650,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
         case DownloadControllerEvent.REMOVE_FILPACKAGE:
         case DownloadControllerEvent.REMOVE_DOWNLOADLINK:
             synchronized (stopMark) {
-                if (this.stopMark != null && this.stopMark == event.getParameter()) setStopMark(hiddenstopMark);
+                if (stopMark == event.getParameter()) setStopMark(hiddenstopMark);
             }
             break;
         }

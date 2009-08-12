@@ -142,7 +142,7 @@ public abstract class View extends SwitchPanel {
      * @param right
      */
     public synchronized void setContent(SwitchPanel right) {
-        SwingGui.checkEDT();
+        SwingGui.checkEDT();        
         boolean found = false;
         for (Component c : rightPane.getComponents()) {
             c.setVisible(false);

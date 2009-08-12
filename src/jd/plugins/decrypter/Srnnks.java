@@ -566,7 +566,7 @@ public class Srnnks extends PluginForDecrypt {
             linkName = parameter.replaceFirst(".*/..[\\_\\-]", "").replaceFirst("\\.html?", "");
         }
         String hostname = getHostname(parameter);
-        SrnnksLinks dlink = new SrnnksLinks(linkName, hostname, size * 1024 * 1024, parameter, mirrors);
+        SrnnksLinks dlink = new SrnnksLinks(linkName, hostname, size * 1024 * 1024l, parameter, mirrors);
         return dlink;
     }
 
@@ -961,8 +961,8 @@ public class Srnnks extends PluginForDecrypt {
                     }
                 }
                 ArrayList<DownloadLink> dls = getDLinks(link, cryptedLink);
-                down = (ArrayList<DownloadLink>) dls.clone();
                 if (dls != null && dls.size() > 0) {
+                    down = (ArrayList<DownloadLink>) dls.clone();
                     ArrayList<DownloadLink> finaldls = null;
                     finaldls = new ArrayList<DownloadLink>();
                     for (DownloadLink dls2 : dls) {

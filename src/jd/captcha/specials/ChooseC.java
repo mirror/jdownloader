@@ -186,7 +186,7 @@ public class ChooseC extends BasicWindow {
     }
 
     private void init(Captcha captcha) {
-
+        if (captcha == null) return;
         this.captcha = captcha;
         this.setAlwaysOnTop(true);
         panel = new JPanel();

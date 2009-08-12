@@ -55,7 +55,7 @@ public class DDLMscrg extends PluginForDecrypt {
                 if (calc[1].equals("+")) {
                     captchaForm.put(inputname, String.valueOf(Integer.parseInt(calc[0]) + Integer.parseInt(calc[2])));
                 } else {
-                    captchaForm.put(inputname, String.valueOf(Integer.parseInt(calc[0]) + Integer.parseInt(calc[2])));
+                    captchaForm.put(inputname, String.valueOf(Integer.parseInt(calc[0]) - Integer.parseInt(calc[2])));
                 }
                 br.submitForm(captchaForm);
                 if (!br.containsHTML("Du bist ein Angeber") && !br.containsHTML("Mein Gott, wo bist denn du zur Schule gegangen!")) {

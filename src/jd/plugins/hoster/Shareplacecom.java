@@ -55,9 +55,9 @@ public class Shareplacecom extends PluginForHost {
             downloadLink.setName(filename.trim());
             String filesize = null;
             if ((filesize = br.getRegex("File size: </b>(.*)MB<b>").getMatch(0)) != null) {
-                downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize)) * 1024 * 1024);
+                downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize)) * 1024 * 1024l);
             } else if ((filesize = br.getRegex("File size: </b>(.*)KB<b>").getMatch(0)) != null) {
-                downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize)) * 1024);
+                downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize)) * 1024l);
             } else if ((filesize = br.getRegex("File size: </b>(.*)byte<b>").getMatch(0)) != null) {
                 downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize)));
             }
