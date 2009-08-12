@@ -62,7 +62,7 @@ public class AddonConfig extends ConfigPanel {
                         latestSelection.setHidden();
                     }
                     latestSelection = comp;
-                    comp.setShown();
+                    if(comp!=null)comp.setShown();
                     revalidate();
                 } catch (Exception e2) {
                     e2.printStackTrace();
