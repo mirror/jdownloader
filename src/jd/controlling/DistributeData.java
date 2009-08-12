@@ -21,6 +21,7 @@ import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 import jd.DecryptPluginWrapper;
 import jd.HostPluginWrapper;
@@ -31,11 +32,13 @@ import jd.nutils.encoding.Encoding;
 import jd.nutils.encoding.HTMLEntities;
 import jd.nutils.jobber.JDRunnable;
 import jd.nutils.jobber.Jobber;
+import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -253,10 +256,12 @@ public class DistributeData extends Thread {
      * @return Link-ArrayList
      */
     public ArrayList<DownloadLink> findLinks() {
+        ArrayList<DownloadLink> ret = quickHosterCheck();
+        if (ret != null && ret.size() == 1) return ret;
         foundPasswords.addAll(HTMLParser.findPasswords(data));
         data = HTMLEntities.unhtmlentities(data);
         data = data.replaceAll("jd://", "http://");
-        ArrayList<DownloadLink> ret = findLinksIntern();
+        ret = findLinksIntern();
         data = Encoding.urlDecode(data, true);
         ret.addAll(findLinksIntern());
         if (!filterNormalHTTP) {
@@ -271,6 +276,27 @@ public class DistributeData extends Thread {
             link.addSourcePluginPasswordList(foundPasswords);
         }
         return ret;
+    }
+
+    /**
+     * Checks if data is only a singlehoster link
+     * 
+     * @return
+     */
+    private ArrayList<DownloadLink> quickHosterCheck() {
+        for (HostPluginWrapper pw : JDUtilities.getPluginsForHost()) {
+            Pattern pattern = pw.getPattern();
+            String match = new Regex(data, pattern).getMatch(-1);
+            if (match != null && match.equals(data)) {
+
+                DownloadLink dl = new DownloadLink((PluginForHost) pw.getNewPluginInstance(), null, pw.getHost(), Encoding.urlDecode(match, true), true);
+                ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+                ret.add(dl);
+                return ret;
+
+            }
+        }
+        return null;
     }
 
     private ArrayList<DownloadLink> findLinksIntern() {

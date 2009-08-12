@@ -18,8 +18,8 @@ package jd.plugins.decrypter;
 
 import java.awt.Point;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -32,11 +32,14 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "linkcrypt.ws" }, urls = { "http://[\\w\\.]*?linkcrypt\\.ws/dir/[\\w]+"}, flags = { 0 })
 
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.Scriptable;
 
+@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "linkcrypt.ws" }, urls = { "http://[\\w\\.]*?linkcrypt\\.ws/dir/[\\w]+" }, flags = { 0 })
 public class LnkCrptWs extends PluginForDecrypt {
 
     public LnkCrptWs(PluginWrapper wrapper) {
@@ -55,22 +58,59 @@ public class LnkCrptWs extends PluginForDecrypt {
         String containerId = new Regex(parameter, "dir/([a-zA-Z0-9]+)").getMatch(0);
 
         br.getPage("http://linkcrypt.ws/dlc/" + containerId);
+        Form password = br.getForm(0);
+        if (password != null && password.hasInputFieldByName("password")) {
+            // Password Protected
 
+            String latestPassword = this.getPluginConfig().getStringProperty("PASSWORD");
+            if (latestPassword != null) {
+                password.put("password", latestPassword);
+                br.submitForm(password);
+            }
+            // no defaultpassword, or defaultpassword is wrong
+            password = br.getForm(0);
+            if (password != null && password.hasInputFieldByName("password")) {
+                latestPassword = PluginUtils.askPassword(this);
+                password.put("password", latestPassword);
+                br.setDebug(true);
+                br.submitForm(password);
+                password = br.getForm(0);
+                if (password != null && password.hasInputFieldByName("password")) {
+                    PluginUtils.informPasswordWrong(this, latestPassword);
+                    return null;
+                }
+                getPluginConfig().setProperty("PASSWORD", latestPassword);
+                getPluginConfig().save();
+            }
+
+        }
         logger.finest("Captcha Protected");
 
         boolean valid = true;
         for (int i = 0; i < 5; ++i) {
-            if (br.containsHTML("Bitte klicke auf den offenen Kreis!")) {
+            Form captcha = br.getForm(0);
+            if (br.containsHTML("Bitte in den offenen Kreis klicken")) {
                 valid = false;
                 File file = this.getLocalCaptchaFile();
-                Form form = br.getForm(0);
-                Browser.download(file, br.cloneBrowser().openGetConnection("http://linkcrypt.ws/captx.php"));
+                String url = captcha.getRegex("src=\"(.*?)\"").getMatch(0);
+                Browser.download(file, br.cloneBrowser().openGetConnection(url));
                 Point p = UserIO.getInstance().requestClickPositionDialog(file, JDL.L("plugins.decrypt.stealthto.captcha.title", "Captcha"), JDL.L("plugins.decrypt.stealthto.captcha", "Please click on the Circle with a gap"));
                 if (p == null) throw new DecrypterException(DecrypterException.CAPTCHA);
-                form.put("x", p.x + "");
-                form.put("y", p.y + "");
-                br.submitForm(form);
+                captcha.put("x", p.x + "");
+                captcha.put("y", p.y + "");
+                br.submitForm(captcha);
+            } else if (captcha != null && !captcha.hasInputFieldByName("key")) {
+                valid = false;
+                File file = this.getLocalCaptchaFile();
+                String url = captcha.getRegex("src=\"(.*?)\"").getMatch(0);
+                Browser.download(file, br.cloneBrowser().openGetConnection(url));
+                Point p = UserIO.getInstance().requestClickPositionDialog(file, JDL.L("plugins.decrypt.stealthto.captcha.title", "Captcha"), "");
+                if (p == null) throw new DecrypterException(DecrypterException.CAPTCHA);
+                captcha.put("x", p.x + "");
+                captcha.put("y", p.y + "");
+                br.submitForm(captcha);
             } else {
+
                 valid = true;
                 break;
             }
@@ -78,25 +118,57 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         if (valid == false) throw new DecrypterException(DecrypterException.CAPTCHA);
 
-        File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
-        if (!container.exists()) container.createNewFile();
+        String[] containers = br.getRegex("eval\\((.*?\\,\\{\\}\\))\\)").getColumn(0);
 
-        /* TODO: Das kann man sicher besser lösen.. bitte mal wer reinschauen */
-        String dlc = br.getRegex("(^.*?)<script").getMatch(0);
-        if (dlc == null) dlc = br.toString();
+        HashMap<String, String> map = new HashMap<String, String>();
 
-        FileOutputStream out = new FileOutputStream(container);
-        for (int i = 0; i < dlc.length(); i++) {
-            out.write((byte) dlc.charAt(i));
+        for (String c : containers) {
+            Context cx = Context.enter();
+            Scriptable scope = cx.initStandardObjects();
+            c = c.replace("return p}(", " return p}  f(").replace("function(p,a,c,k,e,d)", "function f(p,a,c,k,e,d)");
+            Object result = cx.evaluateString(scope, c, "<cmd>", 1, null);
+
+            String code = Context.toString(result);
+            String[] row = new Regex(code, "href=\"(.*?)\"><img.*?image/(.*?)\\.").getRow(0);
+
+            if (row != null) {
+                map.put(row[1], row[0]);
+            } else {
+                System.out.println(code);
+            }
+
         }
-        out.close();
+        File container = null;
+        if (map.containsKey("dlc")) {
+            container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
+            if (!container.exists()) container.createNewFile();
+            Browser.download(container, map.get("dlc"));
+        } else if (map.containsKey("cnl")) {
+            container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
+            if (!container.exists()) container.createNewFile();
+            Browser.download(container, map.get("cnl").replace("dlc://", "http://"));
+        } else if (map.containsKey("ccf")) {
+            container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".ccf");
+            if (!container.exists()) container.createNewFile();
+            Browser.download(container, map.get("ccf"));
+        } else if (map.containsKey("rsdf")) {
+            container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".rsdf");
+            if (!container.exists()) container.createNewFile();
+            Browser.download(container, map.get("rsdf"));
+        }
+        if (container != null) {
+            //container available
+            decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
 
-        decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
-        container.delete();
+            container.delete();
+            if (decryptedLinks.size() > 0) return decryptedLinks;
 
-        return decryptedLinks;
+        }
+        
+        // webdecryption
+        return null;
     }
 
     // @Override
-    
+
 }
