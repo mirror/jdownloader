@@ -41,10 +41,12 @@ import de.javasoft.plaf.synthetica.SyntheticaLookAndFeel;
  */
 public class SyntheticaJayDownLookAndFeel extends SyntheticaLookAndFeel {
 
+    private static final long serialVersionUID = -1032317968282284025L;
+
     public SyntheticaJayDownLookAndFeel() throws ParseException, IOException {
         super("blackmoon/synth.xml");
         long start = System.currentTimeMillis();
-        Class clazz = SyntheticaLookAndFeel.class;
+        Class<?> clazz = SyntheticaLookAndFeel.class;
         load(JDUtilities.getResourceURL("jd/img/synthetica/jaydown/synth.xml").openStream(), clazz);
         try {
             String syntheticaFileName = "Synthetica.xml";
@@ -67,7 +69,6 @@ public class SyntheticaJayDownLookAndFeel extends SyntheticaLookAndFeel {
         }
         long stop = System.currentTimeMillis();
         JDLogger.getLogger().finest((new StringBuilder("Time for loading LAF: ")).append(stop - start).append("ms").toString());
-   
 
     }
 

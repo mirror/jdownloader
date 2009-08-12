@@ -39,11 +39,9 @@ import javax.swing.border.EmptyBorder;
 import jd.config.SubConfiguration;
 import jd.gui.UserIO;
 import jd.http.Browser;
-import jd.nutils.JDFlags;
 import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
 
@@ -171,7 +169,7 @@ public class Main {
                 JDUtilities.getResourceFile("webcheck.tmp").delete();
             }
             Main.log(log, "Local: " + JDUtilities.getResourceFile(".").getAbsolutePath());
-         
+
             Main.log(log, "Start java -jar -Xmx512m JDownloader.jar in " + JDUtilities.getResourceFile(".").getAbsolutePath());
             JDUtilities.getDatabaseConnector().shutdownDatabase();
             if (!clone) JDUtilities.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", "-rfu" }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0);

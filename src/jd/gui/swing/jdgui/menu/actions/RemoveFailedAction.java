@@ -23,7 +23,6 @@ import jd.config.MenuAction;
 import jd.controlling.DownloadController;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
 
 public class RemoveFailedAction extends MenuAction {
 

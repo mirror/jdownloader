@@ -68,8 +68,14 @@ public abstract class UserIO {
      */
     public static final int NO_ICON = 1 << 8;
     /**
-     * Return IDS
+     * Cancle option ignores Don't show again checkbox
      */
+    public static final int DONT_SHOW_AGAIN_IGNORES_CANCEL = 1 << 9;
+    /**
+     * If user selects OK Option, the don't show again option is ignored
+     */
+    public static final int DONT_SHOW_AGAIN_IGNORES_OK = 1 << 10;
+
     /**
      * pressed ok
      */
@@ -79,7 +85,8 @@ public abstract class UserIO {
      */
     public static final int RETURN_CANCEL = 1 << 2;
     /**
-     * don'tz sho again flag ahs been set. the dialog may has been visible. if RETURN_SKIPPED_BY_DONT_SHOW is not set. the user set this flag latly
+     * don'tz sho again flag ahs been set. the dialog may has been visible. if
+     * RETURN_SKIPPED_BY_DONT_SHOW is not set. the user set this flag latly
      */
     public static final int RETURN_DONT_SHOW_AGAIN = 1 << 3;
     /**
@@ -94,14 +101,7 @@ public abstract class UserIO {
     public static final int ICON_WARNING = 1;
     public static final int ICON_ERROR = 2;
     public static final int ICON_QUESTION = 3;
-    /**
-     * Cancle option ignores Don't show again checkbox
-     */
-    public static final int DONT_SHOW_AGAIN_IGNORES_CANCEL = 1<<6;
-    /**
-     * If user selects OK Option, the don't show again option is ignored
-     */
-    public static final int DONT_SHOW_AGAIN_IGNORES_OK = 1<<7;
+
     protected static UserIO INSTANCE = null;
     private static Integer COUNTDOWN_TIME = null;
 

@@ -1,8 +1,5 @@
 package tests.singletests;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -28,18 +25,16 @@ import tests.utils.TestUtils;
 
 public class TestLink {
 
-    private String ip;
-
     @Before
     public void setUp() throws Exception {
         TestUtils.mainInit();
-         TestUtils.initGUI();
+        TestUtils.initGUI();
         TestUtils.initDecrypter();
         TestUtils.initContainer();
         TestUtils.initHosts();
         TestUtils.finishInit();
     }
-   
+
     @Test
     public void getTestLinks() {
 
@@ -61,29 +56,27 @@ public class TestLink {
                         for (HostPluginWrapper pw : JDUtilities.getPluginsForHost()) {
 
                             if (pw.canHandle(l)) {
-                                
-                                DownloadLink dl = new DownloadLink((PluginForHost)pw.getNewPluginInstance(), null, pw.getHost(), Encoding.urlDecode(l, true), true);
+
+                                DownloadLink dl = new DownloadLink((PluginForHost) pw.getNewPluginInstance(), null, pw.getHost(), Encoding.urlDecode(l, true), true);
                                 dl.isAvailable();
                                 if (dl.isAvailable()) {
-                                    System.out.println("Hoster: "+dl.getDownloadURL() + " : " + new File(dl.getFileOutput()).getName()+ " : " + dl.getDownloadSize() + " Bytes");
+                                    System.out.println("Hoster: " + dl.getDownloadURL() + " : " + new File(dl.getFileOutput()).getName() + " : " + dl.getDownloadSize() + " Bytes");
                                 }
 
                             }
                         }
-                        
-                        
-                        
+
                         for (DecryptPluginWrapper pw : DecryptPluginWrapper.getDecryptWrapper()) {
 
                             if (pw.canHandle(l)) {
                                 PluginForDecrypt plg = (PluginForDecrypt) pw.getNewPluginInstance();
 
                                 CryptedLink[] dd = plg.getDecryptableLinks(l);
-                         
-                                if (dd!=null&&dd.length>0) {
+
+                                if (dd != null && dd.length > 0) {
                                     ArrayList<DownloadLink> a = plg.decryptIt(dd[0], new ProgressController("test", 10));
-                                    if(a!=null&&a.size()>0){
-                                    System.out.println("Crypter: "+dd[0] + " : Files:" + a.size());
+                                    if (a != null && a.size() > 0) {
+                                        System.out.println("Crypter: " + dd[0] + " : Files:" + a.size());
                                     }
                                 }
 
@@ -94,10 +87,7 @@ public class TestLink {
                 } catch (Exception e) {
                 }
             }
-
-            links = links;
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
     }

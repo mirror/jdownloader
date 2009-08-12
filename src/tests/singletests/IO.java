@@ -27,21 +27,17 @@ import org.junit.Test;
 import tests.utils.TestUtils;
 
 public class IO {
-    private String[] urls = {};
 
     @Before
     public void setUp() {
-
         TestUtils.initJD();
-
     }
 
     @Test
     public void dontshowagain() {
-        int ret = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN|UserIO.DONT_SHOW_AGAIN_IGNORES_OK, "My title 2", "Message", null, null, null);
+        int ret = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_OK, "My title 2", "Message", null, null, null);
 
         out(ret);
-
     }
 
     private void out(int ret) {

@@ -24,7 +24,6 @@ import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 
 import javax.swing.AbstractAction;
 import javax.swing.ImageIcon;
@@ -44,7 +43,6 @@ import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.interfaces.JDMouseAdapter;
 import jd.gui.userio.DummyFrame;
 import jd.nutils.JDFlags;
-import jd.nutils.JDHash;
 import jd.nutils.Screen;
 import jd.nutils.encoding.Encoding;
 import jd.utils.locale.JDL;
@@ -91,7 +89,7 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
     }
 
     public void init() {
-        dont:if (JDFlags.hasAllFlags(flag, UserIO.DONT_SHOW_AGAIN)) {
+        dont: if (JDFlags.hasAllFlags(flag, UserIO.DONT_SHOW_AGAIN)) {
             SubConfiguration cfg = SubConfiguration.getConfig(DIALOGS_CONFIG);
             // System.out.println(cfg+toString()+"This restore" +
             // "DONT_SHOW_AGAIN_" + JDHash.getMD5(this.toString()) + " " +
@@ -102,17 +100,17 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
                 if (value instanceof Integer) {
                     int i = ((Integer) value).intValue();
                     int ret = (i & (UserIO.RETURN_OK | UserIO.RETURN_CANCEL)) | UserIO.RETURN_DONT_SHOW_AGAIN | UserIO.RETURN_SKIPPED_BY_DONT_SHOW;
-                    
-                    //return if the stored values are excluded
-                    if(JDFlags.hasAllFlags(flag, UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL)&&JDFlags.hasAllFlags(flag, UserIO.RETURN_CANCEL)){
-                      break dont;  
-                    }
-                    if(JDFlags.hasAllFlags(flag, UserIO.DONT_SHOW_AGAIN_IGNORES_OK)&&JDFlags.hasAllFlags(ret, UserIO.RETURN_OK)){
+
+                    // return if the stored values are excluded
+                    if (JDFlags.hasAllFlags(flag, UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL) && JDFlags.hasAllFlags(flag, UserIO.RETURN_CANCEL)) {
                         break dont;
                     }
-                    
+                    if (JDFlags.hasAllFlags(flag, UserIO.DONT_SHOW_AGAIN_IGNORES_OK) && JDFlags.hasAllFlags(ret, UserIO.RETURN_OK)) {
+                        break dont;
+                    }
+
                     this.returnValue = ret;
-                
+
                 }
                 return;
 
@@ -144,7 +142,7 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
 
             dont.setHorizontalAlignment(JCheckBox.TRAILING);
 
-            add(dontlabel=new JLabel(JDL.L("gui.dialogs.dontshowthisagain", "Don't show this again")));
+            add(dontlabel = new JLabel(JDL.L("gui.dialogs.dontshowthisagain", "Don't show this again")));
             add(dont, "alignx right");
         }
 
@@ -183,40 +181,40 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
         } else {
             countDownLabel.setVisible(false);
         }
-        if(dont!=null){
-        btnOK.addMouseListener(new JDMouseAdapter(){        
+        if (dont != null) {
+            btnOK.addMouseListener(new JDMouseAdapter() {
 
-            public void mouseEntered(MouseEvent e) {
-                if(JDFlags.hasAllFlags(flag, UserIO.DONT_SHOW_AGAIN_IGNORES_OK)){
-                   dont.setEnabled(false);
-                   dontlabel.setEnabled(false);
-                }
-                
-            }
-            public void mouseExited(MouseEvent e) {
-                dont.setEnabled(true);
-                dontlabel.setEnabled(true);
-            }
-          
-            
-        });
-        
-        btnCancel.addMouseListener(new JDMouseAdapter(){        
+                public void mouseEntered(MouseEvent e) {
+                    if (JDFlags.hasAllFlags(flag, UserIO.DONT_SHOW_AGAIN_IGNORES_OK)) {
+                        dont.setEnabled(false);
+                        dontlabel.setEnabled(false);
+                    }
 
-            public void mouseEntered(MouseEvent e) {
-                if(JDFlags.hasAllFlags(flag, UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL)){
-                    dont.setEnabled(false);
-                    dontlabel.setEnabled(false);
                 }
-                
-            }
-            public void mouseExited(MouseEvent e) {
-                dont.setEnabled(true);
-                dontlabel.setEnabled(true);
-            }
-          
-            
-        });
+
+                public void mouseExited(MouseEvent e) {
+                    dont.setEnabled(true);
+                    dontlabel.setEnabled(true);
+                }
+
+            });
+
+            btnCancel.addMouseListener(new JDMouseAdapter() {
+
+                public void mouseEntered(MouseEvent e) {
+                    if (JDFlags.hasAllFlags(flag, UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL)) {
+                        dont.setEnabled(false);
+                        dontlabel.setEnabled(false);
+                    }
+
+                }
+
+                public void mouseExited(MouseEvent e) {
+                    dont.setEnabled(true);
+                    dontlabel.setEnabled(true);
+                }
+
+            });
         }
         this.setAlwaysOnTop(true);
         this.invalidate();
@@ -293,13 +291,13 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
         returnValue = b ? UserIO.RETURN_OK : UserIO.RETURN_CANCEL;
         if (JDFlags.hasAllFlags(flag, UserIO.DONT_SHOW_AGAIN)) {
 
-            if (dont.isSelected()&&dont.isEnabled()) {
-             
+            if (dont.isSelected() && dont.isEnabled()) {
+
                 returnValue |= UserIO.RETURN_DONT_SHOW_AGAIN;
                 SubConfiguration cfg = SubConfiguration.getConfig(DIALOGS_CONFIG);
                 cfg.setProperty("DONT_SHOW_AGAIN_" + (this.toString()), returnValue);
                 cfg.save();
-           
+
                 // System.out.println(cfg+toString()+" This save" +
                 // "DONT_SHOW_AGAIN_" + JDHash.getMD5(this.toString()) + " " +
                 // returnValue);

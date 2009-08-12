@@ -314,19 +314,16 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
 
             @Override
             public Icon getIcon() {
-                // TODO Auto-generated method stub
                 return null;
             }
 
             @Override
             public String getTitle() {
-                // TODO Auto-generated method stub
                 return JDL.L("jd.plugins.optional.HTTPLiveHeaderScripter.title", "HLH Scripter");
             }
 
             @Override
             public String getTooltip() {
-                // TODO Auto-generated method stub
                 return JDL.L("jd.plugins.optional.HTTPLiveHeaderScripter.tooltip", "HTTP-Live-Header Scripter: Create Reconnect scripts easily");
             }
 
@@ -393,16 +390,14 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
 
         SwitchPanel sp = new SwitchPanel() {
 
+            private static final long serialVersionUID = -258117300311991599L;
+
             @Override
             protected void onHide() {
-                // TODO Auto-generated method stub
-
             }
 
             @Override
             protected void onShow() {
-                // TODO Auto-generated method stub
-
             }
 
         };

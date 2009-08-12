@@ -19,7 +19,6 @@ package jd.gui.swing.laf;
 import java.io.File;
 import java.io.FileInputStream;
 import java.lang.reflect.Modifier;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map.Entry;
@@ -37,9 +36,7 @@ import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.JDGuiConstants;
-import jd.gui.swing.laf.synthetica.SyntheticaJayDownLookAndFeel;
 import jd.nutils.OSDetector;
-import jd.parser.Regex;
 import jd.utils.JDUtilities;
 
 public class LookAndFeelController {
