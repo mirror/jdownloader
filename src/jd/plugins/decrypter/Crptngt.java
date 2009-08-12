@@ -126,7 +126,7 @@ public class Crptngt extends PluginForDecrypt {
             // No container
             if (tempDecryptedLinks.size() == 0) {
                 String[] links = br2.getRegex("(http://www\\.crypting\\.it/follow\\.php\\?url=.*?)'}").getColumn(0);
-                if (links.length == 0) return null;
+                if (links.length == 0) continue;
                 progress.setRange(mirrors.length * links.length);
                 for (String link : links) {
                     br2.getHeaders().put("Referer", "http://www.crypting.it/greybox/loader_frame.html?s=0");
@@ -144,7 +144,7 @@ public class Crptngt extends PluginForDecrypt {
                             rdLink = br2.getRegex("downloadlink\">(.*?)<").getMatch(0);
                     }
                     if (rdLink == null || rdLink.trim().isEmpty())
-                        return null;
+                        continue;
                     else
                         rdLink = rdLink.trim();
 
