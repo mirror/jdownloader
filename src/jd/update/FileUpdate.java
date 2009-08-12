@@ -251,7 +251,7 @@ public class FileUpdate {
                     //hash of fresh downloaded file is ok
                     broadcaster.fireEvent(new MessageEvent(this, SUCCESS, "Hash OK"));
                     //move to update folder
-                    this.getLocalFile().delete();
+                    this.getLocalTmpFile().delete();
                     boolean ret = tmpFile.renameTo(getLocalTmpFile());
                     if (ret) {
                         //rename ok
