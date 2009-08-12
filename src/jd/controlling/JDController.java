@@ -596,7 +596,7 @@ public class JDController implements ControlListener {
             progress.increase(1);
         }
         progress.setStatusText(downloadLinks.size() + " links found");
-        progress.finalize();
+        progress.doFinalize();
         return downloadLinks;
     }
 
@@ -719,7 +719,7 @@ public class JDController implements ControlListener {
                     // schickt die Links zuerst mal zum Linkgrabber
                     LinkGrabberController.getInstance().addLinks(downloadLinks, hideGrabber, autostart);
                 }
-                progress.finalize();
+                progress.doFinalize();
             }
         }.start();
     }

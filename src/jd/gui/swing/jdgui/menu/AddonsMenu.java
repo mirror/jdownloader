@@ -105,8 +105,8 @@ public class AddonsMenu extends JStartMenu {
                     m.setIcon(JDTheme.II(plg.getPlugin().getIconKey(), 16, 16));
                     m.setItems(mis);
                     JMenuItem mi = Menu.getJMenuItem(m);
-                    mi.setIcon(m.getIcon());
                     if (mi != null) {
+                        mi.setIcon(m.getIcon());
                         itemsWithSubmenu.add(mi);
                     } else {
                         addSeparator();

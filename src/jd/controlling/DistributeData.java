@@ -548,7 +548,7 @@ public class DistributeData extends Thread {
 
         }
         JDLogger.getLogger().info("Found Links" + sb);
-        pc.finalize(2000);
+        pc.doFinalize(2000);
         return sb.toString();
     }
 }

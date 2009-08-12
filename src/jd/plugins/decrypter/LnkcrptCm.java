@@ -61,7 +61,7 @@ public class LnkcrptCm extends PluginForDecrypt {
                 progress.increase(1);
 
             }
-            progress.finalize();
+            progress.doFinalize();
         }
 
         String url = br.getRegex("<meta http-equiv=\"refresh\" .*? URL=(.*?)\" />").getMatch(0);

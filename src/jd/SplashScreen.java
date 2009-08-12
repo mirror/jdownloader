@@ -55,7 +55,7 @@ class SplashProgressImage {
     private Image image;
 
     private long startTime = 0;
-    private final int dur = 500;
+    private int dur = 500;
 
     public SplashProgressImage(Image i) {
         image = i;
@@ -85,7 +85,6 @@ public class SplashScreen implements ActionListener, ControlListener {
 
     private JLabel label;
 
-    private final int speed = 100;
     private long startTime = 0;
 
     private Timer timer;
@@ -102,7 +101,7 @@ public class SplashScreen implements ActionListener, ControlListener {
 
     private JProgressBar progress;
 
-    private String curString = new String();
+    private String curString = "";
 
     private GraphicsDevice gd = null;
 
@@ -144,7 +143,7 @@ public class SplashScreen implements ActionListener, ControlListener {
     }
 
     private void startAnimation() {
-        timer = new Timer(speed, this);
+        timer = new Timer(100, this);
         timer.setCoalesce(true);
         timer.start();
         startTime = System.currentTimeMillis();
@@ -162,9 +161,7 @@ public class SplashScreen implements ActionListener, ControlListener {
         window.add(label);
         window.add(progress = new JProgressBar(), "hidemode 3,height 20!");
         progress.setVisible(true);
-        
-      
-       
+
         progress.setIndeterminate(true);
         window.pack();
         Rectangle b = gc.getBounds();

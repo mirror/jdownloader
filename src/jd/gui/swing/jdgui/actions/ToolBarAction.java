@@ -60,6 +60,7 @@ public abstract class ToolBarAction extends JDAction {
     }
 
     public boolean equals(Object o) {
+        if (o == null || !(o instanceof ToolBarAction)) return false;
         return getID().equals(((ToolBarAction) o).getID());
     }
 
@@ -94,6 +95,5 @@ public abstract class ToolBarAction extends JDAction {
     public Types getType() {
         return type;
     }
-
 
 }

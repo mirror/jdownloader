@@ -111,8 +111,7 @@ public class ProgressController implements MessageListener {
         setStatus(currentValue - i);
     }
 
-    // @Override
-    public void finalize() {
+    public void doFinalize() {
         if (finalizing) return;
         finished = true;
         currentValue = max;
@@ -123,7 +122,7 @@ public class ProgressController implements MessageListener {
         return this.finalizing;
     }
 
-    public void finalize(final long waittimer) {
+    public void doFinalize(final long waittimer) {
         if (finalizing) return;
         finalizing = true;
         final ProgressController instance = this;

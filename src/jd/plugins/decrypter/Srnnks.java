@@ -338,7 +338,7 @@ public class Srnnks extends PluginForDecrypt {
                     }
                 }
             } catch (Exception e) {
-                progress.finalize();
+                progress.doFinalize();
                 return null;
             }
 

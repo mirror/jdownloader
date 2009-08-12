@@ -104,7 +104,7 @@ public class WebUpdate {
             }
             if (localHash != null && remoteHash != null && remoteHash.equalsIgnoreCase(localHash)) {
                 ttmp.interrupt();
-                progress.finalize();
+                progress.doFinalize();
                 logger.info("Updater is still up2date!");
                 return true;
             }
@@ -120,7 +120,7 @@ public class WebUpdate {
                         if (remoteHash.equalsIgnoreCase(localHash)) {
                             if ((!file.exists() || file.delete()) && tmp.renameTo(file)) {
                                 ttmp.interrupt();
-                                progress.finalize(2000);
+                                progress.doFinalize(2000);
                                 logger.info("Update of " + file.getAbsolutePath() + " successfull");
                                 return true;
                             } else {
@@ -128,7 +128,7 @@ public class WebUpdate {
                                 logger.severe("Rename error: jdupdate.jar");
                                 progress.setColor(Color.RED);
                                 progress.setStatusText(JDL.LF("wrapper.webupdate.updateUpdater.error_rename", "Could not rename jdupdate.jar.tmp to jdupdate.jar"));
-                                progress.finalize(5000);
+                                progress.doFinalize(5000);
                                 return false;
                             }
                         } else {
@@ -149,7 +149,7 @@ public class WebUpdate {
         ttmp.interrupt();
         progress.setColor(Color.RED);
         progress.setStatusText(JDL.LF("wrapper.webupdate.updateUpdater.error_reqeust2", "Could not download new jdupdate.jar"));
-        progress.finalize(5000);
+        progress.doFinalize(5000);
         logger.info("Update of " + file.getAbsolutePath() + " failed");
         return false;
     }
@@ -189,7 +189,7 @@ public class WebUpdate {
         } catch (Exception e) {
             progress.setColor(Color.RED);
             progress.setStatusText("Update failed");
-            progress.finalize(15000l);
+            progress.doFinalize(15000l);
             UPDATE_IN_PROGRESS = false;
             JDController.releaseDelayExit(id);
             return;
@@ -245,7 +245,7 @@ public class WebUpdate {
                     });
                 }
                 if (!guiCall) {
-                    progress.finalize();
+                    progress.doFinalize();
                     JDController.releaseDelayExit(id);
                     if (doPluginRestart) JDUtilities.restartJDandWait();
                     UPDATE_IN_PROGRESS = false;
@@ -253,7 +253,7 @@ public class WebUpdate {
                 }
                 if (!forceguiCall && SubConfiguration.getConfig("WEBUPDATE").getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false)) {
                     logger.severe("Webupdater disabled");
-                    progress.finalize();
+                    progress.doFinalize();
                     JDController.releaseDelayExit(id);
                     if (doPluginRestart) JDUtilities.restartJDandWait();
                     UPDATE_IN_PROGRESS = false;
@@ -276,7 +276,7 @@ public class WebUpdate {
 
                     }
 
-                    progress.finalize();
+                    progress.doFinalize();
                     JDController.releaseDelayExit(id);
                     if (doPluginRestart) JDUtilities.restartJDandWait();
                     UPDATE_IN_PROGRESS = false;
@@ -315,7 +315,7 @@ public class WebUpdate {
 
                 }
                 if (messageListener != null) updater.getBroadcaster().removeListener(messageListener);
-                progress.finalize();
+                progress.doFinalize();
                 JDController.releaseDelayExit(id);
             }
         }.start();
@@ -382,7 +382,7 @@ public class WebUpdate {
                         JDLogger.exception(e);
 
                     }
-                    pc.finalize();
+                    pc.doFinalize();
 
                 } finally {
                     JDController.releaseDelayExit(id);

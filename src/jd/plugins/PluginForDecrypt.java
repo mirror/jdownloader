@@ -163,23 +163,23 @@ public abstract class PluginForDecrypt extends Plugin {
         } catch (SocketTimeoutException e2) {
             progress.setStatusText("Serverproblem?");
             progress.setColor(Color.RED);
-            progress.finalize(15000l);
+            progress.doFinalize(15000l);
             return new ArrayList<DownloadLink>();
         } catch (UnknownHostException e) {
             progress.setStatusText("No InternetConnection?");
             progress.setColor(Color.RED);
-            progress.finalize(15000l);
+            progress.doFinalize(15000l);
             return new ArrayList<DownloadLink>();
         } catch (DecrypterException e) {
             tmpLinks = new ArrayList<DownloadLink>();
             progress.setStatusText(this.getHost() + ": " + e.getErrorMessage());
             progress.setColor(Color.RED);
             tryClickNLoad(cryptedLink);
-            progress.finalize(15000l);
+            progress.doFinalize(15000l);
         } catch (InterruptedException e2) {
             tmpLinks = new ArrayList<DownloadLink>();
         } catch (Exception e) {
-            progress.finalize();
+            progress.doFinalize();
             JDLogger.exception(e);
         }
         if (tmpLinks == null) {
@@ -190,16 +190,16 @@ public abstract class PluginForDecrypt extends Plugin {
             tryClickNLoad(cryptedLink);
 
             progress.setColor(Color.RED);
-            progress.finalize(15000l);
+            progress.doFinalize(15000l);
             return new ArrayList<DownloadLink>();
         }
 
         if (tmpLinks.size() == 0) {
-            progress.finalize();
+            progress.doFinalize();
             return new ArrayList<DownloadLink>();
         }
 
-        progress.finalize();
+        progress.doFinalize();
         return tmpLinks;
     }
 

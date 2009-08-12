@@ -291,7 +291,7 @@ public class ActionController {
                 test.start();
                 JDUtilities.getController().stopDownloads();
                 test.interrupt();
-                pc.finalize();
+                pc.doFinalize();
             }
 
         };

@@ -363,7 +363,7 @@ public abstract class PluginsC extends Plugin {
             logger.info("Init Container");
             fireControlEvent(ControlEvent.CONTROL_PLUGIN_ACTIVE, this);
             if (progress != null) {
-                progress.finalize();
+                progress.doFinalize();
             }
             progress = new ProgressController(JDL.L("plugins.container.open", "Open Container"), 10);
             progress.increase(1);
@@ -392,14 +392,14 @@ public abstract class PluginsC extends Plugin {
             if (this.containerStatus == null) {
                 progress.setColor(Color.RED);
                 progress.setStatusText(JDL.LF("plugins.container.exit.error", "Container error: %s", "Container not found!"));
-                progress.finalize(500);
+                progress.doFinalize(500);
             } else if (!this.containerStatus.hasStatus(ContainerStatus.STATUS_FINISHED)) {
                 progress.setColor(Color.RED);
                 progress.setStatusText(JDL.LF("plugins.container.exit.error", "Container error: %s", containerStatus.getStatusText()));
-                progress.finalize(5000);
+                progress.doFinalize(5000);
                 new WebUpdate().doUpdateCheck(false, false);
             } else {
-                progress.finalize();
+                progress.doFinalize();
             }
             fireControlEvent(ControlEvent.CONTROL_PLUGIN_INACTIVE, this);
 

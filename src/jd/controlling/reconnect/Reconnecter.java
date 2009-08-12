@@ -214,7 +214,7 @@ public class Reconnecter {
                     }
                     if (ret == false) {
                         ProgressController progress = new ProgressController(JDL.L("jd.controlling.reconnect.Reconnector.progress.failed", "Reconnect failed! Please check your reconnect Settings and try a Manual Reconnect!"), 100);
-                        progress.finalize(10000l);
+                        progress.doFinalize(10000l);
                     }
                     JDUtilities.getConfiguration().setProperty(Configuration.PARAM_LATEST_RECONNECT_RESULT, ret);
                     JDUtilities.getConfiguration().save();
@@ -284,7 +284,7 @@ public class Reconnecter {
             progress.setStatusText(JDL.L("gui.reconnect.progress.status.success", "Reconnect successfull"));
         }
         setReconnectRequested(false);
-        progress.finalize(4000);
+        progress.doFinalize(4000);
         return ret;
     }
 

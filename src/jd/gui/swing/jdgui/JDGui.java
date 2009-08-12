@@ -334,7 +334,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
                                 pc.setStatusText("Autostart aborted!");
                             }
                         });
-                        pc.finalize(10 * 1000l);
+                        pc.doFinalize(10 * 1000l);
                         while (!pc.isFinished()) {
                             try {
                                 Thread.sleep(1000);

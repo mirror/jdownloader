@@ -112,16 +112,16 @@ public abstract class ReconnectMethod {
                 UserIF.getInstance().displayMiniWarning(JDL.L("reconnect.ipfiltered.warning.title", "Wrong IP!"), JDL.LF("reconnect.ipfiltered.warning.short", "Die IP %s wurde als nicht erlaubt identifiziert", afterIP));
                 afterIP = "offline";
             } else {
-                progress.finalize();
+                progress.doFinalize();
                 return true;
             }
         }
 
         if (maxretries == -1 || retries <= maxretries) {
-            progress.finalize();
+            progress.doFinalize();
             return doReconnect();
         }
-        progress.finalize();
+        progress.doFinalize();
         return false;
     }
 

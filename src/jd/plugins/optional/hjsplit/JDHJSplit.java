@@ -278,7 +278,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
                     }
                 } catch (Exception e) {
                 }
-                progress.finalize();
+                progress.doFinalize();
                 JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ON_FILEOUTPUT, new File[] { output }));
             }
         });

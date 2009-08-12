@@ -62,7 +62,7 @@ public class ChooseC extends BasicWindow {
     BufferedImage colorImage;
     private JLabel colorState;
     private int foregroundColor1 = 0xff00ff, foregroundColor2 = 0xFF99FF, backgroundColor1 = 0x0000ff, backgroundColor2 = 0x00ffff;
-    
+
     class ColorMode {
         short mode;
         String modeString;
@@ -74,7 +74,7 @@ public class ChooseC extends BasicWindow {
 
         @Override
         public boolean equals(Object arg0) {
-            // TODO Auto-generated method stub
+            if ((arg0 == null) || !(arg0 instanceof ColorMode)) return false;
             return mode == ((ColorMode) arg0).mode;
         }
 
@@ -89,21 +89,18 @@ public class ChooseC extends BasicWindow {
     private void removePixelAbsolut(CPoint cp) {
         backUP();
         ret.remove(cp);
-        if(fastSelection)
-        {
-        for (int x = 0; x < captchaImage.getWidth(); x++) {
-            for (int y = 0; y < captchaImage.getHeight(); y++) {
-                double dist = Colors.getColorDifference(captcha.getPixelValue(x, y), cp.getColor());
-                if (dist < cp.getDistance()) {
-                    captchaImage.grid[x][y] = captcha.getPixelValue(x, y);
+        if (fastSelection) {
+            for (int x = 0; x < captchaImage.getWidth(); x++) {
+                for (int y = 0; y < captchaImage.getHeight(); y++) {
+                    double dist = Colors.getColorDifference(captcha.getPixelValue(x, y), cp.getColor());
+                    if (dist < cp.getDistance()) {
+                        captchaImage.grid[x][y] = captcha.getPixelValue(x, y);
+                    }
+
                 }
 
             }
-
-        }
-        }
-        else
-        {
+        } else {
             paintImage();
         }
     }
@@ -163,21 +160,18 @@ public class ChooseC extends BasicWindow {
         if (!ret.contains(p)) {
             backUP();
             ret.add(p);
-            if(fastSelection)
-            {
-            for (int x = 0; x < captchaImage.getWidth(); x++) {
-                for (int y = 0; y < captchaImage.getHeight(); y++) {
-                    captchaImage.grid[x][y] = captchaImage.getPixelValue(x, y);
-                    if (p.getColorDifference(captcha.getPixelValue(x, y)) < p.getDistance()) {
-                        captchaImage.grid[x][y] = p.isForeground() ? foregroundColor1 : backgroundColor1;
+            if (fastSelection) {
+                for (int x = 0; x < captchaImage.getWidth(); x++) {
+                    for (int y = 0; y < captchaImage.getHeight(); y++) {
+                        captchaImage.grid[x][y] = captchaImage.getPixelValue(x, y);
+                        if (p.getColorDifference(captcha.getPixelValue(x, y)) < p.getDistance()) {
+                            captchaImage.grid[x][y] = p.isForeground() ? foregroundColor1 : backgroundColor1;
+                        }
+
                     }
 
                 }
-
-            }
-            }
-            else
-            {
+            } else {
                 paintImage();
             }
             ic.image = captchaImage.getImage().getScaledInstance(captchaImage.getWidth() * zoom / 100, captchaImage.getHeight() * zoom / 100, Image.SCALE_DEFAULT);
@@ -213,8 +207,8 @@ public class ChooseC extends BasicWindow {
             }
         };
     }
-    private void paintImage()
-    {
+
+    private void paintImage() {
         for (int x = 0; x < captchaImage.getWidth(); x++) {
             for (int y = 0; y < captchaImage.getHeight(); y++) {
                 captchaImage.grid[x][y] = captcha.getPixelValue(x, y);
@@ -245,6 +239,7 @@ public class ChooseC extends BasicWindow {
 
         }
     }
+
     private void createIc() {
         captchaImage = new Captcha(captcha.getWidth(), captcha.getHeight());
 
@@ -340,9 +335,9 @@ public class ChooseC extends BasicWindow {
     private String getDigit(int i) {
         String ret = "";
         if (i < 10)
-            ret = i+"&nbsp;&nbsp;&nbsp;&nbsp;";
+            ret = i + "&nbsp;&nbsp;&nbsp;&nbsp;";
         else if (i < 100)
-            ret = i+"&nbsp;&nbsp;";
+            ret = i + "&nbsp;&nbsp;";
         else
             ret += i;
         return ret;

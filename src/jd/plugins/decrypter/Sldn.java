@@ -112,7 +112,7 @@ public class Sldn extends PluginForDecrypt {
                         progress.increase(1);
 
                     }
-                    progress.finalize();
+                    progress.doFinalize();
                 }
             }
         } else {

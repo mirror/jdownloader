@@ -141,7 +141,7 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
                     }
                     progress.increase(1);
                 }
-                progress.finalize();
+                progress.doFinalize();
             }
             logger.finer("load plugin: " + getClassName());
 

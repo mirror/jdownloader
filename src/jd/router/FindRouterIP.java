@@ -36,12 +36,12 @@ public class FindRouterIP {
         progress.setStatus(100);
         if (ia != null) {
             progress.setStatusText(JDL.LF("gui.config.routeripfinder.ready", "Hostname found: %s", ia.getHostAddress()));
-            progress.finalize(3000);
+            progress.doFinalize(3000);
             return ia.getHostAddress();
 
         } else {
             progress.setStatusText(JDL.L("gui.config.routeripfinder.notfound", "Can't find your routers hostname"));
-            progress.finalize(3000);
+            progress.doFinalize(3000);
             progress.setColor(Color.RED);
 
             return null;

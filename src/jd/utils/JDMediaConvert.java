@@ -60,7 +60,7 @@ public class JDMediaConvert {
                 if (!new File(downloadlink.getFileOutput().replaceAll(TempExt, ".avi")).delete()) {
                     new File(downloadlink.getFileOutput().replaceAll(TempExt, ".avi")).deleteOnExit();
                 }
-                progress.finalize();
+                progress.doFinalize();
                 return true;
             case AUDIOMP3_AND_VIDEOFLV:
                 logger.info("Convert FLV to mp3 (keep FLV)...");
@@ -72,18 +72,18 @@ public class JDMediaConvert {
                 }
                 // Rename tmp to flv
                 new File(downloadlink.getFileOutput()).renameTo(new File(downloadlink.getFileOutput().replaceAll(".tmp", ConversionMode.VIDEOFLV.GetExtFirst())));
-                progress.finalize();
+                progress.doFinalize();
                 return true;
             default:
                 logger.warning("Don't know how to convert " + InType.GetText() + " to " + OutType.GetText());
                 downloadlink.getLinkStatus().setErrorMessage(JDL.L("convert.progress.unknownintype", "Unbekanntes Format"));
-                progress.finalize();
+                progress.doFinalize();
                 return false;
             }
         default:
             logger.warning("Don't know how to convert " + InType.GetText() + " to " + OutType.GetText());
             downloadlink.getLinkStatus().setErrorMessage(JDL.L("convert.progress.unknownintype", "Unbekanntes Format"));
-            progress.finalize();
+            progress.doFinalize();
             return false;
         }
     }

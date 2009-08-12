@@ -422,12 +422,12 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
 
             }
             progress.setStatusText(JDL.L(LOCALE_PREFIX + "svn.updating.ready", "Updating SVN: Complete"));
-            progress.finalize(2 * 1000l);
+            progress.doFinalize(2 * 1000l);
         } catch (SVNException e) {
             JDLogger.exception(e);
             progress.setColor(Color.RED);
             progress.setStatusText(JDL.L(LOCALE_PREFIX + "svn.updating.error", "Updating SVN: Error!"));
-            progress.finalize(5 * 1000l);
+            progress.doFinalize(5 * 1000l);
         }
 
     
@@ -649,7 +649,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
             e.printStackTrace();
         }
         progress.setStatusText(JDL.L(LOCALE_PREFIX + "analyzingSource.ready", "Analyzing Source Folder: Complete"));
-        progress.finalize(2 * 1000l);
+        progress.doFinalize(2 * 1000l);
     }
 
     private boolean commit(File file, String string, Subversion svn) {

@@ -317,7 +317,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
             EventQueue.invokeLater(new Runnable() {
                 public void run() {
                     pc.setStatusText(pc.getStatusText() + ": " + JDL.L("gui.linkgrabber.aborted", "Aborted"));
-                    pc.finalize(5000l);
+                    pc.doFinalize(5000l);
                 }
             });
             checkJobbers.stop();
@@ -372,7 +372,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                     }
                 }
                 lc.getBroadcaster().removeListener(INSTANCE);
-                pc.finalize();
+                pc.doFinalize();
                 pc.getBroadcaster().removeListener(INSTANCE);
                 LGINSTANCE.postprocessing();
                 gatherer_running = false;

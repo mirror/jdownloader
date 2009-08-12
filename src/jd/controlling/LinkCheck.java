@@ -174,7 +174,7 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
                         return;
                     }
                 }
-                pc.finalize();
+                pc.doFinalize();
                 pc.getBroadcaster().removeListener(LinkCheck.getLinkChecker());
                 getBroadcaster().fireEvent(new LinkCheckEvent(this, LinkCheckEvent.STOP));
                 checkRunning = false;
@@ -217,7 +217,7 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
             EventQueue.invokeLater(new Runnable() {
                 public void run() {
                     pc.setStatusText(pc.getStatusText() + ": Aborted");
-                    pc.finalize(5000l);
+                    pc.doFinalize(5000l);
                 }
             });
             checkJobbers.stop();

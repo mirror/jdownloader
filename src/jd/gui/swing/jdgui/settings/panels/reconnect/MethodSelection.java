@@ -158,7 +158,7 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
 
                     timer.interrupt();
                     progress.setStatus(100);
-                    progress.finalize(5000);
+                    progress.doFinalize(5000);
 
                 }
             }.start();

@@ -84,7 +84,7 @@ public class HTTPLiveHeader extends ReconnectMethod {
         String ip = configuration.getStringProperty(Configuration.PARAM_HTTPSEND_IP);
 
         if (script == null || script.length() == 0) {
-            progress.finalize();
+            progress.doFinalize();
             logger.severe("No LiveHeader Script found");
             return false;
         }
@@ -114,13 +114,13 @@ public class HTTPLiveHeader extends ReconnectMethod {
         try {
             xmlScript = JDUtilities.parseXmlString(script, false);
             if (xmlScript == null) {
-                progress.finalize();
+                progress.doFinalize();
                 logger.severe("Error while parsing the xml string: " + script);
                 return false;
             }
             Node root = xmlScript.getChildNodes().item(0);
             if (root == null || !root.getNodeName().equalsIgnoreCase("HSRC")) {
-                progress.finalize();
+                progress.doFinalize();
                 logger.severe("Root Node must be [[[HSRC]]]*[/HSRC]");
                 return false;
             }
@@ -135,7 +135,7 @@ public class HTTPLiveHeader extends ReconnectMethod {
                 if (current.getNodeType() == 3) continue;
 
                 if (!current.getNodeName().equalsIgnoreCase("STEP")) {
-                    progress.finalize();
+                    progress.doFinalize();
                     logger.severe("Root Node should only contain [[[STEP]]]*[[[/STEP]]] ChildTag: " + current.getNodeName());
                     return false;
                 }
@@ -216,7 +216,7 @@ public class HTTPLiveHeader extends ReconnectMethod {
                         boolean ishttps = false;
                         boolean israw = false;
                         if (toDo.getChildNodes().getLength() != 1) {
-                            progress.finalize();
+                            progress.doFinalize();
                             logger.severe("A REQUEST Tag is not allowed to have childTags.");
                             return false;
                         }
@@ -248,14 +248,14 @@ public class HTTPLiveHeader extends ReconnectMethod {
                     if (toDo.getNodeName().equalsIgnoreCase("RESPONSE")) {
                         logger.finer("get Response");
                         if (toDo.getChildNodes().getLength() != 1) {
-                            progress.finalize();
+                            progress.doFinalize();
                             logger.severe("A RESPONSE Tag is not allowed to have childTags.");
                             return false;
                         }
 
                         NamedNodeMap attributes = toDo.getAttributes();
                         if (attributes.getNamedItem("keys") == null) {
-                            progress.finalize();
+                            progress.doFinalize();
                             logger.severe("A RESPONSE Node needs a Keys Attribute: " + toDo);
                             return false;
                         }
@@ -279,7 +279,7 @@ public class HTTPLiveHeader extends ReconnectMethod {
             }
         } catch (Exception e) {
             JDLogger.exception(e);
-            progress.finalize();
+            progress.doFinalize();
             logger.severe(e.getCause() + " : " + e.getMessage());
             return false;
         }

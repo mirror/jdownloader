@@ -176,7 +176,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
             }
         }
         DownloadController.getInstance().fireDownloadLinkUpdate(al);
-        progress.finalize();
+        progress.doFinalize();
         logger.finer("Stopped Downloads");
         clearDownloadListStatus();
         aborting = false;

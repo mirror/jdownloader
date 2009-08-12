@@ -169,7 +169,7 @@ public class LnkbsBz extends PluginForDecrypt {
                         logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
                     }
                 }
-                progress.finalize();
+                progress.doFinalize();
                 return decryptedLinks;
             } catch (DecrypterException e2) {
                 logger.severe("LinkBaseBiz: Captcha Error");

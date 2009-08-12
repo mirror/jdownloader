@@ -1316,7 +1316,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         // wrapper.getDownloadLink().getLinkStatus().setStatusText(null);
         wrapper.getDownloadLink().setPluginProgress(null);
         if (wrapper.getProgressController() != null) {
-            wrapper.getProgressController().finalize(8000);
+            wrapper.getProgressController().doFinalize(8000);
         }
 
     }

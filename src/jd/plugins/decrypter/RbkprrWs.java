@@ -52,9 +52,8 @@ import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
-@DecrypterPlugin(revision = "$Revision: 7195 $", interfaceVersion = 2, names = { "raubkopierer.ws" }, urls = { "http://[\\w\\.]*?raubkopierer\\.(ws|cc)/\\w+/[\\w/]*?\\d+/.+"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision: 7195 $", interfaceVersion = 2, names = { "raubkopierer.ws" }, urls = { "http://[\\w\\.]*?raubkopierer\\.(ws|cc)/\\w+/[\\w/]*?\\d+/.+" }, flags = { 0 })
 public class RbkprrWs extends PluginForDecrypt {
 
     private ProgressController progress;
@@ -97,7 +96,7 @@ public class RbkprrWs extends PluginForDecrypt {
             logger.warning("Perhaps wrong URL or the download is not available anymore.");
             progress.setStatusText("No downloads found on " + parameter);
             progress.setColor(Color.RED);
-            progress.finalize(10000l);
+            progress.doFinalize(10000l);
             return new ArrayList<DownloadLink>();
         }
         /* Get package name + password */
@@ -127,7 +126,7 @@ public class RbkprrWs extends PluginForDecrypt {
                 File captchaFile = this.getLocalCaptchaFile();
                 Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaURL));
                 Raubkopierer.prepareCaptcha(captchaFile);
-                String code = getCaptchaCode("rbkprrws",captchaFile, param);
+                String code = getCaptchaCode("rbkprrws", captchaFile, param);
                 br.postPage(parameter, "captcha=" + code + "&" + mirrors.get(i).getKey() + "=");
                 if (!br.containsHTML("Fehler: Der Sicherheits-Code")) {
                     break;
@@ -202,7 +201,7 @@ public class RbkprrWs extends PluginForDecrypt {
                 decryptedLinks.add(sampleDLink);
             }
         } else {
-            if (fpName.isEmpty() || fpName == null) fpName = "raubkopierer.ws";
+            if (fpName == null || fpName.isEmpty()) fpName = "raubkopierer.ws";
             fpExtra.setName(fpName + " - Extras");
             if (nfoDLink != null) {
                 nfoDLink.setFilePackage(fpExtra);
@@ -462,6 +461,5 @@ public class RbkprrWs extends PluginForDecrypt {
     }
 
     // @Override
-    
 
 }
