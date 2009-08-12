@@ -229,7 +229,6 @@ public class LookAndFeelController {
     private static void install() {
         
         
-        UIManager.installLookAndFeel("JayDown", "jd.gui.swing.laf.synthetica.SyntheticaJayDownLookAndFeel");
         for (File file : JDUtilities.getJDClassLoader().getLafs()) {
             try {
                 JarInputStream jarFile = new JarInputStream(new FileInputStream(file));
@@ -250,7 +249,7 @@ public class LookAndFeelController {
                             String name = clazz.getSimpleName().replace("LookAndFeel", "");
                             names.add(name);
                             classes.add(cl);
-                            UIManager.installLookAndFeel(name, cl);
+                         
 
                         }
                     } catch (Throwable t) {
