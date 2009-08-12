@@ -10,23 +10,24 @@ import jd.utils.JDUtilities;
 
 public class CreateHoster {
 
-    public static void create(final EasyFile ef, String user, int lettersize) {
+    public static boolean create(final EasyFile ef, String user, int lettersize) {
         String path = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath();
         File folder2 = new File(path + "/captchas/" + ef.toString());
         if (!folder2.exists() || folder2.list().length < 1) {
             if (JOptionPane.showConfirmDialog(null, "You need Captchas do you wanna load Captchas?", "Load Captchas", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_NO_OPTION) {
 
-                new GuiRunnable<Boolean>() {
+                if (!new GuiRunnable<Boolean>() {
                     public Boolean runSave() {
                         return LoadCaptchas.load(ef.toString());
                     }
-                }.getReturnValue();
+                }.getReturnValue()) return false;
             }
-            return;
         }
-        EasyFile ef2 = new EasyFile(new File(ef.file.getParentFile(), ef.toString() + System.currentTimeMillis()));
-        JOptionPane.showConfirmDialog(null, "Methode dir " + ef + " will be moved to " + ef2, "Old Methode will be moved", JOptionPane.WARNING_MESSAGE);
-        new File(ef.file.getAbsolutePath()).renameTo(ef2.file);
+        if (ef.file.exists()) {
+            EasyFile ef2 = new EasyFile(new File(ef.file.getParentFile(), ef.toString() + System.currentTimeMillis()));
+            JOptionPane.showConfirmDialog(null, "Methode dir " + ef + " will be moved to " + ef2, "Old Methode will be moved", JOptionPane.CLOSED_OPTION, JOptionPane.WARNING_MESSAGE);
+            new File(ef.file.getAbsolutePath()).renameTo(ef2.file);
+        }
         String type = "jpg";
         String[] files = folder2.list();
         for (String string : files) {
@@ -48,7 +49,7 @@ public class CreateHoster {
         if (out.exists()) out.renameTo(new File(ef.file, "script_bak" + System.currentTimeMillis() + ".jas"));
         JDIO.copyFile(in, out);
         JDIO.writeLocalFile(new File(ef.file, "jacinfo.xml"), jacInfoXml, false);
-
+        return true;
     }
 
 }

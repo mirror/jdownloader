@@ -530,7 +530,7 @@ public class ChooseC extends BasicWindow {
 
     public static void main(String[] args) {
         String path = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath();
-        String hoster = "crypt-me.com";
+        String hoster = "canna.to";
         File folder = new File(path + "/captchas/" + hoster);
         getColors(folder, hoster, null);
     }
