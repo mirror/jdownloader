@@ -267,7 +267,7 @@ public class WebUpdate {
                     File[] updates = JDUtilities.getResourceFile("update").listFiles();
                     if (updates != null && updates.length > 0) {
 
-                        int ret = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, JDL.L("jd.update.Main.error.title.old", "Updates found!"), JDL.L("jd.update.Main.error.message.old", "There are are uninstalled updates. Install them now?"), null, null, null);
+                        int ret = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, JDL.L("jd.update.Main.error.title.old", "Updates found!"), JDL.L("jd.update.Main.error.message.old", "There are uninstalled updates. Install them now?"), null, null, null);
                         if (JDFlags.hasAllFlags(ret, UserIO.RETURN_OK)) {
                             JDController.releaseDelayExit(id);
                             JDUtilities.restartJDandWait();

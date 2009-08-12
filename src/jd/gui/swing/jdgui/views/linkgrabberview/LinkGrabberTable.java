@@ -114,8 +114,8 @@ public class LinkGrabberTable extends JTable implements MouseListener, MouseMoti
 
         getTableHeader().setPreferredSize(new Dimension(getColumnModel().getTotalColumnWidth(), 19));
         setTransferHandler(new LinkGrabberTableTransferHandler(this));
-      //This method is 1.6 only
-        if(JDUtilities.getJavaVersion()>=1.6)this.setFillsViewportHeight(true);
+        // This method is 1.6 only
+        if (JDUtilities.getJavaVersion() >= 1.6) this.setFillsViewportHeight(true);
         prioDescs = new String[] { JDL.L("gui.treetable.tooltip.priority-1", "Low Priority"), JDL.L("gui.treetable.tooltip.priority0", "No Priority"), JDL.L("gui.treetable.tooltip.priority1", "High Priority"), JDL.L("gui.treetable.tooltip.priority2", "Higher Priority"), JDL.L("gui.treetable.tooltip.priority3", "Highest Priority") };
     }
 
@@ -258,12 +258,9 @@ public class LinkGrabberTable extends JTable implements MouseListener, MouseMoti
         int row = rowAtPoint(e.getPoint());
         if (row == -1) return;
         int column = getRealColumnAtPoint(e.getX());
-        System.out.println("TOGGLE1 " + column + " == " + e.getX());
         if (column == 0 && e.getButton() == MouseEvent.BUTTON1 && e.getX() < 20 && e.getClickCount() == 1) {
             Object element = this.getModel().getValueAt(row, 0);
-            System.out.println("TOGGLE2");
             if (element != null && element instanceof LinkGrabberFilePackage) {
-                System.out.println("TOGGLE3");
                 toggleFilePackageExpand((LinkGrabberFilePackage) element);
             }
         } else if (e.getButton() == MouseEvent.BUTTON1 && e.getClickCount() == 2) {

@@ -58,7 +58,7 @@ public class AboutDialog extends AbstractDialog {
     public JComponent contentInit() {
         JPanel cp = new JPanel(new MigLayout("ins 10 10 0 10, wrap 2"));
 
-        cp.add(new JLabel(JDImage.getImageIcon("logo/jd_logo_128_128")), "spany 3, gapright 10");
+        cp.add(new JLabel(JDImage.getImageIcon("logo/jd_logo_128_128")), "spany 4, gapright 10");
 
         JLabel lbl;
         cp.add(lbl = new JLabel(JDL.L(JDL_PREFIX + "name", "JDownloader")), "gaptop 15");
@@ -67,6 +67,8 @@ public class AboutDialog extends AbstractDialog {
         cp.add(new JLabel(JDL.LF(JDL_PREFIX + "version", "Version %s", JDUtilities.getRevision())));
 
         cp.add(new JLabel("© AppWork UG (haftungsbeschränkt) 2007-2009"), "gaptop 5");
+
+        cp.add(new JLabel("Synthetica License Registration Number (#289416475)"), "gaptop 15");
 
         JButton btn;
         cp.add(btn = Factory.createButton(JDL.L(JDL_PREFIX + "license", "Show license"), JDTheme.II("gui.images.premium", 16, 16), new ActionListener() {
