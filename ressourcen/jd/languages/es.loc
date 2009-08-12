@@ -508,10 +508,10 @@ gui.menu.action.remove_dupes.mnem = -
 gui.menu.action.remove_dupes.name = Duplicados
 gui.menu.action.remove_failed.accel = -
 gui.menu.action.remove_failed.mnem = -
-gui.menu.action.remove_failed.name = Remover fallados
+gui.menu.action.remove_failed.name = Descargas falladas
 gui.menu.action.remove_offline.accel = -
 gui.menu.action.remove_offline.mnem = -
-gui.menu.action.remove_offline.name = Eliminar vínculos fuera de linea
+gui.menu.action.remove_offline.name = Vínculos fuera de linea
 gui.menu.action.restart.accel = -
 gui.menu.action.restart.mnem = -
 gui.menu.action.restart.name = Reiniciar
@@ -908,7 +908,7 @@ jd.update.webupdater.updatefiles.success = Correcto
 jd.utils.webupdate.ballon.message.updateinprogress = Ya hay una actualización en proceso
 jd.utils.webupdate.ballon.title = Actualizar
 jd.utils.webupdate.message = <face="Verdana, Arial, Helvetica, sans-serif">%s actualizaciones disponibles. Instalar ahora?</font>
-jd.utils.webupdate.message2 = <font size="4" face="Verdana, Arial, Helvetica, sans-serif">%s actualzaciones disponibles. Instalar ahora?</font>
+jd.utils.webupdate.message2 = <font size="4" face="Verdana, Arial, Helvetica, sans-serif">%s actualizaciones disponibles. Instalar ahora?</font>
 jd.utils.webupdate.progress.autopluginupdate = Actualizando complementos...
 jd.utils.webupdate.progresscontroller.text = Actualización ejecutándose
 linkgrabber.onlinestatus.offline = Fuera de línea
@@ -1155,7 +1155,7 @@ plugins.optional.jdlighttray.startminimized = Ejecutar minimizado
 plugins.optional.jdlighttray.tooltip = Mostrar resumen
 plugins.optional.jdunrar.askforpassword = ¿Contraseña para %s?
 plugins.optional.jdunrar.config.advanced = Ajustes Avanzados
-plugins.optional.jdunrar.config.passwordlist2 = Lista de todas las contraseñas. Una linea por contraseña. Contraseñas disponibles: %s
+plugins.optional.jdunrar.config.passwordlist2 = Lista de todas las contraseñas para los archivos descargados, ingresar una contraseña por línea: %s
 plugins.optional.jdunrar.crcerrorin = Extracción: fallada (CRC en %s)
 plugins.optional.jdunrar.error.extrfailedcrc = Extracción: fallada (CRC en archivo desconocido)
 plugins.optional.jdunrar.filefilter = RAR, volúmenes de inicio
