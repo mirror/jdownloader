@@ -6,7 +6,6 @@ import javax.swing.JMenuBar;
 
 import jd.gui.swing.jdgui.borders.JDBorderFactory;
 import jd.gui.swing.jdgui.settings.ConfigPanel;
-import jd.utils.locale.JDL;
 
 public class ConfigPanelView extends ClosableView {
 

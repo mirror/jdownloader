@@ -31,6 +31,7 @@ import javax.swing.JPanel;
 import javax.swing.UIManager;
 
 import jd.gui.swing.jdgui.InfoPanelHandler;
+import jd.gui.swing.jdgui.borders.JDBorderFactory;
 import jd.gui.swing.jdgui.interfaces.DroppedPanel;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.utils.locale.JDL;
@@ -68,16 +69,16 @@ public class JDCollapser extends DroppedPanel {
         menutitle.setContentAreaFilled(false);
         menutitle.setBorderPainted(false);
         menubar.add(Box.createHorizontalGlue());
-
+        menubar.setBorder(JDBorderFactory.createInsideShadowBorder(0, 0, 1, 0));
         CloseAction closeAction = new CloseAction();
         
         Box panel = new Box(1);
         // JButton bt;
 
         panel.add(closeButton = new JButton(closeAction));
-
+        closeButton.setBorderPainted(false);
         closeButton.setPreferredSize(new Dimension(closeAction.getWidth(), closeAction.getHeight()));
-        // closeButton.setContentAreaFilled(false);
+         closeButton.setContentAreaFilled(false);
         closeButton.setToolTipText(JDL.LF("jd.gui.swing.components.JDCollapser.closetooltip", "Close %s", ""));
         panel.setOpaque(false);
         panel.setBorder(BorderFactory.createEmptyBorder(0, 0, 1, 5));

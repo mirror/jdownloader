@@ -16,6 +16,7 @@
 
 package jd.gui.swing.jdgui;
 
+import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Image;
@@ -509,7 +510,11 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         if (container.getTitle() != null) {
             name = container.getTitle();
         }
-        JDCollapser.getInstance().setContentPanel(AddonConfig.getInstance(container, name), JDL.LF("jd.gui.swing.jdgui.JDGui.showConfigPanel.title", "Setting for %s", name), container.getGroup() == null ? null : container.getGroup().getIcon());
+        if(container.getGroup()!=null&&container.getGroup().getName()!=null)name=container.getGroup().getName();
+        AddonConfig p = AddonConfig.getInstance(container, name);
+        javax.swing.JTabbedPane tabbed = (javax.swing.JTabbedPane)p.getComponent(0);
+       
+        JDCollapser.getInstance().setContentPanel((SwitchPanel)tabbed.getComponent(0), JDL.LF("jd.gui.swing.jdgui.JDGui.showConfigPanel.title", "Setting for %s", name), container.getGroup() == null ? null : container.getGroup().getIcon());
 
         // this.mainTabbedPane.getSelectedView().setContent(
         // JDCollapser.getInstance());

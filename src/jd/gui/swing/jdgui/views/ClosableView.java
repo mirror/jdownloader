@@ -39,8 +39,10 @@ abstract public class ClosableView extends View {
         JButton bt;
 
         panel.add(bt = new JButton(closeAction));
-        bt.setPreferredSize(new Dimension(20, 14));
+//        bt.setPreferredSize(new Dimension(20, 14));
+        bt.setPreferredSize(new Dimension(UIManager.getIcon("InternalFrame.closeIcon").getIconWidth(),UIManager.getIcon("InternalFrame.closeIcon").getIconHeight()));
         bt.setContentAreaFilled(false);
+        bt.setBorderPainted(false);
         bt.setToolTipText(JDL.LF("jd.gui.swing.jdgui.views.ClosableView.closebtn.tooltip", "Close %s", this.getTitle()));
         panel.setOpaque(false);
         panel.setBorder(BorderFactory.createEmptyBorder(0, 0, 1, 0));
