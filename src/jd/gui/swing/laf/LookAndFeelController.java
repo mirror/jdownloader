@@ -37,6 +37,7 @@ import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.JDGuiConstants;
+import jd.gui.swing.laf.synthetica.SyntheticaJayDownLookAndFeel;
 import jd.nutils.OSDetector;
 import jd.parser.Regex;
 import jd.utils.JDUtilities;
@@ -156,35 +157,35 @@ public class LookAndFeelController {
         // return sup[0];
 
     }
-
-    /**
-     * INstalls all Substance LookAndFeels
-     */
-    public static void installSubstance() {
-
-        String pkg = "org/jvnet/substance/skin/";
-        URL res = JDUtilities.getJDClassLoader().getResource(pkg);
-        String url = new Regex(res, "(.*)\\!.*").getMatch(0);
-        url = url.substring(4);
-        try {
-            File file = new File(new URL(url).toURI());
-
-            JarInputStream jarFile = new JarInputStream(new FileInputStream(file));
-            JarEntry e;
-            while ((e = jarFile.getNextJarEntry()) != null) {
-                if (e.getName().startsWith(pkg)) {
-                    String laf = new Regex(e.getName(), "org/jvnet/substance/skin/(.*?)LookAndFeel\\.class").getMatch(0);
-                    if (laf != null) {
-                        UIManager.installLookAndFeel(laf, "org.jvnet.substance.skin." + laf + "LookAndFeel");
-                    }
-                }
-
-            }
-
-        } catch (Exception e) {
-            JDLogger.exception(e);
-        }
-    }
+//
+//    /**
+//     * INstalls all Substance LookAndFeels
+//     */
+//    public static void installSubstance() {
+//
+//        String pkg = "org/jvnet/substance/skin/";
+//        URL res = JDUtilities.getJDClassLoader().getResource(pkg);
+//        String url = new Regex(res, "(.*)\\!.*").getMatch(0);
+//        url = url.substring(4);
+//        try {
+//            File file = new File(new URL(url).toURI());
+//
+//            JarInputStream jarFile = new JarInputStream(new FileInputStream(file));
+//            JarEntry e;
+//            while ((e = jarFile.getNextJarEntry()) != null) {
+//                if (e.getName().startsWith(pkg)) {
+//                    String laf = new Regex(e.getName(), "org/jvnet/substance/skin/(.*?)LookAndFeel\\.class").getMatch(0);
+//                    if (laf != null) {
+//                        UIManager.installLookAndFeel(laf, "org.jvnet.substance.skin." + laf + "LookAndFeel");
+//                    }
+//                }
+//
+//            }
+//
+//        } catch (Exception e) {
+//            JDLogger.exception(e);
+//        }
+//    }
 
     /**
      * setups the correct Look and Feel
@@ -229,6 +230,9 @@ public class LookAndFeelController {
      * INstalls all Look and feels founmd in libs/laf/
      */
     private static void install() {
+        
+        
+        UIManager.installLookAndFeel("JayDown", "jd.gui.swing.laf.synthetica.SyntheticaJayDownLookAndFeel");
         for (File file : JDUtilities.getJDClassLoader().getLafs()) {
             try {
                 JarInputStream jarFile = new JarInputStream(new FileInputStream(file));

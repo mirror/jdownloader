@@ -247,7 +247,7 @@ public class FileUpdate {
                 
                 
                 String downloadedHash = JDHash.getMD5(tmpFile);
-                if (downloadedHash.equalsIgnoreCase(hash)) {
+                if (downloadedHash!=null&&downloadedHash.equalsIgnoreCase(hash)) {
                     //hash of fresh downloaded file is ok
                     broadcaster.fireEvent(new MessageEvent(this, SUCCESS, "Hash OK"));
                     //move to update folder
