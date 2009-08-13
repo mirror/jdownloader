@@ -18,6 +18,8 @@ package jd;
 
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 
 import jd.controlling.JDLogger;
 import jd.nutils.Formatter;
@@ -31,6 +33,13 @@ public class OptionalPluginWrapper extends PluginWrapper {
     private static final ArrayList<OptionalPluginWrapper> OPTIONAL_WRAPPER = new ArrayList<OptionalPluginWrapper>();
 
     public static ArrayList<OptionalPluginWrapper> getOptionalWrapper() {
+        Collections.sort(OPTIONAL_WRAPPER, new Comparator<OptionalPluginWrapper>() {
+
+            public int compare(OptionalPluginWrapper o1, OptionalPluginWrapper o2) {
+            
+                return o1.getHost().compareToIgnoreCase(o2.getHost());
+            }
+        });
         return OPTIONAL_WRAPPER;
     }
 
@@ -126,8 +135,8 @@ public class OptionalPluginWrapper extends PluginWrapper {
         return null;
 
     }
-    
-    public String getID(){
+
+    public String getID() {
         return id;
     }
 
