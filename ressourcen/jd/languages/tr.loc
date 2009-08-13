@@ -102,6 +102,7 @@ easycaptcha.color = Renk
 easycaptcha.colorcrainer.title = Renk eğiticisi
 easycaptcha.foreground = Ön plan
 easycaptcha.image = İmge:
+easycaptcha.loadcaptchas.clickoncaptcha = Captchaya tıkla
 easycaptcha.loadcaptchas.link = Link
 easycaptcha.loadcaptchas.title = Captchaları yükle
 easycaptcha.orginal = Orjinal:
