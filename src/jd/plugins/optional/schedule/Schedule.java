@@ -25,6 +25,8 @@ import java.util.Date;
 import jd.PluginWrapper;
 import jd.config.MenuAction;
 import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
+import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
 import jd.plugins.optional.schedule.modules.DisablePremium;
@@ -54,9 +56,9 @@ public class Schedule extends PluginOptional {
     private SimpleDateFormat date;
 
     private SchedulerView view;
-    
+
     private Schedulercheck sc;
-    
+
     private boolean running = false;
 
     private MenuAction activateAction;
@@ -117,18 +119,18 @@ public class Schedule extends PluginOptional {
         actions.remove(row);
 
         saveActions();
-        
+
         stopCheck();
     }
 
     public void addAction(Actions act) {
         actions.add(act);
-        
+
         saveActions();
-        
+
         startCheck();
     }
-    
+
     private void saveActions() {
         this.getPluginConfig().setProperty("Scheduler_Actions", actions);
         this.getPluginConfig().save();
@@ -145,6 +147,19 @@ public class Schedule extends PluginOptional {
             if (((MenuAction) e.getSource()).isSelected()) {
                 if (view == null) {
                     view = new SchedulerView();
+                    view.getBroadcaster().addListener(new SwitchPanelListener() {
+
+                        @Override
+                        public void onPanelEvent(SwitchPanelEvent event) {
+                            switch (event.getID()) {
+                            case SwitchPanelEvent.ON_REMOVE:
+                                activateAction.setSelected(false);
+                                break;
+                            }
+
+                        }
+
+                    });
                     view.setContent(new MainGui(getPluginConfig()));
                 }
                 JDGui.getInstance().setContent(view);
@@ -167,43 +182,38 @@ public class Schedule extends PluginOptional {
 
     public boolean initAddon() {
         logger.info("Schedule OK");
-        this.activateAction = new MenuAction(MenuAction.TOGGLE,getHost(), 0).setActionListener(this);
+        this.activateAction = new MenuAction(MenuAction.TOGGLE, getHost(), 0).setActionListener(this);
         activateAction.setSelected(false);
         return true;
     }
 
     public void onExit() {
     }
-    
+
     public void startCheck() {
-        if(sc == null)
-            sc = new Schedulercheck();
-        
-        if(sc.isAlive() || !shouldStart())
-            return;
-        
+        if (sc == null) sc = new Schedulercheck();
+
+        if (sc.isAlive() || !shouldStart()) return;
+
         logger.info("Starting scheduler");
         running = true;
         sc.start();
     }
-    
+
     public void stopCheck() {
-        if(sc == null || !sc.isAlive() || shouldStart())
-            return;
-        
+        if (sc == null || !sc.isAlive() || shouldStart()) return;
+
         logger.info("Stoping scheduler");
         running = false;
     }
-    
+
     private boolean shouldStart() {
-        if(actions.size() == 0)
-            return false;
-        
-        for(Actions a : actions) {
-            if(a.isEnabled())
-                return true;
+        if (actions.size() == 0) return false;
+
+        for (Actions a : actions) {
+            if (a.isEnabled()) return true;
         }
-        
+
         return false;
     }
 
@@ -221,9 +231,9 @@ public class Schedule extends PluginOptional {
                 String todaydate = date.format(today);
                 String todaytime = time.format(today);
 
-                for(Actions a : actions) {
-                    if(a.isEnabled() && todaydate.equals(date.format(a.getDate())) && todaytime.equals(time.format(a.getDate()))) {
-                        for(Executions e : a.getExecutions()) {
+                for (Actions a : actions) {
+                    if (a.isEnabled() && todaydate.equals(date.format(a.getDate())) && todaytime.equals(time.format(a.getDate()))) {
+                        for (Executions e : a.getExecutions()) {
                             e.exceute();
                         }
 
@@ -239,7 +249,8 @@ public class Schedule extends PluginOptional {
 
                 try {
                     Thread.sleep(60000);
-                } catch (InterruptedException e) {}
+                } catch (InterruptedException e) {
+                }
             }
         };
     }

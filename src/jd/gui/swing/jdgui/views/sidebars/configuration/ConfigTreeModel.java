@@ -263,17 +263,17 @@ public class ConfigTreeModel implements TreeModel {
         }
 
         public int indexOf(Object child) {
-          
+
             return entries.indexOf(child);
         }
 
         public int size() {
-           
+
             return entries.size();
         }
 
         public Object get(int index) {
-          
+
             return entries.get(index);
         }
 

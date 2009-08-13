@@ -58,6 +58,8 @@ import jd.gui.swing.SwingGui;
 import jd.gui.swing.components.JDFileChooser;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
+import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
+import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
 import jd.gui.swing.jdgui.views.ClosableView;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.io.JDFileFilter;
@@ -93,12 +95,12 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
     @SuppressWarnings("unchecked")
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() instanceof MenuAction && ((MenuAction) e.getSource()).getActionID() == 0) {
-             if (action.isSelected()) {
-             initGUI();
-             SwingGui.getInstance().setContent(tabbedPanel);
-             } else {
-             tabbedPanel.close();
-             }
+            if (action.isSelected()) {
+                initGUI();
+                SwingGui.getInstance().setContent(tabbedPanel);
+            } else {
+                tabbedPanel.close();
+            }
         } else if (e.getSource() == menImportHTTPLive) {
             importFF();
         } else if (e.getSource() == menHelpWiki) {
@@ -284,7 +286,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
 
     public ArrayList<MenuAction> createMenuitems() {
         ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
-        if (action == null){
+        if (action == null) {
             action = (MenuAction) new MenuAction(MenuAction.TOGGLE, getHost(), 0).setActionListener(this);
             action.setSelected(false);
         }
@@ -309,12 +311,12 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
             }
 
             @Override
-            public void onHide() {
-            }
-
-            @Override
             public Icon getIcon() {
                 return null;
+            }
+
+            public void onHide() {
+
             }
 
             @Override
@@ -382,6 +384,20 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
             }
 
         };
+
+        tabbedPanel.getBroadcaster().addListener(new SwitchPanelListener() {
+
+            @Override
+            public void onPanelEvent(SwitchPanelEvent event) {
+                switch (event.getID()) {
+                case SwitchPanelEvent.ON_REMOVE:
+                    action.setSelected(false);
+                    break;
+                }
+
+            }
+
+        });
         tabbedPanel.init();
         textArea = new JTextArea();
         textArea.setText("[[[HSRC]]]\r\n\r\n\r\n[[[/HSRC]]]");
