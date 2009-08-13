@@ -231,7 +231,13 @@ public class LoadCaptchas {
                                 }
                                 File f2 = new File(dir + System.currentTimeMillis() + ft);
                                 br.getDownload(f2, link);
-                                pd.setValue(k);
+                                final int c = k;
+                                new GuiRunnable<Object>() {
+                                    public Object runSave() {
+                                        pd.setValue(c);
+                                        return null;
+                                    }
+                                }.waitForEDT();
                             } catch (Exception ev) {
                                 // TODO Auto-generated catch block
                                 ev.printStackTrace();
