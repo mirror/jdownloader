@@ -74,17 +74,17 @@ public class General extends ConfigPanel {
 
         container.setGroup(new ConfigGroup(JDL.L("gui.config.download.download.tab", "Downloadsteuerung"), JDTheme.II("gui.images.downloadorder", 32, 32)));
 
-        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, JDL.L("gui.config.download.simultan_downloads", "Maximale gleichzeitige Downloads"), 1, 20));
-        ce.setDefaultValue(2);
-        ce.setStep(1);
+//        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, JDL.L("gui.config.download.simultan_downloads", "Maximale gleichzeitige Downloads"), 1, 20));
+//        ce.setDefaultValue(2);
+//        ce.setStep(1);
 
         container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN_PER_HOST, JDL.L("gui.config.download.simultan_downloads_per_host", "Maximum of simultaneous downloads per host (0 = no limit)"), 0, 20));
         ce.setDefaultValue(0);
         ce.setStep(1);
 
-        container.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, JDL.L("gui.config.download.chunks", "Anzahl der Verbindungen/Datei(Chunkload)"), 1, 20));
-        conditionEntry.setDefaultValue(2);
-        conditionEntry.setStep(1);
+//        container.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, JDL.L("gui.config.download.chunks", "Anzahl der Verbindungen/Datei(Chunkload)"), 1, 20));
+//        conditionEntry.setDefaultValue(2);
+//        conditionEntry.setStep(1);
 
         // container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER,
         // config, PluginForHost.PARAM_MAX_RETRIES,
