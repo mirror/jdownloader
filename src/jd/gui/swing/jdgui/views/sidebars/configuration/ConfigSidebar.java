@@ -1,5 +1,6 @@
 package jd.gui.swing.jdgui.views.sidebars.configuration;
 
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 
 import javax.swing.JTree;
@@ -13,6 +14,7 @@ import jd.gui.swing.jdgui.interfaces.SideBarPanel;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.ConfigurationView;
 import jd.gui.swing.jdgui.views.sidebars.configuration.ConfigTreeModel.TreeEntry;
+import jd.gui.swing.laf.LookAndFeelController;
 import net.miginfocom.swing.MigLayout;
 
 public class ConfigSidebar extends SideBarPanel {
@@ -35,6 +37,14 @@ public class ConfigSidebar extends SideBarPanel {
             public void processMouseEvent(MouseEvent m) {
                 if (m.getClickCount() > 1) return;
                 super.processMouseEvent(m);
+            }
+
+            public void processKeyEvent(KeyEvent m) {
+                if (LookAndFeelController.isSynthetica()) {
+                  return;
+                }
+                super.processKeyEvent(m);
+
             }
 
         });
