@@ -26,6 +26,8 @@ import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import javax.swing.SpinnerNumberModel;
 
+import jd.gui.swing.GuiRunnable;
+
 import jd.utils.locale.JDL;
 
 import jd.nutils.JDImage;
@@ -90,7 +92,7 @@ public class LoadCaptchas {
             JTextField tfl = new JTextField();
             p.add(tfl);
             p.add(new JLabel(JDL.L("easycaptcha.loadcaptchas.howmuch", "How much captchas you need") + ":"));
-            final JSpinner sm = new JSpinner(new SpinnerNumberModel(4, 1, 300, 1));
+            final JSpinner sm = new JSpinner(new SpinnerNumberModel(100, 1, 4000, 1));
             p.add(sm);
             final JButton ok = new JButton(JDL.L("gui.btn_ok", "OK"));
             ok.addActionListener(new ActionListener() {
@@ -110,7 +112,7 @@ public class LoadCaptchas {
                 }
             });
             p.add(cancel);
-            dialog.addWindowListener(new WindowListener() {
+            WindowListener l = new WindowListener() {
                 public void windowActivated(WindowEvent e) {
                 }
 
@@ -132,7 +134,8 @@ public class LoadCaptchas {
 
                 public void windowOpened(WindowEvent e) {
                 }
-            });
+            };
+            dialog.addWindowListener(l);
             if (dialog.isActive()) return false;
             dialog.add(p);
             dialog.pack();
@@ -140,8 +143,7 @@ public class LoadCaptchas {
             dialog.setVisible(true);
             final String link = tfl.getText();
             final int menge = (Integer) sm.getValue();
-            final ProgressDialog pd = new ProgressDialog(DummyFrame.getDialogParent(), "load captchas please wait", null, false, true);
-            pd.setMaximum(menge);
+            final ProgressDialog pd = new ProgressDialog(DummyFrame.getDialogParent(), JDL.L("easycaptcha.loadcaptchas.loadimages", "load images please wait"), null, false, true);
 
             final Browser br = new Browser();
             br.getPage(link);
@@ -185,11 +187,11 @@ public class LoadCaptchas {
                 return true;
             }
 
-            dialog.setTitle("click on the captcha");
+            dialog.setTitle(JDL.L("easycaptcha.loadcaptchas.clickoncaptcha", "click on the captcha"));
             final String[] images = getImages(br);
             final File[] files = new File[images.length];
             JPanel panel = new JPanel(new GridLayout(images.length / 3, 3));
-
+            dialog.removeWindowListener(l);
             dialog.addWindowListener(new WindowListener() {
 
                 public void windowActivated(WindowEvent e) {
@@ -198,11 +200,13 @@ public class LoadCaptchas {
                 }
 
                 public void windowClosed(WindowEvent e) {
-                    // TODO Auto-generated method stub
 
                 }
 
                 public void windowClosing(WindowEvent e) {
+                    for (File file : files) {
+                        file.delete();
+                    }
                     dialog.dispose();
                 }
 
@@ -226,65 +230,94 @@ public class LoadCaptchas {
 
                 }
             });
-            final Thread[] jb = new Thread[images.length];
+            Thread th = new Thread(new Runnable() {
+                public void run() {
+                    final Thread[] jb = new Thread[images.length];
 
-            for (int j = 0; j < images.length; j++) {
-                final int i = j;
-                jb[i] = new Thread(new Runnable() {
+                    for (int j = 0; j < images.length; j++) {
+                        final int i = j;
+                        jb[i] = new Thread(new Runnable() {
 
-                    public void run() {
-                        String ft = ".jpg";
-                        if (images[i].toLowerCase().contains("png"))
-                            ft = ".png";
-                        else if (images[i].toLowerCase().contains("gif"))
-                            ft = ".gif";
-                        else {
-                            try {
-                                br.getPage(images[i]);
-                                String ct2 = br.getHttpConnection().getContentType().toLowerCase();
-                                if (ct2 != null && ct2.contains("image")) {
-                                    if (ct2.equals("image/jpeg"))
-                                        ft = ".jpg";
-                                    else {
-                                        ft = ct2.replaceFirst("image/", ".");
+                            public void run() {
+                                String ft = ".jpg";
+                                if (images[i].toLowerCase().contains("png"))
+                                    ft = ".png";
+                                else if (images[i].toLowerCase().contains("gif"))
+                                    ft = ".gif";
+                                else {
+                                    try {
+                                        br.getPage(images[i]);
+                                        String ct2 = br.getHttpConnection().getContentType().toLowerCase();
+                                        if (ct2 != null && ct2.contains("image")) {
+                                            if (ct2.equals("image/jpeg"))
+                                                ft = ".jpg";
+                                            else {
+                                                ft = ct2.replaceFirst("image/", ".");
+                                            }
+                                        }
+                                    } catch (IOException e) {
+                                        // TODO Auto-generated catch block
+                                        e.printStackTrace();
                                     }
-                                }
-                            } catch (IOException e) {
-                                // TODO Auto-generated catch block
-                                e.printStackTrace();
-                            }
 
-                        }
-                        final String filetype = ft;
-                        final File f = new File(dir, System.currentTimeMillis() + filetype);
-                        files[i] = f;
-                        try {
-                            br.getDownload(f, images[i]);
-                        } catch (Exception e) {
-                        }
-                        synchronized (jb[i]) {
-                            jb[i].notify();
-                        }
+                                }
+                                final String filetype = ft;
+                                final File f = new File(dir, System.currentTimeMillis() + filetype);
+                                files[i] = f;
+                                try {
+                                    br.getDownload(f, images[i]);
+                                } catch (Exception e) {
+                                }
+                                synchronized (jb[i]) {
+                                    jb[i].notify();
+                                }
+                            }
+                        });
+                        jb[i].start();
                     }
-                });
-                jb[i].start();
-            }
-            for (Thread thread : jb) {
-                while (thread.isAlive()) {
-                    synchronized (thread) {
-                        thread.wait(3000);
+                    new GuiRunnable<Object>() {
+                        public Object runSave() {
+                            pd.setMaximum(images.length);
+                            return null;
+                        }
+                    }.waitForEDT();
+                    int c =0;
+                    for (Thread thread : jb) {
+                        while (thread.isAlive()) {
+                            synchronized (thread) {
+                                try {
+                                    thread.wait(3000);
+                                } catch (InterruptedException e) {
+                                    // TODO Auto-generated catch block
+                                    e.printStackTrace();
+                                }
+                            }
+                        }
+                        final int d =c++;
+                        new GuiRunnable<Object>() {
+                            public Object runSave() {
+                                pd.setValue(d);
+                                return null;
+                            }
+                        }.waitForEDT();
                     }
+                    new GuiRunnable<Object>() {
+                        public Object runSave() {
+                            pd.setVisible(false);
+                            return null;
+                        }
+                    }.waitForEDT();
                 }
-            }
+            });
+
+
+            th.start();
+            pd.setThread(th);
+            pd.setVisible(true);
+            final EasyFile ef = new EasyFile();
             for (int j = 0; j < images.length; j++) {
-                final int i = j;
-                final File f = files[i];
+                final File f = files[j];
                 if (!f.exists() || f.length() < 100) continue;
-                String ft = ".jpg";
-                if (f.getName().toLowerCase().contains("png"))
-                    ft = ".png";
-                else if (f.getName().toLowerCase().contains("gif")) ft = ".gif";
-                final String filetype = ft;
                 BufferedImage captchaImage = JDImage.getImage(f);
                 int area = captchaImage.getHeight(null) * captchaImage.getHeight(null);
                 if (area < 50 || area > 50000 || captchaImage.getHeight(null) > 400 || captchaImage.getWidth(null) > 400) {
@@ -299,73 +332,7 @@ public class LoadCaptchas {
 
                     public void mouseClicked(MouseEvent e) {
                         dialog.dispose();
-
-                        Runnable runnable = new Runnable() {
-                            public void run() {
-                                try {
-                                    for (File file : files) {
-                                        if (!file.equals(f)) file.delete();
-                                    }
-                                    Browser brss = br.cloneBrowser();
-
-                                    brss.getPage(link);
-
-                                    final String[] im = getImages(brss);
-                                    File f2 = new File(dir + System.currentTimeMillis() + filetype);
-                                    br.getDownload(f2, im[i]);
-
-                                    if (im[i].equals(images[i])) {
-                                        for (int k = 0; k < menge - 2; k++) {
-                                            final Browser brs = br.cloneBrowser();
-                                            try {
-                                                f2 = new File(dir + System.currentTimeMillis() + filetype);
-                                                brs.getDownload(f2, images[i]);
-
-                                            } catch (Exception ev) {
-                                                // TODO Auto-generated
-                                                // catch
-                                                // block
-                                                ev.printStackTrace();
-                                            }
-                                            pd.setValue(k);
-                                        }
-                                    } else {
-                                        for (int k = 0; k < menge - 2; k++) {
-
-                                            final Browser brs = br.cloneBrowser();
-
-                                            brs.getPage(link);
-
-                                            try {
-                                                f2 = new File(dir + System.currentTimeMillis() + filetype);
-
-                                                brs.getDownload(f2, getImages(brs)[i]);
-
-                                            } catch (Exception ev) {
-                                                // TODO Auto-generated
-                                                // catch
-                                                // block
-                                                ev.printStackTrace();
-                                            }
-                                            pd.setValue(k);
-
-                                        }
-                                    }
-                                } catch (Exception e) {
-                                    // TODO Auto-generated catch block
-                                    e.printStackTrace();
-                                }
-
-                                pd.dispose();
-                            }
-                        };
-                        Thread th = new Thread(runnable);
-                        th.start();
-                        pd.setThread(th);
-                        pd.setVisible(true);
-                        synchronized (dialog) {
-                            dialog.notify();
-                        }
+                        ef.file = f;
                     }
 
                     public void mouseEntered(MouseEvent e) {
@@ -387,9 +354,100 @@ public class LoadCaptchas {
             dialog.pack();
             dialog.setLocation(Screen.getCenterOfComponent(DummyFrame.getDialogParent(), dialog));
             dialog.setVisible(true);
-            synchronized (dialog) {
-                dialog.wait();
-            }
+            if (ef.file != null) {
+                Runnable runnable = new Runnable() {
+                    public void run() {
+                        try {
+                            int i = 0;
+                            for (int j = 0; j < files.length; j++) {
+                                File file = files[j];
+                                if (!file.equals(ef.file))
+                                    file.delete();
+                                else
+                                    i = j;
+                            }
+                            String filetype = ".jpg";
+                            if (ef.file.getName().toLowerCase().contains("png"))
+                                filetype = ".png";
+                            else if (ef.file.getName().toLowerCase().contains("gif")) filetype = ".gif";
+                            Browser brss = br.cloneBrowser();
+
+                            brss.getPage(link);
+
+                            final String[] im = getImages(brss);
+                            File f2 = new File(dir + System.currentTimeMillis() + filetype);
+                            br.getDownload(f2, im[i]);
+
+                            if (im[i].equals(images[i])) {
+                                for (int k = 0; k < menge - 2; k++) {
+                                    final Browser brs = br.cloneBrowser();
+                                    try {
+                                        f2 = new File(dir + System.currentTimeMillis() + filetype);
+                                        brs.getDownload(f2, images[i]);
+
+                                    } catch (Exception ev) {
+                                        // TODO Auto-generated
+                                        // catch
+                                        // block
+                                        ev.printStackTrace();
+                                    }
+                                    final int d =k;
+                                    new GuiRunnable<Object>() {
+                                        public Object runSave() {
+                                            pd.setValue(d);
+                                            return null;
+                                        }
+                                    }.waitForEDT();                                }
+                            } else {
+                                for (int k = 0; k < menge - 2; k++) {
+                                    final Browser brs = br.cloneBrowser();
+
+                                    brs.getPage(link);
+
+                                    try {
+                                        f2 = new File(dir + System.currentTimeMillis() + filetype);
+
+                                        brs.getDownload(f2, getImages(brs)[i]);
+
+                                    } catch (Exception ev) {
+                                        // TODO Auto-generated
+                                        // catch
+                                        // block
+                                        ev.printStackTrace();
+                                    }
+                                    final int d =k;
+                                    new GuiRunnable<Object>() {
+                                        public Object runSave() {
+                                            pd.setValue(d);
+                                            return null;
+                                        }
+                                    }.waitForEDT();
+
+
+                                }
+                            }
+                        } catch (Exception e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                        }
+                        new GuiRunnable<Object>() {
+                            public Object runSave() {
+                                pd.dispose();
+                                return null;
+                            }
+                        }.waitForEDT();
+                    }
+                };
+
+                
+                th = new Thread(runnable);
+                th.start();
+                pd.setMaximum(menge);
+                pd.setValue(1);
+                pd.setThread(th);
+                pd.setVisible(true);
+            } else
+                return false;
             if (opendir) openDir(dir);
             return dir.length() > 0;
 

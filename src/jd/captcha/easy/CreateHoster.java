@@ -16,13 +16,15 @@ public class CreateHoster {
         File folder2 = new File(path + "/captchas/" + ef.toString());
         if (!folder2.exists() || folder2.list().length < 1) {
             int res = UserIOGui.getInstance().requestConfirmDialog(UserIOGui.DONT_SHOW_AGAIN, JDL.L("easycaptcha.loadcaptchas.title", "Load Captchas"), JDL.L("easycaptcha.loadcaptchas", "You need Captchas do you wanna load Captchas?"), null, JDL.L("gui.btn_yes", "yes"), JDL.L("gui.btn_no", "no"));
-            if (JDFlags.hasAllFlags(res, UserIO.RETURN_OK)) {
+            if (JDFlags.hasSomeFlags(res, UserIO.RETURN_OK|UserIO.RETURN_COUNTDOWN_TIMEOUT|UserIO.RETURN_SKIPPED_BY_DONT_SHOW)) {
                 if (!new GuiRunnable<Boolean>() {
                     public Boolean runSave() {
                         return LoadCaptchas.load(ef.toString());
                     }
                 }.getReturnValue()) return false;
             }
+            else
+                return false;
         }
         if (ef.file.exists()) {
             EasyFile ef2 = new EasyFile(new File(ef.file.getParentFile(), ef.toString() + System.currentTimeMillis()));

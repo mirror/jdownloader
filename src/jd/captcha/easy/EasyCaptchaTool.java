@@ -32,7 +32,7 @@ import jd.gui.userio.DummyFrame;
 
 public class EasyCaptchaTool {
 
-    private static EasyFile showStartDialog() {
+    private static EasyFile getCaptchaMethode() {
         return new GuiRunnable<EasyFile>() {
             public EasyFile runSave() {
                 final EasyFile ef = new EasyFile();
@@ -130,7 +130,8 @@ public class EasyCaptchaTool {
                                             ef.file = new File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/" + JDUtilities.getJACMethodsDirectory(), tfHoster.getText());
                                             dialog.dispose();
                                             cHosterDialog.dispose();
-                                            CreateHoster.create(ef, tfName.getText(), (Integer) spMaxLetters.getValue());
+                                            if(!CreateHoster.create(ef, tfName.getText(), (Integer) spMaxLetters.getValue()))
+                                                    ef.file=null;
 
                                         } else {
                                             JOptionPane.showConfirmDialog(null, JDL.L("easycaptcha.tool.warning.hostnamemissing", "the hostname is missing"), JDL.L("easycaptcha.tool.warning.hostnamemissing", "the hostname is missing"), JOptionPane.CLOSED_OPTION, JOptionPane.WARNING_MESSAGE);
@@ -171,7 +172,7 @@ public class EasyCaptchaTool {
 
     public static void main(String[] args) {
 
-        EasyCaptchaTool.showStartDialog();
+        EasyCaptchaTool.getCaptchaMethode();
         System.exit(0);
 
     }
