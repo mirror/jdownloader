@@ -31,8 +31,8 @@ import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import javax.swing.JComponent;
 
-import jd.nutils.encoding.Encoding;
 import jd.nutils.Colors;
+import jd.nutils.encoding.Encoding;
 import jd.utils.locale.JDL;
 
 /**

@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -39,7 +38,6 @@ public class UpMusicIn extends PluginForHost {
         // enablePremium("http://www.upmusic.in/?op=registration");
     }
 
-    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         String linkurl = null;
         String previousLink = null;
@@ -96,7 +94,6 @@ public class UpMusicIn extends PluginForHost {
         dl.startDownload();
     }
 
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 7;
     }
@@ -164,12 +161,10 @@ public class UpMusicIn extends PluginForHost {
      * jd.plugins.BrowserAdapter.openDownload(br,downloadLink, linkurl);
      * dl.startDownload(); }
      */
-    // @Override
     public String getAGBLink() {
         return "http://www.upmusic.in/tos.html";
     }
 
-    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -179,27 +174,18 @@ public class UpMusicIn extends PluginForHost {
         String filename = br.getRegex("File Name:</b></td><td[^>]*>(.+?)</td></tr>").getMatch(0);
         if (filename.endsWith("</b>")) filename = filename.substring(0, filename.length() - 4);
         String filesize = br.getRegex("Size:</b></td><td>.*<small>\\((.+?)ytes\\)</small>").getMatch(0);
-        // System.out.println(br.getRegex("<html>(.*?)</html>").getMatch(0));
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename);
         downloadLink.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
     public void reset() {
     }
 
-    // @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
     public void resetDownloadlink(DownloadLink link) {
         link.setProperty("directLink", null);
     }

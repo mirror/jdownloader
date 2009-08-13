@@ -21,11 +21,11 @@ import java.io.IOException;
 import java.net.URL;
 
 import jd.PluginWrapper;
-import jd.nutils.encoding.Encoding;
 import jd.nutils.FtpEvent;
 import jd.nutils.FtpListener;
 import jd.nutils.JDHash;
 import jd.nutils.SimpleFTP;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;

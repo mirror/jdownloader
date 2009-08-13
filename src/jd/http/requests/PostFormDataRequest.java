@@ -26,7 +26,6 @@ import java.io.OutputStreamWriter;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 
-
 import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;

@@ -9,6 +9,7 @@ import jd.gui.swing.jdgui.settings.ConfigPanel;
 
 public class ConfigPanelView extends ClosableView {
 
+    private static final long serialVersionUID = -4273043756814096939L;
     private ConfigPanel panel;
     private Icon icon;
     private String title;
@@ -21,43 +22,40 @@ public class ConfigPanelView extends ClosableView {
         this.setContent(panel);
         this.init();
     }
+
     protected void initMenu(JMenuBar menubar) {
         JButton top;
         menubar.add(top = new JButton(icon));
         top.setBorderPainted(false);
         top.setContentAreaFilled(false);
-        menubar.add(top= new JButton(title));
+        menubar.add(top = new JButton(title));
         top.setBorderPainted(false);
         top.setContentAreaFilled(false);
-        
+
         menubar.setBorder(JDBorderFactory.createInsideShadowBorder(0, 0, 1, 0));
     }
+
     @Override
     public Icon getIcon() {
-
         return icon;
     }
 
     @Override
     public String getTitle() {
-
         return title;
     }
 
     @Override
     public String getTooltip() {
-
         return null;
     }
 
     @Override
     protected void onHide() {
-
     }
 
     @Override
     protected void onShow() {
-
     }
 
 }
