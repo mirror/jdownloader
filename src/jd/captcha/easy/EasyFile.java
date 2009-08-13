@@ -2,16 +2,33 @@ package jd.captcha.easy;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.io.Serializable;
 import java.util.ArrayList;
 
 import javax.swing.ImageIcon;
+
+import jd.gui.UserIO;
+import jd.gui.swing.GuiRunnable;
+import jd.gui.swing.jdgui.userio.UserIOGui;
+import jd.nutils.JDFlags;
+import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 import jd.config.container.JDLabelContainer;
 
 import jd.nutils.JDImage;
 
-public class EasyFile implements JDLabelContainer {
+public class EasyFile implements JDLabelContainer, Serializable {
     public File file = null;
+    public File getFile() {
+        return file;
+    }
+
+    public void setFile(File file) {
+        this.file = file;
+    }
+
+
     private static final long serialVersionUID = 1L;
 
     public EasyFile(File file) {
@@ -56,7 +73,22 @@ public class EasyFile implements JDLabelContainer {
         if (files != null && files.length > 0) return files[0];
         return null;
     }
-
+    public boolean hasCaptchas() {
+        String path = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath();
+        File folder2 = new File(path + "/captchas/" + getName());
+        if (!folder2.exists() || folder2.list().length < 1) {
+            int res = UserIOGui.getInstance().requestConfirmDialog(UserIOGui.DONT_SHOW_AGAIN, JDL.L("easycaptcha.loadcaptchas.title", "Load Captchas"), JDL.L("easycaptcha.loadcaptchas", "You need Captchas do you wanna load Captchas?"), null, JDL.L("gui.btn_yes", "yes"), JDL.L("gui.btn_no", "no"));
+            if (JDFlags.hasSomeFlags(res, UserIO.RETURN_OK | UserIO.RETURN_COUNTDOWN_TIMEOUT | UserIO.RETURN_SKIPPED_BY_DONT_SHOW)) {
+                return new GuiRunnable<Boolean>() {
+                    public Boolean runSave() {
+                        return LoadCaptchas.load(getName());
+                    }
+                }.getReturnValue();
+            } else
+                return false;
+        }
+        return true;
+    }
     public ImageIcon getIcon() {
         try {
             File image = getExampleImage();
