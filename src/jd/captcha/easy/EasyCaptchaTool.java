@@ -2,6 +2,7 @@ package jd.captcha.easy;
 
 import java.awt.Dimension;
 import java.awt.GridLayout;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -16,6 +17,10 @@ import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import javax.swing.SpinnerNumberModel;
+
+import jd.gui.swing.jdgui.events.EDTEventQueue;
+import jd.gui.swing.laf.LookAndFeelController;
+
 import jd.config.SubConfiguration;
 import jd.utils.locale.JDL;
 import jd.gui.swing.jdgui.settings.JDLabelListRenderer;
@@ -211,9 +216,17 @@ public class EasyCaptchaTool {
     }
 
     public static void main(String[] args) {
+        new GuiRunnable<Object>() {
+            // @Override
+            public Object runSave() {
+                LookAndFeelController.setUIManager();
+                Toolkit.getDefaultToolkit().getSystemEventQueue().push(new EDTEventQueue());
+                EasyFile meth = EasyCaptchaTool.getCaptchaMethode();
+                showToolKid(meth);
+                return null;
+            }
+        }.waitForEDT();
 
-        EasyFile meth = EasyCaptchaTool.getCaptchaMethode();
-        showToolKid(meth);
         System.exit(0);
 
     }

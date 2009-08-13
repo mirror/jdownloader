@@ -7,6 +7,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.awt.GridLayout;
 import java.awt.Image;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
@@ -14,6 +15,7 @@ import java.awt.event.WindowListener;
 import java.awt.image.BufferedImage;
 import java.io.*;
 
+import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JDialog;
@@ -22,13 +24,12 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
-import javax.swing.JTextField;
 import javax.swing.SpinnerNumberModel;
-
+import jd.gui.swing.jdgui.events.EDTEventQueue;
+import jd.gui.swing.laf.LookAndFeelController;
+import jd.gui.swing.components.JDTextField;
 import jd.gui.swing.GuiRunnable;
-
 import jd.utils.locale.JDL;
-
 import jd.nutils.JDImage;
 import jd.nutils.Screen;
 import jd.gui.swing.dialog.ProgressDialog;
@@ -68,8 +69,15 @@ public class LoadCaptchas {
         return ret.toArray(new String[] {});
     }
 
-    private static void openDir(String dir) {
-        if (JOptionPane.showConfirmDialog(null, "Captcha Ordner:" + dir + " jetzt öffnen?") == JOptionPane.YES_OPTION) JDUtilities.openExplorer(new File(dir));
+    private static void openDir(final String dir) {
+        new GuiRunnable<Object>() {
+            // @Override
+            public Object runSave() {
+                if (JOptionPane.showConfirmDialog(null, "Captcha Ordner:" + dir + " jetzt öffnen?") == JOptionPane.YES_OPTION) JDUtilities.openExplorer(new File(dir));
+
+                return null;
+            }
+        }.waitForEDT();
 
     }
 
@@ -84,16 +92,48 @@ public class LoadCaptchas {
     public static boolean load(final String host2, final boolean opendir) {
 
         try {
-            final JDialog dialog = new JDialog(DummyFrame.getDialogParent());
+
+            final JDialog dialog = new GuiRunnable<JDialog>() {
+                // @Override
+                public JDialog runSave() {
+                    return new JDialog(DummyFrame.getDialogParent());
+                }
+            }.getReturnValue();
             dialog.setModal(true);
-            final JPanel p = new JPanel(new GridLayout(3, 2));
-            p.add(new JLabel(JDL.L("easycaptcha.loadcaptchas.link", "Link") + ":"));
-            final JTextField tfl = new JTextField();
+            final JPanel p = new GuiRunnable<JPanel>() {
+                // @Override
+                public JPanel runSave() {
+                    JPanel ret = new JPanel(new GridLayout(3, 2));
+                    ret.add(new JLabel(JDL.L("easycaptcha.loadcaptchas.link", "Link") + ":"));
+                    return ret;
+
+                }
+            }.getReturnValue();
+
+            final JDTextField tfl = new GuiRunnable<JDTextField>() {
+                // @Override
+                public JDTextField runSave() {
+                    return new JDTextField();
+                }
+            }.getReturnValue();
+            tfl.setBorder(BorderFactory.createEtchedBorder());
+
             p.add(tfl);
-            p.add(new JLabel(JDL.L("easycaptcha.loadcaptchas.howmuch", "How much captchas you need") + ":"));
-            JSpinner sm = new JSpinner(new SpinnerNumberModel(100, 1, 4000, 1));
+            JSpinner sm = new GuiRunnable<JSpinner>() {
+                // @Override
+                public JSpinner runSave() {
+                    p.add(new JLabel(JDL.L("easycaptcha.loadcaptchas.howmuch", "How much captchas you need") + ":"));
+
+                    return new JSpinner(new SpinnerNumberModel(100, 1, 4000, 1));
+                }
+            }.getReturnValue();
             p.add(sm);
-            JButton ok = new JButton(JDL.L("gui.btn_ok", "OK"));
+            JButton ok = new GuiRunnable<JButton>() {
+                // @Override
+                public JButton runSave() {
+                    return new JButton(JDL.L("gui.btn_ok", "OK"));
+                }
+            }.getReturnValue();
             ok.addActionListener(new ActionListener() {
 
                 public void actionPerformed(ActionEvent e) {
@@ -128,7 +168,12 @@ public class LoadCaptchas {
                 public void windowOpened(WindowEvent e) {
                 }
             };
-            JButton cancel = new JButton(JDL.L("gui.btn_cancel", "Cancel"));
+            JButton cancel = new GuiRunnable<JButton>() {
+                // @Override
+                public JButton runSave() {
+                    return new JButton(JDL.L("gui.btn_cancel", "Cancel"));
+                }
+            }.getReturnValue();
             cancel.addActionListener(new ActionListener() {
 
                 public void actionPerformed(ActionEvent e) {
@@ -140,14 +185,28 @@ public class LoadCaptchas {
 
             dialog.addWindowListener(l);
             dialog.add(p);
-            dialog.pack();
-            dialog.setLocation(Screen.getCenterOfComponent(DummyFrame.getDialogParent(), dialog));
-            dialog.setVisible(true);
+            new GuiRunnable<Object>() {
+                // @Override
+                public Object runSave() {
+                    dialog.setLocation(Screen.getCenterOfComponent(DummyFrame.getDialogParent(), dialog));
+                    dialog.pack();
+                    dialog.setVisible(true);
+                    
+                    return null;
+                }
+            }.waitForEDT();
+;
+
             final String link = tfl.getText();
             if (link == null || link.matches("\\s*")) return false;
             final int menge = (Integer) sm.getValue();
-            final ProgressDialog pd = new ProgressDialog(DummyFrame.getDialogParent(), JDL.L("easycaptcha.loadcaptchas.loadimages", "load images please wait"), null, false, true);
+            final ProgressDialog pd = new GuiRunnable<ProgressDialog>() {
+                // @Override
+                public ProgressDialog runSave() {
 
+                    return new ProgressDialog(DummyFrame.getDialogParent(), JDL.L("easycaptcha.loadcaptchas.loadimages", "load images please wait"), null, false, true);
+                }
+            }.getReturnValue();
             final Browser br = new Browser();
             br.getPage(link);
             String host = host2;
@@ -232,7 +291,7 @@ public class LoadCaptchas {
 
                 }
             });
-            Thread th = new Thread(new Runnable() {
+            final Thread th = new Thread(new Runnable() {
                 public void run() {
                     final Thread[] jb = new Thread[images.length];
 
@@ -281,6 +340,7 @@ public class LoadCaptchas {
                             return null;
                         }
                     }.waitForEDT();
+
                     int c = 0;
                     for (Thread thread : jb) {
                         while (thread.isAlive()) {
@@ -311,23 +371,36 @@ public class LoadCaptchas {
             });
 
             th.start();
-            pd.setThread(th);
-            pd.setVisible(true);
+            new GuiRunnable<Object>() {
+                // @Override
+                public Object runSave() {
+                    pd.setThread(th);
+                    pd.setVisible(true);
+                    
+                    return null;
+                }
+            }.waitForEDT();
+
             final EasyFile ef = new EasyFile();
-            ArrayList<JButton> bts = new ArrayList<JButton>();
+            final ArrayList<JButton> bts = new ArrayList<JButton>();
             for (int j = 0; j < images.length; j++) {
                 final File f = files[j];
                 if (!f.exists() || f.length() < 100) continue;
-                BufferedImage captchaImage = JDImage.getImage(f);
+                final BufferedImage captchaImage = JDImage.getImage(f);
                 int area = captchaImage.getHeight(null) * captchaImage.getHeight(null);
                 if (area < 50 || area > 50000 || captchaImage.getHeight(null) > 400 || captchaImage.getWidth(null) > 400 || captchaImage.getWidth(null) < 10 || captchaImage.getHeight(null) < 5) {
                     f.delete();
                     continue;
                 }
                 double faktor = Math.max((double) captchaImage.getWidth(null) / 100, (double) captchaImage.getHeight(null) / 100);
-                int width = (int) (captchaImage.getWidth(null) / faktor);
-                int height = (int) (captchaImage.getHeight(null) / faktor);
-                JButton ic = new JButton(new ImageIcon(captchaImage.getScaledInstance(width, height, Image.SCALE_SMOOTH)));
+                final int width = (int) (captchaImage.getWidth(null) / faktor);
+                final int height = (int) (captchaImage.getHeight(null) / faktor);
+                JButton ic = new GuiRunnable<JButton>() {
+                    // @Override
+                    public JButton runSave() {
+                        return new JButton(new ImageIcon(captchaImage.getScaledInstance(width, height, Image.SCALE_SMOOTH)));
+                    }
+                }.getReturnValue();
                 ic.addActionListener(new ActionListener() {
 
                     public void actionPerformed(ActionEvent e) {
@@ -337,18 +410,31 @@ public class LoadCaptchas {
                 });
                 bts.add(ic);
             }
-            JPanel panel = new JPanel(new GridLayout((int) Math.ceil(((double) bts.size()) / 5), 5));
+            final JPanel panel = new GuiRunnable<JPanel>() {
+                // @Override
+                public JPanel runSave() {
+                    return new JPanel(new GridLayout((int) Math.ceil(((double) bts.size()) / 5), 5));
+                }
+            }.getReturnValue();
             for (JButton button : bts) {
                 panel.add(button);
 
             }
-            dialog.add(new JScrollPane(panel));
+            new GuiRunnable<Object>() {
+                // @Override
+                public Object runSave() {
+                    dialog.add(new JScrollPane(panel));
 
-            dialog.pack();
-            dialog.setLocation(Screen.getCenterOfComponent(DummyFrame.getDialogParent(), dialog));
-            dialog.setVisible(true);
+                    dialog.pack();
+                    dialog.setLocation(Screen.getCenterOfComponent(DummyFrame.getDialogParent(), dialog));
+                    dialog.setVisible(true);
+                    
+                    return null;
+                }
+            }.waitForEDT();
+
             if (ef.file != null) {
-                Runnable runnable = new Runnable() {
+                final Runnable runnable = new Runnable() {
                     public void run() {
                         try {
                             int i = 0;
@@ -431,13 +517,20 @@ public class LoadCaptchas {
                         }.waitForEDT();
                     }
                 };
+                new GuiRunnable<Object>() {
+                    // @Override
+                    public Object runSave() {
+                        Thread th2 = new Thread(runnable);
+                        th2.start();
+                        pd.setMaximum(menge);
+                        pd.setValue(1);
+                        pd.setThread(th2);
+                        pd.setVisible(true);
+                        
+                        return null;
+                    }
+                }.waitForEDT();
 
-                th = new Thread(runnable);
-                th.start();
-                pd.setMaximum(menge);
-                pd.setValue(1);
-                pd.setThread(th);
-                pd.setVisible(true);
             } else
                 return false;
             if (opendir) openDir(dir);
@@ -451,7 +544,17 @@ public class LoadCaptchas {
     }
 
     public static void main(String[] args) throws Exception {
-        LoadCaptchas.load();
+        new GuiRunnable<Object>() {
+            // @Override
+            public Object runSave() {
+                LookAndFeelController.setUIManager();
+                Toolkit.getDefaultToolkit().getSystemEventQueue().push(new EDTEventQueue());
+
+                LoadCaptchas.load();
+                return null;
+            }
+        }.waitForEDT();
+
         System.exit(0);
     }
 }

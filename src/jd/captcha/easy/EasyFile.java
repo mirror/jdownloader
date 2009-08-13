@@ -110,7 +110,7 @@ public class EasyFile implements JDLabelContainer, Serializable {
         }
         String filetype = "jpg";
         File[] fl = folder2.listFiles();
-        if(fl.length>0)
+        if(fl!=null && fl.length>0)
         {
         if (fl[fl.length-1].getName().toLowerCase().contains("png"))
             filetype = "png";
