@@ -34,6 +34,8 @@ import javax.swing.border.TitledBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import jd.utils.locale.JDL;
+
 import jd.nutils.io.JDIO;
 
 import jd.utils.JDUtilities;
@@ -48,7 +50,7 @@ import jd.captcha.JAntiCaptcha;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.utils.Utilities;
 
-public class ChooseC extends BasicWindow {
+public class ColorTrainer extends BasicWindow {
     private static final long serialVersionUID = 1L;
     private JPanel panel, images;
     private ImageComponent ic, icColorImage;
@@ -251,22 +253,22 @@ public class ChooseC extends BasicWindow {
         images.add(ic, getGBC(0, 2, 1, 1));
     }
 
-    private ChooseC() {
+    private ColorTrainer() {
         super();
     }
 
     private void addImages() {
         images = new JPanel();
-        images.setBorder(new TitledBorder("Image:"));
+        images.setBorder(new TitledBorder(JDL.L("easycaptcha.image", "Image:")));
 
         images.setLayout(new BoxLayout(images, BoxLayout.Y_AXIS));
-        images.add(new JLabel("Original:"), getGBC(0, 1, 1, 1));
+        images.add(new JLabel(JDL.L("easycaptcha.orginal", "Original:")), getGBC(0, 1, 1, 1));
 
         ImageComponent ic0 = new ImageComponent(captcha.getImage().getScaledInstance(captcha.getWidth() * zoom / 100, captcha.getHeight() * zoom / 100, Image.SCALE_DEFAULT));
         images.add(ic0, getGBC(0, 1, 1, 1));
         images.add(Box.createRigidArea(new Dimension(0, 10)));
 
-        images.add(new JLabel("Labeled:"), getGBC(0, 1, 1, 1));
+        images.add(new JLabel(JDL.L("easycaptcha.labeled", "Labeled:")), getGBC(0, 1, 1, 1));
 
         createIc();
         MouseListener icl = getICListener();
@@ -329,7 +331,7 @@ public class ChooseC extends BasicWindow {
         icColorImage.revalidate();
         icColorImage.repaint();
         float[] hsb = Colors.rgb2hsb(c.getRed(), c.getGreen(), c.getBlue());
-        colorState.setText("<HTML><BODY>Color:#" + Integer.toHexString(c.getRGB() & 0x00ffffff) + "<BR>\r\n" + "Position:" + xc + ":" + yc + "<BR>\r\n" + "<span style=\"color:#" + Integer.toHexString(new Color(c.getRed(), 0, 0).getRGB() & 0x00ffffff) + "\">R:" + getDigit(c.getRed()) + "</span><span style=\"color:#" + Integer.toHexString(new Color(0, c.getGreen(), 0).getRGB() & 0x00ffffff) + "\"> G:" + getDigit(c.getGreen()) + "</span><span style=\"color:#" + Integer.toHexString(new Color(0, 0, c.getBlue()).getRGB() & 0x00ffffff) + "\"> B:" + getDigit(c.getBlue()) + "</span><BR>\r\n" + "H:" + getDigit(Math.round(hsb[0] * 360)) + " S:" + getDigit(Math.round(hsb[1] * 100)) + " B:" + getDigit(Math.round(hsb[2] * 100)) + "\r\n</BODY></HTML>");
+        colorState.setText("<HTML><BODY>"+JDL.L("easycaptcha.color", "Color")+":#" + Integer.toHexString(c.getRGB() & 0x00ffffff) + "<BR>\r\n"+ xc + ":" + yc + "<BR>\r\n" + "<span style=\"color:#" + Integer.toHexString(new Color(c.getRed(), 0, 0).getRGB() & 0x00ffffff) + "\">R:" + getDigit(c.getRed()) + "</span><span style=\"color:#" + Integer.toHexString(new Color(0, c.getGreen(), 0).getRGB() & 0x00ffffff) + "\"> G:" + getDigit(c.getGreen()) + "</span><span style=\"color:#" + Integer.toHexString(new Color(0, 0, c.getBlue()).getRGB() & 0x00ffffff) + "\"> B:" + getDigit(c.getBlue()) + "</span><BR>\r\n" + "H:" + getDigit(Math.round(hsb[0] * 360)) + " S:" + getDigit(Math.round(hsb[1] * 100)) + " B:" + getDigit(Math.round(hsb[2] * 100)) + "\r\n</BODY></HTML>");
     }
 
     private String getDigit(int i) {
@@ -351,7 +353,7 @@ public class ChooseC extends BasicWindow {
         setStatus(1, 1);
         box.add(icColorImage);
         box.add(colorState);
-        box.setBorder(new TitledBorder("Color:"));
+        box.setBorder(new TitledBorder(JDL.L("easycaptcha.color", "Color")));
         return box;
     }
 
@@ -359,27 +361,27 @@ public class ChooseC extends BasicWindow {
         JPanel box = new JPanel(new GridLayout(5, 1));
         box.add(mode);
 
-        final JCheckBox ground = new JCheckBox(foreground ? "foreground" : "background", foreground);
+        final JCheckBox ground = new JCheckBox(foreground ? JDL.L("easycaptcha.foreground", "foreground") : JDL.L("easycaptcha.background", "background"), foreground);
         ground.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
                 foreground = !foreground;
-                ground.setText(foreground ? "foreground" : "background");
+                ground.setText(foreground ? JDL.L("easycaptcha.foreground", "foreground") : JDL.L("easycaptcha.background", "background"));
             }
         });
 
         box.add(ground);
-        final JCheckBox addb = new JCheckBox(add ? "add" : "remove", foreground);
+        final JCheckBox addb = new JCheckBox(add ? JDL.L("easycaptcha.add", "add") : JDL.L("easycaptcha.remove", "remove"), add);
         addb.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
                 add = !add;
-                addb.setText(add ? "add" : "remove");
+                addb.setText(add ? JDL.L("easycaptcha.add", "add") : JDL.L("easycaptcha.remove", "remove"));
             }
         });
         box.add(addb);
 
-        JCheckBox fst = new JCheckBox("Fast selection", fastSelection);
+        JCheckBox fst = new JCheckBox(JDL.L("easycaptcha.fastselection", "FastSelection:"), fastSelection);
         fst.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
@@ -397,11 +399,11 @@ public class ChooseC extends BasicWindow {
                 tollerance = (Integer) tolleranceSP.getValue();
             }
         });
-        pen.add(new JLabel("Threshold:"));
+        pen.add(new JLabel(JDL.L("easycaptcha.threshold", "Threshold:")));
         pen.add(tolleranceSP);
 
         box.add(pen);
-        box.setBorder(new TitledBorder("Settings:"));
+        box.setBorder(new TitledBorder(JDL.L("easycaptcha.settings", "Settings:")));
 
         return box;
 
@@ -417,7 +419,7 @@ public class ChooseC extends BasicWindow {
         add(new JScrollPane(panel), BorderLayout.CENTER);
         setLocation(0, 0);
 
-        setTitle("Layerrecognition Trainer");
+        setTitle(JDL.L("easycaptcha.colorcrainer.title", "Color Trainer"));
         addImages();
         panel.add(images);
         JPanel pen = new JPanel();
@@ -428,7 +430,7 @@ public class ChooseC extends BasicWindow {
         panel.add(pen, gb);
         gb = Utilities.getGBC(0, 4, 1, 1);
 
-        back = new JButton("back");
+        back = new JButton(JDL.L("easycaptcha.back", "back"));
         back.setEnabled(false);
         back.addActionListener(new ActionListener() {
 
@@ -441,7 +443,7 @@ public class ChooseC extends BasicWindow {
         Component glue = Box.createGlue();
         glue.setSize(10, 1);
         box.add(glue);
-        JButton btf = new JButton("Finish");
+        JButton btf = new JButton(JDL.L("easycaptcha.finished", "finish"));
         btf.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
@@ -452,7 +454,7 @@ public class ChooseC extends BasicWindow {
         gb.anchor = GridBagConstraints.WEST;
         panel.add(box, gb);
 
-        JButton bt = new JButton("OK");
+        JButton bt = new JButton(JDL.L("gui.btn_ok", "OK"));
         bt.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
@@ -484,7 +486,7 @@ public class ChooseC extends BasicWindow {
 
         JAntiCaptcha jac = new JAntiCaptcha(Utilities.getMethodDir(), "EasyCaptcha");
         if (c == null) c = load(file);
-        ChooseC lastCC = null;
+        ColorTrainer lastCC = null;
         for (int i = 0; i < cs.length; i++) {
             File captchafile = list[i];
             Image captchaImage = Utilities.loadImage(captchafile);
@@ -492,7 +494,7 @@ public class ChooseC extends BasicWindow {
             Captcha captcha = jac.createCaptcha(captchaImage);
             captcha.setCaptchaFile(captchafile);
             cs[i] = captcha;
-            ChooseC cc = new ChooseC();
+            ColorTrainer cc = new ColorTrainer();
             if (lastCC != null) {
                 cc.fastSelection = lastCC.fastSelection;
                 cc.foreground = lastCC.foreground;
@@ -513,7 +515,7 @@ public class ChooseC extends BasicWindow {
             lastCC = cc;
             if (cc.close) break;
         }
-        if (JOptionPane.showConfirmDialog(null, "Save?", "Save?", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) saveColors(c, file);
+        if (JOptionPane.showConfirmDialog(null, JDL.L("gui.btn_save", "Save"), JDL.L("gui.btn_save", "Save"), JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) saveColors(c, file);
         return c;
     }
 
@@ -530,7 +532,7 @@ public class ChooseC extends BasicWindow {
 
     public static void main(String[] args) {
         String path = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath();
-        String hoster = "canna.to";
+        String hoster = "relfreaks.com";
         File folder = new File(path + "/captchas/" + hoster);
         getColors(folder, hoster, null);
     }

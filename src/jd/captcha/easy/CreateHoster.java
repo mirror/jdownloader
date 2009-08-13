@@ -1,10 +1,11 @@
 package jd.captcha.easy;
 
 import java.io.File;
-import javax.swing.JOptionPane;
-
+import jd.gui.swing.jdgui.userio.UserIOGui;
+import jd.utils.locale.JDL;
+import jd.nutils.JDFlags;
+import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
-
 import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
 
@@ -14,8 +15,8 @@ public class CreateHoster {
         String path = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath();
         File folder2 = new File(path + "/captchas/" + ef.toString());
         if (!folder2.exists() || folder2.list().length < 1) {
-            if (JOptionPane.showConfirmDialog(null, "You need Captchas do you wanna load Captchas?", "Load Captchas", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_NO_OPTION) {
-
+            int res = UserIOGui.getInstance().requestConfirmDialog(UserIOGui.DONT_SHOW_AGAIN, JDL.L("easycaptcha.loadcaptchas.title", "Load Captchas"), JDL.L("easycaptcha.loadcaptchas", "You need Captchas do you wanna load Captchas?"), null, JDL.L("gui.btn_yes", "yes"), JDL.L("gui.btn_no", "no"));
+            if (JDFlags.hasAllFlags(res, UserIO.RETURN_OK)) {
                 if (!new GuiRunnable<Boolean>() {
                     public Boolean runSave() {
                         return LoadCaptchas.load(ef.toString());
@@ -25,7 +26,7 @@ public class CreateHoster {
         }
         if (ef.file.exists()) {
             EasyFile ef2 = new EasyFile(new File(ef.file.getParentFile(), ef.toString() + System.currentTimeMillis()));
-            JOptionPane.showConfirmDialog(null, "Methode dir " + ef + " will be moved to " + ef2, "Old Methode will be moved", JOptionPane.CLOSED_OPTION, JOptionPane.WARNING_MESSAGE);
+            UserIOGui.getInstance().requestConfirmDialog(UserIOGui.NO_CANCEL_OPTION|UserIOGui.ICON_WARNING, JDL.LF("easycaptcha.methodedirmove", "Methode dir %s will be moved to %s", ef,ef2));
             new File(ef.file.getAbsolutePath()).renameTo(ef2.file);
         }
         String type = "jpg";

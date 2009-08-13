@@ -7,16 +7,27 @@ import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.awt.GridLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.awt.image.BufferedImage;
 import java.io.*;
+
+import javax.swing.JButton;
 import javax.swing.JDialog;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSpinner;
+import javax.swing.JTextField;
+import javax.swing.SpinnerNumberModel;
+
+import jd.utils.locale.JDL;
+
 import jd.nutils.JDImage;
 import jd.nutils.Screen;
 import jd.gui.swing.dialog.ProgressDialog;
@@ -72,13 +83,65 @@ public class LoadCaptchas {
     public static boolean load(final String host2, final boolean opendir) {
 
         try {
+            final JDialog dialog = new JDialog(DummyFrame.getDialogParent());
+            dialog.setModal(true);
+            final JPanel p = new JPanel(new GridLayout(3, 2));
+            p.add(new JLabel(JDL.L("easycaptcha.loadcaptchas.link", "Link") + ":"));
+            JTextField tfl = new JTextField();
+            p.add(tfl);
+            p.add(new JLabel(JDL.L("easycaptcha.loadcaptchas.howmuch", "How much captchas you need") + ":"));
+            final JSpinner sm = new JSpinner(new SpinnerNumberModel(4, 1, 300, 1));
+            p.add(sm);
+            final JButton ok = new JButton(JDL.L("gui.btn_ok", "OK"));
+            ok.addActionListener(new ActionListener() {
 
-            final String link = JOptionPane.showInputDialog("Bitte Link eingeben:");
-            final int menge = Integer.parseInt(JOptionPane.showInputDialog("Wieviele Captchas sollen heruntergeladen werden:", "500"));
+                public void actionPerformed(ActionEvent e) {
+                    dialog.remove(p);
+                    dialog.validate();
+                    dialog.setVisible(false);
+                }
+            });
+            p.add(ok);
+            final JButton cancel = new JButton(JDL.L("gui.btn_cancel", "Cancel"));
+            cancel.addActionListener(new ActionListener() {
+
+                public void actionPerformed(ActionEvent e) {
+                    dialog.dispose();
+                }
+            });
+            p.add(cancel);
+            dialog.addWindowListener(new WindowListener() {
+                public void windowActivated(WindowEvent e) {
+                }
+
+                public void windowClosed(WindowEvent e) {
+                    dialog.dispose();
+                }
+
+                public void windowClosing(WindowEvent e) {
+                }
+
+                public void windowDeactivated(WindowEvent e) {
+                }
+
+                public void windowDeiconified(WindowEvent e) {
+                }
+
+                public void windowIconified(WindowEvent e) {
+                }
+
+                public void windowOpened(WindowEvent e) {
+                }
+            });
+            if (dialog.isActive()) return false;
+            dialog.add(p);
+            dialog.pack();
+            dialog.setLocation(Screen.getCenterOfComponent(DummyFrame.getDialogParent(), dialog));
+            dialog.setVisible(true);
+            final String link = tfl.getText();
+            final int menge = (Integer) sm.getValue();
             final ProgressDialog pd = new ProgressDialog(DummyFrame.getDialogParent(), "load captchas please wait", null, false, true);
             pd.setMaximum(menge);
-            final JDialog dialog = new JDialog(DummyFrame.getDialogParent());
-            dialog.setLocation(Screen.getCenterOfComponent(DummyFrame.getDialogParent(), dialog));
 
             final Browser br = new Browser();
             br.getPage(link);
@@ -322,7 +385,7 @@ public class LoadCaptchas {
             dialog.add(new JScrollPane(panel));
 
             dialog.pack();
-            dialog.setModal(true);
+            dialog.setLocation(Screen.getCenterOfComponent(DummyFrame.getDialogParent(), dialog));
             dialog.setVisible(true);
             synchronized (dialog) {
                 dialog.wait();
