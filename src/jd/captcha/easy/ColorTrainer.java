@@ -49,9 +49,6 @@ import jd.utils.JDUtilities;
 import jd.nutils.Colors;
 
 import jd.captcha.gui.ImageComponent;
-
-import jd.captcha.gui.BasicWindow;
-
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.utils.Utilities;
