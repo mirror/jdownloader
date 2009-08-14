@@ -18,8 +18,6 @@ package jd.captcha;
 
 import java.awt.Toolkit;
 import java.util.logging.Logger;
-
-import jd.captcha.easy.LoadCaptchas;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.events.EDTEventQueue;
 import jd.gui.swing.laf.LookAndFeelController;

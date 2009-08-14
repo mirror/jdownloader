@@ -59,8 +59,6 @@ import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.utils.JDUtilities;
-
-import org.htmlcleaner.JDomSerializer;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
