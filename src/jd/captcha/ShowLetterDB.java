@@ -8,7 +8,7 @@ public class ShowLetterDB {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-        String hoster = "uploadbox.com";
+        String hoster = "canna.to";
         JAntiCaptcha jac = new JAntiCaptcha(Utilities.getMethodDir(), hoster);
         jac.displayLibrary();
 	}

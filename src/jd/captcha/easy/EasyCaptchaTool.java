@@ -18,6 +18,8 @@ import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import javax.swing.SpinnerNumberModel;
 
+import jd.JDInit;
+
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.utils.Utilities;
 
@@ -215,6 +217,7 @@ public class EasyCaptchaTool {
         CreateHoster.setImageType(meth);
         File folder = meth.getCaptchaFolder();
         if (!folder.exists() || folder.list().length < 1) return;
+        final JAntiCaptcha jac = new JAntiCaptcha(Utilities.getMethodDir(), meth.getName());
         final JDialog dialog = new GuiRunnable<JDialog>() {
             // @Override
             public JDialog runSave() {
@@ -222,43 +225,75 @@ public class EasyCaptchaTool {
             }
         }.getReturnValue();
         dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        dialog.setLocation(Screen.getCenterOfComponent(DummyFrame.getDialogParent(), dialog));
         dialog.setTitle(JDL.L("easycaptcha.tool.title", "EasyCaptcha"));
         final JPanel box = new GuiRunnable<JPanel>() {
-            // @Override
             public JPanel runSave() {
                 return new JPanel(new GridLayout(3, 1));
             }
         }.getReturnValue();
         JButton btnTrain = new GuiRunnable<JButton>() {
-            // @Override
             public JButton runSave() {
-                return new JButton(JDL.L("easycaptcha.tool.train", "Train"));
+                return new JButton(JDL.L("easycaptcha.tool.btn.train", "Train"));
             }
         }.getReturnValue();
         btnTrain.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
-                // jac.runTestMode(new
-                // File("1186941165349_captcha.jpg"));
-
-                final JAntiCaptcha jac = new JAntiCaptcha(Utilities.getMethodDir(), meth.getName());
                 new Thread(new Runnable() {
 
                     public void run() {
                         jac.trainAllCaptchas(meth.getCaptchaFolder().getAbsolutePath());
-                        
-                    }}).start();
+
+                    }
+                }).start();
 
             }
         });
         box.add(btnTrain);
+        JButton btnShowLetters = new GuiRunnable<JButton>() {
+            public JButton runSave() {
+                return new JButton(JDL.L("easycaptcha.tool.btn.letterdb", "Show Letter Database"));
+            }
+        }.getReturnValue();
+        btnShowLetters.addActionListener(new ActionListener() {
+
+            public void actionPerformed(ActionEvent e) {
+
+                new Thread(new Runnable() {
+
+                    public void run() {
+                        jac.displayLibrary();
+                    }
+                }).start();
+
+            }
+        });
+        box.add(btnShowLetters);
+        JButton btnColorTrainer = new GuiRunnable<JButton>() {
+            public JButton runSave() {
+                return new JButton(JDL.L("easycaptcha.tool.btn.colortrainer", "Train Colors"));
+            }
+        }.getReturnValue();
+        btnColorTrainer.addActionListener(new ActionListener() {
+
+            public void actionPerformed(ActionEvent e) {
+
+                new Thread(new Runnable() {
+
+                    public void run() {
+                        ColorTrainer.getColor(meth);
+
+                    }
+                }).start();
+
+            }
+        });
+        box.add(btnColorTrainer);
         dialog.add(box);
         new GuiRunnable<Object>() {
-            // @Override
             public Object runSave() {
                 dialog.pack();
-                // dialog.setModalityType(ModalityType.DOCUMENT_MODAL);
-
                 dialog.setVisible(true);
                 return null;
             }
@@ -267,7 +302,8 @@ public class EasyCaptchaTool {
     }
 
     public static void main(String[] args) {
-         LookAndFeelController.setUIManager();
+        new JDInit().loadConfiguration();
+        LookAndFeelController.setUIManager();
 
         new GuiRunnable<Object>() {
             // @Override
@@ -279,7 +315,6 @@ public class EasyCaptchaTool {
         EasyFile meth = EasyCaptchaTool.getCaptchaMethode();
 
         showToolKid(meth);
-
 
         // System.exit(0);
 

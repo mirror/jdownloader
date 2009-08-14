@@ -645,16 +645,25 @@ public class JAntiCaptcha {
      * Zeigt die Momentane Library an. Buchstaben können gelöscht werden
      */
     public void displayLibrary() {
-        Letter tmp;
         if (letterDB == null || letterDB.size() == 0) { return; }
         // final BasicWindow w = BasicWindow.getWindow("Library: " +
         // letterDB.size() + " Datensätze", 400, 300);
-        final JFrame w = new JFrame();
+        ;
+        final JFrame w = new GuiRunnable<JFrame>() {
+            public JFrame runSave() {
+                return new JFrame();
+            }
+        }.getReturnValue();
         // w.setLayout(new GridBagLayout());
         sortLetterDB();
-        JPanel p = new JPanel(new GridLayout(letterDB.size() + 1, 3));
+        JPanel p =new GuiRunnable<JPanel>() {
+            public JPanel runSave() {
+                JPanel bp= new JPanel(new GridLayout(letterDB.size() + 1, 3));
+                w.add(new JScrollPane(bp));
+                return bp;
+            }
+        }.getReturnValue();
 
-        w.add(new JScrollPane(p));
 
         final Letter[] list = new Letter[letterDB.size()];
 
@@ -663,12 +672,26 @@ public class JAntiCaptcha {
         ListIterator<Letter> iter = letterDB.listIterator(letterDB.size());
         final ArrayList<Integer> rem = new ArrayList<Integer>();
         while (iter.hasPrevious()) {
-            tmp = iter.previous();
+            final Letter tmp = iter.previous();
             list[i] = tmp;
-            JLabel lbl = new JLabel(tmp.getId() + ": " + tmp.getDecodedValue() + "(" + tmp.getGoodDetections() + "/" + tmp.getBadDetections() + ") Size: " + tmp.toPixelObject(0.85).getSize());
-            ImageComponent img = new ImageComponent(tmp.getImage());
+            
+            JLabel lbl = new GuiRunnable<JLabel>() {
+                public JLabel runSave() {
+                    return new JLabel(tmp.getId() + ": " + tmp.getDecodedValue() + "(" + tmp.getGoodDetections() + "/" + tmp.getBadDetections() + ") Size: " + tmp.toPixelObject(0.85).getSize());
+                }
+            }.getReturnValue();
+            
+            ImageComponent img =  new GuiRunnable<ImageComponent>() {
+                public ImageComponent runSave() {
+                    return new ImageComponent(tmp.getImage());
+                }
+            }.getReturnValue();
 
-            final JCheckBox bt = new JCheckBox("DELETE");
+            final JCheckBox bt = new GuiRunnable<JCheckBox>() {
+                public JCheckBox runSave() {
+                    return new JCheckBox("DELETE");
+                }
+            }.getReturnValue(); 
             final int ii = i;
             bt.addActionListener(new ActionListener() {
                 public Integer id = new Integer(ii);
@@ -693,12 +716,17 @@ public class JAntiCaptcha {
             // x += 6;
             // }
         }
-        JButton b = new JButton("Invoke");
+        JButton b = new GuiRunnable<JButton>() {
+            public JButton runSave() {
+                return new JButton("Invoke");
+            }
+        }.getReturnValue(); 
+        
         p.add(b);
         b.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
-                System.out.println(rem + "");
+//                System.out.println(rem + "");
                 ArrayList<Letter> list = new ArrayList<Letter>();
                 int s = letterDB.size();
                 for (Integer i : rem) {
@@ -717,8 +745,14 @@ public class JAntiCaptcha {
                 displayLibrary();
             }
         });
-        w.pack();
-        w.setVisible(true);
+        new GuiRunnable<Object>() {
+            public Object runSave() {
+                w.pack();
+                w.setVisible(true);
+                return null;
+            }
+        }.waitForEDT();
+
     }
 
     private String getCodeFromFileName(String name) {
