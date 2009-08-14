@@ -6,6 +6,7 @@ import java.awt.event.ActionEvent;
 import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
+import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JMenuBar;
 import javax.swing.UIManager;
@@ -39,8 +40,7 @@ abstract public class ClosableView extends View {
         JButton bt;
 
         panel.add(bt = new JButton(closeAction));
-//        bt.setPreferredSize(new Dimension(20, 14));
-        bt.setPreferredSize(new Dimension(UIManager.getIcon("InternalFrame.closeIcon").getIconWidth(),UIManager.getIcon("InternalFrame.closeIcon").getIconHeight()));
+        bt.setPreferredSize(new Dimension(closeAction.getWidth(), closeAction.getHeight()));
         bt.setContentAreaFilled(false);
         bt.setBorderPainted(false);
         bt.setToolTipText(JDL.LF("jd.gui.swing.jdgui.views.ClosableView.closebtn.tooltip", "Close %s", this.getTitle()));
@@ -79,9 +79,22 @@ abstract public class ClosableView extends View {
 
     public class CloseAction extends AbstractAction {
         private static final long serialVersionUID = -771203720364300914L;
+        private int height;
+        private int width;
+
+        public int getHeight() {
+            return height;
+        }
+
+        public int getWidth() {
+            return width;
+        }
 
         public CloseAction() {
-            this.putValue(AbstractAction.SMALL_ICON, UIManager.getIcon("InternalFrame.closeIcon"));
+            Icon ic = UIManager.getIcon("InternalFrame.closeIcon");
+            this.height = ic.getIconHeight();
+            this.width = ic.getIconWidth();
+            this.putValue(AbstractAction.SMALL_ICON, ic);
         }
 
         public void actionPerformed(ActionEvent e) {

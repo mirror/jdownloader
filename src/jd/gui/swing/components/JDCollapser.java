@@ -26,6 +26,7 @@ import javax.swing.Box;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JLabel;
 import javax.swing.JMenuBar;
 import javax.swing.JPanel;
 import javax.swing.UIManager;
@@ -41,7 +42,6 @@ import net.miginfocom.swing.MigLayout;
  * class for an infopanel with close button.
  * 
  * @author Coalado
- * 
  */
 public class JDCollapser extends DroppedPanel {
 
@@ -58,33 +58,29 @@ public class JDCollapser extends DroppedPanel {
     private JPanel content;
     private JMenuBar menubar;
     private JButton closeButton;
-    private JButton menutitle;
+    private JLabel menutitle;
 
     private JDCollapser() {
         super();
         this.setLayout(new MigLayout("ins 0 5 0 0,wrap 1", "[fill,grow]", "[fill,grow]"));
 
         menubar = new JMenuBar();
-        menubar.add(menutitle = new JButton(""));
-        menutitle.setContentAreaFilled(false);
-        menutitle.setBorderPainted(false);
+        menubar.add(menutitle = new JLabel(""));
         menubar.add(Box.createHorizontalGlue());
         menubar.setBorder(JDBorderFactory.createInsideShadowBorder(0, 0, 1, 0));
         CloseAction closeAction = new CloseAction();
-        
-        Box panel = new Box(1);
-        // JButton bt;
 
+        Box panel = new Box(1);
         panel.add(closeButton = new JButton(closeAction));
         closeButton.setBorderPainted(false);
         closeButton.setPreferredSize(new Dimension(closeAction.getWidth(), closeAction.getHeight()));
-         closeButton.setContentAreaFilled(false);
+        closeButton.setContentAreaFilled(false);
         closeButton.setToolTipText(JDL.LF("jd.gui.swing.components.JDCollapser.closetooltip", "Close %s", ""));
         panel.setOpaque(false);
         panel.setBorder(BorderFactory.createEmptyBorder(0, 0, 1, 5));
         menubar.add(panel);
 
-        add(menubar, "dock NORTH,height "+Math.max(closeAction.getHeight()+3, 18)+"!,gapbottom 2");
+        add(menubar, "dock NORTH,height " + Math.max(closeAction.getHeight() + 3, 18) + "!,gapbottom 2");
 
         content = new JPanel();
         add(content);
@@ -134,9 +130,6 @@ public class JDCollapser extends DroppedPanel {
     }
 
     public class CloseAction extends AbstractAction {
-        /**
-         * 
-         */
         private static final long serialVersionUID = -771203720364300914L;
         private int height;
         private int width;
@@ -146,18 +139,13 @@ public class JDCollapser extends DroppedPanel {
         }
 
         public int getWidth() {
-            // TODO Auto-generated method stub
             return width;
         }
 
         public CloseAction() {
-
-            // this.putValue(AbstractAction.SMALL_ICON,
-            // UIManager.getIcon("Synthetica.docking.titlebar.close.hover"));
             Icon ic = UIManager.getIcon("InternalFrame.closeIcon");
-
             this.height = ic.getIconHeight();
-            this.width=ic.getIconWidth();
+            this.width = ic.getIconWidth();
             this.putValue(AbstractAction.SMALL_ICON, ic);
         }
 
