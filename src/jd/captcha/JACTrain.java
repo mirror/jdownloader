@@ -16,7 +16,13 @@
 
 package jd.captcha;
 
+import java.awt.Toolkit;
 import java.util.logging.Logger;
+
+import jd.captcha.easy.LoadCaptchas;
+import jd.gui.swing.GuiRunnable;
+import jd.gui.swing.jdgui.events.EDTEventQueue;
+import jd.gui.swing.laf.LookAndFeelController;
 
 import jd.captcha.utils.Utilities;
 import jd.utils.JDUtilities;
@@ -42,8 +48,8 @@ public class JACTrain {
     private void go() {
 
         // String hoster="rscat.com";
-        String hoster = "streamprotect.net";
-        JAntiCaptcha jac = new JAntiCaptcha(Utilities.getMethodDir(), hoster);
+        final String hoster = "canna.to";
+        final JAntiCaptcha jac = new JAntiCaptcha(Utilities.getMethodDir(), hoster);
         // jac.runTestMode(new File("1186941165349_captcha.jpg"));
         jac.displayLibrary();
 
@@ -54,7 +60,17 @@ public class JACTrain {
         // jac.trainCaptcha(new
         // File("C:/Users/coalado/.jd_home/jd/captcha/methods/"+hoster+"/captchas/"+"captcha08_05_2008_22_20_01"+".jpg"),
         // 4);
+        new GuiRunnable<Object>() {
+            // @Override
+            public Object runSave() {
+                LookAndFeelController.setUIManager();
+                Toolkit.getDefaultToolkit().getSystemEventQueue().push(new EDTEventQueue());
+
+                return null;
+            }
+        }.waitForEDT();
         jac.trainAllCaptchas(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/captchas/" + hoster);
+
 
         // jac.saveMTHFile();
         logger.info("Training Ende");

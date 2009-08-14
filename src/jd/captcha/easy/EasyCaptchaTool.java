@@ -18,6 +18,9 @@ import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import javax.swing.SpinnerNumberModel;
 
+import jd.captcha.JAntiCaptcha;
+import jd.captcha.utils.Utilities;
+
 import jd.gui.swing.jdgui.events.EDTEventQueue;
 import jd.gui.swing.laf.LookAndFeelController;
 
@@ -122,9 +125,8 @@ public class EasyCaptchaTool {
 
                     public void actionPerformed(ActionEvent e) {
                         EasyFile ef2 = showMethodes();
-                        if(ef2!=null)
-                        {
-                            ef.file=ef2.file;
+                        if (ef2 != null) {
+                            ef.file = ef2.file;
                             dialog.dispose();
                         }
                     }
@@ -162,7 +164,7 @@ public class EasyCaptchaTool {
                                             dialog.dispose();
                                             cHosterDialog.dispose();
                                             if (tfAuthor.getText() != null && !tfAuthor.getText().matches("\\s*")) config.setProperty(CONFIG_AUTHOR, tfAuthor.getText());
-                                            CreateHoster.create(new EasyFile(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/" + JDUtilities.getJACMethodsDirectory()+"/"+"easycaptcha"),ef, tfAuthor.getText(), (Integer) spMaxLetters.getValue());
+                                            CreateHoster.create(new EasyFile(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/" + JDUtilities.getJACMethodsDirectory() + "/" + "easycaptcha"), ef, tfAuthor.getText(), (Integer) spMaxLetters.getValue());
 
                                         } else {
                                             JOptionPane.showConfirmDialog(null, JDL.L("easycaptcha.tool.warning.hostnamemissing", "the hostname is missing"), JDL.L("easycaptcha.tool.warning.hostnamemissing", "the hostname is missing"), JOptionPane.CLOSED_OPTION, JOptionPane.WARNING_MESSAGE);
@@ -209,25 +211,77 @@ public class EasyCaptchaTool {
     }
 
     public static void showToolKid(final EasyFile meth) {
+
         CreateHoster.setImageType(meth);
         File folder = meth.getCaptchaFolder();
         if (!folder.exists() || folder.list().length < 1) return;
-        System.out.println(meth);
-    }
+        final JDialog dialog = new GuiRunnable<JDialog>() {
+            // @Override
+            public JDialog runSave() {
+                return new JDialog(DummyFrame.getDialogParent());
+            }
+        }.getReturnValue();
+        dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        dialog.setTitle(JDL.L("easycaptcha.tool.title", "EasyCaptcha"));
+        final JPanel box = new GuiRunnable<JPanel>() {
+            // @Override
+            public JPanel runSave() {
+                return new JPanel(new GridLayout(3, 1));
+            }
+        }.getReturnValue();
+        JButton btnTrain = new GuiRunnable<JButton>() {
+            // @Override
+            public JButton runSave() {
+                return new JButton(JDL.L("easycaptcha.tool.train", "Train"));
+            }
+        }.getReturnValue();
+        btnTrain.addActionListener(new ActionListener() {
 
-    public static void main(String[] args) {
+            public void actionPerformed(ActionEvent e) {
+                // jac.runTestMode(new
+                // File("1186941165349_captcha.jpg"));
+
+                final JAntiCaptcha jac = new JAntiCaptcha(Utilities.getMethodDir(), meth.getName());
+                new Thread(new Runnable() {
+
+                    public void run() {
+                        jac.trainAllCaptchas(meth.getCaptchaFolder().getAbsolutePath());
+                        
+                    }}).start();
+
+            }
+        });
+        box.add(btnTrain);
+        dialog.add(box);
         new GuiRunnable<Object>() {
             // @Override
             public Object runSave() {
-                LookAndFeelController.setUIManager();
-                Toolkit.getDefaultToolkit().getSystemEventQueue().push(new EDTEventQueue());
-                EasyFile meth = EasyCaptchaTool.getCaptchaMethode();
-                showToolKid(meth);
+                dialog.pack();
+                // dialog.setModalityType(ModalityType.DOCUMENT_MODAL);
+
+                dialog.setVisible(true);
                 return null;
             }
         }.waitForEDT();
 
-        System.exit(0);
+    }
+
+    public static void main(String[] args) {
+         LookAndFeelController.setUIManager();
+
+        new GuiRunnable<Object>() {
+            // @Override
+            public Object runSave() {
+                Toolkit.getDefaultToolkit().getSystemEventQueue().push(new EDTEventQueue());
+                return null;
+            }
+        }.waitForEDT();
+        EasyFile meth = EasyCaptchaTool.getCaptchaMethode();
+
+        showToolKid(meth);
+
+
+        // System.exit(0);
 
     }
 

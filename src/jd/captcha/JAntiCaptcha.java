@@ -37,6 +37,7 @@ import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -59,11 +60,16 @@ import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.utils.JDUtilities;
 
+import org.htmlcleaner.JDomSerializer;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import jd.gui.userio.DummyFrame;
+
+import jd.gui.swing.GuiRunnable;
 
 /**
  * Diese Klasse stellt alle public Methoden zur captcha Erkennung zur Verfügung.
@@ -228,7 +234,7 @@ public class JAntiCaptcha {
 
     private BasicWindow bw3;
 
-    private JFrame f;
+    private JDialog f;
 
     /**
      * Bildtyp. Falls dieser von jpg unterschiedlich ist, muss zuerst
@@ -326,9 +332,6 @@ public class JAntiCaptcha {
         Letter[] letters = captcha.getLetters(getLetterNum());
         if (letters == null) {
             captcha.setValityPercent(100.0);
-            if (Utilities.isLoggerActive()) {
-                logger.severe("Captcha konnte nicht erkannt werden!");
-            }
             return null;
         }
         // LetterComperator[] newLetters = new LetterComperator[letters.length];
@@ -336,6 +339,13 @@ public class JAntiCaptcha {
         double correct = 0;
         LetterComperator akt;
 
+        if (letters == null) {
+            captcha.setValityPercent(100.0);
+            if (Utilities.isLoggerActive()) {
+                logger.severe("Captcha konnte nicht erkannt werden!");
+            }
+            return null;
+        }
         // if (letters.length != this.getLetterNum()) {
         // captcha.setValityPercent(100.0);
         // if(Utilities.isLoggerActive())logger.severe("Captcha konnte nicht
@@ -622,7 +632,14 @@ public class JAntiCaptcha {
 
     private void destroyScrollPaneWindows() {
         while (spw.size() > 0) {
-            spw.remove(0).destroy();
+            new GuiRunnable<Object>() {
+                // @Override
+                public Object runSave() {
+                    spw.remove(0).destroy();
+                    return null;
+                }
+            }.waitForEDT();
+
         }
     }
 
@@ -1358,7 +1375,7 @@ public class JAntiCaptcha {
             letter.removeSmallObjects(0.3, 0.5, 10);
             letter = letter.getSimplified(getJas().getDouble("simplifyFaktor"));
             letter.setDecodedValue(let);
-
+            if (letter == null) continue;
             // BasicWindow.showImage(letter.getImage(1),element.getName());
 
             letterDB.add(letter);
@@ -1761,7 +1778,19 @@ public class JAntiCaptcha {
                 if (Utilities.isLoggerActive()) {
                     logger.info("Erkennungsrate: " + 100 * successFull / total);
                 }
+            } else if (newLetters == -2) {
+                if (f != null) {
+                    new GuiRunnable<Object>() {
+                        // @Override
+                        public Object runSave() {
+                            f.dispose();
+                            return null;
+                        }
+                    }.waitForEDT();
+                }
+                break;
             }
+
         }
 
     }
@@ -1778,7 +1807,6 @@ public class JAntiCaptcha {
             destroyScrollPaneWindows();
         }
         // Lade das Bild
-        Image captchaImage = Utilities.loadImage(captchafile);
         // Erstelle hashwert
         final String captchaHash = JDHash.getMD5(captchafile);
 
@@ -1791,30 +1819,38 @@ public class JAntiCaptcha {
             return -1;
         }
         // captcha erstellen
-        Captcha captcha = createCaptcha(captchaImage);
+        Image captchaImage = Utilities.loadImage(captchafile);
+
+        final Captcha captcha = createCaptcha(captchaImage);
         if (captcha == null) return -1;
         String code = null;
         // Zeige das OriginalBild
-        if (f != null) {
-            f.dispose();
-        }
-        f = new JFrame();
-        f.setVisible(true);
-        f.setLocation(500, 10);
-        f.setLayout(new GridBagLayout());
-        f.add(new JLabel("original captcha: " + captchafile.getName()), Utilities.getGBC(0, 0, 10, 1));
 
-        f.add(new ImageComponent(captcha.getImage()), Utilities.getGBC(0, 1, 10, 1));
+        new GuiRunnable<Object>() {
+            // @Override
+            public Object runSave() {
+                if (f != null) {
+                    f.dispose();
+                }
+                f = new JDialog(DummyFrame.getDialogParent());
+                f.setLocation(500, 10);
+                f.setLayout(new GridBagLayout());
+                f.add(new JLabel("original captcha: " + captchafile.getName()), Utilities.getGBC(0, 0, 10, 1));
 
-        f.setSize(1400, 800);
+                f.add(new ImageComponent(captcha.getImage()), Utilities.getGBC(0, 1, 10, 1));
 
-        f.pack();
+                f.setSize(1400, 800);
+                f.pack();
+                f.setVisible(true);
 
+                return null;
+            }
+        }.waitForEDT();
         // Führe das Prepare aus
         // jas.executePrepareCommands(captcha);
         // Hole die letters aus dem neuen captcha
         final String guess = checkCaptcha(captchafile, captcha);
-        Letter[] letters = captcha.getLetters(letterNum);
+        final Letter[] letters = captcha.getLetters(letterNum);
         // Utilities.wait(40000);
         // prüfe auf Erfolgreiche Lettererkennung
         // if (letters == null || letters.length != this.getLetterNum()) {
@@ -1849,16 +1885,26 @@ public class JAntiCaptcha {
         // }
         class myRunnable implements Runnable {
             public String code = null;
+            public int ret = 0;
 
             public void run() {
                 if (getCodeFromFileName(captchafile.getName()) == null) {
-                    code = JOptionPane.showInputDialog("Bitte Captcha Code eingeben (Press enter to confirm " + guess, guess);
+                    code = new GuiRunnable<String>() {
+                        // @Override
+                        public String runSave() {
+                            return JOptionPane.showInputDialog("Bitte Captcha Code eingeben (Press enter to confirm " + guess, guess);
+                        }
+                    }.getReturnValue();
                     if (code != null && code.equals(guess)) {
                         code = "";
                     } else if (code == null) {
-                        boolean doIt = JOptionPane.showConfirmDialog(new JFrame(), "Ja (yes) = beenden (close) \t Nein (no) = nächstes Captcha (next captcha)") == JOptionPane.OK_OPTION;
-                        if (doIt) {
-                            System.exit(0);
+                        if (new GuiRunnable<Boolean>() {
+                            // @Override
+                            public Boolean runSave() {
+                                return JOptionPane.showConfirmDialog(new JFrame(), "Ja (yes) = beenden (close) \t Nein (no) = nächstes Captcha (next captcha)") == JOptionPane.OK_OPTION;
+                            }
+                        }.getReturnValue()) {
+                            ret = -2;
                         }
                     }
 
@@ -1879,24 +1925,29 @@ public class JAntiCaptcha {
         Thread inpThread = new Thread(run);
         inpThread.start();
         // Zeige das After-prepare Bild an
+        new GuiRunnable<Object>() {
+            // @Override
+            public Object runSave() {
+                f.add(new JLabel("Letter Detection"), Utilities.getGBC(0, 3, 10, 1));
 
-        f.add(new JLabel("Letter Detection"), Utilities.getGBC(0, 3, 10, 1));
+                f.add(new ImageComponent(captcha.getImageWithGaps(1)), Utilities.getGBC(0, 4, 10, 1));
 
-        f.add(new ImageComponent(captcha.getImageWithGaps(1)), Utilities.getGBC(0, 4, 10, 1));
+                f.add(new JLabel("Seperated"), Utilities.getGBC(0, 5, 10, 1));
+                for (int i = 0; i < letters.length; i++) {
+                    f.add(new ImageComponent(letters[i].getImage((int) Math.ceil(jas.getDouble("simplifyFaktor")))), Utilities.getGBC(i * 2 + 1, 6, 1, 1));
+                    JLabel jl = new JLabel("|");
+                    jl.setForeground(Color.RED);
+                    f.add(jl, Utilities.getGBC(i * 2 + 2, 6, 1, 1));
+                }
+                f.pack();
+                return null;
+            }
+        }.waitForEDT();
 
-        f.add(new JLabel("Seperated"), Utilities.getGBC(0, 5, 10, 1));
-
-        for (int i = 0; i < letters.length; i++) {
-            f.add(new ImageComponent(letters[i].getImage((int) Math.ceil(jas.getDouble("simplifyFaktor")))), Utilities.getGBC(i * 2 + 1, 6, 1, 1));
-            JLabel jl = new JLabel("|");
-            jl.setForeground(Color.RED);
-            f.add(jl, Utilities.getGBC(i * 2 + 2, 6, 1, 1));
-        }
-        f.pack();
         // Decoden. checkCaptcha verwendet dabei die gecachte Erkennung der
         // letters
 
-        LetterComperator[] lcs = captcha.getLetterComperators();
+        final LetterComperator[] lcs = captcha.getLetterComperators();
         if (lcs == null) {
             File file = getResourceFile("detectionErrors5/" + System.currentTimeMillis() + "_" + captchafile.getName());
             file.getParentFile().mkdirs();
@@ -1909,51 +1960,73 @@ public class JAntiCaptcha {
         if (lcs.length != letters.length) {
             logger.severe("ACHTUNG. lcs: " + lcs.length + " - letters: " + letters.length);
         }
-        if (guess != null /* && guess.length() == getLetterNum() */) {
+        new GuiRunnable<Object>() {
+            // @Override
+            public Object runSave() {
+                if (guess != null /* && guess.length() == getLetterNum() */) {
 
-            for (int i = 0; i < lcs.length; i++) {
-                if (lcs[i] != null && lcs[i].getB() != null) {
-                    f.add(new ImageComponent(lcs[i].getB().getImage((int) Math.ceil(jas.getDouble("simplifyFaktor")))), Utilities.getGBC(i * 2 + 1, 8, 1, 1));
+                    f.add(new JLabel("Letter Detection"), Utilities.getGBC(0, 3, 10, 1));
 
+                    f.add(new ImageComponent(captcha.getImageWithGaps(1)), Utilities.getGBC(0, 4, 10, 1));
+
+                    f.add(new JLabel("Seperated"), Utilities.getGBC(0, 5, 10, 1));
+                    for (int i = 0; i < letters.length; i++) {
+                        f.add(new ImageComponent(letters[i].getImage((int) Math.ceil(jas.getDouble("simplifyFaktor")))), Utilities.getGBC(i * 2 + 1, 6, 1, 1));
+                        JLabel jl = new JLabel("|");
+                        jl.setForeground(Color.RED);
+                        f.add(jl, Utilities.getGBC(i * 2 + 2, 6, 1, 1));
+                    }
+                    f.pack();
+
+                    for (int i = 0; i < lcs.length; i++) {
+                        if (lcs[i] != null && lcs[i].getB() != null) {
+
+                            f.add(new ImageComponent(lcs[i].getB().getImage((int) Math.ceil(jas.getDouble("simplifyFaktor")))), Utilities.getGBC(i * 2 + 1, 8, 1, 1));
+
+                        } else {
+                            f.add(new JLabel(""), Utilities.getGBC(i * 2 + 1, 8, 1, 1));
+
+                        }
+                        JLabel jl = new JLabel("|");
+                        jl.setForeground(Color.RED);
+                        f.add(jl, Utilities.getGBC(i * 2 + 2, 6, 1, 1));
+                        // bw3.setImage(i + 1, 3, lcs[i].getB().getImage((int)
+                        // Math.ceil(jas.getDouble("simplifyFaktor"))));
+
+                        if (lcs[i] != null && lcs[i].getB() != null) {
+                            f.add(new JLabel("" + lcs[i].getDecodedValue()), Utilities.getGBC(i * 2 + 1, 9, 1, 1));
+
+                            // bw3.setText(i + 1, 4, lcs[i].getDecodedValue());
+                        } else {
+                            f.add(new JLabel(""), Utilities.getGBC(i * 2 + 1, 9, 1, 1));
+
+                        }
+                        if (lcs[i] != null && lcs[i].getB() != null) {
+                            f.add(new JLabel("" + Math.round(10 * lcs[i].getValityPercent()) / 10.0), Utilities.getGBC(i * 2 + 1, 10, 1, 1));
+
+                        } else {
+                            f.add(new JLabel(""), Utilities.getGBC(i * 2 + 1, 10, 1, 1));
+
+                        }
+                    }
+                    f.pack();
                 } else {
-                    f.add(new JLabel(""), Utilities.getGBC(i * 2 + 1, 8, 1, 1));
-
+                    if (Utilities.isLoggerActive()) {
+                        logger.warning("Erkennung fehlgeschlagen");
+                    }
                 }
-                JLabel jl = new JLabel("|");
-                jl.setForeground(Color.RED);
-                f.add(jl, Utilities.getGBC(i * 2 + 2, 6, 1, 1));
-                // bw3.setImage(i + 1, 3, lcs[i].getB().getImage((int)
-                // Math.ceil(jas.getDouble("simplifyFaktor"))));
+                f.add(new JLabel("prepared captcha"), Utilities.getGBC(0, 11, 10, 1));
 
-                if (lcs[i] != null && lcs[i].getB() != null) {
-                    f.add(new JLabel("" + lcs[i].getDecodedValue()), Utilities.getGBC(i * 2 + 1, 9, 1, 1));
-
-                    // bw3.setText(i + 1, 4, lcs[i].getDecodedValue());
-                } else {
-                    f.add(new JLabel(""), Utilities.getGBC(i * 2 + 1, 9, 1, 1));
-
-                }
-                if (lcs[i] != null && lcs[i].getB() != null) {
-                    f.add(new JLabel("" + Math.round(10 * lcs[i].getValityPercent()) / 10.0), Utilities.getGBC(i * 2 + 1, 10, 1, 1));
-
-                } else {
-                    f.add(new JLabel(""), Utilities.getGBC(i * 2 + 1, 10, 1, 1));
-
-                }
+                f.add(new ImageComponent(captcha.getImage()), Utilities.getGBC(0, 12, 10, 1));
+                f.pack();
+                return null;
             }
-            f.pack();
-        } else {
-            if (Utilities.isLoggerActive()) {
-                logger.warning("Erkennung fehlgeschlagen");
-            }
-        }
-        f.add(new JLabel("prepared captcha"), Utilities.getGBC(0, 11, 10, 1));
 
-        f.add(new ImageComponent(captcha.getImage()), Utilities.getGBC(0, 12, 10, 1));
-        f.pack();
+        }.waitForEDT();
         if (Utilities.isLoggerActive()) {
             logger.info("Decoded Captcha: " + guess + " Vality: " + captcha.getValityPercent());
         }
+
         if (inpThread.isAlive()) {
             synchronized (run) {
                 try {
@@ -1964,6 +2037,7 @@ public class JAntiCaptcha {
                 }
             }
         }
+        if (run.ret == -2) return -2;
         code = run.code;
         if (code == null) {
             File file = getResourceFile("detectionErrors3/" + System.currentTimeMillis() + "_" + captchafile.getName());
@@ -1993,7 +2067,9 @@ public class JAntiCaptcha {
             captchafile.renameTo(new File(newName));
         }
         int ret = 0;
-        for (int i = 0; i < letters.length; i++) {
+        for (int j = 0; j < letters.length; j++) {
+            final int i = j;
+
             if (!code.substring(i, i + 1).equals("-")) {
                 if (guess != null && code.length() > i && guess.length() > i && code.substring(i, i + 1).equals(guess.substring(i, i + 1))) {
                     ret++;
@@ -2005,8 +2081,14 @@ public class JAntiCaptcha {
                         // letters[i].setTextGrid(letters[i].getPixelString());
                         letters[i].setSourcehash(captchaHash);
                         letters[i].setDecodedValue(code.substring(i, i + 1));
+                        new GuiRunnable<Object>() {
+                            // @Override
+                            public Object runSave() {
+                                BasicWindow.showImage(letters[i].getImage(2), "" + letters[i].getDecodedValue());
 
-                        BasicWindow.showImage(letters[i].getImage(2), "" + letters[i].getDecodedValue());
+                                return null;
+                            }
+                        }.waitForEDT();
                         letterDB.add(letters[i]);
                     }
                     if (!jas.getBoolean("TrainOnlyUnknown")) {
@@ -2015,12 +2097,33 @@ public class JAntiCaptcha {
                         letters[i].setSourcehash(captchaHash);
                         letters[i].setDecodedValue(code.substring(i, i + 1));
                         letterDB.add(letters[i]);
-                        f.add(new JLabel("OK+"), Utilities.getGBC(i + 1, 13, 1, 1));
+                        new GuiRunnable<Object>() {
+                            // @Override
+                            public Object runSave() {
+                                f.add(new JLabel("OK+"), Utilities.getGBC(i + 1, 13, 1, 1));
+
+                                return null;
+                            }
+                        }.waitForEDT();
 
                     } else {
-                        f.add(new JLabel("OK-"), Utilities.getGBC(i + 1, 13, 1, 1));
+                        new GuiRunnable<Object>() {
+                            // @Override
+                            public Object runSave() {
+                                f.add(new JLabel("OK-"), Utilities.getGBC(i + 1, 13, 1, 1));
+
+                                return null;
+                            }
+                        }.waitForEDT();
                     }
-                    f.pack();
+                    new GuiRunnable<Object>() {
+                        // @Override
+                        public Object runSave() {
+                            f.pack();
+
+                            return null;
+                        }
+                    }.waitForEDT();
                 } else {
                     if (Utilities.isLoggerActive()) {
                         logger.info(letterDB + " - ");
@@ -2034,13 +2137,27 @@ public class JAntiCaptcha {
                     letters[i].setDecodedValue(code.substring(i, i + 1));
 
                     letterDB.add(letters[i]);
-                    BasicWindow.showImage(letters[i].getImage(2), "" + letters[i].getDecodedValue());
-                    f.add(new JLabel("NO +"), Utilities.getGBC(i + 1, 13, 1, 1));
-                    f.pack();
+                    new GuiRunnable<Object>() {
+                        // @Override
+                        public Object runSave() {
+                            BasicWindow.showImage(letters[i].getImage(2), "" + letters[i].getDecodedValue());
+                            f.add(new JLabel("NO +"), Utilities.getGBC(i + 1, 13, 1, 1));
+                            f.pack();
+                            return null;
+                        }
+                    }.waitForEDT();
+
                 }
             } else {
-                f.add(new JLabel("-"), Utilities.getGBC(i + 1, 13, 1, 1));
-                f.pack();
+                new GuiRunnable<Object>() {
+                    // @Override
+                    public Object runSave() {
+                        f.add(new JLabel("-"), Utilities.getGBC(i + 1, 13, 1, 1));
+                        f.pack();
+                        return null;
+                    }
+                }.waitForEDT();
+
             }
             // mth.appendChild(element);
         }
