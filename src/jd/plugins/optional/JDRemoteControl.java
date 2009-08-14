@@ -476,10 +476,10 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             if (enablePlugin) {
                 server = new HttpServer(subConfig.getIntegerProperty(PARAM_PORT, 10025), new Serverhandler());
                 server.start();
-                UserIO.getInstance().requestMessageDialog(getHost() + " " + JDL.L("plugins.optional.remotecontrol.startedonport", "started on port") + " " + subConfig.getIntegerProperty(PARAM_PORT, 10025) + "\n http://127.0.0.1:" + subConfig.getIntegerProperty(PARAM_PORT, 10025) + JDL.L("plugins.optional.remotecontrol.help", "/help for Developer Information."));
+                UserIO.getInstance().requestMessageDialog(JDL.LF("plugins.optional.remotecontrol.startedonport2", " %s started on port %s\nhttp://127.0.0.1:%s\n/help for Developer Information.", getHost(), subConfig.getIntegerProperty(PARAM_PORT, 10025), subConfig.getIntegerProperty(PARAM_PORT, 10025)));
             } else {
                 if (server != null) server.sstop();
-                UserIO.getInstance().requestMessageDialog(getHost() + " " + JDL.L("plugins.optional.remotecontrol.stopped", "stopped."));
+                UserIO.getInstance().requestMessageDialog(JDL.LF("plugins.optional.remotecontrol.stopped2", "getHost() stopped."));
             }
         } catch (Exception ex) {
             JDLogger.exception(ex);
@@ -490,7 +490,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
         ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
 
         MenuAction m;
-        menu.add(m = (MenuAction)new MenuAction(MenuAction.TOGGLE, JDL.L("plugins.optional.remotecontrol.activate", "Aktivieren"), 0).setActionListener(this));
+        menu.add(m = (MenuAction) new MenuAction(MenuAction.TOGGLE, JDL.L("plugins.optional.remotecontrol.activate", "Aktivieren"), 0).setActionListener(this));
         m.setSelected(subConfig.getBooleanProperty(PARAM_ENABLED, true));
 
         return menu;

@@ -27,13 +27,13 @@ public class MainTabbedPane extends JTabbedPane {
         return INSTANCE;
     }
 
+    @Override
     public void remove(Component component) {
         throw new RuntimeException(" This method is not allowed");
-
     }
 
+    @Override
     protected boolean processKeyBinding(KeyStroke ks, KeyEvent e, int condition, boolean pressed) {
-
         boolean ret = super.processKeyBinding(ks, e, condition, pressed);
 
         if (getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).get(ks) != null) { return false; }
@@ -45,14 +45,13 @@ public class MainTabbedPane extends JTabbedPane {
 
         super.remove(view);
         view.getBroadcaster().fireEvent(new SwitchPanelEvent(view, SwitchPanelEvent.ON_REMOVE));
+        if (getTabCount() > 0) setSelectedComponent(getComponentAt(0));
     }
 
-    // private Boolean extraHighlight;
     protected View latestSelection;
 
     public void addTab(View view) {
         addTab(view, 0);
-
     }
 
     /**
@@ -94,10 +93,6 @@ public class MainTabbedPane extends JTabbedPane {
             this.setTabComponentAt(this.getTabCount() - 1, new ChangeHeader(view));
         }
         this.setFocusable(false);
-        // extraHighlight =
-        // SubConfiguration.getConfig(JDGuiConstants.CONFIG_PARAMETER).getBooleanProperty(JDGuiConstants.CFG_KEY_MAIN_TABBED_HIGHLIGHT,
-        // false);
-        // initUI();
     }
 
     private MainTabbedPane() {
@@ -125,106 +120,11 @@ public class MainTabbedPane extends JTabbedPane {
         });
     }
 
+    @Override
     public void paint(Graphics g) {
         super.paint(g);
         if (SwingGui.getInstance() != null) SwingGui.getInstance().setWaiting(false);
     }
-
-    // /**
-    // * inits the ui for special lafs
-    // */
-    // private void initUI() {
-    // if (getUI() instanceof AcrylTabbedPaneUI) {
-    //
-    // setUI(new AcrylTabbedPaneUI() {
-    // public void installDefaults() {
-    // super.installDefaults();
-    // contentBorderInsets = new Insets(0, 0, 0, 0);
-    // int inset = extraHighlight ? 4 : 1;
-    // tabInsets = new Insets(inset, 6, inset, 6);
-    // }
-    //
-    // protected void paintContentBorder(Graphics g, int tabPlacement, int
-    // selectedIndex, int x, int y, int w, int h) {
-    // // super.paintContentBorder(arg0, arg1, arg2, arg3, arg4,
-    // // arg5, arg6)
-    // int sepHeight = tabAreaInsets.bottom;
-    //
-    // if (sepHeight > 0) {
-    // switch (tabPlacement) {
-    // case TOP: {
-    // int tabAreaHeight = calculateTabAreaHeight(tabPlacement, runCount,
-    // maxTabHeight);
-    // Color colors[] = getContentBorderColors(tabPlacement);
-    // for (int i = 0; i < colors.length; i++) {
-    // g.setColor(colors[i]);
-    // g.drawLine(x, y + tabAreaHeight - sepHeight + i + 1, x + w, y +
-    // tabAreaHeight - sepHeight + i + 1);
-    // }
-    //
-    // break;
-    // }
-    //
-    // }
-    //
-    // }
-    //
-    // }
-    //
-    // protected void paintTab(Graphics g, int tabPlacement, Rectangle[] rects,
-    // int tabIndex, Rectangle iconRect, Rectangle textRect) {
-    // Rectangle tabRect = rects[tabIndex];
-    // int selectedIndex = tabPane.getSelectedIndex();
-    // boolean isSelected = selectedIndex == tabIndex;
-    //
-    // if (extraHighlight && !isSelected) {
-    // tabRect.y += 5;
-    // tabRect.height -= 5;
-    //
-    // }
-    // paintTabBackground(g, tabPlacement, tabIndex, tabRect.x, tabRect.y,
-    // tabRect.width, tabRect.height, isSelected);
-    // paintTabBorder(g, tabPlacement, tabIndex, tabRect.x, tabRect.y,
-    // tabRect.width, tabRect.height, isSelected);
-    // if (extraHighlight && isSelected) {
-    // tabRect.y += 5;
-    // tabRect.height -= 5;
-    // }
-    // try {
-    // boolean doPaintContent = true;
-    // if (JTattooUtilities.getJavaVersion() >= 1.6) {
-    // doPaintContent = (tabPane.getTabComponentAt(tabIndex) == null);
-    // }
-    // if (doPaintContent) {
-    // String title = tabPane.getTitleAt(tabIndex);
-    // Font font = getTabFont(isSelected);
-    // FontMetrics metrics = g.getFontMetrics(font);
-    // Icon icon = getIconForTab(tabIndex);
-    //
-    // layoutLabel(tabPlacement, metrics, tabIndex, title, icon, tabRect,
-    // iconRect, textRect, isSelected);
-    // paintText(g, tabPlacement, font, metrics, tabIndex, title, textRect,
-    // isSelected);
-    // paintIcon(g, tabPlacement, tabIndex, icon, iconRect, isSelected);
-    // }
-    // paintFocusIndicator(g, tabPlacement, rects, tabIndex, iconRect, textRect,
-    // isSelected);
-    // } catch (Exception ex) {
-    // //
-    // outStream.print("----------------------------------------------------\n");
-    // // ex.printStackTrace(outStream);
-    // }
-    // if (extraHighlight) {
-    // tabRect.y -= 5;
-    // tabRect.height += 5;
-    // }
-    //
-    // }
-    //
-    // });
-    //
-    // }
-    // }
 
     /**
      * gets called form the main frame if it gets closed
@@ -236,28 +136,16 @@ public class MainTabbedPane extends JTabbedPane {
     /**
      * returns the currently selected View
      */
-
     public View getSelectedView() {
         SwingGui.checkEDT();
         return (View) super.getSelectedComponent();
     }
 
+    @Override
     public void setSelectedComponent(Component e) {
         SwingGui.checkEDT();
         super.setSelectedComponent(getComponentEquals((View) e));
     }
-
-    // public String getTitleAt(int index) {
-    // System.out.println(index);
-    // try {
-    // return super.getTitleAt(index);
-    // } catch (Exception e) {
-    //
-    // e.printStackTrace();
-    // return "";
-    // }
-    //
-    // }
 
     /**
      * returns the component in this tab that equals view
