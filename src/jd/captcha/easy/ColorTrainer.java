@@ -620,13 +620,20 @@ public class ColorTrainer {
 
             captcha.setCaptchaFile(captchafile);
             cs[i] = captcha;
-            ColorTrainer cc = new ColorTrainer();
+            final ColorTrainer cc = new ColorTrainer();
             if (lastCC != null) {
+                final ColorTrainer last = lastCC;
                 cc.fastSelection = lastCC.fastSelection;
                 cc.foreground = lastCC.foreground;
                 cc.add = lastCC.add;
                 cc.tollerance = lastCC.tollerance;
-                cc.mode.setSelectedItem(lastCC.mode.getSelectedItem());
+                new GuiRunnable<Object>() {
+                    public Object runSave() {
+                        cc.mode.setSelectedItem(last.mode.getSelectedItem());
+
+                    return null;
+                    }
+                }.waitForEDT();
             }
             cc.ret = c;
             cc.init(captcha);

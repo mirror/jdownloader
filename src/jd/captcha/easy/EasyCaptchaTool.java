@@ -290,6 +290,26 @@ public class EasyCaptchaTool {
             }
         });
         box.add(btnColorTrainer);
+        JButton btnColorLoadCaptchas = new GuiRunnable<JButton>() {
+            public JButton runSave() {
+                return new JButton(JDL.L("easycaptcha.tool.btn.loadcaptchas", "Load Captchas"));
+            }
+        }.getReturnValue();
+        btnColorLoadCaptchas.addActionListener(new ActionListener() {
+
+            public void actionPerformed(ActionEvent e) {
+
+                new Thread(new Runnable() {
+
+                    public void run() {
+                        LoadCaptchas.load(meth.getName(),false);
+
+                    }
+                }).start();
+
+            }
+        });
+        box.add(btnColorLoadCaptchas);
         dialog.add(box);
         new GuiRunnable<Object>() {
             public Object runSave() {

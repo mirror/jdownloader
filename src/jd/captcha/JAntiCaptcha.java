@@ -2113,14 +2113,29 @@ public class JAntiCaptcha {
                         // letters[i].setTextGrid(letters[i].getPixelString());
                         letters[i].setSourcehash(captchaHash);
                         letters[i].setDecodedValue(code.substring(i, i + 1));
-                        new GuiRunnable<Object>() {
-                            // @Override
-                            public Object runSave() {
-                                BasicWindow.showImage(letters[i].getImage(2), "" + letters[i].getDecodedValue());
-
-                                return null;
+                        new Thread(new Runnable() {
+                            public void run() {
+                                final BasicWindow bws = new GuiRunnable<BasicWindow>() {
+                                    // @Override
+                                    public BasicWindow runSave() {
+                                        return BasicWindow.showImage(letters[i].getImage(2), "" + letters[i].getDecodedValue());
+                                    }
+                                }.getReturnValue();
+                                try {
+                                    Thread.sleep(1000);
+                                } catch (InterruptedException e) {
+                                    // TODO Auto-generated catch block
+                                    e.printStackTrace();
+                                }
+                                new GuiRunnable<Object>() {
+                                    // @Override
+                                    public Object runSave() {
+                                        bws.dispose();
+                                        return null;                                    }
+                                }.waitForEDT();
                             }
-                        }.waitForEDT();
+                        }).start();
+
                         letterDB.add(letters[i]);
                     }
                     if (!jas.getBoolean("TrainOnlyUnknown")) {
