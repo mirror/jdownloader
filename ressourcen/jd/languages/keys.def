@@ -29,6 +29,7 @@ easycaptcha.tool.warning.hostnamemissing = the hostname is missing
 easycaptcha.tool.btn.train = Train
 easycaptcha.tool.btn.letterdb = Show Letter Database
 easycaptcha.tool.btn.colortrainer = Train Colors
+easycaptcha.tool.btn.loadcaptchas = Load Captchas
 easycaptcha.loadcaptchas.title = Load Captchas
 easycaptcha.needcaptchas = You need Captchas first!
 easycaptcha.opencaptchafolder = Open Captcha Folder
