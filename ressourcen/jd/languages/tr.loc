@@ -682,6 +682,7 @@ gui.menu.action.remove_disabled.name = Devre Dışı Olanları Kaldır
 gui.menu.action.remove_dupes.accel = -
 gui.menu.action.remove_dupes.mnem = -
 gui.menu.action.remove_dupes.name = Aynı Olanları Kaldır
+gui.menu.action.remove_offline.name = Çevrimdışı olanları kaldır
 gui.menu.action.restart.accel = -
 gui.menu.action.restart.desc = jDownloader'ı yeniden başlat
 gui.menu.action.restart.mnem = -
