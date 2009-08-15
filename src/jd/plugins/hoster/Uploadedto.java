@@ -34,7 +34,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploaded.to" }, urls = { "((http://[\\w\\.]*?uploaded\\.to/.*?(file/|\\?id=|&id=)[\\w]+/?)|(http://[\\w\\.]*?ul\\.to/[\\w\\-]+/?))" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploaded.to" ,"ul.to","ul.to"}, urls = { "http://[\\w\\.]*?uploaded\\.to/.*?(file/|\\?id=|&id=)[\\w]+/?","http://[\\w\\.]*?ul\\.to/[\\w\\-]+/.+","http://[\\w\\.]*?ul\\.to/[\\w\\-]+/?" }, flags = { 2,2,2 })
 public class Uploadedto extends PluginForHost {
 
     static private final String AGB_LINK = "http://uploaded.to/agb";

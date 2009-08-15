@@ -295,8 +295,10 @@ public class DistributeData extends Thread {
     private ArrayList<DownloadLink> quickHosterCheck(String data) {
         for (HostPluginWrapper pw : JDUtilities.getPluginsForHost()) {
             Pattern pattern = pw.getPattern();
+          
+          
             String match = new Regex(data, pattern).getMatch(-1);
-            if (match != null && match.equals(data)) {
+            if (match != null && (match.equals(data)||(match.length()>10+pw.getHost().length()&&data.startsWith(match)))) {
 
                 DownloadLink dl = new DownloadLink((PluginForHost) pw.getNewPluginInstance(), null, pw.getHost(), Encoding.urlDecode(match, true), true);
                 ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();

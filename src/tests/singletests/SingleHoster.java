@@ -33,6 +33,7 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
 import jd.plugins.HosterInfo;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
@@ -49,7 +50,6 @@ public class SingleHoster {
     @Before
     public void setUp() {
 
-
         TestUtils.mainInit();
         TestUtils.initGUI();
         TestUtils.initDecrypter();
@@ -63,12 +63,10 @@ public class SingleHoster {
         // "Please enter Hoster Domain. e.g. rapidshare.de", null, def, null,
         // null, null);
         // UserIO.setCountdownTime(20);
-
         links = TestUtils.getHosterLinks(d);
-//        links = new HashMap<String, String>();
+        // links = new HashMap<String, String>();
         if (!links.containsKey(TestUtils.HOSTER_LINKTYPE_NORMAL + 1)) {
-            
-            
+
             Browser br = new Browser();
 
             try {
@@ -78,8 +76,8 @@ public class SingleHoster {
                 String source = Encoding.htmlDecode(br.toString().replace("<em>", "").replace("</em>", ""));
 
                 String[] links = HTMLParser.getHttpLinks(source, null);
-
-               main: for (String l : links) {
+                int ii = 1;
+                main: for (String l : links) {
                     try {
                         if (l.toLowerCase().contains(d.toLowerCase()) && new URL(l).getHost().toLowerCase().contains(d.toLowerCase())) {
                             for (HostPluginWrapper pw : JDUtilities.getPluginsForHost()) {
@@ -88,11 +86,11 @@ public class SingleHoster {
 
                                     DownloadLink dl = new DownloadLink((PluginForHost) pw.getNewPluginInstance(), null, pw.getHost(), Encoding.urlDecode(l, true), true);
                                     dl.isAvailable();
-                                    if (dl.isAvailable()) { 
-                                        
-                                        this.links.put(TestUtils.HOSTER_LINKTYPE_NORMAL + 1, dl.getDownloadURL());
-                                        break main;
-                                        
+                                    if (dl.isAvailable()) {
+                                        System.out.println(dl.getDownloadURL());
+                                        this.links.put(TestUtils.HOSTER_LINKTYPE_NORMAL + ii++, dl.getDownloadURL());
+                                        if (ii > 4) break main;
+
                                     }
 
                                 }
@@ -105,12 +103,10 @@ public class SingleHoster {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-          
+
         }
         TestUtils.log("Found " + links.size() + " test link(s) for host " + d);
     }
-
-
 
     @Test
     public void findDownloadLink() {
@@ -132,6 +128,22 @@ public class SingleHoster {
                 DownloadLink dlink = getDownloadLink(next.getValue());
                 TestUtils.log("Testing link: " + next.getValue());
                 if (next.getKey().equalsIgnoreCase(TestUtils.HOSTER_LINKTYPE_NORMAL + 1)) {
+                    if (dlink.getAvailableStatus() != AvailableStatus.TRUE) {
+                        fail(TestUtils.log(next.getKey() + " Downloadlink " + next.getValue() + " is marked as NOT AVAILABLE"));
+                    }
+                } else if (next.getKey().equalsIgnoreCase(TestUtils.HOSTER_LINKTYPE_NORMAL + 2)) {
+                    if (dlink.getAvailableStatus() != AvailableStatus.TRUE) {
+                        fail(TestUtils.log(next.getKey() + " Downloadlink " + next.getValue() + " is marked as NOT AVAILABLE"));
+                    }
+                } else if (next.getKey().equalsIgnoreCase(TestUtils.HOSTER_LINKTYPE_NORMAL + 3)) {
+                    if (dlink.getAvailableStatus() != AvailableStatus.TRUE) {
+                        fail(TestUtils.log(next.getKey() + " Downloadlink " + next.getValue() + " is marked as NOT AVAILABLE"));
+                    }
+                } else if (next.getKey().equalsIgnoreCase(TestUtils.HOSTER_LINKTYPE_NORMAL + 4)) {
+                    if (dlink.getAvailableStatus() != AvailableStatus.TRUE) {
+                        fail(TestUtils.log(next.getKey() + " Downloadlink " + next.getValue() + " is marked as NOT AVAILABLE"));
+                    }
+                } else if (next.getKey().equalsIgnoreCase(TestUtils.HOSTER_LINKTYPE_NORMAL + 5)) {
                     if (dlink.getAvailableStatus() != AvailableStatus.TRUE) {
                         fail(TestUtils.log(next.getKey() + " Downloadlink " + next.getValue() + " is marked as NOT AVAILABLE"));
                     }
@@ -158,7 +170,20 @@ public class SingleHoster {
     @Test
     public void downloadFree() {
         for (Entry<String, String> next : links.entrySet()) {
+            TestUtils.log(next.getValue());
             if (next.getKey().equalsIgnoreCase(TestUtils.HOSTER_LINKTYPE_NORMAL + 1)) {
+                download(next.getValue());
+            }
+            if (next.getKey().equalsIgnoreCase(TestUtils.HOSTER_LINKTYPE_NORMAL + 2)) {
+                download(next.getValue());
+            }
+            if (next.getKey().equalsIgnoreCase(TestUtils.HOSTER_LINKTYPE_NORMAL + 3)) {
+                download(next.getValue());
+            }
+            if (next.getKey().equalsIgnoreCase(TestUtils.HOSTER_LINKTYPE_NORMAL + 4)) {
+                download(next.getValue());
+            }
+            if (next.getKey().equalsIgnoreCase(TestUtils.HOSTER_LINKTYPE_NORMAL + 5)) {
                 download(next.getValue());
             }
         }
@@ -189,6 +214,10 @@ public class SingleHoster {
             while (true) {
 
                 Thread.sleep(1000);
+                if (!dlink.getLinkStatus().hasStatus(LinkStatus.PLUGIN_IN_PROGRESS)) {
+                    TestUtils.log("Download did not start correctly. PLugin is not active any more");
+                    return;
+                }
                 if (dlink.getLinkStatus().getStatusString().trim().length() == 0) {
                     fail(TestUtils.log("Download did not start correctly. Statusstring is empty"));
                     download.abortDownload();
@@ -243,6 +272,6 @@ public class SingleHoster {
 
     @After
     public void tearDown() throws Exception {
-        JDUtilities.getController().exit();
+        // JDUtilities.getController().exit();
     }
 }

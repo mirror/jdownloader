@@ -79,7 +79,8 @@ public class LetitBitNet extends PluginForHost {
         Form form = br.getForm(3);
         form.put("pass", Encoding.urlEncode(account.getPass()));
         br.submitForm(form);
-        String url = br.getRegex("middle.*?href='(.*?letit.*?download.*?)'").getMatch(0);
+        
+       String url = br.getRegex("middle.*?href='(.*?letit.*?download.*?)'").getMatch(0);
         if (url == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
         dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, url, true, 0);
         dl.startDownload();

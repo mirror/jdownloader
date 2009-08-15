@@ -490,9 +490,14 @@ public class ConfigEntry implements Serializable {
         this.propertyName = propertyName;
         return this;
     }
-
-    public void setPropertyType(PropertyType propertyType) {
+/**
+ * Sets the propoertyType. one of PropertyType enum.
+ * @param propertyType
+ * @return
+ */
+    public ConfigEntry setPropertyType(PropertyType propertyType) {
         this.propertyType = propertyType;
+        return this;
     }
 
     public ConfigEntry setStart(int start) {
