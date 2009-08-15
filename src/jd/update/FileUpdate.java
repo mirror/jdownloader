@@ -252,7 +252,14 @@ public class FileUpdate {
                     broadcaster.fireEvent(new MessageEvent(this, SUCCESS, "Hash OK"));
                     //move to update folder
                     this.getLocalTmpFile().delete();
-                    boolean ret = tmpFile.renameTo(getLocalTmpFile());
+                    //tinyupdate has to be updated directly
+                    boolean ret;
+                    if(tmpFile.getName().startsWith("tinyupdate")){
+                         ret = tmpFile.renameTo(this.getLocalFile());
+                    }else{
+                         ret = tmpFile.renameTo(getLocalTmpFile()); 
+                    }
+                  
                     if (ret) {
                         //rename ok
                         return ret;
