@@ -54,7 +54,7 @@ public class Vipfilecom extends PluginForHost {
         if (br.containsHTML("This file not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String fileSize = br.getRegex("<span.*?Size:.*?<b style=.*?>(.*?)</b>").getMatch(0);
         if (fileSize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String fileName = br.getRegex("<input type=\"hidden\" name=\"name\" value=\"(.*?)\" />").getMatch(0);
+        String fileName = br.getRegex("<input type=\"hidden\" name=\"realname\" value=\"(.*?)\" />").getMatch(0);
         downloadLink.setDownloadSize(Regex.getSize(fileSize));
         downloadLink.setName(fileName);
         String link = Encoding.htmlDecode(br.getRegex(Pattern.compile("<a href=\"(http://vip-file\\.com/download.*?)\">", Pattern.CASE_INSENSITIVE)).getMatch(0));
@@ -93,7 +93,7 @@ public class Vipfilecom extends PluginForHost {
         Form form = br.getForm(1);
         form.put("pass", Encoding.urlEncode(account.getPass()));
         br.submitForm(form);
-        String url = Encoding.htmlDecode(br.getRegex(Pattern.compile("<a href=\"(.*?vip-file\\.com/download.*?)\">", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        String url = Encoding.htmlDecode(br.getRegex(Pattern.compile("<a href=\"(.*?vip-file\\.com.*?)\">", Pattern.CASE_INSENSITIVE)).getMatch(0));
         if (url == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
         dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, url, true, 0);
         dl.startDownload();
