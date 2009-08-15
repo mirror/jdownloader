@@ -22,7 +22,6 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
-import java.awt.image.RGBImageFilter;
 import java.io.IOException;
 import java.net.URL;
 import java.util.HashMap;
@@ -31,16 +30,15 @@ import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import javax.swing.JComponent;
 
-import jd.nutils.Colors;
+import jd.controlling.JDLogger;
 import jd.nutils.encoding.Encoding;
 import jd.utils.locale.JDL;
 
 /**
- * Die ChartAPI greift auf die Google Chart API zurück Sie funktioniert nur mit
+ * Die ChartAPI greift auf die Google Chart API zurück. Sie funktioniert nur mit
  * einer intakten Internet-Verbindung!
  * 
  * @author gluewurm
- * 
  */
 public abstract class ChartAPI extends JComponent {
 
@@ -53,7 +51,7 @@ public abstract class ChartAPI extends JComponent {
             this.path = path;
         }
 
-        //@Override
+        // @Override
         public void run() {
             BufferedImage image = null;
             try {
@@ -67,7 +65,7 @@ public abstract class ChartAPI extends JComponent {
     }
 
     private static final String serverAdress = "chart.apis.google.com";
-    private Logger logger = jd.controlling.JDLogger.getLogger();
+    private Logger logger = JDLogger.getLogger();
     private HashMap<String, ChartAPIEntity> collData = new HashMap<String, ChartAPIEntity>();
     private int width;
     private int height;
@@ -167,20 +165,21 @@ public abstract class ChartAPI extends JComponent {
         loader.start();
     }
 
-    public class TransparentFilter extends RGBImageFilter {
-        private final int transparentRGB;
-
-        public TransparentFilter(Color color) {
-            this.transparentRGB = color.getRGB();
-        }
-
-        //@Override
-        public int filterRGB(int x, int y, int rgb) {
-
-            if (Colors.getColorDifference(rgb, transparentRGB) > 40.0) return rgb | 0x44000000;
-            return rgb & 0xffffff;
-        }
-    }
+    // public class TransparentFilter extends RGBImageFilter {
+    // private final int transparentRGB;
+    //
+    // public TransparentFilter(Color color) {
+    // this.transparentRGB = color.getRGB();
+    // }
+    //
+    // //@Override
+    // public int filterRGB(int x, int y, int rgb) {
+    //
+    // if (Colors.getColorDifference(rgb, transparentRGB) > 40.0) return rgb |
+    // 0x44000000;
+    // return rgb & 0xffffff;
+    // }
+    // }
 
     public void setImage(Image image) {
 

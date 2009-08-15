@@ -330,26 +330,14 @@ public class JAntiCaptcha {
         Letter[] letters = captcha.getLetters(getLetterNum());
         if (letters == null) {
             captcha.setValityPercent(100.0);
-            return null;
-        }
-        // LetterComperator[] newLetters = new LetterComperator[letters.length];
-        String ret = "";
-        double correct = 0;
-        LetterComperator akt;
-
-        if (letters == null) {
-            captcha.setValityPercent(100.0);
             if (Utilities.isLoggerActive()) {
                 logger.severe("Captcha konnte nicht erkannt werden!");
             }
             return null;
         }
-        // if (letters.length != this.getLetterNum()) {
-        // captcha.setValityPercent(100.0);
-        // if(Utilities.isLoggerActive())logger.severe("Captcha konnte nicht
-        // erkannt werden!2");
-        // return null;
-        // }
+        String ret = "";
+        double correct = 0;
+        LetterComperator akt;
 
         // Scannen
         Vector<LetterComperator> newLettersVector = new Vector<LetterComperator>();
@@ -1827,7 +1815,7 @@ public class JAntiCaptcha {
 
     }
 
-    int trainCaptcha(final File captchafile, int letterNum) {
+    public int trainCaptcha(final File captchafile, int letterNum) {
 
         if (!captchafile.exists()) {
             if (Utilities.isLoggerActive()) {
@@ -1915,7 +1903,7 @@ public class JAntiCaptcha {
         // return -1;
         // }
         // }
-        class myRunnable implements Runnable {
+        class MyRunnable implements Runnable {
             public String code = null;
             public int ret = 0;
 
@@ -1953,7 +1941,7 @@ public class JAntiCaptcha {
             }
 
         }
-        myRunnable run = new myRunnable();
+        MyRunnable run = new MyRunnable();
         Thread inpThread = new Thread(run);
         inpThread.start();
         // Zeige das After-prepare Bild an
