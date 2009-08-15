@@ -19,15 +19,23 @@ package tests.singletests;
 import static org.junit.Assert.fail;
 
 import java.io.File;
+import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
+import jd.HostPluginWrapper;
 import jd.controlling.DistributeData;
 import jd.controlling.SingleDownloadController;
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
 import jd.plugins.HosterInfo;
+import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.JDUtilities;
 
 import org.junit.After;
 import org.junit.Before;
@@ -38,15 +46,10 @@ import tests.utils.TestUtils;
 public class SingleHoster {
     private HashMap<String, String> links;
 
-    /**
-     * change this to the host that is tested, test links are taken from
-     * http://jdownloader
-     * .net:8081/knowledge/wiki/development/intern/testlinks/hoster/HOST
-     */
-    private static final String HOST = "ftp";
-
     @Before
     public void setUp() {
+
+
         TestUtils.mainInit();
         TestUtils.initGUI();
         TestUtils.initDecrypter();
@@ -54,9 +57,60 @@ public class SingleHoster {
         TestUtils.initHosts();
         TestUtils.finishInit();
 
-        links = TestUtils.getHosterLinks(HOST);
-        TestUtils.log("Found " + links.size() + " test link(s) for host " + HOST);
+        String d = TestUtils.getStringProperty("HOSTERDOMAIN");
+        // UserIO.setCountdownTime(2);
+        // String d = UserIOGui.getInstance().requestInputDialog(0,
+        // "Please enter Hoster Domain. e.g. rapidshare.de", null, def, null,
+        // null, null);
+        // UserIO.setCountdownTime(20);
+
+        links = TestUtils.getHosterLinks(d);
+//        links = new HashMap<String, String>();
+        if (!links.containsKey(TestUtils.HOSTER_LINKTYPE_NORMAL + 1)) {
+            
+            
+            Browser br = new Browser();
+
+            try {
+                br.setDebug(true);
+                br.getPage("http://www.google.de/search?as_q=&num=250&as_qdr=m&as_epq=intext%3A" + Encoding.urlEncode(d));
+
+                String source = Encoding.htmlDecode(br.toString().replace("<em>", "").replace("</em>", ""));
+
+                String[] links = HTMLParser.getHttpLinks(source, null);
+
+               main: for (String l : links) {
+                    try {
+                        if (l.toLowerCase().contains(d.toLowerCase()) && new URL(l).getHost().toLowerCase().contains(d.toLowerCase())) {
+                            for (HostPluginWrapper pw : JDUtilities.getPluginsForHost()) {
+
+                                if (pw.canHandle(l)) {
+
+                                    DownloadLink dl = new DownloadLink((PluginForHost) pw.getNewPluginInstance(), null, pw.getHost(), Encoding.urlDecode(l, true), true);
+                                    dl.isAvailable();
+                                    if (dl.isAvailable()) { 
+                                        
+                                        this.links.put(TestUtils.HOSTER_LINKTYPE_NORMAL + 1, dl.getDownloadURL());
+                                        break main;
+                                        
+                                    }
+
+                                }
+                            }
+
+                        }
+                    } catch (Exception e) {
+                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+          
+        }
+        TestUtils.log("Found " + links.size() + " test link(s) for host " + d);
     }
+
+
 
     @Test
     public void findDownloadLink() {
@@ -135,7 +189,7 @@ public class SingleHoster {
             while (true) {
 
                 Thread.sleep(1000);
-                if(dlink.getLinkStatus().getStatusString().trim().length()==0){
+                if (dlink.getLinkStatus().getStatusString().trim().length() == 0) {
                     fail(TestUtils.log("Download did not start correctly. Statusstring is empty"));
                     download.abortDownload();
                     return;
@@ -189,6 +243,6 @@ public class SingleHoster {
 
     @After
     public void tearDown() throws Exception {
-        // JDUtilities.getController().exit();
+        JDUtilities.getController().exit();
     }
 }
