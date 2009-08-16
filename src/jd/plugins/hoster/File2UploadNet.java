@@ -22,6 +22,8 @@ import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -36,11 +38,81 @@ public class File2UploadNet extends PluginForHost {
 
     public File2UploadNet(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("http://file2upload.net/membership?paid");
     }
 
     @Override
     public String getAGBLink() {
         return "http://file2upload.net/toc";
+    }
+
+    public void login(Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage("http://www.file2upload.net");
+        Form form = br.getForm(0);
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        form.put("acc_login", Encoding.urlEncode(account.getUser()));
+        form.put("acc_pass", Encoding.urlEncode(account.getPass()));
+        br.submitForm(form);
+        br.setFollowRedirects(false);
+    }
+
+    // @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo(this, account);
+        this.setBrowserExclusive();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        if (br.containsHTML("Account area")) {
+            account.setValid(true);
+        } else {
+            account.setValid(false);
+        }
+        return ai;
+    }
+
+    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        requestFileInformation(downloadLink);
+        login(account);
+        br.getPage(downloadLink.getDownloadURL());
+        String passCode = null;
+        if (br.containsHTML("Your package allow only")) {
+            // sleep(5 * 60 * 1001l, downloadLink);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Too much parallel downloads", LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        }
+        if (br.containsHTML("Enter password to download this file")) {
+            if (downloadLink.getStringProperty("pass", null) == null) {
+                passCode = Plugin.getUserInput("Password?", downloadLink);
+            } else {
+                /* gespeicherten PassCode holen */
+                passCode = downloadLink.getStringProperty("pass", null);
+            }
+            Form pwform = br.getForm(1);
+            if (pwform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            pwform.put("password", passCode);
+            br.submitForm(pwform);
+        }
+        if (br.containsHTML("Wrong password")) {
+            logger.warning("Wrong password");
+            downloadLink.setProperty("pass", null);
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        }
+        if (passCode != null) {
+            downloadLink.setProperty("pass", passCode);
+        }
+        String dllink = br.getRegex("class=\"important\" href=\"(.*?)\">Click").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        dl.startDownload();
+    }
+
+    public int getMaxSimultanPremiumDownloadNum() {
+        return 2;
     }
 
     // @Override
@@ -65,11 +137,13 @@ public class File2UploadNet extends PluginForHost {
         Form captchaForm = br.getForm(0);
         if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         String passCode = null;
-        //This host got asecurity issue, if you enter the right pssword and the wrong captcha (if a password is required), you can still download and only if you DON'T have to enter a Password, the Captcha is required.
+        // This host got asecurity issue, if you enter the right pssword and the
+        // wrong captcha (if a password is required), you can still download and
+        // only if you DON'T have to enter a Password, the Captcha is required.
         if (!br.containsHTML("Enter password to download this file")) {
-        String captchaurl = "http://file2upload.net/captcha.php";
-        String code = getCaptchaCode(captchaurl, downloadLink);
-        captchaForm.put("code", code);
+            String captchaurl = "http://file2upload.net/captcha.php";
+            String code = getCaptchaCode(captchaurl, downloadLink);
+            captchaForm.put("code", code);
         }
         if (br.containsHTML("Enter password to download this file")) {
             if (downloadLink.getStringProperty("pass", null) == null) {
@@ -90,7 +164,7 @@ public class File2UploadNet extends PluginForHost {
             downloadLink.setProperty("pass", passCode);
         }
         String dllink = br.getRegex("class=\"important\" href=\"(.*?)\">Click to download! <").getMatch(0);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, dllink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
 
         dl.startDownload();
     }
