@@ -31,7 +31,7 @@ import jd.plugins.PluginForDecrypt;
 public class CrstlWrzN extends PluginForDecrypt {
 
     private static final String patternLink_Protected = "(http://[\\w\\.]*?crystal-warez\\.in/protect/[^\"']*)";
-    static private Integer lock = 0;
+    final static private Object LOCK = new Object();
 
     public CrstlWrzN(PluginWrapper wrapper) {
         super(wrapper);
@@ -41,7 +41,7 @@ public class CrstlWrzN extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         String parameter = param.toString();
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        synchronized (lock) {
+        synchronized (LOCK) {
             br.getPage(parameter);
             if (parameter.matches(patternLink_Protected)) {
                 String code = null;

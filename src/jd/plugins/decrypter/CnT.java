@@ -25,13 +25,12 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "cine.to" }, urls = { "http://[\\w\\.]*?cine\\.to/index\\.php\\?do=show_download&id=[\\w]+|http://[\\w\\.]*?cine\\.to/index\\.php\\?do=protect&id=[\\w]+|http://[\\w\\.]*?cine\\.to/pre/index\\.php\\?do=show_download&id=[\\w]+|http://[\\w\\.]*?cine\\.to/pre/index\\.php\\?do=protect&id=[\\w]+"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "cine.to" }, urls = { "http://[\\w\\.]*?cine\\.to/index\\.php\\?do=show_download&id=[\\w]+|http://[\\w\\.]*?cine\\.to/index\\.php\\?do=protect&id=[\\w]+|http://[\\w\\.]*?cine\\.to/pre/index\\.php\\?do=show_download&id=[\\w]+|http://[\\w\\.]*?cine\\.to/pre/index\\.php\\?do=protect&id=[\\w]+" }, flags = { 0 })
 public class CnT extends PluginForDecrypt {
 
     private static final String patternLink_Protected = "http://[\\w\\.]*?cine\\.to/index\\.php\\?do=protect\\&id=[a-zA-Z0-9]+|http://[\\w\\.]*?cine\\.to/index\\.php\\?do=protect\\&id=[a-zA-Z0-9]+|http://[\\w\\.]*?cine\\.to/pre/index\\.php\\?do=protect\\&id=[a-zA-Z0-9]+";
-    static private Integer lock = 0;
+    final static private Object LOCK = new Object();
 
     public CnT(PluginWrapper wrapper) {
         super(wrapper);
@@ -41,7 +40,7 @@ public class CnT extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         String parameter = param.toString();
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        synchronized (lock) {
+        synchronized (LOCK) {
             br.getPage(parameter);
             if (parameter.matches(patternLink_Protected)) {
                 String code = getCaptchaCode("http://cine.to/securimage_show.php", param);
@@ -66,6 +65,5 @@ public class CnT extends PluginForDecrypt {
     }
 
     // @Override
-    
 
 }

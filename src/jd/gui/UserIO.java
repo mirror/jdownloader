@@ -103,7 +103,7 @@ public abstract class UserIO {
     public static final int ICON_QUESTION = 3;
 
     protected static UserIO INSTANCE = null;
-    private static Integer COUNTDOWN_TIME = null;
+    private static int COUNTDOWN_TIME = -1;
 
     public static UserIO getInstance() {
         if (INSTANCE == null) INSTANCE = new NoUserIO();
@@ -240,7 +240,7 @@ public abstract class UserIO {
 
     public static int getCountdownTime() {
         SubConfiguration cfg = GUIUtils.getConfig();
-        if (COUNTDOWN_TIME != null) return COUNTDOWN_TIME.intValue();
+        if (COUNTDOWN_TIME > 0) return COUNTDOWN_TIME;
         return Math.max(2, cfg.getIntegerProperty(JDGuiConstants.PARAM_INPUTTIMEOUT, 20));
     }
 
@@ -249,11 +249,11 @@ public abstract class UserIO {
      * 
      * @param time
      */
-    public static void setCountdownTime(Integer time) {
-        if (time == null) {
-            COUNTDOWN_TIME = null;
+    public static void setCountdownTime(int time) {
+        if (time <= 0) {
+            COUNTDOWN_TIME = -1;
         } else {
-            COUNTDOWN_TIME = new Integer(time);
+            COUNTDOWN_TIME = time;
         }
     }
 

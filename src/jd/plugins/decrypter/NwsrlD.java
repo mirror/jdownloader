@@ -28,7 +28,7 @@ import jd.plugins.PluginForDecrypt;
 
 
 public class NwsrlD extends PluginForDecrypt {
-    private static Integer lock = new Integer(0);
+    final static private Object LOCK = new Object();
     private DownloadLink dl;
 
     public NwsrlD(PluginWrapper wrapper) {
@@ -39,7 +39,7 @@ public class NwsrlD extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        synchronized (lock) {
+        synchronized (LOCK) {
             br.getPage(parameter);
             String link = br.getRedirectLocation();
             if (link == null) link = br.getRegex("<a href=\"([^\"]*)\" .*?(style|onClick)").getMatch(0);

@@ -30,7 +30,7 @@ import jd.plugins.PluginForDecrypt;
 
 public class Lxn extends PluginForDecrypt {
 
-    static private Integer lock = 0; /*
+    final static private Object LOCK = new Object(); /*
                                       * lixin checkt anhand der ip und der
                                       * globalen phpsessionid, daher müssen
                                       * parallel zugriffe vermieden werden,
@@ -45,7 +45,7 @@ public class Lxn extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        synchronized (lock) {
+        synchronized (LOCK) {
             boolean lix_continue = true;
             Form form;
             /* zuerst mal den evtl captcha abarbeiten */

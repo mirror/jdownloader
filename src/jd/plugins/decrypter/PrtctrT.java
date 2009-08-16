@@ -35,11 +35,10 @@ import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
 import org.xml.sax.SAXException;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "protector.to" }, urls = { "http://[\\w\\.]*?protector\\.to/.*"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "protector.to" }, urls = { "http://[\\w\\.]*?protector\\.to/.*" }, flags = { 0 })
 public class PrtctrT extends PluginForDecrypt {
-    private static Integer lock = new Integer(0);
+    final static private Object LOCK = new Object();
 
     public PrtctrT(PluginWrapper wrapper) {
         super(wrapper);
@@ -64,9 +63,10 @@ public class PrtctrT extends PluginForDecrypt {
          * String link = "dlc://protector.to/container/" + currentDate + "/" +
          * folderID + "_1.dlc"; decryptedLinks.add(createDownloadlink(link));
          */
-        synchronized (lock) {
+        synchronized (LOCK) {
             if (param.getStringProperty("referer", null) != null) {
-                //br.getHeaders().put("Referer", param.getStringProperty("referer", null));
+                // br.getHeaders().put("Referer",
+                // param.getStringProperty("referer", null));
             }
             if (param.getProperty("protector_cookies", null) != null) {
                 br.getCookies(this.getHost()).add((Cookies) param.getProperty("protector_cookies", null));
@@ -133,7 +133,7 @@ public class PrtctrT extends PluginForDecrypt {
             while ((img = br.getRegex("<img src=\"(/captcha/display.php[/?]uuid=[0-9a-z.]+)\" />").getMatch(0)) != null) {
                 if (retry > 5) throw new DecrypterException(DecrypterException.CAPTCHA);
                 Form form = br.getForm(0);
-                String captchaCode = getCaptchaCode("http://protector.to"+img, param);
+                String captchaCode = getCaptchaCode("http://protector.to" + img, param);
                 if (captchaCode == null) return null;
                 form.put("code", captchaCode);
                 br.submitForm(form);
@@ -171,5 +171,5 @@ public class PrtctrT extends PluginForDecrypt {
     }
 
     // @Override
-    
+
 }

@@ -100,7 +100,6 @@ public class StartUp {
 
     @Test
     public void Controller() {
-        new JDController();
         assertTrue(JDController.getInstance() != null);
     }
 

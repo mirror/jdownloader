@@ -94,7 +94,7 @@ public class Rapidshare extends PluginForHost {
 
     private static String[] serverList3;
 
-    private static Integer loginlock = 0;
+    final static private Object LOCK = new Object();
 
     private static long rsapiwait = 0;
 
@@ -861,7 +861,7 @@ public class Rapidshare extends PluginForHost {
 
     @SuppressWarnings("unchecked")
     public Browser login(Account account, boolean usesavedcookie) throws IOException, PluginException {
-        synchronized (loginlock) {
+        synchronized (LOCK) {
             Browser br = new Browser();
             br.setDebug(true);
             br.setCookiesExclusive(true);

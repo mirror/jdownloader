@@ -38,9 +38,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
-@DecrypterPlugin(revision = "$Revision: 7185 $", interfaceVersion = 2, names = { "ddl-warez.org" }, urls = { "http://[\\w\\.]*?ddl-warez\\.org/detail\\.php\\?id=.+&cat=[\\w]+"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision: 7185 $", interfaceVersion = 2, names = { "ddl-warez.org" }, urls = { "http://[\\w\\.]*?ddl-warez\\.org/detail\\.php\\?id=.+&cat=[\\w]+" }, flags = { 0 })
 public class DDLWrz extends PluginForDecrypt {
     static class DDLWrz_Linkgrabber extends Thread {
         public final static int THREADFAIL = 1;
@@ -70,7 +69,7 @@ public class DDLWrz extends PluginForDecrypt {
         @Override
         public void run() {
             if (gotjob == true) {
-                logger.finest("DDLWrz_Linkgrabber: id=" + new Integer(Worker_ID) + " started!");
+                logger.finest("DDLWrz_Linkgrabber: id=" + Worker_ID + " started!");
                 String base = br.getBaseURL();
                 String action = form.getAction(base);
 
@@ -85,10 +84,8 @@ public class DDLWrz extends PluginForDecrypt {
                             downloadlink = new Regex(unpackedScript, Pattern.compile("<frame.*?src=\"([^\" ]*?)\r?\n?\" (?=(NAME=\"second\"))", Pattern.CASE_INSENSITIVE)).getMatch(0);
                             break;
                         } catch (Exception e) {
-                            logger.finest("DDLWrz_Linkgrabber: id=" + new Integer(Worker_ID) + " PostRequest-Error, try again!");
-                            synchronized (DDLWrz.Worker_Delay) {
-                                DDLWrz.Worker_Delay = 1000;
-                            }
+                            logger.finest("DDLWrz_Linkgrabber: id=" + Worker_ID + " PostRequest-Error, try again!");
+                            DDLWrz.Worker_Delay = 1000;
                         }
                         try {
                             Thread.sleep(1500);
@@ -96,13 +93,13 @@ public class DDLWrz extends PluginForDecrypt {
                         }
                     }
                 } else {
-                    logger.finest("DDLWrz_Linkgrabber: id=" + new Integer(Worker_ID) + " finished! (NO DOWNLOAD FORM!)");
+                    logger.finest("DDLWrz_Linkgrabber: id=" + Worker_ID + " finished! (NO DOWNLOAD FORM!)");
                     _status = THREADFAIL;
                     progress.increase(1);
                     return;
                 }
             }
-            logger.finest("DDLWrz_Linkgrabber: id=" + new Integer(Worker_ID) + " finished!");
+            logger.finest("DDLWrz_Linkgrabber: id=" + Worker_ID + " finished!");
             _status = THREADPASS;
             progress.increase(1);
         }
@@ -172,8 +169,10 @@ public class DDLWrz extends PluginForDecrypt {
                             }
                         }
                     }
-                    //only one countdown can be processed at a time: Leider ist es nicht möglich zwei Countdows zur selben Zeit offen zu haben.
-                    synchronized (__lock) {
+                    // only one countdown can be processed at a time: Leider ist
+                    // es nicht möglich zwei Countdows zur selben Zeit offen zu
+                    // haben.
+                    synchronized (LOCK) {
                         br.submitForm(form);
                         form = br.getForm(1);
                         if (form.getAction().contains("crypt.php")) {
@@ -193,9 +192,7 @@ public class DDLWrz extends PluginForDecrypt {
                 progress.setRange(forms.length);
                 DDLWrz_Linkgrabber DDLWrz_Linkgrabbers[] = new DDLWrz_Linkgrabber[forms.length];
                 for (int i = 0; i < forms.length; ++i) {
-                    synchronized (Worker_Delay) {
-                        Thread.sleep(Worker_Delay);
-                    }
+                    Thread.sleep(Worker_Delay);
                     DDLWrz_Linkgrabbers[i] = new DDLWrz_Linkgrabber(progress, i, br.cloneBrowser());
                     DDLWrz_Linkgrabbers[i].setjob(forms[i]);
                     DDLWrz_Linkgrabbers[i].start();
@@ -283,9 +280,6 @@ public class DDLWrz extends PluginForDecrypt {
     //
     // }
 
-
-    
-
     public static String getCode(String id, Browser br, int what) throws IOException {
         Browser brc = br.cloneBrowser();
         brc.getPage("http://www.ddl-warez.org/getcaptcha.php?id=" + id);
@@ -320,7 +314,7 @@ public class DDLWrz extends PluginForDecrypt {
             for (String c : codes.keySet()) {
                 if (c.equalsIgnoreCase(code)) continue;
                 for (int i = 0; i < c.length(); i++) {
-                    retcode=retcode.replaceAll("" + c.charAt(i), "");
+                    retcode = retcode.replaceAll("" + c.charAt(i), "");
                 }
             }
             return retcode;
@@ -379,5 +373,5 @@ public class DDLWrz extends PluginForDecrypt {
             return createKey(number / seed, seed) + String.valueOf((char) (number % seed + offset));
     }
 
-    private static Object __lock = new Object();
+    private final static Object LOCK = new Object();
 }

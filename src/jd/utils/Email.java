@@ -77,7 +77,7 @@ public class Email {
         Transport.send(msg);
     }
 
-    class MailAuthenticator extends Authenticator {
+    static class MailAuthenticator extends Authenticator {
 
         /**
          * Ein String, der den Usernamen nach der Erzeugung eines Objektes<br>

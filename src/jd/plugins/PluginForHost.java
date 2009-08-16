@@ -73,7 +73,7 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public String getVersion() {
-        return this.wrapper.getVersion();
+        return wrapper.getVersion();
     }
 
     protected String getCaptchaCode(String method, String captchaAddress, DownloadLink downloadLink) throws IOException, PluginException {
@@ -81,7 +81,7 @@ public abstract class PluginForHost extends Plugin {
             logger.severe("Captcha Adresse nicht definiert");
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
-        File captchaFile = this.getLocalCaptchaFile();
+        File captchaFile = getLocalCaptchaFile();
         try {
             Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaAddress));
         } catch (Exception e) {
@@ -128,15 +128,15 @@ public abstract class PluginForHost extends Plugin {
     private static final String CONFIGNAME = "pluginsForHost";
     private static int currentConnections = 0;
 
-    private static HashMap<Class<? extends PluginForHost>, Long> HOSTER_WAIT_TIMES = new HashMap<Class<? extends PluginForHost>, Long>();
-    private static HashMap<Class<? extends PluginForHost>, Long> HOSTER_WAIT_UNTIL_TIMES = new HashMap<Class<? extends PluginForHost>, Long>();
+    private static HashMap<String, Long> HOSTER_WAIT_TIMES = new HashMap<String, Long>();
+    private static HashMap<String, Long> HOSTER_WAIT_UNTIL_TIMES = new HashMap<String, Long>();
 
     public static final String PARAM_MAX_RETRIES = "MAX_RETRIES";
     protected DownloadInterface dl = null;
     private int maxConnections = 50;
 
-    private static HashMap<Class<? extends PluginForHost>, Long> LAST_CONNECTION_TIME = new HashMap<Class<? extends PluginForHost>, Long>();
-    private static HashMap<Class<? extends PluginForHost>, Long> LAST_STARTED_TIME = new HashMap<Class<? extends PluginForHost>, Long>();
+    private static HashMap<String, Long> LAST_CONNECTION_TIME = new HashMap<String, Long>();
+    private static HashMap<String, Long> LAST_STARTED_TIME = new HashMap<String, Long>();
     private Long WAIT_BETWEEN_STARTS = 0L;
 
     private boolean enablePremium = false;
@@ -160,9 +160,9 @@ public abstract class PluginForHost extends Plugin {
 
     protected int waitForFreeConnection(DownloadLink downloadLink) throws InterruptedException {
         int free;
-        while ((free = this.getMaxConnections() - getCurrentConnections()) <= 0) {
+        while ((free = getMaxConnections() - getCurrentConnections()) <= 0) {
             Thread.sleep(1000);
-            downloadLink.getLinkStatus().setStatusText(JDL.LF("download.system.waitForconnection", "Cur. %s/%s connections...waiting", getCurrentConnections() + "", this.getMaxConnections() + ""));
+            downloadLink.getLinkStatus().setStatusText(JDL.LF("download.system.waitForconnection", "Cur. %s/%s connections...waiting", getCurrentConnections() + "", getMaxConnections() + ""));
             downloadLink.requestGuiUpdate();
         }
         return free;
@@ -229,14 +229,14 @@ public abstract class PluginForHost extends Plugin {
     // @Override
     public ArrayList<MenuAction> createMenuitems() {
 
-        if (!this.enablePremium) return null;
+        if (!enablePremium) return null;
         ArrayList<MenuAction> menuList = new ArrayList<MenuAction>();
         MenuAction account;
         MenuAction m = new MenuAction(MenuAction.NORMAL, JDL.L("plugins.menu.configs", "Configuration"), 1);
         m.setActionListener(this);
-        if (this.config == null || config.getEntries().size() == 0) m.setEnabled(false);
+        if (config == null || config.getEntries().size() == 0) m.setEnabled(false);
 
-        if (config != null) config.setGroup(new ConfigGroup(this.getHost(), this.getHosterIcon()));
+        if (config != null) config.setGroup(new ConfigGroup(getHost(), getHosterIcon()));
         menuList.add(m);
         if (premiumAction == null) {
             premiumAction = new MenuAction(MenuAction.CONTAINER, JDL.L("plugins.menu.accounts", "Accounts"), 0);
@@ -295,11 +295,11 @@ public abstract class PluginForHost extends Plugin {
     public abstract String getAGBLink();
 
     protected void enablePremium() {
-        this.enablePremium(null);
+        enablePremium(null);
     }
 
     protected void enablePremium(String url) {
-        this.premiumurl = url;
+        premiumurl = url;
         enablePremium = true;
     }
 
@@ -334,11 +334,6 @@ public abstract class PluginForHost extends Plugin {
                     // Plugininstanz
                     PluginForHost plg = (PluginForHost) wrapper.getNewPluginInstance();
                     DownloadLink link = new DownloadLink(plg, file.substring(file.lastIndexOf("/") + 1, file.length()), getHost(), file, true);
-                    try {
-                        correctDownloadLink(link);
-                    } catch (Exception e) {
-                        JDLogger.exception(e);
-                    }
                     links.add(link);
                     if (fp != null) {
                         link.setFilePackage(fp);
@@ -382,7 +377,7 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public synchronized int getFreeConnections() {
-        return Math.max(1, this.getMaxConnections() - currentConnections);
+        return Math.max(1, getMaxConnections() - currentConnections);
     }
 
     public int getMaxConnections() {
@@ -417,31 +412,31 @@ public abstract class PluginForHost extends Plugin {
 
     public boolean ignoreHosterWaittime() {
         if (AccountController.getInstance().getValidAccount(this) == null) return false;
-        if (!this.enablePremium || !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) return false;
+        if (!enablePremium || !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) return false;
         return true;
     }
 
     public long getRemainingHosterWaittime() {
-        if (!HOSTER_WAIT_UNTIL_TIMES.containsKey(this.getClass())) { return 0; }
-        return Math.max(0, (HOSTER_WAIT_UNTIL_TIMES.get(this.getClass()) - System.currentTimeMillis()));
+        if (!HOSTER_WAIT_UNTIL_TIMES.containsKey(getHost())) { return 0; }
+        return Math.max(0, (HOSTER_WAIT_UNTIL_TIMES.get(getHost()) - System.currentTimeMillis()));
     }
 
     public synchronized long getLastTimeStarted() {
-        if (!LAST_STARTED_TIME.containsKey(this.getClass())) { return 0; }
-        return Math.max(0, (LAST_STARTED_TIME.get(this.getClass())));
+        if (!LAST_STARTED_TIME.containsKey(getHost())) { return 0; }
+        return Math.max(0, (LAST_STARTED_TIME.get(getHost())));
     }
 
     public synchronized void putLastTimeStarted(long time) {
-        LAST_STARTED_TIME.put(this.getClass(), time);
+        LAST_STARTED_TIME.put(getHost(), time);
     }
 
     public synchronized long getLastConnectionTime() {
-        if (!LAST_CONNECTION_TIME.containsKey(this.getClass())) { return 0; }
-        return Math.max(0, (LAST_CONNECTION_TIME.get(this.getClass())));
+        if (!LAST_CONNECTION_TIME.containsKey(getHost())) { return 0; }
+        return Math.max(0, (LAST_CONNECTION_TIME.get(getHost())));
     }
 
     public synchronized void putLastConnectionTime(long time) {
-        LAST_CONNECTION_TIME.put(this.getClass(), time);
+        LAST_CONNECTION_TIME.put(getHost(), time);
     }
 
     public void handlePremium(DownloadLink link, Account account) throws Exception {
@@ -469,8 +464,8 @@ public abstract class PluginForHost extends Plugin {
 
         Long t = 0l;
 
-        if (HOSTER_WAIT_UNTIL_TIMES.containsKey(this.getClass())) {
-            t = HOSTER_WAIT_UNTIL_TIMES.get(this.getClass());
+        if (HOSTER_WAIT_UNTIL_TIMES.containsKey(getHost())) {
+            t = HOSTER_WAIT_UNTIL_TIMES.get(getHost());
         }
         Account account = null;
         if (enablePremium) account = AccountController.getInstance().getValidAccount(this);
@@ -521,11 +516,10 @@ public abstract class PluginForHost extends Plugin {
             }
         } else {
             if (t > 0) {
-                this.resetHosterWaitTime();
+                resetHosterWaitTime();
                 DownloadController.getInstance().fireGlobalUpdate();
             }
             try {
-                downloadLink.getTransferStatus().usePremium(false);
                 handleFree(downloadLink);
                 if (dl != null && dl.getConnection() != null) {
                     try {
@@ -558,8 +552,8 @@ public abstract class PluginForHost extends Plugin {
     public abstract void resetDownloadlink(DownloadLink link);
 
     public void resetHosterWaitTime() {
-        HOSTER_WAIT_TIMES.put(this.getClass(), 0l);
-        HOSTER_WAIT_UNTIL_TIMES.put(this.getClass(), 0l);
+        HOSTER_WAIT_TIMES.put(getHost(), 0l);
+        HOSTER_WAIT_UNTIL_TIMES.put(getHost(), 0l);
     }
 
     public void resetPluginGlobals() {
@@ -571,13 +565,13 @@ public abstract class PluginForHost extends Plugin {
         getPluginConfig().save();
     }
 
-    public synchronized void setCurrentConnections(int CurrentConnections) {
+    public static synchronized void setCurrentConnections(int CurrentConnections) {
         currentConnections = CurrentConnections;
     }
 
     public void setHosterWaittime(long milliSeconds) {
-        HOSTER_WAIT_TIMES.put(this.getClass(), milliSeconds);
-        HOSTER_WAIT_UNTIL_TIMES.put(this.getClass(), System.currentTimeMillis() + milliSeconds);
+        HOSTER_WAIT_TIMES.put(getHost(), milliSeconds);
+        HOSTER_WAIT_UNTIL_TIMES.put(getHost(), System.currentTimeMillis() + milliSeconds);
     }
 
     public int getTimegapBetweenConnections() {
@@ -592,7 +586,7 @@ public abstract class PluginForHost extends Plugin {
         long time = Math.max(0, WAIT_BETWEEN_STARTS - (System.currentTimeMillis() - getLastTimeStarted()));
         if (time > 0) {
             try {
-                this.sleep(time, downloadLink);
+                sleep(time, downloadLink);
             } catch (PluginException e) {
 
                 // downloadLink.getLinkStatus().setStatusText(null);
@@ -643,8 +637,8 @@ public abstract class PluginForHost extends Plugin {
      * hostercontrollvariablen zurückgesetzt.
      */
     public static void resetStatics() {
-        HOSTER_WAIT_TIMES = new HashMap<Class<? extends PluginForHost>, Long>();
-        HOSTER_WAIT_UNTIL_TIMES = new HashMap<Class<? extends PluginForHost>, Long>();
+        HOSTER_WAIT_TIMES.clear();
+        HOSTER_WAIT_UNTIL_TIMES.clear();
     }
 
     public Browser getBrowser() {
@@ -661,8 +655,8 @@ public abstract class PluginForHost extends Plugin {
      * @return
      */
     public String getBuyPremiumUrl() {
-        if (this.premiumurl != null) return "http://jdownloader.org/r.php?u=" + Encoding.urlEncode(premiumurl);
-        return this.premiumurl;
+        if (premiumurl != null) return "http://jdownloader.org/r.php?u=" + Encoding.urlEncode(premiumurl);
+        return premiumurl;
     }
 
     public boolean isPremiumEnabled() {
@@ -710,7 +704,7 @@ public abstract class PluginForHost extends Plugin {
         GraphicsConfiguration gc = gd.getDefaultConfiguration();
         final BufferedImage image = gc.createCompatibleImage(w, h, Transparency.BITMASK);
         Graphics2D g = image.createGraphics();
-        String host = this.getClass().getSimpleName();
+        String host = getHost();
         String dummy = host.replaceAll("[a-z0-9]", "");
         if (dummy.length() < 2) dummy = host.toUpperCase();
         if (dummy.length() > 2) dummy = dummy.substring(0, 2);

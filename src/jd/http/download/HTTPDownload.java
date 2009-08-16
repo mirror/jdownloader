@@ -401,7 +401,7 @@ public class HTTPDownload extends DownloadInterface {
         ArrayList<Long[]> missing = new ArrayList<Long[]>();
         chunks.sort(new Comparator<Worker>() {
             public int compare(Worker o1, Worker o2) {
-                return new Long(((DownloadChunk) o1.getRunnable()).getChunkStart()).compareTo(new Long(((DownloadChunk) o2.getRunnable()).getChunkStart()));
+                return Long.valueOf(((DownloadChunk) o1.getRunnable()).getChunkStart()).compareTo(Long.valueOf(((DownloadChunk) o2.getRunnable()).getChunkStart()));
             }
         });
 

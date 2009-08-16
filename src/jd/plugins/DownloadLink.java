@@ -193,6 +193,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     public DownloadLink(PluginForHost plugin, String name, String host, String urlDownload, boolean isEnabled) {
         setLoadedPlugin(plugin);
+
         priority = 0;
         setName(name);
         sourcePluginPasswordList = new ArrayList<String>();
@@ -202,7 +203,13 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         this.isEnabled = isEnabled;
 
         this.setUrlDownload(urlDownload);
-
+        if (plugin != null) {
+            try {
+                plugin.correctDownloadLink(this);
+            } catch (Exception e) {
+                JDLogger.exception(e);
+            }
+        }
         if (name == null && urlDownload != null) {
             this.name = Plugin.extractFileNameFromURL(getDownloadURL());
         }

@@ -772,7 +772,7 @@ public class GetRouterInfo {
 
                             UserIO.setCountdownTime(600);
                             int ret = UserIO.getInstance().requestConfirmDialog(0, null, JDL.LF("gui.config.liveHeader.warning.upnpinactive", "Bitte aktivieren sie fals vorhanden Upnp in den Netzwerkeinstellungen ihres Routers <br><a href=\"http://%s\">zum Router</a><br><a href=\"http://wiki.jdownloader.org/index.php?title=Router_Upnp\">Wikiartikel: Upnp Routern</a><br>drücken sie Ok wenn sie Upnp aktiviert haben oder abbrechen wenn sie fortfahren wollen!", infos.getRouterHost()), UserIO.getInstance().getIcon(UserIO.ICON_WARNING), null, null);
-                            UserIO.setCountdownTime(null);
+                            UserIO.setCountdownTime(-1);
                             if (JDFlags.hasAllFlags(ret, UserIO.RETURN_OK)) {
                                 try {
                                     setProgressText(JDL.L("gui.config.routeripfinder.status.testingupnp", "Testing UPnP..."));

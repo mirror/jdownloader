@@ -189,7 +189,7 @@ public class JDShutdown extends PluginOptional {
             String message = JDL.L("interaction.shutdown.dialog.msg", "<h2><font color=\"red\">Achtung ihr Betriebssystem wird heruntergefahren!</font></h2>");
             UserIO.setCountdownTime(count);
             int ret = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, JDL.L("interaction.shutdown.dialog.title", "Shutdown"), message, UserIO.getInstance().getIcon(UserIO.ICON_WARNING), null, null);
-            UserIO.setCountdownTime(null);
+            UserIO.setCountdownTime(-1);
             logger.info("Return code: " + ret);
             if (JDFlags.hasSomeFlags(ret, UserIO.RETURN_OK, UserIO.RETURN_COUNTDOWN_TIMEOUT)) {
                 logger.info("Prepare Shutdown");

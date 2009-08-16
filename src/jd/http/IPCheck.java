@@ -13,7 +13,8 @@ public class IPCheck {
     private static final String FALLBACK_CHECK_SITE = "http://service.jdownloader.org/tools/getip.php";
     private static final String FALLBACK_CHECK_REGEX = "<ip>([\\d+\\.]+?)</ip>";
     public static ArrayList<String[]> IP_CHECK_SERVICES = new ArrayList<String[]>();
-    private static Integer IP_CHECK_INDEX = new Integer(0);
+    private static int IP_CHECK_INDEX = 0;
+    private static final Object LOCK = new Object();
 
     static {
         /* setup fallback ipcheck services */
@@ -128,7 +129,7 @@ public class IPCheck {
             br.setConnectTimeout(10000);
             br.setReadTimeout(10000);
         }
-        synchronized (IP_CHECK_INDEX) {
+        synchronized (LOCK) {
             IP_CHECK_INDEX = IP_CHECK_INDEX % IP_CHECK_SERVICES.size();
             String[] ipcheck = IP_CHECK_SERVICES.get(IP_CHECK_INDEX);
             IP_CHECK_INDEX++;

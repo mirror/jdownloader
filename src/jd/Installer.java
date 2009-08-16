@@ -17,14 +17,12 @@
 package jd;
 
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.io.File;
 import java.util.ArrayList;
 
 import javax.swing.AbstractListModel;
-import javax.swing.DefaultListCellRenderer;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JList;
@@ -63,21 +61,6 @@ import net.miginfocom.swing.MigLayout;
  * 
  * @author JD-Team
  */
-
-class IconListRenderer extends DefaultListCellRenderer {
-
-    /**
-     * 
-     */
-    private static final long serialVersionUID = -7406509479266128054L;
-
-    @Override
-    public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-        JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-        label.setIcon(((JDLocale) value).getIcon());
-        return label;
-    }
-}
 
 public class Installer {
 
@@ -141,7 +124,7 @@ public class Installer {
                     private static final long serialVersionUID = -7983868276841947499L;
 
                     protected void packed() {
-                        dialog = this;                        
+                        dialog = this;
                         this.setSize(550, 400);
                     }
 
@@ -237,7 +220,6 @@ public class Installer {
 
                 })), "growx,pushx,gapleft 40,gapright 10");
                 list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-                list.setCellRenderer(new IconListRenderer());
                 if (error) list.setEnabled(false);
 
                 list.setSelectedValue(sel, true);
@@ -276,7 +258,7 @@ public class Installer {
                     private static final long serialVersionUID = 4685519683324833575L;
 
                     protected void packed() {
-                        dialog = this;                        
+                        dialog = this;
                         this.setIconImage(JDImage.getImage("logo/jd_logo_54_54"));
                         this.setSize(550, 400);
                         if (error) {

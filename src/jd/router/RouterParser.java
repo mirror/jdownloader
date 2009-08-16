@@ -261,8 +261,7 @@ public class RouterParser {
      * @throws IOException
      */
     public final long readLong(InputStream is) throws IOException {
-        is.read(readBuffer, 0, 8);
-        positionInFile += 8;
+        positionInFile += is.read(readBuffer, 0, 8);
         return ((long) readBuffer[0] << 56) + ((long) (readBuffer[1] & 255) << 48) + ((long) (readBuffer[2] & 255) << 40) + ((long) (readBuffer[3] & 255) << 32) + ((long) (readBuffer[4] & 255) << 24) + ((readBuffer[5] & 255) << 16) + ((readBuffer[6] & 255) << 8) + ((readBuffer[7] & 255) << 0);
     }
 

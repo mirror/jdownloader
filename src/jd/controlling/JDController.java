@@ -53,7 +53,7 @@ import jd.utils.locale.JDL;
 public class JDController implements ControlListener {
 
     public static JDController getInstance() {
-        if (INSTANCE == null) new JDController();
+        if (INSTANCE == null) INSTANCE = new JDController();
         return INSTANCE;
     }
 
@@ -202,7 +202,7 @@ public class JDController implements ControlListener {
      */
     private DownloadWatchDog watchdog;
 
-    private Integer StartStopSync = new Integer(0);
+    private final Object StartStopSync = new Object();
 
     private static ArrayList<String> delayMap = new ArrayList<String>();
     private static JDController INSTANCE;
@@ -210,9 +210,7 @@ public class JDController implements ControlListener {
     public JDController() {
         downloadStatus = DOWNLOAD_NOT_RUNNING;
         eventSender = getEventSender();
-        INSTANCE = this;
         JDUtilities.setController(this);
-
     }
 
     /**

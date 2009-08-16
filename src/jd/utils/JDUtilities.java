@@ -127,7 +127,7 @@ public class JDUtilities {
     /**
      * nur 1 UserIO Dialog gleichzeitig (z.b. PW, Captcha)
      */
-    public static Integer USERIO_LOCK = new Integer(0);
+    public static final Object USERIO_LOCK = new Object();
 
     private static String REVISION;
 
