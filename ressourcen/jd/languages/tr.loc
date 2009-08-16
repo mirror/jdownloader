@@ -281,6 +281,7 @@ gui.config.gui.testbrowser = Tarayıcı Testi
 gui.config.gui.testbrowser.error = Tarayıcı başlatılamadı: %s
 gui.config.gui.testbrowser.message = JDownloader şimdi  http://jdownloader.org adresini tarayıcınızda açmaya çalışacak..
 gui.config.gui.testcontainer.error = İnternet tarayıcı başlatılamadı: %s
+gui.config.gui.testcontainer.long = Tarayıcıyı test et
 gui.config.gui.testcontainer.short = Tarayıcıyı başlat
 gui.config.gui.theme = Tema
 gui.config.gui.use_custom_browser = Tarayıcıyı özel seç
