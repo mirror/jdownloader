@@ -46,9 +46,11 @@ public class TurboBitNet extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("<div class=\"code-404\">404</div>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String fileName = br.getRegex("<span class='file-icon .*?'>&nbsp;</span><b>(.*?)</b></h1>").getMatch(0);
-        String fileSize = br.getRegex("<div><b>Размер файла:</b> (.*?)</div></div>").getMatch(0);
+        String fileSize = br.getRegex("<div><b>Размер файла:</b> (.*?).</div></div>").getMatch(0);
         if (fileName == null || fileSize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        fileSize = fileSize.replaceAll("б", "B");
+        fileSize = fileSize.replaceAll("М", "M");
+        fileSize = fileSize.replaceAll("к", "k");
+        fileSize = fileSize + "b";
         downloadLink.setName(fileName.trim());
         downloadLink.setDownloadSize(Regex.getSize(fileSize.replaceAll(",", "\\.")));
         return AvailableStatus.TRUE;
@@ -62,7 +64,7 @@ public class TurboBitNet extends PluginForHost {
 
         br.getPage("http://turbobit.net/download/free/" + id);
         String waittime = br.getRegex("<span id='timeout'>(.*?)</span></h1>").getMatch(0);
-        if(waittime != null) {
+        if (waittime != null) {
             sleep(Long.parseLong(waittime) * 1000, downloadLink);
         }
         String captchaUrl = br.getRegex("<img alt=\"Captcha\" src=\"(.*?)\" width=\"150\" height=\"50\" />").getMatch(0);
@@ -83,7 +85,7 @@ public class TurboBitNet extends PluginForHost {
 
         String downloadUrl = br.getRegex("<a href='(.*?)'>").getMatch(0);
 
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, downloadUrl, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadUrl, true, 0);
         dl.startDownload();
     }
 
