@@ -1285,7 +1285,7 @@ public class Srnnks extends PluginForDecrypt {
 
             private static final long serialVersionUID = 5068062216039834333L;
 
-            private String m_columns[] = { JDL.L("gui.packageinfo.name", "Name"), JDL.L("gui.treetable.header_3.hoster", "Anbieter"), JDL.L("gui.linkgrabber.packagetab.table.column.size", "Größe") };
+            private String m_columns[] = { JDL.L("gui.packageinfo.name", "Name"), JDL.L("gui.treetable.hoster", "Anbieter"), JDL.L("gui.linkgrabber.packagetab.table.column.size", "Größe") };
 
             private ArrayList<SrnnksLinks> dls;
 

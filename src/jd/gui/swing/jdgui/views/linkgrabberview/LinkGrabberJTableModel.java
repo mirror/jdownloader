@@ -18,7 +18,7 @@ public class LinkGrabberJTableModel extends AbstractTableModel {
     public static final byte COL_HOSTER = 2;
     public static final byte COL_STATUS = 3;
 
-    private static final String[] COLUMN_NAMES = { JDL.L("gui.linkgrabber.header.packagesfiles", "Pakete/Dateien"), JDL.L("gui.treetable.header.size", "Größe"), JDL.L("gui.treetable.header_3.hoster", "Anbieter"), JDL.L("gui.treetable.header_4.status", "Status") };
+    private static final String[] COLUMN_NAMES = { JDL.L("gui.linkgrabber.header.packagesfiles", "Pakete/Dateien"), JDL.L("gui.treetable.header.size", "Größe"), JDL.L("gui.treetable.hoster", "Anbieter"), JDL.L("gui.treetable.status", "Status") };
     private ArrayList<Object> addlist = new ArrayList<Object>();
     private SubConfiguration config;
 
