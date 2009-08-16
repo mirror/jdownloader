@@ -23,9 +23,12 @@ import javax.swing.JComponent;
 import javax.swing.JTextPane;
 
 import jd.gui.UserIO;
+import jd.gui.swing.components.linkbutton.JLink;
 import jd.nutils.JDFlags;
 
 public class ConfirmDialog extends AbstractDialog {
+
+    private static final long serialVersionUID = -7647771640756844691L;
 
     private JTextPane textField;
     private String message;
@@ -36,33 +39,24 @@ public class ConfirmDialog extends AbstractDialog {
         init();
     }
 
-    /**
-     * 
-     */
-    private static final long serialVersionUID = -7647771640756844691L;
-
     public JComponent contentInit() {
         textField = new JTextPane();
-
         if (JDFlags.hasAllFlags(this.flag, UserIO.STYLE_HTML)) {
             textField.setContentType("text/html");
-            // textPane.setEditable(false);
+            textField.addHyperlinkListener(JLink.getHyperlinkListener());
         } else {
             textField.setContentType("text");
+
+            textField.setBounds(0, 0, 450, 600);
+            textField.setMaximumSize(new Dimension(450, 600));
         }
-        // textField.setBorder(null);
-        // textField.setBackground(null);
         textField.setOpaque(false);
         textField.setText(this.message);
         textField.setEditable(false);
         textField.setBackground(null);
         textField.putClientProperty("Synthetica.opaque", Boolean.FALSE);
 
-        // cp.add(textField, "width n:n:450");
-        textField.setBounds(0, 0, 450, 600);
-        textField.setMaximumSize(new Dimension(450, 600));
         return textField;
-
     }
 
     public Integer getReturnID() {

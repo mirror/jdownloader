@@ -19,7 +19,6 @@ package jd.gui.swing.jdgui.views.downloadview;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
@@ -30,7 +29,6 @@ import javax.swing.JComponent;
 import javax.swing.JTable;
 import javax.swing.UIManager;
 import javax.swing.border.Border;
-import javax.swing.table.TableColumn;
 
 import jd.controlling.JDController;
 import jd.gui.swing.RowHighlighter;
@@ -48,9 +46,9 @@ public class TableRenderer extends DefaultTableRenderer {
 
     private static final long serialVersionUID = -3916572910439565199L;
 
-    private static final String NULL_BYTE_PROGRESS = "0.00% (0 B/* MB)";
+    // private static final String NULL_BYTE_PROGRESS = "0.00% (0 B/* MB)";
 
-    private DecimalFormat c = new DecimalFormat("0.00");
+    // private DecimalFormat c = new DecimalFormat("0.00");
 
     private Component co;
 
@@ -76,7 +74,7 @@ public class TableRenderer extends DefaultTableRenderer {
 
     private String strPluginError;
 
-    private TableColumn col;
+    // private TableColumn col;
 
     private Border leftGap;
 
@@ -84,7 +82,7 @@ public class TableRenderer extends DefaultTableRenderer {
 
     private ImageIcon imgFailed;
 
-    private String strWaitIO;
+    // private String strWaitIO;
 
     private Icon imgExtract;
 
@@ -160,7 +158,8 @@ public class TableRenderer extends DefaultTableRenderer {
         strDownloadLinkActive = JDL.L("gui.treetable.packagestatus.links_active", "aktiv");
         strETA = JDL.L("gui.eta", "ETA");
         strPluginError = JDL.L("gui.treetable.error.plugin", "Plugin error");
-        strWaitIO = JDL.L("gui.linkgrabber.waitinguserio", "Waiting for user input");
+        // strWaitIO = JDL.L("gui.linkgrabber.waitinguserio",
+        // "Waiting for user input");
     }
 
     // @Override
@@ -307,7 +306,7 @@ public class TableRenderer extends DefaultTableRenderer {
                 ((JRendererLabel) co).setBorder(null);
                 return co;
             } else if (dLink.getPluginProgress() != null) {
-                col = this.table.getColumn(column);
+                // col = this.table.getColumn(column);
                 progress.setMaximum(dLink.getPluginProgress().getTotal());
                 progress.setValue(dLink.getPluginProgress().getCurrent());
                 progress.setForeground(COL_PROGRESS_NORMAL);
@@ -526,9 +525,7 @@ public class TableRenderer extends DefaultTableRenderer {
         case DownloadJTableModel.COL_FINISHED:
             co = super.getTableCellRendererComponent(table, "", isSelected, hasFocus, row, column);
             return co;
-            
-            
-   
+
         case DownloadJTableModel.COL_HOSTER:
             value = fp.getHoster();
             break;

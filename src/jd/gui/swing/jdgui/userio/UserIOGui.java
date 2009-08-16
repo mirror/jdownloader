@@ -31,7 +31,6 @@ import jd.gui.swing.dialog.ClickPositionDialog;
 import jd.gui.swing.dialog.ComboDialog;
 import jd.gui.swing.dialog.ConfirmDialog;
 import jd.gui.swing.dialog.HelpDialog;
-import jd.gui.swing.dialog.HtmlDialog;
 import jd.gui.swing.dialog.InputDialog;
 import jd.gui.swing.dialog.TextAreaDialog;
 import jd.gui.swing.dialog.TwoTextFieldDialog;
@@ -83,18 +82,6 @@ public class UserIOGui extends UserIO {
             @Override
             public Integer runSave() {
                 return new HelpDialog(flag, title, message, helpMessage, url).getReturnValue();
-            }
-
-        }.getReturnValue();
-    }
-
-    @Override
-    protected int showHtmlDialog(final int flag, final String title, final String message) {
-        return new GuiRunnable<Integer>() {
-
-            @Override
-            public Integer runSave() {
-                return new HtmlDialog(flag, title, message).getReturnValue();
             }
 
         }.getReturnValue();

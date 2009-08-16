@@ -35,23 +35,17 @@ import javax.swing.border.TitledBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import jd.gui.userio.DummyFrame;
-import jd.nutils.Screen;
-
-import jd.gui.swing.GuiRunnable;
-
-import jd.utils.locale.JDL;
-
-import jd.nutils.io.JDIO;
-
-import jd.utils.JDUtilities;
-
-import jd.nutils.Colors;
-
-import jd.captcha.gui.ImageComponent;
 import jd.captcha.JAntiCaptcha;
+import jd.captcha.gui.ImageComponent;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.utils.Utilities;
+import jd.gui.swing.GuiRunnable;
+import jd.gui.userio.DummyFrame;
+import jd.nutils.Colors;
+import jd.nutils.Screen;
+import jd.nutils.io.JDIO;
+import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 public class ColorTrainer {
     private static final long serialVersionUID = 1L;
@@ -63,17 +57,17 @@ public class ColorTrainer {
     private boolean foreground = true, add = true, close = true, fastSelection = false;
     public int zoom = 400;
     protected Captcha captchaImage, lastCaptcha;
-    JButton back;
-    BufferedImage colorImage;
+    private JButton back;
+    private BufferedImage colorImage;
     private JLabel colorState;
     private JFrame frame;
     private int foregroundColor1 = 0xff00ff, foregroundColor2 = 0xFF99FF, backgroundColor1 = 0x0000ff, backgroundColor2 = 0x00ffff;
 
     class ColorMode {
-        short mode;
-        String modeString;
+        private int mode;
+        private String modeString;
 
-        public ColorMode(short mode, String modestString) {
+        public ColorMode(int mode, String modestString) {
             this.mode = mode;
             this.modeString = modestString;
         }
@@ -282,6 +276,7 @@ public class ColorTrainer {
         }.waitForEDT();
         images.add(ic, getGBC(0, 2, 1, 1));
     }
+
     /**
      * Gibt die default GridbagConstants zurück
      * 
@@ -305,7 +300,7 @@ public class ColorTrainer {
     private ColorTrainer() {
         new GuiRunnable<Object>() {
             public Object runSave() {
-                frame=new JFrame();
+                frame = new JFrame();
                 return null;
             }
         }.waitForEDT();
@@ -631,7 +626,7 @@ public class ColorTrainer {
                     public Object runSave() {
                         cc.mode.setSelectedItem(last.mode.getSelectedItem());
 
-                    return null;
+                        return null;
                     }
                 }.waitForEDT();
             }

@@ -26,15 +26,11 @@ public class DownloadJTableModel extends AbstractTableModel {
     /**
      * Default widths in px -1 is AUTO
      */
-    protected static final int[] COL_WIDTHS = new int[] { -1, 20, 30, -1, -1, -1, 10
-
-    };
+    protected static final int[] COL_WIDTHS = new int[] { -1, 20, 30, -1, -1, -1, 10 };
     /**
      * Default visible
      */
-    protected static final boolean[] COL_VISIBLE = new boolean[] { true, false, true, true, false, false, true
-
-    };
+    protected static final boolean[] COL_VISIBLE = new boolean[] { true, false, true, true, false, false, true };
     private ArrayList<Object> downloadlist = new ArrayList<Object>();
     private SubConfiguration config;
 

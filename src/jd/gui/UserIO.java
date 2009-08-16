@@ -138,14 +138,6 @@ public abstract class UserIO {
 
     abstract protected int showHelpDialog(int flag, String title, String message, String helpMessage, String url);
 
-    public int requestHtmlDialog(int flag, String title, String message) {
-        synchronized (INSTANCE) {
-            return showHtmlDialog(flag, title, message);
-        }
-    }
-
-    abstract protected int showHtmlDialog(int flag, String title, String message);
-
     public int requestConfirmDialog(int flag, String title, String message, ImageIcon icon, String okOption, String cancelOption) {
         synchronized (INSTANCE) {
             if (icon == null) {
@@ -258,12 +250,15 @@ public abstract class UserIO {
     }
 
     public String requestInputDialog(String message) {
-
         return requestInputDialog(0, message, null);
     }
 
     public int requestConfirmDialog(int flag, String question) {
-        return UserIO.getInstance().requestConfirmDialog(flag, JDL.L("jd.gui.userio.defaulttitle.confirm", "Please confirm!"), question, this.getDefaultIcon(question), null, null);
+        return requestConfirmDialog(flag, JDL.L("jd.gui.userio.defaulttitle.confirm", "Please confirm!"), question, this.getDefaultIcon(question), null, null);
+    }
+
+    public int requestConfirmDialog(int flag, String title, String question) {
+        return requestConfirmDialog(flag, title, question, this.getDefaultIcon(title + question), null, null);
     }
 
     /**
@@ -277,7 +272,7 @@ public abstract class UserIO {
      * @return
      */
     public String requestInputDialog(int flag, String question, String defaultvalue) {
-        return this.requestInputDialog(0, JDL.L("jd.gui.userio.defaulttitle.input", "Please enter!"), question, defaultvalue, this.getDefaultIcon(question), null, null);
+        return requestInputDialog(0, JDL.L("jd.gui.userio.defaulttitle.input", "Please enter!"), question, defaultvalue, this.getDefaultIcon(question), null, null);
     }
 
     /**

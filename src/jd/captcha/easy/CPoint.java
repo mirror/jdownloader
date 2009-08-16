@@ -4,35 +4,31 @@ import java.awt.Color;
 import java.awt.Point;
 import java.io.Serializable;
 
+import jd.captcha.pixelgrid.Captcha;
 import jd.nutils.Colors;
 
-import jd.captcha.pixelgrid.Captcha;
+public class CPoint extends Point implements Serializable, Cloneable {
 
-public class CPoint extends Point implements Serializable {
-
-    /**
-	 * 
-	 */
-    public final static short LAB_DIFFERENCE = 1;
-    public final static short RGB_DIFFERENCE1 = 2;
-    public final static short RGB_DIFFERENCE2 = 3;
-    public final static short HUE_DIFFERENCE = 4;
-    public final static short SATURATION_DIFFERENCE = 5;
-    public final static short BRIGHTNESS_DIFFERENCE = 6;
-    public final static short RED_DIFFERENCE = 7;
-    public final static short GREEN_DIFFERENCE = 8;
-    public final static short BLUE_DIFFERENCE = 9;
+    public final static int LAB_DIFFERENCE = 1;
+    public final static int RGB_DIFFERENCE1 = 2;
+    public final static int RGB_DIFFERENCE2 = 3;
+    public final static int HUE_DIFFERENCE = 4;
+    public final static int SATURATION_DIFFERENCE = 5;
+    public final static int BRIGHTNESS_DIFFERENCE = 6;
+    public final static int RED_DIFFERENCE = 7;
+    public final static int GREEN_DIFFERENCE = 8;
+    public final static int BLUE_DIFFERENCE = 9;
 
     private static final long serialVersionUID = 333616481245029882L;
     private int color, distance;
     private boolean foreground = true;
-    private short colorDifferenceMode = LAB_DIFFERENCE;
+    private int colorDifferenceMode = LAB_DIFFERENCE;
 
-    public short getColorDistanceMode() {
+    public int getColorDistanceMode() {
         return colorDifferenceMode;
     }
 
-    public void setColorDistanceMode(short colorDistanceMode) {
+    public void setColorDistanceMode(int colorDistanceMode) {
         this.colorDifferenceMode = colorDistanceMode;
     }
 
@@ -118,7 +114,6 @@ public class CPoint extends Point implements Serializable {
 
     @Override
     public boolean equals(Object obj) {
-        // TODO Auto-generated method stub
         return super.equals(obj) || ((CPoint) obj).color == color;
     }
 }

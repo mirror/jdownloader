@@ -45,12 +45,6 @@ public class NoUserIO extends UserIO {
     }
 
     @Override
-    protected int showHtmlDialog(int flag, String title, String message) {
-        System.out.println("NoUserIO set!");
-        return 0;
-    }
-
-    @Override
     protected String showInputDialog(int flag, String title, String message, String defaultMessage, ImageIcon icon, String okOption, String cancelOption) {
         System.out.println("NoUserIO set!");
         return "";
