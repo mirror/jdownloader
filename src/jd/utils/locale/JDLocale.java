@@ -18,15 +18,10 @@ package jd.utils.locale;
 
 import java.io.Serializable;
 
-import javax.swing.ImageIcon;
-
-import jd.config.container.JDLabelContainer;
 import jd.utils.JDGeoCode;
 
-public class JDLocale implements Serializable, JDLabelContainer {
-    /**
-     * 
-     */
+public class JDLocale implements Serializable {
+
     private static final long serialVersionUID = 1116656232817008992L;
 
     private String[] codes;
@@ -39,12 +34,10 @@ public class JDLocale implements Serializable, JDLabelContainer {
     }
 
     public String getCountryCode() {
-
         return codes[1];
     }
 
     public String getExtensionCode() {
-
         return codes[1];
     }
 
@@ -61,16 +54,10 @@ public class JDLocale implements Serializable, JDLabelContainer {
         return JDGeoCode.toLongerNative(lngGeoCode);
     }
 
+    @Override
     public boolean equals(Object l) {
         if (l == null || !(l instanceof JDLocale)) return false;
         return this.getLngGeoCode().equals(((JDLocale) l).getLngGeoCode());
     }
 
-    public ImageIcon getIcon() {
-        return null;
-    }
-
-    public String getLabel() {
-        return toString();
-    }
 }

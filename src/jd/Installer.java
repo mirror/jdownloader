@@ -63,7 +63,6 @@ import net.miginfocom.swing.MigLayout;
  * 
  * @author JD-Team
  */
-
 public class Installer {
 
     private static final long serialVersionUID = 8764525546298642601L;
@@ -72,7 +71,7 @@ public class Installer {
 
     private String countryCode;
 
-    private boolean error;
+    // private boolean error;
 
     private String languageCode;
 
@@ -102,10 +101,6 @@ public class Installer {
 
                 JLabel lbl = new JLabel(JDL.L("installer.gui.message", "After Installation, JDownloader will update to the latest version."));
 
-                if (OSDetector.isWindows()) {
-                    JDUtilities.getResourceFile("downloads");
-
-                }
                 c.add(lbl, "pushx,growx,split 2");
 
                 Font f = lbl.getFont();
@@ -114,29 +109,20 @@ public class Installer {
                 lbl.setFont(f);
                 c.add(new JLabel(JDImage.getScaledImageIcon(JDImage.getImage("logo/jd_logo_54_54"), 32, 32)), "alignx right");
                 c.add(new JSeparator(), "pushx,growx,gapbottom 5");
-             
+
                 c.add(lbl = new JLabel(JDL.L("installer.firefox.message", "Do you want to integrate JDownloader to Firefox?")), "growy,pushy");
                 c.add(lbl = new JLabel(JDImage.getImageIcon("flashgot_logo")), "growy,pushy");
                 c.add(lbl = new JLabel(JDL.L("installer.firefox.message.flashgot", "This installs the famous FlashGot Extension (flashgot.net).")), "growy,pushy");
-          
-                
+
                 lbl.setVerticalAlignment(SwingConstants.TOP);
                 lbl.setHorizontalAlignment(SwingConstants.LEFT);
 
                 new ContainerDialog(UserIO.NO_COUNTDOWN, JDL.L("installer.firefox.title", "Install firefox integration?"), c, null, null) {
-                    /**
-                     * 
-                     */
                     private static final long serialVersionUID = -7983868276841947499L;
 
                     protected void packed() {
                         dialog = this;
                         this.setSize(550, 400);
-                    }
-
-                    protected void setReturnValue(boolean b) {
-                        super.setReturnValue(b);
-
                     }
                 };
 
@@ -200,9 +186,6 @@ public class Installer {
                 content.add(Factory.createHeader(JDL.L("gui.config.gui.language", "Language"), JDTheme.II("gui.splash.languages", 24, 24)), "growx,pushx");
                 final JList list;
                 content.add(new JScrollPane(list = new JList(new AbstractListModel() {
-                    /**
-                     * 
-                     */
                     private static final long serialVersionUID = -7645376943352687975L;
                     private ArrayList<JDLocale> ids;
 
@@ -215,18 +198,16 @@ public class Installer {
                     }
 
                     public Object getElementAt(int index) {
-
                         return getIds().get(index);
                     }
 
                     public int getSize() {
-                        // TODO Auto-generated method stub
                         return getIds().size();
                     }
 
                 })), "growx,pushx,gapleft 40,gapright 10");
                 list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-                if (error) list.setEnabled(false);
+                // if (error) list.setEnabled(false);
 
                 list.setSelectedValue(sel, true);
                 list.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
@@ -245,11 +226,10 @@ public class Installer {
                 final BrowseFile br;
                 content.add(br = new BrowseFile(), "growx,pushx,gapleft 40,gapright 10");
                 br.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-                if (error) br.setEnabled(false);
+                // if (error) br.setEnabled(false);
                 content.add(new JSeparator(), "growx,pushx,gaptop 5");
                 if (OSDetector.isMac()) {
                     br.setCurrentPath(new File(System.getProperty("user.home") + "/Downloads"));
-
                 } else if (OSDetector.isWindows() && new File(System.getProperty("user.home") + "/Downloads").exists()) {
                     br.setCurrentPath(new File(System.getProperty("user.home") + "/Downloads"));
                 } else if (OSDetector.isWindows() && new File(System.getProperty("user.home") + "/Download").exists()) {
@@ -258,25 +238,21 @@ public class Installer {
                     br.setCurrentPath(JDUtilities.getResourceFile("downloads"));
                 }
                 new ContainerDialog(UserIO.NO_COUNTDOWN, JDL.L("installer.gui.title", "JDownloader Installation"), p, null, null) {
-                    /**
-                     * 
-                     */
                     private static final long serialVersionUID = 4685519683324833575L;
 
                     protected void packed() {
                         dialog = this;
                         this.setIconImage(JDImage.getImage("logo/jd_logo_54_54"));
                         this.setSize(550, 400);
-                        if (error) {
-                            this.btnOK.setEnabled(false);
-                        }
+                        // if (error) {
+                        // this.btnOK.setEnabled(false);
+                        // }
                     }
 
                     protected void setReturnValue(boolean b) {
                         super.setReturnValue(b);
                         if (b) {
                             JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, br.getCurrentPath());
-
                         } else {
                             JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, null);
                         }
@@ -290,26 +266,26 @@ public class Installer {
 
     public static void installFirefoxaddon() {
         File file = getFlashGotFile();
-  
+
         LocalBrowser.openinFirefox(file.getAbsolutePath());
     }
-/**
- * Calls a webupdate to get the latest XPI
- * @return
- */
+
+    /**
+     * Calls a webupdate to get the latest XPI
+     * 
+     * @return
+     */
     public static File getFlashGotFile() {
         ArrayList<FileUpdate> files;
         try {
-            WebUpdater wu;
-            files = (wu=new WebUpdater()).getAvailableFiles();
+            WebUpdater wu = new WebUpdater();
+            files = wu.getAvailableFiles();
 
             for (FileUpdate f : files) {
                 if (f.getLocalFile().getAbsolutePath().endsWith("flashgot.xpi")) {
                     wu.updateUpdatefile(f);
-                  if(f.getLocalTmpFile().exists())return f.getLocalTmpFile();
-                  return f.getLocalFile();
-                    
-                
+                    if (f.getLocalTmpFile().exists()) return f.getLocalTmpFile();
+                    return f.getLocalFile();
                 }
             }
         } catch (Exception e) {
@@ -330,9 +306,7 @@ public class Installer {
                 lbl.setText(JDL.LF("installer.vistaDir.warning", "Warning! JD is installed in %s. This causes errors.", JDUtilities.getResourceFile("downloads")));
                 lbl.setForeground(Color.RED);
                 lbl.setBackground(Color.RED);
-                error = true;
             }
-
         }
         c.add(lbl, "pushx,growx,split 2");
 
@@ -342,53 +316,12 @@ public class Installer {
         lbl.setFont(f);
         try {
             c.add(new JLabel(JDImage.getScaledImageIcon(JDImage.getImage("logo/jd_logo_54_54"), 32, 32)), "alignx right");
-
         } catch (Exception e) {
-
             System.err.println("DEVELOPER WARNING! Please copy trunk/ressourcen/jd  to home/.jd_home/jd");
         }
         // c.add(new JSeparator(), "pushx,growx,gapbottom 5");
         return c;
     }
-
-    // public static void showConfigDialog(final JFrame parent, final
-    // ConfigContainer configContainer, final boolean alwaysOnTop) {
-    // // logger.info("ConfigDialog");
-    // new GuiRunnable<Object>() {
-    //
-    // // @Override
-    // public Object runSave() {
-    //
-    // ConfigEntriesPanel p = new ConfigEntriesPanel(configContainer);
-    // JPanel panel = new JPanel(new BorderLayout());
-    // JPanel con;
-    // panel.add(con = new JPanel(new MigLayout("ins 10,wrap 1")),
-    // BorderLayout.NORTH);
-    // panel.add(p, BorderLayout.CENTER);
-    // JLabel lbl;
-    // con.add(lbl=new
-    // JLabel("JDownloader Installation"),"pushx,growx,split 2");
-    // Font f = lbl.getFont();
-    // f=f.deriveFont(f.getStyle() ^ Font.BOLD);
-    //
-    // // bold
-    // lbl.setFont(f);
-    // con.add(new
-    // JLabel(JDImage.getScaledImageIcon(JDImage.getImage("logo/jd_logo_54_54"),
-    // 48, 48)),"alignx right");
-    // con.add(new JSeparator(), "pushx,growx,gapbottom 15");
-    // ConfigurationPopup pop = new ConfigurationPopup(parent, p, panel);
-    // pop.setSize(550, 400);
-    // pop.setModal(true);
-    // pop.setAlwaysOnTop(alwaysOnTop);
-    // pop.setLocation(Screen.getCenterOfComponent(parent, pop));
-    // pop.setVisible(true);
-    //
-    // return null;
-    // }
-    //
-    // }.waitForEDT();
-    // }
 
     public boolean isAborted() {
         return aborted;

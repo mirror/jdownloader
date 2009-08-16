@@ -33,7 +33,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Locale;
 import java.util.Properties;
 import java.util.TreeSet;
@@ -76,7 +75,6 @@ import jd.utils.locale.JDL;
 /**
  * @author JD-Team
  */
-
 public class Main {
 
     private static Logger LOGGER;
@@ -399,7 +397,6 @@ public class Main {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private void go() {
         final JDInit init = new JDInit();
         final JDController controller = JDController.getInstance();
@@ -454,11 +451,11 @@ public class Main {
         JDUtilities.getConfiguration().setProperty("head", head);
 
         Properties pr = System.getProperties();
-        TreeSet propKeys = new TreeSet(pr.keySet());
+        TreeSet<Object> propKeys = new TreeSet<Object>(pr.keySet());
 
-        for (Iterator it = propKeys.iterator(); it.hasNext();) {
-            String key = (String) it.next();
-            LOGGER.finer("" + key + "=" + pr.get(key));
+        for (Object it : propKeys) {
+            String key = it.toString();
+            LOGGER.finer(key + "=" + pr.get(key));
         }
 
         LOGGER.info("Revision: " + JDUtilities.getJDTitle());

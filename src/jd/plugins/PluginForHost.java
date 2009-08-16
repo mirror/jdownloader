@@ -303,7 +303,7 @@ public abstract class PluginForHost extends Plugin {
         enablePremium = true;
     }
 
-    public synchronized int getCurrentConnections() {
+    public static synchronized int getCurrentConnections() {
         return currentConnections;
     }
 

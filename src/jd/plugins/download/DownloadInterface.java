@@ -760,9 +760,9 @@ abstract public class DownloadInterface {
          * Thread runner
          */
         public void run() {
-            plugin.setCurrentConnections(plugin.getCurrentConnections() + 1);
+            PluginForHost.setCurrentConnections(PluginForHost.getCurrentConnections() + 1);
             run0();
-            plugin.setCurrentConnections(plugin.getCurrentConnections() - 1);
+            PluginForHost.setCurrentConnections(PluginForHost.getCurrentConnections() - 1);
             addToChunksInProgress(-1);
 
             while (true) {
