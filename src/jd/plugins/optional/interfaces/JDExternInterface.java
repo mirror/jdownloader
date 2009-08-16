@@ -1,11 +1,17 @@
 package jd.plugins.optional.interfaces;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 
+import jd.Installer;
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
+import jd.config.ConfigGroup;
 import jd.config.MenuAction;
 import jd.controlling.DistributeData;
 import jd.controlling.JDLogger;
@@ -13,6 +19,7 @@ import jd.controlling.LinkGrabberController;
 import jd.controlling.PasswordListController;
 import jd.gui.UserIO;
 import jd.nutils.JDFlags;
+import jd.nutils.JDImage;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.httpserver.Handler;
 import jd.nutils.httpserver.HttpServer;
@@ -26,8 +33,10 @@ import jd.plugins.OptionalPlugin;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
+import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+import jd.utils.locale.JDLocale;
 
 @OptionalPlugin(rev = "$Revision$", id = "externinterface", interfaceversion = 4)
 public class JDExternInterface extends PluginOptional {
@@ -41,10 +50,29 @@ public class JDExternInterface extends PluginOptional {
         handler = new RequestHandler();
         initpanel();
     }
+    
+    
+    public String getIconKey() {
+        return "gui.images.flashgot";
+    }
+    private void initConfigEntries() {
+       
+        config.setGroup( new ConfigGroup(JDL.L("jd.plugins.optional.interfaces.JDExternInterface.flashgot.configgroup","Install FlashGot Firefox Addon"), JDTheme.II("gui.images.flashgot",16,16)));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener(){
 
+            public void actionPerformed(ActionEvent e) {
+               Installer.installFirefoxaddon();
+                
+            }
+        } , JDL.L("jd.plugins.optional.interfaces.JDExternInterface.flashgot", "Install"),JDL.L("jd.plugins.optional.interfaces.JDExternInterface.flashgot.long", "Install Firefox integration"),null));
+
+       
+
+    }
     // @Override
     public boolean initAddon() {
         logger.info("Extern Interface API initialized on port 9666");
+        initConfigEntries();
         try {
             server = new HttpServer(this.getPluginConfig().getIntegerProperty("INTERFACE_PORT", 9666), handler);
             server.start();

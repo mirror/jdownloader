@@ -67,7 +67,7 @@ import jd.utils.locale.JDL;
 
 public class JDInit {
 
-    private static final boolean TEST_INSTALLER = true;
+    private static final boolean TEST_INSTALLER = false;
 
     private static Logger logger = jd.controlling.JDLogger.getLogger();
 

@@ -260,12 +260,12 @@ public class DistributeData extends Thread {
         /* normal quickcheck */
         ArrayList<DownloadLink> ret = quickHosterCheck(data);
         if (ret != null && ret.size() == 1) return ret;
-//        if (!filterNormalHTTP) {
-//            /* quickcheck for http */
-//            String newdata = data.replaceAll("http://", "httpviajd://");
-//            newdata = newdata.replaceAll("https://", "httpsviajd://");
-//            ret = quickHosterCheck(newdata);
-//        }
+        // if (!filterNormalHTTP) {
+        // /* quickcheck for http */
+        // String newdata = data.replaceAll("http://", "httpviajd://");
+        // newdata = newdata.replaceAll("https://", "httpsviajd://");
+        // ret = quickHosterCheck(newdata);
+        // }
         if (ret != null && ret.size() == 1) return ret;
         foundPasswords.addAll(HTMLParser.findPasswords(data));
         data = HTMLEntities.unhtmlentities(data);
@@ -293,18 +293,20 @@ public class DistributeData extends Thread {
      * @return
      */
     private ArrayList<DownloadLink> quickHosterCheck(String data) {
+        data = data.toLowerCase();
         for (HostPluginWrapper pw : JDUtilities.getPluginsForHost()) {
             Pattern pattern = pw.getPattern();
-          
-          
-            String match = new Regex(data, pattern).getMatch(-1);
-            if (match != null && (match.equals(data)||(match.length()>10+pw.getHost().length()&&data.startsWith(match)))) {
 
-                DownloadLink dl = new DownloadLink((PluginForHost) pw.getNewPluginInstance(), null, pw.getHost(), Encoding.urlDecode(match, true), true);
-                ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-                ret.add(dl);
-                return ret;
+            if (data.contains(pw.getHost().toLowerCase())) {
+                String match = new Regex(data, pattern).getMatch(-1);
+                if (match != null && (match.equals(data) || (match.length() > 10 + pw.getHost().length() && data.startsWith(match)))) {
 
+                    DownloadLink dl = new DownloadLink((PluginForHost) pw.getNewPluginInstance(), null, pw.getHost(), Encoding.urlDecode(match, true), true);
+                    ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+                    ret.add(dl);
+                    return ret;
+
+                }
             }
         }
         return null;

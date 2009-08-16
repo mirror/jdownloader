@@ -177,6 +177,12 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     private long requestTime;
 
+    private String part;
+
+    private long created=-1l;
+
+    private long finishedDate=-1l;
+
     /**
      * Erzeugt einen neuen DownloadLink
      * 
@@ -201,7 +207,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         downloadMax = 0;
         this.host = host == null ? null : host.toLowerCase();
         this.isEnabled = isEnabled;
-
+        created = System.currentTimeMillis();
+        finishedDate=-1l;
         this.setUrlDownload(urlDownload);
         if (plugin != null) {
             try {
@@ -213,6 +220,22 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         if (name == null && urlDownload != null) {
             this.name = Plugin.extractFileNameFromURL(getDownloadURL());
         }
+    }
+
+    public long getFinishedDate() {
+        return finishedDate;
+    }
+
+    public void setFinishedDate(long finishedDate) {
+        this.finishedDate = finishedDate;
+    }
+
+    public long getCreated() {
+        return created;
+    }
+
+    public void setCreated(long created) {
+        this.created = created;
     }
 
     public synchronized JDBroadcaster<DownloadLinkListener, DownloadLinkEvent> getBroadcaster() {
@@ -928,6 +951,27 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             this.name = JDUtilities.removeEndingPoints(JDIO.validateFileandPathName(name));
         }
         this.setIcon(null);
+
+        setPart(name);
+    }
+
+    /**
+     * sets the part String (e.g. part12 >12)
+     * 
+     * @param name2
+     */
+    private void setPart(String name2) {
+        part = new Regex(name2, "\\.part(\\d+)").getMatch(0);
+        if (part == null) {
+            new Regex(name2, "\\.r(\\d+)").getMatch(0);
+        }
+        if (part == null) {
+            new Regex(name2, "\\.(\\d+)").getMatch(0);
+        }
+    }
+
+    public String getPart() {
+        return part;
     }
 
     private void setIcon(ImageIcon icon) {
@@ -965,6 +1009,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         } else {
             finalFileName = null;
         }
+
     }
 
     /**

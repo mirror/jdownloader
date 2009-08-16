@@ -23,6 +23,7 @@ import javax.swing.ImageIcon;
 
 import jd.controlling.JDLogger;
 import jd.nutils.Formatter;
+import jd.nutils.JDFlags;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -158,6 +159,9 @@ public class LinkStatus implements Serializable {
      */
     public void addStatus(int status) {
         this.status |= status;
+        if(JDFlags.hasSomeFlags(status, FINISHED)){
+            downloadLink.setFinishedDate(System.currentTimeMillis());
+        }
         lastestStatus = status;
     }
 
@@ -397,6 +401,9 @@ public class LinkStatus implements Serializable {
             resetWaitTime();
         }
         this.status = status;
+        if(JDFlags.hasSomeFlags(status, FINISHED)){
+            downloadLink.setFinishedDate(System.currentTimeMillis());
+        }
         lastestStatus = status;
     }
 

@@ -114,8 +114,12 @@ public class Installer {
                 lbl.setFont(f);
                 c.add(new JLabel(JDImage.getScaledImageIcon(JDImage.getImage("logo/jd_logo_54_54"), 32, 32)), "alignx right");
                 c.add(new JSeparator(), "pushx,growx,gapbottom 5");
-
+             
                 c.add(lbl = new JLabel(JDL.L("installer.firefox.message", "Do you want to integrate JDownloader to Firefox?")), "growy,pushy");
+                c.add(lbl = new JLabel(JDImage.getImageIcon("flashgot_logo")), "growy,pushy");
+                c.add(lbl = new JLabel(JDL.L("installer.firefox.message.flashgot", "This installs the famous FlashGot Extension (flashgot.net).")), "growy,pushy");
+          
+                
                 lbl.setVerticalAlignment(SwingConstants.TOP);
                 lbl.setHorizontalAlignment(SwingConstants.LEFT);
 

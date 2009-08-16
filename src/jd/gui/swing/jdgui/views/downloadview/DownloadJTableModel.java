@@ -13,24 +13,26 @@ import jd.utils.locale.JDL;
 public class DownloadJTableModel extends AbstractTableModel {
 
     private static final long serialVersionUID = 1L;
-    public static final byte COL_PART = 0;
-    public static final byte COL_HOSTER = 1;
-    public static final byte COL_STATUS = 2;
-    public static final byte COL_STATUS_DETAILS = 3;
-    public static final byte COL_PROGRESS = 4;
+    public static final byte COL_NAME = 0;
+    public static final byte COL_PART = 1;
+    public static final byte COL_HOSTER = 2;
+    public static final byte COL_STATUS = 3;
+    public static final byte COL_ADDED = 4;
+    public static final byte COL_FINISHED = 5;
+    public static final byte COL_PROGRESS = 6;
 
-    protected static final String[] COLUMN_NAMES = { JDL.L("gui.treetable.header_1.tree", "F"), JDL.L("gui.treetable.header_3.hoster", "Anbieter"), JDL.L("gui.treetable.header_4.status", "Status"), JDL.L("jd.gui.swing.jdgui.views.downloadview.DownloadJTableModel.extendedstatus.status", "Details"), JDL.L("gui.treetable.header_5.progress", "Fortschritt") };
+    protected static final String[] COLUMN_NAMES = { JDL.L("gui.treetable.name", "F"), JDL.L("gui.treetable.part", "Part"), JDL.L("gui.treetable.hoster", "Anbieter"), JDL.L("gui.treetable.status", "Status"), JDL.L("gui.treetable.added", "Added date"), JDL.L("gui.treetable.finished", "Finished date"), JDL.L("gui.treetable.progress", "Fortschritt") };
 
     /**
      * Default widths in px -1 is AUTO
      */
-    protected static final int[] COL_WIDTHS = new int[] { -1, 30, -1, -1, 10
+    protected static final int[] COL_WIDTHS = new int[] { -1, 20, 30, -1, -1, -1, 10
 
     };
     /**
      * Default visible
      */
-    protected static final boolean[] COL_VISIBLE = new boolean[] { true, true, true, true, true
+    protected static final boolean[] COL_VISIBLE = new boolean[] { true, false, true, true, false, false, true
 
     };
     private ArrayList<Object> downloadlist = new ArrayList<Object>();
@@ -38,7 +40,7 @@ public class DownloadJTableModel extends AbstractTableModel {
 
     public DownloadJTableModel() {
         super();
-        config = SubConfiguration.getConfig("gui");        
+        config = SubConfiguration.getConfig("gui2");
     }
 
     public int getRowCount() {
@@ -101,7 +103,7 @@ public class DownloadJTableModel extends AbstractTableModel {
     }
 
     public boolean isVisible(int column) {
-        return config.getBooleanProperty("VISABLE_COL_" + column, true);
+        return config.getBooleanProperty("VISABLE_COL_" + column, COL_VISIBLE[column]);
     }
 
     public void setVisible(int column, boolean visible) {

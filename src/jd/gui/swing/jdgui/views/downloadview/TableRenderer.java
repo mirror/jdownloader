@@ -21,6 +21,7 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Date;
 
 import javax.swing.BorderFactory;
 import javax.swing.Icon;
@@ -212,7 +213,7 @@ public class TableRenderer extends DefaultTableRenderer {
     private Component getDownloadLinkCell(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         dLink = (DownloadLink) value;
         switch (column) {
-        case DownloadJTableModel.COL_PART:
+        case DownloadJTableModel.COL_NAME:
 
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             clearSB();
@@ -224,6 +225,37 @@ public class TableRenderer extends DefaultTableRenderer {
 
             ((JRendererLabel) co).setText(dLink.getName());
             ((JRendererLabel) co).setBorder(leftGap);
+
+            return co;
+
+        case DownloadJTableModel.COL_PART:
+            co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+
+            ((JRendererLabel) co).setText(dLink.getPart());
+            ((JRendererLabel) co).setBorder(null);
+
+            return co;
+        case DownloadJTableModel.COL_ADDED:
+            co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+
+            if (dLink.getCreated() <= 0) {
+                ((JRendererLabel) co).setText("");
+            } else {
+
+                ((JRendererLabel) co).setText(new Date(dLink.getCreated()).toString());
+            }
+            ((JRendererLabel) co).setBorder(null);
+
+            return co;
+        case DownloadJTableModel.COL_FINISHED:
+            co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            if (dLink.getFinishedDate() <= 0) {
+                ((JRendererLabel) co).setText("");
+            } else {
+                ((JRendererLabel) co).setText(new Date(dLink.getFinishedDate()).toString());
+            }
+
+            ((JRendererLabel) co).setBorder(null);
 
             return co;
         case DownloadJTableModel.COL_HOSTER:
@@ -297,100 +329,108 @@ public class TableRenderer extends DefaultTableRenderer {
             progress.setForeground(COL_PROGRESS_NORMAL);
             return progress;
 
-        case DownloadJTableModel.COL_STATUS_DETAILS:
-
-            co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-            clearSB();
-            ((JRendererLabel) co).setBorder(null);
-
-            if (dLink.getPlugin() == null) {
-                co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                ((JRendererLabel) co).setIcon(null);
-                ((JRendererLabel) co).setText(strPluginError);
-                ((JRendererLabel) co).setBorder(null);
-                return co;
-            } else if (!dLink.getPlugin().getWrapper().usePlugin()) {
-                co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                ((JRendererLabel) co).setIcon(null);
-                ((JRendererLabel) co).setText(strPluginDisabled);
-                ((JRendererLabel) co).setBorder(null);
-                return co;
-            } else if (dLink.getPluginProgress() != null) {
-
-                ((JRendererLabel) co).setIcon(null);
-                ((JRendererLabel) co).setText(dLink.getPluginProgress().getPercent() + "%");
-                ((JRendererLabel) co).setBorder(null);
-                return co;
-            } else if (dLink.getDownloadCurrent() > 0) {
-                if (!dLink.getLinkStatus().isPluginActive()) {
-                    if (dLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
-                        clearSB();
-                        col = this.table.getColumn(column);
-                        if (col.getWidth() < 100) {
-                            sb.append("100%");
-                        } else {
-                            sb.append("100% (").append(Formatter.formatReadable(Math.max(0, dLink.getDownloadSize()))).append(')');
-                        }
-                        ((JRendererLabel) co).setIcon(null);
-                        ((JRendererLabel) co).setText(sb.toString());
-                        ((JRendererLabel) co).setBorder(null);
-                    } else {
-                        clearSB();
-                        col = this.table.getColumn(column);
-                        if (col.getWidth() < 100) {
-                            sb.append(c.format(dLink.getPercent() / 100.0)).append('%');
-                        } else {
-                            sb.append(Formatter.formatReadable(dLink.getDownloadCurrent())).append('/').append(Formatter.formatReadable(Math.max(0, dLink.getDownloadSize())));
-                        }
-                        ((JRendererLabel) co).setIcon(null);
-                        ((JRendererLabel) co).setText(sb.toString());
-                        ((JRendererLabel) co).setBorder(null);
-                    }
-                } else {
-
-                    if (dLink.getLinkStatus().hasStatus(LinkStatus.WAITING_USERIO)) {
-
-                        ((JRendererLabel) co).setIcon(null);
-                        ((JRendererLabel) co).setText(strWaitIO);
-                        ((JRendererLabel) co).setBorder(null);
-                    } else {
-                        clearSB();
-                        col = this.table.getColumn(column);
-                        if (col.getWidth() < 100) {
-                            sb.append(c.format(dLink.getPercent() / 100.0)).append('%');
-                        } else {
-                            sb.append(Formatter.formatReadable(dLink.getDownloadCurrent())).append('/').append(Formatter.formatReadable(Math.max(0, dLink.getDownloadSize())));
-                        }
-
-                        ((JRendererLabel) co).setIcon(null);
-                        ((JRendererLabel) co).setText(sb.toString());
-                        ((JRendererLabel) co).setBorder(null);
-                    }
-                }
-
-                return co;
-            }
-
-            if (dLink.getDownloadSize() > 1) {
-                clearSB();
-                col = this.table.getColumn(column);
-                if (col.getWidth() < 100) {
-                    sb.append(c.format(dLink.getPercent() / 100.0)).append('%');
-                } else {
-                    sb.append(Formatter.formatReadable(dLink.getDownloadCurrent())).append('/').append(Formatter.formatReadable(Math.max(0, dLink.getDownloadSize())));
-                }
-                ((JRendererLabel) co).setIcon(null);
-                ((JRendererLabel) co).setText(sb.toString());
-                ((JRendererLabel) co).setBorder(null);
-            } else {
-
-                ((JRendererLabel) co).setIcon(null);
-                ((JRendererLabel) co).setText(NULL_BYTE_PROGRESS);
-                ((JRendererLabel) co).setBorder(null);
-
-            }
-
-            return co;
+            // case DownloadJTableModel.COL_STATUS_DETAILS:
+            //
+            // co = super.getTableCellRendererComponent(table, value,
+            // isSelected, hasFocus, row, column);
+            // clearSB();
+            // ((JRendererLabel) co).setBorder(null);
+            //
+            // if (dLink.getPlugin() == null) {
+            // co = super.getTableCellRendererComponent(table, value,
+            // isSelected, hasFocus, row, column);
+            // ((JRendererLabel) co).setIcon(null);
+            // ((JRendererLabel) co).setText(strPluginError);
+            // ((JRendererLabel) co).setBorder(null);
+            // return co;
+            // } else if (!dLink.getPlugin().getWrapper().usePlugin()) {
+            // co = super.getTableCellRendererComponent(table, value,
+            // isSelected, hasFocus, row, column);
+            // ((JRendererLabel) co).setIcon(null);
+            // ((JRendererLabel) co).setText(strPluginDisabled);
+            // ((JRendererLabel) co).setBorder(null);
+            // return co;
+            // } else if (dLink.getPluginProgress() != null) {
+            //
+            // ((JRendererLabel) co).setIcon(null);
+            // ((JRendererLabel)
+            // co).setText(dLink.getPluginProgress().getPercent() + "%");
+            // ((JRendererLabel) co).setBorder(null);
+            // return co;
+            // } else if (dLink.getDownloadCurrent() > 0) {
+            // if (!dLink.getLinkStatus().isPluginActive()) {
+            // if (dLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
+            // clearSB();
+            // col = this.table.getColumn(column);
+            // if (col.getWidth() < 100) {
+            // sb.append("100%");
+            // } else {
+            // sb.append("100% (").append(Formatter.formatReadable(Math.max(0,
+            // dLink.getDownloadSize()))).append(')');
+            // }
+            // ((JRendererLabel) co).setIcon(null);
+            // ((JRendererLabel) co).setText(sb.toString());
+            // ((JRendererLabel) co).setBorder(null);
+            // } else {
+            // clearSB();
+            // col = this.table.getColumn(column);
+            // if (col.getWidth() < 100) {
+            // sb.append(c.format(dLink.getPercent() / 100.0)).append('%');
+            // } else {
+            // sb.append(Formatter.formatReadable(dLink.getDownloadCurrent())).append('/').append(Formatter.formatReadable(Math.max(0,
+            // dLink.getDownloadSize())));
+            // }
+            // ((JRendererLabel) co).setIcon(null);
+            // ((JRendererLabel) co).setText(sb.toString());
+            // ((JRendererLabel) co).setBorder(null);
+            // }
+            // } else {
+            //
+            // if (dLink.getLinkStatus().hasStatus(LinkStatus.WAITING_USERIO)) {
+            //
+            // ((JRendererLabel) co).setIcon(null);
+            // ((JRendererLabel) co).setText(strWaitIO);
+            // ((JRendererLabel) co).setBorder(null);
+            // } else {
+            // clearSB();
+            // col = this.table.getColumn(column);
+            // if (col.getWidth() < 100) {
+            // sb.append(c.format(dLink.getPercent() / 100.0)).append('%');
+            // } else {
+            // sb.append(Formatter.formatReadable(dLink.getDownloadCurrent())).append('/').append(Formatter.formatReadable(Math.max(0,
+            // dLink.getDownloadSize())));
+            // }
+            //
+            // ((JRendererLabel) co).setIcon(null);
+            // ((JRendererLabel) co).setText(sb.toString());
+            // ((JRendererLabel) co).setBorder(null);
+            // }
+            // }
+            //
+            // return co;
+            // }
+            //
+            // if (dLink.getDownloadSize() > 1) {
+            // clearSB();
+            // col = this.table.getColumn(column);
+            // if (col.getWidth() < 100) {
+            // sb.append(c.format(dLink.getPercent() / 100.0)).append('%');
+            // } else {
+            // sb.append(Formatter.formatReadable(dLink.getDownloadCurrent())).append('/').append(Formatter.formatReadable(Math.max(0,
+            // dLink.getDownloadSize())));
+            // }
+            // ((JRendererLabel) co).setIcon(null);
+            // ((JRendererLabel) co).setText(sb.toString());
+            // ((JRendererLabel) co).setBorder(null);
+            // } else {
+            //
+            // ((JRendererLabel) co).setIcon(null);
+            // ((JRendererLabel) co).setText(NULL_BYTE_PROGRESS);
+            // ((JRendererLabel) co).setBorder(null);
+            //
+            // }
+            //
+            // return co;
         case DownloadJTableModel.COL_STATUS:
 
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
@@ -470,7 +510,7 @@ public class TableRenderer extends DefaultTableRenderer {
     private Component getFilePackageCell(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         fp = (FilePackage) value;
         switch (column) {
-        case DownloadJTableModel.COL_PART:
+        case DownloadJTableModel.COL_NAME:
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             ((JRendererLabel) co).setText(fp.getName() + " [" + fp.size() + "]");
             if (fp.getLinksFailed() > 0) {
@@ -481,6 +521,14 @@ public class TableRenderer extends DefaultTableRenderer {
 
             ((JRendererLabel) co).setBorder(null);
             return co;
+        case DownloadJTableModel.COL_PART:
+        case DownloadJTableModel.COL_ADDED:
+        case DownloadJTableModel.COL_FINISHED:
+            co = super.getTableCellRendererComponent(table, "", isSelected, hasFocus, row, column);
+            return co;
+            
+            
+   
         case DownloadJTableModel.COL_HOSTER:
             value = fp.getHoster();
             break;
@@ -495,33 +543,36 @@ public class TableRenderer extends DefaultTableRenderer {
             }
             progress.setForeground(COL_PROGRESS_NORMAL);
             return progress;
-        case DownloadJTableModel.COL_STATUS_DETAILS:
-            co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-            if (fp.isFinished()) {
-                clearSB();
-                col = this.table.getColumn(column);
-                if (col.getWidth() < 100) {
-                    sb.append("100%");
-                } else {
-                    sb.append("100% (").append(Formatter.formatReadable(Math.max(0, fp.getTotalEstimatedPackageSize()))).append(')');
-                }
-                ((JRendererLabel) co).setText(sb.toString());
-                ((JRendererLabel) co).setIcon(null);
-                ((JRendererLabel) co).setBorder(null);
-                return co;
-            } else {
-                clearSB();
-                col = this.table.getColumn(column);
-                if (col.getWidth() < 100) {
-                    sb.append(c.format(fp.getPercent())).append('%');
-                } else {
-                    sb.append(Formatter.formatReadable(fp.getTotalKBLoaded())).append('/').append(Formatter.formatReadable(Math.max(0, fp.getTotalEstimatedPackageSize())));
-                }
-                ((JRendererLabel) co).setText(sb.toString());
-                ((JRendererLabel) co).setIcon(null);
-                ((JRendererLabel) co).setBorder(null);
-                return co;
-            }
+            // case DownloadJTableModel.COL_STATUS_DETAILS:
+            // co = super.getTableCellRendererComponent(table, value,
+            // isSelected, hasFocus, row, column);
+            // if (fp.isFinished()) {
+            // clearSB();
+            // col = this.table.getColumn(column);
+            // if (col.getWidth() < 100) {
+            // sb.append("100%");
+            // } else {
+            // sb.append("100% (").append(Formatter.formatReadable(Math.max(0,
+            // fp.getTotalEstimatedPackageSize()))).append(')');
+            // }
+            // ((JRendererLabel) co).setText(sb.toString());
+            // ((JRendererLabel) co).setIcon(null);
+            // ((JRendererLabel) co).setBorder(null);
+            // return co;
+            // } else {
+            // clearSB();
+            // col = this.table.getColumn(column);
+            // if (col.getWidth() < 100) {
+            // sb.append(c.format(fp.getPercent())).append('%');
+            // } else {
+            // sb.append(Formatter.formatReadable(fp.getTotalKBLoaded())).append('/').append(Formatter.formatReadable(Math.max(0,
+            // fp.getTotalEstimatedPackageSize())));
+            // }
+            // ((JRendererLabel) co).setText(sb.toString());
+            // ((JRendererLabel) co).setIcon(null);
+            // ((JRendererLabel) co).setBorder(null);
+            // return co;
+            // }
         case DownloadJTableModel.COL_STATUS:
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             statuspanel.setBackground(co.getBackground());
