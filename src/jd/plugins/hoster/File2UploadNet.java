@@ -41,7 +41,6 @@ public class File2UploadNet extends PluginForHost {
         this.enablePremium("http://file2upload.net/membership?paid");
     }
 
-    @Override
     public String getAGBLink() {
         return "http://file2upload.net/toc";
     }
@@ -56,23 +55,18 @@ public class File2UploadNet extends PluginForHost {
         form.put("acc_pass", Encoding.urlEncode(account.getPass()));
         br.submitForm(form);
         br.setFollowRedirects(false);
+        if (!br.containsHTML("Account area")) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
     }
 
-    // @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
-        this.setBrowserExclusive();
         try {
             login(account);
         } catch (PluginException e) {
             account.setValid(false);
             return ai;
         }
-        if (br.containsHTML("Account area")) {
-            account.setValid(true);
-        } else {
-            account.setValid(false);
-        }
+        account.setValid(true);
         return ai;
     }
 
@@ -107,6 +101,7 @@ public class File2UploadNet extends PluginForHost {
         }
         String dllink = br.getRegex("class=\"important\" href=\"(.*?)\">Click").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         dl.startDownload();
     }
@@ -115,7 +110,6 @@ public class File2UploadNet extends PluginForHost {
         return 2;
     }
 
-    // @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
@@ -131,7 +125,6 @@ public class File2UploadNet extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         Form captchaForm = br.getForm(0);
@@ -164,21 +157,19 @@ public class File2UploadNet extends PluginForHost {
             downloadLink.setProperty("pass", passCode);
         }
         String dllink = br.getRegex("class=\"important\" href=\"(.*?)\">Click to download! <").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
-
         dl.startDownload();
     }
 
-    @Override
     public void reset() {
     }
 
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 }

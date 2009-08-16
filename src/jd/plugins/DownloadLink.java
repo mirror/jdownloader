@@ -179,9 +179,9 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     private String part;
 
-    private long created=-1l;
+    private long created = -1l;
 
-    private long finishedDate=-1l;
+    private long finishedDate = -1l;
 
     /**
      * Erzeugt einen neuen DownloadLink
@@ -208,7 +208,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         this.host = host == null ? null : host.toLowerCase();
         this.isEnabled = isEnabled;
         created = System.currentTimeMillis();
-        finishedDate=-1l;
+        finishedDate = -1l;
         this.setUrlDownload(urlDownload);
         if (plugin != null) {
             try {
@@ -961,6 +961,10 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @param name2
      */
     private void setPart(String name2) {
+        if (name2 == null) {
+            part = null;
+            return;
+        }
         part = new Regex(name2, "\\.part(\\d+)").getMatch(0);
         if (part == null) {
             new Regex(name2, "\\.r(\\d+)").getMatch(0);
@@ -1009,7 +1013,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         } else {
             finalFileName = null;
         }
-
+        setPart(finalFileName);
     }
 
     /**

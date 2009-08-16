@@ -55,12 +55,10 @@ public class FileFactory extends PluginForHost {
         this.enablePremium("http://www.filefactory.com/info/premium.php");
     }
 
-    // @Override
     public int getTimegapBetweenConnections() {
         return 200;
     }
 
-    // @Override
     public void handleFree(DownloadLink parameter) throws Exception {
         requestFileInformation(parameter);
         try {
@@ -104,25 +102,31 @@ public class FileFactory extends PluginForHost {
         try {
             waittime = Long.parseLong(br.getRegex("<p id=\"countdown\">(\\d+?)</p>").getMatch(0)) * 1000l;
         } catch (Exception e) {
-            e.printStackTrace();
         }
         if (waittime > 60000l) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime); }
         waittime += 1000;
         sleep(waittime, parameter);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,parameter, downloadUrl);
+        br.setFollowRedirects(true);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, downloadUrl);
 
         // Prüft ob content disposition header da sind
         if (dl.getConnection().isContentDisposition()) {
             dl.startDownload();
         } else {
             br.followConnection();
-            logger.info(br.toString());
+            if (br.containsHTML("have exceeded the download limit")) {
+                waittime = 0;
+                try {
+                    waittime = Long.parseLong(br.getRegex("Please wait (\\d+) minutes to download more files").getMatch(0)) * 1000l;
+                } catch (Exception e) {
+                }
+                if (waittime > 0) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
 
     }
 
-    // @Override
     public int getMaxRetries() {
         return 20;
     }
@@ -140,7 +144,6 @@ public class FileFactory extends PluginForHost {
         if (br.containsHTML(LOGIN_ERROR)) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
     }
 
-    // @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
 
@@ -167,13 +170,13 @@ public class FileFactory extends PluginForHost {
         return ai;
     }
 
-    // @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
         login(account);
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, br.getRedirectLocation(), true, 0);
+        br.setFollowRedirects(true);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), true, 0);
         if (dl.getConnection().isContentDisposition()) {
             br.followConnection();
             if (br.containsHTML(NOT_AVAILABLE)) {
@@ -183,7 +186,8 @@ public class FileFactory extends PluginForHost {
             } else {
                 String red = br.getRegex(Pattern.compile("10px 0;\">.*<a href=\"(.*?)\">Download with FileFactory Premium", Pattern.DOTALL)).getMatch(0);
                 logger.finer("Indirect download");
-                dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, red, true, 0);
+                br.setFollowRedirects(true);
+                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, red, true, 0);
             }
         } else {
             logger.finer("DIRECT download");
@@ -191,7 +195,6 @@ public class FileFactory extends PluginForHost {
         dl.startDownload();
     }
 
-    // @Override
     public String getAGBLink() {
         return "http://www.filefactory.com/info/terms.php";
     }
@@ -201,7 +204,6 @@ public class FileFactory extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replaceAll("http://filefactory", "http://www.filefactory"));
     }
 
-    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -240,29 +242,19 @@ public class FileFactory extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * /* public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
     public void init() {
     }
 
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    // @Override
     public void reset() {
     }
 
-    // @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 

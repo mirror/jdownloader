@@ -31,7 +31,6 @@ public class LoadedIt extends PluginForHost {
 
     public LoadedIt(PluginWrapper wrapper) {
         super(wrapper);
-        // TODO Auto-generated constructor stub
     }
 
     @Override
@@ -49,36 +48,26 @@ public class LoadedIt extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink link) throws Exception {
-        this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
+        this.requestFileInformation(link);
+        br.setDebug(true);
         Form DLForm = br.getFormbyProperty("name", "wait");
         if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         int tt = Integer.parseInt(br.getRegex("var time_wait = (.*?);").getMatch(0));
-        sleep(tt * 1001, link);
+        sleep(tt * 1001l, link);
         br.submitForm(DLForm);
         String dllink = br.getRegex("type=\"video/divx\" src=\"(.*?)\" custommode=\"Stage6").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        //Bad try
-//        Regex reg = br.getRegex("GR&Ouml;SSE <b>(.*?)</b> (.*?)</td>");
-//        String filesize = reg.getMatch(0) + " " + reg.getMatch(1);
-//        link.setDownloadSize(Regex.getSize(filesize));
-        BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        dl = BrowserAdapter.openDownload(br, link, dllink, true, 0);
         dl.startDownload();
     }
 
-    @Override
     public void reset() {
-        // TODO Auto-generated method stub
-
     }
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-        // TODO Auto-generated method stub
-
     }
 
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
