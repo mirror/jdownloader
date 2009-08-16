@@ -42,6 +42,7 @@ gui.images.stopsign = default/process-stop
 gui.images.sort = default/sort
 gui.images.running = default/forward
 gui.images.load = default/document-open
+gui.images.flashgot = flashgot_logo_0
 gui.images.remove_ok = default/remove-ok
 gui.images.remove_all = default/remove-all
 gui.images.remove_dupes = default/remove-dupes
