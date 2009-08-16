@@ -47,6 +47,8 @@ import jd.nutils.JDFlags;
 import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
 import jd.nutils.nativeintegration.LocalBrowser;
+import jd.update.FileUpdate;
+import jd.update.WebUpdater;
 import jd.utils.JDFileReg;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -283,7 +285,33 @@ public class Installer {
     }
 
     public static void installFirefoxaddon() {
-        LocalBrowser.openinFirefox(JDUtilities.getResourceFile("tools/jdownff.xpi").getAbsolutePath());
+        File file = getFlashGotFile();
+  
+        LocalBrowser.openinFirefox(file.getAbsolutePath());
+    }
+/**
+ * Calls a webupdate to get the latest XPI
+ * @return
+ */
+    public static File getFlashGotFile() {
+        ArrayList<FileUpdate> files;
+        try {
+            WebUpdater wu;
+            files = (wu=new WebUpdater()).getAvailableFiles();
+
+            for (FileUpdate f : files) {
+                if (f.getLocalFile().getAbsolutePath().endsWith("flashgot.xpi")) {
+                    wu.updateUpdatefile(f);
+                  if(f.getLocalTmpFile().exists())return f.getLocalTmpFile();
+                  return f.getLocalFile();
+                    
+                
+                }
+            }
+        } catch (Exception e) {
+            JDLogger.exception(e);
+        }
+        return null;
     }
 
     public JPanel getInstallerPanel() {

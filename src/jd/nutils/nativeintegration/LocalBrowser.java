@@ -267,22 +267,26 @@ abstract public class LocalBrowser implements Serializable {
             if (path != null) {
                 Executer exec = new Executer(path);
                 exec.addParameters(new String[] { url });
-                exec.setWaitTimeout(180);
+             
                 exec.start();
+            
+                
             }
         } else if (OSDetector.isMac()) {
             if (new File("/Applications/Firefox.app").exists()) {
                 path = "/Applications/Firefox.app";
                 Executer exec = new Executer("open");
                 exec.addParameters(new String[] { path, url });
-                exec.setWaitTimeout(180);
+             
                 exec.start();
+              
             }
         } else if (OSDetector.isLinux()) {
             Executer exec = new Executer("firefox");
             exec.addParameters(new String[] { url });
-            exec.setWaitTimeout(180);
+           
             exec.start();
+          
         }
     }
 }

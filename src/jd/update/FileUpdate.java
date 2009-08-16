@@ -80,10 +80,10 @@ public class FileUpdate {
         };
     }
 
-
     public JDBroadcaster<MessageListener, MessageEvent> getBroadcaster() {
         return broadcaster;
     }
+
     public String toString() {
         return localPath;
     }
@@ -172,15 +172,14 @@ public class FileUpdate {
                 } else {
                     tmpFile = JDUtilities.getResourceFile(getLocalPath() + ".tmp");
                 }
-                //delete tmp file
+                // delete tmp file
                 tmpFile.delete();
-
-                if (this.getLocalTmpFile().exists() && JDHash.getMD5(this.getLocalTmpFile()).equals(hash)) {
-                    //if update/... already exists and hash is ok.. 
-            
-//                    this.getLocalTmpFile().renameTo(tmpFile);
+                File updatetmp = this.getLocalTmpFile();
+                if (updatetmp.exists() && JDHash.getMD5(updatetmp).equals(hash)) {
+                    return true;
                 } else {
-                    //remove local tmp file, since it does either not exist or is invalid
+                    // remove local tmp file, since it does either not exist or
+                    // is invalid
                     this.getLocalTmpFile().delete();
 
                     if (url.contains("?")) {
@@ -195,14 +194,14 @@ public class FileUpdate {
                     URLConnectionAdapter con = null;
                     int response = -1;
                     try {
-                        //Open connection
+                        // Open connection
                         con = br.openGetConnection(url);
                         endTime = System.currentTimeMillis();
                         response = con.getResponseCode();
                         currentServer.setRequestTime(endTime - startTime);
 
                     } catch (Exception e) {
-                        //Failed connection.retry next server
+                        // Failed connection.retry next server
                         broadcaster.fireEvent(new MessageEvent(this, ERROR, "Error. Connection error"));
                         currentServer.setRequestTime(100000l);
                         try {
@@ -211,9 +210,9 @@ public class FileUpdate {
                         }
                         continue;
                     }
-                    //connection estabilished
+                    // connection estabilished
                     if (response != 200) {
-                    //responscode  has errors. Try next server
+                        // responscode has errors. Try next server
                         broadcaster.fireEvent(new MessageEvent(this, ERROR, "Error. Connection error " + response + ""));
                         currentServer.setRequestTime(500000l);
                         try {
@@ -223,11 +222,11 @@ public class FileUpdate {
                         continue;
 
                     }
-//connection is ok. download now to *.,tmp file
+                    // connection is ok. download now to *.,tmp file
                     try {
                         Browser.download(tmpFile, con);
                     } catch (Exception e) {
-                        //DOwnload failed. try next server
+                        // DOwnload failed. try next server
                         broadcaster.fireEvent(new MessageEvent(this, ERROR, "Error. Connection broken"));
                         currentServer.setRequestTime(100000l);
                         try {
@@ -236,7 +235,7 @@ public class FileUpdate {
                         }
                         continue;
                     }
-                    //Download is ok. b
+                    // Download is ok. b
                     try {
                         con.disconnect();
                     } catch (Exception e) {
@@ -244,40 +243,39 @@ public class FileUpdate {
                     broadcaster.fireEvent(new MessageEvent(this, SERVER_STATS, currentServer + " requesttimeAVG=" + currentServer.getRequestTime() + ""));
 
                 }
-                
-                
+
                 String downloadedHash = JDHash.getMD5(tmpFile);
-                if (downloadedHash!=null&&downloadedHash.equalsIgnoreCase(hash)) {
-                    //hash of fresh downloaded file is ok
+                if (downloadedHash != null && downloadedHash.equalsIgnoreCase(hash)) {
+                    // hash of fresh downloaded file is ok
                     broadcaster.fireEvent(new MessageEvent(this, SUCCESS, "Hash OK"));
-                    //move to update folder
+                    // move to update folder
                     this.getLocalTmpFile().delete();
-                    //tinyupdate has to be updated directly
+                    // tinyupdate has to be updated directly
                     boolean ret;
-                    if(tmpFile.getName().startsWith("tinyupdate")){
-                         ret = tmpFile.renameTo(this.getLocalFile());
-                    }else{
-                         ret = tmpFile.renameTo(getLocalTmpFile()); 
+                    if (tmpFile.getName().startsWith("tinyupdate")) {
+                        ret = tmpFile.renameTo(this.getLocalFile());
+                    } else {
+                        ret = tmpFile.renameTo(getLocalTmpFile());
                     }
-                  
+
                     if (ret) {
-                        //rename ok
+                        // rename ok
                         return ret;
                     } else {
-                        //rename failed. needs subfolder?
+                        // rename failed. needs subfolder?
                         getLocalTmpFile().getParentFile().mkdirs();
                         ret = tmpFile.renameTo(getLocalTmpFile());
                         if (!ret) {
-                            //rename failed finally
+                            // rename failed finally
                             broadcaster.fireEvent(new MessageEvent(this, ERROR, "Error. Rename failed"));
                         } else {
-                            //rename succeeded
+                            // rename succeeded
                             return ret;
                         }
                     }
                 } else {
-                    //Download failed. delete tmp file and exit
-                    
+                    // Download failed. delete tmp file and exit
+
                     broadcaster.fireEvent(new MessageEvent(this, ERROR, "Hash Failed"));
                     if (hasServer()) {
                         broadcaster.fireEvent(new MessageEvent(this, ERROR, "Error. Retry"));
@@ -298,7 +296,12 @@ public class FileUpdate {
 
     }
 
-    private File getLocalTmpFile() {
+    /**
+     * Returns the local tmp file
+     * 
+     * @return
+     */
+    public File getLocalTmpFile() {
         if (workingDir != null) {
             return new File(new File(workingDir, "update") + getLocalPath());
         } else {

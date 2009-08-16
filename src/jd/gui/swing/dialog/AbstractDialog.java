@@ -32,6 +32,7 @@ import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JPanel;
 import javax.swing.JRootPane;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
@@ -75,6 +76,8 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
     private JCheckBox dont;
 
     private JLabel dontlabel;
+
+    private JPanel buttonBar;
 
     public AbstractDialog(int flag, String title, ImageIcon icon, String okOption, String cancelOption) {
         super(DummyFrame.getDialogParent());
@@ -123,6 +126,8 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
         this.setLayout(new MigLayout("ins 5", "[fill,grow]", "[fill,grow][]"));
 
         this.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+        this.buttonBar = new JPanel(new MigLayout("ins 0", "[fill,grow]", "[fill,grow]"));
+
         btnOK = new JButton(this.okOption);
         JButton focus = btnOK;
 
@@ -135,7 +140,7 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
         contentpane = contentInit();
         add(contentpane, "pushx,growx,pushy,growy,spanx,aligny center,wrap");
 
-        add(this.countDownLabel, "split 4,growx");
+        add(this.countDownLabel, "split 3,growx");
 
         if ((flag & UserIO.DONT_SHOW_AGAIN) > 0) {
             dont = new JCheckBox();
@@ -145,7 +150,7 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
             add(dontlabel = new JLabel(JDL.L("gui.dialogs.dontshowthisagain", "Don't show this again")));
             add(dont, "alignx right");
         }
-
+        add(buttonBar, "alignx right");
         if ((flag & UserIO.NO_OK_OPTION) == 0) {
 
             // this.getRootPane().setDefaultButton(btnOK);
@@ -163,11 +168,11 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
                 }
             });
             focus = btnOK;
-            add(btnOK, "alignx right");
+            buttonBar.add(btnOK, "alignx right,tag ok,sizegroup confirms");
         }
         if ((flag & UserIO.NO_CANCEL_OPTION) == 0) {
 
-            add(btnCancel, "alignx right");
+            buttonBar.add(btnCancel, "alignx right,tag cancel,sizegroup confirms");
             if ((flag & UserIO.NO_OK_OPTION) != 0) {
                 this.getRootPane().setDefaultButton(btnCancel);
                 btnCancel.requestFocusInWindow();

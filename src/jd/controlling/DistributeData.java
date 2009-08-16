@@ -260,12 +260,12 @@ public class DistributeData extends Thread {
         /* normal quickcheck */
         ArrayList<DownloadLink> ret = quickHosterCheck(data);
         if (ret != null && ret.size() == 1) return ret;
-        if (!filterNormalHTTP) {
-            /* quickcheck for http */
-            String newdata = data.replaceAll("http://", "httpviajd://");
-            newdata = newdata.replaceAll("https://", "httpsviajd://");
-            ret = quickHosterCheck(newdata);
-        }
+//        if (!filterNormalHTTP) {
+//            /* quickcheck for http */
+//            String newdata = data.replaceAll("http://", "httpviajd://");
+//            newdata = newdata.replaceAll("https://", "httpsviajd://");
+//            ret = quickHosterCheck(newdata);
+//        }
         if (ret != null && ret.size() == 1) return ret;
         foundPasswords.addAll(HTMLParser.findPasswords(data));
         data = HTMLEntities.unhtmlentities(data);
