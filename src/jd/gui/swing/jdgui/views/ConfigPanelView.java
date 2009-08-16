@@ -1,7 +1,7 @@
 package jd.gui.swing.jdgui.views;
 
 import javax.swing.Icon;
-import javax.swing.JButton;
+import javax.swing.JLabel;
 import javax.swing.JMenuBar;
 
 import jd.gui.swing.jdgui.borders.JDBorderFactory;
@@ -23,14 +23,12 @@ public class ConfigPanelView extends ClosableView {
         this.init();
     }
 
+    @Override
     protected void initMenu(JMenuBar menubar) {
-        JButton top;
-        menubar.add(top = new JButton(icon));
-        top.setBorderPainted(false);
-        top.setContentAreaFilled(false);
-        menubar.add(top = new JButton(title));
-        top.setBorderPainted(false);
-        top.setContentAreaFilled(false);
+        JLabel label;
+        menubar.add(label = new JLabel(title));
+        label.setIcon(icon);
+        label.setIconTextGap(10);
 
         menubar.setBorder(JDBorderFactory.createInsideShadowBorder(0, 0, 1, 0));
     }
