@@ -45,15 +45,12 @@ public class TurboBitNet extends PluginForHost {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("<div class=\"code-404\">404</div>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        Regex infos = br.getRegex(Pattern.compile("<h1 class=\"download-file\">.*<span class='file-icon rar'>&nbsp;</span><b>(.*?)</b></h1>.*<div class=\"download-file\">.*<div><b>.*:</b>(.*?).</div></div>", Pattern.DOTALL));
-        String fileName = infos.getMatch(0);        
-        String fileSize = infos.getMatch(1);
+        String fileName = br.getRegex("<span class='file-icon .*?'>&nbsp;</span><b>(.*?)</b></h1>").getMatch(0);
+        String fileSize = br.getRegex("<div><b>Размер файла:</b> (.*?)</div></div>").getMatch(0);
         if (fileName == null || fileSize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        fileSize = fileSize.replaceAll("М", "M");
-        fileSize = fileSize.replaceAll("к", "k");
-        fileSize = fileSize + "b";
+        fileSize = fileSize.replaceAll("б", "B");
         downloadLink.setName(fileName.trim());
-        downloadLink.setDownloadSize(Regex.getSize(fileSize.trim()));
+        downloadLink.setDownloadSize(Regex.getSize(fileSize.replaceAll(",", "\\.")));
         return AvailableStatus.TRUE;
     }
 
