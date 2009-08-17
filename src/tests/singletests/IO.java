@@ -40,8 +40,8 @@ public class IO {
 
         out(ret);
         
-        int status = UserIO.getInstance().requestHelpDialog(UserIO.NO_CANCEL_OPTION|UserIO.NO_COUNTDOWN, JDL.LF("system.update.message.title", "Updated to version %s", JDUtilities.getRevision()), JDL.L("system.update.message", "Update successfull"), JDL.L("system.update.showchangelogv2", "What's new?"), "http://jdownloader.org/changes/index");
-        out(status);
+//        int status = UserIO.getInstance().requestHelpDialog(UserIO.NO_CANCEL_OPTION|UserIO.NO_COUNTDOWN, JDL.LF("system.update.message.title", "Updated to version %s", JDUtilities.getRevision()), JDL.L("system.update.message", "Update successfull"), JDL.L("system.update.showchangelogv2", "What's new?"), "http://jdownloader.org/changes/index");
+//        out(status);
     }
 
     private void out(int ret) {
