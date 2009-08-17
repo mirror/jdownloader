@@ -20,14 +20,12 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JMenuItem;
 
 import jd.config.Configuration;
+import jd.gui.UserIF;
 import jd.gui.UserIO;
 import jd.gui.swing.SwingGui;
-import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
-import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
-import jd.gui.swing.jdgui.settings.panels.premium.Premium;
-import jd.gui.swing.jdgui.views.ConfigPanelView;
 import jd.gui.swing.menu.HosterMenu;
 import jd.nutils.JDFlags;
 import jd.utils.JDTheme;
@@ -42,9 +40,9 @@ public class PremiumMenu extends JStartMenu implements ActionListener {
 
     private JCheckBoxMenuItem premium;
 
-    private JCheckBoxMenuItem config;
+    private JMenuItem config;
 
-    private ConfigPanelView panel;
+    // private ConfigPanelView panel;
 
     private PremiumMenu() {
         super("gui.menu.premium", "gui.images.taskpanes.premium");
@@ -67,42 +65,38 @@ public class PremiumMenu extends JStartMenu implements ActionListener {
         HosterMenu.update(this);
         this.addSeparator();
 
-        config = new JCheckBoxMenuItem(JDL.L("gui.menu.action.config.desc", "Premium Settings"));
+        config = new JMenuItem(JDL.L("gui.menu.action.config.desc", "Premium Settings"));
         config.addActionListener(this);
-        config.setSelected(false);
+        // config.setSelected(false);
         this.add(config);
     }
 
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == config) {
-            if (config.isSelected()) {
-                if (panel == null) {
-                    panel = new ConfigPanelView(new Premium(null), JDL.L("gui.menu.action.config.desc", "Premium Settings"), JDTheme.II("gui.images.configuration", 16, 16));
-                    panel.getBroadcaster().addListener(new SwitchPanelListener() {
-
-                        @Override
-                        public void onPanelEvent(SwitchPanelEvent event) {
-                            switch (event.getID()) {
-                            case SwitchPanelEvent.ON_REMOVE:
-                                config.setSelected(false);
-                                break;
-                            case SwitchPanelEvent.ON_SHOW:
-                                // activateAction.setSelected(true);
-                                break;
-                            }
-
-                        }
-
-                    });
-                }
-                SwingGui.getInstance().setContent(panel);
-            } else {
-                panel.close();
-            }
-
-        }
-
-        if (e.getSource() == premium) {
+            // if (config.isSelected()) {
+            // if (panel == null) {
+            // panel = new ConfigPanelView(new Premium(null),
+            // JDL.L("gui.menu.action.config.desc", "Premium Settings"),
+            // JDTheme.II("gui.images.configuration", 16, 16));
+            // panel.getBroadcaster().addListener(new SwitchPanelListener() {
+            //
+            // @Override
+            // public void onPanelEvent(SwitchPanelEvent event) {
+            // switch (event.getID()) {
+            // case SwitchPanelEvent.ON_REMOVE:
+            // config.setSelected(false);
+            // break;
+            // }
+            // }
+            //
+            // });
+            // }
+            // SwingGui.getInstance().setContent(panel);
+            // } else {
+            // panel.close();
+            // }
+            SwingGui.getInstance().requestPanel(UserIF.Panels.PREMIUMCONFIG, null);
+        } else if (e.getSource() == premium) {
             if (!premium.isSelected()) {
                 int answer = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_COUNTDOWN, JDL.L("dialogs.premiumstatus.global.title", "Disable Premium?"), JDL.L("dialogs.premiumstatus.global.message", "Do you really want to disable all premium accounts?"), JDTheme.II("gui.images.warning", 32, 32), JDL.L("gui.btn_yes", "Yes"), JDL.L("gui.btn_no", "No"));
                 if (JDFlags.hasAllFlags(answer, UserIO.RETURN_CANCEL) && !JDFlags.hasAllFlags(answer, UserIO.RETURN_DONT_SHOW_AGAIN)) {
@@ -119,7 +113,6 @@ public class PremiumMenu extends JStartMenu implements ActionListener {
     public void update() {
         this.removeAll();
         updateMenu();
-
     }
 
 }

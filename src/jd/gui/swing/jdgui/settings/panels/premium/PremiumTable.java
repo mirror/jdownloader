@@ -87,7 +87,7 @@ public class PremiumTable extends JTable implements MouseListener {
         int[] rows = getSelectedRows();
         ArrayList<Account> ret = new ArrayList<Account>();
         for (int row : rows) {
-            Object element = this.getModel().getValueAt(row, 0);
+            Object element = model.getValueAt(row, 0);
             if (element != null && element instanceof Account) {
                 ret.add((Account) element);
             }

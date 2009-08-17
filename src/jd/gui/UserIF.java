@@ -18,7 +18,6 @@ public abstract class UserIF {
      * An Abstract panelrepresentation used in requestPanel(Panels.*,Parameter
      * 
      * @author Coalado
-     * 
      */
     public static enum Panels {
         /**
@@ -38,17 +37,16 @@ public abstract class UserIF {
         CONFIGPANEL,
 
         /**
-         * Premium configpanel. has account as parameter
+         * Premium configpanel. has account as parameter, if the
+         * accountconfigpanel should be shown, otherwise (parameter == null) the
+         * premiumview is shown
          */
-
-
         PREMIUMCONFIG,
-        
+
         /**
          * Addon manager panel
          */
         ADDON_MANAGER
-
 
     };
 

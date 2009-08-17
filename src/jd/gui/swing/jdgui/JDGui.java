@@ -129,7 +129,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
     @Override
     public void displayMiniWarning(String shortWarn, String longWarn) {
         /*
-         * TODO: mal durch ein einheitliches notificationo system ersetzen,
+         * TODO: mal durch ein einheitliches notification system ersetzen,
          * welches an das eventsystem gekoppelt ist
          */
         Balloon.show(shortWarn, JDTheme.II("gui.images.warning", 32, 32), longWarn);
@@ -490,7 +490,6 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
                 default:
                     mainTabbedPane.setSelectedComponent(downloadView);
                 }
-                // TODO Auto-generated method stub
                 return null;
             }
         }.waitForEDT();

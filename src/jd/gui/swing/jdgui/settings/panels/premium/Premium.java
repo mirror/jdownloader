@@ -33,11 +33,12 @@ import javax.swing.JTextField;
 import javax.swing.Timer;
 
 import jd.HostPluginWrapper;
-import jd.config.ConfigEntry;
 import jd.config.Configuration;
+import jd.config.ConfigEntry.PropertyType;
 import jd.controlling.AccountController;
 import jd.controlling.AccountControllerEvent;
 import jd.controlling.AccountControllerListener;
+import jd.controlling.JDLogger;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.components.AccountDialog;
@@ -69,15 +70,15 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
     private JScrollPane scrollPane;
     private Timer Update_Async;
     private boolean tablerefreshinprogress = false;
-    protected Logger logger = jd.controlling.JDLogger.getLogger();
+    protected Logger logger = JDLogger.getLogger();
 
     public Premium(Configuration configuration) {
         super();
-
         initPanel();
         load();
     }
 
+    @Override
     public String getBreadcrum() {
         return JDL.L(this.getClass().getName() + ".breadcrum", this.getClass().getSimpleName());
     }
@@ -86,6 +87,7 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
         return JDL.L(JDL_PREFIX + "title", "Premium");
     }
 
+    @Override
     public void initPanel() {
         panel.setLayout(new MigLayout("ins 5,wrap 1", "[fill,grow]", "[fill,grow]"));
         initPanel(panel);
@@ -105,17 +107,12 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
         initActions();
 
         ViewToolbar vt = new ViewToolbar() {
-            /**
-             * 
-             */
             private static final long serialVersionUID = 583469943193290056L;
 
             public void setDefaults(int i, AbstractButton ab) {
                 ab.setForeground(new JLabel().getForeground());
-
             }
         };
-        // vt.setContentPainted(false);
         vt.setList(new String[] { "action.premiumview.addacc", "action.premiumview.removeacc", "action.premium.buy" });
 
         panel.add(vt, "dock north,gapleft 3");
@@ -130,20 +127,16 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
     @Override
     public void save() {
         saveConfigEntries();
-
     }
 
     @Override
-    public ConfigEntry.PropertyType hasChanges() {
-        return ConfigEntry.PropertyType.NORMAL;
+    public PropertyType hasChanges() {
+        return PropertyType.NORMAL;
     }
 
     private void initActions() {
         new ThreadedAction("action.premiumview.addacc", "gui.images.newlogins") {
 
-            /**
-             * 
-             */
             private static final long serialVersionUID = -4407938288408350792L;
 
             @Override
@@ -175,9 +168,6 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
         };
         new ThreadedAction("action.premiumview.removeacc", "gui.images.delete") {
 
-            /**
-             * 
-             */
             private static final long serialVersionUID = -4407938288408350792L;
 
             @Override
@@ -192,7 +182,7 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
             public void threadedActionPerformed(ActionEvent e) {
                 ArrayList<Account> accs = internalTable.getSelectedAccounts();
                 if (accs.size() == 0) return;
-                if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, JDL.L("action.premiumview.removeacc.ask", "Remove selected ") + " (" + JDL.LF("action.premiumview.removeacc.accs", "%s Account(s)", accs.size()) + ")"), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
+                if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, JDL.L("action.premiumview.removeacc.ask", "Remove selected?") + " (" + JDL.LF("action.premiumview.removeacc.accs", "%s Account(s)", accs.size()) + ")"), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
                     for (Account acc : accs) {
                         AccountController.getInstance().removeAccount((String) null, acc);
                     }
@@ -202,9 +192,6 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
 
         new ThreadedAction("action.premium.buy", "gui.images.buy") {
 
-            /**
-             * 
-             */
             private static final long serialVersionUID = -4407938288408350792L;
 
             @Override
@@ -299,7 +286,6 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
     }
 
     public boolean vetoAccountGetEvent(String host, Account account) {
-        // TODO Auto-generated method stub
         return false;
     }
 
@@ -370,5 +356,4 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
         this.internalTable.getSelectionModel().setSelectionInterval(row, row);
     }
 
-  
 }
