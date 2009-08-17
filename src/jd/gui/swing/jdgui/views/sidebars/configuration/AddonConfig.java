@@ -3,6 +3,7 @@ package jd.gui.swing.jdgui.views.sidebars.configuration;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -33,7 +34,9 @@ public class AddonConfig extends ConfigPanel {
     public String getBreadcrum() {
         return JDL.L("jd.gui.swing.jdgui.settings.panels.ConfigPanelAddons.breadcrum", "") + JDL.L("jd.gui.swing.jdgui.views.sidebars.configuration.AddonConfig.breadcrum.deliminator", " - ") + name;
     }
-
+    public JPanel getPanel() {
+        return panel;
+    }
     @Override
     public void initPanel() {
 
@@ -89,10 +92,10 @@ public class AddonConfig extends ConfigPanel {
  * @param name2
  * @return
  */
-    public synchronized static AddonConfig getInstance(ConfigContainer container2, String name2) {
+    public synchronized static AddonConfig getInstance(ConfigContainer container2, String name2,String ext) {
         if (MAP == null) MAP = new HashMap<String, AddonConfig>();
 
-        AddonConfig p = MAP.get(container2 + "_" + name2);
+        AddonConfig p = MAP.get(container2 + "_" + name2+ext);
         if (p != null) return p;
 
         MAP.put(container2 + "_" + name2, p = new AddonConfig(container2, name2));

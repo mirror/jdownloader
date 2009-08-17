@@ -509,11 +509,14 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
             name = container.getTitle();
         }
         if (container.getGroup() != null && container.getGroup().getName() != null) name = container.getGroup().getName();
-        AddonConfig p = AddonConfig.getInstance(container, name);
-        javax.swing.JTabbedPane tabbed = (javax.swing.JTabbedPane) p.getComponent(0);
+        AddonConfig p = AddonConfig.getInstance(container, name,"_2");
+        try{
+//        javax.swing.JTabbedPane tabbed = (javax.swing.JTabbedPane) p.getComponent(0);
 
-        JDCollapser.getInstance().setContentPanel((SwitchPanel) tabbed.getComponent(0), JDL.LF("jd.gui.swing.jdgui.JDGui.showConfigPanel.title", "Setting for %s", name), container.getGroup() == null ? null : container.getGroup().getIcon());
-
+        JDCollapser.getInstance().setContentPanel((SwitchPanel) p.getPanel(), JDL.LF("jd.gui.swing.jdgui.JDGui.showConfigPanel.title", "Setting for %s", name), container.getGroup() == null ? null : container.getGroup().getIcon());
+        }catch(Throwable e){
+            e.printStackTrace();
+        }
         // this.mainTabbedPane.getSelectedView().setContent(
         // JDCollapser.getInstance());
         this.mainTabbedPane.getSelectedView().setInfoPanel(JDCollapser.getInstance());

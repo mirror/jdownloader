@@ -42,6 +42,7 @@ import net.miginfocom.swing.MigLayout;
 
 public class ConfigPanel extends SwitchPanel {
 
+
     private static final long serialVersionUID = 3383448498625377495L;
 
     protected Vector<GUIConfigEntry> entries = new Vector<GUIConfigEntry>();
