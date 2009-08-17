@@ -9,26 +9,26 @@ import jd.nutils.Colors;
 
 public class CPoint extends Point implements Serializable, Cloneable {
 
-    public final static int LAB_DIFFERENCE = 1;
-    public final static int RGB_DIFFERENCE1 = 2;
-    public final static int RGB_DIFFERENCE2 = 3;
-    public final static int HUE_DIFFERENCE = 4;
-    public final static int SATURATION_DIFFERENCE = 5;
-    public final static int BRIGHTNESS_DIFFERENCE = 6;
-    public final static int RED_DIFFERENCE = 7;
-    public final static int GREEN_DIFFERENCE = 8;
-    public final static int BLUE_DIFFERENCE = 9;
+    public final static byte LAB_DIFFERENCE = 1;
+    public final static byte RGB_DIFFERENCE1 = 2;
+    public final static byte RGB_DIFFERENCE2 = 3;
+    public final static byte HUE_DIFFERENCE = 4;
+    public final static byte SATURATION_DIFFERENCE = 5;
+    public final static byte BRIGHTNESS_DIFFERENCE = 6;
+    public final static byte RED_DIFFERENCE = 7;
+    public final static byte GREEN_DIFFERENCE = 8;
+    public final static byte BLUE_DIFFERENCE = 9;
 
     private static final long serialVersionUID = 333616481245029882L;
     private int color, distance;
     private boolean foreground = true;
-    private int colorDifferenceMode = LAB_DIFFERENCE;
+    private byte colorDifferenceMode = LAB_DIFFERENCE;
 
-    public int getColorDistanceMode() {
+    public byte getColorDistanceMode() {
         return colorDifferenceMode;
     }
 
-    public void setColorDistanceMode(int colorDistanceMode) {
+    public void setColorDistanceMode(final byte colorDistanceMode) {
         this.colorDifferenceMode = colorDistanceMode;
     }
 
@@ -36,7 +36,7 @@ public class CPoint extends Point implements Serializable, Cloneable {
         return foreground;
     }
 
-    public void setForeground(boolean foreground) {
+    public void setForeground(final boolean foreground) {
         this.foreground = foreground;
     }
 
@@ -44,7 +44,7 @@ public class CPoint extends Point implements Serializable, Cloneable {
         return color;
     }
 
-    public void setColor(int color) {
+    public void setColor(final int color) {
         this.color = color;
     }
 
@@ -52,8 +52,9 @@ public class CPoint extends Point implements Serializable, Cloneable {
         return distance;
     }
 
-    public double getColorDifference(int color) {
+    public double getColorDifference(final int color) {
         double dst = 0;
+
         if (color == this.color) return dst;
         switch (colorDifferenceMode) {
         case LAB_DIFFERENCE:
@@ -90,18 +91,18 @@ public class CPoint extends Point implements Serializable, Cloneable {
         return dst;
     }
 
-    public void setDistance(int distance) {
+    public void setDistance(final int distance) {
         this.distance = distance;
     }
 
     public CPoint() {
     }
 
-    public CPoint(int x, int y, int distance, Captcha captcha) {
+    public CPoint(final int x, final int y, final int distance, final Captcha captcha) {
         this(x, y, distance, captcha.getPixelValue(x, y));
     }
 
-    public CPoint(int x, int y, int distance, int color) {
+    public CPoint(final int x, final int y, final int distance, final int color) {
         super(x, y);
         this.color = color;
         this.distance = distance;
@@ -113,7 +114,7 @@ public class CPoint extends Point implements Serializable, Cloneable {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(final Object obj) {
         return super.equals(obj) || ((CPoint) obj).color == color;
     }
 }

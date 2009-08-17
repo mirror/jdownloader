@@ -7,6 +7,10 @@ import java.util.ArrayList;
 
 import javax.swing.ImageIcon;
 
+import jd.captcha.utils.Utilities;
+
+import jd.captcha.JAntiCaptcha;
+
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.userio.UserIOGui;
@@ -54,7 +58,10 @@ public class EasyFile implements JDLabelContainer, Serializable {
     public String toString() {
         return file.getName();
     }
-
+    public JAntiCaptcha getJac()
+    {
+        return new JAntiCaptcha(Utilities.getMethodDir(), getName());
+    }
     public EasyFile[] listFiles() {
         File[] files = file.listFiles();
         ArrayList<EasyFile> ret = new ArrayList<EasyFile>();

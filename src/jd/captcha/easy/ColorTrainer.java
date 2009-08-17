@@ -63,30 +63,11 @@ public class ColorTrainer {
     private JFrame frame;
     private int foregroundColor1 = 0xff00ff, foregroundColor2 = 0xFF99FF, backgroundColor1 = 0x0000ff, backgroundColor2 = 0x00ffff;
 
-    class ColorMode {
-        private int mode;
-        private String modeString;
 
-        public ColorMode(int mode, String modestString) {
-            this.mode = mode;
-            this.modeString = modestString;
-        }
 
-        @Override
-        public boolean equals(Object arg0) {
-            if ((arg0 == null) || !(arg0 instanceof ColorMode)) return false;
-            return mode == ((ColorMode) arg0).mode;
-        }
-
-        public String toString() {
-            return modeString;
-        }
-    }
-
-    final ColorMode[] cModes = new ColorMode[] { new ColorMode(CPoint.LAB_DIFFERENCE, "LAB Difference"), new ColorMode(CPoint.RGB_DIFFERENCE1, "RGB1 Difference"), new ColorMode(CPoint.RGB_DIFFERENCE2, "RGB2 Difference"), new ColorMode(CPoint.HUE_DIFFERENCE, "Hue Difference"), new ColorMode(CPoint.SATURATION_DIFFERENCE, "Saturation Difference"), new ColorMode(CPoint.BRIGHTNESS_DIFFERENCE, "Brightness Difference"), new ColorMode(CPoint.RED_DIFFERENCE, "Red Difference"), new ColorMode(CPoint.GREEN_DIFFERENCE, "Green Difference"), new ColorMode(CPoint.BLUE_DIFFERENCE, "Blue Difference") };
-    final JComboBox mode = new GuiRunnable<JComboBox>() {
+    private JComboBox mode = new GuiRunnable<JComboBox>() {
         public JComboBox runSave() {
-            return new JComboBox(cModes);
+            return new JComboBox(ColorMode.cModes);
         }
     }.getReturnValue();
 
@@ -297,7 +278,7 @@ public class ColorTrainer {
         return gbc;
     }
 
-    private ColorTrainer() {
+    public ColorTrainer() {
         new GuiRunnable<Object>() {
             public Object runSave() {
                 frame = new JFrame();
@@ -312,7 +293,7 @@ public class ColorTrainer {
             public Object runSave() {
                 images = new JPanel();
 
-                images.setBorder(new TitledBorder(JDL.L("easycaptcha.image", "Image:")));
+                images.setBorder(new TitledBorder(JDL.L("easycaptcha.images", "Images:")));
 
                 images.setLayout(new BoxLayout(images, BoxLayout.Y_AXIS));
 
