@@ -63,4 +63,9 @@ public class ConfirmDialog extends AbstractDialog {
         return super.getReturnValue();
     }
 
+    @Override
+    public String toString() {
+        return super.toString() + this.message;
+    }
+
 }

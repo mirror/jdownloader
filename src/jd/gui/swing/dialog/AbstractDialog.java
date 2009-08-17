@@ -22,7 +22,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
-import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 
 import javax.swing.AbstractAction;
@@ -86,39 +85,28 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
         setTitle(title);
 
         this.icon = (JDFlags.hasAllFlags(flag, UserIO.NO_ICON)) ? null : icon;
-        this.okOption = (okOption == null) ? JDL.L("gui.btn_ok", null) : okOption;
-        this.cancelOption = (cancelOption == null) ? JDL.L("gui.btn_cancel", null) : cancelOption;
-
+        this.okOption = (okOption == null) ? JDL.L("gui.btn_ok", "Ok") : okOption;
+        this.cancelOption = (cancelOption == null) ? JDL.L("gui.btn_cancel", "Cancel") : cancelOption;
     }
 
     public void init() {
         dont: if (JDFlags.hasAllFlags(flag, UserIO.DONT_SHOW_AGAIN)) {
             SubConfiguration cfg = SubConfiguration.getConfig(DIALOGS_CONFIG);
-            // System.out.println(cfg+toString()+"This restore" +
-            // "DONT_SHOW_AGAIN_" + JDHash.getMD5(this.toString()) + " " +
-            // cfg.getProperty("DONT_SHOW_AGAIN_" +
-            // JDHash.getMD5(this.toString())));
-            Object value;
-            if ((value = cfg.getProperty("DONT_SHOW_AGAIN_" + this.toString())) != null) {
-                if (value instanceof Integer) {
-                    int i = ((Integer) value).intValue();
-                    int ret = (i & (UserIO.RETURN_OK | UserIO.RETURN_CANCEL)) | UserIO.RETURN_DONT_SHOW_AGAIN | UserIO.RETURN_SKIPPED_BY_DONT_SHOW;
+            int i = cfg.getIntegerProperty(getDontShowAgainKey(), -1);
+            if (i != -1) {
+                int ret = (i & (UserIO.RETURN_OK | UserIO.RETURN_CANCEL)) | UserIO.RETURN_DONT_SHOW_AGAIN | UserIO.RETURN_SKIPPED_BY_DONT_SHOW;
 
-                    // return if the stored values are excluded
-                    if (JDFlags.hasAllFlags(flag, UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL) && JDFlags.hasAllFlags(flag, UserIO.RETURN_CANCEL)) {
-                        break dont;
-                    }
-                    if (JDFlags.hasAllFlags(flag, UserIO.DONT_SHOW_AGAIN_IGNORES_OK) && JDFlags.hasAllFlags(ret, UserIO.RETURN_OK)) {
-                        break dont;
-                    }
-
-                    this.returnValue = ret;
-
+                // return if the stored values are excluded
+                if (JDFlags.hasAllFlags(flag, UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL) && JDFlags.hasAllFlags(ret, UserIO.RETURN_CANCEL)) {
+                    break dont;
                 }
+                if (JDFlags.hasAllFlags(flag, UserIO.DONT_SHOW_AGAIN_IGNORES_OK) && JDFlags.hasAllFlags(ret, UserIO.RETURN_OK)) {
+                    break dont;
+                }
+
+                this.returnValue = ret;
                 return;
-
             }
-
         }
 
         this.setModal(true);
@@ -255,9 +243,8 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
 
     }
 
-    protected void processKeyEvent(KeyEvent e) {
-        super.processKeyEvent(e);
-
+    protected String getDontShowAgainKey() {
+        return "DONT_SHOW_AGAIN_" + this.toString();
     }
 
     /**
@@ -266,6 +253,12 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
     protected void packed() {
     }
 
+    /**
+     * Could result in issues when no title is specified and default title is
+     * used! So all dialogs with default title will use the same DONT_SHOW_AGAIN
+     * result.
+     */
+    @Override
     public String toString() {
         return Encoding.filterString("dialog-" + this.getTitle());
     }
@@ -295,18 +288,11 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
     protected void setReturnValue(boolean b) {
         returnValue = b ? UserIO.RETURN_OK : UserIO.RETURN_CANCEL;
         if (JDFlags.hasAllFlags(flag, UserIO.DONT_SHOW_AGAIN)) {
-
             if (dont.isSelected() && dont.isEnabled()) {
-
                 returnValue |= UserIO.RETURN_DONT_SHOW_AGAIN;
                 SubConfiguration cfg = SubConfiguration.getConfig(DIALOGS_CONFIG);
-                cfg.setProperty("DONT_SHOW_AGAIN_" + (this.toString()), returnValue);
+                cfg.setProperty(getDontShowAgainKey(), returnValue);
                 cfg.save();
-
-                // System.out.println(cfg+toString()+" This save" +
-                // "DONT_SHOW_AGAIN_" + JDHash.getMD5(this.toString()) + " " +
-                // returnValue);
-
             }
         }
 
