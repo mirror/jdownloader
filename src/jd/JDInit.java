@@ -490,18 +490,25 @@ public class JDInit {
         }
     }
 
-    public void removeFiles() {
+    public boolean removeFiles() {
         String[] remove = Regex.getLines(JDIO.getLocalFile(JDUtilities.getResourceFile("outdated.dat")));
         String homedir = JDUtilities.getJDHomeDirectoryFromEnvironment().toString();
+        boolean ret = true;
         if (remove != null) {
             for (String file : remove) {
                 if (file.length() == 0) continue;
                 if (!file.matches(".*?" + File.separator + "?\\.+" + File.separator + ".*?")) {
                     File delete = new File(homedir, file);
-                    if (JDIO.removeDirectoryOrFile(delete)) logger.warning("Removed " + file);
+                    if(!delete.exists())continue;
+                    if (JDIO.removeDirectoryOrFile(delete)){
+                        logger.warning("Removed " + file);
+                    }else{
+                        ret=false;
+                    }
                 }
             }
         }
+        return ret;
     }
 
 }

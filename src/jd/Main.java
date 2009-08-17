@@ -381,7 +381,7 @@ public class Main {
             System.setProperty("com.apple.mrj.application.apple.menu.about.name", "jDownloader");
             System.setProperty("com.apple.mrj.application.growbox.intrudes", "false");
             new MacOSController();
-
+    
             /*
              * TODO: Pfade müssen nicht absolut angegeben werden.
              */
@@ -416,7 +416,15 @@ public class Main {
         } else {
             JDLogger.removeConsoleHandler();
         }
-        init.removeFiles();
+        if (!init.removeFiles()) {
+            LOGGER.severe("COULD NOT DELETE OUTDATED FILES.RESTART REQUIRED");
+            int answer = UserIO.getInstance().requestConfirmDialog(0, JDL.L("jd.Main.removerestart.title", "Updater"), JDL.L("jd.Main.removerestart.message", "Could not remove outdated libraries. Restart recommended!"), null, JDL.L("jd.Main.removerestart.ok", "Restart now!"), JDL.L("jd.Main.removerestart.cancel", "Continue"));
+            if (UserIO.isOK(answer)) {
+                JDUtilities.restartJD();
+                System.exit(1);
+
+            }
+        }
         LOGGER.info("init Controller");
 
         LOGGER.info("init Webupdate");

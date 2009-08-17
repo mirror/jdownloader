@@ -48,16 +48,7 @@ public class HelpDialog extends AbstractDialog {
         init();
     }
 
-    @Override
-    public JComponent contentInit() {
-        JPanel content = new JPanel(new MigLayout("ins 0", "[grow,fill]"));
-
-        JTextPane htmlArea = new JTextPane();
-        htmlArea.setEditable(false);
-        htmlArea.setContentType("text/html");
-        htmlArea.setText(message);
-        htmlArea.setOpaque(false);
-        htmlArea.putClientProperty("Synthetica.opaque", Boolean.FALSE);
+    protected void addButtons(JPanel buttonBar) {
         JButton help = new JButton(helpMessage == null ? JDL.L("gui.btn_help", "Help") : helpMessage);
         help.addActionListener(new ActionListener() {
 
@@ -72,9 +63,22 @@ public class HelpDialog extends AbstractDialog {
             }
 
         });
+        buttonBar.add(help, "alignx right,tag help,sizegroup confirms");
+    }
+
+    @Override
+    public JComponent contentInit() {
+        JPanel content = new JPanel(new MigLayout("ins 0", "[grow,fill]"));
+
+        JTextPane htmlArea = new JTextPane();
+        htmlArea.setEditable(false);
+        htmlArea.setContentType("text/html");
+        htmlArea.setText(message);
+        htmlArea.setOpaque(false);
+        htmlArea.putClientProperty("Synthetica.opaque", Boolean.FALSE);
 
         content.add(htmlArea);
-        content.add(help,"dock east");
+     
 
         return content;
     }

@@ -252,7 +252,9 @@ public class FileUpdate {
                     this.getLocalTmpFile().delete();
                     // tinyupdate has to be updated directly
                     boolean ret;
+                    
                     if (tmpFile.getName().startsWith("tinyupdate")) {
+                        this.getLocalFile().delete();
                         ret = tmpFile.renameTo(this.getLocalFile());
                     } else {
                         ret = tmpFile.renameTo(getLocalTmpFile());

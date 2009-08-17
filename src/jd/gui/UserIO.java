@@ -26,6 +26,7 @@ import jd.config.SubConfiguration;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.gui.userio.NoUserIO;
+import jd.nutils.JDFlags;
 import jd.utils.locale.JDL;
 
 public abstract class UserIO {
@@ -292,5 +293,14 @@ public abstract class UserIO {
      * @return
      */
     public abstract int requestComboDialog(int flag, String title, String question, Object[] options, int defaultSelection, ImageIcon icon, String okText, String cancelText, Object renderer);
+/**
+ * Checks wether this answerfalg contains the ok option
+ * @param answer
+ * @return
+ */
+    public static boolean isOK(int answer) {
+        
+        return JDFlags.hasSomeFlags(answer, UserIO.RETURN_OK);
+    }
 
 }

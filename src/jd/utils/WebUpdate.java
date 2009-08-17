@@ -369,17 +369,23 @@ public class WebUpdate {
 
                         updater.updateFiles(files, pc);
                         if (updater.getErrors() > 0) {
-
+System.err.println("ERRO");
                             int ret = UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN | UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, JDL.L("jd.update.Main.error.title", "Errors occured"), JDL.LF("jd.update.Main.error.message", "Errors occured!\r\nThere were %s error(s) while updating. Do you want to update anyway?", updater.getErrors()), UserIO.getInstance().getIcon(UserIO.ICON_WARNING), null, null);
                             if (JDFlags.hasAllFlags(ret, UserIO.RETURN_OK)) {
                                 JDController.releaseDelayExit(id);
                                 JDUtilities.restartJDandWait();
                             }
 
+                        }else{
+                            System.err.println("OK RESTART");
+                            JDController.releaseDelayExit(id);
+                            JDUtilities.restartJDandWait();
                         }
-
+ 
                     } catch (Exception e) {
+                        System.err.println("EXCEPTION");
                         JDLogger.exception(e);
+                        e.printStackTrace();
 
                     }
                     pc.doFinalize();

@@ -167,6 +167,7 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
                 focus = btnCancel;
             }
         }
+        this.addButtons(buttonBar);
         this.setMinimumSize(new Dimension(300, -1));
 
         if (JDFlags.hasNoFlags(flag, UserIO.NO_COUNTDOWN)) {
@@ -241,6 +242,10 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
         this.packed();
         this.setVisible(true);
 
+    }
+
+    protected void addButtons(JPanel buttonBar) {
+//        buttonBar.add(btnCancel, "alignx right,tag cancel,sizegroup confirms");
     }
 
     protected String getDontShowAgainKey() {
