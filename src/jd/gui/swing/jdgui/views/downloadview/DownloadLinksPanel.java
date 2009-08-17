@@ -601,7 +601,7 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
                     }
                     break;
                 case TableAction.DELETE: {
-                    if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, JDL.L("gui.downloadlist.delete", "Ausgewählte Links wirklich entfernen?") + " (" + JDL.LF("gui.downloadlist.delete.size_packagev2", "%s links", selectedLinks.size()) + ")"), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
+                    if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, JDL.L("gui.downloadlist.delete", "Ausgewählte Links wirklich entfernen?") + " (" + JDL.LF("gui.downloadlist.delete.size_packagev2", "%s links", selectedLinks.size()) + ")"), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
                         for (int i = 0; i < selectedLinks.size(); i++) {
                             selectedLinks.get(i).setEnabled(false);
                             selectedLinks.get(i).getFilePackage().remove(selectedLinks.get(i));
@@ -686,7 +686,7 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
     public void showDownloadLinkInfo(DownloadLink downloadLink) {
         filePackageInfo.setDownloadLink(downloadLink);
         JDCollapser.getInstance().setContentPanel(filePackageInfo, JDL.L("gui.linkgrabber.infopanel.link.title", "Link information"), null);
-     
+
         InfoPanelHandler.setPanel(JDCollapser.getInstance());
 
     }

@@ -260,7 +260,7 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
      */
     @Override
     public String toString() {
-        return Encoding.filterString("dialog-" + this.getTitle());
+        return Encoding.filterString("dialog-" + this.getTitle()).replaceAll("\\d", "");
     }
 
     abstract public JComponent contentInit();

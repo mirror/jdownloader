@@ -25,6 +25,7 @@ import javax.swing.JTextPane;
 import jd.gui.UserIO;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.nutils.JDFlags;
+import jd.nutils.encoding.Encoding;
 
 public class ConfirmDialog extends AbstractDialog {
 
@@ -65,7 +66,7 @@ public class ConfirmDialog extends AbstractDialog {
 
     @Override
     public String toString() {
-        return super.toString() + this.message;
+        return Encoding.filterString(super.toString() + this.message).replaceAll("\\d", "");
     }
 
 }
