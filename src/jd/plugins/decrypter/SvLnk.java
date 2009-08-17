@@ -20,18 +20,24 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import javax.crypto.Cipher;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+
 import jd.DecryptPluginWrapper;
 import jd.HostPluginWrapper;
 import jd.PluginWrapper;
 import jd.controlling.DistributeData;
 import jd.controlling.ProgressController;
 import jd.http.Browser.BrowserException;
+import jd.nutils.encoding.Base64;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.pluginUtils.Recaptcha;
+import jd.utils.JDHexUtils;
 
 @DecrypterPlugin(revision = "$Revision: 7185 $", interfaceVersion = 2, names = { "savelink1", "savelink2" }, urls = { "http://.*?\\..*?/.*?/sl/.*", "http://.*?\\..*?/.*?[\\?\\&]sl=1.*" }, flags = { 0, 0 })
 public class SvLnk extends PluginForDecrypt {
@@ -39,6 +45,7 @@ public class SvLnk extends PluginForDecrypt {
     private static final String RECAPTCHA = "recaptcha";
     private static final ArrayList<DownloadLink> NULL = new ArrayList<DownloadLink>();
     private static final String LINK = "link";
+    private static final String AES = "aes";
 
     public SvLnk(PluginWrapper wrapper) {
         super(wrapper);
@@ -58,6 +65,33 @@ public class SvLnk extends PluginForDecrypt {
                 return decryptRecaptcha(parameter, progress);
             } else if (slParameters!=null&&slParameters[0].equalsIgnoreCase(LINK)) {
                 return followLink(slParameters[1]);
+                
+                
+            } else if (slParameters!=null&&slParameters[0].equalsIgnoreCase(AES)) {       
+
+                byte[] byteKey  = JDHexUtils.getByteArray(slParameters[1]);
+                SecretKeySpec skeySpec = new SecretKeySpec(byteKey, "AES");
+                IvParameterSpec ivSpec = new IvParameterSpec(byteKey);
+                Cipher c = Cipher.getInstance("AES/CBC/PKCS5Padding");
+                c.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
+
+                byte[] dec = c.doFinal(Base64.decode(slParameters[2].trim()));
+
+                String decoded = new String(dec);
+
+                String[] urls = HTMLParser.getHttpLinks(decoded,null);
+                StringBuilder sb = new StringBuilder();
+                for (String s : urls) {
+                    if (!s.equalsIgnoreCase(parameter.getCryptedUrl())) {
+                        sb.append(s + "\r\n");
+                    }
+                }
+                ArrayList<DownloadLink> links = new DistributeData(sb.toString()).findLinks();
+                for (Iterator<DownloadLink> it = links.iterator(); it.hasNext();) {
+                    if (it.next().getDownloadURL().equalsIgnoreCase(parameter.getCryptedUrl())) it.remove();
+                }
+                
+                return links;
             } else {
                 String[] redirect = br.getRegex("<meta http-equiv=\"refresh\" content=\"(\\d+)\\; url=(.*?)\">").getRow(0);
                 if (redirect != null) {
