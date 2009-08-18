@@ -114,7 +114,7 @@ public class MegasharesCom extends PluginForHost {
         String dlLink = br.getRegex("<div id=\"dlink\"><a href=\"(.*?)\">Click").getMatch(0);
         if (dlLink == null) throw new PluginException(LinkStatus.ERROR_FATAL);
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, dlLink, true, -6);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlLink, true, -6);
         if (!dl.getConnection().isContentDisposition()) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 5 * 60 * 1000l);
@@ -171,7 +171,7 @@ public class MegasharesCom extends PluginForHost {
         }
         // Dateigröße holen
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, url, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 1);
         if (!dl.getConnection().isContentDisposition()) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_RETRY);

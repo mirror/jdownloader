@@ -465,7 +465,26 @@ public class Form extends Property {
 
         return preferredSubmit;
     }
+/**
+ * Us the i-th submit field when submitted
+ * @param i
+ */
+    public void setPreferredSubmit(int i) {
+        this.preferredSubmit = null;
+        for (InputField ipf : this.inputfields) {
+            if (ipf.getType() != null && ipf.getValue() != null && ipf.getType().equalsIgnoreCase("submit") &&i--<=0) {
+                this.preferredSubmit = ipf;
+                return;
+            }
+        }
+     
+        throw new IllegalArgumentException("No such Submitfield: " + i);
 
+    }
+    /**
+     * Tell the form which submit field to use
+     * @param preferredSubmit
+     */
     public void setPreferredSubmit(String preferredSubmit) {
         this.preferredSubmit = null;
         for (InputField ipf : this.inputfields) {
@@ -506,6 +525,8 @@ public class Form extends Property {
     public ArrayList<RequestVariable> getRequestVariables() {
         ArrayList<RequestVariable> ret = new ArrayList<RequestVariable>();
         for (InputField ipf : this.inputfields) {
+            //DO not send not preffered Submit types
+            if(this.getPreferredSubmit()!=null&&ipf.getType().equalsIgnoreCase("submit")&&getPreferredSubmit()!=ipf)continue;
             if (ipf.getKey() == null) continue;/*
                                                 * nameless key-value are not
                                                 * being sent, see firefox

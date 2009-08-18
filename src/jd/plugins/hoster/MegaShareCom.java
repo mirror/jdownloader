@@ -16,9 +16,11 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import java.io.File;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.nutils.JDHash;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
@@ -41,13 +43,15 @@ public class MegaShareCom extends PluginForHost {
     }
 
     // @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setDebug(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        br.postPage(br.getURL(), "FreeDz=FREE");
+        Form submit = br.getForm(0);
+        submit.setPreferredSubmit(2);
+        br.submitForm(submit);
         if (br.containsHTML("This File has been DELETED")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         return AvailableStatus.TRUE;
     }
@@ -61,11 +65,44 @@ public class MegaShareCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         Form form = br.getForm(0);
+
+        File captchaFile = getLocalCaptchaFile();
+        int i = 15;
+        while (i-- > 0) {
+            try {
+                Browser.download(captchaFile, br.cloneBrowser().openGetConnection("http://megashare.com/security.php?" + Math.random()));
+            } catch (Exception e) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
+
+            String hash = JDHash.getMD5(captchaFile);
+            // Seems to be a captchaerror (captcahs without any letters)
+            if (hash.equals("eb92a5ddf69784ee2de24bca0c6299d4")) {
+                continue;
+            } else {
+                break;
+            }
+        }
+        String captchaCode = getCaptchaCode(getHost(), captchaFile, downloadLink);
+
         form.remove("accel");
         form.remove("yesss");
         form.remove("yesss");
+        form.remove("yesss");
+        form.remove("yesss");
+        form.remove("yesss");
+        form.remove("yesss");
+        
+        form.put("captcha_code", captchaCode);
         form.put("yesss", "Download");
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, form, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, true, 1);
+        if(!dl.getConnection().isContentDisposition()){
+            String page = br.loadConnection(dl.getConnection());
+            if(page.contains("Invalid Captcha Value")){
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA); 
+            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        }
         dl.startDownload();
     }
 
