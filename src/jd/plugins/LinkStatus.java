@@ -28,10 +28,14 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 public class LinkStatus implements Serializable {
-    // Controlling Zeigt an, dass der Link gerade heruntergeladen wird
+    /**
+     * Controlling Zeigt an, dass der Link gerade heruntergeladen wird
+     */
     public static final int DOWNLOADINTERFACE_IN_PROGRESS = 1 << 10;
 
-    // Controlling Die AGB wurde noch nicht unterzeichnet.
+    /**
+     * Controlling Die AGB wurde noch nicht unterzeichnet.
+     */
     public static final int ERROR_AGB_NOT_SIGNED = 1 << 16;
     /**
      * Controlling,Downloadinterface Zeigt an, dass die Datei auf der Festplatte
@@ -39,7 +43,9 @@ public class LinkStatus implements Serializable {
      */
     public static final int ERROR_ALREADYEXISTS = 1 << 13;
 
-    // PLugins: Captcha Text war falsch
+    /**
+     * PLugins: Captcha Text war falsch
+     */
     public final static int ERROR_CAPTCHA = 1 << 3;
     /**
      * Downloadinterface Zeigt an dass der Eigentliche Download im
@@ -47,7 +53,9 @@ public class LinkStatus implements Serializable {
      */
     public static final int ERROR_DOWNLOAD_FAILED = 1 << 14;
 
-    // Downloadinterface Zeigt an dass der Link nicht vollständig geladen wurde
+    /**
+     * Downloadinterface Zeigt an dass der Link nicht vollständig geladen wurde
+     */
     public static final int ERROR_DOWNLOAD_INCOMPLETE = 1 << 9;
     /**
      * Plugins & Downloadinterface Schwerwiegender fehler. Der Download wird
@@ -55,10 +63,14 @@ public class LinkStatus implements Serializable {
      */
     public static final int ERROR_FATAL = 1 << 17;
 
-    // Plugins & Downloadinterface: Die Datei konnte nicht gefunden werden
+    /**
+     * Plugins & Downloadinterface: Die Datei konnte nicht gefunden werden
+     */
     public final static int ERROR_FILE_NOT_FOUND = 1 << 5;
 
-    // Plugins: Download Limit wurde erreicht
+    /**
+     * Plugins: Download Limit wurde erreicht
+     */
     public final static int ERROR_IP_BLOCKED = 1 << 4;
     /**
      * Conttrolling, Downloadinterface, Plugins Zeigt an, dass gerade ein
@@ -127,7 +139,9 @@ public class LinkStatus implements Serializable {
     public static final int ERROR_POST_PROCESS = 1 << 24;
     private static final long serialVersionUID = 3885661829491436448L;
 
-    // Controlling: Link muß noch bearbeitet werden.
+    /**
+     * Controlling: Link muß noch bearbeitet werden.
+     */
     public final static int TODO = 1 << 0;
     public static final int VALUE_ID_PREMIUM_TEMP_DISABLE = 0;
     public static final int VALUE_ID_PREMIUM_DISABLE = 1;
@@ -439,7 +453,7 @@ public class LinkStatus implements Serializable {
         return null;
     }
 
-    // @Override
+    @Override
     public String toString() {
         Class<? extends LinkStatus> cl = this.getClass();
         Field[] fields = cl.getDeclaredFields();
@@ -497,13 +511,11 @@ public class LinkStatus implements Serializable {
     }
 
     public int getStatus() {
-        // TODO Auto-generated method stub
         return status;
     }
 
     public void setStatusIcon(ImageIcon scaledImageIcon) {
         statusIcon = scaledImageIcon;
-
     }
 
     public ImageIcon getStatusIcon() {

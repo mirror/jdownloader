@@ -46,6 +46,8 @@ public class TableRenderer extends DefaultTableRenderer {
 
     private static final long serialVersionUID = -3916572910439565199L;
 
+    private static final String JDL_PREFIX = "jd.gui.swing.jdgui.views.downloadview.TableRenderer.";
+
     // private static final String NULL_BYTE_PROGRESS = "0.00% (0 B/* MB)";
 
     // private DecimalFormat c = new DecimalFormat("0.00");
@@ -101,6 +103,26 @@ public class TableRenderer extends DefaultTableRenderer {
     private ImageIcon icon_fp_open_error;
 
     private ImageIcon icon_fp_closed_error;
+
+    private String strResume;
+
+    private String strPremium;
+
+    private String strStopMark;
+
+    private String strFinished;
+
+    private String strFailed;
+
+    private String strExtract;
+
+    private String strPriorityS;
+
+    private String strPriority1;
+
+    private String strPriority2;
+
+    private String strPriority3;
 
     private StatusLabel statuspanel;
 
@@ -165,6 +187,16 @@ public class TableRenderer extends DefaultTableRenderer {
         strPluginError = JDL.L("gui.treetable.error.plugin", "Plugin error");
         // strWaitIO = JDL.L("gui.linkgrabber.waitinguserio",
         // "Waiting for user input");
+        strResume = JDL.L(JDL_PREFIX + "resume", "Resumable");
+        strPremium = JDL.L(JDL_PREFIX + "premium", "Loading with Premium");
+        strStopMark = JDL.L(JDL_PREFIX + "stopmark", "Stopmark set");
+        strFinished = JDL.L(JDL_PREFIX + "finished", "Download finished");
+        strFailed = JDL.L(JDL_PREFIX + "failed", "Download failed");
+        strExtract = JDL.L(JDL_PREFIX + "extract", "Extracting");
+        strPriorityS = JDL.L("gui.treetable.tooltip.priority-1", "Low Priority");
+        strPriority1 = JDL.L("gui.treetable.tooltip.priority1", "High Priority");
+        strPriority2 = JDL.L("gui.treetable.tooltip.priority2", "Higher Priority");
+        strPriority3 = JDL.L("gui.treetable.tooltip.priority3", "Highest Priority");
     }
 
     // @Override
@@ -265,7 +297,7 @@ public class TableRenderer extends DefaultTableRenderer {
             } else {
                 if (dLink.getPlugin().hasHosterIcon()) {
                     statuspanel.setText(dLink.getPlugin().getSessionInfo());
-                    statuspanel.setIcon(-1, dLink.getPlugin().getHosterIcon());
+                    statuspanel.setIcon(-1, dLink.getPlugin().getHosterIcon(), dLink.getPlugin().getHost());
                 } else {
                     clearSB();
                     sb.append(dLink.getPlugin().getHost());
@@ -274,11 +306,11 @@ public class TableRenderer extends DefaultTableRenderer {
                 }
             }
             if (dLink.getTransferStatus().usesPremium()) {
-                statuspanel.setIcon(counter, imgPremium);
+                statuspanel.setIcon(counter, imgPremium, strPremium);
                 counter++;
             }
             if (dLink.getTransferStatus().supportsResume()) {
-                statuspanel.setIcon(counter, imgResume);
+                statuspanel.setIcon(counter, imgResume, strResume);
                 counter++;
             }
             statuspanel.clearIcons(counter);
@@ -357,23 +389,23 @@ public class TableRenderer extends DefaultTableRenderer {
             counter = 0;
 
             if (JDController.getInstance().getWatchdog() != null && JDController.getInstance().getWatchdog().isStopMark(value)) {
-                statuspanel.setIcon(counter, imgStopMark);
+                statuspanel.setIcon(counter, imgStopMark, strStopMark);
                 counter++;
             }
 
             if (dLink.getLinkStatus().getStatusIcon() != null) {
-                statuspanel.setIcon(counter, dLink.getLinkStatus().getStatusIcon());
+                statuspanel.setIcon(counter, dLink.getLinkStatus().getStatusIcon(), dLink.getLinkStatus().getStatusText());
                 counter++;
             } else if (dLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
-                statuspanel.setIcon(counter, imgFinished);
+                statuspanel.setIcon(counter, imgFinished, strFinished);
                 counter++;
             } else if (dLink.getLinkStatus().isFailed()) {
-                statuspanel.setIcon(counter, imgFailed);
+                statuspanel.setIcon(counter, imgFailed, strFailed);
                 counter++;
             }
 
             if (counter <= StatusLabel.ICONCOUNT && dLink.getPluginProgress() != null && dLink.getPluginProgress().getPercent() > 0.0 && dLink.getPluginProgress().getPercent() < 100.0) {
-                statuspanel.setIcon(counter, imgExtract);
+                statuspanel.setIcon(counter, imgExtract, strExtract);
                 counter++;
             }
 
@@ -383,19 +415,19 @@ public class TableRenderer extends DefaultTableRenderer {
                 default:
                     break;
                 case -1:
-                    statuspanel.setIcon(counter, imgPriorityS);
+                    statuspanel.setIcon(counter, imgPriorityS, strPriorityS);
                     counter++;
                     break;
                 case 1:
-                    statuspanel.setIcon(counter, imgPriority1);
+                    statuspanel.setIcon(counter, imgPriority1, strPriority1);
                     counter++;
                     break;
                 case 2:
-                    statuspanel.setIcon(counter, imgPriority2);
+                    statuspanel.setIcon(counter, imgPriority2, strPriority2);
                     counter++;
                     break;
                 case 3:
-                    statuspanel.setIcon(counter, imgPriority3);
+                    statuspanel.setIcon(counter, imgPriority3, strPriority3);
                     counter++;
                     break;
                 }
@@ -465,10 +497,10 @@ public class TableRenderer extends DefaultTableRenderer {
             }
             counter = 0;
             if (fp.isFinished()) {
-                statuspanel.setIcon(counter, imgFinished);
+                statuspanel.setIcon(counter, imgFinished, strFinished);
                 counter++;
             } else if (JDController.getInstance().getWatchdog() != null && JDController.getInstance().getWatchdog().isStopMark(value)) {
-                statuspanel.setIcon(counter, imgStopMark);
+                statuspanel.setIcon(counter, imgStopMark, strStopMark);
                 counter++;
             } else if (fp.getTotalDownloadSpeed() > 0) {
 

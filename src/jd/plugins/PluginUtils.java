@@ -1,17 +1,17 @@
 package jd.plugins;
 
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.Scriptable;
-
 import jd.gui.UserIO;
 import jd.gui.swing.components.Balloon;
 import jd.http.Browser;
-import jd.parser.Regex;
 import jd.utils.locale.JDL;
+
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.Scriptable;
+
 /**
- * LIttle Helper class for often used PLugin issues
+ * Little Helper class for often used Plugin issues
+ * 
  * @author Coalado
- *
  */
 public class PluginUtils {
     /**
@@ -35,19 +35,18 @@ public class PluginUtils {
     public static void evalJSPacker(Browser br) {
         String regex = "eval\\((.*?\\,\\{\\}\\))\\)";
         String[] containers = br.getRegex(regex).getColumn(0);
-        
-        String htmlcode=br.getRequest().getHtmlCode();
+
+        String htmlcode = br.getRequest().getHtmlCode();
         for (String c : containers) {
             Context cx = Context.enter();
             Scriptable scope = cx.initStandardObjects();
             c = c.replaceAll("return p\\}\\(", " return p}  f(").replaceAll("function\\s*\\(p\\,a\\,c\\,k\\,e\\,d\\)", "function f(p,a,c,k,e,d)");
             Object result = cx.evaluateString(scope, c, "<cmd>", 1, null);
             String code = Context.toString(result);
-            htmlcode=htmlcode.replaceFirst(regex, code);
-          
+            htmlcode = htmlcode.replaceFirst(regex, code);
+
         }
         br.getRequest().setHtmlCode(htmlcode);
-        
     }
 
 }

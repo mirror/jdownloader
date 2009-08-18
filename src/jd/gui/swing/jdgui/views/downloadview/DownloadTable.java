@@ -43,7 +43,6 @@ import javax.swing.JTable;
 import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
-import javax.swing.ToolTipManager;
 import javax.swing.UIManager;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
@@ -125,8 +124,8 @@ public class DownloadTable extends JTable implements MouseListener, MouseMotionL
         setDragEnabled(true);
         setTransferHandler(new TableTransferHandler(this));
 
-        ToolTipManager.sharedInstance().unregisterComponent(this);
-        ToolTipManager.sharedInstance().unregisterComponent(this.getTableHeader());
+        // ToolTipManager.sharedInstance().unregisterComponent(this);
+        // ToolTipManager.sharedInstance().unregisterComponent(this.getTableHeader());
 
         addDisabledHighlighter();
         addPostErrorHighlighter();
@@ -137,8 +136,8 @@ public class DownloadTable extends JTable implements MouseListener, MouseMotionL
         // ActionController.getToolBarAction("action.downloadview.moveup").setEnabled(true);
         // ActionController.getToolBarAction("action.downloadview.movedown").setEnabled(true);
         // ActionController.getToolBarAction("action.downloadview.movetobottom").setEnabled(true);
-//This method is 1.6 only
-        if(JDUtilities.getJavaVersion()>=1.6)this.setFillsViewportHeight(true);
+        // This method is 1.6 only
+        if (JDUtilities.getJavaVersion() >= 1.6) this.setFillsViewportHeight(true);
     }
 
     protected boolean processKeyBinding(KeyStroke ks, KeyEvent e, int condition, boolean pressed) {

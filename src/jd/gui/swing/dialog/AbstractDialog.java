@@ -92,8 +92,9 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
     public void init() {
         dont: if (JDFlags.hasAllFlags(flag, UserIO.DONT_SHOW_AGAIN)) {
             SubConfiguration cfg = SubConfiguration.getConfig(DIALOGS_CONFIG);
-            int i = cfg.getIntegerProperty(getDontShowAgainKey(), -1);
-            if (i != -1) {
+            Object value;
+            if ((value = cfg.getProperty("DONT_SHOW_AGAIN_" + getDontShowAgainKey())) != null && value instanceof Integer) {
+                int i = ((Integer) value).intValue();
                 int ret = (i & (UserIO.RETURN_OK | UserIO.RETURN_CANCEL)) | UserIO.RETURN_DONT_SHOW_AGAIN | UserIO.RETURN_SKIPPED_BY_DONT_SHOW;
 
                 // return if the stored values are excluded
@@ -245,8 +246,6 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
     }
 
     protected void addButtons(JPanel buttonBar) {
-        // buttonBar.add(btnCancel,
-        // "alignx right,tag cancel,sizegroup confirms");
     }
 
     protected String getDontShowAgainKey() {
@@ -274,18 +273,14 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == btnOK) {
             setReturnValue(true);
-
         } else if (e.getSource() == btnCancel) {
-
             setReturnValue(false);
         }
         dispose();
-
     }
 
     // @Override
     protected void onCountdown() {
-
         setReturnValue(false);
         returnValue |= UserIO.RETURN_COUNTDOWN_TIMEOUT;
         this.dispose();
@@ -301,7 +296,6 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
                 cfg.save();
             }
         }
-
     }
 
     public int getReturnValue() {

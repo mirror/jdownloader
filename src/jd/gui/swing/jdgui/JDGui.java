@@ -222,24 +222,24 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
     }
 
     /**
-     * Sets the Windows ICons. lot's of lafs have problems resizing the icon. so
+     * Sets the Windows Icons. lot's of lafs have problems resizing the icon. so
      * we set different sizes. for 1.5 it is only possible to use
-     * setIconImage(Icon icon)
+     * {@link JFrame#setIconImage(Image)}
      */
     private void setWindowIcon() {
-        ArrayList<Image> list = new ArrayList<Image>();
-        list.add(JDImage.getImage("logo/logo_14_14"));
-        list.add(JDImage.getImage("logo/logo_15_15"));
-        list.add(JDImage.getImage("logo/logo_16_16"));
-        list.add(JDImage.getImage("logo/logo_17_17"));
-        list.add(JDImage.getImage("logo/logo_18_18"));
-        list.add(JDImage.getImage("logo/logo_19_19"));
-        list.add(JDImage.getImage("logo/logo_20_20"));
-        list.add(JDImage.getImage("logo/jd_logo_64_64"));
         if (JDUtilities.getJavaVersion() >= 1.6) {
+            ArrayList<Image> list = new ArrayList<Image>();
+            list.add(JDImage.getImage("logo/logo_14_14"));
+            list.add(JDImage.getImage("logo/logo_15_15"));
+            list.add(JDImage.getImage("logo/logo_16_16"));
+            list.add(JDImage.getImage("logo/logo_17_17"));
+            list.add(JDImage.getImage("logo/logo_18_18"));
+            list.add(JDImage.getImage("logo/logo_19_19"));
+            list.add(JDImage.getImage("logo/logo_20_20"));
+            list.add(JDImage.getImage("logo/jd_logo_64_64"));
             mainFrame.setIconImages(list);
         } else {
-            mainFrame.setIconImage(list.get(3));
+            mainFrame.setIconImage(JDImage.getImage("logo/logo_17_17"));
         }
     }
 
@@ -502,18 +502,18 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
      */
     protected void showConfigPanel(final ConfigContainer container) {
 
-      
         String name = "";
         if (container.getTitle() != null) {
             name = container.getTitle();
         }
         if (container.getGroup() != null && container.getGroup().getName() != null) name = container.getGroup().getName();
-        AddonConfig p = AddonConfig.getInstance(container, name,"_2");
-        try{
-//        javax.swing.JTabbedPane tabbed = (javax.swing.JTabbedPane) p.getComponent(0);
+        AddonConfig p = AddonConfig.getInstance(container, name, "_2");
+        try {
+            // javax.swing.JTabbedPane tabbed = (javax.swing.JTabbedPane)
+            // p.getComponent(0);
 
-        JDCollapser.getInstance().setContentPanel((SwitchPanel) p.getPanel(), JDL.LF("jd.gui.swing.jdgui.JDGui.showConfigPanel.title", "Setting for %s", name), container.getGroup() == null ? null : container.getGroup().getIcon());
-        }catch(Throwable e){
+            JDCollapser.getInstance().setContentPanel((SwitchPanel) p.getPanel(), JDL.LF("jd.gui.swing.jdgui.JDGui.showConfigPanel.title", "Setting for %s", name), container.getGroup() == null ? null : container.getGroup().getIcon());
+        } catch (Throwable e) {
             e.printStackTrace();
         }
         // this.mainTabbedPane.getSelectedView().setContent(
