@@ -1142,6 +1142,7 @@ jd.plugins.optional.schedule.maingui.mytablemodel.date = Tarih
 jd.plugins.optional.schedule.maingui.mytablemodel.name = Adı
 jd.plugins.optional.schedule.maingui.mytablemodel.repeats = Tekrarlamalar
 jd.plugins.optional.schedule.maingui.mytablemodel.time = Zaman
+jd.plugins.optional.schedule.schedulerview.title = Zamanlanmış Görevler
 jd.plugins.optional.schedule.schedulerview.tooltip = İndirmelerinizi zamana göre ayarlayın
 jd.plugins.optional.webinterface.jdwebinterface = JD Web Arayüzü
 jd.plugins.pluginforhost.premiuminfo = Detaylar
