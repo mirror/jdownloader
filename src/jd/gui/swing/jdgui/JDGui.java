@@ -502,8 +502,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
      */
     protected void showConfigPanel(final ConfigContainer container) {
 
-        this.mainTabbedPane.getSelectedView().setInfoPanel(JDCollapser.getInstance());
-
+      
         String name = "";
         if (container.getTitle() != null) {
             name = container.getTitle();

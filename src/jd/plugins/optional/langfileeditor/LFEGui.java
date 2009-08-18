@@ -31,10 +31,12 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map.Entry;
 
 import javax.swing.JMenu;
@@ -59,6 +61,7 @@ import jd.gui.swing.components.pieapi.ChartAPIEntity;
 import jd.gui.swing.components.pieapi.PieChartAPI;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.nutils.JDFlags;
+import jd.nutils.OSDetector;
 import jd.nutils.io.JDIO;
 import jd.nutils.svn.ResolveHandler;
 import jd.nutils.svn.Subversion;
@@ -119,6 +122,12 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
 
     private long HEAD;
 
+    private JMenuItem mnuCurrent;
+
+    private JMenu mnuTest;
+
+    private JMenuItem mnuKeymode;
+
     public LFEGui(SubConfiguration cfg) {
         subConfig = cfg;
         this.setName(JDL.L(LOCALE_PREFIX + "title", "Language Editor"));
@@ -157,7 +166,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
         keyChart.addEntity(entOld = new ChartAPIEntity(JDL.L(LOCALE_PREFIX + "keychart.old", "Old"), 0, Color.ORANGE));
 
         this.setLayout(new MigLayout("wrap 3", "[grow, fill]", "[grow, fill][]"));
-      
+
         this.add(new JScrollPane(table), "grow, spanx");
         this.add(keyChart, "w 225!, h 50!");
 
@@ -196,7 +205,6 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
         keyChart.fetchImage();
     }
 
-  
     private void populateLngMenu() {
         new GuiRunnable<Object>() {
 
@@ -256,7 +264,6 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
         if (e.getSource() == mnuReload) {
             saveChanges();
 
-         
             new Thread(new Runnable() {
                 public void run() {
                     try {
@@ -266,23 +273,23 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
                         populateLngMenu();
                         initLocaleData();
                     } finally {
-                    
+
                     }
                 }
             }).start();
 
         } else if (e.getSource() == mnuSave) {
 
-            saveLanguageFile(languageFile);
+            saveLanguageFile(languageFile, true);
+        } else if (e.getSource() == this.mnuCurrent) {
+            saveLanguageFile(languageFile, false);
+            startNewInstance(new String[] { "-n","-lng ",languageFile.getAbsolutePath() });
+        } else if (e.getSource() == this.mnuKeymode) {
 
+            startNewInstance(new String[] { "-n", "-trdebug "});
         } else if (e.getSource() == mnuAdd) {
 
-            String[] result = UserIO.getInstance().requestTwoTextFieldDialog(
-                                                                            JDL.L(LOCALE_PREFIX + "addKey.title", "Add new key"),
-                                                                            JDL.L(LOCALE_PREFIX + "addKey.message1", "Type in the name of the key:"),
-                                                                            JDL.L(LOCALE_PREFIX + "addKey.message2", "Type in the translated message of the key:"),
-                                                                            "",
-                                                                            "");
+            String[] result = UserIO.getInstance().requestTwoTextFieldDialog(JDL.L(LOCALE_PREFIX + "addKey.title", "Add new key"), JDL.L(LOCALE_PREFIX + "addKey.message1", "Type in the name of the key:"), JDL.L(LOCALE_PREFIX + "addKey.message2", "Type in the translated message of the key:"), "", "");
             if (result == null || result[0].equals("")) return;
             result[0] = result[0].toLowerCase();
             for (KeyInfo ki : data) {
@@ -352,16 +359,68 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
 
     }
 
+    private void startNewInstance(String[] strings) {
+
+        List<String> lst = ManagementFactory.getRuntimeMXBean().getInputArguments();
+        ArrayList<String> jargs = new ArrayList<String>();
+
+        boolean xmxset = false;
+        boolean xmsset = false;
+        boolean useconc = false;
+        boolean minheap = false;
+        boolean maxheap = false;
+
+        for (String h : lst) {
+            if (h.contains("Xmx")) {
+                xmxset = true;
+                if (Runtime.getRuntime().maxMemory() < 533000000) {
+                    jargs.add("-Xmx512m");
+                    continue;
+                }
+            } else if (h.contains("xms")) {
+                xmsset = true;
+            } else if (h.contains("XX:+useconc")) {
+                useconc = true;
+            } else if (h.contains("minheapfree")) {
+                minheap = true;
+            } else if (h.contains("maxheapfree")) {
+                maxheap = true;
+            }
+            jargs.add(h);
+        }
+        if (!xmxset) jargs.add("-Xmx512m");
+        if (OSDetector.isLinux()) {
+            if (!xmsset) jargs.add("-Xms64m");
+            if (!useconc) jargs.add("-XX:+UseConcMarkSweepGC");
+            if (!minheap) jargs.add("-XX:MinHeapFreeRatio=0");
+            if (!maxheap) jargs.add("-XX:MaxHeapFreeRatio=0");
+        }
+        jargs.add("-jar");
+        jargs.add("JDownloader.jar");
+
+        String[] javaArgs = jargs.toArray(new String[jargs.size()]);
+        String[] finalArgs = new String[JDUtilities.getJDargs().length + javaArgs.length];
+        System.arraycopy(javaArgs, 0, finalArgs, 0, javaArgs.length);
+        System.arraycopy(JDUtilities.getJDargs(), 0, finalArgs, javaArgs.length, JDUtilities.getJDargs().length);
+        System.arraycopy(strings, 0, finalArgs, javaArgs.length, strings.length);
+
+        if (OSDetector.isMac()) {
+            JDLogger.getLogger().info(JDUtilities.runCommand("open", new String[] { "-n", "jDownloader.app" }, JDUtilities.getResourceFile(".").getParentFile().getParentFile().getParentFile().getParentFile().getAbsolutePath(), 0));
+        } else {
+            JDLogger.getLogger().info(JDUtilities.runCommand("java", finalArgs, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
+        }
+
+    }
+
     private void saveChanges() {
         if (!changed) return;
         int ret = UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN, "Save changes?", "Save your changes to " + this.languageFile + "?", null, null, null);
         if (JDFlags.hasAllFlags(ret, UserIO.RETURN_OK)) {
-            saveLanguageFile(languageFile);
+            saveLanguageFile(languageFile, true);
         }
     }
 
     private void updateSVN(boolean revert) {
-      
 
         if (!dirLanguages.exists()) dirLanguages.mkdirs();
         if (!dirWorkingCopy.exists()) dirWorkingCopy.mkdirs();
@@ -382,8 +441,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
             svn.getBroadcaster().addListener(new MessageListener() {
 
                 public void onMessage(MessageEvent event) {
-                    progress
-                            .setStatusText(JDL.L(LOCALE_PREFIX + "svn.updating", "Updating SVN: Please wait") + ": " + event.getMessage().replace(dirWorkingCopy.getParentFile().getAbsolutePath(), ""));
+                    progress.setStatusText(JDL.L(LOCALE_PREFIX + "svn.updating", "Updating SVN: Please wait") + ": " + event.getMessage().replace(dirWorkingCopy.getParentFile().getAbsolutePath(), ""));
 
                 }
 
@@ -399,9 +457,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
             } catch (Exception e) {
 
                 JDLogger.exception(e);
-                UserIO.getInstance().requestMessageDialog(
-                                                          JDL.L(LOCALE_PREFIX + "error.title", "Error occured"),
-                                                          JDL.LF(LOCALE_PREFIX + "error.updatesource.message", "Error while updating source:\r\n %s", JDLogger.getStackTrace(e)));
+                UserIO.getInstance().requestMessageDialog(JDL.L(LOCALE_PREFIX + "error.title", "Error occured"), JDL.LF(LOCALE_PREFIX + "error.updatesource.message", "Error while updating source:\r\n %s", JDLogger.getStackTrace(e)));
             }
             if (revert) {
                 try {
@@ -416,9 +472,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
                 svnLanguageDir.update(dirLanguages, null);
             } catch (Exception e) {
                 JDLogger.exception(e);
-                UserIO.getInstance().requestMessageDialog(
-                                                          JDL.L(LOCALE_PREFIX + "error.title", "Error occured"),
-                                                          JDL.LF(LOCALE_PREFIX + "error.updatelanguages.message", "Error while updating languages:\r\n %s", JDLogger.getStackTrace(e)));
+                UserIO.getInstance().requestMessageDialog(JDL.L(LOCALE_PREFIX + "error.title", "Error occured"), JDL.LF(LOCALE_PREFIX + "error.updatelanguages.message", "Error while updating languages:\r\n %s", JDLogger.getStackTrace(e)));
 
             }
             progress.setStatusText(JDL.L(LOCALE_PREFIX + "svn.updating.ready", "Updating SVN: Complete"));
@@ -429,8 +483,6 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
             progress.setStatusText(JDL.L(LOCALE_PREFIX + "svn.updating.error", "Updating SVN: Error!"));
             progress.doFinalize(5 * 1000l);
         }
-
-    
 
     }
 
@@ -479,7 +531,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
         return ret;
     }
 
-    private void saveLanguageFile(File file) {
+    private void saveLanguageFile(File file, boolean upload) {
         StringBuilder sb = new StringBuilder();
 
         Collections.sort(data);
@@ -504,14 +556,15 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
             BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF8"));
             out.write(sb.toString());
             out.close();
+            if (upload) {
+                String message = UserIO.getInstance().requestInputDialog(0, "Enter change description", "Please enter a short description for your changes (in english).", "", null, null, null);
+                if (message == null) message = "Updated language file";
+                if (!commit(file, message, null)) {
 
-            String message = UserIO.getInstance().requestInputDialog(0, "Enter change description", "Please enter a short description for your changes (in english).", "", null, null, null);
-            if (message == null) message = "Updated language file";
-            if (!commit(file, message, null)) {
+                    UserIO.getInstance().requestMessageDialog("Could not upload changes. Please send the file " + file.getAbsolutePath() + " to support@jdownloader.org");
 
-                UserIO.getInstance().requestMessageDialog("Could not upload changes. Please send the file " + file.getAbsolutePath() + " to support@jdownloader.org");
-
-                return;
+                    return;
+                }
             }
         } catch (Exception e) {
             UserIO.getInstance().requestMessageDialog(JDL.LF(LOCALE_PREFIX + "save.error.message", "An error occured while writing the LanguageFile:\n%s", e.getMessage()));
@@ -519,12 +572,14 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
         }
 
         changed = false;
+        if (upload) {
         UserIO.getInstance().requestMessageDialog(JDL.L(LOCALE_PREFIX + "save.success.message", "LanguageFile saved successfully!"));
+        }
         initLocaleData();
     }
 
     private void initLocaleData() {
-      
+
         parseLanguageFile(languageFile, languageKeysFormFile);
 
         HashMap<String, String> dupeHelp = new HashMap<String, String>();
@@ -590,13 +645,12 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
 
         });
 
-
     }
 
     private void getSourceEntries() {
-        
+
         getSourceEntriesFromFolder();
-        
+
     }
 
     private void getSourceEntriesFromFolder() {
@@ -876,12 +930,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
 
         private static final long serialVersionUID = -5434313385327397539L;
 
-        private String[] columnNames = {
-                JDL.L(LOCALE_PREFIX + "id", "ID"),
-                JDL.L(LOCALE_PREFIX + "key", "Key"),
-                JDL.L(LOCALE_PREFIX + "sourceValue", "Default Value"),
-                JDL.L(LOCALE_PREFIX + "languageFileValue", "Language File Value")
-        };
+        private String[] columnNames = { JDL.L(LOCALE_PREFIX + "id", "ID"), JDL.L(LOCALE_PREFIX + "key", "Key"), JDL.L(LOCALE_PREFIX + "sourceValue", "Default Value"), JDL.L(LOCALE_PREFIX + "languageFileValue", "Language File Value") };
 
         public int getColumnCount() {
             return columnNames.length;
@@ -1010,14 +1059,22 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
         mnuShowDupes.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_D, KeyEvent.CTRL_DOWN_MASK));
         mnuOpenSearchDialog.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F, KeyEvent.CTRL_DOWN_MASK));
 
+        // Test
+
+        mnuTest = new JMenu(JDL.L(LOCALE_PREFIX + "test", "Test"));
+
+        mnuTest.add(mnuCurrent = new JMenuItem(JDL.L(LOCALE_PREFIX + "startcurrent", "Test JD with current translation")));
+        mnuCurrent.addActionListener(this);
+        mnuTest.add(mnuKeymode = new JMenuItem(JDL.L(LOCALE_PREFIX + "startkey", "Test JD in Key mode")));
+        mnuKeymode.addActionListener(this);
+        
         // Menü-Bar zusammensetzen
-      
+
         menubar.add(mnuFile);
         menubar.add(mnuKey);
         menubar.add(mnuEntries);
+        menubar.add(mnuTest);
 
-    
-        
     }
 
 }

@@ -101,6 +101,7 @@ public abstract class View extends SwitchPanel {
         SwingGui.checkEDT();
         if (info == null) info = defaultInfoPanel;
         if (infoPanel == info) return;
+     
         if (info == null) {
             bottomContent.setVisible(false);
         } else {

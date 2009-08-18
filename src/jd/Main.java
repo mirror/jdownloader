@@ -190,6 +190,14 @@ public class Main {
 
                 LOGGER.finer(args[i] + " " + args[i + 1]);
                 i++;
+            } else if (args[i].equals("-lng")) {
+
+                LOGGER.finer(args[i] + " " + args[i + 1]);
+                if(new File(args[i + 1]).exists()&&args[i + 1].trim().endsWith(".loc")){
+                LOGGER.info("Use custom languagefile: "+args[i + 1]);
+                    JDL.setStaticLocale(args[i + 1]);
+                }
+                i++;
 
             } else if (args[i].equals("--new-instance") || args[i].equals("-n")) {
 

@@ -633,6 +633,10 @@ public class JDUtilities {
         JD_ARGUMENTS = args;
     }
 
+    public static String[] getJDargs() {
+        return JD_ARGUMENTS;
+    }
+
     public static void restartJDandWait() {
         restartJD();
         while (true) {

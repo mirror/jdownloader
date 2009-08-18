@@ -64,6 +64,8 @@ public class JDL {
 
     private static JDLocale localeID;
 
+    private static String STATIC_LOCALE;
+
     /**
      * returns the correct country code
      * 
@@ -268,7 +270,7 @@ public class JDL {
         if (defaultData == null) {
             System.err.println("JD have to load the default language, there is an missing entry");
             defaultData = new HashMap<Integer, String>();
-            File defaultFile = JDUtilities.getResourceFile(LANGUAGES_DIR + DEFAULT_LOCALE.getLngGeoCode() + ".loc");
+            File defaultFile = STATIC_LOCALE==null?JDUtilities.getResourceFile(LANGUAGES_DIR + DEFAULT_LOCALE.getLngGeoCode() + ".loc"):new File(STATIC_LOCALE);
             if (defaultFile.exists()) {
                 JDL.parseLanguageFile(defaultFile, defaultData);
             } else {
@@ -316,7 +318,7 @@ public class JDL {
         if (lID == null) return;
         localeID = lID;
         System.out.println("Loaded language: " + lID);
-        localeFile = JDUtilities.getResourceFile(LANGUAGES_DIR + localeID.getLngGeoCode() + ".loc");
+        localeFile = STATIC_LOCALE==null?JDUtilities.getResourceFile(LANGUAGES_DIR + localeID.getLngGeoCode() + ".loc"):new File(STATIC_LOCALE);
         if (localeFile.exists()) {
             JDL.parseLanguageFile(localeFile, data);
         } else {
@@ -346,6 +348,14 @@ public class JDL {
             JDLogger.exception(e);
             return null;
         }
+    }
+/**
+ * Use a absolute path to a locale
+ * @param string
+ */
+    public static void setStaticLocale(String string) {
+        STATIC_LOCALE=string;
+        
     }
 
 }

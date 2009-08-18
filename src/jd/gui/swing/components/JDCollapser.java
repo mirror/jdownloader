@@ -95,10 +95,11 @@ public class JDCollapser extends DroppedPanel {
 
     public void setContentPanel(SwitchPanel panel2, String name, ImageIcon icon) {
         if (panel2 == this.panel) return;
-        menutitle.setText(name);
-        menutitle.setIcon(icon);
+        
+       if(name!=null) menutitle.setText(name);
+      if(icon!=null)  menutitle.setIcon(icon);
         this.closeButton.setToolTipText(JDL.LF("jd.gui.swing.components.JDCollapser.closetooltip", "Close %s", name));
-        content.removeAll();
+        if(name!=null) content.removeAll();
         if(panel!=null)panel.setHidden();
         this.panel = panel2;
         if (panel == null) return;
@@ -118,7 +119,12 @@ public class JDCollapser extends DroppedPanel {
      * deligates the onHidevenet to the contentpanel
      */
     public void onHide() {
-        if (panel != null) panel.setHidden();
+        if (panel != null){
+            
+        
+        this.setContentPanel(null, null, null);
+        
+        }
     }
 
     @Override
