@@ -449,19 +449,18 @@ public class AccountController extends SubConfiguration implements ActionListene
         saveinprogress = true;
         new Thread() {
             public void run() {
-                this.setName("AccountController: Saving");
-                synchronized (hosteraccounts) {
-                    save();
-                }
+                saveSyncnonThread();
                 saveinprogress = false;
             }
         }.start();
     }
 
     public void saveSyncnonThread() {
+        String id = JDController.requestDelayExit("accountcontroller");
         synchronized (hosteraccounts) {
             save();
         }
+        JDController.releaseDelayExit(id);
     }
 
     public boolean vetoAccountGetEvent(String host, Account account) {

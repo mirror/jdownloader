@@ -201,21 +201,19 @@ public class DownloadController implements FilePackageListener, DownloadControll
         new Thread() {
             public void run() {
                 this.setName("DownloadController: Saving");
-                synchronized (packages) {
-                    saveinprogress = true;
-                    JDUtilities.getDatabaseConnector().saveLinks(packages);
-                    saveinprogress = false;
-                }
+                saveDownloadLinksSyncnonThread();
             }
         }.start();
     }
 
     public void saveDownloadLinksSyncnonThread() {
+        String id = JDController.requestDelayExit("downloadcontroller");
         synchronized (packages) {
             saveinprogress = true;
             JDUtilities.getDatabaseConnector().saveLinks(packages);
             saveinprogress = false;
         }
+        JDController.releaseDelayExit(id);
     }
 
     // public void backupDownloadLinksSync() {

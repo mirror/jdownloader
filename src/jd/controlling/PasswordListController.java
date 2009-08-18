@@ -179,20 +179,19 @@ public class PasswordListController implements ActionListener, DownloadControlle
             public void run() {
                 this.setName("PasswordList: Saving");
                 saveinprogress = true;
-                synchronized (LIST2) {
-                    CONFIG.setProperty("LIST2", LIST2);
-                    CONFIG.save();
-                }
+                saveSync();
                 saveinprogress = false;
             }
         }.start();
     }
 
     public void saveSync() {
+        String id = JDController.requestDelayExit("passwordcontroller");
         synchronized (LIST2) {
             CONFIG.setProperty("LIST2", LIST2);
             CONFIG.save();
         }
+        JDController.releaseDelayExit(id);
     }
 
     public void actionPerformed(ActionEvent arg0) {

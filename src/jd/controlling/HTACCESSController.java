@@ -137,20 +137,19 @@ public class HTACCESSController implements ActionListener, ListController {
             public void run() {
                 this.setName("PasswordList: Saving");
                 saveinprogress = true;
-                synchronized (LIST) {
-                    CONFIG.setProperty("LIST", LIST);
-                    CONFIG.save();
-                }
+                saveSync();
                 saveinprogress = false;
             }
         }.start();
     }
 
     public void saveSync() {
+        String id = JDController.requestDelayExit("htaccesscontroller");
         synchronized (LIST) {
             CONFIG.setProperty("LIST", LIST);
             CONFIG.save();
         }
+        JDController.releaseDelayExit(id);
     }
 
     public void actionPerformed(ActionEvent arg0) {

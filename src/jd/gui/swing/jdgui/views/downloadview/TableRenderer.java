@@ -361,14 +361,20 @@ public class TableRenderer extends DefaultTableRenderer {
                 progress.setValue(dLink.getDownloadCurrent());
                 progress.setForeground(COL_PROGRESS_NORMAL);
                 return progress;
+            } else if (dLink.getDownloadSize() > 0) {
+                clearSB();
+                sb.append(Formatter.formatReadable(dLink.getDownloadCurrent())).append('/').append(Formatter.formatReadable(Math.max(0, dLink.getDownloadSize())));
+                progress.setMaximum(dLink.getDownloadSize());
+                progress.setString(sb.toString());
+                progress.setValue(dLink.getDownloadCurrent());
+                progress.setForeground(COL_PROGRESS_NORMAL);
+                return progress;
             }
-            progress.setMaximum(10000);
-            progress.setValue(0);
-            progress.setString(null);
-            progress.setBorder(null);
-            progress.setForeground(COL_PROGRESS_NORMAL);
-            return progress;
-
+            co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            ((JRendererLabel) co).setIcon(null);
+            ((JRendererLabel) co).setText("Unknown FileSize");
+            ((JRendererLabel) co).setBorder(null);
+            return co;
         case DownloadJTableModel.COL_STATUS:
 
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
