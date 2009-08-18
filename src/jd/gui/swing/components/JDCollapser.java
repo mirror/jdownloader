@@ -99,10 +99,11 @@ public class JDCollapser extends DroppedPanel {
         menutitle.setIcon(icon);
         this.closeButton.setToolTipText(JDL.LF("jd.gui.swing.components.JDCollapser.closetooltip", "Close %s", name));
         content.removeAll();
+        if(panel!=null)panel.setHidden();
         this.panel = panel2;
         if (panel == null) return;
         content.setLayout(new MigLayout("ins 0,wrap 1", "[fill,grow]", "[fill,grow]"));
-
+        panel.setShown();
         content.add(panel);
         revalidate();
         content.revalidate();
