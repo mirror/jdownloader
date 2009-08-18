@@ -124,6 +124,8 @@ public class TableRenderer extends DefaultTableRenderer {
 
     private String strPriority3;
 
+    private String strLoadingFrom;
+
     private StatusLabel statuspanel;
 
     private int counter;
@@ -187,9 +189,9 @@ public class TableRenderer extends DefaultTableRenderer {
         strPluginError = JDL.L("gui.treetable.error.plugin", "Plugin error");
         // strWaitIO = JDL.L("gui.linkgrabber.waitinguserio",
         // "Waiting for user input");
-        strResume = JDL.L(JDL_PREFIX + "resume", "Resumable");
+        strResume = JDL.L(JDL_PREFIX + "resume", "Resumable download");
         strPremium = JDL.L(JDL_PREFIX + "premium", "Loading with Premium");
-        strStopMark = JDL.L(JDL_PREFIX + "stopmark", "Stopmark set");
+        strStopMark = JDL.L(JDL_PREFIX + "stopmark", "Stopmark is set");
         strFinished = JDL.L(JDL_PREFIX + "finished", "Download finished");
         strFailed = JDL.L(JDL_PREFIX + "failed", "Download failed");
         strExtract = JDL.L(JDL_PREFIX + "extract", "Extracting");
@@ -197,6 +199,7 @@ public class TableRenderer extends DefaultTableRenderer {
         strPriority1 = JDL.L("gui.treetable.tooltip.priority1", "High Priority");
         strPriority2 = JDL.L("gui.treetable.tooltip.priority2", "Higher Priority");
         strPriority3 = JDL.L("gui.treetable.tooltip.priority3", "Highest Priority");
+        strLoadingFrom = JDL.L(JDL_PREFIX + "loadingFrom", "Loading from") + " ";
     }
 
     // @Override
@@ -297,7 +300,7 @@ public class TableRenderer extends DefaultTableRenderer {
             } else {
                 if (dLink.getPlugin().hasHosterIcon()) {
                     statuspanel.setText(dLink.getPlugin().getSessionInfo());
-                    statuspanel.setIcon(-1, dLink.getPlugin().getHosterIcon(), dLink.getPlugin().getHost());
+                    statuspanel.setIcon(-1, dLink.getPlugin().getHosterIcon(), strLoadingFrom + dLink.getPlugin().getHost());
                 } else {
                     clearSB();
                     sb.append(dLink.getPlugin().getHost());

@@ -17,6 +17,7 @@
 package jd.gui.swing.jdgui.views.downloadview;
 
 import java.awt.Color;
+import java.awt.event.MouseEvent;
 
 import javax.swing.Icon;
 import javax.swing.JPanel;
@@ -38,27 +39,27 @@ public class StatusLabel extends JPanel {
     public static final int ICONCOUNT = 5;
     private JRendererLabel left;
     private JRendererLabel[] rights = new JRendererLabel[ICONCOUNT];
-    // private boolean enabled[] = new boolean[ICONCOUNT];
 
     public StatusLabel() {
         super(new MigLayout("ins 0", "[]0[fill,grow,align right]"));
+        this.setOpaque(true);
 
         add(left = new JRendererLabel());
+        left.setOpaque(false);
 
         for (int i = 0; i < ICONCOUNT; i++) {
             add(rights[i] = new JRendererLabel(), "dock east");
             rights[i].setOpaque(false);
-            // enabled[i] = true;
         }
-
-        left.setOpaque(false);
-        this.setOpaque(true);
     }
 
-    /** clears the icon for left, setIcon AFTER setText */
+    /**
+     * clears the icon for left, setIcon AFTER setText
+     */
     public void setText(String text) {
         left.setIcon(null);
         left.setText(text);
+        left.setToolTipText(null);
     }
 
     @Override
@@ -75,31 +76,19 @@ public class StatusLabel extends JPanel {
     public void setIcon(int i, Icon icon, String tooltip) {
         if (i < 0 && ICONCOUNT > 0) {
             left.setIcon(icon);
+            left.setToolTipText(tooltip);
         } else {
             if (i < 0 || i >= ICONCOUNT) return;
             rights[i].setIcon(icon);
             rights[i].setToolTipText(tooltip);
-            // enabled[i] = true;
         }
     }
-
-    // public void setIcon(int i, Icon icon, boolean enabled, String tooltip) {
-    // if (i < 0 || i >= ICONCOUNT) return;
-    // rights[i].setIcon(icon);
-    // rights[i].setToolTipText(tooltip);
-    // rights[i].setEnabled(enabled);
-    // this.enabled[i] = enabled;
-    // }
 
     @Override
     public void setEnabled(boolean b) {
         if (rights != null) {
             for (int i = 0; i < ICONCOUNT; i++) {
-                // if (!enabled[i]) {
-                // rights[i].setEnabled(false);
-                // } else {
                 rights[i].setEnabled(b);
-                // }
             }
         }
         if (left != null) left.setEnabled(b);
@@ -108,14 +97,27 @@ public class StatusLabel extends JPanel {
     /**
      * Remember, that its always the same panel instance. so we have to reset to
      * defaults before each cellrenderer call.
-     * 
-     * @param counter
      */
     public void clearIcons(int counter) {
         for (int i = counter; i < ICONCOUNT; i++) {
             rights[i].setIcon(null);
             rights[i].setToolTipText(null);
         }
+    }
+
+    @Override
+    public String getToolTipText(MouseEvent e) {
+        StringBuilder sb = new StringBuilder();
+        if (left.getToolTipText() != null) {
+            sb.append(left.getToolTipText());
+        }
+        for (int i = rights.length - 1; i >= 0; --i) {
+            if (rights[i].getToolTipText() != null) {
+                if (sb.length() > 0) sb.append(" | ");
+                sb.append(rights[i].getToolTipText());
+            }
+        }
+        return sb.toString();
     }
 
 }
