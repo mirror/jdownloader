@@ -759,16 +759,20 @@ public class DownloadController implements FilePackageListener, DownloadControll
                         case MOVE_TOP: {
                             ArrayList<ArrayList<DownloadLink>> split = splitByFilePackage((ArrayList<DownloadLink>) src);
                             for (ArrayList<DownloadLink> links : split) {
+                                if (links.get(0).getFilePackage().indexOf(links.get(0)) == 0) {
+                                    addPackageAt(links.get(0).getFilePackage(), 0, 0);
+                                }
                                 links.get(0).getFilePackage().addLinksAt(links, 0);
-                                addPackageAt(links.get(0).getFilePackage(), 0, 0);
                             }
                         }
                             return;
                         case MOVE_BOTTOM: {
                             ArrayList<ArrayList<DownloadLink>> split = splitByFilePackage((ArrayList<DownloadLink>) src);
                             for (ArrayList<DownloadLink> links : split) {
+                                if (links.get(0).getFilePackage().indexOf(links.get(links.size() - 1)) == links.get(0).getFilePackage().size() - 1) {
+                                    addPackageAt(links.get(0).getFilePackage(), size() + 1, 0);
+                                }
                                 links.get(0).getFilePackage().addLinksAt(links, links.get(0).getFilePackage().size() + 1);
-                                addPackageAt(links.get(0).getFilePackage(), size() + 1, 0);
                             }
                         }
                             return;

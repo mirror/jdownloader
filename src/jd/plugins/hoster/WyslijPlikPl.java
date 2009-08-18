@@ -29,80 +29,71 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wyslijplik.pl" }, urls = { "http://[\\w\\.]*?wyslijplik\\.pl/download\\.php\\?sid=\\w{8}" }, flags = { 2 })
-
 public class WyslijPlikPl extends PluginForHost {
 
-public WyslijPlikPl(PluginWrapper wrapper) {
-  super(wrapper);
-}
+    public WyslijPlikPl(PluginWrapper wrapper) {
+        super(wrapper);
+    }
 
-// @Override
-public String getAGBLink() {
-  return "http://wyslijplik.pl/tos.php";
-}
+    public String getAGBLink() {
+        return "http://wyslijplik.pl/tos.php";
+    }
 
-// @Override
-public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-  this.setBrowserExclusive();
-  br.getPage(downloadLink.getDownloadURL());
-  /* there won't be a error-message if dl does not exist, so check whether dl link is available */
-  if (br.containsHTML("<a href='http://\\w{2}\\.wyslijplik\\.pl/get\\.php\\?gid=\\w{8}'.*?</a>")) {
-      String filename = br.getRegex("<table class='showfiles'>.*?<b>(.*?)</b></a>").getMatch(0);
-      String filesize = br.getRegex("<table class='showfiles'>.*?<td>(.*?KB)</td>").getMatch(0);
-      if (!(filename == null || filesize  == null)) {
-          downloadLink.setName(filename);
-          downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
-          return AvailableStatus.TRUE;
-      }
-  }
-  throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-}
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.getPage(downloadLink.getDownloadURL());
+        /*
+         * there won't be a error-message if dl does not exist, so check whether
+         * dl link is available
+         */
+        if (br.containsHTML("<a href='http://\\w{2}\\.wyslijplik\\.pl/get\\.php\\?gid=\\w{8}'.*?</a>")) {
+            String filename = br.getRegex("<table class='showfiles'>.*?<b>(.*?)</b></a>").getMatch(0);
+            String filesize = br.getRegex("<table class='showfiles'>.*?<td>(.*?KB)</td>").getMatch(0);
+            if ((filename != null && filesize != null)) {
+                downloadLink.setName(filename);
+                downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
+                return AvailableStatus.TRUE;
+            }
+        }
+        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+    }
 
-// @Override
-public void handleFree(DownloadLink downloadLink) throws Exception {
-  requestFileInformation(downloadLink);
-  String linkurl = br.getRegex("<a href='(http://\\w{2}\\.wyslijplik\\.pl/get\\.php\\?gid=\\w{8})'.*?</a>").getMatch(0);
-  if (linkurl == null) {
-      throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-  }
-  dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, linkurl, false, 1);
-  if (!(dl.getConnection().isContentDisposition())) {
-      dl.getConnection().disconnect();
-      throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-  }
-  URLConnectionAdapter con = dl.getConnection();
-  if (con.getResponseCode() != 200 && con.getResponseCode() != 206) {
-      con.disconnect();
-      throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 1000l);
-  }
-  dl.startDownload();
-}
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        String linkurl = br.getRegex("<a href='(http://\\w{2}\\.wyslijplik\\.pl/get\\.php\\?gid=\\w{8})'.*?</a>").getMatch(0);
+        if (linkurl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, false, 1);
+        if (!(dl.getConnection().isContentDisposition())) {
+            dl.getConnection().disconnect();
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        URLConnectionAdapter con = dl.getConnection();
+        if (con.getResponseCode() != 200 && con.getResponseCode() != 206) {
+            con.disconnect();
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 1000l);
+        }
+        dl.startDownload();
+    }
 
-// @Override
-/* Note:
- * 
- * Simultan DL Limits are not implemented yet:
- *  - no limits for up to 250mb files
- *  - 5 300MB Downloads
- *  - 3 500MB Downloads
- *  - 1 1GB Download
- * 
- * Well that's what i found in the faq - so the limits depend on the filesize
- * Would also need more testlinks to bigger files...
- */
-public int getMaxSimultanFreeDownloadNum() {
-  return 20;
-}
+    /*
+     * Note:
+     * 
+     * Simultan DL Limits are not implemented yet: - no limits for up to 250mb
+     * files - 5 300MB Downloads - 3 500MB Downloads - 1 1GB Download
+     * 
+     * Well that's what i found in the faq - so the limits depend on the
+     * filesize Would also need more testlinks to bigger files...
+     */
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
 
-// @Override
-public void reset() {
-}
+    public void reset() {
+    }
 
-// @Override
-public void resetPluginGlobals() {
-}
+    public void resetPluginGlobals() {
+    }
 
-// @Override
-public void resetDownloadlink(DownloadLink link) {
-}
+    public void resetDownloadlink(DownloadLink link) {
+    }
 }
