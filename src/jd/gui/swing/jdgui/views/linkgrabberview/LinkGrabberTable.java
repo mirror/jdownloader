@@ -19,6 +19,7 @@ package jd.gui.swing.jdgui.views.linkgrabberview;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
@@ -51,6 +52,28 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+class PropMenuItem extends JMenuItem implements ActionListener {
+
+    private static final long serialVersionUID = 6328630034846759725L;
+    private Object obj;
+    private LinkGrabberPanel linkgrabber;
+
+    public PropMenuItem(LinkGrabberPanel linkgrabber) {
+        super(JDL.L("gui.table.contextmenu.prop", "Properties"));
+        this.setIcon(JDTheme.II("gui.images.config.tip", 16, 16));
+        this.linkgrabber = linkgrabber;
+        this.addActionListener(this);
+    }
+
+    public void actionPerformed(ActionEvent e) {
+        if (obj != null && obj instanceof LinkGrabberFilePackage) linkgrabber.showFilePackageInfo((LinkGrabberFilePackage) obj);
+    }
+
+    public void setObject(Object obj) {
+        this.obj = obj;
+    }
+}
+
 public class LinkGrabberTable extends JDTable implements MouseListener, MouseMotionListener, KeyListener {
 
     private static final long serialVersionUID = 1L;
@@ -58,6 +81,8 @@ public class LinkGrabberTable extends JDTable implements MouseListener, MouseMot
     protected LinkGrabberPanel linkgrabber;
 
     private String[] prioDescs;
+
+    private PropMenuItem propItem;
 
     public static final String PROPERTY_EXPANDED = "lg_expanded";
     public static final String PROPERTY_USEREXPAND = "lg_userexpand";
@@ -86,6 +111,7 @@ public class LinkGrabberTable extends JDTable implements MouseListener, MouseMot
         addDisabledHighlighter();
         addExistsHighlighter();
         prioDescs = new String[] { JDL.L("gui.treetable.tooltip.priority-1", "Low Priority"), JDL.L("gui.treetable.tooltip.priority0", "No Priority"), JDL.L("gui.treetable.tooltip.priority1", "High Priority"), JDL.L("gui.treetable.tooltip.priority2", "Higher Priority"), JDL.L("gui.treetable.tooltip.priority3", "Highest Priority") };
+        propItem = new PropMenuItem(linkgrabber);
     }
 
     public void fireTableChanged() {
@@ -282,6 +308,11 @@ public class LinkGrabberTable extends JDTable implements MouseListener, MouseMot
                 prop.put("links", alllinks);
                 prop.put("boolean", false);
                 if (links_enabled > 0) popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.bad", 16, 16), JDL.L("gui.table.contextmenu.disable", "deaktivieren") + " (" + links_enabled + ")", LinkGrabberTableAction.DE_ACTIVATE, new Property("infos", prop))));
+            }
+            if (obj instanceof LinkGrabberFilePackage) {
+                popup.addSeparator();
+                propItem.setObject(obj);
+                popup.add(propItem);
             }
             if (popup.getComponentCount() != 0) popup.show(this, point.x, point.y);
         }

@@ -64,6 +64,33 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+class PropMenuItem extends JMenuItem implements ActionListener {
+
+    private static final long serialVersionUID = 6328630034846759725L;
+    private Object obj;
+    private DownloadLinksPanel panel;
+
+    public PropMenuItem(DownloadLinksPanel panel) {
+        super(JDL.L("gui.table.contextmenu.prop", "Properties"));
+        this.setIcon(JDTheme.II("gui.images.config.tip", 16, 16));
+        this.panel = panel;
+        this.addActionListener(this);
+    }
+
+    public void actionPerformed(ActionEvent e) {
+        if (obj == null) return;
+        if (obj instanceof DownloadLink) {
+            panel.showDownloadLinkInfo((DownloadLink) obj);
+        } else if (obj instanceof FilePackage) {
+            panel.showFilePackageInfo((FilePackage) obj);
+        }
+    }
+
+    public void setObject(Object obj) {
+        this.obj = obj;
+    }
+}
+
 public class DownloadTable extends JTable implements MouseListener, MouseMotionListener, KeyListener {
 
     public static final String PROPERTY_EXPANDED = "expanded";
@@ -83,6 +110,8 @@ public class DownloadTable extends JTable implements MouseListener, MouseMotionL
     private String[] prioDescs;
 
     private DownloadJTableModel model;
+
+    private PropMenuItem propItem;
 
     public DownloadTable(DownloadJTableModel model, DownloadLinksPanel panel) {
         super(model);
@@ -138,6 +167,7 @@ public class DownloadTable extends JTable implements MouseListener, MouseMotionL
         // ActionController.getToolBarAction("action.downloadview.movetobottom").setEnabled(true);
         // This method is 1.6 only
         if (JDUtilities.getJavaVersion() >= 1.6) this.setFillsViewportHeight(true);
+        propItem = new PropMenuItem(panel);
     }
 
     protected boolean processKeyBinding(KeyStroke ks, KeyEvent e, int condition, boolean pressed) {
@@ -478,6 +508,9 @@ public class DownloadTable extends JTable implements MouseListener, MouseMotionL
                 popup.add(tmp = new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.resume", 16, 16), JDL.L("gui.table.contextmenu.resume", "fortsetzen") + " (" + resumlinks.size() + ")", TableAction.DOWNLOAD_RESUME, new Property("links", resumlinks))));
                 if (resumlinks.size() == 0) tmp.setEnabled(false);
                 popup.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.reset", 16, 16), JDL.L("gui.table.contextmenu.reset", "zurücksetzen") + " (" + alllinks.size() + ")", TableAction.DOWNLOAD_RESET, new Property("links", alllinks))));
+                popup.addSeparator();
+                propItem.setObject(obj);
+                popup.add(propItem);
             }
             if (popup.getComponentCount() != 0) popup.show(this, point.x, point.y);
         }
