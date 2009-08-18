@@ -23,7 +23,7 @@ public class UsedSpaceColumn extends JDTableColumn {
     private static Dimension dim = new Dimension(200, 30);
 
     @Override
-    public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
+    public Component myTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -34,9 +34,7 @@ public class UsedSpaceColumn extends JDTableColumn {
     }
 
     @Override
-    public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-        hasFocus = false;
-        column = this.getJDTableModel().toModel(column);
+    public Component myTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         if (value instanceof Account) {
             Account ac = (Account) value;
             AccountInfo ai = ac.getAccountInfo();

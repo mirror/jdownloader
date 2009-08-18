@@ -7,6 +7,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.util.ArrayList;
 
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JPopupMenu;
@@ -22,7 +23,7 @@ import jd.gui.swing.components.JExtCheckBoxMenuItem;
 import jd.gui.swing.jdgui.views.downloadview.DownloadTable;
 import jd.utils.JDUtilities;
 
-public class JDTable extends JTable implements MouseListener {
+public class JDTable extends JTable {
 
     /**
      * 
@@ -30,7 +31,6 @@ public class JDTable extends JTable implements MouseListener {
     private static final long serialVersionUID = -6631229711568284941L;
     private JDTableModel model;
     private SubConfiguration tableconfig;
-    private TableColumn[] cols;
 
     public JDTable(JDTableModel model) {
         super(model);
@@ -39,17 +39,67 @@ public class JDTable extends JTable implements MouseListener {
         createColumns();
         setShowHorizontalLines(false);
         setShowVerticalLines(false);
-        getTableHeader().addMouseListener(this);
+        getTableHeader().addMouseListener(new MouseListener() {
+            public void mouseClicked(MouseEvent e) {
+                if (e.getSource() == getTableHeader()) {
+                    if (e.getButton() == MouseEvent.BUTTON3) {
+                        JPopupMenu popup = new JPopupMenu();
+                        JCheckBoxMenuItem[] mis = new JCheckBoxMenuItem[getJDTableModel().getRealColumnCount()];
+
+                        for (int i = 0; i < getJDTableModel().getRealColumnCount(); ++i) {
+                            final int j = i;
+                            final JExtCheckBoxMenuItem mi = new JExtCheckBoxMenuItem(getJDTableModel().getRealColumnName(i));
+                            mi.setHideOnClick(false);
+                            mis[i] = mi;
+                            if (i == 0) mi.setEnabled(false);
+                            mi.setSelected(getJDTableModel().isVisible(i));
+                            mi.addActionListener(new ActionListener() {
+
+                                public void actionPerformed(ActionEvent e) {
+                                    getJDTableModel().setVisible(j, mi.isSelected());
+                                    createColumns();
+                                    revalidate();
+                                    repaint();
+                                }
+
+                            });
+                            popup.add(mi);
+                        }
+                        popup.show(getTableHeader(), e.getX(), e.getY());
+                    }
+                }
+
+            }
+
+            public void mouseEntered(MouseEvent e) {
+            }
+
+            public void mouseExited(MouseEvent e) {
+            }
+
+            public void mousePressed(MouseEvent e) {
+            }
+
+            public void mouseReleased(MouseEvent e) {
+            }
+        });
         getTableHeader().setReorderingAllowed(false);
         getTableHeader().setResizingAllowed(true);
         setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
         setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         setAutoscrolls(false);
-
         this.setRowHeight(DownloadTable.ROWHEIGHT);
         getTableHeader().setPreferredSize(new Dimension(getColumnModel().getTotalColumnWidth(), 19));
         // This method is 1.6 only
         if (JDUtilities.getJavaVersion() >= 1.6) this.setFillsViewportHeight(true);
+    }
+
+    public ArrayList<JDRowHighlighter> getJDRowHighlighter() {
+        return model.getJDRowHighlighter();
+    }
+
+    public void addJDRowHighlighter(JDRowHighlighter high) {
+        model.addJDRowHighlighter(high);
     }
 
     public JDTableModel getJDTableModel() {
@@ -72,11 +122,9 @@ public class JDTable extends JTable implements MouseListener {
         while (tcm.getColumnCount() > 0) {
             tcm.removeColumn(tcm.getColumn(0));
         }
-        cols = new TableColumn[getModel().getColumnCount()];
         for (int i = 0; i < getModel().getColumnCount(); ++i) {
             final int j = i;
             TableColumn tableColumn = new TableColumn(i);
-            cols[i] = tableColumn;
             tableColumn.addPropertyChangeListener(new PropertyChangeListener() {
                 public void propertyChange(PropertyChangeEvent evt) {
                     if (evt.getPropertyName().equals("width")) {
@@ -90,47 +138,13 @@ public class JDTable extends JTable implements MouseListener {
         }
     }
 
-    public void mouseClicked(MouseEvent e) {
-        if (e.getSource() == getTableHeader()) {
-            if (e.getButton() == MouseEvent.BUTTON3) {
-                JPopupMenu popup = new JPopupMenu();
-                JCheckBoxMenuItem[] mis = new JCheckBoxMenuItem[model.getRealColumnCount()];
-
-                for (int i = 0; i < model.getRealColumnCount(); ++i) {
-                    final int j = i;
-                    final JExtCheckBoxMenuItem mi = new JExtCheckBoxMenuItem(model.getRealColumnName(i));
-                    mi.setHideOnClick(false);
-                    mis[i] = mi;
-                    if (i == 0) mi.setEnabled(false);
-                    mi.setSelected(model.isVisible(i));
-                    mi.addActionListener(new ActionListener() {
-
-                        public void actionPerformed(ActionEvent e) {
-                            model.setVisible(j, mi.isSelected());
-                            createColumns();
-                            revalidate();
-                            repaint();
-                        }
-
-                    });
-                    popup.add(mi);
-                }
-                popup.show(getTableHeader(), e.getX(), e.getY());
-            }
-        }
-
-    }
-
-    public void mouseEntered(MouseEvent e) {
-    }
-
-    public void mouseExited(MouseEvent e) {
-    }
-
-    public void mousePressed(MouseEvent e) {
-    }
-
-    public void mouseReleased(MouseEvent e) {
+    public int getRealColumnAtPoint(int x) {
+        /*
+         * diese funktion gibt den echten columnindex zurück, da durch
+         * an/ausschalten dieser anders kann
+         */
+        x = getColumnModel().getColumnIndexAtX(x);
+        return model.toModel(x);
     }
 
 }

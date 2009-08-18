@@ -16,46 +16,34 @@
 
 package jd.gui.swing.jdgui.views.linkgrabberview;
 
-import java.awt.Color;
-import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
 import javax.swing.DropMode;
-import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
-import javax.swing.JTable;
 import javax.swing.KeyStroke;
-import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
-import javax.swing.table.TableCellRenderer;
-import javax.swing.table.TableColumn;
-import javax.swing.table.TableColumnModel;
 
 import jd.config.Property;
-import jd.config.SubConfiguration;
 import jd.controlling.LinkGrabberController;
 import jd.gui.swing.GuiRunnable;
-import jd.gui.swing.RowHighlighter;
 import jd.gui.swing.components.JExtCheckBoxMenuItem;
+import jd.gui.swing.components.JDTable.JDRowHighlighter;
+import jd.gui.swing.components.JDTable.JDTable;
 import jd.gui.swing.jdgui.actions.ActionController;
-import jd.gui.swing.jdgui.views.downloadview.DownloadTable;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkGrabberFilePackage;
 import jd.plugins.LinkStatus;
@@ -63,13 +51,12 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-public class LinkGrabberTable extends JTable implements MouseListener, MouseMotionListener, KeyListener {
+public class LinkGrabberTable extends JDTable implements MouseListener, MouseMotionListener, KeyListener {
 
     private static final long serialVersionUID = 1L;
-    private LinkGrabberJTableModel model;
+
     protected LinkGrabberPanel linkgrabber;
-    private LinkGrabberTableRenderer cellRenderer;
-    private TableColumn[] cols;
+
     private String[] prioDescs;
 
     public static final String PROPERTY_EXPANDED = "lg_expanded";
@@ -79,22 +66,10 @@ public class LinkGrabberTable extends JTable implements MouseListener, MouseMoti
         return linkgrabber;
     }
 
-    public LinkGrabberTable(LinkGrabberJTableModel model, LinkGrabberPanel linkgrabber) {
-        super(model);
+    public LinkGrabberTable(LinkGrabberPanel linkgrabber) {
+        super(new LinkGrabberJTableModel("linkgrabber"));
         this.linkgrabber = linkgrabber;
-        this.cellRenderer = new LinkGrabberTableRenderer(this);
-        this.model = model;
-        createColumns();
-        setShowGrid(false);
-        setShowHorizontalLines(false);
-        setShowVerticalLines(false);
-        getTableHeader().setReorderingAllowed(false);
-        getTableHeader().setResizingAllowed(true);
-        setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
-        setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-        setAutoscrolls(false);
         addMouseListener(this);
-        this.setRowHeight(DownloadTable.ROWHEIGHT);
         addKeyListener(this);
         addMouseMotionListener(this);
 
@@ -105,22 +80,12 @@ public class LinkGrabberTable extends JTable implements MouseListener, MouseMoti
         }
         setDragEnabled(true);
         setTransferHandler(new LinkGrabberTableTransferHandler(this));
-        getTableHeader().addMouseListener(this);
         UIManager.put("Table.focusCellHighlightBorder", null);
 
         addPackageHighlighter();
         addDisabledHighlighter();
         addExistsHighlighter();
-
-        getTableHeader().setPreferredSize(new Dimension(getColumnModel().getTotalColumnWidth(), 19));
-        setTransferHandler(new LinkGrabberTableTransferHandler(this));
-        // This method is 1.6 only
-        if (JDUtilities.getJavaVersion() >= 1.6) this.setFillsViewportHeight(true);
         prioDescs = new String[] { JDL.L("gui.treetable.tooltip.priority-1", "Low Priority"), JDL.L("gui.treetable.tooltip.priority0", "No Priority"), JDL.L("gui.treetable.tooltip.priority1", "High Priority"), JDL.L("gui.treetable.tooltip.priority2", "Higher Priority"), JDL.L("gui.treetable.tooltip.priority3", "Highest Priority") };
-    }
-
-    public TableCellRenderer getCellRenderer(int row, int col) {
-        return cellRenderer;
     }
 
     public void fireTableChanged() {
@@ -131,15 +96,15 @@ public class LinkGrabberTable extends JTable implements MouseListener, MouseMoti
                 int[] rows = getSelectedRows();
                 final ArrayList<Object> selected = new ArrayList<Object>();
                 for (int row : rows) {
-                    Object elem = model.getValueAt(row, 0);
+                    Object elem = getJDTableModel().getValueAt(row, 0);
                     if (elem != null) selected.add(elem);
                 }
-                model.refreshModel();
-                model.fireTableStructureChanged();
+                getJDTableModel().refreshModel();
+                getJDTableModel().fireTableStructureChanged();
                 SwingUtilities.invokeLater(new Runnable() {
                     public void run() {
                         for (Object obj : selected) {
-                            int row = model.getRowforObject(obj);
+                            int row = getJDTableModel().getRowforObject(obj);
                             if (row != -1) addRowSelectionInterval(row, row);
                         }
                         scrollRectToVisible(viewRect);
@@ -151,14 +116,10 @@ public class LinkGrabberTable extends JTable implements MouseListener, MouseMoti
     }
 
     protected boolean processKeyBinding(KeyStroke ks, KeyEvent e, int condition, boolean pressed) {
-
         boolean ret = super.processKeyBinding(ks, e, condition, pressed);
-
         if (ks.getKeyCode() == KeyEvent.VK_ENTER && !ks.isOnKeyRelease()) {
             ActionController.getToolBarAction("action.linkgrabber.addall").actionPerformed(null);
-
         }
-
         return ret;
     }
 
@@ -203,47 +164,14 @@ public class LinkGrabberTable extends JTable implements MouseListener, MouseMoti
     public void mouseMoved(MouseEvent e) {
     }
 
-    private int getRealColumnAtPoint(int x) {
-        /*
-         * diese funktion gibt den echten columnindex zurück, da durch
-         * an/ausschalten dieser anders kann
-         */
-        x = getColumnModel().getColumnIndexAtX(x);
-        return model.toModel(x);
-    }
-
     public void mouseClicked(MouseEvent e) {
-        if (e.getSource() == getTableHeader()) {
-            if (e.getButton() == MouseEvent.BUTTON1) {
-                int col = getRealColumnAtPoint(e.getX());
-                LinkGrabberTableAction test = new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.sort", 16, 16), JDL.L("gui.table.contextmenu.packagesort", "Paket sortieren"), LinkGrabberTableAction.SORT_ALL, new Property("col", col));
-                test.actionPerformed(new ActionEvent(test, 0, ""));
-            } else if (e.getButton() == MouseEvent.BUTTON3) {
-                JPopupMenu popup = new JPopupMenu();
-                JCheckBoxMenuItem[] mis = new JCheckBoxMenuItem[model.getRealColumnCount()];
 
-                for (int i = 0; i < model.getRealColumnCount(); ++i) {
-                    final int j = i;
-                    final JExtCheckBoxMenuItem mi = new JExtCheckBoxMenuItem(model.getRealColumnName(i));
-                    mi.setHideOnClick(false);
-                    mis[i] = mi;
-                    if (i == 0) mi.setEnabled(false);
-                    mi.setSelected(model.isVisible(i));
-                    mi.addActionListener(new ActionListener() {
+        // LinkGrabberTableAction test = new LinkGrabberTableAction(linkgrabber,
+        // JDTheme.II("gui.images.sort", 16, 16),
+        // JDL.L("gui.table.contextmenu.packagesort", "Paket sortieren"),
+        // LinkGrabberTableAction.SORT_ALL, new Property("col", col));
+        // test.actionPerformed(new ActionEvent(test, 0, ""));
 
-                        public void actionPerformed(ActionEvent e) {
-                            model.setVisible(j, mi.isSelected());
-                            createColumns();
-                            revalidate();
-                            repaint();
-                        }
-
-                    });
-                    popup.add(mi);
-                }
-                popup.show(getTableHeader(), e.getX(), e.getY());
-            }
-        }
     }
 
     public void mouseEntered(MouseEvent arg0) {
@@ -286,7 +214,7 @@ public class LinkGrabberTable extends JTable implements MouseListener, MouseMoti
         int row = rowAtPoint(point);
         int col = columnAtPoint(point);
 
-        if (model.getValueAt(row, 0) == null) {
+        if (getJDTableModel().getValueAt(row, 0) == null) {
             clearSelection();
             if (e.getButton() == MouseEvent.BUTTON3) {
                 if (LinkGrabberController.getInstance().getFILTERPACKAGE().size() > 0 || LinkGrabberController.getInstance().size() > 0) {
@@ -302,10 +230,10 @@ public class LinkGrabberTable extends JTable implements MouseListener, MouseMoti
 
         if (!isRowSelected(row) && e.getButton() == MouseEvent.BUTTON3) {
             clearSelection();
-            if (model.getValueAt(row, 0) != null) this.addRowSelectionInterval(row, row);
+            if (getJDTableModel().getValueAt(row, 0) != null) this.addRowSelectionInterval(row, row);
         }
         if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
-            if (model.getValueAt(row, 0) == null) { return; }
+            if (getJDTableModel().getValueAt(row, 0) == null) { return; }
             ArrayList<DownloadLink> alllinks = getAllSelectedDownloadLinks();
             int links_enabled = 0;
             for (DownloadLink next : alllinks) {
@@ -335,7 +263,7 @@ public class LinkGrabberTable extends JTable implements MouseListener, MouseMoti
                 popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.add_package", 16, 16), JDL.L("gui.table.contextmenu.editdownloadDir", "Zielordner ändern") + " (" + sfp.size() + ")", LinkGrabberTableAction.EDIT_DIR)));
             }
             if (obj instanceof LinkGrabberFilePackage || obj instanceof DownloadLink) {
-                popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.sort", 16, 16), JDL.L("gui.table.contextmenu.packagesort", "Paket sortieren") + " (" + sfp.size() + "), (" + model.getColumnName(col) + ")", LinkGrabberTableAction.SORT, new Property("col", model.toModel(col)))));
+                popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.sort", 16, 16), JDL.L("gui.table.contextmenu.packagesort", "Paket sortieren") + " (" + sfp.size() + "), (" + getJDTableModel().getColumnName(col) + ")", LinkGrabberTableAction.SORT, new Property("col", getJDTableModel().toModel(col)))));
                 popup.addSeparator();
                 popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.dlc", 16, 16), JDL.L("gui.table.contextmenu.dlc", "DLC erstellen") + " (" + alllinks.size() + ")", LinkGrabberTableAction.SAVE_DLC, new Property("links", alllinks))));
                 popup.add(buildpriomenu(alllinks));
@@ -399,68 +327,30 @@ public class LinkGrabberTable extends JTable implements MouseListener, MouseMoti
     }
 
     private void addDisabledHighlighter() {
-        Color background = JDTheme.C("gui.color.downloadlist.row_link_disabled", "adadad", 100);
-        cellRenderer.addHighlighter(new RowHighlighter<LinkGrabberJTableModel>(model, background) {
-
+        this.addJDRowHighlighter(new JDRowHighlighter(JDTheme.C("gui.color.downloadlist.row_link_disabled", "adadad", 100)) {
             @Override
-            public boolean doHighlight(int row) {
-                Object o = model.getObjectforRow(row);
+            public boolean doHighlight(Object o) {
                 return (o != null && o instanceof DownloadLink && !((DownloadLink) o).isEnabled());
             }
-
         });
     }
 
     private void addPackageHighlighter() {
-        Color background = JDTheme.C("gui.color.downloadlist.package", "4c4c4c", 150);
-        cellRenderer.addHighlighter(new RowHighlighter<LinkGrabberJTableModel>(model, background) {
-
+        this.addJDRowHighlighter(new JDRowHighlighter(JDTheme.C("gui.color.downloadlist.package", "4c4c4c", 150)) {
             @Override
-            public boolean doHighlight(int row) {
-                Object o = model.getObjectforRow(row);
+            public boolean doHighlight(Object o) {
                 return (o != null && o instanceof LinkGrabberFilePackage);
             }
-
         });
     }
 
     private void addExistsHighlighter() {
-        Color background = JDTheme.C("gui.color.linkgrabber.error_exists", "ff7f00", 120);
-        cellRenderer.addHighlighter(new RowHighlighter<LinkGrabberJTableModel>(model, background) {
-
+        this.addJDRowHighlighter(new JDRowHighlighter(JDTheme.C("gui.color.linkgrabber.error_exists", "ff7f00", 120)) {
             @Override
-            public boolean doHighlight(int row) {
-                Object o = model.getObjectforRow(row);
+            public boolean doHighlight(Object o) {
                 return (o != null && o instanceof DownloadLink && ((DownloadLink) o).getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS));
             }
-
         });
-    }
-
-    public void createColumns() {
-        setAutoCreateColumnsFromModel(false);
-        TableColumnModel tcm = getColumnModel();
-        while (tcm.getColumnCount() > 0) {
-            tcm.removeColumn(tcm.getColumn(0));
-        }
-
-        final SubConfiguration config = SubConfiguration.getConfig("linkgrabber");
-        cols = new TableColumn[getModel().getColumnCount()];
-        for (int i = 0; i < getModel().getColumnCount(); ++i) {
-            final int j = i;
-            TableColumn tableColumn = new TableColumn(i);
-            cols[i] = tableColumn;
-            tableColumn.addPropertyChangeListener(new PropertyChangeListener() {
-                public void propertyChange(PropertyChangeEvent evt) {
-                    if (evt.getPropertyName().equals("width")) {
-                        config.setProperty("WIDTH_COL_" + model.toModel(j), evt.getNewValue());
-                        config.save();
-                    }
-                }
-            });
-            tableColumn.setPreferredWidth(config.getIntegerProperty("WIDTH_COL_" + model.toModel(j), tableColumn.getWidth()));
-            addColumn(tableColumn);
-        }
     }
 
     public void keyReleased(KeyEvent e) {
@@ -475,10 +365,6 @@ public class LinkGrabberTable extends JTable implements MouseListener, MouseMoti
     }
 
     public void keyTyped(KeyEvent arg0) {
-    }
-
-    public LinkGrabberJTableModel getTableModel() {
-        return model;
     }
 
 }

@@ -17,6 +17,7 @@ public abstract class JDTableModel extends AbstractTableModel {
 
     protected ArrayList<Object> list = new ArrayList<Object>();
     protected ArrayList<JDTableColumn> columns = new ArrayList<JDTableColumn>();
+    private ArrayList<JDRowHighlighter> highlighter = new ArrayList<JDRowHighlighter>();
 
     public JDTableModel(String configname) {
         super();
@@ -39,6 +40,14 @@ public abstract class JDTableModel extends AbstractTableModel {
 
     public int getRowCount() {
         return list.size();
+    }
+
+    public ArrayList<JDRowHighlighter> getJDRowHighlighter() {
+        return highlighter;
+    }
+
+    public void addJDRowHighlighter(JDRowHighlighter high) {
+        highlighter.add(high);
     }
 
     public int getRowforObject(Object o) {

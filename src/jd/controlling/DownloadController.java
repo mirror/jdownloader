@@ -157,7 +157,6 @@ public class DownloadController implements FilePackageListener, DownloadControll
         try {
             packages = loadDownloadLinks();
         } catch (Exception e) {
-            jd.controlling.JDLogger.getLogger().severe("" + e.getStackTrace());
             packages = null;
         }
         if (packages == null) {
@@ -737,6 +736,10 @@ public class DownloadController implements FilePackageListener, DownloadControll
                             for (DownloadLink item : (ArrayList<DownloadLink>) src) {
                                 curpos = item.getFilePackage().indexOf(item);
                                 item.getFilePackage().add(curpos - 1, item, 0);
+                                if (curpos == 0) {
+                                    curpos = indexOf(item.getFilePackage());
+                                    addPackageAt(item.getFilePackage(), curpos - 1, 0);
+                                }
                             }
                         }
                             return;
@@ -746,6 +749,10 @@ public class DownloadController implements FilePackageListener, DownloadControll
                             for (int i = links.size() - 1; i >= 0; i--) {
                                 curpos = links.get(i).getFilePackage().indexOf(links.get(i));
                                 links.get(i).getFilePackage().add(curpos + 2, links.get(i), 0);
+                                if (curpos == links.get(i).getFilePackage().size() - 1) {
+                                    curpos = indexOf(links.get(i).getFilePackage());
+                                    addPackageAt(links.get(i).getFilePackage(), curpos + 2, 0);
+                                }
                             }
                         }
                             return;
@@ -753,6 +760,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
                             ArrayList<ArrayList<DownloadLink>> split = splitByFilePackage((ArrayList<DownloadLink>) src);
                             for (ArrayList<DownloadLink> links : split) {
                                 links.get(0).getFilePackage().addLinksAt(links, 0);
+                                addPackageAt(links.get(0).getFilePackage(), 0, 0);
                             }
                         }
                             return;
@@ -760,6 +768,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
                             ArrayList<ArrayList<DownloadLink>> split = splitByFilePackage((ArrayList<DownloadLink>) src);
                             for (ArrayList<DownloadLink> links : split) {
                                 links.get(0).getFilePackage().addLinksAt(links, links.get(0).getFilePackage().size() + 1);
+                                addPackageAt(links.get(0).getFilePackage(), size() + 1, 0);
                             }
                         }
                             return;

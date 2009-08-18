@@ -1,131 +1,47 @@
 package jd.gui.swing.jdgui.views.linkgrabberview;
 
-import java.util.ArrayList;
-
-import javax.swing.table.AbstractTableModel;
-
-import jd.config.SubConfiguration;
 import jd.controlling.LinkGrabberController;
+import jd.gui.swing.components.JDTable.JDTableModel;
+import jd.gui.swing.jdgui.views.linkgrabberview.Columns.FileColumn;
+import jd.gui.swing.jdgui.views.linkgrabberview.Columns.HosterColumn;
+import jd.gui.swing.jdgui.views.linkgrabberview.Columns.PartColumn;
+import jd.gui.swing.jdgui.views.linkgrabberview.Columns.RequestTimeColumn;
+import jd.gui.swing.jdgui.views.linkgrabberview.Columns.SizeColumn;
+import jd.gui.swing.jdgui.views.linkgrabberview.Columns.StatusColumn;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkGrabberFilePackage;
 import jd.utils.locale.JDL;
 
-public class LinkGrabberJTableModel extends AbstractTableModel {
+public class LinkGrabberJTableModel extends JDTableModel {
 
     private static final long serialVersionUID = 896882146491584908L;
-    public static final byte COL_PACK_FILE = 0;
-    public static final byte COL_SIZE = 1;
-    public static final byte COL_HOSTER = 2;
-    public static final byte COL_STATUS = 3;
 
-    private static final String[] COLUMN_NAMES = { JDL.L("gui.linkgrabber.header.packagesfiles", "Pakete/Dateien"), JDL.L("gui.treetable.header.size", "Größe"), JDL.L("gui.treetable.hoster", "Anbieter"), JDL.L("gui.treetable.status", "Status") };
-    private ArrayList<Object> addlist = new ArrayList<Object>();
-    private SubConfiguration config;
-
-    public LinkGrabberJTableModel() {
-        super();
-        config = SubConfiguration.getConfig("linkgrabber");        
-    }
-
-    public int getRowCount() {
-        return addlist.size();
-    }
-
-    public int getRowforObject(Object o) {
-        synchronized (addlist) {
-            return addlist.indexOf(o);
-        }
-    }
-
-    public Object getObjectforRow(int row) {
-        synchronized (addlist) {
-            if (row < addlist.size()) return addlist.get(row);
-            return null;
-        }
+    public LinkGrabberJTableModel(String configname) {
+        super(configname);
+        this.addColumn(new FileColumn(JDL.L("gui.linkgrabber.header.packagesfiles", "Pakete/Dateien"), this));
+        this.addColumn(new PartColumn(JDL.L("gui.treetable.header.part", "Part"), this));
+        this.addColumn(new SizeColumn(JDL.L("gui.treetable.header.size", "Größe"), this));
+        this.addColumn(new HosterColumn(JDL.L("gui.treetable.hoster", "Anbieter"), this));
+        this.addColumn(new StatusColumn(JDL.L("gui.treetable.status", "Status"), this));
+        this.addColumn(new RequestTimeColumn(JDL.L("gui.treetable.requesttime", "RequestTime"), this));
     }
 
     public void refreshModel() {
         synchronized (LinkGrabberController.ControllerLock) {
             synchronized (LinkGrabberController.getInstance().getPackages()) {
-                synchronized (addlist) {
-                    addlist.clear();
+                synchronized (list) {
+                    list.clear();
                     for (LinkGrabberFilePackage fp : LinkGrabberController.getInstance().getPackages()) {
-                        addlist.add(fp);
+                        list.add(fp);
                         if (fp.getBooleanProperty(LinkGrabberTable.PROPERTY_EXPANDED, false)) {
                             for (DownloadLink dl : fp.getDownloadLinks()) {
-                                addlist.add(dl);
+                                list.add(dl);
                             }
                         }
                     }
                 }
             }
         }
-    }
-
-    public Object getValueAt(int rowIndex, int columnIndex) {
-        try {
-            return addlist.get(rowIndex);
-        } catch (IndexOutOfBoundsException e) {
-            return null;
-        }
-    }
-
-    public int getRealColumnCount() {
-        return COLUMN_NAMES.length;
-    }
-
-    public String getRealColumnName(int column) {
-        return COLUMN_NAMES[column];
-    }
-
-    public int getColumnCount() {
-        int j = 0;
-        for (int i = 0; i < COLUMN_NAMES.length; ++i) {
-            if (isVisible(i)) ++j;
-        }
-        return j;
-    }
-
-    public boolean isVisible(int column) {
-        return config.getBooleanProperty("VISABLE_COL_" + column, true);
-    }
-
-    public void setVisible(int column, boolean visible) {
-        config.setProperty("VISABLE_COL_" + column, visible);
-        config.save();
-    }
-
-    public int toModel(int column) {
-        int i = 0;
-        int k;
-        for (k = 0; k < getRealColumnCount(); ++k) {
-            if (isVisible(k)) {
-                ++i;
-            }
-            if (i > column) break;
-        }
-        return k;
-    }
-
-    public int toVisible(int column) {
-        int i = column;
-        int k;
-        for (k = column; k >= 0; --k) {
-            if (!isVisible(k)) {
-                --i;
-            }
-        }
-        return i;
-    }
-
-    // @Override
-    public String getColumnName(int column) {
-        return COLUMN_NAMES[toModel(column)];
-    }
-
-    // @Override
-    public Class<?> getColumnClass(int column) {
-        return Object.class;
     }
 
 }

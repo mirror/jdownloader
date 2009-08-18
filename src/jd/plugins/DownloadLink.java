@@ -35,7 +35,6 @@ import jd.controlling.DownloadController;
 import jd.controlling.JDLogger;
 import jd.controlling.SingleDownloadController;
 import jd.event.JDBroadcaster;
-import jd.nutils.Formatter;
 import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
 import jd.nutils.io.JDIO;
@@ -609,12 +608,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             try {
                 long startTime = System.currentTimeMillis();
                 availableStatus = getPlugin().requestFileInformation(this);
-                startTime = System.currentTimeMillis() - startTime;
-                if (getLinkStatus().getStatusText() == null || getLinkStatus().getStatusText().trim().length() == 0) {
-                    this.requestTime = startTime;
-                    getLinkStatus().setStatusText(JDL.LF("jd.plugins.downloadlink.statustext.requesttime", "Requesttime: %s", Formatter.formatMilliseconds(startTime)));
-                }
-
+                this.requestTime = System.currentTimeMillis() - startTime;
                 try {
                     getPlugin().getBrowser().getHttpConnection().disconnect();
                 } catch (Exception e) {

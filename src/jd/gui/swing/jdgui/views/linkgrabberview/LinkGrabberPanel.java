@@ -80,7 +80,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
 
     protected Logger logger = jd.controlling.JDLogger.getLogger();
 
-    private Thread gatherer;
+    private transient Thread gatherer;
     private boolean gatherer_running = false;
     private ProgressController pc;
 
@@ -125,7 +125,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
 
     private LinkGrabberPanel() {
         super(new MigLayout("ins 0,wrap 1", "[fill,grow]", "[fill,grow]"));
-        internalTable = new LinkGrabberTable(new LinkGrabberJTableModel(), this);
+        internalTable = new LinkGrabberTable(this);
         scrollPane = new JScrollPane(internalTable);
         this.add(scrollPane, "cell 0 0");
         filePackageInfo = new LinkGrabberFilePackageInfo();
@@ -239,40 +239,33 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
     }
 
     public void fireTableChanged(final boolean fast) {
-        if (tablerefreshinprogress && !fast) return;
-        new Thread() {
-            public void run() {
-                if (!fast) tablerefreshinprogress = true;
-                this.setName("LinkGrabber: refresh Table");
-                synchronized (LinkGrabberController.ControllerLock) {
-                    synchronized (LGINSTANCE.getPackages()) {
-                        if (gatherer_running) {
-                            ArrayList<LinkGrabberFilePackage> fps = LGINSTANCE.getPackages();
-                            int count = 0;
-                            for (LinkGrabberFilePackage fp : fps) {
-                                count += 1 + fp.size();
-                            }
-                            if (count > (internalTable.getVisibleRect().getHeight() / 16.0)) {
-                                for (LinkGrabberFilePackage fp : fps) {
-                                    if (!fp.getBooleanProperty(LinkGrabberTable.PROPERTY_USEREXPAND, false)) fp.setProperty(LinkGrabberTable.PROPERTY_EXPANDED, false);
-                                }
-                            } else {
-                                for (LinkGrabberFilePackage fp : fps) {
-                                    if (!fp.getBooleanProperty(LinkGrabberTable.PROPERTY_USEREXPAND, false)) fp.setProperty(LinkGrabberTable.PROPERTY_EXPANDED, true);
-                                }
-                            }
+        synchronized (LinkGrabberController.ControllerLock) {
+            synchronized (LGINSTANCE.getPackages()) {
+                if (gatherer_running) {
+                    ArrayList<LinkGrabberFilePackage> fps = LGINSTANCE.getPackages();
+                    int count = 0;
+                    for (LinkGrabberFilePackage fp : fps) {
+                        count += 1 + fp.size();
+                    }
+                    if (count > (internalTable.getVisibleRect().getHeight() / 16.0)) {
+                        for (LinkGrabberFilePackage fp : fps) {
+                            if (!fp.getBooleanProperty(LinkGrabberTable.PROPERTY_USEREXPAND, false)) fp.setProperty(LinkGrabberTable.PROPERTY_EXPANDED, false);
+                        }
+                    } else {
+                        for (LinkGrabberFilePackage fp : fps) {
+                            if (!fp.getBooleanProperty(LinkGrabberTable.PROPERTY_USEREXPAND, false)) fp.setProperty(LinkGrabberTable.PROPERTY_EXPANDED, true);
                         }
                     }
                 }
+
                 try {
                     internalTable.fireTableChanged();
                 } catch (Exception e) {
                     logger.severe("TreeTable Exception, complete refresh!");
                     Update_Async.restart();
                 }
-                if (!fast) tablerefreshinprogress = false;
             }
-        }.start();
+        }
     }
 
     // @Override
@@ -741,14 +734,18 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         fp.setExtractAfterDownload(fpv2.isExtractAfterDownload());
         addToDownloadDirs(fpv2.getDownloadDirectory(), fpv2.getName());
 
+        fp.setDownloadDirectory(fpv2.getDownloadDirectory());
         if (fpv2.useSubDir()) {
             File file = new File(new File(fpv2.getDownloadDirectory()), fp.getName());
-            if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CREATE_SUBFOLDER_BEFORE_DOWNLOAD, false)) {
-                if (!file.exists()) file.mkdirs();
-            }
             fp.setDownloadDirectory(file.getAbsolutePath());
-        } else {
-            fp.setDownloadDirectory(fpv2.getDownloadDirectory());
+            if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CREATE_SUBFOLDER_BEFORE_DOWNLOAD, false)) {
+                if (!file.exists()) {
+                    if (!file.mkdirs()) {
+                        logger.severe("could not create " + file.toString());
+                        fp.setDownloadDirectory(fpv2.getDownloadDirectory());
+                    }
+                }
+            }
         }
         int files = 0;
         if (host == null) {

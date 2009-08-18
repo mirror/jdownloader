@@ -26,7 +26,6 @@ import java.util.Iterator;
 import javax.swing.Timer;
 
 import jd.event.JDBroadcaster;
-import jd.nutils.Formatter;
 import jd.nutils.jobber.JDRunnable;
 import jd.nutils.jobber.Jobber;
 import jd.plugins.DownloadLink;
@@ -108,9 +107,6 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
                 long reqtime = System.currentTimeMillis() - timer;
                 for (DownloadLink d : hosterList) {
                     d.setRequestTime(reqtime);
-                    if (d.getLinkStatus().getStatusText() == null || d.getLinkStatus().getStatusText().trim().length() == 0) {
-                        d.getLinkStatus().setStatusText(JDL.LF("jd.gui.skins.simple.components.linkgrabber.linkcheck.downloadlink.statustext.requesttime", "Requesttime: %s", Formatter.formatMilliseconds(System.currentTimeMillis() - timer)));
-                    }
                 }
                 getBroadcaster().fireEvent(new LinkCheckEvent(this, LinkCheckEvent.AFTER_CHECK, hosterList));
                 pc.increase(hosterList.size());

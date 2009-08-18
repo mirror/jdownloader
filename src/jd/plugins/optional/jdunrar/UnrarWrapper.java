@@ -116,7 +116,6 @@ public class UnrarWrapper extends Thread implements JDRunnable {
         this.currentlyWorkingOn = currentlyWorkingOn;
     }
 
-    private String latestStatus;
     private int currentVolume = 1;
     private long startTime;
     private SubConfiguration config = null;
@@ -269,7 +268,6 @@ public class UnrarWrapper extends Thread implements JDRunnable {
             JDLogger.exception(e);
             fireEvent(JDUnrarConstants.WRAPPER_EXTRACTION_FAILED);
         }
-
     }
 
     private boolean checkSizes() {
@@ -297,14 +295,14 @@ public class UnrarWrapper extends Thread implements JDRunnable {
     private void removeArchiveFiles() {
         for (String file : archiveParts) {
             if (file != null && file.trim().length() > 0) {
-                if (new File(file).isAbsolute()) {
-                    new File(file).delete();
-                    new File(file).deleteOnExit();
+                File tmpFile = new File(file);
+                if (tmpFile.isAbsolute()) {
+                    if (!tmpFile.delete()) tmpFile.deleteOnExit();
                     JDLogger.getLogger().warning("Deleted archive after extraction: " + new File(file));
                 } else {
-                    new File(this.file.getParentFile(), file).delete();
-                    new File(this.file.getParentFile(), file).deleteOnExit();
-                    logger.warning("Deleted archive after extraction: " + new File(this.file.getParentFile(), file));
+                    tmpFile = new File(this.file.getParentFile(), file);
+                    if (!tmpFile.delete()) tmpFile.deleteOnExit();
+                    logger.warning("Deleted archive after extraction: " + tmpFile);
                 }
             }
         }
@@ -338,11 +336,13 @@ public class UnrarWrapper extends Thread implements JDRunnable {
         exec.addParameter("-v");
         exec.addParameter("-ierr");
         exec.addParameter(file.getAbsolutePath());
+        exec.setRunin(file.getParentFile().getAbsolutePath());
         if (extractTo != null) {
-            extractTo.mkdirs();
-            exec.setRunin(extractTo.getAbsolutePath());
-        } else {
-            exec.setRunin(file.getParentFile().getAbsolutePath());
+            if (!extractTo.mkdirs()) {
+                exec.setRunin(extractTo.getAbsolutePath());
+            } else {
+                logger.severe("could not create " + extractTo.toString());
+            }
         }
         exec.setWaitTimeout(-1);
         exec.addProcessListener(new ExtractListener(), Executer.LISTENER_ERRORSTREAM);
@@ -717,7 +717,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
                         String name = matchervolumes.group(1);
 
                         if (name.matches("\\*.*")) {
-                            name = name.replaceFirst(".", "");
+                            name = name.replaceFirst("\\.", "");
 
                             long size = Long.parseLong(matchervolumes.group(2));
                             this.isProtected = true;
@@ -741,7 +741,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
                             }
 
                         } else {
-                            name = name.replaceFirst(".", "");
+                            name = name.replaceFirst("\\.", "");
                             if (!name.equals(namen) && !matchervolumes.group(4).equals("D")) {
 
                                 tmp = new ArchivFile(name);
@@ -784,10 +784,6 @@ public class UnrarWrapper extends Thread implements JDRunnable {
 
     public int getCurrentVolume() {
         return currentVolume;
-    }
-
-    public String getLatestStatus() {
-        return latestStatus;
     }
 
     public long getExtractedSize() {
@@ -988,6 +984,5 @@ public class UnrarWrapper extends Thread implements JDRunnable {
 
     public void go() throws Exception {
         run();
-
     }
 }

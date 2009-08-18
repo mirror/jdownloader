@@ -69,7 +69,6 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
     private PremiumTable internalTable;
     private JScrollPane scrollPane;
     private Timer Update_Async;
-    private boolean tablerefreshinprogress = false;
     protected Logger logger = JDLogger.getLogger();
 
     public Premium(Configuration configuration) {
@@ -240,21 +239,12 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
     }
 
     public void fireTableChanged(final boolean fast) {
-        if (tablerefreshinprogress && !fast) return;
-        new Thread() {
-            public void run() {
-                if (!fast) tablerefreshinprogress = true;
-                this.setName("PremiumPanel: refresh Table");
-                try {
-                    internalTable.fireTableChanged();
-                } catch (Exception e) {
-                    logger.severe("TreeTable Exception, complete refresh!");
-                    Update_Async.restart();
-                }
-                if (!fast) tablerefreshinprogress = false;
-            }
-        }.start();
-
+        try {
+            internalTable.fireTableChanged();
+        } catch (Exception e) {
+            logger.severe("TreeTable Exception, complete refresh!");
+            Update_Async.restart();
+        }
     }
 
     @Override

@@ -93,8 +93,6 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
 
     private FilePackageInfo filePackageInfo;
 
-    private boolean tableRefreshInProgress = false;
-
     private JScrollPane scrollPane;
 
     public DownloadLinksPanel() {
@@ -237,24 +235,13 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
     }
 
     public void fireTableChanged(int id, ArrayList<Object> objs) {
-
-        if (tableRefreshInProgress && id != REFRESH_DATA_AND_STRUCTURE_CHANGED_FAST) return;
-        final ArrayList<Object> objs2 = new ArrayList<Object>(objs);
-        final int id2 = id;
-        new Thread() {
-            public void run() {
-                if (id2 != REFRESH_DATA_AND_STRUCTURE_CHANGED_FAST) tableRefreshInProgress = true;
-                try {
-                    internalTable.fireTableChanged(id2, objs2);
-                } catch (Exception e) {
-                    logger.severe("TreeTable Exception, complete refresh!");
-                    updateTableTask(REFRESH_DATA_AND_STRUCTURE_CHANGED, null);
-                }
-
-                if (id2 != REFRESH_DATA_AND_STRUCTURE_CHANGED_FAST) tableRefreshInProgress = false;
-                return;
-            }
-        }.start();
+        try {
+            internalTable.fireTableChanged(id, objs);
+        } catch (Exception e) {
+            logger.severe("TreeTable Exception, complete refresh!");
+            updateTableTask(REFRESH_DATA_AND_STRUCTURE_CHANGED, null);
+        }
+        return;
     }
 
     public void onShow() {
@@ -284,60 +271,62 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
             asyncUpdate.restart();
             return;
         }
-        synchronized (jobObjects) {
-            switch (id) {
-            case REFRESH_DATA_AND_STRUCTURE_CHANGED: {
-                changed = true;
-                this.jobID = REFRESH_DATA_AND_STRUCTURE_CHANGED;
-                this.jobObjects.clear();
-                break;
-            }
-            case REFRESH_ALL_DATA_CHANGED: {
-                switch (this.jobID) {
-                case REFRESH_DATA_AND_STRUCTURE_CHANGED:
-                case REFRESH_ALL_DATA_CHANGED:
-                    break;
-                case NO_JOB:
-                case REFRESH_SPECIFIED_LINKS:
+        synchronized (DownloadController.ControllerLock) {
+            synchronized (jobObjects) {
+                switch (id) {
+                case REFRESH_DATA_AND_STRUCTURE_CHANGED: {
                     changed = true;
-                    this.jobID = REFRESH_ALL_DATA_CHANGED;
+                    this.jobID = REFRESH_DATA_AND_STRUCTURE_CHANGED;
                     this.jobObjects.clear();
                     break;
                 }
-                break;
-            }
-            case REFRESH_SPECIFIED_LINKS: {
-                switch (this.jobID) {
-                case REFRESH_DATA_AND_STRUCTURE_CHANGED:
-                case REFRESH_ALL_DATA_CHANGED:
-                    break;
-                case NO_JOB:
-                case REFRESH_SPECIFIED_LINKS:
-                    this.jobID = REFRESH_SPECIFIED_LINKS;
-                    if (Param instanceof DownloadLink) {
-                        if (!jobObjects.contains(Param)) {
-                            changed = true;
-                            jobObjects.add(Param);
-                        }
-                        if (!jobObjects.contains(((DownloadLink) Param).getFilePackage())) {
-                            changed = true;
-                            jobObjects.add(((DownloadLink) Param).getFilePackage());
-                        }
-                    } else if (Param instanceof ArrayList) {
-                        for (DownloadLink dl : (ArrayList<DownloadLink>) Param) {
-                            if (!jobObjects.contains(dl)) {
-                                changed = true;
-                                jobObjects.add(dl);
-                            }
-                            if (!jobObjects.contains(dl.getFilePackage())) {
-                                changed = true;
-                                jobObjects.add(dl.getFilePackage());
-                            }
-                        }
+                case REFRESH_ALL_DATA_CHANGED: {
+                    switch (this.jobID) {
+                    case REFRESH_DATA_AND_STRUCTURE_CHANGED:
+                    case REFRESH_ALL_DATA_CHANGED:
+                        break;
+                    case NO_JOB:
+                    case REFRESH_SPECIFIED_LINKS:
+                        changed = true;
+                        this.jobID = REFRESH_ALL_DATA_CHANGED;
+                        this.jobObjects.clear();
+                        break;
                     }
                     break;
                 }
-            }
+                case REFRESH_SPECIFIED_LINKS: {
+                    switch (this.jobID) {
+                    case REFRESH_DATA_AND_STRUCTURE_CHANGED:
+                    case REFRESH_ALL_DATA_CHANGED:
+                        break;
+                    case NO_JOB:
+                    case REFRESH_SPECIFIED_LINKS:
+                        this.jobID = REFRESH_SPECIFIED_LINKS;
+                        if (Param instanceof DownloadLink) {
+                            if (!jobObjects.contains(Param)) {
+                                changed = true;
+                                jobObjects.add(Param);
+                            }
+                            if (!jobObjects.contains(((DownloadLink) Param).getFilePackage())) {
+                                changed = true;
+                                jobObjects.add(((DownloadLink) Param).getFilePackage());
+                            }
+                        } else if (Param instanceof ArrayList) {
+                            for (DownloadLink dl : (ArrayList<DownloadLink>) Param) {
+                                if (!jobObjects.contains(dl)) {
+                                    changed = true;
+                                    jobObjects.add(dl);
+                                }
+                                if (!jobObjects.contains(dl.getFilePackage())) {
+                                    changed = true;
+                                    jobObjects.add(dl.getFilePackage());
+                                }
+                            }
+                        }
+                        break;
+                    }
+                }
+                }
             }
         }
         if (!changed && (System.currentTimeMillis() - latestAsyncUpdate > UPDATE_TIMING + 100)) {
@@ -348,10 +337,12 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
 
     private void fireTableTask() {
         latestAsyncUpdate = System.currentTimeMillis();
-        synchronized (jobObjects) {
-            if (isShown() && jobID != NO_JOB) fireTableChanged(this.jobID, this.jobObjects);
-            this.jobID = NO_JOB;
-            this.jobObjects.clear();
+        synchronized (DownloadController.ControllerLock) {
+            synchronized (jobObjects) {
+                if (isShown() && jobID != NO_JOB) fireTableChanged(this.jobID, this.jobObjects);
+                this.jobID = NO_JOB;
+                this.jobObjects.clear();
+            }
         }
     }
 

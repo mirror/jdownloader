@@ -62,7 +62,7 @@ public class EnabledColumn extends JDTableColumn implements ActionListener {
     }
 
     @Override
-    public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
+    public Component myTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
         if (value instanceof Account) {
             enabled = ((Account) value).isEnabled();
         } else {
@@ -76,9 +76,7 @@ public class EnabledColumn extends JDTableColumn implements ActionListener {
     }
 
     @Override
-    public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-        hasFocus = false;
-        column = this.getJDTableModel().toModel(column);
+    public Component myTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         if (value instanceof Account) {
             Account ac = (Account) value;
             value = ac.isEnabled();
