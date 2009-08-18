@@ -20,9 +20,8 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Vector;
-
+import jd.captcha.easy.BackGroundImageTrainer;
 import jd.captcha.easy.ColorTrainer;
-
 import jd.captcha.easy.CPoint;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
@@ -81,6 +80,10 @@ public class EasyCaptcha {
 
     private static int[] clean(Captcha captcha) {
         File file = captcha.owner.getResourceFile("CPoints.xml");
+        BackGroundImageTrainer bgit = new BackGroundImageTrainer(file.getParentFile().getName());
+        bgit.captchaImage=captcha;
+        bgit.load();
+        bgit.clearCaptcha();
         // System.out.println(file);
         Vector<CPoint> ret = ColorTrainer.load(file);
         // gibt an welche höhe der größte Buchstabe hat

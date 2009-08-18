@@ -5,6 +5,8 @@ import java.awt.GridLayout;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.io.File;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -17,6 +19,8 @@ import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import javax.swing.SpinnerNumberModel;
+
+import jd.nutils.io.JDIO;
 
 import jd.JDInit;
 
@@ -216,7 +220,9 @@ public class EasyCaptchaTool {
 
         CreateHoster.setImageType(meth);
         File folder = meth.getCaptchaFolder();
-        if (!folder.exists() || folder.list().length < 1) return;
+        if (!folder.exists() || folder.list().length < 1) {
+            System.exit(0);
+        }
         final JAntiCaptcha jac = new JAntiCaptcha(Utilities.getMethodDir(), meth.getName());
         final JDialog dialog = new GuiRunnable<JDialog>() {
             // @Override
@@ -224,12 +230,34 @@ public class EasyCaptchaTool {
                 return new JDialog(DummyFrame.getDialogParent());
             }
         }.getReturnValue();
-        dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        dialog.addWindowListener(new WindowListener() {
+            public void windowActivated(WindowEvent e) {
+            }
+
+            public void windowClosed(WindowEvent e) {
+            }
+
+            public void windowClosing(WindowEvent e) {
+                System.exit(0);
+            }
+
+            public void windowDeactivated(WindowEvent e) {
+            }
+
+            public void windowDeiconified(WindowEvent e) {
+            }
+
+            public void windowIconified(WindowEvent e) {
+            }
+
+            public void windowOpened(WindowEvent e) {
+            }
+        });
         dialog.setLocation(Screen.getCenterOfComponent(DummyFrame.getDialogParent(), dialog));
         dialog.setTitle(JDL.L("easycaptcha.tool.title", "EasyCaptcha"));
         final JPanel box = new GuiRunnable<JPanel>() {
             public JPanel runSave() {
-                return new JPanel(new GridLayout(3, 1));
+                return new JPanel(new GridLayout(5, 1));
             }
         }.getReturnValue();
         JButton btnTrain = new GuiRunnable<JButton>() {
@@ -270,7 +298,7 @@ public class EasyCaptchaTool {
             }
         });
         box.add(btnShowLetters);
-        JButton btnColorTrainer = new GuiRunnable<JButton>() {
+        final JButton btnColorTrainer = new GuiRunnable<JButton>() {
             public JButton runSave() {
                 return new JButton(JDL.L("easycaptcha.tool.btn.colortrainer", "Train Colors"));
             }
@@ -290,6 +318,25 @@ public class EasyCaptchaTool {
             }
         });
         box.add(btnColorTrainer);
+        final JButton btnBackGround = new GuiRunnable<JButton>() {
+            public JButton runSave() {
+                return new JButton(JDL.L("easycaptcha.tool.btn.background", "Remove Backgrounds"));
+            }
+        }.getReturnValue();
+        btnBackGround.addActionListener(new ActionListener() {
+
+            public void actionPerformed(ActionEvent e) {
+
+                new Thread(new Runnable() {
+
+                    public void run() {
+                        new BackGroundImageTrainer(meth.getName()).initGui();
+                    }
+                }).start();
+
+            }
+        });
+        box.add(btnBackGround);
         JButton btnColorLoadCaptchas = new GuiRunnable<JButton>() {
             public JButton runSave() {
                 return new JButton(JDL.L("easycaptcha.tool.btn.loadcaptchas", "Load Captchas"));
@@ -302,13 +349,23 @@ public class EasyCaptchaTool {
                 new Thread(new Runnable() {
 
                     public void run() {
-                        LoadCaptchas.load(meth.getName(),false);
+                        LoadCaptchas.load(meth.getName(), false);
 
                     }
                 }).start();
 
             }
         });
+        if(!JDIO.getLocalFile(meth.getScriptJas()).contains("param.useSpecialGetLetters=EasyCaptcha.getLetters;"))
+        {
+            new GuiRunnable<Object>() {
+                public Object runSave() {
+                    btnColorTrainer.setEnabled(false);
+                    btnBackGround.setEnabled(false);
+                    return null;
+                }
+            }.waitForEDT();
+        }
         box.add(btnColorLoadCaptchas);
         dialog.add(box);
         new GuiRunnable<Object>() {

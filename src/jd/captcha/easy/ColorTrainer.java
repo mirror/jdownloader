@@ -593,15 +593,22 @@ public class ColorTrainer {
             if (captchaImage == null) continue;
             Captcha captcha = jac.createCaptcha(captchaImage);
             if (captcha == null) continue;
-
+            EasyFile ef = new EasyFile(file.getParent());
+            BackGroundImageTrainer bgit = new BackGroundImageTrainer(ef.getName());
+            bgit.captchaImage=captcha;
+            bgit.load();
+            bgit.clearCaptcha();
             captcha.setCaptchaFile(captchafile);
             cs[i] = captcha;
             final ColorTrainer cc = new ColorTrainer();
+            cc.ret = c;
+
             if (lastCC != null) {
                 final ColorTrainer last = lastCC;
                 cc.fastSelection = lastCC.fastSelection;
                 cc.foreground = lastCC.foreground;
                 cc.add = lastCC.add;
+                cc.ret = lastCC.ret;
                 cc.tollerance = lastCC.tollerance;
                 new GuiRunnable<Object>() {
                     public Object runSave() {
@@ -611,7 +618,6 @@ public class ColorTrainer {
                     }
                 }.waitForEDT();
             }
-            cc.ret = c;
             cc.init(captcha);
             synchronized (cc) {
                 try {
@@ -650,7 +656,7 @@ public class ColorTrainer {
 
     public static void main(String[] args) {
         String path = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath();
-        String hoster = "relfreaks.com";
+        String hoster = "canna.to";
         File folder = new File(path + "/captchas/" + hoster);
         getColors(folder, hoster, null);
     }

@@ -10,7 +10,6 @@ import java.util.Map.Entry;
 
 import javax.imageio.ImageIO;
 
-
 import jd.controlling.JDLogger;
 
 import jd.captcha.pixelgrid.Captcha;
@@ -21,9 +20,13 @@ import jd.captcha.utils.Utilities;
 
 import jd.utils.JDUtilities;
 
-public class BackGroundImageGenerator {
+public class BackgroundFilterCreater {
+    public static File create(EasyFile methode)
+    {
+        return create(methode.getCaptchaFolder().listFiles(), methode);
+    }
     @SuppressWarnings("unchecked")
-    public BackGroundImageGenerator(File[] files, EasyFile methode) {
+    public static File create(File[] files, EasyFile methode) {
         JAntiCaptcha jac = new JAntiCaptcha(Utilities.getMethodDir(), methode.getName());
         Image image = Utilities.loadImage(files[0]);
         Captcha firstCaptcha = jac.createCaptcha(image);
@@ -80,19 +83,20 @@ public class BackGroundImageGenerator {
                 firstCaptcha.setPixelValue(x, y, best.getKey());
             }
         }
+        File ret = new File(methode.file, "mask_" + System.currentTimeMillis() + ".jpg");
         try {
-            ImageIO.write((RenderedImage)firstCaptcha.getImage(), "png", new File(methode.file, "mask_"+System.currentTimeMillis()+".jpg"));
+            ImageIO.write((RenderedImage) firstCaptcha.getImage(), "png", ret);
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-
+        return ret;
     }
 
     public static void main(String[] args) {
         String host = "canna.to";
         EasyFile methode = new EasyFile(new File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/" + JDUtilities.getJACMethodsDirectory(), host));
-        new BackGroundImageGenerator(methode.getCaptchaFolder().listFiles(), methode);
+        create(methode.getCaptchaFolder().listFiles(), methode);
     }
 
 }

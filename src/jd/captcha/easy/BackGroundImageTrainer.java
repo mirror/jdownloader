@@ -1,6 +1,7 @@
 package jd.captcha.easy;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -37,12 +38,12 @@ public class BackGroundImageTrainer {
     private Vector<BackGroundImage> c;
     private EasyFile methode;
     private ImageComponent bg1, bgv;
-    private Captcha captchaImage;
+    public Captcha captchaImage;
     private BackGroundImage dialogImage;
     public int zoom = 400;
     JPanel images;
     private JComboBox mode;
-
+    
     private File getBgImagesXmlFile() {
         return new File(methode.getJacinfoXml().getParent(), "bgimages.xml");
     }
@@ -96,11 +97,63 @@ public class BackGroundImageTrainer {
                 gbc.weightx = 1;
                 
                 box.add(images, gbc);
+
                 final JSpinner tolleranceSP = new JSpinner(new SpinnerNumberModel(tol, 0, 360, 1));
                 tolleranceSP.setToolTipText("Threshold");
                 Box menu = new Box(BoxLayout.X_AXIS);
                 JButton btLoadBackgroundImage = new JButton(JDL.L("easycaptcha.addbackgroundimagedialog.loadimage", "Load BackgroundImage"));
                 menu.add(btLoadBackgroundImage);
+                JButton btCreateBackgroundFilter = new JButton(JDL.L("easycaptcha.addbackgroundimagedialog.generate", "Generate Backgroundfilter"));
+                menu.add(btCreateBackgroundFilter);
+                Color defColor=Color.WHITE;
+                if(dialogImage!=null)
+                    defColor=new Color(dialogImage.getColor());
+                final JColorChooser chooser = new JColorChooser(defColor);
+                JButton btchoose = new JButton(JDL.L("easycaptcha.addbackgroundimagedialog.deletecolor", "Deletecolor"));
+                menu.add(btchoose);
+                btchoose.addActionListener(new ActionListener() {
+
+                    public void actionPerformed(ActionEvent e) {
+                        new GuiRunnable<Object>() {
+                            public Object runSave() {
+                                JDialog dialog = JColorChooser.createDialog(chooser,
+                                        JDL.L("easycaptcha.addbackgroundimagedialog.deletecolor", "Deletecolor"), true, chooser,null, null);
+                                dialog.setVisible(true);
+                                dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+                                return null;
+                            }
+                        }.waitForEDT();
+                    }});
+                
+                final JButton btPreview = new JButton(JDL.L("easycaptcha.addbackgroundimagedialog.imagepreview", "Preview"));
+                if(dialogImage==null)
+                    btPreview.setEnabled(false);
+                btCreateBackgroundFilter.addActionListener(new ActionListener() {
+
+                    public void actionPerformed(ActionEvent e) {
+
+                        File fout = BackgroundFilterCreater.create(methode);
+                        dialogImage = new BackGroundImage();
+                        dialogImage.setBackgroundImage(fout.getName());
+                        dialogImage.setColor(chooser.getColor().getRGB());
+                        dialogImage.setDistance((Integer) tolleranceSP.getValue());
+                        dialogImage.setColorDistanceMode(((ColorMode) mode.getSelectedItem()).mode);
+                        c.add(dialogImage);
+                        clearCaptcha();
+                        c.remove(dialogImage);
+                        btPreview.setEnabled(true);
+                        final Image image2 = captchaImage.getImage().getScaledInstance(captchaImage.getWidth() * zoom / 100, captchaImage.getHeight() * zoom / 100, Image.SCALE_DEFAULT);
+
+                        new GuiRunnable<Object>() {
+                            public Object runSave() {
+                                bgv.image = image2;
+                                bgv.repaint();
+                                return null;
+                            }
+                        }.waitForEDT();
+                    }
+                });
+
                 btLoadBackgroundImage.addActionListener(new ActionListener() {
 
                     public void actionPerformed(ActionEvent e) {
@@ -137,11 +190,13 @@ public class BackGroundImageTrainer {
                         JDIO.copyFile(fch, fout);
                         dialogImage = new BackGroundImage();
                         dialogImage.setBackgroundImage(fout.getName());
+                        dialogImage.setColor(chooser.getColor().getRGB());
                         dialogImage.setDistance((Integer) tolleranceSP.getValue());
                         dialogImage.setColorDistanceMode(((ColorMode) mode.getSelectedItem()).mode);
                         c.add(dialogImage);
                         clearCaptcha();
                         c.remove(dialogImage);
+                        btPreview.setEnabled(true);
                         final Image image2 = captchaImage.getImage().getScaledInstance(captchaImage.getWidth() * zoom / 100, captchaImage.getHeight() * zoom / 100, Image.SCALE_DEFAULT);
 
                         new GuiRunnable<Object>() {
@@ -153,13 +208,15 @@ public class BackGroundImageTrainer {
                         }.waitForEDT();
                     }
                 });
-                JButton btPreview = new JButton(JDL.L("easycaptcha.addbackgroundimagedialog.imagepreview", "Preview"));
+
                 menu.add(btPreview);
                 btPreview.addActionListener(new ActionListener() {
 
                     public void actionPerformed(ActionEvent e) {
                         dialogImage.setDistance((Integer) tolleranceSP.getValue());
                         dialogImage.setColorDistanceMode(((ColorMode) mode.getSelectedItem()).mode);
+                        dialogImage.setColor(chooser.getColor().getRGB());
+
                         c.add(dialogImage);
                         clearCaptcha();
                         c.remove(dialogImage);
@@ -317,9 +374,9 @@ public class BackGroundImageTrainer {
                             public Object runSave() {
                                 tmpPanel.remove(ic);
                                 tmpPanel.remove(del);
+                                tmpPanel.remove(edit);
                                 c.remove(bgio);
                                 tmpPanel.revalidate();
-
                                 mainDialog.pack();
                                 return null;
                             }
@@ -352,7 +409,7 @@ public class BackGroundImageTrainer {
         }
     }
 
-    public void clearCaptcha(BackGroundImage bgi, Captcha cleanImg, int avg) {
+    public void clearCaptcha(BackGroundImage bgi, Captcha cleanImg) {
 
         if (cleanImg.getWidth() != captchaImage.getWidth() || cleanImg.getHeight() != captchaImage.getHeight()) {
             if (Utilities.isLoggerActive()) {
@@ -360,17 +417,16 @@ public class BackGroundImageTrainer {
             }
             return;
         }
+        int color = bgi.getColor();
 
         for (int x = 0; x < captchaImage.getWidth(); x++) {
             for (int y = 0; y < captchaImage.getHeight(); y++) {
                 int pv = captchaImage.getPixelValue(x, y);
-                if(pv!=avg)
-                {
                 bgi.setColor(cleanImg.getPixelValue(x, y));
-                if (bgi.getColorDifference(pv) < bgi.getDistance()) captchaImage.setPixelValue(x, y, avg);
-                }
+                if (bgi.getColorDifference(pv) < bgi.getDistance()) captchaImage.setPixelValue(x, y, color);
             }
         }
+        bgi.setColor(color);
     }
 
     public void clearCaptcha() {
@@ -379,10 +435,8 @@ public class BackGroundImageTrainer {
         BackGroundImage bestBgi = null;
         captchaImage.reset();
         captchaImage.setOrgGrid(PixelGrid.getGridCopy(captchaImage.grid));
-        int avg = captchaImage.getAverage();
-
         for (BackGroundImage bgi : c) {
-
+            int color = bgi.getColor();
             Image bImage = Utilities.loadImage(new File(methode.file, bgi.getBackgroundImage()));
             if (bImage.getWidth(null) != captchaImage.getWidth() || bImage.getHeight(null) != captchaImage.getHeight()) {
                 if (Utilities.isLoggerActive()) {
@@ -398,6 +452,7 @@ public class BackGroundImageTrainer {
                     if (bgi.getColorDifference(captchaImage.getPixelValue(x, y)) < bgi.getDistance()) val++;
                 }
             }
+            bgi.setColor(color);
             if (val > bestVal) {
                 best = captcha2;
                 bestVal = val;
@@ -405,17 +460,12 @@ public class BackGroundImageTrainer {
             }
         }
         if (best != null) {
-            clearCaptcha(bestBgi, best, avg);
+            clearCaptcha(bestBgi, best);
         }
     }
 
     public BackGroundImageTrainer(String hoster) {
         methode = new EasyFile(new File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/" + JDUtilities.getJACMethodsDirectory(), hoster));
-    }
-
-    public static void main(String[] args) {
-        new BackGroundImageTrainer("canna.to").initGui();
-        System.exit(0);
     }
 
 }
