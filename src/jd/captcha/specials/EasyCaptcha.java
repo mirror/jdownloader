@@ -36,13 +36,15 @@ import jd.captcha.pixelobject.PixelObject;
  * @author JD-Team
  */
 public class EasyCaptcha {
-    private static int mergeObjectsBasic(Vector<PixelObject> os) {
+    private static int mergeObjectsBasic(Vector<PixelObject> os, Captcha captcha) {
         int area = 0;
         try {
             for (PixelObject pixelObject : os) {
                 area += pixelObject.getArea();
             }
-            area /= os.size() * 3;
+            if (os.size() <= captcha.owner.getLetterNum()) area /= os.size() * 3;
+            else
+            area /= os.size() * 2;
             for (Iterator<PixelObject> iterator = os.iterator(); iterator.hasNext();) {
                 PixelObject a = (PixelObject) iterator.next();
                 if (a.getArea() < area) {
@@ -66,7 +68,7 @@ public class EasyCaptcha {
                     }
                     nextos.add(a);
 
-                    return mergeObjectsBasic(os);
+                    return mergeObjectsBasic(os, captcha);
                 }
 
             }
@@ -125,13 +127,6 @@ public class EasyCaptcha {
                 else
                     ColorGab[x] = Colors.mixColors(ColorGab[x], grid[akt[0]][akt[1]]);
             }
-            Letter let = biggest.toLetter();
-            for (int y = 0; y < let.getHeight(); y++) {
-                for (int x = 0; x < ColorGab.length; x++) {
-                    let.setPixelValue(x, y, ColorGab[x]);
-                }
-            }
-            BasicWindow.showImage(let.getImage());
             int best = gab.length /3;
             double bestCGab = Double.MIN_VALUE;
             int bestCGabPos = best + 1;
@@ -245,7 +240,7 @@ public class EasyCaptcha {
         // captcha.removeSmallObjects(0.75, 0.75, 6);
         Vector<PixelObject> os = captcha.getObjects(0.5, 0.5);
         Collections.sort(os);
-        int area = mergeObjectsBasic(os);
+        int area = mergeObjectsBasic(os, captcha);
         mergeObjects(os, captcha, pixels);
 
         getRightletters(os, captcha, pixels);
