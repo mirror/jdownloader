@@ -49,6 +49,7 @@ class BooleanRenderer extends JCheckBox implements TableCellRenderer, UIResource
 public class EnabledColumn extends JDTableColumn implements ActionListener {
     private static final long serialVersionUID = -1043261559739746995L;
     private Component co;
+    private Component coedit;
     private BooleanRenderer boolrend;
     private JCheckBox checkbox;
     private static Dimension dim = new Dimension(200, 30);
@@ -71,8 +72,8 @@ public class EnabledColumn extends JDTableColumn implements ActionListener {
         checkbox.removeActionListener(this);
         checkbox.setSelected(enabled);
         checkbox.addActionListener(this);
-        co = checkbox;
-        return co;
+        coedit = checkbox;
+        return coedit;
     }
 
     @Override
@@ -113,8 +114,8 @@ public class EnabledColumn extends JDTableColumn implements ActionListener {
     }
 
     public Object getCellEditorValue() {
-        if (co == null || !(co instanceof JCheckBox)) return null;
-        return ((JCheckBox) co).isSelected();
+        if (coedit == null) return null;
+        return ((JCheckBox) coedit).isSelected();
 
     }
 

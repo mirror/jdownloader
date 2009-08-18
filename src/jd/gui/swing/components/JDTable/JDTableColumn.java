@@ -1,6 +1,7 @@
 package jd.gui.swing.components.JDTable;
 
 import java.awt.Component;
+import java.util.EventObject;
 
 import javax.swing.AbstractCellEditor;
 import javax.swing.JTable;
@@ -35,12 +36,18 @@ public abstract class JDTableColumn extends AbstractCellEditor implements TableC
     }
 
     public void setValueAt(Object value, int rowIndex, int columnIndex) {
+        columnIndex = this.getJDTableModel().toModel(columnIndex);
         Object obj = table.getValueAt(rowIndex, columnIndex);
         if (obj == null) return;
         setValue(value, obj);
     }
 
+    public boolean shouldSelectCell(EventObject anEvent) {
+        return true;
+    }
+
     public boolean isCellEditable(int rowIndex, int columnIndex) {
+        columnIndex = this.getJDTableModel().toModel(columnIndex);
         Object obj = table.getValueAt(rowIndex, columnIndex);
         if (obj == null) return false;
         return isEditable(obj);
@@ -51,6 +58,8 @@ public abstract class JDTableColumn extends AbstractCellEditor implements TableC
     abstract public boolean isEditable(Object obj);
 
     public Component getDefaultTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+        hasFocus = false;
+        column = this.getJDTableModel().toModel(column);
         return defaultrenderer.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
     }
 

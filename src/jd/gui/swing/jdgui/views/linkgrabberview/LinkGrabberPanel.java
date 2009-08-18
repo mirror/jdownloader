@@ -235,7 +235,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         }.start();
     }
 
-    public void fireTableChanged(final boolean fast) {
+    public void fireTableChanged() {
         synchronized (LinkGrabberController.ControllerLock) {
             synchronized (LGINSTANCE.getPackages()) {
                 if (gatherer_running) {
@@ -254,7 +254,6 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                         }
                     }
                 }
-
                 try {
                     internalTable.fireTableChanged();
                 } catch (Exception e) {
@@ -391,7 +390,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
     public void onShow() {
         notvisible = false;
         LGINSTANCE.addListener(this);
-        fireTableChanged(true);
+        fireTableChanged();
     }
 
     public Set<String> getHosterList(ArrayList<DownloadLink> links) {
@@ -410,7 +409,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
             public void run() {
                 this.setName("LinkGrabberPanel: actionPerformed");
                 if (arg0.getSource() == INSTANCE.Update_Async) {
-                    fireTableChanged(false);
+                    fireTableChanged();
                     return;
                 }
 

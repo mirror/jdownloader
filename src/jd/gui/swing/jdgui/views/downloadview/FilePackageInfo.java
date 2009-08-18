@@ -251,69 +251,72 @@ public class FilePackageInfo extends JDCollapser implements ActionListener {
         if (updater != null && updater.isAlive()) return;
         updater = new Thread() {
             public void run() {
-                while (true && !hidden) {
-                    progressBarFilePackage.setMaximums(null);
-                    progressBarDownloadLink.setMaximums(null);
-                    if (fp != null) {
-                        long[] max = new long[fp.getDownloadLinkList().size()];
-                        long[] values = new long[fp.getDownloadLinkList().size()];
-                        int i = 0;
-                        for (DownloadLink dl : fp.getDownloadLinkList()) {
-                            max[i] = Math.max(1024, dl.getDownloadSize());
-                            values[i] = Math.max(1, dl.getDownloadCurrent());
-                            i++;
-                        }
-                        FilePackageInfo.this.progressBarFilePackage.setMaximums(max);
-                        FilePackageInfo.this.progressBarFilePackage.setValues(values);
-                    }
-                    if (downloadLink != null) {
-                        if (downloadLink.getChunksProgress() != null) {
-                            long fileSize = downloadLink.getDownloadSize();
-                            int chunks = downloadLink.getChunksProgress().length;
-                            long part = fileSize / chunks;
-
-                            long[] max = new long[chunks];
-                            long[] values = new long[chunks];
-                            for (int i = 0; i < chunks; i++) {
-                                max[i] = part;
-                                values[i] = downloadLink.getChunksProgress()[i] - i * part;
+                try {
+                    while (true && !hidden) {
+                        progressBarFilePackage.setMaximums(null);
+                        progressBarDownloadLink.setMaximums(null);
+                        if (fp != null) {
+                            long[] max = new long[fp.getDownloadLinkList().size()];
+                            long[] values = new long[fp.getDownloadLinkList().size()];
+                            int i = 0;
+                            for (DownloadLink dl : fp.getDownloadLinkList()) {
+                                max[i] = Math.max(1024, dl.getDownloadSize());
+                                values[i] = Math.max(1, dl.getDownloadCurrent());
+                                i++;
                             }
+                            FilePackageInfo.this.progressBarFilePackage.setMaximums(max);
+                            FilePackageInfo.this.progressBarFilePackage.setValues(values);
+                        }
+                        if (downloadLink != null) {
+                            if (downloadLink.getChunksProgress() != null) {
+                                long fileSize = downloadLink.getDownloadSize();
+                                int chunks = downloadLink.getChunksProgress().length;
+                                long part = fileSize / chunks;
 
-                            FilePackageInfo.this.progressBarDownloadLink.setMaximums(max);
-                            FilePackageInfo.this.progressBarDownloadLink.setValues(values);
-                        } else {
-                            FilePackageInfo.this.progressBarDownloadLink.setMaximums(new long[] { 10 });
-                            FilePackageInfo.this.progressBarDownloadLink.setValues(new long[] { 0 });
-                        }
-                        txtNameDl.setText(downloadLink.getName());
-                        if (downloadLink.getSourcePluginComment() != null && downloadLink.getSourcePluginComment().trim().length() > 0) {
-                            txtCommentDl.setText(downloadLink.getSourcePluginComment());
-                        } else {
-                            txtCommentDl.setText(downloadLink.getFilePackage().getComment());
-                        }
-                        if (downloadLink.getSourcePluginPasswordList() != null && downloadLink.getSourcePluginPasswordList().size() > 0) {
-                            txtPasswordDl.setText(downloadLink.getSourcePluginPasswordList().toString());
-                        } else {
-                            txtPasswordDl.setText(downloadLink.getFilePackage().getPassword());
-                        }
-                        txtStatusDl.setText(downloadLink.getLinkStatus().getStatusString());
+                                long[] max = new long[chunks];
+                                long[] values = new long[chunks];
+                                for (int i = 0; i < chunks; i++) {
+                                    max[i] = part;
+                                    values[i] = downloadLink.getChunksProgress()[i] - i * part;
+                                }
 
-                        if (downloadLink.getDownloadSpeed() <= 0) {
-                            eta.setVisible(false);
-                            speed.setVisible(false);
-                        } else {
-                            eta.setText(JDL.LF("gui.fileinfopanel.linktab.eta2", "ETA: %s", Formatter.formatSeconds((downloadLink.getDownloadSize() - downloadLink.getDownloadCurrent()) / downloadLink.getDownloadSpeed())));
-                            speed.setText(JDL.LF("gui.fileinfopanel.linktab.speed", "Speed: %s/s", Formatter.formatReadable(Math.max(0, downloadLink.getDownloadSpeed()))));
-                            speed.setVisible(true);
-                            eta.setVisible(true);
+                                FilePackageInfo.this.progressBarDownloadLink.setMaximums(max);
+                                FilePackageInfo.this.progressBarDownloadLink.setValues(values);
+                            } else {
+                                FilePackageInfo.this.progressBarDownloadLink.setMaximums(new long[] { 10 });
+                                FilePackageInfo.this.progressBarDownloadLink.setValues(new long[] { 0 });
+                            }
+                            txtNameDl.setText(downloadLink.getName());
+                            if (downloadLink.getSourcePluginComment() != null && downloadLink.getSourcePluginComment().trim().length() > 0) {
+                                txtCommentDl.setText(downloadLink.getSourcePluginComment());
+                            } else {
+                                txtCommentDl.setText(downloadLink.getFilePackage().getComment());
+                            }
+                            if (downloadLink.getSourcePluginPasswordList() != null && downloadLink.getSourcePluginPasswordList().size() > 0) {
+                                txtPasswordDl.setText(downloadLink.getSourcePluginPasswordList().toString());
+                            } else {
+                                txtPasswordDl.setText(downloadLink.getFilePackage().getPassword());
+                            }
+                            txtStatusDl.setText(downloadLink.getLinkStatus().getStatusString());
+
+                            if (downloadLink.getDownloadSpeed() <= 0) {
+                                eta.setVisible(false);
+                                speed.setVisible(false);
+                            } else {
+                                eta.setText(JDL.LF("gui.fileinfopanel.linktab.eta2", "ETA: %s", Formatter.formatSeconds((downloadLink.getDownloadSize() - downloadLink.getDownloadCurrent()) / downloadLink.getDownloadSpeed())));
+                                speed.setText(JDL.LF("gui.fileinfopanel.linktab.speed", "Speed: %s/s", Formatter.formatReadable(Math.max(0, downloadLink.getDownloadSpeed()))));
+                                speed.setVisible(true);
+                                eta.setVisible(true);
+                            }
+                        }
+                        revalidate();
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException e) {
+                            return;
                         }
                     }
-                    revalidate();
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        return;
-                    }
+                } catch (Exception e) {
                 }
             }
         };
@@ -382,7 +385,7 @@ public class FilePackageInfo extends JDCollapser implements ActionListener {
     @Override
     public void onClosed() {
         DownloadView.getInstance().setInfoPanel(null);
-        
+
     }
 
 }

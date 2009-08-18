@@ -45,8 +45,7 @@ public class UserColumn extends JDTableColumn implements ActionListener {
             co.setEnabled(ac.isEnabled());
         } else {
             HostAccounts ha = (HostAccounts) value;
-            value = ha.isEnabled();
-            co = getDefaultTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            co = getDefaultTableCellRendererComponent(table, "", isSelected, hasFocus, row, column);
             co.setEnabled(ha.isEnabled());
             co.setBackground(table.getBackground().darker());
         }
@@ -67,7 +66,7 @@ public class UserColumn extends JDTableColumn implements ActionListener {
     }
 
     public Object getCellEditorValue() {
-        if (coedit == null || !(coedit instanceof JTextField)) return null;
+        if (coedit == null) return null;
         return ((JTextField) coedit).getText();
     }
 

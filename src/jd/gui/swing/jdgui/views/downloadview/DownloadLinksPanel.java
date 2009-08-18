@@ -216,8 +216,8 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
             // @Override
             public Object runSave() {
                 DownloadView.getInstance().setInfoPanel(filePackageInfo);
-//                
-             
+                //                
+
                 return null;
             }
         }.start();
@@ -227,7 +227,7 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
         new GuiRunnable<Object>() {
             // @Override
             public Object runSave() {
-//                InfoPanelHandler.setPanel(null);
+                // InfoPanelHandler.setPanel(null);
 
                 return null;
             }
@@ -236,7 +236,9 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
 
     public void fireTableChanged(int id, ArrayList<Object> objs) {
         try {
-            internalTable.fireTableChanged(id, objs);
+            ArrayList<Object> objs2 = new ArrayList<Object>(objs);
+            int id2 = id;
+            internalTable.fireTableChanged(id2, objs2);
         } catch (Exception e) {
             logger.severe("TreeTable Exception, complete refresh!");
             updateTableTask(REFRESH_DATA_AND_STRUCTURE_CHANGED, null);
@@ -677,7 +679,6 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
     public void showDownloadLinkInfo(DownloadLink downloadLink) {
         filePackageInfo.setDownloadLink(downloadLink);
         DownloadView.getInstance().setInfoPanel(filePackageInfo);
-      
 
     }
 
