@@ -22,9 +22,6 @@ public class UserColumn extends JDTableColumn implements ActionListener {
         user = new JTextField();
     }
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = -5291590062503352550L;
     private Component co;
     private Component coedit;
@@ -71,13 +68,11 @@ public class UserColumn extends JDTableColumn implements ActionListener {
         if (o instanceof Account) ((Account) o).setUser(pw);
     }
 
-    @Override
     public Object getCellEditorValue() {
         if (coedit == null || !(coedit instanceof JTextField)) return null;
         return ((JTextField) coedit).getText();
     }
 
-    @Override
     public void actionPerformed(ActionEvent e) {
         user.removeActionListener(this);
         this.fireEditingStopped();

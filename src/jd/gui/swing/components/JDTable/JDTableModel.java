@@ -112,18 +112,22 @@ public abstract class JDTableModel extends AbstractTableModel {
         return i;
     }
 
+    @Override
     public String getColumnName(int column) {
         return columns.get(toModel(column)).getName();
     }
 
+    @Override
     public Class<?> getColumnClass(int columnIndex) {
         return Object.class;
     }
 
+    @Override
     public boolean isCellEditable(int rowIndex, int columnIndex) {
         return columns.get(columnIndex).isCellEditable(rowIndex, columnIndex);
     }
 
+    @Override
     public void setValueAt(Object value, int rowIndex, int columnIndex) {
         columns.get(columnIndex).setValueAt(value, rowIndex, columnIndex);
     }

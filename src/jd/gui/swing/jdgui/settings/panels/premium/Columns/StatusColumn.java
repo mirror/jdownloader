@@ -17,9 +17,6 @@ public class StatusColumn extends JDTableColumn {
         super(name, table);
     }
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = -5291590062503352550L;
     private Component co;
     private static Dimension dim = new Dimension(200, 30);
@@ -66,7 +63,6 @@ public class StatusColumn extends JDTableColumn {
 
     }
 
-    @Override
     public Object getCellEditorValue() {
         // TODO Auto-generated method stub
         return null;

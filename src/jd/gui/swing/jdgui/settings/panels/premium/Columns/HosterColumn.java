@@ -19,9 +19,6 @@ import org.jdesktop.swingx.renderer.JRendererLabel;
 
 public class HosterColumn extends JDTableColumn {
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = -6741644821097309670L;
     private Component co;
     private static Border leftGap = BorderFactory.createEmptyBorder(0, 30, 0, 0);
@@ -69,7 +66,6 @@ public class HosterColumn extends JDTableColumn {
 
     }
 
-    @Override
     public Object getCellEditorValue() {
         return null;
     }

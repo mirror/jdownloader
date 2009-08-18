@@ -115,13 +115,11 @@ public class PassColumn extends JDTableColumn implements ActionListener {
         if (o instanceof Account) ((Account) o).setPass(pw);
     }
 
-    @Override
     public Object getCellEditorValue() {
         if (coedit == null || !(coedit instanceof JDPasswordField)) return null;
         return new String(((JDPasswordField) coedit).getPassword());
     }
 
-    @Override
     public void actionPerformed(ActionEvent e) {
         passw.removeActionListener(this);
         this.fireEditingStopped();

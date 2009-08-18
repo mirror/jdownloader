@@ -56,15 +56,17 @@ public class JDTable extends JTable implements MouseListener {
         return model;
     }
 
+    @Override
     public TableCellRenderer getCellRenderer(int row, int col) {
-        return model.getJDTableColumn(col);
+        return model.getJDTableColumn(model.toModel(col));
     }
 
+    @Override
     public TableCellEditor getCellEditor(int row, int column) {
-        return model.getJDTableColumn(column);
+        return model.getJDTableColumn(model.toModel(column));
     }
 
-    public void createColumns() {
+    private void createColumns() {
         setAutoCreateColumnsFromModel(false);
         TableColumnModel tcm = getColumnModel();
         while (tcm.getColumnCount() > 0) {

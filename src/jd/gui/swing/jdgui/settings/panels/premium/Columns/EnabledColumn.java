@@ -21,9 +21,6 @@ import jd.plugins.Account;
 
 class BooleanRenderer extends JCheckBox implements TableCellRenderer, UIResource {
 
-    /**
-         * 
-         */
     private static final long serialVersionUID = 5635326369148415608L;
 
     public BooleanRenderer() {
@@ -117,14 +114,12 @@ public class EnabledColumn extends JDTableColumn implements ActionListener {
         }
     }
 
-    @Override
     public Object getCellEditorValue() {
         if (co == null || !(co instanceof JCheckBox)) return null;
         return ((JCheckBox) co).isSelected();
 
     }
 
-    @Override
     public void actionPerformed(ActionEvent e) {
         checkbox.removeActionListener(this);
         this.fireEditingStopped();
