@@ -194,6 +194,7 @@ public class AccountController extends SubConfiguration implements ActionListene
                 System.out.println("plugin no update " + hostname);
                 /* not every plugin has fetchAccountInfo */
                 account.setAccountInfo(null);
+                this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.ACCOUNT_UPDATE, hostname, account));
                 return null;
             }
             account.setAccountInfo(ai);
@@ -203,6 +204,8 @@ public class AccountController extends SubConfiguration implements ActionListene
             } else if (!account.isValid()) {
                 account.setEnabled(false);
                 this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.ACCOUNT_INVALID, hostname, account));
+            } else {
+                this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.ACCOUNT_UPDATE, hostname, account));
             }
         } catch (Exception e) {
             System.out.println("error update " + hostname);

@@ -1,0 +1,60 @@
+package jd.gui.swing.components.JDTable;
+
+import java.awt.Component;
+
+import javax.swing.AbstractCellEditor;
+import javax.swing.JTable;
+import javax.swing.table.TableCellEditor;
+import javax.swing.table.TableCellRenderer;
+
+import org.jdesktop.swingx.renderer.DefaultTableRenderer;
+
+public abstract class JDTableColumn extends AbstractCellEditor implements TableCellEditor, TableCellRenderer {
+
+    private static final long serialVersionUID = -1748365070868647250L;
+    private String name;
+    private JDTableModel table;
+    private DefaultTableRenderer defaultrenderer;
+
+    public JDTableColumn(String name, JDTableModel table) {
+        this.name = name;
+        this.table = table;
+        defaultrenderer = new DefaultTableRenderer();
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public boolean defaultEnabled() {
+        return true;
+    }
+
+    public JDTableModel getJDTableModel() {
+        return table;
+    }
+
+    public void setValueAt(Object value, int rowIndex, int columnIndex) {
+        Object obj = table.getValueAt(rowIndex, columnIndex);
+        if (obj == null) return;
+        setValue(value, obj);
+    }
+
+    public boolean isCellEditable(int rowIndex, int columnIndex) {
+        Object obj = table.getValueAt(rowIndex, columnIndex);
+        if (obj == null) return false;
+        return isEditable(obj);
+    }
+
+    abstract public void setValue(Object value, Object object);
+
+    abstract public boolean isEditable(Object obj);
+
+    public Component getDefaultTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+        return defaultrenderer.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+    }
+
+    abstract public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column);
+
+    abstract public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column);
+}

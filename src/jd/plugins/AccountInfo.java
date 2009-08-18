@@ -27,7 +27,6 @@ public class AccountInfo extends Property {
     private long account_trafficMax = -1;
     private long account_filesNum = -1;
     private long account_premiumPoints = -1;
-    private long account_newPremiumPoints = -1;
     private long account_accountBalance = -1;
     private long account_usedSpace = -1;
     private long account_trafficShareLeft = -1;
@@ -63,10 +62,6 @@ public class AccountInfo extends Property {
      */
     public long getFilesNum() {
         return account_filesNum;
-    }
-
-    public long getNewPremiumPoints() {
-        return account_newPremiumPoints;
     }
 
     /**
@@ -143,7 +138,7 @@ public class AccountInfo extends Property {
         this.setAccountBalance((long) (Double.parseDouble(string) * 100));
     }
 
-    public void setExpired(boolean b) {        
+    public void setExpired(boolean b) {
         this.account_expired = b;
         if (b) {
             this.setTrafficLeft(-1);
@@ -154,10 +149,6 @@ public class AccountInfo extends Property {
         this.account_filesNum = parseInt;
     }
 
-    public void setNewPremiumPoints(long newPremiumPoints) {
-        this.account_newPremiumPoints = newPremiumPoints;
-    }
-
     public void setPremiumPoints(long parseInt) {
         this.account_premiumPoints = parseInt;
     }
@@ -166,14 +157,14 @@ public class AccountInfo extends Property {
         this.setPremiumPoints(Integer.parseInt(string.trim()));
     }
 
-    public void setStatus(String string) {        
+    public void setStatus(String string) {
         this.account_status = string;
     }
 
     /*
      * -1 = unlimited Traffic
      */
-    public void setTrafficLeft(long size) {        
+    public void setTrafficLeft(long size) {
         this.account_trafficLeft = size;
         if (account_trafficLeft != -1) {
             unlimitedTraffic = false;

@@ -107,7 +107,7 @@ public class Utils {
     }
 
     public static void createStep(LinkedHashMap<String, String> headers, String postdata, Vector<String> steps, boolean ishttps, boolean rawmode) {
-        if (!new Regex(headers.get(null), ".*?\\.(gif|jpg|png|bmp|ico|css|js).*?").matches()) {
+        if (!new Regex(headers.get(null), ".*?\\.(gif|jpg|png|bmp|ico|css).*?").matches()) {
             String httpstrue = "";
             String rawtrue = "";
             if (ishttps) httpstrue = " https=\"true\"";

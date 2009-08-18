@@ -98,7 +98,7 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
     }
 
     private void initPanel(JPanel panel) {
-        internalTable = new PremiumTable(new PremiumJTableModel(), this);
+        internalTable = new PremiumTable(this);
         scrollPane = new JScrollPane(internalTable);
         Update_Async = new Timer(250, this);
         Update_Async.setInitialDelay(250);
@@ -313,7 +313,7 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
                 DateFormat formater = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM);
                 String validUntil = (ai.isExpired() ? JDL.L("plugins.host.premium.info.expiredInfo", "[expired]") + " " : "") + formater.format(new Date(ai.getValidUntil())) + "";
                 if (ai.getValidUntil() == -1) validUntil = null;
-                String premiumPoints = ai.getPremiumPoints() + ((ai.getNewPremiumPoints() > 0) ? " [+" + ai.getNewPremiumPoints() + "]" : "");
+                String premiumPoints = ai.getPremiumPoints() + "";
                 String[] data = new String[] { validUntil, Formatter.formatReadable(ai.getTrafficLeft()), ai.getFilesNum() + "", premiumPoints, Formatter.formatReadable(ai.getUsedSpace()), ai.getAccountBalance() < 0 ? null : (ai.getAccountBalance() / 100.0) + " €", Formatter.formatReadable(ai.getTrafficShareLeft()), ai.getStatus() };
 
                 JPanel panel = new JPanel(new MigLayout("ins 5", "[right]10[grow,fill]10[]"));

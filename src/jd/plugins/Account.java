@@ -119,6 +119,7 @@ public class Account extends Property {
         if (pass != null) pass = pass.trim();
         if (this.pass != null && this.pass.equals(pass)) return;
         this.pass = pass;
+        accinfo = null;
         setUpdateTime(0);
         AccountController.getInstance().throwUpdateEvent(null, this);
     }
@@ -135,6 +136,8 @@ public class Account extends Property {
         if (user != null) user = user.trim();
         if (this.user != null && this.user.equals(user)) return;
         this.user = user;
+        accinfo = null;
+        setUpdateTime(0);
         AccountController.getInstance().throwUpdateEvent(null, this);
     }
 
