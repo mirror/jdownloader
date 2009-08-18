@@ -24,9 +24,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "qooy.com" }, urls = { "http://[\\w\\.]*?qooy\\.com/files/[0-9A-Z]+/[0-9a-zA-z.]+"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "qooy.com" }, urls = { "http://[\\w\\.]*?qooy\\.com/files/[0-9A-Z]+/[0-9a-zA-z.]+" }, flags = { 0 })
 public class QCm extends PluginForDecrypt {
 
     public QCm(PluginWrapper wrapper) {
@@ -49,6 +48,5 @@ public class QCm extends PluginForDecrypt {
         }
         return decryptedLinks;
     }
-
 
 }

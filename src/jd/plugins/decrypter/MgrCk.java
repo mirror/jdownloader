@@ -24,9 +24,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "amigura.co.uk" }, urls = { "http://[\\w\\.]*?amigura\\.co\\.uk/(s\\d+|send_file)\\.php\\?d=(\\d+(-|/)[A-Z0-9]+(-|/)\\d+(-|/)|\\d+/).+"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "amigura.co.uk" }, urls = { "http://[\\w\\.]*?amigura\\.co\\.uk/(s\\d+|send_file)\\.php\\?d=(\\d+(-|/)[A-Z0-9]+(-|/)\\d+(-|/)|\\d+/).+" }, flags = { 0 })
 public class MgrCk extends PluginForDecrypt {
 
     public MgrCk(PluginWrapper wrapper) {
@@ -59,6 +58,5 @@ public class MgrCk extends PluginForDecrypt {
     }
 
     // @Override
-    
 
 }

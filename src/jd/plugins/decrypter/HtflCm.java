@@ -25,9 +25,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "hotfile.com" }, urls = { "http://[\\w\\.]*?hotfile\\.com/list/\\d+/[\\w]+"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hotfile.com" }, urls = { "http://[\\w\\.]*?hotfile\\.com/list/\\d+/[\\w]+" }, flags = { 0 })
 public class HtflCm extends PluginForDecrypt {
 
     public HtflCm(PluginWrapper wrapper) {
@@ -55,6 +54,5 @@ public class HtflCm extends PluginForDecrypt {
     }
 
     // @Override
-    
 
 }

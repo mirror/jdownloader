@@ -27,9 +27,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
-@DecrypterPlugin(revision = "$Revision: 7185 $", interfaceVersion = 2, names = { "sogood.net" }, urls = { "http://[\\w\\.]*?sogood\\.net/.+"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sogood.net" }, urls = { "http://[\\w\\.]*?sogood\\.net/.+" }, flags = { 0 })
 public class SGdNt extends PluginForDecrypt {
 
     public SGdNt(PluginWrapper wrapper) {
@@ -42,7 +41,7 @@ public class SGdNt extends PluginForDecrypt {
         String parameter = param.toString();
 
         br.getPage(parameter);
-        if(br.containsHTML("This URL expired!")) throw new DecrypterException("File expired");
+        if (br.containsHTML("This URL expired!")) throw new DecrypterException("File expired");
         if (br.containsHTML("This URL is protected!")) {
             boolean okay = true;
             for (int i = 0; i < 4; i++) {
@@ -60,12 +59,12 @@ public class SGdNt extends PluginForDecrypt {
             if (!okay) throw new DecrypterException(DecrypterException.PASSWORD);
         }
         String declink = br.getRedirectLocation();
-        if(declink == null) return null;
+        if (declink == null) return null;
         decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(declink)));
 
         return decryptedLinks;
     }
 
     // @Override
-    
+
 }

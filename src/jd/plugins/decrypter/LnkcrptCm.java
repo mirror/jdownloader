@@ -26,9 +26,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "linkcrypt.com" }, urls = { "http://[\\w\\.]*?linkcrypt\\.com/[a-zA-Z]-[\\w]+"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linkcrypt.com" }, urls = { "http://[\\w\\.]*?linkcrypt\\.com/[a-zA-Z]-[\\w]+" }, flags = { 0 })
 public class LnkcrptCm extends PluginForDecrypt {
 
     public LnkcrptCm(PluginWrapper wrapper) {
@@ -70,5 +69,5 @@ public class LnkcrptCm extends PluginForDecrypt {
     }
 
     // @Override
-    
+
 }

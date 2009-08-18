@@ -27,9 +27,8 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "Snurl.com" }, urls = { "http://[\\w\\.]*?(snurl\\.com|snipurl\\.com|sn\\.im|snipr\\.com)/.+"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "Snurl.com" }, urls = { "http://[\\w\\.]*?(snurl\\.com|snipurl\\.com|sn\\.im|snipr\\.com)/.+" }, flags = { 0 })
 public class SnrlCm extends PluginForDecrypt {
 
     public SnrlCm(PluginWrapper wrapper) {
@@ -39,7 +38,7 @@ public class SnrlCm extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();        
+        String parameter = param.toString();
         br.getPage(parameter);
         String url = null;
         if (br.getRedirectLocation() != null) {
@@ -70,6 +69,4 @@ public class SnrlCm extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
-    
 }

@@ -25,16 +25,15 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "megaupload.com folder" }, urls = { "http://[\\w\\.]*?megaupload\\.com/.*?\\?f=[\\w]+"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megaupload.com folder" }, urls = { "http://[\\w\\.]*?megaupload\\.com/.*?\\?f=[\\w]+" }, flags = { 0 })
 public class MgpldCmFldr extends PluginForDecrypt {
 
     public MgpldCmFldr(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         String id = Request.parseQuery(param.getCryptedUrl()).get("f");
         String url = "http://www.megaupload.com/xml/folderfiles.php?folderid=" + id;
@@ -48,7 +47,6 @@ public class MgpldCmFldr extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    //@Override
-    
+    // @Override
 
 }

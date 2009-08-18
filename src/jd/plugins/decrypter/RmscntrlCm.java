@@ -38,7 +38,7 @@ public class RmscntrlCm extends PluginForDecrypt {
         this.setAcceptOnlyURIs(false);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -66,6 +66,6 @@ public class RmscntrlCm extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    //@Override
-    
+    // @Override
+
 }

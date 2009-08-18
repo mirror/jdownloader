@@ -31,9 +31,8 @@ import jd.plugins.FilePackage;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "spiegel.de" }, urls = { "(http://[\\w\\.]*?spiegel\\.de/video/video-\\d+.html|http://[\\w\\.]*?spiegel\\.de/fotostrecke/fotostrecke-\\d+(-\\d+)?.html)"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spiegel.de" }, urls = { "(http://[\\w\\.]*?spiegel\\.de/video/video-\\d+.html|http://[\\w\\.]*?spiegel\\.de/fotostrecke/fotostrecke-\\d+(-\\d+)?.html)" }, flags = { 0 })
 public class SpglD extends PluginForDecrypt {
 
     private static final Pattern PATTERN_SUPPORTED_VIDEO = Pattern.compile("http://[\\w\\.]*?spiegel\\.de/video/video-(\\d+).html", Pattern.CASE_INSENSITIVE);
@@ -67,7 +66,7 @@ public class SpglD extends PluginForDecrypt {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink cryptedLink, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         if (new Regex(cryptedLink.getCryptedUrl(), PATTERN_SUPPORTED_VIDEO).matches()) {
@@ -154,6 +153,6 @@ public class SpglD extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    //@Override
-    
+    // @Override
+
 }

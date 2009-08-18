@@ -25,17 +25,19 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "lix.in" }, urls = { "http://[\\w\\.]*?lix\\.in/[-]{0,1}[\\w]{6,10}"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lix.in" }, urls = { "http://[\\w\\.]*?lix\\.in/[-]{0,1}[\\w]{6,10}" }, flags = { 0 })
 public class Lxn extends PluginForDecrypt {
 
     final static private Object LOCK = new Object(); /*
-                                      * lixin checkt anhand der ip und der
-                                      * globalen phpsessionid, daher müssen
-                                      * parallel zugriffe vermieden werden,
-                                      * sonst ist das captcha imme falsch
-                                      */
+                                                      * lixin checkt anhand der
+                                                      * ip und der globalen
+                                                      * phpsessionid, daher
+                                                      * müssen parallel zugriffe
+                                                      * vermieden werden, sonst
+                                                      * ist das captcha imme
+                                                      * falsch
+                                                      */
 
     public Lxn(PluginWrapper wrapper) {
         super(wrapper);
@@ -65,7 +67,7 @@ public class Lxn extends PluginForDecrypt {
                         try {
                             form.setPreferredSubmit("continue");
                             br.submitForm(form);
-                        } catch (Exception e) {                            
+                        } catch (Exception e) {
                             lix_continue = true;
                             break;
                         }
@@ -98,5 +100,5 @@ public class Lxn extends PluginForDecrypt {
     }
 
     // @Override
-    
+
 }

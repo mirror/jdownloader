@@ -24,23 +24,22 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "yourref.de" }, urls = { "http://[\\w\\.]*?yourref\\.de/\\?\\d+"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourref.de" }, urls = { "http://[\\w\\.]*?yourref\\.de/\\?\\d+" }, flags = { 0 })
 public class RRfD extends PluginForDecrypt {
 
     public RRfD(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
         br.getPage(parameter);
         String link = br.getRegex("self\\.window\\.location=\\('(.*?)'").getMatch(0);
-        if (link == null) link = parameter.replace("/?", "/go_counter.php?id=");        
+        if (link == null) link = parameter.replace("/?", "/go_counter.php?id=");
         if (link == null) return null;
         br.setFollowRedirects(false);
         br.getPage(link);
@@ -48,6 +47,6 @@ public class RRfD extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    //@Override
-    
+    // @Override
+
 }

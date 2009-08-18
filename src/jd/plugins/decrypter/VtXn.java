@@ -28,9 +28,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "vetax.in" }, urls = { "http://[\\w\\.]*?vetax\\.in/view/\\d+|http://[\\w\\.]*?vetax\\.in/(dload|mirror)/[\\w]+"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vetax.in" }, urls = { "http://[\\w\\.]*?vetax\\.in/view/\\d+|http://[\\w\\.]*?vetax\\.in/(dload|mirror)/[\\w]+" }, flags = { 0 })
 public class VtXn extends PluginForDecrypt {
 
     static private final String patternSupported_Download = "http://[\\w\\.]*?vetax\\.in/(dload|mirror)/[a-zA-Z0-9]+";
@@ -92,5 +91,5 @@ public class VtXn extends PluginForDecrypt {
     }
 
     // @Override
-    
+
 }

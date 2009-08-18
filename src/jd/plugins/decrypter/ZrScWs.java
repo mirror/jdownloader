@@ -28,9 +28,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "zerosec.ws" }, urls = { "(http://[\\w\\.]*?zerosec\\.ws(/.+/.+/#comments|/.+/#comments|/.+/.*))"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zerosec.ws" }, urls = { "(http://[\\w\\.]*?zerosec\\.ws(/.+/.+/#comments|/.+/#comments|/.+/.*))" }, flags = { 0 })
 public class ZrScWs extends PluginForDecrypt {
 
     public ZrScWs(PluginWrapper wrapper) {
@@ -87,5 +86,5 @@ public class ZrScWs extends PluginForDecrypt {
     }
 
     // @Override
-    
+
 }

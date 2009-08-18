@@ -29,16 +29,15 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
-@DecrypterPlugin(revision = "$Revision: 7185 $", interfaceVersion = 2, names = { "link-share.org" }, urls = { "http://[\\w\\.]*?link-share\\.org/view.php\\?url=[\\w]{32}"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "link-share.org" }, urls = { "http://[\\w\\.]*?link-share\\.org/view.php\\?url=[\\w]{32}" }, flags = { 0 })
 public class LnkShrrg extends PluginForDecrypt {
 
     public LnkShrrg(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -80,6 +79,6 @@ public class LnkShrrg extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    //@Override
-    
+    // @Override
+
 }

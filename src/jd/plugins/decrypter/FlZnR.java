@@ -24,9 +24,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "filezone.ro" }, urls = { "http://[\\w\\.]*?filezone\\.ro/(public/viewset/\\d+|browse/[a-z]+/[0-9A-Za-z_-]+)"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filezone.ro" }, urls = { "http://[\\w\\.]*?filezone\\.ro/(public/viewset/\\d+|browse/[a-z]+/[0-9A-Za-z_-]+)" }, flags = { 0 })
 public class FlZnR extends PluginForDecrypt {
 
     public FlZnR(PluginWrapper wrapper) {
@@ -56,8 +55,5 @@ public class FlZnR extends PluginForDecrypt {
         }
         return decryptedLinks;
     }
-
-   
-    
 
 }

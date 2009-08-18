@@ -25,28 +25,27 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "q1q1q.com" }, urls = { "http://[\\w\\.]*?q1q1q\\.com/\\d+"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "q1q1q.com" }, urls = { "http://[\\w\\.]*?q1q1q\\.com/\\d+" }, flags = { 0 })
 public class Q1Q1QCm extends PluginForDecrypt {
 
     public Q1Q1QCm(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
         String id;
         String parameter = param.toString();
-        id = new Regex(parameter,"q1q1q\\.com/(\\d+)").getMatch(0);
-        br.getPage("http://www.q1q1q.com/show2.php?id="+id);
+        id = new Regex(parameter, "q1q1q\\.com/(\\d+)").getMatch(0);
+        br.getPage("http://www.q1q1q.com/show2.php?id=" + id);
         String link = br.getRegex("name=\"ifram\" src=\"(.*?)\"").getMatch(0);
         decryptedLinks.add(createDownloadlink(link));
         return decryptedLinks;
     }
 
-    //@Override
-    
+    // @Override
+
 }

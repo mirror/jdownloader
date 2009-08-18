@@ -26,9 +26,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7185 $", interfaceVersion = 2, names = { "go4Down.net" }, urls = { "http://[\\w\\.]*?(short\\.)?go4down\\.(com|net)/(short/)\\d+"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "go4Down.net" }, urls = { "http://[\\w\\.]*?(short\\.)?go4down\\.(com|net)/(short/)\\d+" }, flags = { 0 })
 public class GFrDwnNt extends PluginForDecrypt {
 
     public GFrDwnNt(PluginWrapper wrapper) {
@@ -48,5 +47,5 @@ public class GFrDwnNt extends PluginForDecrypt {
     }
 
     // @Override
-    
+
 }

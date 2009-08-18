@@ -25,16 +25,15 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7185 $", interfaceVersion = 2, names = { "xaili.com" }, urls = { "http://[\\w\\.]*?xaili\\.com/\\?site=protect&id=[0-9]+"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xaili.com" }, urls = { "http://[\\w\\.]*?xaili\\.com/\\?site=protect&id=[0-9]+" }, flags = { 0 })
 public class Xlcm extends PluginForDecrypt {
 
     public Xlcm(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -52,6 +51,6 @@ public class Xlcm extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    //@Override
-    
+    // @Override
+
 }

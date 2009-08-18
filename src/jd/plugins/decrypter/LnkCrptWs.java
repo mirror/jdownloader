@@ -40,13 +40,12 @@ import jd.utils.locale.JDL;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
 
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "linkcrypt.ws" }, urls = { "http://[\\w\\.]*?linkcrypt\\.ws/dir/[\\w]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linkcrypt.ws" }, urls = { "http://[\\w\\.]*?linkcrypt\\.ws/dir/[\\w]+" }, flags = { 0 })
 public class LnkCrptWs extends PluginForDecrypt {
 
     public LnkCrptWs(PluginWrapper wrapper) {
         super(wrapper);
     }
-
 
     // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -56,8 +55,8 @@ public class LnkCrptWs extends PluginForDecrypt {
         String containerId = new Regex(parameter, "dir/([a-zA-Z0-9]+)").getMatch(0);
 
         br.getPage("http://linkcrypt.ws/dlc/" + containerId);
-        
-        //check for a password. STore latest password in DB
+
+        // check for a password. STore latest password in DB
         Form password = br.getForm(0);
         if (password != null && password.hasInputFieldByName("password")) {
             // Password Protected
@@ -84,8 +83,8 @@ public class LnkCrptWs extends PluginForDecrypt {
             }
 
         }
-   
-//Different captcha types
+
+        // Different captcha types
         boolean valid = true;
         for (int i = 0; i < 5; ++i) {
             Form captcha = br.getForm(0);
@@ -117,7 +116,7 @@ public class LnkCrptWs extends PluginForDecrypt {
         }
 
         if (valid == false) throw new DecrypterException(DecrypterException.CAPTCHA);
-// Look for containers
+        // Look for containers
         String[] containers = br.getRegex("eval\\((.*?\\,\\{\\}\\))\\)").getColumn(0);
         HashMap<String, String> map = new HashMap<String, String>();
         for (String c : containers) {
@@ -161,19 +160,19 @@ public class LnkCrptWs extends PluginForDecrypt {
         }
         // IF container decryption failed, try webdecryption
         Form[] forms = br.getForms();
-        progress.setRange(forms.length/2);
-        for (Form form :forms) {
+        progress.setRange(forms.length / 2);
+        for (Form form : forms) {
             Browser clone;
             if (form.getInputField("key").getValue() != null && form.getInputField("key").getValue().length() > 0) {
                 progress.increase(1);
                 clone = br.cloneBrowser();
                 clone.submitForm(form);
                 clone.setDebug(true);
-                
+
                 String[] srcs = clone.getRegex("<iframe.*?src\\s*?=\\s*?\"?([^\"> ]{20,})\"?\\s?").getColumn(0);
                 for (String col : srcs) {
                     col = Encoding.htmlDecode(col);
- 
+
                     clone.getPage(col);
                     if (clone.containsHTML("eval")) {
                         String[] evals = clone.getRegex("eval\\((.*?\\,\\{\\}\\))\\)").getColumn(0);

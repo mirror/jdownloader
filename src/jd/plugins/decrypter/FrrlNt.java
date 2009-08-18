@@ -24,9 +24,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "free-url.net" }, urls = { "http://[\\w\\.]*?free-url\\.net/[0-9]+/"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "free-url.net" }, urls = { "http://[\\w\\.]*?free-url\\.net/[0-9]+/" }, flags = { 0 })
 public class FrrlNt extends PluginForDecrypt {
 
     public FrrlNt(PluginWrapper wrapper) {
@@ -47,6 +46,4 @@ public class FrrlNt extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-
-    
 }

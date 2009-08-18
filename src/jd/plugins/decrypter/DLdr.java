@@ -32,9 +32,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
-@DecrypterPlugin(revision = "$Revision: 7185 $", interfaceVersion = 2, names = { "jdloader" }, urls = { "(jdlist://.+)|((dlc|rsdf|ccf)://.*/.+)"}, flags = {  PluginWrapper.LOAD_ON_INIT })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jdloader" }, urls = { "(jdlist://.+)|((dlc|rsdf|ccf)://.*/.+)" }, flags = { PluginWrapper.LOAD_ON_INIT })
 public class DLdr extends PluginForDecrypt {
 
     public DLdr(PluginWrapper wrapper) {
@@ -77,6 +76,5 @@ public class DLdr extends PluginForDecrypt {
     }
 
     // @Override
-    
 
 }

@@ -38,9 +38,8 @@ import jd.utils.locale.JDL;
 
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
-@DecrypterPlugin(revision = "$Revision: 7185 $", interfaceVersion = 2, names = { "crypt-me.com" }, urls = { "http://[\\w\\.]*?crypt-me\\.com/folder/[\\w]+\\.html"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "crypt-me.com" }, urls = { "http://[\\w\\.]*?crypt-me\\.com/folder/[\\w]+\\.html" }, flags = { 0 })
 public class CrptMCm extends PluginForDecrypt {
 
     public CrptMCm(PluginWrapper wrapper) {
@@ -121,7 +120,7 @@ public class CrptMCm extends PluginForDecrypt {
                 form.put("button.x", p.x + "");
                 form.put("button.y", p.y + "");
                 brc.submitForm(form);
-                String tmp2 = decrypt(brc); 
+                String tmp2 = decrypt(brc);
                 if (tmp2.contains("kreiscaptcha")) continue;
                 String encodedLink = new Regex(tmp2, "<iframe src=\"(.*?)\"").getMatch(0);
                 if (encodedLink != null) {
@@ -137,7 +136,7 @@ public class CrptMCm extends PluginForDecrypt {
     private String decrypt(Browser br) {
         String c = br.getRegex("c=\"(.*?)\"").getMatch(0);
         String x = br.getRegex("x\\(\"(.*?)\"\\)").getMatch(0);
-        if (x==null) return br.toString();
+        if (x == null) return br.toString();
         String f = decrypt1(c);
         String dec2 = decrypt2(f, x);
         return dec2;
@@ -167,5 +166,5 @@ public class CrptMCm extends PluginForDecrypt {
     }
 
     // @Override
-    
+
 }

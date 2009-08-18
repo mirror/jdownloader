@@ -24,9 +24,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "mp3zr.com" }, urls = { "http://[\\w\\.]*?mp3zr\\.com/file/[0-9a-zA-Z]+/.+"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mp3zr.com" }, urls = { "http://[\\w\\.]*?mp3zr\\.com/file/[0-9a-zA-Z]+/.+" }, flags = { 0 })
 public class Mp3ZrCm extends PluginForDecrypt {
 
     public Mp3ZrCm(PluginWrapper wrapper) {
@@ -37,12 +36,11 @@ public class Mp3ZrCm extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String link = param.toString().replaceAll("mp3zr.com/file/","sharovar.com/files/");
+        String link = param.toString().replaceAll("mp3zr.com/file/", "sharovar.com/files/");
         decryptedLinks.add(createDownloadlink(link));
         return decryptedLinks;
     }
 
     // @Override
-    
 
 }

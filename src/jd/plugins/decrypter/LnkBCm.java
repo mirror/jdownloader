@@ -24,33 +24,33 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "linkbee.com" }, urls = { "http://[\\w\\.]*?linkbee\\.com/[\\w]+"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linkbee.com" }, urls = { "http://[\\w\\.]*?linkbee\\.com/[\\w]+" }, flags = { 0 })
 public class LnkBCm extends PluginForDecrypt {
 
     public LnkBCm(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
         br.getPage(parameter);
-        // I don't know if this pattern still is valid. May be that there is a version for iframes, and one without iframes.
+        // I don't know if this pattern still is valid. May be that there is a
+        // version for iframes, and one without iframes.
         // Thats why I left it
         String found = br.getRegex("seconds\\s+or\\s+<a\\s+href=\"(.*)\"").getMatch(0);
         if (found == null) {
-            found = br.getRegex("<iframe src=\"(.*?)\"").getMatch(0); 
+            found = br.getRegex("<iframe src=\"(.*?)\"").getMatch(0);
         }
-        if(found==null)return null;
-      
+        if (found == null) return null;
+
         decryptedLinks.add(createDownloadlink(found));
         return decryptedLinks;
     }
 
-    //@Override
-    
+    // @Override
+
 }

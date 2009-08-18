@@ -25,7 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 7189 $", interfaceVersion = 2, names = { "sorozatok.co.nr" }, urls = { "http://www\\.jancsiweb\\.com/sfree/letoltesek.php\\?id=(\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sorozatok.co.nr" }, urls = { "http://www\\.jancsiweb\\.com/sfree/letoltesek.php\\?id=(\\d+)" }, flags = { 0 })
 public class SrztkCNr extends PluginForDecrypt {
 
     public SrztkCNr(PluginWrapper wrapper) {

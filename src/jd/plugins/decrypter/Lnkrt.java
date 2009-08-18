@@ -27,9 +27,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "linkr.at|rapidblogger.com" }, urls = { "http://[\\w\\.]*?(linkr\\.at/\\?p=|rapidblogger\\.com/link/)\\w+"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linkr.at|rapidblogger.com" }, urls = { "http://[\\w\\.]*?(linkr\\.at/\\?p=|rapidblogger\\.com/link/)\\w+" }, flags = { 0 })
 public class Lnkrt extends PluginForDecrypt {
     private static final Pattern PATTERN_MAIN_FRAME = Pattern.compile("<frame src=\"(.+?)\" name=\"Mainframe\" scrolling=\"no\">");
     private static final Pattern PATTERN_DOWNLOAD_LINK = Pattern.compile("window.open\\('(.+?)'\\);");
@@ -38,7 +37,7 @@ public class Lnkrt extends PluginForDecrypt {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink cryptedLink, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String url = cryptedLink.getCryptedUrl();
@@ -56,6 +55,6 @@ public class Lnkrt extends PluginForDecrypt {
         return decryptedLinks.size() > 0 ? decryptedLinks : null;
     }
 
-    //@Override
-    
+    // @Override
+
 }

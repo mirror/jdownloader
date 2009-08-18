@@ -26,9 +26,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7185 $", interfaceVersion = 2, names = { "alpha-link.eu" }, urls = { "http://[\\w\\.]*?alpha\\-link\\.eu/\\?id=[a-fA-F0-9]+"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "alpha-link.eu" }, urls = { "http://[\\w\\.]*?alpha\\-link\\.eu/\\?id=[a-fA-F0-9]+" }, flags = { 0 })
 public class LphLnk extends PluginForDecrypt {
 
     public LphLnk(PluginWrapper wrapper) {
@@ -69,6 +68,5 @@ public class LphLnk extends PluginForDecrypt {
     }
 
     // @Override
-    
 
 }

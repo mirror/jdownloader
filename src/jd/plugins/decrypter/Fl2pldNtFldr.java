@@ -24,16 +24,15 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "file2upload.net" }, urls = { "http://[\\w\\.]*?file2upload\\.(net|com)/folder/[A-Z|0-9]+/"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file2upload.net" }, urls = { "http://[\\w\\.]*?file2upload\\.(net|com)/folder/[A-Z|0-9]+/" }, flags = { 0 })
 public class Fl2pldNtFldr extends PluginForDecrypt {
 
     public Fl2pldNtFldr(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    //file2upload folder decrypter by pspzockerscene
+    // file2upload folder decrypter by pspzockerscene
     // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -43,11 +42,10 @@ public class Fl2pldNtFldr extends PluginForDecrypt {
         if (links.length == 0) return null;
         for (String dl : links)
             decryptedLinks.add(createDownloadlink(dl));
-        
+
         return decryptedLinks;
     }
 
     // @Override
-    
 
 }

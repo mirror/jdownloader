@@ -27,9 +27,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "rsd-store.com" }, urls = { "http://[\\w\\.]*?rsd-store\\.com/\\d+\\.html"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rsd-store.com" }, urls = { "http://[\\w\\.]*?rsd-store\\.com/\\d+\\.html" }, flags = { 0 })
 public class RsdStr extends PluginForDecrypt {
 
     public RsdStr(PluginWrapper wrapper) {
@@ -48,7 +47,5 @@ public class RsdStr extends PluginForDecrypt {
         decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
         return decryptedLinks;
     }
-
-    
 
 }

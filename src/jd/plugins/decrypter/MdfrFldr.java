@@ -26,8 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "mediafire.com" }, urls = { "http://[\\w\\.]*?mediafire\\.com/(\\?sharekey=.+|(?!download)[^\\?]+)" }, flags = { 0 })
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediafire.com" }, urls = { "http://[\\w\\.]*?mediafire\\.com/(\\?sharekey=.+|(?!download)[^\\?]+)" }, flags = { 0 })
 public class MdfrFldr extends PluginForDecrypt {
 
     public MdfrFldr(PluginWrapper wrapper) {
@@ -38,7 +37,7 @@ public class MdfrFldr extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-   
+
         br.getPage(parameter);
         Thread.sleep(500);
         String reqlink = br.getRegex(Pattern.compile("script language=\"JavaScript\" src=\"/js/myfiles\\.php/(.*?)\"")).getMatch(0);

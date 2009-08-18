@@ -32,7 +32,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 7182 $", interfaceVersion = 2, names = { "3dl.am" }, urls = { "http://[\\w\\.]*?3dl\\.am/link/[a-zA-Z0-9]+|http://[\\w\\.]*?3dl\\.am/download/start/[0-9]+/|http://[\\w\\.]*?3dl\\.am/download/[0-9]+/.+\\.html|http://[\\w\\.]*?3dl\\.am/\\?action=entrydetail&entry_id=[0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "3dl.am" }, urls = { "http://[\\w\\.]*?3dl\\.am/link/[a-zA-Z0-9]+|http://[\\w\\.]*?3dl\\.am/download/start/[0-9]+/|http://[\\w\\.]*?3dl\\.am/download/[0-9]+/.+\\.html|http://[\\w\\.]*?3dl\\.am/\\?action=entrydetail&entry_id=[0-9]+" }, flags = { 0 })
 public class DrDlm extends PluginForDecrypt {
     private String password;
     private CryptedLink link;

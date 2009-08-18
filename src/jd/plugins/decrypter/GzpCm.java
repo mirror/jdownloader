@@ -24,9 +24,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "gazup.com" }, urls = { "http://[\\w\\.]*?.gazup\\.com/.+"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gazup.com" }, urls = { "http://[\\w\\.]*?.gazup\\.com/.+" }, flags = { 0 })
 public class GzpCm extends PluginForDecrypt {
 
     public GzpCm(PluginWrapper wrapper) {
@@ -48,8 +47,5 @@ public class GzpCm extends PluginForDecrypt {
         }
         return decryptedLinks;
     }
-
-  
-    
 
 }

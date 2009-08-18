@@ -24,16 +24,15 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "technorocker.info" }, urls = { "http://[\\w\\.]*?technorocker\\.info/download/[0-9]+/.*"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "technorocker.info" }, urls = { "http://[\\w\\.]*?technorocker\\.info/download/[0-9]+/.*" }, flags = { 0 })
 public class Tchnrckrnf extends PluginForDecrypt {
 
     public Tchnrckrnf(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -48,6 +47,6 @@ public class Tchnrckrnf extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    //@Override
-    
+    // @Override
+
 }

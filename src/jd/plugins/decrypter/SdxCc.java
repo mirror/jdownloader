@@ -25,9 +25,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sdx.cc" }, urls = { "http://[\\w\\.]*?sdx\\.cc/infusions/(pro_download_panel|user_uploads)/download\\.php\\?did=\\d+"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sdx.cc" }, urls = { "http://[\\w\\.]*?sdx\\.cc/infusions/(pro_download_panel|user_uploads)/download\\.php\\?did=\\d+" }, flags = { 0 })
 public class SdxCc extends PluginForDecrypt {
 
     public SdxCc(PluginWrapper wrapper) {
@@ -52,7 +51,7 @@ public class SdxCc extends PluginForDecrypt {
         for (String link : links) {
             decryptedLinks.add(createDownloadlink(link));
         }
-        links=br.getRegex("<br />.*?<a href='(http.*?)'").getColumn(0);
+        links = br.getRegex("<br />.*?<a href='(http.*?)'").getColumn(0);
         for (String link : links) {
             decryptedLinks.add(createDownloadlink(link));
         }
@@ -65,5 +64,5 @@ public class SdxCc extends PluginForDecrypt {
     }
 
     // @Override
-    
+
 }

@@ -31,9 +31,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.pluginUtils.Recaptcha;
 import jd.utils.JDUtilities;
-@DecrypterPlugin(revision = "$Revision: 7192 $", interfaceVersion = 2, names = { "gwarez.cc" }, urls = { "fsdfsdfsf"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gwarez.cc" }, urls = { "fsdfsdfsf" }, flags = { 0 })
 public class Gwrzcc extends PluginForDecrypt {
 
     private static final Pattern patternLink_Details_Download = Pattern.compile("http://[\\w\\.]*?gwarez\\.cc/\\d+", Pattern.CASE_INSENSITIVE);
@@ -112,7 +111,7 @@ public class Gwrzcc extends PluginForDecrypt {
                         // deshalb wird der check zuerst gemacht.
                         linkString = brc.getRegex("<meta http-equiv=\"refresh\".*?URL=(.*?)\">").getMatch(0);
                         if (linkString != null) break;
-                        
+
                         Recaptcha rc = new Recaptcha(brc);
                         rc.parse();
                         String k = brc.getRegex("<script type=\"text/javascript\" src=\"http://api.recaptcha.net/challenge\\?k=(.*?)\"></script>").getMatch(0);
@@ -172,8 +171,5 @@ public class Gwrzcc extends PluginForDecrypt {
 
         return decryptedLinks;
     }
-
-    
-    
 
 }

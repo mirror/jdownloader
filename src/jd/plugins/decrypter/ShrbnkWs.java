@@ -29,7 +29,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 7185 $", interfaceVersion = 2, names = { "sharebank.ws" }, urls = { "http://[\\w\\.]*?(mygeek|sharebank)\\.ws/\\?(v|go)=[\\w]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharebank.ws" }, urls = { "http://[\\w\\.]*?(mygeek|sharebank)\\.ws/\\?(v|go)=[\\w]+" }, flags = { 0 })
 public class ShrbnkWs extends PluginForDecrypt {
     private static final String REGEX_FOLDER = ".*?ws/\\?v=[a-zA-Z0-9]+";
     private static final String REGEX_DLLINK = ".*?ws/\\?go=([a-zA-Z0-9]+)";

@@ -25,16 +25,15 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7185 $", interfaceVersion = 2, names = { "rock-house.in" }, urls = { "http://[\\w\\.]*?rock-house\\.in/warez/warez_download\\.php\\?id=\\d+"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rock-house.in" }, urls = { "http://[\\w\\.]*?rock-house\\.in/warez/warez_download\\.php\\?id=\\d+" }, flags = { 0 })
 public class RckHsn extends PluginForDecrypt {
 
     public RckHsn(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -51,6 +50,6 @@ public class RckHsn extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    //@Override
-    
+    // @Override
+
 }

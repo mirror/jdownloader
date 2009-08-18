@@ -24,9 +24,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "newsurl.de" }, urls = { "http://[\\w\\.]*?newsurl.de/.*"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "newsurl.de" }, urls = { "http://[\\w\\.]*?newsurl.de/.*" }, flags = { 0 })
 public class NwsrlD extends PluginForDecrypt {
     final static private Object LOCK = new Object();
     private DownloadLink dl;
@@ -55,5 +54,5 @@ public class NwsrlD extends PluginForDecrypt {
     }
 
     // @Override
-    
+
 }

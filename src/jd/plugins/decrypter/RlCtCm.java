@@ -27,46 +27,41 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
-@DecrypterPlugin(revision = "$Revision: 7185 $", interfaceVersion = 2, names = { "urlcut.com" }, urls = { "http://[\\w\\.]*?urlcut\\.com/[0-9a-zA-Z]+"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "urlcut.com" }, urls = { "http://[\\w\\.]*?urlcut\\.com/[0-9a-zA-Z]+" }, flags = { 0 })
 public class RlCtCm extends PluginForDecrypt {
 
     public RlCtCm(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(false);
         br.getPage(parameter);
         String page = br.getRedirectLocation();
-        if (page.contains("/password.html"))
-        {
-            for (int i=0;i<5;i++)
-            {
-            br.getPage(page);
-            String linkid = br.getRegex("name=u value=\"(.*?)\"").getMatch(0);
-            String passwordstring = getUserInput(JDL.L("plugins.hoster.general.passwordProtectedInput", "Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:"), param.getDecrypterPassword(), param);
-            br.postPage("http://urlcut.com/password.cgi", "u="+linkid+"&p="+Encoding.urlEncode(passwordstring));
-            page = null;
-            page = br.getRedirectLocation();
-            br.getPage(page);
-            page = br.getRedirectLocation();
-            if (!page.contains("/password.html")) break; 
-            if (i == 4) throw new DecrypterException(JDL.L("plugins.decrypter.urtcutcom.badpassword", "You have entered bad password 5 times. Please review your data."));
+        if (page.contains("/password.html")) {
+            for (int i = 0; i < 5; i++) {
+                br.getPage(page);
+                String linkid = br.getRegex("name=u value=\"(.*?)\"").getMatch(0);
+                String passwordstring = getUserInput(JDL.L("plugins.hoster.general.passwordProtectedInput", "Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:"), param.getDecrypterPassword(), param);
+                br.postPage("http://urlcut.com/password.cgi", "u=" + linkid + "&p=" + Encoding.urlEncode(passwordstring));
+                page = null;
+                page = br.getRedirectLocation();
+                br.getPage(page);
+                page = br.getRedirectLocation();
+                if (!page.contains("/password.html")) break;
+                if (i == 4) throw new DecrypterException(JDL.L("plugins.decrypter.urtcutcom.badpassword", "You have entered bad password 5 times. Please review your data."));
             }
             decryptedLinks.add(createDownloadlink(page));
-        }
-        else 
-        {
+        } else {
             decryptedLinks.add(createDownloadlink(page));
         }
         return decryptedLinks;
     }
 
-    //@Override
-    
+    // @Override
+
 }

@@ -24,9 +24,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "divshare.com" }, urls = { "http://[\\w\\.]*?divshare\\.com/folder/[0-9a-zA-z|-]+"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "divshare.com" }, urls = { "http://[\\w\\.]*?divshare\\.com/folder/[0-9a-zA-z|-]+" }, flags = { 0 })
 public class DvShrCmFldr extends PluginForDecrypt {
 
     public DvShrCmFldr(PluginWrapper wrapper) {
@@ -38,17 +37,18 @@ public class DvShrCmFldr extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        //Liste der Ergebnisse wird gemacht (Regex kann man hier eigentlich genauer machen, ging aber nich anderes bei divshare!)
+        // Liste der Ergebnisse wird gemacht (Regex kann man hier eigentlich
+        // genauer machen, ging aber nich anderes bei divshare!)
         String[] links = br.getRegex("\"(/(download|image|folder).*?)\"").getColumn(0);
         if (links.length == 0) return null;
         for (String dl : links)
-            //fügt jedem Ergebnis der Liste ein "http://www.divshare.com" hinzu, damit die Links auch angenommen werden
+            // fügt jedem Ergebnis der Liste ein "http://www.divshare.com"
+            // hinzu, damit die Links auch angenommen werden
             decryptedLinks.add(createDownloadlink("http://www.divshare.com" + dl));
-        
+
         return decryptedLinks;
     }
 
     // @Override
-    
 
 }

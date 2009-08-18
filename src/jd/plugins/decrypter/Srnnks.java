@@ -65,7 +65,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
-@DecrypterPlugin(revision = "$Revision: 7185 $", interfaceVersion = 2, names = { "Srnnks.org" }, urls = { "http://[\\w\\.]*?serienjunkies\\.org.*(rc[_-]|rs[_-]|nl[_-]|u[tl][_-]|ff[_-]|p=[\\d]+|cat=[\\d]+).*" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "Srnnks.org" }, urls = { "http://[\\w\\.]*?serienjunkies\\.org.*(rc[_-]|rs[_-]|nl[_-]|u[tl][_-]|ff[_-]|p=[\\d]+|cat=[\\d]+).*" }, flags = { 0 })
 public class Srnnks extends PluginForDecrypt {
 
     private static String lastHtmlCode = "";

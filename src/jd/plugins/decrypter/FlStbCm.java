@@ -25,9 +25,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "filestube.com" }, urls = { "http://[\\w\\.]*?filestube\\.com/.+"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filestube.com" }, urls = { "http://[\\w\\.]*?filestube\\.com/.+" }, flags = { 0 })
 public class FlStbCm extends PluginForDecrypt {
 
     public FlStbCm(PluginWrapper wrapper) {
@@ -48,8 +47,5 @@ public class FlStbCm extends PluginForDecrypt {
         }
         return decryptedLinks;
     }
-
-   
-    
 
 }

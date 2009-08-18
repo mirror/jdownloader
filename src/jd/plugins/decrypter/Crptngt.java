@@ -29,27 +29,27 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "crypting.it" }, urls = { "http://[\\w\\.]*?crypting\\.it/(s/[\\w]+|index\\.php\\?p=show(usrfolders)?(&user=.+)?&id=[\\w]+)"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "crypting.it" }, urls = { "http://[\\w\\.]*?crypting\\.it/(s/[\\w]+|index\\.php\\?p=show(usrfolders)?(&user=.+)?&id=[\\w]+)" }, flags = { 0 })
 public class Crptngt extends PluginForDecrypt {
 
     public Crptngt(PluginWrapper wrapper) {
         super(wrapper);
     }
+
     private static int getCode(String code) {
-    	try {
-    		int ind = code.indexOf('p');
-    		if(ind==-1)
-    		{
-    			ind = code.indexOf('m');
-    			return Integer.parseInt(code.substring(0,ind)) - Integer.parseInt(code.substring(ind+1));
-    		}
-    		return Integer.parseInt(code.substring(0,ind)) + Integer.parseInt(code.substring(ind+1));
-		} catch (Exception e) {
-		}
-		return 0;
-	}
+        try {
+            int ind = code.indexOf('p');
+            if (ind == -1) {
+                ind = code.indexOf('m');
+                return Integer.parseInt(code.substring(0, ind)) - Integer.parseInt(code.substring(ind + 1));
+            }
+            return Integer.parseInt(code.substring(0, ind)) + Integer.parseInt(code.substring(ind + 1));
+        } catch (Exception e) {
+        }
+        return 0;
+    }
+
     // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -77,7 +77,7 @@ public class Crptngt extends PluginForDecrypt {
         // mirrors)
         for (int i = 1; i <= 5; i++) {
             String code = getCaptchaCode("http://www.crypting.it/captcha.php", param);
-            form.put("AnimCaptcha", ""+getCode(code));
+            form.put("AnimCaptcha", "" + getCode(code));
             Browser br3 = br.cloneBrowser();
             br3.submitForm(form); // Wrong answer!
             String error = br3.getRegex("alert\\(\"(.*?)\"\\);").getMatch(0);
@@ -163,5 +163,5 @@ public class Crptngt extends PluginForDecrypt {
     }
 
     // @Override
-    
+
 }

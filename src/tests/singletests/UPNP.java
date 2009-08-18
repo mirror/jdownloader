@@ -19,14 +19,10 @@ package tests.singletests;
 import java.net.InetAddress;
 
 import jd.nrouter.UPnP;
-import jd.router.UPnPInfo;
-import jd.utils.JDUtilities;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
-import tests.utils.TestUtils;
 
 public class UPNP {
 
@@ -40,9 +36,8 @@ public class UPNP {
         jd.nrouter.RouterInfo router = jd.nrouter.RouterInfo.getInstance();
 
         InetAddress address = router.getAddress();
-        
+
         UPnP upnp = router.getUpnpInfo();
-     
 
     }
 

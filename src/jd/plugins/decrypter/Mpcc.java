@@ -24,16 +24,15 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "myup.cc" }, urls = { "http://[\\w\\.]*?myup\\.cc/link-[\\w]+\\.html"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myup.cc" }, urls = { "http://[\\w\\.]*?myup\\.cc/link-[\\w]+\\.html" }, flags = { 0 })
 public class Mpcc extends PluginForDecrypt {
 
     public Mpcc(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -45,6 +44,6 @@ public class Mpcc extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    //@Override
-    
+    // @Override
+
 }

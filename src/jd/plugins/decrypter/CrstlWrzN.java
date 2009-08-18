@@ -25,9 +25,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "crystal-warez.in" }, urls = { "http://[\\w\\.]*?crystal-(warez|board)\\.in//?(show_download|protect)/.*?\\.html"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "crystal-warez.in" }, urls = { "http://[\\w\\.]*?crystal-(warez|board)\\.in//?(show_download|protect)/.*?\\.html" }, flags = { 0 })
 public class CrstlWrzN extends PluginForDecrypt {
 
     private static final String patternLink_Protected = "(http://[\\w\\.]*?crystal-warez\\.in/protect/[^\"']*)";
@@ -74,5 +73,5 @@ public class CrstlWrzN extends PluginForDecrypt {
     }
 
     // @Override
-    
+
 }

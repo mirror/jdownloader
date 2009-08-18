@@ -27,9 +27,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7185 $", interfaceVersion = 2, names = { "xink.it" }, urls = { "http://[\\w\\.]*?xink\\.it/f-[\\w]+"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xink.it" }, urls = { "http://[\\w\\.]*?xink\\.it/f-[\\w]+" }, flags = { 0 })
 public class Xnkt extends PluginForDecrypt {
 
     public Xnkt(PluginWrapper wrapper) {
@@ -75,7 +74,6 @@ public class Xnkt extends PluginForDecrypt {
     }
 
     // @Override
-    
 
     /**
      * 

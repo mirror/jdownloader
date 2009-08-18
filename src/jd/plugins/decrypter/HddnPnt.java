@@ -24,9 +24,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "hiddenip.net" }, urls = { "http://[\\w\\.]*?hiddenip\\.net/.*?q=[0-9A-Za-z|]+.+"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hiddenip.net" }, urls = { "http://[\\w\\.]*?hiddenip\\.net/.*?q=[0-9A-Za-z|]+.+" }, flags = { 0 })
 public class HddnPnt extends PluginForDecrypt {
 
     public HddnPnt(PluginWrapper wrapper) {
@@ -37,15 +36,12 @@ public class HddnPnt extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         this.setBrowserExclusive();
-        ArrayList<DownloadLink> ret=new ArrayList<DownloadLink>();
+        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.getPage(parameter.toString());
-        String redirect=br.getRegex("form method=\"post\" action=\"http://hiddenip.net/index.php\">.*?<a href=\"(.*?)\">Address").getMatch(0);
-        if (redirect==null) return null;
+        String redirect = br.getRegex("form method=\"post\" action=\"http://hiddenip.net/index.php\">.*?<a href=\"(.*?)\">Address").getMatch(0);
+        if (redirect == null) return null;
         ret.add(this.createDownloadlink(redirect));
         return ret;
     }
-
-   
-    
 
 }

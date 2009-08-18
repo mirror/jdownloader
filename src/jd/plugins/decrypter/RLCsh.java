@@ -25,7 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 7184 $", interfaceVersion = 2, names = {}, urls = {}, flags = {})
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {}, flags = {})
 public class RLCsh extends PluginForDecrypt {
     private static final String[] ANNOTATION_NAMES = new String[] { "urlcash.net", "bat5.com", "sealed.in", "urlcash.org", "clb1.com", "urlgalleries.com", "celebclk.com", "smilinglinks\\.com", "peekatmygirlfriend.com", "looble.net" };
 

@@ -31,9 +31,8 @@ import jd.plugins.PluginForDecrypt;
 
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
-@DecrypterPlugin(revision = "$Revision: 7185 $", interfaceVersion = 2, names = { "urlshield.net" }, urls = { "http://[\\w\\.]*?urlshield\\.net/l/[\\w]+"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "urlshield.net" }, urls = { "http://[\\w\\.]*?urlshield\\.net/l/[\\w]+" }, flags = { 0 })
 public class RlShldnt extends PluginForDecrypt {
 
     public RlShldnt(PluginWrapper wrapper) {
@@ -115,5 +114,5 @@ public class RlShldnt extends PluginForDecrypt {
     }
 
     // @Override
-    
+
 }

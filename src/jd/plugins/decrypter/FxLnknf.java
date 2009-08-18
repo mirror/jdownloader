@@ -26,9 +26,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7185 $", interfaceVersion = 2, names = { "foxlink.info" }, urls = { "http://[\\w\\.]*?(foxlink|viplink|zero10)\\.info/\\d+"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "foxlink.info" }, urls = { "http://[\\w\\.]*?(foxlink|viplink|zero10)\\.info/\\d+" }, flags = { 0 })
 public class FxLnknf extends PluginForDecrypt {
 
     public FxLnknf(PluginWrapper wrapper) {
@@ -47,5 +46,5 @@ public class FxLnknf extends PluginForDecrypt {
     }
 
     // @Override
-    
+
 }

@@ -31,9 +31,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "best-movies.us" }, urls = { "http://crypt\\.(best-movies\\.us|capcrypt\\.info)/go\\.php\\?id\\=\\d+"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "best-movies.us" }, urls = { "http://crypt\\.(best-movies\\.us|capcrypt\\.info)/go\\.php\\?id\\=\\d+" }, flags = { 0 })
 public class BstMvs extends PluginForDecrypt {
 
     static private final Pattern patternCaptcha_Needed = Pattern.compile("<img src=\"clockcaptcha.php\"");
@@ -90,5 +89,5 @@ public class BstMvs extends PluginForDecrypt {
     }
 
     // @Override
-    
+
 }

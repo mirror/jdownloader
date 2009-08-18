@@ -24,26 +24,24 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "Hex.io" }, urls = { "http://[\\w\\.]*?hex\\.io/[\\w]+"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "Hex.io" }, urls = { "http://[\\w\\.]*?hex\\.io/[\\w]+" }, flags = { 0 })
 public class Hx extends PluginForDecrypt {
 
     public Hx(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(false);
-        br.getPage(parameter); 
+        br.getPage(parameter);
         decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
         return decryptedLinks;
     }
 
-    //@Override
-    
+    // @Override
 
 }

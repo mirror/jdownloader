@@ -28,9 +28,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7185 $", interfaceVersion = 2, names = { "badongo.com" }, urls = { "http://[\\w\\.]*?badongo\\.com/.*(file|vid|audio)/[0-9]+"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "badongo.com" }, urls = { "http://[\\w\\.]*?badongo\\.com/.*(file|vid|audio)/[0-9]+" }, flags = { 0 })
 public class BdngCm extends PluginForDecrypt {
     static private String host = "badongo.com";
 
@@ -90,5 +89,5 @@ public class BdngCm extends PluginForDecrypt {
     }
 
     // @Override
-    
+
 }

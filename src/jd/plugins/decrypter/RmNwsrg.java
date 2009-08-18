@@ -31,9 +31,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "rom-news.org" }, urls = { "http://[\\w\\.]*?download\\.rom-news\\.org/[\\w]+"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rom-news.org" }, urls = { "http://[\\w\\.]*?download\\.rom-news\\.org/[\\w]+" }, flags = { 0 })
 public class RmNwsrg extends PluginForDecrypt {
 
     public RmNwsrg(PluginWrapper wrapper) {
@@ -73,6 +72,5 @@ public class RmNwsrg extends PluginForDecrypt {
     }
 
     // @Override
-    
 
 }

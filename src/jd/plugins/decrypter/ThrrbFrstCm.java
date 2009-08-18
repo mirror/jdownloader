@@ -26,9 +26,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7185 $", interfaceVersion = 2, names = { "short.3arabforest.com" }, urls = { "http://[\\w\\.]*?short\\.3arabforest\\.com/\\d+"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "short.3arabforest.com" }, urls = { "http://[\\w\\.]*?short\\.3arabforest\\.com/\\d+" }, flags = { 0 })
 public class ThrrbFrstCm extends PluginForDecrypt {
 
     public ThrrbFrstCm(PluginWrapper wrapper) {
@@ -48,5 +47,5 @@ public class ThrrbFrstCm extends PluginForDecrypt {
     }
 
     // @Override
-    
+
 }

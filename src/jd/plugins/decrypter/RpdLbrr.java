@@ -28,9 +28,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "rapidlibrary.com" }, urls = { "http://rapidlibrary\\.com/download_file_i\\.php\\?.+"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidlibrary.com" }, urls = { "http://rapidlibrary\\.com/download_file_i\\.php\\?.+" }, flags = { 0 })
 public class RpdLbrr extends PluginForDecrypt {
 
     private static boolean decryptRunning = false;
@@ -72,7 +71,6 @@ public class RpdLbrr extends PluginForDecrypt {
     }
 
     // @Override
-    
 
     private void waitQueue() throws InterruptedException {
         while (RpdLbrr.decryptRunning)

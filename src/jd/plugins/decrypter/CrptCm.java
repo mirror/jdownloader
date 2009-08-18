@@ -29,9 +29,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "youcrypt.com" }, urls = { "http://[\\w\\.]*?youcrypt\\.com/[0-9a-zA-Z]+\\.html"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youcrypt.com" }, urls = { "http://[\\w\\.]*?youcrypt\\.com/[0-9a-zA-Z]+\\.html" }, flags = { 0 })
 public class CrptCm extends PluginForDecrypt {
 
     public CrptCm(PluginWrapper wrapper) {
@@ -146,9 +145,6 @@ public class CrptCm extends PluginForDecrypt {
         }
         return decryptedLinks;
     }
-
-    
-    
 
     private String get_easy_Captcha() {
         String captcha = null;

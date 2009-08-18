@@ -34,9 +34,8 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "Stlth.to" }, urls = { "http://[\\w\\.]*?stealth\\.to/(\\?id\\=[\\w]+|index\\.php\\?id\\=[\\w]+|\\?go\\=captcha&id=[\\w]+)|http://[\\w\\.]*?stealth\\.to/folder/[\\w]+"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "Stlth.to" }, urls = { "http://[\\w\\.]*?stealth\\.to/(\\?id\\=[\\w]+|index\\.php\\?id\\=[\\w]+|\\?go\\=captcha&id=[\\w]+)|http://[\\w\\.]*?stealth\\.to/folder/[\\w]+" }, flags = { 0 })
 public class Stlth extends PluginForDecrypt {
 
     public Stlth(PluginWrapper wrapper) {
@@ -102,13 +101,13 @@ public class Stlth extends PluginForDecrypt {
                 if (clone.containsHTML("incorrect-captcha-sol")) {
                     if (max == 0) {
                         logger.warning("Captcha error");
-                        
+
                         return null;
                     } else {
                         continue;
                     }
                 }
-                
+
                 break;
             }
         }
@@ -121,12 +120,13 @@ public class Stlth extends PluginForDecrypt {
 
         fp.setName(name);
         fp.setPassword(pass);
-  
+
         Browser.download(container, br.openGetConnection("http://sql.stealth.to/dlc.php?name=" + stealthID));
         ArrayList<DownloadLink> links = JDUtilities.getController().getContainerLinks(container);
 
         if (links != null && links.size() > 0) {
-            for (DownloadLink l : links) l.setFilePackage(fp);
+            for (DownloadLink l : links)
+                l.setFilePackage(fp);
             decryptedLinks.addAll(links);
         } else {
             logger.log(Level.WARNING, "Cannot decrypt download links file ['" + container.getName() + "']");
@@ -140,10 +140,10 @@ public class Stlth extends PluginForDecrypt {
         } else {
             logger.warning("There were no links obtained for the URL '" + url + "'");
         }
-        
+
         return decryptedLinks;
     }
 
     // @Override
-    
+
 }

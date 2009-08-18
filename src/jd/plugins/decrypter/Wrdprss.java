@@ -29,7 +29,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 7175 $", interfaceVersion = 2, names = {}, urls = {}, flags = {})
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {}, flags = {})
 public class Wrdprss extends PluginForDecrypt {
     /**
      * Returns the annotations names array

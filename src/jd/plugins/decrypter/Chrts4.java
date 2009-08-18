@@ -33,9 +33,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "charts4you.org" }, urls = { "http://[\\w\\.]*?charts4you\\.org/\\?id=\\d+"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "charts4you.org" }, urls = { "http://[\\w\\.]*?charts4you\\.org/\\?id=\\d+" }, flags = { 0 })
 public class Chrts4 extends PluginForDecrypt {
 
     public Chrts4(PluginWrapper wrapper) {
@@ -74,6 +73,5 @@ public class Chrts4 extends PluginForDecrypt {
     }
 
     // @Override
-    
 
 }

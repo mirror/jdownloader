@@ -26,9 +26,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "pspisos.org" }, urls = { "http://[\\w\\.]*?pspisos\\.org/(d\\d\\d?wn|d3741l5)/.+(/\\d+)?"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pspisos.org" }, urls = { "http://[\\w\\.]*?pspisos\\.org/(d\\d\\d?wn|d3741l5)/.+(/\\d+)?" }, flags = { 0 })
 public class Pspssrg extends PluginForDecrypt {
 
     public Pspssrg(PluginWrapper wrapper) {
@@ -73,6 +72,5 @@ public class Pspssrg extends PluginForDecrypt {
     }
 
     // @Override
-    
 
 }

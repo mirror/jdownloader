@@ -40,9 +40,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7185 $", interfaceVersion = 2, names = { "youtube.com" }, urls = { "http://[\\w\\.]*?youtube\\.com/(watch\\?v=[a-z-_A-Z0-9]+|view_play_list\\?p=[a-z-_A-Z0-9]+(.*?page=\\d+)?)"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "http://[\\w\\.]*?youtube\\.com/(watch\\?v=[a-z-_A-Z0-9]+|view_play_list\\?p=[a-z-_A-Z0-9]+(.*?page=\\d+)?)" }, flags = { 0 })
 public class TbCm extends PluginForDecrypt {
 
     static private String host = "youtube.com";
@@ -182,7 +181,7 @@ public class TbCm extends PluginForDecrypt {
                 boolean tryall = false;
                 while (true) {
                     if (tryall || (ConvertDialog.getKeeped().contains(ConversionMode.VIDEOFLV) || ConvertDialog.getKeeped().contains(ConversionMode.AUDIOMP3) || ConvertDialog.getKeeped().contains(ConversionMode.AUDIOMP3_AND_VIDEOFLV))) {
-                        if (br.openGetConnection(link).getResponseCode() == 200) {                            
+                        if (br.openGetConnection(link).getResponseCode() == 200) {
                             addtopos(ConversionMode.VIDEOFLV, link, br.getHttpConnection().getLongContentLength(), "");
                             addtopos(ConversionMode.AUDIOMP3, link, br.getHttpConnection().getLongContentLength(), "");
                             addtopos(ConversionMode.AUDIOMP3_AND_VIDEOFLV, link, br.getHttpConnection().getLongContentLength(), "");
@@ -190,7 +189,7 @@ public class TbCm extends PluginForDecrypt {
                             if ((ConvertDialog.getKeeped().contains(ConversionMode.VIDEOFLV) || ConvertDialog.getKeeped().contains(ConversionMode.AUDIOMP3) || ConvertDialog.getKeeped().contains(ConversionMode.AUDIOMP3_AND_VIDEOFLV))) break;
                         }
                     }
-                    if (tryall || ConvertDialog.getKeeped().contains(ConversionMode.VIDEOMP4)) {                        
+                    if (tryall || ConvertDialog.getKeeped().contains(ConversionMode.VIDEOMP4)) {
                         if (br.openGetConnection(link + "&fmt=18").getResponseCode() == 200) {
                             addtopos(ConversionMode.VIDEOMP4, link + "&fmt=18", br.getHttpConnection().getLongContentLength(), "(18)");
                             br.getHttpConnection().disconnect();
@@ -205,7 +204,7 @@ public class TbCm extends PluginForDecrypt {
                         }
                         if (ConvertDialog.getKeeped().contains(ConversionMode.VIDEOMP4)) break;
                     }
-                    if (tryall) {                        
+                    if (tryall) {
                         if (br.openGetConnection(link + "&fmt=13").getResponseCode() == 200) {
                             addtopos(ConversionMode.VIDEO3GP, link + "&fmt=13", br.getHttpConnection().getLongContentLength(), "(13)");
                             br.getHttpConnection().disconnect();
@@ -255,5 +254,5 @@ public class TbCm extends PluginForDecrypt {
     }
 
     // @Override
-    
+
 }

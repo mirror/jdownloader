@@ -37,10 +37,9 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginUtils;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision: 7185 $", interfaceVersion = 2, names = { "ddl-warez.org" }, urls = { "http://[\\w\\.]*?ddl-warez\\.org/detail\\.php\\?id=.+&cat=[\\w]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ddl-warez.org" }, urls = { "http://[\\w\\.]*?ddl-warez\\.org/detail\\.php\\?id=.+&cat=[\\w]+" }, flags = { 0 })
 public class DDLWrz extends PluginForDecrypt {
     static class DDLWrz_Linkgrabber extends Thread {
         public final static int THREADFAIL = 1;
@@ -189,9 +188,8 @@ public class DDLWrz extends PluginForDecrypt {
                         continue;
                     }
                 }
-                
 
-                String unpackedScript =  jsunpacker(br);
+                String unpackedScript = jsunpacker(br);
                 Form[] forms = Form.getForms(unpackedScript);
                 progress.setRange(forms.length);
                 DDLWrz_Linkgrabber DDLWrz_Linkgrabbers[] = new DDLWrz_Linkgrabber[forms.length];

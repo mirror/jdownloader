@@ -24,16 +24,15 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "all-stream.info" }, urls = { "http://[\\w\\.]*?all-stream.info/\\?id=\\d+.*"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "all-stream.info" }, urls = { "http://[\\w\\.]*?all-stream.info/\\?id=\\d+.*" }, flags = { 0 })
 public class LlStrmnf extends PluginForDecrypt {
 
     public LlStrmnf(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.getPage(param.toString());
@@ -46,6 +45,6 @@ public class LlStrmnf extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    //@Override
-    
+    // @Override
+
 }

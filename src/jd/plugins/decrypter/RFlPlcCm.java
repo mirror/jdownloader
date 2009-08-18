@@ -24,25 +24,24 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "yourfileplace.Com" }, urls = { "http://[\\w\\.]*?yourfileplace\\.com/files/\\d+/.+\\.html"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourfileplace.Com" }, urls = { "http://[\\w\\.]*?yourfileplace\\.com/files/\\d+/.+\\.html" }, flags = { 0 })
 public class RFlPlcCm extends PluginForDecrypt {
 
     public RFlPlcCm(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
-        br.getPage(param.toString().replace("files/","popup.php?file="));
+        br.getPage(param.toString().replace("files/", "popup.php?file="));
         String link = br.getRegex("onClick=poplink\\('(.*?)'\\)>").getMatch(0);
         decryptedLinks.add(createDownloadlink(link));
         return decryptedLinks;
     }
 
-    //@Override
-    
+    // @Override
+
 }

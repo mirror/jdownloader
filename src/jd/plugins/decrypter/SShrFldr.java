@@ -24,9 +24,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "easy-share.com" }, urls = { "http://[\\w\\.]*?easy-share\\.com/f/\\d+/"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "easy-share.com" }, urls = { "http://[\\w\\.]*?easy-share\\.com/f/\\d+/" }, flags = { 0 })
 public class SShrFldr extends PluginForDecrypt {
 
     public SShrFldr(PluginWrapper wrapper) {
@@ -48,6 +47,5 @@ public class SShrFldr extends PluginForDecrypt {
     }
 
     // @Override
-    
 
 }

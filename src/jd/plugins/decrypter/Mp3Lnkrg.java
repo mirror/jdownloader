@@ -26,9 +26,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7185 $", interfaceVersion = 2, names = { "mp3link.org" }, urls = { "http://[\\w\\.]*?mp3link\\.org/.*?/(song|album).+"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mp3link.org" }, urls = { "http://[\\w\\.]*?mp3link\\.org/.*?/(song|album).+" }, flags = { 0 })
 public class Mp3Lnkrg extends PluginForDecrypt {
 
     private String pattern_AlbumInfo = "http://mp3link\\.org/.*?/album/details\\.html";
@@ -40,8 +39,8 @@ public class Mp3Lnkrg extends PluginForDecrypt {
         super(wrapper);
     }
 
-    //@Override
-    //@SuppressWarnings("null")
+    // @Override
+    // @SuppressWarnings("null")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -56,19 +55,17 @@ public class Mp3Lnkrg extends PluginForDecrypt {
             if (link.matches(pattern_Song)) {
                 String artist = br.getRegex("Artist:<b>(.*?)</b>").getMatch(0);
                 String title = br.getRegex("Title:<b>(.*?)</b>").getMatch(0);
-                if ((artist.length() != 0) && (title.length() != 0))
-                    seperator = " - ";
+                if ((artist.length() != 0) && (title.length() != 0)) seperator = " - ";
                 filename = artist + seperator + title;
-            } else 
+            } else
                 filename = br.getRegex("<h2><b>(.*?)</b></h2>").getMatch(0);
         }
         if (link.matches(pattern_Album) || link.matches(pattern_Song)) {
             br.getPage(link);
             if (link.matches(pattern_Album)) {
                 link = br.getRegex("document\\.location\\s+=\\s+'(.*?)'").getMatch(0);
-            } else if (link.matches(pattern_Song))
-                link = br.getRedirectLocation();
-            
+            } else if (link.matches(pattern_Song)) link = br.getRedirectLocation();
+
             DownloadLink dlink = createDownloadlink(link);
             FilePackage fp = FilePackage.getInstance();
             fp.setName(HTMLEntities.unhtmlentities(filename));
@@ -80,6 +77,6 @@ public class Mp3Lnkrg extends PluginForDecrypt {
         } else
             return null;
     }
-    //@Override
-    
+    // @Override
+
 }

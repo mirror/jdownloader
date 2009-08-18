@@ -29,9 +29,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "jamendo.com" }, urls = { "http://[\\w\\.]*?jamendo\\.com/.?.?/?(album/\\d+|artist/.+)"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jamendo.com" }, urls = { "http://[\\w\\.]*?jamendo\\.com/.?.?/?(album/\\d+|artist/.+)" }, flags = { 0 })
 public class MndCm extends PluginForDecrypt {
 
     private static String ENABLE_SUBFOLDERS = "ENABLE_SUBFOLDERS";
@@ -42,7 +41,7 @@ public class MndCm extends PluginForDecrypt {
         setConfigElements();
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         if (parameter.toString().contains("/album")) {
@@ -81,8 +80,7 @@ public class MndCm extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    //@Override
-    
+    // @Override
 
     /**
      * TODO: Umbauen!

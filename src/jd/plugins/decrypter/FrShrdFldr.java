@@ -28,9 +28,8 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "4shared.com" }, urls = { "http://[\\w\\.]*?4shared\\.com/dir/\\d+/[\\w]+/?"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "http://[\\w\\.]*?4shared\\.com/dir/\\d+/[\\w]+/?" }, flags = { 0 })
 public class FrShrdFldr extends PluginForDecrypt {
 
     public FrShrdFldr(PluginWrapper wrapper) {
@@ -95,6 +94,5 @@ public class FrShrdFldr extends PluginForDecrypt {
     }
 
     // @Override
-    
 
 }

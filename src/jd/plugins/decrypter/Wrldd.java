@@ -26,9 +26,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7195 $", interfaceVersion = 2, names = { "wii-reloaded.info" }, urls = { "http://[\\w\\.]*?wii-reloaded\\.(info|org)(/protect)?/get\\.php\\?i=.+"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wii-reloaded.info" }, urls = { "http://[\\w\\.]*?wii-reloaded\\.(info|org)(/protect)?/get\\.php\\?i=.+" }, flags = { 0 })
 public class Wrldd extends PluginForDecrypt {
 
     public Wrldd(PluginWrapper wrapper) {
@@ -39,7 +38,7 @@ public class Wrldd extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         int submitvalue = getPluginConfig().getIntegerProperty("WIIReloaded_SubmitValue", 5);
         br.setDebug(true);
-        String parameter = param.toString().replaceFirst("reloaded.info", "reloaded.org");        
+        String parameter = param.toString().replaceFirst("reloaded.info", "reloaded.org");
         ArrayList<String> link_passwds = new ArrayList<String>();
         link_passwds.add("wii-reloaded.info");
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -63,7 +62,7 @@ public class Wrldd extends PluginForDecrypt {
 
             progress.addToMax(1);
 
-            String capTxt = getCaptchaCode("wii",adr, param);
+            String capTxt = getCaptchaCode("wii", adr, param);
             Form post = br.getForm(0);
             post.put("sicherheitscode", capTxt);
             try {
@@ -134,5 +133,5 @@ public class Wrldd extends PluginForDecrypt {
     }
 
     // @Override
-    
+
 }

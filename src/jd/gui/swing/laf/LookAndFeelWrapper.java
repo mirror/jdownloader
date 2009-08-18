@@ -5,37 +5,35 @@ import java.io.Serializable;
 import javax.swing.ImageIcon;
 import javax.swing.UIManager.LookAndFeelInfo;
 
-import jd.config.container.JDLabelContainer;
 import jd.nutils.JDImage;
 import jd.utils.JDTheme;
 
-public class LookAndFeelWrapper implements Serializable{
+public class LookAndFeelWrapper implements Serializable {
 
-
-    /**
-     * 
-     */
     private static final long serialVersionUID = 8010506524416796786L;
     private String className;
     private String name;
 
     public LookAndFeelWrapper(LookAndFeelInfo lafi) {
         this.className = lafi.getClassName();
-        this.name=lafi.getName();
+        this.name = lafi.getName();
     }
 
     public LookAndFeelWrapper(String className) {
         this.className = className;
-        name=className.substring(className.lastIndexOf(".")+1);
+        name = className.substring(className.lastIndexOf(".") + 1);
     }
+
     /**
      * Sets a static name. just fort displaying
+     * 
      * @param string
      */
     public void setName(String string) {
         this.name = string;
 
     }
+
     // @Override
     public boolean equals(Object obj) {
         return (obj instanceof LookAndFeelWrapper) && ((LookAndFeelWrapper) obj).getClassName() != null && ((LookAndFeelWrapper) obj).getClassName().equals(className);
@@ -51,7 +49,7 @@ public class LookAndFeelWrapper implements Serializable{
 
     // @Override
     public String toString() {
-      return name;
+        return name;
     }
 
     public ImageIcon getIcon() {
@@ -70,15 +68,13 @@ public class LookAndFeelWrapper implements Serializable{
     public boolean isJTattoo() {
         return this.className.contains("jtattoo");
     }
-    
-
 
     public boolean isSubstance() {
         return this.className.contains("substance");
     }
 
-    public String  getName() {
+    public String getName() {
         // TODO Auto-generated method stub
-         return this.name;
+        return this.name;
     }
 }

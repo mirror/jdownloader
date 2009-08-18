@@ -25,9 +25,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7185 $", interfaceVersion = 2, names = { "saug.us" }, urls = { "http://[\\w\\.]*?saug\\.us/folder.?-[\\w\\-]{30,50}\\.html|http://[\\w\\.]*?saug\\.us/go.+\\.php"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "saug.us" }, urls = { "http://[\\w\\.]*?saug\\.us/folder.?-[\\w\\-]{30,50}\\.html|http://[\\w\\.]*?saug\\.us/go.+\\.php" }, flags = { 0 })
 public class SGS extends PluginForDecrypt {
 
     private String patternSupported_go = "http://[\\w\\.]*?saug\\.us/go.+\\.php";
@@ -37,7 +36,7 @@ public class SGS extends PluginForDecrypt {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -90,6 +89,6 @@ public class SGS extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    //@Override
-    
+    // @Override
+
 }

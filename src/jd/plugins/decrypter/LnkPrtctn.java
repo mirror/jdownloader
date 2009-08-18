@@ -31,9 +31,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "linkprotect.in" }, urls = { "http://[\\w\\.]*?linkprotect\\.in/index.php\\?site=folder&id=[\\w]{1,50}"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linkprotect.in" }, urls = { "http://[\\w\\.]*?linkprotect\\.in/index.php\\?site=folder&id=[\\w]{1,50}" }, flags = { 0 })
 public class LnkPrtctn extends PluginForDecrypt {
 
     static private final Pattern patternName = Pattern.compile("Ordnername: <b>(.*?)</b>");
@@ -139,5 +138,5 @@ public class LnkPrtctn extends PluginForDecrypt {
     }
 
     // @Override
-    
+
 }

@@ -24,9 +24,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "takemyfile.com" }, urls = { "http://[\\w\\.]*?(tmf\\.myegy\\.com|takemyfile.com)/(.*?id=)?\\d+"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "takemyfile.com" }, urls = { "http://[\\w\\.]*?(tmf\\.myegy\\.com|takemyfile.com)/(.*?id=)?\\d+" }, flags = { 0 })
 public class TkmflCm extends PluginForDecrypt {
 
     public TkmflCm(PluginWrapper wrapper) {
@@ -45,7 +44,5 @@ public class TkmflCm extends PluginForDecrypt {
         decryptedLinks.add(this.createDownloadlink(url));
         return decryptedLinks;
     }
-
-
 
 }

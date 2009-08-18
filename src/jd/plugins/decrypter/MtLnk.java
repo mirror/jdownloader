@@ -35,9 +35,8 @@ import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "metalinker.org" }, urls = { "http://[\\d\\w\\.:\\-@]*/.*?\\.metalink"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "metalinker.org" }, urls = { "http://[\\d\\w\\.:\\-@]*/.*?\\.metalink" }, flags = { 0 })
 public class MtLnk extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> decryptedLinks;
@@ -75,8 +74,6 @@ public class MtLnk extends PluginForDecrypt {
 
         return decryptedLinks;
     }
-
-    
 
     public class MetalinkSAXHandler extends DefaultHandler {
         private CharArrayWriter text = new CharArrayWriter();
@@ -148,11 +145,13 @@ public class MtLnk extends PluginForDecrypt {
                     pgk.setComment(publisherURL);
                 }
                 decryptedLinks.add(downloadLink);
-            } 
-            //else if (path.equalsIgnoreCase(".metalink.files.file.verification.pieces.hash")) {
-            //    /** define chunk hashes..... TODO */
+            }
+            // else if
+            // (path.equalsIgnoreCase(".metalink.files.file.verification.pieces.hash"))
+            // {
+            // /** define chunk hashes..... TODO */
             //
-            //}
+            // }
             path = path.substring(0, path.length() - qName.length() - 1);
             text.reset();
         }

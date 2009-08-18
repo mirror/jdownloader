@@ -25,32 +25,30 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "Szort.pl" }, urls = { "http://[\\w\\.]*(tini\\.us|justlink\\.us|poourl\\.com|szort\\.pl)/.+"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "Szort.pl" }, urls = { "http://[\\w\\.]*(tini\\.us|justlink\\.us|poourl\\.com|szort\\.pl)/.+" }, flags = { 0 })
 public class SzrtPl extends PluginForDecrypt {
 
     public SzrtPl(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        //TODO: Seiten mit Passwort, Seite momentan buggy ...
-        if(parameter.contains(".php"))
-            return decryptedLinks;
+        // TODO: Seiten mit Passwort, Seite momentan buggy ...
+        if (parameter.contains(".php")) return decryptedLinks;
 
         String link;
-        while(true) {
+        while (true) {
 
             br.getPage(parameter);
             link = br.getRegex(Pattern.compile("<frame name=\"strona\" src=\"(.*?)\">")).getMatch(0);
-            if(link == null) {
+            if (link == null) {
                 parameter = br.getRedirectLocation();
-                if(parameter == null)
+                if (parameter == null)
                     return null;
                 else
                     continue;
@@ -63,6 +61,6 @@ public class SzrtPl extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    //@Override
-    
+    // @Override
+
 }

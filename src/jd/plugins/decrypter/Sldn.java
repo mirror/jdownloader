@@ -32,9 +32,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
-@DecrypterPlugin(revision = "$Revision: 7185 $", interfaceVersion = 2, names = { "sealed.in" }, urls = { "http://[\\w\\.]*?sealed\\.in/[a-zA-Z]-[\\w]+"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sealed.in" }, urls = { "http://[\\w\\.]*?sealed\\.in/[a-zA-Z]-[\\w]+" }, flags = { 0 })
 public class Sldn extends PluginForDecrypt {
 
     public Sldn(PluginWrapper wrapper) {
@@ -220,5 +219,5 @@ public class Sldn extends PluginForDecrypt {
     }
 
     // @Override
-    
+
 }

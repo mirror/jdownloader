@@ -39,7 +39,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.pluginUtils.Recaptcha;
 import jd.utils.JDHexUtils;
 
-@DecrypterPlugin(revision = "$Revision: 7185 $", interfaceVersion = 2, names = { "savelink1", "savelink2" }, urls = { "http://.*?\\..*?/.*?/sl/.*", "http://.*?\\..*?/.*?[\\?\\&]sl=1.*" }, flags = { 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "savelink1", "savelink2" }, urls = { "http://.*?\\..*?/.*?/sl/.*", "http://.*?\\..*?/.*?[\\?\\&]sl=1.*" }, flags = { 0, 0 })
 public class SvLnk extends PluginForDecrypt {
 
     private static final String RECAPTCHA = "recaptcha";
@@ -63,13 +63,12 @@ public class SvLnk extends PluginForDecrypt {
             }
             if (slParameters != null && slParameters[0].equalsIgnoreCase(RECAPTCHA)) {
                 return decryptRecaptcha(parameter, progress);
-            } else if (slParameters!=null&&slParameters[0].equalsIgnoreCase(LINK)) {
+            } else if (slParameters != null && slParameters[0].equalsIgnoreCase(LINK)) {
                 return followLink(slParameters[1]);
-                
-                
-            } else if (slParameters!=null&&slParameters[0].equalsIgnoreCase(AES)) {       
 
-                byte[] byteKey  = JDHexUtils.getByteArray(slParameters[1]);
+            } else if (slParameters != null && slParameters[0].equalsIgnoreCase(AES)) {
+
+                byte[] byteKey = JDHexUtils.getByteArray(slParameters[1]);
                 SecretKeySpec skeySpec = new SecretKeySpec(byteKey, "AES");
                 IvParameterSpec ivSpec = new IvParameterSpec(byteKey);
                 Cipher c = Cipher.getInstance("AES/CBC/PKCS5Padding");
@@ -79,7 +78,7 @@ public class SvLnk extends PluginForDecrypt {
 
                 String decoded = new String(dec);
 
-                String[] urls = HTMLParser.getHttpLinks(decoded,null);
+                String[] urls = HTMLParser.getHttpLinks(decoded, null);
                 StringBuilder sb = new StringBuilder();
                 for (String s : urls) {
                     if (!s.equalsIgnoreCase(parameter.getCryptedUrl())) {
@@ -90,7 +89,7 @@ public class SvLnk extends PluginForDecrypt {
                 for (Iterator<DownloadLink> it = links.iterator(); it.hasNext();) {
                     if (it.next().getDownloadURL().equalsIgnoreCase(parameter.getCryptedUrl())) it.remove();
                 }
-                
+
                 return links;
             } else {
                 String[] redirect = br.getRegex("<meta http-equiv=\"refresh\" content=\"(\\d+)\\; url=(.*?)\">").getRow(0);
@@ -126,7 +125,7 @@ public class SvLnk extends PluginForDecrypt {
 
         String follow = br.getRegex("<a.*?href=\"([^\"]*)\"[^>]*>\\s*" + linktitle + "\\s*<").getMatch(0);
         follow = br.getURL(follow);
-     
+
         return single(follow);
     }
 

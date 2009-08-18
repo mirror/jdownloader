@@ -25,16 +25,15 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "web06.de" }, urls = { "http://[\\w\\.]*?web06\\.de/\\?user=\\d+site=(.*)"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "web06.de" }, urls = { "http://[\\w\\.]*?web06\\.de/\\?user=\\d+site=(.*)" }, flags = { 0 })
 public class Wb06d extends PluginForDecrypt {
 
     public Wb06d(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -47,6 +46,6 @@ public class Wb06d extends PluginForDecrypt {
         return null;
     }
 
-    //@Override
-    
+    // @Override
+
 }

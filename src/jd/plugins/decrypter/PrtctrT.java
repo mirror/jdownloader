@@ -36,7 +36,7 @@ import jd.utils.JDUtilities;
 
 import org.xml.sax.SAXException;
 
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "protector.to" }, urls = { "http://[\\w\\.]*?protector\\.to/.*" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protector.to" }, urls = { "http://[\\w\\.]*?protector\\.to/.*" }, flags = { 0 })
 public class PrtctrT extends PluginForDecrypt {
     final static private Object LOCK = new Object();
 

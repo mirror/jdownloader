@@ -24,9 +24,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "mega.1280.com" }, urls = { "http://[\\w\\.]*?mega\\.1280\\.com/folder/[A-Z|0-9]+"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega.1280.com" }, urls = { "http://[\\w\\.]*?mega\\.1280\\.com/folder/[A-Z|0-9]+" }, flags = { 0 })
 public class Mg1280CmFldr extends PluginForDecrypt {
 
     public Mg1280CmFldr(PluginWrapper wrapper) {
@@ -42,11 +41,10 @@ public class Mg1280CmFldr extends PluginForDecrypt {
         if (links.length == 0) return null;
         for (String dl : links)
             decryptedLinks.add(createDownloadlink(dl));
-        
+
         return decryptedLinks;
     }
 
     // @Override
-    
 
 }

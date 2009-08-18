@@ -28,9 +28,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7185 $", interfaceVersion = 2, names = { "myvideo.de" }, urls = { "http://[\\w\\.]*?myvideo\\.de/watch/[0-9]+/"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myvideo.de" }, urls = { "http://[\\w\\.]*?myvideo\\.de/watch/[0-9]+/" }, flags = { 0 })
 public class MvdD extends PluginForDecrypt {
 
     public MvdD(PluginWrapper wrapper) {
@@ -70,5 +69,5 @@ public class MvdD extends PluginForDecrypt {
     }
 
     // @Override
-    
+
 }

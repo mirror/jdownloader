@@ -27,9 +27,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "cryptbox.cc" }, urls = { "http://[\\w\\.]*?.cryptbox\\.cc/ordner/[0-9a-zA-z]+"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cryptbox.cc" }, urls = { "http://[\\w\\.]*?.cryptbox\\.cc/ordner/[0-9a-zA-z]+" }, flags = { 0 })
 public class CrptBxCC extends PluginForDecrypt {
 
     private static final String CAPTCHA_PATTERN = "<img src=\\'\\.\\./captcha/captcha\\.php\\'>";
@@ -87,8 +86,5 @@ public class CrptBxCC extends PluginForDecrypt {
         }
         return decryptedLinks;
     }
-
-   
-    
 
 }

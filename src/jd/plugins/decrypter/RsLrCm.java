@@ -33,9 +33,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-@DecrypterPlugin(revision = "$Revision: 7185 $", interfaceVersion = 2, names = { "rs-layer.com" }, urls = { "http://[\\w\\.]*?rs-layer\\.com/(.+)\\.html"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rs-layer.com" }, urls = { "http://[\\w\\.]*?rs-layer\\.com/(.+)\\.html" }, flags = { 0 })
 public class RsLrCm extends PluginForDecrypt {
 
     private static Pattern linkPattern = Pattern.compile("onclick=\"getFile\\('([^;]*)'\\)", Pattern.CASE_INSENSITIVE);
@@ -125,6 +124,5 @@ public class RsLrCm extends PluginForDecrypt {
     }
 
     // @Override
-    
 
 }

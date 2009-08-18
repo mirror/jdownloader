@@ -26,9 +26,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7185 $", interfaceVersion = 2, names = { "knoffl.com" }, urls = { "http://[\\w\\.]*?knoffl\\.com/(u/[\\w-]+|[\\w-]+)"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "knoffl.com" }, urls = { "http://[\\w\\.]*?knoffl\\.com/(u/[\\w-]+|[\\w-]+)" }, flags = { 0 })
 public class KnfflCm extends PluginForDecrypt {
 
     public KnfflCm(PluginWrapper wrapper) {
@@ -42,8 +41,7 @@ public class KnfflCm extends PluginForDecrypt {
         br.getPage(parameter);
         String properurl = br.getRegex("frame src=\"([^\\s]+)\" name=\"main\"").getMatch(0);
         if (properurl != null) br.getPage(properurl);
-        if (br.containsHTML("Seite wird geladen"))
-        {
+        if (br.containsHTML("Seite wird geladen")) {
             properurl = null;
             properurl = br.getRegex("content=\"0;URL=([\\s]+)\"").getMatch(0);
             if (properurl == null) properurl = br.getRegex("a href=\"([\\s]+)\"").getMatch(0);
@@ -56,13 +54,13 @@ public class KnfflCm extends PluginForDecrypt {
             links = br.getRegex("dl\\('(.*?)'\\)").getColumn(0);
         }
         String codedurl;
-        for (int i=0;i<links.length;i++) {
-            codedurl = new Regex(links[i],"&go=([a-zA-Z0-9=]+)").getMatch(0);
+        for (int i = 0; i < links.length; i++) {
+            codedurl = new Regex(links[i], "&go=([a-zA-Z0-9=]+)").getMatch(0);
             decryptedLinks.add(createDownloadlink(Encoding.Base64Decode(codedurl)));
         }
         return decryptedLinks;
     }
 
     // @Override
-    
+
 }

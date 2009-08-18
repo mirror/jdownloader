@@ -24,9 +24,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "redirect.musicalmente.info" }, urls = { "http://[\\w\\.]*?redirect\\.musicalmente\\.info/.+"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "redirect.musicalmente.info" }, urls = { "http://[\\w\\.]*?redirect\\.musicalmente\\.info/.+" }, flags = { 0 })
 public class Msclmntnf extends PluginForDecrypt {
 
     public Msclmntnf(PluginWrapper wrapper) {
@@ -44,7 +43,5 @@ public class Msclmntnf extends PluginForDecrypt {
 
         return decryptedLinks;
     }
-
-   
 
 }

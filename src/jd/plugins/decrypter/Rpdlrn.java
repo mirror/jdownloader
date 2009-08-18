@@ -28,16 +28,15 @@ import jd.plugins.PluginForDecrypt;
 
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
-@DecrypterPlugin(revision = "$Revision: 7185 $", interfaceVersion = 2, names = { "rapidlayer.in" }, urls = { "http://[\\w\\.]*?rapidlayer\\.in/go/[\\w]+"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidlayer.in" }, urls = { "http://[\\w\\.]*?rapidlayer\\.in/go/[\\w]+" }, flags = { 0 })
 public class Rpdlrn extends PluginForDecrypt {
 
     public Rpdlrn(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -59,6 +58,6 @@ public class Rpdlrn extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    //@Override
-    
+    // @Override
+
 }

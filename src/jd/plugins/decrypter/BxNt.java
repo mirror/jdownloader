@@ -29,9 +29,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7185 $", interfaceVersion = 2, names = { "box.net" }, urls = { "http://www\\.box\\.net/shared/(\\w+\\b(?<!\\bstatic))(/rss\\.xml|#\\w*)?"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "box.net" }, urls = { "http://www\\.box\\.net/shared/(\\w+\\b(?<!\\bstatic))(/rss\\.xml|#\\w*)?" }, flags = { 0 })
 public class BxNt extends PluginForDecrypt {
     private static final String BASE_URL_PATTERN = "(http://www\\.box\\.net/shared/\\w+)(#\\w*)?";
 
@@ -131,5 +130,4 @@ public class BxNt extends PluginForDecrypt {
         return !br.containsHTML("RSS channel not found");
     }
 
-    
 }

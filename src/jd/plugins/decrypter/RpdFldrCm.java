@@ -26,9 +26,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "rapidfolder.com" }, urls = { "http://[\\w\\.]*?rapidfolder\\.com/\\?\\w+"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidfolder.com" }, urls = { "http://[\\w\\.]*?rapidfolder\\.com/\\?\\w+" }, flags = { 0 })
 public class RpdFldrCm extends PluginForDecrypt {
     private static final Pattern PATTERN_SUPPORTED = Pattern.compile("http://[\\w\\.]*?rapidfolder\\.com/\\?(\\w+)", Pattern.CASE_INSENSITIVE);
     private static final Pattern PATTERN_REDIRECT_URL = Pattern.compile("action=\"(http://.+?)\">");
@@ -41,7 +40,7 @@ public class RpdFldrCm extends PluginForDecrypt {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink cryptedLink, ProgressController progress) throws Exception {
         br.setFollowRedirects(false);
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -74,6 +73,6 @@ public class RpdFldrCm extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    //@Override
-    
+    // @Override
+
 }

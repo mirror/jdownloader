@@ -37,7 +37,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision: 7185 $", interfaceVersion = 2, names = { "crypt-it.com" }, urls = { "(http|ccf)://[\\w\\.]*?crypt-it\\.com/(s|e|d|c)/[\\w]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "crypt-it.com" }, urls = { "(http|ccf)://[\\w\\.]*?crypt-it\\.com/(s|e|d|c)/[\\w]+" }, flags = { 0 })
 public class CrpttCm extends PluginForDecrypt {
 
     private static final String PATTERN_PASSWORD_FOLDER = "<input type=\"password\"";

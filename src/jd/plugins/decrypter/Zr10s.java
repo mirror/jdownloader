@@ -26,33 +26,28 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7185 $", interfaceVersion = 2, names = { "h-link.us","zero10.us" }, urls = { "http://[\\w\\.]*?h-link\\.us/\\d+", "http://[\\w\\.]*?zero10\\.us/\\d+"}, flags = { 0,0 })
 
-
-
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "h-link.us", "zero10.us" }, urls = { "http://[\\w\\.]*?h-link\\.us/\\d+", "http://[\\w\\.]*?zero10\\.us/\\d+" }, flags = { 0, 0 })
 public class Zr10s extends PluginForDecrypt {
 
     public Zr10s(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         String linkid;
         boolean hlink = false;
         if (parameter.indexOf("h-link.us") != -1) {
-            hlink=true;
+            hlink = true;
         }
-        if (hlink==true) {
+        if (hlink == true) {
             linkid = new Regex(parameter, ".*?h-link\\.us/([^/]*)").getMatch(0);
             br.getPage("http://h-link.us/m1.php?id=" + linkid);
 
-        }
-        else
-        {
+        } else {
             linkid = new Regex(parameter, ".*?zero10\\.us/([^/]*)").getMatch(0);
             br.getPage("http://zero10.us/m1.php?id=" + linkid);
         }
@@ -62,6 +57,6 @@ public class Zr10s extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    //@Override
-    
+    // @Override
+
 }

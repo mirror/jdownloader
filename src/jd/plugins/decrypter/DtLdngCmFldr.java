@@ -24,9 +24,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "data-loading.com" }, urls = { "http://[\\w\\.]*?data-loading\\.com/.{2}/folders/\\d+/\\w+"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "data-loading.com" }, urls = { "http://[\\w\\.]*?data-loading\\.com/.{2}/folders/\\d+/\\w+" }, flags = { 0 })
 public class DtLdngCmFldr extends PluginForDecrypt {
 
     public DtLdngCmFldr(PluginWrapper wrapper) {
@@ -42,11 +41,10 @@ public class DtLdngCmFldr extends PluginForDecrypt {
         if (links.length == 0) return null;
         for (String dl : links)
             decryptedLinks.add(createDownloadlink(dl));
-        
+
         return decryptedLinks;
     }
 
     // @Override
-    
 
 }

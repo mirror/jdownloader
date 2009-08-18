@@ -56,7 +56,7 @@ public class Advanced extends ConfigPanel {
     private ConfigContainer setupContainer() {
 
         ConfigEntry ce;
-        ConfigEntry conditionEntry;
+        // ConfigEntry conditionEntry;
         ConfigEntry conditionEntry2;
 
         // Extended Tab
@@ -65,8 +65,12 @@ public class Advanced extends ConfigPanel {
 
         extended.setGroup(new ConfigGroup(JDL.L("gui.config.download.ipcheck", "Reconnect IP-Check"), JDTheme.II("gui.images.network", 32, 32)));
 
-//        extended.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.PARAM_GLOBAL_IP_DISABLE, JDL.L("gui.config.download.ipcheck.disable", "IP Überprüfung deaktivieren")));
-//        conditionEntry.setDefaultValue(false);
+        // extended.addEntry(conditionEntry = new
+        // ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config,
+        // Configuration.PARAM_GLOBAL_IP_DISABLE,
+        // JDL.L("gui.config.download.ipcheck.disable",
+        // "IP Überprüfung deaktivieren")));
+        // conditionEntry.setDefaultValue(false);
 
         extended.addEntry(conditionEntry2 = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.PARAM_GLOBAL_IP_BALANCE, JDL.L("gui.config.download.ipcheck.balance", "Use balanced IP-Check")));
         conditionEntry2.setDefaultValue(true);

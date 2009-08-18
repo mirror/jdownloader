@@ -24,9 +24,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "movietown.info" }, urls = { "http://[\\w\\.]*?movietown\\.info/index/download\\.php\\?id=\\d+"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movietown.info" }, urls = { "http://[\\w\\.]*?movietown\\.info/index/download\\.php\\?id=\\d+" }, flags = { 0 })
 public class MvTwn extends PluginForDecrypt {
 
     public MvTwn(PluginWrapper wrapper) {
@@ -50,7 +49,5 @@ public class MvTwn extends PluginForDecrypt {
         }
         return decryptedLinks;
     }
-
-    
 
 }

@@ -24,22 +24,21 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "rapidshare.mu" }, urls = { "http://[\\w\\.]*?rapidshare.mu/[\\w]+"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidshare.mu" }, urls = { "http://[\\w\\.]*?rapidshare.mu/[\\w]+" }, flags = { 0 })
 public class RpdshrM extends PluginForDecrypt {
 
     public RpdshrM(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
         br.getPage(parameter);
-        
+
         String link = br.getRegex("20;url=(.*?)\"").getMatch(0);
         if (link == null) link = br.getRegex("<h6><a href=\"(.*?)\"").getMatch(0);
         if (link == null) return null;
@@ -48,6 +47,6 @@ public class RpdshrM extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    //@Override
-    
+    // @Override
+
 }

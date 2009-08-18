@@ -25,9 +25,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7185 $", interfaceVersion = 2, names = { "anime-loads.org" }, urls = { "http://[\\w\\.]*?anime-loads\\.org/crypt.php\\?cryptid=[\\w]+|http://[\\w\\.]*?anime-loads\\.org/page.php\\?id=[0-9]+"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anime-loads.org" }, urls = { "http://[\\w\\.]*?anime-loads\\.org/crypt.php\\?cryptid=[\\w]+|http://[\\w\\.]*?anime-loads\\.org/page.php\\?id=[0-9]+" }, flags = { 0 })
 public class NmLdsrg extends PluginForDecrypt {
     static private String host = "anime-loads.org";
 
@@ -43,7 +42,6 @@ public class NmLdsrg extends PluginForDecrypt {
 
         br.setCookiesExclusive(true);
         br.clearCookies(host);
-
 
         if (parameter.contains("crypt")) {
             links.add(parameter);
@@ -65,5 +63,5 @@ public class NmLdsrg extends PluginForDecrypt {
     }
 
     // @Override
-    
+
 }

@@ -27,13 +27,10 @@ import jd.plugins.PluginForDecrypt;
 
 // new DecryptPluginWrapper("animea.net", "NmNt",
 // PluginPattern.DECRYPTER_ANIMEANET_PLUGIN);
-@DecrypterPlugin(revision = "$Revision: 7185 $", interfaceVersion = 2, names = {"animea.net"}, urls = {"http://[\\w\\.]*?animea\\.net/download/[\\d]+/(.*?)\\.html|http://[\\w\\.]*?animea\\.net/download/[\\d]+-[\\d]+/(.*?)\\.html"}, flags = {0})
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "animea.net" }, urls = { "http://[\\w\\.]*?animea\\.net/download/[\\d]+/(.*?)\\.html|http://[\\w\\.]*?animea\\.net/download/[\\d]+-[\\d]+/(.*?)\\.html" }, flags = { 0 })
 public class NmNt extends PluginForDecrypt {
 
-
-
     static public final String DECRYPTER_ANIMEANET_SERIES = "http://[\\w\\.]*?animea\\.net/download/[\\d]+/(.*?)\\.html";
-    
 
     public NmNt(PluginWrapper wrapper) {
         super(wrapper);

@@ -24,16 +24,15 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "megarotic.com" }, urls = { "http://[\\w\\.]*?(megarotic|sexuploader)\\.com/.*?(\\?|&)d=[\\w]+"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megarotic.com" }, urls = { "http://[\\w\\.]*?(megarotic|sexuploader)\\.com/.*?(\\?|&)d=[\\w]+" }, flags = { 0 })
 public class MgRtcCm extends PluginForDecrypt {
 
     public MgRtcCm(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    //@Override
+    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String url = param.toString();
@@ -42,7 +41,6 @@ public class MgRtcCm extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    //@Override
-    
+    // @Override
 
 }

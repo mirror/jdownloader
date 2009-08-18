@@ -40,7 +40,7 @@ import jd.utils.JDUtilities;
 
 //create this patterns with CMS.main
 
-@DecrypterPlugin(revision = "$Revision: 7195 $", interfaceVersion = 2, names = {}, urls = {}, flags = {})
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {}, flags = {})
 public class CMS extends PluginForDecrypt {
     private static final String[] ANNOTATION_NAMES = new String[] { "ddl-kingz.in", "oxygen-warez.com", "filefox.in", "alphawarez.us", "pirate-loads.com", "fettrap.com", "omega-music.com", "hardcoremetal.biz", "flashload.org", "twin-warez.com", "oneload.org", "steelwarez.com", "fullstreams.info", "lionwarez.com", "1dl.in", "chrome-database.com", "oneload.org", "youwarez.biz", "saugking.net", "leetpornz.com", "freefiles4u.com", "dark-load.net", "crimeland.de", "get-warez.in", "meinsound.com", "projekt-tempel-news.de.vu", "datensau.org", "musik.am", "spreaded.net", "relfreaks.com", "babevidz.com", "serien24.com", "porn-freaks.net", "xxx-4-free.net", "porn-traffic.net", "chili-warez.net", "game-freaks.net", "isos.at", "your-load.com", "mov-world.net", "xtreme-warez.net", "sceneload.to", "epicspeedload.in", "serienfreaks.to", "serienfreaks.in", "warez-load.com", "ddl-scene.com",
             "mp3king.cinipac-hosting.biz", "sauggirls.com", "pornfox.in", "xflat24.com", "alben.ws", "worldofxxx.org", "gamegalaxy.ws", "ddl.byte.to", "interload.biz", "xwebb.extra.hu/1dl", "jokermovie.org", "xtreme-warez.biz", "your-load.com", "top-hitz.com", "wii-reloaded.ath.cx/sites/epic", "wankingking.com", "projekt-tempel-news.org", "porn-ox.in", "music-dome.cc", "sound-load.com", "hoerspiele.to", "jim2008.extra.hu", "ex-yu.extra.hu", "firefiles.in", "gez-load.net", "wrzunlimited.1gb.in", "streamload.in", "toxic.to", "mp3z.to", "sexload.to", "sound-load.com", "sfulc.exofire.net/cms", "fickdiehure.com", "dream-team.bz/cms", "omega-warez.com", "ddl-scene.cc", "xxxstreams.org", "scene-warez.com", "dokuh.tv", "titanload.to", "ddlshock.com", "xtreme-warez.us", "crunkwarez.com", "serienking.in", "stream.szenepic.us", "gate-warez.com", "gateload.info", "hot-porn-ddl.com" };
@@ -128,7 +128,7 @@ public class CMS extends PluginForDecrypt {
                         if (matcher.find()) {
                             logger.finest("Captcha Protected");
                             String captchaAdress = host + new Regex(element[2], Pattern.compile("<IMG SRC=\"(/.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
-                            capTxt = getCaptchaCode("cms",captchaAdress, param);
+                            capTxt = getCaptchaCode("cms", captchaAdress, param);
 
                             String posthelp = HTMLParser.getFormInputHidden(element[2]);
                             if (element[0].startsWith("http")) {
@@ -215,7 +215,7 @@ public class CMS extends PluginForDecrypt {
                             logger.finest("Captcha Protected");
                             String captchaAdress = host + tform.getRegex(Pattern.compile("<img src=\"(/captcha/.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
                             captchaFile = getLocalCaptchaFile();
-                            Browser.download(captchaFile, captchaAdress);                            
+                            Browser.download(captchaFile, captchaAdress);
                             capTxt = getCaptchaCode("cms", captchaFile, UserIO.NO_JAC, param, null, null);
                             tform.put("code", capTxt);
                             brc.submitForm(tform);

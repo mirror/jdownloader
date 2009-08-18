@@ -28,9 +28,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "rlslog.net" }, urls = { "(http://[\\w\\.]*?rlslog\\.net(/.+/.+/#comments|/.+/#comments|/.+/.*))"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rlslog.net" }, urls = { "(http://[\\w\\.]*?rlslog\\.net(/.+/.+/#comments|/.+/#comments|/.+/.*))" }, flags = { 0 })
 public class Rlslg extends PluginForDecrypt {
 
     public Rlslg(PluginWrapper wrapper) {
@@ -86,5 +85,5 @@ public class Rlslg extends PluginForDecrypt {
     }
 
     // @Override
-    
+
 }

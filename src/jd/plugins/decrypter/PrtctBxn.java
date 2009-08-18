@@ -31,9 +31,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
-@DecrypterPlugin(revision = "$Revision: 7139 $", interfaceVersion = 2, names = { "protectbox.in" }, urls = { "http://[\\w\\.]*?protectbox\\.in/.*"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protectbox.in" }, urls = { "http://[\\w\\.]*?protectbox\\.in/.*" }, flags = { 0 })
 public class PrtctBxn extends PluginForDecrypt {
 
     public PrtctBxn(PluginWrapper wrapper) {
@@ -66,6 +65,5 @@ public class PrtctBxn extends PluginForDecrypt {
     }
 
     // @Override
-    
 
 }
