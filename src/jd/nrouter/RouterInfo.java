@@ -290,30 +290,30 @@ public class RouterInfo {
 
     /**
      * Calls netstat -nt to find the router's ip. returns null if nothing found
-     * and the ip if found something; TODO: DOES NOT WORK UNDER WINDOWS
+     * and the ip if found something;
      * http://jdownloader.net:8081/pastebin/1ab4eabb60df171d0d442f0c7fb875a0
      * 
      */
     public InetAddress getIPFormNetStat() {
         try {
-
-            String _255 = "(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)";
-            String exIP = "(?:" + _255 + "\\.){3}" + _255;
-            Pattern pat = Pattern.compile("^\\s*(?:0\\.0\\.0\\.0\\s*){1,2}(" + exIP + ").*");
+            Pattern pat = Pattern.compile("^\\s*(?:0\\.0\\.0\\.0\\s*){1,2}((?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)).*");
             Executer exec = new Executer("netstat");
             exec.addParameter("-rn");
             exec.setWaitTimeout(5000);
             exec.start();
             exec.waitTimeout();
+            String[] out = exec.getOutputStream().split("[\r\n]+");
+            for (String string : out) {
+                String m = new Regex(string, pat).getMatch(0);
+                if(m!=null)
+                {
+                    InetAddress ia = InetAddress.getByName(m);
+                    if (ia.isReachable(1500)) {
 
-            String[] matches = new Regex(exec.getOutputStream(), pat).getColumn(0);
-            for (String m : matches) {
-
-                InetAddress ia = InetAddress.getByName(m);
-                if (ia.isReachable(1500)) {
-
-                return ia; }
+                    return ia; }
+                }
             }
+
 
         } catch (Exception e) {
             JDLogger.exception(e);

@@ -16,11 +16,7 @@
 
 package jd.router;
 
-import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.Socket;
@@ -37,8 +33,6 @@ import java.util.Map;
 import java.util.Vector;
 import java.util.Map.Entry;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import javax.swing.JTextField;
 
@@ -55,7 +49,6 @@ import jd.http.Browser;
 import jd.http.RequestHeader;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDFlags;
-import jd.nutils.OSDetector;
 import jd.nutils.Threader;
 import jd.nutils.jobber.JDRunnable;
 import jd.utils.JDUtilities;
