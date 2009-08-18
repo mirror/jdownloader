@@ -29,10 +29,11 @@ import jd.config.Configuration;
 import jd.controlling.DownloadController;
 import jd.controlling.PasswordListController;
 import jd.gui.swing.components.ComboBrowseFile;
+import jd.gui.swing.components.JDCollapser;
 import jd.gui.swing.components.JDFileChooser;
 import jd.gui.swing.components.JDTextField;
 import jd.gui.swing.components.MultiProgressBar;
-import jd.gui.swing.jdgui.interfaces.SwitchPanel;
+import jd.gui.swing.jdgui.views.DownloadView;
 import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -41,7 +42,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
-public class FilePackageInfo extends SwitchPanel implements ActionListener {
+public class FilePackageInfo extends JDCollapser implements ActionListener {
 
     private static final long serialVersionUID = 5410296068527460629L;
 
@@ -90,8 +91,10 @@ public class FilePackageInfo extends SwitchPanel implements ActionListener {
     private JLabel speed;
 
     public FilePackageInfo() {
+        super();
         buildGui();
         fp = null;
+        this.menutitle.setText(JDL.L("gui.linkgrabber.packagetab.title", "FilePackage"));
     }
 
     public void setPackage(FilePackage fp) {
@@ -134,8 +137,8 @@ public class FilePackageInfo extends SwitchPanel implements ActionListener {
         tabbedPane = new JTabbedPane();
         tabbedPane.add(createFilePackageInfo(), JDL.L("gui.fileinfopanel.packagetab", "Package"));
         tabbedPane.add(createLinkInfo(), JDL.L("gui.fileinfopanel.link", "Downloadlink"));
-        this.setLayout(new MigLayout("", "[grow]", "[]"));
-        this.add(tabbedPane, "grow");
+        content.setLayout(new MigLayout("", "[grow]", "[]"));
+        content.add(tabbedPane, "grow");
     }
 
     private JPanel createFilePackageInfo() {
@@ -171,6 +174,9 @@ public class FilePackageInfo extends SwitchPanel implements ActionListener {
         panel.add(txtSize = new JDTextField(true), "alignx right");
         txtSize.setEditable(false);
         txtSize.setBorder(null);
+        txtSize.setOpaque(false);
+        txtSize.putClientProperty("Synthetica.opaque", Boolean.FALSE);
+
         panel.add(new JLabel(JDL.L("gui.fileinfopanel.packagetab.lbl.name", "Paketname")));
         panel.add(txtName, "span 2,growx,spanx");
         panel.add(new JLabel(JDL.L("gui.fileinfopanel.packagetab.lbl.saveto", "Speichern unter")));
@@ -194,6 +200,8 @@ public class FilePackageInfo extends SwitchPanel implements ActionListener {
         typeicon.setText(JDL.L("gui.fileinfopanel.linktab.chunks", "Chunks"));
         panel.add(progressBarDownloadLink, "spanx,growx,pushx,split 2");
         panel.add(txtSizeDl = new JDTextField(true), "alignx right");
+        txtSizeDl.setOpaque(false);
+        txtSizeDl.putClientProperty("Synthetica.opaque", Boolean.FALSE);
         txtSizeDl.setEditable(false);
         txtSizeDl.setBorder(null);
         panel.add(eta = new JLabel(JDL.LF("gui.fileinfopanel.linktab.eta", "ETA: %s mm:ss", "0")));
@@ -369,6 +377,12 @@ public class FilePackageInfo extends SwitchPanel implements ActionListener {
             update();
         }
 
+    }
+
+    @Override
+    public void onClosed() {
+        DownloadView.getInstance().setInfoPanel(null);
+        
     }
 
 }

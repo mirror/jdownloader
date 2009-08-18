@@ -45,17 +45,16 @@ import jd.controlling.LinkCheckListener;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
-import jd.gui.swing.components.JDCollapser;
 import jd.gui.swing.components.JDFileChooser;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.jdgui.GUIUtils;
-import jd.gui.swing.jdgui.InfoPanelHandler;
 import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.gui.swing.jdgui.MainTabbedPane;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.ThreadedAction;
 import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
+import jd.gui.swing.jdgui.views.DownloadView;
 import jd.nutils.JDFlags;
 import jd.nutils.io.JDFileFilter;
 import jd.nutils.io.JDIO;
@@ -211,13 +210,14 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
     }
 
     public void showFilePackageInfo(FilePackage fp) {
+
         filePackageInfo.setPackage(fp);
         new GuiRunnable<Object>() {
             // @Override
             public Object runSave() {
-                JDCollapser.getInstance().setContentPanel(filePackageInfo, JDL.L("gui.linkgrabber.packagetab.title", "FilePackage"), null);
-
-                InfoPanelHandler.setPanel(JDCollapser.getInstance());
+                DownloadView.getInstance().setInfoPanel(filePackageInfo);
+//                
+             
                 return null;
             }
         }.start();
@@ -227,7 +227,7 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
         new GuiRunnable<Object>() {
             // @Override
             public Object runSave() {
-                InfoPanelHandler.setPanel(null);
+//                InfoPanelHandler.setPanel(null);
 
                 return null;
             }
@@ -676,9 +676,8 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
 
     public void showDownloadLinkInfo(DownloadLink downloadLink) {
         filePackageInfo.setDownloadLink(downloadLink);
-        JDCollapser.getInstance().setContentPanel(filePackageInfo, JDL.L("gui.linkgrabber.infopanel.link.title", "Link information"), null);
-
-        InfoPanelHandler.setPanel(JDCollapser.getInstance());
+        DownloadView.getInstance().setInfoPanel(filePackageInfo);
+      
 
     }
 

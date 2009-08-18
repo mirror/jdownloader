@@ -64,6 +64,7 @@ public class InputDialog extends AbstractDialog implements KeyListener, MouseLis
         messageArea.setOpaque(false);
         messageArea.setText(this.message);
         messageArea.setEditable(false);
+        messageArea.putClientProperty("Synthetica.opaque", Boolean.FALSE);
 
         contentpane.add(messageArea);
         if (JDFlags.hasAllFlags(flag, UserIO.STYLE_LARGE)) {

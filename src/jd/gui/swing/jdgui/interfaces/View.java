@@ -36,8 +36,8 @@ public abstract class View extends SwitchPanel {
     private SwitchPanel content;
     private JPanel topContent;
     private JPanel bottomContent;
-    private DroppedPanel infoPanel;
-    private DroppedPanel defaultInfoPanel;
+    private SwitchPanel infoPanel;
+    private SwitchPanel defaultInfoPanel;
     @SuppressWarnings("unused")
     private ViewToolbar toolbar;
     private Border orgSidebarBorder;
@@ -97,7 +97,7 @@ public abstract class View extends SwitchPanel {
      * 
      * @param infoPanel
      */
-    public void setInfoPanel(DroppedPanel info) {
+    public void setInfoPanel(SwitchPanel info) {
         SwingGui.checkEDT();
         if (info == null) info = defaultInfoPanel;
         if (infoPanel == info) return;
@@ -115,7 +115,7 @@ public abstract class View extends SwitchPanel {
         if (this.infoPanel != null && isShown()) this.infoPanel.setShown();
     }
 
-    public DroppedPanel getInfoPanel() {
+    public SwitchPanel getInfoPanel() {
         return infoPanel;
     }
 

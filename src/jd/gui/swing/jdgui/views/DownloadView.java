@@ -19,10 +19,17 @@ public class DownloadView extends View {
      */
     private static final String IDENT_PREFIX = "jd.gui.swing.jdgui.views.downloadview.";
 
-    public DownloadView() {
+    private static DownloadView INSTANCE = null;
+
+    private DownloadView() {
         super();
         this.setContent(new DownloadLinksPanel());
         this.setDefaultInfoPanel(new DownloadInfoPanel());
+    }
+
+    public synchronized static DownloadView getInstance() {
+        if (INSTANCE == null) INSTANCE = new DownloadView();
+        return INSTANCE;
     }
 
     @Override

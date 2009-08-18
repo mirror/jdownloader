@@ -51,10 +51,11 @@ public class ConfirmDialog extends AbstractDialog {
             textField.setBounds(0, 0, 450, 600);
             textField.setMaximumSize(new Dimension(450, 600));
         }
-        textField.setOpaque(false);
+      
         textField.setText(this.message);
         textField.setEditable(false);
         textField.setBackground(null);
+        textField.setOpaque(false);
         textField.putClientProperty("Synthetica.opaque", Boolean.FALSE);
 
         return textField;

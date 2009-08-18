@@ -47,14 +47,13 @@ import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.components.Balloon;
-import jd.gui.swing.components.JDCollapser;
 import jd.gui.swing.components.JDFileChooser;
 import jd.gui.swing.jdgui.GUIUtils;
-import jd.gui.swing.jdgui.InfoPanelHandler;
 import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.gui.swing.jdgui.actions.ThreadedAction;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
+import jd.gui.swing.jdgui.views.LinkgrabberView;
 import jd.gui.swing.jdgui.views.toolbar.ViewToolbar;
 import jd.nutils.io.JDFileFilter;
 import jd.nutils.io.JDIO;
@@ -218,9 +217,8 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         new GuiRunnable<Object>() {
             // @Override
             public Object runSave() {
-                JDCollapser.getInstance().setContentPanel(filePackageInfo, JDL.L("gui.linkgrabber.packagetab.title", "File package"), null);
 
-                InfoPanelHandler.setPanel(JDCollapser.getInstance());
+                LinkgrabberView.getInstance().setInfoPanel(filePackageInfo);
 
                 return null;
             }
@@ -231,7 +229,6 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         new GuiRunnable<Object>() {
             // @Override
             public Object runSave() {
-                InfoPanelHandler.setPanel(null);
 
                 return null;
             }

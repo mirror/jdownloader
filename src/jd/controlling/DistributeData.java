@@ -299,7 +299,7 @@ public class DistributeData extends Thread {
 
             if (lowercasedata.contains(pw.getHost().toLowerCase())) {
                 String match = new Regex(data, pattern).getMatch(-1);
-                if (match != null && (match.equals(data) || (match.length() > 10 + pw.getHost().length() && data.startsWith(match)))) {
+                if (match != null && (match.equals(data) || (match.length() > 10 + pw.getHost().length() && data.startsWith(match)&&(match.length()*2)>data.length()))) {
 
                     DownloadLink dl = new DownloadLink((PluginForHost) pw.getNewPluginInstance(), null, pw.getHost(), Encoding.urlDecode(match, true), true);
                     ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();

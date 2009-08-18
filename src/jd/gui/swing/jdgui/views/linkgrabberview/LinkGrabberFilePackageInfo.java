@@ -29,15 +29,17 @@ import jd.config.Configuration;
 import jd.controlling.DownloadController;
 import jd.controlling.PasswordListController;
 import jd.gui.swing.components.ComboBrowseFile;
+import jd.gui.swing.components.JDCollapser;
 import jd.gui.swing.components.JDFileChooser;
 import jd.gui.swing.components.JDTextField;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
+import jd.gui.swing.jdgui.views.LinkgrabberView;
 import jd.plugins.LinkGrabberFilePackage;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
-public class LinkGrabberFilePackageInfo extends SwitchPanel implements ActionListener, FocusListener {
+public class LinkGrabberFilePackageInfo extends JDCollapser implements ActionListener, FocusListener {
 
     private static final long serialVersionUID = 5410296068527460629L;
 
@@ -60,6 +62,7 @@ public class LinkGrabberFilePackageInfo extends SwitchPanel implements ActionLis
     public LinkGrabberFilePackageInfo() {
         buildGui();
         fp = null;
+        this.menutitle.setText( JDL.L("gui.linkgrabber.packagetab.title", "File package"));
     }
 
     public void setPackage(LinkGrabberFilePackage fp) {
@@ -121,21 +124,21 @@ public class LinkGrabberFilePackageInfo extends SwitchPanel implements ActionLis
         chbUseSubdirectory.setHorizontalTextPosition(SwingConstants.LEFT);
         chbUseSubdirectory.addActionListener(this);
 
-        this.setLayout(new MigLayout("ins 10, wrap 3", "[]10[grow,fill][]", "[]5[]5[]5[]"));
+        content.setLayout(new MigLayout("ins 10, wrap 3", "[]10[grow,fill][]", "[]5[]5[]5[]"));
 
-        this.add(new JLabel(JDL.L("gui.linkgrabber.packagetab.lbl.name", "Paketname")));
-        this.add(txtName, "span 2");
-        this.add(new JLabel(JDL.L("gui.linkgrabber.packagetab.lbl.saveto", "Speichern unter")));
-        this.add(brwSaveTo.getInput(), "gapright 10, growx");
-        this.add(brwSaveTo.getButton(), "pushx,growx");
+        content.add(new JLabel(JDL.L("gui.linkgrabber.packagetab.lbl.name", "Paketname")));
+        content.add(txtName, "span 2");
+        content.add(new JLabel(JDL.L("gui.linkgrabber.packagetab.lbl.saveto", "Speichern unter")));
+        content.add(brwSaveTo.getInput(), "gapright 10, growx");
+        content.add(brwSaveTo.getButton(), "pushx,growx");
 
-        this.add(new JLabel(JDL.L("gui.linkgrabber.packagetab.lbl.password", "Archivpasswort")), "newline");
+        content.add(new JLabel(JDL.L("gui.linkgrabber.packagetab.lbl.password", "Archivpasswort")), "newline");
 
-        this.add(txtPassword, " gapright 10, growx");
-        this.add(chbExtract, "alignx right");
-        this.add(new JLabel(JDL.L("gui.linkgrabber.packagetab.lbl.comment", "Kommentar")));
-        this.add(txtComment, "gapright 10, growx");
-        this.add(chbUseSubdirectory, "alignx right");
+        content.add(txtPassword, " gapright 10, growx");
+        content.add(chbExtract, "alignx right");
+        content.add(new JLabel(JDL.L("gui.linkgrabber.packagetab.lbl.comment", "Kommentar")));
+        content.add(txtComment, "gapright 10, growx");
+        content.add(chbUseSubdirectory, "alignx right");
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -183,6 +186,12 @@ public class LinkGrabberFilePackageInfo extends SwitchPanel implements ActionLis
 
     public void focusLost(FocusEvent e) {
         this.actionPerformed(null);
+        
+    }
+
+    @Override
+    public void onClosed() {
+    LinkgrabberView.getInstance().setInfoPanel(null);
         
     }
 

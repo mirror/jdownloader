@@ -163,8 +163,8 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         multiProgressBar = new TabProgress();
         this.toolBar = MainToolBar.getInstance();
         toolBar.registerAccelerators(this);
-        downloadView = new DownloadView();
-        linkgrabberView = new LinkgrabberView();
+        downloadView = DownloadView.getInstance();
+        linkgrabberView = LinkgrabberView.getInstance();
         configurationView = new ConfigurationView();
 
         logView = new LogView();
@@ -507,18 +507,39 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
             name = container.getTitle();
         }
         if (container.getGroup() != null && container.getGroup().getName() != null) name = container.getGroup().getName();
-        AddonConfig p = AddonConfig.getInstance(container, name, "_2");
-        try {
-            // javax.swing.JTabbedPane tabbed = (javax.swing.JTabbedPane)
-            // p.getComponent(0);
 
-            JDCollapser.getInstance().setContentPanel((SwitchPanel) p.getPanel(), JDL.LF("jd.gui.swing.jdgui.JDGui.showConfigPanel.title", "Setting for %s", name), container.getGroup() == null ? null : container.getGroup().getIcon());
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
+        AddonConfig p = AddonConfig.getInstance(container, name, "_2");
+        JDCollapser col = new JDCollapser() {
+
+            /**
+         * 
+         */
+            private static final long serialVersionUID = 1L;
+
+            @Override
+            public void onClosed() {
+                mainTabbedPane.getSelectedView().setInfoPanel(null);
+            }
+
+            @Override
+            protected void onHide() {
+           
+
+            }
+
+            @Override
+            protected void onShow() {
+             
+
+            }
+
+        };
+        col.getContent().add(p.getPanel());
+        col.getMenutitle().setText(name);
+
         // this.mainTabbedPane.getSelectedView().setContent(
         // JDCollapser.getInstance());
-        this.mainTabbedPane.getSelectedView().setInfoPanel(JDCollapser.getInstance());
+        this.mainTabbedPane.getSelectedView().setInfoPanel(col);
 
     }
 

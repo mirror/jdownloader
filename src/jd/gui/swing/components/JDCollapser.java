@@ -16,6 +16,7 @@
 
 package jd.gui.swing.components;
 
+import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.event.ActionEvent;
@@ -24,17 +25,14 @@ import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.Icon;
-import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JMenuBar;
 import javax.swing.JPanel;
 import javax.swing.UIManager;
 
-import jd.gui.swing.jdgui.InfoPanelHandler;
 import jd.gui.swing.jdgui.borders.JDBorderFactory;
 import jd.gui.swing.jdgui.interfaces.DroppedPanel;
-import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
@@ -43,24 +41,19 @@ import net.miginfocom.swing.MigLayout;
  * 
  * @author Coalado
  */
-public class JDCollapser extends DroppedPanel {
+public abstract class JDCollapser extends DroppedPanel {
 
     private static final long serialVersionUID = 6864885344815243560L;
-    private static JDCollapser INSTANCE = null;
 
-    public static JDCollapser getInstance() {
-        if (INSTANCE == null) INSTANCE = new JDCollapser();
-        return INSTANCE;
-    }
-
-    private SwitchPanel panel;
-
-    private JPanel content;
-    private JMenuBar menubar;
+    protected JMenuBar menubar;
     private JButton closeButton;
-    private JLabel menutitle;
+    protected JLabel menutitle;
 
-    private JDCollapser() {
+    protected JPanel content;
+
+  
+
+    protected JDCollapser() {
         super();
         this.setLayout(new MigLayout("ins 0 5 0 0,wrap 1", "[fill,grow]", "[fill,grow]"));
 
@@ -81,58 +74,19 @@ public class JDCollapser extends DroppedPanel {
         menubar.add(panel);
 
         add(menubar, "dock NORTH,height " + Math.max(closeAction.getHeight() + 3, 18) + "!,gapbottom 2");
-
-        content = new JPanel();
+        this.content = new JPanel();
         add(content);
+        content.setLayout(new MigLayout("ins 0,wrap 1","[grow,fill]","[grow,fill]"));
         this.setVisible(true);
 
     }
 
+    public JLabel getMenutitle() {
+        return menutitle;
+    }
+
     public void paint(Graphics g) {
         super.paint(g);
-
-    }
-
-    public void setContentPanel(SwitchPanel panel2, String name, ImageIcon icon) {
-        if (panel2 == this.panel) return;
-        
-       if(name!=null) menutitle.setText(name);
-      if(icon!=null)  menutitle.setIcon(icon);
-        this.closeButton.setToolTipText(JDL.LF("jd.gui.swing.components.JDCollapser.closetooltip", "Close %s", name));
-        if(name!=null) content.removeAll();
-        if(panel!=null)panel.setHidden();
-        this.panel = panel2;
-        if (panel == null) return;
-        content.setLayout(new MigLayout("ins 0,wrap 1", "[fill,grow]", "[fill,grow]"));
-        panel.setShown();
-        content.add(panel);
-        revalidate();
-        content.revalidate();
-    }
-
-    public SwitchPanel getContentPanel() {
-        return panel;
-    }
-
-    @Override
-    /**
-     * deligates the onHidevenet to the contentpanel
-     */
-    public void onHide() {
-        if (panel != null){
-            
-        
-        this.setContentPanel(null, null, null);
-        
-        }
-    }
-
-    @Override
-    /**
-     * deligates the onShow event to the contentpanel
-     */
-    public void onShow() {
-        if (panel != null) panel.setShown();
 
     }
 
@@ -157,8 +111,15 @@ public class JDCollapser extends DroppedPanel {
         }
 
         public void actionPerformed(ActionEvent e) {
-            InfoPanelHandler.setPanel(null);
+            JDCollapser.this.onClosed();
         }
+    }
+
+    abstract public void onClosed();
+
+    public Container getContent() {
+   
+        return content;
     }
 
 }
