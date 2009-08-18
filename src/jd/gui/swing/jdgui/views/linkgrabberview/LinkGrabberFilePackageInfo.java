@@ -18,6 +18,8 @@ package jd.gui.swing.jdgui.views.linkgrabberview;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
@@ -35,7 +37,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
-public class LinkGrabberFilePackageInfo extends SwitchPanel implements ActionListener {
+public class LinkGrabberFilePackageInfo extends SwitchPanel implements ActionListener, FocusListener {
 
     private static final long serialVersionUID = 5410296068527460629L;
 
@@ -96,7 +98,7 @@ public class LinkGrabberFilePackageInfo extends SwitchPanel implements ActionLis
     private void buildGui() {
         txtName = new JDTextField(true);
         txtName.addActionListener(this);
-
+        txtName.addFocusListener(this);
         brwSaveTo = new ComboBrowseFile("DownloadSaveTo");
         brwSaveTo.setEditable(true);
         brwSaveTo.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
@@ -138,19 +140,19 @@ public class LinkGrabberFilePackageInfo extends SwitchPanel implements ActionLis
 
     public void actionPerformed(ActionEvent e) {
         if (fp == null || !notifyUpdate) return;
-        if (e.getSource() == txtName) {
+//        if (e.getSource() == txtName) {
             fp.setName(txtName.getText());
-        } else if (e.getSource() == brwSaveTo) {
+//        } else if (e.getSource() == brwSaveTo) {
             fp.setDownloadDirectory(brwSaveTo.getText());
-        } else if (e.getSource() == txtComment) {
+//        } else if (e.getSource() == txtComment) {
             fp.setComment(txtComment.getText());
-        } else if (e.getSource() == txtPassword) {
+//        } else if (e.getSource() == txtPassword) {
             fp.setPassword(txtPassword.getText());
-        } else if (e.getSource() == chbExtract) {
+//        } else if (e.getSource() == chbExtract) {
             fp.setExtractAfterDownload(chbExtract.isSelected());
-        } else if (e.getSource() == chbUseSubdirectory) {
+//        } else if (e.getSource() == chbUseSubdirectory) {
             fp.setUseSubDir(chbUseSubdirectory.isSelected());
-        }
+//        }
         DownloadController.getInstance().fireDownloadLinkUpdate(fp.get(0));
     }
 
@@ -174,6 +176,14 @@ public class LinkGrabberFilePackageInfo extends SwitchPanel implements ActionLis
         if (this.fp == null) return;
         onHideSave();
         fp = null;
+    }
+
+    public void focusGained(FocusEvent e) {       
+    }
+
+    public void focusLost(FocusEvent e) {
+        this.actionPerformed(null);
+        
     }
 
 }
