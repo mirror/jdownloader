@@ -173,7 +173,11 @@ public class RouterInfo {
             }
         }
     }
-
+/**
+ * RUns throw a predefined  HOst Table (multithreaded) and checks if there is a service on port 80.
+ * returns the ip if there is a webservice on any adress. See updateHostTable() 
+ * @return
+ */
     public InetAddress getIpFormHostTable() {
         updateHostTable();
         final int size = HOST_NAMES.size();
