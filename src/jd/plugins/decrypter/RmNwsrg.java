@@ -53,7 +53,7 @@ public class RmNwsrg extends PluginForDecrypt {
             File file = this.getLocalCaptchaFile();
             String whattoclick = br.getRegex("<h2>(.*?)</h2>").getMatch(0);
             whattoclick = whattoclick.replaceAll("(</span>|\">|<span class=\")", " ");
-            String cap = br.getRegex("\"image\" src=\"(.*?image.*?)\"").getMatch(0);
+            String cap = br.getRegex("\"image\" src=\"(.*?png.*?)\"").getMatch(0);
             Form form = br.getForm(0);
             Browser.download(file, br.cloneBrowser().openGetConnection(cap));
             Point p = UserIO.getInstance().requestClickPositionDialog(file, JDL.L("plugins.decrypt.stealthto.captcha.title", "Captcha"), whattoclick);
