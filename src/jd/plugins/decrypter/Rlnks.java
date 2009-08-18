@@ -33,10 +33,10 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginUtils;
 import jd.utils.JDUtilities;
-@DecrypterPlugin(revision = "$Revision: 7185 $", interfaceVersion = 2, names = { "relink.us" }, urls = { "http://[\\w\\.]*?relink\\.us/(go\\.php\\?id=[\\w]+|f/[\\w]+)"}, flags = { 0 })
 
-
+@DecrypterPlugin(revision = "$Revision: 7185 $", interfaceVersion = 2, names = { "relink.us", "relink.us" }, urls = { "http://[\\w\\.]*?relink\\.us/(go\\.php\\?id=[\\w]+|f/[\\w]+)", "http://[\\w\\.]*?relink\\.us/view\\.php\\?id=\\w+" }, flags = { 0, 0 })
 public class Rlnks extends PluginForDecrypt {
 
     ProgressController progress;
@@ -45,13 +45,13 @@ public class Rlnks extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private boolean add_relinkus_container(String page, String cryptedLink, String containerFormat, ArrayList<DownloadLink> decryptedLinks) throws IOException {
-        String container_link = new Regex(page, "(download\\.php\\?id=[a-zA-z0-9]+\\&amp\\;" + containerFormat + "=1)").getMatch(0);
-        if (container_link != null) {
+    private boolean decryptContainer(String page, String cryptedLink, String containerFormat, ArrayList<DownloadLink> decryptedLinks) throws IOException {
+        String containerURL = new Regex(page, "(download\\.php\\?id=[a-zA-z0-9]+\\&" + containerFormat + "=\\d+)").getMatch(0);
+        if (containerURL != null) {
             File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + "." + containerFormat);
             Browser browser = br.cloneBrowser();
             browser.getHeaders().put("Referer", cryptedLink);
-            browser.getDownload(container, "http://relink.us/" + Encoding.htmlDecode(container_link));
+            browser.getDownload(container, "http://relink.us/" + Encoding.htmlDecode(containerURL));
             decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
             container.delete();
             return true;
@@ -59,28 +59,27 @@ public class Rlnks extends PluginForDecrypt {
         return false;
     }
 
-    private void add_relinkus_links(ArrayList<DownloadLink> decryptedLinks) throws IOException {
-        // String links[] = new Regex(page, Pattern.compile(
-        // "action=\\'([^\\']*?)\\' method=\\'post\\' target=\\'\\_blank\\'",
-        // Pattern.CASE_INSENSITIVE)).getColumn(0);
-        // if (links.length == 0) {
-        // links = new Regex(page,
-        // Pattern.compile("action=\"(.*?)\" method=\"post\" target=\"\\_blank\""
-        // , Pattern.CASE_INSENSITIVE)).getColumn(0);
-        // }
-        Form[] forms = br.getForms();
+    private void decryptLinks(ArrayList<DownloadLink> decryptedLinks) throws IOException {
 
-        progress.addToMax(forms.length);
-        for (Form link : forms) {
-            try {
-                br.submitForm(link);
-                String dl_link = br.getRegex(Pattern.compile("iframe .*? src=['\"][\n\r]*?(.*?)['\"]", Pattern.CASE_INSENSITIVE)).getMatch(0);
-                decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(dl_link)));
-                progress.increase(1);
-            } catch (Exception e) {
-                // TODO Auto-generated catch block
-                logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+        br.setFollowRedirects(false);
+        String[] matches = br.getRegex("getFile\\('(cid=\\w*?&lid=\\d*?)'\\)").getColumn(0);
+
+        try {
+            progress.addToMax(matches.length);
+            for (String match : matches) {
+                try {
+                    br.getPage("http://relink.us/frame.php?" + match);
+
+                    decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(br.getRedirectLocation())));
+                    progress.increase(1);
+                } catch (Exception e) {
+                    // TODO Auto-generated catch block
+                    logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+                }
             }
+
+        } finally {
+            br.setFollowRedirects(true);
         }
     }
 
@@ -95,11 +94,11 @@ public class Rlnks extends PluginForDecrypt {
         String page = br.getPage(parameter);
         boolean okay = true;
         for (int i = 0; i < 4; i++) {
-            if (br.containsHTML("Dieser Ordner ist passwort")) {
+            if (br.containsHTML("(das richtige Passwort)|(haben ein falsches Passwort)")) {
                 okay = false;
-                Form form = br.getForm(0);
-                String pw = getUserInput("Password?", param);
-                form.put("passwort", pw);
+                Form form = br.getForm(1);
+                String pw = PluginUtils.askPassword(this);
+                form.put("password", pw);
                 page = br.submitForm(form);
             } else {
                 okay = true;
@@ -108,17 +107,17 @@ public class Rlnks extends PluginForDecrypt {
         }
         if (okay == false) throw new DecrypterException(DecrypterException.CAPTCHA);
         progress.setRange(0);
-        add_relinkus_links(decryptedLinks);
+        // decryptLinks(decryptedLinks);
         String more_links[] = new Regex(page, Pattern.compile("<a href=\"(go\\.php\\?id=[a-zA-Z0-9]+\\&seite=\\d+)\">", Pattern.CASE_INSENSITIVE)).getColumn(0);
         for (String link : more_links) {
             br.getPage("http://relink.us/" + link);
-            add_relinkus_links(decryptedLinks);
+            decryptLinks(decryptedLinks);
         }
 
-        if (decryptedLinks.size() == 0) {
-            if (!add_relinkus_container(page, parameter, "dlc", decryptedLinks)) {
-                if (!add_relinkus_container(page, parameter, "ccf", decryptedLinks)) {
-                    add_relinkus_container(page, parameter, "rsdf", decryptedLinks);
+        if (decryptedLinks.size() == 0 || true) {
+            if (!decryptContainer(page, parameter, "dlc", decryptedLinks)) {
+                if (!decryptContainer(page, parameter, "ccf", decryptedLinks)) {
+                    decryptContainer(page, parameter, "rsdf", decryptedLinks);
                 }
             }
         }
@@ -127,5 +126,5 @@ public class Rlnks extends PluginForDecrypt {
     }
 
     // @Override
-    
+
 }
