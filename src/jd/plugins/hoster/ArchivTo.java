@@ -94,7 +94,7 @@ public class ArchivTo extends PluginForHost {
         String src = br.getRegex("<param name=\"src\" value=\"(.*?)\" />").getMatch(0);
         br.setDebug(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, src,true,-10);
-        dl.startDownload();
+        dl.startDownload(); 
        
     }
 
