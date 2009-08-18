@@ -93,12 +93,12 @@ public class MilleDriveCom extends PluginForHost {
             if (down1 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             this.sleep(30001, downloadLink);
             br.submitForm(down1);
-            Form down2 = br.getFormbyProperty("id", "free-down");
+            if(br.containsHTML("currently in use")){
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+            }   
+           String url = br.getRegex("<a href=\"(http://cache[^\"]+)").getMatch(0);
             if (br.containsHTML("The requested URL does not exist")) throw new PluginException(LinkStatus.ERROR_RETRY);
-            String downurl = br.getRegex("name=\"down-url\" value=\"(.*?)\"").getMatch(0);
-            String ticket = br.getRegex("name=\"ticket\" value=\"(.*?)\"").getMatch(0);
-            if (downurl == null || ticket == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-            dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, down2, true, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, url, true, 1);
 
         } else {
             String finalfilename = downloadLink.getName();
