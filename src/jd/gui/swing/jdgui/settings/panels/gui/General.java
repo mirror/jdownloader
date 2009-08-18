@@ -16,6 +16,8 @@
 
 package jd.gui.swing.jdgui.settings.panels.gui;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.ArrayList;
 
 import javax.swing.JTabbedPane;
@@ -26,6 +28,7 @@ import jd.config.ConfigGroup;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.config.ConfigEntry.PropertyType;
+import jd.gui.swing.dialog.AbstractDialog;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.gui.swing.jdgui.settings.ConfigPanel;
@@ -87,7 +90,6 @@ public class General extends ConfigPanel {
             ce.setPropertyType(PropertyType.NEEDS_RESTART);
         }
 
-
         if (LookAndFeelController.getSupportedLookAndFeels().length > 1) {
             look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, LookAndFeelController.PARAM_PLAF, LookAndFeelController.getSupportedLookAndFeels(), JDL.L("gui.config.gui.plaf", "Style(benötigt JD-Neustart)")).setGroup(lookGroup));
             ce.setDefaultValue(LookAndFeelController.getPlaf());
@@ -101,8 +103,16 @@ public class General extends ConfigPanel {
         ce.setDefaultValue(true);
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDGuiConstants.PARAM_SHOW_BALLOON, JDL.L("gui.config.gui.showBalloon", "Show Balloon infos")).setGroup(feel));
         ce.setDefaultValue(true);
+        look.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
+
+            public void actionPerformed(ActionEvent e) {
+                AbstractDialog.resetDialogInformations();
+            }
+
+        }, JDL.L("gui.config.gui.resetdialogs.short", "Reset"), JDL.L("gui.config.gui.resetdialogs", "Reset Dialog Informations"), JDTheme.II("gui.images.restart", 16, 16)).setGroup(feel));
+
         ConfigGroup perf = new ConfigGroup(JDL.L("gui.config.gui.performance", "Performance"), JDTheme.II("gui.images.performance", 32, 32));
-  
+
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDGuiConstants.DECORATION_ENABLED, JDL.L("gui.config.gui.decoration", "Enable Windowdecoration")).setGroup(perf));
         ce.setDefaultValue(true);
         ce.setPropertyType(PropertyType.NEEDS_RESTART);

@@ -28,7 +28,6 @@ import jd.controlling.JDLogger;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
-import net.miginfocom.swing.MigLayout;
 
 public class HelpDialog extends AbstractDialog {
 
@@ -48,6 +47,7 @@ public class HelpDialog extends AbstractDialog {
         init();
     }
 
+    @Override
     protected void addButtons(JPanel buttonBar) {
         JButton help = new JButton(helpMessage == null ? JDL.L("gui.btn_help", "Help") : helpMessage);
         help.addActionListener(new ActionListener() {
@@ -68,8 +68,6 @@ public class HelpDialog extends AbstractDialog {
 
     @Override
     public JComponent contentInit() {
-        JPanel content = new JPanel(new MigLayout("ins 0", "[grow,fill]"));
-
         JTextPane htmlArea = new JTextPane();
         htmlArea.setEditable(false);
         htmlArea.setContentType("text/html");
@@ -77,10 +75,7 @@ public class HelpDialog extends AbstractDialog {
         htmlArea.setOpaque(false);
         htmlArea.putClientProperty("Synthetica.opaque", Boolean.FALSE);
 
-        content.add(htmlArea);
-     
-
-        return content;
+        return htmlArea;
     }
 
 }

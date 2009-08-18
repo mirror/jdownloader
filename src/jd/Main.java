@@ -400,11 +400,13 @@ public class Main {
     private void go() {
         final JDInit init = new JDInit();
         final JDController controller = JDController.getInstance();
-        JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_PROGRESS, "This is JD :)"));
+        // JDUtilities.getController().fireControlEvent(new ControlEvent(this,
+        // SplashScreen.SPLASH_PROGRESS, "This is JD :)"));
         init.init();
         LOGGER.info(new Date() + "");
         LOGGER.info("init Configuration");
-        JDUtilities.getController().fireControlEvent(new ControlEvent(this, SplashScreen.SPLASH_PROGRESS, "Once upon a time..."));
+        // JDUtilities.getController().fireControlEvent(new ControlEvent(this,
+        // SplashScreen.SPLASH_PROGRESS, "Once upon a time..."));
 
         if (init.loadConfiguration() == null) {
 

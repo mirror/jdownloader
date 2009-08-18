@@ -245,7 +245,8 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
     }
 
     protected void addButtons(JPanel buttonBar) {
-//        buttonBar.add(btnCancel, "alignx right,tag cancel,sizegroup confirms");
+        // buttonBar.add(btnCancel,
+        // "alignx right,tag cancel,sizegroup confirms");
     }
 
     protected String getDontShowAgainKey() {
@@ -313,6 +314,10 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
 
     public static Dimension getDefaultDimension() {
         return DEFAULT_DIMENSION;
+    }
+
+    public static void resetDialogInformations() {
+        SubConfiguration.getConfig(DIALOGS_CONFIG).getProperties().clear();
     }
 
 }

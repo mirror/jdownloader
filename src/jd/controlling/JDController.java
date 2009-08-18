@@ -348,7 +348,7 @@ public class JDController implements ControlListener {
     }
 
     public void prepareShutdown() {
-        logger.info("Stop all runing downloads");
+        logger.info("Stop all running downloads");
         stopDownloads();
         logger.info("Call Exit event");
         fireControlEventDirect(new ControlEvent(this, ControlEvent.CONTROL_SYSTEM_EXIT, this));
@@ -368,7 +368,7 @@ public class JDController implements ControlListener {
         JDUtilities.getDatabaseConnector().shutdownDatabase();
     }
 
-    /*
+    /**
      * hiermit kann ein Thread den Exit von JD verzögern (zb. speichern von db
      * sachen) gibt eine ID zurück, mit welcher wieder der request freigegeben
      * werden kann
@@ -389,7 +389,7 @@ public class JDController implements ControlListener {
         }
     }
 
-    /*
+    /**
      * hiermit signalisiert ein Thread das es nun okay ist zu beenden benötigt
      * eine gültige ID
      */
