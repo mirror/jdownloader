@@ -56,10 +56,10 @@ public class IPCheck {
      * @return ip oder /offline
      */
     public static String getIPAddress(Browser br) {
-        if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
-            JDLogger.getLogger().finer("IP Check is disabled. return current Milliseconds");
-            return System.currentTimeMillis() + "";
-        }
+//        if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
+//            JDLogger.getLogger().finer("IP Check is disabled. return current Milliseconds");
+//            return System.currentTimeMillis() + "";
+//        }
         if (br == null) {
             br = new Browser();
             br.getHeaders().put("User-Agent", RandomUserAgent.generate());

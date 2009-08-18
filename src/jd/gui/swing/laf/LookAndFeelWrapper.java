@@ -9,7 +9,7 @@ import jd.config.container.JDLabelContainer;
 import jd.nutils.JDImage;
 import jd.utils.JDTheme;
 
-public class LookAndFeelWrapper implements Serializable, JDLabelContainer{
+public class LookAndFeelWrapper implements Serializable{
 
 
     /**

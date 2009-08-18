@@ -66,7 +66,7 @@ public class SubPanelCLRReconnect extends ConfigPanel implements ActionListener 
         // JDUtilities.addToGridBag(panel, btnSelectRouter, 0, 0, 1, 1, 0, 1,
         // insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        btnFindIP = new JButton(JDL.L("gui.config.liveHeader.btnFindIP", "Router IP ermitteln"));
+        btnFindIP = new JButton(JDL.L("gui.config.liveHeader.btnFindIP", "RouterInfo IP ermitteln"));
         btnFindIP.addActionListener(this);
         buttons.add(btnFindIP, "width 160!");
 

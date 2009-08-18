@@ -22,6 +22,7 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 
 import jd.controlling.JDLogger;
+import jd.nrouter.RouterInfo;
 import jd.nutils.OSDetector;
 import jd.parser.Regex;
 import jd.utils.JDUtilities;
@@ -115,9 +116,9 @@ public class GetMacAdress {
 
     public static void main(String[] args) {
         try {
-            System.out.println(new GetMacAdress().getMacAddress(new GetRouterInfo(null).getAdress()));
+            System.out.println(new GetMacAdress().getMacAddress(RouterInfo.getInstance().getAddress()));
         } catch (SocketException e) {
-            // TODO Auto-generated catch block
+            // TODO Auto-generated catch block 
             JDLogger.exception(e);
         } catch (UnknownHostException e) {
             // TODO Auto-generated catch block

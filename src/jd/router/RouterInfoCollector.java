@@ -30,6 +30,7 @@ import jd.controlling.JDLogger;
 import jd.controlling.reconnect.HTTPLiveHeader;
 import jd.controlling.reconnect.ReconnectMethod;
 import jd.http.Browser;
+import jd.nrouter.RouterInfo;
 import jd.nutils.Threader;
 import jd.nutils.jobber.JDRunnable;
 import jd.parser.Regex;
@@ -63,7 +64,7 @@ public class RouterInfoCollector {
 
     public static InetAddress getRouterIP() {
         String routerIp = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_IP, null);
-        if (routerIp == null || routerIp.matches("\\s*")) return new GetRouterInfo(null).getAdress();
+        if (routerIp == null || routerIp.matches("\\s*")) return RouterInfo.getInstance().getAddress();
         try {
             return InetAddress.getByName(routerIp);
         } catch (UnknownHostException e) {
@@ -216,7 +217,7 @@ public class RouterInfoCollector {
                     }
                     if (isClr()) {
                         if (info.getRouterName() == null) {
-                            info.setRouterName(new Regex(info.getReconnectMethodeClr(), "<Router name=\"(.*?)\" />").getMatch(0));
+                            info.setRouterName(new Regex(info.getReconnectMethodeClr(), "<RouterInfo name=\"(.*?)\" />").getMatch(0));
                         }
                         info.setReconnectMethodeClr(reconnectMethodeClr);
                     }

@@ -460,7 +460,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
 
         JPanel panel = new JPanel(new BorderLayout(10, 10));
         final DefaultListModel defaultListModel = new DefaultListModel();
-        final String text = "Search Router Model";
+        final String text = "Search RouterInfo Model";
         final JTextField searchField = new JTextField();
         searchField.setForeground(Color.lightGray);
         final JList list = new JList(defaultListModel);
@@ -544,7 +544,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
         JOptionPane op = new JOptionPane(panel, JOptionPane.INFORMATION_MESSAGE, JOptionPane.OK_CANCEL_OPTION, icon);
         // JDialog dialog = new
         // JDialog(SwingUtilities.getWindowAncestor(btnSelectRouter), );
-        JDialog dialog = op.createDialog(tabbedPanel, JDL.L("gui.config.liveHeader.dialog.importRouter", "Router importieren"));
+        JDialog dialog = op.createDialog(tabbedPanel, JDL.L("gui.config.liveHeader.dialog.importRouter", "RouterInfo importieren"));
         dialog.add(op);
         dialog.setModal(true);
         dialog.setPreferredSize(new Dimension(400, 500));

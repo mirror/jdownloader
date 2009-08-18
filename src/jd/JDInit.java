@@ -503,6 +503,8 @@ public class JDInit {
                     if (JDIO.removeDirectoryOrFile(delete)){
                         logger.warning("Removed " + file);
                     }else{
+                        
+                        logger.severe("Failed to remove " + file);
                         ret=false;
                     }
                 }

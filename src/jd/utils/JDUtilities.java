@@ -44,7 +44,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.logging.Logger;
-import java.util.regex.Pattern;
 import java.util.zip.CRC32;
 import java.util.zip.CheckedInputStream;
 
@@ -62,7 +61,6 @@ import jd.JDClassLoader;
 import jd.OptionalPluginWrapper;
 import jd.config.Configuration;
 import jd.config.DatabaseConnector;
-import jd.config.SubConfiguration;
 import jd.controlling.DownloadController;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
@@ -831,24 +829,6 @@ public class JDUtilities {
             return false;
         }
 
-    }
-
-    /**
-     * Überprüft ob eine IP gültig ist. das verwendete Pattern aknn in der
-     * config editiert werden.
-     * 
-     * @param ip
-     * @return
-     */
-    public static boolean validateIP(String ip) {
-        /* Zeitstempel nicht der Validierung unterziehen */
-        if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) return true;
-        try {
-            return Pattern.compile(SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_MASK, "\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).)" + "{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b")).matcher(ip).matches();
-        } catch (Exception e) {
-            JDLogger.getLogger().severe("Could not validate IP! " + e);
-        }
-        return true;
     }
 
     public static String removeEndingPoints(String name) {

@@ -86,9 +86,9 @@ public class Reconnecter {
              * gab schon nen externen reconnect , checke nur falls wirklich
              * ipcheck aktiv ist!
              */
-            if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
+//            if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
                 if (Reconnecter.checkExternalIPChange()) return true;
-            }
+//            }
         }
 
         Interaction.handleInteraction(Interaction.INTERACTION_BEFORE_RECONNECT, controller);
@@ -195,7 +195,8 @@ public class Reconnecter {
                      * hier nur ein ip check falls auch ip check wirklich aktiv,
                      * sonst gibts ne endlos reconnectschleife
                      */
-                    if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) return Reconnecter.checkExternalIPChange();
+//                    if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) 
+                        return Reconnecter.checkExternalIPChange();
                 }
                 return false;
 
