@@ -293,11 +293,11 @@ public class DistributeData extends Thread {
      * @return
      */
     private ArrayList<DownloadLink> quickHosterCheck(String data) {
-        data = data.toLowerCase();
+        String lowercasedata=data.toLowerCase();
         for (HostPluginWrapper pw : JDUtilities.getPluginsForHost()) {
             Pattern pattern = pw.getPattern();
 
-            if (data.contains(pw.getHost().toLowerCase())) {
+            if (lowercasedata.contains(pw.getHost().toLowerCase())) {
                 String match = new Regex(data, pattern).getMatch(-1);
                 if (match != null && (match.equals(data) || (match.length() > 10 + pw.getHost().length() && data.startsWith(match)))) {
 

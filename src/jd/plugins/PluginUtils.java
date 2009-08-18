@@ -1,7 +1,12 @@
 package jd.plugins;
 
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.Scriptable;
+
 import jd.gui.UserIO;
 import jd.gui.swing.components.Balloon;
+import jd.http.Browser;
+import jd.parser.Regex;
 import jd.utils.locale.JDL;
 /**
  * LIttle Helper class for often used PLugin issues
@@ -25,6 +30,24 @@ public class PluginUtils {
     public static void informPasswordWrong(Plugin plg, String password) {
         Balloon.show(JDL.LF("jd.plugins.PluginUtils.informPasswordWrong.title", "Password wrong: %s", password), UserIO.getInstance().getIcon(UserIO.ICON_ERROR), JDL.LF("jd.plugins.PluginUtils.informPasswordWrong.message", "The password you entered for %s has been wrong.", plg.getHost()));
 
+    }
+
+    public static void evalJSPacker(Browser br) {
+        String regex = "eval\\((.*?\\,\\{\\}\\))\\)";
+        String[] containers = br.getRegex(regex).getColumn(0);
+        
+        String htmlcode=br.getRequest().getHtmlCode();
+        for (String c : containers) {
+            Context cx = Context.enter();
+            Scriptable scope = cx.initStandardObjects();
+            c = c.replaceAll("return p\\}\\(", " return p}  f(").replaceAll("function\\s*\\(p\\,a\\,c\\,k\\,e\\,d\\)", "function f(p,a,c,k,e,d)");
+            Object result = cx.evaluateString(scope, c, "<cmd>", 1, null);
+            String code = Context.toString(result);
+            htmlcode=htmlcode.replaceFirst(regex, code);
+          
+        }
+        br.getRequest().setHtmlCode(htmlcode);
+        
     }
 
 }

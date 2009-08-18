@@ -20,7 +20,6 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -28,7 +27,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "archiv.to" }, urls = { "http://[\\w\\.]*?archiv\\.to/\\?Module\\=Details&HashID\\=.*" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "archiv.to" }, urls = { "http://[\\w\\.]*?archiv\\.to/\\?Module\\=Details\\&HashID\\=.*" }, flags = { 0 })
 public class ArchivTo extends PluginForHost {
 
     public ArchivTo(PluginWrapper wrapper) {
@@ -46,17 +45,26 @@ public class ArchivTo extends PluginForHost {
             br.setFollowRedirects(true);
             br.setCookiesExclusive(true);
             br.clearCookies(getHost());
-            String page = br.getPage(downloadLink.getDownloadURL());
-
-            downloadLink.setName(new Regex(page, "<a href=\".*?archiv.*?\" style=\"Color.*?\">(.*?)</a></td></tr>").getMatch(0));
-            downloadLink.setMD5Hash(new Regex(page, "<td width=\"23%\">MD5 Code</td>\\s*<td width=\"77%\">: ([0-9a-z]*?)</td>").getMatch(0));
-            downloadLink.setDownloadSize(Long.parseLong(new Regex(page, "<td width=.*?>Dateigröße</td>\\s*<td width=.*?>: (\\d+?) Bytes \\(.*\\)</td>").getMatch(0)));
+            br.getPage(downloadLink.getDownloadURL());
+        
+            if (!br.containsHTML("MD5 Code") || br.containsHTML("(Datei wurde entfernt)")) {
+                if(br.containsHTML("Originaldatei"))return requestFileInformationStream(downloadLink);
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+            downloadLink.setName(br.getRegex("<a href=\".*?archiv.*?\" style=\"Color.*?\">(.*?)</a></td></tr>").getMatch(0));
+            downloadLink.setMD5Hash(br.getRegex("<td width=\"23%\">MD5 Code</td>\\s*<td width=\"77%\">: ([0-9a-z]*?)</td>").getMatch(0));
+            downloadLink.setDownloadSize(Long.parseLong(br.getRegex("<td width=.*?>Dateigröße</td>\\s*<td width=.*?>: (\\d+?) Bytes \\(.*\\)</td>").getMatch(0)));
 
             return AvailableStatus.TRUE;
         } catch (Exception e) {
             logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
         }
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+    }
+
+    private AvailableStatus requestFileInformationStream(DownloadLink downloadLink) {
+        downloadLink.setName(br.getRegex("<tr>.*?Originaldatei</td>.*?<td.*?>.*?<a href=.*?>(.*?)</a></td>.*?</tr>").getMatch(0));
+        downloadLink.setDownloadSize(Long.parseLong(br.getRegex("<tr>.*?<td.*?>Dateigr..e</td>.*?<td .*?: (\\d+) Bytes \\(~ .*?\\)</td>.*?</tr>").getMatch(0)));
+        return AvailableStatus.TRUE;
     }
 
     // @Override
@@ -69,13 +77,25 @@ public class ArchivTo extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         requestFileInformation(downloadLink);
-
+        if(!br.containsHTML("MD5 Code")){
+         handleFreeStream(downloadLink);
+         return;
+        }
+      
         br.getPage(downloadLink.getDownloadURL());
         String link = br.getRegex("<a href=\"http://ww\\.archiv\\.to/(Get.*?)\" style=").getMatch(0);
         String dlLink = "http://archiv.to/" + Encoding.htmlDecode(link);
 
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, dlLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlLink);
         dl.startDownload();
+    }
+
+    private void handleFreeStream(DownloadLink downloadLink) throws Exception {
+        String src = br.getRegex("<param name=\"src\" value=\"(.*?)\" />").getMatch(0);
+        br.setDebug(true);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, src,true,-10);
+        dl.startDownload();
+       
     }
 
     // @Override
