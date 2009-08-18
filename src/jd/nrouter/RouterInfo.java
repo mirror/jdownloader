@@ -14,6 +14,7 @@ import jd.nutils.OSDetector;
 import jd.nutils.Threader;
 import jd.nutils.jobber.JDRunnable;
 import jd.parser.Regex;
+import jd.router.UPnPInfo;
 
 public class RouterInfo {
     private InetAddress address;
@@ -302,7 +303,8 @@ public class RouterInfo {
             exec.setWaitTimeout(5000);
             exec.start();
             exec.waitTimeout();
-            String[] out = exec.getOutputStream().split("[\r\n]+");
+        
+            String[] out = Regex.getLines(exec.getOutputStream());
             for (String string : out) {
                 String m = new Regex(string, pat).getMatch(0);
                 if(m!=null)
@@ -320,8 +322,25 @@ public class RouterInfo {
         }
         return null;
     }
-    public static void main(String[] args) {
-        System.out.println(getInstance().getIPFormNetStat());
+
+/**
+ * Collects UPNP Informations an returns them.
+ * returns null if upnp is not supported
+ */
+    public UPnP getUpnpInfo() {
+        UPnP upnp = new UPnP(address);
+        if(!upnp.load(10000)){
+            return null;
+        }
+      
+  
         
+        return upnp;
+//        if (upnp.met != null && upnp.met.size() != 0) {
+//            isalv.SCPDs = upnp.SCPDs;
+//            isalv.meths = upnp.met;
+//        }
     }
+
+
 }

@@ -57,7 +57,7 @@ public class Jobber {
     }
 
     /**
-     * Jobber.class Diese Klasse ermöglichtda s paralelle ausführen mehrere
+     * Jobber.class Diese Klasse ermöglicht  das paralelle Ausführen mehrere
      * Jobs. Es ist möglich während der Ausführung neue Jobs hinzuzufügen.
      * 
      * @param i

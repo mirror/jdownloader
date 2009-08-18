@@ -43,7 +43,7 @@ public class SingleDecrypter {
      * http://jdownloader
      * .net:8081/knowledge/wiki/development/intern/testlinks/decrypter/DECRYPT
      */
-    private static final String DECRYPT = "crypt-me.com";
+    private static final String DECRYPT = "relink.us";
 
     @Before
     public void setUp() {
@@ -63,6 +63,14 @@ public class SingleDecrypter {
         for (Entry<String, String> next : links.entrySet()) {
             TestUtils.log("Testing link: " + next.getValue());
             if (next.getKey().equalsIgnoreCase("NORMAL_DECRYPTERLINK_1")) {
+                decryptURL(next.getValue());
+            } else if (next.getKey().equalsIgnoreCase("NORMAL_DECRYPTERLINK_2")) {
+                decryptURL(next.getValue());
+            } else if (next.getKey().equalsIgnoreCase("NORMAL_DECRYPTERLINK_3")) {
+                decryptURL(next.getValue());
+            } else if (next.getKey().equalsIgnoreCase("NORMAL_DECRYPTERLINK_4")) {
+                decryptURL(next.getValue());
+            } else if (next.getKey().equalsIgnoreCase("NORMAL_DECRYPTERLINK_5")) {
                 decryptURL(next.getValue());
             } else if (next.getKey().startsWith("PASSWORD_PROTECTED_1:")) {
                 decryptPWURL(next.getValue(), next.getKey().substring("PASSWORD_PROTECTED_1:".length()));

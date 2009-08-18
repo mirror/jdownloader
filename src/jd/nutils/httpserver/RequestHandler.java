@@ -28,7 +28,6 @@ public class RequestHandler extends Thread {
     private Handler handler;
     private boolean eof = false;
 
-
     public RequestHandler(Socket socket, Handler handler) {
         this.socket = socket;
         this.handler = handler;
@@ -57,8 +56,8 @@ public class RequestHandler extends Thread {
                     while (data - offset > 0) {
                         offset += reader.read(buffer, offset, data - offset);
                     }
-                   req.setPostData(buffer);
-this.parseParameter(req, new String(buffer));
+                    req.setPostData(buffer);
+                    this.parseParameter(req, new String(buffer));
                     eof = true;
                     continue;
                 }
@@ -100,11 +99,9 @@ this.parseParameter(req, new String(buffer));
         }
     }
 
- 
-
     public void parseParameter(Request req, String parameter) {
         String[] help = parameter.split("\\&");
-        
+
         for (String entry : help) {
             entry = entry.trim();
             int index = entry.indexOf("=");
@@ -118,9 +115,8 @@ this.parseParameter(req, new String(buffer));
     }
 
     private String readline(BufferedInputStream reader) {
-        int max_buf = 1024;
-        byte[] buffer = new byte[max_buf];
-        int index = 0;
+        StringBuilder sb = new StringBuilder();
+
         int byteread = -6;
         try {
 
@@ -130,15 +126,12 @@ this.parseParameter(req, new String(buffer));
 
                     reader.mark(0);
 
-                    if (index > max_buf) { return null; }
-                    buffer[index++] = (byte) byteread;
+                    sb.append((char)byteread);
                     if ((byteread = reader.read()) != -1) {
 
                         if (byteread == 13 || byteread == 10) {
 
-                            if (index > max_buf) { return null; }
-                            buffer[index++] = (byte) byteread;
-
+                            sb.append((char)byteread);
                             break;
                         } else {
                             reader.reset();
@@ -147,18 +140,17 @@ this.parseParameter(req, new String(buffer));
                     }
 
                 }
-                if (index > max_buf) { return null; }
-                buffer[index++] = (byte) byteread;
+
+                sb.append((char)byteread);
 
             }
             if (byteread == -1) {
                 eof = true;
             }
-
         } catch (IOException e) {
             JDLogger.exception(e);
         }
-        if (index == 0) return null;
-        return new String(buffer).substring(0, index);
+
+        return sb.toString();
     }
 }

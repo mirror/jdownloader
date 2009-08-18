@@ -711,7 +711,14 @@ public class Browser {
             String base = getBase(string);
             if (string.startsWith("/") || string.startsWith("\\")) {
                 try {
-                    string = "http://" + new URL(base).getHost() + string;
+                    
+                   URL bUrl = new URL(base);
+                    if(bUrl.getPort()!=80&&bUrl.getPort()>0){
+                        string = "http://" + new URL(base).getHost()+":"+bUrl.getPort() + string;
+                    }else{
+                        string = "http://" + new URL(base).getHost() + string;  
+                    }
+                  
                 } catch (MalformedURLException e1) {
                     // TODO Auto-generated catch block
                     e1.printStackTrace();
@@ -735,7 +742,11 @@ public class Browser {
         }
 
         // path.substring(path.lastIndexOf("/"))
+        if(request.getHttpConnection().getURL().getPort()!=80&&request.getHttpConnection().getURL().getPort()>0){
+            string = "http://" + request.getHttpConnection().getURL().getHost()+":"+request.getHttpConnection().getURL().getPort() + path + "/";
+        }else{
         string = "http://" + request.getHttpConnection().getURL().getHost() + path + "/";
+        }
         return string;
     }
 
@@ -1251,7 +1262,7 @@ public class Browser {
     }
 
     public String getXPathElement(String xPath) {
-        return new XPath(this.toString(), xPath).getFirstMatch();
+        return new XPath(this.toString(), xPath,false).getFirstMatch();
 
     }
 

@@ -41,13 +41,22 @@ public class XPath {
     HtmlCleaner cleaner;
     private Document doc;
     private String query;
+    public String getQuery() {
+        return query;
+    }
+    public void setQuery(String query) {
+        this.query = query;
+    }
+
     private String source;
     private javax.xml.xpath.XPath xpath;
 
     public XPath(String source, String query) {
         this(source, query, true);
     }
-
+    public XPath(String source) {
+        this(source, null, true);
+    }
     public XPath(String source, String query, boolean transform) {
         try {
             if (transform) {
@@ -57,7 +66,7 @@ public class XPath {
                 doc = new DomSerializer(props, true).createDOM(cleaner.clean(source));
             } else {
                 DocumentBuilderFactory domFactory = DocumentBuilderFactory.newInstance();
-                domFactory.setNamespaceAware(true);
+                domFactory.setNamespaceAware(false);
                 DocumentBuilder builder = domFactory.newDocumentBuilder();
                 doc = builder.parse(new InputSource(new ByteArrayInputStream(source.getBytes())));
             }
