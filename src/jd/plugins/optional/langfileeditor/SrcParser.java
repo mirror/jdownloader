@@ -125,7 +125,7 @@ public class SrcParser {
                 }
                 return;
             } catch (Exception e) {
-                e.printStackTrace();
+              
                 cacheEntries.delete();
                 cachePattern.delete();
                 fileEntries = new ArrayList<LngEntry>();

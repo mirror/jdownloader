@@ -31,12 +31,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map.Entry;
 
 import javax.swing.JMenu;
@@ -61,7 +59,6 @@ import jd.gui.swing.components.pieapi.ChartAPIEntity;
 import jd.gui.swing.components.pieapi.PieChartAPI;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.nutils.JDFlags;
-import jd.nutils.OSDetector;
 import jd.nutils.io.JDIO;
 import jd.nutils.svn.ResolveHandler;
 import jd.nutils.svn.Subversion;
@@ -283,10 +280,12 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
             saveLanguageFile(languageFile, true);
         } else if (e.getSource() == this.mnuCurrent) {
             saveLanguageFile(languageFile, false);
-            startNewInstance(new String[] { "-n","-lng ",languageFile.getAbsolutePath() });
+            startNewInstance(new String[] { "-n", "-lng", languageFile.getAbsolutePath() });
+            UserIO.getInstance().requestMessageDialog("Started JDownloader using " + languageFile);
         } else if (e.getSource() == this.mnuKeymode) {
 
-            startNewInstance(new String[] { "-n", "-trdebug "});
+            startNewInstance(new String[] { "-n", "-trdebug" });
+            UserIO.getInstance().requestMessageDialog("Started JDownloader in KEY DEBUG Mode");
         } else if (e.getSource() == mnuAdd) {
 
             String[] result = UserIO.getInstance().requestTwoTextFieldDialog(JDL.L(LOCALE_PREFIX + "addKey.title", "Add new key"), JDL.L(LOCALE_PREFIX + "addKey.message1", "Type in the name of the key:"), JDL.L(LOCALE_PREFIX + "addKey.message2", "Type in the translated message of the key:"), "", "");
@@ -361,54 +360,17 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
 
     private void startNewInstance(String[] strings) {
 
-        List<String> lst = ManagementFactory.getRuntimeMXBean().getInputArguments();
         ArrayList<String> jargs = new ArrayList<String>();
 
-        boolean xmxset = false;
-        boolean xmsset = false;
-        boolean useconc = false;
-        boolean minheap = false;
-        boolean maxheap = false;
+        jargs.add("-Xmx512m");
 
-        for (String h : lst) {
-            if (h.contains("Xmx")) {
-                xmxset = true;
-                if (Runtime.getRuntime().maxMemory() < 533000000) {
-                    jargs.add("-Xmx512m");
-                    continue;
-                }
-            } else if (h.contains("xms")) {
-                xmsset = true;
-            } else if (h.contains("XX:+useconc")) {
-                useconc = true;
-            } else if (h.contains("minheapfree")) {
-                minheap = true;
-            } else if (h.contains("maxheapfree")) {
-                maxheap = true;
-            }
-            jargs.add(h);
-        }
-        if (!xmxset) jargs.add("-Xmx512m");
-        if (OSDetector.isLinux()) {
-            if (!xmsset) jargs.add("-Xms64m");
-            if (!useconc) jargs.add("-XX:+UseConcMarkSweepGC");
-            if (!minheap) jargs.add("-XX:MinHeapFreeRatio=0");
-            if (!maxheap) jargs.add("-XX:MaxHeapFreeRatio=0");
-        }
         jargs.add("-jar");
         jargs.add("JDownloader.jar");
-
-        String[] javaArgs = jargs.toArray(new String[jargs.size()]);
-        String[] finalArgs = new String[JDUtilities.getJDargs().length + javaArgs.length];
-        System.arraycopy(javaArgs, 0, finalArgs, 0, javaArgs.length);
-        System.arraycopy(JDUtilities.getJDargs(), 0, finalArgs, javaArgs.length, JDUtilities.getJDargs().length);
-        System.arraycopy(strings, 0, finalArgs, javaArgs.length, strings.length);
-
-        if (OSDetector.isMac()) {
-            JDLogger.getLogger().info(JDUtilities.runCommand("open", new String[] { "-n", "jDownloader.app" }, JDUtilities.getResourceFile(".").getParentFile().getParentFile().getParentFile().getParentFile().getAbsolutePath(), 0));
-        } else {
-            JDLogger.getLogger().info(JDUtilities.runCommand("java", finalArgs, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
+        for (String a : strings) {
+            jargs.add(a);
         }
+
+        JDLogger.getLogger().info(JDUtilities.runCommand("java", jargs.toArray(new String[] {}), JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
 
     }
 
@@ -573,7 +535,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
 
         changed = false;
         if (upload) {
-        UserIO.getInstance().requestMessageDialog(JDL.L(LOCALE_PREFIX + "save.success.message", "LanguageFile saved successfully!"));
+            UserIO.getInstance().requestMessageDialog(JDL.L(LOCALE_PREFIX + "save.success.message", "LanguageFile saved successfully!"));
         }
         initLocaleData();
     }
@@ -1067,7 +1029,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
         mnuCurrent.addActionListener(this);
         mnuTest.add(mnuKeymode = new JMenuItem(JDL.L(LOCALE_PREFIX + "startkey", "Test JD in Key mode")));
         mnuKeymode.addActionListener(this);
-        
+
         // Menü-Bar zusammensetzen
 
         menubar.add(mnuFile);

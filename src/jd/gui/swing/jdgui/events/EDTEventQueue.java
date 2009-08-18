@@ -42,6 +42,7 @@ import javax.swing.MenuSelectionManager;
 import javax.swing.SwingUtilities;
 import javax.swing.text.JTextComponent;
 
+import jd.controlling.JDLogger;
 import jd.gui.swing.components.MouseFollower;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.jdgui.JDGui;
@@ -57,6 +58,7 @@ public class EDTEventQueue extends EventQueue {
     private JPanel mouseOver;
 
     private JLabel lbl;
+
     public EDTEventQueue() {
         super();
 
@@ -202,6 +204,8 @@ public class EDTEventQueue extends EventQueue {
                                         sb2.append("\r\n" + Formatter.fillString("", " ", "", i * 3) + " Possible Translation: " + JDL.L(t, text) + " (" + t + ")");
                                     }
 
+                                    JDLogger.getLogger().info(sb2+"");
+
                                 }
                                 if (source2 instanceof JLabel) {
                                     ((JLabel) source2).setText(keys[0]);
@@ -217,7 +221,7 @@ public class EDTEventQueue extends EventQueue {
             } else if (e.getID() == MouseEvent.MOUSE_MOVED && e.isControlDown() && e.isShiftDown()) {
 
                 Point point = e.getPoint();
-                Component source =JDGui.getInstance().getMainFrame().getContentPane();
+                Component source = JDGui.getInstance().getMainFrame().getContentPane();
 
                 point.x -= (source.getLocationOnScreen().x - JDGui.getInstance().getMainFrame().getLocationOnScreen().x);
                 point.y -= (source.getLocationOnScreen().y - JDGui.getInstance().getMainFrame().getLocationOnScreen().y);
@@ -269,7 +273,7 @@ public class EDTEventQueue extends EventQueue {
         final JTextComponent t = (JTextComponent) c;
 
         JPopupMenu menu = new JPopupMenu();
-        
+
         menu.add(new MenuAbstractAction(t, JDL.L("gui.textcomponent.context.cut", "Ausschneiden"), JDTheme.II("gui.icons.cut", 16, 16), JDL.L("gui.textcomponent.context.cut.acc", "ctrl X")) {
 
             private static final long serialVersionUID = 1L;
