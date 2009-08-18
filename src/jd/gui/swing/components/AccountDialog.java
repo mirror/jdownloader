@@ -1,6 +1,8 @@
 package jd.gui.swing.components;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -58,6 +60,11 @@ public class AccountDialog extends AbstractDialog {
         JPanel panel = new JPanel(new MigLayout("ins 0, wrap 2"));
         panel.add(new JLabel(JDL.L(JDL_PREFIX + "hoster", "Hoster:")));
         ArrayList<HostPluginWrapper> plugins = JDUtilities.getPremiumPluginsForHost();
+        Collections.sort(plugins, new Comparator<HostPluginWrapper>() {
+            public int compare(HostPluginWrapper a, HostPluginWrapper b) {
+                return a.getHost().compareToIgnoreCase(b.getHost());
+            }
+        });
         HostPluginWrapper[] array = plugins.toArray(new HostPluginWrapper[plugins.size()]);
         panel.add(hoster = new JComboBox(array), "w 200!");
         if (plugin != null) {

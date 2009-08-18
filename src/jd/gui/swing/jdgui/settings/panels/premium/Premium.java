@@ -21,6 +21,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.text.DateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.logging.Logger;
 
@@ -148,7 +150,7 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
             }
 
             public void threadedActionPerformed(final ActionEvent e) {
-
+                internalTable.editingStopped(null);
                 new GuiRunnable<Object>() {
 
                     @Override
@@ -180,6 +182,7 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
 
             public void threadedActionPerformed(ActionEvent e) {
                 ArrayList<Account> accs = internalTable.getSelectedAccounts();
+                internalTable.editingStopped(null);
                 if (accs.size() == 0) return;
                 if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, JDL.L("action.premiumview.removeacc.ask", "Remove selected?") + " (" + JDL.LF("action.premiumview.removeacc.accs", "%s Account(s)", accs.size()) + ")"), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
                     for (Account acc : accs) {
@@ -203,12 +206,18 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
             }
 
             public void threadedActionPerformed(ActionEvent e) {
+                internalTable.editingStopped(null);
                 new GuiRunnable<Object>() {
 
                     @Override
                     public Object runSave() {
 
                         ArrayList<HostPluginWrapper> plugins = JDUtilities.getPremiumPluginsForHost();
+                        Collections.sort(plugins, new Comparator<HostPluginWrapper>() {
+                            public int compare(HostPluginWrapper a, HostPluginWrapper b) {
+                                return a.getHost().compareToIgnoreCase(b.getHost());
+                            }
+                        });
                         HostPluginWrapper[] data = plugins.toArray(new HostPluginWrapper[plugins.size()]);
                         int selection = UserIO.getInstance().requestComboDialog(0, JDL.L(JDL_PREFIX + "buy.title", "Buy Premium"), JDL.L(JDL_PREFIX + "buy.message", "Which hoster are you interested in?"), data, 0, null, JDL.L(JDL_PREFIX + "continue", "Continue"), null, new IconListRenderer());
 

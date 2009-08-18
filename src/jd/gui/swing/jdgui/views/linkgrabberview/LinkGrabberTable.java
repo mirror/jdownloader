@@ -230,7 +230,7 @@ public class LinkGrabberTable extends JDTable implements MouseListener, MouseMot
     public void toggleFilePackageExpand(LinkGrabberFilePackage fp) {
         fp.setProperty(PROPERTY_EXPANDED, !fp.getBooleanProperty(PROPERTY_EXPANDED, false));
         fp.setProperty(PROPERTY_USEREXPAND, true);
-        linkgrabber.fireTableChanged(true);
+        linkgrabber.fireTableChanged();
     }
 
     public void mousePressed(MouseEvent e) {
