@@ -21,6 +21,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Vector;
+
+import jd.captcha.gui.BasicWindow;
+
 import jd.nutils.Colors;
 import jd.captcha.easy.BackGroundImageTrainer;
 import jd.captcha.easy.ColorTrainer;
@@ -38,28 +41,54 @@ public class EasyCaptcha {
     private static int mergeObjectsBasic(Vector<PixelObject> os, Captcha captcha) {
         int area = 0;
         try {
+
+            PixelObject aos = os.get(0);
             for (PixelObject pixelObject : os) {
                 area += pixelObject.getArea();
+                if (aos.getWidth() < pixelObject.getWidth()) aos = pixelObject;
             }
-            if (os.size() <= captcha.owner.getLetterNum()) area /= os.size() * 3;
+
+            for (int i = 0; i < os.size(); i++) {
+                PixelObject b = os.get(i);
+                if (b != aos && (b.getXMin() - aos.getXMin()) <= 0 && ((b.getXMin() + b.getWidth()) - ((aos.getXMin() + aos.getWidth())) >= 0)) {
+                    b.add(aos);
+                    os.remove(aos);
+                    return mergeObjectsBasic(os, captcha);
+
+                }
+            }
+            if (os.size() <= captcha.owner.getLetterNum())
+                area /= os.size() * 3;
             else
-            area /= os.size() * 2;
+                area /= os.size() * 2;
+            if (aos.getArea() < area) {
+                os.remove(aos);
+
+                PixelObject nextos = os.get(0);
+
+                int best = Math.abs(aos.getXMin() - nextos.getXMin()) + Math.abs((aos.getXMin() + aos.getWidth()) - (nextos.getXMin() + nextos.getWidth()));
+                for (int i = 1; i < os.size(); i++) {
+                    PixelObject b = os.get(i);
+                    int ib = Math.abs(aos.getXMin() - b.getXMin()) + Math.abs((aos.getXMin() + aos.getWidth()) - (b.getXMin() + b.getWidth()));
+                    if (ib < best) {
+                        best = ib;
+                        nextos = b;
+                    }
+                }
+                nextos.add(aos);
+
+            }
             for (Iterator<PixelObject> iterator = os.iterator(); iterator.hasNext();) {
                 PixelObject a = (PixelObject) iterator.next();
                 if (a.getArea() < area) {
                     iterator.remove();
 
                     PixelObject nextos = os.get(0);
-                    int xMin = Math.max(a.getXMin(), nextos.getXMin());
-                    int amax = a.getXMin() + a.getWidth();
-                    int xMax = Math.min(amax, nextos.getXMin() + nextos.getWidth());
-                    int best = Math.abs(amax - xMax) + Math.abs(a.getXMin() - xMin);
+
+                    int best = Math.abs(a.getXMin() - nextos.getXMin()) + Math.abs((a.getXMin() + a.getWidth()) - (nextos.getXMin() + nextos.getWidth()));
                     for (int i = 1; i < os.size(); i++) {
                         PixelObject b = os.get(i);
-                        xMin = Math.max(a.getXMin(), b.getXMin());
-                        amax = a.getXMin() + a.getWidth();
-                        xMax = Math.min(amax, b.getXMin() + b.getWidth());
-                        int ib = Math.abs(amax - xMax) + Math.abs(a.getXMin() - xMin);
+                        int ib = Math.abs(a.getXMin() - b.getXMin()) + Math.abs((a.getXMin() + a.getWidth()) - (b.getXMin() + b.getWidth()));
                         if (ib < best) {
                             best = ib;
                             nextos = b;
@@ -68,6 +97,22 @@ public class EasyCaptcha {
                     nextos.add(a);
 
                     return mergeObjectsBasic(os, captcha);
+                }
+
+            }
+            for (int i = 0; i < os.size(); i++) {
+                PixelObject b = os.get(i);
+                for (int j = i; j < os.size(); j++) {
+                    PixelObject a = os.get(j);
+                    if(a.getWidth()<b.getWidth())
+                    {
+                    if (b != a && (b.getXMin() - a.getXMin()) <= 0 && ((b.getXMin() + b.getWidth()) - ((a.getXMin() + a.getWidth())) >= 0)) {
+                        b.add(a);
+                        os.remove(a);
+                        return mergeObjectsBasic(os, captcha);
+
+                    }
+                    }
                 }
 
             }
@@ -112,11 +157,13 @@ public class EasyCaptcha {
         }
 
         if (biggest.getWidth() > minw) {
+            os.remove(biggest);
+
             int[][] grid = captcha.getOrgGridCopy();
 
             int[] gab = new int[biggest.getWidth()];
             int[] ColorGab = new int[gab.length];
-           
+
             for (int i = 0; i < biggest.getSize(); i++) {
                 int[] akt = biggest.elementAt(i);
                 int x = akt[0] - biggest.getXMin();
@@ -126,7 +173,7 @@ public class EasyCaptcha {
                 else
                     ColorGab[x] = Colors.mixColors(ColorGab[x], grid[akt[0]][akt[1]]);
             }
-            int best = gab.length /3;
+            int best = gab.length / 3;
             double bestCGab = Double.MIN_VALUE;
             int bestCGabPos = best + 1;
             for (int i = best + 1; i < gab.length * 2 / 3; i++) {
@@ -143,13 +190,11 @@ public class EasyCaptcha {
                     // TODO: handle exception
                 }
             }
-            if(bestCGab>10 && gab[best]/2<gab[bestCGabPos])
-            {
+            if (bestCGab > 10 && gab[best] / 2 < gab[bestCGabPos]) {
                 best = bestCGabPos;
             }
-                
+
             PixelObject[] bs = biggest.cut(best, biggest.getWidth(), 0);
-            os.remove(biggest);
 
             for (PixelObject pixelObject : bs) {
                 if (pixelObject != null) os.add(pixelObject);
@@ -242,7 +287,7 @@ public class EasyCaptcha {
         int area = mergeObjectsBasic(os, captcha);
         mergeObjects(os, captcha, pixels);
 
-        getRightletters(os, captcha, pixels);
+         getRightletters(os, captcha, pixels);
         Collections.sort(os);
         ArrayList<Letter> ret = new ArrayList<Letter>();
         for (PixelObject pixelObject : os) {
