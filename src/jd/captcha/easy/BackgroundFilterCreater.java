@@ -37,15 +37,18 @@ public class BackgroundFilterCreater {
                 grid[x][y].put(firstCaptcha.getPixelValue(x, y), 0);
             }
         }
+        int i =0;
         for (File file : files) {
             image = Utilities.loadImage(file);
             Captcha captcha = jac.createCaptcha(image);
-            if (captcha.getWidth() != firstCaptcha.getWidth() || captcha.getHeight() != firstCaptcha.getHeight()) {
+            if (captcha == null || captcha.getWidth() != firstCaptcha.getWidth() || captcha.getHeight() != firstCaptcha.getHeight()) {
                 if (Utilities.isLoggerActive()) {
                     JDLogger.getLogger().info("ERROR Maske und Bild passen nicht zusammmen");
                 }
                 continue;
             }
+            if(i++==100)break;
+
             for (int x = 0; x < captcha.getWidth(); x++) {
                 for (int y = 0; y < captcha.getHeight(); y++) {
                     HashMap<Integer, Integer> map = grid[x][y];

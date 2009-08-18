@@ -1565,7 +1565,9 @@ public class Captcha extends PixelGrid {
             return true;
         }
     }
-
+    public int[][] getOrgGridCopy() {
+        return PixelGrid.getGridCopy(tmpGrid);
+    }
     /**
      * Setztd as interne Grid auf den ausgangszustand zurück. Funktioniert nur
      * wenn dieser gespeichert ist. Im fehlerfall wird fals zurückgegegen
@@ -1576,7 +1578,7 @@ public class Captcha extends PixelGrid {
         seperatedLetters = null;
         setPrepared(false);
         if (tmpGrid == null) { return false; }
-        grid = tmpGrid;
+        grid = PixelGrid.getGridCopy(tmpGrid);
 
         return true;
     }
