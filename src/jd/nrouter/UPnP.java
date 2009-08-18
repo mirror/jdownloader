@@ -3,21 +3,19 @@ package jd.nrouter;
 import java.net.InetAddress;
 
 import jd.controlling.JDLogger;
-import jd.http.Browser;
 import jd.nutils.Threader;
 import jd.nutils.jobber.JDRunnable;
 
 import org.cybergarage.upnp.ControlPoint;
 import org.cybergarage.upnp.device.SearchResponseListener;
 import org.cybergarage.upnp.ssdp.SSDPPacket;
-import org.w3c.dom.Document;
 
 public class UPnP {
     private InetAddress host;
     private SSDPPacket ssdpPacket;
 
-    private Document deviceDescription;
-    private Browser deviceBrowser;
+    // private Document deviceDescription;
+    // private Browser deviceBrowser;
     private UpnpDevice device;
 
     public UPnP(InetAddress ipaddress) {

@@ -14,7 +14,6 @@ import jd.nutils.OSDetector;
 import jd.nutils.Threader;
 import jd.nutils.jobber.JDRunnable;
 import jd.parser.Regex;
-import jd.router.UPnPInfo;
 
 public class RouterInfo {
     private InetAddress address;
@@ -118,10 +117,10 @@ public class RouterInfo {
      * @return
      */
     public synchronized static RouterInfo getInstance() {
-       
-            if (INSTANCE == null) INSTANCE = new RouterInfo();
-            return INSTANCE;
-        
+
+        if (INSTANCE == null) INSTANCE = new RouterInfo();
+        return INSTANCE;
+
     }
 
     /**
@@ -174,11 +173,14 @@ public class RouterInfo {
             }
         }
     }
-/**
- * RUns throw a predefined  HOst Table (multithreaded) and checks if there is a service on port 80.
- * returns the ip if there is a webservice on any adress. See updateHostTable() 
- * @return
- */
+
+    /**
+     * RUns throw a predefined HOst Table (multithreaded) and checks if there is
+     * a service on port 80. returns the ip if there is a webservice on any
+     * adress. See updateHostTable()
+     * 
+     * @return
+     */
     public InetAddress getIpFormHostTable() {
         updateHostTable();
         final int size = HOST_NAMES.size();
@@ -303,12 +305,11 @@ public class RouterInfo {
             exec.setWaitTimeout(5000);
             exec.start();
             exec.waitTimeout();
-        
+
             String[] out = Regex.getLines(exec.getOutputStream());
             for (String string : out) {
                 String m = new Regex(string, pat).getMatch(0);
-                if(m!=null)
-                {
+                if (m != null) {
                     InetAddress ia = InetAddress.getByName(m);
                     if (ia.isReachable(1500)) {
 
@@ -316,31 +317,25 @@ public class RouterInfo {
                 }
             }
 
-
         } catch (Exception e) {
             JDLogger.exception(e);
         }
         return null;
     }
 
-/**
- * Collects UPNP Informations an returns them.
- * returns null if upnp is not supported
- */
+    /**
+     * Collects UPNP Informations an returns them. returns null if upnp is not
+     * supported
+     */
     public UPnP getUpnpInfo() {
         UPnP upnp = new UPnP(address);
-        if(!upnp.load(10000)){
-            return null;
-        }
-      
-  
-        
-        return upnp;
-//        if (upnp.met != null && upnp.met.size() != 0) {
-//            isalv.SCPDs = upnp.SCPDs;
-//            isalv.meths = upnp.met;
-//        }
-    }
+        if (!upnp.load(10000)) { return null; }
 
+        return upnp;
+        // if (upnp.met != null && upnp.met.size() != 0) {
+        // isalv.SCPDs = upnp.SCPDs;
+        // isalv.meths = upnp.met;
+        // }
+    }
 
 }

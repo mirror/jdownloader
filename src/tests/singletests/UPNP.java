@@ -18,6 +18,7 @@ package tests.singletests;
 
 import java.net.InetAddress;
 
+import jd.nrouter.RouterInfo;
 import jd.nrouter.UPnP;
 
 import org.junit.After;
@@ -33,7 +34,7 @@ public class UPNP {
 
     @Test
     public void ipcheck() {
-        jd.nrouter.RouterInfo router = jd.nrouter.RouterInfo.getInstance();
+        RouterInfo router = RouterInfo.getInstance();
 
         InetAddress address = router.getAddress();
 

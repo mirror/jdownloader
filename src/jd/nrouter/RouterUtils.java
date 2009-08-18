@@ -12,7 +12,7 @@ import java.util.regex.Pattern;
 import jd.controlling.JDLogger;
 
 public class RouterUtils {
- 
+
     /**
      * Validates the givvei ip. a) checks if it is a valid IP adress (regex) b)
      * checks if it is available within a timeout of 1500 ms
@@ -46,15 +46,15 @@ public class RouterUtils {
     public static ArrayList<InetAddress> getNetworkDeviceAdresses() {
         ArrayList<InetAddress> ret = new ArrayList<InetAddress>();
         try {
-            Enumeration e = NetworkInterface.getNetworkInterfaces();
+            Enumeration<NetworkInterface> e = NetworkInterface.getNetworkInterfaces();
 
             while (e.hasMoreElements()) {
                 NetworkInterface ni = (NetworkInterface) e.nextElement();
 
-                Enumeration e2 = ni.getInetAddresses();
+                Enumeration<InetAddress> e2 = ni.getInetAddresses();
 
                 while (e2.hasMoreElements()) {
-                    InetAddress ip = (InetAddress) e2.nextElement();
+                    InetAddress ip = e2.nextElement();
                     if (ip.isLoopbackAddress()) break;
                     if (ip.getHostAddress().matches("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}")) ret.add(ip);
                 }

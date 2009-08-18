@@ -17,7 +17,6 @@
 package jd.gui.swing.jdgui.views.downloadview;
 
 import java.awt.Color;
-import java.awt.event.MouseEvent;
 
 import javax.swing.Icon;
 import javax.swing.JPanel;
@@ -106,7 +105,7 @@ public class StatusLabel extends JPanel {
     }
 
     @Override
-    public String getToolTipText(MouseEvent e) {
+    public String getToolTipText() {
         StringBuilder sb = new StringBuilder();
         if (left.getToolTipText() != null) {
             sb.append(left.getToolTipText());
@@ -117,7 +116,8 @@ public class StatusLabel extends JPanel {
                 sb.append(rights[i].getToolTipText());
             }
         }
-        return sb.toString();
+        if (sb.length() > 0) return sb.toString();
+        return null;
     }
 
 }
