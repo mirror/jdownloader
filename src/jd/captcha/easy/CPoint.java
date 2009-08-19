@@ -21,6 +21,15 @@ public class CPoint extends Point implements Serializable, Cloneable {
 
     private static final long serialVersionUID = 333616481245029882L;
     private int color, distance;
+
+    public int getColor() {
+        return color;
+    }
+
+    public void setColor(int color) {
+        this.color = color;
+    }
+
     private boolean foreground = true;
     private byte colorDifferenceMode = LAB_DIFFERENCE;
 
@@ -28,7 +37,7 @@ public class CPoint extends Point implements Serializable, Cloneable {
         return colorDifferenceMode;
     }
 
-    public void setColorDistanceMode(final byte colorDistanceMode) {
+    public void setColorDistanceMode(byte colorDistanceMode) {
         this.colorDifferenceMode = colorDistanceMode;
     }
 
@@ -36,23 +45,15 @@ public class CPoint extends Point implements Serializable, Cloneable {
         return foreground;
     }
 
-    public void setForeground(final boolean foreground) {
+    public void setForeground(boolean foreground) {
         this.foreground = foreground;
-    }
-
-    public int getColor() {
-        return color;
-    }
-
-    public void setColor(final int color) {
-        this.color = color;
     }
 
     public int getDistance() {
         return distance;
     }
 
-    public double getColorDifference(final int color) {
+    public double getColorDifference(int color) {
         double dst = 0;
 
         if (color == this.color) return dst;
@@ -91,18 +92,18 @@ public class CPoint extends Point implements Serializable, Cloneable {
         return dst;
     }
 
-    public void setDistance(final int distance) {
+    public void setDistance(int distance) {
         this.distance = distance;
     }
 
     public CPoint() {
     }
 
-    public CPoint(final int x, final int y, final int distance, final Captcha captcha) {
+    public CPoint(int x, int y, int distance, Captcha captcha) {
         this(x, y, distance, captcha.getPixelValue(x, y));
     }
 
-    public CPoint(final int x, final int y, final int distance, final int color) {
+    public CPoint(int x, int y, int distance, int color) {
         super(x, y);
         this.color = color;
         this.distance = distance;
@@ -114,7 +115,7 @@ public class CPoint extends Point implements Serializable, Cloneable {
     }
 
     @Override
-    public boolean equals(final Object obj) {
+    public boolean equals(Object obj) {
         return super.equals(obj) || ((CPoint) obj).color == color;
     }
 }
