@@ -176,7 +176,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     private long requestTime;
 
-    private String part;
+    private String partnum2 = null;
 
     private long created = -1l;
 
@@ -957,21 +957,26 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     private void setPart(String name2) {
         if (name2 == null) {
-            part = null;
+            partnum2 = null;
             return;
         }
-        part = new Regex(name2, "\\.part(\\d+)").getMatch(0);
-        if (part == null) {
-            new Regex(name2, "\\.r(\\d+)").getMatch(0);
+        partnum2 = new Regex(name2, ".*\\.part(\\d+)").getMatch(0);
+        if (partnum2 == null) {
+            partnum2 = new Regex(name2, ".*\\.r(\\d+)").getMatch(0);
         }
-        if (part == null) {
-            new Regex(name2, "\\.(\\d+)").getMatch(0);
+        if (partnum2 == null) {
+            partnum2 = new Regex(name2, ".*\\.(\\d+)").getMatch(0);
+        }
+        if (partnum2 == null) {
+            partnum2 = "";
         }
     }
 
     public String getPart() {
-        if (part == null) part = "";
-        return part;
+        if (partnum2 == null) {
+            setPart(getName());
+        }
+        return partnum2;
     }
 
     private void setIcon(ImageIcon icon) {

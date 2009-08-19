@@ -77,11 +77,6 @@ public class StatusColumn extends JDTableColumn {
     }
 
     @Override
-    public boolean defaultEnabled() {
-        return false;
-    }
-
-    @Override
     public Component myTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
         return null;
     }

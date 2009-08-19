@@ -85,7 +85,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
     }
 
     public void start() {
-        stopMark = nostopMark;
+        if (reachedStopMark()) stopMark = nostopMark;
         /* ursprünglichen speed wiederherstellen */
         if (SubConfiguration.getConfig("DOWNLOAD").getProperty("MAXSPEEDBEFOREPAUSE", null) != null) {
             logger.info("Restoring old speedlimit");

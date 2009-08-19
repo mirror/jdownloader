@@ -172,26 +172,27 @@ public class AccountController extends SubConfiguration implements ActionListene
         AccountInfo ai = account.getAccountInfo();
         if (!forceupdate) {
             if (account.lastUpdateTime() != 0 && ai != null && ai.isExpired()) {
-                System.out.println(" no update because expired " + hostname);
+                // System.out.println(" no update because expired " + hostname);
                 return ai;
             }
             if (!account.isValid() && account.lastUpdateTime() != 0) {
-                System.out.println(" no update because invalid " + hostname);
+                // System.out.println(" no update because invalid " + hostname);
                 return ai;
             }
             if ((System.currentTimeMillis() - account.lastUpdateTime()) < waittimeAccountInfoUpdate) {
-                System.out.println(" no update because waittime " + hostname);
+                // System.out.println(" no update because waittime " +
+                // hostname);
                 return ai;
             }
         }
         try {
-            System.out.println("update " + hostname);
+            // System.out.println("update " + hostname);
             account.setUpdateTime(System.currentTimeMillis());
             /* not every plugin sets this info correct */
             account.setValid(true);
             ai = plugin.fetchAccountInfo(account);
             if (ai == null) {
-                System.out.println("plugin no update " + hostname);
+                // System.out.println("plugin no update " + hostname);
                 /* not every plugin has fetchAccountInfo */
                 account.setAccountInfo(null);
                 this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.ACCOUNT_UPDATE, hostname, account));
@@ -208,7 +209,7 @@ public class AccountController extends SubConfiguration implements ActionListene
                 this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.ACCOUNT_UPDATE, hostname, account));
             }
         } catch (Exception e) {
-            System.out.println("error update " + hostname);
+            // System.out.println("error update " + hostname);
             account.setAccountInfo(null);
             account.setEnabled(false);
             account.setValid(false);

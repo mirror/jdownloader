@@ -85,7 +85,6 @@ public class JDTable extends JTable {
             public void mouseClicked(MouseEvent e) {
                 if (e.getButton() == MouseEvent.BUTTON1) {
                     int col = realColumnAtPoint(e.getPoint());
-                    System.out.println("is sortable " + col + " " + getJDTableModel().getJDTableColumn(col));
                     if (getJDTableModel().getJDTableColumn(col).isSortable(null)) getJDTableModel().getJDTableColumn(col).doSort(null);
                 } else if (e.getButton() == MouseEvent.BUTTON3) {
                     JPopupMenu popup = new JPopupMenu();
