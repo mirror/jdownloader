@@ -1,6 +1,25 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2008  JD-Team support@jdownloader.org
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
 package jd.gui.swing.jdgui.components.toolbar;
 
 import static jd.controlling.JDLogger.warning;
+
+import java.awt.event.KeyEvent;
 
 import javax.swing.AbstractButton;
 import javax.swing.Action;
@@ -11,6 +30,7 @@ import javax.swing.JToolBar;
 import javax.swing.KeyStroke;
 
 import jd.gui.swing.GuiRunnable;
+import jd.gui.swing.ShortCuts;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.actions.ActionControlEvent;
 import jd.gui.swing.jdgui.actions.ActionController;
@@ -140,67 +160,20 @@ public class ToolBar extends JToolBar implements ActionControllerListener {
 
                     // getInputMap(JButton.WHEN_IN_FOCUSED_WINDOW).put(ks,
                     // action);
+                    
+                    
+if(action.getValue(Action.ACCELERATOR_KEY)!=null){
+ 
 
-                    // ab.setText("");
-                    //
-                    // ab.setIcon(JDTheme.II(action.getValue(ToolBarAction.IMAGE_KEY)
-                    // + "", preferredIconSize, preferredIconSize));
-                    //
-                    // // if (action.getAccelerator() != null)
-                    // //
-                    // ab.setAccelerator(KeyStroke.getKeyStroke(action.getAccelerator()));
-                    // if (action.getValue(Action.MNEMONIC_KEY) != null) {
-                    // ab.setToolTipText(action.getTooltipText() + " [Alt+"
-                    // + new String(new byte[] { ((Integer)
-                    // action.getValue(Action.MNEMONIC_KEY)).byteValue() })
-                    // + "]");
-                    // } else {
-                    // ab.setToolTipText(action.getTooltipText());
-                    // }
-                    //
-                    // ab.setEnabled(action.isEnabled());
-                    // ab.setSelected(action.isSelected());
-                    //
-                    // action.putValue(GUIINSTANCE, ab);
-                    // PropertyChangeListener pcl;
-                    // // external changes on the action get deligated to
-                    // the
-                    // // buttons
-                    // action.addPropertyChangeListener(pcl = new
-                    // PropertyChangeListener() {
-                    // public void propertyChange(PropertyChangeEvent evt) {
-                    // ToolBarAction action = (ToolBarAction)
-                    // evt.getSource();
-                    // try {
-                    // AbstractButton ab = ((AbstractButton)
-                    // action.getValue(GUIINSTANCE));
-                    // ab.setText("");
-                    // if (action.getValue(Action.MNEMONIC_KEY) != null) {
-                    // ab.setToolTipText(action.getTooltipText() + " [Alt+"
-                    // + new String(new byte[] { ((Integer)
-                    // action.getValue(Action.MNEMONIC_KEY)).byteValue() })
-                    // + "]");
-                    // } else {
-                    // ab.setToolTipText(action.getTooltipText());
-                    // }
-                    // ab.setEnabled(action.isEnabled());
-                    // ab.setSelected(action.isSelected());
-                    // } catch (Throwable w) {
-                    // JDLogger.exception(w);
-                    // action.removePropertyChangeListener(this);
-                    //
-                    // }
-                    //
-                    // }
-                    //
-                    // });
-                    // if (action.getValue(PROPERTY_CHANGE_LISTENER) !=
-                    // null) {
-                    //
-                    // action.removePropertyChangeListener((PropertyChangeListener)
-                    // action.getValue(PROPERTY_CHANGE_LISTENER));
-                    // }
-                    // action.putValue(PROPERTY_CHANGE_LISTENER, pcl);
+    
+    
+    ab.setToolTipText(action.getTooltipText() + " ["+ShortCuts.getAcceleratorString((KeyStroke)action.getValue(Action.ACCELERATOR_KEY))+"]");
+    
+}else if (action.getValue(Action.MNEMONIC_KEY) != null) {
+                        ab.setToolTipText(action.getTooltipText() + " [Alt+" + new String(new byte[] { ((Integer) action.getValue(Action.MNEMONIC_KEY)).byteValue() }) + "]");
+                    } else {
+                        ab.setToolTipText(action.getTooltipText());
+                    }
 
                 }
             }

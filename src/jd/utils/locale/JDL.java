@@ -31,6 +31,7 @@ import javax.swing.JComponent;
 
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
+import jd.event.JDBroadcaster;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.io.JDFileFilter;
@@ -46,25 +47,55 @@ public class JDL {
 
     private static String COUNTRY_CODE = null;
 
-    private static HashMap<Integer, String> data = new HashMap<Integer, String>();
+    private static HashMap<Integer, String> DATA = new HashMap<Integer, String>();
 
     public static boolean DEBUG = false;
 
-    private static HashMap<Integer, String> defaultData = null;
+    private static HashMap<Integer, String> DEFAULT_DATA = null;
 
-    private static int key;
+    private static int KEY;
 
     private static String LANGUAGES_DIR = "jd/languages/";
 
-    public static final String LOCALE_ID = "LOCALE4";
+    public static final String LOCALE_PARAM_ID = "LOCALE4";
 
     public static final JDLocale DEFAULT_LOCALE = JDL.getInstance("en");
 
-    private static File localeFile;
+    private static JDBroadcaster<JDLListener, JDLEvent> BROADCASTER = null;
 
-    private static JDLocale localeID;
+    private static File LOCALE_FILE;
+
+    private static JDLocale LOCALE_ID;
 
     private static String STATIC_LOCALE;
+
+    private static HashMap<String, String> SETTINGS;
+
+    /**
+     * Returns SETTINGS form the current lng file
+     * 
+     * @return
+     */
+    public static HashMap<String, String> getSettings() {
+        if (SETTINGS == null) SETTINGS = new HashMap<String, String>();
+        return SETTINGS;
+    }
+
+    public static JDBroadcaster<JDLListener, JDLEvent> getBroadcaster() {
+        if (BROADCASTER == null) {
+            BROADCASTER = new JDBroadcaster<JDLListener, JDLEvent>() {
+
+                @Override
+                protected void fireEvent(JDLListener listener, JDLEvent event) {
+                    listener.onJDLEvent(event);
+
+                }
+
+            };
+
+        }
+        return BROADCASTER;
+    }
 
     /**
      * returns the correct country code
@@ -110,7 +141,7 @@ public class JDL {
     }
 
     /**
-     * Returns an array for the best matching key to text
+     * Returns an array for the best matching KEY to text
      * 
      * @param text
      * @return
@@ -118,7 +149,7 @@ public class JDL {
     public static String[] getKeysFor(String text) {
         ArrayList<Integer> bestKeys = new ArrayList<Integer>();
         int bestValue = Integer.MAX_VALUE;
-        for (Entry<Integer, String> next : data.entrySet()) {
+        for (Entry<Integer, String> next : DATA.entrySet()) {
             int dist = EditDistance.getLevenshteinDistance(text, next.getValue());
 
             if (dist < bestValue) {
@@ -139,7 +170,7 @@ public class JDL {
     }
 
     public static File getLanguageFile() {
-        return localeFile;
+        return LOCALE_FILE;
     }
 
     /**
@@ -148,19 +179,19 @@ public class JDL {
      * @return
      */
     public static JDLocale getConfigLocale() {
-        return SubConfiguration.getConfig(JDL.CONFIG).getGenericProperty(JDL.LOCALE_ID, JDL.DEFAULT_LOCALE);
+        return SubConfiguration.getConfig(JDL.CONFIG).getGenericProperty(JDL.LOCALE_PARAM_ID, JDL.DEFAULT_LOCALE);
     }
 
     /**
      * saves defaultlocal
      */
     public static void setConfigLocale(JDLocale l) {
-        SubConfiguration.getConfig(JDL.CONFIG).setProperty(JDL.LOCALE_ID, l);
+        SubConfiguration.getConfig(JDL.CONFIG).setProperty(JDL.LOCALE_PARAM_ID, l);
         SubConfiguration.getConfig(JDL.CONFIG).save();
     }
 
     public static JDLocale getLocale() {
-        return localeID;
+        return LOCALE_ID;
     }
 
     public static ArrayList<JDLocale> getLocaleIDs() {
@@ -181,30 +212,30 @@ public class JDL {
 
     public static String getLocaleString(String key2, String def) {
         if (DEBUG) return key2;
-        if (data == null || localeFile == null) {
+        if (DATA == null || LOCALE_FILE == null) {
             JDL.setLocale(getConfigLocale());
         }
-        if (data == null) return "Error in JDL: data==null";
-        key = key2.toLowerCase().hashCode();
-        if (data.containsKey(key)) return data.get(key);
+        if (DATA == null) return "Error in JDL: DATA==null";
+        KEY = key2.toLowerCase().hashCode();
+        if (DATA.containsKey(KEY)) return DATA.get(KEY);
 
         System.out.println("Key not found: " + key2 + " Defaultvalue: " + def);
         if (def == null) {
-            // defaultData nur im absoluten Notfall laden
+            // DEFAULT_DATA nur im absoluten Notfall laden
             loadDefault();
-            if (defaultData.containsKey(key)) {
-                def = defaultData.get(key);
+            if (DEFAULT_DATA.containsKey(KEY)) {
+                def = DEFAULT_DATA.get(KEY);
             }
             if (def == null) def = key2;
         }
 
-        data.put(key, def);
+        DATA.put(KEY, def);
 
         return def;
     }
 
     /**
-     * Searches the key to a given hashcode. only needed for debug issues
+     * Searches the KEY to a given hashcode. only needed for debug issues
      * 
      * @param hash
      * @return
@@ -212,7 +243,7 @@ public class JDL {
     private static String hashToKey(Integer hash) {
         BufferedReader f;
         try {
-            f = new BufferedReader(new InputStreamReader(new FileInputStream(localeFile), "UTF8"));
+            f = new BufferedReader(new InputStreamReader(new FileInputStream(LOCALE_FILE), "UTF8"));
 
             String line;
             String key;
@@ -248,7 +279,7 @@ public class JDL {
     /**
      * Wrapper für String.format(JDL.L(..),args)
      * 
-     * @param key
+     * @param KEY
      * @param def
      * @param args
      * @return
@@ -267,12 +298,12 @@ public class JDL {
     }
 
     private static void loadDefault() {
-        if (defaultData == null) {
+        if (DEFAULT_DATA == null) {
             System.err.println("JD have to load the default language, there is an missing entry");
-            defaultData = new HashMap<Integer, String>();
-            File defaultFile = STATIC_LOCALE==null?JDUtilities.getResourceFile(LANGUAGES_DIR + DEFAULT_LOCALE.getLngGeoCode() + ".loc"):new File(STATIC_LOCALE);
+            DEFAULT_DATA = new HashMap<Integer, String>();
+            File defaultFile = STATIC_LOCALE == null ? JDUtilities.getResourceFile(LANGUAGES_DIR + DEFAULT_LOCALE.getLngGeoCode() + ".loc") : new File(STATIC_LOCALE);
             if (defaultFile.exists()) {
-                JDL.parseLanguageFile(defaultFile, defaultData);
+                JDL.parseLanguageFile(defaultFile, DEFAULT_DATA);
             } else {
                 System.out.println("Could not load the default languagefile: " + defaultFile);
             }
@@ -298,31 +329,38 @@ public class JDL {
             String value;
             while ((line = f.readLine()) != null) {
                 if (line.startsWith("#")) continue;
+
                 int split = line.indexOf("=");
                 if (split <= 0) continue;
 
                 key = line.substring(0, split).trim().toLowerCase();
                 value = line.substring(split + 1).trim() + (line.endsWith(" ") ? " " : "");
                 value = value.replace("\\r", "\r").replace("\\n", "\n");
+                if (key.startsWith("!")) {
+                    getSettings().put(key.substring(1), value);
 
+                }
                 data.put(key.hashCode(), value);
             }
             f.close();
         } catch (IOException e) {
             JDLogger.exception(e);
         }
+        
+      
         JDLogger.getLogger().info("parse lng file end " + file);
     }
 
     public static void setLocale(JDLocale lID) {
         if (lID == null) return;
-        localeID = lID;
+        LOCALE_ID = lID;
         System.out.println("Loaded language: " + lID);
-        localeFile = STATIC_LOCALE==null?JDUtilities.getResourceFile(LANGUAGES_DIR + localeID.getLngGeoCode() + ".loc"):new File(STATIC_LOCALE);
-        if (localeFile.exists()) {
-            JDL.parseLanguageFile(localeFile, data);
+        LOCALE_FILE = STATIC_LOCALE == null ? JDUtilities.getResourceFile(LANGUAGES_DIR + LOCALE_ID.getLngGeoCode() + ".loc") : new File(STATIC_LOCALE);
+        if (LOCALE_FILE.exists()) {
+            JDL.parseLanguageFile(LOCALE_FILE, DATA);
+            getBroadcaster().fireEvent(new JDLEvent(lID,JDLEvent.SET_NEW_LOCALE));    
         } else {
-            System.out.println("Language " + localeID + " not installed");
+            System.out.println("Language " + LOCALE_ID + " not installed");
             return;
         }
     }
@@ -349,13 +387,15 @@ public class JDL {
             return null;
         }
     }
-/**
- * Use a absolute path to a locale
- * @param string
- */
+
+    /**
+     * Use a absolute path to a locale
+     * 
+     * @param string
+     */
     public static void setStaticLocale(String string) {
-        STATIC_LOCALE=string;
-        
+        STATIC_LOCALE = string;
+
     }
 
 }

@@ -50,7 +50,9 @@ public class SrcParser {
             }
 
         };
+       
         pattern.add("sys\\.warning\\.dlcerror\\.(.+?)");
+        pattern.add("!(.+?)");
     }
 
     public JDBroadcaster<MessageListener, MessageEvent> getBroadcaster() {

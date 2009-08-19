@@ -28,6 +28,7 @@ import jd.config.ConfigGroup;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.config.ConfigEntry.PropertyType;
+import jd.gui.UserIO;
 import jd.gui.swing.dialog.AbstractDialog;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.JDGuiConstants;
@@ -74,7 +75,7 @@ public class General extends ConfigPanel {
 
         look.addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, JDL.LF("gui.config.gui.languageFileInfo2", "Current Language File: %s", JDL.getLocale().toString())).setGroup(lookGroup));
 
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, SubConfiguration.getConfig(JDL.CONFIG), JDL.LOCALE_ID, JDL.getLocaleIDs().toArray(new JDLocale[] {}), JDL.L("gui.config.gui.language", "Language")).setGroup(lookGroup));
+        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, SubConfiguration.getConfig(JDL.CONFIG), JDL.LOCALE_PARAM_ID, JDL.getLocaleIDs().toArray(new JDLocale[] {}), JDL.L("gui.config.gui.language", "Language")).setGroup(lookGroup));
         ce.setDefaultValue(JDL.DEFAULT_LOCALE);
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
 
@@ -103,13 +104,16 @@ public class General extends ConfigPanel {
         ce.setDefaultValue(true);
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDGuiConstants.PARAM_SHOW_BALLOON, JDL.L("gui.config.gui.showBalloon", "Show Balloon infos")).setGroup(feel));
         ce.setDefaultValue(true);
+       
+        
         look.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
                 AbstractDialog.resetDialogInformations();
+                UserIO.getInstance().requestMessageDialog( JDL.L("gui.config.gui.resetdialogs.message", "Dialog Information has been reseted."));
             }
 
-        }, JDL.L("gui.config.gui.resetdialogs.short", "Reset"), JDL.L("gui.config.gui.resetdialogs", "Reset Dialog Informations"), JDTheme.II("gui.images.restart", 16, 16)).setGroup(feel));
+        }, JDL.L("gui.config.gui.resetdialogs.short", "Reset"), JDL.L("gui.config.gui.resetdialogs2", "Reset Dialog Information"), JDTheme.II("gui.images.restart", 16, 16)).setGroup(feel).setEnabled( SubConfiguration.getConfig(AbstractDialog.DIALOGS_CONFIG).getProperties().size()>0));
 
         ConfigGroup perf = new ConfigGroup(JDL.L("gui.config.gui.performance", "Performance"), JDTheme.II("gui.images.performance", 32, 32));
 

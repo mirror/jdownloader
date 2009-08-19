@@ -28,10 +28,11 @@ public class LookAndFeelWrapper implements Serializable {
      * Sets a static name. just fort displaying
      * 
      * @param string
+     * @return 
      */
-    public void setName(String string) {
+    public LookAndFeelWrapper setName(String string) {
         this.name = string;
-
+return this;
     }
 
     // @Override

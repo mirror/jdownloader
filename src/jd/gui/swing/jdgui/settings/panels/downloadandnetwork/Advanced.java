@@ -112,7 +112,7 @@ public class Advanced extends ConfigPanel {
             if (ce != null) addGUIConfigEntry(ce);
         }
         JTabbedPane tabbed = new JTabbedPane();
-        tabbed.addTab(getTitle(), panel);
+        tabbed.addTab(getBreadcrum(), panel);
         add(tabbed);
     }
 

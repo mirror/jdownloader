@@ -98,6 +98,7 @@ public class MainTabbedPane extends JTabbedPane {
     private MainTabbedPane() {
 
         this.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
+        this.setOpaque(false);
         this.addChangeListener(new ChangeListener() {
 
             public void stateChanged(ChangeEvent e) {

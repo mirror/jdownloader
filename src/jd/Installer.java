@@ -80,7 +80,7 @@ public class Installer {
 
         languageCode = countryCode.toLowerCase();
 
-        SubConfiguration.getConfig(JDL.CONFIG).setProperty(JDL.LOCALE_ID, null);
+        SubConfiguration.getConfig(JDL.CONFIG).setProperty(JDL.LOCALE_PARAM_ID, null);
 
         showConfig();
 
@@ -176,7 +176,7 @@ public class Installer {
                     }
                 }
                 if (def == null) def = "en";
-                JDLocale sel = (JDLocale) SubConfiguration.getConfig(JDL.CONFIG).getProperty(JDL.LOCALE_ID, JDL.getInstance(def));
+                JDLocale sel = (JDLocale) SubConfiguration.getConfig(JDL.CONFIG).getProperty(JDL.LOCALE_PARAM_ID, JDL.getInstance(def));
 
                 JDL.setLocale(sel);
 
