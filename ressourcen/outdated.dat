@@ -37,7 +37,6 @@ jd/languages/Portugues(brazil).lng
 jd/languages/arabic.lng
 libs/ui.jar
 libs/mail.jar
-libs/mail.jar
 libs/junit-4.6.jar
 tools/mac/unrar
 ICE_JNIRegistry.dll
@@ -69,4 +68,5 @@ libs/looks.jar
 libs/jetty-6.1.8.jar
 libs/jetty-util-6.1.8.jar
 libs/synthetica_LICENSE.txt
-
+tools/windows/recycle.exe
+tools/windows/recycle.cpp
