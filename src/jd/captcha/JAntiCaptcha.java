@@ -2101,7 +2101,7 @@ public class JAntiCaptcha {
                         // letters[i].setTextGrid(letters[i].getPixelString());
                         letters[i].setSourcehash(captchaHash);
                         letters[i].setDecodedValue(code.substring(i, i + 1));
-                        /*
+                        
                         new Thread(new Runnable() {
                             public void run() {
                                 final BasicWindow bws = new GuiRunnable<BasicWindow>() {
@@ -2124,7 +2124,7 @@ public class JAntiCaptcha {
                                 }.waitForEDT();
                             }
                         }).start();
-                        */
+
                         letterDB.add(letters[i]);
                     }
                     if (!jas.getBoolean("TrainOnlyUnknown")) {
@@ -2173,10 +2173,32 @@ public class JAntiCaptcha {
                     letters[i].setDecodedValue(code.substring(i, i + 1));
 
                     letterDB.add(letters[i]);
+                    new Thread(new Runnable() {
+                        public void run() {
+                            final BasicWindow bws = new GuiRunnable<BasicWindow>() {
+                                // @Override
+                                public BasicWindow runSave() {
+                                    return  BasicWindow.showImage(letters[i].getImage(2), "" + letters[i].getDecodedValue());
+
+                                }
+                            }.getReturnValue();
+                            try {
+                                Thread.sleep(1000);
+                            } catch (InterruptedException e) {
+                                // TODO Auto-generated catch block
+                                e.printStackTrace();
+                            }
+                            new GuiRunnable<Object>() {
+                                // @Override
+                                public Object runSave() {
+                                    bws.dispose();
+                                    return null;                                    }
+                            }.waitForEDT();
+                        }
+                    }).start();
                     new GuiRunnable<Object>() {
                         // @Override
                         public Object runSave() {
-//                            BasicWindow.showImage(letters[i].getImage(2), "" + letters[i].getDecodedValue());
                             f.add(new JLabel("NO +"), Utilities.getGBC(i + 1, 13, 1, 1));
                             f.pack();
                             return null;
