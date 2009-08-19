@@ -441,10 +441,9 @@ public class LoadCaptchas {
             final ArrayList<JButton> bts = new ArrayList<JButton>();
             for (int j = 0; j < images.size(); j++) {
                 final LoadImage f = images.get(j);
-                if (!f.file.exists() || f.file.length() < 100) continue;
+                if (f == null || f.file == null || !f.file.exists() || f.file.length() < 100) continue;
                 final BufferedImage captchaImage = JDImage.getImage(f.file);
-                if(captchaImage==null)
-                {
+                if (captchaImage == null) {
                     f.file.delete();
                     continue;
                 }
