@@ -47,7 +47,7 @@ public class BackGroundImage extends CPoint {
         EasyFile methode = new EasyFile(captchaImage.owner.getResourceFile("jacinfo.xml").getParentFile());
         Image bImage = getImage(methode);
 
-        if (bImage==null||bImage.getWidth(null) != captchaImage.getWidth() || bImage.getWidth(null) != captchaImage.getHeight()) {
+        if (bImage==null||bImage.getWidth(null) != captchaImage.getWidth() || bImage.getHeight(null) != captchaImage.getHeight()) {
             if (Utilities.isLoggerActive()) {
                 JDLogger.getLogger().info("ERROR Maske und Bild passen nicht zusammmen");
             }

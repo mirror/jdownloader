@@ -288,7 +288,7 @@ public class ColorTrainer {
      * @return Image
      */
     public Image getScaledOriginalCaptchaImage() {
-        return originalCaptcha.getImage().getScaledInstance(workingCaptcha.getWidth() * zoom / 100, workingCaptcha.getHeight() * zoom / 100, Image.SCALE_DEFAULT);
+        return originalCaptcha.getImage().getScaledInstance(originalCaptcha.getWidth() * zoom / 100, originalCaptcha.getHeight() * zoom / 100, Image.SCALE_DEFAULT);
     }
 
     @SuppressWarnings("unchecked")

@@ -346,9 +346,7 @@ public class ColorTrainerGUI {
 
     }
 
-    private void init(Captcha captcha) {
-
-        colorTrainer.originalCaptcha = captcha;
+    private void init() {
         new GuiRunnable<Object>() {
             public Object runSave() {
                 frame.setAlwaysOnTop(true);
@@ -446,11 +444,11 @@ public class ColorTrainerGUI {
             cs[i] = captcha;
             ColorTrainerGUI cc = new ColorTrainerGUI();
             cc.colorTrainer.colorPointList = colorPoints;
-
+            cc.colorTrainer.originalCaptcha=captcha;
             if (lastCC != null) {
                 lastCC.colorTrainer.copySettingsTo(cc.colorTrainer);
             }
-            cc.init(captcha);
+            cc.init();
             synchronized (cc) {
                 try {
                     cc.wait();

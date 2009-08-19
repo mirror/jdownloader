@@ -96,7 +96,7 @@ public class BackgroundFilterCreater {
                 firstCaptcha.setPixelValue(x, y, best.getKey());
             }
         }
-        File ret = new File(methode.file, "mask_" + System.currentTimeMillis() + ".jpg");
+        File ret = new File(methode.file, "mask_" + System.currentTimeMillis() + ".png");
         try {
             ImageIO.write((RenderedImage) firstCaptcha.getImage(), "png", ret);
         } catch (IOException e) {
