@@ -1190,6 +1190,7 @@ jd.plugins.optional.schedule.maingui.mytablemodel.add.once = Sadece bir kere
 jd.plugins.optional.schedule.maingui.mytablemodel.add.weekly = Haftalık
 jd.plugins.optional.schedule.maingui.mytablemodel.date = Tarih
 jd.plugins.optional.schedule.maingui.mytablemodel.name = Adı
+jd.plugins.optional.schedule.maingui.mytablemodel.number = # Eylem Sayısı
 jd.plugins.optional.schedule.maingui.mytablemodel.repeats = Tekrarlamalar
 jd.plugins.optional.schedule.maingui.mytablemodel.time = Zaman
 jd.plugins.optional.schedule.schedule = Zamanlanmış Görevler
