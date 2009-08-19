@@ -1320,6 +1320,7 @@ jd.utils.webupdate.progresscontroller.text = Update is running
 jd.update.main.error.title = Errors occured
 jd.update.main.error.message = Errors occured!\r\nThere were %s error(s) while updating. Do you want to update anyway?
 #pattern: sys\.warning\.dlcerror\.(.+?)
+#pattern: !(.+?)
 #pattern: gui\.menu\.(.+?)\.name
 #pattern: gui\.menu\.(.+?)\.mnem
 #pattern: gui\.menu\.(.+?)\.accel
