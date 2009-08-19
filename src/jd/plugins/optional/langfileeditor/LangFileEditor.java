@@ -27,6 +27,7 @@ import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.SingletonPanel;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
+import jd.utils.locale.JDL;
 
 @OptionalPlugin(rev = "$Revision$", id = "langfileditor", interfaceversion = 4)
 /**
@@ -35,6 +36,7 @@ import jd.plugins.PluginOptional;
  * 
  * @author eXecuTe
  * @author Greeny
+ * @author coalado
  */
 public class LangFileEditor extends PluginOptional {
 
@@ -62,12 +64,12 @@ public class LangFileEditor extends PluginOptional {
     @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() instanceof MenuAction && ((MenuAction) e.getSource()).getActionID() == 0) {
-      if (lfeView == null) lfeView = new LFEView(lfe.getPanel(), this);
+            if (lfeView == null) lfeView = new LFEView(lfe.getPanel(), this);
 
             if (((MenuAction) e.getSource()).isSelected()) {
 
                 SwingGui.getInstance().setContent(lfeView);
-           } else {
+            } else {
                 lfeView.close();
             }
 
@@ -76,7 +78,7 @@ public class LangFileEditor extends PluginOptional {
 
     @Override
     public boolean initAddon() {
-        activateAction = new MenuAction(MenuAction.TOGGLE, "Show", 0).setActionListener(this);
+        activateAction = new MenuAction(MenuAction.TOGGLE, JDL.L("jd.plugins.optional.langfileeditor.LangFileEditor.show", "Show"), 0).setActionListener(this);
         activateAction.setSelected(false);
         return true;
     }
