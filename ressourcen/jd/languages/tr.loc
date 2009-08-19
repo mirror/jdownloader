@@ -829,6 +829,7 @@ gui.table.contextmenu.newpackage = Yeni bir Pakete Taşı
 gui.table.contextmenu.newpackage2 = Yeni Bir Pakete Taşı
 gui.table.contextmenu.packagesort = Dosyaları Sırala
 gui.table.contextmenu.priority = Öncelik
+gui.table.contextmenu.prop = Özellikler
 gui.table.contextmenu.reset = Sıfırla
 gui.table.contextmenu.resume = Sürdür
 gui.table.contextmenu.setdlpw = İndirme Parolasını Belirle
