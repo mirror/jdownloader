@@ -71,9 +71,15 @@ public class Restarter {
             }
             new File("update/tools/tinyupdate.jar").deleteOnExit();
             new File("update/tools/tinyupdate.jar").delete();
-            
+
             move(new File("update"));
-            removeFiles();
+            int i = 0;
+            while (!removeFiles() && i <= 3) {
+
+                Thread.sleep(2000);
+                i++;
+
+            }
             if (RESTART) {
                 if (OSDetector.isMac()) {
                     Executer exec = new Executer("open");
@@ -178,11 +184,10 @@ public class Restarter {
 
                 String n = new File("update").getAbsolutePath();
                 File newFile = new File(f.getAbsolutePath().replace(n, "").substring(1)).getAbsoluteFile();
-            
 
                 int waittime = 15000;
                 while (newFile.exists() && !newFile.delete() && !WAIT_FOR_JDOWNLOADER_TERM) {
-                 
+
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
@@ -196,17 +201,16 @@ public class Restarter {
                     logger.severe("WAIT FOR DELETE");
 
                 }
-                if(!newFile.exists()){
+                if (!newFile.exists()) {
                     WAIT_FOR_JDOWNLOADER_TERM = true;
                     logger.severe("DELETE OLD OK");
-                }else{
+                } else {
                     logger.severe("DELETE OLD FAILED");
                 }
-                    
-       
+
                 newFile.getParentFile().mkdirs();
-                logger.severe(newFile+" exists: "+newFile.exists());
-                logger.severe(f+" new exists: "+f.exists());
+                logger.severe(newFile + " exists: " + newFile.exists());
+                logger.severe(f + " new exists: " + f.exists());
                 logger.severe("RENAME :" + f.renameTo(newFile));
                 if (f.getParentFile().list().length == 0) f.getParentFile().delete();
             }

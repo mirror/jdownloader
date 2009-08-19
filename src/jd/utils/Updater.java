@@ -104,7 +104,7 @@ public class Updater {
             }
         }
 
-        String[] rest = new String[] {/* "libs/svnkit.jar" */
+        String[] rest = new String[] {/* "libs/svnkit.jar" */"info.txt","jd/img/default/flags","plugins/JDPremium.jar","tools/Windows/recycle.exe"
 
         };
         for (String path : rest) {
@@ -204,6 +204,9 @@ public class Updater {
             copyDirectory(f, this.updateDir);
         }
 
+        
+        
+        copyDirectory(new File(jars.getParentFile(), "ressourcen\\licenses"), new File(this.updateDir, "licenses"));
         copyDirectory(new File(jars.getParentFile(), "ressourcen\\jd"), new File(this.updateDir, "jd"));
         copyDirectory(new File(jars.getParentFile(), "ressourcen\\tools"), new File(this.updateDir, "tools"));
         copyDirectory(new File(jars.getParentFile(), "ressourcen\\libs"), new File(this.updateDir, "libs"));

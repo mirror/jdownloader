@@ -38,14 +38,15 @@ public class Changelog {
      * @throws SVNException
      */
     public static void main(String[] args) throws SVNException {
-//        new Changelog().getChangelog();
+      new Changelog().load();
+      
 
     }
 
     private void load() throws SVNException {
 
         Subversion svn = new Subversion(SVN_SRC);
-        ArrayList<SVNLogEntry> entries = svn.getChangeset(6111, 6193);
+        ArrayList<SVNLogEntry> entries = svn.getChangeset(6193, 7450);
         HashMap<String, Change> map = new HashMap<String, Change>();
         for (SVNLogEntry logEntry : entries) {
 
