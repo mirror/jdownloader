@@ -48,7 +48,7 @@ public class XupIn extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
-        String filename = br.getRegex("<legend>.*?<b>Download:(.*?)</b>").getMatch(0);
+        String filename = br.getRegex("<legend>.*?<.*?>Download:(.*?)</.*?>").getMatch(0);
         String filesize = br.getRegex("File Size:(.*?)</li>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setDownloadSize(Regex.getSize(filesize));
