@@ -194,13 +194,13 @@ public class JDStatusBar extends JPanel implements ChangeListener, ControlListen
     }
 
     public void stateChanged(ChangeEvent e) {
-        if (e.getSource() == spMaxSpeed) {
+        if (e.getSource() == spMaxSpeed.getSpinner()) {
             dlConfig.setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, (Integer) spMaxSpeed.getValue());
             dlConfig.save();
-        } else if (e.getSource() == spMaxDls) {
+        } else if (e.getSource() == spMaxDls.getSpinner()) {
             dlConfig.setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, (Integer) spMaxDls.getValue());
             dlConfig.save();
-        } else if (e.getSource() == spMaxChunks) {
+        } else if (e.getSource() == spMaxChunks.getSpinner()) {
             dlConfig.setProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, (Integer) spMaxChunks.getValue());
             dlConfig.save();
         }
