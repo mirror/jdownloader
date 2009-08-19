@@ -443,6 +443,11 @@ public class LoadCaptchas {
                 final LoadImage f = images.get(j);
                 if (!f.file.exists() || f.file.length() < 100) continue;
                 final BufferedImage captchaImage = JDImage.getImage(f.file);
+                if(captchaImage==null)
+                {
+                    f.file.delete();
+                    continue;
+                }
                 int area = captchaImage.getHeight(null) * captchaImage.getHeight(null);
                 if (area < 50 || area > 50000 || captchaImage.getHeight(null) > 400 || captchaImage.getWidth(null) > 400 || captchaImage.getWidth(null) < 10 || captchaImage.getHeight(null) < 5) {
                     f.file.delete();
