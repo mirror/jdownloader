@@ -49,12 +49,14 @@ public class Restarter {
         try {
             // Create a file handler that write log record to a file called
             // my.log
-            FileHandler handler = new FileHandler("restarter.log", true);
+            FileHandler handler = new FileHandler("restarter.log", false);
 
             // Add to the desired logger
             logger = Logger.getLogger("org.jdownloader");
             logger.addHandler(handler);
+           
         } catch (IOException e) {
+       
         }
         try {
             for (String arg : args) {

@@ -638,7 +638,7 @@ public class JDUtilities {
     }
 
     public static void restartJDandWait() {
-        restartJD();
+        restartJD(false);
         while (true) {
             try {
                 Thread.sleep(5000);
@@ -647,7 +647,7 @@ public class JDUtilities {
         }
     }
 
-    public static void restartJD() {
+    public static void restartJD(final boolean tinybypass) {
         new Thread(new Runnable() {
             public void run() {
                 if (JDUtilities.getController() != null) JDUtilities.getController().prepareShutdown();
@@ -695,7 +695,7 @@ public class JDUtilities {
                 System.arraycopy(JD_ARGUMENTS, 0, finalArgs, javaArgs.length, JD_ARGUMENTS.length);
 
                 ArrayList<File> restartfiles = JDIO.listFiles(JDUtilities.getResourceFile("update"));
-                if (restartfiles != null && restartfiles.size() > 0) {
+                if (restartfiles != null && restartfiles.size() > 0||tinybypass) {
                     if (OSDetector.isMac()) {
                         JDLogger.getLogger().info(JDUtilities.runCommand("java", new String[] { "-jar", "tools/tinyupdate.jar", "-restart" }, getResourceFile(".").getAbsolutePath(), 0));
                     } else {

@@ -125,6 +125,7 @@ public class JDFileReg {
                 txt.setLineWrap(true);
                 txt.setBorder(null);
                 txt.setOpaque(false);
+                txt.putClientProperty("Synthetica.opaque", Boolean.FALSE);
 
                 new ContainerDialog(UserIO.NO_COUNTDOWN, JDL.L("gui.cnl.install.title", "Click'n'Load Installation"), c, null, null) {
                     /**

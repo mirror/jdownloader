@@ -104,7 +104,7 @@ public class Updater {
             }
         }
 
-        String[] rest = new String[] {/* "libs/svnkit.jar" */"info.txt","jd/img/default/flags","plugins/JDPremium.jar","tools/Windows/recycle.exe"
+        String[] rest = new String[] {/* "libs/svnkit.jar" */"info.txt","jd/img/default/flags","plugins/JDPremium.jar","tools/Windows/recycle.exe","jd/img/screenshots","jd/img/synthetica"
 
         };
         for (String path : rest) {

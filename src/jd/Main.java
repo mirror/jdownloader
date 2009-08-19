@@ -430,8 +430,13 @@ public class Main {
             LOGGER.severe("COULD NOT DELETE OUTDATED FILES.RESTART REQUIRED");
             int answer = UserIO.getInstance().requestConfirmDialog(0, JDL.L("jd.Main.removerestart.title", "Updater"), JDL.L("jd.Main.removerestart.message", "Could not remove outdated libraries. Restart recommended!"), null, JDL.L("jd.Main.removerestart.ok", "Restart now!"), JDL.L("jd.Main.removerestart.cancel", "Continue"));
             if (UserIO.isOK(answer)) {
-                JDUtilities.restartJD();
-             
+                JDUtilities.restartJD(true);
+                while (true) {
+                    try {
+                        Thread.sleep(5000);
+                    } catch (InterruptedException e) {
+                    }
+                }
 
             }
         }

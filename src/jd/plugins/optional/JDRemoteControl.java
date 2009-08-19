@@ -326,7 +326,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
 
                             JDLogger.exception(e);
                         }
-                        JDUtilities.restartJD();
+                        JDUtilities.restartJD(false);
                     }
 
                 }).start();

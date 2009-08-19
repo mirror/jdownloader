@@ -308,7 +308,7 @@ public class JDSimpleWebserverRequestHandler {
 
                             JDLogger.exception(e);
                         }
-                        JDUtilities.restartJD();
+                        JDUtilities.restartJD(false);
                     }
                 }).start();
 
