@@ -427,7 +427,6 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                 String ext = null;
                 Set<String> hoster = null;
                 String name = null;
-                int col = 0;
                 boolean b = false;
                 synchronized (LinkGrabberController.ControllerLock) {
                     synchronized (LGINSTANCE.getPackages()) {
@@ -446,11 +445,6 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                             case LinkGrabberTableAction.ADD_SELECTED_PACKAGES:
                             case LinkGrabberTableAction.EDIT_DIR:
                             case LinkGrabberTableAction.SPLIT_HOSTER:
-                                selected_packages = new ArrayList<LinkGrabberFilePackage>(INSTANCE.internalTable.getSelectedFilePackages());
-                                break;
-                            case LinkGrabberTableAction.SORT:
-                                col = (Integer) ((LinkGrabberTableAction) ((JMenuItem) arg0.getSource()).getAction()).getProperty().getProperty("col");
-                                selected_links = new ArrayList<DownloadLink>(INSTANCE.internalTable.getSelectedDownloadLinks());
                                 selected_packages = new ArrayList<LinkGrabberFilePackage>(INSTANCE.internalTable.getSelectedFilePackages());
                                 break;
                             case LinkGrabberTableAction.DOWNLOAD_PRIO:
@@ -475,9 +469,6 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                             switch (arg0.getID()) {
                             case LinkGrabberTableAction.DELETE:
                                 selected_links = (ArrayList<DownloadLink>) ((LinkGrabberTableAction) arg0.getSource()).getProperty().getProperty("links");
-                                break;
-                            case LinkGrabberTableAction.SORT_ALL:
-                                col = (Integer) ((LinkGrabberTableAction) arg0.getSource()).getProperty().getProperty("col");
                                 break;
                             }
                         }
@@ -534,24 +525,6 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                             for (LinkGrabberFilePackage fp2 : selected_packages) {
                                 fp2.removeOffline();
                             }
-                            break;
-                        case LinkGrabberTableAction.SORT:
-                            if (selected_links.size() > 0) {
-                                LinkGrabberFilePackage fp2 = LGINSTANCE.getFPwithLink(selected_links.get(0));
-                                if (fp2 != null) {
-                                    fp2.sort(col, false);
-                                }
-                                break;
-                            }
-                            for (LinkGrabberFilePackage fp2 : selected_packages) {
-                                fp2.sort(col, false);
-                            }
-                            break;
-                        case LinkGrabberTableAction.SORT_ALL:
-                            if (LGINSTANCE.size() == 1) {
-                                LGINSTANCE.getPackages().get(0).sort(col, false);
-                            } else
-                                LGINSTANCE.sort(col);
                             break;
                         case LinkGrabberTableAction.SELECT_HOSTER:
                             for (LinkGrabberFilePackage fp2 : selected_packages) {
@@ -654,7 +627,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                             }
                             break;
                         case LinkGrabberTableAction.EXT_FILTER:
-                            LGINSTANCE.FilterExtension(ext, b);
+                            LGINSTANCE.filterExtension(ext, b);
                             break;
                         }
                     }

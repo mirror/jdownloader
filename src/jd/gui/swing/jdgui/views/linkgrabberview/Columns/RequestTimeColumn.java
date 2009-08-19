@@ -1,9 +1,13 @@
 package jd.gui.swing.jdgui.views.linkgrabberview.Columns;
 
 import java.awt.Component;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 
 import javax.swing.JTable;
 
+import jd.controlling.LinkGrabberController;
 import jd.gui.swing.components.JDTable.JDTableColumn;
 import jd.gui.swing.components.JDTable.JDTableModel;
 import jd.nutils.Formatter;
@@ -63,14 +67,41 @@ public class RequestTimeColumn extends JDTableColumn {
 
     @Override
     public boolean isSortable(Object obj) {
-        // TODO Auto-generated method stub
+        /*
+         * LinkGrabber hat nur null(Header) oder ne
+         * ArrayList(LinkGrabberFilePackage)
+         */
+        if (obj == null && LinkGrabberController.getInstance().size() == 1) return true;
+        if (obj instanceof ArrayList<?>) return true;
         return false;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public void sort(Object obj, boolean sortingToggle) {
-        // TODO Auto-generated method stub
-
+    public void sort(Object obj, final boolean sortingToggle) {
+        ArrayList<LinkGrabberFilePackage> packages = null;
+        synchronized (LinkGrabberController.ControllerLock) {
+            synchronized (LinkGrabberController.getInstance().getPackages()) {
+                packages = LinkGrabberController.getInstance().getPackages();
+                if (obj != null && packages.size() > 1) packages = (ArrayList<LinkGrabberFilePackage>) obj;
+                for (LinkGrabberFilePackage fp : packages) {
+                    Collections.sort(fp.getDownloadLinks(), new Comparator<DownloadLink>() {
+                        public int compare(DownloadLink a, DownloadLink b) {
+                            DownloadLink aa = b;
+                            DownloadLink bb = a;
+                            if (sortingToggle) {
+                                aa = a;
+                                bb = b;
+                            }
+                            if (aa.getRequestTime() == bb.getRequestTime()) return 0;
+                            return aa.getRequestTime() < bb.getRequestTime() ? -1 : 1;
+                        }
+                    });
+                }
+            }
+        }
+        /* inform LinkGrabberController that structure changed */
+        LinkGrabberController.getInstance().throwRefresh();
     }
 
     @Override

@@ -61,7 +61,7 @@ public class Scrd extends PluginForDecrypt {
         }
 
         private String lskdqpyr(String alokfmth, String yoaksjdh) {
-            if (pnjzokye == null || yoaksjdh != pnjzokye) {
+            if (pnjzokye == null || pnjzokye.equalsIgnoreCase(yoaksjdh)) {
                 yoliukev(yoaksjdh);
                 pnjzokye = yoaksjdh;
             }

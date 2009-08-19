@@ -77,11 +77,12 @@ public class SpeedMeterPanel extends JPanel implements ActionListener, MouseList
 
             @Override
             public void onPropertyChanged(Property source, String key) {
-                if (key == Configuration.PARAM_DOWNLOAD_MAX_SPEED) {
+                if (key == null) return;
+                if (key.equalsIgnoreCase(Configuration.PARAM_DOWNLOAD_MAX_SPEED)) {
                     update();
-                } else if (key == JDGuiConstants.PARAM_SHOW_SPEEDMETER_WINDOWSIZE) {
+                } else if (key.equalsIgnoreCase(JDGuiConstants.PARAM_SHOW_SPEEDMETER_WINDOWSIZE)) {
                     window = GUIUtils.getConfig().getIntegerProperty(JDGuiConstants.PARAM_SHOW_SPEEDMETER_WINDOWSIZE, 60);
-                } else if (key == JDGuiConstants.PARAM_SHOW_SPEEDMETER) {
+                } else if (key.equalsIgnoreCase(JDGuiConstants.PARAM_SHOW_SPEEDMETER)) {
                     show = GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_SHOW_SPEEDMETER, true);
                     setBorder(show ? BorderFactory.createEtchedBorder() : null);
                 }

@@ -68,7 +68,6 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
     private static final HashSet<String> extensionFilter = new HashSet<String>();
 
     private static LinkGrabberController INSTANCE = null;
-    private boolean lastSort = true;
 
     private LinkGrabberControllerBroadcaster broadcaster;
 
@@ -170,7 +169,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
         this.FP_FILTERED.setDownloadLinks(new ArrayList<DownloadLink>());
     }
 
-    public void FilterExtension(String ext, boolean b) {
+    public void filterExtension(String ext, boolean b) {
         boolean c = false;
         synchronized (extensionFilter) {
             if (!b) {
@@ -263,7 +262,11 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
                             FP_OFFLINE.add(dl);
                         }
                     }
-                    fp.sort(1, true);
+                    Collections.sort(fp.getDownloadLinks(), new Comparator<DownloadLink>() {
+                        public int compare(DownloadLink a, DownloadLink b) {
+                            return a.getName().compareToIgnoreCase(b.getName());
+                        }
+                    });
                 }
             }
         }
@@ -358,39 +361,6 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
                 broadcaster.fireEvent(new LinkGrabberControllerEvent(this, LinkGrabberControllerEvent.REMOVE_FILEPACKAGE, fp));
             }
         }
-    }
-
-    public void sort(final int col) {
-        lastSort = !lastSort;
-        synchronized (packages) {
-            if (col == 3) {
-                for (LinkGrabberFilePackage fp : packages) {
-                    fp.sort(3, lastSort);
-                }
-            } else {
-                Collections.sort(packages, new Comparator<LinkGrabberFilePackage>() {
-                    public int compare(LinkGrabberFilePackage a, LinkGrabberFilePackage b) {
-                        LinkGrabberFilePackage aa = a;
-                        LinkGrabberFilePackage bb = b;
-                        if (lastSort) {
-                            aa = b;
-                            bb = a;
-                        }
-                        switch (col) {
-                        case 0:
-                            return aa.getName().compareToIgnoreCase(bb.getName());
-                        case 1:
-                            return aa.getDownloadSize(false) > bb.getDownloadSize(false) ? 1 : -1;
-                        case 2:
-                            return aa.getHoster().compareToIgnoreCase(bb.getHoster());
-                        default:
-                            return -1;
-                        }
-                    }
-                });
-            }
-        }
-        broadcaster.fireEvent(new LinkGrabberControllerEvent(this, LinkGrabberControllerEvent.REFRESH_STRUCTURE));
     }
 
     public void throwRefresh() {

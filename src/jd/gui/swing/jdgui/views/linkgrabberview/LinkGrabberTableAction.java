@@ -30,8 +30,6 @@ public class LinkGrabberTableAction extends AbstractAction {
     public static final int NEW_PACKAGE = 100;
     public static final int MERGE_PACKAGE = 110;
     public static final int EDIT_DIR = 101;
-    public static final int SORT = 103;
-    public static final int SORT_ALL = 1031;
     public static final int DOWNLOAD_PRIO = 200;
     public static final int SET_PW = 201;
     public static final int ADD_SELECTED_PACKAGES = 301;

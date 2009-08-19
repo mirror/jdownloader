@@ -1,9 +1,13 @@
 package jd.gui.swing.jdgui.views.linkgrabberview.Columns;
 
 import java.awt.Component;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 
 import javax.swing.JTable;
 
+import jd.controlling.LinkGrabberController;
 import jd.gui.swing.components.JDTable.JDTableColumn;
 import jd.gui.swing.components.JDTable.JDTableModel;
 import jd.nutils.Formatter;
@@ -60,14 +64,60 @@ public class SizeColumn extends JDTableColumn {
 
     @Override
     public boolean isSortable(Object obj) {
-        // TODO Auto-generated method stub
+        /*
+         * LinkGrabber hat nur null(Header) oder ne
+         * ArrayList(LinkGrabberFilePackage)
+         */
+        if (obj == null || obj instanceof ArrayList<?>) return true;
         return false;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public void sort(Object obj, boolean sortingToggle) {
-        // TODO Auto-generated method stub
-
+    public void sort(Object obj, final boolean sortingToggle) {
+        ArrayList<LinkGrabberFilePackage> packages = null;
+        synchronized (LinkGrabberController.ControllerLock) {
+            synchronized (LinkGrabberController.getInstance().getPackages()) {
+                packages = LinkGrabberController.getInstance().getPackages();
+                if (obj == null && packages.size() > 1) {
+                    /* header, sortiere die packages nach namen */
+                    Collections.sort(packages, new Comparator<LinkGrabberFilePackage>() {
+                        public int compare(LinkGrabberFilePackage a, LinkGrabberFilePackage b) {
+                            LinkGrabberFilePackage aa = a;
+                            LinkGrabberFilePackage bb = b;
+                            if (sortingToggle) {
+                                aa = b;
+                                bb = a;
+                            }
+                            if (aa.getDownloadSize(false) == bb.getDownloadSize(false)) return 0;
+                            return aa.getDownloadSize(false) < bb.getDownloadSize(false) ? -1 : 1;
+                        }
+                    });
+                } else {
+                    /*
+                     * in obj stecken alle selektierten packages, sortiere die
+                     * links nach namen
+                     */
+                    if (obj != null) packages = (ArrayList<LinkGrabberFilePackage>) obj;
+                    for (LinkGrabberFilePackage fp : packages) {
+                        Collections.sort(fp.getDownloadLinks(), new Comparator<DownloadLink>() {
+                            public int compare(DownloadLink a, DownloadLink b) {
+                                DownloadLink aa = b;
+                                DownloadLink bb = a;
+                                if (sortingToggle) {
+                                    aa = a;
+                                    bb = b;
+                                }
+                                if (aa.getDownloadSize() == bb.getDownloadSize()) return 0;
+                                return aa.getDownloadSize() < bb.getDownloadSize() ? -1 : 1;
+                            }
+                        });
+                    }
+                }
+            }
+        }
+        /* inform LinkGrabberController that structure changed */
+        LinkGrabberController.getInstance().throwRefresh();
     }
 
     @Override

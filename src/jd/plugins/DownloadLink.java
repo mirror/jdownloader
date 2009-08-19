@@ -970,6 +970,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     public String getPart() {
+        if (part == null) part = "";
         return part;
     }
 

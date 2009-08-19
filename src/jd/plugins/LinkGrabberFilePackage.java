@@ -17,8 +17,6 @@
 package jd.plugins;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -56,7 +54,6 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
     private long size = -1;
 
     private long lastSizeCalc = 0;
-    private boolean sortasc = false;
     private int lastfail = 0;
     private long lastFailCount = 0;
     private String hosts;
@@ -394,48 +391,6 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
         synchronized (downloadLinks) {
             return downloadLinks.size();
         }
-    }
-
-    public void sort(final int col, boolean asc) {
-        if (asc) {
-            sortasc = true;
-        } else {
-            sortasc = !sortasc;
-        }
-        synchronized (downloadLinks) {
-
-            Collections.sort(downloadLinks, new Comparator<DownloadLink>() {
-
-                public int compare(DownloadLink a, DownloadLink b) {
-                    if (a.getName().endsWith(".sfv")) { return -1; }
-                    if (b.getName().endsWith(".sfv")) { return 1; }
-                    DownloadLink aa = b;
-                    DownloadLink bb = a;
-                    if (sortasc) {
-                        aa = a;
-                        bb = b;
-                    }
-                    switch (col) {
-                    case 0:
-                        return aa.getName().compareToIgnoreCase(bb.getName());
-                    case 1:
-                        return aa.getDownloadSize() < bb.getDownloadSize() ? 1 : -1;
-                    case 2:
-                        return aa.getHost().compareToIgnoreCase(bb.getHost());
-                    case 3:
-                        if (aa.getLinkStatus().getStatusText() != null && bb.getLinkStatus().getStatusText() != null) {
-                            return aa.getLinkStatus().getStatusText().compareToIgnoreCase(bb.getLinkStatus().getStatusText());
-                        } else
-                            return -1;
-                    default:
-                        return -1;
-                    }
-
-                }
-
-            });
-        }
-        broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));
     }
 
     public void addListener(LinkGrabberFilePackageListener l) {
