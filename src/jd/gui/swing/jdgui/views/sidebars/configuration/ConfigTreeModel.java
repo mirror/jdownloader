@@ -77,7 +77,7 @@ public class ConfigTreeModel implements TreeModel {
         // "Reconnect")).setIcon("gui.images.config.reconnect"));
         dl.add(new TreeEntry(jd.gui.swing.jdgui.settings.panels.reconnect.Advanced.class, jd.gui.swing.jdgui.settings.panels.reconnect.Advanced.getTitle()).setIcon("gui.images.reconnect_settings"));
 
-        modules.add(dl = new TreeEntry("Passwords & Logins").setIcon("gui.images.list"));
+        modules.add(dl = new TreeEntry(JDL.L(JDL_PREFIX + "passwordsANdLogins","Passwords & Logins")).setIcon("gui.images.list"));
         dl.add(new TreeEntry(jd.gui.swing.jdgui.settings.panels.passwords.PasswordList.class, jd.gui.swing.jdgui.settings.panels.passwords.PasswordList.getTitle()).setIcon("gui.images.addons.unrar"));
 
         dl.add(new TreeEntry(jd.gui.swing.jdgui.settings.panels.passwords.PasswordListHTAccess.class, jd.gui.swing.jdgui.settings.panels.passwords.PasswordListHTAccess.getTitle()).setIcon("gui.images.htaccess"));
