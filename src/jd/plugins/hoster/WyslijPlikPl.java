@@ -47,8 +47,8 @@ public class WyslijPlikPl extends PluginForHost {
          * dl link is available
          */
         if (br.containsHTML("<a href='http://\\w{2}\\.wyslijplik\\.pl/get\\.php\\?gid=\\w{8}'.*?</a>")) {
-            String filename = br.getRegex("<table class='showfiles'>.*?<b>(.*?)</b></a>").getMatch(0);
-            String filesize = br.getRegex("<table class='showfiles'>.*?<td>(.*?KB)</td>").getMatch(0);
+            String filename = br.getRegex("<td width='230'><a href='.*?'  title=\"(.*?)\\.\"><b>").getMatch(0);
+            String filesize = br.getRegex("<table class='showfiles'>.*?<td>(.*?)</td>").getMatch(0);
             if ((filename != null && filesize != null)) {
                 downloadLink.setName(filename);
                 downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
@@ -62,7 +62,7 @@ public class WyslijPlikPl extends PluginForHost {
         requestFileInformation(downloadLink);
         String linkurl = br.getRegex("<a href='(http://\\w{2}\\.wyslijplik\\.pl/get\\.php\\?gid=\\w{8})'.*?</a>").getMatch(0);
         if (linkurl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, true, -20);
         if (!(dl.getConnection().isContentDisposition())) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -85,7 +85,7 @@ public class WyslijPlikPl extends PluginForHost {
      * filesize Would also need more testlinks to bigger files...
      */
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return 20;
     }
 
     public void reset() {
