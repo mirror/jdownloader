@@ -1,7 +1,6 @@
 package jd.gui.swing.jdgui.settings.panels.premium.Columns;
 
 import java.awt.Component;
-import java.awt.Dimension;
 
 import javax.swing.JTable;
 
@@ -19,7 +18,6 @@ public class StatusColumn extends JDTableColumn {
 
     private static final long serialVersionUID = -5291590062503352550L;
     private Component co;
-    private static Dimension dim = new Dimension(200, 30);
 
     @Override
     public Component myTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {

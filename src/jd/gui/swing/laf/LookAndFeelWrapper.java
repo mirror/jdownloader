@@ -2,11 +2,7 @@ package jd.gui.swing.laf;
 
 import java.io.Serializable;
 
-import javax.swing.ImageIcon;
 import javax.swing.UIManager.LookAndFeelInfo;
-
-import jd.nutils.JDImage;
-import jd.utils.JDTheme;
 
 public class LookAndFeelWrapper implements Serializable {
 
@@ -28,14 +24,14 @@ public class LookAndFeelWrapper implements Serializable {
      * Sets a static name. just fort displaying
      * 
      * @param string
-     * @return 
+     * @return
      */
     public LookAndFeelWrapper setName(String string) {
         this.name = string;
-return this;
+        return this;
     }
 
-    // @Override
+    @Override
     public boolean equals(Object obj) {
         return (obj instanceof LookAndFeelWrapper) && ((LookAndFeelWrapper) obj).getClassName() != null && ((LookAndFeelWrapper) obj).getClassName().equals(className);
     }
@@ -48,22 +44,9 @@ return this;
         this.className = className;
     }
 
-    // @Override
+    @Override
     public String toString() {
         return name;
-    }
-
-    public ImageIcon getIcon() {
-        try {
-            ImageIcon img = JDImage.getImageIcon(JDTheme.V("plaf.screenshot." + this.getClassName()));
-            return img;
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    public String getLabel() {
-        return toString();
     }
 
     public boolean isJTattoo() {
@@ -75,7 +58,6 @@ return this;
     }
 
     public String getName() {
-        // TODO Auto-generated method stub
         return this.name;
     }
 }

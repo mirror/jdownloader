@@ -409,6 +409,7 @@ public class Config {
             return values.size();
         }
 
+        @Override
         public String getColumnName(int col) {
             return columnNames[col];
         }
@@ -432,18 +433,14 @@ public class Config {
             return "";
         }
 
+        @Override
         public Class<?> getColumnClass(int c) {
             return String.class;
         }
 
+        @Override
         public boolean isCellEditable(int row, int col) {
-            return col == 5;
-        }
-
-        public void setValueAt(Object value, int row, int col) {
-            if (col == 2) {
-
-            }
+            return false;
         }
 
     }
