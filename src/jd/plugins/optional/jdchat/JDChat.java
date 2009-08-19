@@ -757,7 +757,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         MenuAction m;
 
         menu.add(m = activateAction);
-        if (frame == null || !frame.isVisible()) {
+        if (view == null || !view.isVisible()) {
             m.setSelected(false);
         } else {
             m.setSelected(true);
@@ -833,8 +833,10 @@ public class JDChat extends PluginOptional implements ControlListener {
     public boolean initAddon() {
         NAMES = new ArrayList<User>();
         sb = new StringBuilder();
-        this.activateAction = new MenuAction(MenuAction.TOGGLE, JDL.L("plugins.optional.jdchat.menu.windowstatus", "Chatwindow"), 0).setActionListener(this);
-        activateAction.setSelected(false);
+        if (activateAction == null) {
+            this.activateAction = new MenuAction(MenuAction.TOGGLE, JDL.L("plugins.optional.jdchat.menu.windowstatus", "Chatwindow"), 0).setActionListener(this);
+            activateAction.setSelected(false);
+        }
         return true;
     }
 
@@ -1134,6 +1136,8 @@ public class JDChat extends PluginOptional implements ControlListener {
         NAMES.clear();
         this.setLoggedIn(false);
         this.updateNamesPanel();
+        if(view!=null)SwingGui.getInstance().disposeView(view);
+        view=null;
         if (conn != null) conn.close();
         conn = null;
     }
