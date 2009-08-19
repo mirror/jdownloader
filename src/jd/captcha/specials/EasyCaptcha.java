@@ -225,12 +225,19 @@ public class EasyCaptcha {
                     // TODO: handle exception
                 }
             }
-            if (bestCGab > 2 && gab[best] / 2 < gab[bestCGabPos]) {
-                best = bestCGabPos;
-            }
-            else if(bestCGab>10)
-            {
-                best = bestCGabPos;
+            try {
+                double t = Colors.getBrightnessColorDifference(colorGab[bestCGabPos], colorGab[bestCGabPos - 1]) / 2;
+                double t2 = Colors.getHueColorDifference(colorGab[bestCGabPos], colorGab[bestCGabPos - 1]) / 2;
+
+                if (Colors.getBrightnessColorDifference(colorGab[best], colorGab[best - 1]) < t && Colors.getBrightnessColorDifference(colorGab[best], colorGab[best + 1]) < t && Colors.getHueColorDifference(colorGab[best], colorGab[best - 1]) < t2 && Colors.getHueColorDifference(colorGab[best], colorGab[best + 1]) < t2) {
+                    if (bestCGab > 2 && gab[best] * 2 / 3 < gab[bestCGabPos]) {
+                        best = bestCGabPos;
+                    } else if (bestCGab > 13) {
+                        best = bestCGabPos;
+                    }
+                }
+            } catch (Exception e) {
+                // TODO: handle exception
             }
 
             PixelObject[] bs = biggest.splitAt(best);
@@ -328,7 +335,7 @@ public class EasyCaptcha {
         int area = mergeObjectsBasic(os, captcha, gab);
         // mergeObjects(os, captcha, pixels);
         for (Iterator<PixelObject> iterator = os.iterator(); iterator.hasNext();) {
-            if (iterator.next().getArea() < area/2) {
+            if (iterator.next().getArea() < area / 2) {
                 iterator.remove();
             }
         }
@@ -338,7 +345,7 @@ public class EasyCaptcha {
         for (PixelObject pixelObject : os) {
             Letter let = pixelObject.toLetter();
             let.removeSmallObjects(0.75, 0.75, area / 10);
-            let=let.toPixelObject(0.75).toLetter();
+            let = let.toPixelObject(0.75).toLetter();
             ret.add(let);
         }
         return ret.toArray(new Letter[] {});
