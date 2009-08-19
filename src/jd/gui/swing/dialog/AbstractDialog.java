@@ -23,6 +23,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
 import java.awt.event.MouseEvent;
+import java.util.HashMap;
 
 import javax.swing.AbstractAction;
 import javax.swing.ImageIcon;
@@ -52,7 +53,7 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
 
     private static final long serialVersionUID = -169149552591067268L;
 
-    private static final String DIALOGS_CONFIG = "DIALOGS";
+    public static final String DIALOGS_CONFIG = "DIALOGS";
 
     protected JButton btnCancel;
 
@@ -93,7 +94,7 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
         dont: if (JDFlags.hasAllFlags(flag, UserIO.DONT_SHOW_AGAIN)) {
             SubConfiguration cfg = SubConfiguration.getConfig(DIALOGS_CONFIG);
             Object value;
-            if ((value = cfg.getProperty("DONT_SHOW_AGAIN_" + getDontShowAgainKey())) != null && value instanceof Integer) {
+            if ((value = cfg.getProperty(getDontShowAgainKey())) != null && value instanceof Integer) {
                 int i = ((Integer) value).intValue();
                 int ret = (i & (UserIO.RETURN_OK | UserIO.RETURN_CANCEL)) | UserIO.RETURN_DONT_SHOW_AGAIN | UserIO.RETURN_SKIPPED_BY_DONT_SHOW;
 
@@ -312,6 +313,8 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
 
     public static void resetDialogInformations() {
         SubConfiguration.getConfig(DIALOGS_CONFIG).getProperties().clear();
+        SubConfiguration.getConfig(DIALOGS_CONFIG).save();
+    
     }
-
+ 
 }
