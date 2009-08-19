@@ -106,9 +106,9 @@ public class FileColumn extends JDTableColumn {
         ArrayList<LinkGrabberFilePackage> packages = null;
         synchronized (LinkGrabberController.ControllerLock) {
             synchronized (LinkGrabberController.getInstance().getPackages()) {
-                if (obj == null) {
+                packages = LinkGrabberController.getInstance().getPackages();
+                if (obj == null && packages.size() > 1) {
                     /* header, sortiere die packages nach namen */
-                    packages = LinkGrabberController.getInstance().getPackages();
                     Collections.sort(packages, new Comparator<LinkGrabberFilePackage>() {
                         public int compare(LinkGrabberFilePackage a, LinkGrabberFilePackage b) {
                             LinkGrabberFilePackage aa = a;
@@ -125,7 +125,7 @@ public class FileColumn extends JDTableColumn {
                      * in obj stecken alle selektierten packages, sortiere die
                      * links nach namen
                      */
-                    packages = (ArrayList<LinkGrabberFilePackage>) obj;
+                    if (obj != null) packages = (ArrayList<LinkGrabberFilePackage>) obj;
                     for (LinkGrabberFilePackage fp : packages) {
                         Collections.sort(fp.getDownloadLinks(), new Comparator<DownloadLink>() {
                             public int compare(DownloadLink a, DownloadLink b) {
