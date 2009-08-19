@@ -1,4 +1,5 @@
 !font = Dialog
+!fontsize = 24
 action.downloadview.movedown.tooltip = Move down
 action.downloadview.movetobottom.tooltip = Move to bottom
 action.downloadview.movetotop.tooltip = Move to top
