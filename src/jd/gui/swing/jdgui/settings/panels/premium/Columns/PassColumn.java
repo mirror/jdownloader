@@ -86,7 +86,6 @@ public class PassColumn extends JDTableColumn implements ActionListener {
     @Override
     public Component myTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         if (value instanceof Account) {
-            Account ac = (Account) value;
             co = getDefaultTableCellRendererComponent(table, "*****", isSelected, hasFocus, row, column);
         } else {
             co = getDefaultTableCellRendererComponent(table, "", isSelected, hasFocus, row, column);

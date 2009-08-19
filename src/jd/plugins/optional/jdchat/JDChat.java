@@ -657,7 +657,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         sb.append("<!---->");
         sb.append("<li>");
         if (user != null) {
-            sb.append("<span style='" + user.getStyle() + (getUser(conn.getNick()) == user ? ";font-weight:bold" : "") + "'>[" + df.format(dt) + "] " + user.getNickLink("pmnick") + (style == JDChat.STYLE_PM ? ">> " : ": ") + "</span>");
+            sb.append("<span style='" + user.getStyle() + (getUser(conn.getNick()) == user ? ";font-weight:bold" : "") + "'>[" + df.format(dt) + "] " + user.getNickLink("pmnick") + (JDChat.STYLE_PM.equalsIgnoreCase(style) ? ">> " : ": ") + "</span>");
         } else {
             sb.append("<span class='time'>[" + df.format(dt) + "] </span>");
 
@@ -1136,8 +1136,8 @@ public class JDChat extends PluginOptional implements ControlListener {
         NAMES.clear();
         this.setLoggedIn(false);
         this.updateNamesPanel();
-        if(view!=null)SwingGui.getInstance().disposeView(view);
-        view=null;
+        if (view != null) SwingGui.getInstance().disposeView(view);
+        view = null;
         if (conn != null) conn.close();
         conn = null;
     }

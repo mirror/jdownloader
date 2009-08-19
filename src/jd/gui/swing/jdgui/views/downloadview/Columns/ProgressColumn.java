@@ -78,13 +78,13 @@ public class ProgressColumn extends JDTableColumn {
             dLink = (DownloadLink) value;
             progress.setBorder(null);
             if (dLink.getPlugin() == null) {
-                co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                co = getDefaultTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
                 ((JRendererLabel) co).setIcon(null);
                 ((JRendererLabel) co).setText(strPluginError);
                 ((JRendererLabel) co).setBorder(null);
                 return co;
             } else if (!dLink.getPlugin().getWrapper().usePlugin()) {
-                co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                co = getDefaultTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
                 ((JRendererLabel) co).setIcon(null);
                 ((JRendererLabel) co).setText(strPluginDisabled);
                 ((JRendererLabel) co).setBorder(null);

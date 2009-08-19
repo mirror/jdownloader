@@ -119,7 +119,7 @@ public class WebUpdater implements Serializable {
     private Browser br;
 
     private String[] branches;
-    private JDBroadcaster<MessageListener, MessageEvent> broadcaster;
+    private transient JDBroadcaster<MessageListener, MessageEvent> broadcaster;
     private Integer errors = 0;
 
     private boolean ignorePlugins = true;
@@ -237,7 +237,7 @@ public class WebUpdater implements Serializable {
         for (int i = 0; i < UPDATE_MIRROR.length; i++) {
             String serv = mirrors.remove((int) (Math.random() * (UPDATE_MIRROR.length - 1 - i)));
             try {
-             
+
                 br.getPage(serv + "branches.lst");
                 if (br.getRequest().getHttpConnection().isOK()) {
                     this.branches = Regex.getLines(br.toString());
@@ -245,7 +245,7 @@ public class WebUpdater implements Serializable {
                     return branches;
                 }
             } catch (Exception e) {
-e.printStackTrace();
+                e.printStackTrace();
             }
             System.err.println("No branches found on " + serv);
         }
@@ -465,7 +465,7 @@ e.printStackTrace();
         boolean fnf = true;
         for (int trycount = 0; trycount < 10; trycount++) {
             try {
-                broadcaster.fireEvent(new MessageEvent(this, 0, JDL.L("jd.update.webupdater.updateavailavleservers","Update Downloadmirrors")));
+                broadcaster.fireEvent(new MessageEvent(this, 0, JDL.L("jd.update.webupdater.updateavailavleservers", "Update Downloadmirrors")));
 
                 String path = getListPath(trycount);
                 if (path == null) continue;
@@ -493,7 +493,7 @@ e.printStackTrace();
                     } else {
                         s.setPercent((s.getPercent() * 100) / total);
                     }
-                    broadcaster.fireEvent(new MessageEvent(this, 0,  JDL.LF("jd.update.webupdater.updateavailavleservers.server","Updateserver: %s" , s)));
+                    broadcaster.fireEvent(new MessageEvent(this, 0, JDL.LF("jd.update.webupdater.updateavailavleservers.server", "Updateserver: %s", s)));
 
                 }
                 if (servers.size() > 0) {

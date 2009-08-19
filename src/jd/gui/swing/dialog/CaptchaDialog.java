@@ -71,7 +71,7 @@ public class CaptchaDialog extends JCountdownDialog implements ActionListener, K
 
     private String explain;
 
-    private SwingWorker<Object, Object> jacWorker;
+    private transient SwingWorker<Object, Object> jacWorker;
 
     public CaptchaDialog(int flag, String methodname, File captchafile, String suggestion, String explain) {
         super(SwingGui.getInstance().getMainFrame());

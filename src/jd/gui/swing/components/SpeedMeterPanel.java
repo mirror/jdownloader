@@ -54,7 +54,7 @@ public class SpeedMeterPanel extends JPanel implements ActionListener, MouseList
     private static final long serialVersionUID = 5571694800446993879L;
     private int i;
     private int[] cache;
-    private Thread th;
+    private transient Thread th;
     private int window;
     private boolean show;
 

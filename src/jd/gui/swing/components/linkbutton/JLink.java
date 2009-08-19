@@ -86,7 +86,7 @@ public class JLink extends JLabel {
     }
 
     private URL url;
-    private JDBroadcaster<ActionListener, JDEvent> broadcaster;
+    private transient JDBroadcaster<ActionListener, JDEvent> broadcaster;
 
     public JLink() {
         this(null, null, null);

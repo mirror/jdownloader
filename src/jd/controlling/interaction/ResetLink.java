@@ -18,43 +18,15 @@ package jd.controlling.interaction;
 
 import java.io.Serializable;
 
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
-import jd.controlling.DownloadController;
-import jd.controlling.JDController;
-import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 public class ResetLink extends Interaction implements Serializable {
 
     private static final long serialVersionUID = -9071890385750062424L;
 
-    private static final String PARAM_LAST_OR_ALL = "LAST_OR_ALL";
-
     // @Override
     public boolean doInteraction(Object arg) {
-        logger.info("Starting Reset Link");
-        int type = this.getIntegerProperty(PARAM_LAST_OR_ALL, 1);
-        JDController controller = JDUtilities.getController();
-        if (type == 0) {
-            controller.resetAllLinks();
-        } else if (type == 1) {
-            DownloadLink link = controller.getLastFinishedDownloadLink();
-            if (link != null) {
-                link.getLinkStatus().setStatus(LinkStatus.TODO);
-                link.getLinkStatus().setStatusText("");
-                link.reset();
-                link.getPlugin().resetPluginGlobals();
-                DownloadController.getInstance().fireDownloadLinkUpdate(link);
-            } else {
-                logger.severe("Kein letzter Downloadlink gefunden");
-            }
-
-        }
-
-        return true;
+        return false;
     }
 
     // @Override
@@ -64,7 +36,7 @@ public class ResetLink extends Interaction implements Serializable {
 
     // @Override
     public void initConfig() {
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, this, PARAM_LAST_OR_ALL, new String[] { JDL.L("interaction.resetLink.options.all", "all Links"), JDL.L("interaction.resetLink.options.lastLink", "only last Link") }, JDL.L("interaction.resetLink.whichLink", "Welcher Link soll zurückgesetzt werden?")).setDefaultValue(1));
+
     }
 
     // @Override

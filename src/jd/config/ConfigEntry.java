@@ -62,7 +62,7 @@ public class ConfigEntry implements Serializable {
     private ConfigEntry conditionEntry;
     private Object conditionValue;
     private ConfigContainer container;
-    private ListController controller;
+    private transient ListController controller;
     private Object defaultValue;
     private String description;
     private boolean enabled = true;
@@ -490,11 +490,13 @@ public class ConfigEntry implements Serializable {
         this.propertyName = propertyName;
         return this;
     }
-/**
- * Sets the propoertyType. one of PropertyType enum.
- * @param propertyType
- * @return
- */
+
+    /**
+     * Sets the propoertyType. one of PropertyType enum.
+     * 
+     * @param propertyType
+     * @return
+     */
     public ConfigEntry setPropertyType(PropertyType propertyType) {
         this.propertyType = propertyType;
         return this;
