@@ -18,13 +18,23 @@ import jd.captcha.JAntiCaptcha;
 
 import jd.captcha.utils.Utilities;
 
-import jd.utils.JDUtilities;
-
 public class BackgroundFilterCreater {
+    /**
+     * Erstellt eine Backgroundimage im MethodenOrdner aus den Captchas im Captchaordner der Methode
+     * @param files
+     * @param methode
+     * @return
+     */
     public static File create(EasyFile methode)
     {
         return create(methode.getCaptchaFolder().listFiles(), methode);
     }
+    /**
+     * Erstellt ein Hintergrundbild im MethodenOrdner aus einer Liste von Dateien
+     * @param files
+     * @param methode
+     * @return
+     */
     @SuppressWarnings("unchecked")
     public static File create(File[] files, EasyFile methode) {
         JAntiCaptcha jac = new JAntiCaptcha(Utilities.getMethodDir(), methode.getName());
@@ -94,12 +104,6 @@ public class BackgroundFilterCreater {
             e.printStackTrace();
         }
         return ret;
-    }
-
-    public static void main(String[] args) {
-        String host = "canna.to";
-        EasyFile methode = new EasyFile(new File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/" + JDUtilities.getJACMethodsDirectory(), host));
-        create(methode.getCaptchaFolder().listFiles(), methode);
     }
 
 }

@@ -19,6 +19,9 @@ package jd.gui.swing.components;
 import java.io.File;
 
 import javax.swing.JFileChooser;
+import javax.swing.filechooser.FileFilter;
+
+import jd.gui.swing.GuiRunnable;
 
 import jd.utils.JDUtilities;
 
@@ -31,6 +34,7 @@ public class JDFileChooser extends JFileChooser {
 
     private static final long serialVersionUID = 3315263822025280362L;
     private String fcID;
+    public static int ImagesOnly = 3;
 
     public JDFileChooser() {
         this(null);
@@ -72,5 +76,46 @@ public class JDFileChooser extends JFileChooser {
             JDUtilities.setCurrentWorkingDirectory(ret[0].getParentFile(), fcID);
         }
         return ret;
+    }
+
+    @Override
+    public void setFileSelectionMode(int mode) {
+        if (mode == ImagesOnly) {
+            setFileFilter(new FileFilter() {
+
+                @Override
+                public boolean accept(File f) {
+                    if (f.isDirectory()) return true;
+                    String nt = f.getName().toLowerCase();
+                    if (nt.endsWith(".jpg") || nt.endsWith(".png") || nt.endsWith(".gif") || nt.endsWith(".jpeg") || nt.endsWith(".bmp")) return true;
+                    return false;
+                }
+
+                @Override
+                public String getDescription() {
+                    // TODO Auto-generated method stub
+                    return null;
+                }
+            });
+            mode = FILES_ONLY;
+        }
+        super.setFileSelectionMode(mode);
+    }
+    public static File getFile()
+    {
+        return getFile(FILES_ONLY);
+    }
+    public static File getFile(final int mode)
+    {
+        return new GuiRunnable<File>() {
+            public File runSave() {
+                JDFileChooser fc = new JDFileChooser();
+                fc.setVisible(true);
+                fc.setFileSelectionMode(mode);
+                fc.showOpenDialog(null);
+                File ret = fc.getSelectedFile();
+                return ret;
+            }
+        }.getReturnValue();
     }
 }

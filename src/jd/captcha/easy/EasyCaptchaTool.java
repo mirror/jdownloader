@@ -56,7 +56,7 @@ public class EasyCaptchaTool {
                 JPanel pa = new JPanel(new GridLayout(2, 1));
 
                 pa.add(new JLabel(JDL.L("easycaptcha.tool.mothodedialog.selectmethode", "select the methode:")));
-                EasyFile[] paths = new EasyFile(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/" + JDUtilities.getJACMethodsDirectory()).listFiles();
+                EasyFile[] paths = EasyFile.getMethodeList();
 
                 final JComboBox combox = new JComboBox(paths);
                 combox.setRenderer(new JDLabelListRenderer());
@@ -170,7 +170,7 @@ public class EasyCaptchaTool {
                                             dialog.dispose();
                                             cHosterDialog.dispose();
                                             if (tfAuthor.getText() != null && !tfAuthor.getText().matches("\\s*")) config.setProperty(CONFIG_AUTHOR, tfAuthor.getText());
-                                            CreateHoster.create(new EasyFile(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/" + JDUtilities.getJACMethodsDirectory() + "/" + "easycaptcha"), ef, tfAuthor.getText(), (Integer) spMaxLetters.getValue());
+                                            CreateHoster.create(new EasyFile("easycaptcha"), ef, tfAuthor.getText(), (Integer) spMaxLetters.getValue());
 
                                         } else {
                                             JOptionPane.showConfirmDialog(null, JDL.L("easycaptcha.tool.warning.hostnamemissing", "the hostname is missing"), JDL.L("easycaptcha.tool.warning.hostnamemissing", "the hostname is missing"), JOptionPane.CLOSED_OPTION, JOptionPane.WARNING_MESSAGE);
@@ -310,7 +310,7 @@ public class EasyCaptchaTool {
                 new Thread(new Runnable() {
 
                     public void run() {
-                        ColorTrainer.getColor(meth);
+                        ColorTrainerGUI.getColor(meth);
 
                     }
                 }).start();
@@ -330,7 +330,7 @@ public class EasyCaptchaTool {
                 new Thread(new Runnable() {
 
                     public void run() {
-                        new BackGroundImageTrainer(meth.getName()).initGui();
+                        new BackGroundImageTrainerGUI(meth.getName()).initGui();
                     }
                 }).start();
 
@@ -356,8 +356,7 @@ public class EasyCaptchaTool {
 
             }
         });
-        if(!JDIO.getLocalFile(meth.getScriptJas()).contains("param.useSpecialGetLetters=EasyCaptcha.getLetters;"))
-        {
+        if (!JDIO.getLocalFile(meth.getScriptJas()).contains("param.useSpecialGetLetters=EasyCaptcha.getLetters;")) {
             new GuiRunnable<Object>() {
                 public Object runSave() {
                     btnColorTrainer.setEnabled(false);

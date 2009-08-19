@@ -23,9 +23,11 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
 import java.util.Map.Entry;
+
+import jd.captcha.easy.BackGroundImageManager;
+
 import jd.nutils.Colors;
-import jd.captcha.easy.BackGroundImageTrainer;
-import jd.captcha.easy.ColorTrainer;
+import jd.captcha.easy.ColorTrainerGUI;
 import jd.captcha.easy.CPoint;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
@@ -252,12 +254,10 @@ public class EasyCaptcha {
 
     private static int[] clean(Captcha captcha) {
         File file = captcha.owner.getResourceFile("CPoints.xml");
-        BackGroundImageTrainer bgit = new BackGroundImageTrainer(file.getParentFile().getName());
-        bgit.captchaImage = captcha;
-        bgit.load();
-        bgit.clearCaptcha();
+        BackGroundImageManager bgit = new BackGroundImageManager(captcha);
+        bgit.clearCaptchaAll();
         // System.out.println(file);
-        Vector<CPoint> ret = ColorTrainer.load(file);
+        Vector<CPoint> ret = ColorTrainerGUI.load(file);
         // gibt an welche höhe der größte Buchstabe hat
         int retYmax = 0;
         // breite aller Buchstaben
@@ -327,13 +327,11 @@ public class EasyCaptcha {
 
     public static Letter[] getLetters(Captcha captcha) {
         int[] pixels = clean(captcha);
-        // captcha.removeSmallObjects(0.75, 0.75, 6);
         Vector<PixelObject> os = captcha.getObjects(0.5, 0.5);
         Collections.sort(os);
         int gab = pixels[2] / (captcha.owner.getLetterNum());
 
         int area = mergeObjectsBasic(os, captcha, gab);
-        // mergeObjects(os, captcha, pixels);
         for (Iterator<PixelObject> iterator = os.iterator(); iterator.hasNext();) {
             if (iterator.next().getArea() < area / 2) {
                 iterator.remove();
