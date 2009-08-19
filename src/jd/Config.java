@@ -16,6 +16,7 @@ import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
+import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
 import javax.swing.UIDefaults;
@@ -39,15 +40,13 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
-import org.jdesktop.swingx.JXTable;
-
 public class Config {
 
     private Configuration mainConfig;
     private ArrayList<SubConfiguration> configs;
     private JComboBox configSelection;
     private SubConfiguration currentConfig;
-    private JXTable table;
+    private JTable table;
     private ConfigTableModel tableModel;
 
     private ArrayList<Object> values;
@@ -194,11 +193,11 @@ public class Config {
             }
 
         });
-        table = new JXTable(tableModel = new ConfigTableModel());
+        table = new JTable(tableModel = new ConfigTableModel());
 
         table.getTableHeader().setReorderingAllowed(false);
 
-        table.getColumn(0).setPreferredWidth(100);
+        table.getColumnModel().getColumn(0).setPreferredWidth(100);
 
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
@@ -388,15 +387,12 @@ public class Config {
         remove.setBorderPainted(false);
         remove.setContentAreaFilled(false);
         frame.add(configSelection, "split 4,pushx,growx");
-        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-
         frame.add(add, "alignx right");
         frame.add(remove, "alignx right");
         frame.add(edit, "alignx right");
         frame.add(new JScrollPane(table));
         frame.setVisible(true);
         frame.pack();
-
     }
 
     private class ConfigTableModel extends AbstractTableModel {
