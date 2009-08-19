@@ -608,7 +608,6 @@ public class ColorTrainer {
                 cc.fastSelection = lastCC.fastSelection;
                 cc.foreground = lastCC.foreground;
                 cc.add = lastCC.add;
-                cc.ret = lastCC.ret;
                 cc.tollerance = lastCC.tollerance;
                 new GuiRunnable<Object>() {
                     public Object runSave() {
@@ -628,6 +627,7 @@ public class ColorTrainer {
                 }
             }
             lastCC = cc;
+            c=cc.ret;
             if (cc.close) break;
 
         }

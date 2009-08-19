@@ -644,14 +644,13 @@ public class JAntiCaptcha {
         }.getReturnValue();
         // w.setLayout(new GridBagLayout());
         sortLetterDB();
-        JPanel p =new GuiRunnable<JPanel>() {
+        JPanel p = new GuiRunnable<JPanel>() {
             public JPanel runSave() {
-                JPanel bp= new JPanel(new GridLayout(letterDB.size() + 1, 3));
+                JPanel bp = new JPanel(new GridLayout(letterDB.size() + 1, 3));
                 w.add(new JScrollPane(bp));
                 return bp;
             }
         }.getReturnValue();
-
 
         final Letter[] list = new Letter[letterDB.size()];
 
@@ -662,14 +661,14 @@ public class JAntiCaptcha {
         while (iter.hasPrevious()) {
             final Letter tmp = iter.previous();
             list[i] = tmp;
-            
+
             JLabel lbl = new GuiRunnable<JLabel>() {
                 public JLabel runSave() {
                     return new JLabel(tmp.getId() + ": " + tmp.getDecodedValue() + "(" + tmp.getGoodDetections() + "/" + tmp.getBadDetections() + ") Size: " + tmp.toPixelObject(0.85).getSize());
                 }
             }.getReturnValue();
-            
-            ImageComponent img =  new GuiRunnable<ImageComponent>() {
+
+            ImageComponent img = new GuiRunnable<ImageComponent>() {
                 public ImageComponent runSave() {
                     return new ImageComponent(tmp.getImage());
                 }
@@ -679,7 +678,7 @@ public class JAntiCaptcha {
                 public JCheckBox runSave() {
                     return new JCheckBox("DELETE");
                 }
-            }.getReturnValue(); 
+            }.getReturnValue();
             final int ii = i;
             bt.addActionListener(new ActionListener() {
                 public Integer id = new Integer(ii);
@@ -708,13 +707,13 @@ public class JAntiCaptcha {
             public JButton runSave() {
                 return new JButton("Invoke");
             }
-        }.getReturnValue(); 
-        
+        }.getReturnValue();
+
         p.add(b);
         b.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
-//                System.out.println(rem + "");
+                // System.out.println(rem + "");
                 ArrayList<Letter> list = new ArrayList<Letter>();
                 int s = letterDB.size();
                 for (Integer i : rem) {
@@ -2103,24 +2102,22 @@ public class JAntiCaptcha {
                         letters[i].setDecodedValue(code.substring(i, i + 1));
                         new Thread(new Runnable() {
                             public void run() {
-                                final BasicWindow bws = new GuiRunnable<BasicWindow>() {
-                                    // @Override
-                                    public BasicWindow runSave() {
-                                        return BasicWindow.showImage(letters[i].getImage(2), "" + letters[i].getDecodedValue());
-                                    }
-                                }.getReturnValue();
-                                try {
-                                    Thread.sleep(1000);
-                                } catch (InterruptedException e) {
-                                    // TODO Auto-generated catch block
-                                    e.printStackTrace();
-                                }
-                                new GuiRunnable<Object>() {
-                                    // @Override
-                                    public Object runSave() {
-                                        bws.dispose();
-                                        return null;                                    }
-                                }.waitForEDT();
+                                /*
+                                 * final BasicWindow bws = new
+                                 * GuiRunnable<BasicWindow>() { // @Override
+                                 * public BasicWindow runSave() { return
+                                 * BasicWindow.showImage(letters[i].getImage(2),
+                                 * "" + letters[i].getDecodedValue()); }
+                                 * }.getReturnValue();
+                                 * 
+                                 * try { Thread.sleep(1000); } catch
+                                 * (InterruptedException e) { // TODO
+                                 * Auto-generated catch block
+                                 * e.printStackTrace(); } new
+                                 * GuiRunnable<Object>() { // @Override public
+                                 * Object runSave() { bws.dispose(); return
+                                 * null; } }.waitForEDT();
+                                 */
                             }
                         }).start();
 
