@@ -47,8 +47,8 @@ public class Updater {
 
     public static StringBuilder SERVERLIST = new StringBuilder();
     static {
-        // SERVERLIST.append("-1:http://update4ex.jdownloader.org/branches/%BRANCH%/\r\n");
-        // SERVERLIST.append("-1:http://jdupdate.bluehost.to/branches/%BRANCH%/\r\n");
+        SERVERLIST.append("-1:http://update4ex.jdownloader.org/branches/%BRANCH%/\r\n");
+        SERVERLIST.append("-1:http://jdupdate.bluehost.to/branches/%BRANCH%/\r\n");
         SERVERLIST.append("-1:http://update1.jdownloader.org/%BRANCH%/\r\n");
         SERVERLIST.append("-1:http://update2.jdownloader.org/%BRANCH%/\r\n");
         SERVERLIST.append("-1:http://update0.jdownloader.org/%BRANCH%/\r\n");
@@ -57,7 +57,7 @@ public class Updater {
     public static void main(String[] args) throws Exception {
         String branch = null;
 
-        branch = "NIGHTLY";
+        branch = "Synthy";
         Updater upd = new Updater();
 
         if (branch != null) WebUpdater.getConfig("WEBUPDATE").setProperty("BRANCH", branch);

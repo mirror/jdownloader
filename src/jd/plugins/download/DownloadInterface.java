@@ -188,6 +188,7 @@ abstract public class DownloadInterface {
             // }
             if (isExternalyAborted()) {
                 logger.severe("INTERRUPT");
+                error(LinkStatus.ERROR_TIMEOUT_REACHED, "Timeout reached");
                 interrupt();
             }
             if (timer <= 0) { return; }
