@@ -53,10 +53,6 @@ public abstract class JDTableColumn extends AbstractCellEditor implements TableC
         return isEditable(obj);
     }
 
-    abstract public void setValue(Object value, Object object);
-
-    abstract public boolean isEditable(Object obj);
-
     public Component getDefaultTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         hasFocus = false;
         column = this.getJDTableModel().toModel(column);
@@ -80,7 +76,14 @@ public abstract class JDTableColumn extends AbstractCellEditor implements TableC
         return myTableCellEditorComponent(table, value, isSelected, row, column);
     }
 
-    abstract public Component myTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column);
+    public abstract void setValue(Object value, Object object);
 
-    abstract public Component myTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column);
+    public abstract boolean isEditable(Object obj);
+
+    public abstract Component myTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column);
+
+    public abstract Component myTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column);
+
+    public abstract Object getCellEditorValue();
+
 }

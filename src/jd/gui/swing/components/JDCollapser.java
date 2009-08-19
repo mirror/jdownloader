@@ -16,9 +16,7 @@
 
 package jd.gui.swing.components;
 
-import java.awt.Container;
 import java.awt.Dimension;
-import java.awt.Graphics;
 import java.awt.event.ActionEvent;
 
 import javax.swing.AbstractAction;
@@ -51,8 +49,6 @@ public abstract class JDCollapser extends DroppedPanel {
 
     protected JPanel content;
 
-  
-
     protected JDCollapser() {
         super();
         this.setLayout(new MigLayout("ins 0 5 0 0,wrap 1", "[fill,grow]", "[fill,grow]"));
@@ -76,18 +72,13 @@ public abstract class JDCollapser extends DroppedPanel {
         add(menubar, "dock NORTH,height " + Math.max(closeAction.getHeight() + 3, 18) + "!,gapbottom 2");
         this.content = new JPanel();
         add(content);
-        content.setLayout(new MigLayout("ins 0,wrap 1","[grow,fill]","[grow,fill]"));
+        content.setLayout(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[grow,fill]"));
         this.setVisible(true);
 
     }
 
     public JLabel getMenutitle() {
         return menutitle;
-    }
-
-    public void paint(Graphics g) {
-        super.paint(g);
-
     }
 
     public class CloseAction extends AbstractAction {
@@ -117,8 +108,7 @@ public abstract class JDCollapser extends DroppedPanel {
 
     abstract public void onClosed();
 
-    public Container getContent() {
-   
+    public JPanel getContent() {
         return content;
     }
 

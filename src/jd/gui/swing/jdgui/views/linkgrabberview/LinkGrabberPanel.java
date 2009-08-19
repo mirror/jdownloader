@@ -225,16 +225,6 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         }.start();
     }
 
-    public void hideFilePackageInfo() {
-        new GuiRunnable<Object>() {
-            // @Override
-            public Object runSave() {
-
-                return null;
-            }
-        }.start();
-    }
-
     public void fireTableChanged() {
         synchronized (LinkGrabberController.ControllerLock) {
             synchronized (LGINSTANCE.getPackages()) {
@@ -821,10 +811,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
 
     public void onLinkGrabberControllerEvent(LinkGrabberControllerEvent event) {
         switch (event.getID()) {
-        case LinkGrabberControllerEvent.REMOVE_FILPACKAGE:
-            if (filePackageInfo.getPackage() != null && filePackageInfo.getPackage() == ((LinkGrabberFilePackage) event.getParameter())) {
-                this.hideFilePackageInfo();
-            }
+        case LinkGrabberControllerEvent.REMOVE_FILEPACKAGE:
             Update_Async.restart();
             break;
         case LinkGrabberControllerEvent.REFRESH_STRUCTURE:
@@ -842,30 +829,25 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
 
     class LinkGrabberToolbar extends ViewToolbar {
 
-        /**
-             * 
-             */
         private static final long serialVersionUID = 1L;
 
+        @Override
         public void setDefaults(int i, AbstractButton ab) {
             if (i == 0) {
                 ab.setContentAreaFilled(false);
                 ab.setText("");
             } else {
-
                 confirmButton = ab;
-
             }
         }
 
+        @Override
         public String getButtonConstraint(int i, ToolBarAction action) {
-
             if (i == 0) {
                 return BUTTON_CONSTRAINTS + ", alignx left, width 20!";
             } else {
                 return BUTTON_CONSTRAINTS + ", alignx right";
             }
-
         }
 
     }

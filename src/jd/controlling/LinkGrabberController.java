@@ -355,7 +355,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
             synchronized (packages) {
                 if (fp != this.FP_FILTERED && fp != this.FP_OFFLINE && fp != this.FP_UNCHECKED && fp != this.FP_UNSORTED) fp.removeListener(this);
                 packages.remove(fp);
-                broadcaster.fireEvent(new LinkGrabberControllerEvent(this, LinkGrabberControllerEvent.REMOVE_FILPACKAGE, fp));
+                broadcaster.fireEvent(new LinkGrabberControllerEvent(this, LinkGrabberControllerEvent.REMOVE_FILEPACKAGE, fp));
             }
         }
     }
@@ -580,7 +580,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
     public void onLinkGrabberControllerEvent(LinkGrabberControllerEvent event) {
         switch (event.getID()) {
         case LinkGrabberControllerEvent.ADD_FILEPACKAGE:
-        case LinkGrabberControllerEvent.REMOVE_FILPACKAGE:
+        case LinkGrabberControllerEvent.REMOVE_FILEPACKAGE:
             broadcaster.fireEvent(new LinkGrabberControllerEvent(this, LinkGrabberControllerEvent.REFRESH_STRUCTURE));
             break;
         case LinkGrabberControllerEvent.FILTER_CHANGED:

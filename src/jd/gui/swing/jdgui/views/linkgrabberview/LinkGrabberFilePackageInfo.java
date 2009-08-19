@@ -32,7 +32,6 @@ import jd.gui.swing.components.ComboBrowseFile;
 import jd.gui.swing.components.JDCollapser;
 import jd.gui.swing.components.JDFileChooser;
 import jd.gui.swing.components.JDTextField;
-import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.LinkgrabberView;
 import jd.plugins.LinkGrabberFilePackage;
 import jd.utils.JDUtilities;
@@ -62,7 +61,7 @@ public class LinkGrabberFilePackageInfo extends JDCollapser implements ActionLis
     public LinkGrabberFilePackageInfo() {
         buildGui();
         fp = null;
-        this.menutitle.setText( JDL.L("gui.linkgrabber.packagetab.title", "File package"));
+        this.menutitle.setText(JDL.L("gui.linkgrabber.packagetab.title", "File package"));
     }
 
     public void setPackage(LinkGrabberFilePackage fp) {
@@ -143,19 +142,12 @@ public class LinkGrabberFilePackageInfo extends JDCollapser implements ActionLis
 
     public void actionPerformed(ActionEvent e) {
         if (fp == null || !notifyUpdate) return;
-//        if (e.getSource() == txtName) {
-            fp.setName(txtName.getText());
-//        } else if (e.getSource() == brwSaveTo) {
-            fp.setDownloadDirectory(brwSaveTo.getText());
-//        } else if (e.getSource() == txtComment) {
-            fp.setComment(txtComment.getText());
-//        } else if (e.getSource() == txtPassword) {
-            fp.setPassword(txtPassword.getText());
-//        } else if (e.getSource() == chbExtract) {
-            fp.setExtractAfterDownload(chbExtract.isSelected());
-//        } else if (e.getSource() == chbUseSubdirectory) {
-            fp.setUseSubDir(chbUseSubdirectory.isSelected());
-//        }
+        fp.setName(txtName.getText());
+        fp.setDownloadDirectory(brwSaveTo.getText());
+        fp.setComment(txtComment.getText());
+        fp.setPassword(txtPassword.getText());
+        fp.setExtractAfterDownload(chbExtract.isSelected());
+        fp.setUseSubDir(chbUseSubdirectory.isSelected());
         DownloadController.getInstance().fireDownloadLinkUpdate(fp.get(0));
     }
 
@@ -181,18 +173,16 @@ public class LinkGrabberFilePackageInfo extends JDCollapser implements ActionLis
         fp = null;
     }
 
-    public void focusGained(FocusEvent e) {       
+    public void focusGained(FocusEvent e) {
     }
 
     public void focusLost(FocusEvent e) {
         this.actionPerformed(null);
-        
     }
 
     @Override
     public void onClosed() {
-    LinkgrabberView.getInstance().setInfoPanel(null);
-        
+        LinkgrabberView.getInstance().setInfoPanel(null);
     }
 
 }

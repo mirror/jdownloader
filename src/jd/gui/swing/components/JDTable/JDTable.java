@@ -4,7 +4,6 @@ import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
@@ -20,6 +19,7 @@ import javax.swing.table.TableColumnModel;
 
 import jd.config.SubConfiguration;
 import jd.gui.swing.components.JExtCheckBoxMenuItem;
+import jd.gui.swing.jdgui.interfaces.JDMouseAdapter;
 import jd.gui.swing.jdgui.views.downloadview.DownloadTable;
 import jd.utils.JDUtilities;
 
@@ -39,49 +39,37 @@ public class JDTable extends JTable {
         createColumns();
         setShowHorizontalLines(false);
         setShowVerticalLines(false);
-        getTableHeader().addMouseListener(new MouseListener() {
+        getTableHeader().addMouseListener(new JDMouseAdapter() {
+
+            @Override
             public void mouseClicked(MouseEvent e) {
-                if (e.getSource() == getTableHeader()) {
-                    if (e.getButton() == MouseEvent.BUTTON3) {
-                        JPopupMenu popup = new JPopupMenu();
-                        JCheckBoxMenuItem[] mis = new JCheckBoxMenuItem[getJDTableModel().getRealColumnCount()];
+                if (e.getButton() == MouseEvent.BUTTON3) {
+                    JPopupMenu popup = new JPopupMenu();
+                    JCheckBoxMenuItem[] mis = new JCheckBoxMenuItem[getJDTableModel().getRealColumnCount()];
 
-                        for (int i = 0; i < getJDTableModel().getRealColumnCount(); ++i) {
-                            final int j = i;
-                            final JExtCheckBoxMenuItem mi = new JExtCheckBoxMenuItem(getJDTableModel().getRealColumnName(i));
-                            mi.setHideOnClick(false);
-                            mis[i] = mi;
-                            if (i == 0) mi.setEnabled(false);
-                            mi.setSelected(getJDTableModel().isVisible(i));
-                            mi.addActionListener(new ActionListener() {
+                    for (int i = 0; i < getJDTableModel().getRealColumnCount(); ++i) {
+                        final int j = i;
+                        final JExtCheckBoxMenuItem mi = new JExtCheckBoxMenuItem(getJDTableModel().getRealColumnName(i));
+                        mi.setHideOnClick(false);
+                        mis[i] = mi;
+                        if (i == 0) mi.setEnabled(false);
+                        mi.setSelected(getJDTableModel().isVisible(i));
+                        mi.addActionListener(new ActionListener() {
 
-                                public void actionPerformed(ActionEvent e) {
-                                    getJDTableModel().setVisible(j, mi.isSelected());
-                                    createColumns();
-                                    revalidate();
-                                    repaint();
-                                }
+                            public void actionPerformed(ActionEvent e) {
+                                getJDTableModel().setVisible(j, mi.isSelected());
+                                createColumns();
+                                revalidate();
+                                repaint();
+                            }
 
-                            });
-                            popup.add(mi);
-                        }
-                        popup.show(getTableHeader(), e.getX(), e.getY());
+                        });
+                        popup.add(mi);
                     }
+                    popup.show(getTableHeader(), e.getX(), e.getY());
                 }
-
             }
 
-            public void mouseEntered(MouseEvent e) {
-            }
-
-            public void mouseExited(MouseEvent e) {
-            }
-
-            public void mousePressed(MouseEvent e) {
-            }
-
-            public void mouseReleased(MouseEvent e) {
-            }
         });
         getTableHeader().setReorderingAllowed(false);
         getTableHeader().setResizingAllowed(true);
@@ -138,11 +126,11 @@ public class JDTable extends JTable {
         }
     }
 
+    /**
+     * diese funktion gibt den echten columnindex zurück, da durch
+     * an/ausschalten dieser anders sein kann
+     */
     public int getRealColumnAtPoint(int x) {
-        /*
-         * diese funktion gibt den echten columnindex zurück, da durch
-         * an/ausschalten dieser anders kann
-         */
         x = getColumnModel().getColumnIndexAtX(x);
         return model.toModel(x);
     }
