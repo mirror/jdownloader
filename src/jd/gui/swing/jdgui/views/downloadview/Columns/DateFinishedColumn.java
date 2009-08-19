@@ -1,10 +1,14 @@
 package jd.gui.swing.jdgui.views.downloadview.Columns;
 
 import java.awt.Component;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 
 import javax.swing.JTable;
 
+import jd.controlling.DownloadController;
 import jd.gui.swing.components.JDTable.JDTableColumn;
 import jd.gui.swing.components.JDTable.JDTableModel;
 import jd.plugins.DownloadLink;
@@ -70,13 +74,44 @@ public class DateFinishedColumn extends JDTableColumn {
 
     @Override
     public boolean isSortable(Object obj) {
+        /*
+         * DownloadView hat nur null(Header) oder ne ArrayList(FilePackage)
+         */
+        if (obj == null && DownloadController.getInstance().getPackages().size() == 1) return true;
+        if (obj == null || obj instanceof ArrayList<?>) return true;
         return false;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public void sort(Object obj, boolean sortingToggle) {
-        // TODO Auto-generated method stub
-
+    public void sort(Object obj, final boolean sortingToggle) {
+        ArrayList<FilePackage> packages = null;
+        synchronized (DownloadController.ControllerLock) {
+            synchronized (DownloadController.getInstance().getPackages()) {
+                packages = DownloadController.getInstance().getPackages();
+                /*
+                 * in obj stecken alle selektierten packages, sortiere die links
+                 * nach namen
+                 */
+                if (obj != null && packages.size() > 1) packages = (ArrayList<FilePackage>) obj;
+                for (FilePackage fp : packages) {
+                    Collections.sort(fp.getDownloadLinkList(), new Comparator<DownloadLink>() {
+                        public int compare(DownloadLink a, DownloadLink b) {
+                            DownloadLink aa = b;
+                            DownloadLink bb = a;
+                            if (sortingToggle) {
+                                aa = a;
+                                bb = b;
+                            }
+                            if (aa.getFinishedDate() == bb.getFinishedDate()) return 0;
+                            return aa.getFinishedDate() < bb.getFinishedDate() ? -1 : 1;
+                        }
+                    });
+                }
+            }
+        }
+        /* inform DownloadController that structure changed */
+        DownloadController.getInstance().fireStructureUpdate();
     }
 
     @Override
