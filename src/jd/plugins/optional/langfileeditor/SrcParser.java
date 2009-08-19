@@ -50,7 +50,8 @@ public class SrcParser {
             }
 
         };
-       
+     
+        pattern.add("jd\\.gui\\.swing\\.ShortCuts\\.(.+?)");
         pattern.add("sys\\.warning\\.dlcerror\\.(.+?)");
         pattern.add("!(.+?)");
     }

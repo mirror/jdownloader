@@ -193,6 +193,7 @@ public class SingleHoster {
 
         try {
             DownloadLink dlink = getDownloadLink(url);
+            dlink.getPlugin().setAGBChecked(true);
             if (dlink.getAvailableStatus() != AvailableStatus.TRUE) {
                 fail(TestUtils.log("Downloadlink " + url + " is marked as NOT AVAILABLE"));
             }

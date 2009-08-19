@@ -107,6 +107,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
     private JMenuItem mnuContextAdopt, mnuContextClear, mnuContextDelete, mnuContextTranslate;
 
     private HashMap<String, String> languageKeysFormFile = new HashMap<String, String>();
+    private HashMap<String, String> languageENKeysFormFile = new HashMap<String, String>();
     private ArrayList<KeyInfo> data = new ArrayList<KeyInfo>();
     private HashMap<String, ArrayList<String>> dupes = new HashMap<String, ArrayList<String>>();
     private String lngKey = null;
@@ -297,7 +298,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
                     return;
                 }
             }
-            data.add(new KeyInfo(result[0].toLowerCase(), null, result[1]));
+            data.add(new KeyInfo(result[0].toLowerCase(), null, result[1],languageENKeysFormFile.get(result[0].toLowerCase())));
             tableModel.fireTableDataChanged();
             updateKeyChart();
 
@@ -543,7 +544,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
     private void initLocaleData() {
 
         parseLanguageFile(languageFile, languageKeysFormFile);
-
+        parseLanguageFile(new File(dirLanguages, "en.loc") , languageENKeysFormFile);
         HashMap<String, String> dupeHelp = new HashMap<String, String>();
         data.clear();
         dupes.clear();
@@ -556,7 +557,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
         KeyInfo keyInfo;
         for (LngEntry entry : sourceParser.getEntries()) {
             key = entry.getKey();
-            keyInfo = new KeyInfo(key, entry.getValue(), languageKeysFormFile.remove(key));
+            keyInfo = new KeyInfo(key, entry.getValue(), languageKeysFormFile.remove(key),languageENKeysFormFile.get(key));
             data.add(keyInfo);
             if (!keyInfo.isMissing()) {
 
@@ -585,7 +586,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
                 }
             }
 
-            data.add(new KeyInfo(key, value, entry.getValue()));
+            data.add(new KeyInfo(key, value, entry.getValue(),languageENKeysFormFile.get(key)));
         }
 
         Collections.sort(data);
@@ -825,9 +826,12 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
 
         private String language = "";
 
-        public KeyInfo(String key, String source, String language) {
+        private String enValue;
+
+        public KeyInfo(String key, String source, String language, String en) {
             this.key = key;
             this.setSource(source);
+            enValue=en;
             this.setLanguage(language);
         }
 
@@ -867,6 +871,14 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
         public String toString() {
             return this.getKey() + " = " + this.getLanguage();
         }
+/**
+ * Returns the english value
+ * @return
+ */
+        public String getEnglish() {
+       
+            return enValue;
+        }
 
     }
 
@@ -892,7 +904,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
 
         private static final long serialVersionUID = -5434313385327397539L;
 
-        private String[] columnNames = { JDL.L(LOCALE_PREFIX + "id", "ID"), JDL.L(LOCALE_PREFIX + "key", "Key"), JDL.L(LOCALE_PREFIX + "sourceValue", "Default Value"), JDL.L(LOCALE_PREFIX + "languageFileValue", "Language File Value") };
+        private String[] columnNames = { JDL.L(LOCALE_PREFIX + "id", "ID"), JDL.L(LOCALE_PREFIX + "key", "Key"), JDL.L(LOCALE_PREFIX + "sourceValue", "Default Value"), JDL.L(LOCALE_PREFIX + "languageFileValue", "Language File Value"), JDL.L(LOCALE_PREFIX + "english", "en.loc") };
 
         public int getColumnCount() {
             return columnNames.length;
@@ -917,6 +929,8 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
                 return data.get(row).getSource();
             case 3:
                 return data.get(row).getLanguage();
+            case 4:
+                return data.get(row).getEnglish();
             }
             return "";
         }

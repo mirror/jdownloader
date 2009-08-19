@@ -19,6 +19,7 @@ package jd.gui.swing.jdgui.views.downloadview;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
@@ -133,6 +134,8 @@ public class TableRenderer extends DefaultTableRenderer {
     private Date date;
 
     private Dimension dim;
+
+    private SimpleDateFormat dateFormat;
     private static Border ERROR_BORDER;
     private static Color COL_PROGRESS_ERROR = new Color(0xCC3300);
 
@@ -150,6 +153,14 @@ public class TableRenderer extends DefaultTableRenderer {
         COL_PROGRESS_NORMAL = progress.getForeground();
         statuspanel = new StatusLabel();
         date = new Date();
+        try{
+            
+       
+         dateFormat = new SimpleDateFormat(JDL.L("jd.gui.swing.jdgui.views.downloadview.TableRenderer.TableRenderer.dateformat","dd.MM.yy HH:mm"));
+        }catch(Exception e){
+            dateFormat = new SimpleDateFormat("dd.MM.yy HH:mm");
+            
+        }
         dim = new Dimension(200, 30);
         ERROR_BORDER = BorderFactory.createLineBorder(COL_PROGRESS_ERROR);
     }
@@ -274,7 +285,7 @@ public class TableRenderer extends DefaultTableRenderer {
                 ((JRendererLabel) co).setText("");
             } else {
                 date.setTime(dLink.getCreated());
-                ((JRendererLabel) co).setText(date.toString());
+                ((JRendererLabel) co).setText(dateFormat.format(date));
             }
             ((JRendererLabel) co).setBorder(null);
             return co;
@@ -284,7 +295,7 @@ public class TableRenderer extends DefaultTableRenderer {
                 ((JRendererLabel) co).setText("");
             } else {
                 date.setTime(dLink.getFinishedDate());
-                ((JRendererLabel) co).setText(date.toString());
+                ((JRendererLabel) co).setText(dateFormat.format(date));
             }
             ((JRendererLabel) co).setBorder(null);
             return co;
