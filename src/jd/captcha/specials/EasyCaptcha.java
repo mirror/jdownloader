@@ -23,11 +23,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
 import java.util.Map.Entry;
-
+import jd.captcha.easy.ColorTrainer;
 import jd.captcha.easy.BackGroundImageManager;
-
 import jd.nutils.Colors;
-import jd.captcha.easy.ColorTrainerGUI;
 import jd.captcha.easy.CPoint;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
@@ -257,7 +255,7 @@ public class EasyCaptcha {
         BackGroundImageManager bgit = new BackGroundImageManager(captcha);
         bgit.clearCaptchaAll();
         // System.out.println(file);
-        Vector<CPoint> ret = ColorTrainerGUI.load(file);
+        Vector<CPoint> ret = ColorTrainer.load(file);
         // gibt an welche höhe der größte Buchstabe hat
         int retYmax = 0;
         // breite aller Buchstaben

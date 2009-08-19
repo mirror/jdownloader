@@ -8,33 +8,70 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.Iterator;
 import java.util.Vector;
-
 import jd.nutils.io.JDIO;
-
 import jd.utils.locale.JDL;
 import jd.nutils.Colors;
-
 import jd.captcha.pixelgrid.Captcha;
 
 public class ColorTrainer {
-    public Captcha captchaImage, lastCaptcha;
-    public boolean foreground = true, fastSelection = false, add = true;
+    /**
+     * Farben mit denen der Hintergrund/Fordergrund gefärbt wird
+     * foregroundColor1, backgroundColor1 = sicher zugeordnete Farben
+     * foregroundColor2, backgroundColor2 = wahrscheinlich
+     * Fordergrund/Hintergrund
+     */
+    public static final int foregroundColor1 = 0xff00ff, foregroundColor2 = 0xFF99FF, backgroundColor1 = 0x0000ff, backgroundColor2 = 0x00ffff;
+
+    /**
+     * bearbeitetes Captcha
+     */
+    public Captcha workingCaptcha;
+    /**
+     * Backup Captcha
+     */
+    public Captcha backUpCaptcha;
+    /**
+     * Ob im Fordergrund oder im hintergrund selektiert wird
+     */
+    public boolean foreground = true;
+    /**
+     * schnelle und performante Selektionsmöglichkeit ist aber exakt TODO muss
+     * noch verbessert werden möglicherweise komplett entfernen
+     */
+    public boolean fastSelection = false;
+    public boolean add = true;
+    /**
+     * Zoomfaktor mit dem das Captcha angezeigt wird
+     */
     public int zoom = 400;
-    public Captcha captcha;
-    
-    public int tollerance = 25;
+    /**
+     * Orginal Captcha
+     */
+    public Captcha originalCaptcha;
+    /**
+     * Farbtoleranzwert
+     */
+    public int threshold = 25;
+    /**
+     * Dieses Bild zeigt die aktuelle Farbinformation an
+     */
     public BufferedImage colorImage = new BufferedImage(28, 28, BufferedImage.TYPE_INT_RGB);
-    public int foregroundColor1 = 0xff00ff, foregroundColor2 = 0xFF99FF, backgroundColor1 = 0x0000ff, backgroundColor2 = 0x00ffff;
-    public Vector<CPoint> ret = new Vector<CPoint>(), lastRet = new Vector<CPoint>();
-    public byte mode = CPoint.LAB_DIFFERENCE;
+    /**
+     * Liste der Farbpunkte die zum identifizieren von Hintergrund und
+     * Fordergrund verwendet werden
+     */
+    public Vector<CPoint> colorPointList = new Vector<CPoint>();
+    private Vector<CPoint> colorPointListBackUp = new Vector<CPoint>();
+    public byte colorDifferenceMode = CPoint.LAB_DIFFERENCE;
+
     public void removePixelAbsolut(CPoint cp) {
-        ret.remove(cp);
+        colorPointList.remove(cp);
         if (fastSelection) {
-            for (int x = 0; x < captchaImage.getWidth(); x++) {
-                for (int y = 0; y < captchaImage.getHeight(); y++) {
-                    double dist = Colors.getColorDifference(captcha.getPixelValue(x, y), cp.getColor());
+            for (int x = 0; x < workingCaptcha.getWidth(); x++) {
+                for (int y = 0; y < workingCaptcha.getHeight(); y++) {
+                    double dist = Colors.getColorDifference(originalCaptcha.getPixelValue(x, y), cp.getColor());
                     if (dist < cp.getDistance()) {
-                        captchaImage.grid[x][y] = captcha.getPixelValue(x, y);
+                        workingCaptcha.grid[x][y] = originalCaptcha.getPixelValue(x, y);
                     }
 
                 }
@@ -46,14 +83,14 @@ public class ColorTrainer {
     }
 
     public void addPixel(final CPoint p) {
-        if (!ret.contains(p)) {
-            ret.add(p);
+        if (!colorPointList.contains(p)) {
+            colorPointList.add(p);
             if (fastSelection) {
-                for (int x = 0; x < captchaImage.getWidth(); x++) {
-                    for (int y = 0; y < captchaImage.getHeight(); y++) {
-                        captchaImage.grid[x][y] = captchaImage.getPixelValue(x, y);
-                        if (p.getColorDifference(captcha.getPixelValue(x, y)) < p.getDistance()) {
-                            captchaImage.grid[x][y] = p.isForeground() ? foregroundColor1 : backgroundColor1;
+                for (int x = 0; x < workingCaptcha.getWidth(); x++) {
+                    for (int y = 0; y < workingCaptcha.getHeight(); y++) {
+                        workingCaptcha.grid[x][y] = workingCaptcha.getPixelValue(x, y);
+                        if (p.getColorDifference(originalCaptcha.getPixelValue(x, y)) < p.getDistance()) {
+                            workingCaptcha.grid[x][y] = p.isForeground() ? foregroundColor1 : backgroundColor1;
                         }
 
                     }
@@ -78,12 +115,20 @@ public class ColorTrainer {
         return ret;
     }
 
+    /**
+     * Gibt einen String mit Informationen (rgb hsb usw.) über den pixel an der
+     * Position x y an
+     * 
+     * @param x
+     * @param y
+     * @return
+     */
     public String getStatusString(int xb, int yb) {
         Graphics2D graphics = colorImage.createGraphics();
         final int xc = xb * 100 / zoom;
         final int yc = yb * 100 / zoom;
 
-        final Color c = new Color(captcha.getPixelValue(xc, yc));
+        final Color c = new Color(originalCaptcha.getPixelValue(xc, yc));
         for (int y = 0; y < colorImage.getHeight(); y++) {
 
             for (int x = 0; x < colorImage.getWidth(); x++) {
@@ -123,7 +168,7 @@ public class ColorTrainer {
         int co = pr.getColor();
         double bestDist = Integer.MAX_VALUE;
         CPoint bestPX = null;
-        for (Iterator<CPoint> iterator = ret.iterator(); iterator.hasNext();) {
+        for (Iterator<CPoint> iterator = colorPointList.iterator(); iterator.hasNext();) {
             CPoint p = (CPoint) iterator.next();
             double dist = 0;
             if (p.getDistance() == 0) {
@@ -143,15 +188,15 @@ public class ColorTrainer {
     }
 
     private void paintImage() {
-        for (int x = 0; x < captchaImage.getWidth(); x++) {
-            for (int y = 0; y < captchaImage.getHeight(); y++) {
-                captchaImage.grid[x][y] = captcha.getPixelValue(x, y);
+        for (int x = 0; x < workingCaptcha.getWidth(); x++) {
+            for (int y = 0; y < workingCaptcha.getHeight(); y++) {
+                workingCaptcha.grid[x][y] = originalCaptcha.getPixelValue(x, y);
                 double bestDist1 = Double.MAX_VALUE;
                 CPoint cpBestDist1 = null;
                 double bestDist2 = Double.MAX_VALUE;
                 CPoint cpBestDist2 = null;
-                for (CPoint cp : ret) {
-                    double dist = cp.getColorDifference(captcha.getPixelValue(x, y));
+                for (CPoint cp : colorPointList) {
+                    double dist = cp.getColorDifference(originalCaptcha.getPixelValue(x, y));
                     if (bestDist1 > dist) {
                         bestDist1 = dist;
                         cpBestDist1 = cp;
@@ -164,9 +209,9 @@ public class ColorTrainer {
                     }
                 }
                 if (cpBestDist2 != null) {
-                    captchaImage.grid[x][y] = cpBestDist2.isForeground() ? foregroundColor1 : backgroundColor1;
+                    workingCaptcha.grid[x][y] = cpBestDist2.isForeground() ? foregroundColor1 : backgroundColor1;
                 } else if (cpBestDist1 != null) {
-                    captchaImage.grid[x][y] = cpBestDist1.isForeground() ? foregroundColor2 : backgroundColor2;
+                    workingCaptcha.grid[x][y] = cpBestDist1.isForeground() ? foregroundColor2 : backgroundColor2;
                 }
 
             }
@@ -175,20 +220,33 @@ public class ColorTrainer {
     }
 
     public void recreateCaptcha() {
-        captchaImage = new Captcha(captcha.getWidth(), captcha.getHeight());
+        workingCaptcha = new Captcha(originalCaptcha.getWidth(), originalCaptcha.getHeight());
 
-        captchaImage.grid = new int[captcha.getWidth()][captcha.getHeight()];
+        workingCaptcha.grid = new int[originalCaptcha.getWidth()][originalCaptcha.getHeight()];
 
         paintImage();
 
     }
 
     /**
+     * übergibt Einstellungen an einen anderen ColorTrainer
+     * 
+     * @param colorTrainer
+     */
+    public void copySettingsTo(ColorTrainer colorTrainer) {
+        colorTrainer.fastSelection = fastSelection;
+        colorTrainer.foreground = foreground;
+        colorTrainer.add = add;
+        colorTrainer.threshold = threshold;
+        colorTrainer.colorDifferenceMode = colorDifferenceMode;
+    }
+
+    /**
      * Läd das letzte captcha
      */
     public void loadLastImage() {
-        ret = lastRet;
-        captchaImage = lastCaptcha;
+        colorPointList = colorPointListBackUp;
+        workingCaptcha = backUpCaptcha;
     }
 
     /**
@@ -196,29 +254,43 @@ public class ColorTrainer {
      */
     @SuppressWarnings("unchecked")
     public void backUP() {
-        lastRet = (Vector<CPoint>) ret.clone();
-        lastCaptcha = new Captcha(captchaImage.getHeight(), captchaImage.getWidth());
-        lastCaptcha.grid = new int[captchaImage.getWidth()][captchaImage.getHeight()];
-        for (int a = 0; a < captchaImage.grid.length; a++) {
+        colorPointListBackUp = (Vector<CPoint>) colorPointList.clone();
+        backUpCaptcha = new Captcha(workingCaptcha.getHeight(), workingCaptcha.getWidth());
+        backUpCaptcha.grid = new int[workingCaptcha.getWidth()][workingCaptcha.getHeight()];
+        for (int a = 0; a < workingCaptcha.grid.length; a++) {
 
-            lastCaptcha.grid[a] = captchaImage.grid[a].clone();
+            backUpCaptcha.grid[a] = workingCaptcha.grid[a].clone();
         }
     }
+
     public CPoint getCPointFromMouseEvent(MouseEvent e) {
-        CPoint p = new CPoint(e.getX() * 100 / zoom, e.getY() * 100 / zoom, (Integer) tollerance, captcha);
-        p.setColorDistanceMode(mode);
+        CPoint p = new CPoint(e.getX() * 100 / zoom, e.getY() * 100 / zoom, (Integer) threshold, originalCaptcha);
+        p.setColorDistanceMode(colorDifferenceMode);
         p.setForeground(foreground);
         return p;
     }
+
     /**
-     * gibt vom Captcha ein um den Zoomfaktor Scalliertes Image zurück
+     * gibt vom bearbeiteten Captcha ein um den Zoomfaktor Scalliertes Image
+     * zurück
      * 
      * @param zoom
      * @return Image
      */
-    public Image getScaledCaptchaImage() {
-        return captchaImage.getImage().getScaledInstance(captchaImage.getWidth() * zoom / 100, captchaImage.getHeight() * zoom / 100, Image.SCALE_DEFAULT);
+    public Image getScaledWorkingCaptchaImage() {
+        return workingCaptcha.getImage().getScaledInstance(workingCaptcha.getWidth() * zoom / 100, workingCaptcha.getHeight() * zoom / 100, Image.SCALE_DEFAULT);
     }
+
+    /**
+     * gibt vom Original Captcha ein um den Zoomfaktor Scalliertes Image zurück
+     * 
+     * @param zoom
+     * @return Image
+     */
+    public Image getScaledOriginalCaptchaImage() {
+        return originalCaptcha.getImage().getScaledInstance(workingCaptcha.getWidth() * zoom / 100, workingCaptcha.getHeight() * zoom / 100, Image.SCALE_DEFAULT);
+    }
+
     @SuppressWarnings("unchecked")
     public static Vector<CPoint> load(File file) {
         if (file.exists()) { return (Vector<CPoint>) JDIO.loadObject(null, file, true); }

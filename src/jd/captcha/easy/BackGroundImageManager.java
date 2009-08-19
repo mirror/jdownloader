@@ -24,6 +24,27 @@ public class BackGroundImageManager {
     private Vector<BackGroundImage> backgroundList = null;
     protected EasyFile methode;
     private Captcha captchaImage;
+    public int zoom = 400;
+
+    /**
+     * Verwaltet die hintergrundbilder und sorgt dafür das das richtige entfernt
+     * wird bei einem randomCaptcha
+     * 
+     * @param originalCaptcha
+     */
+    public BackGroundImageManager(EasyFile methode) {
+        this(methode.getRandomCaptcha());
+    }
+
+    /**
+     * Verwaltet die hintergrundbilder und sorgt dafür das das richtige entfernt
+     * wird bei einem randomCaptcha
+     * 
+     * @param originalCaptcha
+     */
+    public BackGroundImageManager(String hoster) {
+        this(new EasyFile(hoster));
+    }
 
     /**
      * Verwaltet die hintergrundbilder und sorgt dafür das das richtige entfernt
@@ -36,32 +57,50 @@ public class BackGroundImageManager {
         methode = new EasyFile(captchaImage.owner.getResourceFile("jacinfo.xml").getParentFile());
         load();
     }
+
     /**
      * gibt ein um den Zoomfaktor Scalliertes Image zurück
      * 
      * @param zoom
      * @return Image
      */
-    public Image getScaledCaptchaImage(int zoom) {
+    public Image getScaledCaptchaImage() {
         return captchaImage.getImage().getScaledInstance(captchaImage.getWidth() * zoom / 100, captchaImage.getHeight() * zoom / 100, Image.SCALE_DEFAULT);
     }
 
+    /**
+     * Liste der Hindergrundbilder
+     * 
+     * @return
+     */
     public Vector<BackGroundImage> getBackgroundList() {
         return backgroundList;
     }
 
+    /**
+     * Liste der Hindergrundbilder
+     */
     public void setBackgroundList(Vector<BackGroundImage> backgroundList) {
         this.backgroundList = backgroundList;
     }
-
+    /**
+     * Hintergrundbild hinzufügen
+     * @param bgi
+     */
     public void add(BackGroundImage bgi) {
         backgroundList.add(bgi);
     }
-
+    /**
+     * aktuell verwaltetes Captcha
+     * @return
+     */
     public Captcha getCaptchaImage() {
         return captchaImage;
     }
-
+    /**
+     * aktuell verwaltetes Captcha
+     * @return
+     */
     public void setCaptchaImage(Captcha captchaImage) {
         this.captchaImage = captchaImage;
     }
@@ -135,7 +174,10 @@ public class BackGroundImageManager {
             bestBgi.clearCaptcha(captchaImage);
         }
     }
-
+    /**
+     * löscht das Hintergrundbild aus der liste (Captcha wird nicht neu erstell)
+     * @param dialogImage
+     */
     public void remove(BackGroundImage dialogImage) {
         backgroundList.remove(dialogImage);
     }

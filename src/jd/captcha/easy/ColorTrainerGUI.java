@@ -39,7 +39,7 @@ import jd.nutils.Screen;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-public class ColorTrainerGUI extends ColorTrainer {
+public class ColorTrainerGUI {
     private static final long serialVersionUID = 1L;
     private JPanel panel, images;
     private ImageComponent ic, icColorImage;
@@ -47,22 +47,22 @@ public class ColorTrainerGUI extends ColorTrainer {
     private JButton back;
     private JLabel colorState;
     private JFrame frame;
-
+    private ColorTrainer colorTrainer = new ColorTrainer();
 
     public void removePixelAbsolut(CPoint cp) {
         backUP();
-        super.removePixelAbsolut(cp);
+        colorTrainer.removePixelAbsolut(cp);
     }
 
     public void backUP() {
-        super.backUP();
+        colorTrainer.backUP();
         back.setEnabled(true);
     }
 
     private void goBack() {
-        loadLastImage();
+        colorTrainer.loadLastImage();
         back.setEnabled(false);
-        ic.image = getScaledCaptchaImage();
+        ic.image = colorTrainer.getScaledWorkingCaptchaImage();
         new GuiRunnable<Object>() {
             public Object runSave() {
                 panel.repaint();
@@ -74,10 +74,10 @@ public class ColorTrainerGUI extends ColorTrainer {
     }
 
     private void removePixelRelativ(final CPoint pr) {
-        CPoint bestPX = getBestPixel(pr);
+        CPoint bestPX = colorTrainer.getBestPixel(pr);
         if (bestPX != null) {
             removePixelAbsolut(bestPX);
-            ic.image = getScaledCaptchaImage();
+            ic.image = colorTrainer.getScaledWorkingCaptchaImage();
             new GuiRunnable<Object>() {
                 public Object runSave() {
                     panel.repaint();
@@ -89,10 +89,10 @@ public class ColorTrainerGUI extends ColorTrainer {
     }
 
     public void addPixel(final CPoint p) {
-        if (!ret.contains(p)) {
+        if (!colorTrainer.colorPointList.contains(p)) {
             backUP();
             addPixel(p);
-            ic.image = captchaImage.getImage().getScaledInstance(captchaImage.getWidth() * zoom / 100, captchaImage.getHeight() * zoom / 100, Image.SCALE_DEFAULT);
+            ic.image = colorTrainer.getScaledWorkingCaptchaImage();
             new GuiRunnable<Object>() {
                 public Object runSave() {
                     panel.repaint();
@@ -107,9 +107,9 @@ public class ColorTrainerGUI extends ColorTrainer {
         return new MouseListener() {
 
             public void mouseClicked(MouseEvent e) {
-                final CPoint p = getCPointFromMouseEvent(e);
+                final CPoint p = colorTrainer.getCPointFromMouseEvent(e);
 
-                if (add)
+                if (colorTrainer.add)
                     addPixel(p);
                 else
                     removePixelRelativ(p);
@@ -130,8 +130,8 @@ public class ColorTrainerGUI extends ColorTrainer {
     }
 
     private void createIc() {
-        recreateCaptcha();
-        final Image ci = getScaledCaptchaImage();
+        colorTrainer.recreateCaptcha();
+        final Image ci = colorTrainer.getScaledWorkingCaptchaImage();
         new GuiRunnable<Object>() {
             public Object runSave() {
                 ic = new ImageComponent(ci);
@@ -181,7 +181,7 @@ public class ColorTrainerGUI extends ColorTrainer {
                 images.setLayout(new BoxLayout(images, BoxLayout.Y_AXIS));
 
                 images.add(new JLabel(JDL.L("easycaptcha.orginal", "Original:")), getGBC(0, 1, 1, 1));
-                ImageComponent ic0 = new ImageComponent(captcha.getImage().getScaledInstance(captcha.getWidth() * zoom / 100, captcha.getHeight() * zoom / 100, Image.SCALE_DEFAULT));
+                ImageComponent ic0 = new ImageComponent(colorTrainer.getScaledOriginalCaptchaImage());
 
                 images.add(ic0, getGBC(0, 1, 1, 1));
 
@@ -223,10 +223,10 @@ public class ColorTrainerGUI extends ColorTrainer {
     }
 
     public void setStatus(int xb, int yb) {
-        final String statusString = getStatusString(xb, yb);
+        final String statusString = colorTrainer.getStatusString(xb, yb);
         new GuiRunnable<Object>() {
             public Object runSave() {
-                icColorImage.setImage(colorImage);
+                icColorImage.setImage(colorTrainer.colorImage);
                 icColorImage.revalidate();
                 icColorImage.repaint();
                 colorState.setText(statusString);
@@ -238,7 +238,7 @@ public class ColorTrainerGUI extends ColorTrainer {
 
     private JPanel addStatus() {
         JPanel box = new JPanel(new GridLayout(2, 1));
-        icColorImage = new ImageComponent(colorImage);
+        icColorImage = new ImageComponent(colorTrainer.colorImage);
         colorState = new JLabel();
         setStatus(1, 1);
         box.add(icColorImage);
@@ -251,29 +251,30 @@ public class ColorTrainerGUI extends ColorTrainer {
         final JPanel box = new JPanel(new GridLayout(5, 1));
         new GuiRunnable<JComboBox>() {
             public JComboBox runSave() {
-                final JComboBox ret=new JComboBox(ColorMode.cModes);
+                final JComboBox ret = new JComboBox(ColorMode.cModes);
                 box.add(ret);
                 ret.addActionListener(new ActionListener() {
 
                     public void actionPerformed(ActionEvent e) {
-                        mode=((ColorMode) ret.getSelectedItem()).mode;
-                    }});
+                        colorTrainer.colorDifferenceMode = ((ColorMode) ret.getSelectedItem()).mode;
+                    }
+                });
                 return null;
             }
         }.waitForEDT();
 
         final JCheckBox ground = new GuiRunnable<JCheckBox>() {
             public JCheckBox runSave() {
-                return new JCheckBox(foreground ? JDL.L("easycaptcha.foreground", "foreground") : JDL.L("easycaptcha.background", "background"), foreground);
+                return new JCheckBox(colorTrainer.foreground ? JDL.L("easycaptcha.foreground", "foreground") : JDL.L("easycaptcha.background", "background"), colorTrainer.foreground);
             }
         }.getReturnValue();
         ground.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
-                foreground = !foreground;
+                colorTrainer.foreground = !colorTrainer.foreground;
                 new GuiRunnable<Object>() {
                     public Object runSave() {
-                        ground.setText(foreground ? JDL.L("easycaptcha.foreground", "foreground") : JDL.L("easycaptcha.background", "background"));
+                        ground.setText(colorTrainer.foreground ? JDL.L("easycaptcha.foreground", "foreground") : JDL.L("easycaptcha.background", "background"));
                         return null;
                     }
                 }.waitForEDT();
@@ -283,17 +284,17 @@ public class ColorTrainerGUI extends ColorTrainer {
         box.add(ground);
         final JCheckBox addb = new GuiRunnable<JCheckBox>() {
             public JCheckBox runSave() {
-                return new JCheckBox(add ? JDL.L("easycaptcha.add", "add") : JDL.L("easycaptcha.remove", "remove"), add);
+                return new JCheckBox(colorTrainer.add ? JDL.L("easycaptcha.add", "add") : JDL.L("easycaptcha.remove", "remove"), colorTrainer.add);
 
             }
         }.getReturnValue();
         addb.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
-                add = !add;
+                colorTrainer.add = !colorTrainer.add;
                 new GuiRunnable<Object>() {
                     public Object runSave() {
-                        addb.setText(add ? JDL.L("easycaptcha.add", "add") : JDL.L("easycaptcha.remove", "remove"));
+                        addb.setText(colorTrainer.add ? JDL.L("easycaptcha.add", "add") : JDL.L("easycaptcha.remove", "remove"));
                         return null;
                     }
                 }.waitForEDT();
@@ -303,14 +304,14 @@ public class ColorTrainerGUI extends ColorTrainer {
 
         JCheckBox fst = new GuiRunnable<JCheckBox>() {
             public JCheckBox runSave() {
-                return new JCheckBox(JDL.L("easycaptcha.fastselection", "FastSelection:"), fastSelection);
+                return new JCheckBox(JDL.L("easycaptcha.fastselection", "FastSelection:"), colorTrainer.fastSelection);
             }
         }.getReturnValue();
 
         fst.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
-                fastSelection = !fastSelection;
+                colorTrainer.fastSelection = !colorTrainer.fastSelection;
             }
         });
         box.add(fst);
@@ -319,7 +320,7 @@ public class ColorTrainerGUI extends ColorTrainer {
             public void stateChanged(final ChangeEvent e) {
                 new GuiRunnable<Object>() {
                     public Object runSave() {
-                        tollerance = (Integer) ((JSpinner) e.getSource()).getValue();
+                        colorTrainer.threshold = (Integer) ((JSpinner) e.getSource()).getValue();
 
                         return null;
                     }
@@ -329,7 +330,7 @@ public class ColorTrainerGUI extends ColorTrainer {
         new GuiRunnable<Object>() {
             public Object runSave() {
                 JPanel p = new JPanel();
-                final JSpinner tolleranceSP = new JSpinner(new SpinnerNumberModel(tollerance, 0, 360, 1));
+                final JSpinner tolleranceSP = new JSpinner(new SpinnerNumberModel(colorTrainer.threshold, 0, 360, 1));
                 tolleranceSP.setToolTipText("Threshold");
                 tolleranceSP.addChangeListener(cl);
                 p.add(new JLabel(JDL.L("easycaptcha.threshold", "Threshold:")));
@@ -347,7 +348,7 @@ public class ColorTrainerGUI extends ColorTrainer {
 
     private void init(Captcha captcha) {
 
-        this.captcha = captcha;
+        colorTrainer.originalCaptcha = captcha;
         new GuiRunnable<Object>() {
             public Object runSave() {
                 frame.setAlwaysOnTop(true);
@@ -425,13 +426,13 @@ public class ColorTrainerGUI extends ColorTrainer {
         }
     }
 
-    public static Vector<CPoint> getColors(File folder, String hoster, Vector<CPoint> c) {
+    public static Vector<CPoint> getColors(File folder, String hoster, Vector<CPoint> colorPoints) {
         File file = new File(JDUtilities.getJDHomeDirectoryFromEnvironment() + "/" + JDUtilities.getJACMethodsDirectory() + hoster + "/CPoints.xml");
 
         File[] list = folder.listFiles();
         Captcha[] cs = new Captcha[15 < list.length ? 15 : list.length];
         JAntiCaptcha jac = new JAntiCaptcha(Utilities.getMethodDir(), "EasyCaptcha");
-        if (c == null) c = load(file);
+        if (colorPoints == null) colorPoints = ColorTrainer.load(file);
         ColorTrainerGUI lastCC = null;
         for (int i = 0; i < cs.length; i++) {
             File captchafile = list[i];
@@ -443,15 +444,11 @@ public class ColorTrainerGUI extends ColorTrainer {
             bgit.clearCaptchaAll();
             captcha.setCaptchaFile(captchafile);
             cs[i] = captcha;
-            final ColorTrainerGUI cc = new ColorTrainerGUI();
-            cc.ret = c;
+            ColorTrainerGUI cc = new ColorTrainerGUI();
+            cc.colorTrainer.colorPointList = colorPoints;
 
             if (lastCC != null) {
-                cc.fastSelection = lastCC.fastSelection;
-                cc.foreground = lastCC.foreground;
-                cc.add = lastCC.add;
-                cc.tollerance = lastCC.tollerance;
-                cc.mode = lastCC.mode;
+                lastCC.colorTrainer.copySettingsTo(cc.colorTrainer);
             }
             cc.init(captcha);
             synchronized (cc) {
@@ -463,7 +460,7 @@ public class ColorTrainerGUI extends ColorTrainer {
                 }
             }
             lastCC = cc;
-            c = cc.ret;
+            colorPoints = cc.colorTrainer.colorPointList;
             if (cc.close) break;
 
         }
@@ -471,10 +468,14 @@ public class ColorTrainerGUI extends ColorTrainer {
             public Boolean runSave() {
                 return JOptionPane.showConfirmDialog(null, JDL.L("gui.btn_save", "Save"), JDL.L("gui.btn_save", "Save"), JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION;
             }
-        }.getReturnValue()) saveColors(c, file);
-        return c;
+        }.getReturnValue()) ColorTrainer.saveColors(colorPoints, file);
+        return colorPoints;
     }
-
+    /**
+     * Startet einen ColorTrainer und gibt die Liste mit den Trainierten CPoints zurück
+     * @param file
+     * @return
+     */
     public static Vector<CPoint> getColor(EasyFile file) {
         return getColors(file.getCaptchaFolder(), file.getName(), null);
     }
