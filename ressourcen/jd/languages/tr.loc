@@ -1107,6 +1107,7 @@ jd.gui.swing.jdgui.views.linkgrabberview.tab.tooltip = Topladığınız link ve 
 jd.gui.swing.jdgui.views.logview.tab.title = Günlük
 jd.gui.swing.jdgui.views.logview.tab.tooltip = Günlüğe gözat ya da karşıya yükle
 jd.gui.swing.menu.hostermenu = Barındırıcı %s
+jd.gui.swing.shortcuts.key.shift = shift
 jd.gui.userio.defaulttitle.confirm = Lütfen onaylayın!
 jd.gui.userio.defaulttitle.input = Lütfen girin!
 jd.plugins.decrypt.bestmovies.captchainputwrong = Yanlış girdiniz, lütfen süreyi böyle giriniz: 4:30
