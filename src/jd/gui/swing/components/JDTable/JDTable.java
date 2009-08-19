@@ -16,6 +16,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
+import javax.swing.UIManager;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.TableColumnModelEvent;
@@ -28,7 +29,6 @@ import javax.swing.table.TableColumnModel;
 import jd.config.SubConfiguration;
 import jd.gui.swing.components.JExtCheckBoxMenuItem;
 import jd.gui.swing.jdgui.interfaces.JDMouseAdapter;
-import jd.gui.swing.jdgui.views.downloadview.DownloadTable;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -68,6 +68,7 @@ public class JDTable extends JTable {
     private JDTableModel model;
     private SubConfiguration tableconfig;
     private SortMenuItem defaultSortMenuItem;
+    public static final int ROWHEIGHT = 19;
 
     public JDTable(JDTableModel model) {
         super(model);
@@ -76,6 +77,7 @@ public class JDTable extends JTable {
         createColumns();
         setShowHorizontalLines(false);
         setShowVerticalLines(false);
+        UIManager.put("Table.focusCellHighlightBorder", null);
         defaultSortMenuItem = new SortMenuItem();
         getTableHeader().addMouseListener(new JDMouseAdapter() {
 
@@ -118,7 +120,7 @@ public class JDTable extends JTable {
         setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
         setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         setAutoscrolls(false);
-        this.setRowHeight(DownloadTable.ROWHEIGHT);
+        this.setRowHeight(ROWHEIGHT);
         getTableHeader().setPreferredSize(new Dimension(getColumnModel().getTotalColumnWidth(), 19));
         // This method is 1.6 only
         if (JDUtilities.getJavaVersion() >= 1.6) this.setFillsViewportHeight(true);

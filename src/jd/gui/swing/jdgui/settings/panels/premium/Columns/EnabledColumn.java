@@ -1,7 +1,6 @@
 package jd.gui.swing.jdgui.settings.panels.premium.Columns;
 
 import java.awt.Component;
-import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
@@ -52,7 +51,6 @@ public class EnabledColumn extends JDTableColumn implements ActionListener {
     private Component coedit;
     private BooleanRenderer boolrend;
     private JCheckBox checkbox;
-    private static Dimension dim = new Dimension(200, 30);
     boolean enabled = false;
 
     public EnabledColumn(String name, JDTableModel table) {
@@ -82,15 +80,12 @@ public class EnabledColumn extends JDTableColumn implements ActionListener {
             Account ac = (Account) value;
             value = ac.isEnabled();
             co = boolrend.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-            co.setEnabled(ac.isEnabled());
         } else {
             HostAccounts ha = (HostAccounts) value;
             value = ha.isEnabled();
             co = boolrend.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-            co.setEnabled(ha.isEnabled());
             co.setBackground(table.getBackground().darker());
         }
-        co.setSize(dim);
         return co;
     }
 
@@ -135,6 +130,14 @@ public class EnabledColumn extends JDTableColumn implements ActionListener {
     public void sort(Object obj, boolean sortingToggle) {
         // TODO Auto-generated method stub
 
+    }
+
+    @Override
+    public boolean isEnabled(Object obj) {
+        if (obj == null) return false;
+        if (obj instanceof Account) return ((Account) obj).isEnabled();
+        if (obj instanceof HostAccounts) return ((HostAccounts) obj).isEnabled();
+        return true;
     }
 
 }

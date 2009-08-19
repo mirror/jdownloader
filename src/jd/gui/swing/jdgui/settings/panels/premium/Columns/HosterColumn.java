@@ -1,7 +1,6 @@
 package jd.gui.swing.jdgui.settings.panels.premium.Columns;
 
 import java.awt.Component;
-import java.awt.Dimension;
 
 import javax.swing.BorderFactory;
 import javax.swing.JTable;
@@ -22,7 +21,6 @@ public class HosterColumn extends JDTableColumn {
     private static final long serialVersionUID = -6741644821097309670L;
     private Component co;
     private static Border leftGap = BorderFactory.createEmptyBorder(0, 30, 0, 0);
-    private static Dimension dim = new Dimension(200, 30);
 
     public HosterColumn(String name, JDTableModel table) {
         super(name, table);
@@ -40,17 +38,14 @@ public class HosterColumn extends JDTableColumn {
             ((JRendererLabel) co).setText(JDL.L("jd.gui.swing.jdgui.settings.panels.premium.PremiumTableRenderer.account", "Account"));
             ((JRendererLabel) co).setBorder(leftGap);
             ((JRendererLabel) co).setHorizontalAlignment(SwingConstants.RIGHT);
-            co.setEnabled(((Account) value).isEnabled());
         } else {
             HostAccounts ha = (HostAccounts) value;
             String host = ha.getHost();
             co = getDefaultTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             ((JRendererLabel) co).setIcon(JDUtilities.getPluginForHost(host).getHosterIcon());
             ((JRendererLabel) co).setText(host);
-            co.setEnabled(ha.isEnabled());
             co.setBackground(table.getBackground().darker());
         }
-        co.setSize(dim);
         return co;
     }
 
@@ -80,4 +75,11 @@ public class HosterColumn extends JDTableColumn {
 
     }
 
+    @Override
+    public boolean isEnabled(Object obj) {
+        if (obj == null) return false;
+        if (obj instanceof Account) return ((Account) obj).isEnabled();
+        if (obj instanceof HostAccounts) return ((HostAccounts) obj).isEnabled();
+        return true;
+    }
 }

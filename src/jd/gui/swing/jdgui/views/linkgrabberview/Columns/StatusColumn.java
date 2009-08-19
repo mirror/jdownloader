@@ -154,4 +154,11 @@ public class StatusColumn extends JDTableColumn {
 
     }
 
+    @Override
+    public boolean isEnabled(Object obj) {
+        if (obj == null) return false;
+        if (obj instanceof DownloadLink) return ((DownloadLink) obj).isEnabled();
+        return true;
+    }
+
 }

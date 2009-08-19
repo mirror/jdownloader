@@ -96,7 +96,7 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
 
     public DownloadLinksPanel() {
         super(new MigLayout("ins 0, wrap 1", "[grow, fill]", "[grow, fill]"));
-        internalTable = new DownloadTable(new DownloadJTableModel(), this);
+        internalTable = new DownloadTable(this);
         scrollPane = new JScrollPane(internalTable);
         filePackageInfo = new FilePackageInfo();
 
@@ -685,5 +685,10 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
 
     public JScrollPane getScrollPane() {
         return scrollPane;
+    }
+
+    public boolean isFilePackageInfoVisible() {
+        if (DownloadView.getInstance().getInfoPanel() == filePackageInfo) return true;
+        return false;
     }
 }

@@ -76,7 +76,13 @@ public class HosterColumn extends JDTableColumn {
     @Override
     public void sort(Object obj, boolean sortingToggle) {
         // TODO Auto-generated method stub
+    }
 
+    @Override
+    public boolean isEnabled(Object obj) {
+        if (obj == null) return false;
+        if (obj instanceof DownloadLink) return ((DownloadLink) obj).isEnabled();
+        return true;
     }
 
 }

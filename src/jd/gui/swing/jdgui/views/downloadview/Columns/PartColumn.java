@@ -1,4 +1,4 @@
-package jd.gui.swing.jdgui.views.linkgrabberview.Columns;
+package jd.gui.swing.jdgui.views.downloadview.Columns;
 
 import java.awt.Component;
 
@@ -6,13 +6,12 @@ import javax.swing.JTable;
 
 import jd.gui.swing.components.JDTable.JDTableColumn;
 import jd.gui.swing.components.JDTable.JDTableModel;
-import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
-import jd.plugins.LinkGrabberFilePackage;
+import jd.plugins.FilePackage;
 
 import org.jdesktop.swingx.renderer.JRendererLabel;
 
-public class RequestTimeColumn extends JDTableColumn {
+public class PartColumn extends JDTableColumn {
 
     /**
      * 
@@ -21,7 +20,7 @@ public class RequestTimeColumn extends JDTableColumn {
     private Component co;
     private DownloadLink dLink;
 
-    public RequestTimeColumn(String name, JDTableModel table) {
+    public PartColumn(String name, JDTableModel table) {
         super(name, table);
     }
 
@@ -42,14 +41,14 @@ public class RequestTimeColumn extends JDTableColumn {
 
     @Override
     public Component myTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-        if (value instanceof LinkGrabberFilePackage) {
-            value = "";
+        if (value instanceof FilePackage) {
+            co = getDefaultTableCellRendererComponent(table, "", isSelected, hasFocus, row, column);
         } else if (value instanceof DownloadLink) {
             dLink = (DownloadLink) value;
-            value = Formatter.formatMilliseconds(dLink.getRequestTime());
+            co = getDefaultTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            ((JRendererLabel) co).setText(dLink.getPart());
+            ((JRendererLabel) co).setBorder(null);
         }
-        co = getDefaultTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-        ((JRendererLabel) co).setBorder(null);
         return co;
     }
 
@@ -63,7 +62,6 @@ public class RequestTimeColumn extends JDTableColumn {
 
     @Override
     public boolean isSortable(Object obj) {
-        // TODO Auto-generated method stub
         return false;
     }
 
@@ -77,6 +75,7 @@ public class RequestTimeColumn extends JDTableColumn {
     public boolean isEnabled(Object obj) {
         if (obj == null) return false;
         if (obj instanceof DownloadLink) return ((DownloadLink) obj).isEnabled();
+        if (obj instanceof FilePackage) return ((FilePackage) obj).isEnabled();
         return true;
     }
 

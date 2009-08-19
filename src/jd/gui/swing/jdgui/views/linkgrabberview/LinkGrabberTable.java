@@ -36,7 +36,6 @@ import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
 
 import jd.config.Property;
 import jd.controlling.LinkGrabberController;
@@ -104,8 +103,8 @@ public class LinkGrabberTable extends JDTable implements MouseListener, MouseMot
         }
         setDragEnabled(true);
         setTransferHandler(new LinkGrabberTableTransferHandler(this));
-        UIManager.put("Table.focusCellHighlightBorder", null);
-
+        setColumnSelectionAllowed(false);
+        setRowSelectionAllowed(true);
         addPackageHighlighter();
         addDisabledHighlighter();
         addExistsHighlighter();
@@ -288,7 +287,7 @@ public class LinkGrabberTable extends JDTable implements MouseListener, MouseMot
                 popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.add_package", 16, 16), JDL.L("gui.table.contextmenu.editdownloadDir", "Zielordner ändern") + " (" + sfp.size() + ")", LinkGrabberTableAction.EDIT_DIR)));
             }
             if (obj instanceof LinkGrabberFilePackage || obj instanceof DownloadLink) {
-                this.addSortItem(popup, col, sfp, JDL.L("gui.table.contextmenu.packagesort", "Paket sortieren") + " (" + sfp.size() + "), (" + getColumnName(col) + ")");
+                addSortItem(popup, col, sfp, JDL.L("gui.table.contextmenu.packagesort", "Paket sortieren") + " (" + sfp.size() + "), (" + getJDTableModel().getColumnName(col) + ")");
                 popup.addSeparator();
                 popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.dlc", 16, 16), JDL.L("gui.table.contextmenu.dlc", "DLC erstellen") + " (" + alllinks.size() + ")", LinkGrabberTableAction.SAVE_DLC, new Property("links", alllinks))));
                 popup.add(buildpriomenu(alllinks));

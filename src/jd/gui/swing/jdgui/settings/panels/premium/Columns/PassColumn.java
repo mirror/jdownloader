@@ -1,7 +1,6 @@
 package jd.gui.swing.jdgui.settings.panels.premium.Columns;
 
 import java.awt.Component;
-import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.ClipboardOwner;
@@ -74,7 +73,6 @@ public class PassColumn extends JDTableColumn implements ActionListener {
     private static final long serialVersionUID = -5291590062503352550L;
     private Component co;
     private Component coedit;
-    private static Dimension dim = new Dimension(200, 30);
 
     @Override
     public Component myTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
@@ -90,14 +88,10 @@ public class PassColumn extends JDTableColumn implements ActionListener {
         if (value instanceof Account) {
             Account ac = (Account) value;
             co = getDefaultTableCellRendererComponent(table, "*****", isSelected, hasFocus, row, column);
-            co.setEnabled(ac.isEnabled());
         } else {
-            HostAccounts ha = (HostAccounts) value;
             co = getDefaultTableCellRendererComponent(table, "", isSelected, hasFocus, row, column);
-            co.setEnabled(ha.isEnabled());
             co.setBackground(table.getBackground().darker());
         }
-        co.setSize(dim);
         return co;
     }
 
@@ -135,6 +129,14 @@ public class PassColumn extends JDTableColumn implements ActionListener {
     public void sort(Object obj, boolean sortingToggle) {
         // TODO Auto-generated method stub
 
+    }
+
+    @Override
+    public boolean isEnabled(Object obj) {
+        if (obj == null) return false;
+        if (obj instanceof Account) return ((Account) obj).isEnabled();
+        if (obj instanceof HostAccounts) return ((HostAccounts) obj).isEnabled();
+        return true;
     }
 
 }

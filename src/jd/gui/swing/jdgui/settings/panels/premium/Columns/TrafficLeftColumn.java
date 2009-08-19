@@ -60,7 +60,6 @@ public class TrafficLeftColumn extends JDTableColumn {
             }
             progress.setString((String) value);
             co = progress;
-            co.setEnabled(ac.isEnabled());
         } else {
             HostAccounts ha = (HostAccounts) value;
             if (!ha.gotAccountInfos()) {
@@ -73,10 +72,8 @@ public class TrafficLeftColumn extends JDTableColumn {
                 }
             }
             co = getDefaultTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-            co.setEnabled(ha.isEnabled());
             co.setBackground(table.getBackground().darker());
         }
-        co.setSize(dim);
         return co;
     }
 
@@ -107,6 +104,14 @@ public class TrafficLeftColumn extends JDTableColumn {
     public void sort(Object obj, boolean sortingToggle) {
         // TODO Auto-generated method stub
 
+    }
+
+    @Override
+    public boolean isEnabled(Object obj) {
+        if (obj == null) return false;
+        if (obj instanceof Account) return ((Account) obj).isEnabled();
+        if (obj instanceof HostAccounts) return ((HostAccounts) obj).isEnabled();
+        return true;
     }
 
 }

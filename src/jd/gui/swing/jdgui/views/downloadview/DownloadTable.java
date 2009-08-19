@@ -16,8 +16,6 @@
 
 package jd.gui.swing.jdgui.views.downloadview;
 
-import java.awt.Color;
-import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
@@ -27,35 +25,26 @@ import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 
 import javax.swing.DropMode;
-import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComponent;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
-import javax.swing.JTable;
 import javax.swing.KeyStroke;
-import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
-import javax.swing.table.TableCellRenderer;
-import javax.swing.table.TableColumn;
-import javax.swing.table.TableColumnModel;
 
 import jd.config.MenuAction;
 import jd.config.Property;
-import jd.config.SubConfiguration;
 import jd.controlling.DownloadWatchDog;
 import jd.event.ControlEvent;
 import jd.gui.swing.GuiRunnable;
-import jd.gui.swing.RowHighlighter;
-import jd.gui.swing.components.JExtCheckBoxMenuItem;
+import jd.gui.swing.components.JDTable.JDRowHighlighter;
+import jd.gui.swing.components.JDTable.JDTable;
 import jd.gui.swing.menu.Menu;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -91,186 +80,86 @@ class PropMenuItem extends JMenuItem implements ActionListener {
     }
 }
 
-public class DownloadTable extends JTable implements MouseListener, MouseMotionListener, KeyListener {
+public class DownloadTable extends JDTable implements MouseListener, MouseMotionListener, KeyListener {
 
     public static final String PROPERTY_EXPANDED = "expanded";
 
     private static final long serialVersionUID = 1L;
 
-    protected static final String WIDTH_PREFIX = "WIDTH7_COL_";
-
-    public static final int ROWHEIGHT = 19;
-
-    private TableRenderer cellRenderer;
-
-    private TableColumn[] cols;
-
     private DownloadLinksPanel panel;
 
     private String[] prioDescs;
 
-    private DownloadJTableModel model;
-
     private PropMenuItem propItem;
 
-    public DownloadTable(DownloadJTableModel model, DownloadLinksPanel panel) {
-        super(model);
-
-        this.cellRenderer = new TableRenderer(this);
+    public DownloadTable(DownloadLinksPanel panel) {
+        super(new DownloadJTableModel("gui2"));
         this.panel = panel;
-        this.model = model;
-        setShowGrid(false);
-        setShowHorizontalLines(false);
-        setShowVerticalLines(false);
-        createColumns();
-        getTableHeader().setReorderingAllowed(false);
-        getTableHeader().setResizingAllowed(true);
-        prioDescs = new String[] { JDL.L("gui.treetable.tooltip.priority-1", "Low Priority"), JDL.L("gui.treetable.tooltip.priority0", "No Priority"), JDL.L("gui.treetable.tooltip.priority1", "High Priority"), JDL.L("gui.treetable.tooltip.priority2", "Higher Priority"), JDL.L("gui.treetable.tooltip.priority3", "Highest Priority") };
-        setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
-        setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-        setColumnSelectionAllowed(false);
-        setRowSelectionAllowed(true);
-        // setColumnControlVisible(true);
-        // setColumnControl(new JColumnControlButton(this));
-        setAutoscrolls(false);
-        this.setRowHeight(ROWHEIGHT);
-        // setEditable(false);
         addMouseListener(this);
         addKeyListener(this);
         addMouseMotionListener(this);
-
-        getTableHeader().setPreferredSize(new Dimension(getColumnModel().getTotalColumnWidth(), 19));
-        // setSortable(false);
-        getTableHeader().addMouseListener(this);
-        UIManager.put("Table.focusCellHighlightBorder", null);
-
         if (JDUtilities.getJavaVersion() >= 1.6) {
             // setDropMode(DropMode.ON_OR_INSERT_ROWS); /*muss noch geschaut
             // werden wie man das genau macht*/
             setDropMode(DropMode.USE_SELECTION);
         }
-
         setDragEnabled(true);
         setTransferHandler(new TableTransferHandler(this));
-
-        // ToolTipManager.sharedInstance().unregisterComponent(this);
-        // ToolTipManager.sharedInstance().unregisterComponent(this.getTableHeader());
+        setColumnSelectionAllowed(false);
+        setRowSelectionAllowed(true);
 
         addDisabledHighlighter();
         addPostErrorHighlighter();
         addWaitHighlighter();
         addPackageHighlighter();
-
-        // ;
-        // ActionController.getToolBarAction("action.downloadview.moveup").setEnabled(true);
-        // ActionController.getToolBarAction("action.downloadview.movedown").setEnabled(true);
-        // ActionController.getToolBarAction("action.downloadview.movetobottom").setEnabled(true);
-        // This method is 1.6 only
-        if (JDUtilities.getJavaVersion() >= 1.6) this.setFillsViewportHeight(true);
+        prioDescs = new String[] { JDL.L("gui.treetable.tooltip.priority-1", "Low Priority"), JDL.L("gui.treetable.tooltip.priority0", "No Priority"), JDL.L("gui.treetable.tooltip.priority1", "High Priority"), JDL.L("gui.treetable.tooltip.priority2", "Higher Priority"), JDL.L("gui.treetable.tooltip.priority3", "Highest Priority") };
         propItem = new PropMenuItem(panel);
     }
 
     protected boolean processKeyBinding(KeyStroke ks, KeyEvent e, int condition, boolean pressed) {
-
         boolean ret = super.processKeyBinding(ks, e, condition, pressed);
-
         if (getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).get(ks) != null) { return false; }
         if (getRootPane().getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).get(ks) != null) { return false; }
         return ret;
     }
 
-    public void createColumns() {
-        setAutoCreateColumnsFromModel(false);
-        TableColumnModel tcm = getColumnModel();
-        while (tcm.getColumnCount() > 0) {
-            tcm.removeColumn(tcm.getColumn(0));
-        }
-
-        final SubConfiguration config = SubConfiguration.getConfig("gui");
-        cols = new TableColumn[getModel().getColumnCount()];
-        for (int i = 0; i < getModel().getColumnCount(); ++i) {
-            final int j = i;
-            TableColumn tableColumn = new TableColumn(i);
-            cols[i] = tableColumn;
-            tableColumn.addPropertyChangeListener(new PropertyChangeListener() {
-                public void propertyChange(PropertyChangeEvent evt) {
-                    if (evt.getPropertyName().equals("width")) {
-                        config.setProperty("WIDTH_COL_" + model.toModel(j), evt.getNewValue());
-                        config.save();
-                    }
-                }
-            });
-            tableColumn.setPreferredWidth(config.getIntegerProperty("WIDTH_COL_" + model.toModel(j), tableColumn.getWidth()));
-            addColumn(tableColumn);
-        }
-    }
-
     private void addPackageHighlighter() {
-        // Color background = JDTheme.C("gui.color.downloadlist.package",
-        // "4c4c4c", 150);
-        cellRenderer.addHighlighter(new RowHighlighter<DownloadJTableModel>(model, UIManager.getColor("TableHeader.background")) {
-
+        this.addJDRowHighlighter(new JDRowHighlighter(UIManager.getColor("TableHeader.background")) {
             @Override
-            public boolean doHighlight(int row) {
-                Object o = model.getObjectforRow(row);
+            public boolean doHighlight(Object o) {
                 return (o != null && o instanceof FilePackage);
             }
-
         });
     }
 
     private void addWaitHighlighter() {
-        Color background = JDTheme.C("gui.color.downloadlist.error_post", "ff9936", 100);
-        cellRenderer.addHighlighter(new RowHighlighter<DownloadJTableModel>(model, background) {
-
+        this.addJDRowHighlighter(new JDRowHighlighter(JDTheme.C("gui.color.downloadlist.error_post", "ff9936", 100)) {
             @Override
-            public boolean doHighlight(int row) {
-                Object o = model.getObjectforRow(row);
+            public boolean doHighlight(Object o) {
                 if (o == null || !(o instanceof DownloadLink)) return false;
                 DownloadLink dl = (DownloadLink) o;
                 if (dl.getLinkStatus().hasStatus(LinkStatus.FINISHED) || !dl.isEnabled() || dl.getLinkStatus().isPluginActive()) return false;
                 return dl.getPlugin() == null || dl.getPlugin().getRemainingHosterWaittime() > 0;
             }
-
         });
     }
 
     private void addPostErrorHighlighter() {
-        Color background = JDTheme.C("gui.color.downloadlist.error_post", "ff9936", 120);
-        cellRenderer.addHighlighter(new RowHighlighter<DownloadJTableModel>(model, background) {
-
+        this.addJDRowHighlighter(new JDRowHighlighter(JDTheme.C("gui.color.downloadlist.error_post", "ff9936", 120)) {
             @Override
-            public boolean doHighlight(int row) {
-                Object o = model.getObjectforRow(row);
+            public boolean doHighlight(Object o) {
                 return (o != null && o instanceof DownloadLink && ((DownloadLink) o).getLinkStatus().hasStatus(LinkStatus.ERROR_POST_PROCESS));
             }
-
         });
     }
 
     private void addDisabledHighlighter() {
-        Color background = JDTheme.C("gui.color.downloadlist.row_link_disabled", "adadad", 100);
-        cellRenderer.addHighlighter(new RowHighlighter<DownloadJTableModel>(model, background) {
-
+        this.addJDRowHighlighter(new JDRowHighlighter(JDTheme.C("gui.color.downloadlist.row_link_disabled", "adadad", 100)) {
             @Override
-            public boolean doHighlight(int row) {
-                Object o = model.getObjectforRow(row);
+            public boolean doHighlight(Object o) {
                 return (o != null && o instanceof DownloadLink && !((DownloadLink) o).isEnabled());
             }
-
         });
-    }
-
-    public TableCellRenderer getCellRenderer(int row, int col) {
-        return cellRenderer;
-    }
-
-    public TableColumn getColumn(int column) {
-        return getColumnModel().getColumn(model.toVisible(column));
-    }
-
-    public DownloadJTableModel getTableModel() {
-        return model;
     }
 
     public void fireTableChanged(final int id, final ArrayList<Object> objs) {
@@ -283,33 +172,33 @@ public class DownloadTable extends JTable implements MouseListener, MouseMotionL
                 switch (id) {
                 case DownloadLinksPanel.REFRESH_SPECIFIED_LINKS:
                     for (Object obj : objs) {
-                        int row = model.getRowforObject(obj);
+                        int row = getJDTableModel().getRowforObject(obj);
                         if (row != -1) {
                             if (last == -1) {
-                                model.fireTableRowsUpdated(row, row);
+                                getJDTableModel().fireTableRowsUpdated(row, row);
                             } else if (row >= first && row <= last) {
-                                model.fireTableRowsUpdated(row, row);
+                                getJDTableModel().fireTableRowsUpdated(row, row);
                             }
                         }
                     }
                     return null;
                 case DownloadLinksPanel.REFRESH_ALL_DATA_CHANGED:
-                    model.fireTableDataChanged();
+                    getJDTableModel().fireTableDataChanged();
                     return null;
                 case DownloadLinksPanel.REFRESH_DATA_AND_STRUCTURE_CHANGED:
                 case DownloadLinksPanel.REFRESH_DATA_AND_STRUCTURE_CHANGED_FAST:
                     int[] rows = getSelectedRows();
                     final ArrayList<Object> selected = new ArrayList<Object>();
                     for (int row : rows) {
-                        Object elem = model.getValueAt(row, 0);
+                        Object elem = getValueAt(row, 0);
                         if (elem != null) selected.add(elem);
                     }
-                    model.refreshModel();
-                    model.fireTableStructureChanged();
+                    getJDTableModel().refreshModel();
+                    getJDTableModel().fireTableStructureChanged();
                     SwingUtilities.invokeLater(new Runnable() {
                         public void run() {
                             for (Object obj : selected) {
-                                int row = model.getRowforObject(obj);
+                                int row = getJDTableModel().getRowforObject(obj);
                                 if (row != -1) addRowSelectionInterval(row, row);
                             }
                             scrollRectToVisible(viewRect);
@@ -372,36 +261,6 @@ public class DownloadTable extends JTable implements MouseListener, MouseMotionL
     }
 
     public void mouseClicked(MouseEvent e) {
-        if (e.getSource() == getTableHeader()) {
-            if (e.getButton() == MouseEvent.BUTTON1) {
-                int col = getRealColumnAtPoint(e.getX());
-                TableAction test = new TableAction(panel, JDTheme.II("gui.images.sort", 16, 16), JDL.L("gui.table.contextmenu.packagesort", "Paket sortieren"), TableAction.SORT_ALL, new Property("col", col));
-                test.actionPerformed(new ActionEvent(test, 0, ""));
-            } else if (e.getButton() == MouseEvent.BUTTON3) {
-                JPopupMenu popup = new JPopupMenu();
-                JCheckBoxMenuItem[] mis = new JCheckBoxMenuItem[model.getRealColumnCount()];
-                for (int i = 0; i < model.getRealColumnCount(); ++i) {
-                    final int j = i;
-                    final JExtCheckBoxMenuItem mi = new JExtCheckBoxMenuItem(model.getRealColumnName(i));
-                    mi.setHideOnClick(false);
-                    mis[i] = mi;
-                    if (i == 0) mi.setEnabled(false);
-                    mi.setSelected(model.isVisible(i));
-                    mi.addActionListener(new ActionListener() {
-
-                        public void actionPerformed(ActionEvent e) {
-                            model.setVisible(j, mi.isSelected());
-                            createColumns();
-                            revalidate();
-                            repaint();
-                        }
-
-                    });
-                    popup.add(mi);
-                }
-                popup.show(getTableHeader(), e.getX(), e.getY());
-            }
-        }
     }
 
     public void mouseDragged(MouseEvent e) {
@@ -416,30 +275,21 @@ public class DownloadTable extends JTable implements MouseListener, MouseMotionL
     public void mouseMoved(MouseEvent e) {
     }
 
-    private int getRealColumnAtPoint(int x) {
-        /*
-         * diese funktion gibt den echten columnindex zurück, da durch
-         * an/ausschalten dieser anders kann
-         */
-        x = getColumnModel().getColumnIndexAtX(x);
-        return model.toModel(x);
-    }
-
     public void mousePressed(MouseEvent e) {
         /* nicht auf headerclicks reagieren */
         if (e.getSource() != this) return;
         Point point = e.getPoint();
         int row = rowAtPoint(point);
-        int col = columnAtPoint(point);
+        int col = realColumnAtPoint(point);
         JMenuItem tmp;
 
         if (!isRowSelected(row) && e.getButton() == MouseEvent.BUTTON3) {
             clearSelection();
-            if (model.getValueAt(row, 0) != null) this.addRowSelectionInterval(row, row);
+            if (getValueAt(row, 0) != null) this.addRowSelectionInterval(row, row);
         }
         if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
 
-            if (model.getValueAt(row, 0) == null) { return; }
+            if (getValueAt(row, 0) == null) { return; }
             ArrayList<DownloadLink> alllinks = getAllSelectedDownloadLinks();
             ArrayList<DownloadLink> resumlinks = new ArrayList<DownloadLink>();
             ArrayList<DownloadLink> allnoncon = new ArrayList<DownloadLink>();
@@ -471,7 +321,7 @@ public class DownloadTable extends JTable implements MouseListener, MouseMotionL
             popup.add(createExtrasMenu(obj));
             if (obj instanceof FilePackage) {
                 popup.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.package_opened", 16, 16), JDL.L("gui.table.contextmenu.downloadDir", "Zielordner öffnen"), TableAction.DOWNLOAD_DIR, new Property("folder", new File(((FilePackage) obj).getDownloadDirectory())))));
-                popup.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.sort", 16, 16), JDL.L("gui.table.contextmenu.packagesort", "Paket sortieren") + " (" + sfp.size() + "), (" + model.getColumnName(col) + ")", TableAction.SORT, new Property("col", model.toModel(col)))));
+                addSortItem(popup, col, sfp, JDL.L("gui.table.contextmenu.packagesort", "Paket sortieren") + " (" + sfp.size() + "), (" + getJDTableModel().getColumnName(col) + ")");
                 popup.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.edit", 16, 16), JDL.L("gui.table.contextmenu.editpackagename", "Paketname ändern") + " (" + sfp.size() + ")", TableAction.EDIT_NAME, new Property("packages", sfp))));
                 popup.add(tmp = new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.save", 16, 16), JDL.L("gui.table.contextmenu.editdownloadDir", "Zielordner ändern") + " (" + sfp.size() + ")", TableAction.EDIT_DIR, new Property("packages", sfp))));
 
@@ -479,9 +329,7 @@ public class DownloadTable extends JTable implements MouseListener, MouseMotionL
             }
             if (obj instanceof DownloadLink) {
                 popup.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.package_opened", 16, 16), JDL.L("gui.table.contextmenu.downloadDir", "Zielordner öffnen"), TableAction.DOWNLOAD_DIR, new Property("folder", new File(((DownloadLink) obj).getFileOutput()).getParentFile()))));
-
-                popup.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.sort", 16, 16), JDL.L("gui.table.contextmenu.packagesort", "Paket sortieren") + " (" + sfp.size() + "), (" + model.getColumnName(col) + ")", TableAction.SORT, new Property("col", model.toModel(col)))));
-
+                addSortItem(popup, col, sfp, JDL.L("gui.table.contextmenu.packagesort", "Paket sortieren") + " (" + sfp.size() + "), (" + getJDTableModel().getColumnName(col) + ")");
                 popup.add(tmp = new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.browse", 16, 16), JDL.L("gui.table.contextmenu.browseLink", "im Browser öffnen"), TableAction.DOWNLOAD_BROWSE_LINK, new Property("downloadlink", obj))));
                 if (((DownloadLink) obj).getLinkType() != DownloadLink.LINKTYPE_NORMAL) tmp.setEnabled(false);
             }
@@ -568,19 +416,25 @@ public class DownloadTable extends JTable implements MouseListener, MouseMotionL
         if (e.getSource() != this) return;
         int row = rowAtPoint(e.getPoint());
         if (row == -1) return;
-        int column = getRealColumnAtPoint(e.getX());
-        if (column == 0 && e.getButton() == MouseEvent.BUTTON1 && e.getX() < 20 && e.getClickCount() == 1) {
-            Object element = this.getModel().getValueAt(row, 0);
-            if (element != null && element instanceof FilePackage) {
-                toggleFilePackageExpand((FilePackage) element);
+        int column = realColumnAtPoint(e.getPoint());
+        if (column == 0 && e.getButton() == MouseEvent.BUTTON1 && e.getClickCount() == 1) {
+            Point p = this.getPointinCell(e.getPoint());
+            if (p != null && p.getX() < 30) {
+                Object element = getValueAt(row, 0);
+                if (element != null && element instanceof FilePackage) {
+                    toggleFilePackageExpand((FilePackage) element);
+                    return;
+                }
             }
-        } else if (e.getButton() == MouseEvent.BUTTON1 && e.getClickCount() == 2) {
-            Object element = this.getModel().getValueAt(row, 0);
-            if (element == null) return;
-            if (element instanceof FilePackage) {
-                panel.showFilePackageInfo((FilePackage) element);
-            } else {
-                panel.showDownloadLinkInfo((DownloadLink) element);
+        }
+        if (e.getButton() == MouseEvent.BUTTON1) {
+            if ((e.getClickCount() == 1 && panel.isFilePackageInfoVisible()) || e.getClickCount() == 2) {
+                Object element = getValueAt(row, 0);
+                if (element instanceof FilePackage) {
+                    panel.showFilePackageInfo((FilePackage) element);
+                } else {
+                    panel.showDownloadLinkInfo((DownloadLink) element);
+                }
             }
         }
 

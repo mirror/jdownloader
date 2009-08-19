@@ -716,6 +716,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         chunksProgress = null;
         downloadLinkController = null;
         downloadCurrent = 0;
+        finishedDate = -1l;
         linkStatus.reset();
         this.availableStatus = null;
         this.setEnabled(true);

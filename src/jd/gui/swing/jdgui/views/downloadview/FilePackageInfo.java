@@ -80,7 +80,7 @@ public class FilePackageInfo extends JDCollapser implements ActionListener {
 
     private DownloadLink downloadLink;
 
-    private Thread updater;
+    private transient Thread updater;
 
     private MultiProgressBar progressBarDownloadLink;
 
