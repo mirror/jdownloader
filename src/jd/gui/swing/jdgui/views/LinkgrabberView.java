@@ -24,11 +24,13 @@ public class LinkgrabberView extends View {
      */
     private static final String IDENT_PREFIX = "jd.gui.swing.jdgui.views.linkgrabberview.";
 
-    private static  LinkgrabberView INSTANCE = null;
-public static LinkgrabberView getInstance(){
-    if(INSTANCE==null)INSTANCE=new LinkgrabberView();
-    return INSTANCE;
-}
+    private static LinkgrabberView INSTANCE = null;
+
+    public static LinkgrabberView getInstance() {
+        if (INSTANCE == null) INSTANCE = new LinkgrabberView();
+        return INSTANCE;
+    }
+
     private LinkgrabberView() {
 
         super();

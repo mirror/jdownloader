@@ -97,4 +97,16 @@ public class TrafficLeftColumn extends JDTableColumn {
         return null;
     }
 
+    @Override
+    public boolean isSortable(Object obj) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public void sort(Object obj, boolean sortingToggle) {
+        // TODO Auto-generated method stub
+
+    }
+
 }

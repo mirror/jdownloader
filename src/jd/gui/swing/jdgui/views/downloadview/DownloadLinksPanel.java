@@ -210,14 +210,22 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
     }
 
     public void showFilePackageInfo(FilePackage fp) {
-
         filePackageInfo.setPackage(fp);
         new GuiRunnable<Object>() {
             // @Override
             public Object runSave() {
                 DownloadView.getInstance().setInfoPanel(filePackageInfo);
-                //                
+                return null;
+            }
+        }.start();
+    }
 
+    public void showDownloadLinkInfo(DownloadLink downloadLink) {
+        filePackageInfo.setDownloadLink(downloadLink);
+        new GuiRunnable<Object>() {
+            // @Override
+            public Object runSave() {
+                DownloadView.getInstance().setInfoPanel(filePackageInfo);
                 return null;
             }
         }.start();
@@ -227,8 +235,7 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
         new GuiRunnable<Object>() {
             // @Override
             public Object runSave() {
-                // InfoPanelHandler.setPanel(null);
-
+                DownloadView.getInstance().setInfoPanel(null);
                 return null;
             }
         }.start();
@@ -674,12 +681,6 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
             LinkCheck.getLinkChecker().getBroadcaster().removeListener(this);
             break;
         }
-    }
-
-    public void showDownloadLinkInfo(DownloadLink downloadLink) {
-        filePackageInfo.setDownloadLink(downloadLink);
-        DownloadView.getInstance().setInfoPanel(filePackageInfo);
-
     }
 
     public JScrollPane getScrollPane() {

@@ -16,6 +16,7 @@ public abstract class JDTableColumn extends AbstractCellEditor implements TableC
     private String name;
     private JDTableModel table;
     private DefaultTableRenderer defaultrenderer;
+    private boolean sortingToggle = false; /* eg Asc and Desc sorting, a toggle */
 
     public JDTableColumn(String name, JDTableModel table) {
         this.name = name;
@@ -31,12 +32,15 @@ public abstract class JDTableColumn extends AbstractCellEditor implements TableC
         return true;
     }
 
+    public String getID() {
+        return getClass().getSimpleName();
+    }
+
     public JDTableModel getJDTableModel() {
         return table;
     }
 
     public void setValueAt(Object value, int rowIndex, int columnIndex) {
-        columnIndex = this.getJDTableModel().toModel(columnIndex);
         Object obj = table.getValueAt(rowIndex, columnIndex);
         if (obj == null) return;
         setValue(value, obj);
@@ -46,8 +50,22 @@ public abstract class JDTableColumn extends AbstractCellEditor implements TableC
         return true;
     }
 
+    /* obj==null for sorting on columnheader */
+    abstract public boolean isSortable(Object obj);
+
+    protected void doSort(final Object obj) {
+        new Thread() {
+            public void run() {
+                this.setName(getID());
+                sort(obj, sortingToggle);
+            }
+        }.start();
+        sortingToggle = !sortingToggle;
+    }
+
+    abstract public void sort(Object obj, final boolean sortingToggle);
+
     public boolean isCellEditable(int rowIndex, int columnIndex) {
-        columnIndex = this.getJDTableModel().toModel(columnIndex);
         Object obj = table.getValueAt(rowIndex, columnIndex);
         if (obj == null) return false;
         return isEditable(obj);
@@ -55,13 +73,11 @@ public abstract class JDTableColumn extends AbstractCellEditor implements TableC
 
     public Component getDefaultTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         hasFocus = false;
-        column = this.getJDTableModel().toModel(column);
         return defaultrenderer.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
     }
 
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         hasFocus = false;
-        column = this.getJDTableModel().toModel(column);
         Component c = myTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
         for (JDRowHighlighter high : this.table.getJDRowHighlighter()) {
             if (high.doHighlight(value)) {

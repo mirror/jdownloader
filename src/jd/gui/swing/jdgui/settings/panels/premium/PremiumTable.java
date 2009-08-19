@@ -42,7 +42,7 @@ public class PremiumTable extends JDTable {
                 int[] rows = getSelectedRows();
                 final ArrayList<Object> selected = new ArrayList<Object>();
                 for (int row : rows) {
-                    Object elem = getJDTableModel().getValueAt(row, 0);
+                    Object elem = getValueAt(row, 0);
                     if (elem != null) selected.add(elem);
                 }
                 getJDTableModel().refreshModel();

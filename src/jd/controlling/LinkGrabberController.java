@@ -393,7 +393,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
         broadcaster.fireEvent(new LinkGrabberControllerEvent(this, LinkGrabberControllerEvent.REFRESH_STRUCTURE));
     }
 
-    public void FilterPackages() {
+    public void filterPackages() {
         synchronized (LinkGrabberController.ControllerLock) {
             synchronized (packages) {
                 ArrayList<LinkGrabberFilePackage> fps = new ArrayList<LinkGrabberFilePackage>(packages);
@@ -584,7 +584,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
             broadcaster.fireEvent(new LinkGrabberControllerEvent(this, LinkGrabberControllerEvent.REFRESH_STRUCTURE));
             break;
         case LinkGrabberControllerEvent.FILTER_CHANGED:
-            FilterPackages();
+            filterPackages();
             break;
         default:
             break;

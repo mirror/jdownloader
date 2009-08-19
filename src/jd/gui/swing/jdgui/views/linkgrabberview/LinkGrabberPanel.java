@@ -217,9 +217,17 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         new GuiRunnable<Object>() {
             // @Override
             public Object runSave() {
-
                 LinkgrabberView.getInstance().setInfoPanel(filePackageInfo);
+                return null;
+            }
+        }.start();
+    }
 
+    public void hideFilePackageInfo() {
+        new GuiRunnable<Object>() {
+            // @Override
+            public Object runSave() {
+                LinkgrabberView.getInstance().setInfoPanel(null);
                 return null;
             }
         }.start();
@@ -424,35 +432,6 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                 synchronized (LinkGrabberController.ControllerLock) {
                     synchronized (LGINSTANCE.getPackages()) {
                         ArrayList<LinkGrabberFilePackage> fps = LGINSTANCE.getPackages();
-                        // if (arg0.getSource() instanceof LinkGrabberTaskPane)
-                        // {
-                        // switch (arg0.getID()) {
-                        // case LinkGrabberTableAction.ADD_SELECTED_PACKAGES:
-                        // selected_packages = new
-                        // ArrayList<LinkGrabberFilePackage>(INSTANCE.internalTable.getSelectedFilePackages());
-                        // break;
-                        // case LinkGrabberTableAction.GUI_LOAD:
-                        // new GuiRunnable<Object>() {
-                        // // @Override
-                        // public Object runSave() {
-                        // JDFileChooser fc = new JDFileChooser("_LOADSAVEDLC");
-                        // fc.setDialogTitle(JDL.L("gui.filechooser.loaddlc",
-                        // "Load DLC file"));
-                        // fc.setFileFilter(new JDFileFilter(null,
-                        // ".dlc|.rsdf|.ccf|.metalink", true));
-                        // if (fc.showOpenDialog(null) ==
-                        // JDFileChooser.APPROVE_OPTION) {
-                        // File ret2 = fc.getSelectedFile();
-                        // if (ret2 != null) {
-                        // JDUtilities.getController().loadContainerFile(ret2);
-                        // }
-                        // }
-                        // return null;
-                        // }
-                        // }.start();
-                        // return;
-                        // }
-                        // } else
                         if (arg0.getSource() instanceof JMenuItem) {
                             switch (arg0.getID()) {
                             case LinkGrabberTableAction.SELECT_HOSTER:
@@ -812,6 +791,9 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
     public void onLinkGrabberControllerEvent(LinkGrabberControllerEvent event) {
         switch (event.getID()) {
         case LinkGrabberControllerEvent.REMOVE_FILEPACKAGE:
+            if (filePackageInfo.getPackage() != null && filePackageInfo.getPackage() == ((LinkGrabberFilePackage) event.getParameter())) {
+                hideFilePackageInfo();
+            }
             Update_Async.restart();
             break;
         case LinkGrabberControllerEvent.REFRESH_STRUCTURE:
@@ -825,6 +807,11 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         default:
             break;
         }
+    }
+
+    public boolean isFilePackageInfoVisible() {
+        if (LinkgrabberView.getInstance().getInfoPanel() == filePackageInfo) return true;
+        return false;
     }
 
     class LinkGrabberToolbar extends ViewToolbar {

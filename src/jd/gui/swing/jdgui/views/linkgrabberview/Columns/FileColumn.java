@@ -86,4 +86,15 @@ public class FileColumn extends JDTableColumn {
         return null;
     }
 
+    @Override
+    public boolean isSortable(Object obj) {
+        return false;
+    }
+
+    @Override
+    public void sort(Object obj, boolean sortingToggle) {
+        // TODO Auto-generated method stub
+
+    }
+
 }

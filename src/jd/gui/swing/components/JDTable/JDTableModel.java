@@ -71,20 +71,8 @@ public abstract class JDTableModel extends AbstractTableModel {
         }
     }
 
-    public int getRealColumnCount() {
-        return columns.size();
-    }
-
-    public String getRealColumnName(int column) {
-        return columns.get(column).getName();
-    }
-
     public int getColumnCount() {
-        int j = 0;
-        for (int i = 0; i < columns.size(); ++i) {
-            if (isVisible(i)) ++j;
-        }
-        return j;
+        return columns.size();
     }
 
     public boolean isVisible(int column) {
@@ -98,32 +86,9 @@ public abstract class JDTableModel extends AbstractTableModel {
         config.save();
     }
 
-    public int toModel(int column) {
-        int i = 0;
-        int k;
-        for (k = 0; k < getRealColumnCount(); ++k) {
-            if (isVisible(k)) {
-                ++i;
-            }
-            if (i > column) break;
-        }
-        return k;
-    }
-
-    public int toVisible(int column) {
-        int i = column;
-        int k;
-        for (k = column; k >= 0; --k) {
-            if (!isVisible(k)) {
-                --i;
-            }
-        }
-        return i;
-    }
-
     @Override
     public String getColumnName(int column) {
-        return columns.get(toModel(column)).getName();
+        return columns.get(column).getName();
     }
 
     @Override
