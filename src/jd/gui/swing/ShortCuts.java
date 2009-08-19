@@ -1,8 +1,5 @@
 /**
- * 
- * 
- * 
- * Some functions (marked) Taken from java.awt.AWTKeyStroke.java
+ * Some functions (marked) taken from {@link java.awt.AWTKeyStroke}
  * 
  * 
  * @(#)AWTKeyStroke.java    1.28 06/02/06
@@ -33,7 +30,6 @@ import java.awt.event.KeyEvent;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
-import java.util.Map;
 
 import javax.swing.KeyStroke;
 
@@ -57,7 +53,7 @@ public class ShortCuts {
     }
 
     /**
-     * Taken from java.awt.AWTKeyStroke.java
+     * Taken from {@link java.awt.AWTKeyStroke}
      * 
      * 
      * @(#)AWTKeyStroke.java 1.28 06/02/06
@@ -100,7 +96,7 @@ public class ShortCuts {
     }
 
     /**
-     * Taken from java.awt.AWTKeyStroke.java
+     * Taken from {@link java.awt.AWTKeyStroke}
      * 
      * 
      * @(#)AWTKeyStroke.java 1.28 06/02/06
@@ -108,24 +104,22 @@ public class ShortCuts {
      *                       Copyright 2006 Sun Microsystems, Inc. All rights
      *                       reserved. SUN PROPRIETARY/CONFIDENTIAL. Use is
      *                       subject to license terms.
-     *                       
-     *                       
+     * 
+     * 
      *                       Modified with translation code by JDTEam
-     *                       Translation uses dynamic keys. this is not recommended, but there is not better solution
-     *                       
+     *                       Translation uses dynamic keys. this is not
+     *                       recommended, but there is not better solution
+     * 
      */
     private static String getVKText(int keyCode) {
-       
-        Integer key = Integer.valueOf(keyCode);
-
+        // Integer key = Integer.valueOf(keyCode);
         int expected_modifiers = (Modifier.PUBLIC | Modifier.STATIC | Modifier.FINAL);
         Field[] fields = KeyEvent.class.getDeclaredFields();
         for (int i = 0; i < fields.length; i++) {
             try {
                 if (fields[i].getModifiers() == expected_modifiers && fields[i].getType() == Integer.TYPE && fields[i].getName().startsWith("VK_") && fields[i].getInt(KeyEvent.class) == keyCode) {
-                
-                    return JDL.L(JDL_PREFIX+fields[i].getName(),fields[i].getName().substring(3));
-                }
+
+                return JDL.L(JDL_PREFIX + fields[i].getName(), fields[i].getName().substring(3)); }
             } catch (IllegalAccessException e) {
                 assert (false);
             }
@@ -134,7 +128,7 @@ public class ShortCuts {
     }
 
     /**
-     * Taken from java.awt.AWTKeyStroke.java
+     * Taken from {@link java.awt.AWTKeyStroke}
      * 
      * 
      * @(#)AWTKeyStroke.java 1.28 06/02/06
@@ -144,12 +138,12 @@ public class ShortCuts {
      *                       subject to license terms.
      */
     static class VKCollection {
-        Map code2name;
-        Map name2code;
+        HashMap<Integer, String> code2name;
+        HashMap<String, Integer> name2code;
 
         public VKCollection() {
-            code2name = new HashMap();
-            name2code = new HashMap();
+            code2name = new HashMap<Integer, String>();
+            name2code = new HashMap<String, Integer>();
         }
 
         public synchronized void put(String name, Integer code) {
@@ -162,12 +156,12 @@ public class ShortCuts {
 
         public synchronized Integer findCode(String name) {
             assert (name != null);
-            return (Integer) name2code.get(name);
+            return name2code.get(name);
         }
 
         public synchronized String findName(Integer code) {
             assert (code != null);
-            return (String) code2name.get(code);
+            return code2name.get(code);
         }
     }
 }

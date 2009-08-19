@@ -14,12 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.gui.swing.jdgui.components.toolbar;
-
-import static jd.controlling.JDLogger.warning;
-
-import java.awt.event.KeyEvent;
 
 import javax.swing.AbstractButton;
 import javax.swing.Action;
@@ -29,6 +24,7 @@ import javax.swing.JSeparator;
 import javax.swing.JToolBar;
 import javax.swing.KeyStroke;
 
+import jd.controlling.JDLogger;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.ShortCuts;
 import jd.gui.swing.SwingGui;
@@ -117,16 +113,14 @@ public class ToolBar extends JToolBar implements ActionControllerListener {
                 ToolBarAction action = ActionController.getToolBarAction(key);
 
                 if (action == null) {
-                    warning("The Action " + key + " is not available");
+                    JDLogger.warning("The Action " + key + " is not available");
                     continue;
-
                 }
 
                 action.init();
                 if (!action.isVisible()) {
-                    warning("Action " + action + " is set to invisble");
+                    JDLogger.warning("Action " + action + " is set to invisble");
                     continue;
-
                 }
 
                 ab = null;
@@ -160,16 +154,10 @@ public class ToolBar extends JToolBar implements ActionControllerListener {
 
                     // getInputMap(JButton.WHEN_IN_FOCUSED_WINDOW).put(ks,
                     // action);
-                    
-                    
-if(action.getValue(Action.ACCELERATOR_KEY)!=null){
- 
 
-    
-    
-    ab.setToolTipText(action.getTooltipText() + " ["+ShortCuts.getAcceleratorString((KeyStroke)action.getValue(Action.ACCELERATOR_KEY))+"]");
-    
-}else if (action.getValue(Action.MNEMONIC_KEY) != null) {
+                    if (action.getValue(Action.ACCELERATOR_KEY) != null) {
+                        ab.setToolTipText(action.getTooltipText() + " [" + ShortCuts.getAcceleratorString((KeyStroke) action.getValue(Action.ACCELERATOR_KEY)) + "]");
+                    } else if (action.getValue(Action.MNEMONIC_KEY) != null) {
                         ab.setToolTipText(action.getTooltipText() + " [Alt+" + new String(new byte[] { ((Integer) action.getValue(Action.MNEMONIC_KEY)).byteValue() }) + "]");
                     } else {
                         ab.setToolTipText(action.getTooltipText());

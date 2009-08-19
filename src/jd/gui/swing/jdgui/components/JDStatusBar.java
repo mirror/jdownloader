@@ -16,12 +16,17 @@
 
 package jd.gui.swing.jdgui.components;
 
+import java.awt.Color;
+import java.awt.Point;
+import java.awt.event.MouseEvent;
+
 import javax.swing.BorderFactory;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingUtilities;
+import javax.swing.JSpinner.DefaultEditor;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
@@ -43,17 +48,11 @@ public class JDStatusBar extends JPanel implements ChangeListener, ControlListen
 
     private SubConfiguration dlConfig = null;
 
-    private JLabel lblMaxChunks;
+    private JDSpinner spMaxChunks;
 
-    private JSpinner spMaxChunks;
+    private JDSpinner spMaxDls;
 
-    private JLabel lblMaxDls;
-
-    private JSpinner spMaxDls;
-
-    private JLabel lblMaxSpeed;
-
-    private JSpinner spMaxSpeed;
+    private JDSpinner spMaxSpeed;
 
     public JDStatusBar() {
         dlConfig = SubConfiguration.getConfig("DOWNLOAD");
@@ -61,52 +60,92 @@ public class JDStatusBar extends JPanel implements ChangeListener, ControlListen
         initGUI();
     }
 
-    private void initGUI() {
+    private class JDSpinner extends JPanel {
+        private static final long serialVersionUID = 8892482065686899916L;
 
+        private JLabel lbl;
+
+        private JSpinner spn;
+
+        public JDSpinner(String label) {
+            super(new MigLayout("ins 0", "[][grow,fill]"));
+
+            lbl = new JLabel(label) {
+                private static final long serialVersionUID = 8794670984465489135L;
+
+                @Override
+                public Point getToolTipLocation(MouseEvent e) {
+                    return new Point(0, -25);
+                }
+            };
+            spn = new JSpinner();
+            spn.addChangeListener(JDStatusBar.this);
+
+            add(lbl);
+            add(spn, "w 70!, h 20!");
+        }
+
+        public JSpinner getSpinner() {
+            return spn;
+        }
+
+        public void setText(String s) {
+            lbl.setText(s);
+        }
+
+        public void setValue(Integer i) {
+            spn.setValue(i);
+        }
+
+        public Integer getValue() {
+            return (Integer) spn.getValue();
+        }
+
+        public void setColor(Color c) {
+            lbl.setForeground(c);
+            ((DefaultEditor) spn.getEditor()).getTextField().setForeground(c);
+        }
+
+        @Override
+        public void setToolTipText(String s) {
+            lbl.setToolTipText(s);
+        }
+
+    }
+
+    private void initGUI() {
         this.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, getBackground().darker()));
 
         setLayout(new MigLayout("ins 0 0 0 0", "[fill,grow,left][shrink,right][shrink,right][shrink,right][shrink,right][shrink,right]", "[23px!]"));
 
         JDUtilities.getController().addControlListener(this);
 
-        lblMaxSpeed = new JLabel(JDL.L("gui.statusbar.speed", "Max. Speed"));
-        spMaxSpeed = new JSpinner();        
-        spMaxSpeed.setModel(new SpinnerNumberModel(dlConfig.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0), 0, Integer.MAX_VALUE, 50));        
+        spMaxSpeed = new JDSpinner(JDL.L("gui.statusbar.speed", "Max. Speed"));
+        spMaxSpeed.getSpinner().setModel(new SpinnerNumberModel(dlConfig.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0), 0, Integer.MAX_VALUE, 50));
         spMaxSpeed.setToolTipText(JDL.L("gui.tooltip.statusbar.speedlimiter", "Geschwindigkeitsbegrenzung festlegen (KB/s) [0:unendlich]"));
-        spMaxSpeed.addChangeListener(this);
         colorizeSpinnerSpeed();
 
-        lblMaxDls = new JLabel(JDL.L("gui.statusbar.sim_ownloads", "Max. Dls."));
-        spMaxDls = new JSpinner();
-        spMaxDls.setModel(new SpinnerNumberModel(dlConfig.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2), 1, 20, 1));
+        spMaxDls = new JDSpinner(JDL.L("gui.statusbar.sim_ownloads", "Max. Dls."));
+        spMaxDls.getSpinner().setModel(new SpinnerNumberModel(dlConfig.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2), 1, 20, 1));
         spMaxDls.setToolTipText(JDL.L("gui.tooltip.statusbar.simultan_downloads", "Max. gleichzeitige Downloads"));
-        spMaxDls.addChangeListener(this);
 
-        lblMaxChunks = new JLabel(JDL.L("gui.statusbar.maxChunks", "Max. Con."));
-        spMaxChunks = new JSpinner();
-        spMaxChunks.setModel(new SpinnerNumberModel(dlConfig.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2), 1, 20, 1));
+        spMaxChunks = new JDSpinner(JDL.L("gui.statusbar.maxChunks", "Max. Con."));
+        spMaxChunks.getSpinner().setModel(new SpinnerNumberModel(dlConfig.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2), 1, 20, 1));
         spMaxChunks.setToolTipText(JDL.L("gui.tooltip.statusbar.max_chunks", "Max. Connections/File"));
-        spMaxChunks.addChangeListener(this);
 
         add(new PremiumStatus(), "gaptop 1,aligny top");
-        add(lblMaxChunks);
-        add(spMaxChunks, "width 70!,height 20!");
-        add(lblMaxDls);
-        add(spMaxDls, "width 70!,height 20!");
-        add(lblMaxSpeed);
-        add(spMaxSpeed, "width 70!,height 20!");
+        add(spMaxChunks);
+        add(spMaxDls);
+        add(spMaxSpeed);
 
     }
 
     private void colorizeSpinnerSpeed() {
         /* färbt den spinner ein, falls speedbegrenzung aktiv */
-        JSpinner.DefaultEditor spMaxEditor = (JSpinner.DefaultEditor) spMaxSpeed.getEditor();
-        if ((Integer) spMaxSpeed.getValue() > 0) {
-            lblMaxSpeed.setForeground(JDTheme.C("gui.color.statusbar.maxspeedhighlight", "ff0c03"));
-            spMaxEditor.getTextField().setForeground(JDTheme.C("gui.color.statusbar.maxspeedhighlight", "ff0c03"));
+        if (spMaxSpeed.getValue() > 0) {
+            spMaxSpeed.setColor(JDTheme.C("gui.color.statusbar.maxspeedhighlight", "ff0c03"));
         } else {
-            lblMaxSpeed.setForeground(null);
-            spMaxEditor.getTextField().setForeground(null);
+            spMaxSpeed.setColor(null);
         }
     }
 
@@ -143,9 +182,9 @@ public class JDStatusBar extends JPanel implements ChangeListener, ControlListen
      */
     public void setSpeed(int speed) {
         if (speed <= 0) {
-            lblMaxSpeed.setText(JDL.L("gui.statusbar.speed", "Max. Speed"));
+            spMaxSpeed.setText(JDL.L("gui.statusbar.speed", "Max. Speed"));
         } else {
-            lblMaxSpeed.setText("(" + Formatter.formatReadable(speed) + "/s)");
+            spMaxSpeed.setText("(" + Formatter.formatReadable(speed) + "/s)");
         }
     }
 
