@@ -74,7 +74,7 @@ public class Youtube extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, downloadLink.getDownloadURL());
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL());
         if (dl.startDownload()) {
             if (downloadLink.getProperty("convertto") != null) {
                 ConversionMode convertto = ConversionMode.valueOf(downloadLink.getProperty("convertto").toString());
@@ -94,7 +94,7 @@ public class Youtube extends PluginForHost {
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         synchronized (lock) {
             login(account);
-            dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, downloadLink.getDownloadURL());
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL());
         }
         if (dl.startDownload()) {
             if (downloadLink.getProperty("convertto") != null) {
@@ -127,10 +127,14 @@ public class Youtube extends PluginForHost {
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.setDebug(true);
         br.getPage("http://www.youtube.com/");
-        br.getPage("https://www.google.com/accounts/ServiceLogin?uilel=3&service=youtube&passive=true&continue=http%3A%2F%2Fwww.youtube.com%2Fsignup%3Fnomobiletemp%3D1%26hl%3Den_US%26next%3D%252F&hl=en_US&ltmpl=sso");
+
+        br.getPage("https://www.google.com/accounts/ServiceLogin?uilel=3&service=youtube&passive=true&continue=http%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue%26nomobiletemp%3D1%26hl%3Den_US%26next%3D%252F&hl=en_US&ltmpl=sso");
         br.setFollowRedirects(false);
-        br.postPage("https://www.google.com/accounts/ServiceLoginAuth?service=youtube", "ltmpl=sso&continue=http%3A%2F%2Fwww.youtube.com%2Fsignup%3Fnomobiletemp%3D1%26hl%3Den_US%26next%3D%252F&service=youtube&uilel=3&ltmpl=sso&hl=en_US&ltmpl=sso&GALX=THv6dNUkoZc&Email=" + Encoding.urlEncode(account.getUser()) + "&Passwd=" + Encoding.urlEncode(account.getPass()) + "&PersistentCookie=yes&rmShown=1&signIn=Sign+in&asts=");
+        String cook = br.getCookie("http://www.google.com", "GALX");
+        if (cook == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        br.postPage("https://www.google.com/accounts/ServiceLoginAuth?service=youtube", "ltmpl=sso&continue=http%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue%26nomobiletemp%3D1%26hl%3Den_US%26next%3D%252F&service=youtube&uilel=3&ltmpl=sso&hl=en_US&ltmpl=sso&GALX=" + cook + "&Email=" + Encoding.urlEncode(account.getUser()) + "&Passwd=" + Encoding.urlEncode(account.getPass()) + "&PersistentCookie=yes&rmShown=1&signIn=Sign+in&asts=");
         if (br.getRedirectLocation() == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
         br.setFollowRedirects(true);
         br.getPage(br.getRedirectLocation());

@@ -38,7 +38,9 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "http://[\\w\\.]*?youtube\\.com/(watch\\?v=[a-z-_A-Z0-9]+|view_play_list\\?p=[a-z-_A-Z0-9]+(.*?page=\\d+)?)" }, flags = { 0 })
@@ -70,18 +72,24 @@ public class TbCm extends PluginForDecrypt {
     private boolean login(Account account) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.setDebug(true);
         br.getPage("http://www.youtube.com/");
-        br.getPage("https://www.google.com/accounts/ServiceLogin?uilel=3&service=youtube&passive=true&continue=http%3A%2F%2Fwww.youtube.com%2Fsignup%3Fnomobiletemp%3D1%26hl%3Den_US%26next%3D%252F&hl=en_US&ltmpl=sso");
+
+        br.getPage("https://www.google.com/accounts/ServiceLogin?uilel=3&service=youtube&passive=true&continue=http%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue%26nomobiletemp%3D1%26hl%3Den_US%26next%3D%252F&hl=en_US&ltmpl=sso");
         br.setFollowRedirects(false);
-        br.postPage("https://www.google.com/accounts/ServiceLoginAuth?service=youtube", "ltmpl=sso&continue=http%3A%2F%2Fwww.youtube.com%2Fsignup%3Fnomobiletemp%3D1%26hl%3Den_US%26next%3D%252F&service=youtube&uilel=3&ltmpl=sso&hl=en_US&ltmpl=sso&GALX=THv6dNUkoZc&Email=" + Encoding.urlEncode(account.getUser()) + "&Passwd=" + Encoding.urlEncode(account.getPass()) + "&PersistentCookie=yes&rmShown=1&signIn=Sign+in&asts=");
+        String cook = br.getCookie("http://www.google.com", "GALX");
+        if (cook == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        br.postPage("https://www.google.com/accounts/ServiceLoginAuth?service=youtube", "ltmpl=sso&continue=http%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue%26nomobiletemp%3D1%26hl%3Den_US%26next%3D%252F&service=youtube&uilel=3&ltmpl=sso&hl=en_US&ltmpl=sso&GALX=" + cook + "&Email=" + Encoding.urlEncode(account.getUser()) + "&Passwd=" + Encoding.urlEncode(account.getPass()) + "&PersistentCookie=yes&rmShown=1&signIn=Sign+in&asts=");
         if (br.getRedirectLocation() == null) {
             account.setEnabled(false);
+            account.setValid(false);
             return false;
         }
         br.setFollowRedirects(true);
         br.getPage(br.getRedirectLocation());
         if (br.getCookie("http://www.youtube.com", "LOGIN_INFO") == null) {
             account.setEnabled(false);
+            account.setValid(false);
             return false;
         }
         br.getPage("http://www.youtube.com/index?hl=en");
@@ -95,7 +103,7 @@ public class TbCm extends PluginForDecrypt {
         }
     }
 
-    class Info {
+    static class Info {
         public String link;
         public long size;
         public String desc;
