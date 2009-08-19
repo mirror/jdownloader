@@ -23,6 +23,7 @@ public abstract class JDTableColumn extends AbstractCellEditor implements TableC
     private JDTableModel table;
     private DefaultTableRenderer defaultrenderer;
     private boolean sortingToggle = false; /* eg Asc and Desc sorting, a toggle */
+    private Thread sortThread = null;
     private static Color color = UIManager.getColor("TableHeader.background");
     private static Dimension dim = new Dimension(200, 30);
 
@@ -62,13 +63,19 @@ public abstract class JDTableColumn extends AbstractCellEditor implements TableC
     abstract public boolean isSortable(Object obj);
 
     protected void doSort(final Object obj) {
-        new Thread() {
+        if (sortThread != null) return;
+        sortThread = new Thread() {
             public void run() {
                 this.setName(getID());
-                sort(obj, sortingToggle);
+                try {
+                    sort(obj, sortingToggle);
+                } catch (Exception e) {
+                }
+                sortingToggle = !sortingToggle;
+                sortThread = null;
             }
-        }.start();
-        sortingToggle = !sortingToggle;
+        };
+        sortThread.start();
     }
 
     abstract public void sort(Object obj, final boolean sortingToggle);

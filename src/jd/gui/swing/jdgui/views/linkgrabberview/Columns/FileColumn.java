@@ -1,12 +1,16 @@
 package jd.gui.swing.jdgui.views.linkgrabberview.Columns;
 
 import java.awt.Component;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JTable;
 import javax.swing.border.Border;
 
+import jd.controlling.LinkGrabberController;
 import jd.gui.swing.components.JDTable.JDTableColumn;
 import jd.gui.swing.components.JDTable.JDTableModel;
 import jd.gui.swing.jdgui.views.linkgrabberview.LinkGrabberTable;
@@ -88,13 +92,58 @@ public class FileColumn extends JDTableColumn {
 
     @Override
     public boolean isSortable(Object obj) {
+        /*
+         * LinkGrabber hat nur null(Header) oder ne
+         * ArrayList(LinkGrabberFilePackage)
+         */
+        if (obj == null || obj instanceof ArrayList<?>) return true;
         return false;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public void sort(Object obj, boolean sortingToggle) {
-        // TODO Auto-generated method stub
-
+    public void sort(Object obj, final boolean sortingToggle) {
+        ArrayList<LinkGrabberFilePackage> packages = null;
+        synchronized (LinkGrabberController.ControllerLock) {
+            synchronized (LinkGrabberController.getInstance().getPackages()) {
+                if (obj == null) {
+                    /* header, sortiere die packages nach namen */
+                    packages = LinkGrabberController.getInstance().getPackages();
+                    Collections.sort(packages, new Comparator<LinkGrabberFilePackage>() {
+                        public int compare(LinkGrabberFilePackage a, LinkGrabberFilePackage b) {
+                            LinkGrabberFilePackage aa = a;
+                            LinkGrabberFilePackage bb = b;
+                            if (sortingToggle) {
+                                aa = b;
+                                bb = a;
+                            }
+                            return aa.getName().compareToIgnoreCase(bb.getName());
+                        }
+                    });
+                } else {
+                    /*
+                     * in obj stecken alle selektierten packages, sortiere die
+                     * links nach namen
+                     */
+                    packages = (ArrayList<LinkGrabberFilePackage>) obj;
+                    for (LinkGrabberFilePackage fp : packages) {
+                        Collections.sort(fp.getDownloadLinks(), new Comparator<DownloadLink>() {
+                            public int compare(DownloadLink a, DownloadLink b) {
+                                DownloadLink aa = b;
+                                DownloadLink bb = a;
+                                if (sortingToggle) {
+                                    aa = a;
+                                    bb = b;
+                                }
+                                return aa.getName().compareToIgnoreCase(bb.getName());
+                            }
+                        });
+                    }
+                }
+            }
+        }
+        /* inform LinkGrabberController that structure changed */
+        LinkGrabberController.getInstance().throwRefresh();
     }
 
     @Override

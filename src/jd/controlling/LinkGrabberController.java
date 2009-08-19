@@ -393,6 +393,10 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
         broadcaster.fireEvent(new LinkGrabberControllerEvent(this, LinkGrabberControllerEvent.REFRESH_STRUCTURE));
     }
 
+    public void throwRefresh() {
+        broadcaster.fireEvent(new LinkGrabberControllerEvent(this, LinkGrabberControllerEvent.REFRESH_STRUCTURE));
+    }
+
     public void filterPackages() {
         synchronized (LinkGrabberController.ControllerLock) {
             synchronized (packages) {
