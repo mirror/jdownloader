@@ -200,6 +200,7 @@ convert.dialog.toppriority = Diese Auswahl vorherigen immer vorziehen
 convert.dialog.staykeepingformat = Formate weiterhin beibehalten
 convert.dialog.chooseformat = Wähle das Dateiformat:
 jd.gui.swing.components.jdcollapser.closetooltip = Close %s
+gui.table.contextmenu.sort =  Sort
 plugins.config.premium.chartapi.caption.error = %s Chart is loading or not available
 gui.speedmeter.pause = pause
 gui.speedmeter.hide = Hide Speedmeter
@@ -745,6 +746,7 @@ jd.gui.swing.jdgui.views.sidebars.configuration.addonconfig.breadcrum.deliminato
 jd.gui.swing.jdgui.views.configtreemodel.configuration.title = Settings
 jd.gui.swing.jdgui.views.configtreemodel.basics.title = Basics
 jd.gui.swing.jdgui.views.configtreemodel.modules.title = Modules
+jd.gui.swing.jdgui.views.configtreemodel.passwordsandlogins = Passwords & Logins
 jd.gui.swing.jdgui.views.configtreemodel.plugins.title = Plugins & Add-ons
 jd.gui.swing.menu.hostermenu = Hoster %s
 jd.gui.swing.shortcuts.key.shift = shift
@@ -1122,6 +1124,7 @@ plugins.optional.jdunrar.status.extractfailed = Extract failed
 plugins.optional.jdunrar.status.extractfailedcrc = Extract failed (CRC error)
 jd.plugins.optional.jdunrar.jdunrar = JDUnrar
 plugins.optional.jdunrar.name = JD-Unrar
+jd.plugins.optional.langfileeditor.langfileeditor.show = Show
 jd.plugins.optional.langfileeditor.langfileeditor = LangFileEditor
 plugins.optional.langfileeditor.duplicatedentries = Duplicated Entries
 plugins.optional.langfileeditor.string = String
@@ -1328,9 +1331,7 @@ jd.utils.webupdate.message2 = <font size="4" face="Verdana, Arial, Helvetica, sa
 jd.utils.webupdate.progresscontroller.text = Update is running
 jd.update.main.error.title = Errors occured
 jd.update.main.error.message = Errors occured!\r\nThere were %s error(s) while updating. Do you want to update anyway?
-#pattern: jd\.gui\.swing\.ShortCuts\.(.+?)
 #pattern: sys\.warning\.dlcerror\.(.+?)
-#pattern: !(.+?)
 #pattern: gui\.menu\.(.+?)\.name
 #pattern: gui\.menu\.(.+?)\.mnem
 #pattern: gui\.menu\.(.+?)\.accel
