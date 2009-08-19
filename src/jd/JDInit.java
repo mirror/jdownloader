@@ -501,10 +501,11 @@ public class JDInit {
                     File delete = new File(homedir, file);
                     if(!delete.exists())continue;
                     if (JDIO.removeDirectoryOrFile(delete)){
-                        logger.warning("Removed " + file);
+                        System.out.println("Removed " + file);
+                     
                     }else{
                         
-                        logger.severe("Failed to remove " + file);
+                        System.out.println("Failed to remove " + file);
                         ret=false;
                     }
                 }
