@@ -23,7 +23,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
 import java.awt.event.MouseEvent;
-import java.util.HashMap;
 
 import javax.swing.AbstractAction;
 import javax.swing.ImageIcon;
@@ -314,7 +313,6 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
     public static void resetDialogInformations() {
         SubConfiguration.getConfig(DIALOGS_CONFIG).getProperties().clear();
         SubConfiguration.getConfig(DIALOGS_CONFIG).save();
-    
     }
- 
+
 }

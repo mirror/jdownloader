@@ -290,10 +290,11 @@ public class WebUpdate {
                     logger.finer("Files to update: " + files);
 
                     if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, false)) {
-
+                        UserIO.setCountdownTime(5);
                         int answer = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, JDL.L("init.webupdate.auto.countdowndialog2", "Automatic update."), JDL.LF("jd.utils.webupdate.message", "<font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\">%s update(s) available. Install now?</font>", files.size()), JDTheme.II("gui.splash.update", 32, 32), null, null);
+                        UserIO.setCountdownTime(-1);
 
-                        if (JDFlags.hasAllFlags(answer, UserIO.RETURN_OK)) {
+                        if (JDFlags.hasSomeFlags(answer, UserIO.RETURN_OK, UserIO.RETURN_COUNTDOWN_TIMEOUT)) {
                             doUpdate(updater, files, doPluginRestart);
                         } else {
                             UPDATE_IN_PROGRESS = false;
@@ -369,19 +370,19 @@ public class WebUpdate {
 
                         updater.updateFiles(files, pc);
                         if (updater.getErrors() > 0) {
-System.err.println("ERRO");
+                            System.err.println("ERRO");
                             int ret = UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN | UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, JDL.L("jd.update.Main.error.title", "Errors occured"), JDL.LF("jd.update.Main.error.message", "Errors occured!\r\nThere were %s error(s) while updating. Do you want to update anyway?", updater.getErrors()), UserIO.getInstance().getIcon(UserIO.ICON_WARNING), null, null);
                             if (JDFlags.hasAllFlags(ret, UserIO.RETURN_OK)) {
                                 JDController.releaseDelayExit(id);
                                 JDUtilities.restartJDandWait();
                             }
 
-                        }else{
+                        } else {
                             System.err.println("OK RESTART");
                             JDController.releaseDelayExit(id);
                             JDUtilities.restartJDandWait();
                         }
- 
+
                     } catch (Exception e) {
                         System.err.println("EXCEPTION");
                         JDLogger.exception(e);
