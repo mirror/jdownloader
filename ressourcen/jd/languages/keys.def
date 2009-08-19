@@ -1328,6 +1328,7 @@ jd.utils.webupdate.message2 = <font size="4" face="Verdana, Arial, Helvetica, sa
 jd.utils.webupdate.progresscontroller.text = Update is running
 jd.update.main.error.title = Errors occured
 jd.update.main.error.message = Errors occured!\r\nThere were %s error(s) while updating. Do you want to update anyway?
+#pattern: jd\.gui\.swing\.ShortCuts\.(.+?)
 #pattern: sys\.warning\.dlcerror\.(.+?)
 #pattern: !(.+?)
 #pattern: gui\.menu\.(.+?)\.name
