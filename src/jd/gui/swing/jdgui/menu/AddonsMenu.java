@@ -63,7 +63,7 @@ public class AddonsMenu extends JStartMenu {
                 SwingGui.getInstance().requestPanel(UserIF.Panels.ADDON_MANAGER, null);
             }
         };
-
+        cfg.setIcon(JDTheme.II("gui.images.config.packagemanager",16,16));
         this.add(cfg);
 
         ArrayList<JMenuItem> itemsWithSubmenu = new ArrayList<JMenuItem>();
