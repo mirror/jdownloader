@@ -276,6 +276,7 @@ public class Installer {
      * @return
      */
     public static File getFlashGotFile() {
+        
         ArrayList<FileUpdate> files;
         try {
             WebUpdater wu = new WebUpdater();
@@ -291,7 +292,7 @@ public class Installer {
         } catch (Exception e) {
             JDLogger.exception(e);
         }
-        return null;
+        return JDUtilities.getResourceFile("tools/flashgot.xpi");
     }
 
     public JPanel getInstallerPanel() {

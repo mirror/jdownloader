@@ -1,6 +1,7 @@
 package jd.gui.swing.jdgui.views.downloadview.Columns;
 
 import java.awt.Component;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -13,6 +14,7 @@ import jd.gui.swing.components.JDTable.JDTableColumn;
 import jd.gui.swing.components.JDTable.JDTableModel;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.utils.locale.JDL;
 
 import org.jdesktop.swingx.renderer.JRendererLabel;
 
@@ -25,10 +27,21 @@ public class DateFinishedColumn extends JDTableColumn {
     private Component co;
     private DownloadLink dLink;
     private Date date;
+    private SimpleDateFormat dateFormat;
 
     public DateFinishedColumn(String name, JDTableModel table) {
         super(name, table);
         date = new Date();
+        try {
+
+            dateFormat = new SimpleDateFormat(JDL.L("jd.gui.swing.jdgui.views.downloadview.TableRenderer.TableRenderer.dateformat", "dd.MM.yy HH:mm"));
+
+        } catch (Exception e) {
+
+            dateFormat = new SimpleDateFormat("dd.MM.yy HH:mm");
+
+        }
+
     }
 
     @Override
@@ -57,7 +70,8 @@ public class DateFinishedColumn extends JDTableColumn {
                 ((JRendererLabel) co).setText("");
             } else {
                 date.setTime(dLink.getFinishedDate());
-                ((JRendererLabel) co).setText(date.toString());
+                ((JRendererLabel) co).setText(dateFormat.format(date));
+
             }
             ((JRendererLabel) co).setBorder(null);
         }
