@@ -37,7 +37,9 @@ public class IPCheck {
         /* Use Unittest to check this table */
         IP_CHECK_SERVICES.add(new String[] { "http://www.wieistmeineip.de/", "Ihre IP-Adresse.*?class=\"ip\">([\\d+\\.]+?)</h1>" });
         IP_CHECK_SERVICES.add(new String[] { "http://www.whatismyip.com/", "<h1>Your IP Address Is: ([\\d+\\.]+?)</h1>" });
-        IP_CHECK_SERVICES.add(new String[] { "http://www.whatsmyip.org/", "<title>What.*?Your IP is ([\\d+\\.]+?)</title>" });
+        // white page IP_CHECK_SERVICES.add(new String[] {
+        // "http://www.whatsmyip.org/",
+        // "<title>What.*?Your IP is ([\\d+\\.]+?)</title>" });
         IP_CHECK_SERVICES.add(new String[] { "http://whatismyipaddress.com/", "<B>Your IP address is ([\\d+\\.]+?)</B>" });
         IP_CHECK_SERVICES.add(new String[] { "http://www.ipaddressworld.com/", "Your computer.*?size=\\+6>([\\d+\\.]+?)</FONT>" });
         IP_CHECK_SERVICES.add(new String[] { "http://www.showmyip.com/", "IP Address properties of your Internet Connection ([\\d+\\.]+?) --> " });
@@ -46,13 +48,27 @@ public class IPCheck {
         IP_CHECK_SERVICES.add(new String[] { "http://www.findmyipaddress.info/", "My IP is.*?class=\"heading_color\">([\\d+\\.]+?)<" });
         IP_CHECK_SERVICES.add(new String[] { "http://www.meineip.de/", "<th>Das ist Deine IP-Adresse.*?>([\\d+\\.]+?) </td>" });
         IP_CHECK_SERVICES.add(new String[] { "http://checkip.dyndns.org/", "Current IP Address: ([\\d+\\.]+?)</body" });
-        IP_CHECK_SERVICES.add(new String[] { "http://www.anonym-surfen.com/anonym-surfen/test/", "IP\\:</td><td>([\\d+\\.]+?)([\\d+\\.]+?)</td>" });
+        IP_CHECK_SERVICES.add(new String[] { "http://www.anonym-surfen.com/anonym-surfen/test/", "ber Sie:</td></tr>.*?IP\\:</td><td>([\\d+\\.]+?)</td>" });
         IP_CHECK_SERVICES.add(new String[] { "http://www.init7.net/support/ip-adress-test.php", "Adresse: <b>([\\d+\\.]+?)</b>" });
         IP_CHECK_SERVICES.add(new String[] { "http://www.ip-adress.com/IP_adresse/", "<h2>Meine IP: ([\\d+\\.]+?)</h2>" });
         IP_CHECK_SERVICES.add(new String[] { "http://myip.tsql.de/", "<b>IP\\-Adresse :</b>\\s*?([\\d+\\.]+?)<" });
         IP_CHECK_SERVICES.add(new String[] { "http://www.tracemyip.org/", "name\\s*?=\\s*?\"IP\" onclick\\s*?=\\s*?\".*?\"\\s*?value\\s*?=\\s*?\"([\\d+\\.]+?)\"" });
         IP_CHECK_SERVICES.add(new String[] { "http://www.cmyip.com/", "My IP is[^\\d]*([\\d+\\.]+?)</h1>" });
         IP_CHECK_SERVICES.add(new String[] { "http://www.univie.ac.at/cgi-bin/ip.cgi", "<font color=\"#dd0000\">([\\d+\\.]+?)</font>" });
+        IP_CHECK_SERVICES.add(new String[] { "http://checkmyip.com/", "Your local IP address is.*?([\\d+\\.]+).*?<" });
+        IP_CHECK_SERVICES.add(new String[] { "http://www.knowmyip.com/", "Your ip is:.*?<b> ([\\d+\\.]+)</b></font>" });
+        IP_CHECK_SERVICES.add(new String[] { "http://whatsmyip.net/", "Address is: <span>([\\d+\\.]+)</span>" });
+        IP_CHECK_SERVICES.add(new String[] { "http://www.faqs.org/ip.php", "Your IP address is: ([\\d+\\.]+).*?</p>" });
+        IP_CHECK_SERVICES.add(new String[] { "http://showip.net/", "boxmaincontent\" id=\"ipaddress\">.*?([\\d+\\.]+)<di" });
+        IP_CHECK_SERVICES.add(new String[] { "http://www.ipaddresslocation.org/", "My IP Address.*?<span class=\"pb\"><b>([\\d+\\.]+)</b></span>" });
+        IP_CHECK_SERVICES.add(new String[] { "http://www.spyber.com/", "<font size=.*?><b>.*?IP: ([\\d+\\.]+)</b>" });
+        IP_CHECK_SERVICES.add(new String[] { "http://www.formyip.com/", "<strong>Your IP is ([\\d+\\.]+)</strong>" });
+        IP_CHECK_SERVICES.add(new String[] { "http://www.whatismyipv6.net/", "Your IP is ([\\d+\\.]+)<" });
+        IP_CHECK_SERVICES.add(new String[] { "http://myipinfo.net/", "computer.*?IP address is:.*?<p><b>([\\d+\\.]+)</b>" });
+
+        IP_CHECK_SERVICES.add(new String[] { "http://www.moanmyip.com/", "Your external IP address</h2>.*?<div class=.*?>([\\d+\\.]+)</div>" });
+        IP_CHECK_SERVICES.add(new String[] { "http://my-i-p.com/", "IP Whois Data for: ([\\d+\\.]+)\"" });
+        IP_CHECK_SERVICES.add(new String[] { "http://www.ip2stuff.com/", "your IP address\">.*?([\\d+\\.]+) -" });
 
         Collections.shuffle(IP_CHECK_SERVICES);
     }
@@ -87,6 +103,7 @@ public class IPCheck {
         if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_BALANCE, true)) {
             /* use ipcheck balancer */
             String ip = IPCheck.getBalancedIP(br);
+            if (ip == null) ip = IPCheck.getBalancedIP(br);
             if (ip != null) return IPCheck.LATEST_IP = ip;
         } else {
             /* use userdefined ipcheck */

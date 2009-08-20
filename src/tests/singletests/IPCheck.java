@@ -25,43 +25,44 @@ import jd.http.Browser;
 import org.junit.Before;
 import org.junit.Test;
 
-import tests.utils.TestUtils;
-
 public class IPCheck {
 
     private String ip;
 
     @Before
     public void setUp() throws Exception {
-        TestUtils.initJD();
+        // TestUtils.initJD();
     }
 
     @Test
     public void checkIPTable() {
 
         ArrayList<String[]> table = jd.http.IPCheck.IP_CHECK_SERVICES;
-        for (int i = 0; i < 20; i++) {
-            for (String[] entry : table) {
-                Browser br = new Browser();
-                br.setDebug(true);
-                try {
+        System.out.println("IPCHECKS:" + table.size());
+        // for (int i = 0; i < 20; i++) {
+        for (String[] entry : table) {
+            Browser br = new Browser();
+            // br.setDebug(true);
+            try {
 
-                    br.getPage(entry[0]);
-                    String lip = br.getRegex(entry[1]).getMatch(0).trim();
-                    if (ip == null) ip = lip;
+                br.getPage(entry[0]);
+                String lip = br.getRegex(entry[1]).getMatch(0).trim();
+                System.out.println(entry[0] + " reports: " + lip);
+                if (ip == null) ip = lip;
 
-                    if (!ip.equals(lip)) {
-
-                    }
-                } catch (Exception e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                    System.out.println(br);
+                if (!ip.equals(lip)) {
+                    System.out.println("regex for " + entry[0] + " may be invalid");
                     assertTrue(false);
                 }
-
+            } catch (Exception e) {
+                // TODO Auto-generated catch block
+                // e.printStackTrace();
+                System.out.println(entry[0] + " broken");
+                assertTrue(false);
             }
+
         }
+        // }
 
     }
 }

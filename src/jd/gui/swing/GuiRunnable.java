@@ -98,7 +98,6 @@ public abstract class GuiRunnable<T> implements Runnable {
         setStarted(true);
 
         if (SwingUtilities.isEventDispatchThread()) {
-            // if( SwingGui.checkEDT()){
             run();
         } else {
             SwingUtilities.invokeLater(this);

@@ -50,7 +50,7 @@ public class Youtube extends PluginForHost {
     // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException {
         downloadLink.setFinalFileName(downloadLink.getStringProperty("name", "video.tmp"));
-        downloadLink.setDownloadSize((Long) downloadLink.getProperty("size", new Long(0)));
+        downloadLink.setDownloadSize((Long) downloadLink.getProperty("size", Long.valueOf(0l)));
         // br.setFollowRedirects(true);
         // URLConnectionAdapter tmp =
         // br.openGetConnection(downloadLink.getDownloadURL());
@@ -160,6 +160,6 @@ public class Youtube extends PluginForHost {
     // @Override
     public void resetDownloadlink(DownloadLink downloadLink) {
         downloadLink.setFinalFileName(downloadLink.getStringProperty("name", "video.tmp"));
-        downloadLink.setDownloadSize((Long) downloadLink.getProperty("size", new Long(0)));
+        downloadLink.setDownloadSize((Long) downloadLink.getProperty("size", Long.valueOf(0l)));
     }
 }
