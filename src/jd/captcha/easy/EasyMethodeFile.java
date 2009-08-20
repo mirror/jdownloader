@@ -51,7 +51,7 @@ public class EasyMethodeFile implements JDLabelContainer, Serializable {
     }
     public boolean isEasyCaptchaMethode() {
         File js = getScriptJas();
-        return js.exists() && JDIO.getLocalFile(js).contains("param.useSpecialGetLetters=EasyCaptcha.getLetters;");
+        return js.exists() && JDIO.getLocalFile(js).contains("param.useSpecialGetLetters=EasyCaptcha;");
     }
 
     public File getFile() {
