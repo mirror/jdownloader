@@ -26,9 +26,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flameupload.com" }, urls = { "http://[\\w\\.]*?flameupload\\.com/files/[0-9A-Z]{8}/\\w+" }, flags = { 0 })
-public class FlameUploadCom extends PluginForDecrypt {
+public class FlmpldCm extends PluginForDecrypt {
 
-    public FlameUploadCom(PluginWrapper wrapper) {
+    public FlmpldCm(PluginWrapper wrapper) {
       super(wrapper);
     }
     
