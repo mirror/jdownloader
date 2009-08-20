@@ -49,7 +49,7 @@ public class LoadCaptchas {
     private ArrayList<LoadImage> images;
     private LoadImage selectedImage;
     private JFrame owner;
-    boolean followLinks = false;
+    boolean followLinks = true;
     /**
      * Ordner in den die Bilder geladen werden (default: jdCaptchaFolder/host)
      * 
@@ -164,19 +164,24 @@ public class LoadCaptchas {
                 double faktor = Math.max((double) captchaImage.getWidth(null) / 100, (double) captchaImage.getHeight(null) / 100);
                 final int width = (int) (captchaImage.getWidth(null) / faktor);
                 final int height = (int) (captchaImage.getHeight(null) / faktor);
-                JButton ic = new GuiRunnable<JButton>() {
-                    public JButton runSave() {
-                        return new JButton(new ImageIcon(captchaImage.getScaledInstance(width, height, Image.SCALE_SMOOTH)));
-                    }
-                }.getReturnValue();
-                ic.addActionListener(new ActionListener() {
+                try {
+                    JButton ic = new GuiRunnable<JButton>() {
+                        public JButton runSave() {
+                            return new JButton(new ImageIcon(captchaImage.getScaledInstance(width, height, Image.SCALE_SMOOTH)));
+                        }
+                    }.getReturnValue();
+                    ic.addActionListener(new ActionListener() {
 
-                    public void actionPerformed(ActionEvent e) {
-                        selectedImage = f;
-                        dialog.dispose();
-                    }
-                });
-                bts.add(ic);
+                        public void actionPerformed(ActionEvent e) {
+                            selectedImage = f;
+                            dialog.dispose();
+                        }
+                    });
+                    bts.add(ic);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
             }
             final JPanel panel = new GuiRunnable<JPanel>() {
                 public JPanel runSave() {
@@ -488,7 +493,6 @@ public class LoadCaptchas {
                 LoadImage li = new LoadImage(imagea[i], br);
                 li.form = -1;
                 li.location = i;
-                li.parentUrl = loadinfo.link;
                 images.add(li);
             }
         } catch (Exception e) {
@@ -496,20 +500,17 @@ public class LoadCaptchas {
         }
         if (followLinks) {
             String[] links = HTMLParser.getHttpLinks(br.toString(), br.getURL());
-            for (String string : links) {
+            for (int b = 0; b < links.length; b++) {
+                String string = links[b];
                 try {
                     Browser brc = br.cloneBrowser();
                     brc.getPage(string);
-                    if(string.contains("http://protector.to/download/"))
-                        System.out.println(brc);
                     imagea = getImages(brc);
                     for (int i = 0; i < imagea.length; i++) {
-                        System.out.println(imagea[i]);
-
                         LoadImage li = new LoadImage(imagea[i], brc);
                         li.form = -1;
                         li.location = i;
-                        li.parentUrl = string;
+                        li.followUrl = b;
                         images.add(li);
                     }
 
@@ -518,6 +519,7 @@ public class LoadCaptchas {
             }
 
         }
+
         Form[] forms = getForms(br);
         for (int i = 0; i < forms.length; i++) {
             try {
@@ -532,7 +534,6 @@ public class LoadCaptchas {
                     LoadImage li = new LoadImage(imagea[b], brc);
                     li.form = i;
                     li.location = b;
-                    li.parentUrl = loadinfo.link;
                     if (images.contains(li)) continue;
                     images.add(li);
                 }
@@ -701,7 +702,7 @@ class LoadImage {
     /**
      * ParentUrl
      */
-    public String parentUrl;
+    public int followUrl = -1;
     /**
      * Bildadresse
      */
@@ -771,7 +772,10 @@ class LoadImage {
     public void followPageFormLoad(String destination, LoadInfo loadInfo) throws Exception {
         br.clearCookies(loadInfo.link);
         br.getPage(loadInfo.link);
-        if (!loadInfo.link.equals(parentUrl)) br.getPage(parentUrl);
+        if (followUrl != -1) {
+            String[] links = HTMLParser.getHttpLinks(br.toString(), br.getURL());
+            br.getPage(links[followUrl]);
+        }
 
         if (form != -1) {
             br.submitForm(LoadCaptchas.getForms(br)[form]);
