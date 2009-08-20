@@ -55,7 +55,7 @@ public class LoadCaptchas {
      * @return
      */
     public LoadCaptchas(JFrame owner) {
-        this(owner,null);
+        this(owner, null);
     }
 
     /**
@@ -65,7 +65,7 @@ public class LoadCaptchas {
      * @return
      */
     public LoadCaptchas(JFrame owner, String host) {
-        this(owner,host, false);
+        this(owner, host, false);
     }
 
     /**
@@ -79,7 +79,7 @@ public class LoadCaptchas {
     public LoadCaptchas(JFrame owner, String host, boolean opendir) {
         this.host = host;
         this.opendir = opendir;
-        this.owner=owner;
+        this.owner = owner;
     }
 
     /**
@@ -166,6 +166,7 @@ public class LoadCaptchas {
 
                     public void actionPerformed(ActionEvent e) {
                         selectedImage = f;
+                        dialog.dispose();
                     }
                 });
                 bts.add(ic);
