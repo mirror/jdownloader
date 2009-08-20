@@ -118,11 +118,17 @@ public class Uploadedto extends PluginForHost {
             ai.setStatus("Accounttyp: Collectorsaccount");
         } else {
             String balance = br.getMatch("Your bank balance is:</span> <span class=.*?>(.*?)</span>");
+            String opencredits = br.getMatch("Open credits:</span> <span class=.*?>(.*?)</span>");
             String points = br.getMatch("Your point account is:</span>.*?<span class=.*?>(\\d*?)</span>");
             String traffic = br.getMatch("Traffic left: </span><span class=.*?>(.*?)</span> ");
             String expire = br.getMatch("Valid until: </span> <span class=.*?>(.*?)</span>");
             ai.setValidUntil(Regex.getMilliSeconds(expire, "dd-MM-yyyy hh:mm", null));
-            ai.setAccountBalance((long) (Double.parseDouble(balance) * 100));
+            if (opencredits != null) {
+                double b = (Double.parseDouble(balance) + Double.parseDouble(opencredits)) * 100;
+                ai.setAccountBalance((long) b);
+            } else {
+                ai.setAccountBalance((long) (Double.parseDouble(balance) * 100));
+            }
             ai.setTrafficLeft(Regex.getSize(traffic));
             ai.setTrafficMax(50 * 1024 * 1024 * 1024l);
             ai.setPremiumPoints(Long.parseLong(points));
@@ -180,7 +186,7 @@ public class Uploadedto extends PluginForHost {
         }
 
         br.setDebug(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, br.getRedirectLocation(), true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), true, 0);
 
         dl.setFileSizeVerified(true);
         if (dl.getConnection().getLongContentLength() == 0 || !dl.getConnection().isContentDisposition()) {
@@ -285,7 +291,7 @@ public class Uploadedto extends PluginForHost {
         if (form != null) {
             form.put("download_submit", "Download");
             sleep(10000l, downloadLink);
-            dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, form, false, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, false, 1);
         } else {
             String dlLink = br.getRedirectLocation();
             if (dlLink == null) {
@@ -293,7 +299,7 @@ public class Uploadedto extends PluginForHost {
                 logger.severe("Fatal error 1\r\n" + br);
                 throw new PluginException(LinkStatus.ERROR_FATAL);
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, dlLink, false, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlLink, false, 1);
         }
         dl.fakeContentRangeHeader(false);
         dl.setFileSizeVerified(true);

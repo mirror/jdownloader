@@ -88,17 +88,35 @@ public class Rapidshare extends PluginForHost {
 
     private static final String PROPERTY_USE_TELEKOMSERVER = "USE_TELEKOMSERVER";
 
-    private static String[] serverList1;
+    private static String[] serverList1 = new String[] { "cg", "cg2", "dt", "gc", "gc2", "l3", "l32", "l33", "l34", "tg", "tl", "tl2" };
 
-    private static String[] serverList2;
+    private static String[] serverList2 = new String[] { "cg", "dt", "gc", "gc2", "l3", "l32", "tg", "tg2", "tl", "tl2", "tl3" };
 
-    private static String[] serverList3;
+    private static String[] serverList3 = new String[] { "cg", "dt", "gc", "gc2", "l3", "l32", "l33", "l34", "tg", "tg2", "tl", "tl2" };
 
     final static private Object LOCK = new Object();
 
     private static long rsapiwait = 0;
 
     private static HashMap<String, String> serverMap = new HashMap<String, String>();
+    static {
+        serverMap.put("Cogent", "cg");
+        serverMap.put("Cogent #2", "cg2");
+        serverMap.put("Deutsche Telekom", "dt");
+        serverMap.put("GlobalCrossing", "gc");
+        serverMap.put("GlobalCrossing #2", "gc2");
+        serverMap.put("Level(3)", "l3");
+        serverMap.put("Level(3) #2", "l32");
+        serverMap.put("Level(3) #3", "l33");
+        serverMap.put("Level(3) #4", "l34");
+        serverMap.put("Tata Com.", "tg");
+        serverMap.put("Tata Com. #2", "tg2");
+        serverMap.put("Teleglobe", "tg");
+        serverMap.put("Teleglobe #2", "tg2");
+        serverMap.put("TeliaSonera", "tl");
+        serverMap.put("TeliaSonera #2", "tl2");
+        serverMap.put("TeliaSonera #3", "tl3");
+    }
 
     private static Account dummyAccount = new Account("TRAFSHARE", "TRAFSHARE");
 
@@ -127,27 +145,6 @@ public class Rapidshare extends PluginForHost {
     public Rapidshare(PluginWrapper wrapper) {
 
         super(wrapper);
-
-        serverMap.put("Cogent", "cg");
-        serverMap.put("Cogent #2", "cg2");
-        serverMap.put("Deutsche Telekom", "dt");
-        serverMap.put("GlobalCrossing", "gc");
-        serverMap.put("GlobalCrossing #2", "gc2");
-        serverMap.put("Level(3)", "l3");
-        serverMap.put("Level(3) #2", "l32");
-        serverMap.put("Level(3) #3", "l33");
-        serverMap.put("Level(3) #4", "l34");
-        serverMap.put("Tata Com.", "tg");
-        serverMap.put("Tata Com. #2", "tg2");
-        serverMap.put("Teleglobe", "tg");
-        serverMap.put("Teleglobe #2", "tg2");
-        serverMap.put("TeliaSonera", "tl");
-        serverMap.put("TeliaSonera #2", "tl2");
-        serverMap.put("TeliaSonera #3", "tl3");
-
-        serverList1 = new String[] { "cg", "cg2", "dt", "gc", "gc2", "l3", "l32", "l33", "l34", "tg", "tl", "tl2" };
-        serverList2 = new String[] { "cg", "dt", "gc", "gc2", "l3", "l32", "tg", "tg2", "tl", "tl2", "tl3" };
-        serverList3 = new String[] { "cg", "dt", "gc", "gc2", "l3", "l32", "l33", "l34", "tg", "tg2", "tl", "tl2" };
 
         setConfigElements();
         enablePremium("http://rapidshare.com/premium.html");
@@ -931,7 +928,8 @@ public class Rapidshare extends PluginForHost {
             ai.setTrafficLeft((long) (Long.parseLong(data.get("premkbleft")) / 1000.0) * 1024l * 1024l);
             ai.setTrafficMax(25 * 1024 * 1024 * 1024l);
             ai.setFilesNum(Long.parseLong(data.get("curfiles")));
-            ai.setPremiumPoints(Long.parseLong(data.get("points")));
+            ai.setPremiumPoints(Long.parseLong(data.get("fpoints")));
+            ai.setAccountBalance(Long.parseLong(data.get("refpoints")) * Long.parseLong(data.get("refrate")));
             ai.setUsedSpace(Long.parseLong(data.get("curspace")));
             ai.setTrafficShareLeft((long) (Long.parseLong(data.get("bodkb")) / 1000.0) * 1024l * 1024l);
             ai.setValidUntil(Long.parseLong(data.get("validuntil")) * 1000);
