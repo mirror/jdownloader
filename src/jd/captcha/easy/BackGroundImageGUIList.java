@@ -11,7 +11,7 @@ import jd.utils.locale.JDL;
 import jd.gui.swing.GuiRunnable;
 
 public class BackGroundImageGUIList implements ActionListener {
-    public BackGroundImageGUIList(EasyFile methode) {
+    public BackGroundImageGUIList(EasyMethodeFile methode) {
         this.manager = new BackGroundImageManager(methode);
     }
 

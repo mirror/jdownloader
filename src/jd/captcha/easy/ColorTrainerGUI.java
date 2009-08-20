@@ -474,7 +474,7 @@ public class ColorTrainerGUI {
      * @param file
      * @return
      */
-    public static Vector<CPoint> getColor(EasyFile file) {
+    public static Vector<CPoint> getColor(EasyMethodeFile file) {
         return getColors(file.getCaptchaFolder(), file.getName(), null);
     }
 

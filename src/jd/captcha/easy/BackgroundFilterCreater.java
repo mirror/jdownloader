@@ -25,7 +25,7 @@ public class BackgroundFilterCreater {
      * @param methode
      * @return
      */
-    public static File create(EasyFile methode)
+    public static File create(EasyMethodeFile methode)
     {
         return create(methode.getCaptchaFolder().listFiles(), methode);
     }
@@ -36,7 +36,7 @@ public class BackgroundFilterCreater {
      * @return
      */
     @SuppressWarnings("unchecked")
-    public static File create(File[] files, EasyFile methode) {
+    public static File create(File[] files, EasyMethodeFile methode) {
         JAntiCaptcha jac = new JAntiCaptcha(Utilities.getMethodDir(), methode.getName());
         Image image = Utilities.loadImage(files[0]);
         Captcha firstCaptcha = jac.createCaptcha(image);

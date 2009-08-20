@@ -16,20 +16,21 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import jd.config.container.JDLabelContainer;
 import jd.nutils.JDImage;
-public class EasyFile implements JDLabelContainer, Serializable {
+
+public class EasyMethodeFile implements JDLabelContainer, Serializable {
     public File file = null;
-    /**
-    *
-    * @param file
-    */
-   public EasyFile(String methodename) {
-       this.file = new File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/" + JDUtilities.getJACMethodsDirectory(), methodename);
-   }
-   public EasyFile(File file) {
-       this.file = file;
-   }
-   public EasyFile() {
-   }
+
+    public EasyMethodeFile(String methodename) {
+        this.file = new File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/" + JDUtilities.getJACMethodsDirectory(), methodename);
+    }
+
+    public EasyMethodeFile(File file) {
+        this.file = file;
+    }
+
+    public EasyMethodeFile() {
+    }
+
     public File getFile() {
         return file;
     }
@@ -44,41 +45,47 @@ public class EasyFile implements JDLabelContainer, Serializable {
         return new File(file, "script.jas");
 
     }
-
     public File getJacinfoXml() {
         return new File(file, "jacinfo.xml");
     }
-
-
-    @Override
-    public String toString() {
-        return file.getName();
-    }
-
+    /**
+     * 
+     * @return JAntiCaptcha Instanz für die Methode
+     */
     public JAntiCaptcha getJac() {
         return new JAntiCaptcha(Utilities.getMethodDir(), getName());
     }
 
-    public static EasyFile[] getMethodeList() {
+    /**
+     * erstellt eine Liste aller vorhandener Methoden
+     */
+    public static EasyMethodeFile[] getMethodeList() {
         File[] files = new File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/" + JDUtilities.getJACMethodsDirectory()).listFiles();
-        ArrayList<EasyFile> ret = new ArrayList<EasyFile>();
+        ArrayList<EasyMethodeFile> ret = new ArrayList<EasyMethodeFile>();
         for (int i = 0; i < files.length; i++) {
-            EasyFile ef = new EasyFile(files[i]);
+            EasyMethodeFile ef = new EasyMethodeFile(files[i]);
             if (ef.getScriptJas().exists()) ret.add(ef);
 
         }
-        return ret.toArray(new EasyFile[] {});
+        return ret.toArray(new EasyMethodeFile[] {});
     }
 
     public File getCaptchaFolder() {
         return new File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/captchas/" + getName());
     }
 
+    /**
+     * gibt falls vorhanden das File zum example.jpg/png/gif im Methodenordner
+     * aus
+     * 
+     * @return
+     */
     public File getExampleImage() {
         File[] files = file.listFiles(new FileFilter() {
 
             public boolean accept(File pathname) {
-                if (pathname.getName().toLowerCase().contains("example")) return true;
+                String ln = pathname.getName().toLowerCase();
+                if (ln.contains("example") && ln.matches(".*\\.(jpg|jpeg|gif|png|bmp)")) return true;
                 return false;
             }
         });
@@ -86,6 +93,13 @@ public class EasyFile implements JDLabelContainer, Serializable {
         return null;
     }
 
+    /**
+     * Ermittelt den Dateityp der Captchas im Captchaordner ist der Ordner leer
+     * wird jpg ausgegeben bzw Bilder geladen wenn showLoadDialog true ist
+     * 
+     * @param showLoadDialog
+     * @return captchatyp jpg | png | gif
+     */
     public String getCaptchaType(boolean showLoadDialog) {
         final File folder2 = getCaptchaFolder();
         if (showLoadDialog) {
@@ -123,10 +137,17 @@ public class EasyFile implements JDLabelContainer, Serializable {
         return filetype;
     }
 
+    /**
+     * öffnet den Captchaordner
+     */
     public void openCaptchaFolder() {
         JDUtilities.openExplorer(getCaptchaFolder());
     }
 
+    /**
+     * läd das ExamleImage fals vorhanden und gibt ein ImageIcon mit
+     * maxWidht=44px und maxHeight=24 aus
+     */
     public ImageIcon getIcon() {
         try {
             File image = getExampleImage();
@@ -140,11 +161,11 @@ public class EasyFile implements JDLabelContainer, Serializable {
         return null;
     }
 
-    public String getName() {
-        // TODO Auto-generated method stub
-        return toString();
-    }
-
+    /**
+     * Erzeugt ein zufallsCaptcha aus dem Captchaordner
+     * 
+     * @return
+     */
     public Captcha getRandomCaptcha() {
         File[] list = getCaptchaFolder().listFiles();
         if (list.length == 0) return null;
@@ -153,8 +174,16 @@ public class EasyFile implements JDLabelContainer, Serializable {
         return captchaImage;
     }
 
+    @Override
+    public String toString() {
+        return file.getName();
+    }
+
     public String getLabel() {
-        // TODO Auto-generated method stub
+        return toString();
+    }
+
+    public String getName() {
         return toString();
     }
 }
