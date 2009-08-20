@@ -19,6 +19,7 @@ package jd.controlling;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.Set;
@@ -125,21 +126,13 @@ public class PasswordListController implements ActionListener, DownloadControlle
                 addPasswords(Regex.getLines(pw));
             }
             CONFIG.setProperty("LIST", "");
+            CONFIG.save();
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    private void addPasswords(LinkedList<String> list) {
-        if (list == null || list.size() == 0) return;
-        synchronized (LIST2) {
-            for (String pw : list) {
-                addPassword(pw);
-            }
-        }
-    }
-
-    private void addPasswords(ArrayList<String> list) {
+    private void addPasswords(Collection<String> list) {
         if (list == null || list.size() == 0) return;
         synchronized (LIST2) {
             for (String pw : list) {

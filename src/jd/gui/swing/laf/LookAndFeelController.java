@@ -1,5 +1,3 @@
-package jd.gui.swing.laf;
-
 //    jDownloader - Downloadmanager
 //    Copyright (C) 2008  JD-Team support@jdownloader.org
 //
@@ -15,6 +13,8 @@ package jd.gui.swing.laf;
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+package jd.gui.swing.laf;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -258,7 +258,7 @@ public class LookAndFeelController {
                                 fontsize = Integer.parseInt(JDL.getSettings().get("fontsize"));
                             } catch (Exception e) {
                             }
-                          
+
                             try {
                                 Class.forName("de.javasoft.plaf.synthetica.SyntheticaLookAndFeel").getMethod("setFont", new Class[] { String.class, int.class }).invoke(null, new Object[] { font, fontsize });
 

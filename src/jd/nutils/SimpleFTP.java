@@ -1,16 +1,32 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2009  JD-Team support@jdownloader.org
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 /* 
-Copyright Paul James Mutton, 2001-2004, http://www.jibble.org/
+ Copyright Paul James Mutton, 2001-2004, http://www.jibble.org/
 
-This file is part of SimpleFTP.
+ This file is part of SimpleFTP.
 
-This software is dual-licensed, allowing you to choose between the GNU
-General Public License (GPL) and the www.jibble.org Commercial License.
-Since the GPL may be too restrictive for use in a proprietary application,
-a commercial license is also provided. Full license information can be
-found at http://www.jibble.org/licenses/
+ This software is dual-licensed, allowing you to choose between the GNU
+ General Public License (GPL) and the www.jibble.org Commercial License.
+ Since the GPL may be too restrictive for use in a proprietary application,
+ a commercial license is also provided. Full license information can be
+ found at http://www.jibble.org/licenses/
 
-$Author: pjm2 $
-$Id: SimpleFTP.java,v 1.2 2004/05/29 19:27:37 pjm2 Exp $
+ $Author: pjm2 $
+ $Id: SimpleFTP.java,v 1.2 2004/05/29 19:27:37 pjm2 Exp $
 
  */
 package jd.nutils;

@@ -1,3 +1,19 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2009  JD-Team support@jdownloader.org
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -77,7 +93,7 @@ public class MegaVideo extends PluginForHost {
             this.handleFree(downloadLink);
             return;
         } else {
-            dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, url, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
             dl.startDownload();
         }
     }
@@ -101,7 +117,7 @@ public class MegaVideo extends PluginForHost {
             url = "http://www" + s + ".megavideo.com/files/" + decrypt(un, Integer.parseInt(k1), Integer.parseInt(k2)) + "/";
         }
         if (url == null) throw new PluginException(LinkStatus.ERROR_FATAL);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,link, url, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, false, 1);
         dl.startDownload();
     }
 

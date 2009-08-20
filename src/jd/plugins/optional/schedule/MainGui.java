@@ -1,3 +1,19 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2009  JD-Team support@jdownloader.org
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.plugins.optional.schedule;
 
 import java.awt.event.ActionEvent;
@@ -42,7 +58,7 @@ public class MainGui extends SwitchPanel implements ActionListener, MouseListene
     private SimpleDateFormat date;
 
     private static MainGui instance;
-    
+
     private Date now = new Date();
 
     public MainGui(SubConfiguration cfg) {
@@ -177,7 +193,7 @@ public class MainGui extends SwitchPanel implements ActionListener, MouseListene
             case 4:
                 return String.class;
             case 5:
-                return String.class;    
+                return String.class;
             case 6:
                 return Integer.class;
             }
@@ -196,7 +212,7 @@ public class MainGui extends SwitchPanel implements ActionListener, MouseListene
             case 3:
                 return time.format(Schedule.getInstance().getActions().get(rowIndex).getDate());
             case 4:
-                now.setTime((long)Schedule.getInstance().getActions().get(rowIndex).getDate().getTime() - System.currentTimeMillis() - 3600000);
+                now.setTime((long) Schedule.getInstance().getActions().get(rowIndex).getDate().getTime() - System.currentTimeMillis() - 3600000);
                 return time.format(now);
             case 5:
                 switch (Schedule.getInstance().getActions().get(rowIndex).getRepeat()) {

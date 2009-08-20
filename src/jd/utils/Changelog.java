@@ -38,9 +38,7 @@ public class Changelog {
      * @throws SVNException
      */
     public static void main(String[] args) throws SVNException {
-      new Changelog().load();
-      
-
+        new Changelog().load();
     }
 
     private void load() throws SVNException {
@@ -63,7 +61,7 @@ public class Changelog {
 
                 for (Iterator<?> changedPaths = changedPathsSet.iterator(); changedPaths.hasNext();) {
                     SVNLogEntryPath entryPath = (SVNLogEntryPath) logEntry.getChangedPaths().get(changedPaths.next());
-                    
+
                     System.out.println(" " + entryPath.getType() + " " + entryPath.getPath() + ((entryPath.getCopyPath() != null) ? " (from " + entryPath.getCopyPath() + " revision " + entryPath.getCopyRevision() + ")" : ""));
                     Change c;
                     if (map.containsKey(entryPath.getPath())) {
@@ -71,7 +69,7 @@ public class Changelog {
                     } else {
 
                         c = new Change(entryPath.getPath());
-                        if (!c.getName().contains("test")&&!c.getName().contains("Test")&&c.getCategory()!=null&&c.getCategory().trim().length()>2&&c.getName().trim().length()>3&&logEntry.getMessage() != null && logEntry.getMessage().trim().length() > 0&&!logEntry.getMessage().contains("Merged")&&!logEntry.getMessage().contains("*nochangelog*")) {
+                        if (!c.getName().contains("test") && !c.getName().contains("Test") && c.getCategory() != null && c.getCategory().trim().length() > 2 && c.getName().trim().length() > 3 && logEntry.getMessage() != null && logEntry.getMessage().trim().length() > 0 && !logEntry.getMessage().contains("Merged") && !logEntry.getMessage().contains("*nochangelog*")) {
 
                             map.put(entryPath.getPath(), c);
 
@@ -103,7 +101,7 @@ public class Changelog {
                 if (!authors.contains(a)) authors += " " + a;
             }
             authors = authors.trim();
-            if(!next.getCategory().equalsIgnoreCase("Decrypter"))            System.out.println("|" + next.getType() + "|" + next.getName() + "|" + next.getCategory() + "|" + authors + "|" + changesets + "|");
+            if (!next.getCategory().equalsIgnoreCase("Decrypter")) System.out.println("|" + next.getType() + "|" + next.getName() + "|" + next.getCategory() + "|" + authors + "|" + changesets + "|");
         }
     }
 
@@ -114,24 +112,12 @@ public class Changelog {
             return revisions;
         }
 
-        public void setRevisions(ArrayList<Long> revisions) {
-            this.revisions = revisions;
-        }
-
         public ArrayList<String> getAuthors() {
             return authors;
         }
 
-        public void setAuthors(ArrayList<String> authors) {
-            this.authors = authors;
-        }
-
         public String getCategory() {
             return category;
-        }
-
-        public void setCategory(String category) {
-            this.category = category;
         }
 
         public String getType() {
@@ -166,10 +152,6 @@ public class Changelog {
             return name;
         }
 
-        public void setName(String name) {
-            this.name = name;
-        }
-
         private String getCategory(String path) {
             HashMap<String, String> map = new HashMap<String, String>();
             map.put("/trunk/src/jd/plugins/optional", "Addon");
@@ -192,17 +174,14 @@ public class Changelog {
             if (type != 'M') {
                 this.type = type;
             }
-
         }
 
         public void addAuthor(String author) {
             authors.add(author);
-
         }
 
         public void addRevision(long revision) {
             revisions.add(revision);
-
         }
 
     }
