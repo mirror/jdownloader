@@ -193,7 +193,8 @@ public class BackGroundImageDialog implements ActionListener {
                 }
             }.waitForEDT();
         } else if (e.getSource() == btFinished) {
-            if (dialogImage != null) bgim.add(dialogImage);
+            // wird in der BackGroundImageGUIList gemacht
+            // if (dialogImage != null) bgim.add(dialogImage);
 
             new GuiRunnable<Object>() {
                 public Object runSave() {
