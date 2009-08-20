@@ -30,6 +30,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 import jd.controlling.JDLogger;
+import jd.nutils.jna.Win32.Shell32;
 import jd.utils.JDUtilities;
 
 public class FileUtils {
@@ -109,16 +110,25 @@ public class FileUtils {
     private static boolean movetoRecycleBin(File file) {
         boolean success = false;
         if (OSDetector.isWindows()) {
-            if (new File(getWin_RecyclePath()).exists() && new File(getWin_RecyclePath()).canExecute()) {
-                Executer ex = new Executer(getWin_RecyclePath());
-                ex.addParameter(file.getAbsolutePath());
-                ex.run();
-                if (ex.getExitValue() == 1) {
-                    success = true;
-                } else {
-                    JDLogger.getLogger().warning("recycle.exe returned with exit code " + ex.getExitValue());
-                }
+            // taken from
+            // https://jna.dev.java.net/source/browse/jna/trunk/jnalib/src/com/sun/jna/examples/FileUtils.java
+            // also includes examples for mac and linux
+            Shell32 shell = Shell32.INSTANCE;
+            Shell32.SHFILEOPSTRUCT fileop = new Shell32.SHFILEOPSTRUCT();
+            File[] files = new File[] { file };
+            fileop.wFunc = Shell32.FO_DELETE;
+            String[] paths = new String[files.length];
+            for (int i = 0; i < paths.length; i++) {
+                paths[i] = files[i].getAbsolutePath();
             }
+            fileop.pFrom = fileop.encodePaths(paths);
+            fileop.fFlags = Shell32.FOF_ALLOWUNDO | Shell32.FOF_NOCONFIRMATION | Shell32.FOF_NOERRORUI | Shell32.FOF_SILENT;
+            int ret = shell.SHFileOperation(fileop);
+            if (ret != 0 || fileop.fAnyOperationsAborted) {
+                JDLogger.getLogger().warning("moving to trash failed with return message: " + ret);
+                return false;
+            }
+            return true;
         }
         /*
          * else if(OSDetector.isLinux()) { success = true; } else
