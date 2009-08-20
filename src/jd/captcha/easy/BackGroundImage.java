@@ -12,7 +12,7 @@ public class BackGroundImage extends CPoint {
      */
     private static final long serialVersionUID = 8700548338559980634L;
     private transient Image image =null;
-    private String backgroundImage;
+    private String backgroundImage; 
     /**
      * gibt den namen des Hindergrundbildes aus
      * @return
