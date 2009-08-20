@@ -25,6 +25,7 @@ public class BackGroundImage extends CPoint {
      * @param backgroundImage
      */
     public void setBackgroundImage(String backgroundImage) {
+        image=null;
         this.backgroundImage = backgroundImage;
     }
     /**
@@ -64,5 +65,17 @@ public class BackGroundImage extends CPoint {
             }
         }
         setColor(color);
+    }
+    @Override
+    public BackGroundImage clone() {
+        BackGroundImage ret = new BackGroundImage();
+        ret.setLocation(getLocation());
+        ret.setColor(getColor());
+        ret.setDistance(getDistance());
+        ret.setColorDistanceMode(getColorDistanceMode());
+        ret.setForeground(isForeground());
+        ret.backgroundImage=backgroundImage;
+        ret.image=image;
+        return ret;
     }
 }

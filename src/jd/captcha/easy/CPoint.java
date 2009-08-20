@@ -183,7 +183,10 @@ public class CPoint extends Point implements Serializable, Cloneable {
 
     @Override
     public Object clone() {
-        return new CPoint(x, y, distance, color);
+        CPoint ret = new CPoint(x, y, distance, color);
+        ret.colorDifferenceMode = colorDifferenceMode;
+        ret.foreground = foreground;
+        return ret;
     }
 
     /**

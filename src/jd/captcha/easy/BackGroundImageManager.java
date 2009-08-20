@@ -2,6 +2,7 @@ package jd.captcha.easy;
 
 import java.awt.Image;
 import java.io.File;
+import java.util.Iterator;
 import java.util.Vector;
 
 import jd.nutils.io.JDIO;
@@ -83,22 +84,28 @@ public class BackGroundImageManager {
     public void setBackgroundList(Vector<BackGroundImage> backgroundList) {
         this.backgroundList = backgroundList;
     }
+
     /**
      * Hintergrundbild hinzufügen
+     * 
      * @param bgi
      */
     public void add(BackGroundImage bgi) {
         backgroundList.add(bgi);
     }
+
     /**
      * aktuell verwaltetes Captcha
+     * 
      * @return
      */
     public Captcha getCaptchaImage() {
         return captchaImage;
     }
+
     /**
      * aktuell verwaltetes Captcha
+     * 
      * @return
      */
     public void setCaptchaImage(Captcha captchaImage) {
@@ -133,9 +140,17 @@ public class BackGroundImageManager {
      * Speichert alle Hintergrundbilder in der bgimages.xml ab
      */
     public void save() {
+
         File file = getBgImagesXmlFile();
         file.getParentFile().mkdirs();
-        JDIO.saveObject(null, backgroundList, file, null, null, true);
+        for (Iterator<BackGroundImage> iter = backgroundList.iterator(); iter.hasNext();) {
+            BackGroundImage bgi = iter.next();
+            if (bgi == null || bgi.getBackgroundImage() == null || bgi.getBackgroundImage().matches("\\s*")) iter.remove();
+        }
+        if (backgroundList.size() == 0)
+            file.delete();
+        else
+            JDIO.saveObject(null, backgroundList, file, null, null, true);
     }
 
     /**
@@ -174,8 +189,10 @@ public class BackGroundImageManager {
             bestBgi.clearCaptcha(captchaImage);
         }
     }
+
     /**
      * löscht das Hintergrundbild aus der liste (Captcha wird nicht neu erstell)
+     * 
      * @param dialogImage
      */
     public void remove(BackGroundImage dialogImage) {

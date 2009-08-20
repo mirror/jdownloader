@@ -10,15 +10,16 @@ import jd.captcha.gui.ImageComponent;
 import jd.utils.locale.JDL;
 import jd.gui.swing.GuiRunnable;
 
-public class BackGroundImageGUIList implements ActionListener{
+public class BackGroundImageGUIList implements ActionListener {
     public BackGroundImageGUIList(EasyFile methode) {
-        manager = new BackGroundImageManager(methode);
+        this.manager = new BackGroundImageManager(methode);
     }
 
     private JDialog mainDialog;
     private JPanel panel, imageBox;
     private BackGroundImageManager manager;
     private JButton btExit, btAdd;
+
     public void showImages() {
         // Images initialisiert
         new GuiRunnable<Object>() {
@@ -30,12 +31,15 @@ public class BackGroundImageGUIList implements ActionListener{
             }
         }.waitForEDT();
         for (BackGroundImage bgi : manager.getBackgroundList()) {
-            bgi.getImage(manager.methode);
-            showImage(bgi);
+            if (bgi != null) {
+                bgi.getImage(manager.methode);
+                showImage(bgi);
+            }
         }
     }
 
     void showImage(final BackGroundImage bgio) {
+        if (bgio == null) return;
         new GuiRunnable<Object>() {
             public Object runSave() {
                 final JPanel tmpPanel = new JPanel();
@@ -50,18 +54,22 @@ public class BackGroundImageGUIList implements ActionListener{
                     public void actionPerformed(ActionEvent e) {
                         new GuiRunnable<Object>() {
                             public Object runSave() {
-                                tmpPanel.remove(ic);
-                                tmpPanel.remove(edit);
-                                tmpPanel.remove(del);
 
-                                BackGroundImage dialogImage = bgio;
-                                manager.remove(bgio);
-                                tmpPanel.revalidate();
-                                mainDialog.pack();
+                                BackGroundImage dialogImage = bgio.clone();
                                 BackGroundImageDialog bgiaDialog = new BackGroundImageDialog(manager);
                                 bgiaDialog.dialogImage = dialogImage;
                                 dialogImage = bgiaDialog.getNewBackGroundImage();
-                                showImage(dialogImage);
+                                if (dialogImage != null) {
+                                    if (!bgio.getBackgroundImage().equals(dialogImage.getBackgroundImage())) {
+                                        bgio.setBackgroundImage(dialogImage.getBackgroundImage());
+                                        ic.image = bgio.getImage(manager.methode);
+                                        ic.revalidate();
+                                        ic.repaint();
+                                    }
+                                    bgio.setColor(dialogImage.getColor());
+                                    bgio.setColorDistanceMode(dialogImage.getColorDistanceMode());
+                                    bgio.setDistance(dialogImage.getDistance());
+                                }
                                 return null;
                             }
                         }.waitForEDT();
@@ -94,7 +102,7 @@ public class BackGroundImageGUIList implements ActionListener{
 
     }
 
-    public void initGui() {
+    public void show() {
         new GuiRunnable<Object>() {
             public Object runSave() {
                 mainDialog = new JDialog(DummyFrame.getDialogParent());
@@ -125,26 +133,25 @@ public class BackGroundImageGUIList implements ActionListener{
             }
         }.waitForEDT();
     }
-    public void addActionListeners()
-    {
+
+    public void addActionListeners() {
         btExit.addActionListener(this);
         btAdd.addActionListener(this);
     }
+
     public void actionPerformed(ActionEvent e) {
-        if(e.getSource()==btExit)
-        {
-        manager.save();
-        new GuiRunnable<Object>() {
-            public Object runSave() {
-                mainDialog.dispose();
-                return null;
-            }
-        }.waitForEDT();
-        }
-        else if(e.getSource()==btAdd)
-        {
+        if (e.getSource() == btExit) {
+            manager.save();
+            new GuiRunnable<Object>() {
+                public Object runSave() {
+                    mainDialog.dispose();
+                    return null;
+                }
+            }.waitForEDT();
+        } else if (e.getSource() == btAdd) {
             BackGroundImageDialog bgiaDialog = new BackGroundImageDialog(manager);
             showImage(bgiaDialog.getNewBackGroundImage());
+            mainDialog.pack();
         }
     }
 

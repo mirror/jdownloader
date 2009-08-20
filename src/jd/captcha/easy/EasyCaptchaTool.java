@@ -330,7 +330,7 @@ public class EasyCaptchaTool {
                 new Thread(new Runnable() {
 
                     public void run() {
-                        new BackGroundImageGUIList(meth).initGui();
+                        new BackGroundImageGUIList(meth).show();
                     }
                 }).start();
 
