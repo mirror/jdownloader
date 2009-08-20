@@ -36,15 +36,15 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mooshare.net" }, urls = { "http://[\\w\\.]*?mooshare\\.net/files/\\d+/.*?\\.html" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mooshare.net" }, urls = { "http://[\\w\\.]*?mooshare\\.net/files/(\\d+)/(.*?)\\.html" }, flags = { 2 })
 public class Moosharenet extends PluginForHost {
 
     public Moosharenet(PluginWrapper wrapper) {
-        super(wrapper);        
+        super(wrapper);
         enablePremium("http://mooshare.net/?section=becomemember");
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return "http://mooshare.net/?section=faq";
     }
@@ -60,7 +60,7 @@ public class Moosharenet extends PluginForHost {
         }
     }
 
-    // @Override
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         try {
@@ -91,7 +91,7 @@ public class Moosharenet extends PluginForHost {
         return ai;
     }
 
-    // @Override
+    @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
         login(account);
@@ -107,7 +107,7 @@ public class Moosharenet extends PluginForHost {
         }
         if (dlLink == null) throw new PluginException(LinkStatus.ERROR_FATAL);
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, dlLink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlLink, false, 1);
         if (!dl.getConnection().isContentDisposition()) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_RETRY);
@@ -115,42 +115,35 @@ public class Moosharenet extends PluginForHost {
         dl.startDownload();
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(false);
-        br.getPage(downloadLink.getDownloadURL());        
-        Form form = br.getForm(2);
-        if (form == null) {
-            if (br.containsHTML("Sie haben Ihr Downloadlimit für den Moment erreicht!")) {
-                logger.info("DownloadLimit reached!");
-                return AvailableStatus.UNCHECKABLE;
-            }
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String[] infos = new Regex(downloadLink.getDownloadURL(), "http://[\\w\\.]*?mooshare\\.net/files/(\\d+)/(.*?)\\.html").getRow(0);
+
+        br.getPage("http://mooshare.net/api/checkfile.php?name=" + infos[1] + "&id=" + infos[0]);
+        try {
+            int a = Integer.parseInt(br.toString().trim());
+            if (a < 1) return AvailableStatus.FALSE;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return AvailableStatus.FALSE;
         }
-        br.submitForm(form);
-        if (br.containsHTML("keine Dateien parallel downloaden")){            
-            return AvailableStatus.UNCHECKABLE;
-        }
-        String filename = br.getRegex(Pattern.compile(">Datei</td>.*?<td.*?>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-        String filesize = br.getRegex(Pattern.compile(">Gr.*?e</td>.*?<td.*?>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setName(filename);
-        downloadLink.setDownloadSize(Regex.getSize(filesize));
+
+        br.getPage("http://mooshare.net/api/checkfilesize.php?name=" + infos[1] + "&id=" + infos[0]);
+        downloadLink.setName(infos[1]);
+        downloadLink.setDownloadSize(Regex.getSize(br.toString()));
+
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        /*warten da nach einem download noch kurz die meldung kommt, gleichzeitiges download verboten*/
+        /*
+         * warten da nach einem download noch kurz die meldung kommt,
+         * gleichzeitiges download verboten
+         */
         sleep(15000, downloadLink);
         /* Nochmals das File überprüfen */
-        requestFileInformation(downloadLink);        
+        requestFileInformation(downloadLink);
         if (br.containsHTML("keine Dateien parallel downloaden")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
         if (br.containsHTML("Sie haben Ihr Downloadlimit für den Moment erreicht!")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l); }
         String wait = br.getRegex("var time = (.*?);").getMatch(0);
@@ -172,29 +165,28 @@ public class Moosharenet extends PluginForHost {
         }
         br.setFollowRedirects(true);
         br.setDebug(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, dlLink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlLink, false, 1);
         if (!dl.getConnection().isContentDisposition()) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }
-        dl.startDownload();        
+        dl.startDownload();
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    // @Override
+    @Override
     public void reset() {
     }
 
-    // @Override
+    @Override
     public void resetPluginGlobals() {
-
     }
 
-    // @Override
+    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 
