@@ -345,8 +345,20 @@ public class JDInit {
     public void loadCPlugins() {
         try {
             new CPluginWrapper("ccf", "C", ".+\\.ccf");
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+        try {
             new CPluginWrapper("rsdf", "R", ".+\\.rsdf");
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+        try {
             new CPluginWrapper("dlc", "D", ".+\\.dlc");
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+        try {
             new CPluginWrapper("metalink", "MetaLink", ".+\\.metalink");
         } catch (Throwable e) {
             e.printStackTrace();
@@ -407,7 +419,6 @@ public class JDInit {
             JDLogger.exception(e);
         }
 
-      
     }
 
     /**
@@ -499,14 +510,14 @@ public class JDInit {
                 if (file.length() == 0) continue;
                 if (!file.matches(".*?" + File.separator + "?\\.+" + File.separator + ".*?")) {
                     File delete = new File(homedir, file);
-                    if(!delete.exists())continue;
-                    if (JDIO.removeDirectoryOrFile(delete)){
+                    if (!delete.exists()) continue;
+                    if (JDIO.removeDirectoryOrFile(delete)) {
                         System.out.println("Removed " + file);
-                     
-                    }else{
-                        
+
+                    } else {
+
                         System.out.println("Failed to remove " + file);
-                        ret=false;
+                        ret = false;
                     }
                 }
             }

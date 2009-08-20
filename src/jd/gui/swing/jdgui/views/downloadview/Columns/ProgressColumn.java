@@ -103,7 +103,7 @@ public class ProgressColumn extends JDTableColumn {
                 ((JRendererLabel) co).setText(strPluginError);
                 ((JRendererLabel) co).setBorder(null);
                 return co;
-            } else if (!dLink.getPlugin().getWrapper().usePlugin()) {
+            } else if (!dLink.getPlugin().getWrapper().usePlugin() && !dLink.getLinkStatus().isPluginActive()) {
                 co = getDefaultTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
                 ((JRendererLabel) co).setIcon(null);
                 ((JRendererLabel) co).setText(strPluginDisabled);
