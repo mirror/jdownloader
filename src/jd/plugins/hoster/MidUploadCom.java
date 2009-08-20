@@ -64,7 +64,7 @@ public class MidUploadCom extends PluginForHost {
         String captcha = null;
         captcha = br.getRegex(Pattern.compile("Bitte Code eingeben:</b></td></tr>.*<tr><td align=right>.*<img src=\"(.*?)\">.*class=\"captcha_code\">", Pattern.DOTALL)).getMatch(0);
         if (captcha == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        String code = getCaptchaCode(captcha, link);
+        String code = getCaptchaCode("6giga.com", captcha, link);
         form.put("code", code);
         br.submitForm(form);
         if (br.containsHTML("Wrong captcha") || br.containsHTML("Expired session")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
