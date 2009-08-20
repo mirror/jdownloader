@@ -37,4 +37,6 @@ param.objectColorContrast = 0.3;
 param.objectDetectionContrast = 0.5;
 param.relativecontrast=0.85;
 param.autoLetterNum=true;
-param.useSpecialGetLetters=EasyCaptcha_AppsceneOrg.getLetters;
+captcha.prepare.captchacommand.blur(1, 1, 3);
+captcha.prepare.captchacommand.setContrast(2);
+param.useSpecialGetLetters=EasyCaptcha.getLetters;
