@@ -51,7 +51,7 @@ public class ColorTrainerGUI {
 
     public void removePixelAbsolut(CPoint cp) {
         backUP();
-        colorTrainer.removePixelAbsolut(cp);
+        colorTrainer.removeCPoint(cp);
     }
 
     public void backUP() {
@@ -301,20 +301,17 @@ public class ColorTrainerGUI {
             }
         });
         box.add(addb);
-
-        JCheckBox fst = new GuiRunnable<JCheckBox>() {
-            public JCheckBox runSave() {
-                return new JCheckBox(JDL.L("easycaptcha.fastselection", "FastSelection:"), colorTrainer.fastSelection);
-            }
-        }.getReturnValue();
-
-        fst.addActionListener(new ActionListener() {
-
-            public void actionPerformed(ActionEvent e) {
-                colorTrainer.fastSelection = !colorTrainer.fastSelection;
-            }
-        });
-        box.add(fst);
+        /*
+         * JCheckBox fst = new GuiRunnable<JCheckBox>() { public JCheckBox
+         * runSave() { return new JCheckBox(JDL.L("easycaptcha.fastselection",
+         * "FastSelection:"), colorTrainer.fastSelection); } }.getReturnValue();
+         * 
+         * fst.addActionListener(new ActionListener() {
+         * 
+         * public void actionPerformed(ActionEvent e) {
+         * colorTrainer.fastSelection = !colorTrainer.fastSelection; } });
+         * box.add(fst);
+         */
         final ChangeListener cl = new ChangeListener() {
 
             public void stateChanged(final ChangeEvent e) {
@@ -444,7 +441,7 @@ public class ColorTrainerGUI {
             cs[i] = captcha;
             ColorTrainerGUI cc = new ColorTrainerGUI();
             cc.colorTrainer.colorPointList = colorPoints;
-            cc.colorTrainer.originalCaptcha=captcha;
+            cc.colorTrainer.originalCaptcha = captcha;
             if (lastCC != null) {
                 lastCC.colorTrainer.copySettingsTo(cc.colorTrainer);
             }
@@ -469,8 +466,11 @@ public class ColorTrainerGUI {
         }.getReturnValue()) ColorTrainer.saveColors(colorPoints, file);
         return colorPoints;
     }
+
     /**
-     * Startet einen ColorTrainer und gibt die Liste mit den Trainierten CPoints zurück
+     * Startet einen ColorTrainer und gibt die Liste mit den Trainierten CPoints
+     * zurück
+     * 
      * @param file
      * @return
      */

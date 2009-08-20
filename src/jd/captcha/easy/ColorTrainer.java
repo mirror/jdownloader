@@ -35,8 +35,8 @@ public class ColorTrainer {
      */
     public boolean foreground = true;
     /**
-     * schnelle und performante Selektionsmöglichkeit ist aber exakt TODO muss
-     * noch verbessert werden möglicherweise komplett entfernen
+     * schnelle und performante Selektionsmöglichkeit noch nicht fertig und
+     * deswegen vorerst deaktiviert
      */
     public boolean fastSelection = false;
     public boolean add = true;
@@ -67,13 +67,18 @@ public class ColorTrainer {
      */
     public byte colorDifferenceMode = CPoint.LAB_DIFFERENCE;
 
-    public void removePixelAbsolut(CPoint cp) {
-        colorPointList.remove(cp);
+    /**
+     * löscht einen cPoint aus der Liste und erstellt das WorkingCaptcha neu
+     * 
+     * @param CPoint
+     */
+    public void removeCPoint(CPoint cPoint) {
+        colorPointList.remove(cPoint);
         if (fastSelection) {
             for (int x = 0; x < workingCaptcha.getWidth(); x++) {
                 for (int y = 0; y < workingCaptcha.getHeight(); y++) {
-                    double dist = Colors.getColorDifference(originalCaptcha.getPixelValue(x, y), cp.getColor());
-                    if (dist < cp.getDistance()) {
+                    double dist = Colors.getColorDifference(originalCaptcha.getPixelValue(x, y), cPoint.getColor());
+                    if (dist < cPoint.getDistance()) {
                         workingCaptcha.grid[x][y] = originalCaptcha.getPixelValue(x, y);
                     }
 
@@ -85,15 +90,20 @@ public class ColorTrainer {
         }
     }
 
-    public void addPixel(final CPoint p) {
-        if (!colorPointList.contains(p)) {
-            colorPointList.add(p);
+    /**
+     * fügt einen CPoint zur Liste und erstellt das WorkingCaptcha neu
+     * 
+     * @param cPoint
+     */
+    public void addCPoint(final CPoint cPoint) {
+        if (!colorPointList.contains(cPoint)) {
+            colorPointList.add(cPoint);
             if (fastSelection) {
                 for (int x = 0; x < workingCaptcha.getWidth(); x++) {
                     for (int y = 0; y < workingCaptcha.getHeight(); y++) {
                         workingCaptcha.grid[x][y] = workingCaptcha.getPixelValue(x, y);
-                        if (p.getColorDifference(originalCaptcha.getPixelValue(x, y)) < p.getDistance()) {
-                            workingCaptcha.grid[x][y] = p.isForeground() ? foregroundColor1 : backgroundColor1;
+                        if (cPoint.getColorDifference(originalCaptcha.getPixelValue(x, y)) < cPoint.getDistance()) {
+                            workingCaptcha.grid[x][y] = cPoint.isForeground() ? foregroundColor1 : backgroundColor1;
                         }
 
                     }
@@ -294,6 +304,9 @@ public class ColorTrainer {
         }
     }
 
+    /**
+     * Farbpunkt der bei den Koordinaten des MouseEvents liegt aus
+     */
     public CPoint getCPointFromMouseEvent(MouseEvent e) {
         CPoint p = new CPoint(e.getX() * 100 / zoom, e.getY() * 100 / zoom, (Integer) threshold, originalCaptcha);
         p.setColorDistanceMode(colorDifferenceMode);
