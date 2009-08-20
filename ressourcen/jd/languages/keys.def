@@ -7,11 +7,11 @@ easycaptcha.addbackgroundimagedialog.loadimage = Load BackgroundImage
 easycaptcha.addbackgroundimagedialog.generate = Generate Backgroundfilter
 easycaptcha.addbackgroundimagedialog.deletecolor = Deletecolor
 easycaptcha.finished = finish
+plugins.optional.httpliveheaderscripter.gui.menu.edit = Edit
+gui.component.textarea.context.delete = Delete
 easycaptcha.backgroundimagetrainer.title = BackgroundImage Trainer
 gui.menu.add = Add
 easycaptcha.backgroundimagetrainer.saveandexit = Save and Exit
-plugins.optional.httpliveheaderscripter.gui.menu.edit = Edit
-gui.component.textarea.context.delete = Delete
 easycaptcha.color = Color
 easycaptcha.labeled = Labeled:
 easycaptcha.foreground = foreground
@@ -545,6 +545,7 @@ gui.tooltip.progressicon = This module is active
 jd.gui.swing.jdgui.views.closableview.closebtn.tooltip = Close %s
 jd.gui.swing.jdgui.views.configurationview.tab.title = Settings
 jd.gui.swing.jdgui.views.configurationview.tab.tooltip = All options and settings for JDownloader
+jd.gui.swing.jdgui.views.downloadview.tablerenderer.tablerenderer.dateformat = dd.MM.yy HH:mm
 jd.gui.swing.jdgui.views.downloadview.tablerenderer.resume = Resumable download
 jd.gui.swing.jdgui.views.downloadview.tablerenderer.premium = Loading with Premium
 jd.gui.swing.jdgui.views.downloadview.tablerenderer.loadingfrom = Loading from
@@ -1297,9 +1298,7 @@ jd.utils.webupdate.message2 = <font size="4" face="Verdana, Arial, Helvetica, sa
 jd.utils.webupdate.progresscontroller.text = Update is running
 jd.update.main.error.title = Errors occured
 jd.update.main.error.message = Errors occured!\r\nThere were %s error(s) while updating. Do you want to update anyway?
-#pattern: jd\.gui\.swing\.ShortCuts\.(.+?)
 #pattern: sys\.warning\.dlcerror\.(.+?)
-#pattern: !(.+?)
 #pattern: gui\.menu\.(.+?)\.name
 #pattern: gui\.menu\.(.+?)\.mnem
 #pattern: gui\.menu\.(.+?)\.accel
