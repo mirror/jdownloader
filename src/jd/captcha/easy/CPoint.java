@@ -21,38 +21,118 @@ public class CPoint extends Point implements Serializable, Cloneable {
 
     private static final long serialVersionUID = 333616481245029882L;
     private int color, distance;
+    /**
+     * Fordergrund oder Hintergrund Buchstaben oder Hintergrund
+     */
+    private boolean foreground = true;
 
+    private byte colorDifferenceMode = LAB_DIFFERENCE;
+
+    /**
+     * Beim CPoint wird der Point um Farbeigenschaften erweitert und stellt
+     * verschiedene möglichkeiten zur verfügung um Farbunterschiede zu berechnen
+     */
+    public CPoint() {
+    }
+
+    /**
+     * Beim CPoint wird der Point um Farbeigenschaften erweitert und stellt
+     * verschiedene möglichkeiten zur verfügung um Farbunterschiede zu berechnen
+     * 
+     * @param x
+     * @param y
+     * @param distance
+     * @param captcha
+     */
+    public CPoint(int x, int y, int distance, Captcha captcha) {
+        this(x, y, distance, captcha.getPixelValue(x, y));
+    }
+
+    /**
+     * Beim CPoint wird der Point um Farbeigenschaften erweitert und stellt
+     * verschiedene möglichkeiten zur verfügung um Farbunterschiede zu berechnen
+     * 
+     * @param x
+     * @param y
+     * @param distance
+     * @param color
+     */
+    public CPoint(int x, int y, int distance, int color) {
+        super(x, y);
+        this.color = color;
+        this.distance = distance;
+    }
+
+    /**
+     * Farbe
+     * 
+     * @return
+     */
     public int getColor() {
         return color;
     }
 
+    /**
+     * Farbe
+     * 
+     * @param color
+     */
     public void setColor(int color) {
         this.color = color;
     }
 
-    private boolean foreground = true;
-    private byte colorDifferenceMode = LAB_DIFFERENCE;
-
+    /**
+     * Farbmodus
+     * 
+     * @param colorDistanceMode
+     *            CPoint.LAB_DIFFERENCE CPoint.RGB_DIFFERENCE1 ...
+     */
     public byte getColorDistanceMode() {
         return colorDifferenceMode;
     }
 
+    /**
+     * Farbmodus
+     * 
+     * @param colorDistanceMode
+     *            CPoint.LAB_DIFFERENCE CPoint.RGB_DIFFERENCE1 ...
+     */
     public void setColorDistanceMode(byte colorDistanceMode) {
         this.colorDifferenceMode = colorDistanceMode;
     }
 
+    /**
+     * handelt es sich um einen Fordergrund / Buchstaben oder um Hintergrund
+     * 
+     * @return false wenn Hintergrund
+     */
     public boolean isForeground() {
         return foreground;
     }
 
+    /**
+     * @param Wenn
+     *            Fordergrund / Buchstaben dann true beim Hintergrund false
+     */
     public void setForeground(boolean foreground) {
         this.foreground = foreground;
     }
 
+    /**
+     * Erlaubter Farbunterschied
+     * 
+     * @return
+     */
     public int getDistance() {
         return distance;
     }
 
+    /**
+     * gibt anhand von colorDifferenceMode unterschied zur übergebenen Farbe aus
+     * 
+     * @param color
+     * @return
+     */
     public double getColorDifference(int color) {
         double dst = 0;
 
@@ -92,20 +172,12 @@ public class CPoint extends Point implements Serializable, Cloneable {
         return dst;
     }
 
+    /**
+     * 
+     * @param Erlaubter
+     *            Farbunterschied
+     */
     public void setDistance(int distance) {
-        this.distance = distance;
-    }
-
-    public CPoint() {
-    }
-
-    public CPoint(int x, int y, int distance, Captcha captcha) {
-        this(x, y, distance, captcha.getPixelValue(x, y));
-    }
-
-    public CPoint(int x, int y, int distance, int color) {
-        super(x, y);
-        this.color = color;
         this.distance = distance;
     }
 
@@ -114,8 +186,11 @@ public class CPoint extends Point implements Serializable, Cloneable {
         return new CPoint(x, y, distance, color);
     }
 
+    /**
+     * prüft ob die farbe und
+     */
     @Override
     public boolean equals(Object obj) {
-        return super.equals(obj) || ((CPoint) obj).color == color;
+        return super.equals(obj) || (obj != null && obj instanceof CPoint && ((CPoint) obj).color == color);
     }
 }
