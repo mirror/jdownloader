@@ -75,6 +75,9 @@ class PropMenuItem extends JMenuItem implements ActionListener {
 
 public class LinkGrabberTable extends JDTable implements MouseListener, MouseMotionListener, KeyListener {
 
+    public final static byte EXPCOL_TOP = 0;
+    public final static byte EXPCOL_CUR = 1;
+    public final static byte EXPCOL_BOT = 2;
     private static final long serialVersionUID = 1L;
 
     protected LinkGrabberPanel linkgrabber;
@@ -208,7 +211,13 @@ public class LinkGrabberTable extends JDTable implements MouseListener, MouseMot
             if (p != null && p.getX() < 30) {
                 Object element = getValueAt(row, 0);
                 if (element != null && element instanceof LinkGrabberFilePackage) {
-                    toggleFilePackageExpand((LinkGrabberFilePackage) element);
+                    if (e.isControlDown() && !e.isShiftDown()) {
+                        toggleFilePackageExpand((LinkGrabberFilePackage) element, EXPCOL_BOT);
+                    } else if (e.isControlDown() && e.isShiftDown()) {
+                        toggleFilePackageExpand((LinkGrabberFilePackage) element, EXPCOL_TOP);
+                    } else {
+                        toggleFilePackageExpand((LinkGrabberFilePackage) element, EXPCOL_CUR);
+                    }
                     return;
                 }
             }
@@ -225,9 +234,36 @@ public class LinkGrabberTable extends JDTable implements MouseListener, MouseMot
         }
     }
 
-    public void toggleFilePackageExpand(LinkGrabberFilePackage fp) {
-        fp.setProperty(PROPERTY_EXPANDED, !fp.getBooleanProperty(PROPERTY_EXPANDED, false));
-        fp.setProperty(PROPERTY_USEREXPAND, true);
+    public void toggleFilePackageExpand(LinkGrabberFilePackage fp, byte mode) {
+        boolean cur = !fp.getBooleanProperty(PROPERTY_EXPANDED, false);
+        switch (mode) {
+        case EXPCOL_CUR:
+            fp.setProperty(PROPERTY_EXPANDED, cur);
+            fp.setProperty(PROPERTY_USEREXPAND, true);
+            break;
+        case EXPCOL_TOP: {
+            ArrayList<LinkGrabberFilePackage> packages = new ArrayList<LinkGrabberFilePackage>(LinkGrabberController.getInstance().getPackages());
+            int indexfp = LinkGrabberController.getInstance().indexOf(fp);
+            for (int index = 0; index <= indexfp; index++) {
+                LinkGrabberFilePackage fp2 = packages.get(index);
+                fp2.setProperty(PROPERTY_EXPANDED, cur);
+                fp2.setProperty(PROPERTY_USEREXPAND, true);
+            }
+        }
+            break;
+        case EXPCOL_BOT: {
+            ArrayList<LinkGrabberFilePackage> packages = new ArrayList<LinkGrabberFilePackage>(LinkGrabberController.getInstance().getPackages());
+            int indexfp = LinkGrabberController.getInstance().indexOf(fp);
+            for (int index = indexfp; index < packages.size(); index++) {
+                LinkGrabberFilePackage fp2 = packages.get(index);
+                fp2.setProperty(PROPERTY_EXPANDED, cur);
+                fp2.setProperty(PROPERTY_USEREXPAND, true);
+            }
+        }
+            break;
+        default:
+            return;
+        }
         linkgrabber.fireTableChanged();
     }
 

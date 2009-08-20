@@ -40,6 +40,7 @@ import javax.swing.UIManager;
 
 import jd.config.MenuAction;
 import jd.config.Property;
+import jd.controlling.DownloadController;
 import jd.controlling.DownloadWatchDog;
 import jd.event.ControlEvent;
 import jd.gui.swing.GuiRunnable;
@@ -83,6 +84,9 @@ class PropMenuItem extends JMenuItem implements ActionListener {
 public class DownloadTable extends JDTable implements MouseListener, MouseMotionListener, KeyListener {
 
     public static final String PROPERTY_EXPANDED = "expanded";
+    public final static byte EXPCOL_TOP = 0;
+    public final static byte EXPCOL_CUR = 1;
+    public final static byte EXPCOL_BOT = 2;
 
     private static final long serialVersionUID = 1L;
 
@@ -421,7 +425,13 @@ public class DownloadTable extends JDTable implements MouseListener, MouseMotion
             if (p != null && p.getX() < 30) {
                 Object element = getValueAt(row, 0);
                 if (element != null && element instanceof FilePackage) {
-                    toggleFilePackageExpand((FilePackage) element);
+                    if (e.isControlDown() && !e.isShiftDown()) {
+                        toggleFilePackageExpand((FilePackage) element, EXPCOL_BOT);
+                    } else if (e.isControlDown() && e.isShiftDown()) {
+                        toggleFilePackageExpand((FilePackage) element, EXPCOL_TOP);
+                    } else {
+                        toggleFilePackageExpand((FilePackage) element, EXPCOL_CUR);
+                    }
                     return;
                 }
             }
@@ -439,9 +449,33 @@ public class DownloadTable extends JDTable implements MouseListener, MouseMotion
 
     }
 
-    public void toggleFilePackageExpand(FilePackage fp) {
-        fp.setProperty(DownloadTable.PROPERTY_EXPANDED, !fp.getBooleanProperty(DownloadTable.PROPERTY_EXPANDED, false));
+    public void toggleFilePackageExpand(FilePackage fp, byte mode) {
+        boolean cur = !fp.getBooleanProperty(DownloadTable.PROPERTY_EXPANDED, false);
+        switch (mode) {
+        case EXPCOL_CUR:
+            fp.setProperty(DownloadTable.PROPERTY_EXPANDED, cur);
+            break;
+        case EXPCOL_TOP: {
+            ArrayList<FilePackage> packages = new ArrayList<FilePackage>(DownloadController.getInstance().getPackages());
+            int indexfp = DownloadController.getInstance().indexOf(fp);
+            for (int index = 0; index <= indexfp; index++) {
+                FilePackage fp2 = packages.get(index);
+                fp2.setProperty(DownloadTable.PROPERTY_EXPANDED, cur);
+            }
+        }
+            break;
+        case EXPCOL_BOT: {
+            ArrayList<FilePackage> packages = new ArrayList<FilePackage>(DownloadController.getInstance().getPackages());
+            int indexfp = DownloadController.getInstance().indexOf(fp);
+            for (int index = indexfp; index < packages.size(); index++) {
+                FilePackage fp2 = packages.get(index);
+                fp2.setProperty(DownloadTable.PROPERTY_EXPANDED, cur);
+            }
+        }
+            break;
+        default:
+            return;
+        }
         panel.updateTableTask(DownloadLinksPanel.REFRESH_DATA_AND_STRUCTURE_CHANGED_FAST, null);
     }
-
 }

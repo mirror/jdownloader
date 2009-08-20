@@ -79,7 +79,10 @@ public abstract class GuiRunnable<T> implements Runnable {
     }
 
     public void run() {
-        this.returnValue = this.runSave();
+        try {
+            this.returnValue = this.runSave();
+        } catch (Exception e) {
+        }
         synchronized (lock) {
             lock.notify();
             lock = null;
@@ -93,10 +96,9 @@ public abstract class GuiRunnable<T> implements Runnable {
      */
     public void start() {
         setStarted(true);
-   
-  
+
         if (SwingUtilities.isEventDispatchThread()) {
-//            if(      SwingGui.checkEDT()){
+            // if( SwingGui.checkEDT()){
             run();
         } else {
             SwingUtilities.invokeLater(this);
