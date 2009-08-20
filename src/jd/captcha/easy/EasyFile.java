@@ -98,7 +98,7 @@ public class EasyFile implements JDLabelContainer, Serializable {
                 } else {
                     return new GuiRunnable<String>() {
                         public String runSave() {
-                            if (!LoadCaptchas.load(getName())) {
+                            if (!new LoadCaptchas(getName()).start()) {
                                 openCaptchaFolder();
                                 return "jpg";
                             }

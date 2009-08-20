@@ -349,8 +349,7 @@ public class EasyCaptchaTool {
                 new Thread(new Runnable() {
 
                     public void run() {
-                        LoadCaptchas.load(meth.getName(), false);
-
+                        new LoadCaptchas(meth.getName()).start();
                     }
                 }).start();
 
