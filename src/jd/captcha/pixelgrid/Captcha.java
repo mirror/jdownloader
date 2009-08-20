@@ -41,6 +41,8 @@ import jd.captcha.utils.Utilities;
 import jd.controlling.JDLogger;
 import jd.nutils.Colors;
 
+import com.jhlabs.image.BoxBlurFilter;
+import com.jhlabs.image.ContrastFilter;
 import com.sun.image.codec.jpeg.ImageFormatException;
 import com.sun.image.codec.jpeg.JPEGCodec;
 import com.sun.image.codec.jpeg.JPEGImageEncoder;
@@ -1173,7 +1175,24 @@ public class Captcha extends PixelGrid {
 
         return ret;
     }
-
+    
+    public void setContrast(float contrast) {
+        BufferedImage image = (BufferedImage) getImage();
+        ContrastFilter cf = new ContrastFilter();
+        cf.setContrast(8);
+        BufferedImage dest = cf.createCompatibleDestImage(image, null);
+        cf.filter(image, dest);
+        Captcha cap2 = owner.createCaptcha(dest);
+        grid=cap2.grid;
+    }
+    public void blur(int hRadius, int vRadius, int iteration) {
+        BufferedImage image = (BufferedImage) getImage();
+        BoxBlurFilter blur = new BoxBlurFilter(hRadius, vRadius, iteration);
+        BufferedImage dest = blur.createCompatibleDestImage(image, null);
+        blur.filter(image, dest);
+        Captcha cap2 = owner.createCaptcha(dest);
+        grid=cap2.grid;
+    }
     /**
      * Sucht angefangen bei der aktullen Positiond en ncähsten letter und gibt
      * ihn zurück
