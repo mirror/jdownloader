@@ -18,6 +18,7 @@ import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JDialog;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -32,7 +33,6 @@ import jd.utils.locale.JDL;
 import jd.nutils.JDImage;
 import jd.nutils.Screen;
 import jd.gui.swing.dialog.ProgressDialog;
-import jd.gui.userio.DummyFrame;
 
 public class LoadCaptchas {
     private static final long serialVersionUID = 1L;
@@ -42,6 +42,7 @@ public class LoadCaptchas {
     private Browser br = new Browser();
     private ArrayList<LoadImage> images;
     private LoadImage selectedImage;
+    private JFrame owner;
     /**
      * Ordner in den die Bilder geladen werden (default: jdCaptchaFolder/host)
      * 
@@ -53,8 +54,8 @@ public class LoadCaptchas {
      * 
      * @return
      */
-    public LoadCaptchas() {
-        this(null, false);
+    public LoadCaptchas(JFrame owner) {
+        this(owner,null);
     }
 
     /**
@@ -63,8 +64,8 @@ public class LoadCaptchas {
      *            wenn der Hostname = null ist wird er aus dem Link erstellt
      * @return
      */
-    public LoadCaptchas(String host) {
-        this(host, false);
+    public LoadCaptchas(JFrame owner, String host) {
+        this(owner,host, false);
     }
 
     /**
@@ -75,9 +76,10 @@ public class LoadCaptchas {
      *            ob am ende der Captchaordner im Browser geöffnet werden soll
      * @return
      */
-    public LoadCaptchas(String host, boolean opendir) {
+    public LoadCaptchas(JFrame owner, String host, boolean opendir) {
         this.host = host;
         this.opendir = opendir;
+        this.owner=owner;
     }
 
     /**
@@ -89,10 +91,11 @@ public class LoadCaptchas {
             if (loadinfo == null) return false;
             final JDialog dialog = new GuiRunnable<JDialog>() {
                 public JDialog runSave() {
-                    return new JDialog(DummyFrame.getDialogParent());
+                    return new JDialog(owner);
                 }
             }.getReturnValue();
             dialog.setModal(true);
+            dialog.setAlwaysOnTop(true);
             br.getPage(loadinfo.link);
             if (host == null) {
                 host = br.getHost().toLowerCase();
@@ -181,7 +184,8 @@ public class LoadCaptchas {
                     dialog.add(new JScrollPane(panel));
 
                     dialog.pack();
-                    dialog.setLocation(Screen.getCenterOfComponent(DummyFrame.getDialogParent(), dialog));
+                    dialog.setLocation(Screen.getCenterOfComponent(owner, dialog));
+                    dialog.setAlwaysOnTop(true);
                     dialog.setVisible(true);
 
                     return null;
@@ -280,13 +284,15 @@ public class LoadCaptchas {
      * 
      * @return
      */
-    private static LoadInfo getLoadInfo() {
+    private LoadInfo getLoadInfo() {
         final JDialog dialog = new GuiRunnable<JDialog>() {
             public JDialog runSave() {
-                return new JDialog(DummyFrame.getDialogParent());
+                return new JDialog(owner);
             }
         }.getReturnValue();
         dialog.setModal(true);
+        dialog.setAlwaysOnTop(true);
+
         final JPanel p = new GuiRunnable<JPanel>() {
             public JPanel runSave() {
                 JPanel ret = new JPanel(new GridLayout(3, 2));
@@ -367,8 +373,10 @@ public class LoadCaptchas {
         dialog.add(p);
         new GuiRunnable<Object>() {
             public Object runSave() {
-                dialog.setLocation(Screen.getCenterOfComponent(DummyFrame.getDialogParent(), dialog));
+                dialog.setLocation(Screen.getCenterOfComponent(owner, dialog));
                 dialog.pack();
+                dialog.setAlwaysOnTop(true);
+
                 dialog.setVisible(true);
 
                 return null;
@@ -417,9 +425,10 @@ public class LoadCaptchas {
             final ProgressDialog pd = new GuiRunnable<ProgressDialog>() {
                 public ProgressDialog runSave() {
 
-                    return new ProgressDialog(DummyFrame.getDialogParent(), JDL.L("easycaptcha.loadcaptchas.loadimages", "load images please wait"), null, false, true);
+                    return new ProgressDialog(owner, JDL.L("easycaptcha.loadcaptchas.loadimages", "load images please wait"), null, false, true);
                 }
             }.getReturnValue();
+            pd.setAlwaysOnTop(true);
             Runnable runnable = new Runnable() {
                 public void run() {
                     for (int k = 0; k < loadinfo.menge; k++) {
@@ -510,9 +519,10 @@ public class LoadCaptchas {
         final ProgressDialog pd = new GuiRunnable<ProgressDialog>() {
             public ProgressDialog runSave() {
 
-                return new ProgressDialog(DummyFrame.getDialogParent(), JDL.L("easycaptcha.loadcaptchas.loadimages", "load images please wait"), null, false, true);
+                return new ProgressDialog(owner, JDL.L("easycaptcha.loadcaptchas.loadimages", "load images please wait"), null, false, true);
             }
         }.getReturnValue();
+        pd.setAlwaysOnTop(true);
         final Thread th = new Thread(new Runnable() {
             public void run() {
                 final Thread[] jb = new Thread[images.size()];
@@ -580,9 +590,10 @@ public class LoadCaptchas {
         final ProgressDialog pd = new GuiRunnable<ProgressDialog>() {
             public ProgressDialog runSave() {
 
-                return new ProgressDialog(DummyFrame.getDialogParent(), JDL.L("easycaptcha.loadcaptchas.loadimages", "load images please wait"), null, false, true);
+                return new ProgressDialog(owner, JDL.L("easycaptcha.loadcaptchas.loadimages", "load images please wait"), null, false, true);
             }
         }.getReturnValue();
+        pd.setAlwaysOnTop(true);
         final Runnable runnable = new Runnable() {
             public void run() {
                 try {

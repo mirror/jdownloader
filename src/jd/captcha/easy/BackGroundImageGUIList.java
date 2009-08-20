@@ -11,10 +11,12 @@ import jd.utils.locale.JDL;
 import jd.gui.swing.GuiRunnable;
 
 public class BackGroundImageGUIList implements ActionListener {
-    public BackGroundImageGUIList(EasyMethodeFile methode) {
+    public BackGroundImageGUIList(EasyMethodeFile methode, JFrame owner) {
         this.manager = new BackGroundImageManager(methode);
+        this.owner = owner;
     }
 
+    private JFrame owner;
     private JDialog mainDialog;
     private JPanel panel, imageBox;
     private BackGroundImageManager manager;
@@ -56,9 +58,12 @@ public class BackGroundImageGUIList implements ActionListener {
                             public Object runSave() {
 
                                 BackGroundImage dialogImage = bgio.clone();
-                                BackGroundImageDialog bgiaDialog = new BackGroundImageDialog(manager);
-                                bgiaDialog.dialogImage = dialogImage;
+                                mainDialog.setAlwaysOnTop(false);
+                                BackGroundImageDialog bgiaDialog = new BackGroundImageDialog(manager, owner);
+                                bgiaDialog.workingImage = dialogImage;
                                 dialogImage = bgiaDialog.getNewBackGroundImage();
+                                mainDialog.setAlwaysOnTop(true);
+
                                 if (dialogImage != null) {
                                     if (!bgio.getBackgroundImage().equals(dialogImage.getBackgroundImage())) {
                                         bgio.setBackgroundImage(dialogImage.getBackgroundImage());
@@ -105,7 +110,8 @@ public class BackGroundImageGUIList implements ActionListener {
     public void show() {
         new GuiRunnable<Object>() {
             public Object runSave() {
-                mainDialog = new JDialog(DummyFrame.getDialogParent());
+                mainDialog = new JDialog(owner);
+                mainDialog.setAlwaysOnTop(true);
                 mainDialog.setModal(true);
                 panel = new JPanel();
                 panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
@@ -149,9 +155,15 @@ public class BackGroundImageGUIList implements ActionListener {
                 }
             }.waitForEDT();
         } else if (e.getSource() == btAdd) {
-            BackGroundImageDialog bgiaDialog = new BackGroundImageDialog(manager);
-            showImage(bgiaDialog.getNewBackGroundImage());
-            mainDialog.pack();
+            mainDialog.setAlwaysOnTop(false);
+            BackGroundImageDialog bgiaDialog = new BackGroundImageDialog(manager, owner);
+            BackGroundImage ret = bgiaDialog.getNewBackGroundImage();
+            if (ret != null) {
+                showImage(bgiaDialog.getNewBackGroundImage());
+                mainDialog.pack();
+            }
+            mainDialog.setAlwaysOnTop(true);
+
         }
     }
 

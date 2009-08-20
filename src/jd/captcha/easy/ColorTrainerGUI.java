@@ -19,6 +19,7 @@ import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
+import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -46,9 +47,17 @@ public class ColorTrainerGUI {
     private boolean close = true;
     private JButton back;
     private JLabel colorState;
-    private JFrame frame;
+    private JDialog frame;
     private ColorTrainer colorTrainer = new ColorTrainer();
-
+    public ColorTrainerGUI(final JFrame owner)
+    {
+        new GuiRunnable<Object>() {
+            public Object runSave() {
+                frame = new JDialog(owner);
+                return null;
+            }
+        }.waitForEDT();
+    }
     public void removePixelAbsolut(CPoint cp) {
         backUP();
         colorTrainer.removeCPoint(cp);
@@ -159,15 +168,6 @@ public class ColorTrainerGUI {
         gbc.weightx = 1;
 
         return gbc;
-    }
-
-    public ColorTrainerGUI() {
-        new GuiRunnable<Object>() {
-            public Object runSave() {
-                frame = new JFrame();
-                return null;
-            }
-        }.waitForEDT();
     }
 
     private void addImages() {
@@ -421,7 +421,7 @@ public class ColorTrainerGUI {
         }
     }
 
-    public static Vector<CPoint> getColors(File folder, String hoster, Vector<CPoint> colorPoints) {
+    public static Vector<CPoint> getColors(File folder, String hoster, Vector<CPoint> colorPoints, JFrame owner) {
         File file = new File(JDUtilities.getJDHomeDirectoryFromEnvironment() + "/" + JDUtilities.getJACMethodsDirectory() + hoster + "/CPoints.xml");
 
         File[] list = folder.listFiles();
@@ -439,7 +439,7 @@ public class ColorTrainerGUI {
             bgit.clearCaptchaAll();
             captcha.setCaptchaFile(captchafile);
             cs[i] = captcha;
-            ColorTrainerGUI cc = new ColorTrainerGUI();
+            ColorTrainerGUI cc = new ColorTrainerGUI(owner);
             cc.colorTrainer.colorPointList = colorPoints;
             cc.colorTrainer.originalCaptcha = captcha;
             if (lastCC != null) {
@@ -474,15 +474,15 @@ public class ColorTrainerGUI {
      * @param file
      * @return
      */
-    public static Vector<CPoint> getColor(EasyMethodeFile file) {
-        return getColors(file.getCaptchaFolder(), file.getName(), null);
+    public static Vector<CPoint> getColor(EasyMethodeFile file, JFrame owner) {
+        return getColors(file.getCaptchaFolder(), file.getName(), null, owner);
     }
 
     public static void main(String[] args) {
         String path = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath();
         String hoster = "canna.to";
         File folder = new File(path + "/captchas/" + hoster);
-        getColors(folder, hoster, null);
+        getColors(folder, hoster, null, new JFrame());
     }
 
 }

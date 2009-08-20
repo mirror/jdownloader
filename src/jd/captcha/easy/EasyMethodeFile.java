@@ -112,7 +112,7 @@ public class EasyMethodeFile implements JDLabelContainer, Serializable {
                 } else {
                     return new GuiRunnable<String>() {
                         public String runSave() {
-                            if (!new LoadCaptchas(getName()).start()) {
+                            if (!new LoadCaptchas(EasyCaptchaTool.ownerFrame, getName()).start()) {
                                 openCaptchaFolder();
                                 return "jpg";
                             }
