@@ -4,7 +4,12 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Vector;
+
 import javax.swing.ImageIcon;
+
+import jd.nutils.io.JDIO;
+
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.utils.Utilities;
 import jd.captcha.JAntiCaptcha;
@@ -30,6 +35,24 @@ public class EasyMethodeFile implements JDLabelContainer, Serializable {
 
     public EasyMethodeFile() {
     }
+    public boolean isReadyToTrain() {
+        if(!isEasyCaptchaMethode())return true;
+        Vector<CPoint> list = ColorTrainer.load(new File(file,"CPoints.xml"));
+        boolean hasForderGround = false;
+        boolean hasBackGround = false;
+
+        for (CPoint point : list) {
+            if(point.isForeground())
+                hasForderGround=true;
+            else
+                hasBackGround=true;
+        }
+        return hasForderGround && hasBackGround;
+    }
+    public boolean isEasyCaptchaMethode() {
+        File js = getScriptJas();
+        return js.exists() && JDIO.getLocalFile(js).contains("param.useSpecialGetLetters=EasyCaptcha.getLetters;");
+    }
 
     public File getFile() {
         return file;
@@ -45,9 +68,11 @@ public class EasyMethodeFile implements JDLabelContainer, Serializable {
         return new File(file, "script.jas");
 
     }
+
     public File getJacinfoXml() {
         return new File(file, "jacinfo.xml");
     }
+
     /**
      * 
      * @return JAntiCaptcha Instanz für die Methode

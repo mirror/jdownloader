@@ -20,19 +20,12 @@ import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import javax.swing.SpinnerNumberModel;
-
 import jd.gui.userio.DummyFrame;
-
-import jd.nutils.io.JDIO;
-
 import jd.JDInit;
-
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.utils.Utilities;
-
 import jd.gui.swing.jdgui.events.EDTEventQueue;
 import jd.gui.swing.laf.LookAndFeelController;
-
 import jd.config.SubConfiguration;
 import jd.utils.locale.JDL;
 import jd.gui.swing.jdgui.settings.JDLabelListRenderer;
@@ -218,7 +211,15 @@ public class EasyCaptchaTool {
         config.save();
         JDUtilities.getConfiguration().save();
     }
-
+    public static void checkReadyToTrain(final EasyMethodeFile meth, final JButton btnTrain)
+    {
+            new GuiRunnable<Object>() {
+                public Object runSave() {
+                    btnTrain.setEnabled(meth.isReadyToTrain());
+                    return null;
+                }
+            }.waitForEDT();
+    }
     public static void showToolKid(final EasyMethodeFile meth) {
 
         CreateHoster.setImageType(meth);
@@ -263,7 +264,7 @@ public class EasyCaptchaTool {
                 return new JPanel(new GridLayout(5, 1));
             }
         }.getReturnValue();
-        JButton btnTrain = new GuiRunnable<JButton>() {
+        final JButton btnTrain = new GuiRunnable<JButton>() {
             public JButton runSave() {
                 return new JButton(JDL.L("easycaptcha.tool.btn.train", "Train"));
             }
@@ -314,7 +315,7 @@ public class EasyCaptchaTool {
 
                     public void run() {
                         ColorTrainerGUI.getColor(meth, ownerFrame);
-
+                        checkReadyToTrain(meth, btnTrain);
                     }
                 }).start();
 
@@ -358,7 +359,7 @@ public class EasyCaptchaTool {
 
             }
         });
-        if (!JDIO.getLocalFile(meth.getScriptJas()).contains("param.useSpecialGetLetters=EasyCaptcha.getLetters;")) {
+        if (!meth.isEasyCaptchaMethode()) {
             new GuiRunnable<Object>() {
                 public Object runSave() {
                     btnColorTrainer.setEnabled(false);
@@ -367,6 +368,11 @@ public class EasyCaptchaTool {
                 }
             }.waitForEDT();
         }
+        else
+        {
+            checkReadyToTrain(meth, btnTrain);
+        }
+
         box.add(btnColorLoadCaptchas);
         dialog.add(box);
         new GuiRunnable<Object>() {
