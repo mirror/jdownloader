@@ -51,6 +51,8 @@ public class Updater {
         SERVERLIST.append("-1:http://jdupdate.bluehost.to/branches/%BRANCH%/\r\n");
         SERVERLIST.append("-1:http://update1.jdownloader.org/%BRANCH%/\r\n");
         SERVERLIST.append("-1:http://update2.jdownloader.org/%BRANCH%/\r\n");
+        SERVERLIST.append("-1:http://jd.code4everyone.de/%BRANCH%/\r\n");
+      
         SERVERLIST.append("-1:http://update0.jdownloader.org/%BRANCH%/\r\n");
     }
 
@@ -81,9 +83,16 @@ public class Updater {
         // //
         upd.merge();
         upd.checkHashes();
-        upd.clone0(upd.branch);
-        upd.clone2(upd.branch);
+        upd.clone2(upd.branch,"http://update0.jdownloader.org/clone.php");
+        upd.clone2(upd.branch,"http://update2.jdownloader.org/clone.php");
+       list=upd.getLocalFileList(upd.workingDir, false);
+        
+        SimpleFTP.uploadSecure("jdupdate.bluehost.to", 2100, getCFG("jdupdate.bluehost.to_ftp_user"), getCFG("jdupdate.bluehost.to_ftp_pass"), "/branches/" + branch, upd.updateDir, list.toArray(new File[] {}));
+        
+        SimpleFTP.uploadSecure("update4ex.jdownloader.org", 21, getCFG("update4ex_ftp_user"), getCFG("update4ex_ftp_pass"), "/branches/" + branch, upd.updateDir, list.toArray(new File[] {}));
+        SimpleFTP.uploadSecure("jd.code4everyone.de", 21, getCFG("jd.code4everyone.de_ftp_user"), getCFG("jd.code4everyone.de_ftp_pass"), "/httpdocs/" + branch, upd.updateDir, list.toArray(new File[] {}));
 
+        
         upd.uploadHashList();
 
         System.exit(0);
@@ -213,43 +222,25 @@ public class Updater {
 
     }
 
-    private void clone2(String branch) throws IOException {
+    private void clone2(String branch,String path) throws IOException {
         LinkedHashMap<String, String> map = createHashList(this.workingDir);
         Browser br = new Browser();
         br.forceDebug(true);
 
         map.put("pass", getCFG("updateHashPW"));
 
-        br.postPage("http://update2.jdownloader.org/clone.php?pass=" + getCFG("updateHashPW") + "&branch=" + branch, map);
+        br.postPage(path+"?pass=" + getCFG("updateHashPW") + "&branch=" + branch, map);
         System.out.println(br + "");
         // map = map;
         if (!br.containsHTML("<b>fail</b>") && !br.containsHTML("<b>Warning</b>") && !br.containsHTML("<b>Error</b>")) {
-            System.out.println("CLONE update2 OK");
+            System.out.println("CLONE OK "+path);
             return;
         }
 
-        JOptionPane.showConfirmDialog(frame, "MD5 ERROR!!!! See log");
+        JOptionPane.showConfirmDialog(frame, "MD5 ERROR!!!! See log"+path);
 
     }
 
-    private void clone0(String branch) throws IOException {
-        LinkedHashMap<String, String> map = createHashList(this.workingDir);
-        Browser br = new Browser();
-        br.forceDebug(true);
-
-        map.put("pass", getCFG("updateHashPW"));
-
-        br.postPage("http://update0.jdownloader.org/clone.php?pass=" + getCFG("updateHashPW") + "&branch=" + branch, map);
-        System.out.println(br + "");
-        // map = map;
-        if (!br.containsHTML("<b>fail</b>") && !br.containsHTML("<b>Warning</b>") && !br.containsHTML("<b>Error</b>")) {
-            System.out.println("CLONE update0 OK");
-            return;
-        }
-
-        JOptionPane.showConfirmDialog(frame, "MD5 ERROR!!!! See log");
-
-    }
 
     // private void lockUpdate() throws IOException {
     // Browser br = new Browser();

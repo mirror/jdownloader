@@ -19,7 +19,7 @@ package jd.captcha;
 import java.io.File;
 import java.io.FileFilter;
 import java.util.Collections;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.logging.Logger;
 
 import jd.controlling.JDLogger;
@@ -36,7 +36,7 @@ public class JACMethod implements Comparable<JACMethod> {
 
     private static Logger logger = JDLogger.getLogger();
 
-    private static Vector<JACMethod> methods = null;
+    private static ArrayList<JACMethod> methods = null;
 
     public static String forServiceName(String service) {
         for (JACMethod method : getMethods()) {
@@ -49,9 +49,9 @@ public class JACMethod implements Comparable<JACMethod> {
         return service;
     }
 
-    public static Vector<JACMethod> getMethods() {
+    public static ArrayList<JACMethod> getMethods() {
         if (methods != null) return methods;
-        Vector<JACMethod> methods = new Vector<JACMethod>();
+        ArrayList<JACMethod> methods = new ArrayList<JACMethod>();
         for (File methodDir : getMethodDirs()) {
             methods.addAll(parseJACInfo(methodDir));
         }
@@ -78,7 +78,7 @@ public class JACMethod implements Comparable<JACMethod> {
         return entries;
     }
 
-    private static Vector<JACMethod> parseJACInfo(File dir) {
+    private static ArrayList<JACMethod> parseJACInfo(File dir) {
         String filecontent = JDIO.getLocalFile(new File(dir.getAbsolutePath() + "/jacinfo.xml"));
         Document doc = JDUtilities.parseXmlString(filecontent, false);
         if (doc == null) return null;
@@ -109,7 +109,7 @@ public class JACMethod implements Comparable<JACMethod> {
             }
         }
 
-        Vector<JACMethod> methods = new Vector<JACMethod>();
+        ArrayList<JACMethod> methods = new ArrayList<JACMethod>();
         if (services != null) {
             for (String service : services) {
                 methods.add(new JACMethod(dir.getName(), service, author));

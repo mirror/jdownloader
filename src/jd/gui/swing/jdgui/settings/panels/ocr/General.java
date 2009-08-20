@@ -16,7 +16,8 @@
 
 package jd.gui.swing.jdgui.settings.panels.ocr;
 
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.Iterator;
 
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
@@ -115,7 +116,7 @@ public class General extends ConfigPanel {
 
     private static final long serialVersionUID = 1592765387324291781L;
 
-    private Vector<JACMethod> methods;
+    private ArrayList<JACMethod> methods;
 
     private JTable table;
 
@@ -127,6 +128,41 @@ public class General extends ConfigPanel {
         super();
         this.configuration = configuration;
         methods = JACMethod.getMethods();
+      for( Iterator<JACMethod> it = methods.iterator();it.hasNext();){
+          JACMethod next = it.next();
+          if(next.getServiceName().equalsIgnoreCase("underground cms")){
+              it.remove();
+              continue;
+          }
+          if(next.getServiceName().equalsIgnoreCase("uu.canna.to")){
+              it.remove();
+              continue;
+          }
+          if(next.getServiceName().equalsIgnoreCase("wii-reloaded.ath.cx")){
+              it.remove();
+              continue;
+          }
+          if(next.getServiceName().equalsIgnoreCase("raubkopierer.ws")){
+              it.remove();
+              continue;
+          }
+          if(next.getServiceName().equalsIgnoreCase("appscene.org")){
+              it.remove();
+              continue;
+          }
+          if(next.getServiceName().equalsIgnoreCase("canna.to")){
+              it.remove();
+              continue;
+          }
+          if(next.getServiceName().equalsIgnoreCase("serienfreaks.to")){
+              it.remove();
+              continue;
+          }
+          if(next.getServiceName().equalsIgnoreCase("sealed.in")){
+              it.remove();
+              continue;
+          }
+      }
         initPanel();
         load();
     }
