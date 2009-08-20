@@ -16,12 +16,11 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
-
 import jd.PluginWrapper;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
+import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -29,7 +28,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision", interfaceVersion = 2, names = { "sharovar.com" }, urls = { "http://[\\w\\.]*?sharovar\\.com/files/.+{1,}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharovar.com" }, urls = { "http://[\\w\\.]*?sharovar\\.com/files/.+{1,}" }, flags = { 0 })
 public class SharovarCom extends PluginForHost {
 
     public SharovarCom(PluginWrapper wrapper) {
@@ -42,7 +41,7 @@ public class SharovarCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(link.getDownloadURL());
@@ -54,14 +53,14 @@ public class SharovarCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
 
-        Form DLForm = br.getForm(3);
-        if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        br.submitForm(DLForm);
+        Form dlform = br.getForm(3);
+        if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        br.submitForm(dlform);
         String dllink = br.getRegex("Now you can download file</h3><form action=\"(.*)\" method=\"post\" enctype=\"application/").getMatch(0);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, dllink, false, 1);
+        dl = BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();
             // check ob limit aktiv, falls ja wird ein neuer Versuch gestartet,
