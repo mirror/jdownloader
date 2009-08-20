@@ -39,7 +39,46 @@ public class BackGroundImageDialog implements ActionListener {
     private int threshold = 2;
     private byte modeByte = CPoint.LAB_DIFFERENCE;
     private JPanel images;
-
+    public BackGroundImage getNewBackGroundImage() {
+        init();
+        return ret;
+    }
+    private void init() {
+        initDialog();
+        initCaptchaImages();
+        initComponents();
+        addComponentsToDialog();
+    }
+    private void addComponentsToDialog()
+    {
+        new GuiRunnable<Object>() {
+            public Object runSave() {
+                JPanel box = new JPanel();
+                box.setLayout(new GridBagLayout());
+                GridBagConstraints gbc = Utilities.getGBC(0, 0, 1, 1);
+                gbc.anchor = GridBagConstraints.NORTH;
+                gbc.fill = GridBagConstraints.BOTH;
+                gbc.weighty = 1;
+                gbc.weightx = 1;
+                box.add(images, gbc);
+                Box menu = new Box(BoxLayout.X_AXIS);
+                menu.add(btLoadBackgroundImage);
+                menu.add(btCreateBackgroundFilter);
+                menu.add(btColorChoose);
+                menu.add(btPreview);
+                menu.add(thresholdSpinner);
+                menu.add(mode);
+                menu.add(btFinished);
+                gbc.gridy = 1;
+                box.add(menu, gbc);
+                dialog.add(box);
+                dialog.pack();
+                addActionListeners();
+                dialog.setVisible(true);
+                return null;
+            }
+        }.waitForEDT();
+    }
     private void initDialog() {
         new GuiRunnable<Object>() {
             public Object runSave() {
@@ -91,8 +130,6 @@ public class BackGroundImageDialog implements ActionListener {
     }
 
     private void initComponents() {
-        initCaptchaImages();
-        initDialog();
         new GuiRunnable<Object>() {
             public Object runSave() {
                 thresholdSpinner = new JSpinner(new SpinnerNumberModel(threshold, 0, 360, 1));
@@ -114,42 +151,9 @@ public class BackGroundImageDialog implements ActionListener {
 
     }
 
-    private void init() {
-        initComponents();
 
-        new GuiRunnable<Object>() {
-            public Object runSave() {
-                JPanel box = new JPanel();
-                box.setLayout(new GridBagLayout());
-                GridBagConstraints gbc = Utilities.getGBC(0, 0, 1, 1);
-                gbc.anchor = GridBagConstraints.NORTH;
-                gbc.fill = GridBagConstraints.BOTH;
-                gbc.weighty = 1;
-                gbc.weightx = 1;
-                box.add(images, gbc);
-                Box menu = new Box(BoxLayout.X_AXIS);
-                menu.add(btLoadBackgroundImage);
-                menu.add(btCreateBackgroundFilter);
-                menu.add(btColorChoose);
-                menu.add(btPreview);
-                menu.add(thresholdSpinner);
-                menu.add(mode);
-                menu.add(btFinished);
-                gbc.gridy = 1;
-                box.add(menu, gbc);
-                dialog.add(box);
-                dialog.pack();
-                addActionListeners();
-                dialog.setVisible(true);
-                return null;
-            }
-        }.waitForEDT();
-    }
 
-    public BackGroundImage getNewBackGroundImage() {
-        init();
-        return ret;
-    }
+
 
     private void addActionListeners() {
         btColorChoose.addActionListener(this);

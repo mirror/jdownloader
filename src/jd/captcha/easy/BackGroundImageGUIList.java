@@ -10,7 +10,7 @@ import jd.captcha.gui.ImageComponent;
 import jd.utils.locale.JDL;
 import jd.gui.swing.GuiRunnable;
 
-public class BackGroundImageGUIList {
+public class BackGroundImageGUIList implements ActionListener{
     public BackGroundImageGUIList(EasyFile methode) {
         manager = new BackGroundImageManager(methode);
     }
@@ -18,7 +18,7 @@ public class BackGroundImageGUIList {
     private JDialog mainDialog;
     private JPanel panel, imageBox;
     private BackGroundImageManager manager;
-
+    private JButton btExit, btAdd;
     public void showImages() {
         // Images initialisiert
         new GuiRunnable<Object>() {
@@ -111,38 +111,41 @@ public class BackGroundImageGUIList {
         showImages();
         new GuiRunnable<Object>() {
             public Object runSave() {
-                final JButton add = new JButton(JDL.L("gui.menu.add", "Add"));
-                add.addActionListener(new ActionListener() {
-
-                    public void actionPerformed(ActionEvent arg0) {
-                        BackGroundImageDialog bgiaDialog = new BackGroundImageDialog(manager);
-                        showImage(bgiaDialog.getNewBackGroundImage());
-                    }
-
-                });
-                JButton exit = new JButton(JDL.L("easycaptcha.backgroundimagetrainer.saveandexit", "Save and Exit"));
-                exit.addActionListener(new ActionListener() {
-
-                    public void actionPerformed(ActionEvent e) {
-                        manager.save();
-                        new GuiRunnable<Object>() {
-                            public Object runSave() {
-                                mainDialog.dispose();
-                                return null;
-                            }
-                        }.waitForEDT();
-                    }
-                });
+                btAdd = new JButton(JDL.L("gui.menu.add", "Add"));
+                btExit = new JButton(JDL.L("easycaptcha.backgroundimagetrainer.saveandexit", "Save and Exit"));
                 Box box = new Box(BoxLayout.X_AXIS);
-                box.add(add);
-                box.add(exit);
+                box.add(btAdd);
+                box.add(btExit);
                 panel.add(box);
                 mainDialog.pack();
                 mainDialog.setLocation(Screen.getCenterOfComponent(DummyFrame.getDialogParent(), mainDialog));
+                addActionListeners();
                 mainDialog.setVisible(true);
                 return null;
             }
         }.waitForEDT();
+    }
+    public void addActionListeners()
+    {
+        btExit.addActionListener(this);
+        btAdd.addActionListener(this);
+    }
+    public void actionPerformed(ActionEvent e) {
+        if(e.getSource()==btExit)
+        {
+        manager.save();
+        new GuiRunnable<Object>() {
+            public Object runSave() {
+                mainDialog.dispose();
+                return null;
+            }
+        }.waitForEDT();
+        }
+        else if(e.getSource()==btAdd)
+        {
+            BackGroundImageDialog bgiaDialog = new BackGroundImageDialog(manager);
+            showImage(bgiaDialog.getNewBackGroundImage());
+        }
     }
 
 }
