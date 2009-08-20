@@ -441,6 +441,7 @@ public class ColorTrainerGUI {
             BackGroundImageManager bgit = new BackGroundImageManager(captcha);
             bgit.clearCaptchaAll();
             captcha.setOrgGrid(PixelGrid.getGridCopy(captcha.grid));
+            captcha.owner.jas.executePrepareCommands(captcha.getCaptchaFile(), captcha);
             captcha.setCaptchaFile(captchafile);
             cs[i] = captcha;
             ColorTrainerGUI cc = new ColorTrainerGUI(owner);
