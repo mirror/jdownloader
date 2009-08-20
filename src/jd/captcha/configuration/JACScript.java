@@ -375,6 +375,7 @@ public class JACScript {
         try {
             for (int i = 0; i < captchaPrepareCommands.size(); i++) {
                 String[] cmd = captchaPrepareCommands.elementAt(i);
+
                 if (Utilities.isLoggerActive()) {
                     logger.fine("Execute Function: " + cmd[1] + "(" + cmd[2] + ")");
                 }
@@ -383,6 +384,66 @@ public class JACScript {
                     if (Utilities.isLoggerActive()) {
                         logger.severe("Syntax Error in " + method + "/+script.jas");
                         // captchaPrepareCommands
+                    }
+
+                } else if (cmd[0].equals("function") && cmd[1].matches("(?is)captchacommand\\..*")) {
+                    String[] parm = null;
+                    if (cmd[2] != null) {
+                        parm = cmd[2].trim().split("[\\s]*\\,[\\s]*");
+                    }
+                    String methodname = cmd[1].replaceFirst("(?is)captchacommand\\.", "");
+                    Class<?> newClass;
+                    try {
+                        newClass = Captcha.class;
+                        Method[] methods = newClass.getMethods();
+                        Method method = null;
+                        for (Method method1 : methods) {
+                            if (method1.getName().equals(methodname) && method1.getParameterTypes().length == parm.length) {
+                                method = method1;
+                            }
+                        }
+                        if (method == null) {
+                            if (Utilities.isLoggerActive()) {
+                                logger.severe("Fehler in captchacommand: Methode existiert nicht");
+                            }
+                        }
+                        Object instance = captcha;
+                        Object[] paramObj = null;
+                        if (parm != null && parm.length > 0) {
+                            paramObj = new Object[parm.length];
+                            Class<?>[] types = method.getParameterTypes();
+                            for (int c = 0; c < types.length; c++) {
+                                Class<?> class1 = types[c];
+                                parm[c]=parm[c].trim();
+                                Object d = parm[c];
+                                if (class1.getName().equals("String"))
+                                    d = parm[c];
+                                else if (class1.getName().equals("int"))
+                                    d = Integer.parseInt(parm[c]);
+                                else if (class1.getName().equals("float"))
+                                    d = Float.parseFloat(parm[c]);
+                                else if (class1.getName().equals("double"))
+                                    d = Double.parseDouble(parm[c]);
+                                else if (class1.getName().equals("long"))
+                                    d = Long.parseLong(parm[c]);
+                                else if (class1.getName().equals("short"))
+                                    d = Short.parseShort(parm[c]);
+                                else if (class1.getName().equals("byte"))
+                                    d = Byte.parseByte(parm[c]);
+                                else if (class1.getName().equals("boolean"))
+                                    d = Boolean.parseBoolean(parm[c]);
+                                else if (class1.getName().equals("char")) d = Byte.parseByte(parm[c]);
+                                else d=class1.cast(d);
+                                paramObj[c] = d;
+                            }
+                        }
+                        method.invoke(instance, paramObj);
+
+                    } catch (Exception e) {
+                        if (Utilities.isLoggerActive()) {
+                            logger.severe("Fehler in captchacommand: " + e.getMessage());
+                        }
+                        JDLogger.exception(e);
                     }
 
                 } else if (cmd[0].equals("function") && cmd[2] == null) {
