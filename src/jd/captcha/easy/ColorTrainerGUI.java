@@ -74,7 +74,7 @@ public class ColorTrainerGUI {
     }
 
     private void removePixelRelativ(final CPoint pr) {
-        CPoint bestPX = colorTrainer.getBestPixel(pr);
+        CPoint bestPX = colorTrainer.searchCPoint(pr);
         if (bestPX != null) {
             removePixelAbsolut(bestPX);
             ic.image = colorTrainer.getScaledWorkingCaptchaImage();
@@ -130,7 +130,7 @@ public class ColorTrainerGUI {
     }
 
     private void createIc() {
-        colorTrainer.recreateCaptcha();
+        colorTrainer.createWorkingCaptcha();
         final Image ci = colorTrainer.getScaledWorkingCaptchaImage();
         new GuiRunnable<Object>() {
             public Object runSave() {

@@ -62,6 +62,9 @@ public class ColorTrainer {
      */
     public Vector<CPoint> colorPointList = new Vector<CPoint>();
     private Vector<CPoint> colorPointListBackUp = new Vector<CPoint>();
+    /**
+     * Farbmodus wird in der Gui über eine Combobox gesetzt
+     */
     public byte colorDifferenceMode = CPoint.LAB_DIFFERENCE;
 
     public void removePixelAbsolut(CPoint cp) {
@@ -78,7 +81,7 @@ public class ColorTrainer {
 
             }
         } else {
-            paintImage();
+            recreateWorkingCaptcha();
         }
     }
 
@@ -97,13 +100,19 @@ public class ColorTrainer {
 
                 }
             } else {
-                paintImage();
+                recreateWorkingCaptcha();
             }
 
         }
 
     }
 
+    /**
+     * fügt bei Zahlen die kleiner sind als 100 Lehrzeichen hinzu
+     * 
+     * @param i
+     * @return
+     */
     private String getDigit(int i) {
         String ret = "";
         if (i < 10)
@@ -164,20 +173,41 @@ public class ColorTrainer {
         return "<HTML><BODY>" + JDL.L("easycaptcha.color", "Color") + ":#" + Integer.toHexString(c.getRGB() & 0x00ffffff) + "<BR>\r\n" + xc + ":" + yc + "<BR>\r\n" + "<span style=\"color:#" + Integer.toHexString(new Color(c.getRed(), 0, 0).getRGB() & 0x00ffffff) + "\">R:" + getDigit(c.getRed()) + "</span><span style=\"color:#" + Integer.toHexString(new Color(0, c.getGreen(), 0).getRGB() & 0x00ffffff) + "\"> G:" + getDigit(c.getGreen()) + "</span><span style=\"color:#" + Integer.toHexString(new Color(0, 0, c.getBlue()).getRGB() & 0x00ffffff) + "\"> B:" + getDigit(c.getBlue()) + "</span><BR>\r\n" + "H:" + getDigit(Math.round(hsb[0] * 360)) + " S:" + getDigit(Math.round(hsb[1] * 100)) + " B:" + getDigit(Math.round(hsb[2] * 100)) + "\r\n</BODY></HTML>";
     }
 
-    public CPoint getBestPixel(final CPoint pr) {
-        int co = pr.getColor();
+    /**
+     * Sucht den ColorPoint aus der colorPointList der die meiste
+     * Übereinstimmung mit der Farbe hat gibt null aus wenn die Farbe keinem
+     * ColorPoint der Liste entspricht Wird beim löschen von Farbpunkten aus der
+     * Liste verwendet
+     * 
+     * @param color
+     * @return matching CPoint
+     */
+    public CPoint searchCPoint(CPoint color) {
+        return searchCPoint(color.getColor());
+    }
+
+    /**
+     * Sucht den ColorPoint aus der colorPointList der die meiste
+     * Übereinstimmung mit der Farbe hat gibt null aus wenn die Farbe keinem
+     * ColorPoint der Liste entspricht Wird beim löschen von Farbpunkten aus der
+     * Liste verwendet
+     * 
+     * @param color
+     * @return matching CPoint
+     */
+    public CPoint searchCPoint(int color) {
         double bestDist = Integer.MAX_VALUE;
         CPoint bestPX = null;
         for (Iterator<CPoint> iterator = colorPointList.iterator(); iterator.hasNext();) {
             CPoint p = (CPoint) iterator.next();
             double dist = 0;
             if (p.getDistance() == 0) {
-                if (co == p.getColor()) {
+                if (color == p.getColor()) {
                     bestPX = p;
                     break;
                 }
 
-            } else if ((dist = p.getColorDifference(co)) < p.getDistance()) {
+            } else if ((dist = p.getColorDifference(color)) < p.getDistance()) {
                 if (dist < bestDist) {
                     bestPX = p;
                     bestDist = dist;
@@ -187,7 +217,10 @@ public class ColorTrainer {
         return bestPX;
     }
 
-    private void paintImage() {
+    /**
+     * Zeichnet Fordergrund und Hintergrund auf dem workingCaptcha neu
+     */
+    private void recreateWorkingCaptcha() {
         for (int x = 0; x < workingCaptcha.getWidth(); x++) {
             for (int y = 0; y < workingCaptcha.getHeight(); y++) {
                 workingCaptcha.grid[x][y] = originalCaptcha.getPixelValue(x, y);
@@ -213,19 +246,17 @@ public class ColorTrainer {
                 } else if (cpBestDist1 != null) {
                     workingCaptcha.grid[x][y] = cpBestDist1.isForeground() ? foregroundColor2 : backgroundColor2;
                 }
-
             }
-
         }
     }
 
-    public void recreateCaptcha() {
+    /**
+     * Erstellt das Captcha auf dem Fordergrund und Hintergrund gezeichnet wird
+     */
+    public void createWorkingCaptcha() {
         workingCaptcha = new Captcha(originalCaptcha.getWidth(), originalCaptcha.getHeight());
-
         workingCaptcha.grid = new int[originalCaptcha.getWidth()][originalCaptcha.getHeight()];
-
-        paintImage();
-
+        recreateWorkingCaptcha();
     }
 
     /**
@@ -291,15 +322,27 @@ public class ColorTrainer {
         return originalCaptcha.getImage().getScaledInstance(originalCaptcha.getWidth() * zoom / 100, originalCaptcha.getHeight() * zoom / 100, Image.SCALE_DEFAULT);
     }
 
+    /**
+     * läd einen Vector<CPoint> aus eine XML Datei (methodedir/CPoints.xml)
+     * 
+     * @param file
+     * @return
+     */
     @SuppressWarnings("unchecked")
     public static Vector<CPoint> load(File file) {
         if (file.exists()) { return (Vector<CPoint>) JDIO.loadObject(null, file, true); }
         return new Vector<CPoint>();
     }
 
-    public static void saveColors(Vector<CPoint> cc, File file) {
+    /**
+     * Speichert einen Vector<CPoint> in eine XML Datei (methodedir/CPoints.xml)
+     * 
+     * @param cPoints
+     * @param file
+     */
+    public static void saveColors(Vector<CPoint> cPoints, File file) {
         file.getParentFile().mkdirs();
-        JDIO.saveObject(null, cc, file, null, null, true);
+        JDIO.saveObject(null, cPoints, file, null, null, true);
     }
 
 }
