@@ -123,7 +123,7 @@ public class Browser {
     private HashMap<String, String[]> logins = new HashMap<String, String[]>();
 
     /**
-     * Clears all cookies for the givven url. URL has to be a valid url
+     * Clears all cookies for the given url. URL has to be a valid url
      * 
      * @param url
      */
