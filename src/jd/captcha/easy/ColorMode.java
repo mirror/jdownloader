@@ -1,20 +1,29 @@
 package jd.captcha.easy;
-public     class ColorMode {
-    public static final ColorMode[] cModes = new ColorMode[] { new ColorMode(CPoint.LAB_DIFFERENCE, "LAB Difference"), new ColorMode(CPoint.RGB_DIFFERENCE1, "RGB1 Difference"), new ColorMode(CPoint.RGB_DIFFERENCE2, "RGB2 Difference"), new ColorMode(CPoint.HUE_DIFFERENCE, "Hue Difference"), new ColorMode(CPoint.SATURATION_DIFFERENCE, "Saturation Difference"), new ColorMode(CPoint.BRIGHTNESS_DIFFERENCE, "Brightness Difference"), new ColorMode(CPoint.RED_DIFFERENCE, "Red Difference"), new ColorMode(CPoint.GREEN_DIFFERENCE, "Green Difference"), new ColorMode(CPoint.BLUE_DIFFERENCE, "Blue Difference") };
 
+public class ColorMode {
+    /**
+     * Array mit allen Farbmodellen aus CPoint
+     */
+    public static final ColorMode[] cModes = new ColorMode[] { new ColorMode(CPoint.LAB_DIFFERENCE, "LAB Difference"), new ColorMode(CPoint.RGB_DIFFERENCE1, "RGB1 Difference"), new ColorMode(CPoint.RGB_DIFFERENCE2, "RGB2 Difference"), new ColorMode(CPoint.HUE_DIFFERENCE, "Hue Difference"), new ColorMode(CPoint.SATURATION_DIFFERENCE, "Saturation Difference"), new ColorMode(CPoint.BRIGHTNESS_DIFFERENCE, "Brightness Difference"), new ColorMode(CPoint.RED_DIFFERENCE, "Red Difference"), new ColorMode(CPoint.GREEN_DIFFERENCE, "Green Difference"), new ColorMode(CPoint.BLUE_DIFFERENCE, "Blue Difference") };
+    /**
+     * Farbmodus CPoint.LAB_DIFFERENCE
+     */
     protected byte mode;
+    /**
+     * Name des Farbmodells (Für die ComboBox)
+     */
     private String modeString;
-    public ColorMode(byte mode)
-    {
+
+    public ColorMode(byte mode) {
         this.mode = mode;
         for (ColorMode m : cModes) {
-            if(mode==m.mode)
-            {
-                this.modeString=m.modeString;
+            if (mode == m.mode) {
+                this.modeString = m.modeString;
                 break;
             }
         }
     }
+
     public ColorMode(byte mode, String modestString) {
         this.mode = mode;
         this.modeString = modestString;

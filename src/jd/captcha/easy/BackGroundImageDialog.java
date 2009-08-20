@@ -21,22 +21,24 @@ import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
 import jd.utils.locale.JDL;
 
-public class BackGroundImageDialog {
-    private BackGroundImageManager bgim;
+public class BackGroundImageDialog implements ActionListener {
 
     public BackGroundImageDialog(BackGroundImageManager bgim) {
         this.bgim = bgim;
     }
 
-    private ImageComponent bg1, bgv;
     public BackGroundImage dialogImage;
+    private BackGroundImageManager bgim;
+    private ImageComponent bg1, bgv;
     private BackGroundImage ret = null;
     private JDialog dialog;
+    private JButton btColorChoose, btPreview, btFinished, btLoadBackgroundImage, btCreateBackgroundFilter;
     private JComboBox mode;
+    private JSpinner thresholdSpinner;
+    private JColorChooser colorChooser;
     private int threshold = 2;
     private byte modeByte = CPoint.LAB_DIFFERENCE;
-
-    JPanel images;
+    private JPanel images;
 
     private void initDialog() {
         new GuiRunnable<Object>() {
@@ -52,6 +54,8 @@ public class BackGroundImageDialog {
     }
 
     private void initCaptchaImages() {
+        bgim.getCaptchaImage().reset();
+
         final Image image = bgim.getScaledCaptchaImage();
 
         new GuiRunnable<Object>() {
@@ -86,154 +90,162 @@ public class BackGroundImageDialog {
         }.waitForEDT();
     }
 
-    public BackGroundImage getNewBackGroundImage() {
-        bgim.getCaptchaImage().reset();
-        initDialog();
+    private void initComponents() {
         initCaptchaImages();
-        return new GuiRunnable<BackGroundImage>() {
-            public BackGroundImage runSave() {
+        initDialog();
+        new GuiRunnable<Object>() {
+            public Object runSave() {
+                thresholdSpinner = new JSpinner(new SpinnerNumberModel(threshold, 0, 360, 1));
+                thresholdSpinner.setToolTipText("Threshold");
+                btLoadBackgroundImage = new JButton(JDL.L("easycaptcha.addbackgroundimagedialog.loadimage", "Load BackgroundImage"));
+                btCreateBackgroundFilter = new JButton(JDL.L("easycaptcha.addbackgroundimagedialog.generate", "Generate Backgroundfilter"));
+                Color defColor = Color.WHITE;
+                if (dialogImage != null) defColor = new Color(dialogImage.getColor());
+                colorChooser = new JColorChooser(defColor);
+                btColorChoose = new JButton(JDL.L("easycaptcha.addbackgroundimagedialog.deletecolor", "Deletecolor"));
+                btPreview = new JButton(JDL.L("easycaptcha.addbackgroundimagedialog.imagepreview", "Preview"));
+                if (dialogImage == null) btPreview.setEnabled(false);
+                mode = new JComboBox(ColorMode.cModes);
+                mode.setSelectedItem(new ColorMode(modeByte));
+                btFinished = new JButton(JDL.L("easycaptcha.finished", "finish"));
+                return null;
+            }
+        }.waitForEDT();
+
+    }
+
+    private void init() {
+        initComponents();
+
+        new GuiRunnable<Object>() {
+            public Object runSave() {
                 JPanel box = new JPanel();
                 box.setLayout(new GridBagLayout());
-
                 GridBagConstraints gbc = Utilities.getGBC(0, 0, 1, 1);
                 gbc.anchor = GridBagConstraints.NORTH;
                 gbc.fill = GridBagConstraints.BOTH;
                 gbc.weighty = 1;
                 gbc.weightx = 1;
-
                 box.add(images, gbc);
-
-                final JSpinner tolleranceSP = new JSpinner(new SpinnerNumberModel(threshold, 0, 360, 1));
-                tolleranceSP.setToolTipText("Threshold");
                 Box menu = new Box(BoxLayout.X_AXIS);
-                JButton btLoadBackgroundImage = new JButton(JDL.L("easycaptcha.addbackgroundimagedialog.loadimage", "Load BackgroundImage"));
                 menu.add(btLoadBackgroundImage);
-                JButton btCreateBackgroundFilter = new JButton(JDL.L("easycaptcha.addbackgroundimagedialog.generate", "Generate Backgroundfilter"));
                 menu.add(btCreateBackgroundFilter);
-                Color defColor = Color.WHITE;
-                if (dialogImage != null) defColor = new Color(dialogImage.getColor());
-                final JColorChooser chooser = new JColorChooser(defColor);
-                JButton btchoose = new JButton(JDL.L("easycaptcha.addbackgroundimagedialog.deletecolor", "Deletecolor"));
-                menu.add(btchoose);
-                final JButton btPreview = new JButton(JDL.L("easycaptcha.addbackgroundimagedialog.imagepreview", "Preview"));
-                if (dialogImage == null) btPreview.setEnabled(false);
+                menu.add(btColorChoose);
                 menu.add(btPreview);
-                menu.add(tolleranceSP);
-                mode = new JComboBox(ColorMode.cModes);
-                mode.setSelectedItem(new ColorMode(modeByte));
+                menu.add(thresholdSpinner);
                 menu.add(mode);
-                JButton btf = new JButton(JDL.L("easycaptcha.finished", "finish"));
-                menu.add(btf);
+                menu.add(btFinished);
                 gbc.gridy = 1;
                 box.add(menu, gbc);
                 dialog.add(box);
                 dialog.pack();
-
-                btchoose.addActionListener(new ActionListener() {
-
-                    public void actionPerformed(ActionEvent e) {
-                        new GuiRunnable<Object>() {
-                            public Object runSave() {
-                                JDialog dialog = JColorChooser.createDialog(chooser, JDL.L("easycaptcha.addbackgroundimagedialog.deletecolor", "Deletecolor"), true, chooser, null, null);
-                                dialog.setVisible(true);
-                                dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-                                return null;
-                            }
-                        }.waitForEDT();
-                    }
-                });
-                btCreateBackgroundFilter.addActionListener(new ActionListener() {
-
-                    public void actionPerformed(ActionEvent e) {
-
-                        File fout = BackgroundFilterCreater.create(bgim.methode);
-                        dialogImage = new BackGroundImage();
-                        dialogImage.setBackgroundImage(fout.getName());
-                        dialogImage.setColor(chooser.getColor().getRGB());
-                        dialogImage.setDistance((Integer) tolleranceSP.getValue());
-                        dialogImage.setColorDistanceMode(((ColorMode) mode.getSelectedItem()).mode);
-                        bgim.add(dialogImage);
-                        bgim.clearCaptchaAll();
-                        bgim.remove(dialogImage);
-                        btPreview.setEnabled(true);
-                        final Image image2 = bgim.getScaledCaptchaImage();
-
-                        new GuiRunnable<Object>() {
-                            public Object runSave() {
-                                bgv.image = image2;
-                                bgv.repaint();
-                                return null;
-                            }
-                        }.waitForEDT();
-                    }
-                });
-                btLoadBackgroundImage.addActionListener(new ActionListener() {
-
-                    public void actionPerformed(ActionEvent e) {
-                        File fch = JDFileChooser.getFile(JDFileChooser.ImagesOnly);
-                        File fout = new File(bgim.methode.file, "mask_" + JDHash.getMD5(fch) + "." + JDIO.getFileExtension(fch));
-                        JDIO.copyFile(fch, fout);
-                        dialogImage = new BackGroundImage();
-                        dialogImage.setBackgroundImage(fout.getName());
-                        dialogImage.setColor(chooser.getColor().getRGB());
-                        dialogImage.setDistance((Integer) tolleranceSP.getValue());
-                        dialogImage.setColorDistanceMode(((ColorMode) mode.getSelectedItem()).mode);
-                        bgim.add(dialogImage);
-                        bgim.clearCaptchaAll();
-                        bgim.remove(dialogImage);
-                        btPreview.setEnabled(true);
-                        final Image image2 = bgim.getScaledCaptchaImage();
-
-                        new GuiRunnable<Object>() {
-                            public Object runSave() {
-                                bgv.image = image2;
-                                bgv.repaint();
-                                return null;
-                            }
-                        }.waitForEDT();
-                    }
-                });
-                btPreview.addActionListener(new ActionListener() {
-
-                    public void actionPerformed(ActionEvent e) {
-                        dialogImage.setDistance((Integer) tolleranceSP.getValue());
-                        dialogImage.setColorDistanceMode(((ColorMode) mode.getSelectedItem()).mode);
-                        dialogImage.setColor(chooser.getColor().getRGB());
-
-                        bgim.add(dialogImage);
-                        bgim.clearCaptchaAll();
-                        bgim.remove(dialogImage);
-                        final Image image2 = bgim.getScaledCaptchaImage();
-
-                        new GuiRunnable<Object>() {
-                            public Object runSave() {
-                                bgv.image = image2;
-                                bgv.repaint();
-                                return null;
-                            }
-                        }.waitForEDT();
-                    }
-                });
-
-                btf.addActionListener(new ActionListener() {
-
-                    public void actionPerformed(ActionEvent e) {
-                        bgim.add(dialogImage);
-
-                        new GuiRunnable<Object>() {
-                            public Object runSave() {
-                                dialog.dispose();
-
-                                return null;
-                            }
-                        }.waitForEDT();
-                        ret = dialogImage;
-                    }
-                });
+                addActionListeners();
                 dialog.setVisible(true);
-                return ret;
+                return null;
             }
-        }.getReturnValue();
+        }.waitForEDT();
+    }
+
+    public BackGroundImage getNewBackGroundImage() {
+        init();
+        return ret;
+    }
+
+    private void addActionListeners() {
+        btColorChoose.addActionListener(this);
+        btPreview.addActionListener(this);
+        btFinished.addActionListener(this);
+        btLoadBackgroundImage.addActionListener(this);
+        btCreateBackgroundFilter.addActionListener(this);
+        mode.addActionListener(this);
+    }
+
+    public void actionPerformed(final ActionEvent e) {
+        if (e.getSource() == btPreview) {
+            dialogImage.setDistance((Integer) thresholdSpinner.getValue());
+            dialogImage.setColorDistanceMode(modeByte);
+            dialogImage.setColor(colorChooser.getColor().getRGB());
+
+            bgim.add(dialogImage);
+            bgim.clearCaptchaAll();
+            bgim.remove(dialogImage);
+            final Image image2 = bgim.getScaledCaptchaImage();
+
+            new GuiRunnable<Object>() {
+                public Object runSave() {
+                    bgv.image = image2;
+                    bgv.repaint();
+                    return null;
+                }
+            }.waitForEDT();
+        } else if (e.getSource() == btColorChoose) {
+            new GuiRunnable<Object>() {
+                public Object runSave() {
+
+                    JDialog dialog = JColorChooser.createDialog(colorChooser, JDL.L("easycaptcha.addbackgroundimagedialog.deletecolor", "Deletecolor"), true, colorChooser, null, null);
+                    dialog.setVisible(true);
+                    dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+
+                    return null;
+                }
+            }.waitForEDT();
+        } else if (e.getSource() == btFinished) {
+            bgim.add(dialogImage);
+
+            new GuiRunnable<Object>() {
+                public Object runSave() {
+                    dialog.dispose();
+
+                    return null;
+                }
+            }.waitForEDT();
+            ret = dialogImage;
+        } else if (e.getSource() == btLoadBackgroundImage) {
+            File fch = JDFileChooser.getFile(JDFileChooser.ImagesOnly);
+            File fout = new File(bgim.methode.file, "mask_" + JDHash.getMD5(fch) + "." + JDIO.getFileExtension(fch));
+            JDIO.copyFile(fch, fout);
+            dialogImage = new BackGroundImage();
+            dialogImage.setBackgroundImage(fout.getName());
+            dialogImage.setColor(colorChooser.getColor().getRGB());
+            dialogImage.setDistance((Integer) thresholdSpinner.getValue());
+            dialogImage.setColorDistanceMode(modeByte);
+            bgim.add(dialogImage);
+            bgim.clearCaptchaAll();
+            bgim.remove(dialogImage);
+            btPreview.setEnabled(true);
+            final Image image2 = bgim.getScaledCaptchaImage();
+
+            new GuiRunnable<Object>() {
+                public Object runSave() {
+                    bgv.image = image2;
+                    bgv.repaint();
+                    return null;
+                }
+            }.waitForEDT();
+        } else if (e.getSource() == btCreateBackgroundFilter) {
+
+            File fout = BackgroundFilterCreater.create(bgim.methode);
+            dialogImage = new BackGroundImage();
+            dialogImage.setBackgroundImage(fout.getName());
+            dialogImage.setColor(colorChooser.getColor().getRGB());
+            dialogImage.setDistance((Integer) thresholdSpinner.getValue());
+            dialogImage.setColorDistanceMode(modeByte);
+            bgim.add(dialogImage);
+            bgim.clearCaptchaAll();
+            bgim.remove(dialogImage);
+            btPreview.setEnabled(true);
+            final Image image2 = bgim.getScaledCaptchaImage();
+
+            new GuiRunnable<Object>() {
+                public Object runSave() {
+                    bgv.image = image2;
+                    bgv.repaint();
+                    return null;
+                }
+            }.waitForEDT();
+        } else if (e.getSource() == mode) {
+            modeByte = ((ColorMode) mode.getSelectedItem()).mode;
+        }
     }
 
 }
