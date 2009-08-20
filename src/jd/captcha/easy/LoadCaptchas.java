@@ -25,6 +25,9 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
+
+import jd.parser.html.HTMLParser;
+
 import jd.parser.html.InputField;
 import jd.parser.html.Form;
 import jd.gui.swing.components.JDTextField;
@@ -40,9 +43,13 @@ public class LoadCaptchas {
     public boolean opendir = false;
     private LoadInfo loadinfo;
     private Browser br = new Browser();
+    {
+        br.setFollowRedirects(true);
+    }
     private ArrayList<LoadImage> images;
     private LoadImage selectedImage;
     private JFrame owner;
+    boolean followLinks = false;
     /**
      * Ordner in den die Bilder geladen werden (default: jdCaptchaFolder/host)
      * 
@@ -472,7 +479,7 @@ public class LoadCaptchas {
      * @param br
      * @return ArrayList<LoadImage>
      */
-    private static ArrayList<LoadImage> getAllImages(Browser br) {
+    private ArrayList<LoadImage> getAllImages(Browser br) {
         ArrayList<LoadImage> images = new ArrayList<LoadImage>();
         String[] imagea;
         try {
@@ -481,12 +488,36 @@ public class LoadCaptchas {
                 LoadImage li = new LoadImage(imagea[i], br);
                 li.form = -1;
                 li.location = i;
+                li.parentUrl = loadinfo.link;
                 images.add(li);
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
+        if (followLinks) {
+            String[] links = HTMLParser.getHttpLinks(br.toString(), br.getURL());
+            for (String string : links) {
+                try {
+                    Browser brc = br.cloneBrowser();
+                    brc.getPage(string);
+                    if(string.contains("http://protector.to/download/"))
+                        System.out.println(brc);
+                    imagea = getImages(brc);
+                    for (int i = 0; i < imagea.length; i++) {
+                        System.out.println(imagea[i]);
 
+                        LoadImage li = new LoadImage(imagea[i], brc);
+                        li.form = -1;
+                        li.location = i;
+                        li.parentUrl = string;
+                        images.add(li);
+                    }
+
+                } catch (Exception e) {
+                }
+            }
+
+        }
         Form[] forms = getForms(br);
         for (int i = 0; i < forms.length; i++) {
             try {
@@ -501,6 +532,7 @@ public class LoadCaptchas {
                     LoadImage li = new LoadImage(imagea[b], brc);
                     li.form = i;
                     li.location = b;
+                    li.parentUrl = loadinfo.link;
                     if (images.contains(li)) continue;
                     images.add(li);
                 }
@@ -667,6 +699,10 @@ public class LoadCaptchas {
  */
 class LoadImage {
     /**
+     * ParentUrl
+     */
+    public String parentUrl;
+    /**
      * Bildadresse
      */
     public String imageUrl;
@@ -735,6 +771,8 @@ class LoadImage {
     public void followPageFormLoad(String destination, LoadInfo loadInfo) throws Exception {
         br.clearCookies(loadInfo.link);
         br.getPage(loadInfo.link);
+        if (!loadInfo.link.equals(parentUrl)) br.getPage(parentUrl);
+
         if (form != -1) {
             br.submitForm(LoadCaptchas.getForms(br)[form]);
         }
