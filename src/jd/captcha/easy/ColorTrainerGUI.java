@@ -100,7 +100,7 @@ public class ColorTrainerGUI {
     public void addPixel(final CPoint p) {
         if (!colorTrainer.colorPointList.contains(p)) {
             backUP();
-            addPixel(p);
+            colorTrainer.addCPoint(p);
             ic.image = colorTrainer.getScaledWorkingCaptchaImage();
             new GuiRunnable<Object>() {
                 public Object runSave() {

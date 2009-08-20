@@ -295,7 +295,10 @@ public class ColorTrainer {
      */
     @SuppressWarnings("unchecked")
     public void backUP() {
+        if(colorPointList!=null)
         colorPointListBackUp = (Vector<CPoint>) colorPointList.clone();
+        else
+            colorPointListBackUp=null;
         backUpCaptcha = new Captcha(workingCaptcha.getHeight(), workingCaptcha.getWidth());
         backUpCaptcha.grid = new int[workingCaptcha.getWidth()][workingCaptcha.getHeight()];
         for (int a = 0; a < workingCaptcha.grid.length; a++) {
