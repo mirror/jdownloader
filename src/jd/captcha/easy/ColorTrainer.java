@@ -66,7 +66,14 @@ public class ColorTrainer {
      * Farbmodus wird in der Gui über eine Combobox gesetzt
      */
     public byte colorDifferenceMode = CPoint.LAB_DIFFERENCE;
-
+    private void autoSetZoomFaktor() {
+        if(originalCaptcha.getWidth()>100 || originalCaptcha.getHeight()>100)
+            zoom=100;
+        else if(originalCaptcha.getWidth()>50 || originalCaptcha.getHeight()>50)
+            zoom=200;
+        else
+            zoom=400;
+    }
     /**
      * löscht einen cPoint aus der Liste und erstellt das WorkingCaptcha neu
      * 
@@ -335,6 +342,8 @@ public class ColorTrainer {
      * @return Image
      */
     public Image getScaledOriginalCaptchaImage() {
+        autoSetZoomFaktor();
+        System.out.println(zoom);
         return originalCaptcha.getImage().getScaledInstance(originalCaptcha.getWidth() * zoom / 100, originalCaptcha.getHeight() * zoom / 100, Image.SCALE_DEFAULT);
     }
 

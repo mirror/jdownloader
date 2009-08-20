@@ -159,7 +159,8 @@ public class BackGroundImageGUIList implements ActionListener {
             BackGroundImageDialog bgiaDialog = new BackGroundImageDialog(manager, owner);
             BackGroundImage ret = bgiaDialog.getNewBackGroundImage();
             if (ret != null) {
-                showImage(bgiaDialog.getNewBackGroundImage());
+                manager.add(ret);
+                showImage(ret);
                 mainDialog.pack();
             }
             mainDialog.setAlwaysOnTop(true);

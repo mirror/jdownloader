@@ -25,8 +25,15 @@ public class BackGroundImageManager {
     private Vector<BackGroundImage> backgroundList = null;
     protected EasyMethodeFile methode;
     private Captcha captchaImage;
-    public int zoom = 400;
-
+    public int zoom;
+    private void autoSetZoomFaktor() {
+        if(captchaImage.getWidth()>100 || captchaImage.getHeight()>100)
+            zoom=100;
+        else if(captchaImage.getWidth()>50 || captchaImage.getHeight()>50)
+            zoom=200;
+        else
+            zoom=400;
+    }
     /**
      * Verwaltet die hintergrundbilder und sorgt dafür das das richtige entfernt
      * wird bei einem randomCaptcha
@@ -55,6 +62,7 @@ public class BackGroundImageManager {
      */
     public BackGroundImageManager(Captcha captcha) {
         this.captchaImage = captcha;
+        autoSetZoomFaktor();
         methode = new EasyMethodeFile(captchaImage.owner.getResourceFile("jacinfo.xml").getParentFile());
         load();
     }
