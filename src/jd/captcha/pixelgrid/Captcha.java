@@ -1179,7 +1179,7 @@ public class Captcha extends PixelGrid {
     public void setContrast(float contrast) {
         BufferedImage image = (BufferedImage) getImage();
         ContrastFilter cf = new ContrastFilter();
-        cf.setContrast(8);
+        cf.setContrast(contrast);
         BufferedImage dest = cf.createCompatibleDestImage(image, null);
         cf.filter(image, dest);
         Captcha cap2 = owner.createCaptcha(dest);
@@ -1190,6 +1190,15 @@ public class Captcha extends PixelGrid {
         BoxBlurFilter blur = new BoxBlurFilter(hRadius, vRadius, iteration);
         BufferedImage dest = blur.createCompatibleDestImage(image, null);
         blur.filter(image, dest);
+        Captcha cap2 = owner.createCaptcha(dest);
+        grid=cap2.grid;
+    }
+    public void setBrightness(float brightness) {
+        BufferedImage image = (BufferedImage) getImage();
+        ContrastFilter cf = new ContrastFilter();
+        cf.setBrightness(brightness);
+        BufferedImage dest = cf.createCompatibleDestImage(image, null);
+        cf.filter(image, dest);
         Captcha cap2 = owner.createCaptcha(dest);
         grid=cap2.grid;
     }
