@@ -1,26 +1,32 @@
 package jd;
 
 import java.io.File;
+import java.io.FilenameFilter;
 import java.util.ArrayList;
+import java.util.regex.Pattern;
 
 import jd.nutils.io.JDIO;
+import jd.nutils.zip.Zip;
 
 public class Tester {
 
     public static void main(String s[]) throws Exception {
-        File file = new File("C:\\Dokumente und Einstellungen\\Towelie\\Desktop\\Uni Temp\\www.sra.uni-hannover.de");
+        
+        
+        File[] files = new File("c:/Users/Coalado/Desktop/pack/").listFiles(new FilenameFilter() {
+            public boolean accept(File dir, String name) {
+                if (name.endsWith(".svn")) { return false; }
+                return true;
 
-        ArrayList<File> files = JDIO.listFiles(file);
-
-        for (File f : files) {
-            if (f.getAbsolutePath().endsWith(".ram")) {
-                System.out.println(f.getAbsolutePath());
-                String content = JDIO.getLocalFile(f);
-                JDIO.writeLocalFile(new File(f.getAbsolutePath() + ".bak"), content);
-                content = content.replace("http://www.sra.uni-hannover.de/vorlesung_online/bs/SS09/", "file:///C:/Dokumente%20und%20Einstellungen/Towelie/Desktop/Uni%20Temp/www.sra.uni-hannover.de/");
-                JDIO.writeLocalFile(f, content);
             }
-        }
+
+        });
+    
+        Zip zip = new Zip(files, new File("c:/Users/Coalado/Desktop/substance.zip"));
+        zip.setExcludeFilter(Pattern.compile("\\.svn", Pattern.CASE_INSENSITIVE));
+        zip.fillSize = 5 * 1024 * 1024 + 30000 + (int) (Math.random() * 1024.0 * 150.0);
+      
+            zip.zip();
     }
 
 }

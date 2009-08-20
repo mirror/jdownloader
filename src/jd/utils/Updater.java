@@ -85,12 +85,12 @@ public class Updater {
         upd.checkHashes();
         upd.clone2(upd.branch,"http://update0.jdownloader.org/clone.php");
         upd.clone2(upd.branch,"http://update2.jdownloader.org/clone.php");
-       list=upd.getLocalFileList(upd.workingDir, false);
+//       list=upd.getLocalFileList(upd.workingDir, false);
         
-        SimpleFTP.uploadSecure("jdupdate.bluehost.to", 2100, getCFG("jdupdate.bluehost.to_ftp_user"), getCFG("jdupdate.bluehost.to_ftp_pass"), "/branches/" + branch, upd.updateDir, list.toArray(new File[] {}));
-        
-        SimpleFTP.uploadSecure("update4ex.jdownloader.org", 21, getCFG("update4ex_ftp_user"), getCFG("update4ex_ftp_pass"), "/branches/" + branch, upd.updateDir, list.toArray(new File[] {}));
-        SimpleFTP.uploadSecure("jd.code4everyone.de", 21, getCFG("jd.code4everyone.de_ftp_user"), getCFG("jd.code4everyone.de_ftp_pass"), "/httpdocs/" + branch, upd.updateDir, list.toArray(new File[] {}));
+//        SimpleFTP.uploadSecure("jdupdate.bluehost.to", 2100, getCFG("jdupdate.bluehost.to_ftp_user"), getCFG("jdupdate.bluehost.to_ftp_pass"), "/branches/" + branch, upd.workingDir, list.toArray(new File[] {}));
+//        
+//        SimpleFTP.uploadSecure("update4ex.jdownloader.org", 21, getCFG("update4ex_ftp_user"), getCFG("update4ex_ftp_pass"), "/branches/" + branch, upd.workingDir, list.toArray(new File[] {}));
+//        SimpleFTP.uploadSecure("jd.code4everyone.de", 21, getCFG("jd.code4everyone.de_ftp_user"), getCFG("jd.code4everyone.de_ftp_pass"), "/httpdocs/" + branch, upd.workingDir, list.toArray(new File[] {}));
 
         
         upd.uploadHashList();
