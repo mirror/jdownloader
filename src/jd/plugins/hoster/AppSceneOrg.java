@@ -19,6 +19,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.parser.html.Form;
+import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -51,15 +52,14 @@ public class AppSceneOrg extends PluginForHost {
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        String sessionid = br.getRegex("<img src=\"http://www.appscene.org/captcha/(.*?)\"").getMatch(0);
-        String captchaurl = "http://www.appscene.org/captcha/" + sessionid;
+        String captchaurl = br.getRegex("<img src=\"(http://www.appscene.org/captcha/.*?)\"").getMatch(0);
         String code = getCaptchaCode(captchaurl, downloadLink);
         Form captchaForm = br.getForm(0);
         if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         captchaForm.put("captcha", code);
         br.submitForm(captchaForm);
         if (br.getRedirectLocation().contains("appscene.org/download")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, br.getRedirectLocation(), false, 1);
+        dl = BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), false, 1);
         dl.startDownload();
     }
 

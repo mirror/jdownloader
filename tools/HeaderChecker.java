@@ -16,16 +16,17 @@ public class HeaderChecker {
     public static void main(String[] args) {
         HeaderChecker hc = new HeaderChecker(HeaderChecker.START_DIRECTORY);
         hc.check();
-//        hc.quickCheck();
+        // hc.quickCheck();
     }
 
-    private static final boolean DEBUG = !false;
-    private static final boolean FIXIT = !true;
+    private static final boolean DEBUG = true;
+    private static final boolean FIXIT = false;
 
     private static final String[] IGNORE_NAMES = new String[] { "junique", "jaxe", "template", "ShortCuts", "DiffMatchPatch", "Tester", "Base64", "XTrustProvider", "HTMLEntities" };
 
-    private static String LICENSE_PREFIX;
     private static String LICENSE;
+    private static String LICENSE_PREFIX;
+    private static String LICENSE_PREFIX_TRIMMED;
 
     private static final File START_DIRECTORY = new File("C:\\Dokumente und Einstellungen\\Towelie\\Eigene Dateien\\Java\\jd\\src\\");
 
@@ -36,6 +37,7 @@ public class HeaderChecker {
     public HeaderChecker(File dir) {
         LICENSE = JDIO.getLocalFile(JDUtilities.getResourceFile("gpl.header"));
         LICENSE_PREFIX = LICENSE.substring(0, Math.min(LICENSE.indexOf('\r'), LICENSE.indexOf('\n')));
+        LICENSE_PREFIX_TRIMMED = LICENSE_PREFIX.substring(2).trim();
 
         if (dir == null || !dir.exists()) {
             JFileChooser fc = new JFileChooser();
@@ -58,7 +60,7 @@ public class HeaderChecker {
         int count;
         for (File file : getSourceFiles(dir)) {
             content = JDIO.getLocalFile(file);
-            count = new Regex(content, "jDownloader - Downloadmanager").count();
+            count = new Regex(content, LICENSE_PREFIX_TRIMMED).count();
             if (count > 1) {
                 System.out.println(prepareFilename(file));
             }
@@ -96,7 +98,7 @@ public class HeaderChecker {
 
     private boolean fixFile(File file) {
         String content = JDIO.getLocalFile(file);
-        if (content.contains(LICENSE_PREFIX)) return false;
+        if (content.contains(LICENSE_PREFIX_TRIMMED)) return false;
 
         StringBuilder sb = new StringBuilder();
         sb.append(LICENSE);

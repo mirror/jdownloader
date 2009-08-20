@@ -114,6 +114,9 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
     private boolean changed = false;
     private final File dirLanguages, dirWorkingCopy;
 
+    private static final Color colorDone = new Color(204, 255, 170);
+    private static final Color colorMissing = new Color(221, 34, 34);
+    private static final Color colorOld = Color.ORANGE;
     private ColorHighlighter doneHighlighter, missingHighlighter, oldHighlighter;
 
     private SrcParser sourceParser;
@@ -137,9 +140,9 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
     }
 
     private void showGui() {
-        doneHighlighter = new ColorHighlighter(new DonePredicate(), Color.GREEN, null);
-        missingHighlighter = new ColorHighlighter(new MissingPredicate(), Color.RED, null);
-        oldHighlighter = new ColorHighlighter(new OldPredicate(), Color.ORANGE, null);
+        doneHighlighter = new ColorHighlighter(new DonePredicate(), colorDone, null);
+        missingHighlighter = new ColorHighlighter(new MissingPredicate(), colorMissing, null);
+        oldHighlighter = new ColorHighlighter(new OldPredicate(), colorOld, null);
 
         tableModel = new MyTableModel();
         table = new JXTable(tableModel);
@@ -159,9 +162,9 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
         table.addHighlighter(missingHighlighter);
         table.addHighlighter(oldHighlighter);
         keyChart = new PieChartAPI("", 225, 50);
-        keyChart.addEntity(entDone = new ChartAPIEntity(JDL.L(LOCALE_PREFIX + "keychart.done", "Done"), 0, Color.GREEN));
-        keyChart.addEntity(entMissing = new ChartAPIEntity(JDL.L(LOCALE_PREFIX + "keychart.missing", "Missing"), 0, Color.RED));
-        keyChart.addEntity(entOld = new ChartAPIEntity(JDL.L(LOCALE_PREFIX + "keychart.old", "Old"), 0, Color.ORANGE));
+        keyChart.addEntity(entDone = new ChartAPIEntity(JDL.L(LOCALE_PREFIX + "keychart.done", "Done"), 0, colorDone));
+        keyChart.addEntity(entMissing = new ChartAPIEntity(JDL.L(LOCALE_PREFIX + "keychart.missing", "Missing"), 0, colorMissing));
+        keyChart.addEntity(entOld = new ChartAPIEntity(JDL.L(LOCALE_PREFIX + "keychart.old", "Old"), 0, colorOld));
 
         this.setLayout(new MigLayout("wrap 3", "[grow, fill]", "[grow, fill][]"));
 
@@ -298,7 +301,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
                     return;
                 }
             }
-            data.add(new KeyInfo(result[0].toLowerCase(), null, result[1],languageENKeysFormFile.get(result[0].toLowerCase())));
+            data.add(new KeyInfo(result[0].toLowerCase(), null, result[1], languageENKeysFormFile.get(result[0].toLowerCase())));
             tableModel.fireTableDataChanged();
             updateKeyChart();
 
@@ -544,7 +547,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
     private void initLocaleData() {
 
         parseLanguageFile(languageFile, languageKeysFormFile);
-        parseLanguageFile(new File(dirLanguages, "en.loc") , languageENKeysFormFile);
+        parseLanguageFile(new File(dirLanguages, "en.loc"), languageENKeysFormFile);
         HashMap<String, String> dupeHelp = new HashMap<String, String>();
         data.clear();
         dupes.clear();
@@ -557,7 +560,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
         KeyInfo keyInfo;
         for (LngEntry entry : sourceParser.getEntries()) {
             key = entry.getKey();
-            keyInfo = new KeyInfo(key, entry.getValue(), languageKeysFormFile.remove(key),languageENKeysFormFile.get(key));
+            keyInfo = new KeyInfo(key, entry.getValue(), languageKeysFormFile.remove(key), languageENKeysFormFile.get(key));
             data.add(keyInfo);
             if (!keyInfo.isMissing()) {
 
@@ -586,7 +589,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
                 }
             }
 
-            data.add(new KeyInfo(key, value, entry.getValue(),languageENKeysFormFile.get(key)));
+            data.add(new KeyInfo(key, value, entry.getValue(), languageENKeysFormFile.get(key)));
         }
 
         Collections.sort(data);
@@ -831,7 +834,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
         public KeyInfo(String key, String source, String language, String en) {
             this.key = key;
             this.setSource(source);
-            enValue=en;
+            enValue = en;
             this.setLanguage(language);
         }
 
@@ -871,12 +874,14 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
         public String toString() {
             return this.getKey() + " = " + this.getLanguage();
         }
-/**
- * Returns the english value
- * @return
- */
+
+        /**
+         * Returns the english value
+         * 
+         * @return
+         */
         public String getEnglish() {
-       
+
             return enValue;
         }
 

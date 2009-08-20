@@ -31,11 +31,9 @@ import java.io.OutputStream;
 
 import jd.controlling.JDLogger;
 import jd.nutils.jna.Win32.Shell32;
-import jd.utils.JDUtilities;
 
 public class FileUtils {
 
-    private static String win_RecyclePath = null;
     public static final int DeletePermanently = 0;
     public static final int MoveToRecycleBin = 1;
 
@@ -101,10 +99,6 @@ public class FileUtils {
         }
         JDLogger.getLogger().fine("File deleted: " + file);
         return true;
-    }
-
-    private static String getWin_RecyclePath() {
-        return (win_RecyclePath == null) ? (win_RecyclePath = JDUtilities.getResourceFile("tools\\windows\\recycle.exe").getAbsolutePath()) : win_RecyclePath;
     }
 
     private static boolean movetoRecycleBin(File file) {
