@@ -8,15 +8,42 @@ import jd.captcha.pixelgrid.Captcha;
 import jd.nutils.Colors;
 
 public class CPoint extends Point implements Serializable, Cloneable {
-
+    /**
+     * Die LAB Differenz ist der Menschlichen Farbempfindung sehr nahe
+     */
     public final static byte LAB_DIFFERENCE = 1;
+    /**
+     * Schnell berrechneter RGB Farbunterschied nicht wirklich gut aber da der
+     * Farbunterschied unter umständen so berechnet wurde nützlich
+     */
     public final static byte RGB_DIFFERENCE1 = 2;
+    /**
+     * Farbunterschied im Raum
+     */
     public final static byte RGB_DIFFERENCE2 = 3;
+    /**
+     * unterschied des Farbtons
+     */
     public final static byte HUE_DIFFERENCE = 4;
+    /**
+     * Unterschied der Farbsättigung
+     */
     public final static byte SATURATION_DIFFERENCE = 5;
+    /**
+     * Unterschied der absoluten Helligkeit
+     */
     public final static byte BRIGHTNESS_DIFFERENCE = 6;
+    /**
+     * Rotunterschied
+     */
     public final static byte RED_DIFFERENCE = 7;
+    /**
+     * Grünunterschied
+     */
     public final static byte GREEN_DIFFERENCE = 8;
+    /**
+     * Blauunterschied
+     */
     public final static byte BLUE_DIFFERENCE = 9;
 
     private static final long serialVersionUID = 333616481245029882L;
