@@ -30,6 +30,9 @@ import javax.swing.SpinnerNumberModel;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+
+import jd.captcha.pixelgrid.PixelGrid;
+
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.gui.ImageComponent;
 import jd.captcha.pixelgrid.Captcha;
@@ -426,7 +429,7 @@ public class ColorTrainerGUI {
 
         File[] list = folder.listFiles();
         Captcha[] cs = new Captcha[15 < list.length ? 15 : list.length];
-        JAntiCaptcha jac = new JAntiCaptcha(Utilities.getMethodDir(), "EasyCaptcha");
+        JAntiCaptcha jac = new JAntiCaptcha(Utilities.getMethodDir(), hoster);
         if (colorPoints == null) colorPoints = ColorTrainer.load(file);
         ColorTrainerGUI lastCC = null;
         for (int i = 0; i < cs.length; i++) {
@@ -437,6 +440,7 @@ public class ColorTrainerGUI {
             if (captcha == null) continue;
             BackGroundImageManager bgit = new BackGroundImageManager(captcha);
             bgit.clearCaptchaAll();
+            captcha.setOrgGrid(PixelGrid.getGridCopy(captcha.grid));
             captcha.setCaptchaFile(captchafile);
             cs[i] = captcha;
             ColorTrainerGUI cc = new ColorTrainerGUI(owner);

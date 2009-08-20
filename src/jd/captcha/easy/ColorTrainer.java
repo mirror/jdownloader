@@ -343,7 +343,6 @@ public class ColorTrainer {
      */
     public Image getScaledOriginalCaptchaImage() {
         autoSetZoomFaktor();
-        System.out.println(zoom);
         return originalCaptcha.getImage().getScaledInstance(originalCaptcha.getWidth() * zoom / 100, originalCaptcha.getHeight() * zoom / 100, Image.SCALE_DEFAULT);
     }
 
