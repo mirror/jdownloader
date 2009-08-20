@@ -78,7 +78,7 @@ import jd.utils.locale.JDL;
 public class Main {
 
     private static Logger LOGGER;
-    //  public static SplashScreen SPLASHSCREEN = null;
+    // public static SplashScreen SPLASHSCREEN = null;
     private static String instanceID = Main.class.getName();
     private static boolean instanceStarted = false;
 
