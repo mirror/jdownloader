@@ -26,7 +26,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "appscene.org" }, urls = { "http://[\\w\\.]*?appscene\\.org/download\\.php\\?id=[0-9]+" }, flags = { 0 })
+//appscebe.org by pspzockerscene
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "appscene.org" }, urls = { "http://[\\w\\.]*?appscene\\.org/download/[0-9]+" }, flags = { 0 })
 public class AppSceneOrg extends PluginForHost {
 
     public AppSceneOrg(PluginWrapper wrapper) {
@@ -43,23 +44,22 @@ public class AppSceneOrg extends PluginForHost {
         setBrowserExclusive();
         String url = downloadLink.getDownloadURL();
         br.getPage(url);
-        if (br.containsHTML("The file you have requested does not exist or has been deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("or has been deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         return AvailableStatus.TRUE;
     }
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        String sessionid = br.getRegex("<form method=\"post\" action=\"download\\.php\\?stage=verify&download_session=(.*?)\">").getMatch(0);
-        String captchaurl = br.getBaseURL() + "captcha.php?sess=" + sessionid;
+        String sessionid = br.getRegex("<img src=\"http://www.appscene.org/captcha/(.*?)\"").getMatch(0);
+        String captchaurl = "http://www.appscene.org/captcha/" + sessionid;
         String code = getCaptchaCode(captchaurl, downloadLink);
         Form captchaForm = br.getForm(0);
         if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         captchaForm.put("captcha", code);
         br.submitForm(captchaForm);
-        if (br.getRedirectLocation().contains("appscene.org/download.php?id=")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (br.getRedirectLocation().contains("appscene.org/download")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, br.getRedirectLocation(), false, 1);
-        if (br.containsHTML("This download session doesn't exist or has been deleted")) throw new PluginException(LinkStatus.ERROR_RETRY);
         dl.startDownload();
     }
 
