@@ -21,7 +21,6 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.RandomUserAgent;
-import jd.http.RequestHeader;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -31,26 +30,24 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision", interfaceVersion = 2, names = { "yourfiles.biz" }, urls = { "http://[\\w\\.]*?yourfiles\\.(biz|to)/\\?d=[\\w]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourfiles.biz" }, urls = { "http://[\\w\\.]*?yourfiles\\.(biz|to)/\\?d=[\\w]+" }, flags = { 0 })
 public class YourFilesBiz extends PluginForHost {
 
     public YourFilesBiz(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return "http://yourfiles.biz/rules.php";
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
         br.setFollowRedirects(true);
-        setLangToEn();
-        RequestHeader reqh = new RequestHeader();
-        reqh.put("User-Agent", RandomUserAgent.generate());
-        br.setHeaders(reqh);
+        br.setCookie("http://yourfiles.to/", "yab_mylang", "en");
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(downloadLink.getDownloadURL());
         String filename = br.getRegex("<b>File name:</b></td>\\s+<td align=left width=[0-9]+%>(.*?)</td>").getMatch(0);
         String filesize = br.getRegex("File size:</b></td>\\s+<td align=left>(.*?)</td>").getMatch(0);
@@ -60,21 +57,12 @@ public class YourFilesBiz extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    public void setLangToEn() throws IOException {
-        br.setCookie("http://yourfiles.to/", "yab_mylang", "en");
-    }
-
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String url = br.getRegex(Pattern.compile("document.location=\"(http.*?getfile\\.php.*?)\"'>", Pattern.CASE_INSENSITIVE)).getMatch(0);
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, url);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url);
         URLConnectionAdapter con = dl.getConnection();
         if (!con.isContentDisposition()) {
             con.disconnect();
@@ -83,23 +71,21 @@ public class YourFilesBiz extends PluginForHost {
         dl.startDownload();
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    // @Override
+    @Override
     public void reset() {
     }
 
-    // @Override
+    @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
+    @Override
     public void resetDownloadlink(DownloadLink link) {
-        // TODO Auto-generated method stub
-
     }
 
 }
