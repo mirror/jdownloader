@@ -27,7 +27,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rs.xxx-blog.org" }, urls = { "http://[\\w\\.]*?xxx-blog\\.org/[com-|u|filefactory/]([\\w\\./])*" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rs.xxx-blog.org" }, urls = { "http://[\\w\\.]*?xxx-blog\\.org/(com-|u|filefactory/)[\\w\\./]+" }, flags = { 0 })
 public class RsXXXBlg extends PluginForDecrypt {
 
     public RsXXXBlg(PluginWrapper wrapper) {

@@ -554,7 +554,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
                     sigger.append(s);
                 }
                 String sig = sigger.toString();
-                logger.finest(exec.getInputStreamBuffer() + " : " + sig);
+                // logger.finest(exec.getInputStreamBuffer() + " : " + sig);
                 if (sig.trim().length() < 8) continue;
                 Signature signature = FileSignatures.getSignature(sig);
 
@@ -717,7 +717,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
                         String name = matchervolumes.group(1);
 
                         if (name.matches("\\*.*")) {
-                            name = name.replaceFirst("\\.", "");
+                            name = name.substring(1);
 
                             long size = Long.parseLong(matchervolumes.group(2));
                             this.isProtected = true;
@@ -741,7 +741,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
                             }
 
                         } else {
-                            name = name.replaceFirst("\\.", "");
+                            name = name.substring(1);
                             if (!name.equals(namen) && !matchervolumes.group(4).equals("D")) {
 
                                 tmp = new ArchivFile(name);

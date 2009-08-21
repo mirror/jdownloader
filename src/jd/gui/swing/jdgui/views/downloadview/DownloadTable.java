@@ -287,6 +287,10 @@ public class DownloadTable extends JDTable implements MouseListener, MouseMotion
         int col = realColumnAtPoint(point);
         JMenuItem tmp;
 
+        if (getValueAt(row, 0) == null) {
+            clearSelection();
+        }
+
         if (!isRowSelected(row) && e.getButton() == MouseEvent.BUTTON3) {
             clearSelection();
             if (getValueAt(row, 0) != null) this.addRowSelectionInterval(row, row);

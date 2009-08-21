@@ -237,27 +237,19 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
             column = table.getColumnModel().getColumn(c);
             switch (c) {
             case 0:
-                column.setPreferredWidth(150);
+                column.setPreferredWidth(100);
                 break;
             case 1:
                 column.setPreferredWidth(60);
-                column.setMinWidth(60);
-                column.setMaxWidth(60);
                 break;
             case 2:
                 column.setPreferredWidth(60);
-                column.setMinWidth(60);
-                column.setMaxWidth(60);
                 break;
             case 3:
                 column.setPreferredWidth(60);
-                column.setMinWidth(60);
-                column.setMaxWidth(60);
                 break;
             case 4:
                 column.setPreferredWidth(90);
-                column.setMaxWidth(90);
-                column.setMinWidth(90);
                 break;
             case 5:
                 column.setPreferredWidth(100);
@@ -317,9 +309,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
     @Override
     public void save() {
-        
-        
-        
+
     }
 
     @Override

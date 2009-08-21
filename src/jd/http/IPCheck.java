@@ -67,7 +67,8 @@ public class IPCheck {
         IP_CHECK_SERVICES.add(new String[] { "http://myipinfo.net/", "computer.*?IP address is:.*?<p><b>([\\d+\\.]+)</b>" });
 
         IP_CHECK_SERVICES.add(new String[] { "http://www.moanmyip.com/", "Your external IP address</h2>.*?<div class=.*?>([\\d+\\.]+)</div>" });
-        IP_CHECK_SERVICES.add(new String[] { "http://my-i-p.com/", "IP Whois Data for: ([\\d+\\.]+)\"" });
+        // white page IP_CHECK_SERVICES.add(new String[] { "http://my-i-p.com/",
+        // "IP Whois Data for: ([\\d+\\.]+)\"" });
         IP_CHECK_SERVICES.add(new String[] { "http://www.ip2stuff.com/", "your IP address\">.*?([\\d+\\.]+) -" });
 
         Collections.shuffle(IP_CHECK_SERVICES);
@@ -97,8 +98,8 @@ public class IPCheck {
         if (br == null) {
             br = new Browser();
             br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-            br.setConnectTimeout(10000);
-            br.setReadTimeout(10000);
+            br.setConnectTimeout(15000);
+            br.setReadTimeout(15000);
         }
         if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_BALANCE, true)) {
             /* use ipcheck balancer */
