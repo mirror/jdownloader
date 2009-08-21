@@ -35,6 +35,8 @@ import jd.utils.locale.JDL;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gmd-music.com" }, urls = { "http://[\\w\\.]*?(gmd-music\\.com|uploadr\\.eu)/download/\\d+_[\\w-]+/" }, flags = { 0 })
 public class GmdMscCm extends PluginForDecrypt {
 
+  private String domain = null;
+    
   public GmdMscCm(PluginWrapper wrapper) {
     super(wrapper);
   }
@@ -43,6 +45,10 @@ public class GmdMscCm extends PluginForDecrypt {
   public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
     ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
     String parameter = param.toString();
+    
+    if (parameter.matches(".*?gmd-music\\.com.*?")) domain = "http://gmd-music.com/";
+    else if (parameter.matches(".*?uploadr\\.eu.*?")) domain = "http://uploadr.eu/";
+    
     br.getPage(parameter);
     String[] redirectLinks = br.getRegex("onclick='self.window.location = \"(redirect/\\d+_[\\w-]+/)\";").getColumn(0);
     if (redirectLinks.length == 0) return null;
@@ -53,16 +59,13 @@ public class GmdMscCm extends PluginForDecrypt {
     fp.setName(name);
     
     for (String redlnk : redirectLinks) {
-        br.getPage("http://gmd-music.com/" + redlnk);
+        br.getPage(this.domain + redlnk);
         handleCaptcha();
         String[] hostLinks = br.getRegex("<textarea name='links' rows='12' cols='104'>(http://.*?)</textarea>").getColumn(0);
         for (String hstlnk : hostLinks) {
-          
-          
           DownloadLink dl = createDownloadlink(hstlnk);
           dl.setFilePackage(fp);
-          decryptedLinks.add(dl);
-          
+          decryptedLinks.add(dl); 
         }
         
     } 
@@ -73,13 +76,13 @@ public class GmdMscCm extends PluginForDecrypt {
       boolean valid = true;
       for (int i = 0; i < 5; ++i) {
           if (br.containsHTML("Klicken Sie auf den ge&ouml;ffneten Kreis!")) {
-              Form captcha = br.getForm(1);
-              captcha.setAction("http://gmd-music.com/" + captcha.getAction());
+              Form captcha = br.getFormbyProperty("name", "captcha");
+              captcha.setAction(this.domain + captcha.getAction());
               valid = false;
               File file = this.getLocalCaptchaFile();
-              String url = "http://gmd-music.com/" + captcha.getRegex("input type='image' src='(.*?)'").getMatch(0);
+              String url = this.domain + captcha.getRegex("input type='image' src='(.*?)'").getMatch(0);
               Browser.download(file, br.cloneBrowser().openGetConnection(url));
-              Point p = UserIO.getInstance().requestClickPositionDialog(file, JDL.L("plugins.decrypt.stealthto.captcha.title", "Captcha"), JDL.L("plugins.decrypt.stealthto.captcha", "Please click on the Circle with a gap"));
+              Point p = UserIO.getInstance().requestClickPositionDialog(file, JDL.L("plugins.decrypt.gmd-music.captcha.title", "Captcha"), JDL.L("plugins.decrypt.gmd-music.captcha", "Please click on the Circle with a gap"));
               if (p == null) throw new DecrypterException(DecrypterException.CAPTCHA);
               captcha.put("button", "Send");
               captcha.put("button.x", p.x + "");
