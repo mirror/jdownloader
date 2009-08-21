@@ -101,6 +101,7 @@ public class LoadCaptchas {
             new File(dir).mkdir();
             if (loadDirect()) {
                 if (opendir) openDir(dir);
+                new EasyMethodeFile(host).copyExampleImage();
                 return true;
             }
 
