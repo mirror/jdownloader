@@ -3,6 +3,7 @@ package jd.captcha.easy;
 import java.awt.Image;
 import java.awt.image.RenderedImage;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Set;
@@ -27,7 +28,11 @@ public class BackgroundFilterCreater {
      */
     public static File create(EasyMethodeFile methode)
     {
-        return create(methode.getCaptchaFolder().listFiles(), methode);
+        return create(methode.getCaptchaFolder().listFiles(new FileFilter() {
+
+            public boolean accept(File pathname) {
+                return pathname.isFile() && pathname.getName().matches("(?is).*\\.(jpg|png|gif)");
+            }}), methode);
     }
     /**
      * Erstellt ein Hintergrundbild im MethodenOrdner aus einer Liste von Dateien
