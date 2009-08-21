@@ -943,6 +943,10 @@ public class Rapidshare extends PluginForHost {
     // @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
+        ai.setSpecialTraffic(true); /*
+                                     * rs has specialtraffic: trafficshare,
+                                     * pointconverting
+                                     */
         String api = "http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=getaccountdetails_v1&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&type=prem";
         queryAPI(br, api);
         String error = br.getRegex("ERROR:(.*)").getMatch(0);

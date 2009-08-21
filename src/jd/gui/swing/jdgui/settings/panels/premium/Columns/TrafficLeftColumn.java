@@ -67,7 +67,7 @@ public class TrafficLeftColumn extends JDTableColumn {
                     progress.setMaximum(10);
                     progress.setValue(10);
                 } else {
-                    value = Formatter.formatReadable(ai.getTrafficLeft());
+                    value = Formatter.formatReadable(ai.getTrafficLeft()) + "/" + Formatter.formatReadable(ai.getTrafficMax());
                     progress.setMaximum(ai.getTrafficMax());
                     progress.setValue(ai.getTrafficLeft());
                 }
@@ -81,6 +81,8 @@ public class TrafficLeftColumn extends JDTableColumn {
             } else {
                 if (ha.getTraffic() < 0) {
                     value = "Unlimited";
+                } else if (ha.getTraffic() == 0) {
+                    value = "No Traffic left";
                 } else {
                     value = Formatter.formatReadable(ha.getTraffic());
                 }

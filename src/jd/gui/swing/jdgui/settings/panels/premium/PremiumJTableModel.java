@@ -31,6 +31,7 @@ import jd.gui.swing.jdgui.settings.panels.premium.Columns.PassColumn;
 import jd.gui.swing.jdgui.settings.panels.premium.Columns.PremiumPointsColumn;
 import jd.gui.swing.jdgui.settings.panels.premium.Columns.StatusColumn;
 import jd.gui.swing.jdgui.settings.panels.premium.Columns.TrafficLeftColumn;
+import jd.gui.swing.jdgui.settings.panels.premium.Columns.TrafficShareColumn;
 import jd.gui.swing.jdgui.settings.panels.premium.Columns.UsedSpaceColumn;
 import jd.gui.swing.jdgui.settings.panels.premium.Columns.UserColumn;
 import jd.plugins.Account;
@@ -61,6 +62,7 @@ public class PremiumJTableModel extends JDTableModel {
         this.addColumn(new StatusColumn(JDL.L(IDENT_PREFIX + "status", "Status"), this));
         this.addColumn(new ExpireDateColumn(JDL.L(IDENT_PREFIX + "expiredate", "ExpireDate"), this));
         this.addColumn(new TrafficLeftColumn(JDL.L(IDENT_PREFIX + "trafficleft", "Trafficleft"), this));
+        this.addColumn(new TrafficShareColumn(JDL.L(IDENT_PREFIX + "trafficshare", "TrafficShare"), this));
         this.addColumn(new PremiumPointsColumn(JDL.L(IDENT_PREFIX + "premiumpoints", "PremiumPoints"), this));
         this.addColumn(new FilesNumColumn(JDL.L(IDENT_PREFIX + "filesnum", "Number of Files"), this));
         this.addColumn(new CashColumn(JDL.L(IDENT_PREFIX + "cash", "Cash"), this));

@@ -217,6 +217,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
                                 long max = 0l;
                                 long left = 0l;
                                 enabled = false;
+                                boolean special = false;
                                 for (Account a : accs) {
                                     if (a.isEnabled()) {
                                         enabled = true;
@@ -238,6 +239,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
                                                      * normal and premium accs
                                                      */
                                                     left += ai.getTrafficLeft();
+                                                    if (!special && ai.isSpecialTraffic()) special = true;
                                                 }
                                             }
                                         } else {
@@ -254,7 +256,11 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
                                 if (left == 0) {
                                     bars[ii].setMaximum(10);
                                     bars[ii].setValue(0);
-                                    bars[ii].setToolTipText(JDL.LF("gui.premiumstatus.expired_traffic.tooltip", "%s - %s account(s) -- At the moment no premium traffic is available.", host, accs.size()));
+                                    if (special) {
+                                        bars[ii].setToolTipText(JDL.LF("gui.premiumstatus.expired_maybetraffic.tooltip", "%s - %s account(s) -- At the moment it may be that no premium traffic is left.", host, accs.size()));
+                                    } else {
+                                        bars[ii].setToolTipText(JDL.LF("gui.premiumstatus.expired_traffic.tooltip", "%s - %s account(s) -- At the moment no premium traffic is available.", host, accs.size()));
+                                    }
                                 } else if (left > 0) {
                                     bars[ii].setMaximum(max);
                                     bars[ii].setValue(left);

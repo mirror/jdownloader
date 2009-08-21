@@ -490,7 +490,9 @@ public abstract class PluginForHost extends Plugin {
             if (traffic >= 0 && ai != null && !ai.isUnlimitedTraffic()) {
                 long left = Math.max(0, ai.getTrafficLeft() - traffic);
                 ai.setTrafficLeft(left);
-                if (left == 0) {
+                if (left == 0 && ai.isSpecialTraffic()) {
+                    logger.severe("Premium Account " + account.getUser() + ": Traffic Limit could be reached, but SpecialTraffic might be available!");
+                } else if (left == 0) {
                     logger.severe("Premium Account " + account.getUser() + ": Traffic Limit reached");
                     account.setTempDisabled(true);
                 }
