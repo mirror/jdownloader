@@ -26,7 +26,6 @@ import java.io.StringWriter;
 import java.util.logging.FileHandler;
 import java.util.logging.Logger;
 
-import jd.controlling.JDLogger;
 import jd.nutils.Executer;
 import jd.nutils.OSDetector;
 
@@ -54,9 +53,9 @@ public class Restarter {
             // Add to the desired logger
             logger = Logger.getLogger("org.jdownloader");
             logger.addHandler(handler);
-           
+
         } catch (IOException e) {
-       
+
         }
         try {
             for (String arg : args) {
@@ -124,8 +123,7 @@ public class Restarter {
             f.close();
             return ret.toString();
         } catch (IOException e) {
-
-            JDLogger.exception(e);
+            e.printStackTrace();
         }
         return "";
     }
