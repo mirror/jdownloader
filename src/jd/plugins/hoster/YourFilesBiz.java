@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.http.RandomUserAgent;
+import jd.http.RequestHeader;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -29,7 +31,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourfiles.biz" }, urls = { "http://[\\w\\.]*?yourfiles\\.(biz|to)/\\?d=[\\w]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision", interfaceVersion = 2, names = { "yourfiles.biz" }, urls = { "http://[\\w\\.]*?yourfiles\\.(biz|to)/\\?d=[\\w]+" }, flags = { 0 })
 public class YourFilesBiz extends PluginForHost {
 
     public YourFilesBiz(PluginWrapper wrapper) {
@@ -46,6 +48,9 @@ public class YourFilesBiz extends PluginForHost {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         setLangToEn();
+        RequestHeader reqh = new RequestHeader();
+        reqh.put("User-Agent", RandomUserAgent.generate());
+        br.setHeaders(reqh);
         br.getPage(downloadLink.getDownloadURL());
         String filename = br.getRegex("<b>File name:</b></td>\\s+<td align=left width=[0-9]+%>(.*?)</td>").getMatch(0);
         String filesize = br.getRegex("File size:</b></td>\\s+<td align=left>(.*?)</td>").getMatch(0);
