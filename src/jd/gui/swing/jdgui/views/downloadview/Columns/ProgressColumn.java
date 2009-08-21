@@ -92,6 +92,9 @@ public class ProgressColumn extends JDTableColumn {
                 progress.setMaximum(Math.max(1, fp.getTotalEstimatedPackageSize()));
                 progress.setValue(fp.getTotalKBLoaded());
             }
+            clearSB();
+            sb.append(Formatter.formatReadable(fp.getTotalKBLoaded())).append('/').append(Formatter.formatReadable(Math.max(0, fp.getTotalEstimatedPackageSize())));
+            progress.setString(sb.toString());
             progress.setForeground(COL_PROGRESS_NORMAL);
             return progress;
         } else if (value instanceof DownloadLink) {

@@ -96,6 +96,8 @@ public class Rapidshare extends PluginForHost {
 
     final static private Object LOCK = new Object();
 
+    final static private Object HTMLWORKAROUND = new Object();
+
     private static long rsapiwait = 0;
 
     private static HashMap<String, String> serverMap = new HashMap<String, String>();
@@ -180,13 +182,16 @@ public class Rapidshare extends PluginForHost {
             for (DownloadLink u : urls) {
                 if (size > 3000) {
                     logger.finest("OnlineCheck: SplitCheck " + links.size() + "/" + urls.length + " links");
-                    if (!checkLinksIntern(links.toArray(new DownloadLink[] {}))) return false;
-                    links = new ArrayList<DownloadLink>();
-                    idlist = new StringBuilder();
-                    namelist = new StringBuilder();
+                    /* do not stop here because we are not finished yet */
+                    checkLinksIntern2(links);
+                    links.clear();
+                    idlist.delete(0, idlist.capacity());
+                    namelist.delete(0, namelist.capacity());
                 }
-                idlist.append("," + getID(u.getDownloadURL()));
-                namelist.append("," + getName(u.getDownloadURL()));
+                /* workaround reset */
+                u.setProperty("htmlworkaround", null);
+                idlist.append("," + getID(u));
+                namelist.append("," + getName(u));
                 links.add(u);
                 size = ("http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=checkfiles_v1&files=" + idlist.toString().substring(1) + "&filenames=" + namelist.toString().substring(1) + "&incmd5=1").length();
             }
@@ -196,12 +201,24 @@ public class Rapidshare extends PluginForHost {
                 } else {
                     logger.finest("OnlineCheck: Check " + urls.length + " links");
                 }
-                if (!checkLinksIntern(links.toArray(new DownloadLink[] {}))) return false;
+                if (!checkLinksIntern2(links)) return false;
             }
         } catch (Exception e) {
             e.printStackTrace();
             return false;
         }
+        return true;
+    }
+
+    private boolean checkLinksIntern2(ArrayList<DownloadLink> links) {
+        if (!checkLinksIntern(links.toArray(new DownloadLink[] {}))) return false;
+        ArrayList<DownloadLink> retry = new ArrayList<DownloadLink>();
+        for (DownloadLink link : links) {
+            if (link.getProperty("htmlworkaround", null) != null) {
+                retry.add(link);
+            }
+        }
+        if (retry.size() > 0) if (!checkLinksIntern(retry.toArray(new DownloadLink[] {}))) return false;
         return true;
     }
 
@@ -218,8 +235,8 @@ public class Rapidshare extends PluginForHost {
                 StringBuilder namelist = new StringBuilder();
                 checkurls.removeAll(finishedurls);
                 for (DownloadLink u : checkurls) {
-                    idlist.append("," + getID(u.getDownloadURL()));
-                    namelist.append("," + getName(u.getDownloadURL()));
+                    idlist.append("," + getID(u));
+                    namelist.append("," + getName(u));
                 }
                 String req = "http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=checkfiles_v1&files=" + idlist.toString().substring(1) + "&filenames=" + namelist.toString().substring(1) + "&incmd5=1";
 
@@ -247,6 +264,7 @@ public class Rapidshare extends PluginForHost {
                     // 3=Server down 4=File abused 5
                     switch (Integer.parseInt(matches[i][4])) {
                     case 0:
+                        tryWorkaround(u);
                         u.getLinkStatus().setErrorMessage(JDL.L("plugin.host.rapidshare.status.filenotfound", "File not found"));
                         u.getLinkStatus().setStatusText(JDL.L("plugin.host.rapidshare.status.filenotfound", "File not found"));
 
@@ -321,13 +339,25 @@ public class Rapidshare extends PluginForHost {
 
     }
 
-    private String getName(String downloadURL) {
-        /* remove html ending, because rs now checks the complete filename */
-        return new Regex(downloadURL, "files/\\d+/(.*?)(\\.html?|$)").getMatch(0);
+    private String getName(DownloadLink link) {
+        String name;
+        if (link.getProperty("htmlworkaround", null) == null) {
+            /* remove html ending, because rs now checks the complete filename */
+            name = new Regex(link.getDownloadURL(), "files/\\d+/(.*?)(\\.html?|$)").getMatch(0);
+        } else {
+            name = new Regex(link.getDownloadURL(), "files/\\d+/(.*?)$").getMatch(0);
+        }
+        return name;
     }
 
-    private String getID(String downloadURL) {
-        return new Regex(downloadURL, "files/(\\d+)/").getMatch(0);
+    private void tryWorkaround(DownloadLink link) {
+        if (link.getProperty("htmlworkaround", null) == null) {
+            link.setProperty("htmlworkaround", HTMLWORKAROUND);
+        }
+    }
+
+    private String getID(DownloadLink link) {
+        return new Regex(link.getDownloadURL(), "files/(\\d+)/").getMatch(0);
     }
 
     // @Override

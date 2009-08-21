@@ -1003,17 +1003,17 @@ public class JDChat extends PluginOptional implements ControlListener {
             }
 
         });
-        lang = new JComboBox(new String[] { JDL.getInstance("en").toString(), JDL.getInstance("de").toString(), JDL.getInstance("es").toString(), JDL.getInstance("tr").toString() });
+        lang = new JComboBox(new JDLocale[] { JDL.getInstance("en"), JDL.getInstance("de"), JDL.getInstance("es"), JDL.getInstance("tr") });
         lang.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
-                getPluginConfig().setProperty("CHANNEL_LNG", lang.getSelectedItem());
+                getPluginConfig().setProperty(CHANNEL_LNG, lang.getSelectedItem());
                 getPluginConfig().save();
                 initChannel();
             }
 
         });
-        lang.setSelectedItem(this.getPluginConfig().getStringProperty(CHANNEL_LNG, JDL.getInstance("en").toString()));
+        lang.setSelectedItem(this.getPluginConfig().getProperty(CHANNEL_LNG, JDL.getInstance("en")));
         textArea.setContentType("text/html");
         textArea.setEditable(false);
 
@@ -1094,17 +1094,17 @@ public class JDChat extends PluginOptional implements ControlListener {
     private void initChannel() {
 
         JDLocale id = JDL.getLocale();
-        String lng = JDL.getInstance("en").toString();
+        JDLocale lng = JDL.getInstance("en");
         if (id.getLanguageCode().equals("es")) {
-            lng = JDL.getInstance("es").toString();
+            lng = JDL.getInstance("es");
         } else if (id.getLanguageCode().equals("tr")) {
-            lng = JDL.getInstance("tr").toString();
+            lng = JDL.getInstance("tr");
         }
-        lng = this.getPluginConfig().getStringProperty(CHANNEL_LNG, JDL.getInstance("en").toString());
+        lng = (JDLocale) this.getPluginConfig().getProperty(CHANNEL_LNG, JDL.getInstance("en"));
         String newChannel = null;
-        if (lng.equals(JDL.getInstance("es").toString())) {
+        if (lng.getLanguageCode().equals(JDL.getInstance("es").getLanguageCode())) {
             newChannel = "#jdownloader[es]";
-        } else if (lng.equals(JDL.getInstance("tr").toString())) {
+        } else if (lng.getLanguageCode().equals(JDL.getInstance("tr").getLanguageCode())) {
             newChannel = "#jdownloader[tr]";
         } else {
             newChannel = "#jdownloader";
