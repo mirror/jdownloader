@@ -41,7 +41,7 @@ public class HtflCm extends PluginForDecrypt {
         br.getPage(parameter);
         FilePackage fp = FilePackage.getInstance();
         String fpName = br.getRegex("-2px;\" />(.*?)/?</td>").getMatch(0).trim();
-        if (fpName == null || fpName.isEmpty()) fpName = "Hotfile.com folder";
+        if (fpName == null || fpName.length() == 0) fpName = "Hotfile.com folder";
         fp.setName(fpName);
         String[] links = br.getRegex("(http://hotfile\\.com/dl/\\d+/[0-9a-zA-Z]+/.*?)\"").getColumn(0);
         if (links == null || links.length == 0) return null;

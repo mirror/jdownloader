@@ -101,9 +101,9 @@ public class RbkprrWs extends PluginForDecrypt {
         }
         /* Get package name + password */
         fpName = br.getRegex("<h1>(.*?)(<img.*?)?</h1>").getMatch(0).trim();
-        if (fpName != null && !fpName.isEmpty()) fp.setName(HTMLEntities.unhtmlentities(fpName));
+        if (fpName != null && fpName.length() != 0) fp.setName(HTMLEntities.unhtmlentities(fpName));
         fpPass = br.getRegex("Passwort:</b></th>\\s+<td>(.*?)</td>").getMatch(0).trim();
-        if (fpPass != null && !fpPass.isEmpty()) fp.setPassword(fpPass);
+        if (fpPass != null && fpPass.length() != 0) fp.setPassword(fpPass);
 
         Form form = br.getFormbyProperty("name", "go_captcha");
         if (form != null) {
@@ -178,7 +178,7 @@ public class RbkprrWs extends PluginForDecrypt {
                 for (String part : parts) {
                     br.getPage(part.replace("goto", "frame"));
                     DownloadLink dlink = createDownloadlink(br.getRedirectLocation());
-                    if (fpPass != null && !fpPass.isEmpty()) dlink.addSourcePluginPassword(fpPass);
+                    if (fpPass != null && fpPass.length() != 0) dlink.addSourcePluginPassword(fpPass);
                     dlink.setFilePackage(fp);
                     // fp.add(dlink);
                     decryptedLinks.add(dlink);
@@ -201,7 +201,7 @@ public class RbkprrWs extends PluginForDecrypt {
                 decryptedLinks.add(sampleDLink);
             }
         } else {
-            if (fpName == null || fpName.isEmpty()) fpName = "raubkopierer.ws";
+            if (fpName == null || fpName.length() == 0) fpName = "raubkopierer.ws";
             fpExtra.setName(fpName + " - Extras");
             if (nfoDLink != null) {
                 nfoDLink.setFilePackage(fpExtra);

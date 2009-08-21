@@ -112,7 +112,7 @@ public class Crptngt extends PluginForDecrypt {
                 ArrayList<DownloadLink> dLinks = JDUtilities.getController().getContainerLinks(containerFile);
                 containerFile.delete();
                 if (dLinks.size() != 0) {
-                    if (password != null && !password.isEmpty()) {
+                    if (password != null && password.length() != 0) {
                         for (DownloadLink dLink : dLinks) {
                             dLink.addSourcePluginPassword(password);
                             tempDecryptedLinks.add(dLink);
@@ -143,14 +143,14 @@ public class Crptngt extends PluginForDecrypt {
                         } else
                             rdLink = br2.getRegex("downloadlink\">(.*?)<").getMatch(0);
                     }
-                    if (rdLink == null || rdLink.trim().isEmpty())
+                    if (rdLink == null || rdLink.trim().length() == 0)
                         continue;
                     else
                         rdLink = rdLink.trim();
 
                     DownloadLink dLink;
                     dLink = createDownloadlink(rdLink);
-                    if (password != null && !password.isEmpty()) dLink.addSourcePluginPassword(password);
+                    if (password != null && password.length() != 0) dLink.addSourcePluginPassword(password);
                     tempDecryptedLinks.add(dLink);
                     progress.increase(1);
                 }

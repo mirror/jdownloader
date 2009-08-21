@@ -44,7 +44,7 @@ public class MgrCk extends PluginForDecrypt {
             link = br.getRedirectLocation();
         else {
             String error = br.getRegex("class=\"sm\">(.*?)<").getMatch(0);
-            if (!error.isEmpty()) {
+            if (error.length() != 0) {
                 logger.warning(error + " (" + parameter + ")");
                 return new ArrayList<DownloadLink>();
             }

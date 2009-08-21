@@ -70,7 +70,7 @@ public class FrShrdFldr extends PluginForDecrypt {
         for (String dl : links) {
             DownloadLink dlink;
             dlink = createDownloadlink(dl);
-            if (!pass.isEmpty()) dlink.setProperty("pass", pass);
+            if (pass.length() != 0) dlink.setProperty("pass", pass);
             decryptedLinks.add(dlink);
         }
         String changedir = br.getRegex("var currentDirId = (\\d+);").getMatch(0);
@@ -85,7 +85,7 @@ public class FrShrdFldr extends PluginForDecrypt {
             for (String dl : links) {
                 DownloadLink dlink;
                 dlink = createDownloadlink(dl);
-                if (!pass.isEmpty()) dlink.setProperty("pass", pass);
+                if (pass.length() != 0) dlink.setProperty("pass", pass);
                 decryptedLinks.add(dlink);
             }
         }

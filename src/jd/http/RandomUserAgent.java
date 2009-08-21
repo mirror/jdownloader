@@ -225,11 +225,11 @@ public class RandomUserAgent {
         if (dotNet20.equalsIgnoreCase("; ")) dotNet20 = "";
 
         String dotNet30 = "";
-        if (!dotNet20.isEmpty()) dotNet30 = "; " + winAddons.get(2)[rand.nextInt(winAddons.get(2).length)];
+        if (dotNet20.length() != 0) dotNet30 = "; " + winAddons.get(2)[rand.nextInt(winAddons.get(2).length)];
         if (dotNet30.equalsIgnoreCase("; ")) dotNet30 = "";
 
         String dotNet35 = "";
-        if (!dotNet30.isEmpty()) dotNet35 = "; " + winAddons.get(3)[rand.nextInt(winAddons.get(3).length)];
+        if (dotNet30.length() != 0) dotNet35 = "; " + winAddons.get(3)[rand.nextInt(winAddons.get(3).length)];
         if (dotNet35.equalsIgnoreCase("; ")) dotNet35 = "";
 
         return dotNet10 + dotNet20 + dotNet30 + dotNet35;
