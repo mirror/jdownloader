@@ -692,6 +692,10 @@ public abstract class PluginForHost extends Plugin {
         return null;
     }
 
+    private final String cleanString(String host) {
+        return host.replaceAll("[a-z0-9\\-\\.]", "");
+    }
+
     /**
      * Creates a dummyHosterIcon
      */
@@ -705,7 +709,8 @@ public abstract class PluginForHost extends Plugin {
         final BufferedImage image = gc.createCompatibleImage(w, h, Transparency.BITMASK);
         Graphics2D g = image.createGraphics();
         String host = getHost();
-        String dummy = host.replaceAll("[a-z0-9]", "");
+        String dummy = cleanString(host);
+        if (dummy.length() < 2) dummy = cleanString(getClass().getSimpleName());
         if (dummy.length() < 2) dummy = host.toUpperCase();
         if (dummy.length() > 2) dummy = dummy.substring(0, 2);
         g.setFont(new Font("Arial", Font.BOLD, size));
