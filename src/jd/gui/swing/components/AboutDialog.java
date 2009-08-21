@@ -33,6 +33,7 @@ import jd.gui.swing.dialog.AbstractDialog;
 import jd.gui.swing.jdgui.userio.UserIOGui;
 import jd.nutils.JDImage;
 import jd.nutils.io.JDIO;
+import jd.update.WebUpdater;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -63,8 +64,13 @@ public class AboutDialog extends AbstractDialog {
         JLabel lbl;
         cp.add(lbl = new JLabel(JDL.L(JDL_PREFIX + "name", "JDownloader")), "gaptop 15");
         lbl.setFont(lbl.getFont().deriveFont(lbl.getFont().getSize() * 2.0f));
-
-        cp.add(new JLabel(JDL.LF(JDL_PREFIX + "version", "Version %s", JDUtilities.getRevision())));
+        String branch = WebUpdater.getConfig("WEBUPDATE").getStringProperty("BRANCHINUSE", null);
+        if (branch == null) {
+            branch = "";
+        } else {
+            branch = "-" + branch + "-";
+        }
+        cp.add(new JLabel(branch + JDL.LF(JDL_PREFIX + "version", "Version %s", JDUtilities.getRevision())));
 
         cp.add(new JLabel("© AppWork UG (haftungsbeschränkt) 2007-2009"), "gaptop 5");
 

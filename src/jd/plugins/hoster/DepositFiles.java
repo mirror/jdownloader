@@ -120,11 +120,9 @@ public class DepositFiles extends PluginForHost {
     public boolean isFreeAccount() throws IOException {
         setLangtoGer();
         br.getPage("http://depositfiles.com/de/gold/");
-        if (br.containsHTML("<div class=\"access\">Ihr Gold")) return false;
-        String status = br.getRegex("<div class=\"access\">Ihre aktuelle Status:(.*?)- Mitglied</div>").getMatch(0);
-        if (status == null) return true;
-        if (status.trim().equalsIgnoreCase("frei")) return true;
-        return false;
+        if (br.containsHTML("Ihre aktuelle Status: Frei - Mitglied</div>")) return true;
+        if (br.containsHTML("<ins>Gold-Mitgliedschaft</ins>")) return false;
+        return true;
     }
 
     // @Override
@@ -140,11 +138,11 @@ public class DepositFiles extends PluginForHost {
             return ai;
         }
         if (isFreeAccount()) {
-            ai.setStatus(JDL.L("plugins.hoster.depositfilescom.accountok", "Account is OK."));
+            ai.setStatus(JDL.L("plugins.hoster.depositfilescom.accountok", "Account is OK.(Free User)"));
             account.setValid(true);
             return ai;
         }
-        String expire = br.getRegex("<div class=\"access\">Ihr Gold- Account ist.*?bis zum: <b>(.*?)</b></div>").getMatch(0);
+        String expire = br.getRegex("noch den Gold-Zugriff: <b>(.*?)</b></div>").getMatch(0);
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.UK);
         if (expire == null) {
             ai.setStatus(JDL.L("plugins.hoster.depositfilescom.accountbad", "Account expitred or not valid."));

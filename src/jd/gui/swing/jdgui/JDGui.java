@@ -75,7 +75,6 @@ import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
-import jd.update.WebUpdater;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -212,13 +211,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
      * Sets the windowtitle depüending on the used branch
      */
     private void setWindowTitle() {
-        String branch = WebUpdater.getConfig("WEBUPDATE").getStringProperty("BRANCHINUSE", null);
-        if (branch != null) {
-            mainFrame.setTitle("JDownloader -" + branch + "-");
-        } else {
-            mainFrame.setTitle("JDownloader");
-        }
-
+        mainFrame.setTitle("JDownloader");
     }
 
     /**
@@ -523,13 +516,11 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
 
             @Override
             protected void onHide() {
-           
 
             }
 
             @Override
             protected void onShow() {
-             
 
             }
 
