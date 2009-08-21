@@ -37,7 +37,7 @@ import org.mozilla.javascript.Context;
 import org.mozilla.javascript.EvaluatorException;
 import org.mozilla.javascript.Scriptable;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediafire.com" }, urls = { "http://[\\w\\.]*?mediafire\\.com/(download\\.php\\?.+|\\?.+|file/.+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediafire.com" }, urls = { "http://[\\w\\.]*?mediafire\\.com/(download\\.php\\?.+|\\?(?!sharekey).+|file/.+)" }, flags = { 0 })
 public class MediafireCom extends PluginForHost {
 
     static private final String offlinelink = "tos_aup_violation";
@@ -95,7 +95,7 @@ public class MediafireCom extends PluginForHost {
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         String url = null;
-       
+
         try {
             for (int i = 0; i < 3; i++) {
                 if (url != null) break;
@@ -175,7 +175,7 @@ public class MediafireCom extends PluginForHost {
                     url = Context.toString(result);
                 }
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, url, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
             dl.startDownload();
         } catch (EvaluatorException e) {
             // too complexx retry
