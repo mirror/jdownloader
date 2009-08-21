@@ -71,10 +71,8 @@ public class FileShareInUa extends PluginForHost {
         Form DLForm0 = br.getForm(2);
         if (DLForm0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.submitForm(DLForm0);
-        System.out.print(br.toString());
         String dlframe = downloadLink.getDownloadURL() + "?fr";
         br.getPage(dlframe);
-        System.out.print(br.toString());
         String dllink0 = br.getRegex("yandex_bar\"  href=\"(.*?)\" id=\"dl_li").getMatch(0);
         if (dllink0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         String dllink1 = "http://fileshare.in.ua" + dllink0;
