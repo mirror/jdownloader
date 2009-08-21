@@ -23,31 +23,37 @@ import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rs.xxx-blog.org" }, urls = { "http://[\\w\\.]*?xxx-blog\\.org/[\\w]{1,4}-[\\w]{10,40}/.*" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rs.xxx-blog.org" }, urls = { "http://[\\w\\.]*?xxx-blog\\.org/[com-|u|filefactory/]([\\w\\./])*" }, flags = { 0 })
 public class RsXXXBlg extends PluginForDecrypt {
 
     public RsXXXBlg(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // @Override
+    @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
         parameter = parameter.substring(parameter.lastIndexOf("http://"));
-        br.getPage(parameter.replaceFirst("http://[\\w\\.]*?xxx-blog.org", "http://xxx-blog.org/frame"));
-        if (br.getRedirectLocation() == null) return null;
-        DownloadLink dLink = createDownloadlink(br.getRedirectLocation());
+        br.getPage(parameter);
+        DownloadLink dLink;
+        if (br.getRedirectLocation() != null) {
+            dLink = createDownloadlink(br.getRedirectLocation());
+        } else {
+            String http = br.getRegex("<FORM ACTION=\"(.*?)\"").getMatch(0);
+            if (http == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            dLink = createDownloadlink(http);
+        }
         dLink.addSourcePluginPassword("xxx-blog.dl.am");
         dLink.addSourcePluginPassword("xxx-blog.org");
         decryptedLinks.add(dLink);
 
         return decryptedLinks;
     }
-
-    // @Override
 
 }
