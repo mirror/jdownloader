@@ -27,7 +27,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-//appscebe.org by pspzockerscene
+//appscene.org by pspzockerscene
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "appscene.org" }, urls = { "http://[\\w\\.]*?appscene\\.org/(download/[0-9]+|download\\.php\\?id=)" }, flags = { 0 })
 public class AppSceneOrg extends PluginForHost {
 
