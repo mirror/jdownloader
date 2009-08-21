@@ -4,6 +4,7 @@ import java.awt.Image;
 import java.io.File;
 import java.util.Iterator;
 import java.util.Vector;
+import jd.captcha.pixelgrid.PixelGrid;
 
 import jd.nutils.io.JDIO;
 
@@ -26,14 +27,16 @@ public class BackGroundImageManager {
     protected EasyMethodeFile methode;
     private Captcha captchaImage;
     public int zoom;
+    protected int[][] backupGrid;
     private void autoSetZoomFaktor() {
-        if(captchaImage.getWidth()>200 || captchaImage.getHeight()>100)
-            zoom=100;
-        else if(captchaImage.getWidth()>100 || captchaImage.getHeight()>50)
-            zoom=200;
+        if (captchaImage.getWidth() > 200 || captchaImage.getHeight() > 100)
+            zoom = 100;
+        else if (captchaImage.getWidth() > 100 || captchaImage.getHeight() > 50)
+            zoom = 200;
         else
-            zoom=400;
+            zoom = 400;
     }
+
     /**
      * Verwaltet die hintergrundbilder und sorgt dafür das das richtige entfernt
      * wird bei einem randomCaptcha
@@ -62,6 +65,7 @@ public class BackGroundImageManager {
      */
     public BackGroundImageManager(Captcha captcha) {
         this.captchaImage = captcha;
+        backupGrid=PixelGrid.getGridCopy(captcha.getGrid());
         autoSetZoomFaktor();
         methode = new EasyMethodeFile(captchaImage.owner.getResourceFile("jacinfo.xml").getParentFile());
         load();
@@ -166,13 +170,36 @@ public class BackGroundImageManager {
      * ist und reinigt das Captcha damit
      */
     public void clearCaptchaAll() {
+        clearCaptchaAll(backgroundList);
+    }
+
+    /**
+     * reinigt das Captcha
+     * 
+     * @param preview
+     */
+    public void clearCaptchaPreview(BackGroundImage preview) {
+        captchaImage.grid=PixelGrid.getGridCopy(backupGrid);
+        preview.clearCaptcha(captchaImage);
+    }
+    public void resetCaptcha()
+    {
+        captchaImage.grid=PixelGrid.getGridCopy(backupGrid);
+    }
+    /**
+     * Sucht das Hintergrundbild bei dem die größte Übereinstimmung vorhanden
+     * ist und reinigt das Captcha damit
+     * 
+     * @param preview
+     */
+    public void clearCaptchaAll(Vector<BackGroundImage> preview) {
         Captcha best = null;
-        int bestVal = -1;
         BackGroundImage bestBgi = null;
-        for (BackGroundImage bgi : backgroundList) {
+        int bestVal = -1;
+        for (BackGroundImage bgi : preview) {
             int color = bgi.getColor();
-            Image bImage = Utilities.loadImage(new File(methode.file, bgi.getBackgroundImage()));
-            if (bImage.getWidth(null) != captchaImage.getWidth() || bImage.getHeight(null) != captchaImage.getHeight()) {
+            Image bImage = bgi.getImage(methode);
+            if (bImage == null || bImage.getWidth(null) != captchaImage.getWidth() || bImage.getHeight(null) != captchaImage.getHeight()) {
                 if (Utilities.isLoggerActive()) {
                     JDLogger.getLogger().info("ERROR Maske und Bild passen nicht zusammmen");
                 }
@@ -183,7 +210,7 @@ public class BackGroundImageManager {
             for (int x = 0; x < captchaImage.getWidth(); x++) {
                 for (int y = 0; y < captchaImage.getHeight(); y++) {
                     bgi.setColor(captcha2.getPixelValue(x, y));
-                    if (bgi.getColorDifference(captchaImage.getPixelValue(x, y)) < bgi.getDistance()) val++;
+                    if (bgi.getColorDifference(backupGrid[x][y]) < bgi.getDistance()) val++;
                 }
             }
             bgi.setColor(color);
@@ -194,6 +221,7 @@ public class BackGroundImageManager {
             }
         }
         if (best != null) {
+            resetCaptcha();
             bestBgi.clearCaptcha(captchaImage);
         }
     }

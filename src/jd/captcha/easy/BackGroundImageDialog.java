@@ -2,16 +2,16 @@ package jd.captcha.easy;
 
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.image.BufferedImage;
 import java.io.File;
-
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
-
 import jd.captcha.gui.ImageComponent;
 import jd.captcha.utils.Utilities;
 import jd.gui.swing.GuiRunnable;
@@ -24,12 +24,13 @@ public class BackGroundImageDialog implements ActionListener {
 
     public BackGroundImageDialog(BackGroundImageManager bgim, JFrame owner) {
         this.bgim = bgim;
-        this.owner=owner;
+        this.owner = owner;
     }
+
     private JFrame owner;
     public BackGroundImage workingImage;
     private BackGroundImageManager bgim;
-    private ImageComponent bg1, bgv;
+    private ImageComponent bg1, bgv, bgmask;
     private BackGroundImage ret = null;
     private JDialog dialog;
     private JButton btColorChoose, btPreview, btFinished, btLoadBackgroundImage, btCreateBackgroundFilter;
@@ -97,7 +98,7 @@ public class BackGroundImageDialog implements ActionListener {
     }
 
     private void initCaptchaImages() {
-        bgim.getCaptchaImage().reset();
+        bgim.resetCaptcha();
 
         final Image image = bgim.getScaledCaptchaImage();
 
@@ -108,6 +109,20 @@ public class BackGroundImageDialog implements ActionListener {
                 imagePanel.setBorder(new TitledBorder(JDL.L("easycaptcha.images", "Images:")));
 
                 imagePanel.setLayout(new BoxLayout(imagePanel, BoxLayout.Y_AXIS));
+                imagePanel.add(new JLabel(JDL.L("easycaptcha.mask", "Mask:")));
+                if (workingImage != null)
+                    bgmask = new ImageComponent(workingImage.getImage(bgim.methode));
+                else {
+                    BufferedImage bi = new BufferedImage(image.getWidth(null), image.getHeight(null), BufferedImage.TYPE_INT_ARGB);
+                    Graphics2D ig2 = bi.createGraphics();
+                    ig2.fillRect(0, 0, image.getWidth(null) - 1, image.getHeight(null) - 1);
+                    bgmask = new ImageComponent(bi);
+
+                }
+
+                imagePanel.add(bgmask);
+
+                imagePanel.add(Box.createRigidArea(new Dimension(0, 10)));
 
                 imagePanel.add(new JLabel(JDL.L("easycaptcha.orginal", "Original:")));
                 bg1 = new ImageComponent(image);
@@ -120,11 +135,8 @@ public class BackGroundImageDialog implements ActionListener {
                 if (workingImage != null) {
                     threshold = workingImage.getDistance();
                     colorMode = workingImage.getColorDistanceMode();
-                    bgim.add(workingImage);
-                    bgim.clearCaptchaAll();
-                    bgim.remove(workingImage);
-                } else
-                    bgim.clearCaptchaAll();
+                    bgim.clearCaptchaPreview(workingImage);
+                }
 
                 bgv = new ImageComponent(bgim.getScaledCaptchaImage());
                 imagePanel.add(bgv);
@@ -169,12 +181,8 @@ public class BackGroundImageDialog implements ActionListener {
             workingImage.setDistance((Integer) thresholdSpinner.getValue());
             workingImage.setColorDistanceMode(colorMode);
             workingImage.setColor(colorChooser.getColor().getRGB());
-
-            bgim.add(workingImage);
-            bgim.clearCaptchaAll();
-            bgim.remove(workingImage);
+            bgim.clearCaptchaPreview(workingImage);
             final Image image2 = bgim.getScaledCaptchaImage();
-
             new GuiRunnable<Object>() {
                 public Object runSave() {
                     bgv.image = image2;
@@ -215,15 +223,15 @@ public class BackGroundImageDialog implements ActionListener {
                 workingImage.setColor(colorChooser.getColor().getRGB());
                 workingImage.setDistance((Integer) thresholdSpinner.getValue());
                 workingImage.setColorDistanceMode(colorMode);
-                bgim.add(workingImage);
-                bgim.clearCaptchaAll();
-                bgim.remove(workingImage);
+                bgim.clearCaptchaPreview(workingImage);
                 btPreview.setEnabled(true);
                 final Image image2 = bgim.getScaledCaptchaImage();
 
                 new GuiRunnable<Object>() {
                     public Object runSave() {
                         bgv.image = image2;
+                        bgmask.image=workingImage.getImage(bgim.methode);
+                        bgmask.repaint();
                         bgv.repaint();
                         return null;
                     }
@@ -238,15 +246,15 @@ public class BackGroundImageDialog implements ActionListener {
                 workingImage.setColor(colorChooser.getColor().getRGB());
                 workingImage.setDistance((Integer) thresholdSpinner.getValue());
                 workingImage.setColorDistanceMode(colorMode);
-                bgim.add(workingImage);
-                bgim.clearCaptchaAll();
-                bgim.remove(workingImage);
+                bgim.clearCaptchaPreview(workingImage);
                 btPreview.setEnabled(true);
                 final Image image2 = bgim.getScaledCaptchaImage();
 
                 new GuiRunnable<Object>() {
                     public Object runSave() {
                         bgv.image = image2;
+                        bgmask.image=workingImage.getImage(bgim.methode);
+                        bgmask.repaint();
                         bgv.repaint();
                         return null;
                     }

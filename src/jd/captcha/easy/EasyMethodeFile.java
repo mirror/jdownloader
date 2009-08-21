@@ -33,8 +33,8 @@ public class EasyMethodeFile implements JDLabelContainer, Serializable {
     public EasyMethodeFile(File file) {
         this.file = file;
     }
-    public boolean copyExampleImage()
-    {
+
+    public boolean copyExampleImage() {
         File exf = getExampleImage();
         if (exf == null || !exf.exists()) {
             File[] listF = getCaptchaFolder().listFiles(new FilenameFilter() {
@@ -43,30 +43,32 @@ public class EasyMethodeFile implements JDLabelContainer, Serializable {
                     return name.matches("(?is).*\\.(jpg|png|gif)");
                 }
             });
-            if(listF!=null && listF.length>1)
-            {
-                JDIO.copyFile(listF[0], new File(file,"example."+getCaptchaType(false)));
+            if (listF != null && listF.length > 1) {
+                JDIO.copyFile(listF[0], new File(file, "example." + getCaptchaType(false)));
                 return true;
             }
         }
         return false;
     }
+
     public EasyMethodeFile() {
     }
+
     public boolean isReadyToTrain() {
-        if(!isEasyCaptchaMethode())return true;
-        Vector<CPoint> list = ColorTrainer.load(new File(file,"CPoints.xml"));
+        if (!isEasyCaptchaMethode()) return true;
+        Vector<CPoint> list = ColorTrainer.load(new File(file, "CPoints.xml"));
         boolean hasForderGround = false;
         boolean hasBackGround = false;
 
         for (CPoint point : list) {
-            if(point.isForeground())
-                hasForderGround=true;
+            if (point.isForeground())
+                hasForderGround = true;
             else
-                hasBackGround=true;
+                hasBackGround = true;
         }
         return hasForderGround && hasBackGround;
     }
+
     public boolean isEasyCaptchaMethode() {
         File js = getScriptJas();
         return js.exists() && JDIO.getLocalFile(js).contains("param.useSpecialGetLetters=EasyCaptcha");
@@ -204,17 +206,31 @@ public class EasyMethodeFile implements JDLabelContainer, Serializable {
         return null;
     }
 
+    public File getRandomCaptchaFile() {
+        File[] list = getCaptchaFolder().listFiles(new FileFilter() {
+
+            public boolean accept(File pathname) {
+                String ln = pathname.getName().toLowerCase();
+                if (pathname.isFile() && ln.matches(".*\\.(jpg|jpeg|gif|png|bmp)") && pathname.length() > 1) return true;
+                return false;
+            }
+        });
+        if (list.length == 0) return null;
+        int id = (int) (Math.random() * (list.length - 1));
+        return list[id];
+    }
+
     /**
      * Erzeugt ein zufallsCaptcha aus dem Captchaordner
      * 
      * @return
      */
     public Captcha getRandomCaptcha() {
-        File[] list = getCaptchaFolder().listFiles();
-        if (list.length == 0) return null;
-        int id = (int) (Math.random() * (list.length - 1));
-        Captcha captchaImage = getJac().createCaptcha(Utilities.loadImage(list[id]));
-        return captchaImage;
+        Captcha captchaImage = getJac().createCaptcha(Utilities.loadImage(getRandomCaptchaFile()));
+        if (captchaImage != null && captchaImage.getWidth() > 0 && captchaImage.getWidth() > 0) return captchaImage;
+        captchaImage = getJac().createCaptcha(Utilities.loadImage(getRandomCaptchaFile()));
+        if (captchaImage != null && captchaImage.getWidth() > 0 && captchaImage.getWidth() > 0) return captchaImage;
+        return null;
     }
 
     @Override
