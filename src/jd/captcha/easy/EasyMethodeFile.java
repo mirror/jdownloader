@@ -2,6 +2,7 @@ package jd.captcha.easy;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FilenameFilter;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Vector;
@@ -32,7 +33,24 @@ public class EasyMethodeFile implements JDLabelContainer, Serializable {
     public EasyMethodeFile(File file) {
         this.file = file;
     }
+    public boolean copyExampleImage()
+    {
+        File exf = getExampleImage();
+        if (exf == null || !exf.exists()) {
+            File[] listF = getCaptchaFolder().listFiles(new FilenameFilter() {
 
+                public boolean accept(File dir, String name) {
+                    return name.matches("(?is).*\\.(jpg|png|gif)");
+                }
+            });
+            if(listF!=null && listF.length>1)
+            {
+                JDIO.copyFile(listF[0], new File(file,"example."+getCaptchaType(false)));
+                return true;
+            }
+        }
+        return false;
+    }
     public EasyMethodeFile() {
     }
     public boolean isReadyToTrain() {

@@ -14,21 +14,8 @@ public class CopyExampleImageFromCaptchaFolder {
     public static void main(String[] args) {
         EasyMethodeFile[] list = EasyMethodeFile.getMethodeList();
         for (EasyMethodeFile easyMethodeFile : list) {
-            File exf = easyMethodeFile.getExampleImage();
-            if (exf == null || !exf.exists()) {
-                File[] listF = easyMethodeFile.getCaptchaFolder().listFiles(new FilenameFilter() {
-
-                    public boolean accept(File dir, String name) {
-                        return name.matches("(?is).*\\.(jpg|png|gif)");
-                    }
-                });
-                if(listF!=null && listF.length>1)
-                {
-                    JDIO.copyFile(listF[0], new File(easyMethodeFile.file,"example."+easyMethodeFile.getCaptchaType(false)));
-                    System.out.println(easyMethodeFile.file);
-
-                }
-            }
+            if(easyMethodeFile.copyExampleImage())
+                System.out.println(easyMethodeFile.file);
         }
     }
 

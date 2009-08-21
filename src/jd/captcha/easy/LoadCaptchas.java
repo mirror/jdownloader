@@ -196,6 +196,7 @@ public class LoadCaptchas {
             if (selectedImage != null && selectedImage.file != null) {
                 loadProcess();
                 if (opendir) openDir(dir);
+                new EasyMethodeFile(host).copyExampleImage();
                 return dir.length() > 0;
             } else
                 return false;
