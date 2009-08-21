@@ -886,6 +886,7 @@ public class Browser {
      */
     public String postPage(String url, LinkedHashMap<String, String> post) throws IOException {
         openPostConnection(url, post);
+        url=url;
         return loadConnection(null);
 
     }

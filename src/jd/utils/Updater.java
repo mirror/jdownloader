@@ -47,25 +47,28 @@ public class Updater {
 
     public static StringBuilder SERVERLIST = new StringBuilder();
     static {
-        SERVERLIST.append("-1:http://update4ex.jdownloader.org/branches/%BRANCH%/\r\n");
-        SERVERLIST.append("-1:http://jdupdate.bluehost.to/branches/%BRANCH%/\r\n");
+//        SERVERLIST.append("-1:http://update4ex.jdownloader.org/branches/%BRANCH%/\r\n");
+//        SERVERLIST.append("-1:http://jdupdate.bluehost.to/branches/%BRANCH%/\r\n");
         SERVERLIST.append("-1:http://update1.jdownloader.org/%BRANCH%/\r\n");
-        SERVERLIST.append("-1:http://update2.jdownloader.org/%BRANCH%/\r\n");
-        SERVERLIST.append("-1:http://jd.code4everyone.de/%BRANCH%/\r\n");
+//        SERVERLIST.append("-1:http://update2.jdownloader.org/%BRANCH%/\r\n");
+//        SERVERLIST.append("-1:http://jd.code4everyone.de/%BRANCH%/\r\n");
       
-        SERVERLIST.append("-1:http://update0.jdownloader.org/%BRANCH%/\r\n");
+//        SERVERLIST.append("-1:http://update0.jdownloader.org/%BRANCH%/\r\n");
     }
 
     public static void main(String[] args) throws Exception {
         String branch = null;
 
-        branch = "Synthy";
+        branch = "Synthy2";
+        Browser.setGlobalConnectTimeout(500000);
+        Browser.setGlobalReadTimeout(500000);
         Updater upd = new Updater();
 
         if (branch != null) WebUpdater.getConfig("WEBUPDATE").setProperty("BRANCH", branch);
         WebUpdater.getConfig("WEBUPDATE").save();
         System.out.println("STATUS: Webupdate");
-        upd.webupdate();
+ 
+       upd.webupdate();
 
         upd.removeFileOverhead();
 
@@ -83,8 +86,8 @@ public class Updater {
         // //
         upd.merge();
         upd.checkHashes();
-        upd.clone2(upd.branch,"http://update0.jdownloader.org/clone.php");
-        upd.clone2(upd.branch,"http://update2.jdownloader.org/clone.php");
+//        upd.clone2(upd.branch,"http://update0.jdownloader.org/clone.php");
+//        upd.clone2(upd.branch,"http://update2.jdownloader.org/clone.php");
 //       list=upd.getLocalFileList(upd.workingDir, false);
         
 //        SimpleFTP.uploadSecure("jdupdate.bluehost.to", 2100, getCFG("jdupdate.bluehost.to_ftp_user"), getCFG("jdupdate.bluehost.to_ftp_pass"), "/branches/" + branch, upd.workingDir, list.toArray(new File[] {}));
@@ -134,6 +137,7 @@ public class Updater {
         this.branch = id;
 
         String ret = new Browser().getPage(UPDATE_SERVER + "createBranch.php?pass=" + getCFG("updateHashPW") + "&parent=" + latestBranch + "&branch=" + id);
+       ret=ret;
         System.out.println(ret);
         return id;
     }

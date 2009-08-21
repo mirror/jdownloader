@@ -35,6 +35,7 @@ public class FileUpdate {
     private static final int ERROR = 2;
     private static final int SERVER_STATS = 3;
     private static final int SUCCESS = 4;
+    private static final long WAITTIME_ON_ERROR = 20000;
     private String localPath;
     private String url;
     private String hash;
@@ -208,6 +209,8 @@ public class FileUpdate {
                             con.disconnect();
                         } catch (Exception e1) {
                         }
+                        errorWait();
+                 
                         continue;
                     }
                     // connection estabilished
@@ -219,6 +222,7 @@ public class FileUpdate {
                             con.disconnect();
                         } catch (Exception e) {
                         }
+                        errorWait();
                         continue;
 
                     }
@@ -233,6 +237,7 @@ public class FileUpdate {
                             con.disconnect();
                         } catch (Exception e1) {
                         }
+                        errorWait();
                         continue;
                     }
                     // Download is ok. b
@@ -270,6 +275,7 @@ public class FileUpdate {
                         if (!ret) {
                             // rename failed finally
                             broadcaster.fireEvent(new MessageEvent(this, ERROR, "Error. Rename failed"));
+                            errorWait();
                         } else {
                             // rename succeeded
                             return ret;
@@ -285,6 +291,7 @@ public class FileUpdate {
                         broadcaster.fireEvent(new MessageEvent(this, ERROR, "Error. Updateserver down"));
                     }
                     tmpFile.delete();
+                    errorWait();
                     continue;
                 }
             }
@@ -296,6 +303,16 @@ public class FileUpdate {
         }
         return false;
 
+    }
+
+    private void errorWait()  {
+        try {
+            Thread.sleep(WAITTIME_ON_ERROR);
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        
     }
 
     /**

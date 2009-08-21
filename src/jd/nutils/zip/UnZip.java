@@ -47,6 +47,16 @@ public class UnZip {
 
     private File zipFile = null;
 
+    private boolean overwrite=true;
+
+    public boolean isOverwrite() {
+        return overwrite;
+    }
+
+    public void setOverwrite(boolean overwrite) {
+        this.overwrite = overwrite;
+    }
+
     /**
      * Konstruktor in dem nur das zipFile angegeben wird
      * 
@@ -118,8 +128,14 @@ public class UnZip {
                 }
             }
         }
-        System.out.println("Creating " + zipName);
+        //System.out.println(targetPath+"Creating " + zipName);
         File toExtract = new File(targetPath, zipName);
+        if(!overwrite&&toExtract.exists()){
+            System.out.println("Exists skip " + zipName);
+            return null;
+        }else{
+            toExtract.delete();
+        }
         FileOutputStream os = new FileOutputStream(toExtract);
         InputStream is = zipF.getInputStream(e);
         int n = 0;

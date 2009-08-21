@@ -16,6 +16,7 @@
 
 package jd.update;
 
+import java.awt.Color;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -31,14 +32,18 @@ import javax.swing.JOptionPane;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.JTextPane;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.UIManager.LookAndFeelInfo;
 import javax.swing.border.EmptyBorder;
 
 import jd.config.SubConfiguration;
+import jd.event.MessageEvent;
+import jd.event.MessageListener;
 import jd.gui.UserIO;
 import jd.http.Browser;
+import jd.nutils.Formatter;
 import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
@@ -60,6 +65,8 @@ public class Main {
     public static ArrayList<Server> clonePrefix = new ArrayList<Server>();
     public static boolean clone = false;
     private static JProgressBar progressload;
+    private static JTextPane warnings;
+    private static int TICKET_TIME = -1;
 
     private static void log(StringBuilder log, String string) {
         if (log != null) log.append(string);
@@ -72,8 +79,7 @@ public class Main {
             log = new StringBuilder();
 
             boolean OSFilter = true;
-            boolean loadAllPlugins = false;
-
+           
             File cfg;
             if ((cfg = JDUtilities.getResourceFile("jdownloader.config")).exists()) {
 
@@ -87,10 +93,9 @@ public class Main {
                 String p = args[i];
                 if (p.trim().equalsIgnoreCase("-noosfilter")) {
                     OSFilter = false;
-                } else if (p.trim().equalsIgnoreCase("-allplugins")) {
-                    loadAllPlugins = true;
+              
                 } else if (p.trim().equalsIgnoreCase("-full")) {
-                    loadAllPlugins = true;
+                
                     OSFilter = false;
                 } else if (p.trim().equalsIgnoreCase("-brdebug")) {
                     Browser.setVerbose(true);
@@ -102,14 +107,15 @@ public class Main {
                     WebUpdater.getConfig("WEBUPDATE").save();
                     System.out.println("Switched branch: " + br);
                 } else if (p.trim().equalsIgnoreCase("-clone")) {
-                    loadAllPlugins = true;
+                  
                     OSFilter = false;
                     clone = true;
                 } else if (clone && clonePrefix.size() == 0) {
                     clonePrefix.add(new Server(100, p.trim()));
                 }
             }
-
+            WebUpdater.getConfig("WEBUPDATE").setProperty("BRANCH", "Synthy2");
+            WebUpdater.getConfig("WEBUPDATE").save();
             Browser.init();
 
             guiConfig = WebUpdater.getConfig("WEBUPDATE");
@@ -122,16 +128,59 @@ public class Main {
 
             if (!clone) initGUI();
 
+            try {
+                Browser br = new Browser();
+                TICKET_TIME = Integer.parseInt(br.getPage("http://update0.jdownloader.org/tickettime.txt").trim());
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            if (TICKET_TIME < 0) {
+                warnings.setText("There are currently no free update slots. Please try again later!\r\nYou can close this Programm now.\r\nWe advise you to download the latest version from http://jdownloader.org/download!");
+
+                if (JOptionPane.OK_OPTION == JOptionPane.showConfirmDialog(frame, "There are currently no free update slots. Please try again later!\r\n Start JDownloader now?")) {
+
+                } else {
+
+                    while (true) {
+                        Thread.sleep(10000000);
+                    }
+                }
+            } else {
+                warnings.setText("");
+                while (TICKET_TIME > 0) {
+                    Thread.sleep(1000);
+                    warnings.setText("Update starts in " + Formatter.formatSeconds(TICKET_TIME / 1000) + ".\r\n\r\nIf you do not want to wait, we suggest you to download the latest version from http://jdownloader.org/download!");
+
+                    TICKET_TIME -= 1000;
+
+                }
+                warnings.setText("Update is too slow and takes too much time?\r\nDownload latest Version no at http://jdownloader.org/download");
+            }
             for (int i = 0; i < args.length; i++) {
                 Main.log(log, "Parameter " + i + " " + args[i] + " " + System.getProperty("line.separator"));
                 if (!clone) logWindow.setText(log.toString());
             }
             WebUpdater updater = new WebUpdater();
             updater.setOSFilter(OSFilter);
+            updater.getBroadcaster().addListener(new MessageListener(){
+
+        
+
+                public void onMessage(MessageEvent event) {
+                   if(event.getID()==WebUpdater.DO_UPDATE_FAILED){
+                       warnings.setText(event.getMessage());
+                     
+                   }
+                   Main.log(log, event.getMessage()+"\r\n");
+                    
+                }
+                
+            });
             Main.log(log, "Current Date:" + new Date() + "\r\n");
             if (!clone) checkBackup();
-            updater.ignorePlugins(!WebUpdater.getConfig("WEBUPDATE").getBooleanProperty("WEBUPDATE_DISABLE", false));
-            if (loadAllPlugins) updater.ignorePlugins(false);
+            updater.ignorePlugins(false);
+          
             if (!clone) checkUpdateMessage();
             updater.setLogger(log);
 
@@ -157,6 +206,7 @@ public class Main {
                 JDUpdateUtils.backupDataBase();
                 updater.updateFiles(files, null);
             }
+            Restarter.main(new String[]{});
 
             // if (!clone) installAddons(JDUtilities.getResourceFile("."));
             Main.trace(updater.getLogger().toString());
@@ -385,11 +435,22 @@ public class Main {
         progressload = new JProgressBar();
         progressload.setMaximum(100);
         progressload.setStringPainted(true);
+
+        warnings = new JTextPane();
+        warnings.setForeground(Color.RED);
+        warnings.setText("Please wait.. check ticket");
+        warnings.setOpaque(false);
+        warnings.setBackground(null);
+        warnings.setEditable(false);
+
+        warnings.putClientProperty("Synthetica.opaque", Boolean.FALSE);
+
         logWindow = new JTextArea(30, 120);
         JScrollPane scrollPane = new JScrollPane(logWindow);
         scrollPane.setAutoscrolls(true);
         logWindow.setEditable(false);
         logWindow.setAutoscrolls(true);
+        JDUtilities.addToGridBag(frame, warnings, REL, REL, REM, 1, 0, 0, INSETS, BOTHRESIZE, NORTHWEST);
 
         JDUtilities.addToGridBag(frame, new JLabel("Webupdate is running..."), REL, REL, REM, 1, 0, 0, INSETS, NORESIZE, NORTHWEST);
 

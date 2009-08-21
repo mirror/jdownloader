@@ -91,7 +91,7 @@ public class Configuration extends SubConfiguration implements Serializable {
 
     public static final String PARAM_JAC_METHODS = "JAC_METHODS_";
 
-    public static final String PARAM_LOGGER_LEVEL = "LOGGER_LEVEL2";
+    public static final String PARAM_LOGGER_LEVEL = "LOGGER_LEVEL3";
 
     public static final String PARAM_RELOADCONTAINER = "RELOADCONTAINER";
 

@@ -99,6 +99,7 @@ public class WebUpdate {
                     remoteHash = br.getPage(getUpdaterMD5(trycount) + "?t=" + System.currentTimeMillis()).trim();
                 } catch (Exception e) {
                     remoteHash = null;
+                    errorWait();
                     continue;
                 }
             }
@@ -152,6 +153,16 @@ public class WebUpdate {
         progress.doFinalize(5000);
         logger.info("Update of " + file.getAbsolutePath() + " failed");
         return false;
+    }
+
+    private static void errorWait() {
+       try {
+        Thread.sleep(10000);
+    } catch (InterruptedException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+    }
+        
     }
 
     /* guiCall: soll eine Updatemeldung erscheinen? */

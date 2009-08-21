@@ -102,6 +102,7 @@
 				<include name="jd/update/*.class" />
 				<include name="jd/config/*.class" />
 				<include name="jd/http/**" />
+				<include name="jd/event/**" />
 				<include name="jd/controlling/**" />
 				<include name="jd/nutils/**" />
 				<include name="jd/JDClassLoader.class" />
