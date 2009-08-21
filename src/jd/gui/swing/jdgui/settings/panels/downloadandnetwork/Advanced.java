@@ -99,7 +99,7 @@ public class Advanced extends ConfigPanel {
 
         extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, ByteBufferController.MAXBUFFERSIZE, JDL.L("gui.config.download.buffersize2", "Max. Buffersize[KB]"), 500, 2000));
         ce.setStep(100);
-        ce.setDefaultValue(100);
+        ce.setDefaultValue(500);
         return extended;
     }
 

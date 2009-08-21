@@ -54,6 +54,7 @@ public class NarodRu extends PluginForHost {
         if (md5Hash == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String fileSize = br.getRegex(Pattern.compile("<td class=\"l-download-info-right\">.*?<dl class=\"b-download-item g-line\">.*?<dt class=\"size\">.*?</dt>.*?<dd class=\"size\">(.*?).</dd>", Pattern.DOTALL)).getMatch(0);
         if (fileSize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        fileSize = fileSize.replaceAll("Г", "G");
         fileSize = fileSize.replaceAll("М", "M");
         fileSize = fileSize.replaceAll("к", "k");
         fileSize = fileSize + "b";
@@ -89,7 +90,7 @@ public class NarodRu extends PluginForHost {
         String downloadSuffix = br.getRegex(Pattern.compile("<a class=\"h-link\" rel=\"yandex_bar\" href=\"(.*?)\">")).getMatch(0);
         String dlLink = Encoding.htmlDecode("http://narod.ru" + downloadSuffix);
 
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, dlLink, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlLink, true, 1);
         dl.startDownload();
 
     }
