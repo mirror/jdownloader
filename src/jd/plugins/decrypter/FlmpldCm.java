@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -36,10 +37,8 @@ public class FlmpldCm extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
       ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
       String parameter = param.toString();
-     
-      String id = parameter.split("/")[4]; 
+      String id = new Regex(parameter, "files/([0-9A-Z]{8})").getMatch(0);
       parameter = "http://flameupload.com/status.php?uid=" + id;
-      
       br.getPage(parameter);
       String[] redirectLinks = br.getRegex("<a href=(/redirect/[0-9A-Z]{8}/\\d+) target=_blank><img src=/images/click.gif border='0' /></a>").getColumn(0);
       
