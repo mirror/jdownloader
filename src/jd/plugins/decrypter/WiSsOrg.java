@@ -27,6 +27,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
+//by Maniac+pspzockerscene
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wiiisos.org" }, urls = { "http://[\\w\\.]*?wiiisos\\.org/(d\\d\\d?wn|d3741l5)/.+(/\\d+)?" }, flags = { 0 })
 public class WiSsOrg extends PluginForDecrypt {
 
