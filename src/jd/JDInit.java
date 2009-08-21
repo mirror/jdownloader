@@ -382,12 +382,15 @@ public class JDInit {
                         String[] patterns = help.urls();
                         int[] flags = help.flags();
 
+                        // Needed for changing the pattern from
+                        // UCMS/Wordpress/Redirecter/...
+                        String dump = "";
                         // See if there are cached annotations
                         if (names.length == 0) {
                             SubConfiguration cfg = SubConfiguration.getConfig("jd.JDInit.loadPluginForDecrypt");
-                            names = cfg.getGenericProperty(c.getName() + "_names_" + help.revision(), names);
-                            patterns = cfg.getGenericProperty(c.getName() + "_pattern_" + help.revision(), patterns);
-                            flags = cfg.getGenericProperty(c.getName() + "_flags_" + help.revision(), flags);
+                            names = cfg.getGenericProperty(c.getName() + "_names_" + dump + help.revision(), names);
+                            patterns = cfg.getGenericProperty(c.getName() + "_pattern_" + dump + help.revision(), patterns);
+                            flags = cfg.getGenericProperty(c.getName() + "_flags_" + dump + help.revision(), flags);
                         }
                         // if not, try to load them from static functions
                         if (names.length == 0) {
