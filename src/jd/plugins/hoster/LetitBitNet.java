@@ -51,17 +51,10 @@ public class LetitBitNet extends PluginForHost {
 
     // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        br.setCookiesExclusive(true);
-        br.clearCookies(getHost());
+        this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
-        String filename = null;
-        String size = null;
-        try {
-            filename = br.getXPathElement("/html/body/div[2]/div[3]/div/h1[1]").trim();
-            size = br.getXPathElement("/html/body/div[2]/div[3]/div/h1[2]").trim();
-        } catch (Exception e) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
+        String filename = br.getRegex("<span>File::</span>(.*?)</h1>").getMatch(0);
+        String size = br.getRegex("<span>File size::</span>(.*?)</h1>").getMatch(0);
         if (filename == null || size == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(size));
@@ -79,10 +72,10 @@ public class LetitBitNet extends PluginForHost {
         Form form = br.getForm(3);
         form.put("pass", Encoding.urlEncode(account.getPass()));
         br.submitForm(form);
-        
-       String url = br.getRegex("middle.*?href='(.*?letit.*?download.*?)'").getMatch(0);
+
+        String url = br.getRegex("middle.*?href='(.*?letit.*?download.*?)'").getMatch(0);
         if (url == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, url, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
         dl.startDownload();
     }
 
@@ -134,7 +127,7 @@ public class LetitBitNet extends PluginForHost {
         if (url == null) url = br.getRegex("DownloadClick\\(\\).*?href=\"(.*?letit.*?)\">").getMatch(0);
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         this.sleep(2000, downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, url, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 1);
         con = dl.getConnection();
         if (con.getResponseCode() == 404) {
             con.disconnect();
