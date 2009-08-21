@@ -14,17 +14,7 @@ import java.awt.event.WindowListener;
 import java.awt.image.BufferedImage;
 import java.io.*;
 
-import javax.swing.BorderFactory;
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JDialog;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JSpinner;
-import javax.swing.SpinnerNumberModel;
+import javax.swing.*;
 
 import jd.parser.html.HTMLParser;
 
@@ -49,7 +39,6 @@ public class LoadCaptchas {
     private ArrayList<LoadImage> images;
     private LoadImage selectedImage;
     private JFrame owner;
-    boolean followLinks = true;
     /**
      * Ordner in den die Bilder geladen werden (default: jdCaptchaFolder/host)
      * 
@@ -308,13 +297,14 @@ public class LoadCaptchas {
 
         final JPanel p = new GuiRunnable<JPanel>() {
             public JPanel runSave() {
-                JPanel ret = new JPanel(new GridLayout(3, 2));
+                JPanel ret = new JPanel(new GridLayout(4, 2));
                 ret.add(new JLabel(JDL.L("easycaptcha.loadcaptchas.link", "Link") + ":"));
                 return ret;
 
             }
         }.getReturnValue();
 
+        
         final JDTextField tfl = new GuiRunnable<JDTextField>() {
             public JDTextField runSave() {
                 return new JDTextField();
@@ -331,6 +321,15 @@ public class LoadCaptchas {
             }
         }.getReturnValue();
         p.add(sm);
+        JCheckBox followLinks = new GuiRunnable<JCheckBox>() {
+            public JCheckBox runSave() {
+                p.add(new JLabel(JDL.L("easycaptcha.loadcaptchas.followlinks", "follow normal Links (very slow)") + ":"));
+                JCheckBox checkBox = new JCheckBox();
+                checkBox.setSelected(false);
+                p.add(checkBox);
+                return checkBox;
+            }
+        }.getReturnValue();
         JButton ok = new GuiRunnable<JButton>() {
             public JButton runSave() {
                 return new JButton(JDL.L("gui.btn_ok", "OK"));
@@ -399,7 +398,9 @@ public class LoadCaptchas {
         if (link == null || link.matches("\\s*")) return null;
         int menge = (Integer) sm.getValue();
         dialog.dispose();
-        return new LoadInfo(link, menge);
+        LoadInfo retLI = new LoadInfo(link, menge);
+        retLI.followLinks=followLinks.isSelected();
+        return retLI;
 
     }
 
@@ -498,7 +499,7 @@ public class LoadCaptchas {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        if (followLinks) {
+        if (loadinfo.followLinks) {
             String[] links = HTMLParser.getHttpLinks(br.toString(), br.getURL());
             for (int b = 0; b < links.length; b++) {
                 String string = links[b];
@@ -829,6 +830,8 @@ class LoadImage {
 }
 
 class LoadInfo {
+    boolean followLinks = false;
+
     public String link;
     public int menge = 100;
 
