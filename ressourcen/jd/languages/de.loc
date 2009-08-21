@@ -279,7 +279,7 @@ gui.config.liveheader.selectrouter = Router auswählen
 gui.config.liveheader.user = Benutername (->%%%user%%%)
 gui.config.liveheader.warning.nocurlconvert = jDownloader konnte dieses CURL Script nicht konvertieren.
 gui.config.liveheader.warning.notfound = jDownloader konnte ihre Routereinstellung nicht automatisch ermitteln.
-gui.config.liveheader.warning.upnpinactive = Bitte aktivieren sie fals vorhanden Upnp in den Netzwerkeinstellungen ihres Routers <br><a href=\"http://%s\">zum Router</a><br><a href=\"http://wiki.jdownloader.org/index.php?title=Router_Upnp\">Wikiartikel: Upnp Routern</a><br>drücken sie Ok wenn sie Upnp aktiviert haben oder abbrechen wenn sie fortfahren wollen!
+gui.config.liveheader.warning.upnpinactive = Bitte aktivieren sie falls vorhanden Upnp in den Netzwerkeinstellungen ihres Routers <br><a href=\"http://%s\">zum Router</a><br><a href=\"http://wiki.jdownloader.org/index.php?title=Router_Upnp\">Wikiartikel: Upnp Routern</a><br>drücken sie Ok wenn sie Upnp aktiviert haben oder abbrechen wenn sie fortfahren wollen!
 gui.config.liveheader.warning.yourrouter = Sie haben eine
 gui.config.plugin.abg_confirm = Ich habe die AGB/TOS/FAQ von %s gelesen und erkläre mich damit einverstanden
 gui.config.plugin.host.desc = ACHTUNG!!! Das JD Team übernimmt keine Verantwortung für die Einhaltung der AGB`s \r\n der Hoster. Bitte lesen Sie die AGB`s aufmerksam durch und aktivieren Sie das Plugin nur,\r\nfalls Sie sich mit diesen Einverstanden erklären!\r\nDie Reihenfolge der Plugins bestimmt die Prioritäten der automatischen Mirrorauswahl\n\rBevorzugte Hoster sollten oben stehen!
@@ -785,7 +785,7 @@ jd.gui.swing.jdgui.actions.actioncontroller.toolbar.control.stop.tooltip = Alle 
 jd.gui.swing.jdgui.actions.actioncontroller.toolbar.interaction.reconnect.tooltip = Erneuere die IP durch ZUrücksetzen der Internetverbindung
 jd.gui.swing.jdgui.actions.actioncontroller.toolbar.interaction.update.tooltip = Auf neue Versionen prüfen
 jd.gui.swing.jdgui.menu.addonsmenu.configuration = Addon Manager
-jd.gui.swing.jdgui.settings.configpanel.restartquestion = Diese EInstellung benötigt einen JD-Neustart
+jd.gui.swing.jdgui.settings.configpanel.restartquestion = Diese Einstellung benötigt einen JD-Neustart
 jd.gui.swing.jdgui.settings.configpanel.restartquestion.ok = Jetzt neustarten!
 jd.gui.swing.jdgui.settings.configpanel.restartquestion.title = Neustart benötigt!
 jd.gui.swing.jdgui.settings.panels.configpaneladdons.addons.title = Erweiterungen
