@@ -18,6 +18,8 @@ package jd.gui.swing;
 
 import javax.swing.SwingUtilities;
 
+import jd.controlling.JDLogger;
+
 /**
  * This calss invokes a Runnable EDT Save and is able to return values.
  * 
@@ -82,6 +84,7 @@ public abstract class GuiRunnable<T> implements Runnable {
         try {
             this.returnValue = this.runSave();
         } catch (Exception e) {
+            JDLogger.exception(e);
         }
         synchronized (lock) {
             lock.notify();

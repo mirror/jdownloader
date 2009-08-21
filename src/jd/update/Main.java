@@ -79,7 +79,7 @@ public class Main {
             log = new StringBuilder();
 
             boolean OSFilter = true;
-           
+
             File cfg;
             if ((cfg = JDUtilities.getResourceFile("jdownloader.config")).exists()) {
 
@@ -93,9 +93,9 @@ public class Main {
                 String p = args[i];
                 if (p.trim().equalsIgnoreCase("-noosfilter")) {
                     OSFilter = false;
-              
+
                 } else if (p.trim().equalsIgnoreCase("-full")) {
-                
+
                     OSFilter = false;
                 } else if (p.trim().equalsIgnoreCase("-brdebug")) {
                     Browser.setVerbose(true);
@@ -107,15 +107,14 @@ public class Main {
                     WebUpdater.getConfig("WEBUPDATE").save();
                     System.out.println("Switched branch: " + br);
                 } else if (p.trim().equalsIgnoreCase("-clone")) {
-                  
+
                     OSFilter = false;
                     clone = true;
                 } else if (clone && clonePrefix.size() == 0) {
                     clonePrefix.add(new Server(100, p.trim()));
                 }
             }
-            WebUpdater.getConfig("WEBUPDATE").setProperty("BRANCH", "Synthy2");
-            WebUpdater.getConfig("WEBUPDATE").save();
+    
             Browser.init();
 
             guiConfig = WebUpdater.getConfig("WEBUPDATE");
@@ -161,26 +160,55 @@ public class Main {
                 Main.log(log, "Parameter " + i + " " + args[i] + " " + System.getProperty("line.separator"));
                 if (!clone) logWindow.setText(log.toString());
             }
-            WebUpdater updater = new WebUpdater();
+            final WebUpdater updater = new WebUpdater();
             updater.setOSFilter(OSFilter);
-            updater.getBroadcaster().addListener(new MessageListener(){
+            updater.getBroadcaster().addListener(new MessageListener() {
 
-        
+                private String msg0 = "";
+                private String msg1 = "";
+                private String msg2 = "";
 
                 public void onMessage(MessageEvent event) {
-                   if(event.getID()==WebUpdater.DO_UPDATE_FAILED){
-                       warnings.setText(event.getMessage());
-                     
-                   }
-                   Main.log(log, event.getMessage()+"\r\n");
-                    
+
+                    if (updater.getErrors() > 0) {
+
+                        JOptionPane.showConfirmDialog(frame, "Update Server are too busy.\r\n Please try again later or download update at http://jdownloader.org/download!", "UPDATE WARNINGS", JOptionPane.YES_OPTION, JOptionPane.WARNING_MESSAGE);
+                        Main.log(log, "Abort due to errors ");
+
+                        Main.log(log, "Local: " + new File("").getAbsolutePath());
+                        Main.log(log, "Start java -jar -Xmx512m JDownloader.jar in " + JDUtilities.getResourceFile(".").getAbsolutePath());
+
+                        JDUtilities.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", "-rfu" }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0);
+
+                        logWindow.setText(log.toString());
+                        JDIO.writeLocalFile(JDUtilities.getResourceFile("updateLog.txt"), log.toString());
+                        System.exit(0);
+                        return;
+
+                    }
+                    if (event.getID() == WebUpdater.DO_UPDATE_FAILED || event.getID() == FileUpdate.ERROR) {
+
+                        msg2 = msg1;
+                        msg1 = msg0;
+                        msg0 = event.getMessage();
+
+                        warnings.setText(msg2 + "\r\n" + msg1 + "\r\n" + msg0 + "\r\n               Download latest Version no at http://jdownloader.org/download");
+
+                    }
+
+                    if (event.getID() == WebUpdater.DO_UPDATE_SUCCESS) {
+                        warnings.setText("Update is too slow and takes too much time?\r\nDownload latest Version at http://jdownloader.org/download");
+
+                    }
+                    Main.log(log, event.getMessage() + "\r\n");
+
                 }
-                
+
             });
             Main.log(log, "Current Date:" + new Date() + "\r\n");
             if (!clone) checkBackup();
             updater.ignorePlugins(false);
-          
+
             if (!clone) checkUpdateMessage();
             updater.setLogger(log);
 
@@ -206,7 +234,7 @@ public class Main {
                 JDUpdateUtils.backupDataBase();
                 updater.updateFiles(files, null);
             }
-            Restarter.main(new String[]{});
+            Restarter.main(new String[] {});
 
             // if (!clone) installAddons(JDUtilities.getResourceFile("."));
             Main.trace(updater.getLogger().toString());

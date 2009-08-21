@@ -31,11 +31,11 @@ import jd.utils.JDUtilities;
 
 public class FileUpdate {
 
-    private static final int DOWNLOAD_SOURCE = 1;
-    private static final int ERROR = 2;
-    private static final int SERVER_STATS = 3;
-    private static final int SUCCESS = 4;
-    private static final long WAITTIME_ON_ERROR = 20000;
+    public static final int DOWNLOAD_SOURCE = 1;
+    public static final int ERROR = 2;
+    public static final int SERVER_STATS = 3;
+    public static final int SUCCESS = 4;
+    private static final long WAITTIME_ON_ERROR = 15000;
     private String localPath;
     private String url;
     private String hash;
@@ -307,6 +307,7 @@ public class FileUpdate {
 
     private void errorWait()  {
         try {
+            broadcaster.fireEvent(new MessageEvent(this, ERROR,  "Server Busy. Wait "+(WAITTIME_ON_ERROR/1000)+" Seconds"));
             Thread.sleep(WAITTIME_ON_ERROR);
         } catch (InterruptedException e) {
             // TODO Auto-generated catch block

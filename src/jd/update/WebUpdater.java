@@ -526,6 +526,7 @@ public class WebUpdater implements Serializable {
 
     private void errorWait() {
         try {
+            broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_FAILED,  "Server Busy. Wait 10 Seconds"));
             Thread.sleep(10000);
         } catch (InterruptedException e) {
             // TODO Auto-generated catch block
