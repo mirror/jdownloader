@@ -1,10 +1,5 @@
 package jd.captcha.easy;
 
-import java.io.File;
-import java.io.FilenameFilter;
-
-import jd.nutils.io.JDIO;
-
 public class CopyExampleImageFromCaptchaFolder {
 
     /**
