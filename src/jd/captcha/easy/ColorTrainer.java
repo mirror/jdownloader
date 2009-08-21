@@ -67,9 +67,9 @@ public class ColorTrainer {
      */
     public byte colorDifferenceMode = CPoint.LAB_DIFFERENCE;
     private void autoSetZoomFaktor() {
-        if(originalCaptcha.getWidth()>100 || originalCaptcha.getHeight()>100)
+        if(originalCaptcha.getWidth()>200 || originalCaptcha.getHeight()>100)
             zoom=100;
-        else if(originalCaptcha.getWidth()>50 || originalCaptcha.getHeight()>50)
+        else if(originalCaptcha.getWidth()>100 || originalCaptcha.getHeight()>50)
             zoom=200;
         else
             zoom=400;

@@ -27,9 +27,9 @@ public class BackGroundImageManager {
     private Captcha captchaImage;
     public int zoom;
     private void autoSetZoomFaktor() {
-        if(captchaImage.getWidth()>100 || captchaImage.getHeight()>100)
+        if(captchaImage.getWidth()>200 || captchaImage.getHeight()>100)
             zoom=100;
-        else if(captchaImage.getWidth()>50 || captchaImage.getHeight()>50)
+        else if(captchaImage.getWidth()>100 || captchaImage.getHeight()>50)
             zoom=200;
         else
             zoom=400;
