@@ -47,6 +47,7 @@ easycaptcha.loadcaptchas = Load Captchas
 easycaptcha.loadcaptchas.clickoncaptcha = click on the captcha
 easycaptcha.loadcaptchas.link = Link
 easycaptcha.loadcaptchas.howmuch = How much captchas you need
+easycaptcha.loadcaptchas.followlinks = follow normal Links (very slow)
 easycaptcha.loadcaptchas.loadimages = load images please wait
 train.chooser.title = jDownloader :: TrainAll
 showcaptcha.chooser.title = jDownloader :: Show Captcha
@@ -909,6 +910,7 @@ plugins.hoster.sharebaseto.errors.servicenotavailable = Service not available
 plugins.hoster.sharebaseto.errors.toomanyusers = Too many users
 plugins.hoster.sharenownet.errors.servererror = Server Error
 plugins.hoster.shareonlinebiz.errors.servernotavailable = Server temporarily down
+plugins.host.shareswiftcom.uncheckableduewaittime = You have to wait or perform a reconnect to check the available status
 plugins.hoster.speedysharecom.password = Enter Password:
 plugins.hoster.2sharedcom.errors.wrongcaptcha = Wrong captcha
 plugins.hoster.2sharedcom.errors.sessionlimit = Session limit reached
@@ -1297,7 +1299,9 @@ jd.utils.webupdate.message2 = <font size="4" face="Verdana, Arial, Helvetica, sa
 jd.utils.webupdate.progresscontroller.text = Update is running
 jd.update.main.error.title = Errors occured
 jd.update.main.error.message = Errors occured!\r\nThere were %s error(s) while updating. Do you want to update anyway?
+#pattern: jd\.gui\.swing\.ShortCuts\.(.+?)
 #pattern: sys\.warning\.dlcerror\.(.+?)
+#pattern: !(.+?)
 #pattern: gui\.menu\.(.+?)\.name
 #pattern: gui\.menu\.(.+?)\.mnem
 #pattern: gui\.menu\.(.+?)\.accel
