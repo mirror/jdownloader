@@ -46,8 +46,8 @@ public class Mega1280Com extends PluginForHost {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("upload.php")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = Encoding.htmlDecode(br.getRegex("<td class=\"clr03\" colspan=\"3\"><strong>(.*?)</strong></td>").getMatch(0));
-        String filesize = br.getRegex("<td class=\"clr07\" width=\"50%\" valign=\"top\">(.*?)</td>").getMatch(0);
+        String filename = Encoding.htmlDecode(br.getRegex("clr05\"><b>(.*?)</b>").getMatch(0));
+        String filesize = br.getRegex("<br />.*?<strong>(.*?)</strong>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         link.setName(filename);
         link.setDownloadSize(Regex.getSize(filesize));
