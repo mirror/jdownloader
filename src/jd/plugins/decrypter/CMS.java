@@ -232,11 +232,17 @@ public class CMS extends PluginForDecrypt {
                         String[] links2 = brc.getRegex("href=\\\\\"(.*?)\\\\\"").getColumn(0);
                         for (String dl : links2) {
                             dl = dl.replaceAll("\\\\/", "/");
-                            Browser br2 = br.cloneBrowser();
-                            br2.getPage(dl);
-                            String flink = br2.getRegex("<iframe src=\"(.*?)\"").getMatch(0);
-                            if (flink == null && br2.getRedirectLocation() != null) flink = br2.getRedirectLocation();
-                            DownloadLink link = createDownloadlink(flink);
+                            if (!dl.startsWith("http")) {
+                                Browser br2 = br.cloneBrowser();
+                                br2.getPage(dl);
+                                String flink = br2.getRegex("<iframe src=\"(.*?)\"").getMatch(0);
+                                if (flink == null && br2.getRedirectLocation() != null) {
+                                    dl = br2.getRedirectLocation();
+                                } else {
+                                    dl = flink;
+                                }
+                            }
+                            DownloadLink link = createDownloadlink(dl);
                             link.addSourcePluginPassword(pass);
                             decryptedLinks.add(link);
                         }
