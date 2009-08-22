@@ -67,27 +67,26 @@ public class ZShareNet extends PluginForHost {
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        br.setCookiesExclusive(true);
-        br.clearCookies(getHost());
-
-        if (downloadLink.getDownloadURL().contains(".html")) {
-            br.setFollowRedirects(false);
-            br.getPage(downloadLink.getDownloadURL());
-            br.getPage(br.getRedirectLocation().replaceFirst("zshare.net/(download|video|audio|flash)", "zshare.net/download"));
-        } else {
-            br.getPage(downloadLink.getDownloadURL().replaceFirst("zshare.net/(download|video|audio|flash)", "zshare.net/download"));
-        }
+        requestFileInformation(downloadLink);
         // Form abrufen
+        br.setDebug(true);
         Form download = br.getForm(0);
-        // Formparameter setzen (zufällige Klickpositionen im Bild)
-        download.put("imageField.x", (Math.random() * 160) + "");
-        download.put("imageField.y", (Math.random() * 60) + "");
-        download.put("imageField", null);
-        // Form abschicken
-        br.submitForm(download);
-        String fnc = br.getRegex("var link_enc\\=new Array\\(\\'(.*?)\\'\\)").getMatch(0);
-        fnc = fnc.replaceAll("\\'\\,\\'", "");
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, fnc, true, 1);
+        String dlUrl = null;
+        if (download != null) {
+            // Formparameter setzen (zufällige Klickpositionen im Bild)
+            download.put("imageField.x", (Math.random() * 160) + "");
+            download.put("imageField.y", (Math.random() * 60) + "");
+            download.put("imageField", null);
+            // Form abschicken
+            br.submitForm(download);
+            String fnc = br.getRegex("var link_enc\\=new Array\\(\\'(.*?)\\'\\)").getMatch(0);
+            fnc = fnc.replaceAll("\\'\\,\\'", "");
+            dlUrl = fnc;
+        } else {
+            dlUrl = br.getRegex("<td bgcolor=\"#CCCCCC\">.*?<img src=\"(http://.*?.zshare.net/download/.*?)\"").getMatch(0);
+        }
+        if (dlUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlUrl, true, 1);
 
         // Möglicherweise serverfehler...
         if (!dl.getConnection().isContentDisposition()) {
