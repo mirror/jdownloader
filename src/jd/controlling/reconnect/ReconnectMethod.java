@@ -40,11 +40,11 @@ public abstract class ReconnectMethod {
     public static final int CLR = 3;
     /* Integer Property: 0=LiveHeader, 1=Extern, 2=Batch, 3=CLR */
 
-    public static final String PARAM_IPCHECKWAITTIME = "RECONNECT_IPCHECKWAITTIME";
+    public static final String PARAM_IPCHECKWAITTIME = "RECONNECT_IPCHECKWAITTIME2";
 
-    public static final String PARAM_RETRIES = "RECONNECT_RETRIES";
+    public static final String PARAM_RETRIES = "RECONNECT_RETRIES2";
 
-    public static final String PARAM_WAITFORIPCHANGE = "RECONNECT_WAITFORIPCHANGE";
+    public static final String PARAM_WAITFORIPCHANGE = "RECONNECT_WAITFORIPCHANGE2";
 
     protected ConfigContainer config = null;
 
@@ -58,9 +58,9 @@ public abstract class ReconnectMethod {
         ProgressController progress = new ProgressController(this.toString(), 10);
         progress.setStatusText(JDL.L("reconnect.progress.1_retries", "Reconnect #") + retries);
 
-        int waittime = JDUtilities.getConfiguration().getIntegerProperty(PARAM_IPCHECKWAITTIME, 0);
+        int waittime = JDUtilities.getConfiguration().getIntegerProperty(PARAM_IPCHECKWAITTIME, 5);
         int maxretries = JDUtilities.getConfiguration().getIntegerProperty(PARAM_RETRIES, 0);
-        int waitForIp = JDUtilities.getConfiguration().getIntegerProperty(PARAM_WAITFORIPCHANGE, 10);
+        int waitForIp = JDUtilities.getConfiguration().getIntegerProperty(PARAM_WAITFORIPCHANGE, 30);
 
         logger.info("Starting " + this.toString() + " #" + retries);
         String preIp = IPCheck.getIPAddress(null);

@@ -29,9 +29,7 @@ public class BatchReconnect extends ReconnectMethod {
 
     private SubConfiguration configuration;
 
-
-
-    private static final String PROPERTY_IP_WAIT_FOR_RETURN = "WAIT_FOR_RETURN2";
+    private static final String PROPERTY_IP_WAIT_FOR_RETURN = "WAIT_FOR_RETURN3";
 
     private static final String PROPERTY_RECONNECT_EXECUTE_FOLDER = "RECONNECT_EXECUTE_FOLDER";
 
@@ -43,7 +41,7 @@ public class BatchReconnect extends ReconnectMethod {
         configuration = SubConfiguration.getConfig("BATCHRECONNECT");
     }
 
-    //@Override
+    // @Override
     public void initConfig() {
         ConfigEntry cfg;
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, configuration, PROPERTY_TERMINAL, JDL.L("interaction.batchreconnect.terminal", "Interpreter")));
@@ -56,13 +54,13 @@ public class BatchReconnect extends ReconnectMethod {
 
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, configuration, PROPERTY_RECONNECT_EXECUTE_FOLDER, JDL.L("interaction.batchreconnect.executeIn", "Ausführen in (Ordner der Anwendung)")));
 
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, configuration, PROPERTY_IP_WAIT_FOR_RETURN, JDL.L("interaction.batchreconnect.waitForTermination", "Warten x Sekunden bis Befehl beendet ist [sek]"), -1, 600).setDefaultValue(-1));
-      
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, configuration, PROPERTY_IP_WAIT_FOR_RETURN, JDL.L("interaction.batchreconnect.waitForTermination", "Warten x Sekunden bis Befehl beendet ist [sek]"), 10, 600).setDefaultValue(10));
+
     }
 
-    //@Override
+    // @Override
     protected boolean runCommands(ProgressController progress) {
-        int waitForReturn = configuration.getIntegerProperty(PROPERTY_IP_WAIT_FOR_RETURN, -1);
+        int waitForReturn = configuration.getIntegerProperty(PROPERTY_IP_WAIT_FOR_RETURN, 10);
         String executeIn = configuration.getStringProperty(PROPERTY_RECONNECT_EXECUTE_FOLDER);
         String command = configuration.getStringProperty(PROPERTY_TERMINAL);
 
@@ -84,7 +82,7 @@ public class BatchReconnect extends ReconnectMethod {
         return true;
     }
 
-    //@Override
+    // @Override
     public String toString() {
         return JDL.L("interaction.batchreconnect.toString", "Batch reconnect durchführen");
     }
