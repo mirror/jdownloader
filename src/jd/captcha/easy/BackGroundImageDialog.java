@@ -177,6 +177,12 @@ public class BackGroundImageDialog implements ActionListener {
     }
 
     public void actionPerformed(final ActionEvent e) {
+        new GuiRunnable<Object>() {
+            public Object runSave() {
+                dialog.setAlwaysOnTop(false);
+                return null;
+            }
+        }.waitForEDT();
         if (e.getSource() == btPreview) {
             workingImage.setDistance((Integer) thresholdSpinner.getValue());
             workingImage.setColorDistanceMode(colorMode);
@@ -213,6 +219,7 @@ public class BackGroundImageDialog implements ActionListener {
                 }
             }.waitForEDT();
             ret = workingImage;
+            return;
         } else if (e.getSource() == btLoadBackgroundImage) {
             File fch = JDFileChooser.getFile(JDFileChooser.ImagesOnly);
             if (fch != null) {
@@ -230,7 +237,7 @@ public class BackGroundImageDialog implements ActionListener {
                 new GuiRunnable<Object>() {
                     public Object runSave() {
                         bgv.image = image2;
-                        bgmask.image=workingImage.getImage(bgim.methode);
+                        bgmask.image = workingImage.getImage(bgim.methode);
                         bgmask.repaint();
                         bgv.repaint();
                         return null;
@@ -253,7 +260,7 @@ public class BackGroundImageDialog implements ActionListener {
                 new GuiRunnable<Object>() {
                     public Object runSave() {
                         bgv.image = image2;
-                        bgmask.image=workingImage.getImage(bgim.methode);
+                        bgmask.image = workingImage.getImage(bgim.methode);
                         bgmask.repaint();
                         bgv.repaint();
                         return null;
@@ -263,6 +270,12 @@ public class BackGroundImageDialog implements ActionListener {
         } else if (e.getSource() == colorModeBox) {
             colorMode = ((ColorMode) colorModeBox.getSelectedItem()).mode;
         }
+        new GuiRunnable<Object>() {
+            public Object runSave() {
+                dialog.setAlwaysOnTop(true);
+                return null;
+            }
+        }.waitForEDT();
     }
 
 }
