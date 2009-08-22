@@ -269,6 +269,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
                     });
                 }
             }
+            throwRefresh();
         }
     }
 
