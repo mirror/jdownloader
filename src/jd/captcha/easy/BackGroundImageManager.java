@@ -5,9 +5,7 @@ import java.io.File;
 import java.util.Iterator;
 import java.util.Vector;
 import jd.captcha.pixelgrid.PixelGrid;
-
 import jd.nutils.io.JDIO;
-
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.utils.Utilities;
 import jd.controlling.JDLogger;

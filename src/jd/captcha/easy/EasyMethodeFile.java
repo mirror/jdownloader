@@ -9,6 +9,8 @@ import java.util.Vector;
 
 import javax.swing.ImageIcon;
 
+import jd.captcha.easy.load.LoadCaptchas;
+
 import jd.nutils.io.JDIO;
 
 import jd.captcha.pixelgrid.Captcha;

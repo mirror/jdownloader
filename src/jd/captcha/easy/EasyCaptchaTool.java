@@ -20,6 +20,9 @@ import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import javax.swing.SpinnerNumberModel;
+
+import jd.captcha.easy.load.LoadCaptchas;
+
 import jd.gui.userio.DummyFrame;
 import jd.JDInit;
 import jd.captcha.JAntiCaptcha;

@@ -218,6 +218,9 @@ public class BackGroundImageDialog implements ActionListener {
                     return null;
                 }
             }.waitForEDT();
+            workingImage.setColor(colorChooser.getColor().getRGB());
+            workingImage.setDistance((Integer) thresholdSpinner.getValue());
+            workingImage.setColorDistanceMode(colorMode);
             ret = workingImage;
             return;
         } else if (e.getSource() == btLoadBackgroundImage) {

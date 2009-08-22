@@ -78,7 +78,7 @@ public class PixelObject implements Comparable<PixelObject> {
      * captcha als owner. Über owner kann auf den Parameter Dump zugegriffen
      * werden
      */
-    private PixelGrid owner;
+    public PixelGrid owner;
 
     /**
      * Als sicher angenommener Farb durchschnitt
@@ -559,7 +559,27 @@ public class PixelObject implements Comparable<PixelObject> {
         }
         return ret;
     }
+    public PixelObject[] horizintalSplitAt(int yposition) {
+        PixelObject[] ret = new PixelObject[2];
+        for (int i = 0; i < ret.length; i++) {
+            ret[i] = new PixelObject(owner);
+        }
+        for (int i = 0; i < getSize(); i++) {
+            int[] akt = elementAt(i);
+            boolean b = true;
+            for (int y = 0; y < 2; y++) {
+                if (akt[1] >= yMin + y * yposition && akt[1] <= yMin + (y + 1) * yposition) {
+                    ret[y].add(akt[0], akt[1], saveAvg);
+                    b = false;
+                }
+            }
+            if (b) {
+                ret[1].add(akt[0], akt[1], saveAvg);
+            }
 
+        }
+        return ret;
+    }
     public PixelObject[] splitAt(int position) {
         PixelObject[] ret = new PixelObject[2];
         for (int i = 0; i < ret.length; i++) {
@@ -595,7 +615,6 @@ public class PixelObject implements Comparable<PixelObject> {
      */
     public Letter toColoredLetter(int backgroundcolor,PixelGrid owner ) {
         Letter l = new Letter(getWidth(), getHeight());
-        l.setOwner(owner.owner);
         l.setGrid(getGrid(backgroundcolor, owner));
         l.setElementPixel(getSize());
         l.setLocation(new int[] { getXMin(), getYMin() });
@@ -649,7 +668,6 @@ public class PixelObject implements Comparable<PixelObject> {
 
         }
         Letter l = owner.createLetter();
-        l.setOwner(owner.owner);
         l.setElementPixel(getSize());
         l.setLocation(new int[] { getXMin(), getYMin() });
         l.setGrid(ret);

@@ -1,4 +1,4 @@
-package jd.captcha.easy;
+package jd.captcha.easy.load;
 
 import java.awt.Toolkit;
 import jd.gui.userio.DummyFrame;

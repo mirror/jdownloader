@@ -1,4 +1,4 @@
-package jd.captcha.easy;
+package jd.captcha.easy.load;
 
 import jd.utils.JDUtilities;
 import jd.http.Browser;
@@ -15,6 +15,8 @@ import java.awt.image.BufferedImage;
 import java.io.*;
 
 import javax.swing.*;
+
+import jd.captcha.easy.EasyMethodeFile;
 
 import jd.parser.html.HTMLParser;
 
@@ -39,6 +41,8 @@ public class LoadCaptchas {
     private ArrayList<LoadImage> images;
     private LoadImage selectedImage;
     private JFrame owner;
+    public int maxHeight = 400;
+    public int maxWeight = 600;
     /**
      * Ordner in den die Bilder geladen werden (default: jdCaptchaFolder/host)
      * 
@@ -104,96 +108,100 @@ public class LoadCaptchas {
                 new EasyMethodeFile(host).copyExampleImage();
                 return true;
             }
+            selectedImage = LoadImage.loadFile(host);
+            if (selectedImage != null)
+                selectedImage.load(host);
+            else {
+                dialog.setTitle(JDL.L("easycaptcha.loadcaptchas.clickoncaptcha", "click on the captcha"));
+                images = getAllImages(br);
+                loadImages();
+                dialog.addWindowListener(new WindowListener() {
 
-            dialog.setTitle(JDL.L("easycaptcha.loadcaptchas.clickoncaptcha", "click on the captcha"));
-            images = getAllImages(br);
-            loadImages();
-            dialog.addWindowListener(new WindowListener() {
-
-                public void windowActivated(WindowEvent e) {
-                }
-
-                public void windowClosed(WindowEvent e) {
-
-                }
-
-                public void windowClosing(WindowEvent e) {
-                    for (LoadImage loadImage : images) {
-                        loadImage.file.delete();
+                    public void windowActivated(WindowEvent e) {
                     }
-                    dialog.dispose();
-                }
 
-                public void windowDeactivated(WindowEvent e) {
-                }
+                    public void windowClosed(WindowEvent e) {
 
-                public void windowDeiconified(WindowEvent e) {
-                }
+                    }
 
-                public void windowIconified(WindowEvent e) {
-                }
-
-                public void windowOpened(WindowEvent e) {
-                }
-            });
-
-            final ArrayList<JButton> bts = new ArrayList<JButton>();
-            for (int j = 0; j < images.size(); j++) {
-                final LoadImage f = images.get(j);
-                if (f == null || f.file == null || !f.file.exists() || f.file.length() < 100) continue;
-                final BufferedImage captchaImage = JDImage.getImage(f.file);
-                if (captchaImage == null) {
-                    f.file.delete();
-                    continue;
-                }
-                int area = captchaImage.getHeight(null) * captchaImage.getHeight(null);
-                if (area < 50 || area > 50000 || captchaImage.getHeight(null) > 400 || captchaImage.getWidth(null) > 400 || captchaImage.getWidth(null) < 10 || captchaImage.getHeight(null) < 5) {
-                    f.file.delete();
-                    continue;
-                }
-                double faktor = Math.max((double) captchaImage.getWidth(null) / 100, (double) captchaImage.getHeight(null) / 100);
-                final int width = (int) (captchaImage.getWidth(null) / faktor);
-                final int height = (int) (captchaImage.getHeight(null) / faktor);
-                try {
-                    JButton ic = new GuiRunnable<JButton>() {
-                        public JButton runSave() {
-                            return new JButton(new ImageIcon(captchaImage.getScaledInstance(width, height, Image.SCALE_SMOOTH)));
+                    public void windowClosing(WindowEvent e) {
+                        for (LoadImage loadImage : images) {
+                            loadImage.file.delete();
                         }
-                    }.getReturnValue();
-                    ic.addActionListener(new ActionListener() {
+                        dialog.dispose();
+                    }
 
-                        public void actionPerformed(ActionEvent e) {
-                            selectedImage = f;
-                            dialog.dispose();
-                        }
-                    });
-                    bts.add(ic);
-                } catch (Exception e) {
-                    e.printStackTrace();
+                    public void windowDeactivated(WindowEvent e) {
+                    }
+
+                    public void windowDeiconified(WindowEvent e) {
+                    }
+
+                    public void windowIconified(WindowEvent e) {
+                    }
+
+                    public void windowOpened(WindowEvent e) {
+                    }
+                });
+
+                final ArrayList<JButton> bts = new ArrayList<JButton>();
+                for (int j = 0; j < images.size(); j++) {
+                    final LoadImage f = images.get(j);
+                    if (f == null || f.file == null || !f.file.exists() || f.file.length() < 100) continue;
+                    final BufferedImage captchaImage = JDImage.getImage(f.file);
+                    if (captchaImage == null) {
+                        f.file.delete();
+                        continue;
+                    }
+                    int area = captchaImage.getHeight(null) * captchaImage.getHeight(null);
+                    if (area < 50 || captchaImage.getHeight(null) > maxHeight || captchaImage.getWidth(null) > maxWeight || captchaImage.getWidth(null) < 10 || captchaImage.getHeight(null) < 5) {
+                        f.file.delete();
+                        continue;
+                    }
+                    double faktor = Math.max((double) captchaImage.getWidth(null) / 100, (double) captchaImage.getHeight(null) / 100);
+                    final int width = (int) (captchaImage.getWidth(null) / faktor);
+                    final int height = (int) (captchaImage.getHeight(null) / faktor);
+                    try {
+                        JButton ic = new GuiRunnable<JButton>() {
+                            public JButton runSave() {
+                                return new JButton(new ImageIcon(captchaImage.getScaledInstance(width, height, Image.SCALE_SMOOTH)));
+                            }
+                        }.getReturnValue();
+                        ic.addActionListener(new ActionListener() {
+
+                            public void actionPerformed(ActionEvent e) {
+                                selectedImage = f;
+                                dialog.dispose();
+                            }
+                        });
+                        bts.add(ic);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+
                 }
+                final JPanel panel = new GuiRunnable<JPanel>() {
+                    public JPanel runSave() {
+                        return new JPanel(new GridLayout((int) Math.ceil(((double) bts.size()) / 5), 5));
+                    }
+                }.getReturnValue();
+                for (JButton button : bts) {
+                    panel.add(button);
 
+                }
+                new GuiRunnable<Object>() {
+                    public Object runSave() {
+                        dialog.add(new JScrollPane(panel));
+
+                        dialog.pack();
+                        dialog.setLocation(Screen.getCenterOfComponent(owner, dialog));
+                        dialog.setAlwaysOnTop(true);
+                        dialog.setVisible(true);
+
+                        return null;
+                    }
+                }.waitForEDT();
             }
-            final JPanel panel = new GuiRunnable<JPanel>() {
-                public JPanel runSave() {
-                    return new JPanel(new GridLayout((int) Math.ceil(((double) bts.size()) / 5), 5));
-                }
-            }.getReturnValue();
-            for (JButton button : bts) {
-                panel.add(button);
-
-            }
-            new GuiRunnable<Object>() {
-                public Object runSave() {
-                    dialog.add(new JScrollPane(panel));
-
-                    dialog.pack();
-                    dialog.setLocation(Screen.getCenterOfComponent(owner, dialog));
-                    dialog.setAlwaysOnTop(true);
-                    dialog.setVisible(true);
-
-                    return null;
-                }
-            }.waitForEDT();
             if (selectedImage != null && selectedImage.file != null) {
                 loadProcess();
                 if (opendir) openDir(dir);
@@ -306,7 +314,6 @@ public class LoadCaptchas {
             }
         }.getReturnValue();
 
-        
         final JDTextField tfl = new GuiRunnable<JDTextField>() {
             public JDTextField runSave() {
                 return new JDTextField();
@@ -401,7 +408,7 @@ public class LoadCaptchas {
         int menge = (Integer) sm.getValue();
         dialog.dispose();
         LoadInfo retLI = new LoadInfo(link, menge);
-        retLI.followLinks=followLinks.isSelected();
+        retLI.followLinks = followLinks.isSelected();
         return retLI;
 
     }
@@ -493,7 +500,7 @@ public class LoadCaptchas {
         try {
             imagea = getImages(br);
             for (int i = 0; i < imagea.length; i++) {
-                LoadImage li = new LoadImage(imagea[i], br);
+                LoadImage li = new LoadImage(loadinfo, imagea[i], br);
                 li.form = -1;
                 li.location = i;
                 images.add(li);
@@ -510,7 +517,7 @@ public class LoadCaptchas {
                     brc.getPage(string);
                     imagea = getImages(brc);
                     for (int i = 0; i < imagea.length; i++) {
-                        LoadImage li = new LoadImage(imagea[i], brc);
+                        LoadImage li = new LoadImage(loadinfo, imagea[i], brc);
                         li.form = -1;
                         li.location = i;
                         li.followUrl = b;
@@ -534,7 +541,7 @@ public class LoadCaptchas {
                 imagea = getImages(brc);
                 for (int b = 0; b < imagea.length; b++) {
 
-                    LoadImage li = new LoadImage(imagea[b], brc);
+                    LoadImage li = new LoadImage(loadinfo, imagea[b], brc);
                     li.form = i;
                     li.location = b;
                     if (images.contains(li)) continue;
@@ -569,7 +576,7 @@ public class LoadCaptchas {
 
                         public void run() {
                             LoadImage image = images.get(i);
-                            image.load(dir);
+                            image.directCaptchaLoad(dir);
                             synchronized (jb[i]) {
                                 jb[i].notify();
                             }
@@ -634,11 +641,15 @@ public class LoadCaptchas {
         final Runnable runnable = new Runnable() {
             public void run() {
                 try {
+                    if(images!=null)
+                    {
                     for (LoadImage loadImage : images) {
                         if (!loadImage.file.equals(selectedImage.file)) loadImage.file.delete();
                     }
+                    }
                     String oldurl = selectedImage.imageUrl;
-                    selectedImage.followPageFormLoad(dir, loadinfo);
+                    selectedImage.load(host);
+                    LoadImage.save(selectedImage, host);
                     new GuiRunnable<Object>() {
                         public Object runSave() {
                             pd.setValue(1);
@@ -647,7 +658,7 @@ public class LoadCaptchas {
                     }.waitForEDT();
                     if (oldurl.equals(selectedImage.toString())) {
                         for (int k = 1; k < loadinfo.menge - 1; k++) {
-                            selectedImage.load(dir);
+                            selectedImage.directCaptchaLoad(dir);
                             final int d = k;
                             new GuiRunnable<Object>() {
                                 public Object runSave() {
@@ -658,7 +669,7 @@ public class LoadCaptchas {
                         }
                     } else {
                         for (int k = 1; k < loadinfo.menge - 1; k++) {
-                            selectedImage.followPageFormLoad(dir, loadinfo);
+                            selectedImage.load(host);
                             final int d = k;
                             new GuiRunnable<Object>() {
                                 public Object runSave() {
@@ -691,155 +702,6 @@ public class LoadCaptchas {
             }
         }.waitForEDT();
 
-    }
-}
-
-/**
- * Diese klasse speichert Bildinformationen wie die Form die verwendet wurde und
- * die Bildposition
- * 
- * @author dwd
- * 
- */
-class LoadImage {
-    /**
-     * ParentUrl
-     */
-    public int followUrl = -1;
-    /**
-     * Bildadresse
-     */
-    public String imageUrl;
-    /**
-     * Formposition -1 == keiner Form folgen
-     */
-    public int form = -1;
-    /**
-     * Bildposition
-     */
-    public int location = 0;
-    /**
-     * Browser mit dem das Bild runtergeladen wurde
-     */
-    public Browser br;
-    /**
-     * datei in dem das Bild nach dem laden gespeichert wurde
-     */
-    public File file;
-    /**
-     * zwischenspeicher für den DateiType
-     */
-    private String fileType = null;
-
-    public LoadImage() {
-    }
-
-    public LoadImage(String imageUrl, Browser br) {
-        this.imageUrl = imageUrl;
-        this.br = br.cloneBrowser();
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj != null && obj instanceof LoadImage) {
-            String url = ((LoadImage) obj).imageUrl;
-            if (imageUrl == url) return true;
-            if (url == null) return false;
-            return url.equals(imageUrl);
-        }
-        return false;
-    }
-
-    /**
-     * läd das Bild direkt in den vorgegebenen Ordner
-     * 
-     * @param destination
-     */
-    public void load(String destination) {
-        file = new File(destination, System.currentTimeMillis() + getFileType());
-        try {
-            br.getDownload(file, imageUrl);
-
-        } catch (Exception e) {
-        }
-    }
-
-    /**
-     * ruft die Seite erneut auf und folgt den Forms um dann am ende das Bild zu
-     * laden
-     * 
-     * @param destination
-     * @param loadInfo
-     * @throws Exception
-     */
-    public void followPageFormLoad(String destination, LoadInfo loadInfo) throws Exception {
-        br.clearCookies(loadInfo.link);
-        br.getPage(loadInfo.link);
-        if (followUrl != -1) {
-            String[] links = HTMLParser.getHttpLinks(br.toString(), br.getURL());
-            br.getPage(links[followUrl]);
-        }
-
-        if (form != -1) {
-            br.submitForm(LoadCaptchas.getForms(br)[form]);
-        }
-        imageUrl = LoadCaptchas.getImages(br)[location];
-        load(destination);
-    }
-
-    public void setFileType(String fileType) {
-        this.fileType = fileType;
-    }
-
-    /**
-     * Dateitype eines Bildes .jpg wenn er nicht erkannt wird
-     * 
-     * @return
-     */
-    public String getFileType() {
-        if (fileType != null) return fileType;
-        fileType = ".jpg";
-        if (imageUrl.toLowerCase().contains("\\.png"))
-            fileType = ".png";
-        else if (imageUrl.toLowerCase().contains("\\.png"))
-            fileType = ".gif";
-        else {
-            try {
-                br.getPage(imageUrl);
-                String ct2 = br.getHttpConnection().getContentType().toLowerCase();
-                if (ct2 != null && ct2.contains("image")) {
-                    if (ct2.equals("image/jpeg"))
-                        fileType = ".jpg";
-                    else {
-                        fileType = ct2.replaceFirst("image/", ".");
-                    }
-                }
-            } catch (Exception e) {
-            }
-
-        }
-        return fileType;
-    }
-
-    @Override
-    public String toString() {
-        return imageUrl;
-    }
-
-    public String toLowerCase() {
-        return toString().toLowerCase();
-    }
-}
-
-class LoadInfo {
-    boolean followLinks = false;
-
-    public String link;
-    public int menge = 100;
-
-    public LoadInfo(String link, int menge) {
-        this.link = link;
-        this.menge = menge;
     }
 
 }

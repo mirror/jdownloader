@@ -59,7 +59,7 @@ public class SourceParser {
     }
 
     public static void main(String[] args) {
-        parse("system.update.error.message");
+        parse("protect");
     }
 
 }
