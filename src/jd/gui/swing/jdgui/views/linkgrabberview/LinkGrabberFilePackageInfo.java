@@ -56,7 +56,7 @@ public class LinkGrabberFilePackageInfo extends JDCollapser implements ActionLis
 
     private LinkGrabberFilePackage fp = null;
 
-    private boolean notifyUpdate = true;
+
 
     public LinkGrabberFilePackageInfo() {
         buildGui();
@@ -76,21 +76,21 @@ public class LinkGrabberFilePackageInfo extends JDCollapser implements ActionLis
     }
 
     public void update() {
-        if (fp == null || notifyUpdate == false) return;
+        if (fp == null) return;
         /*
          * wichtig: die set funktionen lösen eine action aus , welche ansonsten
          * wiederum ein updatevent aufrufen würden
          */
-        notifyUpdate = false;
-        if (!txtName.isFocusOwner()) txtName.setText(fp.getName());
-        if (!txtComment.isFocusOwner()) txtComment.setText(fp.getComment());
-        if (!txtPassword.isFocusOwner()) txtPassword.setText(fp.getPassword());
-        if (!brwSaveTo.isFocusOwner()) brwSaveTo.setText(fp.getDownloadDirectory());
-        if (!chbExtract.isFocusOwner()) chbExtract.setSelected(fp.isExtractAfterDownload());
-        if (!chbUseSubdirectory.isFocusOwner()) chbUseSubdirectory.setSelected(fp.useSubDir());
+  
+        txtName.setText(fp.getName());
+        txtComment.setText(fp.getComment());
+         txtPassword.setText(fp.getPassword());
+        brwSaveTo.setText(fp.getDownloadDirectory());
+        chbExtract.setSelected(fp.isExtractAfterDownload());
+       chbUseSubdirectory.setSelected(fp.useSubDir());
         /* neuzeichnen */
         revalidate();
-        notifyUpdate = true;
+       
     }
 
     public LinkGrabberFilePackage getPackage() {
@@ -141,13 +141,13 @@ public class LinkGrabberFilePackageInfo extends JDCollapser implements ActionLis
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (fp == null || !notifyUpdate) return;
-        fp.setName(txtName.getText());
-        fp.setDownloadDirectory(brwSaveTo.getText());
-        fp.setComment(txtComment.getText());
-        fp.setPassword(txtPassword.getText());
-        fp.setExtractAfterDownload(chbExtract.isSelected());
-        fp.setUseSubDir(chbUseSubdirectory.isSelected());
+        if (fp == null ) return;
+        if(e.getSource()==txtName)fp.setName(txtName.getText());
+        if(e.getSource()==brwSaveTo) fp.setDownloadDirectory(brwSaveTo.getText());
+        if(e.getSource()==txtComment) fp.setComment(txtComment.getText());
+        if(e.getSource()==txtPassword)fp.setPassword(txtPassword.getText());
+        if(e.getSource()==chbExtract) fp.setExtractAfterDownload(chbExtract.isSelected());
+        if(e.getSource()==chbUseSubdirectory)fp.setUseSubDir(chbUseSubdirectory.isSelected());
         DownloadController.getInstance().fireDownloadLinkUpdate(fp.get(0));
     }
 
@@ -157,13 +157,13 @@ public class LinkGrabberFilePackageInfo extends JDCollapser implements ActionLis
     }
 
     public void onHideSave() {
-        notifyUpdate = false;
+       
         PasswordListController.getInstance().addPassword(txtPassword.getText());
         fp.setName(txtName.getText());
         fp.setComment(txtComment.getText());
         fp.setPassword(txtPassword.getText());
         fp.setDownloadDirectory(brwSaveTo.getText());
-        notifyUpdate = true;
+     
     }
 
     // @Override

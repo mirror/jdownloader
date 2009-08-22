@@ -277,21 +277,7 @@ public class Installer {
      */
     public static File getFlashGotFile() {
         
-        ArrayList<FileUpdate> files;
-        try {
-            WebUpdater wu = new WebUpdater();
-            files = wu.getAvailableFiles();
-
-            for (FileUpdate f : files) {
-                if (f.getLocalFile().getAbsolutePath().endsWith("flashgot.xpi")) {
-                    wu.updateUpdatefile(f);
-                    if (f.getLocalTmpFile().exists()) return f.getLocalTmpFile();
-                    return f.getLocalFile();
-                }
-            }
-        } catch (Exception e) {
-            JDLogger.exception(e);
-        }
+       
         return JDUtilities.getResourceFile("tools/flashgot.xpi");
     }
 

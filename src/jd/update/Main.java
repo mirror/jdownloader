@@ -17,6 +17,7 @@
 package jd.update;
 
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -24,6 +25,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.logging.FileHandler;
+import java.util.logging.Logger;
 
 import javax.swing.JComponent;
 import javax.swing.JFrame;
@@ -67,6 +70,7 @@ public class Main {
     private static JProgressBar progressload;
     private static JTextPane warnings;
     private static int TICKET_TIME = -1;
+    private static Logger logger;
 
     private static void log(StringBuilder log, String string) {
         if (log != null) log.append(string);
@@ -77,6 +81,11 @@ public class Main {
     public static void main(String args[]) {
         try {
             log = new StringBuilder();
+            FileHandler handler = new FileHandler("jdupdate.log", false);
+
+            // Add to the desired logger
+            logger = Logger.getLogger("org.jdownloader.jdupdate");
+            logger.addHandler(handler);
 
             boolean OSFilter = true;
 
@@ -114,7 +123,7 @@ public class Main {
                     clonePrefix.add(new Server(100, p.trim()));
                 }
             }
-    
+
             Browser.init();
 
             guiConfig = WebUpdater.getConfig("WEBUPDATE");
@@ -125,7 +134,7 @@ public class Main {
             System.out.println(WebUpdater.getConfig("PACKAGEMANAGER").getProperties() + "\r\n");
             log.append(WebUpdater.getConfig("PACKAGEMANAGER").getProperties() + "\r\n");
 
-            if (!clone) initGUI();
+            initGUI();
 
             try {
                 Browser br = new Browser();
@@ -135,7 +144,7 @@ public class Main {
                 e.printStackTrace();
             }
             if (TICKET_TIME < 0) {
-                warnings.setText("There are currently no free update slots. Please try again later!\r\nYou can close this Programm now.\r\nWe advise you to download the latest version from http://jdownloader.org/download!");
+                warnings.setText("There are currently no free update slots. Please try again later!\r\n\r\nYou can close this Programm now.\r\nWe advise you to download the latest version from http://jdownloader.org/download!");
 
                 if (JOptionPane.OK_OPTION == JOptionPane.showConfirmDialog(frame, "There are currently no free update slots. Please try again later!\r\n Start JDownloader now?")) {
 
@@ -146,19 +155,19 @@ public class Main {
                     }
                 }
             } else {
-                warnings.setText("");
+                warnings.setText("\r\n\r\n\r\n");
                 while (TICKET_TIME > 0) {
                     Thread.sleep(1000);
-                    warnings.setText("Update starts in " + Formatter.formatSeconds(TICKET_TIME / 1000) + ".\r\n\r\nIf you do not want to wait, we suggest you to download the latest version from http://jdownloader.org/download!");
+                    warnings.setText("Update starts in " + Formatter.formatSeconds(TICKET_TIME / 1000) + ".\r\n\r\n\r\nIf you do not want to wait, we suggest you to download the latest version from http://jdownloader.org/download!");
 
                     TICKET_TIME -= 1000;
 
                 }
-                warnings.setText("Update is too slow and takes too much time?\r\nDownload latest Version no at http://jdownloader.org/download");
+                warnings.setText("Update is too slow and takes too much time?\r\n\r\n\r\nDownload latest Version no at http://jdownloader.org/download");
             }
             for (int i = 0; i < args.length; i++) {
                 Main.log(log, "Parameter " + i + " " + args[i] + " " + System.getProperty("line.separator"));
-                if (!clone) logWindow.setText(log.toString());
+               logWindow.setText(log.toString());
             }
             final WebUpdater updater = new WebUpdater();
             updater.setOSFilter(OSFilter);
@@ -197,7 +206,7 @@ public class Main {
                     }
 
                     if (event.getID() == WebUpdater.DO_UPDATE_SUCCESS) {
-                        warnings.setText("Update is too slow and takes too much time?\r\nDownload latest Version at http://jdownloader.org/download");
+                        warnings.setText("Update is too slow and takes too much time?\r\n\r\n\r\nDownload latest Version at http://jdownloader.org/download");
 
                     }
                     Main.log(log, event.getMessage() + "\r\n");
@@ -206,10 +215,10 @@ public class Main {
 
             });
             Main.log(log, "Current Date:" + new Date() + "\r\n");
-            if (!clone) checkBackup();
+             checkBackup();
             updater.ignorePlugins(false);
 
-            if (!clone) checkUpdateMessage();
+           checkUpdateMessage();
             updater.setLogger(log);
 
             updater.setDownloadProgress(progressload);
@@ -240,7 +249,7 @@ public class Main {
             Main.trace(updater.getLogger().toString());
             Main.trace("End Webupdate");
 
-            if (!clone) logWindow.setText(log.toString());
+            logWindow.setText(log.toString());
             Main.trace(JDUtilities.getResourceFile("updateLog.txt").getAbsoluteFile());
 
             if (JDUtilities.getResourceFile("webcheck.tmp").exists()) {
@@ -250,9 +259,9 @@ public class Main {
 
             Main.log(log, "Start java -jar -Xmx512m JDownloader.jar in " + JDUtilities.getResourceFile(".").getAbsolutePath());
             JDUtilities.getDatabaseConnector().shutdownDatabase();
-            if (!clone) JDUtilities.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", "-rfu" }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0);
+           JDUtilities.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", "-rfu" }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0);
 
-            if (!clone) logWindow.setText(log.toString());
+           logWindow.setText(log.toString());
             JDIO.writeLocalFile(JDUtilities.getResourceFile("updateLog.txt"), log.toString());
             Main.log(log, "Errors: " + updater.getErrors());
             System.exit(0);
@@ -470,7 +479,8 @@ public class Main {
         warnings.setOpaque(false);
         warnings.setBackground(null);
         warnings.setEditable(false);
-
+        warnings.setPreferredSize(new Dimension(500, 80));
+        warnings.setMinimumSize(new Dimension(50, 80));
         warnings.putClientProperty("Synthetica.opaque", Boolean.FALSE);
 
         logWindow = new JTextArea(30, 120);

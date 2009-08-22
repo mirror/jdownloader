@@ -98,8 +98,10 @@ public class Restarter {
                     exec.start();
 
                 }
+                Thread.sleep(1000);
+                System.exit(0);
             }
-            System.exit(0);
+           
 
         } catch (Throwable e) {
             logger.severe(getStackTrace(e));

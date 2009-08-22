@@ -39,6 +39,7 @@ import jd.nutils.io.JDIO;
 import jd.nutils.svn.Subversion;
 import jd.parser.Regex;
 import jd.update.FileUpdate;
+import jd.update.Restarter;
 import jd.update.WebUpdater;
 
 import org.tmatesoft.svn.core.SVNException;
@@ -562,6 +563,7 @@ public class Updater {
             webupdater.filterAvailableUpdates(update);
             System.out.println("UPdate: " + update);
             webupdater.updateFiles(update, null);
+            Restarter.main(new String[]{});
         } catch (Exception e) {
             JDLogger.exception(e);
             remoteFileList = new ArrayList<FileUpdate>();
