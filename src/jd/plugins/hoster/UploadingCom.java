@@ -54,7 +54,7 @@ public class UploadingCom extends PluginForHost {
     public boolean isPremium() throws IOException {
         br.getPage("http://www.uploading.com/");
         if (br.containsHTML("UPGRADE TO PREMIUM")) return false;
-        if (br.containsHTML("Premium account")) return true;
+        if (br.containsHTML("Membership: Premium")) return true;
         return false;
     }
 
@@ -84,12 +84,11 @@ public class UploadingCom extends PluginForHost {
             ai.setStatus("Free Membership");
             return ai;
         }
-        br.getPage("http://www.uploading.com/profile/");
-        String validUntil = br.getRegex("Premium Account access is valid until (.*?)\\.").getMatch(0);
+        String validUntil = br.getRegex("Valid until:(.*?)</div").getMatch(0);
         account.setValid(true);
         /* Workaround for buggy expire date */
-        if (!validUntil.trim().equalsIgnoreCase("0000-00-00")) {
-            ai.setValidUntil(Regex.getMilliSeconds(validUntil, "yyyy-MM-dd", null));
+        if (!validUntil.trim().equalsIgnoreCase("00/00/0000")) {
+            ai.setValidUntil(Regex.getMilliSeconds(validUntil.trim(), "dd/MM/yyyy", null));
         }
         return ai;
     }
@@ -110,13 +109,13 @@ public class UploadingCom extends PluginForHost {
             }
         }
         br.getPage(link.getDownloadURL());
-        Form form = br.getForm(2);
+        Form form = br.getForm(1);
         br.setDebug(true);
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,link, form, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, form, true, 1);
         if (!dl.getConnection().isContentDisposition()) {
             dl.getConnection().disconnect();
-            dl = jd.plugins.BrowserAdapter.openDownload(br,link, form, true, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, form, true, 1);
         }
         dl.startDownload();
     }
@@ -131,19 +130,17 @@ public class UploadingCom extends PluginForHost {
             return;
         }
         br.submitForm(form);
-        if (br.containsHTML("Only Premium users can download files larger than")) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium");
-        }
+        if (br.containsHTML("Only Premium users can download files larger than")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium"); }
         br.setFollowRedirects(false);
         form = br.getFormbyProperty("id", "downloadform");
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-//        this.sleep(70000l, link);
+        // this.sleep(70000l, link);
         int tt = Integer.parseInt(br.getRegex("<script>.*?var.*?=(\\d+);").getMatch(0));
         sleep(tt * 1001l, link);
         br.submitForm(form);
         if (br.getRedirectLocation() == null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,link, br.getRedirectLocation(), false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, br.getRedirectLocation(), false, 1);
         dl.startDownload();
     }
 
@@ -181,22 +178,18 @@ public class UploadingCom extends PluginForHost {
             return;
         }
         br.submitForm(form);
-        if (br.containsHTML("You have reached the daily downloads limit")) {
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED,1*60*60*1000l);
-        }
-        if (br.containsHTML("Only Premium users can download files larger than")) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium");
-        }
+        if (br.containsHTML("You have reached the daily downloads limit")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 1 * 60 * 60 * 1000l); }
+        if (br.containsHTML("Only Premium users can download files larger than")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium"); }
         br.setFollowRedirects(false);
         form = br.getFormbyProperty("id", "downloadform");
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-//        this.sleep(100000l, downloadLink);
+        // this.sleep(100000l, downloadLink);
         int tt = Integer.parseInt(br.getRegex("<script>.*?var.*?=(\\d+);").getMatch(0));
         sleep(tt * 1001l, downloadLink);
         br.submitForm(form);
         if (br.getRedirectLocation() == null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, br.getRedirectLocation(), false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), false, 1);
         dl.setFilenameFix(true);
         dl.startDownload();
     }

@@ -221,7 +221,10 @@ public class AccountInfo extends Property {
     }
 
     public void validUntilCheck() {
-        if (getValidUntil() != -1 && getValidUntil() < System.currentTimeMillis()) this.setExpired(true);
+        if (account_validUntil != -1) {
+            long cur = System.currentTimeMillis();
+            if (account_validUntil < cur) this.setExpired(true);
+        }
     }
 
 }

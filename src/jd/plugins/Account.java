@@ -111,6 +111,8 @@ public class Account extends Property {
         if (this.enabled == enabled) return;
         this.enabled = enabled;
         if (enabled && !isValid()) setUpdateTime(0);
+        AccountInfo ai = accinfo;
+        if (enabled && ai != null && ai.isExpired()) setUpdateTime(0);
         AccountController.getInstance().throwUpdateEvent(null, this);
     }
 
