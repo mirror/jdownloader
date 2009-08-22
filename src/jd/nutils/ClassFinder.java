@@ -106,15 +106,19 @@ public class ClassFinder {
 
         } else {
             for (File file : files) {
-                if (file.isDirectory()) {
-                    try {
-                        classes.addAll(findPlugins(file.toURI().toURL(), packageName + "." + file.getName(), classLoader));
-                    } catch (MalformedURLException e) {
-                        e.printStackTrace();
+                try {
+                    if (file.isDirectory()) {
+                        try {
+                            classes.addAll(findPlugins(file.toURI().toURL(), packageName + "." + file.getName(), classLoader));
+                        } catch (MalformedURLException e) {
+                            e.printStackTrace();
+                        }
+                    } else if (file.getName().endsWith(".class")) {
+                        Class<?> c = classLoader.loadClass(packageName + '.' + file.getName().substring(0, file.getName().length() - 6));
+                        classes.add(c);
                     }
-                } else if (file.getName().endsWith(".class")) {
-                    Class<?> c = classLoader.loadClass(packageName + '.' + file.getName().substring(0, file.getName().length() - 6));
-                    classes.add(c);
+                } catch (Throwable e) {
+                    e.printStackTrace();
                 }
             }
         }
