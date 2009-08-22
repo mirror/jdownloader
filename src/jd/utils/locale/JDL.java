@@ -119,10 +119,9 @@ public class JDL {
                 SubConfiguration.getConfig(JDL.CONFIG).setProperty("DEFAULTLANGUAGE", COUNTRY_CODE);
                 SubConfiguration.getConfig(JDL.CONFIG).save();
             }
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (Exception e) {
+            COUNTRY_CODE = null;
         }
-
         return COUNTRY_CODE;
     }
 
@@ -346,8 +345,7 @@ public class JDL {
         } catch (IOException e) {
             JDLogger.exception(e);
         }
-        
-      
+
         JDLogger.getLogger().info("parse lng file end " + file);
     }
 
@@ -358,7 +356,7 @@ public class JDL {
         LOCALE_FILE = STATIC_LOCALE == null ? JDUtilities.getResourceFile(LANGUAGES_DIR + LOCALE_ID.getLngGeoCode() + ".loc") : new File(STATIC_LOCALE);
         if (LOCALE_FILE.exists()) {
             JDL.parseLanguageFile(LOCALE_FILE, DATA);
-            getBroadcaster().fireEvent(new JDLEvent(lID,JDLEvent.SET_NEW_LOCALE));    
+            getBroadcaster().fireEvent(new JDLEvent(lID, JDLEvent.SET_NEW_LOCALE));
         } else {
             System.out.println("Language " + LOCALE_ID + " not installed");
             return;

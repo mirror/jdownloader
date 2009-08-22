@@ -47,8 +47,6 @@ import jd.nutils.JDFlags;
 import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
 import jd.nutils.nativeintegration.LocalBrowser;
-import jd.update.FileUpdate;
-import jd.update.WebUpdater;
 import jd.utils.JDFileReg;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -77,8 +75,7 @@ public class Installer {
 
     public Installer() {
         countryCode = JDL.getCountryCodeByIP();
-
-        languageCode = countryCode.toLowerCase();
+        if (countryCode != null) languageCode = countryCode.toLowerCase();
 
         SubConfiguration.getConfig(JDL.CONFIG).setProperty(JDL.LOCALE_PARAM_ID, null);
 
@@ -161,17 +158,19 @@ public class Installer {
             @Override
             public Object runSave() {
                 String def = null;
-                for (JDLocale id : JDL.getLocaleIDs()) {
-                    if (id.getCountryCode() != null && id.getCountryCode().equalsIgnoreCase(languageCode)) {
-                        def = languageCode;
-                        break;
-                    }
-                }
-                if (def == null) {
+                if (languageCode != null) {
                     for (JDLocale id : JDL.getLocaleIDs()) {
-                        if (id.getLanguageCode().equalsIgnoreCase(languageCode)) {
+                        if (id.getCountryCode() != null && id.getCountryCode().equalsIgnoreCase(languageCode)) {
                             def = languageCode;
                             break;
+                        }
+                    }
+                    if (def == null) {
+                        for (JDLocale id : JDL.getLocaleIDs()) {
+                            if (id.getLanguageCode().equalsIgnoreCase(languageCode)) {
+                                def = languageCode;
+                                break;
+                            }
                         }
                     }
                 }
@@ -276,8 +275,7 @@ public class Installer {
      * @return
      */
     public static File getFlashGotFile() {
-        
-       
+
         return JDUtilities.getResourceFile("tools/flashgot.xpi");
     }
 
