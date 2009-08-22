@@ -51,7 +51,7 @@ public class JDSimpleWebserverResponseCreator {
     public JDSimpleWebserverResponseCreator() {
         headers = new StringBuilder();
         body = new StringBuilder();
-        contentType = "text/html ;charset=UTF-8";
+        contentType = "text/html; charset=UTF-8";
     }
 
     /*
