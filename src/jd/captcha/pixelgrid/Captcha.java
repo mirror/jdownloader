@@ -43,6 +43,7 @@ import jd.nutils.Colors;
 
 import com.jhlabs.image.BoxBlurFilter;
 import com.jhlabs.image.ContrastFilter;
+import com.jhlabs.image.QuantizeFilter;
 import com.sun.image.codec.jpeg.ImageFormatException;
 import com.sun.image.codec.jpeg.JPEGCodec;
 import com.sun.image.codec.jpeg.JPEGImageEncoder;
@@ -1194,6 +1195,20 @@ public class Captcha extends PixelGrid {
         BoxBlurFilter blur = new BoxBlurFilter(hRadius, vRadius, iteration);
         BufferedImage dest = blur.createCompatibleDestImage(image, null);
         blur.filter(image, dest);
+        Captcha cap2 = owner.createCaptcha(dest);
+        grid=cap2.grid;
+    }
+    /**
+     * reduziert ein bild auf eine gewisse farbanzahl
+     * @param colorNums
+     */
+    public void reduceColors(int colorNums)
+    {
+        BufferedImage image = (BufferedImage) getImage();
+        QuantizeFilter reduceFilter = new QuantizeFilter();
+        BufferedImage dest = reduceFilter.createCompatibleDestImage(image, null);
+        reduceFilter.setNumColors(colorNums);
+        reduceFilter.filter(image, dest);
         Captcha cap2 = owner.createCaptcha(dest);
         grid=cap2.grid;
     }

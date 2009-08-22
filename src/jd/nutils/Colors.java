@@ -213,6 +213,7 @@ public class Colors {
      * @return
      */
     public static double getHueColorDifference(int a, int b) {
+        if (a == b) return 0;
         return getHueColorDifference(getRGB(a), getRGB(b));
 
     }
@@ -239,6 +240,7 @@ public class Colors {
      * @return
      */
     public static double getHueColorDifference360(int a, int b) {
+        if (a == b) return 0;
         return getHueColorDifference360(getRGB(a), getRGB(b));
 
     }
@@ -265,6 +267,7 @@ public class Colors {
      * @return
      */
     public static double getSaturationColorDifference(int a, int b) {
+        if (a == b) return 0;
         return getSaturationColorDifference(getRGB(a), getRGB(b));
 
     }
@@ -291,6 +294,7 @@ public class Colors {
      * @return
      */
     public static double getBrightnessColorDifference(int a, int b) {
+        if (a == b) return 0;
         return getBrightnessColorDifference(getRGB(a), getRGB(b));
 
     }
@@ -326,6 +330,7 @@ public class Colors {
     }
 
     public static double getColorDifference(int a, int b) {
+        if (a == b) return 0;
         return getColorDifference(getRGB(a), getRGB(b));
     }
 
@@ -348,6 +353,7 @@ public class Colors {
      * @return
      */
     public static double getRGBColorDifference2(int color, int color2) {
+        if (color == color2) return 0;
         Color c = new Color(color);
         Color c2 = new Color(color2);
         int dif0 = c.getRed() - c2.getRed();
@@ -364,6 +370,7 @@ public class Colors {
      * @return
      */
     public static double getRGBColorDifference1(int color, int color2) {
+        if (color == color2) return 0;
         Color c = new Color(color);
         Color c2 = new Color(color2);
         int dif0 = c.getRed() - c2.getRed();

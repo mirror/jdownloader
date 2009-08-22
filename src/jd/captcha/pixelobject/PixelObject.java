@@ -581,7 +581,56 @@ public class PixelObject implements Comparable<PixelObject> {
         }
         return ret;
     }
+    /**
+     * Erstellt ein Letter mit den Farben vom Captcha
+     */
+    public Letter toColoredLetter() {
+        return toColoredLetter(owner.getMaxPixelValue(), owner);
+    }
+    /**
+     * Erstellt ein Letter mit den Farben des owners
+     * @param backgroundcolor
+     * @param owner
+     * @return
+     */
+    public Letter toColoredLetter(int backgroundcolor,PixelGrid owner ) {
+        Letter l = new Letter(getWidth(), getHeight());
+        l.setOwner(owner.owner);
+        l.setGrid(getGrid(backgroundcolor, owner));
+        l.setElementPixel(getSize());
+        l.setLocation(new int[] { getXMin(), getYMin() });
+        l.detected = detected;
+        return l;
+    }
+    /**
+     * Erstellt ein grid aus dem PixelObjekt mit den Farben vom Captcha
+     * @param backgroundcolor
+     * @return
+     */
+    public int[][] getGrid()
+    {
+        return getGrid(owner.getMaxPixelValue(), owner);
+    }
+    /**
+     * Erstellt ein grid aus dem PixelObjekt mit den Farben des owners
+     * @param backgroundcolor, owner
+     * @return
+     */
+    public int[][] getGrid(int backgroundcolor,PixelGrid owner)
+    {
+        int[][] ret = new int[getWidth()][getHeight()];
+        for (int x = 0; x < getWidth(); x++) {
+            for (int y = 0; y < getHeight(); y++) {
+                ret[x][y] = backgroundcolor;
+            }
+        }
+        for (int i = 0; i < getSize(); i++) {
+            int[] akt = elementAt(i);
+            ret[akt[0] - getXMin()][akt[1] - getYMin()] = owner.getPixelValue(akt[0], akt[1]);
 
+        }
+        return ret;
+    }
     /**
      * 
      * @return Gibt einen Entsprechenden Sw-Letter zurück
@@ -600,6 +649,7 @@ public class PixelObject implements Comparable<PixelObject> {
 
         }
         Letter l = owner.createLetter();
+        l.setOwner(owner.owner);
         l.setElementPixel(getSize());
         l.setLocation(new int[] { getXMin(), getYMin() });
         l.setGrid(ret);
@@ -607,7 +657,6 @@ public class PixelObject implements Comparable<PixelObject> {
         return l;
 
     }
-
     // @Override
     @Override
     public String toString() {
