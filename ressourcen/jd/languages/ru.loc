@@ -803,6 +803,7 @@ jd.gui.swing.jdgui.settings.configpanel.restartquestion = Эта операци�
 jd.gui.swing.jdgui.settings.configpanel.restartquestion.ok = Перезапуск!
 jd.gui.swing.jdgui.settings.configpanel.restartquestion.title = Требуется перезапуск!
 jd.gui.swing.jdgui.settings.panels.configpaneladdons.addons.title = Расширения
+jd.gui.swing.jdgui.settings.panels.configpaneladdons.breadcrum = Плагины и дополнения - Расширения
 jd.gui.swing.jdgui.settings.panels.configpanelgeneral.breadcrum = Базовые - Общие
 jd.gui.swing.jdgui.settings.panels.configpanelgeneral.general.title = Основные
 jd.gui.swing.jdgui.settings.panels.configpanelpluginforhost.breadcrum = Плагины и дополнения - Хостер
