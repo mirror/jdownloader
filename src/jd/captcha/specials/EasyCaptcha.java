@@ -37,7 +37,7 @@ import jd.captcha.pixelobject.PixelObject;
  * @author JD-Team
  */
 public class EasyCaptcha {
-    private static int mergeObjectsBasic(Vector<PixelObject> os, Captcha captcha, int gab) {
+    public static int mergeObjectsBasic(Vector<PixelObject> os, Captcha captcha, int gab) {
         int area = 0;
         int ret = 0;
         try {
