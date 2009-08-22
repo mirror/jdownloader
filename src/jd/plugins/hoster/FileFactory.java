@@ -160,7 +160,7 @@ public class FileFactory extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        expire = expire.replace("th", "");
+        expire = expire.replaceFirst("([^\\d].*?) ", " ");
         ai.setValidUntil(Regex.getMilliSeconds(expire, "dd MMMM, yyyy", Locale.UK));
 
         br.getPage("http://www.filefactory.com/reward/summary.php");
@@ -177,7 +177,7 @@ public class FileFactory extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), true, 0);
-        if (dl.getConnection().isContentDisposition()) {
+        if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             if (br.containsHTML(NOT_AVAILABLE)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

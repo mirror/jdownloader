@@ -202,7 +202,6 @@ public class JDL {
             if (JDGeoCode.parseLanguageCode(element.getName().split("\\.")[0]) == null) {
                 element.renameTo(new File(element, ".outdated"));
             } else {
-
                 ret.add(getInstance(element.getName().split("\\.")[0]));
             }
         }
@@ -240,10 +239,9 @@ public class JDL {
      * @return
      */
     private static String hashToKey(Integer hash) {
-        BufferedReader f;
+        BufferedReader f = null;
         try {
             f = new BufferedReader(new InputStreamReader(new FileInputStream(LOCALE_FILE), "UTF8"));
-
             String line;
             String key;
             while ((line = f.readLine()) != null) {
@@ -255,9 +253,15 @@ public class JDL {
                 if (hash == key.hashCode()) return key;
 
             }
-            f.close();
-        } catch (IOException e) {
+
+        } catch (Exception e) {
             JDLogger.exception(e);
+        } finally {
+            try {
+                if (f != null) f.close();
+            } catch (Exception e1) {
+                JDLogger.exception(e1);
+            }
         }
         return null;
     }
