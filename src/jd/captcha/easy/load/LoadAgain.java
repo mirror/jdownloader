@@ -9,6 +9,7 @@ public class LoadAgain {
         LoadImage li = LoadImage.loadFile("teradepot.com");
         try {
             System.out.println(li.load("teradepot.com").file);
+            System.out.println(li.br);
         } catch (Exception e) {
             // TODO Auto-generated catch block
             e.printStackTrace();

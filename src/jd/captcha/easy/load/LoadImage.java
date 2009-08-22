@@ -60,11 +60,13 @@ public class LoadImage {
 
     public LoadImage() {
         this.br = new Browser();
+        br.setFollowRedirects(true);
     }
 
     public LoadImage(LoadInfo loadInfo) {
         this.baseUrl = loadInfo.link;
         this.br = new Browser();
+        br.setFollowRedirects(true);
     }
 
     public LoadImage(LoadInfo loadInfo, String imageUrl, Browser br) {
@@ -123,7 +125,7 @@ public class LoadImage {
     public void directCaptchaLoad(String destination) {
         file = new File(destination, System.currentTimeMillis() + getFileType());
         try {
-            br.getDownload(file, imageUrl);
+            br.cloneBrowser().getDownload(file, imageUrl);
 
         } catch (Exception e) {
         }
@@ -175,8 +177,9 @@ public class LoadImage {
             fileType = ".gif";
         else {
             try {
-                br.getPage(imageUrl);
-                String ct2 = br.getHttpConnection().getContentType().toLowerCase();
+                Browser bc = br.cloneBrowser();
+                bc.getPage(imageUrl);
+                String ct2 = bc.getHttpConnection().getContentType().toLowerCase();
                 if (ct2 != null && ct2.contains("image")) {
                     if (ct2.equals("image/jpeg"))
                         fileType = ".jpg";
