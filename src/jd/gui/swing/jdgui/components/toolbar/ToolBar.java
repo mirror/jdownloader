@@ -155,13 +155,13 @@ public class ToolBar extends JToolBar implements ActionControllerListener {
                     // getInputMap(JButton.WHEN_IN_FOCUSED_WINDOW).put(ks,
                     // action);
 
-//                    if (action.getValue(Action.ACCELERATOR_KEY) != null) {
-//                        ab.setToolTipText(action.getTooltipText() + " [" + ShortCuts.getAcceleratorString((KeyStroke) action.getValue(Action.ACCELERATOR_KEY)) + "]");
-//                    } else if (action.getValue(Action.MNEMONIC_KEY) != null) {
-//                        ab.setToolTipText(action.getTooltipText() + " [Alt+" + new String(new byte[] { ((Integer) action.getValue(Action.MNEMONIC_KEY)).byteValue() }) + "]");
-//                    } else {
-//                        ab.setToolTipText(action.getTooltipText());
-//                    }
+                    if (action.getValue(Action.ACCELERATOR_KEY) != null) {
+                        ab.setToolTipText(action.getTooltipText() + " [" + ShortCuts.getAcceleratorString((KeyStroke) action.getValue(Action.ACCELERATOR_KEY)) + "]");
+                    } else if (action.getValue(Action.MNEMONIC_KEY) != null) {
+                        ab.setToolTipText(action.getTooltipText() + " [Alt+" + new String(new byte[] { ((Integer) action.getValue(Action.MNEMONIC_KEY)).byteValue() }) + "]");
+                    } else {
+                        ab.setToolTipText(action.getTooltipText());
+                    }
 
                 }
             }

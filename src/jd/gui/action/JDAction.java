@@ -133,7 +133,7 @@ public abstract class JDAction extends AbstractAction {
      */
     public String getTooltipText() {
         try {
-            return getValue(AbstractAction.LONG_DESCRIPTION).toString();
+            return getValue(AbstractAction.SHORT_DESCRIPTION).toString();
         } catch (Exception e) {
             return null;
         }

@@ -96,6 +96,7 @@ public abstract class ToolBarAction extends JDAction {
      * @param tt
      */
     public void setToolTipText(String tt) {
+      
         putValue(AbstractAction.SHORT_DESCRIPTION, tt);
     }
 
