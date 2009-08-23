@@ -488,7 +488,7 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
      */
     public void load() {
         if (getConfigEntry().getPropertyInstance() != null && getConfigEntry().getPropertyName() != null) {
-            setData(getConfigEntry().getPropertyInstance().getProperty(getConfigEntry().getPropertyName()));
+            setData(getConfigEntry().getPropertyInstance().getProperty(getConfigEntry().getPropertyName(),getConfigEntry().getDefaultValue()));
         } else if (getConfigEntry().getListController() != null) {
             setData(getConfigEntry().getListController().getList());
         }
