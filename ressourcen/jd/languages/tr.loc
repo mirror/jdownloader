@@ -902,6 +902,7 @@ jd.plugins.optional.jdshutdown = JD Sistem Kapatma
 jd.plugins.optional.jdtrayicon.jdlighttray = JD Tepsi İkonu
 jd.plugins.optional.jdunrar.jdunrar = JD Unrar
 jd.plugins.optional.langfileeditor.langfileeditor = Dil Düzenleyici
+jd.plugins.optional.langfileeditor.langfileeditor.initconfigentries.message = Bu eklentiyi kullanabilmek için JD-SVN üyeliğine ihtiyacınız var
 jd.plugins.optional.langfileeditor.langfileeditor.show = Çalıştır
 jd.plugins.optional.langfileeditor.lfeview.title = Dil Düzenleyici
 jd.plugins.optional.langfileeditor.lfeview.tooltip = Bir çeviri dosyası düzenle
