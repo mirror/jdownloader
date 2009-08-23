@@ -27,6 +27,7 @@ import jd.controlling.interaction.Interaction;
 import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
+import jd.gui.swing.jdgui.actions.ActionController;
 import jd.nutils.JDFlags;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -85,7 +86,8 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
     }
 
     public void start() {
-        if (reachedStopMark()) stopMark = nostopMark;
+        /* remove stopsign if it is reached */
+        if (reachedStopMark()) setStopMark(nostopMark);
         /* ursprünglichen speed wiederherstellen */
         if (SubConfiguration.getConfig("DOWNLOAD").getProperty("MAXSPEEDBEFOREPAUSE", null) != null) {
             logger.info("Restoring old speedlimit");
@@ -106,11 +108,30 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
             }
             stopMark = entry;
             if (entry instanceof DownloadLink) {
+                ActionController.getToolBarAction("toolbar.control.stopmark").setSelected(true);
+                ActionController.getToolBarAction("toolbar.control.stopmark").setIcon("gui.images.stopmark.enabled");
+                ActionController.getToolBarAction("toolbar.control.stopmark").setToolTipText("Stopmark is set on Downloadlink: " + ((DownloadLink) entry).getName());
                 DownloadController.getInstance().fireDownloadLinkUpdate(entry);
             } else if (entry instanceof FilePackage) {
+                ActionController.getToolBarAction("toolbar.control.stopmark").setSelected(true);
+                ActionController.getToolBarAction("toolbar.control.stopmark").setIcon("gui.images.stopmark.enabled");
+                ActionController.getToolBarAction("toolbar.control.stopmark").setToolTipText("Stopmark is set on Filepackage: " + ((FilePackage) entry).getName());
                 DownloadController.getInstance().fireDownloadLinkUpdate(((FilePackage) entry).get(0));
+            } else if (entry == hiddenstopMark) {
+                ActionController.getToolBarAction("toolbar.control.stopmark").setSelected(true);
+                ActionController.getToolBarAction("toolbar.control.stopmark").setIcon("gui.images.stopmark.enabled");
+                ActionController.getToolBarAction("toolbar.control.stopmark").setToolTipText("Stopmark is still set!");
+            } else if (entry == nostopMark) {
+                ActionController.getToolBarAction("toolbar.control.stopmark").setSelected(false);
+                ActionController.getToolBarAction("toolbar.control.stopmark").setIcon("gui.images.stopmark.disabled");
+                ActionController.getToolBarAction("toolbar.control.stopmark").setToolTipText("Stop after current Downloads");
             }
+
         }
+    }
+
+    public boolean isStopMarkSet() {
+        return stopMark != nostopMark;
     }
 
     public void toggleStopMark(Object entry) {
@@ -180,6 +201,8 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
         logger.finer("Stopped Downloads");
         clearDownloadListStatus();
         aborting = false;
+        /* remove stopsign if it is reached */
+        if (reachedStopMark()) setStopMark(nostopMark);
     }
 
     /**
@@ -578,6 +601,8 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                     JDUtilities.getController().removeControlListener(INSTANCE);
                     Interaction.handleInteraction(Interaction.INTERACTION_ALL_DOWNLOADS_FINISHED, this);
                     pause(false);
+                    /* remove stopsign if it is reached */
+                    if (reachedStopMark()) setStopMark(nostopMark);
                 }
             };
             watchDogThread.start();

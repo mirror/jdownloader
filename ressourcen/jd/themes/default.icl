@@ -10,6 +10,8 @@ gui.icons.delete = default/edit-delete
 ##
 gui.images.add = default/list-add
 gui.images.stopmark = default/record
+gui.images.stopmark.disabled=default/stop_after_disabled_big
+gui.images.stopmark.enabled=default/stop_after_enabled_big
 gui.images.cancel = default/emblem-unreadable
 gui.images.taskpanes.addons = default/mail-attachment
 gui.images.config.addons = default/mail-attachment

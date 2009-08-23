@@ -30,6 +30,7 @@ import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.ClipboardHandler;
 import jd.controlling.DistributeData;
+import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDController;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.ProgressController;
@@ -525,6 +526,40 @@ public class ActionController {
 
             @Override
             public void init() {
+            }
+
+        };
+
+        new ThreadedAction("toolbar.control.stopmark", "gui.images.stopmark.disabled") {
+
+            /**
+             * 
+             */
+            private static final long serialVersionUID = 4359802245569811800L;
+
+            @Override
+            public void initDefaults() {
+                setPriority(800);
+                this.setEnabled(true);
+                this.setToolTipText(JDL.L(JDL_PREFIX + "toolbar.control.stopmark.tooltip", "Stop after current Downloads"));
+                this.setEnabled(true);
+                this.type = ToolBarAction.Types.TOGGLE;
+                this.setSelected(false);
+                this.setIcon("gui.images.stopmark.disabled");
+            }
+
+            @Override
+            public void init() {
+            }
+
+            @Override
+            public void threadedActionPerformed(ActionEvent e) {
+                if (DownloadWatchDog.getInstance().isStopMarkSet()) {
+                    DownloadWatchDog.getInstance().setStopMark(null);
+                } else if (DownloadWatchDog.getInstance().getActiveDownloads() > 0) {
+                    Object obj = DownloadWatchDog.getInstance().getRunningDownloads().get(0);
+                    DownloadWatchDog.getInstance().setStopMark(obj);
+                }
             }
 
         };
