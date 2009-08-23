@@ -70,6 +70,10 @@ public class ConfigTreeModel implements TreeModel {
         // TreeEntry(jd.gui.swing.jdgui.settings.panels.gui.General.class,
         // JDL.L(JDL_PREFIX + "gui.general.title",
         // "Main")).setIcon("gui.images.config.gui"));
+        
+        dl.add(new TreeEntry(jd.gui.swing.jdgui.settings.panels.gui.ToolbarController.class, jd.gui.swing.jdgui.settings.panels.gui.ToolbarController.getTitle()).setIcon("gui.images.toolbar"));
+        
+        
         dl.add(new TreeEntry(jd.gui.swing.jdgui.settings.panels.gui.Linkgrabber.class, jd.gui.swing.jdgui.settings.panels.gui.Linkgrabber.getTitle()).setIcon("gui.images.taskpanes.linkgrabber"));
         //
 

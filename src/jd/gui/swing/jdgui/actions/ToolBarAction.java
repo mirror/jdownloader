@@ -18,6 +18,7 @@ package jd.gui.swing.jdgui.actions;
 
 import javax.swing.AbstractAction;
 
+import jd.config.SubConfiguration;
 import jd.gui.action.JDAction;
 import jd.utils.locale.JDL;
 
@@ -46,6 +47,8 @@ public abstract class ToolBarAction extends JDAction {
 
     public void setVisible(boolean b) {
         this.putValue(VISIBLE, b);
+        SubConfiguration.getConfig("Toolbar").setProperty("VISIBLE_"+this.getID(), b);
+        SubConfiguration.getConfig("Toolbar").save();
     }
 
     public boolean isVisible() {
@@ -71,6 +74,8 @@ public abstract class ToolBarAction extends JDAction {
         if (iconkey != null) setIcon(iconkey);
         setMnemonic(JDL.L("gui.menu." + menukey + ".mnem", "-"));
         setAccelerator(JDL.L("gui.menu." + menukey + ".accel", "-"));
+        this.putValue(VISIBLE, SubConfiguration.getConfig("Toolbar").getBooleanProperty("VISIBLE_"+this.getID(), true));
+      
         initDefaults();
         ActionController.register(this);
     }

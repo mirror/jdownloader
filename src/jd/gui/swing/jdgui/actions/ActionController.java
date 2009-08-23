@@ -625,4 +625,18 @@ public class ActionController {
         }
     }
 
+    /**
+     * returns a fresh copy of all toolbaractions
+     * 
+     * @return
+     */
+    public static ArrayList<ToolBarAction> getActions() {
+        ArrayList<ToolBarAction> ret = new ArrayList<ToolBarAction>();
+        synchronized (TOOLBAR_ACTION_LIST) {
+            ret.addAll(TOOLBAR_ACTION_LIST);
+        }
+        return ret;
+
+    }
+
 }
