@@ -296,6 +296,12 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     }
 
     public void windowIconified(WindowEvent arg0) {
+        /*
+         * this is a workaround because on some linux systems, the minimize
+         * effect happens after reshowing jd (getting back from tray), so its
+         * always/often in taskbar instead of open window TODO: find a better
+         * way, eg do not minimize at all
+         */
         if (subConfig.getBooleanProperty(PROPERTY_MINIMIZE_TO_TRAY, true)) {
             guiFrame.setState(JFrame.NORMAL);
             guiFrame.setVisible(true);
@@ -335,15 +341,14 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
         }
     }
 
-    
     public Object interact(String command, Object parameter) {
         if (command == null) return null;
         if (command.equalsIgnoreCase("refresh")) {
             new GuiRunnable<Object>() {
 
                 @Override
-                public Object runSave() {                    
-                    removeTrayIcon();                    
+                public Object runSave() {
+                    removeTrayIcon();
                     initGUI();
                     return null;
                 }

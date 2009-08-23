@@ -29,7 +29,6 @@ import javax.swing.SwingConstants;
 
 import jd.config.Configuration;
 import jd.controlling.DownloadController;
-import jd.controlling.PasswordListController;
 import jd.gui.swing.components.ComboBrowseFile;
 import jd.gui.swing.components.JDCollapser;
 import jd.gui.swing.components.JDFileChooser;
@@ -277,10 +276,10 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
                                 long[] values = new long[chunks];
                                 for (int i = 0; i < chunks; i++) {
                                     max[i] = part;
-                                    values[i] = (downloadLink.getChunksProgress()[i]+1) - i * part;
+                                    values[i] = (downloadLink.getChunksProgress()[i] + 1) - i * part;
                                 }
-max[chunks-1]=fileSize-part*(chunks-1);
-values[chunks-1] = (downloadLink.getChunksProgress()[chunks-1]+1) - part*(chunks-1);
+                                max[chunks - 1] = fileSize - part * (chunks - 1);
+                                values[chunks - 1] = (downloadLink.getChunksProgress()[chunks - 1] + 1) - part * (chunks - 1);
                                 FilePackageInfo.this.progressBarDownloadLink.setMaximums(max);
                                 FilePackageInfo.this.progressBarDownloadLink.setValues(values);
                             } else {
@@ -325,13 +324,11 @@ values[chunks-1] = (downloadLink.getChunksProgress()[chunks-1]+1) - part*(chunks
     }
 
     public void onHideSave() {
-
-        PasswordListController.getInstance().addPassword(txtPassword.getText());
         fp.setName(txtName.getText());
         fp.setComment(txtComment.getText());
         fp.setPassword(txtPassword.getText());
         fp.setDownloadDirectory(brwSaveTo.getText());
-
+        fp.setExtractAfterDownload(chbExtract.isSelected());
     }
 
     // @Override

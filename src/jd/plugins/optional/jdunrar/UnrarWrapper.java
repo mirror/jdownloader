@@ -338,7 +338,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
         exec.addParameter(file.getAbsolutePath());
         exec.setRunin(file.getParentFile().getAbsolutePath());
         if (extractTo != null) {
-            if (!extractTo.mkdirs()) {
+            if (extractTo.exists() || extractTo.mkdirs()) {
                 exec.setRunin(extractTo.getAbsolutePath());
             } else {
                 logger.severe("could not create " + extractTo.toString());

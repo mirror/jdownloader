@@ -27,7 +27,6 @@ import javax.swing.SwingConstants;
 
 import jd.config.Configuration;
 import jd.controlling.DownloadController;
-import jd.controlling.PasswordListController;
 import jd.gui.swing.components.ComboBrowseFile;
 import jd.gui.swing.components.JDCollapser;
 import jd.gui.swing.components.JDFileChooser;
@@ -56,8 +55,6 @@ public class LinkGrabberFilePackageInfo extends JDCollapser implements ActionLis
 
     private LinkGrabberFilePackage fp = null;
 
-
-
     public LinkGrabberFilePackageInfo() {
         buildGui();
         fp = null;
@@ -81,16 +78,16 @@ public class LinkGrabberFilePackageInfo extends JDCollapser implements ActionLis
          * wichtig: die set funktionen lösen eine action aus , welche ansonsten
          * wiederum ein updatevent aufrufen würden
          */
-  
+
         txtName.setText(fp.getName());
         txtComment.setText(fp.getComment());
-         txtPassword.setText(fp.getPassword());
+        txtPassword.setText(fp.getPassword());
         brwSaveTo.setText(fp.getDownloadDirectory());
         chbExtract.setSelected(fp.isExtractAfterDownload());
-       chbUseSubdirectory.setSelected(fp.useSubDir());
+        chbUseSubdirectory.setSelected(fp.useSubDir());
         /* neuzeichnen */
         revalidate();
-       
+
     }
 
     public LinkGrabberFilePackage getPackage() {
@@ -141,13 +138,13 @@ public class LinkGrabberFilePackageInfo extends JDCollapser implements ActionLis
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (fp == null ) return;
-        if(e.getSource()==txtName)fp.setName(txtName.getText());
-        if(e.getSource()==brwSaveTo) fp.setDownloadDirectory(brwSaveTo.getText());
-        if(e.getSource()==txtComment) fp.setComment(txtComment.getText());
-        if(e.getSource()==txtPassword)fp.setPassword(txtPassword.getText());
-        if(e.getSource()==chbExtract) fp.setExtractAfterDownload(chbExtract.isSelected());
-        if(e.getSource()==chbUseSubdirectory)fp.setUseSubDir(chbUseSubdirectory.isSelected());
+        if (fp == null) return;
+        if (e.getSource() == txtName) fp.setName(txtName.getText());
+        if (e.getSource() == brwSaveTo) fp.setDownloadDirectory(brwSaveTo.getText());
+        if (e.getSource() == txtComment) fp.setComment(txtComment.getText());
+        if (e.getSource() == txtPassword) fp.setPassword(txtPassword.getText());
+        if (e.getSource() == chbExtract) fp.setExtractAfterDownload(chbExtract.isSelected());
+        if (e.getSource() == chbUseSubdirectory) fp.setUseSubDir(chbUseSubdirectory.isSelected());
         DownloadController.getInstance().fireDownloadLinkUpdate(fp.get(0));
     }
 
@@ -157,13 +154,12 @@ public class LinkGrabberFilePackageInfo extends JDCollapser implements ActionLis
     }
 
     public void onHideSave() {
-       
-        PasswordListController.getInstance().addPassword(txtPassword.getText());
         fp.setName(txtName.getText());
         fp.setComment(txtComment.getText());
         fp.setPassword(txtPassword.getText());
         fp.setDownloadDirectory(brwSaveTo.getText());
-     
+        fp.setExtractAfterDownload(chbExtract.isSelected());
+        fp.setUseSubDir(chbUseSubdirectory.isSelected());
     }
 
     // @Override
@@ -177,12 +173,12 @@ public class LinkGrabberFilePackageInfo extends JDCollapser implements ActionLis
     }
 
     public void focusLost(FocusEvent e) {
-        if(e.getSource()==txtName)fp.setName(txtName.getText());
-        if(e.getSource()==brwSaveTo) fp.setDownloadDirectory(brwSaveTo.getText());
-        if(e.getSource()==txtComment) fp.setComment(txtComment.getText());
-        if(e.getSource()==txtPassword)fp.setPassword(txtPassword.getText());
-        if(e.getSource()==chbExtract) fp.setExtractAfterDownload(chbExtract.isSelected());
-        if(e.getSource()==chbUseSubdirectory)fp.setUseSubDir(chbUseSubdirectory.isSelected());
+        if (e.getSource() == txtName) fp.setName(txtName.getText());
+        if (e.getSource() == brwSaveTo) fp.setDownloadDirectory(brwSaveTo.getText());
+        if (e.getSource() == txtComment) fp.setComment(txtComment.getText());
+        if (e.getSource() == txtPassword) fp.setPassword(txtPassword.getText());
+        if (e.getSource() == chbExtract) fp.setExtractAfterDownload(chbExtract.isSelected());
+        if (e.getSource() == chbUseSubdirectory) fp.setUseSubDir(chbUseSubdirectory.isSelected());
         DownloadController.getInstance().fireDownloadLinkUpdate(fp.get(0));
     }
 
