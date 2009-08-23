@@ -34,6 +34,7 @@ public class Restarter {
     private static boolean WAIT_FOR_JDOWNLOADER_TERM = false;
     private static boolean RESTART = false;
     private static Logger logger;
+    private static boolean NOLOG = false;
 
     public static String getStackTrace(Throwable thrown) {
         StringWriter sw = new StringWriter();
@@ -44,23 +45,26 @@ public class Restarter {
     }
 
     public static void main(String[] args) {
-
+        for (String arg : args) {
+            if (arg.equalsIgnoreCase("-restart")) RESTART = true;
+            if (arg.equalsIgnoreCase("-nolog")) NOLOG = true;
+        }
         try {
-            // Create a file handler that write log record to a file called
-            // my.log
-            FileHandler handler = new FileHandler("restarter.log", false);
 
             // Add to the desired logger
             logger = Logger.getLogger("org.jdownloader");
-            logger.addHandler(handler);
+            if (!NOLOG) {
+                // Create a file handler that write log record to a file called
+                // my.log
+                FileHandler handler = new FileHandler("restarter.log", false);
+                logger.addHandler(handler);
+
+            }
 
         } catch (IOException e) {
 
         }
         try {
-            for (String arg : args) {
-                if (arg.equalsIgnoreCase("-restart")) RESTART = true;
-            }
 
             while (new File("JDownloader.jar").exists() && !new File("JDownloader.jar").canWrite()) {
                 logger.severe("Wait for jdownloader terminating");
@@ -101,7 +105,6 @@ public class Restarter {
                 Thread.sleep(1000);
                 System.exit(0);
             }
-           
 
         } catch (Throwable e) {
             logger.severe(getStackTrace(e));

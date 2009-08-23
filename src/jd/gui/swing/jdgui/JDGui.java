@@ -20,6 +20,8 @@ import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Image;
 import java.awt.event.WindowEvent;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 
 import javax.swing.JFrame;
@@ -28,6 +30,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JPanel;
 import javax.swing.ToolTipManager;
 
+import jd.JDInitFlags;
 import jd.config.ConfigContainer;
 import jd.controlling.ClipboardHandler;
 import jd.controlling.DownloadController;
@@ -113,8 +116,20 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         setWindowIcon();
         setWindowTitle();
         layoutComponents();
+        mainFrame.addPropertyChangeListener("alwaysOnTop", new PropertyChangeListener() {
+//debug code to find this
+            public void propertyChange(PropertyChangeEvent evt) {
+                JDLogger.exception(new Exception());
+                if(JDInitFlags.SWITCH_DEBUG){
+                    
+                    UserIO.getInstance().requestTextAreaDialog("Always on top bug", "Error. Please Send your log to support@jdownloader.org", JDLogger.getStackTrace(new Exception()));
+                }
 
+            }
+
+        });
         mainFrame.pack();
+     
         initLocationAndDimension();
         mainFrame.setVisible(true);
         if (mainFrame.getRootPane().getUI().toString().contains("SyntheticaRootPaneUI")) {

@@ -25,6 +25,7 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.regex.Pattern;
 
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
@@ -37,6 +38,7 @@ import jd.nutils.JDHash;
 import jd.nutils.SimpleFTP;
 import jd.nutils.io.JDIO;
 import jd.nutils.svn.Subversion;
+import jd.nutils.zip.Zip;
 import jd.parser.Regex;
 import jd.update.FileUpdate;
 import jd.update.Restarter;
@@ -60,7 +62,7 @@ public class Updater {
     public static void main(String[] args) throws Exception {
         String branch = null;
 
-        branch = "Synthy2";
+        branch = "NIGHTLY";
         Browser.setGlobalConnectTimeout(500000);
         Browser.setGlobalReadTimeout(500000);
         Updater upd = new Updater();
@@ -145,6 +147,7 @@ public class Updater {
         this.branch = id;
 
         String ret = new Browser().getPage(UPDATE_SERVER + "createBranch.php?pass=" + getCFG("updateHashPW") + "&parent=" + latestBranch + "&branch=" + id);
+
         System.out.println(ret);
         return id;
     }
@@ -229,9 +232,30 @@ public class Updater {
         copyDirectory(new File(jars.getParentFile(), "ressourcen\\tools"), new File(this.updateDir, "tools"));
         copyDirectory(new File(jars.getParentFile(), "ressourcen\\libs"), new File(this.updateDir, "libs"));
 
+        pack(new File(this.updateDir, "jd/captcha"));
+        pack(new File(this.updateDir, "jd/router"));
+
+        pack(new File(this.updateDir, "jd/img"));
+        pack(new File(this.updateDir, "licenses"));
+        pack(new File(this.updateDir, "jd/languages"));
+
+    }
+
+
+    private void pack(File file) {
+        Zip zip = new Zip(file.listFiles(), new File(file, file.getName() + ".extract"));
+        zip.setDeleteAfterPack(true);
+        zip.setExcludeFilter(Pattern.compile(".+\\.extract", Pattern.CASE_INSENSITIVE));
+        try {
+            zip.zip();
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
 
     private void clone2(String branch, String path) throws IOException {
+
         LinkedHashMap<String, String> map = createHashList(this.workingDir);
         Browser br = new Browser();
         br.forceDebug(true);
@@ -495,6 +519,7 @@ public class Updater {
         for (File f : localFiles) {
             if (!f.isDirectory() && !containsFile(f) && !f.getAbsolutePath().equalsIgnoreCase(workingDir.getAbsolutePath())) {
                 sb.append(f.getAbsolutePath() + "\r\n");
+
                 remRequested.add(f.getAbsolutePath());
                 i++;
             }
@@ -566,7 +591,9 @@ public class Updater {
             webupdater.filterAvailableUpdates(update);
             System.out.println("UPdate: " + update);
             webupdater.updateFiles(update, null);
-            Restarter.main(new String[] {});
+
+            Restarter.main(new String[] { "-nolog" });
+
         } catch (Exception e) {
             JDLogger.exception(e);
             remoteFileList = new ArrayList<FileUpdate>();

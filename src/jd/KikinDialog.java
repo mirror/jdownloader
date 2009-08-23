@@ -104,7 +104,7 @@ public class KikinDialog extends AbstractDialog {
         textField.setBorder(null);
 
         textField.setOpaque(false);
-
+        textField.putClientProperty("Synthetica.opaque", Boolean.FALSE);
         textField.setText("<style type='text/css'> body {        font-family: Geneva, Arial, Helvetica, sans-serif; font-size:9px;}</style>" + JDL.L("gui.installer.kikin.agree", "<b><a href=\"http://jdownloader.org/kikin\">What is Kikin?</a> <br/>Best Parts? kikin is free and works automatically.<br>I agree to the kikin <a href=\"http://www.kikin.com/terms-of-service\">Terms of Service</a> and <a href=\"http://www.kikin.com/privacy-policy\">Privacy Policy</a></b>"));
         textField.setEditable(false);
         textField.addHyperlinkListener(new HyperlinkListener() {

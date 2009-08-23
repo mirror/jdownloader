@@ -251,6 +251,7 @@ public class Balloon {
                 textField.setBorder(null);
                 textField.setOpaque(false);
                 // textField.setOpaque(false);
+                textField.putClientProperty("Synthetica.opaque", Boolean.FALSE);
                 textField.setText(string2);
                 textField.setEditable(false);
                 textField.addHyperlinkListener(JLink.getHyperlinkListener());
