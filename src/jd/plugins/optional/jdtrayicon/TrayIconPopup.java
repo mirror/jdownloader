@@ -61,7 +61,8 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
     private static final int ACTION_TOGGLE_PREMIUM = 7;
     private static final int ACTION_TOGGLE_CLIPBOARD = 8;
     private static final int ACTION_TOGGLE_RECONNECT = 9;
-    private static final int ACTION_EXIT = 10;
+    private static final int ACTION_DLFOLDER = 10;
+    private static final int ACTION_EXIT = 11;
 
     private JPanel entryPanel;
     private JPanel bottomPanel;
@@ -114,6 +115,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
         addMenuEntry(ACTION_TOGGLE_PREMIUM, getPremiumImage(), JDL.L("plugins.trayicon.popup.menu.togglePremium", "Premium an/aus"));
         addMenuEntry(ACTION_TOGGLE_CLIPBOARD, getClipBoardImage(), JDL.L("plugins.trayicon.popup.menu.toggleClipboard", "Zwischenablage an/aus"));
         addMenuEntry(ACTION_TOGGLE_RECONNECT, getReconnectImage(), JDL.L("plugins.trayicon.popup.menu.toggleReconnect", "Reconnect an/aus"));
+        addMenuEntry(ACTION_DLFOLDER, "gui.images.package_opened", JDL.L("action.opendlfolder.tooltip", "Open default Downloadfolder"));
         addMenuEntry(ACTION_EXIT, "gui.images.exit", JDL.L("plugins.trayicon.popup.menu.exit", "Beenden"));
     }
 
@@ -233,6 +235,9 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
         if (index < 0) return;
 
         switch (index) {
+        case TrayIconPopup.ACTION_DLFOLDER:
+            ActionController.getToolBarAction("action.opendlfolder").actionPerformed(e);
+            break;
         case TrayIconPopup.ACTION_ADD:
             dispose();
             ActionController.getToolBarAction("action.addurl").actionPerformed(e);
@@ -244,7 +249,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
         case TrayIconPopup.ACTION_PAUSE:
             JDUtilities.getController().pauseDownloads(!JDUtilities.getController().isPaused());
             break;
-        case TrayIconPopup.ACTION_RECONNECT:            
+        case TrayIconPopup.ACTION_RECONNECT:
             ActionController.getToolBarAction("toolbar.interaction.reconnect").actionPerformed(null);
             break;
         case TrayIconPopup.ACTION_START:
@@ -271,5 +276,4 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
         }
         dispose();
     }
-
 }
