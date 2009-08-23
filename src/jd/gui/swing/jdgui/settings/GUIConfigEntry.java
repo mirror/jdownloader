@@ -236,17 +236,17 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
         case ConfigContainer.TYPE_RADIOFIELD:
             decoration = new JLabel(configEntry.getLabel());
             input = new JComponent[1];
-            input[0]= new JPanel(new MigLayout("ins 0", "",""));
+            input[0] = new JPanel(new MigLayout("ins 0", "", ""));
             JRadioButton radio;
 
             ButtonGroup group = new ButtonGroup();
 
             for (int i = 0; i < configEntry.getList().length; i++) {
                 radio = new JRadioButton(configEntry.getList()[i].toString());
-                
+
                 radio.setActionCommand(configEntry.getList()[i].toString());
                 input[0].add(radio);
-              
+
                 radio.setEnabled(configEntry.isEnabled());
                 radio.addActionListener(this);
                 group.add(radio);
@@ -339,7 +339,7 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
         case ConfigContainer.TYPE_RADIOFIELD:
             JRadioButton radio;
             Component[] inputs = input[0].getComponents();
-            
+
             for (Component element : inputs) {
                 radio = (JRadioButton) element;
 
@@ -363,27 +363,22 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
     }
 
     public void propertyChange(PropertyChangeEvent evt) {
-
-        if (input[0] == null) { return; }
-        // logger.info("New Value "+evt.getNewValue());
-        if (getConfigEntry().isConditionalEnabled(evt)) {
-            input[0].setEnabled(true);
-            for (JComponent i : input) {
-                if (i != null) i.setEnabled(true);
+        if (input[0] == null) return;
+        boolean state = getConfigEntry().isConditionalEnabled(evt);
+        for (JComponent i : input) {
+            if (i != null) {
+                i.setEnabled(state);
+                if (i.getComponents() != null) {
+                    for (Component c : i.getComponents()) {
+                        c.setEnabled(state);
+                    }
+                }
             }
-
-            if (decoration != null) decoration.setEnabled(true);
-
-        } else {
-            for (JComponent i : input) {
-                if (i != null) i.setEnabled(false);
-            }
-            if (decoration != null) decoration.setEnabled(true);
         }
+        // if (decoration != null) decoration.setEnabled(state);
     }
 
     public JComponent getDecoration() {
-
         return decoration;
     }
 
@@ -470,7 +465,7 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
             }
             break;
         case ConfigContainer.TYPE_RADIOFIELD:
-            
+
             Component[] inputs = input[0].getComponents();
             for (int i = 0; i < configEntry.getList().length; i++) {
                 JRadioButton radio = (JRadioButton) inputs[i];

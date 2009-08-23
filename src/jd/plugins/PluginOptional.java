@@ -24,8 +24,6 @@ import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
-import jd.gui.UserIO;
-import jd.utils.locale.JDL;
 
 public abstract class PluginOptional extends Plugin implements ControlListener {
 
@@ -53,15 +51,15 @@ public abstract class PluginOptional extends Plugin implements ControlListener {
     public String getHost() {
         return this.getWrapper().getHost();
     }
+
     /**
      * should be overridden by addons with gui
      * 
      * @param b
      */
-public void setGuiEnable(boolean b){
- 
-       
-}
+    public void setGuiEnable(boolean b) {
+    }
+
     public String getIconKey() {
         return "gui.images.config.home";
     }
@@ -81,7 +79,6 @@ public void setGuiEnable(boolean b){
 
     @Override
     public String getVersion() {
-        // TODO Auto-generated method stub
-        return ((OptionalPluginWrapper) (this.getWrapper())).getVersion();
+        return ((OptionalPluginWrapper) this.getWrapper()).getVersion();
     }
 }
