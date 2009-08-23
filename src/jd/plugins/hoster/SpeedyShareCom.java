@@ -74,11 +74,16 @@ public class SpeedyShareCom extends PluginForHost {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
         /* Link holen */
-        String linkurl = Encoding.htmlDecode(new Regex(br, Pattern.compile("href=\"(http://www.speedyshare.com/data/.*?)\"><img src=", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        String linkurl = Encoding.htmlDecode(new Regex(br, Pattern.compile("href=\"(http://www.speedyshare.com/data/.*?)\">", Pattern.CASE_INSENSITIVE)).getMatch(0));
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (br.containsHTML("The one-hour limit has been reached. Wait")) {
+            String wait[] = br.getRegex("id=minwait1>(\\d+):(\\d+)</span> minutes").getRow(0);
+            long waittime = 1000l * 60 * Long.parseLong(wait[0]) + 1000 * Long.parseLong(wait[1]);
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime);
+        }
         /* Datei herunterladen */
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, linkurl, true, -5);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, true, -5);
         URLConnectionAdapter con = dl.getConnection();
         if (con.getResponseCode() != 200 && con.getResponseCode() != 206) {
             con.disconnect();
