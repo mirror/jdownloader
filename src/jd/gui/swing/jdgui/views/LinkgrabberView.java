@@ -56,7 +56,7 @@ public class LinkgrabberView extends View {
 
         toolbar.setList(new String[] { "action.addurl", "action.load" });
 
-        this.setToolBar(toolbar);
+       // this.setToolBar(toolbar);
 
         LinkGrabberController.getInstance().addListener(new LinkGrabberControllerListener() {
             public void onLinkGrabberControllerEvent(LinkGrabberControllerEvent event) {

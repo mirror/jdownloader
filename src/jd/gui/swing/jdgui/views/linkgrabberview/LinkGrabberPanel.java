@@ -143,7 +143,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         toolbar.setHorizontalAlign(ViewToolbar.EAST);
         // toolbar.setBorder(JDBorderFactory.createInsideShadowBorder(3, 0, 0,
         // 0));
-        toolbar.setList(new String[] { "action.linkgrabber.clearlist", "action.linkgrabber.addall" });
+        toolbar.setList(new String[] { "action.linkgrabber.addall" , "action.linkgrabber.clearlist","action.addurl", "action.load" });
         this.add(toolbar, "gapbottom 3,DOCK SOUTH");
     }
 
@@ -793,20 +793,21 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
 
         @Override
         public void setDefaults(int i, AbstractButton ab) {
-            if (i == 0) {
-                ab.setContentAreaFilled(false);
-                ab.setText("");
-            } else {
+//            if (i == 0) {
+//                ab.setContentAreaFilled(false);
+//                ab.setText("");
+//            } else {
                 confirmButton = ab;
-            }
+//            }
         }
+  
 
         @Override
         public String getButtonConstraint(int i, ToolBarAction action) {
-            if (i == 0) {
-                return BUTTON_CONSTRAINTS + ", alignx left, width 20!";
-            } else {
-                return BUTTON_CONSTRAINTS + ", alignx right";
+            if (i <2) {
+                return BUTTON_CONSTRAINTS + ", dock west, sizegroup toolbar";
+           } else {
+                return BUTTON_CONSTRAINTS + ", dock east, sizegroup toolbar";
             }
         }
 
