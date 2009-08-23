@@ -54,6 +54,7 @@ import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.event.MessageEvent;
 import jd.event.MessageListener;
+import jd.gui.UserIF;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
@@ -137,8 +138,11 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
 
     private JButton warning;
 
-    public LFEGui(SubConfiguration cfg) {
+    private LangFileEditor plugin;
+
+    public LFEGui(SubConfiguration cfg, LangFileEditor plg) {
         subConfig = cfg;
+        plugin = plg;
         this.setName(JDL.L(LOCALE_PREFIX + "title", "Language Editor"));
         dirLanguages = JDUtilities.getResourceFile("tmp/lfe/lng/");
         dirWorkingCopy = JDUtilities.getResourceFile("tmp/lfe/src/");
@@ -199,9 +203,11 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
         updater = new Thread(new Runnable() {
 
             public void run() {
+                boolean cfgRequested = false;
                 while (true) {
-                    while (subConfig.getStringProperty(PROPERTY_SVN_ACCESS_USER) == null || subConfig.getStringProperty(PROPERTY_SVN_ACCESS_USER).length() == 0) {
-
+                    while (subConfig.getStringProperty(PROPERTY_SVN_ACCESS_USER) == null || subConfig.getStringProperty(PROPERTY_SVN_ACCESS_USER).trim().length() == 0) {
+                        if (!cfgRequested) SwingGui.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL, plugin.getConfig());
+                        cfgRequested = true;
                         try {
                             new GuiRunnable<Object>() {
 
@@ -224,8 +230,8 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
                         break;
                     } else {
                         UserIO.getInstance().requestMessageDialog(JDL.L("jd.plugins.optional.langfileeditor.LangFileEditor.badlogins", "Logins incorrect.\r\n PLease enter correct logins."));
-                        subConfig.setProperty(PROPERTY_SVN_ACCESS_USER,null);
-                        subConfig.setProperty(PROPERTY_SVN_ACCESS_PASS,null); 
+                        subConfig.setProperty(PROPERTY_SVN_ACCESS_USER, null);
+                        subConfig.setProperty(PROPERTY_SVN_ACCESS_PASS, null);
                         subConfig.save();
                     }
                 }

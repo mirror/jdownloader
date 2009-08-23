@@ -177,7 +177,13 @@ public class LinkGrabberFilePackageInfo extends JDCollapser implements ActionLis
     }
 
     public void focusLost(FocusEvent e) {
-        this.actionPerformed(null);
+        if(e.getSource()==txtName)fp.setName(txtName.getText());
+        if(e.getSource()==brwSaveTo) fp.setDownloadDirectory(brwSaveTo.getText());
+        if(e.getSource()==txtComment) fp.setComment(txtComment.getText());
+        if(e.getSource()==txtPassword)fp.setPassword(txtPassword.getText());
+        if(e.getSource()==chbExtract) fp.setExtractAfterDownload(chbExtract.isSelected());
+        if(e.getSource()==chbUseSubdirectory)fp.setUseSubDir(chbUseSubdirectory.isSelected());
+        DownloadController.getInstance().fireDownloadLinkUpdate(fp.get(0));
     }
 
     @Override

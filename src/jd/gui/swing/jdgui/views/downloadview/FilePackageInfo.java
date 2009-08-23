@@ -18,6 +18,8 @@ package jd.gui.swing.jdgui.views.downloadview;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
@@ -42,7 +44,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
-public class FilePackageInfo extends JDCollapser implements ActionListener {
+public class FilePackageInfo extends JDCollapser implements ActionListener, FocusListener {
 
     private static final long serialVersionUID = 5410296068527460629L;
 
@@ -65,8 +67,6 @@ public class FilePackageInfo extends JDCollapser implements ActionListener {
     private JTabbedPane tabbedPane;
 
     private FilePackage fp = null;
-
-    private boolean notifyUpdate = true;
 
     private boolean hidden = false;
 
@@ -112,21 +112,21 @@ public class FilePackageInfo extends JDCollapser implements ActionListener {
     }
 
     public void update() {
-        if (fp == null || notifyUpdate == false) return;
+        if (fp == null) return;
         /*
          * wichtig: die set funktionen lösen eine action aus , welche ansonsten
          * wiederum ein updatevent aufrufen würden
          */
-        notifyUpdate = false;
-        if (!txtSize.isFocusOwner()) txtSize.setText(Formatter.formatReadable(fp.getTotalEstimatedPackageSize()));
-        if (!txtName.isFocusOwner()) txtName.setText(fp.getName());
-        if (!txtComment.isFocusOwner()) txtComment.setText(fp.getComment());
-        if (!txtPassword.isFocusOwner()) txtPassword.setText(fp.getPassword());
-        if (!brwSaveTo.isFocusOwner()) brwSaveTo.setText(fp.getDownloadDirectory());
-        if (!chbExtract.isFocusOwner()) chbExtract.setSelected(fp.isExtractAfterDownload());
+
+        txtSize.setText(Formatter.formatReadable(fp.getTotalEstimatedPackageSize()));
+        txtName.setText(fp.getName());
+        txtComment.setText(fp.getComment());
+        txtPassword.setText(fp.getPassword());
+        brwSaveTo.setText(fp.getDownloadDirectory());
+        chbExtract.setSelected(fp.isExtractAfterDownload());
         /* neuzeichnen */
         revalidate();
-        notifyUpdate = true;
+
     }
 
     public FilePackage getPackage() {
@@ -144,24 +144,24 @@ public class FilePackageInfo extends JDCollapser implements ActionListener {
     private JPanel createFilePackageInfo() {
         txtName = new JDTextField(true);
         txtName.addActionListener(this);
-
+        txtName.addFocusListener(this);
         brwSaveTo = new ComboBrowseFile("DownloadSaveTo");
         brwSaveTo.setEditable(true);
         brwSaveTo.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
         brwSaveTo.setText(JDUtilities.getConfiguration().getDefaultDownloadDirectory());
         brwSaveTo.addActionListener(this);
-
+        brwSaveTo.addFocusListener(this);
         txtPassword = new JDTextField(true);
         txtPassword.addActionListener(this);
-
+        txtPassword.addFocusListener(this);
         txtComment = new JDTextField(true);
         txtComment.addActionListener(this);
-
+        txtComment.addFocusListener(this);
         chbExtract = new JCheckBox(JDL.L("gui.fileinfopanel.packagetab.chb.extractAfterdownload", "Extract"));
         chbExtract.setSelected(true);
         chbExtract.setHorizontalTextPosition(SwingConstants.LEFT);
         chbExtract.addActionListener(this);
-
+        chbExtract.addFocusListener(this);
         chbUseSubdirectory = new JCheckBox(JDL.L("gui.linkgrabber.packagetab.chb.useSubdirectory", "Use Subdirectory"));
         chbUseSubdirectory.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false));
         chbUseSubdirectory.setHorizontalTextPosition(SwingConstants.LEFT);
@@ -229,7 +229,7 @@ public class FilePackageInfo extends JDCollapser implements ActionListener {
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (fp == null || !notifyUpdate) return;
+        if (fp == null) return;
         if (e.getSource() == txtName) {
             fp.setName(txtName.getText());
         } else if (e.getSource() == brwSaveTo) {
@@ -324,13 +324,13 @@ public class FilePackageInfo extends JDCollapser implements ActionListener {
     }
 
     public void onHideSave() {
-        notifyUpdate = false;
+
         PasswordListController.getInstance().addPassword(txtPassword.getText());
         fp.setName(txtName.getText());
         fp.setComment(txtComment.getText());
         fp.setPassword(txtPassword.getText());
         fp.setDownloadDirectory(brwSaveTo.getText());
-        notifyUpdate = true;
+
     }
 
     // @Override
@@ -386,6 +386,27 @@ public class FilePackageInfo extends JDCollapser implements ActionListener {
     public void onClosed() {
         DownloadView.getInstance().setInfoPanel(null);
 
+    }
+
+    public void focusGained(FocusEvent e) {
+        // TODO Auto-generated method stub
+
+    }
+
+    public void focusLost(FocusEvent e) {
+        if (fp == null) return;
+        if (e.getSource() == txtName) {
+            fp.setName(txtName.getText());
+        } else if (e.getSource() == brwSaveTo) {
+            fp.setDownloadDirectory(brwSaveTo.getText());
+        } else if (e.getSource() == txtComment) {
+            fp.setComment(txtComment.getText());
+        } else if (e.getSource() == txtPassword) {
+            fp.setPassword(txtPassword.getText());
+        } else if (e.getSource() == chbExtract) {
+            fp.setExtractAfterDownload(chbExtract.isSelected());
+        }
+        DownloadController.getInstance().fireDownloadLinkUpdate(fp.get(0));
     }
 
 }
