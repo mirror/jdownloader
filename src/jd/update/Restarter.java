@@ -96,7 +96,7 @@ public class Restarter {
                 } else {
 
                     Executer exec = new Executer("java");
-                    exec.addParameters(new String[] { "-jar", "-Xmx512m", "JDownloader.jar", "-rtfu2" });
+                    exec.addParameters(new String[] { "-jar", "-Xmx512m", "JDownloader.jar", "-rfu" });
                     exec.setRunin(new File(".").getAbsolutePath());
                     exec.setWaitTimeout(0);
                     exec.start();

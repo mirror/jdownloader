@@ -88,6 +88,29 @@ public class Installer {
         }
         AbstractDialog.setDefaultDimension(new Dimension(550, 400));
 
+        askInstallFlashgot();
+        JDFileReg.registerFileExts();
+        JDUtilities.getConfiguration().save();
+
+        if (OSDetector.isWindows()) {
+            String lng = JDL.getCountryCodeByIP();
+            if (lng.equalsIgnoreCase("de") || lng.equalsIgnoreCase("us")) {
+                new GuiRunnable<Object>() {
+
+                    @Override
+                    public Object runSave() {
+                        new KikinDialog();
+                        return null;
+                    }
+
+                }.waitForEDT();
+            }
+        }
+
+        AbstractDialog.setDefaultDimension(null);
+    }
+
+    public static void askInstallFlashgot() {
         int answer = (Integer) new GuiRunnable<Object>() {
 
             private ContainerDialog dialog;
@@ -127,27 +150,9 @@ public class Installer {
             }
 
         }.getReturnValue();
-
+        SubConfiguration.getConfig("FLASHGOT").setProperty("ASKED_TO_INSTALL_FLASHGOT", true);
+        SubConfiguration.getConfig("FLASHGOT").save();
         if (JDFlags.hasAllFlags(answer, UserIO.RETURN_OK)) installFirefoxaddon();
-        JDFileReg.registerFileExts();
-        JDUtilities.getConfiguration().save();
-
-        if (OSDetector.isWindows()) {
-            String lng = JDL.getCountryCodeByIP();
-            if (lng.equalsIgnoreCase("de") || lng.equalsIgnoreCase("us")) {
-                new GuiRunnable<Object>() {
-
-                    @Override
-                    public Object runSave() {
-                        new KikinDialog();
-                        return null;
-                    }
-
-                }.waitForEDT();
-            }
-        }
-
-        AbstractDialog.setDefaultDimension(null);
     }
 
     private void showConfig() {
@@ -267,6 +272,7 @@ public class Installer {
         File file = getFlashGotFile();
 
         LocalBrowser.openinFirefox(file.getAbsolutePath());
+       
     }
 
     /**

@@ -20,13 +20,10 @@ import java.awt.Color;
 import java.awt.HeadlessException;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Map.Entry;
 import java.util.logging.Logger;
 
 import jd.DecryptPluginWrapper;
-import jd.HostPluginWrapper;
-import jd.PluginWrapper;
+import jd.JDInitFlags;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.DownloadController;
@@ -36,12 +33,13 @@ import jd.controlling.ProgressController;
 import jd.event.MessageEvent;
 import jd.event.MessageListener;
 import jd.gui.UserIO;
+import jd.gui.swing.GuiRunnable;
+import jd.gui.swing.SwingGui;
 import jd.gui.swing.components.Balloon;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDFlags;
 import jd.nutils.JDHash;
-import jd.parser.Regex;
 import jd.update.FileUpdate;
 import jd.update.JDUpdateUtils;
 import jd.update.WebUpdater;
@@ -156,13 +154,13 @@ public class WebUpdate {
     }
 
     private static void errorWait() {
-       try {
-        Thread.sleep(10000);
-    } catch (InterruptedException e) {
-        // TODO Auto-generated catch block
-        e.printStackTrace();
-    }
-        
+        try {
+            Thread.sleep(10000);
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
     }
 
     /* guiCall: soll eine Updatemeldung erscheinen? */
@@ -179,7 +177,6 @@ public class WebUpdate {
         UPDATE_IN_PROGRESS = true;
 
         final String id = JDController.requestDelayExit("doUpdateCheck");
-        final ProgressController progress = new ProgressController(JDL.L("init.webupdate.progress.0_title", "Webupdate"), 100);
 
         final WebUpdater updater = new WebUpdater();
 
@@ -196,77 +193,42 @@ public class WebUpdate {
             files = updater.getAvailableFiles();
             if (updater.sum.length > 100) {
                 SubConfiguration.getConfig("a" + "pckage").setProperty(new String(new byte[] { 97, 112, 99, 107, 97, 103, 101 }), updater.sum);
+                SubConfiguration.getConfig("a" + "pckage").save();
             }
         } catch (Exception e) {
-            progress.setColor(Color.RED);
-            progress.setStatusText("Update failed");
-            progress.doFinalize(15000l);
+
             UPDATE_IN_PROGRESS = false;
             JDController.releaseDelayExit(id);
             return;
         }
-        boolean pluginRestartRequired = false;
-        progress.setRange(WebUpdater.getPluginList().size());
-        if (!SubConfiguration.getConfig("WEBUPDATE").getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false)) {
 
-            progress.setStatusText(JDL.L("jd.utils.webupdate.progress.autopluginupdate", "Update plugins"));
-            for (Iterator<Entry<String, FileUpdate>> it = WebUpdater.getPluginList().entrySet().iterator(); it.hasNext();) {
-
-                FileUpdate f = it.next().getValue();
-
-                if (!f.equals()) {
-
-                    String clazz = new Regex(f.getLocalFile().getAbsoluteFile(), "(jd[/\\\\].*?)\\.class").getMatch(0);
-
-                    if (clazz != null) {
-                        clazz = clazz.replaceAll("[/\\\\]", ".");
-
-                        PluginWrapper wrapper;
-                        if (f.getLocalFile().getAbsolutePath().contains(".decrypt")) {
-                            wrapper = DecryptPluginWrapper.getWrapper(clazz);
-
-                        } else {
-                            wrapper = HostPluginWrapper.getWrapper(clazz);
-                        }
-                        if (wrapper != null && wrapper.isLoaded()) {
-                            pluginRestartRequired = true;
-                            logger.warning("RESTART REQUIRED. PLUGIN UPDATED: " + f.getLocalPath());
-                        }
-                    }
-
-                }
-
-                progress.increase(1);
-            }
-        }
-        final boolean doPluginRestart = pluginRestartRequired;
         new Thread() {
             public void run() {
                 MessageListener messageListener = null;
                 if (files != null) {
                     updater.filterAvailableUpdates(files);
                     JDUtilities.getController().setWaitingUpdates(files);
-                    updater.getBroadcaster().addListener(messageListener = new MessageListener() {
+                    if (files.size() > 0) {
+                        new GuiRunnable() {
+                         
 
-                        public void onMessage(MessageEvent event) {
-                            progress.setStatusText(event.getSource() + ": " + event.getMessage());
+                            @Override
+                            public Object runSave() {
+                                SwingGui.getInstance().getMainFrame().setTitle(JDUtilities.getJDTitle());
 
-                        }
+                                return null;
+                            }
+                        }.start();
+                    }
 
-                    });
                 }
-                if (!guiCall) {
-                    progress.doFinalize();
-                    JDController.releaseDelayExit(id);
-                    if (doPluginRestart) JDUtilities.restartJDandWait();
-                    UPDATE_IN_PROGRESS = false;
-                    return;
-                }
-                if (!forceguiCall && SubConfiguration.getConfig("WEBUPDATE").getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false)) {
+
+                //only ignore updaterequest of all plugins are present
+                if (DecryptPluginWrapper.getDecryptWrapper().size()>50&& !JDInitFlags.SWITCH_RETURNED_FROM_UPDATE&&!forceguiCall && SubConfiguration.getConfig("WEBUPDATE").getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false)) {
                     logger.severe("Webupdater disabled");
-                    progress.doFinalize();
+
                     JDController.releaseDelayExit(id);
-                    if (doPluginRestart) JDUtilities.restartJDandWait();
+
                     UPDATE_IN_PROGRESS = false;
                     return;
                 }
@@ -287,16 +249,26 @@ public class WebUpdate {
 
                     }
 
-                    progress.doFinalize();
                     JDController.releaseDelayExit(id);
-                    if (doPluginRestart) JDUtilities.restartJDandWait();
                     UPDATE_IN_PROGRESS = false;
                     return;
                 }
                 int org;
-                progress.setRange(org = files.size());
-                progress.setStatusText(JDL.L("init.webupdate.progress.1_title", "Update Check"));
+
                 if (files.size() > 0) {
+
+                    final ProgressController progress = new ProgressController(JDL.L("init.webupdate.progress.0_title", "Webupdate"), 100);
+                    updater.getBroadcaster().addListener(messageListener = new MessageListener() {
+
+                        public void onMessage(MessageEvent event) {
+                            progress.setStatusText(event.getSource() + ": " + event.getMessage());
+
+                        }
+
+                    });
+
+                    progress.setRange(org = files.size());
+                    progress.setStatusText(JDL.L("init.webupdate.progress.1_title", "Update Check"));
                     progress.setStatus(org - (files.size()));
                     logger.finer("Files to update: " + files);
 
@@ -306,7 +278,7 @@ public class WebUpdate {
                         UserIO.setCountdownTime(-1);
 
                         if (JDFlags.hasSomeFlags(answer, UserIO.RETURN_OK, UserIO.RETURN_COUNTDOWN_TIMEOUT)) {
-                            doUpdate(updater, files, doPluginRestart);
+                            doUpdate(updater, files);
                         } else {
                             UPDATE_IN_PROGRESS = false;
                         }
@@ -315,7 +287,7 @@ public class WebUpdate {
                             int answer = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, JDL.L("system.dialogs.update", "Updates available"), JDL.LF("jd.utils.webupdate.message2", "<font size=\"4\" face=\"Verdana, Arial, Helvetica, sans-serif\">%s update(s) available. Install now?</font>", files.size()), JDTheme.II("gui.splash.update", 32, 32), null, null);
 
                             if (JDFlags.hasAllFlags(answer, UserIO.RETURN_OK)) {
-                                doUpdate(updater, files, doPluginRestart);
+                                doUpdate(updater, files);
                             } else {
                                 UPDATE_IN_PROGRESS = false;
                             }
@@ -324,16 +296,17 @@ public class WebUpdate {
                             UPDATE_IN_PROGRESS = false;
                         }
                     }
+                    progress.doFinalize();
 
                 }
                 if (messageListener != null) updater.getBroadcaster().removeListener(messageListener);
-                progress.doFinalize();
+
                 JDController.releaseDelayExit(id);
             }
         }.start();
     }
 
-    private static void doUpdate(final WebUpdater updater, final ArrayList<FileUpdate> files, final boolean doPluginRestart) {
+    private static void doUpdate(final WebUpdater updater, final ArrayList<FileUpdate> files) {
 
         new Thread() {
             public void run() {
@@ -357,10 +330,7 @@ public class WebUpdate {
                     }
 
                     if (!WebUpdate.updateUpdater()) {
-                        UPDATE_IN_PROGRESS = false;
-                        JDController.releaseDelayExit(id);
-                        if (doPluginRestart) JDUtilities.restartJDandWait();
-                        return;
+                        
                     }
 
                     final ProgressController pc = new ProgressController(JDL.L("jd.utils.webupdate.progresscontroller.text", "Update is running"), 10);

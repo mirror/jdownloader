@@ -29,6 +29,7 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
 import jd.config.MenuAction;
+import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
 import jd.controlling.JDLogger;
 import jd.controlling.LinkGrabberController;
@@ -86,6 +87,11 @@ public class JDExternInterface extends PluginOptional {
     public boolean initAddon() {
         logger.info("Extern Interface API initialized on port 9666");
         initConfigEntries();
+
+        if (!SubConfiguration.getConfig("FLASHGOT").getBooleanProperty("ASKED_TO_INSTALL_FLASHGOT", false)) {
+
+            Installer.askInstallFlashgot();
+        }
         try {
             server = new HttpServer(this.getPluginConfig().getIntegerProperty("INTERFACE_PORT", 9666), handler);
             server.start();

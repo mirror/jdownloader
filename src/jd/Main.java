@@ -157,7 +157,7 @@ public class Main {
             } else if (p.equalsIgnoreCase("-trdebug")) {
                 JDL.DEBUG = true;
                 LOGGER.info("Translation DEBUG Modus aktiv");
-            } else if (p.equalsIgnoreCase("-rfb")) {
+            } else if (p.equalsIgnoreCase("-rfu")) {
                 JDInitFlags.SWITCH_RETURNED_FROM_UPDATE = true;
             }
         }
@@ -498,7 +498,18 @@ public class Main {
          */
         LOGGER.info("update start");
 
-        new WebUpdate().doUpdateCheck(true, false);
+     new Thread(){
+         public void run(){
+             try {
+                Thread.sleep(5000);
+        
+             new WebUpdate().doUpdateCheck(true, false);
+             } catch (InterruptedException e) {
+                 // TODO Auto-generated catch block
+                 e.printStackTrace();
+             }
+         }
+     }.start();
 
         try {
             loadDynamics();

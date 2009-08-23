@@ -121,10 +121,12 @@ public class ConfigPanelAddons extends ConfigPanel implements ActionListener, Mo
                 configuration.save();
                 if ((Boolean) value) {
                     plgWrapper.getPlugin().initAddon();
+                    if (plgWrapper.getAnnotation().hasGui()) {
+                        int ret = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN, plgWrapper.getHost(), JDL.LF(JDL_PREFIX + "askafterinit", "Show %s now?\r\nYou may open it later using Mainmenu->Addon", plgWrapper.getHost()));
 
-                    int ret = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN, JDL.LF(JDL_PREFIX + "askafterinit", "Show %s now?\r\nYou may open it later using Mainmenu->Addon", plgWrapper.getHost()));
-                    if (UserIO.isOK(ret)) {
-                        plgWrapper.getPlugin().setGuiEnable(true);
+                        if (UserIO.isOK(ret)) {
+                            plgWrapper.getPlugin().setGuiEnable(true);
+                        }
                     }
                 } else {
                     plgWrapper.getPlugin().setGuiEnable(false);
@@ -137,7 +139,6 @@ public class ConfigPanelAddons extends ConfigPanel implements ActionListener, Mo
                 // SwingGui.getInstance().getAddonPanel().initGUI();
             }
         }
-
     }
 
     private static final long serialVersionUID = 4145243293360008779L;

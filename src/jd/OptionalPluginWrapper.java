@@ -75,6 +75,10 @@ public class OptionalPluginWrapper extends PluginWrapper {
 
     }
 
+    public OptionalPlugin getAnnotation() {
+        return annotation;
+    }
+
     public double getJavaVersion() {
         return version;
     }

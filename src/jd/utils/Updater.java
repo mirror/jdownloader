@@ -148,7 +148,7 @@ public class Updater {
     private String createBranch(String id) throws IOException {
         this.branch = id;
 
-        String ret = new Browser().getPage(UPDATE_SERVER + "createBranch.php?pass=" + getCFG("updateHashPW") + "&parent=" + latestBranch + "&branch=" + id);
+        String ret = new Browser().getPage(UPDATE_SERVER + "createBranch.php?pass=" + getCFG("updateHashPW2") + "&parent=" + latestBranch + "&branch=" + id);
 
         System.out.println(ret);
         return id;
@@ -245,6 +245,8 @@ public class Updater {
 
 
     private void pack(File file) {
+        new File(file, file.getName() + ".extract").delete();
+        new File(file, file.getName() + ".extract").deleteOnExit();
         Zip zip = new Zip(file.listFiles(), new File(file, file.getName() + ".extract"));
         zip.setDeleteAfterPack(true);
         zip.setExcludeFilter(Pattern.compile(".+\\.extract", Pattern.CASE_INSENSITIVE));
@@ -262,9 +264,9 @@ public class Updater {
         Browser br = new Browser();
         br.forceDebug(true);
 
-        map.put("pass", getCFG("updateHashPW"));
+        map.put("pass", getCFG("updateHashPW2"));
 
-        br.postPage(path + "?pass=" + getCFG("updateHashPW") + "&branch=" + branch, map);
+        br.postPage(path + "?pass=" + getCFG("updateHashPW2") + "&branch=" + branch, map);
         System.out.println(br + "");
         // map = map;
         if (!br.containsHTML("<b>fail</b>") && !br.containsHTML("<b>Warning</b>") && !br.containsHTML("<b>Error</b>")) {
@@ -294,9 +296,9 @@ public class Updater {
             Browser br = new Browser();
             br.forceDebug(true);
 
-            map.put("pass", getCFG("updateHashPW"));
+            map.put("pass", getCFG("updateHashPW2"));
 
-            br.postPage("http://update1.jdownloader.org/checkHashes.php?pass=" + getCFG("updateHashPW") + "&branch=" + branch, map);
+            br.postPage("http://update1.jdownloader.org/checkHashes.php?pass=" + getCFG("updateHashPW2") + "&branch=" + branch, map);
             System.out.println(br + "");
             if (br.containsHTML("success") && !br.containsHTML("<b>Warning</b>") && !br.containsHTML("<b>Error</b>")) break;
 
@@ -311,13 +313,13 @@ public class Updater {
             Browser br = new Browser();
             br.forceDebug(true);
 
-            System.out.println(br.postPage("http://update1.jdownloader.org/unlock.php?pass=" + getCFG("updateHashPW") + "&branch=" + branch, "server=" + SERVERLIST.toString().replaceAll("\\%BRANCH\\%", branch)));
-            map.put("pass", getCFG("updateHashPW"));
+            System.out.println(br.postPage("http://update1.jdownloader.org/unlock.php?pass=" + getCFG("updateHashPW2") + "&branch=" + branch, "server=" + SERVERLIST.toString().replaceAll("\\%BRANCH\\%", branch)));
+            map.put("pass", getCFG("updateHashPW2"));
             // map = map;
             // String addonlist = createAddonList();
             // map.put("addonlist", Encoding.urlEncode(addonlist));
             map.put("addonlist", "");
-            br.postPage("http://update1.jdownloader.org/updateHashList.php?pass=" + getCFG("updateHashPW") + "&branch=" + branch, map);
+            br.postPage("http://update1.jdownloader.org/updateHashList.php?pass=" + getCFG("updateHashPW2") + "&branch=" + branch, map);
             System.out.println(br + "");
             // br = br;
             if (br.containsHTML("success") && !br.containsHTML("<b>Warning</b>") && !br.containsHTML("<b>Error</b>")) break;
