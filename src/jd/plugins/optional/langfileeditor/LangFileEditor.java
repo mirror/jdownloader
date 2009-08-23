@@ -53,7 +53,7 @@ public class LangFileEditor extends PluginOptional {
 
     public LangFileEditor(PluginWrapper wrapper) {
         super(wrapper);
-        lfe = new SingletonPanel(LFEGui.class, this.getPluginConfig());
+        lfe = new SingletonPanel(LFEGui.class, this.getPluginConfig(),this);
         initConfigEntries();
     }
 
@@ -88,7 +88,7 @@ public class LangFileEditor extends PluginOptional {
             public void valueChanged(Object newValue) {
                 super.valueChanged(newValue);
                 user = newValue.toString();
-
+               
             }
         });
 
@@ -101,7 +101,7 @@ public class LangFileEditor extends PluginOptional {
             public void valueChanged(Object newValue) {
                 super.valueChanged(newValue);
                 pass = newValue.toString();
-
+             
             }
         });
 
@@ -112,13 +112,18 @@ public class LangFileEditor extends PluginOptional {
 
                 if (ret) {
                     UserIO.getInstance().requestMessageDialog(JDL.L("jd.plugins.optional.langfileeditor.LangFileEditor.initConfigEntries.checklogins.succeeded", "Successfull!"));
+                    getPluginConfig().setProperty( LFEGui.PROPERTY_SVN_ACCESS_USER, user);
+                 
+                    getPluginConfig().setProperty( LFEGui.PROPERTY_SVN_ACCESS_PASS, pass);
+                    getPluginConfig().save();
+                
                 } else {
                     UserIO.getInstance().requestMessageDialog(JDL.L("jd.plugins.optional.langfileeditor.LangFileEditor.initConfigEntries.checklogins.failed", "Username or password wrong!"));
 
                 }
 
             }
-        }, JDL.L("jd.plugins.optional.langfileeditor.LangFileEditor.testlogins", "Test Logins"), JDL.L("jd.plugins.optional.langfileeditor.LangFileEditor.testloginsmessage", "Test if the logins are correct"), null));
+        }, JDL.L("jd.plugins.optional.langfileeditor.LangFileEditor.testlogins", "Test & Save Logins"), JDL.L("jd.plugins.optional.langfileeditor.LangFileEditor.testloginsmessage", "Test if the logins are correct"), null));
 
     }
 
