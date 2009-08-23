@@ -1,7 +1,7 @@
 $translater$ = Tamer Ray Frost
 $version$ = $Revision$
 action.downloadview.movedown.tooltip = Bir alt satıra yerleştir
-action.downloadview.movetobottom.tooltip = İndirme listesinin altına yerleştir
+action.downloadview.movetobottom.tooltip = İndirme listesinin sonuna yerleştir
 action.downloadview.movetotop.tooltip = İndirme listesinin başına yerleştir
 action.downloadview.moveup.tooltip = Bir üst satıra yerleştir
 action.premiumview.addacc.tooltip = Yeni hesap ekle
