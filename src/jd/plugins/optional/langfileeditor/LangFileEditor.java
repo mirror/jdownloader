@@ -18,6 +18,7 @@ package jd.plugins.optional.langfileeditor;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.net.URL;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
@@ -27,6 +28,7 @@ import jd.config.MenuAction;
 import jd.gui.UserIO;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.SingletonPanel;
+import jd.nutils.nativeintegration.LocalBrowser;
 import jd.nutils.svn.Subversion;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
@@ -57,11 +59,26 @@ public class LangFileEditor extends PluginOptional {
 
     private void initConfigEntries() {
         ConfigEntry cfg;
-        ConfigEntry cond;
+  
+
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
+
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    LocalBrowser.openURL(null, new URL("http://jdownloader.org/knowledge/wiki/development/translation/translate-jdownloader"));
+
+                } catch (Exception e1) {
+                    // TODO Auto-generated catch block
+                    e1.printStackTrace();
+
+                    UserIO.getInstance().requestMessageDialog(JDL.L("jd.plugins.optional.langfileeditor.LangFileEditor.btn.readmore", "more..."), "http://jdownloader.org/knowledge/wiki/development/translation/translate-jdownloader");
+                }
+
+            }
+        }, JDL.L("jd.plugins.optional.langfileeditor.LangFileEditor.btn.readmore", "more..."), JDL.L("jd.plugins.optional.langfileeditor.LangFileEditor.initConfigEntries.message", "To use this addon, you need a JD-SVN Account"), null));
 
         user = getPluginConfig().getStringProperty(LFEGui.PROPERTY_SVN_ACCESS_USER);
         pass = getPluginConfig().getStringProperty(LFEGui.PROPERTY_SVN_ACCESS_PASS);
-        config.addEntry(cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), LFEGui.PROPERTY_SVN_ACCESS_ANONYMOUS, "Do not upload (SVN) changes on save").setDefaultValue(true));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), LFEGui.PROPERTY_SVN_ACCESS_USER, "Upload (SVN) Username") {
             /**
              * 
@@ -75,7 +92,6 @@ public class LangFileEditor extends PluginOptional {
             }
         });
 
-        cfg.setEnabledCondidtion(cond, "==", false);
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, getPluginConfig(), LFEGui.PROPERTY_SVN_ACCESS_PASS, "Upload (SVN) Password") {
             /**
              * 
@@ -88,7 +104,7 @@ public class LangFileEditor extends PluginOptional {
 
             }
         });
-        cfg.setEnabledCondidtion(cond, "==", false);
+
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
@@ -103,7 +119,7 @@ public class LangFileEditor extends PluginOptional {
 
             }
         }, JDL.L("jd.plugins.optional.langfileeditor.LangFileEditor.testlogins", "Test Logins"), JDL.L("jd.plugins.optional.langfileeditor.LangFileEditor.testloginsmessage", "Test if the logins are correct"), null));
-        cfg.setEnabledCondidtion(cond, "==", false);
+
     }
 
     @Override

@@ -31,12 +31,14 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
+import javax.swing.JButton;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
@@ -60,6 +62,7 @@ import jd.gui.swing.components.pieapi.PieChartAPI;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.nutils.JDFlags;
 import jd.nutils.io.JDIO;
+import jd.nutils.nativeintegration.LocalBrowser;
 import jd.nutils.svn.ResolveHandler;
 import jd.nutils.svn.Subversion;
 import jd.parser.Regex;
@@ -88,7 +91,6 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
 
     private final SubConfiguration subConfig;
 
-    public final static String PROPERTY_SVN_ACCESS_ANONYMOUS = "PROPERTY_SVN_CHECKOUT_ANONYMOUS";
     public final static String PROPERTY_SVN_ACCESS_USER = "PROPERTY_SVN_CHECKOUT_USER";
     public final static String PROPERTY_SVN_ACCESS_PASS = "PROPERTY_SVN_CHECKOUT_PASS";
 
@@ -129,6 +131,12 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
 
     private JMenuItem mnuKeymode;
 
+    private Thread updater;
+
+    private JMenuBar menubar;
+
+    private JButton warning;
+
     public LFEGui(SubConfiguration cfg) {
         subConfig = cfg;
         this.setName(JDL.L(LOCALE_PREFIX + "title", "Language Editor"));
@@ -166,14 +174,70 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
         keyChart.addEntity(entMissing = new ChartAPIEntity(JDL.L(LOCALE_PREFIX + "keychart.missing", "Missing"), 0, colorMissing));
         keyChart.addEntity(entOld = new ChartAPIEntity(JDL.L(LOCALE_PREFIX + "keychart.old", "Old"), 0, colorOld));
 
-        this.setLayout(new MigLayout("wrap 3", "[grow, fill]", "[grow, fill][]"));
+        this.setLayout(new MigLayout("wrap 3", "[grow, fill]", "[][grow, fill][]"));
+        warning = new JButton(JDL.L(LOCALE_PREFIX + "account.warning", "SVN Account missing. Click here to read more."));
+        warning.setVisible(false);
+        warning.addActionListener(new ActionListener() {
 
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    LocalBrowser.openURL(null, new URL("http://jdownloader.org/knowledge/wiki/development/translation/translate-jdownloader"));
+
+                } catch (Exception e1) {
+                    // TODO Auto-generated catch block
+                    e1.printStackTrace();
+
+                    UserIO.getInstance().requestMessageDialog(JDL.L("jd.plugins.optional.langfileeditor.LangFileEditor.btn.readmore", "more..."), "http://jdownloader.org/knowledge/wiki/development/translation/translate-jdownloader");
+                }
+
+            }
+        });
+        this.add(warning, "grow, spanx,hidemode 2");
         this.add(new JScrollPane(table), "grow, spanx");
         this.add(keyChart, "w 225!, h 50!");
 
-        new Thread(new Runnable() {
+        updater = new Thread(new Runnable() {
 
             public void run() {
+                while (true) {
+                    while (subConfig.getStringProperty(PROPERTY_SVN_ACCESS_USER) == null || subConfig.getStringProperty(PROPERTY_SVN_ACCESS_USER).length() == 0) {
+
+                        try {
+                            new GuiRunnable<Object>() {
+
+                                @Override
+                                public Object runSave() {
+                                    warning.setVisible(true);
+                                    mnuFile.setEnabled(false);
+
+                                    return null;
+                                }
+
+                            }.start();
+                            Thread.sleep(500);
+                        } catch (InterruptedException e) {
+                            return;
+                        }
+                    }
+
+                    if (Subversion.checkLogin(SOURCE_SVN, subConfig.getStringProperty(PROPERTY_SVN_ACCESS_USER), subConfig.getStringProperty(PROPERTY_SVN_ACCESS_PASS))) {
+                        break;
+                    } else {
+                        UserIO.getInstance().requestMessageDialog(JDL.L("jd.plugins.optional.langfileeditor.LangFileEditor.badlogins", "Logins incorrect.\r\n PLease enter correct logins."));
+                        subConfig.setProperty(PROPERTY_SVN_ACCESS_USER,null);
+                        subConfig.setProperty(PROPERTY_SVN_ACCESS_PASS,null); 
+                        subConfig.save();
+                    }
+                }
+                new GuiRunnable<Object>() {
+
+                    @Override
+                    public Object runSave() {
+                        warning.setVisible(false);
+                        return null;
+                    }
+
+                }.start();
                 LFEGui.this.setEnabled(false);
 
                 updateSVN(false);
@@ -181,9 +245,14 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
                 getSourceEntries();
                 populateLngMenu();
                 LFEGui.this.setEnabled(true);
+                if (menubar != null) menubar.setEnabled(true);
+
+                mnuFile.setEnabled(true);
+
             }
 
-        }).start();
+        });
+        updater.start();
     }
 
     private void updateKeyChart() {
@@ -396,13 +465,10 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
         try {
             Subversion svn = null;
             Subversion svnLanguageDir;
-            if (subConfig.getBooleanProperty(PROPERTY_SVN_ACCESS_ANONYMOUS, true)) {
-                svn = new Subversion(SOURCE_SVN);
-                svnLanguageDir = new Subversion(LANGUAGE_SVN);
-            } else {
-                svn = new Subversion(SOURCE_SVN, subConfig.getStringProperty(PROPERTY_SVN_ACCESS_USER), subConfig.getStringProperty(PROPERTY_SVN_ACCESS_PASS));
-                svnLanguageDir = new Subversion(LANGUAGE_SVN, subConfig.getStringProperty(PROPERTY_SVN_ACCESS_USER), subConfig.getStringProperty(PROPERTY_SVN_ACCESS_PASS));
-            }
+
+            svn = new Subversion(SOURCE_SVN, subConfig.getStringProperty(PROPERTY_SVN_ACCESS_USER), subConfig.getStringProperty(PROPERTY_SVN_ACCESS_PASS));
+            svnLanguageDir = new Subversion(LANGUAGE_SVN, subConfig.getStringProperty(PROPERTY_SVN_ACCESS_USER), subConfig.getStringProperty(PROPERTY_SVN_ACCESS_PASS));
+
             HEAD = svn.latestRevision();
             svn.getBroadcaster().addListener(new MessageListener() {
 
@@ -441,6 +507,8 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
                 UserIO.getInstance().requestMessageDialog(JDL.L(LOCALE_PREFIX + "error.title", "Error occured"), JDL.LF(LOCALE_PREFIX + "error.updatelanguages.message", "Error while updating languages:\r\n %s", JDLogger.getStackTrace(e)));
 
             }
+            svnLanguageDir.dispose();
+            svn.dispose();
             progress.setStatusText(JDL.L(LOCALE_PREFIX + "svn.updating.ready", "Updating SVN: Complete"));
             progress.doFinalize(2 * 1000l);
         } catch (SVNException e) {
@@ -508,17 +576,15 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
 
         try {
             Subversion svn;
-            if (subConfig.getBooleanProperty(PROPERTY_SVN_ACCESS_ANONYMOUS, true)) {
-                svn = new Subversion(LANGUAGE_SVN);
 
-            } else {
-                svn = new Subversion(LANGUAGE_SVN, subConfig.getStringProperty(PROPERTY_SVN_ACCESS_USER), subConfig.getStringProperty(PROPERTY_SVN_ACCESS_PASS));
-            }
+            svn = new Subversion(LANGUAGE_SVN, subConfig.getStringProperty(PROPERTY_SVN_ACCESS_USER), subConfig.getStringProperty(PROPERTY_SVN_ACCESS_PASS));
 
             ArrayList<SVNInfo> info = svn.getInfo(file);
             if (info.get(0).getConflictWrkFile() != null) {
                 svn.revert(file);
             }
+
+            svn.dispose();
             BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF8"));
             out.write(sb.toString());
             out.close();
@@ -604,7 +670,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
                 updateKeyChart();
                 mnuEntries.setEnabled(true);
                 mnuKey.setEnabled(true);
-
+                mnuCurrent.setEnabled(true);
                 mnuSave.setEnabled(true);
 
             }
@@ -626,12 +692,10 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
         Subversion svn = null;
         try {
 
-            if (subConfig.getBooleanProperty(PROPERTY_SVN_ACCESS_ANONYMOUS, true)) {
-                svn = new Subversion(SOURCE_SVN);
-            } else {
-                svn = new Subversion(SOURCE_SVN, subConfig.getStringProperty(PROPERTY_SVN_ACCESS_USER), subConfig.getStringProperty(PROPERTY_SVN_ACCESS_PASS));
-            }
-
+            svn = new Subversion(SOURCE_SVN, subConfig.getStringProperty(PROPERTY_SVN_ACCESS_USER), subConfig.getStringProperty(PROPERTY_SVN_ACCESS_PASS));
+        } catch (org.tmatesoft.svn.core.SVNAuthenticationException e) {
+            subConfig.setProperty(PROPERTY_SVN_ACCESS_USER, null);
+            subConfig.save();
         } catch (SVNException e) {
             e.printStackTrace();
         }
@@ -646,24 +710,22 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
 
             if (svn != null) {
 
-                if (!subConfig.getBooleanProperty(PROPERTY_SVN_ACCESS_ANONYMOUS, true)) {
+                StringBuilder sb = new StringBuilder();
 
-                    StringBuilder sb = new StringBuilder();
-
-                    for (LngEntry lng : sourceParser.getEntries()) {
-                        sb.append("\r\n" + lng.getKey() + " = " + lng.getValue());
-
-                    }
-
-                    for (String pat : sourceParser.getPattern()) {
-                        sb.append("\r\n#pattern: " + pat);
-                    }
-                    JDIO.writeLocalFile(new File(dirLanguages, "keys.def"), sb.toString());
-
-                    svn = new Subversion(LANGUAGE_SVN, subConfig.getStringProperty(PROPERTY_SVN_ACCESS_USER), subConfig.getStringProperty(PROPERTY_SVN_ACCESS_PASS));
-                    commit(new File(dirLanguages, "keys.def"), "parsed latest Source at Revision " + HEAD, svn);
+                for (LngEntry lng : sourceParser.getEntries()) {
+                    sb.append("\r\n" + lng.getKey() + " = " + lng.getValue());
 
                 }
+
+                for (String pat : sourceParser.getPattern()) {
+                    sb.append("\r\n#pattern: " + pat);
+                }
+                JDIO.writeLocalFile(new File(dirLanguages, "keys.def"), sb.toString());
+
+                svn = new Subversion(LANGUAGE_SVN, subConfig.getStringProperty(PROPERTY_SVN_ACCESS_USER), subConfig.getStringProperty(PROPERTY_SVN_ACCESS_PASS));
+                commit(new File(dirLanguages, "keys.def"), "parsed latest Source at Revision " + HEAD, svn);
+
+                svn.dispose();
             }
         } catch (SVNException e) {
             e.printStackTrace();
@@ -674,7 +736,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
 
     private boolean commit(File file, String string, Subversion svn) {
         try {
-            if (subConfig.getBooleanProperty(PROPERTY_SVN_ACCESS_ANONYMOUS, true)) return false;
+
             if (svn == null) {
                 svn = new Subversion(LANGUAGE_SVN, subConfig.getStringProperty(PROPERTY_SVN_ACCESS_USER), subConfig.getStringProperty(PROPERTY_SVN_ACCESS_PASS));
             }
@@ -761,6 +823,8 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
                 e.printStackTrace();
             }
             svn.commit(file, string);
+
+            svn.dispose();
             return true;
         } catch (SVNException e) {
             e.printStackTrace();
@@ -975,11 +1039,18 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
 
     @Override
     public void onHide() {
+        try {
+            updater.interrupt();
+        } catch (Exception e) {
+            e.printStackTrace();
+
+        }
         saveChanges();
+
     }
 
     public void initMenu(JMenuBar menubar) {
-
+        this.menubar = menubar;
         // Load Menü
         mnuLoad = new JMenu(JDL.L(LOCALE_PREFIX + "load", "Load Language"));
 
@@ -1048,13 +1119,14 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
         mnuCurrent.addActionListener(this);
         mnuTest.add(mnuKeymode = new JMenuItem(JDL.L(LOCALE_PREFIX + "startkey", "Test JD in Key mode")));
         mnuKeymode.addActionListener(this);
-
+        mnuCurrent.setEnabled(false);
         // Menü-Bar zusammensetzen
 
         menubar.add(mnuFile);
         menubar.add(mnuKey);
         menubar.add(mnuEntries);
         menubar.add(mnuTest);
+        menubar.setEnabled(false);
 
     }
 

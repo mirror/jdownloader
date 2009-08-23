@@ -654,22 +654,33 @@ public class Subversion implements ISVNEventHandler {
         // TODO Auto-generated method stub
 
     }
-/**
- * checks wether logins are correct or not
- * @param url
- * @param user
- * @param pass
- * @return
- */
+
+    /**
+     * checks wether logins are correct or not
+     * 
+     * @param url
+     * @param user
+     * @param pass
+     * @return
+     */
     public static boolean checkLogin(String url, String user, String pass) {
 
         try {
             new Subversion(url, user, pass);
             return true;
         } catch (SVNException e) {
-            
+
         }
 
         return false;
+    }
+
+    public void dispose() {
+        try {
+            this.getClientManager().dispose();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
     }
 }
