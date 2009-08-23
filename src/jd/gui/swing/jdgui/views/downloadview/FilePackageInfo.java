@@ -169,8 +169,8 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
 
         progressBarFilePackage = new MultiProgressBar();
         panel = new JPanel();
-        panel.setLayout(new MigLayout("ins 10, wrap 3", "[]10[grow,fill][]", "[]5[]5[]5[]"));
-        panel.add(progressBarFilePackage, "spanx,growx,pushx,split 2");
+        panel.setLayout(new MigLayout("ins 10, wrap 3,debug", "[]10[grow,fill][]", "[]5[]5[]5[]"));
+        panel.add(progressBarFilePackage, "spanx,growx,pushx,split 2,height 18!");
         panel.add(txtSize = new JDTextField(true), "alignx right");
         txtSize.setEditable(false);
         txtSize.setBorder(null);
@@ -198,7 +198,7 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
         panel.add(hosterlabel = new JLabel(JDTheme.II("gui.images.sort", 16, 16)), "split 2");
         panel.add(typeicon = new JLabel(JDTheme.II("gui.images.sort", 16, 16)), "");
         typeicon.setText(JDL.L("gui.fileinfopanel.linktab.chunks", "Chunks"));
-        panel.add(progressBarDownloadLink, "spanx,growx,pushx,split 2");
+        panel.add(progressBarDownloadLink, "spanx,growx,pushx,split 2,height 18!");
         panel.add(txtSizeDl = new JDTextField(true), "alignx right");
         txtSizeDl.setOpaque(false);
         txtSizeDl.putClientProperty("Synthetica.opaque", Boolean.FALSE);
@@ -277,9 +277,10 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
                                 long[] values = new long[chunks];
                                 for (int i = 0; i < chunks; i++) {
                                     max[i] = part;
-                                    values[i] = downloadLink.getChunksProgress()[i] - i * part;
+                                    values[i] = (downloadLink.getChunksProgress()[i]+1) - i * part;
                                 }
-
+max[chunks-1]=fileSize-part*(chunks-1);
+values[chunks-1] = (downloadLink.getChunksProgress()[chunks-1]+1) - part*(chunks-1);
                                 FilePackageInfo.this.progressBarDownloadLink.setMaximums(max);
                                 FilePackageInfo.this.progressBarDownloadLink.setValues(values);
                             } else {

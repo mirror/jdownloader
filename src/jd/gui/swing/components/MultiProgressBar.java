@@ -65,7 +65,7 @@ public class MultiProgressBar extends JPanel {
     }
 
     private int scale(long point, double faktor) {
-        return (int) (point / faktor);
+        return  (int)Math.ceil(point / faktor);
     }
 
     private double getFaktor() {
@@ -86,7 +86,7 @@ public class MultiProgressBar extends JPanel {
         for (int i = 0; i < entries.size(); i++) {
             e = entries.get(i);
             Color col = new Color(50, 255 - ((205 / (entries.size() + 1)) * i), 50);
-            Rectangle rec = new Rectangle(scale(e.getPosition(), faktor), 0, scale(e.getValue(), faktor)+1, height);
+            Rectangle rec = new Rectangle(scale(e.getPosition(), faktor), 0, scale(e.getValue(), faktor), height);
 
             ((Graphics2D) g).setPaint(new GradientPaint(width / 2, 0, col, width / 2, height, col2.darker()));
             g2.fill(rec);
@@ -100,7 +100,7 @@ public class MultiProgressBar extends JPanel {
         ((Graphics2D) g).setPaint(getBackground().darker().darker());
         g2.setStroke(new BasicStroke(2));
         g2.drawLine(0, height, width, height);
-        Rectangle rec = new Rectangle(0, height + 2, scale(value+entries.size(), faktor), getHeight() - height);
+        Rectangle rec = new Rectangle(0, height + 2, scale(value, faktor), getHeight() - height);
         ((Graphics2D) g).setPaint(new GradientPaint(width / 2, 0, col1, width / 2, height, col2.darker()));
         g2.fill(rec);
         g2.dispose();
