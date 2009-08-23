@@ -106,7 +106,7 @@ public class EasyShareCom extends PluginForHost {
         br.setCookie("http://www.easy-share.com", "language", "en");
         if (br.containsHTML("Requested file is deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex(Pattern.compile("You are requesting (.*?)\\(", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
-        String filesize = br.getRegex("You are requesting.*?\\((.*?)\\)").getMatch(0);
+        String filesize = br.getRegex("You are requesting.*? \\((.*?)\\)<").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize));
@@ -141,7 +141,7 @@ public class EasyShareCom extends PluginForHost {
         }
         /* Datei herunterladen */
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, form, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, true, 1);
         if (!dl.getConnection().isContentDisposition()) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
         dl.startDownload();
     }
@@ -152,7 +152,7 @@ public class EasyShareCom extends PluginForHost {
         login(account);
         isExpired(account);
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, downloadLink.getDownloadURL(), true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 0);
         dl.startDownload();
     }
 
