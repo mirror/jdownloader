@@ -116,7 +116,9 @@ public class HotFileCom extends PluginForHost {
         }
         Form[] forms = br.getForms();
         Form form = forms[1];
-        this.sleep(30000l, link);
+        int sleeptime = 0;
+        sleeptime = Integer.parseInt(br.getRegex("timerend=d\\.getTime\\(\\)\\+(\\d+);").getMatch(0)) + 1;
+        this.sleep(sleeptime, link);
         br.submitForm(form);
 
         // captcha
