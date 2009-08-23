@@ -415,6 +415,7 @@ gui.config.download.proxy.port = Port
 gui.config.download.proxy.user = User
 gui.config.download.proxy.pass = Pass
 gui.config.download.use_socks = Socks-Proxy Verwenden
+gui.config.download.sockstype = Select Socks Type
 gui.config.download.socks.host = Host/IP
 gui.config.download.socks.port = Port
 jd.gui.swing.jdgui.settings.panels.gui.advanced.breadcrum = Advanced
