@@ -344,6 +344,7 @@ gui.column_plugin = Plugin
 gui.column_version = Version
 gui.column_coder = Ersteller
 gui.column_needs = Needs
+jd.gui.swing.jdgui.settings.panels.configpaneladdons.askafterinit = Show %s now?\r\nYou may open it later using Mainmenu->Addon
 gui.btn_settings = Einstellungen
 jd.gui.swing.jdgui.settings.panels.configpanelgeneral.breadcrum = ConfigPanelGeneral
 jd.gui.swing.jdgui.settings.panels.configpanelgeneral.general.title = General
