@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import javax.swing.SwingUtilities;
 
 import jd.gui.swing.GuiRunnable;
-import jd.gui.swing.components.JDTable.JDTable;
+import jd.gui.swing.components.table.JDTable;
 import jd.plugins.Account;
 
 public class PremiumTable extends JDTable {

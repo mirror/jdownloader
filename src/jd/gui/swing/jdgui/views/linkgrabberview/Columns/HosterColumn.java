@@ -24,8 +24,8 @@ import java.util.Comparator;
 import javax.swing.JTable;
 
 import jd.controlling.LinkGrabberController;
-import jd.gui.swing.components.JDTable.JDTableColumn;
-import jd.gui.swing.components.JDTable.JDTableModel;
+import jd.gui.swing.components.table.JDTableColumn;
+import jd.gui.swing.components.table.JDTableModel;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkGrabberFilePackage;
 

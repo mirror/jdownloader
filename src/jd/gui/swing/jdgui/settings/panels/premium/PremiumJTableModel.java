@@ -21,7 +21,7 @@ import java.util.TreeMap;
 
 import jd.HostPluginWrapper;
 import jd.controlling.AccountController;
-import jd.gui.swing.components.JDTable.JDTableModel;
+import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.jdgui.settings.panels.premium.Columns.CashColumn;
 import jd.gui.swing.jdgui.settings.panels.premium.Columns.EnabledColumn;
 import jd.gui.swing.jdgui.settings.panels.premium.Columns.ExpireDateColumn;

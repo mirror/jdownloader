@@ -415,6 +415,7 @@ public class JDInit {
                         }
                     }
                 } catch (Throwable e) {
+               
                     JDLogger.exception(e);
                 }
             }

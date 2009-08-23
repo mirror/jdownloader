@@ -17,14 +17,17 @@
 package jd.plugins.optional.langfileeditor;
 
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.MenuAction;
+import jd.gui.UserIO;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.SingletonPanel;
+import jd.nutils.svn.Subversion;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
 import jd.utils.locale.JDL;
@@ -43,6 +46,8 @@ public class LangFileEditor extends PluginOptional {
     private final SingletonPanel lfe;
     protected MenuAction activateAction;
     private LFEView lfeView;
+    private String user;
+    private String pass;
 
     public LangFileEditor(PluginWrapper wrapper) {
         super(wrapper);
@@ -54,10 +59,50 @@ public class LangFileEditor extends PluginOptional {
         ConfigEntry cfg;
         ConfigEntry cond;
 
+        user = getPluginConfig().getStringProperty(LFEGui.PROPERTY_SVN_ACCESS_USER);
+        pass = getPluginConfig().getStringProperty(LFEGui.PROPERTY_SVN_ACCESS_PASS);
         config.addEntry(cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), LFEGui.PROPERTY_SVN_ACCESS_ANONYMOUS, "Do not upload (SVN) changes on save").setDefaultValue(true));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), LFEGui.PROPERTY_SVN_ACCESS_USER, "Upload (SVN) Username"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), LFEGui.PROPERTY_SVN_ACCESS_USER, "Upload (SVN) Username") {
+            /**
+             * 
+             */
+            private static final long serialVersionUID = 1L;
+
+            public void valueChanged(Object newValue) {
+                super.valueChanged(newValue);
+                user = newValue.toString();
+
+            }
+        });
+
         cfg.setEnabledCondidtion(cond, "==", false);
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, getPluginConfig(), LFEGui.PROPERTY_SVN_ACCESS_PASS, "Upload (SVN) Password"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, getPluginConfig(), LFEGui.PROPERTY_SVN_ACCESS_PASS, "Upload (SVN) Password") {
+            /**
+             * 
+             */
+            private static final long serialVersionUID = 1L;
+
+            public void valueChanged(Object newValue) {
+                super.valueChanged(newValue);
+                pass = newValue.toString();
+
+            }
+        });
+        cfg.setEnabledCondidtion(cond, "==", false);
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
+
+            public void actionPerformed(ActionEvent e) {
+                boolean ret = Subversion.checkLogin(LFEGui.LANGUAGE_SVN, user, pass);
+
+                if (ret) {
+                    UserIO.getInstance().requestMessageDialog(JDL.L("jd.plugins.optional.langfileeditor.LangFileEditor.initConfigEntries.checklogins.succeeded", "Successfull!"));
+                } else {
+                    UserIO.getInstance().requestMessageDialog(JDL.L("jd.plugins.optional.langfileeditor.LangFileEditor.initConfigEntries.checklogins.failed", "Username or password wrong!"));
+
+                }
+
+            }
+        }, JDL.L("jd.plugins.optional.langfileeditor.LangFileEditor.testlogins", "Test Logins"), JDL.L("jd.plugins.optional.langfileeditor.LangFileEditor.testloginsmessage", "Test if the logins are correct"), null));
         cfg.setEnabledCondidtion(cond, "==", false);
     }
 

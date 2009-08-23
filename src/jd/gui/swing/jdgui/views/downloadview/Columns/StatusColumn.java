@@ -22,8 +22,8 @@ import javax.swing.ImageIcon;
 import javax.swing.JTable;
 
 import jd.controlling.JDController;
-import jd.gui.swing.components.JDTable.JDTableColumn;
-import jd.gui.swing.components.JDTable.JDTableModel;
+import jd.gui.swing.components.table.JDTableColumn;
+import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.jdgui.views.downloadview.StatusLabel;
 import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;

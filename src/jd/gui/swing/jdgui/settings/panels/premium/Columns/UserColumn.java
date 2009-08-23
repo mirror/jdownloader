@@ -23,8 +23,8 @@ import java.awt.event.ActionListener;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 
-import jd.gui.swing.components.JDTable.JDTableColumn;
-import jd.gui.swing.components.JDTable.JDTableModel;
+import jd.gui.swing.components.table.JDTableColumn;
+import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.jdgui.settings.panels.premium.HostAccounts;
 import jd.plugins.Account;
 

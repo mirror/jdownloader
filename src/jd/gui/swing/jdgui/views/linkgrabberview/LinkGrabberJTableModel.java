@@ -17,7 +17,7 @@
 package jd.gui.swing.jdgui.views.linkgrabberview;
 
 import jd.controlling.LinkGrabberController;
-import jd.gui.swing.components.JDTable.JDTableModel;
+import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.jdgui.views.linkgrabberview.Columns.FileColumn;
 import jd.gui.swing.jdgui.views.linkgrabberview.Columns.HosterColumn;
 import jd.gui.swing.jdgui.views.linkgrabberview.Columns.PartColumn;

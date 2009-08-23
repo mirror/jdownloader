@@ -111,7 +111,7 @@ public class ConfigContainer implements Serializable {
      */
     public static final int TYPE_COMBOBOX_INDEX = 15;
 
-    private ActionListener actionListener;
+  
 
     private int containers = 0;
 
@@ -189,14 +189,7 @@ public class ConfigContainer implements Serializable {
         return title;
     }
 
-    public void requestSave() {
-        if (actionListener == null) { return; }
-        actionListener.actionPerformed(new ActionEvent(this, ACTION_REQUEST_SAVE, "save"));
-    }
-
-    public void setActionListener(ActionListener listener) {
-        actionListener = listener;
-    }
+ 
 
     /**
      * Setzt die Propertyinstanz zurück, die dieser Container zum Speichern

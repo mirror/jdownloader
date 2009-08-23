@@ -40,6 +40,7 @@ import org.tmatesoft.svn.core.auth.ISVNAuthenticationManager;
 import org.tmatesoft.svn.core.internal.io.dav.DAVRepositoryFactory;
 import org.tmatesoft.svn.core.internal.io.fs.FSRepositoryFactory;
 import org.tmatesoft.svn.core.internal.io.svn.SVNRepositoryFactoryImpl;
+import org.tmatesoft.svn.core.internal.wc.DefaultSVNAuthenticationManager;
 import org.tmatesoft.svn.core.io.ISVNEditor;
 import org.tmatesoft.svn.core.io.ISVNReporterBaton;
 import org.tmatesoft.svn.core.io.SVNRepository;
@@ -60,7 +61,7 @@ import org.tmatesoft.svn.core.wc.SVNWCUtil;
 
 public class Subversion implements ISVNEventHandler {
 
-//    private static final String PROPERTY_SVN_ACCESS_USER = null;
+    // private static final String PROPERTY_SVN_ACCESS_USER = null;
     private SVNRepository repository;
     private SVNURL svnurl;
     private String user;
@@ -100,6 +101,7 @@ public class Subversion implements ISVNEventHandler {
         this.user = user;
         this.pass = pass;
         authManager = SVNWCUtil.createDefaultAuthenticationManager(this.user, this.pass);
+        ((DefaultSVNAuthenticationManager) authManager).setAuthenticationForced(true);
         repository.setAuthenticationManager(authManager);
         checkRoot();
 
@@ -259,6 +261,7 @@ public class Subversion implements ISVNEventHandler {
     @SuppressWarnings("deprecation")
     public void showInfo(File wcPath, SVNRevision revision, boolean isRecursive) throws SVNException {
         if (revision == null) revision = SVNRevision.HEAD;
+
         getWCClient().doInfo(wcPath, revision, isRecursive, new InfoEventHandler());
     }
 
@@ -273,14 +276,13 @@ public class Subversion implements ISVNEventHandler {
         svn.resolveConflicts(file.getParentFile(), new ResolveHandler() {
 
             public String resolveConflict(SVNInfo info, File file, String contents, int startMine, int endMine, int startTheirs, int endTheirs) {
-              
+
                 String mine = contents.substring(startMine, endMine).trim();
-//                String theirs = contents.substring(startTheirs, endTheirs).trim();
+                // String theirs = contents.substring(startTheirs,
+                // endTheirs).trim();
 
                 return mine;
             }
-
-         
 
         });
         svn.commit(file, "resolved");
@@ -296,8 +298,8 @@ public class Subversion implements ISVNEventHandler {
                 if (file != null) {
 
                     try {
-                     
-                        resolveConflictedFile(info,info.getFile(), handler);
+
+                        resolveConflictedFile(info, info.getFile(), handler);
                         getWCClient().doResolve(info.getFile(), SVNDepth.INFINITY, null);
                         System.out.println(file);
 
@@ -314,11 +316,13 @@ public class Subversion implements ISVNEventHandler {
         //       
 
     }
-/**
- * Returns an ArrayLIst with Info for all files found in file.
- * @param file
- * @return
- */
+
+    /**
+     * Returns an ArrayLIst with Info for all files found in file.
+     * 
+     * @param file
+     * @return
+     */
     public ArrayList<SVNInfo> getInfo(File file) {
         final ArrayList<SVNInfo> ret = new ArrayList<SVNInfo>();
         try {
@@ -343,7 +347,7 @@ public class Subversion implements ISVNEventHandler {
         final String delim = "=======";
         final String theirs = ">>>>>>> .r";
         String txt = JDIO.getLocalFile(file);
-        String pre,post;
+        String pre, post;
         while (true) {
             int mineStart = txt.indexOf(mine);
 
@@ -351,23 +355,24 @@ public class Subversion implements ISVNEventHandler {
             mineStart += mine.length();
             int delimStart = txt.indexOf(delim, mineStart);
             int theirsEnd = txt.indexOf(theirs, delimStart + delim.length());
-            int end=theirsEnd+theirs.length();
-            while (txt.charAt(end)!='\r'&&txt.charAt(end)!='\n') {
+            int end = theirsEnd + theirs.length();
+            while (txt.charAt(end) != '\r' && txt.charAt(end) != '\n') {
                 end++;
             }
 
-        
-            pre=txt.substring(0, mineStart - mine.length());
-            post=txt.substring(end);
-            while(pre.endsWith("\r")||pre.endsWith("\n"))pre=pre.substring(0,pre.length()-1);
-            while(post.startsWith("\r")||post.startsWith("\n"))post=post.substring(1);
-            pre+="\r\n";
-            post="\r\n" + post;
-            if(pre.trim().length()==0)pre=pre.trim();
-            if(post.trim().length()==0)post=post.trim();
-            String solve = handler.resolveConflict(info,file,txt, mineStart, delimStart, delimStart + delim.length(), theirsEnd);
-            if(solve==null)throw new Exception("Could not resolve");
-            txt =  pre+ solve.trim() + post;
+            pre = txt.substring(0, mineStart - mine.length());
+            post = txt.substring(end);
+            while (pre.endsWith("\r") || pre.endsWith("\n"))
+                pre = pre.substring(0, pre.length() - 1);
+            while (post.startsWith("\r") || post.startsWith("\n"))
+                post = post.substring(1);
+            pre += "\r\n";
+            post = "\r\n" + post;
+            if (pre.trim().length() == 0) pre = pre.trim();
+            if (post.trim().length() == 0) post = post.trim();
+            String solve = handler.resolveConflict(info, file, txt, mineStart, delimStart, delimStart + delim.length(), theirsEnd);
+            if (solve == null) throw new Exception("Could not resolve");
+            txt = pre + solve.trim() + post;
         }
         JDIO.writeLocalFile(file, txt);
 
@@ -425,12 +430,12 @@ public class Subversion implements ISVNEventHandler {
      * @throws SVNException
      */
     public void revert(File dstPath) throws SVNException {
-        try{
-        getWCClient().doRevert(new File[] { dstPath }, SVNDepth.INFINITY, null);
-        }catch(Exception e){
+        try {
+            getWCClient().doRevert(new File[] { dstPath }, SVNDepth.INFINITY, null);
+        } catch (Exception e) {
             e.printStackTrace();
-            cleanUp(dstPath,false);
-            
+            cleanUp(dstPath, false);
+
         }
     }
 
@@ -649,5 +654,22 @@ public class Subversion implements ISVNEventHandler {
         // TODO Auto-generated method stub
 
     }
+/**
+ * checks wether logins are correct or not
+ * @param url
+ * @param user
+ * @param pass
+ * @return
+ */
+    public static boolean checkLogin(String url, String user, String pass) {
 
+        try {
+            new Subversion(url, user, pass);
+            return true;
+        } catch (SVNException e) {
+            
+        }
+
+        return false;
+    }
 }

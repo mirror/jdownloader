@@ -28,8 +28,8 @@ import javax.swing.plaf.UIResource;
 import javax.swing.table.TableCellRenderer;
 
 import jd.controlling.AccountController;
-import jd.gui.swing.components.JDTable.JDTableColumn;
-import jd.gui.swing.components.JDTable.JDTableModel;
+import jd.gui.swing.components.table.JDTableColumn;
+import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.jdgui.settings.panels.premium.HostAccounts;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.plugins.Account;

@@ -17,7 +17,7 @@
 package jd.gui.swing.jdgui.views.downloadview;
 
 import jd.controlling.DownloadController;
-import jd.gui.swing.components.JDTable.JDTableModel;
+import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.jdgui.views.downloadview.Columns.DateAddedColumn;
 import jd.gui.swing.jdgui.views.downloadview.Columns.DateFinishedColumn;
 import jd.gui.swing.jdgui.views.downloadview.Columns.FileColumn;
