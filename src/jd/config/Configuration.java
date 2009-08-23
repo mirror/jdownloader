@@ -143,6 +143,10 @@ public class Configuration extends SubConfiguration implements Serializable {
     public static final String PARAM_LATEST_RECONNECT_RESULT = "LATEST_RECONNECT_RESULT";
 
     public static final String NAME = "jdownloaderconfig";
+/**
+ * v4 or v5 socks
+ */
+    public static final String SOCKS_TYPE = "SOCKS_TYPE";
 
     /**
      * Konstruktor für ein Configuration Object

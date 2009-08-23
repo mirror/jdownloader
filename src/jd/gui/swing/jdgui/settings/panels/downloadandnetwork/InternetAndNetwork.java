@@ -22,6 +22,7 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
 import jd.config.Configuration;
+import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.config.ConfigEntry.PropertyType;
 import jd.gui.swing.jdgui.settings.ConfigPanel;
@@ -103,6 +104,12 @@ public class InternetAndNetwork extends ConfigPanel {
         network.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.USE_SOCKS, JDL.L("gui.config.download.use_socks", "Socks-Proxy Verwenden") + " (" + JDL.L("gui.warning.restartNeeded", "JD-Restart needed after changes!") + ")"));
         conditionEntry.setDefaultValue(false);
         conditionEntry.setPropertyType(PropertyType.NEEDS_RESTART);
+        //int type, Property propertyInstance, String propertyName, Object[] list, String label
+        network.addEntry(ce=new ConfigEntry(ConfigContainer.TYPE_RADIOFIELD, config, Configuration.SOCKS_TYPE,new String[]{"Socks v4", "Socks v5"}, JDL.L("gui.config.download.sockstype", "Select Socks Type")).setDefaultValue("Socks v5"));
+        ce.setDefaultValue("");
+        ce.setEnabledCondidtion(conditionEntry, "==", true);
+        ce.setPropertyType(PropertyType.NEEDS_RESTART);
+        
         network.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.SOCKS_HOST, JDL.L("gui.config.download.socks.host", "Host/IP")));
         ce.setDefaultValue("");
         ce.setEnabledCondidtion(conditionEntry, "==", true);

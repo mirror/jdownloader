@@ -42,7 +42,6 @@ import net.miginfocom.swing.MigLayout;
 
 public class ConfigPanel extends SwitchPanel {
 
-
     private static final long serialVersionUID = 3383448498625377495L;
 
     protected Vector<GUIConfigEntry> entries = new Vector<GUIConfigEntry>();
@@ -61,10 +60,12 @@ public class ConfigPanel extends SwitchPanel {
         panel.setLayout(new MigLayout("ins 0 10 10 10,wrap 2", "[fill,grow 10]10[fill,grow]"));
 
     }
-/**
- * Constructor to display a COnfigpanel with contents of container
- * @param container
- */
+
+    /**
+     * Constructor to display a COnfigpanel with contents of container
+     * 
+     * @param container
+     */
     public ConfigPanel(ConfigContainer container) {
         this();
         for (ConfigEntry cfgEntry : container.getEntries()) {
@@ -73,7 +74,7 @@ public class ConfigPanel extends SwitchPanel {
             if (ce != null) addGUIConfigEntry(ce);
 
         }
-        
+
         this.load();
         this.add(panel);
     }
@@ -108,24 +109,16 @@ public class ConfigPanel extends SwitchPanel {
                 // Regression!!!???
                 currentGroup = null;
             }
-            // if (groupMenu == null) {
-            // menuBar.add(groupMenu = new
-            // JMenu(JDL.L("jd.gui.swing.jdgui.settings.configpanel.menu.default",
-            // "Actions")));
-            // groupMenu.setEnabled(false);
-            // }
+
             if (entry.getDecoration() != null) {
 
                 switch (entry.getConfigEntry().getType()) {
-                // case ConfigContainer.TYPE_BUTTON:
-                // panel.add(entry.getDecoration(), "spany " +
-                // entry.getInput().length + (entry.getInput().length == 0 ?
-                // ",spanx" : ""));
-                // break;
+
                 case ConfigContainer.TYPE_TEXTAREA:
                 case ConfigContainer.TYPE_LISTCONTROLLED:
                     panel.add(entry.getDecoration(), "spany " + entry.getInput().length + ",spanx, gapright " + getGapRight());
 
+             
                     break;
                 case ConfigContainer.TYPE_CONTAINER:
                     /**
@@ -139,10 +132,15 @@ public class ConfigPanel extends SwitchPanel {
                 }
             }
 
+            int i = 0;
             for (JComponent c : entry.getInput()) {
+                i++;
                 switch (entry.getConfigEntry().getType()) {
+
+           
                 case ConfigContainer.TYPE_BUTTON:
                     panel.add(c, entry.getDecoration() == null ? "spanx,gapright " + getGapRight() : "width n:n:160,gapright " + getGapRight());
+                  
                     break;
                 case ConfigContainer.TYPE_TEXTAREA:
                 case ConfigContainer.TYPE_LISTCONTROLLED:
@@ -180,15 +178,21 @@ public class ConfigPanel extends SwitchPanel {
                 case ConfigContainer.TYPE_TEXTAREA:
                 case ConfigContainer.TYPE_LISTCONTROLLED:
                     panel.add(entry.getDecoration(), "gapleft " + getGapLeft() + ",spany " + entry.getInput().length + ",spanx");
+                   
+
+              
                     break;
                 default:
                     panel.add(entry.getDecoration(), "gapleft " + getGapLeft() + ",spany " + entry.getInput().length + (entry.getInput().length == 0 ? ",spanx" : ""));
                 }
             }
-
+            int i = 0;
             for (JComponent c : entry.getInput()) {
-
+                i++;
                 switch (entry.getConfigEntry().getType()) {
+
+              
+
                 case ConfigContainer.TYPE_BUTTON:
                     panel.add(c, entry.getDecoration() == null ? "spanx,gapright " + this.getGapRight() + ",gapleft " + this.getGapLeft() : "width n:n:160,gapright " + this.getGapRight());
                     header.setVisible(true);
@@ -200,7 +204,7 @@ public class ConfigPanel extends SwitchPanel {
                     // "spanx,gapleft 35,gapright 20");
                     panel.add(new JScrollPane(c), "spanx,gapright " + getGapRight() + ",growy,pushy,gapleft " + getGapLeft());
                     header.setVisible(true);
-                    break;                
+                    break;
                 default:
                     panel.add(c, entry.getDecoration() == null ? "spanx,gapright " + this.getGapRight() + ",gapleft " + this.getGapLeft() : "gapright " + this.getGapRight());
                     header.setVisible(true);
@@ -226,33 +230,31 @@ public class ConfigPanel extends SwitchPanel {
         addGUIConfigEntry(entry, panel);
     }
 
-    public  void initPanel(){
-        
-        
-        
+    public void initPanel() {
+
     }
 
-    public  void load(){
-       this.loadConfigEntries();
-        
+    public void load() {
+        this.loadConfigEntries();
+
     }
 
     public void loadConfigEntries() {
         for (GUIConfigEntry akt : entries) {
             akt.load();
-           
+
         }
     }
 
-    public  void save(){
+    public void save() {
         this.saveConfigEntries();
-        
+
     }
 
     @Override
     public void onShow() {
 
-//        loadConfigEntries();
+        // loadConfigEntries();
         load();
     }
 
@@ -303,21 +305,22 @@ public class ConfigPanel extends SwitchPanel {
         }
         return ret;
     }
-/**
- * Saves the configentries in THIS panel. 
- */
+
+    /**
+     * Saves the configentries in THIS panel.
+     */
     public final void saveConfigEntries() {
         ArrayList<SubConfiguration> subs = new ArrayList<SubConfiguration>();
-        for (GUIConfigEntry akt : entries) {  
+        for (GUIConfigEntry akt : entries) {
             if (akt.getConfigEntry().getPropertyInstance() instanceof SubConfiguration && subs.indexOf(akt.getConfigEntry().getPropertyInstance()) < 0) {
                 subs.add((SubConfiguration) akt.getConfigEntry().getPropertyInstance());
             }
-          akt.save();
+            akt.save();
         }
 
         for (SubConfiguration subConfiguration : subs) {
-            subConfiguration.save();            
-       }
+            subConfiguration.save();
+        }
     }
- 
+
 }

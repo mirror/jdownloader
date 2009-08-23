@@ -16,6 +16,7 @@
 
 package jd.gui.swing.jdgui.settings;
 
+import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
@@ -31,6 +32,7 @@ import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
+import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JRadioButton;
 import javax.swing.JSeparator;
@@ -52,6 +54,7 @@ import jd.gui.swing.components.JDTextArea;
 import jd.gui.swing.components.JDTextField;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.utils.locale.JDL;
+import net.miginfocom.swing.MigLayout;
 
 /**
  * Diese Klasse fasst ein label / input Paar zusammen und macht das lesen und
@@ -231,19 +234,21 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
             // org.jvnet.substance.skin.BusinessBlueSteelSkin
             break;
         case ConfigContainer.TYPE_RADIOFIELD:
-
-            input = new JComponent[configEntry.getList().length];
+            decoration = new JLabel(configEntry.getLabel());
+            input = new JComponent[1];
+            input[0]= new JPanel(new MigLayout("ins 0", "",""));
             JRadioButton radio;
 
             ButtonGroup group = new ButtonGroup();
 
             for (int i = 0; i < configEntry.getList().length; i++) {
                 radio = new JRadioButton(configEntry.getList()[i].toString());
-                ((JRadioButton) input[0]).addActionListener(this);
+                
                 radio.setActionCommand(configEntry.getList()[i].toString());
-                input[i] = radio;
-                input[i].setEnabled(configEntry.isEnabled());
-
+                input[0].add(radio);
+              
+                radio.setEnabled(configEntry.isEnabled());
+                radio.addActionListener(this);
                 group.add(radio);
 
                 Object p = configEntry.getPropertyInstance().getProperty(configEntry.getPropertyName());
@@ -321,7 +326,7 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
         case ConfigContainer.TYPE_CHECKBOX:
             return ((JCheckBox) input[0]).isSelected();
         case ConfigContainer.TYPE_LISTCONTROLLED:
-          
+
             return ((JDTextArea) input[0]).getText();
         case ConfigContainer.TYPE_BUTTON:
             return null;
@@ -333,7 +338,9 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
             return null;
         case ConfigContainer.TYPE_RADIOFIELD:
             JRadioButton radio;
-            for (JComponent element : input) {
+            Component[] inputs = input[0].getComponents();
+            
+            for (Component element : inputs) {
                 radio = (JRadioButton) element;
 
                 if (radio.getSelectedObjects() != null && radio.getSelectedObjects()[0] != null) { return radio.getSelectedObjects()[0]; }
@@ -463,8 +470,10 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
             }
             break;
         case ConfigContainer.TYPE_RADIOFIELD:
+            
+            Component[] inputs = input[0].getComponents();
             for (int i = 0; i < configEntry.getList().length; i++) {
-                JRadioButton radio = (JRadioButton) input[i];
+                JRadioButton radio = (JRadioButton) inputs[i];
                 if (radio.getActionCommand().equals(text)) {
                     radio.setSelected(true);
                 } else {
@@ -488,8 +497,8 @@ public class GUIConfigEntry implements ActionListener, ChangeListener, PropertyC
      */
     public void load() {
         if (getConfigEntry().getPropertyInstance() != null && getConfigEntry().getPropertyName() != null) {
-          
-            setData(getConfigEntry().getPropertyInstance().getProperty(getConfigEntry().getPropertyName(),getConfigEntry().getDefaultValue()));
+
+            setData(getConfigEntry().getPropertyInstance().getProperty(getConfigEntry().getPropertyName(), getConfigEntry().getDefaultValue()));
         } else if (getConfigEntry().getListController() != null) {
             setData(getConfigEntry().getListController().getList());
         }
