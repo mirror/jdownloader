@@ -214,7 +214,11 @@ public class Megauploadcom extends PluginForHost {
         try {
             if (link.getBooleanProperty("waitworkaround", false)) {
                 waittime = 60;
-            } else if (waitb != null) waittime = Long.parseLong(waitb);
+            } else if (waitb != null) {
+                //MU seems not to check this currently. leave back the waittimeworkaround to have a fallback feature
+                waittime=0;
+//                waittime = Long.parseLong(waitb);
+            }
         } catch (Exception e) {
         }
         if (waittime > 0) this.sleep(waittime * 1000, link);
