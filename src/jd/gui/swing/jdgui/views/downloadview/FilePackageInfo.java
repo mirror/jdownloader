@@ -169,7 +169,7 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
 
         progressBarFilePackage = new MultiProgressBar();
         panel = new JPanel();
-        panel.setLayout(new MigLayout("ins 10, wrap 3,debug", "[]10[grow,fill][]", "[]5[]5[]5[]"));
+        panel.setLayout(new MigLayout("ins 10, wrap 3", "[]10[grow,fill][]", "[]5[]5[]5[]"));
         panel.add(progressBarFilePackage, "spanx,growx,pushx,split 2,height 18!");
         panel.add(txtSize = new JDTextField(true), "alignx right");
         txtSize.setEditable(false);
