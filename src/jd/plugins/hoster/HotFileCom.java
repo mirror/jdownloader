@@ -116,8 +116,12 @@ public class HotFileCom extends PluginForHost {
         }
         Form[] forms = br.getForms();
         Form form = forms[1];
-        int sleeptime = 0;
-        sleeptime = Integer.parseInt(br.getRegex("timerend=d\\.getTime\\(\\)\\+(\\d+);").getMatch(0)) + 1;
+        long sleeptime = 0;
+        try {
+            sleeptime = Long.parseLong(br.getRegex("timerend=d\\.getTime\\(\\)\\+(\\d+);").getMatch(0)) + 1;
+        } catch (Exception e) {
+            sleeptime = 60 * 1000l;
+        }
         this.sleep(sleeptime, link);
         br.submitForm(form);
 

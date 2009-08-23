@@ -534,6 +534,29 @@ public class ActionController {
 
         };
 
+        new ToolBarAction("action.opendlfolder", "gui.images.package_opened") {
+            /**
+             * 
+             */
+            private static final long serialVersionUID = -60944746807335951L;
+
+            public void actionPerformed(ActionEvent e) {
+                String dlDir = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, null);
+                if (dlDir == null) return;
+                JDUtilities.openExplorer(new File(dlDir));
+            }
+
+            @Override
+            public void initDefaults() {
+                this.setToolTipText(JDL.L("action.opendlfolder.tooltip", "Open default Downloadfolder"));
+            }
+
+            @Override
+            public void init() {
+            }
+
+        };
+
         new ThreadedAction("toolbar.control.stopmark", "gui.images.stopmark.disabled") {
 
             /**

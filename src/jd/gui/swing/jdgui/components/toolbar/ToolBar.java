@@ -35,11 +35,11 @@ import jd.gui.swing.jdgui.actions.event.ActionControllerListener;
 import net.miginfocom.swing.MigLayout;
 
 public class ToolBar extends JToolBar implements ActionControllerListener {
-    private static String[] defaultlist = new String[] { "toolbar.control.start", "toolbar.control.pause", "toolbar.control.stop", 
+    private static String[] defaultlist = new String[] { "toolbar.control.start", "toolbar.control.pause", "toolbar.control.stop",
 
-    "toolbar.separator", "action.downloadview.movetotop", "action.downloadview.moveup", "action.downloadview.movedown", "action.downloadview.movetobottom", "toolbar.separator", "toolbar.quickconfig.clipboardoberserver", "toolbar.quickconfig.reconnecttoggle","toolbar.control.stopmark",
+    "toolbar.separator", "action.downloadview.movetotop", "action.downloadview.moveup", "action.downloadview.movedown", "action.downloadview.movetobottom", "toolbar.separator", "toolbar.quickconfig.clipboardoberserver", "toolbar.quickconfig.reconnecttoggle", "toolbar.control.stopmark",
 
-    "toolbar.separator", "toolbar.interaction.reconnect", "toolbar.interaction.update",
+    "toolbar.separator", "toolbar.interaction.reconnect", "toolbar.interaction.update", "toolbar.separator", "action.opendlfolder"
 
     };
 

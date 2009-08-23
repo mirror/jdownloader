@@ -20,8 +20,11 @@ import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -33,7 +36,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "egoshare.com" }, urls = { "http://[\\w\\.]*?egoshare\\.com/download\\.php\\?id=[\\w]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "egoshare.com" }, urls = { "http://[\\w\\.]*?egoshare\\.com/download\\.php\\?id=[\\w]+" }, flags = { 2 })
 public class EgoshareCom extends PluginForHost {
 
     private String captchaCode;
@@ -42,6 +45,7 @@ public class EgoshareCom extends PluginForHost {
 
     public EgoshareCom(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("http://www.egoshare.com/service.php");
     }
 
     // @Override
@@ -49,9 +53,9 @@ public class EgoshareCom extends PluginForHost {
         return "http://www.egoshare.com/faq.php";
     }
 
-    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setCookie("http://www.egoshare.com/", "king_mylang", "en");
         br.getPage(downloadLink.getDownloadURL());
         String filename = br.getRegex(Pattern.compile("File.name.*?</b>.*?<b>(.*?)</b>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
         String filesize = br.getRegex(Pattern.compile("You have requested <font.*?</font>(.*?).</b>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
@@ -61,12 +65,52 @@ public class EgoshareCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * /* public String getVersion() { return getVersion("$Revision$"); }
-     */
+    public void login(Account account) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setCookie("http://www.egoshare.com/", "king_mylang", "en");
+        br.getPage("http://www.egoshare.com/");
+        br.postPage("http://www.egoshare.com/login.php", "act=login&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&login=LOGIN");
+        if (br.getRedirectLocation() == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getCookie("http://www.egoshare.com/", "king_passhash") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        br.getPage(br.getRedirectLocation());
+        if (!br.getRegex("<td align=\"left\">.*?Premium Account.*?</td>").matches()) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        String expired = br.getRegex("<b>Expired\\?</b></td>.*?<td align=.*?>(.*?)<").getMatch(0);
+        if (expired == null || !expired.trim().equalsIgnoreCase("no")) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+    }
 
-    // @Override
+    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        requestFileInformation(downloadLink);
+        login(account);
+        String finalUrl = null;
+        br.getPage(downloadLink.getDownloadURL());
+        finalUrl = br.getRegex("id=downloadfile style=\"display:none\">.*?<a href=\"(http.*?egoshare\\.com/getfile.*?)\"").getMatch(0);
+        if (finalUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalUrl, true, 1);
+        dl.setFilenameFix(true);
+        dl.startDownload();
+    }
+
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo(this, account);
+        this.setBrowserExclusive();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        String validUntil = br.getRegex("Package Expire Date:</b></td>.*?<td align=.*?>(.*?)</td>").getMatch(0);
+        if (validUntil == null) {
+            account.setValid(false);
+        } else {
+            account.setValid(true);
+            ai.setValidUntil(Regex.getMilliSeconds(validUntil, "MM/dd/yy", null));
+        }
+        String points = br.getRegex("Total Points:</b></td>.*?<td align=.*?>(\\d+)</td>").getMatch(0);
+        if (points != null) ai.setPremiumPoints(points);
+        return ai;
+    }
+
     public void handleFree(DownloadLink downloadLink) throws Exception {
         url = downloadLink.getDownloadURL();
         /* Nochmals das File überprüfen */
@@ -115,7 +159,7 @@ public class EgoshareCom extends PluginForHost {
         sleep(5000, downloadLink);
         br.setFollowRedirects(true);
         /* Datei herunterladen */
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, url);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url);
         if (!dl.getConnection().isContentDisposition()) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -123,22 +167,17 @@ public class EgoshareCom extends PluginForHost {
         dl.startDownload();
     }
 
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    // @Override
     public void reset() {
     }
 
-    // @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
     public void resetDownloadlink(DownloadLink link) {
-        // TODO Auto-generated method stub
 
     }
 }
