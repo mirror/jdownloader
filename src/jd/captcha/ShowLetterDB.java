@@ -24,7 +24,7 @@ public class ShowLetterDB {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-        String hoster = "canna.to";
+        String hoster = "3dl.am";
         JAntiCaptcha jac = new JAntiCaptcha(Utilities.getMethodDir(), hoster);
         jac.displayLibrary();
 	}

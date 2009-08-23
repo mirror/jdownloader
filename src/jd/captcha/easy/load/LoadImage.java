@@ -26,7 +26,7 @@ public class LoadImage {
     /**
      * Bildadresse
      */
-    protected transient String imageUrl;
+    public transient String imageUrl;
     /**
      * Formposition -1 == keiner Form folgen
      */
@@ -48,7 +48,7 @@ public class LoadImage {
      */
     public transient File file;
     public transient boolean clearCookies = true;
-    
+
     public LoadImage(String baseUrl) {
         this.baseUrl = baseUrl;
     }
@@ -69,10 +69,11 @@ public class LoadImage {
         this.imageUrl = imageUrl;
         this.br = br.cloneBrowser();
     }
-    
+
     public int getFollowUrl() {
         return followUrl;
     }
+
     public void setFollowUrl(int followUrl) {
         this.followUrl = followUrl;
     }
@@ -100,6 +101,7 @@ public class LoadImage {
     public void setBaseUrl(String baseUrl) {
         this.baseUrl = baseUrl;
     }
+
     @Override
     public boolean equals(Object obj) {
         if (obj != null && obj instanceof LoadImage) {
@@ -163,7 +165,7 @@ public class LoadImage {
      */
     public String getFileType() {
         if (fileType != null) return fileType;
-        if(imageUrl==null) return ".jpg";
+        if (imageUrl == null) return ".jpg";
         fileType = ".jpg";
         if (imageUrl.toLowerCase().contains("\\.png"))
             fileType = ".png";
@@ -188,6 +190,27 @@ public class LoadImage {
         return fileType;
     }
 
+    public static String getFileType(String imageUrl, String conentType) {
+        String fileType = ".jpg";
+        if (imageUrl == null) return ".jpg";
+        fileType = ".jpg";
+        if (imageUrl.toLowerCase().contains("\\.png"))
+            fileType = ".png";
+        else if (imageUrl.toLowerCase().contains("\\.png"))
+            fileType = ".gif";
+        else {
+            if (conentType != null && conentType.contains("image")) {
+                if (conentType.equals("image/jpeg"))
+                    fileType = ".jpg";
+                else {
+                    fileType = conentType.replaceFirst("image/", ".");
+                }
+            }
+
+        }
+        return fileType;
+    }
+
     @Override
     public String toString() {
         return imageUrl;
@@ -196,6 +219,7 @@ public class LoadImage {
     public String toLowerCase() {
         return toString().toLowerCase();
     }
+
     /**
      * läd einen Vector<CPoint> aus eine XML Datei (methodedir/CPoints.xml)
      * 
@@ -205,7 +229,8 @@ public class LoadImage {
     public static LoadImage loadFile(File file) {
         if (file.exists()) { return (LoadImage) JDIO.loadObject(null, file, true); }
         return null;
-    }    
+    }
+
     /**
      * läd ein LoadImage aus eine XML Datei (methodedir/CPoints.xml)
      * 
@@ -216,6 +241,7 @@ public class LoadImage {
         File file = new File(JDUtilities.getJDHomeDirectoryFromEnvironment() + "/" + JDUtilities.getJACMethodsDirectory() + host + "/LoadImage.xml");
         return loadFile(file);
     }
+
     /**
      * Speichert ein LoadImage in eine XML Datei
      * 
@@ -224,9 +250,10 @@ public class LoadImage {
      */
     public static void save(LoadImage li, File file) {
         file.getParentFile().mkdirs();
-        System.out.println("LoadImage has beens saved under: "+file);
+        System.out.println("LoadImage has beens saved under: " + file);
         JDIO.saveObject(null, li, file, null, null, true);
     }
+
     /**
      * Speichert ein LoadImage in eine XML Datei (methodedir/LoadImage.xml)
      * 
@@ -235,6 +262,6 @@ public class LoadImage {
      */
     public static void save(LoadImage selectedImage, String host) {
         File file = new File(JDUtilities.getJDHomeDirectoryFromEnvironment() + "/" + JDUtilities.getJACMethodsDirectory() + host + "/LoadImage.xml");
-        save(selectedImage,file);
+        save(selectedImage, file);
     }
 }

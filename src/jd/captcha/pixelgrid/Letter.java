@@ -845,7 +845,8 @@ public class Letter extends PixelGrid {
             width = line.length();
             if (grid == null) {
                 grid = new int[width][code.length];
-                if (width < 2 || code.length < 2) { return false; }
+                //TODO war vorher width < 2 kann zu regressionen führen beobachten
+                if (width < 1 || code.length < 2) { return false; }
 
             }
             for (int x = 0; x < width; x++) {

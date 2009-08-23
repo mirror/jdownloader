@@ -268,8 +268,6 @@ public class EasyCaptcha {
         for (int x = 0; x < captcha.getWidth(); x++) {
             int bcuy = 0;
             for (int y = 0; y < captcha.getHeight(); y++) {
-
-                captcha.grid[x][y] = captcha.getPixelValue(x, y);
                 double bestDist1 = Double.MAX_VALUE;
                 CPoint cpBestDist1 = null;
                 double bestDist2 = Double.MAX_VALUE;

@@ -62,7 +62,7 @@ public class DrDlm extends PluginForDecrypt {
             Thread.sleep(500);
             String captcha = br.getRegex(Pattern.compile("<img src=\"(/index\\.php\\?action=captcha.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
             if (captcha != null) {
-                String capTxt = getCaptchaCode("http://3dl.am" + captcha, link);
+                String capTxt = getCaptchaCode("3dl.am", "http://3dl.am" + captcha, link);
                 Form form = new Form();
                 form.setAction(br.getRegex("<form action=\"(.*?)\" method=\"post\"").getMatch(0));
                 form.setMethod(MethodType.POST);
