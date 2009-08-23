@@ -25,6 +25,8 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import jd.captcha.easy.load.LoadImage;
+
 import jd.PluginWrapper;
 import jd.config.MenuAction;
 import jd.controlling.CaptchaController;
@@ -206,7 +208,9 @@ public abstract class PluginForDecrypt extends Plugin {
     protected String getCaptchaCode(String captchaAddress, CryptedLink param) throws IOException, DecrypterException {
         return getCaptchaCode(getHost(), captchaAddress, param);
     }
-
+    protected String getCaptchaCode(LoadImage li, CryptedLink param) throws IOException, DecrypterException {
+        return getCaptchaCode(getHost(), li.file, param);
+    }
     protected String getCaptchaCode(String method, String captchaAddress, CryptedLink param) throws IOException, DecrypterException {
         if (captchaAddress == null) {
             logger.severe("Captcha Adresse nicht definiert");

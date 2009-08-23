@@ -3,9 +3,7 @@ package jd.captcha.easy.load;
 import java.io.File;
 import java.net.URI;
 import jd.nutils.io.JDIO;
-
 import jd.utils.JDUtilities;
-
 import jd.http.Browser;
 import jd.parser.html.HTMLParser;
 
@@ -17,9 +15,6 @@ import jd.parser.html.HTMLParser;
  * 
  */
 public class LoadImage {
-
-
-
     /**
      * Adresse die als erstes geladen wird
      */
@@ -51,7 +46,7 @@ public class LoadImage {
     /**
      * datei in dem das Bild nach dem laden gespeichert wurde
      */
-    protected transient File file;
+    public transient File file;
     public transient boolean clearCookies = true;
     
     public LoadImage(String baseUrl) {
@@ -78,7 +73,6 @@ public class LoadImage {
     public int getFollowUrl() {
         return followUrl;
     }
-
     public void setFollowUrl(int followUrl) {
         this.followUrl = followUrl;
     }
@@ -211,7 +205,7 @@ public class LoadImage {
     public static LoadImage loadFile(File file) {
         if (file.exists()) { return (LoadImage) JDIO.loadObject(null, file, true); }
         return null;
-    }
+    }    
     /**
      * läd ein LoadImage aus eine XML Datei (methodedir/CPoints.xml)
      * 
