@@ -1,0 +1,113 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2009  JD-Team support@jdownloader.org
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+package jd.plugins.decrypter;
+
+import java.util.ArrayList;
+
+import jd.PluginWrapper;
+import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterPlugin;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
+import jd.utils.locale.JDL;
+
+//pspzockerscenes first decrypter hehe
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "streamprotect.net" }, urls = { "http://[\\w\\.]*?streamprotect\\.net/f/[a-z|0-9]+" }, flags = { 0 })
+public class StrPrtctNet extends PluginForDecrypt {
+
+    public StrPrtctNet(PluginWrapper wrapper) {
+        super(wrapper);
+    }
+
+    // @Override
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        String parameter = param.toString();
+        FilePackage fp = FilePackage.getInstance();
+        br.setFollowRedirects(false);
+        br.getPage(parameter);
+
+        /* Error handling */
+        if (br.containsHTML("Der angeforderte Ordner konnte nicht gefunden werden")) {
+            logger.warning("Wrong link");
+            logger.warning(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+            return new ArrayList<DownloadLink>();
+        }
+
+        /* File package handling */
+        if (br.containsHTML("Sicherheitscode") || br.containsHTML("Passwort")) {
+            Form captchaForm = br.getForm(0);
+            if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            String passCode = null;
+            if (br.containsHTML("Sicherheitscode")) {
+                String captchalink = br.getRegex("Sicherheitscode.*?img src=\"(.*?)\"").getMatch(0);
+                String code = getCaptchaCode(captchalink, param);
+                captchaForm.put("txtCaptcha", code);
+            }
+            if (br.containsHTML("Passwort")) {
+                if (param.getStringProperty("pass", null) == null) {
+                    passCode = Plugin.getUserInput("Password?", param);
+                } else {
+                    /* gespeicherten PassCode holen */
+                    passCode = param.getStringProperty("pass", null);
+                }
+                captchaForm.put("txtPassword", passCode);
+            }
+            br.submitForm(captchaForm);
+            if (br.containsHTML("Passwort ist falsch")) {
+                logger.warning("Wrong password!");
+                param.setProperty("pass", null);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+            if (passCode != null) {
+                param.setProperty("pass", passCode);
+            }
+            if (br.containsHTML("Sicherheitscode ist falsch")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
+        String cryptframe = br.getRegex("frameborder=.*?<frame src=\"(.*?)\" name").getMatch(0);
+        if (cryptframe == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        br.getPage(cryptframe);
+        String[] links = br.getRegex("Hits.*?href=\"(.*?)\"").getColumn(0);
+        if (links == null || links.length == 0) return null;
+        progress.setRange(links.length);
+        for (String link : links) {
+            br.getPage(link);
+            String clink0 = br.getRegex("topFrame\" frameborder.*?<frame src=\"(.*?)\" name=\"mainFrame").getMatch(0);
+            if (clink0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            br.getPage(clink0);
+            Form ajax = br.getForm(0);
+            ajax.setAction("http://streamprotect.net/ajax/l2ex.php");
+            br.submitForm(ajax);
+            String b64 = br.getRegex("\\{\"state\":\"ok\",\"data\":\"(.*?)\"\\}").getMatch(0);
+            b64 = Encoding.Base64Decode(b64);
+            decryptedLinks.add(createDownloadlink(b64));
+            progress.increase(1);
+        }
+        fp.addLinks(decryptedLinks);
+        return decryptedLinks;
+    }
+
+    // @Override
+
+}
