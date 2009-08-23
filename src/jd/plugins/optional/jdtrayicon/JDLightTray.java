@@ -50,7 +50,7 @@ import jd.plugins.PluginOptional;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@OptionalPlugin(rev = "$Revision$", defaultEnabled = true, id = "trayicon", interfaceversion = 4, minJVM = 1.6)
+@OptionalPlugin(rev = "$Revision$", defaultEnabled = true, id = "trayicon", interfaceversion = 5, minJVM = 1.6)
 public class JDLightTray extends PluginOptional implements MouseListener, MouseMotionListener, WindowListener {
 
     private SubConfiguration subConfig = null;
@@ -303,9 +303,22 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
          * way, eg do not minimize at all
          */
         if (subConfig.getBooleanProperty(PROPERTY_MINIMIZE_TO_TRAY, true)) {
-            guiFrame.setState(JFrame.NORMAL);
-            guiFrame.setVisible(true);
-            miniIt();
+
+            if (System.currentTimeMillis() > this.lastDeIconifiedEvent + 750) {
+                this.lastDeIconifiedEvent = System.currentTimeMillis();
+                if (guiFrame.isVisible()) {
+                    guiFrame.setVisible(false);
+                } else {
+                    guiFrame.setState(JFrame.NORMAL);
+                    guiFrame.setVisible(true);
+                    guiFrame.toFront();
+                }
+            } else {
+                guiFrame.setState(JFrame.NORMAL);
+                guiFrame.setVisible(true);
+                miniIt();
+            }
+
         }
     }
 

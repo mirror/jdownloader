@@ -39,4 +39,9 @@ public @interface OptionalPlugin {
     double minJVM() default 1.5;
 
     String rev();
+/**
+ * if set to true, the addon has to implement public void setGuiEnable(boolean b)
+ * @return
+ */
+    boolean hasGui() default false;;
 }

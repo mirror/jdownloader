@@ -35,7 +35,7 @@ import jd.plugins.PluginOptional;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
-@OptionalPlugin(rev = "$Revision$", id = "langfileditor", interfaceversion = 4)
+@OptionalPlugin(rev = "$Revision$", id = "langfileditor", interfaceversion = 5)
 /**
  * Editor for jDownloader language files. Gets JDLocale.L() and JDLocale.LF()
  * entries from source and compares them to the keypairs in the language file.

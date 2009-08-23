@@ -50,7 +50,7 @@ import jd.plugins.optional.hjsplit.jaxe.ProgressEventListener;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@OptionalPlugin(rev = "$Revision$", defaultEnabled = true, id = "hjsplit", interfaceversion = 4)
+@OptionalPlugin(rev = "$Revision$", defaultEnabled = true, id = "hjsplit", interfaceversion = 5)
 public class JDHJSplit extends PluginOptional implements ControlListener {
 
     private static final String CONFIG_KEY_REMOVE_MERGED = "REMOVE_MERGED";

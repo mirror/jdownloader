@@ -76,7 +76,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-@OptionalPlugin(rev = "$Revision$", id = "livescripter", interfaceversion = 4)
+@OptionalPlugin(rev = "$Revision$", id = "livescripter", interfaceversion = 5)
 public class HTTPLiveHeaderScripter extends PluginOptional {
     public HTTPLiveHeaderScripter(PluginWrapper wrapper) {
         super(wrapper);

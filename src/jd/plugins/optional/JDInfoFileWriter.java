@@ -42,7 +42,7 @@ import jd.utils.JDUtilities;
 import jd.utils.Replacer;
 import jd.utils.locale.JDL;
 
-@OptionalPlugin(rev = "$Revision$", id = "infofilewriter", interfaceversion = 4)
+@OptionalPlugin(rev = "$Revision$", id = "infofilewriter", interfaceversion = 5)
 public class JDInfoFileWriter extends PluginOptional implements ControlListener {
 
     private static final String FILENAME_DEFAULT = "%LAST_FINISHED_PACKAGE.DOWNLOAD_DIRECTORY%/%LAST_FINISHED_PACKAGE.PACKAGENAME%.info";

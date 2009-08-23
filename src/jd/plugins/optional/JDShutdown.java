@@ -40,7 +40,7 @@ import jd.plugins.PluginOptional;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@OptionalPlugin(rev = "$Revision$", id = "shutdown", interfaceversion = 4)
+@OptionalPlugin(rev = "$Revision$", id = "shutdown", interfaceversion = 5)
 public class JDShutdown extends PluginOptional {
 
     private static final int count = 60;

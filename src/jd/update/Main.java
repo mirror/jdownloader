@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.logging.FileHandler;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 import javax.swing.JComponent;
 import javax.swing.JFrame;
@@ -71,6 +72,7 @@ public class Main {
     private static JTextPane warnings;
     private static int TICKET_TIME = -1;
     private static Logger logger;
+    private static boolean RESTORE=false;
 
     private static void log(StringBuilder log, String string) {
         if (log != null) log.append(string);
@@ -108,6 +110,8 @@ public class Main {
                     OSFilter = false;
                 } else if (p.trim().equalsIgnoreCase("-brdebug")) {
                     Browser.setVerbose(true);
+                } else if (p.trim().equalsIgnoreCase("-restore")) {
+                    RESTORE=true;
 
                 } else if (p.trim().equalsIgnoreCase("-branch")) {
                     String br = args[++i];
@@ -223,6 +227,11 @@ public class Main {
 
             updater.setDownloadProgress(progressload);
             Main.trace("Start Webupdate");
+            
+            if(RESTORE){
+                //Remove.extracts
+                JDIO.removeByPattern(JDUtilities.getResourceFile("jd").getParentFile(),Pattern.compile(".*\\.extract",Pattern.CASE_INSENSITIVE));
+            }
             ArrayList<FileUpdate> files;
             try {
                 files = updater.getAvailableFiles();

@@ -43,8 +43,10 @@ import jd.plugins.optional.schedule.modules.StartDownloads;
 import jd.plugins.optional.schedule.modules.StopDownloads;
 import jd.plugins.optional.schedule.modules.UnPauseDownloads;
 
-@OptionalPlugin(rev = "$Revision$", id = "scheduler", interfaceversion = 4)
+@OptionalPlugin(rev = "$Revision$", id = "scheduler", hasGui = true, interfaceversion = 5)
 public class Schedule extends PluginOptional {
+    private static final String JDL_PREFIX = "jd.plugins.optional.schedule.Schedule.";
+
     private static Schedule instance;
 
     private ArrayList<Actions> actions;
@@ -145,29 +147,35 @@ public class Schedule extends PluginOptional {
         if (e.getSource() instanceof MenuAction && ((MenuAction) e.getSource()).getActionID() == 0) {
 
             if (((MenuAction) e.getSource()).isSelected()) {
-                if (view == null) {
-                    view = new SchedulerView();
-                    view.getBroadcaster().addListener(new SwitchPanelListener() {
-
-                        @Override
-                        public void onPanelEvent(SwitchPanelEvent event) {
-                            switch (event.getID()) {
-                            case SwitchPanelEvent.ON_REMOVE:
-                                activateAction.setSelected(false);
-                                break;
-                            }
-
-                        }
-
-                    });
-                    view.setContent(new MainGui(getPluginConfig()));
-                }
-                JDGui.getInstance().setContent(view);
+                showGui();
             } else {
                 view.close();
 
             }
         }
+    }
+
+    private void showGui() {
+        if (view == null) {
+            view = new SchedulerView();
+            view.getBroadcaster().addListener(new SwitchPanelListener() {
+
+                @Override
+                public void onPanelEvent(SwitchPanelEvent event) {
+                    switch (event.getID()) {
+                    case SwitchPanelEvent.ON_REMOVE:
+                        activateAction.setSelected(false);
+                        break;
+                    }
+
+                }
+
+            });
+            view.setContent(new MainGui(getPluginConfig()));
+
+        }
+        activateAction.setSelected(true);
+        JDGui.getInstance().setContent(view);
     }
 
     public ArrayList<MenuAction> createMenuitems() {
@@ -185,6 +193,19 @@ public class Schedule extends PluginOptional {
         this.activateAction = new MenuAction(MenuAction.TOGGLE, getHost(), 0).setActionListener(this);
         activateAction.setSelected(false);
         return true;
+    }
+
+    public void setGuiEnable(boolean b) {
+        if (b) {
+
+            showGui();
+
+        } else {
+            if (view != null) {
+                view.close();
+            }
+        }
+
     }
 
     public void onExit() {

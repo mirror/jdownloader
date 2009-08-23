@@ -71,7 +71,7 @@ import net.miginfocom.swing.MigLayout;
 
 import org.schwering.irc.lib.IRCConnection;
 
-@OptionalPlugin(rev = "$Revision$", id = "chat", interfaceversion = 4)
+@OptionalPlugin(rev = "$Revision$", id = "chat", interfaceversion = 5)
 public class JDChat extends PluginOptional implements ControlListener {
     private static final long AWAY_TIMEOUT = 15 * 60 * 1000;
     private static String CHANNEL = "#jDownloader";

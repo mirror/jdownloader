@@ -35,11 +35,13 @@ import java.io.OutputStreamWriter;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Vector;
+import java.util.regex.Pattern;
 
 import javax.swing.JFileChooser;
 
 import jd.controlling.JDLogger;
 import jd.nutils.JDHash;
+import jd.parser.Regex;
 
 public class JDIO {
 
@@ -409,6 +411,26 @@ public class JDIO {
         }
         return ret;
 
+    }
+
+    /**
+     * removes recursive all files and directories in parentFile if the match
+     * pattern
+     * 
+     * @param parentFile
+     * @param string
+     */
+    public static void removeByPattern(File parentFile, Pattern pattern) {
+        for (File f : parentFile.listFiles()) {
+            if (f.isDirectory()) {
+                removeByPattern(f, pattern);
+
+            }
+            if (Regex.matches(f.getAbsolutePath(), pattern)) {
+                f.delete();
+            }
+
+        }
     }
 
 }

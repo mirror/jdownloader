@@ -35,6 +35,7 @@ import javax.swing.table.AbstractTableModel;
 import jd.OptionalPluginWrapper;
 import jd.config.Configuration;
 import jd.gui.UserIF;
+import jd.gui.UserIO;
 import jd.gui.swing.jdgui.menu.AddonsMenu;
 import jd.gui.swing.jdgui.settings.ConfigPanel;
 import jd.gui.swing.jdgui.views.sidebars.configuration.ConfigSidebar;
@@ -120,11 +121,18 @@ public class ConfigPanelAddons extends ConfigPanel implements ActionListener, Mo
                 configuration.save();
                 if ((Boolean) value) {
                     plgWrapper.getPlugin().initAddon();
+
+                    int ret = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN, JDL.LF(JDL_PREFIX + "askafterinit", "Show %s now?\r\nYou may open it later using Mainmenu->Addon", plgWrapper.getHost()));
+                    if (UserIO.isOK(ret)) {
+                        plgWrapper.getPlugin().setGuiEnable(true);
+                    }
                 } else {
+                    plgWrapper.getPlugin().setGuiEnable(false);
                     plgWrapper.getPlugin().onExit();
                 }
                 AddonsMenu.getInstance().update();
                 ConfigSidebar.getInstance(null).updateAddons();
+
                 // TODO
                 // SwingGui.getInstance().getAddonPanel().initGUI();
             }
