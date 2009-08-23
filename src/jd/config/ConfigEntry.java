@@ -126,6 +126,8 @@ public class ConfigEntry implements Serializable {
     }
 
     public ConfigEntry(int type, Property propertyInstance, String propertyName, int num) {
+        //sets defaultvalue in pi
+    
         this.type = type;
         this.propertyName = propertyName;
         this.propertyInstance = propertyInstance;
@@ -152,8 +154,7 @@ public class ConfigEntry implements Serializable {
         this.type = type;
         this.propertyName = propertyName;
         this.propertyInstance = propertyInstance;
-
-        this.list = list;
+       this.list = list;
         this.label = label;
     }
 
