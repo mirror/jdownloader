@@ -24,6 +24,7 @@ public class crzytrcm extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.getPage(parameter.toString());
         String dllink = null;
+        
         dllink = br.getRegex("</script><a href=\"(.*?)\"><img src=\"http://crazytr.com/url/aa.png\"></a>").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         decryptedLinks.add(createDownloadlink(dllink));
