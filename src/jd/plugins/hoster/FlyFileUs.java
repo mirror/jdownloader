@@ -71,6 +71,7 @@ public class FlyFileUs extends PluginForHost {
         DLForm0.remove("method_premium");
         br.submitForm(DLForm0);
         Form DLForm = br.getFormbyProperty("name", "F1");
+        if (br.containsHTML("You have reached the download-limit")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1000l);
         if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         String passCode = null;
         if (br.containsHTML("<br><b>Password:</b>")) {
@@ -82,7 +83,7 @@ public class FlyFileUs extends PluginForHost {
             }
             DLForm.put("password", passCode);
         }
-        jd.plugins.BrowserAdapter.openDownload(br,downloadLink, DLForm, true, 1);
+        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLForm, true, 1);
         if (!(dl.getConnection().getContentType().contains("octet"))) {
             /*
              * server does not send disposition header, therefore we must check
