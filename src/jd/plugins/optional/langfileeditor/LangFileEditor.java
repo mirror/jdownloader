@@ -32,6 +32,7 @@ import jd.nutils.nativeintegration.LocalBrowser;
 import jd.nutils.svn.Subversion;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
+import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
 @OptionalPlugin(rev = "$Revision$", id = "langfileditor", interfaceversion = 4)
@@ -53,15 +54,12 @@ public class LangFileEditor extends PluginOptional {
 
     public LangFileEditor(PluginWrapper wrapper) {
         super(wrapper);
-        lfe = new SingletonPanel(LFEGui.class, this.getPluginConfig(),this);
+        lfe = new SingletonPanel(LFEGui.class, this.getPluginConfig(), this);
         initConfigEntries();
     }
 
     private void initConfigEntries() {
-        ConfigEntry cfg;
-  
-
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
                 try {
@@ -79,51 +77,41 @@ public class LangFileEditor extends PluginOptional {
 
         user = getPluginConfig().getStringProperty(LFEGui.PROPERTY_SVN_ACCESS_USER);
         pass = getPluginConfig().getStringProperty(LFEGui.PROPERTY_SVN_ACCESS_PASS);
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), LFEGui.PROPERTY_SVN_ACCESS_USER, "Upload (SVN) Username") {
-            /**
-             * 
-             */
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), LFEGui.PROPERTY_SVN_ACCESS_USER, "Upload (SVN) Username") {
             private static final long serialVersionUID = 1L;
 
             public void valueChanged(Object newValue) {
                 super.valueChanged(newValue);
                 user = newValue.toString();
-               
             }
         });
 
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, getPluginConfig(), LFEGui.PROPERTY_SVN_ACCESS_PASS, "Upload (SVN) Password") {
-            /**
-             * 
-             */
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, getPluginConfig(), LFEGui.PROPERTY_SVN_ACCESS_PASS, "Upload (SVN) Password") {
             private static final long serialVersionUID = 1L;
 
             public void valueChanged(Object newValue) {
                 super.valueChanged(newValue);
                 pass = newValue.toString();
-             
             }
         });
 
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
                 boolean ret = Subversion.checkLogin(LFEGui.LANGUAGE_SVN, user, pass);
 
                 if (ret) {
                     UserIO.getInstance().requestMessageDialog(JDL.L("jd.plugins.optional.langfileeditor.LangFileEditor.initConfigEntries.checklogins.succeeded", "Successfull!"));
-                    getPluginConfig().setProperty( LFEGui.PROPERTY_SVN_ACCESS_USER, user);
-                 
-                    getPluginConfig().setProperty( LFEGui.PROPERTY_SVN_ACCESS_PASS, pass);
+                    getPluginConfig().setProperty(LFEGui.PROPERTY_SVN_ACCESS_USER, user);
+
+                    getPluginConfig().setProperty(LFEGui.PROPERTY_SVN_ACCESS_PASS, pass);
                     getPluginConfig().save();
-                
                 } else {
                     UserIO.getInstance().requestMessageDialog(JDL.L("jd.plugins.optional.langfileeditor.LangFileEditor.initConfigEntries.checklogins.failed", "Username or password wrong!"));
-
                 }
 
             }
-        }, JDL.L("jd.plugins.optional.langfileeditor.LangFileEditor.testlogins", "Test & Save Logins"), JDL.L("jd.plugins.optional.langfileeditor.LangFileEditor.testloginsmessage", "Test if the logins are correct"), null));
+        }, JDL.L("jd.plugins.optional.langfileeditor.LangFileEditor.testlogins", "Test & Save Logins"), JDL.L("jd.plugins.optional.langfileeditor.LangFileEditor.testloginsmessage", "Test if the logins are correct"), JDTheme.II("gui.images.premium", 16, 16)));
 
     }
 

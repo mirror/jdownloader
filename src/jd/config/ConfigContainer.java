@@ -16,8 +16,6 @@
 
 package jd.config;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.Serializable;
 import java.util.ArrayList;
 
@@ -111,8 +109,6 @@ public class ConfigContainer implements Serializable {
      */
     public static final int TYPE_COMBOBOX_INDEX = 15;
 
-  
-
     private int containers = 0;
 
     private ArrayList<ConfigEntry> content;
@@ -141,7 +137,7 @@ public class ConfigContainer implements Serializable {
         if (entry.getContainer() != null) {
             containers++;
         }
-      
+
         if (entry.getPropertyInstance() == null) {
             entry.setPropertyInstance(propertyInstance);
         }
@@ -188,8 +184,6 @@ public class ConfigContainer implements Serializable {
     public String getTitle() {
         return title;
     }
-
- 
 
     /**
      * Setzt die Propertyinstanz zurück, die dieser Container zum Speichern

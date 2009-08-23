@@ -1100,7 +1100,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         } else if (id.getLanguageCode().equals("tr")) {
             lng = JDL.getInstance("tr");
         }
-        lng = (JDLocale) this.getPluginConfig().getProperty(CHANNEL_LNG, JDL.getInstance("en"));
+        lng = this.getPluginConfig().getGenericProperty(CHANNEL_LNG, JDL.getInstance("en"));
         String newChannel = null;
         if (lng.getLanguageCode().equals(JDL.getInstance("es").getLanguageCode())) {
             newChannel = "#jdownloader[es]";

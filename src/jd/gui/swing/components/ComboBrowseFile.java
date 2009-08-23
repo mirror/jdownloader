@@ -20,8 +20,6 @@ import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.FocusEvent;
-import java.awt.event.FocusListener;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Vector;
@@ -41,7 +39,7 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
 
     private static final long serialVersionUID = -3852915099917640687L;
 
-    private  Object LOCK = new Object();;
+    private Object LOCK = new Object();
 
     private ArrayList<ActionListener> listenerList = new ArrayList<ActionListener>();
 
@@ -59,7 +57,7 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
 
     private FileFilter fileFilter;
 
-    private boolean dispatchingDisabled=false;
+    private boolean dispatchingDisabled = false;
 
     public ComboBrowseFile(String string) {
         Vector<String> list = SubConfiguration.getConfig("GUI").getGenericProperty(string, new Vector<String>());
@@ -82,19 +80,18 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
             if (sel != null) {
                 setCurrentPath(new File(sel.toString()));
             }
-            if(!dispatchingDisabled){
+            if (!dispatchingDisabled) {
                 for (ActionListener l : listenerList) {
                     l.actionPerformed(new ActionEvent(this, e.getID(), e.getActionCommand()));
-                }  
+                }
             }
         } else if (e.getSource() == btnBrowse) {
             setCurrentPath(getPath());
             for (ActionListener l : listenerList) {
                 l.actionPerformed(new ActionEvent(this, e.getID(), e.getActionCommand()));
-            }  
+            }
         }
-       
-     
+
     }
 
     /**
@@ -188,13 +185,13 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
         cmboInput.setEditable(false);
         cmboInput.addActionListener(this);
         if (cmboInput.getItemCount() > 0) {
-            
-            synchronized(LOCK){
+
+            synchronized (LOCK) {
                 dispatchingDisabled = true;
                 cmboInput.setSelectedIndex(0);
                 dispatchingDisabled = false;
-                }
-        
+            }
+
         }
 
         btnBrowse = new JButton(JDL.L("gui.btn_select", "Auswählen"));
@@ -239,14 +236,14 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
         SubConfiguration.getConfig("GUI").save();
 
         if (getText() != null && getText().equalsIgnoreCase(currentPath.toString())) return;
-        synchronized(LOCK){
-        dispatchingDisabled = true;
-        cmboInput.setSelectedIndex(0);
-        dispatchingDisabled = false;
+        synchronized (LOCK) {
+            dispatchingDisabled = true;
+            cmboInput.setSelectedIndex(0);
+            dispatchingDisabled = false;
         }
         /* EXPERIMENTAL: rausgenommen da freezes verursacht hat */
         // cmboInput.invalidate();
-      
+
     }
 
     public void setEditable(final boolean value) {
@@ -303,7 +300,7 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
     }
 
     public void setText(final String text) {
-        new GuiRunnable<Object>(){
+        new GuiRunnable<Object>() {
 
             @Override
             public Object runSave() {
@@ -314,9 +311,9 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
                 }
                 return null;
             }
-            
+
         }.start();
-      
+
     }
 
     /**

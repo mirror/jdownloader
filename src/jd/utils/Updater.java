@@ -48,13 +48,13 @@ public class Updater {
 
     public static StringBuilder SERVERLIST = new StringBuilder();
     static {
-//        SERVERLIST.append("-1:http://update4ex.jdownloader.org/branches/%BRANCH%/\r\n");
-//        SERVERLIST.append("-1:http://jdupdate.bluehost.to/branches/%BRANCH%/\r\n");
+        // SERVERLIST.append("-1:http://update4ex.jdownloader.org/branches/%BRANCH%/\r\n");
+        // SERVERLIST.append("-1:http://jdupdate.bluehost.to/branches/%BRANCH%/\r\n");
         SERVERLIST.append("-1:http://update1.jdownloader.org/%BRANCH%/\r\n");
-//        SERVERLIST.append("-1:http://update2.jdownloader.org/%BRANCH%/\r\n");
-//        SERVERLIST.append("-1:http://jd.code4everyone.de/%BRANCH%/\r\n");
-      
-//        SERVERLIST.append("-1:http://update0.jdownloader.org/%BRANCH%/\r\n");
+        // SERVERLIST.append("-1:http://update2.jdownloader.org/%BRANCH%/\r\n");
+        // SERVERLIST.append("-1:http://jd.code4everyone.de/%BRANCH%/\r\n");
+
+        // SERVERLIST.append("-1:http://update0.jdownloader.org/%BRANCH%/\r\n");
     }
 
     public static void main(String[] args) throws Exception {
@@ -68,8 +68,8 @@ public class Updater {
         if (branch != null) WebUpdater.getConfig("WEBUPDATE").setProperty("BRANCH", branch);
         WebUpdater.getConfig("WEBUPDATE").save();
         System.out.println("STATUS: Webupdate");
- 
-       upd.webupdate();
+
+        upd.webupdate();
 
         upd.removeFileOverhead();
 
@@ -87,16 +87,23 @@ public class Updater {
         // //
         upd.merge();
         upd.checkHashes();
-//        upd.clone2(upd.branch,"http://update0.jdownloader.org/clone.php");
-//        upd.clone2(upd.branch,"http://update2.jdownloader.org/clone.php");
-//       list=upd.getLocalFileList(upd.workingDir, false);
-        
-//        SimpleFTP.uploadSecure("jdupdate.bluehost.to", 2100, getCFG("jdupdate.bluehost.to_ftp_user"), getCFG("jdupdate.bluehost.to_ftp_pass"), "/branches/" + branch, upd.workingDir, list.toArray(new File[] {}));
-//        
-//        SimpleFTP.uploadSecure("update4ex.jdownloader.org", 21, getCFG("update4ex_ftp_user"), getCFG("update4ex_ftp_pass"), "/branches/" + branch, upd.workingDir, list.toArray(new File[] {}));
-//        SimpleFTP.uploadSecure("jd.code4everyone.de", 21, getCFG("jd.code4everyone.de_ftp_user"), getCFG("jd.code4everyone.de_ftp_pass"), "/httpdocs/" + branch, upd.workingDir, list.toArray(new File[] {}));
+        // upd.clone2(upd.branch,"http://update0.jdownloader.org/clone.php");
+        // upd.clone2(upd.branch,"http://update2.jdownloader.org/clone.php");
+        // list=upd.getLocalFileList(upd.workingDir, false);
 
-        
+        // SimpleFTP.uploadSecure("jdupdate.bluehost.to", 2100,
+        // getCFG("jdupdate.bluehost.to_ftp_user"),
+        // getCFG("jdupdate.bluehost.to_ftp_pass"), "/branches/" + branch,
+        // upd.workingDir, list.toArray(new File[] {}));
+        //        
+        // SimpleFTP.uploadSecure("update4ex.jdownloader.org", 21,
+        // getCFG("update4ex_ftp_user"), getCFG("update4ex_ftp_pass"),
+        // "/branches/" + branch, upd.workingDir, list.toArray(new File[] {}));
+        // SimpleFTP.uploadSecure("jd.code4everyone.de", 21,
+        // getCFG("jd.code4everyone.de_ftp_user"),
+        // getCFG("jd.code4everyone.de_ftp_pass"), "/httpdocs/" + branch,
+        // upd.workingDir, list.toArray(new File[] {}));
+
         upd.uploadHashList();
 
         System.exit(0);
@@ -117,7 +124,7 @@ public class Updater {
             }
         }
 
-        String[] rest = new String[] {/* "libs/svnkit.jar" */"info.txt","jd/img/default/flags","plugins/JDPremium.jar","tools/Windows/recycle.exe","jd/img/screenshots","jd/img/synthetica"
+        String[] rest = new String[] {/* "libs/svnkit.jar" */"info.txt", "jd/img/default/flags", "plugins/JDPremium.jar", "tools/Windows/recycle.exe", "jd/img/screenshots", "jd/img/synthetica"
 
         };
         for (String path : rest) {
@@ -138,7 +145,6 @@ public class Updater {
         this.branch = id;
 
         String ret = new Browser().getPage(UPDATE_SERVER + "createBranch.php?pass=" + getCFG("updateHashPW") + "&parent=" + latestBranch + "&branch=" + id);
-       ret=ret;
         System.out.println(ret);
         return id;
     }
@@ -218,8 +224,6 @@ public class Updater {
             copyDirectory(f, this.updateDir);
         }
 
-        
-        
         copyDirectory(new File(jars.getParentFile(), "ressourcen\\licenses"), new File(this.updateDir, "licenses"));
         copyDirectory(new File(jars.getParentFile(), "ressourcen\\jd"), new File(this.updateDir, "jd"));
         copyDirectory(new File(jars.getParentFile(), "ressourcen\\tools"), new File(this.updateDir, "tools"));
@@ -227,25 +231,24 @@ public class Updater {
 
     }
 
-    private void clone2(String branch,String path) throws IOException {
+    private void clone2(String branch, String path) throws IOException {
         LinkedHashMap<String, String> map = createHashList(this.workingDir);
         Browser br = new Browser();
         br.forceDebug(true);
 
         map.put("pass", getCFG("updateHashPW"));
 
-        br.postPage(path+"?pass=" + getCFG("updateHashPW") + "&branch=" + branch, map);
+        br.postPage(path + "?pass=" + getCFG("updateHashPW") + "&branch=" + branch, map);
         System.out.println(br + "");
         // map = map;
         if (!br.containsHTML("<b>fail</b>") && !br.containsHTML("<b>Warning</b>") && !br.containsHTML("<b>Error</b>")) {
-            System.out.println("CLONE OK "+path);
+            System.out.println("CLONE OK " + path);
             return;
         }
 
-        JOptionPane.showConfirmDialog(frame, "MD5 ERROR!!!! See log"+path);
+        JOptionPane.showConfirmDialog(frame, "MD5 ERROR!!!! See log" + path);
 
     }
-
 
     // private void lockUpdate() throws IOException {
     // Browser br = new Browser();
@@ -563,7 +566,7 @@ public class Updater {
             webupdater.filterAvailableUpdates(update);
             System.out.println("UPdate: " + update);
             webupdater.updateFiles(update, null);
-            Restarter.main(new String[]{});
+            Restarter.main(new String[] {});
         } catch (Exception e) {
             JDLogger.exception(e);
             remoteFileList = new ArrayList<FileUpdate>();

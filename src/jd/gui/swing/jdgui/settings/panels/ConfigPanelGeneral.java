@@ -27,7 +27,6 @@ import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
-import jd.config.ConfigEntry.PropertyType;
 import jd.gui.swing.jdgui.settings.ConfigPanel;
 import jd.gui.swing.jdgui.settings.GUIConfigEntry;
 import jd.nutils.OSDetector;
@@ -63,7 +62,14 @@ public class ConfigPanelGeneral extends ConfigPanel {
 
         ConfigGroup logging = new ConfigGroup(JDL.L("gui.config.general.logging", "Logging"), JDTheme.II("gui.images.terminal", 32, 32));
 
-        addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, configuration, Configuration.PARAM_LOGGER_LEVEL, new Level[] { Level.ALL, Level.INFO, Level.OFF }, JDL.L("gui.config.general.loggerLevel", "Level für's Logging")).setDefaultValue(Level.INFO).setGroup(logging)/*.setPropertyType(PropertyType.NEEDS_RESTART)*/));
+        addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, configuration, Configuration.PARAM_LOGGER_LEVEL, new Level[] { Level.ALL, Level.INFO, Level.OFF }, JDL.L("gui.config.general.loggerLevel", "Level für's Logging")).setDefaultValue(Level.INFO).setGroup(logging)/*
+                                                                                                                                                                                                                                                                                                             * .setPropertyType
+                                                                                                                                                                                                                                                                                                             * (
+                                                                                                                                                                                                                                                                                                             * PropertyType
+                                                                                                                                                                                                                                                                                                             * .
+                                                                                                                                                                                                                                                                                                             * NEEDS_RESTART
+                                                                                                                                                                                                                                                                                                             * )
+                                                                                                                                                                                                                                                                                                             */));
         // addGUIConfigEntry(new GUIConfigEntry(new
         // ConfigEntry(ConfigContainer.TYPE_CHECKBOX, CONFIGURATION,
         // Configuration.LOGGER_FILELOG,
