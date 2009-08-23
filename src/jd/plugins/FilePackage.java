@@ -106,6 +106,10 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
 
     private String ListHoster = null;
 
+    private long created = -1l;
+
+    private long finishedDate = -1l;
+
     @Deprecated
     private Vector<DownloadLink> downloadLinks;
 
@@ -129,6 +133,8 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
         downloadLinkList = new ArrayList<DownloadLink>();
         broadcaster = new FilePackageBroadcaster();
         broadcaster.addListener(this);
+        created = System.currentTimeMillis();
+        finishedDate = -1l;
     }
 
     private void readObject(java.io.ObjectInputStream stream) throws java.io.IOException, ClassNotFoundException {
@@ -137,6 +143,22 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
         links_Disabled = new Integer(0);
         broadcaster = new FilePackageBroadcaster();
         broadcaster.addListener(this);
+    }
+
+    public long getCreated() {
+        return created;
+    }
+
+    public void setCreated(long created) {
+        this.created = created;
+    }
+
+    public long getFinishedDate() {
+        return finishedDate;
+    }
+
+    public void setFinishedDate(long finishedDate) {
+        this.finishedDate = finishedDate;
     }
 
     /**
@@ -217,7 +239,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
     public void addLinksAt(ArrayList<DownloadLink> links, int index) {
         int repos = 0;
         for (int i = 0; i < links.size(); i++) {
-            repos = add(index + i, links.get(i), repos);            
+            repos = add(index + i, links.get(i), repos);
         }
     }
 
@@ -342,6 +364,9 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
                 value = false;
             }
             isFinished = value;
+            if (!isFinished) {
+                finishedDate = -1;
+            } else if (isFinished && finishedDate == -1) finishedDate = System.currentTimeMillis();
         }
         return isFinished;
     }

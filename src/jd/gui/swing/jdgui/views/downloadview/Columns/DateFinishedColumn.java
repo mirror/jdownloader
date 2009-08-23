@@ -44,6 +44,7 @@ public class DateFinishedColumn extends JDTableColumn {
     private DownloadLink dLink;
     private Date date;
     private SimpleDateFormat dateFormat;
+    private FilePackage fp;
 
     public DateFinishedColumn(String name, JDTableModel table) {
         super(name, table);
@@ -78,7 +79,15 @@ public class DateFinishedColumn extends JDTableColumn {
     @Override
     public Component myTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         if (value instanceof FilePackage) {
-            co = getDefaultTableCellRendererComponent(table, "", isSelected, hasFocus, row, column);
+            fp = (FilePackage) value;
+            co = getDefaultTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            if (fp.getFinishedDate() <= 0) {
+                ((JRendererLabel) co).setText("");
+            } else {
+                date.setTime(fp.getFinishedDate());
+                ((JRendererLabel) co).setText(dateFormat.format(date));
+            }
+            ((JRendererLabel) co).setBorder(null);
         } else if (value instanceof DownloadLink) {
             dLink = (DownloadLink) value;
             co = getDefaultTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
@@ -107,7 +116,7 @@ public class DateFinishedColumn extends JDTableColumn {
         /*
          * DownloadView hat nur null(Header) oder ne ArrayList(FilePackage)
          */
-        if (obj == null && DownloadController.getInstance().getPackages().size() == 1) return true;
+        if (obj == null) return true;
         if (obj == null || obj instanceof ArrayList<?>) return true;
         return false;
     }
@@ -119,24 +128,36 @@ public class DateFinishedColumn extends JDTableColumn {
         synchronized (DownloadController.ControllerLock) {
             synchronized (DownloadController.getInstance().getPackages()) {
                 packages = DownloadController.getInstance().getPackages();
-                /*
-                 * in obj stecken alle selektierten packages, sortiere die links
-                 * nach namen
-                 */
-                if (obj != null && packages.size() > 1) packages = (ArrayList<FilePackage>) obj;
-                for (FilePackage fp : packages) {
-                    Collections.sort(fp.getDownloadLinkList(), new Comparator<DownloadLink>() {
-                        public int compare(DownloadLink a, DownloadLink b) {
-                            DownloadLink aa = b;
-                            DownloadLink bb = a;
+                if (obj == null && packages.size() > 1) {
+                    /* header, sortiere die packages nach namen */
+                    Collections.sort(packages, new Comparator<FilePackage>() {
+                        public int compare(FilePackage a, FilePackage b) {
+                            FilePackage aa = a;
+                            FilePackage bb = b;
                             if (sortingToggle) {
-                                aa = a;
-                                bb = b;
+                                aa = b;
+                                bb = a;
                             }
                             if (aa.getFinishedDate() == bb.getFinishedDate()) return 0;
                             return aa.getFinishedDate() < bb.getFinishedDate() ? -1 : 1;
                         }
                     });
+                } else {
+                    if (obj != null && packages.size() > 1) packages = (ArrayList<FilePackage>) obj;
+                    for (FilePackage fp : packages) {
+                        Collections.sort(fp.getDownloadLinkList(), new Comparator<DownloadLink>() {
+                            public int compare(DownloadLink a, DownloadLink b) {
+                                DownloadLink aa = b;
+                                DownloadLink bb = a;
+                                if (sortingToggle) {
+                                    aa = a;
+                                    bb = b;
+                                }
+                                if (aa.getFinishedDate() == bb.getFinishedDate()) return 0;
+                                return aa.getFinishedDate() < bb.getFinishedDate() ? -1 : 1;
+                            }
+                        });
+                    }
                 }
             }
         }
