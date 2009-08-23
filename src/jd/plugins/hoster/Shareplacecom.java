@@ -20,7 +20,12 @@ import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.parser.html.HTMLParser;
+import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -45,22 +50,17 @@ public class Shareplacecom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         url = downloadLink.getDownloadURL();
         setBrowserExclusive();
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.setCustomCharset("UTF-8");
         br.setFollowRedirects(true);
         br.getPage(url);
         if (br.containsHTML("Your requested file is not found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         if (br.getRedirectLocation() == null) {
             String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("File name: </b>(.*?)<b>", Pattern.CASE_INSENSITIVE)).getMatch(0));
-            if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            String filesize = br.getRegex("File size: </b>(.*?)<b><br>").getMatch(0);
+            if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             downloadLink.setName(filename.trim());
-            String filesize = null;
-            if ((filesize = br.getRegex("File size: </b>(.*)MB<b>").getMatch(0)) != null) {
-                downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize)) * 1024 * 1024l);
-            } else if ((filesize = br.getRegex("File size: </b>(.*)KB<b>").getMatch(0)) != null) {
-                downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize)) * 1024l);
-            } else if ((filesize = br.getRegex("File size: </b>(.*)byte<b>").getMatch(0)) != null) {
-                downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize)));
-            }
+            downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
             return AvailableStatus.TRUE;
         } else
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -68,21 +68,25 @@ public class Shareplacecom extends PluginForHost {
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        /* Link holen */
-        url = Encoding.UTF8Decode(br.getRegex(Pattern.compile("document.location=\"(.*?)\";", Pattern.CASE_INSENSITIVE)).getMatch(0));
-
-        /* Zwangswarten */
-        String waittime = br.getRegex(Pattern.compile("var timeout='([0-9]+)';", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        long wait = 10;
-        if (waittime != null) wait = Long.parseLong(waittime);
-        sleep(wait * 1000l, downloadLink);
-        br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url);
-        if (dl.getConnection().isContentDisposition()) {
-            /* Workaround für fehlerhaften Filename Header */
-            String name = Plugin.getFileNameFormHeader(dl.getConnection());
-            if (name != null) downloadLink.setFinalFileName(Encoding.urlDecode(name, false));
+        String page = Encoding.urlDecode(br.toString(), true);
+        String[] links = HTMLParser.getHttpLinks(page, null);
+        boolean found = false;
+        sleep(15000l, downloadLink);
+        for (String link : links) {
+            if (!new Regex(link, ".*?.getfile\\.php.*?$").matches()) continue;
+            Browser brc = br.cloneBrowser();
+            dl = BrowserAdapter.openDownload(brc, downloadLink, link);
+            if (dl.getConnection().isContentDisposition()) {
+                found = true;
+                break;
+            } else {
+                dl.getConnection().disconnect();
+            }
         }
+        if (!found) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        /* Workaround für fehlerhaften Filename Header */
+        String name = Plugin.getFileNameFormHeader(dl.getConnection());
+        if (name != null) downloadLink.setFinalFileName(Encoding.urlDecode(name, false));
         dl.startDownload();
     }
 
