@@ -36,6 +36,7 @@ import jd.controlling.ClipboardHandler;
 import jd.controlling.DownloadController;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
+import jd.controlling.LinkCheck;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.LinkGrabberDistributeEvent;
 import jd.controlling.ProgressController;
@@ -117,11 +118,11 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         setWindowTitle();
         layoutComponents();
         mainFrame.addPropertyChangeListener("alwaysOnTop", new PropertyChangeListener() {
-//debug code to find this
+            // debug code to find this
             public void propertyChange(PropertyChangeEvent evt) {
                 JDLogger.exception(new Exception());
-                if(JDInitFlags.SWITCH_DEBUG){
-                    
+                if (JDInitFlags.SWITCH_DEBUG) {
+
                     UserIO.getInstance().requestTextAreaDialog("Always on top bug", "Error. Please Send your log to support@jdownloader.org", JDLogger.getStackTrace(new Exception()));
                 }
 
@@ -129,7 +130,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
 
         });
         mainFrame.pack();
-     
+
         initLocationAndDimension();
         mainFrame.setVisible(true);
         if (mainFrame.getRootPane().getUI().toString().contains("SyntheticaRootPaneUI")) {
@@ -557,27 +558,32 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         }
     }
 
-    public void addLinks(ArrayList<DownloadLink> links, boolean hidegrabber, boolean autostart) {
+    public void addLinks(final ArrayList<DownloadLink> links, boolean hidegrabber, final boolean autostart) {
         if (links.size() == 0) return;
         if (hidegrabber || autostart) {
-            /* TODO: hier autopackaging ? */
-            ArrayList<FilePackage> fps = new ArrayList<FilePackage>();
-            FilePackage fp = FilePackage.getInstance();
-            fp.setName("Added " + System.currentTimeMillis());
-            for (DownloadLink link : links) {
-                if (link.getFilePackage() == FilePackage.getDefaultFilePackage()) {
-                    fp.add(link);
-                    if (!fps.contains(fp)) fps.add(fp);
-                } else {
-                    if (!fps.contains(link.getFilePackage())) fps.add(link.getFilePackage());
+            new Thread() {
+                public void run() {
+                    /* TODO: hier autopackaging ? */
+                    ArrayList<FilePackage> fps = new ArrayList<FilePackage>();
+                    FilePackage fp = FilePackage.getInstance();
+                    fp.setName("Added " + System.currentTimeMillis());
+                    for (DownloadLink link : links) {
+                        if (link.getFilePackage() == FilePackage.getDefaultFilePackage()) {
+                            fp.add(link);
+                            if (!fps.contains(fp)) fps.add(fp);
+                        } else {
+                            if (!fps.contains(link.getFilePackage())) fps.add(link.getFilePackage());
+                        }
+                    }
+                    LinkCheck.getLinkChecker().checkLinksandWait(links);
+                    if (GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_INSERT_NEW_LINKS_AT, false)) {
+                        DownloadController.getInstance().addAllAt(fps, 0);
+                    } else {
+                        DownloadController.getInstance().addAll(fps);
+                    }
+                    if (autostart) JDController.getInstance().startDownloads();
                 }
-            }
-            if (GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_INSERT_NEW_LINKS_AT, false)) {
-                DownloadController.getInstance().addAllAt(fps, 0);
-            } else {
-                DownloadController.getInstance().addAll(fps);
-            }
-            if (autostart) JDController.getInstance().startDownloads();
+            }.start();
         } else {
             LinkGrabberPanel.getLinkGrabber().addLinks(links);
             requestPanel(UserIF.Panels.LINKGRABBER, null);

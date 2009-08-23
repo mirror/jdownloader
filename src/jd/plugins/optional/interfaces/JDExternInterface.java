@@ -52,7 +52,7 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@OptionalPlugin(rev = "$Revision$",defaultEnabled = true, id = "externinterface", interfaceversion = 5)
+@OptionalPlugin(rev = "$Revision$", defaultEnabled = true, id = "externinterface", interfaceversion = 5)
 public class JDExternInterface extends PluginOptional {
 
     private RequestHandler handler;

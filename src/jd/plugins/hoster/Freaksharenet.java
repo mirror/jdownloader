@@ -90,13 +90,17 @@ public class Freaksharenet extends PluginForHost {
         String url = null;
         if (br.getRedirectLocation() == null) {
             Form form = br.getForm(0);
+            if (form == null) {
+                if (br.containsHTML("Sorry, your Traffic is used up for today")) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            }
             br.submitForm(form);
             url = br.getRedirectLocation();
         } else {
             url = br.getRedirectLocation();
         }
         if (url == null) throw new PluginException(LinkStatus.ERROR_FATAL);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, url, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
         dl.startDownload();
     }
 
@@ -131,7 +135,7 @@ public class Freaksharenet extends PluginForHost {
         sleep(50 * 1000l, downloadLink);
         br.submitForm(form);
         form = br.getForm(0);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, form, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, false, 1);
 
         URLConnectionAdapter con = dl.getConnection();
         if (!con.isContentDisposition()) {

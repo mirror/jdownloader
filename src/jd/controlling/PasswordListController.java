@@ -58,6 +58,7 @@ public class PasswordListController implements ActionListener, DownloadControlle
         saveSync();
     }
 
+    /* Warning: only use single passwords here, not multiple in one string */
     public void addPassword(String pw) {
         if (pw == null || pw.trim().length() == 0) return;
         synchronized (LIST2) {

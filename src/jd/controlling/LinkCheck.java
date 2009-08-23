@@ -86,6 +86,48 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
         checkTimer.restart();
     }
 
+    public void checkLinksandWait(ArrayList<DownloadLink> links) {
+        final Object lock = new Object();
+        final ArrayList<DownloadLink> check = new ArrayList<DownloadLink>(links);
+        this.checkLinks(links);
+        getBroadcaster().addListener(new LinkCheckListener() {
+
+            @SuppressWarnings("unchecked")
+            public void onLinkCheckEvent(LinkCheckEvent event) {
+                synchronized (check) {
+                    if (event.getID() == LinkCheckEvent.AFTER_CHECK) {
+                        if (event.getParameter() instanceof ArrayList<?>) {
+                            ArrayList<DownloadLink> arrayList = (ArrayList<DownloadLink>) event.getParameter();
+                            for (DownloadLink k : arrayList) {
+                                check.remove(k);
+                            }
+                        } else if (event.getParameter() instanceof DownloadLink) {
+                            check.remove((DownloadLink) event.getParameter());
+                        }
+                        synchronized (lock) {
+                            if (check.size() == 0) {
+                                lock.notify();
+                            }
+                        }
+                    }
+                    if (event.getID() == LinkCheckEvent.STOP || event.getID() == LinkCheckEvent.ABORT) {
+                        synchronized (lock) {
+                            if (check.size() == 0) {
+                                lock.notify();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        synchronized (lock) {
+            try {
+                lock.wait();
+            } catch (InterruptedException e) {
+            }
+        }
+    }
+
     private void checkHosterList(ArrayList<DownloadLink> hosterList) {
         if (hosterList.size() != 0) {
             DownloadLink link = hosterList.get(0);
@@ -220,7 +262,7 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
             checkThread.interrupt();
         }
         synchronized (linksToCheck) {
-            linksToCheck = new ArrayList<DownloadLink>();
+            linksToCheck.clear();
         }
     }
 
