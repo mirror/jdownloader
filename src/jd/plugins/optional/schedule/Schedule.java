@@ -47,7 +47,7 @@ import jd.plugins.optional.schedule.modules.UnPauseDownloads;
 public class Schedule extends PluginOptional {
     private static final String JDL_PREFIX = "jd.plugins.optional.schedule.Schedule.";
 
-    private static Schedule instance;
+    private transient static Schedule instance = null;
 
     private ArrayList<Actions> actions;
 
