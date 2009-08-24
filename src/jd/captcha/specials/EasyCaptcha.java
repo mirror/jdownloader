@@ -24,9 +24,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
 import java.util.Map.Entry;
-
-import jd.captcha.gui.BasicWindow;
-
 import jd.captcha.easy.ColorTrainer;
 import jd.captcha.easy.BackGroundImageManager;
 import jd.nutils.Colors;
