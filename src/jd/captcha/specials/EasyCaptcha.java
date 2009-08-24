@@ -21,8 +21,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Vector;
 import java.util.Map.Entry;
+
+import jd.captcha.gui.BasicWindow;
+
 import jd.captcha.easy.ColorTrainer;
 import jd.captcha.easy.BackGroundImageManager;
 import jd.nutils.Colors;
@@ -37,7 +41,7 @@ import jd.captcha.pixelobject.PixelObject;
  * @author JD-Team
  */
 public class EasyCaptcha {
-    public static int mergeObjectsBasic(Vector<PixelObject> os, Captcha captcha, int gab) {
+    public static int mergeObjectsBasic(List<PixelObject> os, Captcha captcha, int gab) {
         int area = 0;
         int ret = 0;
         try {
@@ -156,7 +160,7 @@ public class EasyCaptcha {
         return ret;
     }
 
-    private static Vector<PixelObject> getRightletters(Vector<PixelObject> os, Captcha captcha, int[] pixels) {
+    private static ArrayList<PixelObject> getRightletters(ArrayList<PixelObject> os, Captcha captcha, int[] pixels) {
         if (os.size() >= captcha.owner.getLetterNum()) return os;
         int minw = pixels[0] / (captcha.owner.getLetterNum() * 3 / 2);
         PixelObject biggest = os.get(0);
@@ -250,7 +254,7 @@ public class EasyCaptcha {
         return os;
     }
 
-    private static int[] clean(Captcha captcha) {
+    private static Object[] clean(Captcha captcha) {
         captcha.owner.jas.executePrepareCommands(captcha.getCaptchaFile(), captcha);
         File file = captcha.owner.getResourceFile("CPoints.xml");
         BackGroundImageManager bgit = new BackGroundImageManager(captcha);
@@ -263,7 +267,10 @@ public class EasyCaptcha {
         int retx = 0;
         int gap = 0;
         int lastgap = -1;
+        int[][] grid = captcha.grid;
 
+        ArrayList<PixelObject> reto = new ArrayList<PixelObject>();
+        ArrayList<PixelObject> merge;
         // farbunterscheidung durch ebenen einbauen
         for (int x = 0; x < captcha.getWidth(); x++) {
             int bcuy = 0;
@@ -273,7 +280,7 @@ public class EasyCaptcha {
                 double bestDist2 = Double.MAX_VALUE;
                 CPoint cpBestDist2 = null;
                 for (CPoint cp : ret) {
-                    double dist = cp.getColorDifference(captcha.getPixelValue(x, y));
+                    double dist = cp.getColorDifference(grid[x][y]);
 
                     if (bestDist1 > dist) {
                         bestDist1 = dist;
@@ -286,11 +293,12 @@ public class EasyCaptcha {
                         }
                     }
                 }
+                boolean add = false;
                 if (cpBestDist2 != null) {
                     if (!cpBestDist2.isForeground())
                         captcha.setPixelValue(x, y, 0xFFFFFF);
                     else {
-                        captcha.setPixelValue(x, y, 0x000000);
+                        add = true;
                         bcuy++;
                     }
 
@@ -298,14 +306,37 @@ public class EasyCaptcha {
                     if (!cpBestDist1.isForeground())
                         captcha.setPixelValue(x, y, 0xFFFFFF);
                     else {
-                        captcha.setPixelValue(x, y, 0x000000);
+                        add = true;
                         bcuy++;
                     }
 
                 } else {
-                    captcha.setPixelValue(x, y, 0x000000);
+                    add = true;
                 }
+                if (add) {
+                    PixelObject n = new PixelObject(captcha);
+                    int gc = captcha.getGrid()[x][y];
+                    n.add(x, y, gc);
+                    merge = new ArrayList<PixelObject>();
+                    for (PixelObject o : reto) {
+                        if (Colors.getRGBColorDifference2(gc, o.getAverage()) < 10) {
+                            merge.add(o);
+                        }
+                    }
+                    if (merge.size() == 0) {
+                        reto.add(n);
+                    } else if (merge.size() == 1) {
+                        merge.get(0).add(n);
+                    } else {
+                        for (PixelObject po : merge) {
+                            reto.remove(po);
+                            n.add(po);
+                        }
+                        reto.add(n);
+                    }
+                    captcha.setPixelValue(x, y, 0x000000);
 
+                }
             }
             if (bcuy > retYmax) retYmax += bcuy;
             if (bcuy > 0) {
@@ -319,12 +350,46 @@ public class EasyCaptcha {
                 gap++;
 
         }
-        return new int[] { retx, retYmax, lastgap };
+        int gab = lastgap / (captcha.owner.getLetterNum());
+
+        ArrayList<PixelObject> reto2 = new ArrayList<PixelObject>();
+        for (PixelObject pixelObject : reto) {
+            try {
+                Vector<PixelObject> co = getSWCaptcha(pixelObject).getObjects(0.5, 0.5);
+//                BasicWindow.showImage( getSWCaptcha(pixelObject).getImage());
+
+                mergeObjectsBasic(co, captcha, gab);
+                reto2.addAll(co);
+            } catch (Exception e) {
+            }
+
+        }
+        return new Object[] { retx, retYmax, lastgap, reto2 };
+    }
+
+    private static Captcha getSWCaptcha(PixelObject obj) {
+        int[][] lgrid = new int[obj.owner.getWidth()][obj.owner.getHeight()];
+        for (int x = 0; x < obj.owner.getWidth(); x++) {
+            for (int y = 0; y < obj.owner.getHeight(); y++) {
+                lgrid[x][y] = 0xffffff;
+
+            }
+        }
+        for (int d = 0; d < obj.getSize(); d++) {
+            int[] akt = obj.elementAt(d);
+            lgrid[akt[0]][akt[1]] = 0x000000;
+        }
+        Captcha c = new Captcha(obj.owner.getWidth(), obj.owner.getHeight());
+        c.owner = obj.owner.owner;
+        c.setGrid(lgrid);
+        return c;
     }
 
     public static Letter[] getLetters(Captcha captcha) {
-        int[] pixels = clean(captcha);
-        Vector<PixelObject> os = captcha.getObjects(0.5, 0.5);
+        Object[] cl = clean(captcha);
+        int[] pixels = new int[] { (Integer) cl[0], (Integer) cl[1], (Integer) cl[2] };
+        @SuppressWarnings("unchecked")
+        ArrayList<PixelObject> os = (ArrayList<PixelObject>) cl[3];
         Collections.sort(os);
         int gab = pixels[2] / (captcha.owner.getLetterNum());
 
