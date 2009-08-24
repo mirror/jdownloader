@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -80,6 +81,16 @@ public class FileShareInUa extends PluginForHost {
         br.getPage(dllink1);
         String dllink = br.getRedirectLocation();
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        URLConnectionAdapter con = dl.getConnection();
+        if (!con.isContentDisposition()) {
+            System.out.println("MUH");
+            br.followConnection();
+            if (br.containsHTML("временно недоступен")) {
+                con.disconnect();
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            }
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         dl.startDownload();
     }
 
