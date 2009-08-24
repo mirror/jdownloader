@@ -774,6 +774,7 @@ jd.gui.swing.components.jdcollapser.closetooltip = Kapat %s
 jd.gui.swing.jdgui.actions.actioncontroller.toolbar.control.pause.tooltip = İndirmeleri duraklat (indirme hızınızı 10 kb/s ile sınırlar)
 jd.gui.swing.jdgui.actions.actioncontroller.toolbar.control.start.tooltip = Listedeki indirmeleri başlat
 jd.gui.swing.jdgui.actions.actioncontroller.toolbar.control.stop.tooltip = Yürütülen indirmeleri durdur
+jd.gui.swing.jdgui.actions.actioncontroller.toolbar.control.stopmark.tooltip = Yürütülen indirmeler bitince Dur
 jd.gui.swing.jdgui.actions.actioncontroller.toolbar.interaction.reconnect.tooltip = İnternet bağlantınızı sıfırlayarak yeni IP alın
 jd.gui.swing.jdgui.actions.actioncontroller.toolbar.interaction.update.tooltip = Yeni güncellemeleri kontrol et
 jd.gui.swing.jdgui.menu.addonsmenu.configuration = Eklenti Yönetimi
