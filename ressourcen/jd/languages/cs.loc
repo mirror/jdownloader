@@ -798,6 +798,7 @@ jd.gui.swing.jdgui.settings.configpanel.restartquestion.title = Vyžadován rest
 jd.gui.swing.jdgui.settings.panels.configpaneladdons.addons.title = Rozšíření
 jd.gui.swing.jdgui.settings.panels.configpanelgeneral.breadcrum = Základní nastavení - Obecné
 jd.gui.swing.jdgui.settings.panels.configpanelgeneral.general.title = Obecné
+jd.gui.swing.jdgui.settings.panels.configpanelpluginforhost.host.title = Servery
 jd.gui.swing.jdgui.settings.panels.downloadandnetwork.advanced.breadcrum = Základní nastavení - Připojení a stahování - Pokročilé
 jd.gui.swing.jdgui.settings.panels.downloadandnetwork.advanced.download.advanced.title = Pokročilé
 jd.gui.swing.jdgui.settings.panels.downloadandnetwork.general.download.title = Připojení a stahování
