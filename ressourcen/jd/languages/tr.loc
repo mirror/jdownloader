@@ -1,7 +1,7 @@
-action.downloadview.movedown.tooltip = Bir alt satıra yerleştir
-action.downloadview.movetobottom.tooltip = İndirme listesinin sonuna yerleştir
-action.downloadview.movetotop.tooltip = İndirme listesinin başına yerleştir
-action.downloadview.moveup.tooltip = Bir üst satıra yerleştir
+action.downloadview.movedown.tooltip = Bir alta yerleştir
+action.downloadview.movetobottom.tooltip = En alta yerleştir
+action.downloadview.movetotop.tooltip = En üste yerleştir
+action.downloadview.moveup.tooltip = Bir üste yerleştir
 action.opendlfolder.tooltip = Varsayılan indirme klasörünü aç
 action.premiumview.addacc.tooltip = Yeni hesap ekle
 action.premiumview.removeacc.accs = %s Hesap
