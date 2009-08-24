@@ -421,13 +421,13 @@ public class LoadCaptchas {
      */
     private static String getImageExtentionFromHeader(Browser br) {
         String ret = null;
-        String contentType = br.getHttpConnection().getContentType().toLowerCase();
+        String contentType = br.getHttpConnection().getContentType();
 
-        if (contentType != null && contentType.contains("image")) {
-            if (contentType.equals("image/jpeg"))
+        if (contentType != null && contentType.toLowerCase().contains("image")) {
+            if (contentType.toLowerCase().equals("image/jpeg"))
                 ret = ".jpg";
             else {
-                ret = contentType.replaceFirst("image/", ".");
+                ret = contentType.toLowerCase().replaceFirst("image/", ".");
             }
         }
         return ret;

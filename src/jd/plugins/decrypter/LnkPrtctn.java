@@ -75,7 +75,7 @@ public class LnkPrtctn extends PluginForDecrypt {
                 Browser.download(captchaFile, br2.openGetConnection(captchaAddress));
 
                 br.setCookie(br.getURL(), "PHPSESSID", br2.getCookie(br2.getURL(), "PHPSESSID"));
-                String captchaCode = getCaptchaCode(captchaFile, param);
+                String captchaCode = getCaptchaCode("crypt-me.com",captchaFile, param);
                 captchaCode = captchaCode.toUpperCase();
                 form.put("code", captchaCode);
 
