@@ -548,6 +548,7 @@ gui.menu.action.help.name = Assistance
 gui.menu.action.hostconfig.accel = CTRL+Alt+H
 gui.menu.action.hostconfig.mnem = H
 gui.menu.action.hostconfig.name = Configuration des hébergeurs
+gui.menu.action.linkgrabber.addall.name = Ajouter tous les paquets
 gui.menu.action.load.accel = CTRL+O
 gui.menu.action.load.mnem = F
 gui.menu.action.load.name = Charger un conteneur
