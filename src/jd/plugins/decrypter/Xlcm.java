@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2008  JD-Team support@jdownloader.org
+//    Copyright (C) 2009  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -20,12 +20,13 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.locale.JDL;
 
+//by pspzockerscene
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xaili.com" }, urls = { "http://[\\w\\.]*?xaili\\.com/\\?site=protect&id=[0-9]+" }, flags = { 0 })
 public class Xlcm extends PluginForDecrypt {
 
@@ -37,17 +38,28 @@ public class Xlcm extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-
+        br.setFollowRedirects(false);
         br.getPage(parameter);
-        String links[] = br.getRegex("onClick='popuptt\\(\"(.*?)\"\\)").getColumn(0);
+
+        /* File package handling */
+        String[] links = br.getRegex("popuptt\\(\"(.*?)\"\\);").getColumn(0);
+        if (links == null || links.length == 0) return null;
         progress.setRange(links.length);
-        for (String element : links) {
-            br.getPage("http://www.xaili.com/include/get.php?link=" + element);
-            String link = br.getRegex("src=\"(.*?)\"").getMatch(0);
-            decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link)));
+        for (String link : links) {
+            String cryptedlink = "http://xaili.com/include/get.php?link=" + link;
+            br.getPage(cryptedlink);
+            String test = br.getURL();
+            /* Error handling */
+            if (test.contains("http://xaili.com")) {
+                logger.warning("The requested document was not found on this server.");
+                logger.warning(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+                return new ArrayList<DownloadLink>();
+            }
+
+            DownloadLink dl = createDownloadlink(test);
+            decryptedLinks.add(dl);
             progress.increase(1);
         }
-
         return decryptedLinks;
     }
 
