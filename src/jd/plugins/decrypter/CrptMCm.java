@@ -80,7 +80,7 @@ public class CrptMCm extends PluginForDecrypt {
                 cont = false;
                 Form form = br.getForm(1);
                 String captchaAddress = br.getRegex("<img src=\"(http://crypt-me\\.com/captchanew/show\\.php.*?)\"").getMatch(0);
-                String captchaCode = getCaptchaCode("linkprotect.in", captchaAddress, param);
+                String captchaCode = getCaptchaCode("crypt-me.com", captchaAddress, param);
                 form.put("code", captchaCode);
                 br.submitForm(form);
             } else {
