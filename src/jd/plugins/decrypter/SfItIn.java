@@ -34,7 +34,7 @@ import jd.plugins.PluginForDecrypt;
 //import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "safe-it.in" }, urls = { "http://[\\w\\.]*?(safe-it\\.in|evil-warez\\.com)/\\?s=7&get=[0-9|a-z]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "safe-it.in" }, urls = { "http://[\\w\\.]*?(safe-it\\.in|evil-warez\\.com)(/\\?s|\\?s)=7&get=[0-9|a-z]+" }, flags = { 0 })
 public class SfItIn extends PluginForDecrypt {
 
     public SfItIn(PluginWrapper wrapper) {
