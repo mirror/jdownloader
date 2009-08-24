@@ -813,8 +813,15 @@ jd.plugins.pluginforhost.premiuminfo = Podrobnosti
 jd.plugins.pluginutils.askpassword = Prosím, vložte heslo pro %s
 jd.plugins.pluginutils.informpasswordwrong.message = Heslo, které jste vložili pro %s, bylo špatné.
 jd.plugins.pluginutils.informpasswordwrong.title = Špatné heslo: %s
+jd.update.main.error.message =  Vykytly se chyby!\r\nBěhem aktualizace došlo k %s chybám. Opravdu chcete provést aktualizaci?
+jd.update.main.error.message.old = Jsou dostupné nenainstalované aktualizace. Chcete je nainstalovat teď?
 jd.update.main.error.title = Vyskytly se chyby!
 jd.update.main.error.title.old = Nalezeny aktualizace!
+jd.utils.webupdate.ballon.message.updateinprogress = Aktualizace už probíhá
+jd.utils.webupdate.ballon.title = Aktualizace
+jd.utils.webupdate.message = <font size="2" face="Verdana, Arial, Helvetica, sans-serif">%s dostupných aktualizací. Instalovat teď?</font>
+jd.utils.webupdate.message2 = <font size="4" face="Verdana, Arial, Helvetica, sans-serif">%s dostupných aktualizací. Instalovat teď?</font>
+jd.utils.webupdate.progresscontroller.text = Probíhá aktualizace
 linkgrabber.onlinestatus.offline = offline
 linkgrabber.onlinestatus.online = online
 linkgrabber.onlinestatus.uncheckable = doč. nedostupný
