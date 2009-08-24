@@ -215,6 +215,7 @@ gui.config.general.todowithdownloads.never = nikdy
 gui.config.general.todowithdownloads.packageready = když je připraven balíček
 gui.config.general.update = Aktualizace
 gui.config.general.webupdate.auto = Aktualizace z webu:  automatický start
+gui.config.general.webupdate.disable = Zakázat automatickou aktualizaci
 gui.config.general.webupdate.disable2 = Neupozorňovat mě na důležité aktualizace
 gui.config.gui.browser = Prohlížeč
 gui.config.gui.container = Kontejner (RSDF, DLC, CCF, ...)
