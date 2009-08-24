@@ -58,6 +58,7 @@ public class ShareBaseTo extends PluginForHost {
         setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("Der Download existiert nicht")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (br.containsHTML("Der erforderliche Download-Server ist derzeit nicht verf.*bar")) {throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE); }
         String downloadName = br.getRegex("<title>(.*) @ ShareBase\\.to</title><meta").getMatch(0);
         String downloadSize = br.getRegex("</span>\\((.*?)\\)</td>").getMatch(0);
         if (downloadName == null || downloadSize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
