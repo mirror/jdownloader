@@ -59,7 +59,7 @@ public class SourceParser {
     }
 
     public static void main(String[] args) {
-        parse("protect");
+        parse("ultraupload");
     }
 
 }

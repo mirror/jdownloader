@@ -3,6 +3,9 @@
  <object class="java.util.Vector"> 
   <void method="add"> 
    <object class="jd.captcha.easy.CPoint"> 
+    <void property="color"> 
+     <int>10000536</int> 
+    </void> 
     <void property="colorDistanceMode"> 
      <byte>6</byte> 
     </void> 
@@ -20,7 +23,7 @@
      <byte>6</byte> 
     </void> 
     <void property="distance"> 
-     <int>25</int> 
+     <int>1</int> 
     </void> 
     <void property="foreground"> 
      <boolean>false</boolean> 
@@ -29,14 +32,11 @@
   </void> 
   <void method="add"> 
    <object class="jd.captcha.easy.CPoint"> 
-    <void property="color"> 
-     <int>10000536</int> 
-    </void> 
     <void property="colorDistanceMode"> 
      <byte>6</byte> 
     </void> 
     <void property="distance"> 
-     <int>25</int> 
+     <int>27</int> 
     </void> 
    </object> 
   </void> 
