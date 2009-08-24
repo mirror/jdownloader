@@ -319,7 +319,7 @@ public class EasyCaptcha {
                     n.add(x, y, gc);
                     merge = new ArrayList<PixelObject>();
                     for (PixelObject o : reto) {
-                        if (Colors.getRGBColorDifference2(gc, o.getAverage()) < 10) {
+                        if (Colors.getRGBColorDifference2(gc, o.getAverage()) < 9) {
                             merge.add(o);
                         }
                     }
