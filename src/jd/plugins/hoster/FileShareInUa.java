@@ -50,13 +50,14 @@ public class FileShareInUa extends PluginForHost {
         String filesize = br.getRegex("размер: <b>(.*?)</b></div>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
-        link.setName(filename);
+        link.setFinalFileName(filename);
         link.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
         String freepage = downloadLink.getDownloadURL() + "?free";
         br.getPage(freepage);
         String captchaid = br.getRegex("=\"border: 1px solid #e0e0e0;\" src=\"(.*?)\" width=\"10").getMatch(0);
@@ -78,7 +79,7 @@ public class FileShareInUa extends PluginForHost {
         String dllink1 = "http://fileshare.in.ua" + dllink0;
         br.getPage(dllink1);
         String dllink = br.getRedirectLocation();
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -20);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         dl.startDownload();
     }
 
