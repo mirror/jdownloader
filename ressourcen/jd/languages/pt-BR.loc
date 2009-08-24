@@ -538,6 +538,7 @@ gui.menu.action.wiki.name = Abrir Wiki
 gui.menu.add = Adicionar links
 gui.menu.addons = Addons
 gui.menu.addurl.action.mnem = U
+gui.menu.premium = Premium
 gui.menu.remove = Limpar
 gui.menu.save = Salvar
 gui.packageinfo.name = Nome
