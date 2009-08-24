@@ -290,7 +290,7 @@ public class Uploadedto extends PluginForHost {
         if (form == null && br.containsHTML("Versuch es sp")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.uploadedto.errors.serverproblem", "Server problem"), 10 * 60 * 1000l);
         if (form != null) {
             form.put("download_submit", "Download");
-            sleep(10000l, downloadLink);
+            // sleep(10000l, downloadLink);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, false, 1);
         } else {
             String dlLink = br.getRedirectLocation();
@@ -300,6 +300,13 @@ public class Uploadedto extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FATAL);
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlLink, false, 1);
+        }
+        if (!dl.getConnection().isContentDisposition()) {
+
+            String page = br.loadConnection(null);
+
+            if (br.containsHTML("Sie laden bereits eine Datei herunter")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60*1000l); }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
         dl.fakeContentRangeHeader(false);
         dl.setFileSizeVerified(true);
@@ -313,7 +320,7 @@ public class Uploadedto extends PluginForHost {
 
     // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return 2;
     }
 
     // @Override

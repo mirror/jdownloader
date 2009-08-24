@@ -269,7 +269,12 @@ public class SingleDownloadController extends Thread {
         logger.warning(downloadLink2.getLinkStatus().getErrorMessage());
         // Dieser Exception deutet meistens auf einen PLuginfehler hin. Deshalb
         // wird in diesem Fall die zuletzt geladene browserseite aufgerufen.
+        try{
+        logger.finest(currentPlugin2.getBrowser().getRequest().getHttpConnection() + "");
         logger.finest(currentPlugin2.getBrowser() + "");
+        }catch(Exception e){
+            JDLogger.exception(e);
+        }
         downloadLink2.getLinkStatus().addStatus(LinkStatus.ERROR_FATAL);
         downloadLink2.getLinkStatus().setErrorMessage(JDL.L("controller.status.pluindefekt", "Plugin out of date"));
         downloadLink.requestGuiUpdate();

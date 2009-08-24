@@ -126,11 +126,23 @@ public class JDStatusBar extends JPanel implements ChangeListener, ControlListen
         colorizeSpinnerSpeed();
 
         spMaxDls = new JDSpinner(JDL.L("gui.statusbar.sim_ownloads", "Max. Dls."));
+        try{
         spMaxDls.getSpinner().setModel(new SpinnerNumberModel(dlConfig.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2), 1, 20, 1));
+        }catch(Exception e){
+            dlConfig.setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN,2);
+            spMaxDls.getSpinner().setModel(new SpinnerNumberModel(dlConfig.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2), 1, 20, 1));
+            dlConfig.save();
+        }
         spMaxDls.setToolTipText(JDL.L("gui.tooltip.statusbar.simultan_downloads", "Max. gleichzeitige Downloads"));
 
         spMaxChunks = new JDSpinner(JDL.L("gui.statusbar.maxChunks", "Max. Con."));
+        try{
         spMaxChunks.getSpinner().setModel(new SpinnerNumberModel(dlConfig.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2), 1, 20, 1));
+        }catch(Exception e){
+            dlConfig.setProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS,2);
+            spMaxDls.getSpinner().setModel(new SpinnerNumberModel(dlConfig.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2), 1, 20, 1));
+            dlConfig.save();
+        }
         spMaxChunks.setToolTipText(JDL.L("gui.tooltip.statusbar.max_chunks", "Max. Connections/File"));
 
         add(new PremiumStatus(), "gaptop 1,aligny top");

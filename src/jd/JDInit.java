@@ -415,7 +415,7 @@ public class JDInit {
                         }
                     }
                 } catch (Throwable e) {
-               
+
                     JDLogger.exception(e);
                 }
             }
@@ -503,6 +503,7 @@ public class JDInit {
         } catch (Throwable e) {
             JDLogger.exception(e);
         }
+
     }
 
     public boolean removeFiles() {
