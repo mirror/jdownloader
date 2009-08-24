@@ -92,7 +92,6 @@ public class FileBoxCom extends PluginForHost {
                 downloadLink.setProperty("pass", passCode);
             }
             dl.startDownload();
-        
     }
 
     @Override
