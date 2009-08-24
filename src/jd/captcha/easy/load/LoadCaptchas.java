@@ -15,7 +15,6 @@ import java.awt.image.BufferedImage;
 import java.io.*;
 
 import javax.swing.*;
-
 import jd.captcha.easy.EasyMethodeFile;
 
 import jd.parser.html.HTMLParser;
@@ -307,7 +306,7 @@ public class LoadCaptchas {
 
         final JPanel p = new GuiRunnable<JPanel>() {
             public JPanel runSave() {
-                JPanel ret = new JPanel(new GridLayout(4, 2));
+                JPanel ret = new JPanel(new GridLayout(5, 2));
                 ret.add(new JLabel(JDL.L("easycaptcha.loadcaptchas.link", "Link") + ":"));
                 return ret;
 
@@ -335,6 +334,15 @@ public class LoadCaptchas {
                 p.add(new JLabel(JDL.L("easycaptcha.loadcaptchas.followlinks", "follow normal Links (very slow)") + ":"));
                 JCheckBox checkBox = new JCheckBox();
                 checkBox.setSelected(false);
+                p.add(checkBox);
+                return checkBox;
+            }
+        }.getReturnValue();
+        JCheckBox loadDirect = new GuiRunnable<JCheckBox>() {
+            public JCheckBox runSave() {
+                p.add(new JLabel(JDL.L("easycaptcha.loadcaptchas.loaddirect", "Load direct if possible (much faster)") + ":"));
+                JCheckBox checkBox = new JCheckBox();
+                checkBox.setSelected(true);
                 p.add(checkBox);
                 return checkBox;
             }
@@ -409,6 +417,7 @@ public class LoadCaptchas {
         dialog.dispose();
         LoadInfo retLI = new LoadInfo(link, menge);
         retLI.followLinks = followLinks.isSelected();
+        retLI.directLoad = loadDirect.isSelected();
         return retLI;
 
     }
@@ -647,8 +656,7 @@ public class LoadCaptchas {
                         if (!loadImage.file.equals(selectedImage.file)) loadImage.file.delete();
                     }
                     }
-                    String oldurl = selectedImage.imageUrl;
-                    selectedImage.load(host);
+                    boolean direct = selectedImage.directCaptchaLoad(dir);
                     LoadImage.save(selectedImage, host);
                     new GuiRunnable<Object>() {
                         public Object runSave() {
@@ -656,7 +664,7 @@ public class LoadCaptchas {
                             return null;
                         }
                     }.waitForEDT();
-                    if (oldurl.equals(selectedImage.toString())) {
+                    if (direct && loadinfo.directLoad) {
                         for (int k = 1; k < loadinfo.menge - 1; k++) {
                             selectedImage.directCaptchaLoad(dir);
                             final int d = k;
@@ -668,6 +676,7 @@ public class LoadCaptchas {
                             }.waitForEDT();
                         }
                     } else {
+                        selectedImage.file.delete();
                         for (int k = 1; k < loadinfo.menge - 1; k++) {
                             selectedImage.load(host);
                             final int d = k;

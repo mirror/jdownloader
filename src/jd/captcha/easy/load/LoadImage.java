@@ -2,6 +2,9 @@ package jd.captcha.easy.load;
 
 import java.io.File;
 import java.net.URI;
+
+import jd.nutils.JDHash;
+
 import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
 import jd.http.Browser;
@@ -118,13 +121,20 @@ public class LoadImage {
      * 
      * @param destination
      */
-    public void directCaptchaLoad(String destination) {
+    public boolean directCaptchaLoad(String destination) {
         file = new File(destination, System.currentTimeMillis() + getFileType());
         try {
             br.cloneBrowser().getDownload(file, imageUrl);
-
+            File dest = new File(destination, JDHash.getMD5(file)+ getFileType());
+            if(dest.exists())
+            {file.delete(); 
+            return false;}
+            file.renameTo(dest);
+            file=dest;
+            return true;
         } catch (Exception e) {
         }
+        return false;
     }
 
     /**
