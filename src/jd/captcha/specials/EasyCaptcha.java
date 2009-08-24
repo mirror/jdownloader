@@ -316,7 +316,8 @@ public class EasyCaptcha {
                     n.add(x, y, gc);
                     merge = new ArrayList<PixelObject>();
                     for (PixelObject o : reto) {
-                        if (Colors.getRGBColorDifference2(gc, o.getAverage()) < 9) {
+                        double rgbdiff;
+                        if ((rgbdiff=Colors.getRGBColorDifference2(gc, o.getAverage()))< 6 ||(rgbdiff<25 && Colors.getColorDifference(gc, o.getAverage())<8) ) {
                             merge.add(o);
                         }
                     }
