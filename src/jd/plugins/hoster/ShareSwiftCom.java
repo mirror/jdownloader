@@ -35,17 +35,16 @@ public class ShareSwiftCom extends PluginForHost {
 
     public ShareSwiftCom(PluginWrapper wrapper) {
         super(wrapper);
-        // TODO Auto-generated constructor stub
     }
 
     @Override
     public String getAGBLink() {
         return "http://shareswift.com/tos.html";
     }
-    
-    // @Overrid
+
+    @Override
     public void correctDownloadLink(DownloadLink link) throws Exception {
-        link.setUrlDownload(link.getDownloadURL().replaceFirst("shareswift.viajd" , "shareswift.com"));
+        link.setUrlDownload(link.getDownloadURL().replaceFirst("shareswift\\.viajd", "shareswift.com"));
     }
 
     @Override
@@ -114,17 +113,13 @@ public class ShareSwiftCom extends PluginForHost {
 
     @Override
     public void reset() {
-        // TODO Auto-generated method stub
-
     }
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-        // TODO Auto-generated method stub
-
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 3;
     }
