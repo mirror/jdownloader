@@ -30,7 +30,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 //shareswift.com by pspzockerscene
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shareswift.com" }, urls = { "http://[\\w\\.]*?shareswift\\.com/[0-9a-z]+/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shareswift.com" }, urls = { "http://[\\w\\.]*?shareswift\\.com/[0-9a-z]{12}(/.+(?=\\.html))?" }, flags = { 0 })
 public class ShareSwiftCom extends PluginForHost {
 
     public ShareSwiftCom(PluginWrapper wrapper) {
@@ -40,7 +40,7 @@ public class ShareSwiftCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.teradepot.com/tos.html";
+        return "http://shareswift.com/tos.html";
     }
 
     @Override
@@ -49,7 +49,6 @@ public class ShareSwiftCom extends PluginForHost {
         br.setCookie("http://www.shareswift.com", "lang", "english");
         br.getPage(parameter.getDownloadURL());
         if (br.containsHTML("You have to wait")) {
-
             logger.warning(JDL.L("plugins.host.ShareSwiftCom.uncheckableduewaittime", "You have to wait or perform a reconnect to check the available status"));
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "You need to perform a reconnect to check the available status");
         }
@@ -102,7 +101,7 @@ public class ShareSwiftCom extends PluginForHost {
         if (passCode != null) {
             link.setProperty("pass", passCode);
         }
-        String dllink = br.getRegex("Dieser direkte Downloadlink für Ihre IP.*?href=\"(.*?)\">").getMatch(0);
+        String dllink = br.getRegex("Dieser direkte Downloadlink.*?href=\"(.*?)\">").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         BrowserAdapter.openDownload(br, link, dllink, true, -20);
         dl.startDownload();
