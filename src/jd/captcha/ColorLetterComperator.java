@@ -4,16 +4,14 @@ import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.util.ArrayList;
 
-import com.jhlabs.image.PosterizeFilter;
-
 import jd.captcha.pixelgrid.Captcha;
-
-import jd.nutils.Colors;
-
+import jd.captcha.pixelgrid.Letter;
 import jd.captcha.pixelgrid.PixelGrid;
 import jd.captcha.pixelobject.PixelObject;
 import jd.captcha.utils.Utilities;
-import jd.captcha.pixelgrid.Letter;
+import jd.nutils.Colors;
+
+import com.jhlabs.image.PosterizeFilter;
 
 public class ColorLetterComperator {
     private Letter a;

@@ -16,24 +16,24 @@
 
 package jd.plugins.decrypter;
 
-import java.util.ArrayList;
 import java.io.File;
+import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
-import jd.plugins.DecrypterException;
-import jd.http.URLConnectionAdapter;
 import jd.utils.JDUtilities;
-import jd.nutils.encoding.Encoding;
+import jd.utils.locale.JDL;
 
 //by pspzockerscene
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "urlcrypt.com" }, urls = { "http://[\\w\\.]*?urlcrypt\\.com/open-[A-Za-z0-9]+(-[A-Za-z0-9]+|-[A-Za-z0-9]+-[A-Za-z0-9]+)\\.htm" }, flags = { 0 })

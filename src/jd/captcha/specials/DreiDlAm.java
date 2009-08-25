@@ -5,13 +5,14 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.ListIterator;
 import java.util.Vector;
-import jd.captcha.pixelgrid.PixelGrid;
+
 import jd.captcha.JAntiCaptcha;
-import jd.captcha.utils.Utilities;
 import jd.captcha.LetterComperator;
-import jd.captcha.pixelobject.PixelObject;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
+import jd.captcha.pixelgrid.PixelGrid;
+import jd.captcha.pixelobject.PixelObject;
+import jd.captcha.utils.Utilities;
 /**
  * das ist krank bitte nicht anschauen
  * @author dwd

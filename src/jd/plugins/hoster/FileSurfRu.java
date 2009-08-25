@@ -19,14 +19,14 @@ package jd.plugins.hoster;
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.Plugin;
-import jd.plugins.BrowserAdapter;
 
 //filesurf.ru by pspzockerscene
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesurf.ru" }, urls = { "http://[\\w\\.]*?(filesurf|4ppl|files\\.youmama|upload\\.xradio)\\.ru/[0-9]+" }, flags = { 0 })

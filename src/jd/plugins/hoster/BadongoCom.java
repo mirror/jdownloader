@@ -44,17 +44,22 @@ public class BadongoCom extends PluginForHost {
         this.enablePremium("http://www.badongo.com/compare");
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
         return "http://www.badongo.com/toc/";
     }
 
-    // @Override
+    @Override
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replaceAll("\\.viajd", ".com"));
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
         br.setCookiesExclusive(true);
         br.setCookie("http://www.badongo.com", "badongoL", "de");
-        br.getPage(downloadLink.getDownloadURL().replaceAll("\\.viajd", ".com"));
+        br.getPage(downloadLink.getDownloadURL());
         /* File Password */
         if (br.containsHTML("Diese Datei ist zur Zeit : <b>Geschützt</b>")) {
             for (int i = 0; i <= 5; i++) {
@@ -98,19 +103,14 @@ public class BadongoCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * /* public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
+    @Override
     // TODO: Fix & Test Premium
     public void handlePremium(DownloadLink parameter, Account account) throws Exception {
         requestFileInformation(parameter);
         login(account);
         isPremium();
         String link = null;
-        br.getPage(parameter.getDownloadURL().replaceAll("\\.viajd", ".com"));
+        br.getPage(parameter.getDownloadURL());
         sleep(5000l, parameter);
         if (parameter.getStringProperty("type", "single").equalsIgnoreCase("split")) {
             String downloadLinks[] = br.getRegex("doDownload\\(.?'(.*?).?'\\)").getColumn(0);
@@ -134,7 +134,7 @@ public class BadongoCom extends PluginForHost {
         dl.startDownload();
     }
 
-    // @Override
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
         String link = null;
@@ -232,19 +232,6 @@ public class BadongoCom extends PluginForHost {
         if (br.containsHTML("Du hast Deine Download Quote überschritten")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
     }
 
-    // @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
-    }
-
-    // @Override
-    public void reset() {
-    }
-
-    // @Override
-    public void resetPluginGlobals() {
-    }
-
     public boolean isPremium() throws PluginException, IOException {
         br.getPage("http://www.badongo.com/de/");
         String type = br.getRegex("Du bist zur Zeit als <b>(.*?)</b> eingeloggt").getMatch(0);
@@ -268,7 +255,7 @@ public class BadongoCom extends PluginForHost {
         }
     }
 
-    // @Override
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         try {
@@ -289,10 +276,21 @@ public class BadongoCom extends PluginForHost {
         return ai;
     }
 
-    // @Override
-    public void resetDownloadlink(DownloadLink link) {
-        // TODO Auto-generated method stub
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
 
+    @Override
+    public void reset() {
+    }
+
+    @Override
+    public void resetPluginGlobals() {
+    }
+
+    @Override
+    public void resetDownloadlink(DownloadLink link) {
     }
 
 }

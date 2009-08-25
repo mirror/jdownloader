@@ -17,10 +17,13 @@
 package jd.plugins.decrypter;
 
 import java.awt.Color;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+
 import javax.imageio.ImageIO;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -30,7 +33,6 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import java.awt.image.BufferedImage;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gmd-music.com" }, urls = { "http://[\\w\\.]*?(gmd-music\\.com|uploadr\\.eu)/download/\\d+_[\\w-]+/" }, flags = { 0 })
 public class GmdMscCm extends PluginForDecrypt {

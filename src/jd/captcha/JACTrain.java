@@ -18,11 +18,11 @@ package jd.captcha;
 
 import java.awt.Toolkit;
 import java.util.logging.Logger;
+
+import jd.captcha.utils.Utilities;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.events.EDTEventQueue;
 import jd.gui.swing.laf.LookAndFeelController;
-
-import jd.captcha.utils.Utilities;
 import jd.utils.JDUtilities;
 
 /**

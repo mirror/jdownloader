@@ -8,18 +8,18 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.ListIterator;
 import java.util.Vector;
+
 import javax.imageio.ImageIO;
 
-import jd.captcha.JAntiCaptcha;
-
 import jd.captcha.ColorLetterComperator;
-import jd.nutils.JDImage;
+import jd.captcha.JAntiCaptcha;
 import jd.captcha.LetterComperator;
-import jd.captcha.pixelgrid.PixelGrid;
-import jd.captcha.pixelobject.PixelObject;
 import jd.captcha.easy.BackGroundImageManager;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
+import jd.captcha.pixelgrid.PixelGrid;
+import jd.captcha.pixelobject.PixelObject;
+import jd.nutils.JDImage;
 
 public class ProtectItOrg {
     static ArrayList<PixelObject> getObjects(PixelGrid grid, int neighbourradius) {

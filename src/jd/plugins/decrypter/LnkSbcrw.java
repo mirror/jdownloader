@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
@@ -24,7 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 7434 $", interfaceVersion = 2, names = { "link.sbcrw.com" }, urls = { "http://link.sbcrw.com/[a-zA-Z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "link.sbcrw.com" }, urls = { "http://link.sbcrw.com/[a-zA-Z0-9]+" }, flags = { 0 })
 public class LnkSbcrw extends PluginForDecrypt {
 
     public LnkSbcrw(PluginWrapper wrapper) {

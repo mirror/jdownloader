@@ -17,7 +17,9 @@
 package jd.plugins.decrypter;
 import java.io.File;
 import java.util.ArrayList;
+
 import jd.PluginWrapper;
+import jd.captcha.easy.load.LoadImage;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.parser.html.Form;
@@ -27,9 +29,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
-import jd.captcha.easy.load.LoadImage;
 
-@DecrypterPlugin(revision = "$Revision: 7794 $", interfaceVersion = 2, names = { "videosz.in" }, urls = { "http://[\\w\\.]*?videosz\\.in/screen\\.php\\?load=.*" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videosz.in" }, urls = { "http://[\\w\\.]*?videosz\\.in/screen\\.php\\?load=.*" }, flags = { 0 })
 public class VdSz extends PluginForDecrypt {
 
     public VdSz(PluginWrapper wrapper) {

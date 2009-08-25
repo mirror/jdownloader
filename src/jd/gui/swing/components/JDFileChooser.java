@@ -22,7 +22,6 @@ import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileFilter;
 
 import jd.gui.swing.GuiRunnable;
-
 import jd.utils.JDUtilities;
 
 /**

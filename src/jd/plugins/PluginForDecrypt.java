@@ -25,9 +25,8 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import jd.captcha.easy.load.LoadImage;
-
 import jd.PluginWrapper;
+import jd.captcha.easy.load.LoadImage;
 import jd.config.MenuAction;
 import jd.controlling.CaptchaController;
 import jd.controlling.JDLogger;

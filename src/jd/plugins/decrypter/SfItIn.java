@@ -21,8 +21,6 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-//import jd.http.URLConnectionAdapter;
-//import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -31,7 +29,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-//import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "safe-it.in" }, urls = { "http://[\\w\\.]*?(safe-it\\.in|evil-warez\\.com)(/\\?s|\\?s)=7&get=[0-9|a-z]+" }, flags = { 0 })

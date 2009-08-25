@@ -18,21 +18,20 @@ package jd.plugins.decrypter;
 import java.io.File;
 import java.util.ArrayList;
 
-import jd.http.Browser;
-
-import jd.utils.JDUtilities;
-import jd.parser.html.InputField;
-import jd.captcha.easy.load.LoadImage;
 import jd.PluginWrapper;
+import jd.captcha.easy.load.LoadImage;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.parser.html.Form;
+import jd.parser.html.InputField;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision: 7387 $", interfaceVersion = 2, names = { "protect-it.org" }, urls = { "http://[\\w\\.]*?protect-it\\.org//?\\?id=.*" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protect-it.org" }, urls = { "http://[\\w\\.]*?protect-it\\.org//?\\?id=.*" }, flags = { 0 })
 public class PrtctTOg extends PluginForDecrypt {
 
     public PrtctTOg(PluginWrapper wrapper) {

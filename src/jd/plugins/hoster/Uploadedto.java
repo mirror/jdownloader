@@ -37,8 +37,6 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploaded.to" }, urls = { "(http://[\\w\\.]*?uploaded\\.to/.*?(file/|\\?id=|&id=)[\\w]+/?)|(http://[\\w\\.]*?ul\\.to/[\\w\\-]+/.+)|(http://[\\w\\.]*?ul\\.to/[\\w\\-]+/?)" }, flags = { 2 })
 public class Uploadedto extends PluginForHost {
 
-    static private final String AGB_LINK = "http://uploaded.to/agb";
-
     public Uploadedto(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://uploaded.to/ref?id=70683&r");
@@ -53,29 +51,25 @@ public class Uploadedto extends PluginForHost {
     /**
      * Korrigiert den Downloadlink in ein einheitliches Format
      * 
-     * @param parameter
+     * @param link
      */
-    private void correctURL(DownloadLink parameter) {
-        String link = parameter.getDownloadURL();
-        link = link.replace("ul.to/", "uploaded.to/file/");
-        link = link.replace("/?id=", "/file/");
-        link = link.replace("?id=", "file/");
-        link = link.replaceFirst("/\\?.*?&id=", "/file/");
-        String[] parts = link.split("\\/");
+    @Override
+    public void correctDownloadLink(DownloadLink link) {
+        String url = link.getDownloadURL();
+        url = url.replace("ul.to/", "uploaded.to/file/");
+        url = url.replace("/?id=", "/file/");
+        url = url.replace("?id=", "file/");
+        url = url.replaceFirst("/\\?.*?&id=", "/file/");
+        String[] parts = url.split("\\/");
         String newLink = "";
         for (int t = 0; t < Math.min(parts.length, 5); t++) {
             newLink += parts[t] + "/";
         }
 
-        parameter.setUrlDownload(newLink);
-
+        link.setUrlDownload(newLink);
     }
 
-    public void correctDownloadLink(DownloadLink link) {
-        correctURL(link);
-    }
-
-    // @Override
+    @Override
     public int getTimegapBetweenConnections() {
         return 800;
     }
@@ -100,7 +94,7 @@ public class Uploadedto extends PluginForHost {
         return true;
     }
 
-    // @Override
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         try {
@@ -136,7 +130,7 @@ public class Uploadedto extends PluginForHost {
         return ai;
     }
 
-    // @Override
+    @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         requestFileInformation(downloadLink);
@@ -150,7 +144,7 @@ public class Uploadedto extends PluginForHost {
         }
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
-        checkPasswort(downloadLink);
+        checkPassword(downloadLink);
         String error = new Regex(br.getRedirectLocation(), "http://uploaded.to/\\?view=(.*)").getMatch(0);
         if (error == null) {
             error = new Regex(br.getRedirectLocation(), "\\?view=(.*?)&id\\_a").getMatch(0);
@@ -197,12 +191,12 @@ public class Uploadedto extends PluginForHost {
         dl.startDownload();
     }
 
-    // @Override
+    @Override
     public String getAGBLink() {
-        return AGB_LINK;
+        return "http://uploaded.to/agb";
     }
 
-    // @Override
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -226,12 +220,7 @@ public class Uploadedto extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    public void checkPasswort(DownloadLink downloadLink) throws Exception {
+    private void checkPassword(DownloadLink downloadLink) throws Exception {
         Form form = br.getForm(0);
         String passCode = null;
         if (form != null && form.hasInputFieldByName("file_key")) {
@@ -255,7 +244,7 @@ public class Uploadedto extends PluginForHost {
         }
     }
 
-    // @Override
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         requestFileInformation(downloadLink);
@@ -263,7 +252,7 @@ public class Uploadedto extends PluginForHost {
         br.setDebug(true);
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        checkPasswort(downloadLink);
+        checkPassword(downloadLink);
         if (br.containsHTML("ist aufgebraucht")) {
             long wait = Regex.getMilliSeconds(br.getRegex("\\(Oder warten Sie (.*?)\\!\\)").getMatch(0));
             linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
@@ -302,10 +291,8 @@ public class Uploadedto extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlLink, false, 1);
         }
         if (!dl.getConnection().isContentDisposition()) {
-
-            String page = br.loadConnection(null);
-
-            if (br.containsHTML("Sie laden bereits eine Datei herunter")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60*1000l); }
+            br.loadConnection(null);
+            if (br.containsHTML("Sie laden bereits eine Datei herunter")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
         dl.fakeContentRangeHeader(false);
@@ -318,23 +305,21 @@ public class Uploadedto extends PluginForHost {
         dl.startDownload();
     }
 
-    // @Override
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    // @Override
+    @Override
     public void reset() {
     }
 
-    // @Override
+    @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
+    @Override
     public void resetDownloadlink(DownloadLink link) {
-        // TODO Auto-generated method stub
-
     }
 
 }

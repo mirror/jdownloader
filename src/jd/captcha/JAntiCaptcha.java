@@ -54,20 +54,19 @@ import jd.captcha.pixelgrid.Letter;
 import jd.captcha.pixelobject.PixelObject;
 import jd.captcha.utils.Utilities;
 import jd.controlling.JDLogger;
+import jd.gui.swing.GuiRunnable;
+import jd.gui.userio.DummyFrame;
 import jd.nutils.Executer;
 import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.utils.JDUtilities;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-
-import jd.gui.userio.DummyFrame;
-
-import jd.gui.swing.GuiRunnable;
 
 /**
  * Diese Klasse stellt alle public Methoden zur captcha Erkennung zur Verfügung.
