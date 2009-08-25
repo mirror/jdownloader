@@ -42,7 +42,7 @@ public class VdSz extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         for (int retry = 0; retry < 5; retry++) {
 
-            LoadImage li = LoadImage.loadFile(getHost());
+            LoadImage li = LoadImage.loadFile("vdsz");
             li.baseUrl = param.toString();
             li.load(getHost());
             String captchaCode = getCaptchaCode("crypt-me.com.Calc", li.file, param);
