@@ -41,7 +41,8 @@ public class Usershare extends PluginForHost {
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
-        String linkurl = br.getRegex(".*?flashvars=.*?<a href=\"(.*?)\"><img src=\"/images/download_btn.jpg\" border=0>").getMatch(0);
+        br.setCookie("http://www.usershare.net", "lang", "english");
+        String linkurl = br.getRegex("</script> -->.*?<br>.*?<a href=\"(.*?)\"><img").getMatch(0);
         if (linkurl == null) {
             linkurl = br.getRegex(".*?document.oncontextmenu=new Function.*?<a href=\"(.*?)\"><img src=\"/images/download_btn.jpg\" border=0>").getMatch(0);
             if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
