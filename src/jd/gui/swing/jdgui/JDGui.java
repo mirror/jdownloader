@@ -117,18 +117,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         setWindowIcon();
         setWindowTitle();
         layoutComponents();
-        mainFrame.addPropertyChangeListener("alwaysOnTop", new PropertyChangeListener() {
-            // debug code to find this
-            public void propertyChange(PropertyChangeEvent evt) {
-                JDLogger.exception(new Exception());
-                if (JDInitFlags.SWITCH_DEBUG) {
-
-                    UserIO.getInstance().requestTextAreaDialog("Always on top bug", "Error. Please Send your log to support@jdownloader.org", JDLogger.getStackTrace(new Exception()));
-                }
-
-            }
-
-        });
+     
         mainFrame.pack();
 
         initLocationAndDimension();
