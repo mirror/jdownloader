@@ -1,0 +1,4 @@
+<jDownloader>
+  <method name="gigasize.com" author="JD-Team" services="gigasize.com"/>
+  <format type="png" letterNum="3"/>
+</jDownloader>

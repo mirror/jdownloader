@@ -1,0 +1,4 @@
+<jDownloader>
+  <method name="getapp.info" author="DwD" services="getapp.info"/>
+  <format type="png" letterNum="5" />
+</jDownloader>
