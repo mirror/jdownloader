@@ -18,7 +18,6 @@ package jd.captcha.specials;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.IOException;
 
 import javax.imageio.ImageIO;
 
@@ -28,12 +27,6 @@ import jd.captcha.utils.GifDecoder;
 import jd.utils.JDUtilities;
 
 public class Rbkprr {
-
-
-    private static void multiPrepare(File[] files) {
-        for (File file : files)
-            prepareCaptcha(file);
-    }
 
     public static void prepareCaptcha(File file) {
         try {
@@ -77,7 +70,7 @@ public class Rbkprr {
             frames[0].setGrid(colorGrid);
             // File fileOut = new File(file.getParent() + "\\out\\" +
             // file.getName().replace("gif", "png"));
-            ImageIO.write((BufferedImage) (frames[0].getImage(1)), "png", file);
+            ImageIO.write((BufferedImage) frames[0].getImage(1), "png", file);
         } catch (Exception e) {
 
         }

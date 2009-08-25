@@ -30,7 +30,6 @@ import jd.gui.UserIO;
 import jd.gui.swing.Factory;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.dialog.AbstractDialog;
-import jd.gui.swing.jdgui.userio.UserIOGui;
 import jd.nutils.JDImage;
 import jd.nutils.io.JDIO;
 import jd.update.WebUpdater;
@@ -40,11 +39,6 @@ import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
 public class AboutDialog extends AbstractDialog {
-
-    public static void main(String[] args) {
-        UserIO.setInstance(UserIOGui.getInstance());
-        new AboutDialog();
-    }
 
     private static final String JDL_PREFIX = "jd.gui.swing.components.AboutDialog.";
 
@@ -70,7 +64,7 @@ public class AboutDialog extends AbstractDialog {
         } else {
             branch = "-" + branch + "- ";
         }
-        cp.add(new JLabel(branch + JDL.LF(JDL_PREFIX + "version", "Version %s", JDUtilities.getRevision())));
+        cp.add(new JLabel(branch + JDL.LF(JDL_PREFIX + "version", "Version %s", JDUtilities.JD_VERSION + JDUtilities.getRevision())));
 
         cp.add(new JLabel("© AppWork UG (haftungsbeschränkt) 2007-2009"), "gaptop 5");
 

@@ -74,7 +74,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
-import jd.update.WebUpdater;
 import jd.utils.locale.JDL;
 
 import org.w3c.dom.Document;
@@ -100,11 +99,6 @@ public class JDUtilities {
      * Der DownloadController
      */
     private static JDController CONTROLLER = null;
-
-    /**
-     * Versionsstring der Applikation
-     */
-    public static final String JD_TITLE = "jDownloader";
 
     /**
      * Titel der Applikation
@@ -502,23 +496,15 @@ public class JDUtilities {
     }
 
     public static String getJDTitle() {
-        StringBuilder ret = new StringBuilder(JDUtilities.JD_TITLE);
+        StringBuilder ret = new StringBuilder("JDownloader");
 
-        if (WebUpdater.getConfig("WEBUPDATE").getStringProperty("BRANCHINUSE", null) != null) {
-            ret.append(' ');
-            ret.append('(');
-            ret.append(WebUpdater.getConfig("WEBUPDATE").getStringProperty("BRANCHINUSE", null));
+        int i;
+        if (JDUtilities.getController() != null && JDUtilities.getController().getWaitingUpdates() != null && (i = JDUtilities.getController().getWaitingUpdates().size()) > 0) {
+            ret.append(new char[] { ' ', '(' });
+            ret.append(JDL.LF("gui.mainframe.title.updatemessage2", "%s Updates available", i));
             ret.append(')');
         }
-        ret.append(' ');
-        ret.append(JDUtilities.JD_VERSION);
-        ret.append(JDUtilities.getRevision());
-        if (JDUtilities.getController() != null && JDUtilities.getController().getWaitingUpdates() != null && JDUtilities.getController().getWaitingUpdates().size() > 0) {
-            ret.append(' ');
-            ret.append(JDL.L("gui.mainframe.title.updatemessage", "-->UPDATES VERFÜGBAR:"));
-            ret.append(' ');
-            ret.append(JDUtilities.getController().getWaitingUpdates().size());
-        }
+
         return ret.toString();
     }
 

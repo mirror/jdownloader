@@ -227,7 +227,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
      * Sets the windowtitle depüending on the used branch
      */
     private void setWindowTitle() {
-        mainFrame.setTitle("JDownloader");
+        mainFrame.setTitle(JDUtilities.getJDTitle());
     }
 
     /**
