@@ -30,6 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.DecrypterException;
 import jd.utils.locale.JDL;
 
 //pspzockerscenes first decrypter hehe
@@ -78,7 +79,7 @@ public class StrPrtctNet extends PluginForDecrypt {
             if (br.containsHTML("Passwort ist falsch")) {
                 logger.warning("Wrong password!");
                 param.setProperty("pass", null);
-                throw new PluginException(LinkStatus.ERROR_RETRY);
+                throw new DecrypterException(DecrypterException.PASSWORD);
             }
             if (passCode != null) {
                 param.setProperty("pass", passCode);
