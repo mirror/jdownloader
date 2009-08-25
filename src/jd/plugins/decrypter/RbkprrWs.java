@@ -33,7 +33,7 @@ import javax.swing.JLabel;
 import javax.swing.JSeparator;
 
 import jd.PluginWrapper;
-import jd.captcha.specials.Raubkopierer;
+import jd.captcha.specials.Rbkprr;
 import jd.controlling.ProgressController;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
@@ -125,7 +125,7 @@ public class RbkprrWs extends PluginForDecrypt {
                 String captchaURL = "/captcha" + form.getRegex("<img\\ssrc=\"/captcha(.*?)\"").getMatch(0);
                 File captchaFile = this.getLocalCaptchaFile();
                 Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaURL));
-                Raubkopierer.prepareCaptcha(captchaFile);
+                Rbkprr.prepareCaptcha(captchaFile);
                 String code = getCaptchaCode("rbkprrws", captchaFile, param);
                 br.postPage(parameter, "captcha=" + code + "&" + mirrors.get(i).getKey() + "=");
                 if (!br.containsHTML("Fehler: Der Sicherheits-Code")) {
@@ -261,7 +261,7 @@ public class RbkprrWs extends PluginForDecrypt {
 
                         setLayout(new MigLayout("wrap 1"));
                         setModal(true);
-                        setTitle(JDL.L("plugins.decrypt.RaubkopiererWS.mirrorDialog.title", "Raubkopierer.ws::Mirrors"));
+                        setTitle(JDL.L("plugins.decrypt.RaubkopiererWS.mirrorDialog.title", "Rbkprr.ws::Mirrors"));
                         setAlwaysOnTop(true);
 
                         addWindowListener(new WindowAdapter() {

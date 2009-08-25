@@ -28,7 +28,7 @@ import jd.captcha.pixelobject.PixelObject;
  * 
  * @author JD-Team
  */
-public class Scum {
+public class Scm {
 
 	private static void mergeObjects(Vector<PixelObject> os) {
 		for (PixelObject a : os) {

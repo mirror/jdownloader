@@ -27,12 +27,8 @@ import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.utils.GifDecoder;
 import jd.utils.JDUtilities;
 
-public class Raubkopierer {
-    public static void main(String args[]) throws IOException {
-        File[] files = new File("F:\\JDownloader\\Captcha\\raubkopierer.ws.captchas\\").listFiles();
-        // prepareCaptcha(files[2]);
-        multiPrepare(files);
-    }
+public class Rbkprr {
+
 
     private static void multiPrepare(File[] files) {
         for (File file : files)
@@ -41,7 +37,7 @@ public class Raubkopierer {
 
     public static void prepareCaptcha(File file) {
         try {
-            JAntiCaptcha jac = new JAntiCaptcha(JDUtilities.getJACMethodsDirectory(), "raubkopierer.ws");
+            JAntiCaptcha jac = new JAntiCaptcha(JDUtilities.getJACMethodsDirectory(), "rbkprr");
             jac.getJas().setColorType("RGB");
             GifDecoder d = new GifDecoder();
             d.read(file.getAbsolutePath());

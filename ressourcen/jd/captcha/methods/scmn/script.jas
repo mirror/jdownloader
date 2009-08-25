@@ -48,6 +48,6 @@ param.splitPixelObjectsOverlap=0;
 param.splitGapsOverlap=0;
 
 
-param.useSpecialGetLetters=Scum.getLetters;
+param.useSpecialGetLetters=Scm.getLetters;
 
 

@@ -21,7 +21,6 @@ import java.io.File;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
-import jd.captcha.specials.RomNewsOrg;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -56,7 +55,7 @@ public class RmNwsrg extends PluginForDecrypt {
             String cap = br.getRegex("\"image\" src=\"(.*?png.*?)\"").getMatch(0);
             Form form = br.getForm(0);
             Browser.download(file, br.cloneBrowser().openGetConnection(cap));
-            int[] p = new RomNewsOrg(file, color).getResult();
+            int[] p = new jd.captcha.specials.RmNwsrg(file, color).getResult();
             if (p == null) throw new DecrypterException(DecrypterException.CAPTCHA);
             form.remove("x");
             form.remove("y");

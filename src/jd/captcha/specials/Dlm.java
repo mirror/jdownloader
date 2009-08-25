@@ -18,7 +18,7 @@ import jd.captcha.utils.Utilities;
  * @author dwd
  *
  */
-public class DreiDlAm {
+public class Dlm {
     /**
      * löscht ein objekt an der position x y
      * @param captcha

@@ -12,7 +12,7 @@ import javax.imageio.ImageIO;
  * 
  * @author JTB
  */
-public class RomNewsOrg {
+public class RmNwsrg {
 
     private BufferedImage pic;
     private int[][] selected = new int[20001][2];
@@ -25,7 +25,7 @@ public class RomNewsOrg {
     private int min_y = 100;
     private int[] result;
 
-    public RomNewsOrg(File file, Color color) {
+    public RmNwsrg(File file, Color color) {
         try {
             this.pic = ImageIO.read(file);
         } catch (IOException e) {
