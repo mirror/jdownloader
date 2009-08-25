@@ -30,7 +30,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 //shareswift.com by pspzockerscene
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shareswift.com" }, urls = { "http://[\\w\\.]*?shareswift\\.com/[0-9a-z]{12}(/.+(?=\\.html))?" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shareswift.com" }, urls = { "http://[\\w\\.]*?shareswift\\.viajd/\\w+/.+" }, flags = { 0 })
 public class ShareSwiftCom extends PluginForHost {
 
     public ShareSwiftCom(PluginWrapper wrapper) {
@@ -41,6 +41,11 @@ public class ShareSwiftCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://shareswift.com/tos.html";
+    }
+    
+    // @Overrid
+    public void correctDownloadLink(DownloadLink link) throws Exception {
+        link.setUrlDownload(link.getDownloadURL().replaceFirst("shareswift.viajd" , "shareswift.com"));
     }
 
     @Override
