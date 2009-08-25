@@ -1173,6 +1173,7 @@ plugins.optional.langfileeditor.startcurrent = Test JD with current translation
 plugins.optional.langfileeditor.startkey = Test JD in Key mode
 jd.plugins.optional.langfileeditor.lfeview.title = Translation Editor
 jd.plugins.optional.langfileeditor.lfeview.tooltip = Edit a translation file
+gui.menu.action.opendlfolder = [[.....]]String[]keys=newRegex(currentContent
 jd.plugins.optional.langfileeditor.srcparser = SrcParser
 plugin.optional.scheduler.add.name = Name
 plugin.optional.scheduler.add.once = Only once
