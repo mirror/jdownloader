@@ -211,7 +211,7 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
 
             });
         }
-        this.setAlwaysOnTop(true);
+        //this.setAlwaysOnTop(true);
         this.invalidate();
         this.pack();
         this.setResizable(true);
@@ -242,6 +242,13 @@ public abstract class AbstractDialog extends JCountdownDialog implements ActionL
         focus.requestFocus();
         this.packed();
         this.setVisible(true);
+        
+        //fixes always on top bug in windows
+        /*
+         * Bugdesc: found in svn               
+         */
+        DummyFrame.getDialogParent().setAlwaysOnTop(true);
+        DummyFrame.getDialogParent().setAlwaysOnTop(false);
 
     }
 
