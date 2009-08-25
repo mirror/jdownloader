@@ -569,6 +569,7 @@ public class Rapidshare extends PluginForHost {
             if (downloadLink.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
                 if (Sniffy.hasSniffer()) throw new SnifferException();
             }
+
             String freeOrPremiumSelectPostURL = null;
             Request request = null;
 
@@ -963,7 +964,7 @@ public class Rapidshare extends PluginForHost {
             ai.setTrafficMax(25 * 1024 * 1024 * 1024l);
             ai.setFilesNum(Long.parseLong(data.get("curfiles")));
             ai.setPremiumPoints(Long.parseLong(data.get("fpoints")));
-            ai.setAccountBalance(Long.parseLong(data.get("refpoints")) * Long.parseLong(data.get("refrate")));
+            ai.setAccountBalance((Long.parseLong(data.get("ppoints")) * Long.parseLong(data.get("ppointrate"))) / 1000);
             ai.setUsedSpace(Long.parseLong(data.get("curspace")));
             ai.setTrafficShareLeft((long) (Long.parseLong(data.get("bodkb")) / 1000.0) * 1024l * 1024l);
             ai.setValidUntil(Long.parseLong(data.get("validuntil")) * 1000);
@@ -971,6 +972,7 @@ public class Rapidshare extends PluginForHost {
                 ai.setExpired(true);
             }
         } catch (Exception e) {
+
             logger.severe("RS-API change detected, please inform support!");
         }
         return ai;
