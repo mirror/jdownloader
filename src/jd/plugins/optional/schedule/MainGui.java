@@ -31,7 +31,6 @@ import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.table.AbstractTableModel;
 
-import jd.config.SubConfiguration;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
@@ -61,7 +60,7 @@ public class MainGui extends SwitchPanel implements ActionListener, MouseListene
 
     private Date now = new Date();
 
-    public MainGui(SubConfiguration cfg) {
+    public MainGui() {
         instance = this;
 
         time = new SimpleDateFormat("HH:mm");

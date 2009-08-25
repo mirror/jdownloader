@@ -209,13 +209,10 @@ public class WebUpdate {
                     updater.filterAvailableUpdates(files);
                     JDUtilities.getController().setWaitingUpdates(files);
                     if (files.size() > 0) {
-                        new GuiRunnable() {
-                         
-
+                        new GuiRunnable<Object>() {
                             @Override
                             public Object runSave() {
                                 SwingGui.getInstance().getMainFrame().setTitle(JDUtilities.getJDTitle());
-
                                 return null;
                             }
                         }.start();
@@ -223,8 +220,8 @@ public class WebUpdate {
 
                 }
 
-                //only ignore updaterequest of all plugins are present
-                if (DecryptPluginWrapper.getDecryptWrapper().size()>50&& !JDInitFlags.SWITCH_RETURNED_FROM_UPDATE&&!forceguiCall && SubConfiguration.getConfig("WEBUPDATE").getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false)) {
+                // only ignore updaterequest of all plugins are present
+                if (DecryptPluginWrapper.getDecryptWrapper().size() > 50 && !JDInitFlags.SWITCH_RETURNED_FROM_UPDATE && !forceguiCall && SubConfiguration.getConfig("WEBUPDATE").getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false)) {
                     logger.severe("Webupdater disabled");
 
                     JDController.releaseDelayExit(id);
@@ -330,7 +327,7 @@ public class WebUpdate {
                     }
 
                     if (!WebUpdate.updateUpdater()) {
-                        
+
                     }
 
                     final ProgressController pc = new ProgressController(JDL.L("jd.utils.webupdate.progresscontroller.text", "Update is running"), 10);

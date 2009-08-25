@@ -43,6 +43,8 @@ import org.jdesktop.swingx.renderer.DefaultTableRenderer;
 
 public class ToolbarController extends ConfigPanel {
 
+    private static final long serialVersionUID = -7024581410075950497L;
+
     public String getBreadcrum() {
         return JDL.L(this.getClass().getName() + ".breadcrum", this.getClass().getSimpleName());
     }
@@ -61,7 +63,6 @@ public class ToolbarController extends ConfigPanel {
         public Class<?> getColumnClass(int columnIndex) {
             if (columnIndex == 0) return Boolean.class;
             return ToolBarAction.class;
-
         }
 
         public int getColumnCount() {
@@ -81,9 +82,7 @@ public class ToolbarController extends ConfigPanel {
                 return JDL.L(JDL_PREFIX + ".column.id", "ID");
             case 4:
                 return JDL.L(JDL_PREFIX + ".column.icon", "Icon");
-
             }
-
             return super.getColumnName(column);
         }
 
@@ -92,9 +91,8 @@ public class ToolbarController extends ConfigPanel {
         }
 
         public Object getValueAt(final int rowIndex, final int columnIndex) {
-if(columnIndex==0)return  actions.get(rowIndex).isVisible();
+            if (columnIndex == 0) return actions.get(rowIndex).isVisible();
             return actions.get(rowIndex);
-
         }
 
         @Override
@@ -105,7 +103,6 @@ if(columnIndex==0)return  actions.get(rowIndex).isVisible();
         @Override
         public void setValueAt(Object value, int row, int col) {
             if (col == 0) {
-
                 actions.get(row).setVisible((Boolean) value);
             }
         }
@@ -122,24 +119,23 @@ if(columnIndex==0)return  actions.get(rowIndex).isVisible();
         setActions(ActionController.getActions());
         initPanel();
         load();
-
     }
 
     public void onShow() {
         super.onShow();
         setActions(ActionController.getActions());
-
     }
-/**
- * filters the available actions
- * @param actions2
- */
+
+    /**
+     * filters the available actions
+     * 
+     * @param actions2
+     */
     private void setActions(ArrayList<ToolBarAction> actions2) {
         for (Iterator<ToolBarAction> it = actions2.iterator(); it.hasNext();) {
             ToolBarAction a = it.next();
-            if(a.getID().equals("action.opendlfolder"))continue;
-            
-            
+            if (a.getID().equals("action.opendlfolder")) continue;
+
             if (a.getID().equals("toolbar.separator")) {
                 it.remove();
                 continue;
@@ -149,19 +145,13 @@ if(columnIndex==0)return  actions.get(rowIndex).isVisible();
             } else if (a.getID().equals("toolbar.control.start")) {
                 it.remove();
                 continue;
-                
-                
-                
             } else if (a.getID().equals("toolbar.control.stop")) {
                 it.remove();
                 continue;
-                
-              
-            } else if (!a.getID().startsWith("toolbar.")&&!a.getID().startsWith("action.downloadview")) {
+            } else if (!a.getID().startsWith("toolbar.") && !a.getID().startsWith("action.downloadview")) {
                 it.remove();
                 continue;
-            } 
-
+            }
         }
         this.actions = actions2;
 
@@ -171,11 +161,11 @@ if(columnIndex==0)return  actions.get(rowIndex).isVisible();
     public void initPanel() {
         tableModel = new InternalTableModel();
         table = new JTable(tableModel) {
+            private static final long serialVersionUID = -7914266013067863393L;
+
             @Override
             public TableCellRenderer getCellRenderer(int row, int col) {
-                if (col == 0){
-                    return super.getCellRenderer(row, col);
-                }
+                if (col == 0) return super.getCellRenderer(row, col);
                 return new TableRenderer();
             }
         };
@@ -193,7 +183,7 @@ if(columnIndex==0)return  actions.get(rowIndex).isVisible();
                 column.setPreferredWidth(40);
                 column.setMaxWidth(40);
                 break;
-      
+
             case 4:
                 column.setPreferredWidth(40);
                 column.setMaxWidth(40);
@@ -218,7 +208,6 @@ if(columnIndex==0)return  actions.get(rowIndex).isVisible();
 
     @Override
     public void save() {
-
     }
 
     @Override
@@ -227,6 +216,9 @@ if(columnIndex==0)return  actions.get(rowIndex).isVisible();
     }
 
     class TableRenderer extends DefaultTableRenderer {
+
+        private static final long serialVersionUID = 1L;
+
         private Component co;
         private JCheckBox checkbox;
         private JLabel label;
@@ -264,11 +256,6 @@ if(columnIndex==0)return  actions.get(rowIndex).isVisible();
             }
             return co;
         }
-
-        /**
- * 
- */
-        private static final long serialVersionUID = 1L;
 
     }
 }

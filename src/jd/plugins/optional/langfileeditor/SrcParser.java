@@ -25,7 +25,6 @@ import jd.controlling.JDLogger;
 import jd.event.JDBroadcaster;
 import jd.event.MessageEvent;
 import jd.event.MessageListener;
-import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.nutils.Formatter;
 import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
@@ -51,7 +50,7 @@ public class SrcParser {
             }
 
         };
-     
+
         pattern.add("jd\\.gui\\.swing\\.ShortCuts\\.(.+?)");
         pattern.add("sys\\.warning\\.dlcerror\\.(.+?)");
         pattern.add("!(.+?)");
@@ -129,7 +128,7 @@ public class SrcParser {
                 }
                 return;
             } catch (Exception e) {
-              
+
                 cacheEntries.delete();
                 cachePattern.delete();
                 fileEntries = new ArrayList<LngEntry>();
@@ -202,7 +201,8 @@ public class SrcParser {
 
         }
         if (this.currentContent.contains(" ToolBarAction")) {
-            // new ToolBarAction("action.opendlfolder", "gui.images.package_opened") {
+            // new ToolBarAction("action.opendlfolder",
+            // "gui.images.package_opened") {
             String[] keys = new Regex(currentContent, " ToolBarAction\\s*\\(\"(.*?)\"\\,\\s*\"(.*?)\"").getColumn(0);
 
             for (String k : keys) {

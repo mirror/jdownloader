@@ -171,7 +171,7 @@ public class Schedule extends PluginOptional {
                 }
 
             });
-            view.setContent(new MainGui(getPluginConfig()));
+            view.setContent(new MainGui());
 
         }
         activateAction.setSelected(true);
