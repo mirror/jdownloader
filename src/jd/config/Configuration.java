@@ -140,7 +140,9 @@ public class Configuration extends SubConfiguration implements Serializable {
 
     public static final String PARAM_WEBUPDATE_AUTO_SHOW_CHANGELOG = "WEBUPDATE_AUTO_SHOW_CHANGELOG";
 
-    public static final String PARAM_LATEST_RECONNECT_RESULT = "LATEST_RECONNECT_RESULT";
+    public static final String PARAM_RECONNECT_OKAY = "PARAM_RECONNECT_OKAY";
+
+    public static final String PARAM_RECONNECT_FAILED_COUNTER = "RECONNECT_FAILED_COUNTER";
 
     public static final String NAME = "jdownloaderconfig";
     /**

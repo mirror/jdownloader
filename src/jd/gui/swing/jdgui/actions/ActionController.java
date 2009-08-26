@@ -330,7 +330,7 @@ public class ActionController {
             public void init() {
                 if (inited) return;
                 this.inited = true;
-                JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_LATEST_RECONNECT_RESULT) {
+                JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_RECONNECT_OKAY) {
                     @Override
                     public void onPropertyChanged(Property source, final String key) {
                         if (!source.getBooleanProperty(key, true)) {

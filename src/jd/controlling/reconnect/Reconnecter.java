@@ -29,6 +29,7 @@ import jd.controlling.LinkCheck;
 import jd.controlling.ProgressController;
 import jd.controlling.interaction.Interaction;
 import jd.gui.UserIF;
+import jd.gui.UserIO;
 import jd.http.IPCheck;
 import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
@@ -86,9 +87,11 @@ public class Reconnecter {
              * gab schon nen externen reconnect , checke nur falls wirklich
              * ipcheck aktiv ist!
              */
-//            if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
-                if (Reconnecter.checkExternalIPChange()) return true;
-//            }
+            // if
+            // (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE,
+            // false)) {
+            if (Reconnecter.checkExternalIPChange()) return true;
+            // }
         }
 
         Interaction.handleInteraction(Interaction.INTERACTION_BEFORE_RECONNECT, controller);
@@ -149,11 +152,10 @@ public class Reconnecter {
      * @return
      */
     public static boolean isReconnectPrefered() {
-
-        return (isReconnectRequested() && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true) && SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty("PARAM_DOWNLOAD_PREFER_RECONNECT", true) && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_LATEST_RECONNECT_RESULT, true));
+        return (isReconnectRequested() && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true) && SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty("PARAM_DOWNLOAD_PREFER_RECONNECT", true));
     }
 
-    public static boolean doReconnectIfRequested(boolean bypassrcvalidation) {
+    public static boolean doReconnectIfRequested(boolean doit) {
         if (RECONNECT_IN_PROGRESS) return false;
         /* falls nen Linkcheck läuft, kein Reconnect */
         if (LinkCheck.getLinkChecker().isRunning()) {
@@ -169,7 +171,7 @@ public class Reconnecter {
         RECONNECT_IN_PROGRESS = true;
         boolean ret = false;
         try {
-            ret = doReconnectIfRequestedInternal(bypassrcvalidation);
+            ret = doReconnectIfRequestedInternal(doit);
             if (ret) {
                 Reconnecter.resetAllLinks();
                 Interaction.handleInteraction(Interaction.INTERACTION_AFTER_RECONNECT, JDUtilities.getController());
@@ -181,11 +183,11 @@ public class Reconnecter {
         return ret;
     }
 
-    public static boolean doReconnectIfRequestedInternal(boolean bypassrcvalidation) {
+    public static boolean doReconnectIfRequestedInternal(boolean doit) {
         boolean ret = false;
         /* überhaupt ein reconnect angefragt? */
         if (isReconnectRequested()) {
-            if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true)) {
+            if (!doit && !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true)) {
                 /*
                  * auto reconnect ist AUS, dann nur noch schaun ob sich ip
                  * geändert hat
@@ -195,31 +197,49 @@ public class Reconnecter {
                      * hier nur ein ip check falls auch ip check wirklich aktiv,
                      * sonst gibts ne endlos reconnectschleife
                      */
-//                    if (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) 
-                        return Reconnecter.checkExternalIPChange();
+                    // if
+                    // (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE,
+                    // false))
+                    return Reconnecter.checkExternalIPChange();
                 }
                 return false;
 
             } else {
                 /* auto reconnect ist AN */
-                if (bypassrcvalidation || JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_LATEST_RECONNECT_RESULT, true)) {
-                    try {
-                        ret = Reconnecter.doReconnect();
-                        if (ret) {
-                            logger.info("Reconnect successfully!");
-                        } else {
-                            logger.info("Reconnect failed!");
-                        }
-                    } catch (Exception e) {
-                        logger.finest("Reconnect failed.");
+                try {
+                    ret = Reconnecter.doReconnect();
+                    if (ret) {
+                        logger.info("Reconnect successfully!");
+                    } else {
+                        logger.info("Reconnect failed!");
                     }
-                    if (ret == false) {
-                        ProgressController progress = new ProgressController(JDL.L("jd.controlling.reconnect.Reconnector.progress.failed", "Reconnect failed! Please check your reconnect Settings and try a Manual Reconnect!"), 100);
-                        progress.doFinalize(10000l);
+                } catch (Exception e) {
+                    logger.finest("Reconnect failed.");
+                }
+                if (ret == false) {
+                    /* reconnect failed, increase fail counter */
+                    ProgressController progress = new ProgressController(JDL.L("jd.controlling.reconnect.Reconnector.progress.failed", "Reconnect failed! Please check your reconnect Settings and try a Manual Reconnect!"), 100);
+                    progress.doFinalize(10000l);
+                    int counter = JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_RECONNECT_FAILED_COUNTER, 0) + 1;
+                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_RECONNECT_FAILED_COUNTER, counter);
+                    if (counter > 5) {
+                        /*
+                         * more than 5 failed reconnects in row, disable
+                         * autoreconnect and show message
+                         */
+                        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_RECONNECT_OKAY, false);
+                        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_ALLOW_RECONNECT, false);
+                        UserIO.getInstance().requestMessageDialog(JDL.L("jd.controlling.reconnect.Reconnector.progress.failed2", "Reconnect failed too often! Autoreconnect is disabled! Please check your reconnect Settings!"));
+                        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_RECONNECT_FAILED_COUNTER, 0);
                     }
-                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_LATEST_RECONNECT_RESULT, ret);
+                    JDUtilities.getConfiguration().save();
+                } else {
+                    /* reconnect okay, reset fail counter */
+                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_RECONNECT_FAILED_COUNTER, 0);
+                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_RECONNECT_OKAY, true);
                     JDUtilities.getConfiguration().save();
                 }
+
             }
         }
         return ret;
@@ -290,20 +310,11 @@ public class Reconnecter {
     }
 
     public static boolean doManualReconnect() {
-        boolean oldState = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true);
-
-        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_ALLOW_RECONNECT, true);
-
         boolean restartDownloads = JDUtilities.getController().stopDownloads();
-
         boolean success = Reconnecter.waitForNewIP(1);
-
-        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_ALLOW_RECONNECT, oldState);
-
         if (restartDownloads) {
             JDUtilities.getController().startDownloads();
         }
-
         return success;
     }
 
