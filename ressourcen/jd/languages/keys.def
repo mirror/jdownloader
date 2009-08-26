@@ -1198,6 +1198,7 @@ jd.plugins.optional.schedule.maingui.mytablemodel.time = Time
 jd.plugins.optional.schedule.maingui.mytablemodel.nextexecution = Next Execution
 jd.plugins.optional.schedule.maingui.mytablemodel.repeats = Repeats
 jd.plugins.optional.schedule.maingui.mytablemodel.number = # of actions
+jd.plugins.optional.schedule.disabled = disabled
 jd.plugins.optional.schedule.maingui.mytablemodel.add.once = Only once
 jd.plugins.optional.schedule.maingui.mytablemodel.add.hourly = Hourly
 jd.plugins.optional.schedule.maingui.mytablemodel.add.daily = Daily
