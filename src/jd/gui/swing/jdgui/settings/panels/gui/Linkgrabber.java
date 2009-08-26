@@ -23,6 +23,7 @@ import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
+import jd.config.ConfigEntry.PropertyType;
 import jd.controlling.LinkGrabberController;
 import jd.gui.swing.jdgui.settings.ConfigPanel;
 import jd.gui.swing.jdgui.settings.GUIConfigEntry;
@@ -57,7 +58,9 @@ public class Linkgrabber extends ConfigPanel {
 
         container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, SubConfiguration.getConfig(LinkGrabberController.CONFIG), LinkGrabberController.PARAM_ONLINECHECK, JDL.L("gui.config.linkgrabber.onlincheck", "Check linkinfo and onlinestatus")));
         ce.setDefaultValue(true);
-
+        container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, SubConfiguration.getConfig(LinkGrabberController.CONFIG), LinkGrabberController.PARAM_CONTROLPOSITION, JDL.L("gui.config.linkgrabber.controlposition", "Put Linkgrabberbuttons above table")));
+        ce.setDefaultValue(true);
+        ce.setPropertyType(PropertyType.NEEDS_RESTART);
         container.setGroup(new ConfigGroup(JDL.L("gui.config.gui.linggrabber.ignorelist", "Linkfilter"), JDTheme.II("gui.images.filter", 32, 32)));
 
         container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, SubConfiguration.getConfig(LinkGrabberController.CONFIG), LinkGrabberController.IGNORE_LIST, JDL.L("gui.config.linkgrabber.iognorelist", "The linkfilter is used to filter links based on regular expressions.")));
@@ -76,7 +79,8 @@ public class Linkgrabber extends ConfigPanel {
         }
 
         JTabbedPane tabbed = new JTabbedPane();
-       tabbed.setOpaque(false);  tabbed.add(getBreadcrum(), panel);
+        tabbed.setOpaque(false);
+        tabbed.add(getBreadcrum(), panel);
 
         this.add(tabbed);
     }

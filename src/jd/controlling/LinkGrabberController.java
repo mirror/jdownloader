@@ -67,6 +67,8 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
     private static ArrayList<LinkGrabberFilePackage> packages = new ArrayList<LinkGrabberFilePackage>();
     private static final HashSet<String> extensionFilter = new HashSet<String>();
 
+    public static final String PARAM_CONTROLPOSITION = "PARAM_CONTROLPOSITION";
+
     private static LinkGrabberController INSTANCE = null;
 
     private LinkGrabberControllerBroadcaster broadcaster;

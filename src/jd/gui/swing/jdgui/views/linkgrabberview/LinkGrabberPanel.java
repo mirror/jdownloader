@@ -33,6 +33,7 @@ import javax.swing.JScrollPane;
 import javax.swing.Timer;
 
 import jd.config.Configuration;
+import jd.config.SubConfiguration;
 import jd.controlling.JDController;
 import jd.controlling.LinkCheck;
 import jd.controlling.LinkCheckEvent;
@@ -138,9 +139,18 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         LGINSTANCE = LinkGrabberController.getInstance();
         LGINSTANCE.addListener(this);
         initActions();
-        toolbar = new LinkGrabberToolbar();
+        if (!SubConfiguration.getConfig(LinkGrabberController.CONFIG).getBooleanProperty(LinkGrabberController.PARAM_CONTROLPOSITION, false)) {
+            toolbar = new LinkGrabberToolbar(){
+                @Override
+                public void setDefaults(int i, AbstractButton ab) {
 
-        this.add(toolbar, "gapbottom 3,DOCK SOUTH");
+                    if (i == 2) confirmButton = ab;
+
+                }
+            };
+
+            this.add(toolbar, "gapbottom 3,DOCK SOUTH");
+        }
     }
 
     public void initActions() {
@@ -783,31 +793,5 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         return false;
     }
 
-    class LinkGrabberToolbar extends ViewToolbar {
-
-        private static final long serialVersionUID = 1L;
-
-        public LinkGrabberToolbar() {
-
-            setList(new String[] { "action.addurl", "action.load", "action.linkgrabber.addall", "action.linkgrabber.clearlist" });
-            BUTTON_CONSTRAINTS = "gaptop 2";
-        }
-
-        @Override
-        public void setDefaults(int i, AbstractButton ab) {
-
-            if (i == 2) confirmButton = ab;
-
-        }
-
-        @Override
-        public String getButtonConstraint(int i, ToolBarAction action) {
-            if (i < 3) {
-                return BUTTON_CONSTRAINTS + ", dock west, sizegroup toolbar";
-            } else {
-                return BUTTON_CONSTRAINTS + ", dock east, sizegroup toolbar";
-            }
-        }
-
-    }
+    
 }
