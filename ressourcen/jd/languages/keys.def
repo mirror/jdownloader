@@ -1269,15 +1269,19 @@ gui.config.routeripfinder.status.testingupnp = Testing UPnP...
 gui.config.liveheader.progress.message = jDownloader sucht nach Ihren Routereinstellungen
 gui.config.liveheader.warning.notfound = jDownloader konnte ihre Routereinstellung nicht automatisch ermitteln.
 gui.config.liveheader.warning.yourrouter = Sie haben einen
+gui.config.jdrr.title = Reconnect Recorder
 gui.btn_start = Start
 gui.config.jdrr.infolable = <span color="#4682B4">Überprüfe die IP-Adresse des Routers und drück auf Start,<br>ein Browserfenster mit der Startseite des Routers öffnet sich,<br>nach dem Reconnect drückst du auf Stop und speicherst.<br>Mehr Informationen gibt es </span><a href="http://wiki.jdownloader.org/index.php?title=Recorder">hier</a>
-gui.config.jdrr.title = Reconnect Recorder
 gui.fengshuiconfig.routerip = RouterIP
 gui.config.jdrr.success = Success!
 gui.config.jdrr.savereconnect = Der Reconnect war erfolgreich möchten sie jetzt speichern?
-gui.config.jdrr.close = Schließen
+gui.btn_close = Close
+gui.config.jdrr.status.title = RRStatus
 gui.btn_abort = Abort
 gui.config.jdrr.popup.title = JDRRPopup
+jd.router.reconnectrecorder.gui.icon.progress = Recording Reconnect ...
+jd.router.reconnectrecorder.gui.icon.bad = Error while recording the Reconnect!
+jd.router.reconnectrecorder.gui.icon.good = Reconnect successfully recorded!
 gui.config.jdrr.reconnectfaild = Reconnect failed
 gui.javacheck.html = <link href='http://jdownloader.org/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>You useses a wrong Java version. Please use a original Sun Java. Start jDownloader anyway?<table width='100%%'><tr><th colspan='2'>Your Java Version:</th></tr><tr><th>Runtime Name</th><td>%s</td></tr><tr><th>Runtime Version</th><td>%s</td></tr></table></div>
 gui.javacheck.title = Wrong Java Version
