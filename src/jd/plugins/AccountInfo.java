@@ -168,7 +168,7 @@ public class AccountInfo extends Property {
         this.account_status = string;
     }
 
-    /*
+    /**
      * -1 = unlimited Traffic
      */
     public void setTrafficLeft(long size) {

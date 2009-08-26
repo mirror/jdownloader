@@ -48,7 +48,6 @@ import jd.config.Configuration;
 import jd.controlling.reconnect.HTTPLiveHeader;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
-import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.settings.ConfigPanel;
 import jd.gui.swing.jdgui.settings.GUIConfigEntry;
 import jd.nutils.encoding.Encoding;
@@ -118,11 +117,9 @@ public class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionLi
 
                         @Override
                         public Object runSave() {
-                            Gui jd = new Gui(SwingGui.getInstance().getMainFrame(), ((JTextField) ip.getInput()[0]).getText());
-                            jd.setModal(true);
-                            jd.setVisible(true);
+                            Gui jd = new Gui(((JTextField) ip.getInput()[0]).getText());
                             if (jd.saved) {
-                                ((JTextField) ip.getInput()[0]).setText(jd.routerIP);
+                                ((JTextField) ip.getInput()[0]).setText(jd.ip);
                                 if (jd.user != null) ((JTextField) user.getInput()[0]).setText(jd.user);
                                 if (jd.pass != null) ((JTextField) pass.getInput()[0]).setText(jd.pass);
                                 ((JTextArea) script.getInput()[0]).setText(jd.methode);

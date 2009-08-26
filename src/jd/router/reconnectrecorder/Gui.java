@@ -20,11 +20,10 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import javax.swing.ImageIcon;
-import javax.swing.JButton;
 import javax.swing.JCheckBox;
-import javax.swing.JDialog;
-import javax.swing.JFrame;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
+import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.JTextPane;
 import javax.swing.SwingUtilities;
@@ -35,46 +34,41 @@ import jd.controlling.JDLogger;
 import jd.controlling.reconnect.ReconnectMethod;
 import jd.gui.UserIO;
 import jd.gui.swing.components.linkbutton.JLink;
+import jd.gui.swing.dialog.AbstractDialog;
 import jd.http.IPCheck;
 import jd.nutils.JDFlags;
-import jd.nutils.Screen;
 import jd.parser.Regex;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
-public class Gui extends JDialog implements ActionListener {
+public class Gui extends AbstractDialog implements ActionListener {
 
     private static final long serialVersionUID = 1L;
-
-    private JButton btnCancel;
-
-    private JButton btnStart;
 
     private JTextField routerip;
     private JCheckBox rawmode;
     public boolean saved = false;
     private String ip_before;
     private String ip_after;
-    public String routerIP = null;
-    private JButton btnStop;
-    public String methode = null, user = null, pass = null;
+    public String ip = null;
+    public String methode = null;
+    public String user = null;
+    public String pass = null;
     private static long check_intervall = 3000;
     private static long reconnect_duration = 0;
 
-    public Gui(JFrame frame, String ip) {
-        super(frame);
+    public Gui(String ip) {
+        super(UserIO.NO_COUNTDOWN | UserIO.NO_ICON, JDL.L("gui.config.jdrr.title", "Reconnect Recorder"), null, JDL.L("gui.btn_start", "Start"), JDL.L("gui.btn_cancel", "Abbrechen"));
 
-        routerIP = ip;
+        this.ip = ip;
 
-        routerip = new JTextField(routerIP);
+        init();
+    }
 
-        btnCancel = new JButton(JDL.L("gui.btn_cancel", "Abbrechen"));
-        btnCancel.addActionListener(this);
-
-        btnStart = new JButton(JDL.L("gui.btn_start", "Start"));
-        btnStart.addActionListener(this);
+    public JComponent contentInit() {
+        routerip = new JTextField(ip);
 
         rawmode = new JCheckBox("RawMode?");
         rawmode.setSelected(false);
@@ -85,16 +79,12 @@ public class Gui extends JDialog implements ActionListener {
         infolable.addHyperlinkListener(JLink.getHyperlinkListener());
         infolable.setText(JDL.L("gui.config.jdrr.infolable", "<span color=\"#4682B4\">Überprüfe die IP-Adresse des Routers und drück auf Start,<br>ein Browserfenster mit der Startseite des Routers öffnet sich,<br>nach dem Reconnect drückst du auf Stop und speicherst.<br>Mehr Informationen gibt es </span><a href=\"http://wiki.jdownloader.org/index.php?title=Recorder\">hier</a>"));
 
-        this.setTitle(JDL.L("gui.config.jdrr.title", "Reconnect Recorder"));
-        this.setLayout(new MigLayout("wrap 1", "[center]"));
-        this.add(new JLabel(JDL.L("gui.fengshuiconfig.routerip", "RouterIP") + ":"), "split 3");
-        this.add(routerip, "growx");
-        this.add(rawmode);
-        this.add(infolable, "growx");
-        this.add(btnStart, "split 2");
-        this.add(btnCancel);
-        this.pack();
-        this.setLocation(Screen.getCenterOfComponent(null, this));
+        JPanel panel = new JPanel(new MigLayout("wrap 1", "[center]"));
+        panel.add(new JLabel(JDL.L("gui.fengshuiconfig.routerip", "RouterIP") + ":"), "split 3");
+        panel.add(routerip, "growx");
+        panel.add(rawmode);
+        panel.add(infolable, "growx");
+        return panel;
     }
 
     private void save() {
@@ -115,7 +105,7 @@ public class Gui extends JDialog implements ActionListener {
                 configuration.setProperty(Configuration.PARAM_HTTPSEND_USER, user);
                 configuration.setProperty(Configuration.PARAM_HTTPSEND_PASS, pass);
             }
-            btnCancel.setText(JDL.L("gui.config.jdrr.close", "Schließen"));
+            btnCancel.setText(JDL.L("gui.btn_close", "Close"));
             configuration.setProperty(Configuration.PARAM_HTTPSEND_IP, routerip.getText().trim());
             configuration.setProperty(Configuration.PARAM_HTTPSEND_REQUESTS, methode);
             configuration.setProperty(Configuration.PARAM_HTTPSEND_ROUTERNAME, "Reconnect Recorder Methode");
@@ -132,8 +122,9 @@ public class Gui extends JDialog implements ActionListener {
         }
     }
 
+    @Override
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == btnStart && ReconnectRecorder.running == false) {
+        if (e.getSource() == btnOK && ReconnectRecorder.running == false) {
             if (routerip.getText() != null && !routerip.getText().matches("\\s*")) {
                 String host = routerip.getText().trim();
                 boolean startwithhttps = false;
@@ -153,42 +144,38 @@ public class Gui extends JDialog implements ActionListener {
                 } catch (Exception e1) {
                     JDLogger.exception(e1);
                 }
-                final JDRRInfoPopup popup = new JDRRInfoPopup();
-                popup.startCheck();
-                SwingUtilities.invokeLater(new Runnable() {
-                    public void run() {
-                        popup.setVisible(true);
-                    }
-                });
+                new JDRRInfoPopup();
                 return;
             }
         }
         dispose();
     }
 
-    public class JDRRInfoPopup extends JDialog implements ActionListener {
+    public class JDRRInfoPopup extends AbstractDialog implements ActionListener {
 
         private static final long serialVersionUID = 1L;
         private long reconnect_timer = 0;
         private RRStatus statusicon;
 
         public JDRRInfoPopup() {
-            super();
-            setModal(true);
-            setLayout(new MigLayout("wrap 1", "[center, grow, fill]"));
-            btnStop = new JButton(JDL.L("gui.btn_abort", "Abort"));
-            btnStop.addActionListener(this);
-            statusicon = new RRStatus();
-            this.add(statusicon, "w 32!, h 32!");
-            this.add(btnStop);
-            setDefaultCloseOperation(JDRRInfoPopup.DO_NOTHING_ON_CLOSE);
+            super(UserIO.NO_COUNTDOWN | UserIO.NO_ICON | UserIO.NO_OK_OPTION, JDL.L("gui.config.jdrr.status.title", "RRStatus"), null, null, JDL.L("gui.btn_abort", "Abort"));
 
-            setResizable(false);
-            setUndecorated(true);
-            setTitle("RRStatus");
-            setLocation(20, 20);
-            setAlwaysOnTop(true);
+            init();
+        }
+
+        public JComponent contentInit() {
+            return statusicon = new RRStatus();
+        }
+
+        @Override
+        public void packed() {
+            remove(countDownLabel);
             pack();
+            setMinimumSize(null);
+            setResizable(false);
+            setDefaultCloseOperation(AbstractDialog.DO_NOTHING_ON_CLOSE);
+
+            startCheck();
         }
 
         public void startCheck() {
@@ -226,20 +213,32 @@ public class Gui extends JDialog implements ActionListener {
 
             private ImageIcon imageGood;
 
+            private String strProgress;
+
+            private String strBad;
+
+            private String strGood;
+
             public RRStatus() {
                 imageProgress = JDTheme.II("gui.images.reconnect", 32, 32);
                 imageBad = JDTheme.II("gui.images.unselected", 32, 32);
                 imageGood = JDTheme.II("gui.images.selected", 32, 32);
+                strProgress = JDL.L("jd.router.reconnectrecorder.Gui.icon.progress", "Recording Reconnect ...");
+                strBad = JDL.L("jd.router.reconnectrecorder.Gui.icon.bad", "Error while recording the Reconnect!");
+                strGood = JDL.L("jd.router.reconnectrecorder.Gui.icon.good", "Reconnect successfully recorded!");
                 setStatus(0);
             }
 
             public void setStatus(int state) {
                 if (state == 0) {
                     this.setIcon(imageProgress);
+                    this.setText(strProgress);
                 } else if (state == 1) {
                     this.setIcon(imageGood);
+                    this.setText(strGood);
                 } else {
                     this.setIcon(imageBad);
+                    this.setText(strBad);
                 }
             }
         }
@@ -248,7 +247,7 @@ public class Gui extends JDialog implements ActionListener {
             ReconnectRecorder.stopServer();
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
-                    btnStop.setEnabled(false);
+                    btnCancel.setEnabled(false);
 
                     ip_after = IPCheck.getIPAddress(null);
                     if (!ip_after.contains("offline") && !ip_after.equalsIgnoreCase(ip_before)) {
@@ -261,7 +260,7 @@ public class Gui extends JDialog implements ActionListener {
                         } else {
                             reconnect_duration = System.currentTimeMillis() - reconnect_timer;
                         }
-                        JDLogger.getLogger().info("dauer: " + reconnect_duration + "");
+                        JDLogger.getLogger().info("dauer: " + reconnect_duration);
                         statusicon.setStatus(1);
                     } else {
                         statusicon.setStatus(-1);
@@ -269,7 +268,6 @@ public class Gui extends JDialog implements ActionListener {
                     if (!ip_after.contains("offline") && !ip_after.equalsIgnoreCase(ip_before)) {
                         save();
                     } else {
-                        // save(); /*zu debugzwecken*/
                         UserIO.getInstance().requestMessageDialog(JDL.L("gui.config.jdrr.reconnectfaild", "Reconnect failed"));
                     }
 
@@ -278,8 +276,9 @@ public class Gui extends JDialog implements ActionListener {
             });
         }
 
+        @Override
         public void actionPerformed(ActionEvent arg0) {
-            if (arg0.getSource() == btnStop) {
+            if (arg0.getSource() == btnCancel) {
                 closePopup();
             }
         }
