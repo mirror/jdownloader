@@ -59,7 +59,7 @@ public class HotFileCom extends PluginForHost {
 
     // @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo(this, account);
+        AccountInfo ai = new AccountInfo();
         this.setBrowserExclusive();
         try {
             login(account);

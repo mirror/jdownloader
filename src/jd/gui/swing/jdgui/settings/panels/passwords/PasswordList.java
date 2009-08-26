@@ -21,7 +21,6 @@ import javax.swing.JTabbedPane;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
-import jd.controlling.ListController;
 import jd.controlling.PasswordListController;
 import jd.gui.swing.jdgui.settings.ConfigPanel;
 import jd.gui.swing.jdgui.settings.GUIConfigEntry;
@@ -61,7 +60,7 @@ public class PasswordList extends ConfigPanel {
         //
         //   
 
-        addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_LISTCONTROLLED, (ListController) PasswordListController.getInstance(), JDL.LF("plugins.optional.jdunrar.config.passwordlist2", "List of all passwords. Each line one password. Available passwords: %s", ""))));
+        addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_LISTCONTROLLED, PasswordListController.getInstance(), JDL.LF("plugins.optional.jdunrar.config.passwordlist2", "List of all passwords. Each line one password. Available passwords: %s", ""))));
         // addGUIConfigEntry(new GUIConfigEntry(new
         // ConfigEntry(ConfigContainer.TYPE_CHECKBOX, CONFIGURATION,
         // Configuration.LOGGER_FILELOG,

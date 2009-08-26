@@ -273,7 +273,7 @@ public abstract class UserIO {
      * @return
      */
     public String requestInputDialog(int flag, String question, String defaultvalue) {
-        return requestInputDialog(0, JDL.L("jd.gui.userio.defaulttitle.input", "Please enter!"), question, defaultvalue, this.getDefaultIcon(question), null, null);
+        return requestInputDialog(flag, JDL.L("jd.gui.userio.defaulttitle.input", "Please enter!"), question, defaultvalue, this.getDefaultIcon(question), null, null);
     }
 
     /**
@@ -293,13 +293,15 @@ public abstract class UserIO {
      * @return
      */
     public abstract int requestComboDialog(int flag, String title, String question, Object[] options, int defaultSelection, ImageIcon icon, String okText, String cancelText, Object renderer);
-/**
- * Checks wether this answerfalg contains the ok option
- * @param answer
- * @return
- */
+
+    /**
+     * Checks wether this answerfalg contains the ok option
+     * 
+     * @param answer
+     * @return
+     */
     public static boolean isOK(int answer) {
-        
+
         return JDFlags.hasSomeFlags(answer, UserIO.RETURN_OK);
     }
 

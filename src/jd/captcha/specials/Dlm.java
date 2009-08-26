@@ -153,7 +153,7 @@ public class Dlm {
                 if (head3.getDecodedValue().equals(let.getDecodedValue()))
                     pos = 2;
                 else {// wenn keines der 3 letters zutrifft es ist bestimmt das
-                      // welches am schlechtesten erkennt wurde
+                    // welches am schlechtesten erkennt wurde
                     if (head1.detected.getValityPercent() > head2.detected.getValityPercent()) {
                         if (head1.detected.getValityPercent() > head3.detected.getValityPercent())
                             pos = 0;
@@ -180,7 +180,7 @@ public class Dlm {
         obj = getObjects(captcha, 3);
         Collections.sort(obj);
         if (obj.size() > 3) for (Iterator<PixelObject> iterator = obj.iterator(); iterator.hasNext();) {
-            PixelObject pixelObject = (PixelObject) iterator.next();
+            PixelObject pixelObject = iterator.next();
             if (pixelObject.getArea() < 80) iterator.remove();
         }
         captcha.owner.getJas().set("minimumObjectArea", 1);
@@ -199,7 +199,7 @@ public class Dlm {
         ArrayList<Letter> ret = new ArrayList<Letter>();
         PixelObject last = obj.get(0);
         for (ListIterator<PixelObject> iterator = obj.listIterator(); iterator.hasNext();) {
-            PixelObject pixelObject = (PixelObject) iterator.next();
+            PixelObject pixelObject = iterator.next();
             if ((pixelObject.getArea() > 4 || pixelObject.getHeight() > 5) && (pixelObject.getArea() < 250 && (Math.abs(last.getYMin() - pixelObject.getYMin()) < 3 || (iterator.hasNext() & Math.abs(iterator.next().getYMin() - pixelObject.getYMin()) < 3 & iterator.previous() == pixelObject)))) {
                 // Letter let1 = pixelObject.toLetter();
                 // let1.toBlackAndWhite();
@@ -279,7 +279,7 @@ public class Dlm {
 
                 merge = new Vector<PixelObject>();
                 for (Iterator<PixelObject> iterator = ret.iterator(); iterator.hasNext();) {
-                    PixelObject o = (PixelObject) iterator.next();
+                    PixelObject o = iterator.next();
                     if (o.isTouching(x, y, true, neighbourradius, neighbourradius)) {
                         merge.add(o);
                     }

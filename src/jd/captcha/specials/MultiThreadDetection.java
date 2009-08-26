@@ -32,7 +32,7 @@ public class MultiThreadDetection {
             letter = l;
         }
 
-        //@Override
+        // @Override
         @Override
         public void run() {
             letter.detected = jac.getLetter(letter);
@@ -96,7 +96,7 @@ public class MultiThreadDetection {
         th.start();
         DETECTION_THREADS.add(th);
 
-    };
+    }
 
     public void waitFor(Vector<Letter> list) {
 

@@ -163,12 +163,12 @@ public class WebUpdate {
 
     }
 
-    /* guiCall: soll eine Updatemeldung erscheinen? */
-    /*
-     * forceguiCall: Updatemeldung soll erscheinen, auch wenn user updates
-     * deaktiviert hat
+    /**
+     * @param forceguiCall
+     *            : Updatemeldung soll erscheinen, auch wenn user updates
+     *            deaktiviert hat
      */
-    public synchronized void doUpdateCheck(final boolean guiCall, final boolean forceguiCall) {
+    public synchronized void doUpdateCheck(final boolean forceguiCall) {
         if (UPDATE_IN_PROGRESS) {
             logger.info("UPdate is already running");
             Balloon.show(JDL.L("jd.utils.webupdate.ballon.title", "Update"), UserIO.getInstance().getIcon(UserIO.ICON_WARNING), JDL.L("jd.utils.webupdate.ballon.message.updateinprogress", "There is already an update in progress."));

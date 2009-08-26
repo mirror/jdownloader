@@ -529,7 +529,6 @@ public class JAntiCaptcha {
                         logger.severe("Error in Letters DB line: " + i + ":" + childNode.getTextContent() + " id:" + id);
                         continue;
                     }
-                    ;
 
                     if (id != null) {
                         tmp.setId(Integer.parseInt(id));
@@ -624,7 +623,6 @@ public class JAntiCaptcha {
         if (letterDB == null || letterDB.size() == 0) { return; }
         // final BasicWindow w = BasicWindow.getWindow("Library: " +
         // letterDB.size() + " Datensätze", 400, 300);
-        ;
         final JFrame w = new GuiRunnable<JFrame>() {
             public JFrame runSave() {
                 return new JFrame();

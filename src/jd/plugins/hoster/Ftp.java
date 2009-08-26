@@ -78,7 +78,7 @@ public class Ftp extends PluginForHost {
 
             ftp.getBroadcaster().addListener(new FtpListener() {
 
-                private long last = 0;;
+                private long last = 0;
                 private long lastTime = System.currentTimeMillis();
 
                 public void onDownloadProgress(FtpEvent event) {

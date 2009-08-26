@@ -211,7 +211,7 @@ public class MainGui extends SwitchPanel implements ActionListener, MouseListene
             case 3:
                 return time.format(Schedule.getInstance().getActions().get(rowIndex).getDate());
             case 4:
-                now.setTime((long) Schedule.getInstance().getActions().get(rowIndex).getDate().getTime() - System.currentTimeMillis() - 3600000);
+                now.setTime(Schedule.getInstance().getActions().get(rowIndex).getDate().getTime() - System.currentTimeMillis() - 3600000);
                 return time.format(now);
             case 5:
                 switch (Schedule.getInstance().getActions().get(rowIndex).getRepeat()) {

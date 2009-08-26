@@ -137,7 +137,6 @@ public abstract class TestUtils {
         int ret = cfg.getIntegerProperty(string);
 
         ret = Integer.parseInt(UserIOGui.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN, "Please enter Integer", string, ret + "", null, null, null));
-        ;
 
         cfg.setProperty(string, ret);
         cfg.save();
@@ -249,7 +248,7 @@ public abstract class TestUtils {
         } catch (Exception e1) {
             JDLogger.exception(Level.FINEST, e1);
         }
-        new WebUpdate().doUpdateCheck(true, false);
+        new WebUpdate().doUpdateCheck(false);
         JDUtilities.getController().setInitStatus(JDController.INIT_STATUS_COMPLETE);
         JDUtilities.getController().fireControlEvent(new ControlEvent(new Object(), ControlEvent.CONTROL_INIT_COMPLETE, null));
     }

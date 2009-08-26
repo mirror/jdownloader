@@ -216,8 +216,8 @@ public class LookAndFeelController {
 
                 Class<?> slaf = Class.forName("de.javasoft.plaf.synthetica.SyntheticaLookAndFeel");
 
-                Method method = slaf.getMethod("setLookAndFeel", new Class[] { String.class,boolean.class,boolean.class });
-                method.invoke(null, new Object[] { laf,false,false });
+                Method method = slaf.getMethod("setLookAndFeel", new Class[] { String.class, boolean.class, boolean.class });
+                method.invoke(null, new Object[] { laf, false, false });
 
                 // SyntheticaLookAndFeel#setLookAndFeel(String className),
             } else {
@@ -359,17 +359,15 @@ public class LookAndFeelController {
      * @return
      */
     public static boolean isSubstance() {
-
         return UIManager.getLookAndFeel().getName().toLowerCase().contains("substance");
     }
 
     public static boolean isSynthetica() {
-        // TODO Auto-generated method stub
         return UIManager.getLookAndFeel().getName().toLowerCase().contains("synthetica");
     }
 
-    public static void setDefaultFont(String font) {
-
-    }
+    // public static void setDefaultFont(String font) {
+    //
+    // }
 
 }

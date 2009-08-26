@@ -77,7 +77,7 @@ public class ShareOnlineBiz extends PluginForHost {
 
     // @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo(this, account);
+        AccountInfo ai = new AccountInfo();
         setBrowserExclusive();
         try {
             login(account);
@@ -159,7 +159,7 @@ public class ShareOnlineBiz extends PluginForHost {
 
         br.setFollowRedirects(true);
         /* Datei herunterladen */
-        dl = jd.plugins.BrowserAdapter.openDownload(br,parameter, url, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, url, true, 1);
         dl.startDownload();
     }
 
@@ -214,7 +214,7 @@ public class ShareOnlineBiz extends PluginForHost {
         sleep(15000, downloadLink);
         br.setFollowRedirects(true);
         /* Datei herunterladen */
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, url);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url);
         dl.startDownload();
     }
 

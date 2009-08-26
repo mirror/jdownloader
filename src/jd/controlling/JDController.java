@@ -180,7 +180,7 @@ public class JDController implements ControlListener {
      */
     private int downloadStatus;
 
-    private ArrayList<ControlEvent> eventQueue = new ArrayList<ControlEvent>();;
+    private ArrayList<ControlEvent> eventQueue = new ArrayList<ControlEvent>();
 
     private EventSender eventSender = null;
 

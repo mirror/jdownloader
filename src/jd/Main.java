@@ -503,7 +503,7 @@ public class Main {
                 try {
                     Thread.sleep(5000);
 
-                    new WebUpdate().doUpdateCheck(true, false);
+                    new WebUpdate().doUpdateCheck(false);
                 } catch (InterruptedException e) {
                     // TODO Auto-generated catch block
                     e.printStackTrace();

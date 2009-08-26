@@ -58,7 +58,7 @@ public class ShareBaseTo extends PluginForHost {
         setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("Der Download existiert nicht")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        if (br.containsHTML("Der erforderliche Download-Server ist derzeit nicht verf.*bar")) {throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE); }
+        if (br.containsHTML("Der erforderliche Download-Server ist derzeit nicht verf.*bar")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE); }
         String downloadName = br.getRegex("<title>(.*) @ ShareBase\\.to</title><meta").getMatch(0);
         String downloadSize = br.getRegex("</span>\\((.*?)\\)</td>").getMatch(0);
         if (downloadName == null || downloadSize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -82,7 +82,7 @@ public class ShareBaseTo extends PluginForHost {
 
     // @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo(this, account);
+        AccountInfo ai = new AccountInfo();
         try {
             login(account);
         } catch (PluginException e) {
@@ -117,7 +117,7 @@ public class ShareBaseTo extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
         }
 
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, br.getForm(1));
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getForm(1));
         if (dl.getConnection() == null) {
             logger.severe("ServerError");
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.sharebaseto.errors.servicenotavailable", "Service not available"), 10 * 60 * 1000l);
@@ -153,7 +153,7 @@ public class ShareBaseTo extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitTime);
         }
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, br.getRedirectLocation(), true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), true, 0);
         if (dl.getConnection() == null) {
             logger.severe("ServerError");
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.sharebaseto.errors.servicenotavailable", "Service not available"), 10 * 60 * 1000l);

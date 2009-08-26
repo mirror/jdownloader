@@ -287,7 +287,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
     public ArrayList<MenuAction> createMenuitems() {
         ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
         if (action == null) {
-            action = (MenuAction) new MenuAction(MenuAction.TOGGLE, getHost(), 0).setActionListener(this);
+            action = new MenuAction(MenuAction.TOGGLE, getHost(), 0).setActionListener(this);
             action.setSelected(false);
         }
         menu.add(action);

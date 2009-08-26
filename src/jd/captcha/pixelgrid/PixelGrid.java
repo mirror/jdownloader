@@ -114,7 +114,6 @@ public class PixelGrid extends Property {
         }
         // JDUtilities.getLogger().info("right "+rightLines);
         if (leftLines >= width || width - rightLines > width) { return new int[] { 0, 0 }; }
-        ;
 
         line: for (int y = 0; y < height; y++) {
 
@@ -1640,8 +1639,8 @@ public class PixelGrid extends Property {
      *            Grobheit
      */
     public void sampleDown(int faktor) {
-        int newWidth = (int) Math.ceil(getWidth() / (double)faktor);
-        int newHeight = (int) Math.ceil(getHeight() / (double)faktor);
+        int newWidth = (int) Math.ceil(getWidth() / (double) faktor);
+        int newHeight = (int) Math.ceil(getHeight() / (double) faktor);
 
         int[][] newGrid = new int[getWidth()][getHeight()];
 

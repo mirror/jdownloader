@@ -115,7 +115,7 @@ public class Megauploadcom extends PluginForHost {
     // @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         checkWWWWorkaround();
-        AccountInfo ai = new AccountInfo(this, account);
+        AccountInfo ai = new AccountInfo();
         this.setBrowserExclusive();
         try {
             login(account);
@@ -215,15 +215,16 @@ public class Megauploadcom extends PluginForHost {
             if (link.getBooleanProperty("waitworkaround", false)) {
                 waittime = 60;
             } else if (waitb != null) {
-                //MU seems not to check this currently. leave back the waittimeworkaround to have a fallback feature
-                waittime=0;
-//                waittime = Long.parseLong(waitb);
+                // MU seems not to check this currently. leave back the
+                // waittimeworkaround to have a fallback feature
+                waittime = 0;
+                // waittime = Long.parseLong(waitb);
             }
         } catch (Exception e) {
         }
         if (waittime > 0) this.sleep(waittime * 1000, link);
         try {
-            dl = jd.plugins.BrowserAdapter.openDownload(br,link, url, resume, chunks);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, resume, chunks);
             if (!dl.getConnection().isOK()) {
                 dl.getConnection().disconnect();
                 if (dl.getConnection().getResponseCode() == 503) {

@@ -287,18 +287,12 @@ public class Property implements Serializable {
                     this.changes = true;
                 }
                 return;
-            } else if (value instanceof Object) {
+            } else {
                 if (!value.equals(old) || oldHash != value.hashCode()) {
                     JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));
                     this.changes = true;
                 }
                 return;
-            } else {
-                if (value != old) {
-                    JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));
-                    this.changes = true;
-                }
-
             }
         } catch (Exception e) {
             JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));

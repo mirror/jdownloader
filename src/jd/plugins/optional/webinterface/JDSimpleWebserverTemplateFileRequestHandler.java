@@ -276,7 +276,6 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
             }
             t.setParam("single_infos", v_info);
         }
-        ;
     }
 
     /*

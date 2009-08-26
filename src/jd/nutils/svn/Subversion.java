@@ -286,7 +286,6 @@ public class Subversion implements ISVNEventHandler {
 
         });
         svn.commit(file, "resolved");
-        ;
     }
 
     public void resolveConflicts(File file, final ResolveHandler handler) throws SVNException {

@@ -31,10 +31,10 @@ import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-@OptionalPlugin(rev="$Revision$", id="folderwatch",interfaceversion=4)
+
+@OptionalPlugin(rev = "$Revision$", id = "folderwatch", interfaceversion = 4)
 @SuppressWarnings("unchecked")
 public class JDFolderWatch extends PluginOptional {
-    
 
     public class Check extends Thread {
         // @Override
@@ -48,9 +48,8 @@ public class JDFolderWatch extends PluginOptional {
                 }
             }
             running = false;
-        };
+        }
     }
-
 
     private SubConfiguration subConfig = null;
     private ArrayList<String> added = null;
@@ -132,13 +131,11 @@ public class JDFolderWatch extends PluginOptional {
     // @Override
     public ArrayList<MenuAction> createMenuitems() {
         ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
-        menu.add((MenuAction)new MenuAction(JDL.L("plugins.optional.folderwatch.menu.startstop", "Start/Stop"), 0).setActionListener(this));
-        menu.add((MenuAction)new MenuAction(JDL.L("plugins.optional.folderwatch.menu.check", "Check"), 0).setActionListener(this));
-        menu.add((MenuAction)new MenuAction(JDL.L("plugins.optional.folderwatch.menu.reset", "Reset"), 0).setActionListener(this));
+        menu.add(new MenuAction(JDL.L("plugins.optional.folderwatch.menu.startstop", "Start/Stop"), 0).setActionListener(this));
+        menu.add(new MenuAction(JDL.L("plugins.optional.folderwatch.menu.check", "Check"), 0).setActionListener(this));
+        menu.add(new MenuAction(JDL.L("plugins.optional.folderwatch.menu.reset", "Reset"), 0).setActionListener(this));
         return menu;
     }
-
-
 
     private int getWaittime() {
         return subConfig.getIntegerProperty("WAITTIME", 5) * 60000;

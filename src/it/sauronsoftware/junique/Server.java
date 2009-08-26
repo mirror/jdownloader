@@ -134,7 +134,7 @@ class Server implements Runnable, ConnectionListener {
             if (serverSocket == null) { throw new IllegalStateException("JUnique/Server for id \"" + id + "\" not started"); }
             // Stops any ongoing communication.
             while (connections.size() > 0) {
-                Connection c = (Connection) connections.remove(0);
+                Connection c = connections.remove(0);
                 c.stop();
             }
             // Issues an interrupt signal to the secondary thread.
@@ -143,7 +143,6 @@ class Server implements Runnable, ConnectionListener {
             try {
                 serverSocket.close();
             } catch (IOException e) {
-                ;
             }
             // Waiting for server exiting.
             do {

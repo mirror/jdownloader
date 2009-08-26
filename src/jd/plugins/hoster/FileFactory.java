@@ -145,7 +145,7 @@ public class FileFactory extends PluginForHost {
     }
 
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo(this, account);
+        AccountInfo ai = new AccountInfo();
 
         try {
             login(account);

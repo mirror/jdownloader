@@ -263,7 +263,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
             Reconnecter.toggleReconnect();
             break;
         case TrayIconPopup.ACTION_UPDATE:
-            new WebUpdate().doUpdateCheck(true, true);
+            new WebUpdate().doUpdateCheck(true);
             break;
         case TrayIconPopup.ACTION_EXIT:
             // TODO

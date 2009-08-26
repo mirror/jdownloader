@@ -601,8 +601,6 @@ public class LetterComperator {
                 if (getPixelType(x + xt, y + yt, xx, yy, left, top) == pixelType) {
                     ret++;
                 }
-                ;
-
             }
         }
         return ret;

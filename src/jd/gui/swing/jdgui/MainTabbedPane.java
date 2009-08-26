@@ -66,10 +66,6 @@ public class MainTabbedPane extends JTabbedPane {
 
     protected View latestSelection;
 
-    public void addTab(View view) {
-        addTab(view, 0);
-    }
-
     /**
      * sets a * in the tab to show that the tab contains changes (has to be
      * saved)
@@ -100,7 +96,7 @@ public class MainTabbedPane extends JTabbedPane {
         ((ChangeHeader) this.getTabComponentAt(index)).setCloseEnabled(a);
     }
 
-    public void addTab(View view, int flags) {
+    public void addTab(View view) {
         SwingGui.checkEDT();
         super.addTab(view.getTitle(), view.getIcon(), view, view.getTooltip());
 

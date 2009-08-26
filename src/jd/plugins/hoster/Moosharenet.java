@@ -62,7 +62,7 @@ public class Moosharenet extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo(this, account);
+        AccountInfo ai = new AccountInfo();
         try {
             login(account);
         } catch (PluginException e) {

@@ -64,7 +64,7 @@ public abstract class UserIF {
          */
         ADDON_MANAGER
 
-    };
+    }
 
     /**
      * requests a special view from the gui. example:

@@ -22,7 +22,6 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.controlling.HTACCESSController;
-import jd.controlling.ListController;
 import jd.gui.swing.jdgui.settings.ConfigPanel;
 import jd.gui.swing.jdgui.settings.GUIConfigEntry;
 import jd.utils.locale.JDL;
@@ -64,7 +63,7 @@ public class PasswordListHTAccess extends ConfigPanel {
         // HTACCESSController.getInstance(), JDL.L("plugins.http.htaccess",
         // "List of all HTAccess passwords. Each line one password."))
 
-        addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_LISTCONTROLLED, (ListController) HTACCESSController.getInstance(), JDL.L("plugins.http.htaccess", "List of all HTAccess passwords. Each line one password."))));
+        addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_LISTCONTROLLED, HTACCESSController.getInstance(), JDL.L("plugins.http.htaccess", "List of all HTAccess passwords. Each line one password."))));
         // addGUIConfigEntry(new GUIConfigEntry(new
         // ConfigEntry(ConfigContainer.TYPE_CHECKBOX, CONFIGURATION,
         // Configuration.LOGGER_FILELOG,

@@ -83,7 +83,7 @@ public class ShareNownet extends PluginForHost {
             form.put("captcha", captchaCode);
         }
         /* DownloadLink holen/Captcha check */
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, form);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form);
         if (!dl.getConnection().isContentDisposition() || dl.getRequest().getLocation() != null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         if (dl.getConnection().isContentDisposition() && dl.getConnection().getLongContentLength() == 0) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.sharenownet.errors.servererror", "Server Error"));
         /* Datei herunterladen */
@@ -115,7 +115,7 @@ public class ShareNownet extends PluginForHost {
 
     // @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo(this, account);
+        AccountInfo ai = new AccountInfo();
         try {
             login(account);
         } catch (PluginException e) {

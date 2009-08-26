@@ -149,7 +149,6 @@ public class JUnique {
                 portWriter.write(String.valueOf(server.getListenedPort()));
                 portWriter.flush();
             } catch (Throwable t) {
-                ;
             } finally {
                 if (portWriter != null) {
                     try {
@@ -276,7 +275,6 @@ public class JUnique {
                 response = Message.read(inputStream);
             } catch (Throwable t) {
                 t.printStackTrace();
-                ;
             } finally {
                 if (outputStream != null) {
                     try {

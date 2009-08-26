@@ -236,7 +236,7 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
         AccountController.getInstance().removeListener(this);
     }
 
-    public void fireTableChanged(final boolean fast) {
+    public void fireTableChanged() {
         try {
             internalTable.fireTableChanged();
         } catch (Exception e) {
@@ -249,12 +249,12 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
     public void onShow() {
         super.onShow();
         AccountController.getInstance().addListener(this);
-        fireTableChanged(true);
+        fireTableChanged();
     }
 
     public void actionPerformed(ActionEvent arg0) {
         if (arg0.getSource() == Update_Async) {
-            fireTableChanged(false);
+            fireTableChanged();
             return;
         }
     }

@@ -118,7 +118,6 @@ public class ConfigPanel extends SwitchPanel {
                 case ConfigContainer.TYPE_LISTCONTROLLED:
                     panel.add(entry.getDecoration(), "spany " + entry.getInput().length + ",spanx, gapright " + getGapRight());
 
-             
                     break;
                 case ConfigContainer.TYPE_CONTAINER:
                     /**
@@ -137,10 +136,9 @@ public class ConfigPanel extends SwitchPanel {
                 i++;
                 switch (entry.getConfigEntry().getType()) {
 
-           
                 case ConfigContainer.TYPE_BUTTON:
                     panel.add(c, entry.getDecoration() == null ? "spanx,gapright " + getGapRight() : "width n:n:160,gapright " + getGapRight());
-                  
+
                     break;
                 case ConfigContainer.TYPE_TEXTAREA:
                 case ConfigContainer.TYPE_LISTCONTROLLED:
@@ -168,7 +166,6 @@ public class ConfigPanel extends SwitchPanel {
 
                 panel.add(header = Factory.createHeader(group), "spanx,hidemode 3");
                 header.setVisible(false);
-                ;
 
                 currentGroup = group;
             }
@@ -178,9 +175,7 @@ public class ConfigPanel extends SwitchPanel {
                 case ConfigContainer.TYPE_TEXTAREA:
                 case ConfigContainer.TYPE_LISTCONTROLLED:
                     panel.add(entry.getDecoration(), "gapleft " + getGapLeft() + ",spany " + entry.getInput().length + ",spanx");
-                   
 
-              
                     break;
                 default:
                     panel.add(entry.getDecoration(), "gapleft " + getGapLeft() + ",spany " + entry.getInput().length + (entry.getInput().length == 0 ? ",spanx" : ""));
@@ -190,8 +185,6 @@ public class ConfigPanel extends SwitchPanel {
             for (JComponent c : entry.getInput()) {
                 i++;
                 switch (entry.getConfigEntry().getType()) {
-
-              
 
                 case ConfigContainer.TYPE_BUTTON:
                     panel.add(c, entry.getDecoration() == null ? "spanx,gapright " + this.getGapRight() + ",gapleft " + this.getGapLeft() : "width n:n:160,gapright " + this.getGapRight());

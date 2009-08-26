@@ -34,25 +34,22 @@ public class AccountInfo extends Property {
     private boolean account_expired = false;
     private String account_status;
     private long account_createTime = 0;
-    private boolean specialtTraffic = false; /*
-                                              * indicator that host, account has
-                                              * special traffic handling, do not
-                                              * temp disable if traffic =0
-                                              */
-
-    public AccountInfo(PluginForHost plugin, Account account) {
-    }
+    /**
+     * indicator that host, account has special traffic handling, do not temp
+     * disable if traffic =0
+     */
+    private boolean specialTraffic = false;
 
     public long getCreateTime() {
         return account_createTime;
     }
 
     public void setSpecialTraffic(boolean b) {
-        specialtTraffic = b;
+        specialTraffic = b;
     }
 
     public boolean isSpecialTraffic() {
-        return specialtTraffic;
+        return specialTraffic;
     }
 
     public void setCreateTime(long createTime) {

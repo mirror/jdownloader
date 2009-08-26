@@ -61,7 +61,6 @@ public class AEStables {
     // FFMulFast: fast multiply using table lookup
     public byte FFMulFast(byte a, byte b) {
         int t = 0;
-        ;
         if (a == 0 || b == 0) { return 0; }
         t = (L[(a & 0xff)] & 0xff) + (L[(b & 0xff)] & 0xff);
         if (t > 255) {

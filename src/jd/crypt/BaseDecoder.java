@@ -267,7 +267,6 @@ public class BaseDecoder {
 
         int words = cbuf.length / charsPerWord;
         if (words == 0) { return new byte[0]; }
-        ;
 
         byte[] bbuf = new byte[words * bytesPerWord];
         for (int i = 0; i < words; i++) {

@@ -52,9 +52,7 @@ public class Gui {
         Thread.sleep(5000);
         int links = 0;
         for (DownloadLink dl : DownloadController.getInstance().getAllDownloadLinks()) {
-
             if (dl.getLinkStatus().hasStatus(LinkStatus.TODO)) links++;
-            ;
         }
         frame.button("addAllPackages").click();
 

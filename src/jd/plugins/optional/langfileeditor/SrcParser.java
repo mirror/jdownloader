@@ -188,7 +188,6 @@ public class SrcParser {
             String menukey = new Regex(currentContent, "super\\(\"(.*?)\",\\s*\".*?\"\\);").getMatch(0);
             currentContent = currentContent.replaceFirst("super\\(\"(.*?)\",\\s*\".*?\"\\);", "[[...]]");
             currentContent += "\r\nJDL.L(\"" + menukey + "\",\"" + menukey + "\");";
-
         }
         if (this.currentContent.contains(" ThreadedAction")) {
             String[] keys = new Regex(currentContent, " ThreadedAction\\s*\\(\"(.*?)\"\\,\\s*\"(.*?)\"").getColumn(0);
@@ -198,11 +197,8 @@ public class SrcParser {
                 currentContent += "\r\nJDL.L(\"" + "gui.menu." + k + ".mnem" + "\",\"" + "gui.menu." + k + ".mnem" + "\");";
                 currentContent += "\r\nJDL.L(\"" + "gui.menu." + k + ".accel" + "\",\"" + "-" + "\");";
             }
-
         }
         if (this.currentContent.contains(" ToolBarAction")) {
-            // new ToolBarAction("action.opendlfolder",
-            // "gui.images.package_opened") {
             String[] keys = new Regex(currentContent, " ToolBarAction\\s*\\(\"(.*?)\"\\,\\s*\"(.*?)\"").getColumn(0);
 
             for (String k : keys) {
@@ -213,9 +209,7 @@ public class SrcParser {
         }
         if (this.currentContent.contains("extends PluginOptional")) {
             currentContent += "\r\nJDL.L(\"" + cl + "\",\"" + simple + "\");";
-
         }
-        // JDL.L(this.getClass().getName()
 
     }
 
@@ -252,9 +246,6 @@ public class SrcParser {
     private void parseCodeLine(String match, ArrayList<LngEntry> fileEntries, ArrayList<String> filePattern) {
         String[] calls = match.split("JDL\\.");
         String pat_string = "\"(.*?)(?<!\\\\)\"";
-        // if (match.contains("plugins.host.rapidshare.errors")) {
-        // match = match;
-        // }
         LngEntry entry;
         String m;
         main: for (String orgm : calls) {
@@ -271,7 +262,6 @@ public class SrcParser {
 
                 m = m.replace(" ", "");
                 orgm = m;
-                // m = new Regex(m, "\\((.*?\\,.*?)[\\)\\,]").getMatch(0);
                 try {
 
                     int com1 = m.indexOf(",");

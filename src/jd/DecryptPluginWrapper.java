@@ -33,7 +33,6 @@ public class DecryptPluginWrapper extends PluginWrapper {
     public DecryptPluginWrapper(String host, String classNamePrefix, String className, String patternSupported, int flags, String revision) {
         super(host, classNamePrefix, className, patternSupported, flags);
         this.revision = Formatter.getRevision(revision);
-        ;
         DECRYPT_WRAPPER.add(this);
     }
 

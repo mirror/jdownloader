@@ -65,7 +65,7 @@ public class RouterUtils {
             Enumeration<NetworkInterface> e = NetworkInterface.getNetworkInterfaces();
 
             while (e.hasMoreElements()) {
-                NetworkInterface ni = (NetworkInterface) e.nextElement();
+                NetworkInterface ni = e.nextElement();
 
                 Enumeration<InetAddress> e2 = ni.getInetAddresses();
 

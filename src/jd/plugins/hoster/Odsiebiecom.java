@@ -58,7 +58,7 @@ public class Odsiebiecom extends PluginForHost {
 
     // @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo(this, account);
+        AccountInfo ai = new AccountInfo();
         this.setBrowserExclusive();
         try {
             login(account);
@@ -171,7 +171,7 @@ public class Odsiebiecom extends PluginForHost {
         br.setFollowRedirects(true);
         br.setDebug(true);
         downloadLink.setDownloadSize(0);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, downloadurl, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadurl, false, 1);
         if (dl.getConnection().getContentType().contains("text")) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.odsiebiecom.errors.servererror", "Server error"));

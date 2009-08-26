@@ -82,9 +82,9 @@ public class AddGui extends JPanel implements ActionListener, ChangeListener, Do
         this.edit = edit;
 
         setLayout(new MigLayout("wrap 1, fill", "[fill, grow]"));
-        
+
         JPanel main = new JPanel(new MigLayout("ins 5, wrap 1", "[fill, grow]", "[fill, grow][]"));
-        
+
         JPanel date = new JPanel();
         date.setLayout(new MigLayout("ins 5, wrap 2", "[fill, grow]10[fill, grow]"));
         date.setBorder(BorderFactory.createLineBorder(getBackground().darker()));
@@ -259,12 +259,11 @@ public class AddGui extends JPanel implements ActionListener, ChangeListener, Do
 
         fillComboBox();
 
-        
         main.add(date);
         main.add(actions);
         main.add(new JScrollPane(table), "hmin 100");
         main.add(control);
-        
+
         add(new JScrollPane(main));
     }
 
@@ -365,7 +364,7 @@ public class AddGui extends JPanel implements ActionListener, ChangeListener, Do
                     if (parameter.getText().equals(JDL.L("plugin.optional.scheduler.add.noparameter", "No Parameter needed")))
                         act.addExecutions(new Executions(smi, ""));
                     else
-                        act.addExecutions(new Executions(smi, (String) parameter.getText()));
+                        act.addExecutions(new Executions(smi, parameter.getText()));
                     tableModel.fireTableRowsInserted(act.getExecutions().size(), act.getExecutions().size());
                     fillComboBox();
                     return;

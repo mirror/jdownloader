@@ -66,7 +66,7 @@ public class FileHostMecom extends PluginForHost {
 
     // @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo(this, account);
+        AccountInfo ai = new AccountInfo();
         setBrowserExclusive();
         try {
             login(account);
@@ -138,7 +138,7 @@ public class FileHostMecom extends PluginForHost {
         if (url == null) throw new PluginException(LinkStatus.ERROR_FATAL);
         br.setFollowRedirects(true);
         /* Datei herunterladen */
-        dl = jd.plugins.BrowserAdapter.openDownload(br,parameter, url, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, url, true, 0);
         dl.startDownload();
     }
 
@@ -195,7 +195,7 @@ public class FileHostMecom extends PluginForHost {
         br.setFollowRedirects(true);
         /* Datei herunterladen */
         br.setDebug(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, br.getRedirectLocation(), false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), false, 1);
         dl.startDownload();
     }
 

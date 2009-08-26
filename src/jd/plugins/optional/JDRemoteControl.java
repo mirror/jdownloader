@@ -304,7 +304,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                     SubConfiguration.getConfig("WEBUPDATE").setProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false);
                 }
 
-                new WebUpdate().doUpdateCheck(true, true);
+                new WebUpdate().doUpdateCheck(true);
 
                 response.addContent("Do Webupdate...");
             } else if (request.getRequestUrl().equals("/action/reconnect")) {
@@ -490,7 +490,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
         ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
 
         MenuAction m;
-        menu.add(m = (MenuAction) new MenuAction(MenuAction.TOGGLE, JDL.L("plugins.optional.remotecontrol.activate", "Aktivieren"), 0).setActionListener(this));
+        menu.add(m = new MenuAction(MenuAction.TOGGLE, JDL.L("plugins.optional.remotecontrol.activate", "Aktivieren"), 0).setActionListener(this));
         m.setSelected(subConfig.getBooleanProperty(PARAM_ENABLED, true));
 
         return menu;

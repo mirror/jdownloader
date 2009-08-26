@@ -45,7 +45,8 @@ import jd.plugins.optional.schedule.modules.UnPauseDownloads;
 
 @OptionalPlugin(rev = "$Revision$", id = "scheduler", hasGui = true, interfaceversion = 5)
 public class Schedule extends PluginOptional {
-    // private static final String JDL_PREFIX = "jd.plugins.optional.schedule.Schedule.";
+    // private static final String JDL_PREFIX =
+    // "jd.plugins.optional.schedule.Schedule.";
 
     private transient static Schedule instance = null;
 
@@ -273,6 +274,6 @@ public class Schedule extends PluginOptional {
                 } catch (InterruptedException e) {
                 }
             }
-        };
+        }
     }
 }

@@ -74,7 +74,7 @@ public class ConvertDialog extends JFrame {
             return ext[0];
         }
 
-    };
+    }
 
     private static boolean forcekeep = false;
     private static ArrayList<ConversionMode> keeped = new ArrayList<ConversionMode>();

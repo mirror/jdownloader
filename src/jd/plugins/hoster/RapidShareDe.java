@@ -50,7 +50,7 @@ public class RapidShareDe extends PluginForHost {
     }
 
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo(this, account);
+        AccountInfo ai = new AccountInfo();
         this.setBrowserExclusive();
         try {
             login(account);

@@ -943,7 +943,7 @@ public class Rapidshare extends PluginForHost {
 
     // @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo(this, account);
+        AccountInfo ai = new AccountInfo();
         ai.setSpecialTraffic(true); /*
                                      * rs has specialtraffic: trafficshare,
                                      * pointconverting

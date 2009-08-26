@@ -126,20 +126,20 @@ public class JDStatusBar extends JPanel implements ChangeListener, ControlListen
         colorizeSpinnerSpeed();
 
         spMaxDls = new JDSpinner(JDL.L("gui.statusbar.sim_ownloads", "Max. Dls."));
-        try{
-        spMaxDls.getSpinner().setModel(new SpinnerNumberModel(dlConfig.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2), 1, 20, 1));
-        }catch(Exception e){
-            dlConfig.setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN,2);
+        try {
+            spMaxDls.getSpinner().setModel(new SpinnerNumberModel(dlConfig.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2), 1, 20, 1));
+        } catch (Exception e) {
+            dlConfig.setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2);
             spMaxDls.getSpinner().setModel(new SpinnerNumberModel(dlConfig.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2), 1, 20, 1));
             dlConfig.save();
         }
         spMaxDls.setToolTipText(JDL.L("gui.tooltip.statusbar.simultan_downloads", "Max. gleichzeitige Downloads"));
 
         spMaxChunks = new JDSpinner(JDL.L("gui.statusbar.maxChunks", "Max. Con."));
-        try{
-        spMaxChunks.getSpinner().setModel(new SpinnerNumberModel(dlConfig.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2), 1, 20, 1));
-        }catch(Exception e){
-            dlConfig.setProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS,2);
+        try {
+            spMaxChunks.getSpinner().setModel(new SpinnerNumberModel(dlConfig.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2), 1, 20, 1));
+        } catch (Exception e) {
+            dlConfig.setProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2);
             spMaxDls.getSpinner().setModel(new SpinnerNumberModel(dlConfig.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2), 1, 20, 1));
             dlConfig.save();
         }
@@ -207,13 +207,13 @@ public class JDStatusBar extends JPanel implements ChangeListener, ControlListen
 
     public void stateChanged(ChangeEvent e) {
         if (e.getSource() == spMaxSpeed.getSpinner()) {
-            dlConfig.setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, (Integer) spMaxSpeed.getValue());
+            dlConfig.setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, spMaxSpeed.getValue());
             dlConfig.save();
         } else if (e.getSource() == spMaxDls.getSpinner()) {
-            dlConfig.setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, (Integer) spMaxDls.getValue());
+            dlConfig.setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, spMaxDls.getValue());
             dlConfig.save();
         } else if (e.getSource() == spMaxChunks.getSpinner()) {
-            dlConfig.setProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, (Integer) spMaxChunks.getValue());
+            dlConfig.setProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, spMaxChunks.getValue());
             dlConfig.save();
         }
     }

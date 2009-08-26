@@ -127,7 +127,7 @@ public class DepositFiles extends PluginForHost {
 
     // @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo(this, account);
+        AccountInfo ai = new AccountInfo();
         setBrowserExclusive();
         br.setDebug(true);
         try {

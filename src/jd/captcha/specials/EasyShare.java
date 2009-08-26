@@ -64,7 +64,7 @@ public class EasyShare {
 
                 Color c = new Color(p);
                 if (c.getBlue() > 180 && c.getRed() > 180 && c.getGreen() > 180) {
-                        PixelGrid.setPixelValue(x, y, newgrid, captcha.getMaxPixelValue());
+                    PixelGrid.setPixelValue(x, y, newgrid, captcha.getMaxPixelValue());
 
                 } else {
                     newgrid[x][y] = captcha.grid[x][y];
@@ -74,31 +74,27 @@ public class EasyShare {
         }
         captcha.grid = newgrid;
     }
-    private static Vector<PixelObject> getRightletters(Vector<PixelObject> os, Captcha captcha)
-    {
-    	if(os.size()>5)
-    		return os;
-    	PixelObject biggest = os.get(0);
-    	for (int i = 1; i < os.size(); i++) {
-    		PixelObject po = os.get(i);
-			if(po.getWidth()>biggest.getWidth())
-				biggest=po;
-		}
-    	if(biggest.getWidth()>20)
-    	{
-    		if(os.size()==5 && biggest.getWidth()<25)
-    			return os;
-    		PixelObject[] bs = biggest.cut(biggest.getWidth()/2, biggest.getWidth(), 0);
-    		os.remove(biggest);
-    		
-    		for (PixelObject pixelObject : bs) {
-    			if(pixelObject!=null)
-    			os.add(pixelObject);
-			}
-    		return getRightletters(os, captcha);
-    	}
-    	return os;
+
+    private static Vector<PixelObject> getRightletters(Vector<PixelObject> os, Captcha captcha) {
+        if (os.size() > 5) return os;
+        PixelObject biggest = os.get(0);
+        for (int i = 1; i < os.size(); i++) {
+            PixelObject po = os.get(i);
+            if (po.getWidth() > biggest.getWidth()) biggest = po;
+        }
+        if (biggest.getWidth() > 20) {
+            if (os.size() == 5 && biggest.getWidth() < 25) return os;
+            PixelObject[] bs = biggest.cut(biggest.getWidth() / 2, biggest.getWidth(), 0);
+            os.remove(biggest);
+
+            for (PixelObject pixelObject : bs) {
+                if (pixelObject != null) os.add(pixelObject);
+            }
+            return getRightletters(os, captcha);
+        }
+        return os;
     }
+
     public static Letter[] getLetters(Captcha captcha) {
         // captcha.cleanByRGBDistance(1, 25);
         clean(captcha);
@@ -108,12 +104,12 @@ public class EasyShare {
         Collections.sort(os);
         mergeObjects(os);
         for (ListIterator<PixelObject> iterator = os.listIterator(os.size()); iterator.hasPrevious();) {
-			PixelObject pixelObject = (PixelObject) iterator.previous();
+            PixelObject pixelObject = iterator.previous();
             if (pixelObject.getArea() < 30) {
-            	iterator.remove();
+                iterator.remove();
             }
-		}
-        os=getRightletters(os, captcha);
+        }
+        os = getRightletters(os, captcha);
         Collections.sort(os);
         ArrayList<Letter> ret = new ArrayList<Letter>();
         for (PixelObject pixelObject : os) {

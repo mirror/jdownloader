@@ -94,7 +94,7 @@ public class AccountController extends SubConfiguration implements ActionListene
 
     public static enum ProviderMode {
         FIFO, RR
-    };
+    }
 
     private static final long serialVersionUID = -7560087582989096645L;
 

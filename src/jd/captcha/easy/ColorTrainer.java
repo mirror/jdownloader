@@ -66,14 +66,16 @@ public class ColorTrainer {
      * Farbmodus wird in der Gui über eine Combobox gesetzt
      */
     public byte colorDifferenceMode = CPoint.LAB_DIFFERENCE;
+
     private void autoSetZoomFaktor() {
-        if(originalCaptcha.getWidth()>200 || originalCaptcha.getHeight()>100)
-            zoom=100;
-        else if(originalCaptcha.getWidth()>100 || originalCaptcha.getHeight()>50)
-            zoom=200;
+        if (originalCaptcha.getWidth() > 200 || originalCaptcha.getHeight() > 100)
+            zoom = 100;
+        else if (originalCaptcha.getWidth() > 100 || originalCaptcha.getHeight() > 50)
+            zoom = 200;
         else
-            zoom=400;
+            zoom = 400;
     }
+
     /**
      * löscht einen cPoint aus der Liste und erstellt das WorkingCaptcha neu
      * 
@@ -216,7 +218,7 @@ public class ColorTrainer {
         double bestDist = Integer.MAX_VALUE;
         CPoint bestPX = null;
         for (Iterator<CPoint> iterator = colorPointList.iterator(); iterator.hasNext();) {
-            CPoint p = (CPoint) iterator.next();
+            CPoint p = iterator.next();
             double dist = 0;
             if (p.getDistance() == 0) {
                 if (color == p.getColor()) {
@@ -302,10 +304,10 @@ public class ColorTrainer {
      */
     @SuppressWarnings("unchecked")
     public void backUP() {
-        if(colorPointList!=null)
-        colorPointListBackUp = (Vector<CPoint>) colorPointList.clone();
+        if (colorPointList != null)
+            colorPointListBackUp = (Vector<CPoint>) colorPointList.clone();
         else
-            colorPointListBackUp=null;
+            colorPointListBackUp = null;
         backUpCaptcha = new Captcha(workingCaptcha.getHeight(), workingCaptcha.getWidth());
         backUpCaptcha.grid = new int[workingCaptcha.getWidth()][workingCaptcha.getHeight()];
         for (int a = 0; a < workingCaptcha.grid.length; a++) {
@@ -318,7 +320,7 @@ public class ColorTrainer {
      * Farbpunkt der bei den Koordinaten des MouseEvents liegt aus
      */
     public CPoint getCPointFromMouseEvent(MouseEvent e) {
-        CPoint p = new CPoint(e.getX() * 100 / zoom, e.getY() * 100 / zoom, (Integer) threshold, originalCaptcha);
+        CPoint p = new CPoint(e.getX() * 100 / zoom, e.getY() * 100 / zoom, threshold, originalCaptcha);
         p.setColorDistanceMode(colorDifferenceMode);
         p.setForeground(foreground);
         return p;
