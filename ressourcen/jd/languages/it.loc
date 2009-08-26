@@ -771,6 +771,7 @@ interaction.trigger.package_finished.desc = Eseguito al termine del download
 interaction.trigger.single_download_failed = Download fallito
 interaction.trigger.single_download_failed.desc = Eseguito dopo il download fallito
 jd.controlling.reconnect.reconnector.progress.failed = Riconnessione fallita! Verifica le impostazioni di riconnessione e prova una Riconnessione manuale!
+jd.controlling.reconnect.reconnector.progress.failed2 = Riconnessione fallita troppo spessso! Autoriconnessione disabilitata! Controlla i parametri di riconnessione
 jd.controlling.singledownloadcontroller.askexists = Il file \r\n%s\r\n è già esistente. Cosa vuoi fare?
 jd.controlling.singledownloadcontroller.askexists.title = File già esistente
 jd.gui.skins.simple.simplegui.menubar.filemenu = File
