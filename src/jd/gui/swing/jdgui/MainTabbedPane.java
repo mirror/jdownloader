@@ -58,9 +58,8 @@ public class MainTabbedPane extends JTabbedPane {
     }
 
     public void remove(View view) {
-
         super.remove(view);
-        view.getBroadcaster().fireEvent(new SwitchPanelEvent(view, SwitchPanelEvent.ON_REMOVE));
+        if (view != null) view.getBroadcaster().fireEvent(new SwitchPanelEvent(view, SwitchPanelEvent.ON_REMOVE));
         if (getTabCount() > 0) setSelectedComponent(getComponentAt(0));
     }
 
