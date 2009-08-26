@@ -1,6 +1,6 @@
 action.downloadview.movedown.tooltip = Mover para baixo
 action.downloadview.movetobottom.tooltip = Mover para o final
-action.downloadview.movetotop.tooltip = Mover para o começo
+action.downloadview.movetotop.tooltip = Mover para o início
 action.downloadview.moveup.tooltip = Mover para cima
 action.opendlfolder.tooltip = Abrir a pasta padrão de download
 action.premiumview.addacc.tooltip = Adicionar uma Conta nova
@@ -472,7 +472,7 @@ gui.menu.action.downloadview.movetobottom.mnem = f
 gui.menu.action.downloadview.movetobottom.name = Para o final
 gui.menu.action.downloadview.movetotop.accel = -
 gui.menu.action.downloadview.movetotop.mnem = c
-gui.menu.action.downloadview.movetotop.name = Para o começo
+gui.menu.action.downloadview.movetotop.name = Para o início
 gui.menu.action.downloadview.moveup.accel = -
 gui.menu.action.downloadview.moveup.mnem = c
 gui.menu.action.downloadview.moveup.name = Para cima
