@@ -119,7 +119,9 @@ public class Moosharenet extends PluginForHost {
         br.getPage("http://mooshare.net/api/checkfile.php?name=" + infos[1] + "&id=" + infos[0]);
         try {
             int a = Integer.parseInt(br.toString().trim());
-            if (a < 1) return AvailableStatus.FALSE;
+            if (a < 1) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } catch (PluginException e2) {
+            throw e2;
         } catch (Exception e) {
             e.printStackTrace();
             return AvailableStatus.FALSE;
@@ -141,8 +143,16 @@ public class Moosharenet extends PluginForHost {
         sleep(15000, downloadLink);
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
+        this.setBrowserExclusive();
+        br.setFollowRedirects(false);
+        br.getPage(downloadLink.getDownloadURL());
+        Form form = br.getForm(2);
+        if (form == null) {
+            if (br.containsHTML("Sie haben Ihr Downloadlimit für den Moment erreicht!")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        }
+        br.submitForm(form);
         if (br.containsHTML("keine Dateien parallel downloaden")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
-        if (br.containsHTML("Sie haben Ihr Downloadlimit für den Moment erreicht!")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l); }
         String wait = br.getRegex("var time = (.*?);").getMatch(0);
         if (wait != null) {
             wait = wait.replaceAll("\\.", "");
@@ -151,7 +161,7 @@ public class Moosharenet extends PluginForHost {
             sleep(15000, downloadLink);
         String captchaurl = br.getRegex("<img src=\"(http://mooshare.net/html/images/captcha.php.*?)\" alt=\"captcha\"").getMatch(0);
         String captchaCode = getCaptchaCode(captchaurl, downloadLink);
-        Form form = br.getForm(1);
+        form = br.getForm(1);
         form.put("captcha", captchaCode);
         br.setFollowRedirects(false);
         br.submitForm(form);
