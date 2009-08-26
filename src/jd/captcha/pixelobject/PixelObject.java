@@ -17,7 +17,9 @@
 package jd.captcha.pixelobject;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
@@ -49,8 +51,11 @@ public class PixelObject implements Comparable<PixelObject> {
      */
     private int avgIsSaveNum = 10;
     private boolean bordered = true;
-    public int colorpixel = 0;
     private HashMap<Integer, HashMap<Integer, int[]>> grid;
+    /**
+     * key=color value=quantity
+     */
+    private ArrayList<PixelObjectColor> colors = new ArrayList<PixelObjectColor>();
     /**
      * Kontrastwert für die durchschnisserkennung
      */
@@ -107,6 +112,15 @@ public class PixelObject implements Comparable<PixelObject> {
      */
     private int yMin = Integer.MAX_VALUE;
 
+    public int getMostcolor() {
+        Collections.sort(colors);
+        if (colors.size() > 0)
+            return colors.get(0).color;
+        else
+            return getAverage();
+
+    }
+
     /**
      * @param grid
      */
@@ -115,6 +129,21 @@ public class PixelObject implements Comparable<PixelObject> {
         this.grid = new HashMap<Integer, HashMap<Integer, int[]>>();
         object = new ArrayList<int[]>();
 
+    }
+
+    /**
+     * adds a color to the colorlist
+     * 
+     * @param color
+     * @return false if the color exists in the list
+     */
+    public boolean addColor(int color) {
+        PixelObjectColor poc = new PixelObjectColor(color);
+        if (!colors.contains(poc)) {
+            colors.add(poc);
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -129,7 +158,10 @@ public class PixelObject implements Comparable<PixelObject> {
         int[] tmp = { x, y, color };
         int tmpAvg = avg;
 
-        if (color > 0) avg = Colors.mixColors(avg, color, getSize(), 1);
+        if (color >= 0) {
+            avg = Colors.mixColors(avg, color, getSize(), 1);
+            addColor(color);
+        }
         HashMap<Integer, int[]> row = grid.get(x);
         if (row == null) grid.put(x, row = new HashMap<Integer, int[]>());
         row.put(y, new int[] { x, y, color });
@@ -161,6 +193,39 @@ public class PixelObject implements Comparable<PixelObject> {
             add(current.object.get(i)[0], current.object.get(i)[1], -1);
         }
 
+    }
+
+    /**
+     * delete a PixelObject from this pixelobject
+     * 
+     * @param PixelObject
+     *            current
+     */
+
+    public void del(PixelObject current) {
+        for (int i = 0; i < current.object.size(); i++) {
+            int x = current.object.get(i)[0];
+            int y = current.object.get(i)[1];
+            for (Iterator<int[]> iterator = object.iterator(); iterator.hasNext();) {
+                int[] o = (int[]) iterator.next();
+                if (o[0] == x && o[1] == y) {
+                    iterator.remove();
+                    break;
+                }
+            }
+        }
+        xMin = Integer.MAX_VALUE;
+        xMax = Integer.MIN_VALUE;
+        yMin = Integer.MAX_VALUE;
+        yMax = Integer.MIN_VALUE;
+        colors = new ArrayList<PixelObjectColor>();
+        for (int[] o : object) {
+            addColor(owner.getPixelValue(o[0], o[1]));
+            xMin = Math.min(o[0], xMin);
+            xMax = Math.max(o[0], xMax);
+            yMin = Math.min(o[1], yMin);
+            yMax = Math.max(o[1], yMax);
+        }
     }
 
     private int getYMax() {
@@ -559,6 +624,7 @@ public class PixelObject implements Comparable<PixelObject> {
         }
         return ret;
     }
+
     public PixelObject[] horizintalSplitAt(int yposition) {
         PixelObject[] ret = new PixelObject[2];
         for (int i = 0; i < ret.length; i++) {
@@ -580,6 +646,7 @@ public class PixelObject implements Comparable<PixelObject> {
         }
         return ret;
     }
+
     public PixelObject[] splitAt(int position) {
         PixelObject[] ret = new PixelObject[2];
         for (int i = 0; i < ret.length; i++) {
@@ -601,42 +668,49 @@ public class PixelObject implements Comparable<PixelObject> {
         }
         return ret;
     }
+
     /**
      * Erstellt ein Letter mit den Farben vom Captcha
      */
     public Letter toColoredLetter() {
         return toColoredLetter(owner.getMaxPixelValue(), owner);
     }
+
     /**
      * Erstellt ein Letter mit den Farben des owners
+     * 
      * @param backgroundcolor
      * @param owner
      * @return
      */
-    public Letter toColoredLetter(int backgroundcolor,PixelGrid owner ) {
+    public Letter toColoredLetter(int backgroundcolor, PixelGrid owner) {
         Letter l = new Letter(getWidth(), getHeight());
+        l.setOwner(owner.owner);
         l.setGrid(getGrid(backgroundcolor, owner));
         l.setElementPixel(getSize());
         l.setLocation(new int[] { getXMin(), getYMin() });
         l.detected = detected;
         return l;
     }
+
     /**
      * Erstellt ein grid aus dem PixelObjekt mit den Farben vom Captcha
+     * 
      * @param backgroundcolor
      * @return
      */
-    public int[][] getGrid()
-    {
+    public int[][] getGrid() {
         return getGrid(owner.getMaxPixelValue(), owner);
     }
+
     /**
      * Erstellt ein grid aus dem PixelObjekt mit den Farben des owners
-     * @param backgroundcolor, owner
+     * 
+     * @param backgroundcolor
+     *            , owner
      * @return
      */
-    public int[][] getGrid(int backgroundcolor,PixelGrid owner)
-    {
+    public int[][] getGrid(int backgroundcolor, PixelGrid owner) {
         int[][] ret = new int[getWidth()][getHeight()];
         for (int x = 0; x < getWidth(); x++) {
             for (int y = 0; y < getHeight(); y++) {
@@ -650,6 +724,7 @@ public class PixelObject implements Comparable<PixelObject> {
         }
         return ret;
     }
+
     /**
      * 
      * @return Gibt einen Entsprechenden Sw-Letter zurück
@@ -675,6 +750,7 @@ public class PixelObject implements Comparable<PixelObject> {
         return l;
 
     }
+
     // @Override
     @Override
     public String toString() {
@@ -717,4 +793,22 @@ public class PixelObject implements Comparable<PixelObject> {
         return false;
     }
 
+}
+
+class PixelObjectColor implements Comparable<PixelObjectColor> {
+    int color = 0;
+    int count = 1;
+
+    public PixelObjectColor(int color) {
+        this.color = color;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj != null && obj instanceof PixelObjectColor && ((PixelObjectColor) obj).color == color;
+    }
+
+    public int compareTo(PixelObjectColor o) {
+        return new Integer(count).compareTo(o.count);
+    }
 }

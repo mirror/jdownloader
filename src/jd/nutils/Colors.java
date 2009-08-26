@@ -139,6 +139,16 @@ public class Colors {
         int[] rgbA = Colors.hexToRgb(pixelValue);
         return rgb2hsb(rgbA[0], rgbA[1], rgbA[2]);
     }
+    /**
+     * this is hsv we know from gimp or photoshop (hsb[0]*360 hsb[1]*100 hsb[2]*100)
+     * @param pixelValue
+     * @return
+     */
+    public static int[] rgb2hsv(int pixelValue) {
+        int[] rgbA = Colors.hexToRgb(pixelValue);
+        float[] hsb = rgb2hsb(rgbA[0], rgbA[1], rgbA[2]);
+        return new int[] {Math.round(hsb[0] *360),Math.round(hsb[1]*100),Math.round(hsb[2]*100)};
+    }
 
     /**
      * Wandelt ein RGB Array in die zugehöroge decimale hexzahl um.
