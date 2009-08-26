@@ -32,12 +32,12 @@ import jd.utils.JDUtilities;
  */
 public class DummyFrame extends JFrame {
 
-    private static DummyFrame PARENT;
+    public static JFrame PARENT;
 
     public static JFrame getDialogParent() {
         if (SwingGui.getInstance() != null) return SwingGui.getInstance().getMainFrame();
-       if(PARENT==null)PARENT=new DummyFrame();
-       return PARENT;
+        if (PARENT == null) PARENT = new DummyFrame();
+        return PARENT;
     }
 
     private static final long serialVersionUID = 5729536627803588177L;
