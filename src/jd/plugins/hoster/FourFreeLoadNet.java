@@ -109,8 +109,8 @@ public class FourFreeLoadNet extends PluginForHost {
         finalurl = br.getRegex("document\\.location=\"(.*?)\"").getMatch(0);
         if (finalurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
 
-        /* 20 seks warten */
-        sleep(20000, downloadLink);
+        //waittime not needed right now
+//        sleep(20000, downloadLink);
         br.setFollowRedirects(true);
         /* Datei herunterladen */
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalurl, false, 1);
@@ -211,7 +211,7 @@ public class FourFreeLoadNet extends PluginForHost {
 
     // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return 2;
     }
 
     // @Override
