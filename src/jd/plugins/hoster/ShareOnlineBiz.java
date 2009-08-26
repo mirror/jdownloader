@@ -54,16 +54,10 @@ public class ShareOnlineBiz extends PluginForHost {
         br.setCookie("http://www.share-online.biz", "king_mylang", "en");
         br.postPage("http://www.share-online.biz/login.php", "act=login&location=service.php&dieseid=&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&login=Log+me+in&folder_autologin=1");
         String cookie = br.getCookie("http://www.share-online.biz", "king_passhash");
-        if (cookie == null) {
-            account.setEnabled(false);
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
-        }
+        if (cookie == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
         br.getPage("http://www.share-online.biz/members.php");
         String expired = br.getRegex(Pattern.compile("<b>Expired\\?</b></td>.*?<td align=\"left\">(.*?)<a", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-        if (expired == null || !expired.trim().equalsIgnoreCase("no")) {
-            account.setEnabled(false);
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
-        }
+        if (expired == null || !expired.trim().equalsIgnoreCase("no")) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
     }
 
     private boolean isPremium() throws IOException {

@@ -55,10 +55,7 @@ public class MegasharesCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage("http://d01.megashares.com/");
         br.postPage("http://d01.megashares.com/", "lc_email=" + Encoding.urlEncode(account.getUser()) + "&lc_pin=" + Encoding.urlEncode(account.getPass()) + "&lc_signin=Sign-In");
-        if (br.getCookie("http://megashares.com", "linkcard") == null) {
-            account.setEnabled(false);
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
-        }
+        if (br.getCookie("http://megashares.com", "linkcard") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
     }
 
     // @Override

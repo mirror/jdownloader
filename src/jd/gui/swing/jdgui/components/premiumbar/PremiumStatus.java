@@ -223,6 +223,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
                                         enabled = true;
                                         AccountInfo ai = a.getAccountInfo();
                                         if (ai == null) continue;
+                                        if (ai.isExpired()) continue;
                                         if (!ai.isUnlimitedTraffic()) {
                                             /* no unlimited traffic */
                                             if (!a.isTempDisabled()) {

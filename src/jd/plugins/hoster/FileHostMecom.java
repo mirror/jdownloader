@@ -50,10 +50,7 @@ public class FileHostMecom extends PluginForHost {
     public void login(Account account) throws IOException, PluginException {
         br.postPage("http://www.filehostme.com/", "op=login&redirect=&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&x=48&y=5");
         String cookie = br.getCookie("http://www.filehostme.com/", "xfss");
-        if (cookie == null) {
-            account.setEnabled(false);
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
-        }
+        if (cookie == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
     }
 
     public boolean isPremium() throws IOException {

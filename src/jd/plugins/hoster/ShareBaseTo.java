@@ -74,10 +74,7 @@ public class ShareBaseTo extends PluginForHost {
         br.getPage("http://sharebase.to/members/");
         String points = br.getRegex(Pattern.compile("<td>Premiumpunkte:</td>.*?<td><input.*cleanform.*value=\"([\\d\\.]+) Punkte\"></td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         String expire = br.getRegex(Pattern.compile("<td>Premium bis:</td>.*?<td><input.*?cleanform.*? value=\"(.*?)\"></td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-        if (points == null || expire == null) {
-            account.setEnabled(false);
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
-        }
+        if (points == null || expire == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
     }
 
     // @Override

@@ -61,20 +61,14 @@ public class EasyShareCom extends PluginForHost {
 
         br.submitForm(login);
 
-        if (br.getCookie("http://www.easy-share.com/", "PREMIUM") == null) {
-            account.setEnabled(false);
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
-        }
+        if (br.getCookie("http://www.easy-share.com/", "PREMIUM") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
 
     }
 
     private Cookie isExpired(Account account) throws MalformedURLException, PluginException {
         Cookies cookies = br.getCookies("easy-share.com");
         Cookie premstatus = cookies.get("PREMIUMSTATUS");
-        if (premstatus == null || !premstatus.getValue().equalsIgnoreCase("ACTIVE")) {
-            account.setEnabled(false);
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
-        }
+        if (premstatus == null || !premstatus.getValue().equalsIgnoreCase("ACTIVE")) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
         return premstatus;
     }
 

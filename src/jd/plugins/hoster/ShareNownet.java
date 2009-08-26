@@ -94,23 +94,14 @@ public class ShareNownet extends PluginForHost {
         setBrowserExclusive();
         br.getPage("http://share-now.net/?lang=de");
         br.postPage("http://share-now.net/?lang=de", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&loginuser=1");
-        if (br.getCookie("http://share-now.net", "user") == null) {
-            account.setEnabled(false);
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
-        }
-        if (br.getCookie("http://share-now.net", "pass") == null) {
-            account.setEnabled(false);
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
-        }
+        if (br.getCookie("http://share-now.net", "user") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getCookie("http://share-now.net", "pass") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
     }
 
     private void isExpired(Account account) throws IOException, PluginException {
         br.getPage("http://netload.in/index.php?id=2");
         String validUntil = br.getRegex("Verbleibender Zeitraum</div>.*?<div style=.*?><span style=.*?>(.*?)</span></div>").getMatch(0).trim();
-        if (validUntil != null && new Regex(validUntil.trim(), "kein").matches()) {
-            account.setEnabled(false);
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
-        }
+        if (validUntil != null && new Regex(validUntil.trim(), "kein").matches()) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
     }
 
     // @Override

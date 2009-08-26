@@ -142,10 +142,7 @@ public class FourFreeLoadNet extends PluginForHost {
         form.put("autologin", "0");
         br.submitForm(form);
 
-        if (br.getCookie("http://www.4freeload.net", "yab_passhash") == null || br.getCookie("http://www.4freeload.net", "yab_uid").equals("0")) {
-            account.setEnabled(false);
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
-        }
+        if (br.getCookie("http://www.4freeload.net", "yab_passhash") == null || br.getCookie("http://www.4freeload.net", "yab_uid").equals("0")) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
     }
 
     // @Override

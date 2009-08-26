@@ -107,10 +107,7 @@ public class DepositFiles extends PluginForHost {
         br.submitForm(login);
         br.setFollowRedirects(false);
         String cookie = br.getCookie("http://depositfiles.com", "autologin");
-        if (cookie == null || br.containsHTML("Benutzername-Passwort-Kombination")) {
-            account.setEnabled(false);
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
-        }
+        if (cookie == null || br.containsHTML("Benutzername-Passwort-Kombination")) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
     }
 
     public void setLangtoGer() throws IOException {

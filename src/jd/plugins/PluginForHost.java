@@ -485,20 +485,23 @@ public abstract class PluginForHost extends Plugin {
                 logger.info(downloadLink.getLinkStatus().getLongErrorMessage());
             }
 
-            long traffic = downloadLink.getDownloadCurrent() - before;
-            AccountInfo ai = account.getAccountInfo();
-            if (traffic >= 0 && ai != null && !ai.isUnlimitedTraffic()) {
-                long left = Math.max(0, ai.getTrafficLeft() - traffic);
-                ai.setTrafficLeft(left);
-                if (left == 0 && ai.isSpecialTraffic()) {
-                    logger.severe("Premium Account " + account.getUser() + ": Traffic Limit could be reached, but SpecialTraffic might be available!");
-                } else if (left == 0) {
-                    logger.severe("Premium Account " + account.getUser() + ": Traffic Limit reached");
-                    account.setTempDisabled(true);
+            long traffic = Math.max(0, downloadLink.getDownloadCurrent() - before);
+            boolean throwupdate = false;
+            synchronized (AccountController.AccountLock) {
+                AccountInfo ai = account.getAccountInfo();
+                if (traffic > 0 && ai != null && !ai.isUnlimitedTraffic()) {
+                    long left = Math.max(0, ai.getTrafficLeft() - traffic);
+                    ai.setTrafficLeft(left);
+                    if (left == 0 && ai.isSpecialTraffic()) {
+                        logger.severe("Premium Account " + account.getUser() + ": Traffic Limit could be reached, but SpecialTraffic might be available!");
+                    } else if (left == 0) {
+                        logger.severe("Premium Account " + account.getUser() + ": Traffic Limit reached");
+                        account.setTempDisabled(true);
+                    }
+                    throwupdate = true;
                 }
-                AccountController.getInstance().throwUpdateEvent(this, account);
             }
-
+            if (throwupdate) AccountController.getInstance().throwUpdateEvent(this, account);
             if (downloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_PREMIUM)) {
                 if (downloadLink.getLinkStatus().getValue() == LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE) {
                     logger.severe("Premium Account " + account.getUser() + ": Traffic Limit reached");

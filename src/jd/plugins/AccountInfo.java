@@ -150,9 +150,6 @@ public class AccountInfo extends Property {
 
     public void setExpired(boolean b) {
         this.account_expired = b;
-        if (b) {
-            this.setTrafficLeft(-1);
-        }
     }
 
     public void setFilesNum(long parseInt) {

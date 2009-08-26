@@ -18,6 +18,7 @@ package jd.controlling;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -117,6 +118,8 @@ public class AccountController extends SubConfiguration implements ActionListene
     private long ballooninterval = 30 * 60 * 1000l;
     private ProviderMode providemode = ProviderMode.RR;
 
+    public static final Object AccountLock = new Object();
+
     public long getUpdateTime() {
         return waittimeAccountInfoUpdate;
     }
@@ -172,21 +175,22 @@ public class AccountController extends SubConfiguration implements ActionListene
         AccountInfo ai = account.getAccountInfo();
         if (!forceupdate) {
             if (account.lastUpdateTime() != 0 && ai != null && ai.isExpired()) {
-                // System.out.println(" no update because expired " + hostname);
+                /* account is expired, no need to update */
                 return ai;
             }
             if (!account.isValid() && account.lastUpdateTime() != 0) {
-                // System.out.println(" no update because invalid " + hostname);
+                /* account is invalid, no need to update */
                 return ai;
             }
             if ((System.currentTimeMillis() - account.lastUpdateTime()) < waittimeAccountInfoUpdate) {
-                // System.out.println(" no update because waittime " +
-                // hostname);
+                /*
+                 * account was checked before, timeout for recheck not reached,
+                 * no need to update
+                 */
                 return ai;
             }
         }
         try {
-            // System.out.println("update " + hostname);
             account.setUpdateTime(System.currentTimeMillis());
             /* not every plugin sets this info correct */
             account.setValid(true);
@@ -198,7 +202,9 @@ public class AccountController extends SubConfiguration implements ActionListene
                 this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.ACCOUNT_UPDATE, hostname, account));
                 return null;
             }
-            account.setAccountInfo(ai);
+            synchronized (AccountLock) {
+                account.setAccountInfo(ai);
+            }
             if (ai.isExpired()) {
                 account.setEnabled(false);
                 this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.ACCOUNT_EXPIRED, hostname, account));
@@ -208,8 +214,11 @@ public class AccountController extends SubConfiguration implements ActionListene
             } else {
                 this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.ACCOUNT_UPDATE, hostname, account));
             }
+        } catch (IOException e) {
+            logger.severe("AccountUpdate: " + host + " failed!");
         } catch (Exception e) {
-            // System.out.println("error update " + hostname);
+            logger.severe("AccountUpdate: " + host + " failed!");
+            JDLogger.exception(e);
             account.setAccountInfo(null);
             account.setEnabled(false);
             account.setValid(false);

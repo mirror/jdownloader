@@ -249,10 +249,7 @@ public class BadongoCom extends PluginForHost {
         form.put("username", Encoding.urlEncode(account.getUser()));
         form.put("password", Encoding.urlEncode(account.getPass()));
         br.submitForm(form);
-        if (br.getCookie("http://www.badongo.com", "badongo_user") == null || br.getCookie("http://www.badongo.com", "badongo_password") == null) {
-            account.setEnabled(false);
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
-        }
+        if (br.getCookie("http://www.badongo.com", "badongo_user") == null || br.getCookie("http://www.badongo.com", "badongo_password") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
     }
 
     @Override

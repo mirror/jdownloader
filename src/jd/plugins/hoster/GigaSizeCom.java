@@ -47,15 +47,9 @@ public class GigaSizeCom extends PluginForHost {
     public void login(Account account) throws IOException, PluginException {
         br.postPage("http://www.gigasize.com/login.php", "uname=" + Encoding.urlEncode(account.getUser()) + "&passwd=" + Encoding.urlEncode(account.getPass()) + "&=Login&login=1");
         String cookie = br.getCookie("http://www.gigasize.com", "Cookieuser[pass]");
-        if (cookie == null) {
-            account.setEnabled(false);
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
-        }
+        if (cookie == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
         cookie = br.getCookie("http://www.gigasize.com", "Cookieuser[user]");
-        if (cookie == null) {
-            account.setEnabled(false);
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
-        }
+        if (cookie == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
     }
 
     public boolean isPremium() throws IOException {
