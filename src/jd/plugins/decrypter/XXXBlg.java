@@ -18,6 +18,8 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import jd.parser.html.Form;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
@@ -27,10 +29,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rs.xxx-blog.org" }, urls = { "http://[\\w\\.]*?xxx-blog\\.org/(com-|u|filefactory/)[\\w\\./]+" }, flags = { 0 })
-public class RsXXXBlg extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xxx-blog.org" }, urls = { "http://[\\w\\.]*?xxx-blog\\.org/(sto|com-|u|filefactory/)[\\w\\./]+" }, flags = { 0 })
+public class XXXBlg extends PluginForDecrypt {
 
-    public RsXXXBlg(PluginWrapper wrapper) {
+    public XXXBlg(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -45,9 +47,9 @@ public class RsXXXBlg extends PluginForDecrypt {
         if (br.getRedirectLocation() != null) {
             dLink = createDownloadlink(br.getRedirectLocation());
         } else {
-            String http = br.getRegex("<FORM ACTION=\"(.*?)\"").getMatch(0);
-            if (http == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-            dLink = createDownloadlink(http);
+            Form form = br.getForm(0);
+            if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            dLink = createDownloadlink(form.getAction(null));
         }
         dLink.addSourcePluginPassword("xxx-blog.dl.am");
         dLink.addSourcePluginPassword("xxx-blog.org");
