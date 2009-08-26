@@ -22,12 +22,14 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.HTMLParser;
+import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -80,20 +82,25 @@ public class FilestoreTo extends PluginForHost {
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-        /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
-        /* Link holen */
-        String linkurl = Encoding.htmlDecode(new Regex(br, Pattern.compile("<a href=\"(http://.*?)\" onmouseout", Pattern.CASE_INSENSITIVE)).getMatch(0));
-        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        /* Datei herunterladen */
-        br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, linkurl, true, -2);
-        URLConnectionAdapter con = dl.getConnection();
-        if (con.getResponseCode() != 200 && con.getResponseCode() != 206) {
-            con.disconnect();
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 1000l);
+        String page = Encoding.urlDecode(br.toString(), true);
+        String[] links = HTMLParser.getHttpLinks(page, null);
+        boolean found = false;
+        for (String link : links) {
+            if (!new Regex(link, ".*?.getfile\\.php.*?$").matches()) continue;
+            Browser brc = br.cloneBrowser();
+            dl = BrowserAdapter.openDownload(brc, downloadLink, link);
+            if (dl.getConnection().isContentDisposition()) {
+                found = true;
+                break;
+            } else {
+                dl.getConnection().disconnect();
+            }
         }
+        if (!found) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        /* Workaround für fehlerhaften Filename Header */
+        String name = Plugin.getFileNameFormHeader(dl.getConnection());
+        if (name != null) downloadLink.setFinalFileName(Encoding.urlDecode(name, false));
         dl.startDownload();
     }
 
