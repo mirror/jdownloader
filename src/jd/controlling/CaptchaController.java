@@ -50,7 +50,7 @@ public class CaptchaController {
      * @return
      */
     private boolean isMethodEnabled() {
-        return (JDUtilities.getConfiguration() != null && !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CAPTCHA_JAC_DISABLE, false)) && JACMethod.hasMethod(methodname) && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_JAC_METHODS + methodname.toLowerCase(), true);
+        return (JDUtilities.getConfiguration() != null && !SubConfiguration.getConfig("JAC").getBooleanProperty(Configuration.PARAM_CAPTCHA_JAC_DISABLE, false)) && JACMethod.hasMethod(methodname);
     }
 
     public String getCode(int flag) {

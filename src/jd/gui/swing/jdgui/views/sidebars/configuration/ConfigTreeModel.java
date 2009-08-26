@@ -70,10 +70,9 @@ public class ConfigTreeModel implements TreeModel {
         // TreeEntry(jd.gui.swing.jdgui.settings.panels.gui.General.class,
         // JDL.L(JDL_PREFIX + "gui.general.title",
         // "Main")).setIcon("gui.images.config.gui"));
-        
+
         dl.add(new TreeEntry(jd.gui.swing.jdgui.settings.panels.gui.ToolbarController.class, jd.gui.swing.jdgui.settings.panels.gui.ToolbarController.getTitle()).setIcon("gui.images.toolbar"));
-        
-        
+
         dl.add(new TreeEntry(jd.gui.swing.jdgui.settings.panels.gui.Linkgrabber.class, jd.gui.swing.jdgui.settings.panels.gui.Linkgrabber.getTitle()).setIcon("gui.images.taskpanes.linkgrabber"));
         //
 
@@ -82,13 +81,15 @@ public class ConfigTreeModel implements TreeModel {
 
         root.add(modules = new TreeEntry(JDL.L(JDL_PREFIX + "modules.title", "Modules")).setIcon("gui.images.config.home"));
 
-//        modules.add(dl = new TreeEntry(jd.gui.swing.jdgui.settings.panels.ocr.General.class, jd.gui.swing.jdgui.settings.panels.ocr.General.getTitle()).setIcon("gui.images.config.ocr"));
+        // modules.add(dl = new
+        // TreeEntry(jd.gui.swing.jdgui.settings.panels.ocr.General.class,
+        // jd.gui.swing.jdgui.settings.panels.ocr.General.getTitle()).setIcon("gui.images.config.ocr"));
 
         // dl.add(new
         // TreeEntry(jd.gui.swing.jdgui.settings.panels.ocr.General.class,
         // JDL.L(JDL_PREFIX + "captcha.general.title",
         // "Method List")).setIcon("gui.images.config.ocr"));
-        modules.add(dl = new TreeEntry(jd.gui.swing.jdgui.settings.panels.ocr.Advanced.class, jd.gui.swing.jdgui.settings.panels.ocr.Advanced.getTitle()).setIcon("gui.images.config.ocr"));
+        modules.add(dl = new TreeEntry(jd.gui.swing.jdgui.settings.panels.ConfigPanelCaptcha.class, jd.gui.swing.jdgui.settings.panels.ConfigPanelCaptcha.getTitle()).setIcon("gui.images.config.ocr"));
 
         modules.add(dl = new TreeEntry(jd.gui.swing.jdgui.settings.panels.reconnect.MethodSelection.class, jd.gui.swing.jdgui.settings.panels.reconnect.MethodSelection.getTitle()).setIcon("gui.images.config.reconnect"));
         // dl.add(new
@@ -97,7 +98,7 @@ public class ConfigTreeModel implements TreeModel {
         // "Reconnect")).setIcon("gui.images.config.reconnect"));
         dl.add(new TreeEntry(jd.gui.swing.jdgui.settings.panels.reconnect.Advanced.class, jd.gui.swing.jdgui.settings.panels.reconnect.Advanced.getTitle()).setIcon("gui.images.reconnect_settings"));
 
-        modules.add(dl = new TreeEntry(JDL.L(JDL_PREFIX + "passwordsANdLogins","Passwords & Logins")).setIcon("gui.images.list"));
+        modules.add(dl = new TreeEntry(JDL.L(JDL_PREFIX + "passwordsANdLogins", "Passwords & Logins")).setIcon("gui.images.list"));
         dl.add(new TreeEntry(jd.gui.swing.jdgui.settings.panels.passwords.PasswordList.class, jd.gui.swing.jdgui.settings.panels.passwords.PasswordList.getTitle()).setIcon("gui.images.addons.unrar"));
 
         dl.add(new TreeEntry(jd.gui.swing.jdgui.settings.panels.passwords.PasswordListHTAccess.class, jd.gui.swing.jdgui.settings.panels.passwords.PasswordListHTAccess.getTitle()).setIcon("gui.images.htaccess"));
@@ -115,7 +116,7 @@ public class ConfigTreeModel implements TreeModel {
         for (final OptionalPluginWrapper plg : OptionalPluginWrapper.getOptionalWrapper()) {
             if (!plg.isLoaded() || !plg.isEnabled() || plg.getPlugin().getConfig().getEntries().size() == 0) continue;
 
-            addons2.add(new TreeEntry(AddonConfig.getInstance(plg.getPlugin().getConfig(), plg.getHost(),""), plg.getHost()).setIcon(plg.getPlugin().getIconKey()));
+            addons2.add(new TreeEntry(AddonConfig.getInstance(plg.getPlugin().getConfig(), plg.getHost(), ""), plg.getHost()).setIcon(plg.getPlugin().getIconKey()));
         }
 
     }

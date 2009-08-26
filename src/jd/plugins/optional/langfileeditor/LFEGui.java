@@ -596,7 +596,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
             out.close();
             if (upload) {
                 String message = UserIO.getInstance().requestInputDialog(0, "Enter change description", "Please enter a short description for your changes (in english).", "", null, null, null);
-                if (message == null) message = "Updated language file";
+                if (message == null) message = "Updated language file (" + lngKey + ")";
                 if (!commit(file, message, null)) {
 
                     UserIO.getInstance().requestMessageDialog("Could not upload changes. Please send the file " + file.getAbsolutePath() + " to support@jdownloader.org");

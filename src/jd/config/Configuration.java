@@ -89,7 +89,7 @@ public class Configuration extends SubConfiguration implements Serializable {
 
     public static final String PARAM_INTERACTIONS = "INTERACTIONS";
 
-    public static final String PARAM_JAC_METHODS = "JAC_METHODS_";
+    // public static final String PARAM_JAC_METHODS = "JAC_METHODS_";
 
     public static final String PARAM_LOGGER_LEVEL = "LOGGER_LEVEL3";
 
@@ -143,9 +143,9 @@ public class Configuration extends SubConfiguration implements Serializable {
     public static final String PARAM_LATEST_RECONNECT_RESULT = "LATEST_RECONNECT_RESULT";
 
     public static final String NAME = "jdownloaderconfig";
-/**
- * v4 or v5 socks
- */
+    /**
+     * v4 or v5 socks
+     */
     public static final String SOCKS_TYPE = "SOCKS_TYPE";
 
     /**
