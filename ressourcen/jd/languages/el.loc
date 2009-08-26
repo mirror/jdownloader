@@ -428,7 +428,7 @@ gui.logdialog.loglevelwarning.title = Επιλέχθηκε λανθασμένο 
 gui.logdialog.warning.uploadfailed = Αποστολή απέτυχε
 gui.logger.askquestion = Παρακαλώ περιγράψτε το Πρόβλημα/Σφάλμα/Απορία σας!
 gui.logupload.message = Παρακαλώ στείλτε αυτό το αρχείο σφαλμάτων στην Υποστήριξη
-gui.mainframe.title.updatemessage = -->Ενημερώσεις διαθέσιμες:
+gui.mainframe.title.updatemessage2 = %s Ενημερώσεις διαθέσιμες
 gui.menu.about = Περί JDownloader
 gui.menu.action.about.accel = CTRL+F1
 gui.menu.action.about.mnem = J
@@ -512,6 +512,7 @@ gui.menu.action.load.mnem = C
 gui.menu.action.load.name = Φόρτωση Container (DLC,CCF...)
 gui.menu.action.move_down.name = Μετακίνηση κάτω
 gui.menu.action.move_up.name = Μετακίνηση πάνω
+gui.menu.action.opendlfolder = [[.....]]String[]keys=newRegex(currentContent
 gui.menu.action.opendlfolder.accel = -
 gui.menu.action.opendlfolder.mnem = Λ
 gui.menu.action.opendlfolder.name = Άνοιγμα φακέλου Λήψεων
@@ -956,7 +957,7 @@ jd.plugins.optional.langfileeditor.langfileeditor.initconfigentries.checklogins.
 jd.plugins.optional.langfileeditor.langfileeditor.initconfigentries.checklogins.succeeded = Επιτυχής!
 jd.plugins.optional.langfileeditor.langfileeditor.initconfigentries.message = Για τη χρήση αυτού του προσθέτου, χρειάζεστε έναν JD-SVN λογαριασμό.
 jd.plugins.optional.langfileeditor.langfileeditor.show = Εμφάνιση
-jd.plugins.optional.langfileeditor.langfileeditor.testlogins = Δοκιμή & Αποθήκευση Κωδικών Πρόσβασης
+jd.plugins.optional.langfileeditor.langfileeditor.testlogins = Δοκιμή & Αποθήκευση
 jd.plugins.optional.langfileeditor.langfileeditor.testloginsmessage = Έλεγχος εγκυρότητας Κωδικών
 jd.plugins.optional.langfileeditor.lfeview.title = Επεξεργασία Μετάφρασης
 jd.plugins.optional.langfileeditor.lfeview.tooltip = Επεξεργασία ενός αρχείου γλώσσας
