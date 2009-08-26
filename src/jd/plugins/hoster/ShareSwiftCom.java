@@ -54,7 +54,7 @@ public class ShareSwiftCom extends PluginForHost {
         br.getPage(parameter.getDownloadURL());
         if (br.containsHTML("You have to wait")) {
             logger.warning(JDL.L("plugins.host.ShareSwiftCom.uncheckableduewaittime", "You have to wait or perform a reconnect to check the available status"));
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "You need to perform a reconnect to check the available status");
+            return AvailableStatus.UNCHECKABLE;
         }
         if (br.containsHTML("No such file with this filename")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("No such user exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
