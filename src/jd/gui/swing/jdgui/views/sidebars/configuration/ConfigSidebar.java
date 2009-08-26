@@ -40,6 +40,17 @@ public class ConfigSidebar extends SideBarPanel {
     private JTree tree;
     private ConfigurationView view;
 
+    /**
+     * CReate a singlton instance of the config sidebar
+     * 
+     * @param configurationView
+     * @return
+     */
+    public static ConfigSidebar getInstance(ConfigurationView configurationView) {
+        if (INSTANCE == null && configurationView != null) INSTANCE = new ConfigSidebar(configurationView);
+        return INSTANCE;
+    }
+
     private ConfigSidebar(ConfigurationView configurationView) {
         this.view = configurationView;
         this.setLayout(new MigLayout("ins 0", "[grow,fill]", "[grow,fill]"));
@@ -50,17 +61,16 @@ public class ConfigSidebar extends SideBarPanel {
             /**
              * workaround a synthetica layout bug with doubleclick
              */
+            @Override
             public void processMouseEvent(MouseEvent m) {
                 if (m.getClickCount() > 1) return;
                 super.processMouseEvent(m);
             }
 
+            @Override
             public void processKeyEvent(KeyEvent m) {
-                if (LookAndFeelController.isSynthetica()) {
-                  return;
-                }
+                if (LookAndFeelController.isSynthetica()) return;
                 super.processKeyEvent(m);
-
             }
 
         });
@@ -77,16 +87,12 @@ public class ConfigSidebar extends SideBarPanel {
 
             public void valueChanged(TreeSelectionEvent e) {
                 new GuiRunnable<Object>() {
-
                     @Override
                     public Object runSave() {
                         if (tree.getSelectionPath() == null) return null;
                         entry = (TreeEntry) tree.getSelectionPath().getLastPathComponent();
                         tree.expandPath(tree.getSelectionPath());
-                        if (entry.getPanel() == null) {
-                            entry = entry.getEntries().get(0);
-                        }
-                        view.setContent(entry.getPanel().getPanel());
+                        if (entry.getPanel() != null) view.setContent(entry.getPanel().getPanel());
                         return null;
                     }
                 }.start();
@@ -101,7 +107,7 @@ public class ConfigSidebar extends SideBarPanel {
             tree.expandPath(path);
         }
 
-        tree.setSelectionRow(0);
+        tree.setSelectionRow(1);
     }
 
     public void expandAll(JTree tree, boolean expand) {
@@ -137,11 +143,9 @@ public class ConfigSidebar extends SideBarPanel {
     }
 
     public void setSelectedTreeEntry(Class<? extends SwitchPanel> class1) {
-
         TreeEntry root = (TreeEntry) tree.getModel().getRoot();
         TreePath path = getEntry(new TreePath(root), TreeEntry.getTreeByClass(class1));
         tree.setSelectionPath(path);
-
     }
 
     private TreePath getEntry(TreePath parent, TreeEntry treeEntry) {
@@ -157,27 +161,14 @@ public class ConfigSidebar extends SideBarPanel {
         }
 
         return null;
-
     }
 
     /**
-     * CReate a singlton instance of the config sidebar
-     * 
-     * @param configurationView
-     * @return
-     */
-    public static ConfigSidebar getInstance(ConfigurationView configurationView) {
-        if (INSTANCE == null && configurationView != null) INSTANCE = new ConfigSidebar(configurationView);
-        return INSTANCE;
-    }
-
-    /**
-     * Updates The addon subtree
+     * Updates the Addon subtree
      */
     public void updateAddons() {
         TreePath path = ((ConfigTreeModel) tree.getModel()).updateAddons();
         expandAll(tree, path, true);
-
     }
 
 }

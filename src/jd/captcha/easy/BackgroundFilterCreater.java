@@ -11,38 +11,40 @@ import java.util.Map.Entry;
 
 import javax.imageio.ImageIO;
 
-import jd.controlling.JDLogger;
-
-import jd.captcha.pixelgrid.Captcha;
-
 import jd.captcha.JAntiCaptcha;
-
+import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.utils.Utilities;
+import jd.controlling.JDLogger;
 
 public class BackgroundFilterCreater {
     /**
-     * Erstellt eine Backgroundimage im MethodenOrdner aus den Captchas im Captchaordner der Methode
+     * Erstellt eine Backgroundimage im MethodenOrdner aus den Captchas im
+     * Captchaordner der Methode
+     * 
      * @param files
      * @param methode
      * @return
      */
-    public static File create(EasyMethodeFile methode)
-    {
+    public static File create(EasyMethodeFile methode) {
         return create(methode.getCaptchaFolder().listFiles(new FileFilter() {
 
             public boolean accept(File pathname) {
                 return pathname.isFile() && pathname.getName().matches("(?is).*\\.(jpg|png|gif)");
-            }}), methode);
+            }
+        }), methode);
     }
+
     /**
-     * Erstellt ein Hintergrundbild im MethodenOrdner aus einer Liste von Dateien
+     * Erstellt ein Hintergrundbild im MethodenOrdner aus einer Liste von
+     * Dateien
+     * 
      * @param files
      * @param methode
      * @return
      */
     @SuppressWarnings("unchecked")
     public static File create(File[] files, EasyMethodeFile methode) {
-        JAntiCaptcha jac = new JAntiCaptcha(Utilities.getMethodDir(), methode.getName());
+        JAntiCaptcha jac = new JAntiCaptcha(methode.getName());
         Image image = Utilities.loadImage(files[0]);
         Captcha firstCaptcha = jac.createCaptcha(image);
         HashMap<Integer, Integer>[][] grid = new HashMap[firstCaptcha.getWidth()][firstCaptcha.getHeight()];
@@ -52,7 +54,7 @@ public class BackgroundFilterCreater {
                 grid[x][y].put(firstCaptcha.getPixelValue(x, y), 0);
             }
         }
-        int i =0;
+        int i = 0;
         for (File file : files) {
             image = Utilities.loadImage(file);
             Captcha captcha = jac.createCaptcha(image);
@@ -62,7 +64,7 @@ public class BackgroundFilterCreater {
                 }
                 continue;
             }
-            if(i++==100)break;
+            if (i++ == 100) break;
 
             for (int x = 0; x < captcha.getWidth(); x++) {
                 for (int y = 0; y < captcha.getHeight(); y++) {

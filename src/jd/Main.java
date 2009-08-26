@@ -114,7 +114,7 @@ public class Main {
                 mediaTracker.waitForID(0);
 
                 mediaTracker.removeImage(captchaImage);
-                JAntiCaptcha jac = new JAntiCaptcha(JDUtilities.getJACMethodsDirectory(), host);
+                JAntiCaptcha jac = new JAntiCaptcha(host);
                 Captcha captcha = jac.createCaptcha(captchaImage);
                 String captchaCode = jac.checkCaptcha(file, captcha);
                 if (path.contains("http://")) file.delete();
@@ -193,8 +193,8 @@ public class Main {
             } else if (args[i].equals("-lng")) {
 
                 LOGGER.finer(args[i] + " " + args[i + 1]);
-                if(new File(args[i + 1]).exists()&&args[i + 1].trim().endsWith(".loc")){
-                LOGGER.info("Use custom languagefile: "+args[i + 1]);
+                if (new File(args[i + 1]).exists() && args[i + 1].trim().endsWith(".loc")) {
+                    LOGGER.info("Use custom languagefile: " + args[i + 1]);
                     JDL.setStaticLocale(args[i + 1]);
                 }
                 i++;
@@ -389,7 +389,7 @@ public class Main {
             System.setProperty("com.apple.mrj.application.apple.menu.about.name", "jDownloader");
             System.setProperty("com.apple.mrj.application.growbox.intrudes", "false");
             new MacOSController();
-    
+
             /*
              * TODO: Pfade müssen nicht absolut angegeben werden.
              */
@@ -498,18 +498,18 @@ public class Main {
          */
         LOGGER.info("update start");
 
-     new Thread(){
-         public void run(){
-             try {
-                Thread.sleep(5000);
-        
-             new WebUpdate().doUpdateCheck(true, false);
-             } catch (InterruptedException e) {
-                 // TODO Auto-generated catch block
-                 e.printStackTrace();
-             }
-         }
-     }.start();
+        new Thread() {
+            public void run() {
+                try {
+                    Thread.sleep(5000);
+
+                    new WebUpdate().doUpdateCheck(true, false);
+                } catch (InterruptedException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+            }
+        }.start();
 
         try {
             loadDynamics();

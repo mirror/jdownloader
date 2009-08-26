@@ -24,13 +24,12 @@ import javax.imageio.ImageIO;
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.utils.GifDecoder;
-import jd.utils.JDUtilities;
 
 public class Rbkprr {
 
     public static void prepareCaptcha(File file) {
         try {
-            JAntiCaptcha jac = new JAntiCaptcha(JDUtilities.getJACMethodsDirectory(), "rbkprr");
+            JAntiCaptcha jac = new JAntiCaptcha("rbkprr");
             jac.getJas().setColorType("RGB");
             GifDecoder d = new GifDecoder();
             d.read(file.getAbsolutePath());

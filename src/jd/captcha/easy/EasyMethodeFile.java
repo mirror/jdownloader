@@ -9,21 +9,19 @@ import java.util.Vector;
 
 import javax.swing.ImageIcon;
 
+import jd.captcha.JAntiCaptcha;
 import jd.captcha.easy.load.LoadCaptchas;
-
-import jd.nutils.io.JDIO;
-
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.utils.Utilities;
-import jd.captcha.JAntiCaptcha;
+import jd.config.container.JDLabelContainer;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.userio.UserIOGui;
 import jd.nutils.JDFlags;
+import jd.nutils.JDImage;
+import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-import jd.config.container.JDLabelContainer;
-import jd.nutils.JDImage;
 
 public class EasyMethodeFile implements JDLabelContainer, Serializable {
     public File file = null;
@@ -100,7 +98,7 @@ public class EasyMethodeFile implements JDLabelContainer, Serializable {
      * @return JAntiCaptcha Instanz für die Methode
      */
     public JAntiCaptcha getJac() {
-        return new JAntiCaptcha(Utilities.getMethodDir(), getName());
+        return new JAntiCaptcha(getName());
     }
 
     /**

@@ -107,7 +107,7 @@ public class JACController {
 
     public JACController(File path, String methode) {
         this.path = path;
-        jac = new JAntiCaptcha(Utilities.getMethodDir(), methode);
+        jac = new JAntiCaptcha(methode);
     }
 
     public void showCaptcha() {

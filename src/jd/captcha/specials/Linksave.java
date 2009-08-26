@@ -28,7 +28,6 @@ import jd.captcha.JAntiCaptcha;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.utils.GifDecoder;
 import jd.nutils.Colors;
-import jd.utils.JDUtilities;
 
 public class Linksave {
     public static void main(String args[]) throws IOException {
@@ -38,7 +37,7 @@ public class Linksave {
 
     public static void prepareCaptcha(File file) {
         try {
-            JAntiCaptcha jac = new JAntiCaptcha(JDUtilities.getJACMethodsDirectory(), "linksave.in");
+            JAntiCaptcha jac = new JAntiCaptcha("linksave.in");
             jac.getJas().setColorType("RGB");
             GifDecoder d = new GifDecoder();
             d.read(file.getAbsolutePath());

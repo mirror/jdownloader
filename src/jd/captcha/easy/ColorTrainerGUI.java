@@ -14,6 +14,7 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.io.File;
 import java.util.Vector;
+
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
@@ -31,11 +32,10 @@ import javax.swing.border.TitledBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import jd.captcha.pixelgrid.PixelGrid;
-
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.gui.ImageComponent;
 import jd.captcha.pixelgrid.Captcha;
+import jd.captcha.pixelgrid.PixelGrid;
 import jd.captcha.utils.Utilities;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.userio.DummyFrame;
@@ -52,8 +52,8 @@ public class ColorTrainerGUI {
     private JLabel colorState;
     private JDialog frame;
     private ColorTrainer colorTrainer = new ColorTrainer();
-    public ColorTrainerGUI(final JFrame owner)
-    {
+
+    public ColorTrainerGUI(final JFrame owner) {
         new GuiRunnable<Object>() {
             public Object runSave() {
                 frame = new JDialog(owner);
@@ -61,6 +61,7 @@ public class ColorTrainerGUI {
             }
         }.waitForEDT();
     }
+
     public void removePixelAbsolut(CPoint cp) {
         backUP();
         colorTrainer.removeCPoint(cp);
@@ -429,7 +430,7 @@ public class ColorTrainerGUI {
 
         File[] list = folder.listFiles();
         Captcha[] cs = new Captcha[15 < list.length ? 15 : list.length];
-        JAntiCaptcha jac = new JAntiCaptcha(Utilities.getMethodDir(), hoster);
+        JAntiCaptcha jac = new JAntiCaptcha(hoster);
         if (colorPoints == null) colorPoints = ColorTrainer.load(file);
         ColorTrainerGUI lastCC = null;
         for (int i = 0; i < cs.length; i++) {

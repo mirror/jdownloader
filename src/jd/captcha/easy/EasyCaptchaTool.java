@@ -8,6 +8,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
+
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
@@ -21,26 +22,25 @@ import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import javax.swing.SpinnerNumberModel;
 
-import jd.captcha.easy.load.LoadCaptchas;
-
-import jd.gui.userio.DummyFrame;
 import jd.JDInit;
 import jd.captcha.JAntiCaptcha;
-import jd.captcha.utils.Utilities;
-import jd.gui.swing.jdgui.events.EDTEventQueue;
-import jd.gui.swing.laf.LookAndFeelController;
+import jd.captcha.easy.load.LoadCaptchas;
 import jd.config.SubConfiguration;
-import jd.utils.locale.JDL;
-import jd.gui.swing.jdgui.settings.JDLabelListRenderer;
 import jd.gui.swing.GuiRunnable;
-import jd.utils.JDUtilities;
+import jd.gui.swing.jdgui.events.EDTEventQueue;
+import jd.gui.swing.jdgui.settings.JDLabelListRenderer;
+import jd.gui.swing.laf.LookAndFeelController;
+import jd.gui.userio.DummyFrame;
 import jd.nutils.Screen;
+import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 public class EasyCaptchaTool {
     public static SubConfiguration config = SubConfiguration.getConfig("EasyCaptcha");
     public static final String CONFIG_LASTSESSION = "CONFIG_LASTSESSION";
     public static final String CONFIG_AUTHOR = "AUTHOR";
-    public static JFrame ownerFrame=DummyFrame.getDialogParent();  
+    public static JFrame ownerFrame = DummyFrame.getDialogParent();
+
     public static EasyMethodeFile showMethodes() {
         final EasyMethodeFile ef = new EasyMethodeFile();
         new GuiRunnable<Object>() {
@@ -214,15 +214,16 @@ public class EasyCaptchaTool {
         config.save();
         JDUtilities.getConfiguration().save();
     }
-    public static void checkReadyToTrain(final EasyMethodeFile meth, final JButton btnTrain)
-    {
-            new GuiRunnable<Object>() {
-                public Object runSave() {
-                    btnTrain.setEnabled(meth.isReadyToTrain());
-                    return null;
-                }
-            }.waitForEDT();
+
+    public static void checkReadyToTrain(final EasyMethodeFile meth, final JButton btnTrain) {
+        new GuiRunnable<Object>() {
+            public Object runSave() {
+                btnTrain.setEnabled(meth.isReadyToTrain());
+                return null;
+            }
+        }.waitForEDT();
     }
+
     public static void showToolKid(final EasyMethodeFile meth) {
 
         CreateHoster.setImageType(meth);
@@ -230,7 +231,7 @@ public class EasyCaptchaTool {
         if (!folder.exists() || folder.list().length < 1) {
             System.exit(0);
         }
-        final JAntiCaptcha jac = new JAntiCaptcha(Utilities.getMethodDir(), meth.getName());
+        final JAntiCaptcha jac = new JAntiCaptcha(meth.getName());
         final JDialog dialog = new GuiRunnable<JDialog>() {
             // @Override
             public JDialog runSave() {
@@ -370,9 +371,7 @@ public class EasyCaptchaTool {
                     return null;
                 }
             }.waitForEDT();
-        }
-        else
-        {
+        } else {
             checkReadyToTrain(meth, btnTrain);
         }
 

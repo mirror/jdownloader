@@ -8,7 +8,6 @@ import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
 import jd.captcha.pixelgrid.PixelGrid;
 import jd.captcha.pixelobject.PixelObject;
-import jd.captcha.utils.Utilities;
 import jd.nutils.Colors;
 
 import com.jhlabs.image.PosterizeFilter;
@@ -43,13 +42,13 @@ public class ColorLetterComperator {
 
     public void setLetterA(Letter a) {
         this.a = a;
-        ca=null;
+        ca = null;
         aLayers = null;
     }
 
     public void setLetterB(Letter b) {
         this.b = b;
-        cb=null;
+        cb = null;
         bLayers = null;
     }
 
@@ -68,7 +67,7 @@ public class ColorLetterComperator {
             lgrid[akt[0] - obj.getXMin()][akt[1] - obj.getYMin()] = 0x000000;
 
         }
-        //invertieren wenn der schwarze bereich größer ist als der weiße
+        // invertieren wenn der schwarze bereich größer ist als der weiße
         if (obj.getArea() / 2 < w) {
             for (int x = 0; x < obj.getWidth(); x++) {
                 for (int y = 0; y < obj.getHeight(); y++) {
@@ -86,6 +85,7 @@ public class ColorLetterComperator {
         l.detected = obj.detected;
         return l;
     }
+
     /**
      * vergleicht alle Farbebenen die untersucht werden sollen und gibt den
      * durchschnittlichen ValityPercent
@@ -98,15 +98,13 @@ public class ColorLetterComperator {
             valityPercent = 10000.0;
             return valityPercent;
         }
-        if(ca==null)
-        {
-            ca=reduceColors(a);
+        if (ca == null) {
+            ca = reduceColors(a);
         }
-        if(cb==null)
-        {
-            cb=reduceColors(b);
+        if (cb == null) {
+            cb = reduceColors(b);
         }
-        
+
         if (aLayers == null) {
             aLayers = getObjects(ca);
         }
@@ -175,7 +173,7 @@ public class ColorLetterComperator {
     private JAntiCaptcha getJac() {
         if (owner != null) return owner;
         String hoster = "EasyCaptcha";
-        owner = new JAntiCaptcha(Utilities.getMethodDir(), hoster);
+        owner = new JAntiCaptcha(hoster);
         return owner;
     }
 
@@ -217,14 +215,14 @@ public class ColorLetterComperator {
 
         return ret.toArray(new PixelObject[] {});
     }
+
     /**
      * reduziert die farben (colorLevels)
      * 
      * @param letter
      * @return
      */
-    private Captcha reduceColors(Letter letter)
-    {
+    private Captcha reduceColors(Letter letter) {
         PosterizeFilter qf = new PosterizeFilter();
         BufferedImage image = (BufferedImage) letter.getImage();
         BufferedImage dest = qf.createCompatibleDestImage(image, ColorModel.getRGBdefault());

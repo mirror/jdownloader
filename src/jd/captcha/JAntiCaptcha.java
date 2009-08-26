@@ -86,12 +86,11 @@ public class JAntiCaptcha {
      * Gibt den Captchacode zurück
      * 
      * @param img
-     * @param methodPath
      * @param methodname
      * @return Captchacode
      */
-    public static String getCaptchaCode(File file, Image img, String methodPath, String methodname) {
-        JAntiCaptcha jac = new JAntiCaptcha(methodPath, methodname);
+    public static String getCaptchaCode(File file, Image img, String methodname) {
+        JAntiCaptcha jac = new JAntiCaptcha(methodname);
         // BasicWindow.showImage(img);
         Captcha cap = jac.createCaptcha(img);
         if (cap == null) {
@@ -121,13 +120,12 @@ public class JAntiCaptcha {
         int correctLetters = 0;
         File captchaFile;
         Image img;
-        String methodsPath = file.getParentFile().getAbsolutePath();
         String methodName = file.getName();
         File captchaDir = new File(file.getAbsolutePath() + "/captchas");
         if (Utilities.isLoggerActive()) {
-            logger.info("Test Method: " + methodName + " at " + methodsPath);
+            logger.info("Test Method: " + methodName);
         }
-        new JAntiCaptcha(methodsPath, methodName);
+        new JAntiCaptcha(methodName);
         File[] entries = captchaDir.listFiles(new FileFilter() {
             public boolean accept(File pathname) {
                 // if(Utilities.isLoggerActive())logger.info(pathname.getName(
@@ -163,7 +161,7 @@ public class JAntiCaptcha {
 
             w.repack();
 
-            JAntiCaptcha jac = new JAntiCaptcha(methodsPath, methodName);
+            JAntiCaptcha jac = new JAntiCaptcha(methodName);
             // BasicWindow.showImage(img);
             Captcha cap = jac.createCaptcha(img);
             if (cap == null) {
@@ -261,12 +259,6 @@ public class JAntiCaptcha {
      */
     private String methodDirName;
 
-    /**
-     * Pfad zur Resulotfile. dort wird der Captchacode hineingeschrieben.
-     * (standalone mode)
-     */
-    private String resultFile;
-
     private boolean showDebugGui = false;
 
     private Vector<ScrollPaneWindow> spw = new Vector<ScrollPaneWindow>();
@@ -287,10 +279,8 @@ public class JAntiCaptcha {
 
     private Image sourceImage;
 
-    public JAntiCaptcha(String methodsPath, String methodName) {
+    public JAntiCaptcha(String methodName) {
         methodDirName = JACMethod.forServiceName(methodName);
-        methodsPath = JDUtilities.getJACMethodsDirectory() + methodDirName;
-        logger.info(methodsPath);
 
         getJACInfo();
 
@@ -299,7 +289,6 @@ public class JAntiCaptcha {
         if (Utilities.isLoggerActive()) {
             logger.fine("letter DB loaded: Buchstaben: " + letterDB.size());
         }
-
     }
 
     /**
@@ -643,14 +632,13 @@ public class JAntiCaptcha {
         }.getReturnValue();
         // w.setLayout(new GridBagLayout());
         sortLetterDB();
-        JPanel p =new GuiRunnable<JPanel>() {
+        JPanel p = new GuiRunnable<JPanel>() {
             public JPanel runSave() {
-                JPanel bp= new JPanel(new GridLayout(letterDB.size() + 1, 3));
+                JPanel bp = new JPanel(new GridLayout(letterDB.size() + 1, 3));
                 w.add(new JScrollPane(bp));
                 return bp;
             }
         }.getReturnValue();
-
 
         final Letter[] list = new Letter[letterDB.size()];
 
@@ -661,14 +649,14 @@ public class JAntiCaptcha {
         while (iter.hasPrevious()) {
             final Letter tmp = iter.previous();
             list[i] = tmp;
-            
+
             JLabel lbl = new GuiRunnable<JLabel>() {
                 public JLabel runSave() {
                     return new JLabel(tmp.getId() + ": " + tmp.getDecodedValue() + "(" + tmp.getGoodDetections() + "/" + tmp.getBadDetections() + ") Size: " + tmp.toPixelObject(0.85).getSize());
                 }
             }.getReturnValue();
-            
-            ImageComponent img =  new GuiRunnable<ImageComponent>() {
+
+            ImageComponent img = new GuiRunnable<ImageComponent>() {
                 public ImageComponent runSave() {
                     return new ImageComponent(tmp.getImage());
                 }
@@ -678,7 +666,7 @@ public class JAntiCaptcha {
                 public JCheckBox runSave() {
                     return new JCheckBox("DELETE");
                 }
-            }.getReturnValue(); 
+            }.getReturnValue();
             final int ii = i;
             bt.addActionListener(new ActionListener() {
                 public Integer id = new Integer(ii);
@@ -707,13 +695,13 @@ public class JAntiCaptcha {
             public JButton runSave() {
                 return new JButton("Invoke");
             }
-        }.getReturnValue(); 
-        
+        }.getReturnValue();
+
         p.add(b);
         b.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
-//                System.out.println(rem + "");
+                // System.out.println(rem + "");
                 ArrayList<Letter> list = new ArrayList<Letter>();
                 int s = letterDB.size();
                 for (Integer i : rem) {
@@ -838,10 +826,6 @@ public class JAntiCaptcha {
                 }
 
                 setImageType(JDUtilities.getAttribute(childNode, "type"));
-
-            } else if (childNode.getNodeName().equals("result")) {
-
-                setResultFile(JDUtilities.getAttribute(childNode, "file"));
 
             }
 
@@ -1330,13 +1314,6 @@ public class JAntiCaptcha {
         return JDUtilities.getResourceFile(JDUtilities.getJACMethodsDirectory() + methodDirName + "/" + arg);
     }
 
-    /**
-     * @return the resultFile
-     */
-    public String getResultFile() {
-        return resultFile;
-    }
-
     public Captcha getWorkingCaptcha() {
         return workingCaptcha;
     }
@@ -1573,17 +1550,6 @@ public class JAntiCaptcha {
             logger.finer("SET PARAMETER: [letterNum] = " + letterNum);
         }
         this.letterNum = letterNum;
-    }
-
-    /**
-     * @param resultFile
-     *            the resultFile to set
-     */
-    public void setResultFile(String resultFile) {
-        if (Utilities.isLoggerActive()) {
-            logger.finer("SET PARAMETER: [resultFile] = " + resultFile);
-        }
-        this.resultFile = resultFile;
     }
 
     /**
@@ -2100,7 +2066,7 @@ public class JAntiCaptcha {
                         // letters[i].setTextGrid(letters[i].getPixelString());
                         letters[i].setSourcehash(captchaHash);
                         letters[i].setDecodedValue(code.substring(i, i + 1));
-                        
+
                         new Thread(new Runnable() {
                             public void run() {
                                 final BasicWindow bws = new GuiRunnable<BasicWindow>() {
@@ -2119,7 +2085,8 @@ public class JAntiCaptcha {
                                     // @Override
                                     public Object runSave() {
                                         bws.dispose();
-                                        return null;                                    }
+                                        return null;
+                                    }
                                 }.waitForEDT();
                             }
                         }).start();
@@ -2177,7 +2144,7 @@ public class JAntiCaptcha {
                             final BasicWindow bws = new GuiRunnable<BasicWindow>() {
                                 // @Override
                                 public BasicWindow runSave() {
-                                    return  BasicWindow.showImage(letters[i].getImage(2), "" + letters[i].getDecodedValue());
+                                    return BasicWindow.showImage(letters[i].getImage(2), "" + letters[i].getDecodedValue());
 
                                 }
                             }.getReturnValue();
@@ -2191,7 +2158,8 @@ public class JAntiCaptcha {
                                 // @Override
                                 public Object runSave() {
                                     bws.dispose();
-                                    return null;                                    }
+                                    return null;
+                                }
                             }.waitForEDT();
                         }
                     }).start();

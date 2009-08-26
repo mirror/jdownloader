@@ -12,15 +12,17 @@ import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
 import jd.captcha.pixelgrid.PixelGrid;
 import jd.captcha.pixelobject.PixelObject;
-import jd.captcha.utils.Utilities;
+
 /**
  * das ist krank bitte nicht anschauen
+ * 
  * @author dwd
- *
+ * 
  */
 public class Dlm {
     /**
      * löscht ein objekt an der position x y
+     * 
      * @param captcha
      * @param x
      * @param y
@@ -38,8 +40,10 @@ public class Dlm {
             clearAt(captcha, x - 1, y + 1);
         }
     }
+
     /**
      * prüft ob das objekt an der stelle x y höher ist als 14px
+     * 
      * @param captcha
      * @param x
      * @param y
@@ -53,8 +57,10 @@ public class Dlm {
         }
         return false;
     }
+
     /**
      * löscht alle objekte die höher sind als 14px
+     * 
      * @param captcha
      */
     private static void clear(Captcha captcha) {
@@ -65,8 +71,10 @@ public class Dlm {
 
         }
     }
+
     /**
      * gibt die position aus wo im oberen Teil des Bildes ein objekt anfängt
+     * 
      * @param captcha
      * @param xMin
      * @param xMax
@@ -81,14 +89,17 @@ public class Dlm {
         return null;
 
     }
+
     /**
-     * schneidet ein schneidet ein 30px breites und 25px hohes objekt an der position int[] {x,y} aus
+     * schneidet ein schneidet ein 30px breites und 25px hohes objekt an der
+     * position int[] {x,y} aus
+     * 
      * @param captcha
      * @param header1
      * @return
      */
     private static Letter createLetter(Captcha captcha, int[] header1) {
-        captcha.crop(Math.max(0, header1[0] - 15), header1[1], Math.max(0,captcha.getWidth() - header1[0] - 15), Math.max(0,captcha.getHeight() - header1[1] - 25));
+        captcha.crop(Math.max(0, header1[0] - 15), header1[1], Math.max(0, captcha.getWidth() - header1[0] - 15), Math.max(0, captcha.getHeight() - header1[1] - 25));
         Letter l = captcha.createLetter();
         captcha.toBlackAndWhite();
         l.setLocation(header1);
@@ -98,13 +109,13 @@ public class Dlm {
     }
 
     public static Letter[] getLetters(Captcha captcha) throws Exception {
-        //es wird der Buchstabe M bzw F von unten ausgeschnitten
+        // es wird der Buchstabe M bzw F von unten ausgeschnitten
         captcha.crop(206, 150, 233, 0);
         // captcha.invert();
         Vector<PixelObject> obj = captcha.getObjects(0.7, 0.7);
-        //es gibt nur ein objekt M oder F
+        // es gibt nur ein objekt M oder F
         Letter let = obj.get(0).toLetter();
-        //invertiere macht den vergleich schneller
+        // invertiere macht den vergleich schneller
         let.invert();
         let = let.toPixelObject(0.7).toLetter();
         LetterComperator r = captcha.owner.getLetter(let);
@@ -114,17 +125,17 @@ public class Dlm {
         captcha.reset();
 
         int xMax = captcha.getWidth() / 3;
-        //holt die drei Köpfe
+        // holt die drei Köpfe
         Letter head1 = createLetter(captcha, getHeader(captcha, 0, xMax));
         Letter head2 = createLetter(captcha, getHeader(captcha, xMax, xMax * 2));
         Letter head3 = createLetter(captcha, getHeader(captcha, xMax * 2, xMax * 3));
         int pos = 0;
         String hoster = "3dl.amHeads";
-        JAntiCaptcha jac = new JAntiCaptcha(Utilities.getMethodDir(), hoster);
+        JAntiCaptcha jac = new JAntiCaptcha(hoster);
         LetterComperator rc1 = jac.getLetter(head1);
         head1.detected = rc1;
         head1.setDecodedValue(rc1.getDecodedValue());
-        //schaut welcher der 3 köpfe Mann bzw Frau ist
+        // schaut welcher der 3 köpfe Mann bzw Frau ist
         if (head1.getDecodedValue().equals(let.getDecodedValue()))
             pos = 0;
         else {
@@ -138,10 +149,11 @@ public class Dlm {
                 LetterComperator rc3 = jac.getLetter(head3);
                 head3.detected = rc3;
                 head3.setDecodedValue(rc3.getDecodedValue());
-                
+
                 if (head3.getDecodedValue().equals(let.getDecodedValue()))
                     pos = 2;
-                else {//wenn keines der 3 letters zutrifft es ist bestimmt das welches am schlechtesten erkennt wurde
+                else {// wenn keines der 3 letters zutrifft es ist bestimmt das
+                      // welches am schlechtesten erkennt wurde
                     if (head1.detected.getValityPercent() > head2.detected.getValityPercent()) {
                         if (head1.detected.getValityPercent() > head3.detected.getValityPercent())
                             pos = 0;
@@ -157,14 +169,14 @@ public class Dlm {
 
             }
         }
-        //lösche die untere zeile
+        // lösche die untere zeile
         captcha.crop(0, 0, 0, 20);
-        //entferne alle männchen
+        // entferne alle männchen
         clear(captcha);
         // captcha.removeSmallObjects(0.7, 0.7, 6);
         // BasicWindow.showImage(captcha.getImage());
         captcha.toBlackAndWhite(0.8);
-        //holt die 3 buchstabenpackete
+        // holt die 3 buchstabenpackete
         obj = getObjects(captcha, 3);
         Collections.sort(obj);
         if (obj.size() > 3) for (Iterator<PixelObject> iterator = obj.iterator(); iterator.hasNext();) {
@@ -179,7 +191,7 @@ public class Dlm {
         for (PixelObject pixelObject : obj) {
             if (pixelObject.getArea() < 4) merge++;
         }
-        //die objekte die kleiner sind als 4 pixel können gemerged werden
+        // die objekte die kleiner sind als 4 pixel können gemerged werden
         captcha.owner.setLetterNum(obj.size() - merge);
         EasyCaptcha.mergeObjectsBasic(obj, captcha, 2);
 
@@ -200,8 +212,10 @@ public class Dlm {
         replaceLetters(ret);
         return ret.toArray(new Letter[] {});
     }
+
     /**
      * es wird z.B. letter 1 mit letter r erstetzt und ein letter i hinzugefügt
+     * 
      * @param lets
      */
     private static void replaceLetters(ArrayList<Letter> lets) {
@@ -245,8 +259,10 @@ public class Dlm {
             replaceLetters(lets);
         }
     }
+
     /**
      * hiermit lassen sich große objekte schnell heraus suchen
+     * 
      * @param grid
      * @param neighbourradius
      * @return

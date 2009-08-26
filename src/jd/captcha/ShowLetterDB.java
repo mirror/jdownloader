@@ -16,17 +16,15 @@
 
 package jd.captcha;
 
-import jd.captcha.utils.Utilities;
-
 public class ShowLetterDB {
 
-	/**
-	 * @param args
-	 */
-	public static void main(String[] args) {
+    /**
+     * @param args
+     */
+    public static void main(String[] args) {
         String hoster = "3dl.am";
-        JAntiCaptcha jac = new JAntiCaptcha(Utilities.getMethodDir(), hoster);
+        JAntiCaptcha jac = new JAntiCaptcha(hoster);
         jac.displayLibrary();
-	}
+    }
 
 }

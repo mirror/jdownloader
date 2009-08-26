@@ -47,7 +47,7 @@ public class JACTrain {
 
         // String hoster="rscat.com";
         final String hoster = "canna.to";
-        final JAntiCaptcha jac = new JAntiCaptcha(Utilities.getMethodDir(), hoster);
+        final JAntiCaptcha jac = new JAntiCaptcha(hoster);
         // jac.runTestMode(new File("1186941165349_captcha.jpg"));
         jac.displayLibrary();
 
@@ -68,7 +68,6 @@ public class JACTrain {
             }
         }.waitForEDT();
         jac.trainAllCaptchas(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/captchas/" + hoster);
-
 
         // jac.saveMTHFile();
         logger.info("Training Ende");

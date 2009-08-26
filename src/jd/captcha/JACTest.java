@@ -20,7 +20,6 @@ import java.io.File;
 
 import javax.swing.JOptionPane;
 
-import jd.captcha.utils.Utilities;
 import jd.utils.JDUtilities;
 
 /**
@@ -42,7 +41,7 @@ public class JACTest {
     private void go() {
         String hoster = "linkbase.biz";
 
-        JAntiCaptcha jac = new JAntiCaptcha(Utilities.getMethodDir(), hoster);
+        JAntiCaptcha jac = new JAntiCaptcha(hoster);
 
         // jac.setShowDebugGui(true);
         // LetterComperator.CREATEINTERSECTIONLETTER = true;
@@ -82,7 +81,7 @@ public class JACTest {
         }
         // Utilities.getLogger().info(JAntiCaptcha.getCaptchaCode(Utilities.
         // loadImage(new
-        //File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath()
+        // File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath()
         // +"/jd/captcha/methods"+
         // "/rapidshare.com/captchas/rapidsharecom24190807214810.jpg")),
         // null, "rapidshare.com"));

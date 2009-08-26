@@ -61,7 +61,7 @@ public class CaptchaController {
             return UserIO.getInstance().requestCaptchaDialog(flag | UserIO.NO_JAC, methodname, captchafile, suggest, explain);
         }
 
-        JAntiCaptcha jac = new JAntiCaptcha(JDUtilities.getJACMethodsDirectory(), methodname);
+        JAntiCaptcha jac = new JAntiCaptcha(methodname);
         try {
             Image captchaImage = ImageIO.read(captchafile);
 

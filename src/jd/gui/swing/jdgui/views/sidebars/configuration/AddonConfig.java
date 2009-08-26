@@ -47,23 +47,23 @@ public class AddonConfig extends ConfigPanel {
         load();
     }
 
+    @Override
     public String getBreadcrum() {
         return JDL.L("jd.gui.swing.jdgui.settings.panels.ConfigPanelAddons.breadcrum", "") + JDL.L("jd.gui.swing.jdgui.views.sidebars.configuration.AddonConfig.breadcrum.deliminator", " - ") + name;
     }
+
     public JPanel getPanel() {
         return panel;
     }
+
     @Override
     public void initPanel() {
-
         panel = new ConfigPanel(container);
         ArrayList<ConfigEntry> cont = new ArrayList<ConfigEntry>();
         for (ConfigEntry cfgEntry : container.getEntries()) {
             if (cfgEntry.getType() == ConfigContainer.TYPE_CONTAINER) {
                 cont.add(cfgEntry);
-
             }
-
         }
 
         final JTabbedPane tabbed = new JTabbedPane();
@@ -81,7 +81,7 @@ public class AddonConfig extends ConfigPanel {
                         latestSelection.setHidden();
                     }
                     latestSelection = comp;
-                    if(comp!=null)comp.setShown();
+                    if (comp != null) comp.setShown();
                     revalidate();
                 } catch (Exception e2) {
                     e2.printStackTrace();
@@ -95,26 +95,27 @@ public class AddonConfig extends ConfigPanel {
         tabbed.add(getBreadcrum(), panel);
         for (ConfigEntry c : cont) {
             ConfigPanel p = new ConfigPanel(c.getContainer());
-
             tabbed.add(c.getContainer().getTitle(), p);
         }
 
         this.add(tabbed);
 
     }
-/**
- * Caches panels...
- * @param container2
- * @param name2
- * @return
- */
-    public synchronized static AddonConfig getInstance(ConfigContainer container2, String name2,String ext) {
+
+    /**
+     * Caches panels...
+     * 
+     * @param container2
+     * @param name2
+     * @return
+     */
+    public synchronized static AddonConfig getInstance(ConfigContainer container2, String name2, String ext) {
         if (MAP == null) MAP = new HashMap<String, AddonConfig>();
 
-        AddonConfig p = MAP.get(container2 + "_" + name2+ext);
+        AddonConfig p = MAP.get(container2 + "_" + name2 + ext);
         if (p != null) return p;
 
-        MAP.put(container2 + "_" + name2, p = new AddonConfig(container2, name2));
+        MAP.put(container2 + "_" + name2 + ext, p = new AddonConfig(container2, name2));
         return p;
     }
 
