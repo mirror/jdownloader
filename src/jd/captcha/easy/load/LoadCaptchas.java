@@ -249,7 +249,7 @@ public class LoadCaptchas {
      */
     static String[] getImages(Browser br) throws Exception {
         ArrayList<String> ret = new ArrayList<String>();
-        Pattern[] basePattern = new Pattern[] { Pattern.compile("(?is)<[ ]?input[^>]*?type=.?image[^>]*?src=['|\"]?([^>\\s'\"]*)['|\">\\s]", Pattern.CASE_INSENSITIVE), Pattern.compile("(?is)<[ ]?IMG[^>]*?src=['|\"]?([^>\\s'\"]*)['|\">\\s]", Pattern.CASE_INSENSITIVE) };
+        Pattern[] basePattern = new Pattern[] { Pattern.compile("(?is)<[ ]?input[^>]*?src=['|\"]?([^>\\s'\"]*)['|\">\\s][^>]*?type=.?image[^>]*?", Pattern.CASE_INSENSITIVE), Pattern.compile("(?is)<[ ]?input[^>]*?type=.?image[^>]*?src=['|\"]?([^>\\s'\"]*)['|\">\\s]", Pattern.CASE_INSENSITIVE), Pattern.compile("(?is)<[ ]?IMG[^>]*?src=['|\"]?([^>\\s'\"]*)['|\">\\s]", Pattern.CASE_INSENSITIVE) };
         for (Pattern element : basePattern) {
             Matcher m = element.matcher(br.toString());
             while (m.find()) {
