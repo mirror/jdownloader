@@ -107,6 +107,7 @@ public class SplashScreen implements ActionListener, ControlListener {
 
     public SplashScreen(JDController controller) throws IOException, AWTException {
 
+        
         LookAndFeelController.setUIManager();
         this.image = (BufferedImage) JDTheme.I("gui.splash");
         progressimages = new ArrayList<SplashProgressImage>();
