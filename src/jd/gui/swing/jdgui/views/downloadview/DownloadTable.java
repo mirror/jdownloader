@@ -423,6 +423,14 @@ public class DownloadTable extends JDTable implements MouseListener, MouseMotion
         if (e.getSource() != this) return;
         int row = rowAtPoint(e.getPoint());
         if (row == -1) return;
+        /* deselect package */
+        if (row >= 0 && !isRowSelected(row)) {
+            Object obj = getValueAt(row, 0);
+            if (obj != null && obj instanceof DownloadLink) {
+                int row2 = getJDTableModel().getRowforObject(((DownloadLink) obj).getFilePackage());
+                if (row >= 0 && isRowSelected(row2)) removeRowSelectionInterval(row2, row2);
+            }
+        }
         int column = realColumnAtPoint(e.getPoint());
         if (column == 0 && e.getButton() == MouseEvent.BUTTON1 && e.getClickCount() == 1) {
             Point p = this.getPointinCell(e.getPoint());

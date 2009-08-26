@@ -21,18 +21,24 @@ import java.awt.event.ActionListener;
 
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenuItem;
+import javax.swing.Timer;
 
 import jd.config.Configuration;
+import jd.controlling.AccountController;
+import jd.controlling.AccountControllerEvent;
+import jd.controlling.AccountControllerListener;
 import jd.gui.UserIF;
 import jd.gui.UserIO;
+import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.menu.HosterMenu;
 import jd.nutils.JDFlags;
+import jd.plugins.Account;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-public class PremiumMenu extends JStartMenu implements ActionListener {
+public class PremiumMenu extends JStartMenu implements ActionListener, AccountControllerListener {
 
     private static final long serialVersionUID = 5075413754334671773L;
 
@@ -42,12 +48,17 @@ public class PremiumMenu extends JStartMenu implements ActionListener {
 
     private JMenuItem config;
 
+    private Timer Update_Async;
+
     // private ConfigPanelView panel;
 
     private PremiumMenu() {
         super("gui.menu.premium", "gui.images.taskpanes.premium");
-
+        Update_Async = new Timer(250, this);
+        Update_Async.setInitialDelay(250);
+        Update_Async.setRepeats(false);
         updateMenu();
+        AccountController.getInstance().addListener(this);
     }
 
     public static PremiumMenu getInstance() {
@@ -72,6 +83,16 @@ public class PremiumMenu extends JStartMenu implements ActionListener {
     }
 
     public void actionPerformed(ActionEvent e) {
+        if (e.getSource() == Update_Async) {
+            new GuiRunnable<Object>() {
+                // @Override
+                public Object runSave() {
+                    update();
+                    return null;
+                }
+            }.start();
+            return;
+        }
         if (e.getSource() == config) {
             // if (config.isSelected()) {
             // if (panel == null) {
@@ -113,6 +134,20 @@ public class PremiumMenu extends JStartMenu implements ActionListener {
     public void update() {
         this.removeAll();
         updateMenu();
+    }
+
+    public void onAccountControllerEvent(AccountControllerEvent event) {
+        switch (event.getID()) {
+        case AccountControllerEvent.ACCOUNT_ADDED:
+        case AccountControllerEvent.ACCOUNT_REMOVED:
+            Update_Async.restart();
+            break;
+        }
+    }
+
+    public boolean vetoAccountGetEvent(String host, Account account) {
+        // TODO Auto-generated method stub
+        return false;
     }
 
 }
