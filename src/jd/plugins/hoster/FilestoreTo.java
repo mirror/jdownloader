@@ -29,13 +29,11 @@ import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filestore.to" }, urls = { "http://[\\w\\.]*?filestore\\.to/\\?d=[\\w]+" }, flags = { 0 })
-
 public class FilestoreTo extends PluginForHost {
 
     public FilestoreTo(PluginWrapper wrapper) {
@@ -85,22 +83,15 @@ public class FilestoreTo extends PluginForHost {
         requestFileInformation(downloadLink);
         String page = Encoding.urlDecode(br.toString(), true);
         String[] links = HTMLParser.getHttpLinks(page, null);
-        boolean found = false;
         for (String link : links) {
             if (!new Regex(link, ".*?.getfile\\.php.*?$").matches()) continue;
             Browser brc = br.cloneBrowser();
             dl = BrowserAdapter.openDownload(brc, downloadLink, link);
-            if (dl.getConnection().isContentDisposition()) {
-                found = true;
-                break;
-            } else {
+            if (!(dl.getConnection().isContentDisposition())) {
                 dl.getConnection().disconnect();
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 1000l);
             }
         }
-        if (!found) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        /* Workaround für fehlerhaften Filename Header */
-        String name = Plugin.getFileNameFormHeader(dl.getConnection());
-        if (name != null) downloadLink.setFinalFileName(Encoding.urlDecode(name, false));
         dl.startDownload();
     }
 
@@ -111,7 +102,7 @@ public class FilestoreTo extends PluginForHost {
 
     // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 3;
+        return 20;
     }
 
     // @Override
