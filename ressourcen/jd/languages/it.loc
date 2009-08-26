@@ -137,6 +137,7 @@ gui.ballon.accountmanager.title = Gestore Account
 gui.balloon.backup.title = Backup
 gui.btn_abort = Annulla
 gui.btn_cancel = Annulla
+gui.btn_close = Chiudi
 gui.btn_continue = Continua
 gui.btn_help = Aiuto
 gui.btn_no = No
