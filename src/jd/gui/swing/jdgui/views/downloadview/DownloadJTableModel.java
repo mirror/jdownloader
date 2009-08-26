@@ -22,6 +22,7 @@ import jd.gui.swing.jdgui.views.downloadview.Columns.DateAddedColumn;
 import jd.gui.swing.jdgui.views.downloadview.Columns.DateFinishedColumn;
 import jd.gui.swing.jdgui.views.downloadview.Columns.FileColumn;
 import jd.gui.swing.jdgui.views.downloadview.Columns.HosterColumn;
+import jd.gui.swing.jdgui.views.downloadview.Columns.LoadedColumn;
 import jd.gui.swing.jdgui.views.downloadview.Columns.PartColumn;
 import jd.gui.swing.jdgui.views.downloadview.Columns.ProgressColumn;
 import jd.gui.swing.jdgui.views.downloadview.Columns.SizeColumn;
@@ -39,6 +40,7 @@ public class DownloadJTableModel extends JDTableModel {
         this.addColumn(new FileColumn(JDL.L("gui.treetable.name", "F"), this));
         this.addColumn(new PartColumn(JDL.L("gui.treetable.part", "Part"), this));
         this.addColumn(new SizeColumn(JDL.L("gui.treetable.size", "FileSize"), this));
+        this.addColumn(new LoadedColumn(JDL.L("gui.treetable.loaded", "Loaded"), this));
         this.addColumn(new HosterColumn(JDL.L("gui.treetable.hoster", "Anbieter"), this));
         this.addColumn(new DateAddedColumn(JDL.L("gui.treetable.added", "Added date"), this));
         this.addColumn(new DateFinishedColumn(JDL.L("gui.treetable.finished", "Finished date"), this));
