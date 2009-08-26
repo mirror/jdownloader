@@ -33,19 +33,18 @@ public class Rpdsfnt extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
         br.getPage(parameter);
+        if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
         String link = br.getRegex("&nbsp;<FORM ACTION=\"(.*?)\" METHOD=\"post\" ID=\"postit\"").getMatch(0);
+        if (link == null) link = br.getRegex("<FORM ACTION=\"(.*?)\"").getMatch(0);
         if (link == null) return null;
         decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link)));
 
         return decryptedLinks;
     }
-
-    // @Override
 
 }
