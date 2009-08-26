@@ -184,12 +184,10 @@ public class QshareCom extends PluginForHost {
             account.setValid(true);
 
         if (apiMap.get("FLAT") == 1) {
-            ai.setTrafficLeft(-1l);
             if (apiMap.get("FLAT_END") != 0)
                 ai.setValidUntil(apiMap.get("FLAT_END") * 1000);
             else
-                ai.setValidUntil(-1l);
-            ai.setStatus("Flatrate account");
+                ai.setStatus("Flatrate account");
         } else {
             ai.setTrafficLeft(apiMap.get("TRAFFIC_REMAIN"));
             ai.setTrafficMax(apiMap.get("TRAFFICMAX"));

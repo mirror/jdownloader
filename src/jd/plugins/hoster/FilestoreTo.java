@@ -39,18 +39,17 @@ public class FilestoreTo extends PluginForHost {
     public FilestoreTo(PluginWrapper wrapper) {
         super(wrapper);
         this.setStartIntervall(2000l);
+        Browser.setRequestIntervalLimitGlobal(getHost(), 500);
     }
 
-    // @Override
     public String getAGBLink() {
         return "http://www.filestore.to/rules.php?setlang=en";
     }
 
-    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-        Browser.setRequestIntervalLimitGlobal(getHost(), 500);
+        br.setCookie("http://www.filestore.to", "yab_mylang", "en");
         String url = downloadLink.getDownloadURL();
         String downloadName = null;
         String downloadSize = null;
@@ -73,49 +72,40 @@ public class FilestoreTo extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
-    // @Override
-    /*
-     * /* public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String page = Encoding.urlDecode(br.toString(), true);
         String[] links = HTMLParser.getHttpLinks(page, null);
+        boolean found = false;
         for (String link : links) {
             if (!new Regex(link, ".*?.getfile\\.php.*?$").matches()) continue;
             Browser brc = br.cloneBrowser();
             dl = BrowserAdapter.openDownload(brc, downloadLink, link);
-            if (!(dl.getConnection().isContentDisposition())) {
+            if (dl.getConnection().isContentDisposition()) {
+                found = true;
+                break;
+            } else
                 dl.getConnection().disconnect();
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 1000l);
-            }
         }
+        if (found == false) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         dl.startDownload();
     }
 
-    // @Override
     public int getTimegapBetweenConnections() {
         return 2000;
     }
 
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    // @Override
     public void reset() {
     }
 
-    // @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
     public void resetDownloadlink(DownloadLink link) {
-        // TODO Auto-generated method stub
 
     }
 }

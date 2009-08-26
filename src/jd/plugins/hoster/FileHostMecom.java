@@ -85,7 +85,6 @@ public class FileHostMecom extends PluginForHost {
         String expire = br.getRegex(Pattern.compile("<TR><TD>Premium-Account expire:</TD><TD><b>(.*?)</b>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         account.setValid(true);
         ai.setValidUntil(Regex.getMilliSeconds(expire, "dd MMMMM yyyy", Locale.ENGLISH));
-        ai.setTrafficLeft(-1);
         return ai;
     }
 

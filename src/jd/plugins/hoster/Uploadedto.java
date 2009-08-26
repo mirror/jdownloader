@@ -69,7 +69,6 @@ public class Uploadedto extends PluginForHost {
         link.setUrlDownload(newLink);
     }
 
-    @Override
     public int getTimegapBetweenConnections() {
         return 800;
     }
@@ -94,7 +93,6 @@ public class Uploadedto extends PluginForHost {
         return true;
     }
 
-    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
@@ -130,7 +128,6 @@ public class Uploadedto extends PluginForHost {
         return ai;
     }
 
-    @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         requestFileInformation(downloadLink);
@@ -191,12 +188,10 @@ public class Uploadedto extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
     public String getAGBLink() {
         return "http://uploaded.to/agb";
     }
 
-    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -244,7 +239,6 @@ public class Uploadedto extends PluginForHost {
         }
     }
 
-    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         requestFileInformation(downloadLink);
@@ -291,8 +285,8 @@ public class Uploadedto extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlLink, false, 1);
         }
         if (!dl.getConnection().isContentDisposition()) {
-            br.loadConnection(null);
-            if (br.containsHTML("Sie laden bereits eine Datei herunter")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
+            br.followConnection();
+            if (br.containsHTML("Sie laden bereits eine Datei herunter")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l); }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
         dl.fakeContentRangeHeader(false);
@@ -305,20 +299,16 @@ public class Uploadedto extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    @Override
     public void reset() {
     }
 
-    @Override
     public void resetPluginGlobals() {
     }
 
-    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 

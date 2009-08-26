@@ -53,10 +53,11 @@ public class FlyFileUs extends PluginForHost {
         if (br.containsHTML("File Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         String filename = Encoding.htmlDecode(br.getRegex("<font style=\"font-size:12px;\">You have requested <font color=\"red\">http://flyfile.us/[a-z|0-9]+/(.*?)</font>").getMatch(0));
+        if (filename == null) filename = br.getRegex("<h2>Download File (.*?)</h2>").getMatch(0);
         String filesize = br.getRegex("</font> \\((.*?)\\)</font>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         link.setName(filename);
-        link.setDownloadSize(Regex.getSize(filesize));
+        if (filesize != null) link.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 

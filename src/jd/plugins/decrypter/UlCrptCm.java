@@ -17,10 +17,12 @@
 package jd.plugins.decrypter;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
@@ -33,9 +35,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
-//by pspzockerscene
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "urlcrypt.com" }, urls = { "http://[\\w\\.]*?urlcrypt\\.com/open-[A-Za-z0-9]+(-[A-Za-z0-9]+|-[A-Za-z0-9]+-[A-Za-z0-9]+)\\.htm" }, flags = { 0 })
 public class UlCrptCm extends PluginForDecrypt {
 
@@ -43,7 +43,6 @@ public class UlCrptCm extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -51,149 +50,100 @@ public class UlCrptCm extends PluginForDecrypt {
         br.getPage(parameter);
 
         /* Error handling */
-        if (br.containsHTML("Ordner nicht gefunden")) {
-            logger.warning("The requested document was not found on this server.");
-            logger.warning(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-            return new ArrayList<DownloadLink>();
-        }
+        if (br.containsHTML("Ordner nicht gefunden")) return decryptedLinks;
 
         if (br.containsHTML("geben Sie bitte jetzt das Passwort ein") || br.containsHTML("Sicherheitsabfrage")) {
             Form captchaForm = br.getForm(0);
             if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             String passCode = null;
-            //Captcha handling
+            // Captcha handling
             if (br.containsHTML("Sicherheitsabfrage")) {
                 String captchalink = "http://www.urlcrypt.com/captcha.php?ImageWidth=120&ImageHeight=37&FontSize=19&CordX=10&CordY=24";
                 String code = getCaptchaCode(captchalink, param);
                 captchaForm.put("strCaptcha", code);
             }
-            //Password handling
+            // Password handling
             if (br.containsHTML("geben Sie bitte jetzt das Passwort ein")) {
-                if (param.getStringProperty("pass", null) == null) {
-                    passCode = Plugin.getUserInput("Password?", param);
-                } else {
-                    /* gespeicherten PassCode holen */
-                    passCode = param.getStringProperty("pass", null);
-                }
+                passCode = Plugin.getUserInput("Password?", param);
                 captchaForm.put("strPassword", passCode);
             }
             br.submitForm(captchaForm);
-            //Password errorhandling
-            if (br.containsHTML("geben Sie bitte jetzt das Passwort ein")) {
-                logger.warning("Wrong password!");
-                param.setProperty("pass", null);
-                throw new DecrypterException(DecrypterException.PASSWORD);
-            }
-            if (passCode != null) {
-                param.setProperty("pass", passCode);
-            }
-            //Captcha errorhandling
+            // Password errorhandling
+            if (br.containsHTML("geben Sie bitte jetzt das Passwort ein")) { throw new DecrypterException(DecrypterException.PASSWORD); }
+            // Captcha errorhandling
             if (br.containsHTML("Sicherheitsabfrage")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
 
         /* Password handling */
         String pass = br.getRegex("Passwort: <b>(.*?)</b").getMatch(0);
-        ArrayList<String> passwords = new ArrayList<String>();
-        if (pass != null && !pass.equals("kein Passwort")) {
-            passwords.add(pass);
-        }
-        //container handling (if no containers found, use webprotection
+        if (pass != null && pass.equals("kein Passwort")) pass = null;
+        // container handling (if no containers found, use webprotection
         if (br.containsHTML("DLC-Container")) {
-            String[] dlclinks = br.getRegex("(http://www\\.urlcrypt\\.com/download-dlc-.*?)\"").getColumn(0);
-            if (dlclinks == null || dlclinks.length == 0) return null;
-            for (String link : dlclinks) {
-                String test = Encoding.htmlDecode(link);
-                File file = null;
-                URLConnectionAdapter con = br.openGetConnection(link);
-                if (con.getResponseCode() == 200) {
-                    file = JDUtilities.getResourceFile("tmp/urlcrypt/" + test.replace("http://www.urlcrypt.com/", ""));
-                    br.downloadConnection(file, con);
-                } else {
-                    con.disconnect();
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-                }
-
-                if (file != null && file.exists() && file.length() > 100) {
-                    decryptedLinks = JDUtilities.getController().getContainerLinks(file);
-                    if (decryptedLinks.size() > 0) return decryptedLinks;
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-                }
-            }
+            decryptedLinks = loadcontainer(br, "dlc");
+            if (decryptedLinks != null && decryptedLinks.size() > 0) return decryptedLinks;
         }
 
         if (br.containsHTML("RSDF-Container")) {
-            String[] dlclinks = br.getRegex("(http://www\\.urlcrypt\\.com/download-rsdf-.*?)\"").getColumn(0);
-            if (dlclinks == null || dlclinks.length == 0) return null;
-            for (String link : dlclinks) {
-                String test = Encoding.htmlDecode(link);
-                File file = null;
-                URLConnectionAdapter con = br.openGetConnection(link);
-                if (con.getResponseCode() == 200) {
-                    file = JDUtilities.getResourceFile("tmp/urlcrypt/" + test.replace("http://www.urlcrypt.com/", ""));
-                    br.downloadConnection(file, con);
-                } else {
-                    con.disconnect();
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-                }
-
-                if (file != null && file.exists() && file.length() > 100) {
-                    decryptedLinks = JDUtilities.getController().getContainerLinks(file);
-                    if (decryptedLinks.size() > 0) return decryptedLinks;
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-                }
-            }
+            decryptedLinks = loadcontainer(br, "rsdf");
+            if (decryptedLinks != null && decryptedLinks.size() > 0) return decryptedLinks;
         }
 
         if (br.containsHTML("CCF-Container")) {
-            String[] dlclinks = br.getRegex("(http://www\\.urlcrypt\\.com/download-ccf-.*?)\"").getColumn(0);
-            if (dlclinks == null || dlclinks.length == 0) return null;
-            for (String link : dlclinks) {
-                String test = Encoding.htmlDecode(link);
-                File file = null;
-                URLConnectionAdapter con = br.openGetConnection(link);
-                if (con.getResponseCode() == 200) {
-                    file = JDUtilities.getResourceFile("tmp/urlcrypt/" + test.replace("http://www.urlcrypt.com/", ""));
-                    br.downloadConnection(file, con);
-                } else {
-                    con.disconnect();
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-                }
-
-                if (file != null && file.exists() && file.length() > 100) {
-                    decryptedLinks = JDUtilities.getController().getContainerLinks(file);
-                    if (decryptedLinks.size() > 0) return decryptedLinks;
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-                }
-            }
+            decryptedLinks = loadcontainer(br, "ccf");
+            if (decryptedLinks != null && decryptedLinks.size() > 0) return decryptedLinks;
         }
 
-             //Webprotection decryption
+        // Webprotection decryption
+        decryptedLinks = new ArrayList<DownloadLink>();
         String[] links = br.getRegex("middle;\"><a href=\"(.*?)\"").getColumn(0);
         if (links == null || links.length == 0) return null;
         progress.setRange(links.length);
         for (String link : links) {
             String link0 = link.replace("==-1", "==-0");
-            br.setFollowRedirects(true);
-            br.getPage(link0);
-            String finallink = br.getURL();
+            Browser brc = br.cloneBrowser();
+            brc.setFollowRedirects(false);
+            brc.getPage(link0);
+            String finallink = brc.getRedirectLocation();
             // rapidshare links handling, they crypt rapidshare links
             // "extra safe" but with this, the decrypter can handle these
             // rapidshare links
-            if (finallink.contains("urlcrypt")) {
-                finallink = br.getRegex("<form id=\"ff\" action=\"(.*?)\" method").getMatch(0);
+            if (finallink == null) {
+                finallink = brc.getRegex("<form id=\"ff\" action=\"(.*?)\" method").getMatch(0);
             }
             DownloadLink dl = createDownloadlink(finallink);
-
-            dl.setSourcePluginPasswordList(passwords);
+            dl.addSourcePluginPassword(pass);
             decryptedLinks.add(dl);
             progress.increase(1);
         }
         return decryptedLinks;
     }
 
-    // @Override
+    private ArrayList<DownloadLink> loadcontainer(Browser br, String format) throws IOException, PluginException {
+        Browser brc = br.cloneBrowser();
+        String[] dlclinks = br.getRegex("(http://www\\.urlcrypt\\.com/download-" + format + "-.*?)\"").getColumn(0);
+        if (dlclinks == null || dlclinks.length == 0) return null;
+        for (String link : dlclinks) {
+            String test = Encoding.htmlDecode(link);
+            File file = null;
+            URLConnectionAdapter con = brc.openGetConnection(link);
+            if (con.getResponseCode() == 200) {
+                file = JDUtilities.getResourceFile("tmp/urlcrypt/" + test.replace("http://www.urlcrypt.com/", "") + "." + format);
+                if (file == null) return null;
+                file.deleteOnExit();
+                brc.downloadConnection(file, con);
+            } else {
+                con.disconnect();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            }
+
+            if (file != null && file.exists() && file.length() > 100) {
+                ArrayList<DownloadLink> decryptedLinks = JDUtilities.getController().getContainerLinks(file);
+                if (decryptedLinks.size() > 0) return decryptedLinks;
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            }
+        }
+        return null;
+    }
 
 }
