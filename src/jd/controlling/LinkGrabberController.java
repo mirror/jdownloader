@@ -487,6 +487,9 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
         /**
          * remove 7zip and hjmerge extensions
          */
+        /* remove zip extensions */
+        name = getNameMatch(name, "(.*)\\.zip$");
+        name = getNameMatch(name, "(.*)\\.z\\d+$");
 
         name = getNameMatch(name, "(?is).*\\.7z\\.[\\d]+$");
         name = getNameMatch(name, "(.*)\\.a.$");

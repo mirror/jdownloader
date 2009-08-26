@@ -134,7 +134,7 @@ public class JDTable extends JTable {
         getTableHeader().setResizingAllowed(true);
         setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
         setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-        setAutoscrolls(false);
+        setAutoscrolls(true);
         this.setRowHeight(ROWHEIGHT);
         getTableHeader().setPreferredSize(new Dimension(getColumnModel().getTotalColumnWidth(), 19));
         // This method is 1.6 only

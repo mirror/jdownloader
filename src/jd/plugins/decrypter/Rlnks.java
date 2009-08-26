@@ -60,24 +60,26 @@ public class Rlnks extends PluginForDecrypt {
     }
 
     private void decryptLinks(ArrayList<DownloadLink> decryptedLinks) throws IOException {
-
         br.setFollowRedirects(false);
         String[] matches = br.getRegex("getFile\\('(cid=\\w*?&lid=\\d*?)'\\)").getColumn(0);
-
         try {
             progress.addToMax(matches.length);
             for (String match : matches) {
                 try {
-                    br.getPage("http://relink.us/frame.php?" + match);
-
-                    decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(br.getRedirectLocation())));
+                    for (int i = 0; i < 3; i++) {
+                        Browser brc = br.cloneBrowser();
+                        brc.getPage("http://www.relink.us/frame.php?" + match);
+                        decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(brc.getRedirectLocation())));
+                        if (brc.getRedirectLocation() != null) break;
+                        try {
+                            Thread.sleep(2000);
+                        } catch (Exception e) {
+                        }
+                    }
                     progress.increase(1);
                 } catch (Exception e) {
-                    // TODO Auto-generated catch block
-                    logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
                 }
             }
-
         } finally {
             br.setFollowRedirects(true);
         }
@@ -107,14 +109,14 @@ public class Rlnks extends PluginForDecrypt {
         }
         if (okay == false) throw new DecrypterException(DecrypterException.CAPTCHA);
         progress.setRange(0);
-        // decryptLinks(decryptedLinks);
+        decryptLinks(decryptedLinks);
         String more_links[] = new Regex(page, Pattern.compile("<a href=\"(go\\.php\\?id=[a-zA-Z0-9]+\\&seite=\\d+)\">", Pattern.CASE_INSENSITIVE)).getColumn(0);
         for (String link : more_links) {
             br.getPage("http://relink.us/" + link);
             decryptLinks(decryptedLinks);
         }
 
-        if (decryptedLinks.size() == 0 || true) {
+        if (decryptedLinks.size() == 0) {
             if (!decryptContainer(page, parameter, "dlc", decryptedLinks)) {
                 if (!decryptContainer(page, parameter, "ccf", decryptedLinks)) {
                     decryptContainer(page, parameter, "rsdf", decryptedLinks);
@@ -124,7 +126,5 @@ public class Rlnks extends PluginForDecrypt {
 
         return decryptedLinks;
     }
-
-    // @Override
 
 }
