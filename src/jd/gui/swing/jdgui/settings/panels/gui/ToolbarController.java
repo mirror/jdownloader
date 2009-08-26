@@ -66,7 +66,7 @@ public class ToolbarController extends ConfigPanel {
         }
 
         public int getColumnCount() {
-            return 5;
+            return 4;
         }
 
         @Override
@@ -79,8 +79,6 @@ public class ToolbarController extends ConfigPanel {
             case 2:
                 return JDL.L(JDL_PREFIX + ".column.desc", "Description");
             case 3:
-                return JDL.L(JDL_PREFIX + ".column.id", "ID");
-            case 4:
                 return JDL.L(JDL_PREFIX + ".column.icon", "Icon");
             }
             return super.getColumnName(column);
@@ -184,7 +182,7 @@ public class ToolbarController extends ConfigPanel {
                 column.setMaxWidth(40);
                 break;
 
-            case 4:
+            case 3:
                 column.setPreferredWidth(40);
                 column.setMaxWidth(40);
                 break;
@@ -245,10 +243,6 @@ public class ToolbarController extends ConfigPanel {
                 label.setText(action.getTooltipText());
                 return label;
             case 3:
-                label.setIcon(null);
-                label.setText(action.getID());
-                return label;
-            case 4:
                 label.setIcon(JDTheme.II(action.getValue(ToolBarAction.IMAGE_KEY) + "", 16, 16));
                 label.setText("");
                 return label;

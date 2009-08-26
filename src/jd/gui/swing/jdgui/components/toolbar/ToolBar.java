@@ -109,7 +109,9 @@ public class ToolBar extends JToolBar implements ActionControllerListener {
             SwingGui.checkEDT();
             setLayout(new MigLayout("ins 0, gap 0", getColConstraints(list)));
             AbstractButton ab;
-            for (String key : list) {
+            boolean lastseperator = false;
+            for (int i = 0; i < list.length; i++) {
+                String key = list[i];
                 ToolBarAction action = ActionController.getToolBarAction(key);
 
                 if (action == null) {
@@ -129,14 +131,19 @@ public class ToolBar extends JToolBar implements ActionControllerListener {
 
                     // add(ab = new JMenuItem(action), BUTTON_CONSTRAINTS);
                     ab = add(action);
+                    lastseperator = false;
                     // ab.setText("");
                     break;
                 case SEPARATOR:
-                    add(new JSeparator(JSeparator.VERTICAL), "height 32,gapleft 10,gapright 10");
+                    if (!lastseperator) {
+                        add(new JSeparator(JSeparator.VERTICAL), "height 32,gapleft 10,gapright 10");
+                        lastseperator = true;
+                    }
                     break;
 
                 case TOGGLE:
                     ab = add(action);
+                    lastseperator = false;
                     // add(ab = tbt = new JCheckBoxMenuItem(action),
                     // BUTTON_CONSTRAINTS);
                     // tbt.setText("");
