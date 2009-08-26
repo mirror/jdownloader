@@ -75,7 +75,7 @@ public class BdngCm extends PluginForDecrypt {
             if (partLinks == null || partLinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             progress.setRange(partLinks.length);
             for (int i = 0; i <= partLinks.length - 1; i++) {
-                DownloadLink dlLink = createDownloadlink(partLinks[i].replaceFirst("badongo.com", "badongo.viajd"));
+                DownloadLink dlLink = createDownloadlink(partLinks[i].replaceFirst("badongo\\.com", "badongo.viajd"));
                 dlLink.setName(dlLink.getName() + "." + (i + 1));
                 dlLink.setProperty("type", "split");
                 dlLink.setProperty("part", i + 1);
