@@ -34,7 +34,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkGrabberFilePackage;
 import jd.plugins.LinkGrabberFilePackageEvent;
 import jd.plugins.LinkGrabberFilePackageListener;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.hoster.HTTPAllgemein;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -78,7 +77,6 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
     private ConfigPropertyListener cpl;
     private LinkGrabberFilePackage FP_UNSORTED;
     private LinkGrabberFilePackage FP_UNCHECKED;
-    private LinkGrabberFilePackage FP_UNCHECKABLE;
     private LinkGrabberFilePackage FP_OFFLINE;
     private LinkGrabberFilePackage FP_FILTERED;
     private LinkGrabberDistributeEvent distributer = null;
@@ -148,8 +146,6 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
 
         FP_UNSORTED = new LinkGrabberFilePackage(JDL.L("gui.linkgrabber.package.unsorted", "various"), this);
         FP_UNCHECKED = new LinkGrabberFilePackage(JDL.L("gui.linkgrabber.package.unchecked", "unchecked"), this);
-        FP_UNCHECKABLE = new LinkGrabberFilePackage(JDL.L("gui.linkgrabber.package.uncheckable", "uncheckable"), this);
-        FP_UNCHECKABLE.setIgnore(true);
         FP_OFFLINE = new LinkGrabberFilePackage(JDL.L("gui.linkgrabber.package.offline", "offline"), this);
         FP_OFFLINE.setIgnore(true);
         FP_FILTERED = new LinkGrabberFilePackage(JDL.L("gui.linkgrabber.package.filtered", "filtered"));
@@ -258,9 +254,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
                     if (fp.countFailedLinks(true) == fp.size()) remove = true;
                     ArrayList<DownloadLink> links = new ArrayList<DownloadLink>(fp.getDownloadLinks());
                     for (DownloadLink dl : links) {
-                        if (dl.isAvailabilityStatusChecked() && dl.getAvailableStatus() == AvailableStatus.UNCHECKABLE && links.size() == 1) {
-                            FP_UNCHECKABLE.add(dl);
-                        } else if (dl.isAvailabilityStatusChecked() && !dl.isAvailable() && (links.size() == 1 || remove)) {
+                        if (dl.isAvailabilityStatusChecked() && !dl.isAvailable() && (links.size() == 1 || remove)) {
                             FP_OFFLINE.add(dl);
                         }
                     }
