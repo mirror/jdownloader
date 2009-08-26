@@ -82,13 +82,13 @@ public class ConfigTreeModel implements TreeModel {
 
         root.add(modules = new TreeEntry(JDL.L(JDL_PREFIX + "modules.title", "Modules")).setIcon("gui.images.config.home"));
 
-        modules.add(dl = new TreeEntry(jd.gui.swing.jdgui.settings.panels.ocr.General.class, jd.gui.swing.jdgui.settings.panels.ocr.General.getTitle()).setIcon("gui.images.config.ocr"));
+//        modules.add(dl = new TreeEntry(jd.gui.swing.jdgui.settings.panels.ocr.General.class, jd.gui.swing.jdgui.settings.panels.ocr.General.getTitle()).setIcon("gui.images.config.ocr"));
 
         // dl.add(new
         // TreeEntry(jd.gui.swing.jdgui.settings.panels.ocr.General.class,
         // JDL.L(JDL_PREFIX + "captcha.general.title",
         // "Method List")).setIcon("gui.images.config.ocr"));
-        dl.add(new TreeEntry(jd.gui.swing.jdgui.settings.panels.ocr.Advanced.class, jd.gui.swing.jdgui.settings.panels.ocr.Advanced.getTitle()).setIcon("gui.images.config.ocr"));
+        modules.add(dl = new TreeEntry(jd.gui.swing.jdgui.settings.panels.ocr.Advanced.class, jd.gui.swing.jdgui.settings.panels.ocr.Advanced.getTitle()).setIcon("gui.images.config.ocr"));
 
         modules.add(dl = new TreeEntry(jd.gui.swing.jdgui.settings.panels.reconnect.MethodSelection.class, jd.gui.swing.jdgui.settings.panels.reconnect.MethodSelection.getTitle()).setIcon("gui.images.config.reconnect"));
         // dl.add(new

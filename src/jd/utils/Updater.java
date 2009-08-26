@@ -53,9 +53,10 @@ public class Updater {
         // SERVERLIST.append("-1:http://update4ex.jdownloader.org/branches/%BRANCH%/\r\n");
         // SERVERLIST.append("-1:http://jdupdate.bluehost.to/branches/%BRANCH%/\r\n");
         SERVERLIST.append("-1:http://update1.jdownloader.org/%BRANCH%/\r\n");
+        SERVERLIST.append("-1:http://update3.jdownloader.org/%BRANCH%/\r\n");
         // SERVERLIST.append("-1:http://update2.jdownloader.org/%BRANCH%/\r\n");
         // SERVERLIST.append("-1:http://jd.code4everyone.de/%BRANCH%/\r\n");
-         SERVERLIST.append("-1:http://jd.mirrors.cyb0rk.net/%BRANCH%/\r\n");
+       //  SERVERLIST.append("-1:http://jd.mirrors.cyb0rk.net/%BRANCH%/\r\n");
         
         // SERVERLIST.append("-1:http://update0.jdownloader.org/%BRANCH%/\r\n");
     }
@@ -90,8 +91,8 @@ public class Updater {
         // //
         upd.merge();
         upd.checkHashes();
-        upd.clone2(upd.branch,"http://jd.mirrors.cyb0rk.net/clone.php");
-         //upd.clone2(upd.branch,"http://update0.jdownloader.org/clone.php");
+       // upd.clone2(upd.branch,"http://jd.mirrors.cyb0rk.net/clone.php");
+         upd.clone2(upd.branch,"http://update3.jdownloader.org/clone.php");
         // upd.clone2(upd.branch,"http://update2.jdownloader.org/clone.php");
         // list=upd.getLocalFileList(upd.workingDir, false);
 
