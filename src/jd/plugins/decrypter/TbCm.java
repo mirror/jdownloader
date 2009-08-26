@@ -132,7 +132,7 @@ public class TbCm extends PluginForDecrypt {
             boolean prem = false;
             ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts("youtube.com");
             if (accounts != null && accounts.size() != 0) prem = login(accounts.get(0));
-
+            br.setFollowRedirects(true);
             try {
                 if (StreamingShareLink.matcher(parameter).matches()) {
                     // StreamingShareLink
@@ -170,7 +170,7 @@ public class TbCm extends PluginForDecrypt {
                 String video_id = "";
                 String t = "";
                 String match = br.getRegex(patternswfArgs).getMatch(0);
-                if (match == null) { return null; }
+                if (match == null) throw new DecrypterException("Video seems to be offline");
 
                 /* DownloadUrl holen */
                 String[] lineSub = match.split(",|:");
