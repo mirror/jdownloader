@@ -300,7 +300,7 @@ public class Executer extends Thread {
             this.exception = e1;
             return;
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            
             this.exception = e;
         }
     }

@@ -18,6 +18,7 @@ package jd.gui.swing.laf;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -213,11 +214,28 @@ public class LookAndFeelController {
 
                 // Sets the Synthetica Look and feel and avoids errors if the
                 // synth laf is not loaded (no imports)
+                try {
 
-                Class<?> slaf = Class.forName("de.javasoft.plaf.synthetica.SyntheticaLookAndFeel");
+                    Class<?> slaf = Class.forName("de.javasoft.plaf.synthetica.SyntheticaLookAndFeel");
 
-                Method method = slaf.getMethod("setLookAndFeel", new Class[] { String.class, boolean.class, boolean.class });
-                method.invoke(null, new Object[] { laf, false, false });
+                    Method method = slaf.getMethod("setLookAndFeel", new Class[] { String.class, boolean.class, boolean.class });
+                    method.invoke(null, new Object[] { laf, false, false });
+                } catch (InvocationTargetException e) {
+                    
+                    //ON some systems (turkish) sntheticy throws bugs when inited for the SPlashscreen. this workaroudn disables the spashscreen and
+                    //this the synthetica lafs work
+                    JDLogger.exception(e);
+                    try {
+                        UIManager.setLookAndFeel(getPlaf().getClassName());
+                    } catch (Exception e2) {
+                        GUIUtils.getConfig().setProperty(JDGuiConstants.PARAM_SHOW_SPLASH, false);
+                        GUIUtils.getConfig().save();
+                        JDLogger.warning("Disabled Splashscreen cause it cases LAF errors");
+                        JDLogger.exception(e2);
+                        uiInitated=false;
+                        return;
+                    }
+                }
 
                 // SyntheticaLookAndFeel#setLookAndFeel(String className),
             } else {

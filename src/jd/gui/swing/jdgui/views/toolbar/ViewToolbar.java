@@ -59,7 +59,7 @@ public class ViewToolbar extends JPanel implements ActionControllerListener {
 
     private static final long serialVersionUID = 7533137014274040205L;
 
-    public static final String BUTTON_CONSTRAINTS = "gaptop 2, gapleft 2";
+    public static String BUTTON_CONSTRAINTS = "gaptop 2, gapleft 2";
 
     private static final String GUIINSTANCE = "GUI";
 
