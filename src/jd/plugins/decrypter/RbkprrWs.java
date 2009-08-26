@@ -380,9 +380,9 @@ public class RbkprrWs extends PluginForDecrypt {
             public boolean useForSample;
 
             public SingleMirror(String key, String name, boolean use, boolean useForSample) {
-                if (key == null) key = "unkown";
+                if (key == null) key = "Default";
                 this.key = key;
-                if (name == null) name = "unknown";
+                if (name == null) name = "Default";
                 this.name = name;
                 this.use = use;
                 this.useForSample = useForSample;

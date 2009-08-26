@@ -120,6 +120,8 @@ public class HotFileCom extends PluginForHost {
         try {
             sleeptime = Long.parseLong(br.getRegex("timerend=d\\.getTime\\(\\)\\+(\\d+);").getMatch(0)) + 1;
         } catch (Exception e) {
+            logger.info("WaittimeRegex broken");
+            logger.info(br.toString());
             sleeptime = 60 * 1000l;
         }
         this.sleep(sleeptime, link);
