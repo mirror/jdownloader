@@ -107,7 +107,7 @@ public class ShareSwiftCom extends PluginForHost {
         }
         String dllink = br.getRegex("Dieser direkte Downloadlink.*?href=\"(.*?)\">").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        BrowserAdapter.openDownload(br, link, dllink, true, -20);
+        BrowserAdapter.openDownload(br, link, dllink, false, -20);
         dl.startDownload();
     }
 
@@ -121,7 +121,8 @@ public class ShareSwiftCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 3;
+        // TODO: increase value, but jiaz has to add some new functions to controller first
+        return 1;
     }
 
 }
