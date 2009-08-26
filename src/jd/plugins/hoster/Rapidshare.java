@@ -96,7 +96,7 @@ public class Rapidshare extends PluginForHost {
 
     final static private Object LOCK = new Object();
 
-    final static private Object HTMLWORKAROUND = new Object();
+    final static private Boolean HTMLWORKAROUND = new Boolean(false);
 
     private static long rsapiwait = 0;
 
@@ -267,17 +267,18 @@ public class Rapidshare extends PluginForHost {
                         tryWorkaround(u);
                         u.getLinkStatus().setErrorMessage(JDL.L("plugin.host.rapidshare.status.filenotfound", "File not found"));
                         u.getLinkStatus().setStatusText(JDL.L("plugin.host.rapidshare.status.filenotfound", "File not found"));
-
                         u.setAvailable(false);
                         break;
                     case 1:
                         // u.getLinkStatus().setStatusText("alles prima");
                         u.setAvailable(true);
                         u.getLinkStatus().setStatusText("");
+                        u.getLinkStatus().setErrorMessage(null);
                         break;
                     case 2:
                         u.setAvailable(true);
                         u.getLinkStatus().setStatusText(JDL.L("plugin.host.rapidshare.status.directdownload", "Direct Download"));
+                        u.getLinkStatus().setErrorMessage(null);
                         break;
                     case 3:
                         u.getLinkStatus().setErrorMessage(JDL.L("plugin.host.rapidshare.status.servernotavailable", "Server temp. not available. Try later!"));
