@@ -47,7 +47,7 @@ public class BdngCm extends PluginForDecrypt {
         br.setCookie("http://www.badongo.com", "badongoL", "de");
         br.setFollowRedirects(false);
         br.getPage(parameter);
-        parameter = parameter.replaceFirst("badongo.com", "badongo.viajd");
+        parameter = parameter.replaceFirst("badongo\\.com", "badongo.viajd");
         if (!br.containsHTML("Diese Datei wurde gesplittet")) {
             /* For single video links */
             if (!parameter.endsWith("/1")) parameter = parameter + "/1";
