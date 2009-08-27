@@ -800,6 +800,7 @@ jd.gui.swing.jdgui.settings.configpanel.restartquestion = Ова опција з
 jd.gui.swing.jdgui.settings.configpanel.restartquestion.ok = Поново покрени САДА!
 jd.gui.swing.jdgui.settings.configpanel.restartquestion.title = Потребно је поновно покретање
 jd.gui.swing.jdgui.settings.panels.configpaneladdons.addons.title = Наставци
+jd.gui.swing.jdgui.settings.panels.configpaneladdons.askafterinit = Show %s now?\r\nYou may open it later using Mainmenu->Addon
 linkgrabber.onlinestatus.offline = није доступно
 linkgrabber.onlinestatus.online = доступно
 linkgrabber.onlinestatus.uncheckable = није могуће проверити
