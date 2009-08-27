@@ -426,7 +426,7 @@ public class Main {
         } else {
             JDLogger.removeConsoleHandler();
         }
-        if (!init.removeFiles()) {
+        if (!JDInit.removeFiles()) {
             LOGGER.severe("COULD NOT DELETE OUTDATED FILES.RESTART REQUIRED");
             int answer = UserIO.getInstance().requestConfirmDialog(0, JDL.L("jd.Main.removerestart.title", "Updater"), JDL.L("jd.Main.removerestart.message", "Could not remove outdated libraries. Restart recommended!"), null, JDL.L("jd.Main.removerestart.ok", "Restart now!"), JDL.L("jd.Main.removerestart.cancel", "Continue"));
             if (UserIO.isOK(answer)) {

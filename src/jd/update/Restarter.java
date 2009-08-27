@@ -18,6 +18,7 @@ package jd.update;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -160,17 +161,40 @@ public class Restarter {
         String[] remove = getLines(getLocalFile(outdated));
         String homedir = outdated.getParent();
         boolean ret = true;
+        File delete;
+        File[] deletes;
         if (remove != null) {
             for (String file : remove) {
                 if (file.length() == 0) continue;
                 if (!file.matches(".*?" + File.separator + "?\\.+" + File.separator + ".*?")) {
-                    File delete = new File(homedir, file);
-                    if (!delete.exists()) continue;
-                    if (removeDirectoryOrFile(delete)) {
-                        logger.info("Removed " + file);
+                    if (file.contains("|")) {
+                        final String[] split = file.split("\\|");
+                        File dir = new File(homedir, split[0]);
+                        if (!dir.exists()) continue;
+                        deletes = dir.listFiles(new FileFilter() {
+
+                            public boolean accept(File pathname) {
+                                return pathname.getName().matches(split[1]);
+                            }
+
+                        });
+                        for (File del : deletes) {
+                            if (removeDirectoryOrFile(del)) {
+                                logger.info("Removed " + del.getName() + " [" + file + "]");
+                            } else {
+                                ret = false;
+                                logger.info("FAILED to remove " + del.getName() + " [" + file + "]");
+                            }
+                        }
                     } else {
-                        ret = false;
-                        logger.info(" FAILED to Removed " + file);
+                        delete = new File(homedir, file);
+                        if (!delete.exists()) continue;
+                        if (removeDirectoryOrFile(delete)) {
+                            logger.info("Removed " + file);
+                        } else {
+                            ret = false;
+                            logger.info("FAILED to remove " + file);
+                        }
                     }
                 }
             }

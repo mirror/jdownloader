@@ -18,6 +18,7 @@ package jd;
 
 import java.awt.Toolkit;
 import java.io.File;
+import java.io.FileFilter;
 import java.net.MalformedURLException;
 import java.net.Proxy;
 import java.net.URL;
@@ -506,23 +507,44 @@ public class JDInit {
 
     }
 
-    public boolean removeFiles() {
+    public static boolean removeFiles() {
         String[] remove = Regex.getLines(JDIO.getLocalFile(JDUtilities.getResourceFile("outdated.dat")));
         String homedir = JDUtilities.getJDHomeDirectoryFromEnvironment().toString();
         boolean ret = true;
+        File delete;
+        File[] deletes;
         if (remove != null) {
             for (String file : remove) {
                 if (file.length() == 0) continue;
                 if (!file.matches(".*?" + File.separator + "?\\.+" + File.separator + ".*?")) {
-                    File delete = new File(homedir, file);
-                    if (!delete.exists()) continue;
-                    if (JDIO.removeDirectoryOrFile(delete)) {
-                        System.out.println("Removed " + file);
+                    if (file.contains("|")) {
+                        final String[] split = file.split("\\|");
+                        File dir = new File(homedir, split[0]);
+                        if (!dir.exists()) continue;
+                        deletes = dir.listFiles(new FileFilter() {
 
+                            public boolean accept(File pathname) {
+                                return pathname.getName().matches(split[1]);
+                            }
+
+                        });
+                        for (File del : deletes) {
+                            if (JDIO.removeDirectoryOrFile(del)) {
+                                System.out.println("Removed " + del.getName() + " [" + file + "]");
+                            } else {
+                                ret = false;
+                                System.out.println("FAILED to remove " + del.getName() + " [" + file + "]");
+                            }
+                        }
                     } else {
-
-                        System.out.println("Failed to remove " + file);
-                        ret = false;
+                        delete = new File(homedir, file);
+                        if (!delete.exists()) continue;
+                        if (JDIO.removeDirectoryOrFile(delete)) {
+                            System.out.println("Removed " + file);
+                        } else {
+                            ret = false;
+                            System.out.println("FAILED to remove " + file);
+                        }
                     }
                 }
             }
