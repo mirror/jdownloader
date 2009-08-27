@@ -26,14 +26,13 @@ import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 public class JDLogger {
-   protected JDLogger(){
-       
-   }
+    protected JDLogger() {
+
+    }
 
     private static Logger LOGGER = null;
     public static String LOGGER_NAME = "java_downloader";
     private static ConsoleHandler console;
-    public static long INIT_TIME = System.currentTimeMillis();
 
     /**
      * Liefert die Klasse zurück, mit der Nachrichten ausgegeben werden können
@@ -63,8 +62,7 @@ public class JDLogger {
     }
 
     public static void timestamp(String msg) {
-
-        getLogger().warning(jd.nutils.Formatter.formatMilliseconds(System.currentTimeMillis() - INIT_TIME) + " : " + msg);
+        getLogger().warning(jd.nutils.Formatter.formatMilliseconds(System.currentTimeMillis()) + " : " + msg);
     }
 
     public static void exception(Throwable e) {

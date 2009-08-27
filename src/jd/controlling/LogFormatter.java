@@ -59,7 +59,7 @@ public class LogFormatter extends SimpleFormatter {
         // sb.append(text);
         // sb.append(" - ");
         if (JDLogger.getLogger().getLevel() == Level.ALL) {
-            sb.append(Formatter.formatMilliseconds(record.getMillis() - JDLogger.INIT_TIME));
+            sb.append(Formatter.formatMilliseconds(record.getMillis()));
             sb.append(" - ");
             sb.append(record.getLevel().getName());
             sb.append(" [");

@@ -31,9 +31,10 @@ import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-@OptionalPlugin(rev="$Revision$", id="webinterface",interfaceversion=4)
+
+@OptionalPlugin(rev = "$Revision$", id = "webinterface", interfaceversion = 5)
 public class JDWebinterface extends PluginOptional {
-    static public JDWebinterface instance;    
+    static public JDWebinterface instance;
     static final String PROPERTY_HTTPS = "PARAM_HTTPS";
     static final String PROPERTY_LOGIN = "PARAM_LOGIN";
     static final String PROPERTY_PASS = "PARAM_PASS";
@@ -42,8 +43,6 @@ public class JDWebinterface extends PluginOptional {
     static final String PROPERTY_REFRESH_INTERVAL = "PARAM_REFRESH_INTERVAL";
 
     static final String PROPERTY_USER = "PARAM_USER";
-
-
 
     public JDWebinterface(PluginWrapper wrapper) {
         super(wrapper);
@@ -68,23 +67,20 @@ public class JDWebinterface extends PluginOptional {
         cfg.setDefaultValue("JD");
     }
 
-    //@Override
+    // @Override
     public void actionPerformed(ActionEvent e) {
 
     }
 
-    //@Override
+    // @Override
     public ArrayList<MenuAction> createMenuitems() {
         return null;
     }
 
-    //@Override
+    // @Override
     public String getCoder() {
         return "jiaz";
     }
-
-
-
 
     static public int getRefreshRate() {
         SubConfiguration subConfig = SubConfiguration.getConfig("WEBINTERFACE");
@@ -95,7 +91,7 @@ public class JDWebinterface extends PluginOptional {
         }
     }
 
-    //@Override
+    // @Override
     public boolean initAddon() {
         @SuppressWarnings("unused")
         JDSimpleWebserver server = new JDSimpleWebserver();
@@ -103,7 +99,7 @@ public class JDWebinterface extends PluginOptional {
         return true;
     }
 
-    //@Override
+    // @Override
     public void onExit() {
     }
 }
