@@ -25,7 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shareswift.com" }, urls = { "http://[\\w\\.]*?shareswift\\.com/\\w+/.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shareswift.com" }, urls = { "http://[\\w\\.]*?shareswift\\.com/.+" }, flags = { 0 })
 public class ShrSwftCmFldr extends PluginForDecrypt {
 
     public ShrSwftCmFldr(PluginWrapper wrapper) {
@@ -36,17 +36,19 @@ public class ShrSwftCmFldr extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-
-        if (parameter.matches(".+\\.html")) {
+        br.setCookie("http://www.shareswift.com", "lang", "english");
+        br.getPage(parameter);
+        if (br.containsHTML("You have to wait|Download File")) {
             parameter = parameter.replaceFirst("shareswift\\.com", "shareswift.viajd");
             decryptedLinks.add(createDownloadlink(parameter));
         } else {
-            br.getPage(parameter);
-            String[] links = br.getRegex("<TR><TD><a href=\"(.*?)\" target=\"_blank\">").getColumn(0);
-            if (links.length == 0) return null;
-            for (String dl : links) {
-                dl = dl.replaceFirst("shareswift\\.com", "shareswift.viajd");
-                decryptedLinks.add(createDownloadlink(dl));
+            if (parameter.matches("http://[\\w\\.]*?shareswift\\.com/\\w+/.+")) {
+                String[] links = br.getRegex("<TR><TD><a href=\"(.*?)\" target=\"_blank\">").getColumn(0);
+                if (links.length == 0) return null;
+                for (String dl : links) {
+                    dl = dl.replaceFirst("shareswift\\.com", "shareswift.viajd");
+                    decryptedLinks.add(createDownloadlink(dl));
+                }  
             }
         }
         return decryptedLinks;

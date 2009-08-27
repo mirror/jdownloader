@@ -30,7 +30,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
 //shareswift.com by pspzockerscene
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shareswift.com" }, urls = { "http://[\\w\\.]*?shareswift\\.viajd/\\w+/.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shareswift.com" }, urls = { "http://[\\w\\.]*?shareswift\\.viajd/.+" }, flags = { 0 })
 public class ShareSwiftCom extends PluginForHost {
 
     public ShareSwiftCom(PluginWrapper wrapper) {
@@ -70,6 +70,7 @@ public class ShareSwiftCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
+        br.setCookie("http://www.shareswift.com", "lang", "english");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("You have to wait")) {
             int minutes = 0, seconds = 0, hours = 0;
@@ -82,10 +83,11 @@ public class ShareSwiftCom extends PluginForHost {
             int waittime = ((3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
         }
+        requestFileInformation(link);
         Form DLForm = br.getFormbyProperty("name", "F1");
         if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         String passCode = null;
-        if (br.containsHTML("<br><b>Passwort:</b>")) {
+        if (br.containsHTML("<br><b>Password:</b>")) {
             if (link.getStringProperty("pass", null) == null) {
                 passCode = Plugin.getUserInput("Password?", link);
             } else {
@@ -105,7 +107,7 @@ public class ShareSwiftCom extends PluginForHost {
         if (passCode != null) {
             link.setProperty("pass", passCode);
         }
-        String dllink = br.getRegex("Dieser direkte Downloadlink.*?href=\"(.*?)\">").getMatch(0);
+        String dllink = br.getRegex("This direct link will be available.*?href=\"(.*?)\">").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         BrowserAdapter.openDownload(br, link, dllink, false, -20);
         dl.startDownload();
