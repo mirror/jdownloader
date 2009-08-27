@@ -1,4 +1,4 @@
 <jDownloader>
-  <method name="egoshare.com" author="Coalado" services="egoshare.com;4freeload.net;netgull.com;share-online.biz"/>
+  <method name="egoshare.com" author="Coalado" services="filer.cx;egoshare.com;4freeload.net;netgull.com;share-online.biz"/>
   <format type="png" letterNum="3"/>
 </jDownloader>
