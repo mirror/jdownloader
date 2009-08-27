@@ -16,12 +16,8 @@
 
 package jd.update;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileFilter;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.logging.FileHandler;
@@ -29,6 +25,7 @@ import java.util.logging.Logger;
 
 import jd.nutils.Executer;
 import jd.nutils.OSDetector;
+import jd.nutils.OutdatedParser;
 
 public class Restarter {
 
@@ -113,96 +110,11 @@ public class Restarter {
 
     }
 
-    public static String getLocalFile(File file) {
-        if (file == null) return null;
-        if (!file.exists()) { return ""; }
-        BufferedReader f;
-        try {
-            f = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF8"));
-
-            String line;
-            StringBuffer ret = new StringBuffer();
-            String sep = System.getProperty("line.separator");
-            while ((line = f.readLine()) != null) {
-                ret.append(line + sep);
-            }
-            f.close();
-            return ret.toString();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return "";
+    private static boolean removeFiles() {
+        return OutdatedParser.parseFile(new File("outdated.dat"));
     }
 
-    public static String[] getLines(String arg) {
-        if (arg == null) { return new String[] {}; }
-        String[] temp = arg.split("[\r\n]{1,2}");
-        String[] output = new String[temp.length];
-        for (int i = 0; i < temp.length; i++) {
-            output[i] = temp[i].trim();
-        }
-        return output;
-    }
-
-    public static boolean removeDirectoryOrFile(File dir) {
-        if (dir.isDirectory()) {
-            String[] children = dir.list();
-            for (String element : children) {
-                boolean success = removeDirectoryOrFile(new File(dir, element));
-                if (!success) return false;
-            }
-        }
-
-        return dir.delete();
-    }
-
-    public static boolean removeFiles() {
-        File outdated = new File("outdated.dat");
-        String[] remove = getLines(getLocalFile(outdated));
-        String homedir = outdated.getParent();
-        boolean ret = true;
-        File delete;
-        File[] deletes;
-        if (remove != null) {
-            for (String file : remove) {
-                if (file.length() == 0) continue;
-                if (!file.matches(".*?" + File.separator + "?\\.+" + File.separator + ".*?")) {
-                    if (file.contains("|")) {
-                        final String[] split = file.split("\\|");
-                        File dir = new File(homedir, split[0]);
-                        if (!dir.exists()) continue;
-                        deletes = dir.listFiles(new FileFilter() {
-
-                            public boolean accept(File pathname) {
-                                return pathname.getName().matches(split[1]);
-                            }
-
-                        });
-                        for (File del : deletes) {
-                            if (removeDirectoryOrFile(del)) {
-                                logger.info("Removed " + del.getName() + " [" + file + "]");
-                            } else {
-                                ret = false;
-                                logger.info("FAILED to remove " + del.getName() + " [" + file + "]");
-                            }
-                        }
-                    } else {
-                        delete = new File(homedir, file);
-                        if (!delete.exists()) continue;
-                        if (removeDirectoryOrFile(delete)) {
-                            logger.info("Removed " + file);
-                        } else {
-                            ret = false;
-                            logger.info("FAILED to remove " + file);
-                        }
-                    }
-                }
-            }
-        }
-        return ret;
-    }
-
-    public static void move(File dir) {
+    private static void move(File dir) {
         if (!dir.isDirectory()) return;
 
         main: for (File f : dir.listFiles()) {
