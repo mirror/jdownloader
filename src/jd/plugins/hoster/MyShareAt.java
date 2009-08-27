@@ -48,7 +48,8 @@ public class MyShareAt extends PluginForHost {
 
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
-        if (br.containsHTML("You have to wait 3 minutes, 16 seconds till next download")) {
+        br.setDebug(true);
+        if (br.containsHTML("You have to wait")) {
             long wait = 0;
             String waittimemins = br.getRegex("You have to wait(.*?)minutes").getMatch(0);
             if (waittimemins != null) wait += Long.parseLong(waittimemins.trim()) * 1000 * 60;
@@ -65,11 +66,31 @@ public class MyShareAt extends PluginForHost {
         rc.load();
         File cf = rc.downloadCaptcha(getLocalCaptchaFile());
         String c = getCaptchaCode(cf, link);
+        form = rc.getForm();
+        if (form.hasInputFieldByName("password")) {
+            String passCode = null;
+            if (link.getStringProperty("pass", null) == null) {
+                passCode = Plugin.getUserInput(null, link);
+            } else {
+                /* gespeicherten PassCode holen */
+                passCode = link.getStringProperty("pass", null);
+            }
+            form.put("password", passCode);
+            link.setProperty("pass", passCode);
+        }
         rc.setCode(c);
         String dl_url = br.getRedirectLocation();
+        if (br.containsHTML(">Wrong password<")) {
+            link.setProperty("pass", null);
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
         if (br.containsHTML("Wrong captcha")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dl_url, false, 1);
+        if (!dl.getConnection().isContentDisposition()) {
+            dl.getConnection().disconnect();
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
+        }
         dl.startDownload();
     }
 
@@ -142,6 +163,7 @@ public class MyShareAt extends PluginForHost {
                     passCode = parameter.getStringProperty("pass", null);
                 }
                 form.put("password", passCode);
+                parameter.setProperty("pass", passCode);
             }
             br.submitForm(form);
             if (br.containsHTML(">Wrong password<")) {

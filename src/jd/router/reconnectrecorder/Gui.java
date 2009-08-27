@@ -114,8 +114,12 @@ public class Gui extends AbstractDialog implements ActionListener {
                 reconnect_duration = 2000;
                 /* minimum von 2 seks */
             }
-            configuration.setProperty(ReconnectMethod.PARAM_WAITFORIPCHANGE, ((reconnect_duration / 1000) * 2) + 10);
-            configuration.setProperty(ReconnectMethod.PARAM_IPCHECKWAITTIME, ((reconnect_duration / 1000) / 2) + 2);
+            int aa = (int) ((reconnect_duration / 1000) * 2);
+            if (aa < 30) aa = 30;
+            int ab = (int) ((reconnect_duration / 1000) / 2);
+            if (ab < 30) ab = 5;
+            configuration.setProperty(ReconnectMethod.PARAM_WAITFORIPCHANGE, aa);
+            configuration.setProperty(ReconnectMethod.PARAM_IPCHECKWAITTIME, ab);
             configuration.save();
             saved = true;
             dispose();

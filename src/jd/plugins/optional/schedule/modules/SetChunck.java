@@ -42,7 +42,8 @@ public class SetChunck implements SchedulerModuleInterface {
 
     public boolean checkParameter(String parameter) {
         try {
-            Integer.parseInt(parameter);
+            int i = Integer.parseInt(parameter);
+            if (i > 20 || i < 1) return false;
             return true;
         } catch (Exception e) {
             return false;
