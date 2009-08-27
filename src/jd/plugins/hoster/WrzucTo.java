@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.http.RandomUserAgent;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
@@ -35,14 +36,15 @@ public class WrzucTo extends PluginForHost {
         br.setFollowRedirects(true);
     }
 
-    // @Override
     public String getAGBLink() {
         return "http://www.wrzuc.to/strona/regulamin";
     }
 
-    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
+        br.setCookie("http://www.wrzuc.to", "language", "en");
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         String filesize = br.getRegex(Pattern.compile("class=\"info\">.*?<tr>.*?<td>(.*?)</td>", Pattern.DOTALL)).getMatch(0);
         String name = br.getRegex(Pattern.compile("<div id=\"file_info\">.*<strong>(.*?)</strong><br />", Pattern.DOTALL)).getMatch(0);
@@ -52,33 +54,28 @@ public class WrzucTo extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-
         requestFileInformation(downloadLink);
-        br.setFollowRedirects(true);
         String dllink = br.getRegex(("DwnlButton\">.*?<a href=\"(.*?)\">Download file")).getMatch(0);
-        //To the original Coder of this plugin:  Please check if the dllink is null, else JD will show a "browser Fehler null" and then we have confused users ;)
+        // To the original Coder of this plugin: Please check if the dllink is
+        // null, else JD will show a "browser Fehler null" and then we have
+        // confused users ;)
         if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         dl.startDownload();
     }
 
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    // @Override
     public void reset() {
     }
 
-    // @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
     public void resetDownloadlink(DownloadLink link) {
-        // TODO Auto-generated method stub
+
     }
 }
