@@ -27,7 +27,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wrzuc.to" }, urls = { "http://[\\w\\.]*?wrzuc\\.to/plik/\\w+/.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wrzuc.to" }, urls = { "http://[\\w\\.]*?wrzuc\\.to/.+(\\.wt|\\.html)" }, flags = { 0 })
 public class WrzucTo extends PluginForHost {
 
     public WrzucTo(PluginWrapper wrapper) {
@@ -44,11 +44,9 @@ public class WrzucTo extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
-
-        String filesize = br.getRegex(Pattern.compile("<tbody class=\"info\">.*<tr>.*<td>(.*?)</td>", Pattern.DOTALL)).getMatch(0);
-        if (filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filesize = br.getRegex(Pattern.compile("class=\"info\">.*?<tr>.*?<td>(.*?)</td>", Pattern.DOTALL)).getMatch(0);
         String name = br.getRegex(Pattern.compile("<div id=\"file_info\">.*<strong>(.*?)</strong><br />", Pattern.DOTALL)).getMatch(0);
-        if (name == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (name == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(name.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
         return AvailableStatus.TRUE;
@@ -59,14 +57,16 @@ public class WrzucTo extends PluginForHost {
 
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
-        String link = br.getRegex(Pattern.compile("<a href=\"(.*?)\">Pobierz plik | Download File</a>")).getMatch(0);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, link, false, 1);
+        String dllink = br.getRegex(("DwnlButton\">.*?<a href=\"(.*?)\">Download file")).getMatch(0);
+        //To the original Coder of this plugin:  Please check if the dllink is null, else JD will show a "browser Fehler null" and then we have confused users ;)
+        if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         dl.startDownload();
     }
 
     // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return this.getMaxSimultanDownloadNum();
+        return 20;
     }
 
     // @Override

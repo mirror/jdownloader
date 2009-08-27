@@ -73,6 +73,12 @@ public class HostingcupCom extends PluginForHost {
 
     public void reset() {
     }
+    
+    public int getMaxSimultanFreeDownloadNum() {
+        return 3;
+    }
+    
+    
 
     public void resetDownloadlink(DownloadLink link) {
     }
