@@ -981,6 +981,7 @@ jd.plugins.optional.schedule.schedule = Schedule
 jd.plugins.optional.schedule.schedulerview.title = Scheduler
 jd.plugins.optional.schedule.schedulerview.tooltip = Schedule your downloads
 jd.plugins.optional.webinterface.jdwebinterface = JDWebinterface
+jd.plugins.plugin.aborted = Decryption aborted!
 jd.plugins.pluginforhost.enable_premium = Aktivieren
 jd.plugins.pluginforhost.premiuminfo = Details
 jd.plugins.pluginutils.askpassword = Please enter the password for %s
