@@ -36,7 +36,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
 
@@ -53,9 +52,8 @@ public class LnkCrptWs extends PluginForDecrypt {
         String parameter = param.toString();
 
         String containerId = new Regex(parameter, "dir/([a-zA-Z0-9]+)").getMatch(0);
-
+        
         br.getPage("http://linkcrypt.ws/dlc/" + containerId);
-
         // check for a password. STore latest password in DB
         Form password = br.getForm(0);
         if (password != null && password.hasInputFieldByName("password")) {
@@ -88,12 +86,21 @@ public class LnkCrptWs extends PluginForDecrypt {
         boolean valid = true;
         for (int i = 0; i < 5; ++i) {
             Form captcha = br.getForm(0);
-            if (br.containsHTML("Bitte in den offenen Kreis klicken")) {
+            if (br.containsHTML("cursor:crosshair")) {
                 valid = false;
                 File file = this.getLocalCaptchaFile();
-                String url = captcha.getRegex("src=\"(.*?)\"").getMatch(0);
+                String url = captcha.getRegex("src=\"([^\"]*)\"[^>]*style=\"cursor:").getMatch(0);
+                if (url == null) url = captcha.getRegex("style=\"cursor:[^>]*src=\"([^\"]*)\"").getMatch(0);
                 Browser.download(file, br.cloneBrowser().openGetConnection(url));
-                Point p = UserIO.getInstance().requestClickPositionDialog(file, JDL.L("plugins.decrypt.stealthto.captcha.title", "Captcha"), JDL.L("plugins.decrypt.stealthto.captcha", "Please click on the Circle with a gap"));
+                Point p;
+                if (url.contains("captx.php")) {
+                    String code = getCaptchaCode("lnkcrptwsCircles", file, param);
+                    if (code == null) continue;
+                    String[] codep = code.split(":");
+                    p = new Point(Integer.parseInt(codep[0]), Integer.parseInt(codep[1]));
+
+                } else
+                    p = UserIO.getInstance().requestClickPositionDialog(file, JDL.L("plugins.decrypt.stealthto.captcha.title", "Captcha"), JDL.L("plugins.decrypt.stealthto.captcha", "Please click on the Circle with a gap"));
                 if (p == null) throw new DecrypterException(DecrypterException.CAPTCHA);
                 captcha.put("x", p.x + "");
                 captcha.put("y", p.y + "");
@@ -120,16 +127,19 @@ public class LnkCrptWs extends PluginForDecrypt {
         String[] containers = br.getRegex("eval\\((.*?\\,\\{\\}\\))\\)").getColumn(0);
         HashMap<String, String> map = new HashMap<String, String>();
         for (String c : containers) {
+
             Context cx = Context.enter();
             Scriptable scope = cx.initStandardObjects();
             c = c.replace("return p}(", " return p}  f(").replace("function(p,a,c,k,e,d)", "function f(p,a,c,k,e,d)");
+
             Object result = cx.evaluateString(scope, c, "<cmd>", 1, null);
+  
             String code = Context.toString(result);
             String[] row = new Regex(code, "href=\"(.*?)\"><img.*?image/(.*?)\\.").getRow(0);
             if (row != null) {
+
                 map.put(row[1], row[0]);
             } else {
-                System.out.println(code);
             }
         }
         File container = null;
@@ -152,7 +162,7 @@ public class LnkCrptWs extends PluginForDecrypt {
         }
         if (container != null) {
             // container available
-            decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
+//            decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
 
             container.delete();
             if (decryptedLinks.size() > 0) return decryptedLinks;
@@ -168,7 +178,6 @@ public class LnkCrptWs extends PluginForDecrypt {
                 clone = br.cloneBrowser();
                 clone.submitForm(form);
                 clone.setDebug(true);
-
                 String[] srcs = clone.getRegex("<iframe.*?src\\s*?=\\s*?\"?([^\"> ]{20,})\"?\\s?").getColumn(0);
                 for (String col : srcs) {
                     col = Encoding.htmlDecode(col);
@@ -183,23 +192,25 @@ public class LnkCrptWs extends PluginForDecrypt {
                             c = c.replace("return p}(", " return p}  f(").replace("function(p,a,c,k,e", "function f(p,a,c,k,e");
                             Object result = cx.evaluateString(scope, c, "<cmd>", 1, null);
                             String code = Context.toString(result);
+                            String versch;
                             if (code.startsWith("var versch")) {
-                                String versch = new Regex(code, "versch='(.*?)'").getMatch(0);
-                                versch = Encoding.Base64Decode(versch);
-                                versch = new Regex(versch, "<iframe.*?src\\s*?=\\s*?\"?([^\"> ]{20,})\"?\\s?").getMatch(0);
-                                versch = Encoding.htmlDecode(versch);
-                                decryptedLinks.add(this.createDownloadlink(versch));
+                                versch = new Regex(code, "versch='([^']*)'").getMatch(0);
 
-                            } else {
-
-                                // is only a base64 encoder
+                            } else
+                            {
+                                versch = new Regex(code, ".*?base='([^']*)'").getMatch(0);
                             }
+                            versch = Encoding.Base64Decode(versch);
+                            versch = new Regex(versch, "<iframe.*?src\\s*?=\\s*?\"?([^\"> ]{20,})\"?\\s?").getMatch(0);
+                            versch = Encoding.htmlDecode(versch);
+                            decryptedLinks.add(this.createDownloadlink(versch));
+
                             String[] row = new Regex(code, "href=\"(.*?)\"><img.*?image/(.*?)\\.").getRow(0);
 
                             if (row != null) {
                                 map.put(row[1], row[0]);
                             } else {
-                                System.out.println(code);
+//                                System.out.println(code);
                             }
 
                         }
