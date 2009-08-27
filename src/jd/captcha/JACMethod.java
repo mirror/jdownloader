@@ -53,7 +53,9 @@ public class JACMethod implements Comparable<JACMethod> {
         if (methods != null) return methods;
         ArrayList<JACMethod> methods = new ArrayList<JACMethod>();
         for (File methodDir : getMethodDirs()) {
-            methods.addAll(parseJACInfo(methodDir));
+        	ArrayList<JACMethod> meths = parseJACInfo(methodDir);
+            if(meths!=null)
+        	methods.addAll(meths);
         }
         Collections.sort(methods);
         JACMethod.methods = methods;
