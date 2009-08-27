@@ -145,7 +145,7 @@ public class TbCm extends PluginForDecrypt {
                     DownloadLink thislink = createDownloadlink(info[1]);
                     thislink.setBrowserUrl(info[2]);
                     thislink.setFinalFileName(info[0]);
-                    thislink.setSourcePluginComment("Convert to " + (ConversionMode.valueOf(info[3])).GetText());
+                    thislink.setSourcePluginComment("Convert to " + (ConversionMode.valueOf(info[3])).getText());
                     thislink.setProperty("convertto", info[3]);
 
                     decryptedLinks.add(thislink);
@@ -223,17 +223,15 @@ public class TbCm extends PluginForDecrypt {
                 }
                 ConversionMode convertTo = Plugin.showDisplayDialog(new ArrayList<ConversionMode>(possibleconverts.keySet()), name, param);
 
-                if (convertTo != null) {
-                    for (Info info : possibleconverts.get(convertTo)) {
-                        DownloadLink thislink = createDownloadlink(info.link);
-                        thislink.setBrowserUrl(parameter);
-                        thislink.setFinalFileName(name + info.desc + ".tmp");
-                        thislink.setSourcePluginComment("Convert to " + convertTo.GetText());
-                        thislink.setProperty("size", new Long(info.size));
-                        thislink.setProperty("name", name + info.desc + ".tmp");
-                        thislink.setProperty("convertto", convertTo.name());
-                        decryptedLinks.add(thislink);
-                    }
+                for (Info info : possibleconverts.get(convertTo)) {
+                    DownloadLink thislink = createDownloadlink(info.link);
+                    thislink.setBrowserUrl(parameter);
+                    thislink.setFinalFileName(name + info.desc + ".tmp");
+                    thislink.setSourcePluginComment("Convert to " + convertTo.getText());
+                    thislink.setProperty("size", new Long(info.size));
+                    thislink.setProperty("name", name + info.desc + ".tmp");
+                    thislink.setProperty("convertto", convertTo.name());
+                    decryptedLinks.add(thislink);
                 }
             } catch (IOException e) {
                 logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);

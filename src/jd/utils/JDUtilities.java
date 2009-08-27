@@ -285,11 +285,11 @@ public class JDUtilities {
 
     }
 
-    public static String getUserInput(String message, DownloadLink link) throws InterruptedException {
+    public static String getUserInput(String message, DownloadLink link) {
         return getUserInput(message, null, link);
     }
 
-    public static String getUserInput(String message, String defaultmessage, DownloadLink link) throws InterruptedException {
+    public static String getUserInput(String message, String defaultmessage, DownloadLink link) {
         try {
             link.getLinkStatus().addStatus(LinkStatus.WAITING_USERIO);
             link.requestGuiUpdate();
@@ -302,18 +302,18 @@ public class JDUtilities {
         }
     }
 
-    public static String getUserInput(String message, CryptedLink link) throws InterruptedException {
+    public static String getUserInput(String message, CryptedLink link) {
         return getUserInput(message, null, link);
     }
 
-    public static String getUserInput(String message, String defaultmessage, CryptedLink link) throws InterruptedException {
+    public static String getUserInput(String message, String defaultmessage, CryptedLink link) {
         link.getProgressController().setStatusText(JDL.L("gui.linkgrabber.waitinguserio", "Waiting for user input"));
         String password = getUserInput(message, defaultmessage);
         link.getProgressController().setStatusText(null);
         return password;
     }
 
-    public static String getUserInput(String message, String defaultmessage) throws InterruptedException {
+    public static String getUserInput(String message, String defaultmessage) {
         synchronized (USERIO_LOCK) {
             if (message == null) message = JDL.L("gui.linkgrabber.password", "Password?");
             if (defaultmessage == null) defaultmessage = "";
@@ -681,7 +681,7 @@ public class JDUtilities {
                 System.arraycopy(JD_ARGUMENTS, 0, finalArgs, javaArgs.length, JD_ARGUMENTS.length);
 
                 ArrayList<File> restartfiles = JDIO.listFiles(JDUtilities.getResourceFile("update"));
-                if (restartfiles != null && restartfiles.size() > 0||tinybypass) {
+                if (restartfiles != null && restartfiles.size() > 0 || tinybypass) {
                     if (OSDetector.isMac()) {
                         JDLogger.getLogger().info(JDUtilities.runCommand("java", new String[] { "-jar", "tools/tinyupdate.jar", "-restart" }, getResourceFile(".").getAbsolutePath(), 0));
                     } else {

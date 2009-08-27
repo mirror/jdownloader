@@ -58,7 +58,6 @@ public class SpglD extends PluginForDecrypt {
     private static final Pattern PATTERN_FILENAME_T9 = Pattern.compile("^\\s+<type9>\\s+$\\s+^\\s+" + PATTERN_FILENAME.toString(), Pattern.MULTILINE);
 
     // Patterns für Fotostrecken
-
     private static final Pattern PATTERN_IMG_URL = Pattern.compile("<a id=\"spFotostreckeControlImg\" href=\"(/fotostrecke/fotostrecke-\\d+-\\d+.html)\"><img src=\"(http://www.spiegel.de/img/.+?(\\.\\w+?))\"");
     private static final Pattern PATTERN_IMG_TITLE = Pattern.compile("<meta name=\"description\" content=\"(.+?)\" />");
 
@@ -66,7 +65,6 @@ public class SpglD extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink cryptedLink, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         if (new Regex(cryptedLink.getCryptedUrl(), PATTERN_SUPPORTED_VIDEO).matches()) {
@@ -84,37 +82,36 @@ public class SpglD extends PluginForDecrypt {
             possibleconverts.add(ConversionMode.VIDEOMP4);
             possibleconverts.add(ConversionMode.VIDEOPODCAST);
             possibleconverts.add(ConversionMode.VIDEOIPHONE);
+
             ConversionMode convertTo = Plugin.showDisplayDialog(possibleconverts, name, cryptedLink);
 
-            if (convertTo != null) {
-                DownloadLink downloadLink = null;
-                String fileName;
-                if (convertTo == ConversionMode.VIDEO3GP) {
-                    // type 6
-                    fileName = new Regex(xmlEncodings, PATTERN_FILENAME_T6).getMatch(0);
-                    downloadLink = createDownloadlink("http://video.promobil2spiegel.netbiscuits.com/" + fileName);
-                    downloadLink.setFinalFileName(name + ".3gp");
-                } else if (convertTo == ConversionMode.VIDEOIPHONE) {
-                    // type 8
-                    fileName = new Regex(xmlEncodings, PATTERN_FILENAME_T8).getMatch(0);
-                    downloadLink = createDownloadlink("http://video.promobil2spiegel.netbiscuits.com/" + fileName);
-                    downloadLink.setFinalFileName(name + ".mp4");
-                } else if (convertTo == ConversionMode.VIDEOMP4 || convertTo == ConversionMode.VIDEOPODCAST) {
-                    // type9
-                    fileName = new Regex(xmlEncodings, PATTERN_FILENAME_T9).getMatch(0);
-                    downloadLink = createDownloadlink("http://video.promobil2spiegel.netbiscuits.com/" + fileName);
-                    downloadLink.setFinalFileName(name + ".mp4");
-                } else {
-                    // type5
-                    fileName = new Regex(xmlEncodings, PATTERN_FILENAME_T5).getMatch(0);
-                    downloadLink = createDownloadlink("http://video.spiegel.de/flash/" + fileName);
-                    downloadLink.setFinalFileName(name + ".tmp");
-                }
-                downloadLink.setSourcePluginComment(comment);
-                downloadLink.setBrowserUrl(cryptedLink.getCryptedUrl());
-                downloadLink.setProperty("convertto", convertTo.name());
-                decryptedLinks.add(downloadLink);
+            DownloadLink downloadLink = null;
+            String fileName;
+            if (convertTo == ConversionMode.VIDEO3GP) {
+                // type 6
+                fileName = new Regex(xmlEncodings, PATTERN_FILENAME_T6).getMatch(0);
+                downloadLink = createDownloadlink("http://video.promobil2spiegel.netbiscuits.com/" + fileName);
+                downloadLink.setFinalFileName(name + ".3gp");
+            } else if (convertTo == ConversionMode.VIDEOIPHONE) {
+                // type 8
+                fileName = new Regex(xmlEncodings, PATTERN_FILENAME_T8).getMatch(0);
+                downloadLink = createDownloadlink("http://video.promobil2spiegel.netbiscuits.com/" + fileName);
+                downloadLink.setFinalFileName(name + ".mp4");
+            } else if (convertTo == ConversionMode.VIDEOMP4 || convertTo == ConversionMode.VIDEOPODCAST) {
+                // type9
+                fileName = new Regex(xmlEncodings, PATTERN_FILENAME_T9).getMatch(0);
+                downloadLink = createDownloadlink("http://video.promobil2spiegel.netbiscuits.com/" + fileName);
+                downloadLink.setFinalFileName(name + ".mp4");
+            } else {
+                // type5
+                fileName = new Regex(xmlEncodings, PATTERN_FILENAME_T5).getMatch(0);
+                downloadLink = createDownloadlink("http://video.spiegel.de/flash/" + fileName);
+                downloadLink.setFinalFileName(name + ".tmp");
             }
+            downloadLink.setSourcePluginComment(comment);
+            downloadLink.setBrowserUrl(cryptedLink.getCryptedUrl());
+            downloadLink.setProperty("convertto", convertTo.name());
+            decryptedLinks.add(downloadLink);
         } else if (new Regex(cryptedLink.getCryptedUrl(), PATTERN_SUPPORED_FOTOSTRECKE).matches()) {
             String group3 = new Regex(cryptedLink.getCryptedUrl(), PATTERN_SUPPORED_FOTOSTRECKE).getMatch(0);
             if (group3 != null) {
@@ -152,7 +149,5 @@ public class SpglD extends PluginForDecrypt {
 
         return decryptedLinks;
     }
-
-    // @Override
 
 }

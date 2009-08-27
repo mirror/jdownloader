@@ -4,27 +4,27 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
 
-import jd.captcha.gui.BasicWindow;
-
-import jd.captcha.pixelobject.PixelObject;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
+import jd.captcha.pixelobject.PixelObject;
 
 public class Lnkcrptws {
 
-    static boolean equalElements(int c, int c2) {
-        return c==c2;
+    private static boolean equalElements(int c, int c2) {
+        return c == c2;
     }
 
-    static boolean isWhite(int c) {
+    private static boolean isWhite(int c) {
         return c < 0 || c == 0xffffff;
     }
+
     /**
      * get objects with different color
+     * 
      * @param grid
      * @return
      */
-    static ArrayList<PixelObject> getObjects(Captcha grid) {
+    public static ArrayList<PixelObject> getObjects(Captcha grid) {
         ArrayList<PixelObject> ret = new ArrayList<PixelObject>();
         ArrayList<PixelObject> merge;
         for (int x = 0; x < grid.getWidth(); x++) {
@@ -57,23 +57,23 @@ public class Lnkcrptws {
 
     public static Letter[] getLetters(Captcha captcha) {
         ArrayList<PixelObject> ob = getObjects(captcha);
-        //delete the lines
+        // delete the lines
         for (Iterator<PixelObject> iterator = ob.iterator(); iterator.hasNext();) {
             PixelObject pixelObject = (PixelObject) iterator.next();
-            int ratio = pixelObject.getHeight()*100/pixelObject.getWidth();
-            if(ratio>105 || ratio<95)
-                iterator.remove();
+            int ratio = pixelObject.getHeight() * 100 / pixelObject.getWidth();
+            if (ratio > 105 || ratio < 95) iterator.remove();
         }
         Circle circle = new Circle(captcha, ob);
-        circle.inBorder=3;
-        circle.outBorder=2;
-        circle.isElementColor=new Comparator<Integer>() {
+        circle.inBorder = 3;
+        circle.outBorder = 2;
+        circle.isElementColor = new Comparator<Integer>() {
 
             public int compare(Integer o1, Integer o2) {
-                return o1.equals(o2)?1:0;
-            }};
-//            BasicWindow.showImage(captcha.getImage());
-//            BasicWindow.showImage(circle.getOpenCircle().getImage());
+                return o1.equals(o2) ? 1 : 0;
+            }
+        };
+        // BasicWindow.showImage(captcha.getImage());
+        // BasicWindow.showImage(circle.getOpenCircle().getImage());
         return circle.getOpenCirclePositionAsLetters();
     }
 }

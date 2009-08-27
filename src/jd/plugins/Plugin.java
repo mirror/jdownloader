@@ -71,28 +71,29 @@ public abstract class Plugin implements ActionListener {
         return JDUtilities.passwordArrayToString(passwords.toArray(new String[passwords.size()]));
     }
 
-    public static ConversionMode showDisplayDialog(ArrayList<ConversionMode> displaymodes, String name, CryptedLink link) throws InterruptedException {
+    public static ConversionMode showDisplayDialog(ArrayList<ConversionMode> displaymodes, String name, CryptedLink link) throws DecrypterException {
         link.getProgressController().setStatusText(JDL.L("gui.linkgrabber.waitinguserio", "Waiting for user input"));
         synchronized (JDUtilities.USERIO_LOCK) {
-            ConversionMode temp = ConvertDialog.DisplayDialog(displaymodes, name);
+            ConversionMode temp = ConvertDialog.displayDialog(displaymodes, name);
             link.getProgressController().setStatusText(null);
+            if (temp == null) throw new DecrypterException(JDL.L("jd.plugins.Plugin.aborted", "Decryption aborted!"));
             return temp;
         }
     }
 
-    public static String getUserInput(String message, CryptedLink link) throws DecrypterException, InterruptedException {
+    public static String getUserInput(String message, CryptedLink link) throws DecrypterException {
         String password = JDUtilities.getUserInput(message, link);
         if (password == null) throw new DecrypterException(DecrypterException.PASSWORD);
         return password;
     }
 
-    public static String getUserInput(String message, DownloadLink link) throws PluginException, InterruptedException {
+    public static String getUserInput(String message, DownloadLink link) throws PluginException {
         String password = JDUtilities.getUserInput(message, link);
         if (password == null) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.errors.wrongpassword", "Password wrong"));
         return password;
     }
 
-    public static String getUserInput(String message, String defaultmessage, CryptedLink link) throws DecrypterException, InterruptedException {
+    public static String getUserInput(String message, String defaultmessage, CryptedLink link) throws DecrypterException {
         String password = JDUtilities.getUserInput(message, defaultmessage, link);
         if (password == null) throw new DecrypterException(DecrypterException.PASSWORD);
         return password;

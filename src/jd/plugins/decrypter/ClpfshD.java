@@ -43,7 +43,6 @@ public class ClpfshD extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink cryptedLink, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.clearCookies(getHost());
@@ -73,18 +72,15 @@ public class ClpfshD extends PluginForDecrypt {
         possibleconverts.add(ConversionMode.VIDEOFLV);
         possibleconverts.add(ConversionMode.AUDIOMP3);
         possibleconverts.add(ConversionMode.AUDIOMP3_AND_VIDEOFLV);
-        ConversionMode ConvertTo = Plugin.showDisplayDialog(possibleconverts, name, cryptedLink);
 
-        if (ConvertTo != null) {
-            downloadLink.setFinalFileName(name + ".tmp");
-            downloadLink.setBrowserUrl(cryptedLink.getCryptedUrl());
-            downloadLink.setSourcePluginComment("Convert to " + ConvertTo.GetText());
-            downloadLink.setProperty("convertto", ConvertTo.name());
-            decryptedLinks.add(downloadLink);
-        }
+        ConversionMode convertTo = Plugin.showDisplayDialog(possibleconverts, name, cryptedLink);
+        downloadLink.setFinalFileName(name + ".tmp");
+        downloadLink.setBrowserUrl(cryptedLink.getCryptedUrl());
+        downloadLink.setSourcePluginComment("Convert to " + convertTo.getText());
+        downloadLink.setProperty("convertto", convertTo.name());
+        decryptedLinks.add(downloadLink);
+
         return decryptedLinks;
     }
-
-    // @Override
 
 }

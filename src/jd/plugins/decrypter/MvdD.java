@@ -36,7 +36,6 @@ public class MvdD extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<ConversionMode> possibleconverts = new ArrayList<ConversionMode>();
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -45,9 +44,6 @@ public class MvdD extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(parameter);
 
-        // String server =
-        // br.getRegex(Pattern.compile("p\\.addVariable\\('SERVER','(.*?)'\\)",
-        // Pattern.CASE_INSENSITIVE)).getMatch(0);
         String videoid = br.getRegex(Pattern.compile("p\\.addVariable\\('_videoid','(.*?)'\\)", Pattern.CASE_INSENSITIVE)).getMatch(0);
         String serverpath = br.getRegex(Pattern.compile("<link rel='image_src'.*?href='(.*?)thumbs/.*?'.*?/><link", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (videoid == null || serverpath == null) return null;
@@ -56,18 +52,16 @@ public class MvdD extends PluginForDecrypt {
         possibleconverts.add(ConversionMode.AUDIOMP3);
         possibleconverts.add(ConversionMode.VIDEOFLV);
         possibleconverts.add(ConversionMode.AUDIOMP3_AND_VIDEOFLV);
-        ConversionMode ConvertTo = Plugin.showDisplayDialog(possibleconverts, name, param);
-        if (ConvertTo == null) return decryptedLinks;
+
+        ConversionMode convertTo = Plugin.showDisplayDialog(possibleconverts, name, param);
         DownloadLink thislink = createDownloadlink(link);
         thislink.setBrowserUrl(parameter);
         thislink.setFinalFileName(name + ".tmp");
-        thislink.setSourcePluginComment("Convert to " + ConvertTo.GetText());
-        thislink.setProperty("convertto", ConvertTo.name());
+        thislink.setSourcePluginComment("Convert to " + convertTo.getText());
+        thislink.setProperty("convertto", convertTo.name());
         decryptedLinks.add(thislink);
 
         return decryptedLinks;
     }
-
-    // @Override
 
 }

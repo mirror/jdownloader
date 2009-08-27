@@ -94,7 +94,7 @@ public class CaptchaController {
 
             if (vp > SubConfiguration.getConfig("JAC").getIntegerProperty(Configuration.AUTOTRAIN_ERROR_LEVEL, 95)) {
                 if ((flag & UserIO.NO_USER_INTERACTION) > 0) return captchaCode;
-                return UserIO.getInstance().requestCaptchaDialog(flag | UserIO.NO_JAC, methodname, captchafile, captchaCode, null);
+                return UserIO.getInstance().requestCaptchaDialog(flag | UserIO.NO_JAC, methodname, captchafile, captchaCode, explain);
             } else {
                 return captchaCode;
             }

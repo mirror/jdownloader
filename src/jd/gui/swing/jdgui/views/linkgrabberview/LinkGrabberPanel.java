@@ -52,7 +52,6 @@ import jd.gui.swing.components.JDFileChooser;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.gui.swing.jdgui.actions.ThreadedAction;
-import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.LinkgrabberView;
 import jd.gui.swing.jdgui.views.toolbar.ViewToolbar;
@@ -140,12 +139,12 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         LGINSTANCE.addListener(this);
         initActions();
         if (!SubConfiguration.getConfig(LinkGrabberController.CONFIG).getBooleanProperty(LinkGrabberController.PARAM_CONTROLPOSITION, false)) {
-            toolbar = new LinkGrabberToolbar(){
+            toolbar = new LinkGrabberToolbar() {
+                private static final long serialVersionUID = -1982323901452009881L;
+
                 @Override
                 public void setDefaults(int i, AbstractButton ab) {
-
                     if (i == 2) confirmButton = ab;
-
                 }
             };
 
@@ -793,5 +792,4 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         return false;
     }
 
-    
 }

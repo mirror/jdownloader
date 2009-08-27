@@ -32,11 +32,11 @@ public class JDMediaConvert {
     private static String TempExt = ".tmp$";
 
     public static boolean ConvertFile(DownloadLink downloadlink, ConversionMode InType, ConversionMode OutType) {
-        logger.info("Convert " + downloadlink.getName() + " - " + InType.GetText() + " - " + OutType.GetText());
+        logger.info("Convert " + downloadlink.getName() + " - " + InType.getText() + " - " + OutType.getText());
         if (InType.equals(OutType)) {
             logger.info("No Conversion needed, renaming...");
             File oldone = new File(downloadlink.getFileOutput());
-            File newone = new File(downloadlink.getFileOutput().replaceAll(TempExt, OutType.GetExtFirst()));
+            File newone = new File(downloadlink.getFileOutput().replaceAll(TempExt, OutType.getExtFirst()));
             oldone.renameTo(newone);
             return true;
         }
@@ -71,17 +71,17 @@ public class JDMediaConvert {
                     new File(downloadlink.getFileOutput().replaceAll(TempExt, ".avi")).deleteOnExit();
                 }
                 // Rename tmp to flv
-                new File(downloadlink.getFileOutput()).renameTo(new File(downloadlink.getFileOutput().replaceAll(".tmp", ConversionMode.VIDEOFLV.GetExtFirst())));
+                new File(downloadlink.getFileOutput()).renameTo(new File(downloadlink.getFileOutput().replaceAll(".tmp", ConversionMode.VIDEOFLV.getExtFirst())));
                 progress.doFinalize();
                 return true;
             default:
-                logger.warning("Don't know how to convert " + InType.GetText() + " to " + OutType.GetText());
+                logger.warning("Don't know how to convert " + InType.getText() + " to " + OutType.getText());
                 downloadlink.getLinkStatus().setErrorMessage(JDL.L("convert.progress.unknownintype", "Unbekanntes Format"));
                 progress.doFinalize();
                 return false;
             }
         default:
-            logger.warning("Don't know how to convert " + InType.GetText() + " to " + OutType.GetText());
+            logger.warning("Don't know how to convert " + InType.getText() + " to " + OutType.getText());
             downloadlink.getLinkStatus().setErrorMessage(JDL.L("convert.progress.unknownintype", "Unbekanntes Format"));
             progress.doFinalize();
             return false;

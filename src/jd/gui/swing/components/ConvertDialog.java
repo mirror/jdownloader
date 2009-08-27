@@ -17,25 +17,57 @@
 package jd.gui.swing.components;
 
 import java.util.ArrayList;
-import java.util.logging.Logger;
 
 import javax.swing.JCheckBox;
-import javax.swing.JFrame;
-import javax.swing.JOptionPane;
+import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JPanel;
 
+import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
+import jd.gui.swing.dialog.AbstractDialog;
 import jd.utils.locale.JDL;
+import net.miginfocom.swing.MigLayout;
 
 /**
  * Diese Klasse zeigt dem Nutzer Auswahldialoge beim Konvertieren von FLVs an
  */
-public class ConvertDialog extends JFrame {
+public class ConvertDialog extends AbstractDialog {
 
-    private static Logger logger = jd.controlling.JDLogger.getLogger();
     /**
-     * 
+     * Zeigt Auswahldialog an. wenn keepformat aktiviert ist wird gespeichtertes
+     * Input zurückgegeben, es sei denn, andere Formate stehen zur Auswahl
      */
+    public static ConversionMode displayDialog(final ArrayList<ConversionMode> modes, final String name) {
+        if (modes.size() == 0) return null;
+        if (modes.size() == 1) return modes.get(0);
+
+        if (ConvertDialog.keepformat) {
+            boolean newFormatChoosable = false;
+            if (!ConvertDialog.forcekeep) {
+                for (int i = 0; i < modes.size(); i++) {
+                    if (!keeped_availablemodes.contains(modes.get(i))) {
+                        newFormatChoosable = true;
+                        break;
+                    }
+                }
+            }
+            if (!newFormatChoosable) {
+                for (int i = 0; i < keeped.size(); i++) {
+                    if (modes.contains(keeped.get(i))) return keeped.get(i);
+                }
+            }
+        }
+
+        GuiRunnable<ConversionMode> run = new GuiRunnable<ConversionMode>() {
+            @Override
+            public ConversionMode runSave() {
+                return new ConvertDialog(modes, name).getReturnMode();
+            }
+        };
+        return run.getReturnValue();
+    }
+
     private static final long serialVersionUID = -9146764850581039090L;
 
     public static enum ConversionMode {
@@ -45,32 +77,24 @@ public class ConvertDialog extends JFrame {
         /** width=426, hight=320 bitrate=404 */
         , VIDEOIPHONE("Video (iPhone)", new String[] { ".mp4" });
 
-        String text;
-        String[] ext;
+        private String text;
+        private String[] ext;
 
         ConversionMode(String text, String[] ext) {
             this.text = text;
             this.ext = ext;
         }
 
-        // @Override
+        @Override
         public String toString() {
             return text;
         }
 
-        public String GetText() {
+        public String getText() {
             return text;
         }
 
-        public String[] GetExtArray() {
-            return ext;
-        }
-
-        public String GetExt(int i) {
-            return ext[i];
-        }
-
-        public String GetExtFirst() {
+        public String getExtFirst() {
             return ext[0];
         }
 
@@ -81,12 +105,7 @@ public class ConvertDialog extends JFrame {
     private static ArrayList<ConversionMode> keeped_availablemodes = new ArrayList<ConversionMode>();
     private static boolean keepformat = false;
 
-    public static boolean isKeepformat() {
-        return keepformat;
-    }
-
     private static void setKeepformat(boolean newkeepformat) {
-
         if (newkeepformat == false) {
             ConvertDialog.keepformat = false;
             ConvertDialog.setForceKeep(false);
@@ -102,7 +121,7 @@ public class ConvertDialog extends JFrame {
     }
 
     private static boolean hasKeeped() {
-        if (keepformat) { return (!keeped.isEmpty()); }
+        if (keepformat) return !keeped.isEmpty();
         return false;
     }
 
@@ -125,100 +144,53 @@ public class ConvertDialog extends JFrame {
         return ConvertDialog.keeped;
     }
 
-    /**
-     * Zeigt Auswahldialog an. wenn keepformat aktiviert ist wird gespeichtertes
-     * Input zurückgegeben, es sei denn, andere Formate stehen zur Auswahl
-     */
-    public static ConversionMode DisplayDialog(final ArrayList<ConversionMode> displaymodes, final String name) {
-        logger.fine(displaymodes.size() + " Convertmodi zur Auswahl.");
+    private ArrayList<ConversionMode> modes;
 
-        if (displaymodes.size() == 1) // Bei einer einzigen Auswahl
-        { return displaymodes.get(0); } // diese zurückgeben
-        GuiRunnable<ConversionMode> run = new GuiRunnable<ConversionMode>() {
-            // @Override
-            public ConversionMode runSave() {
-                if (ConvertDialog.keepformat) {
-                    boolean newFormatChoosable = false;
-                    if (!ConvertDialog.forcekeep) {
-                        for (int i = 0; i < displaymodes.size(); i++) {
-                            if (!keeped_availablemodes.contains(displaymodes.get(i))) // Neues
-                            // Element
-                            // in
-                            // der
-                            // Liste
-                            {
-                                newFormatChoosable = true;
-                                break;
-                            }
-                        }
-                    }
-                    if (!newFormatChoosable) // Wenn kein neues Format verfügbar
-                    // ist
-                    // oder forcekeep = 1
-                    { // (newFormatChoosable kann bei forcekeep=true nicht auf
-                        // true
-                        // gesetzt werden)
+    private JCheckBox chkKeepFormat;
+    private JCheckBox chkForceKeep;
+    private JCheckBox chkTopPriority;
+    private JComboBox cmbModes;
 
-                        for (int i = 0; i < keeped.size(); i++) {
-                            if (displaymodes.contains(keeped.get(i))) { return keeped.get(i); }
-                        }
-                    }
-                }
+    private ConvertDialog(ArrayList<ConversionMode> modes, String name) {
+        super(UserIO.NO_COUNTDOWN, JDL.L("convert.dialog.chooseformat", "Wähle das Dateiformat:") + " [" + name + "]", UserIO.getInstance().getIcon(UserIO.ICON_QUESTION), null, null);
 
-                // -.-.-.-.-.-.-.-.-.-.
+        this.modes = modes;
 
-                JPanel boxes = new JPanel();
-                JCheckBox CheckBoxKeepFormat = new JCheckBox(JDL.L("convert.dialog.keepformat", "Format für diese Sitzung beibehalten"));
-                JCheckBox CheckBoxForceKeep = new JCheckBox(JDL.L("convert.dialog.forcekeep", "Beibehalten erzwingen"));
-                JCheckBox CheckBoxTopPriority = new JCheckBox(JDL.L("convert.dialog.toppriority", "Diese Auswahl vorherigen immer vorziehen"));
-
-                CheckBoxForceKeep.setSelected(ConvertDialog.forcekeep);
-                CheckBoxKeepFormat.setSelected(ConvertDialog.hasKeeped());
-
-                if (ConvertDialog.hasKeeped()) {
-                    CheckBoxKeepFormat.setText(JDL.L("convert.dialog.staykeepingformat", "Formate weiterhin beibehalten"));
-                    boxes.add(CheckBoxTopPriority);
-                }
-
-                boxes.add(CheckBoxKeepFormat);
-                boxes.add(CheckBoxForceKeep);
-
-                ConversionMode selectedValue = (ConversionMode) JOptionPane.showInputDialog(null, boxes, /*
-                                                                                                          * Enthält
-                                                                                                          * die
-                                                                                                          * Checkboxen
-                                                                                                          */
-                JDL.L("convert.dialog.chooseformat", "Wähle das Dateiformat:") + " [" + name + "]", JOptionPane.QUESTION_MESSAGE, null, displaymodes.toArray(), displaymodes.get(0));
-
-                if ((CheckBoxKeepFormat.isSelected()) || (CheckBoxForceKeep.isSelected())) {
-                    ConvertDialog.setKeepformat(true);
-                    ConvertDialog.addKeeped(selectedValue, displaymodes, CheckBoxTopPriority.isSelected());
-                    ConvertDialog.setForceKeep(CheckBoxForceKeep.isSelected());
-                } else {
-                    ConvertDialog.setKeepformat(false);
-                }
-                return selectedValue;
-            }
-        };
-
-        return run.getReturnValue();
+        init();
     }
 
-    /*
-     * public static void main(String [ ] args) { ArrayList<ConversionMode> opts
-     * = new ArrayList<ConversionMode>(); opts.add(ConversionMode.AUDIOMP3);
-     * opts.add(ConversionMode.VIDEOMP4);
-     * System.out.println("1: "+ConvertDialog.DisplayDialog(opts, "GUI-Test"));
-     * System.out.println("2: "+ConvertDialog.DisplayDialog(opts, "GUI-Test2"));
-     * opts.remove(ConversionMode.VIDEOMP4);
-     * System.out.println("3: "+ConvertDialog.DisplayDialog(opts, "GUI-Test3"));
-     * opts.add(ConversionMode.VIDEOIPHONE);
-     * System.out.println("4: "+ConvertDialog.DisplayDialog(opts,
-     * "GUI-Test 4")); opts.add(ConversionMode.VIDEOMP4);
-     * System.out.println("5: "+ConvertDialog.DisplayDialog(opts,
-     * "GUI-Test 5")); opts.remove(ConversionMode.VIDEOIPHONE);
-     * System.out.println("6: "+ConvertDialog.DisplayDialog(opts,
-     * "GUI-Test 6")); }
-     */
+    public JComponent contentInit() {
+        chkKeepFormat = new JCheckBox(ConvertDialog.hasKeeped() ? JDL.L("convert.dialog.staykeepingformat", "Formate weiterhin beibehalten") : JDL.L("convert.dialog.keepformat", "Format für diese Sitzung beibehalten"));
+        chkKeepFormat.setSelected(ConvertDialog.hasKeeped());
+
+        chkForceKeep = new JCheckBox(JDL.L("convert.dialog.forcekeep", "Beibehalten erzwingen"));
+        chkForceKeep.setSelected(ConvertDialog.forcekeep);
+
+        chkTopPriority = new JCheckBox(JDL.L("convert.dialog.toppriority", "Diese Auswahl vorherigen immer vorziehen"));
+
+        cmbModes = new JComboBox(modes.toArray(new ConversionMode[modes.size()]));
+        cmbModes.setSelectedIndex(0);
+
+        JPanel panel = new JPanel(new MigLayout("ins 0"));
+        if (ConvertDialog.hasKeeped()) panel.add(chkTopPriority);
+        panel.add(chkKeepFormat);
+        panel.add(chkForceKeep, "wrap");
+        panel.add(cmbModes, "spanx");
+        return panel;
+    }
+
+    private ConversionMode getReturnMode() {
+        if (!UserIO.isOK(getReturnValue())) return null;
+
+        ConversionMode selectedValue = (ConversionMode) cmbModes.getSelectedItem();
+        if ((chkKeepFormat.isSelected()) || (chkForceKeep.isSelected())) {
+            ConvertDialog.setKeepformat(true);
+            ConvertDialog.addKeeped(selectedValue, modes, chkTopPriority.isSelected());
+            ConvertDialog.setForceKeep(chkForceKeep.isSelected());
+        } else {
+            ConvertDialog.setKeepformat(false);
+        }
+        return selectedValue;
+    }
 
 }
