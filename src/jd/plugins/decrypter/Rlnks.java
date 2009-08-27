@@ -69,8 +69,17 @@ public class Rlnks extends PluginForDecrypt {
                     for (int i = 0; i < 3; i++) {
                         Browser brc = br.cloneBrowser();
                         brc.getPage("http://www.relink.us/frame.php?" + match);
-                        decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(brc.getRedirectLocation())));
-                        if (brc.getRedirectLocation() != null) break;
+                        if (brc.getRedirectLocation() != null && brc.getRedirectLocation().contains("relink.us/getfile")) brc.getPage(brc.getRedirectLocation());
+                        if (brc.getRedirectLocation() != null) {
+                            decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(brc.getRedirectLocation())));
+                            break;
+                        } else {
+                            String url = brc.getRegex("iframe.*?src=\"(.*?)\"").getMatch(0);
+                            if (url != null) {
+                                decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(url)));
+                                break;
+                            }
+                        }
                         try {
                             Thread.sleep(2000);
                         } catch (Exception e) {
