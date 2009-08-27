@@ -67,8 +67,8 @@ public class captchaMethodeChecker {
 						{
 							System.out.println(host);
 							System.out.println(file.getName());
-//							System.out.println("");
-//							System.out.println(string);
+							System.out.println("");
+							System.out.println(string);
 							System.out.println("__________________________");
 
 						}
@@ -81,8 +81,8 @@ public class captchaMethodeChecker {
 						{
 							System.out.println(host2);
 							System.out.println(file.getName());
-//							System.out.println("");
-//							System.out.println(string);
+							System.out.println("");
+							System.out.println(string);
 							System.out.println("__________________________");
 
 						}
@@ -107,7 +107,7 @@ public class captchaMethodeChecker {
 	}
 
 	public static void parse(String regexp) {
-		for (File file : getFiles(new File("src/jd/plugins/decrypter"))) {
+		for (File file : getFiles(new File("src/jd/plugins/hoster"))) {
 			parseAdditon(file, regexp);
 		}
 	}

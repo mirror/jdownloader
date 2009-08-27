@@ -100,7 +100,7 @@ public class RapidShareDe extends PluginForHost {
 
         String code = null;
 
-        code = getCaptchaCode("none", captchaFile, downloadLink);
+        code = getCaptchaCode(captchaFile, downloadLink);
         form.put("captcha", code);
         br.setFollowRedirects(true);
         jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form).startDownload();

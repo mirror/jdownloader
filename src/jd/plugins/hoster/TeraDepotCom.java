@@ -92,7 +92,7 @@ public class TeraDepotCom extends PluginForHost {
             captchaForm.put("password", passCode);
         }
         String captchaurl = br.getRegex("Bitte Code eingeben:</b>.*?<img src=\"(.*?)\">").getMatch(0);
-        String code = getCaptchaCode("6giga.com", captchaurl, link);        // Captcha Usereingabe in die Form einfügen
+        String code = getCaptchaCode(captchaurl, link);        // Captcha Usereingabe in die Form einfügen
         captchaForm.put("code", code);
         BrowserAdapter.openDownload(br, link, captchaForm, false, 1);
         if (!(dl.getConnection().isContentDisposition())) {
