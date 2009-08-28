@@ -42,7 +42,6 @@ public class SharearoundCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
-        br.setDebug(true);
         if (br.containsHTML("You have reached")) {
             int minutes = 0, seconds = 0, hours = 0;
             String tmphrs = br.getRegex("\\s+(\\d+)\\s+hours?").getMatch(0);
@@ -87,7 +86,7 @@ public class SharearoundCom extends PluginForHost {
 
     // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 10;
+        return 20;
     }
 
     // @Override
@@ -100,8 +99,10 @@ public class SharearoundCom extends PluginForHost {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("No such file") || br.containsHTML("reached max downloads")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = Encoding.htmlDecode(br.getRegex("File\\s+Name:\\s+<b>(.*?)</b>").getMatch(0));
-        String filesize = br.getRegex("File\\s+Size:\\s+(.*?)<br>").getMatch(0);
+        if (br.containsHTML("No such user exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = Encoding.htmlDecode(br.getRegex("File Name: <b>(.*?)</b>").getMatch(0));
+        String filesize = br.getRegex("File Size: (.*?)<br>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename);
         downloadLink.setDownloadSize(Regex.getSize(filesize));

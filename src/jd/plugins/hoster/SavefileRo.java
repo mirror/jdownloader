@@ -87,7 +87,7 @@ public class SavefileRo extends PluginForHost {
 
     // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 10;
+        return 20;
     }
 
     // @Override

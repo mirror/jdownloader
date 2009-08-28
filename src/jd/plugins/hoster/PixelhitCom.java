@@ -80,14 +80,14 @@ public class PixelhitCom extends PluginForHost {
                 if (br.containsHTML("Download Link Generated")) dllink = br.getRegex("padding:7px;\">\\s+<a\\s+href=\"(.*?)\">").getMatch(0);
             }
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-            dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, dllink, false, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, dllink, true, -20);
             dl.startDownload();
         }
     }
 
     // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 10;
+        return 20;
     }
 
     // @Override

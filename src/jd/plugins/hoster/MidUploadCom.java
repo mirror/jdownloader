@@ -59,6 +59,7 @@ public class MidUploadCom extends PluginForHost {
             }
         }
         form = br.getForm(0);
+        //waittime
         int tt = Integer.parseInt(br.getRegex("countdown\">(\\d+)</span>").getMatch(0));
         sleep(tt * 1001l, link);
         String captcha = null;

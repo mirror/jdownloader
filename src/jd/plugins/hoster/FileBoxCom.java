@@ -77,6 +77,7 @@ public class FileBoxCom extends PluginForHost {
                 }
                 DLForm.put("password", passCode);
             }
+            //waittime
             int tt = Integer.parseInt(br.getRegex("countdown\">(\\d+)</span>").getMatch(0));
             sleep(tt * 1001, downloadLink);
             jd.plugins.BrowserAdapter.openDownload(br,downloadLink, DLForm, false, 1);

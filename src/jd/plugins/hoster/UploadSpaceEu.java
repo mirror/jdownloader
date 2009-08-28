@@ -20,9 +20,7 @@ import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -64,10 +62,8 @@ public class UploadSpaceEu extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        br.setFollowRedirects(true);
-        if (br.containsHTML("is already downloading a file")) {                
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
-        }
+        br.setFollowRedirects(false);
+        if (br.containsHTML("is already downloading a file")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l); }
         if (br.containsHTML("You have reached the download limit")) {
             int minutes = 0, seconds = 0, hours = 0;
             String tmphrs = br.getRegex("\\s+(\\d+)\\s+hours?").getMatch(0);
@@ -79,57 +75,23 @@ public class UploadSpaceEu extends PluginForHost {
             int waittime = ((3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
         } else {
-            // Form um auf "Datei herunterladen" zu klicken
-            Form DLForm = br.getFormbyProperty("name", "F1");
-            if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-// anderer Teil der Passwort-Handlings
-//            String passCode = null;
-//            if (br.containsHTML("valign=top><b>Password:</b></td>")) {
-//                if (downloadLink.getStringProperty("pass", null) == null) {
-//                    passCode = Plugin.getUserInput("Password?", downloadLink);
-//                } else {
-//                    /* gespeicherten PassCode holen */
-//                    passCode = downloadLink.getStringProperty("pass", null);
-//                }
-//                DLForm.put("password", passCode);
-//            }
-            Recaptcha rc = new Recaptcha(br);
-            rc.parse();
-            String k = br.getRegex("src=\"http://api.recaptcha.net/challenge\\?k=(.*?)\\+\" type").getMatch(0);
-            if (k != null) {
-                /* recaptcha */
-
-                Browser rcBr = br.cloneBrowser();
-                rcBr.getPage("http://api.recaptcha.net/challenge?k=" + k);
-                String challenge = rcBr.getRegex("challenge : '(.*?)',").getMatch(0);
-                String server = rcBr.getRegex("server : '(.*?)',").getMatch(0);
-                String captchaAddress = server + "image?c=" + challenge;
-                File captchaFile = this.getLocalCaptchaFile();
-                Browser.download(captchaFile, rcBr.openGetConnection(captchaAddress));
-                String code = getCaptchaCode(captchaFile, downloadLink);
-                // if (code == null) continue;
-                DLForm.put("recaptcha_challenge_field", challenge);
-                DLForm.put("recaptcha_response_field", code);
-            }
             int tt = Integer.parseInt(br.getRegex("countdown\">(\\d+)</span>").getMatch(0));
             sleep(tt * 1001, downloadLink);
-            jd.plugins.BrowserAdapter.openDownload(br,downloadLink, DLForm, false, 1);
-            if (!(dl.getConnection().isContentDisposition())) {
-                br.followConnection();
-                if (br.containsHTML("Wrong captcha")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            Recaptcha rc = new Recaptcha(br);
+            rc.parse();
+            rc.load();
+            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+            String c = getCaptchaCode(cf, downloadLink);
+            rc.setCode(c);
+            String dllink = br.getRedirectLocation();
+            if (dllink == null) {
+                if (br.containsHTML("wrong captcha code") || br.containsHTML("Expired session")) {
+                    logger.warning("Wrong captcha");
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             }
-//Passwort-Handling, aber da ich keine Files mit PW gefunden hab ist das halt auskommentiert
-//                if (br.containsHTML("Wrong password")) {
-//                    logger.warning("Wrong password!");
-//                    downloadLink.setProperty("pass", null);
-//                    throw new PluginException(LinkStatus.ERROR_RETRY);
-//                }
-//            }
-//            if (passCode != null) {
-//                downloadLink.setProperty("pass", passCode);
-//            }
-
+            jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
             dl.startDownload();
         }
     }

@@ -28,10 +28,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ulozto.net" }, urls = { "http://[\\w\\.]*?(ulozto\\.net|uloz\\.to)/.+" }, flags = { 0 })
-public class UlozToNet extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uloz.to" }, urls = { "http://[\\w\\.]*?(uloz\\.to|ulozto\\.sk|ulozto\\.cz|ulozto\\.net)/[0-9]+/" }, flags = { 0 })
+public class UlozTo extends PluginForHost {
 
-    public UlozToNet(PluginWrapper wrapper) {
+    public UlozTo(PluginWrapper wrapper) {
         super(wrapper);
         br.setFollowRedirects(true);
     }
@@ -45,21 +45,21 @@ public class UlozToNet extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         br.getPage(downloadLink.getDownloadURL());
         this.setBrowserExclusive();
-        System.out.print(br);
-        String name = br.getRegex(Pattern.compile("<div style=\"font-size:16px;color:000;\"><b>(.*?)</b>")).getMatch(0);
-        if (name == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        br.setFollowRedirects(false);
+        //Wrong links show the mainpage so here we chack if we got the mainpage or not
+        if (br.containsHTML("multipart/form-data")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex(Pattern.compile("0px;color:#000\"><b>(.*?)</b>")).getMatch(0);
+
         String filesize = br.getRegex(Pattern.compile("Velikost souboru je <b>(.*?)</b> <br />")).getMatch(0);
-        if (filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setName(name.trim());
+        if (filesize == null){
+            filesize = br.getRegex(Pattern.compile("Veľkosť súboru je <b>(.*?)</b> <br />")).getMatch(0);
+        }
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize));
 
         return AvailableStatus.TRUE;
     }
-
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
@@ -70,23 +70,23 @@ public class UlozToNet extends PluginForHost {
         Form captchaForm = br.getFormbyProperty("name", "dwn");
         if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         captchaForm.put("captcha_user", code);
-        br.setFollowRedirects(false);
         br.submitForm(captchaForm);
-
-        String dlLink = br.getRedirectLocation();
-        if (dlLink == null) {
-            if (br.containsHTML("falschen Code eingegeben")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
+        String dllink = br.getRedirectLocation();
+        //Usually this errorhandling is not needed but in case...
+        if (dllink == null) {
+            if (br.containsHTML("Neopsal jsi spr.vn. text z obr.zku")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
             throw new PluginException(LinkStatus.ERROR_FATAL);
         }
-
-        br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, dlLink, false, 1);
+        if(dllink.contains("no#cpt")){
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         dl.startDownload();
     }
 
     // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return this.getMaxSimultanDownloadNum();
+        return 20;
     }
 
     // @Override

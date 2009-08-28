@@ -26,7 +26,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
@@ -45,7 +44,6 @@ public class StrPrtctNet extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        FilePackage fp = FilePackage.getInstance();
         br.setFollowRedirects(false);
         br.getPage(parameter);
 
@@ -102,10 +100,10 @@ public class StrPrtctNet extends PluginForDecrypt {
             br.submitForm(ajax);
             String b64 = br.getRegex("\\{\"state\":\"ok\",\"data\":\"(.*?)\"\\}").getMatch(0);
             b64 = Encoding.Base64Decode(b64);
-            decryptedLinks.add(createDownloadlink(b64));
+            DownloadLink dl = createDownloadlink(b64);
+            decryptedLinks.add(dl);
             progress.increase(1);
         }
-        fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
 
