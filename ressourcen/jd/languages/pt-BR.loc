@@ -668,7 +668,7 @@ gui.table.draganddrop.insertinpackagestart = Inserir no começo do Pacote '%s'
 gui.table.draganddrop.movepackagebefore = Inserir antes '%s'
 gui.table.draganddrop.movepackageend = Inserir depois '%s'
 gui.taskpanes.download.linkgrabber.config.addattop = Adicionar ao topo
-gui.taskpanes.download.linkgrabber.config.startofter = Iniciar depois que adicionar
+gui.taskpanes.download.linkgrabber.config.startofter = Iniciar download imediatamente
 gui.textcomponent.context.copy = Copiar
 gui.textcomponent.context.copy.acc = ctrl C
 gui.textcomponent.context.cut = Recortar
@@ -683,7 +683,7 @@ gui.tooltip.progressicon = Este módulo está ativo
 gui.tooltip.statusbar.max_chunks = Máximo de conexões por arquivo
 gui.tooltip.statusbar.simultan_downloads = Máximo de downloads simultâneos
 gui.tooltip.statusbar.speedlimiter = Velocidade Limite (Kb/s) [0 = Infinito]
-gui.tooltips.linkgrabber.startlinksafteradd = Se selecionado, o download iniciará após adicionar novo link na lista de downloads
+gui.tooltips.linkgrabber.startlinksafteradd = Se selecionado, o download iniciará após adicionar um novo link na lista de downloads
 gui.tooltips.linkgrabber.toporbottom = Se selecionado, novos links serão adicionados no topo da lista de download
 gui.tooltips.quickhelp = Ajuda está disponível em: %s (ctrl+shift+CLIQUE)
 gui.treetable.added = Adicionado
