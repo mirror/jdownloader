@@ -46,12 +46,13 @@ public class UlozTo extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
-        //Wrong links show the mainpage so here we chack if we got the mainpage or not
+        // Wrong links show the mainpage so here we check if we got the mainpage
+        // or not
         if (br.containsHTML("multipart/form-data")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex(Pattern.compile("0px;color:#000\"><b>(.*?)</b>")).getMatch(0);
 
         String filesize = br.getRegex(Pattern.compile("Velikost souboru je <b>(.*?)</b> <br />")).getMatch(0);
-        if (filesize == null){
+        if (filesize == null) {
             filesize = br.getRegex(Pattern.compile("Veľkosť súboru je <b>(.*?)</b> <br />")).getMatch(0);
         }
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -72,14 +73,12 @@ public class UlozTo extends PluginForHost {
         captchaForm.put("captcha_user", code);
         br.submitForm(captchaForm);
         String dllink = br.getRedirectLocation();
-        //Usually this errorhandling is not needed but in case...
+        // Usually this errorhandling is not needed but in case...
         if (dllink == null) {
             if (br.containsHTML("Neopsal jsi spr.vn. text z obr.zku")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
             throw new PluginException(LinkStatus.ERROR_FATAL);
         }
-        if(dllink.contains("no#cpt")){
-            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        }
+        if (dllink.contains("no#cpt")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         dl.startDownload();
     }
