@@ -255,14 +255,14 @@ gui.config.httpliveheader.script = Script de Reconexão
 gui.config.httpliveheader.user = Usuário
 gui.config.jac.column.author = Autor
 gui.config.jac.extern = Método externo
-gui.config.jdrr.infolable = <span color='#4682B4'>Verifique o IP do roteador, o navegador irá abrir com a página do Router<br>Vá em <b>save e reboot</b> no menu do Router<br>Aguarde o JDowloader pegar as informações e criar o script.<br>Mais informação estão disponíveis </span><a href='http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder'>aqui</a>
+gui.config.jdrr.infolable = <span color='#4682B4'>Verifique o IP do Roteador e clique em Começar<br>o navegador irá abrir com a página do Roteador<br>Reconecte depois que você clicar para Parar e Salvar.<br>Mais informação estão disponíveis</span> <a href='http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder'>aqui</a>.
 gui.config.jdrr.popup.title = JDRRPopup
-gui.config.jdrr.reconnectfaild = Falha de reconexão
+gui.config.jdrr.reconnectfaild = Falha na reconexão
 gui.config.jdrr.savereconnect = Sucesso na reconexão, salvar agora?
 gui.config.jdrr.status.title = Status da Gravação
 gui.config.jdrr.success = Sucesso!
-gui.config.jdrr.title = Gravar Script de reconexão
-gui.config.jdshutdown.forceshutdown = Forçar saída (Não disponível para todos os SO's)
+gui.config.jdrr.title = Gravar Script de Reconexão
+gui.config.jdshutdown.forceshutdown = Forçar Saída (Não disponível para todos os SO's)
 gui.config.jdshutdown.hibernate = Hibernar (Não disponível para todos os SO's)
 gui.config.jdshutdown.standby = Standby  (Não disponível para todos os SO's)
 gui.config.linkgrabber.controlposition = Colocar os botões de Captura de Links acima da tabela
@@ -273,14 +273,14 @@ gui.config.liveheader.btnfindip = Identificar IP do Roteador
 gui.config.liveheader.dialog.importrouter = Importar Roteador
 gui.config.liveheader.password = Senha
 gui.config.liveheader.progress.message = JDownloader irá procurar as configurações do seu roteador 
-gui.config.liveheader.recorder = Criar script de reconexão
-gui.config.liveheader.routerip = Router IP 
+gui.config.liveheader.recorder = Criar Script de Reconexão
+gui.config.liveheader.routerip = IP do Roteador
 gui.config.liveheader.script = HTTP Script
-gui.config.liveheader.selectrouter = Selecionar Router
+gui.config.liveheader.selectrouter = Selecionar Roteador
 gui.config.liveheader.user = Login 
 gui.config.liveheader.warning.nocurlconvert = JDownloader não pode converter o script CURL. Solicite suporte ao JD-Support-Team!
-gui.config.liveheader.warning.notfound = JDownloader não detectou definições do router.
-gui.config.liveheader.warning.upnpinactive = Ativar suporte UPnP nas configurações de seu router. <br><a href=\"http://%s\">Ir para o Router</a><br><a href=\"http://jdownloader.org/knowledge/wiki/reconnect/upnp\">Artigo Wiki: Upnp em Router (em inglês)</a><br>Clique em OK quando você ativar o UPnP no router ou Cancelar para ignorar.
+gui.config.liveheader.warning.notfound = JDownloader não detectou as configurações do seu roteador.
+gui.config.liveheader.warning.upnpinactive = Por favor, ative o suporte UPnP nas configurações de seu roteador. <br><a href=\"http://%s\">Ir para o Roteador</a><br><a href=\"http://jdownloader.org/knowledge/wiki/reconnect/upnp\">Wiki: UPnP em Roteador (em inglês)</a><br>Clique em OK quando você ativar o suporte UPnP no Roteador ou Cancelar para ignorar.
 gui.config.liveheader.warning.yourrouter = Você tem um(a)
 gui.config.plugin.abg_confirm = Eu li os termos de %s e aceitei!
 gui.config.plugin.host.desc = Atenção!!\r\nA JD-Team não assume nenhuma responsabilidade pelo cumprimento dos termos.\r\nPor favor, leia os Termos e ative o plugin só\r\nse você aceitá-los!\r\nA ordem dos plugins define a prioridade da seleção automática.\n\rPlugins selecionados devem estar no topo!
