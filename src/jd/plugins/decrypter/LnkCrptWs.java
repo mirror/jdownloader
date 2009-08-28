@@ -162,7 +162,7 @@ public class LnkCrptWs extends PluginForDecrypt {
         }
         if (container != null) {
             // container available
-//            decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
+            decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
 
             container.delete();
             if (decryptedLinks.size() > 0) return decryptedLinks;
