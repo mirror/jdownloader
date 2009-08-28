@@ -158,7 +158,7 @@ public class EasyCaptcha {
         return ret;
     }
 
-    private static ArrayList<PixelObject> getRightletters(ArrayList<PixelObject> os, Captcha captcha, int[] pixels) {
+    public static ArrayList<PixelObject> getRightletters(ArrayList<PixelObject> os, Captcha captcha, int[] pixels) {
         if (os.size() >= captcha.owner.getLetterNum()) return os;
         int minw = pixels[0] / (captcha.owner.getLetterNum() * 3 / 2);
         PixelObject biggest = os.get(0);

@@ -45,6 +45,10 @@ public class CPoint extends Point implements Serializable, Cloneable {
      * Blauunterschied
      */
     public final static byte BLUE_DIFFERENCE = 9;
+    /**
+     * CMYK Color difference
+     */
+    public final static byte CMYK_DIFFERENCE = 10;
 
     private static final long serialVersionUID = 333616481245029882L;
     private int color, distance;
@@ -191,6 +195,9 @@ public class CPoint extends Point implements Serializable, Cloneable {
             break;
         case BLUE_DIFFERENCE:
             dst = Math.abs(new Color(color).getBlue() - new Color(this.color).getBlue());
+            break;
+        case CMYK_DIFFERENCE:
+            dst = Colors.getCMYKColorDifference1(color, this.color);
             break;
         default:
             dst = Colors.getColorDifference(color, this.color);

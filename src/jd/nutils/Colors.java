@@ -35,6 +35,31 @@ public class Colors {
     }
 
     /**
+     * converts a rgb integer to cmyk Cyan, Magenta, Yellow and Key(black)
+     * 
+     * @param rgb
+     * @return
+     */
+    public static float[] rgb2cmyk(int rgb) {
+        float r = (rgb >> 16) & 0xFF;
+        float g = (rgb >> 8) & 0xFF;
+        float b = rgb & 0xFF;
+        float C = 1.0f - (r / 255);
+        float M = 1.0f - (g / 255);
+        float Y = 1.0f - (b / 255);
+        float var_K = 1;
+
+        if (C < var_K) var_K = C;
+        if (M < var_K) var_K = M;
+        if (Y < var_K) var_K = Y;
+
+        C = (C - var_K) / (1 - var_K);
+        M = (M - var_K) / (1 - var_K);
+        Y = (Y - var_K) / (1 - var_K);
+        return new float[] { C * 100, M * 100, Y * 100, var_K * 100 };
+    }
+
+    /**
      * Rechnet RGB werte in den LAB Farbraum um. Der LAB Farbraum wird vor allem
      * zu Farbabstandsberechnungen verwendet Wert für L* enthält die
      * Helligkeitsinformation, und hat einen Wertebereich von 0 bis 100. Die
@@ -139,15 +164,18 @@ public class Colors {
         int[] rgbA = Colors.hexToRgb(pixelValue);
         return rgb2hsb(rgbA[0], rgbA[1], rgbA[2]);
     }
+
     /**
-     * this is hsv we know from gimp or photoshop (hsb[0]*360 hsb[1]*100 hsb[2]*100)
+     * this is hsv we know from gimp or photoshop (hsb[0]*360 hsb[1]*100
+     * hsb[2]*100)
+     * 
      * @param pixelValue
      * @return
      */
     public static int[] rgb2hsv(int pixelValue) {
         int[] rgbA = Colors.hexToRgb(pixelValue);
         float[] hsb = rgb2hsb(rgbA[0], rgbA[1], rgbA[2]);
-        return new int[] {Math.round(hsb[0] *360),Math.round(hsb[1]*100),Math.round(hsb[2]*100)};
+        return new int[] { Math.round(hsb[0] * 360), Math.round(hsb[1] * 100), Math.round(hsb[2] * 100) };
     }
 
     /**
@@ -389,4 +417,21 @@ public class Colors {
         return Math.sqrt(Math.pow(dif0, 2) + Math.pow(dif1, 2) + Math.pow(dif2, 2));
     }
 
+    /**
+     * CMYK Colordifference
+     * 
+     * @param rgbcolor
+     * @param rgbcolor2
+     * @return
+     */
+    public static double getCMYKColorDifference1(int rgbcolor, int rgbcolor2) {
+        if (rgbcolor == rgbcolor2) return 0;
+        float[] cmyk1 = rgb2cmyk(rgbcolor);
+        float[] cmyk2 = rgb2cmyk(rgbcolor2);
+        double dif0 = cmyk1[0] - cmyk2[0];
+        double dif1 = cmyk1[1] - cmyk2[1];
+        double dif2 = cmyk1[2] - cmyk2[2];
+        double dif3 = cmyk1[3] - cmyk2[3];
+        return Math.sqrt(Math.pow(dif0, 2) + Math.pow(dif1, 2) + Math.pow(dif2, 2) + Math.pow(dif3, 2));
+    }
 }
