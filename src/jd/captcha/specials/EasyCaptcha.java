@@ -73,7 +73,7 @@ public class EasyCaptcha {
 
             }
             for (PixelObject pixelObject : os) {
-                if(pixelObject!=aos && pixelObject.getSize()<aos.getSize())
+                if(pixelObject!=aos && (pixelObject.getSize()/2)<aos.getSize())
                 {
                     mergeos(pixelObject, os);
                     return mergeObjectsBasic(os, captcha, gab);
