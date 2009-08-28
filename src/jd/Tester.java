@@ -5,7 +5,6 @@ import java.awt.Dimension;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 
-
 public class Tester {
     public static void main(String ss[]) throws Exception {
         JFrame parent = new JFrame("Test");
@@ -17,6 +16,8 @@ public class Tester {
     }
 
     static class DDialog extends JDialog {
+        private static final long serialVersionUID = 945369252708744102L;
+
         public DDialog(JFrame parent) {
             super(parent);
             this.setAlwaysOnTop(true);
@@ -26,9 +27,6 @@ public class Tester {
             this.setMinimumSize(new Dimension(200, 200));
             this.setVisible(true);
             System.out.println(parent.isAlwaysOnTop());
-
         }
-
     }
 }
-

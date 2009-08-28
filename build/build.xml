@@ -125,7 +125,7 @@
 		<jar jarfile="${dist}/tinyupdate.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/update/Restarter*.class" />
-				<incluse name="jd/nutils/OutdatedParser*.class" />
+				<include name="jd/nutils/OutdatedParser*.class" />
 				<include name="jd/nutils/OSDetector*.class" />	
 				<include name="jd/nutils/DynByteBuff*.class" />
 				<include name="jd/nutils/Executer*.class" />

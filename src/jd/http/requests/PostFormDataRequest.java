@@ -17,7 +17,6 @@
 package jd.http.requests;
 
 import java.io.BufferedOutputStream;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,7 +25,6 @@ import java.io.OutputStreamWriter;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 
-import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 
@@ -144,29 +142,6 @@ public class PostFormDataRequest extends Request {
 
     }
 
-    public static void main(String args[]) throws IOException {
-        try {
-            Browser br = new Browser();
-            br.setDebug(true);
-            String[] data = br.getPage("http://rapidshare.com/cgi-bin/upload.cgi?intsysdata=1").split("\\,");
-            PostFormDataRequest r = (PostFormDataRequest) br.createPostFormDataRequest("http://rs" + data[0].trim() + "cg.rapidshare.com/cgi-bin/upload.cgi");
-            File file = new File("G:\\pluginressourcen\\JDLowSpeed_2009-02-11_v3 (LIGHT).jdu");
-            r.addFormData(new FormData("toolmode2", "1"));
-            r.addFormData(new FormData("filecontent", file.getName(), file));
-            r.addFormData(new FormData("freeaccountid", ""));
-            r.addFormData(new FormData("password", ""));
-
-            r.connect();
-            System.out.println(r.getHttpConnection());
-            String code = r.read();
-            System.out.println(code);
-
-        } catch (Exception e) {
-           e.printStackTrace();
-
-        }
-
-    }
 
     public void addFormData(FormData fd) {
         this.formDatas.add(fd);
