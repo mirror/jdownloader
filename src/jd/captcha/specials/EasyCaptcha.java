@@ -28,7 +28,6 @@ import java.util.Map.Entry;
 import jd.captcha.easy.BackGroundImageManager;
 import jd.captcha.easy.CPoint;
 import jd.captcha.easy.ColorTrainer;
-import jd.captcha.gui.BasicWindow;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
 import jd.captcha.pixelobject.PixelObject;
@@ -180,7 +179,8 @@ public class EasyCaptcha {
     public static ArrayList<PixelObject> getRightletters(ArrayList<PixelObject> os, Captcha captcha, int[] pixels, int area) {
         for (Iterator<PixelObject> iterator = os.iterator(); iterator.hasNext();) {
             PixelObject elem = iterator.next();
-            if (elem.getArea() < (area / 2) || elem.getSize()<(area / 20)) {
+            if(os.size()<3)break;
+            if (elem.getArea() < (area / ( captcha.owner.getLetterNum()*3)) || elem.getSize()<(area / ( captcha.owner.getLetterNum()*4))) {
                 iterator.remove();
             } 
         }
