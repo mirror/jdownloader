@@ -220,6 +220,10 @@ public class LookAndFeelController {
 
                     Method method = slaf.getMethod("setLookAndFeel", new Class[] { String.class, boolean.class, boolean.class });
                     method.invoke(null, new Object[] { laf, false, false });
+                    //disable extended filechooser. jd cares itself for setting the latestlocation
+                    slaf.getMethod("setExtendedFileChooserEnabled", new Class[]{boolean.class}).invoke(null, false);
+           
+
                 } catch (InvocationTargetException e) {
 
                     // ON some systems (turkish) sntheticy throws bugs when
