@@ -51,6 +51,9 @@ public class MyStreamTo extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String dllink = br.getRegex("video/divx\" src=\"(.*?)\"").getMatch(0);
+        if(dllink == null){
+            dllink = br.getRegex("name=\"flashvars\" value=\"file=(.*?)\"").getMatch(0);
+        }
         if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -20);
         dl.startDownload();
