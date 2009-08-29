@@ -221,9 +221,11 @@ public class LookAndFeelController {
                     Method method = slaf.getMethod("setLookAndFeel", new Class[] { String.class, boolean.class, boolean.class });
                     method.invoke(null, new Object[] { laf, false, false });
                 } catch (InvocationTargetException e) {
-                    
-                    //ON some systems (turkish) sntheticy throws bugs when inited for the SPlashscreen. this workaroudn disables the spashscreen and
-                    //this the synthetica lafs work
+
+                    // ON some systems (turkish) sntheticy throws bugs when
+                    // inited for the SPlashscreen. this workaroudn disables the
+                    // spashscreen and
+                    // this the synthetica lafs work
                     JDLogger.exception(e);
                     try {
                         UIManager.setLookAndFeel(getPlaf().getClassName());
@@ -232,7 +234,7 @@ public class LookAndFeelController {
                         GUIUtils.getConfig().save();
                         JDLogger.warning("Disabled Splashscreen cause it cases LAF errors");
                         JDLogger.exception(e2);
-                        uiInitated=false;
+                        uiInitated = false;
                         return;
                     }
                 }
@@ -334,7 +336,7 @@ public class LookAndFeelController {
                 for (int i = 0; i < names.size(); i++) {
                     UIManager.installLookAndFeel(names.get(i), classes.get(i));
                 }
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 JDLogger.exception(e);
             }
         }

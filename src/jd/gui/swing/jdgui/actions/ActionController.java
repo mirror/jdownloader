@@ -398,7 +398,7 @@ public class ActionController {
             private static final long serialVersionUID = -6442494647304101403L;
 
             public void actionPerformed(ActionEvent e) {
-                ClipboardHandler.getClipboard().setEnabled(!this.isSelected());
+                ClipboardHandler.getClipboard().setEnabled(this.isSelected());
             }
 
             @Override
@@ -447,6 +447,7 @@ public class ActionController {
                 this.type = ToolBarAction.Types.TOGGLE;
                 this.setToolTipText(JDL.L("gui.menu.action.reconnect.desc", "-"));
                 setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true));
+               
                 setIcon(isSelected() ? "gui.images.reconnect_enabled" : "gui.images.reconnect_disabled");
             }
 

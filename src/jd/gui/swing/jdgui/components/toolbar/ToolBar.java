@@ -188,7 +188,7 @@ public class ToolBar extends JToolBar implements ActionControllerListener {
                     add(ab = new JToggleButton(action));
 
                     if ((action.getValue(Action.SMALL_ICON) != null || action.getValue(Action.LARGE_ICON_KEY) != null)) {
-                        ab.setHideActionText(true);
+                        ab.setText("");
                     }
                     lastseperator = false;
                     // add(ab = tbt = new JCheckBoxMenuItem(action),
