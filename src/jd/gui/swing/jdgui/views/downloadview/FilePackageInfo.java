@@ -259,7 +259,7 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
                             long[] values = new long[fp.getDownloadLinkList().size()];
                             int i = 0;
                             for (DownloadLink dl : fp.getDownloadLinkList()) {
-                                max[i] = Math.max(1024, dl.getDownloadSize());
+                                max[i] = Math.max(1, dl.getDownloadSize());
                                 values[i] = Math.max(1, dl.getDownloadCurrent());
                                 i++;
                             }
