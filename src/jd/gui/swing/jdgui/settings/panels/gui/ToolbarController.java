@@ -18,6 +18,8 @@ package jd.gui.swing.jdgui.settings.panels.gui;
 
 import java.awt.Component;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 
 import javax.swing.JCheckBox;
@@ -32,8 +34,11 @@ import javax.swing.table.TableColumn;
 
 import jd.config.Configuration;
 import jd.config.ConfigEntry.PropertyType;
+import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
+import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
+import jd.gui.swing.jdgui.components.toolbar.ToolBar;
 import jd.gui.swing.jdgui.settings.ConfigPanel;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
@@ -42,7 +47,39 @@ import net.miginfocom.swing.MigLayout;
 import org.jdesktop.swingx.renderer.DefaultTableRenderer;
 
 public class ToolbarController extends ConfigPanel {
+private static final ArrayList<String> WHITELIST= new ArrayList<String>();
+static{
 
+  WHITELIST.add("action.restart");
+  WHITELIST.add("action.exit");
+  WHITELIST.add("action.addurl");
+  WHITELIST.add("action.load");
+  WHITELIST.add("action.remove.links");
+  WHITELIST.add("action.remove.packages");
+  WHITELIST.add("action.remove_dupes");
+  WHITELIST.add("action.remove_disabled");
+  WHITELIST.add("action.remove_offline");
+  WHITELIST.add("action.remove_failed");
+  WHITELIST.add("action.about");
+  WHITELIST.add("action.help");
+  WHITELIST.add("action.changes");
+  WHITELIST.add("toolbar.control.start");
+  WHITELIST.add("toolbar.control.pause");
+  WHITELIST.add("toolbar.control.stop");
+  WHITELIST.add("toolbar.interaction.reconnect");
+  WHITELIST.add("toolbar.interaction.update");
+  WHITELIST.add("toolbar.quickconfig.clipboardoberserver");
+  WHITELIST.add("toolbar.quickconfig.reconnecttoggle");
+  WHITELIST.add("action.opendlfolder");
+  WHITELIST.add("toolbar.control.stopmark");
+  WHITELIST.add("action.downloadview.movetobottom");
+  WHITELIST.add("action.downloadview.movetotop");
+  WHITELIST.add("action.downloadview.moveup");
+  WHITELIST.add("action.downloadview.movedown");
+  WHITELIST.add("action.premiumview.addacc");
+  WHITELIST.add("action.premium.buy");
+    
+}
     private static final long serialVersionUID = -7024581410075950497L;
 
     public String getBreadcrum() {
@@ -89,7 +126,8 @@ public class ToolbarController extends ConfigPanel {
         }
 
         public Object getValueAt(final int rowIndex, final int columnIndex) {
-            if (columnIndex == 0) return actions.get(rowIndex).isVisible();
+            if (columnIndex == 0) return list.contains(actions.get(rowIndex).getID());
+         
             return actions.get(rowIndex);
         }
 
@@ -101,7 +139,63 @@ public class ToolbarController extends ConfigPanel {
         @Override
         public void setValueAt(Object value, int row, int col) {
             if (col == 0) {
-                actions.get(row).setVisible((Boolean) value);
+                if ((Boolean) value) {
+                    list.add(actions.get(row).getID());
+                } else {
+                    list.remove(actions.get(row).getID());
+                }
+                GUIUtils.getConfig().setProperty("TOOLBAR", list);
+                GUIUtils.getConfig().save();
+                Collections.sort(list,new Comparator<String>() {
+
+                    public int compare(String o1, String o2) {
+                        int ia = ToolBar.DEFAULT_LIST.indexOf(o1);
+                        if(ia<0)ia=Integer.MAX_VALUE;
+                        int ib = ToolBar.DEFAULT_LIST.indexOf(o2);
+                        if(ib<0)ib=Integer.MAX_VALUE;
+                       return ia<ib?-1:1;
+                    
+                    }
+                });
+                while(list.remove("toolbar.separator")){}
+                boolean controls=false;
+                boolean moves=false;
+                boolean configs=false;
+                boolean custom=false;
+                for( int i=0; i<list.size();i++){
+                    if(!controls&&ToolBar.CONTROL_LIST.contains(list.get(i))){
+                        controls = true;
+                        continue;
+                    }
+                    if(!moves&&ToolBar.MOVE_LIST.contains(list.get(i))){
+                        if(controls){
+                            list.add(i,"toolbar.separator");
+                            i++;
+                        }
+                        moves = true;
+                        continue;
+                    }
+                    if(!configs&&ToolBar.CONFIG_LIST.contains(list.get(i))){
+                        
+                        if((controls&&!moves)||moves ){
+                            list.add(i,"toolbar.separator");
+                            i++;
+                        }
+                        
+                        configs = true;
+                    }
+                    if(!custom&&!ToolBar.CONFIG_LIST.contains(list.get(i))&&!ToolBar.MOVE_LIST.contains(list.get(i))&&!ToolBar.CONTROL_LIST.contains(list.get(i))){
+                        if(i>0&&!list.get(i-1).equals("toolbar.separator")){
+                            list.add(i,"toolbar.separator");
+                            i++;
+                        }
+                        custom=true;
+                        
+                        
+                    }
+                    
+                }
+                MainToolBar.getInstance().setList(list.toArray(new String[] {}));
             }
         }
     }
@@ -111,6 +205,8 @@ public class ToolbarController extends ConfigPanel {
     private InternalTableModel tableModel;
 
     private ArrayList<ToolBarAction> actions;
+
+    private ArrayList<String> list;
 
     public ToolbarController(Configuration configuration) {
         super();
@@ -130,28 +226,25 @@ public class ToolbarController extends ConfigPanel {
      * @param actions2
      */
     private void setActions(ArrayList<ToolBarAction> actions2) {
+        this.list = GUIUtils.getConfig().getGenericProperty("TOOLBAR", ToolBar.DEFAULT_LIST);
         for (Iterator<ToolBarAction> it = actions2.iterator(); it.hasNext();) {
             ToolBarAction a = it.next();
-            if (a.getID().equals("action.opendlfolder")) continue;
-
-            if (a.getID().equals("toolbar.separator")) {
+            if (a.getValue(ToolBarAction.IMAGE_KEY) == null) {
                 it.remove();
-                continue;
-            } else if (a.getID().equals("toolbar.separator")) {
-                it.remove();
-                continue;
-            } else if (a.getID().equals("toolbar.control.start")) {
-                it.remove();
-                continue;
-            } else if (a.getID().equals("toolbar.control.stop")) {
-                it.remove();
-                continue;
-            } else if (!a.getID().startsWith("toolbar.") && !a.getID().startsWith("action.downloadview")) {
-                it.remove();
+                list.remove(a.getID());
                 continue;
             }
+            if(!WHITELIST.contains(a.getID())){
+                it.remove();
+                list.remove(a.getID());
+                continue;
+            }
+          
+           
         }
         this.actions = actions2;
+
+     
 
     }
 

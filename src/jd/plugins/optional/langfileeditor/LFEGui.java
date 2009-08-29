@@ -712,30 +712,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
 
         JDLogger.getLogger().warning("Patternmatches are not recommened: \r\n" + sourceParser.getPattern());
 
-        try {
-
-            if (svn != null) {
-
-                StringBuilder sb = new StringBuilder();
-
-                for (LngEntry lng : sourceParser.getEntries()) {
-                    sb.append("\r\n" + lng.getKey() + " = " + lng.getValue());
-
-                }
-
-                for (String pat : sourceParser.getPattern()) {
-                    sb.append("\r\n#pattern: " + pat);
-                }
-                JDIO.writeLocalFile(new File(dirLanguages, "keys.def"), sb.toString());
-
-                svn = new Subversion(LANGUAGE_SVN, subConfig.getStringProperty(PROPERTY_SVN_ACCESS_USER), subConfig.getStringProperty(PROPERTY_SVN_ACCESS_PASS));
-                commit(new File(dirLanguages, "keys.def"), "parsed latest Source at Revision " + HEAD, svn);
-
-                svn.dispose();
-            }
-        } catch (SVNException e) {
-            e.printStackTrace();
-        }
+    
         progress.setStatusText(JDL.L(LOCALE_PREFIX + "analyzingSource.ready", "Analyzing Source Folder: Complete"));
         progress.doFinalize(2 * 1000l);
     }

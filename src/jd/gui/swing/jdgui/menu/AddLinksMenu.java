@@ -27,6 +27,7 @@ public class AddLinksMenu extends JStartMenu {
         super("gui.menu.add", "gui.images.add");
         this.add(new AddUrlAction());
         this.add(new AddContainerAction());
+
     }
 
 }

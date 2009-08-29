@@ -28,6 +28,8 @@ import java.util.Map.Entry;
 import jd.HostPluginWrapper;
 import jd.controlling.DistributeData;
 import jd.controlling.SingleDownloadController;
+import jd.gui.UserIO;
+import jd.gui.swing.jdgui.userio.UserIOGui;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.HTMLParser;
@@ -51,7 +53,9 @@ public class SingleHoster {
     public void setUp() {
 
         TestUtils.mainInit();
-        TestUtils.initGUI();
+        //TestUtils.initGUI();
+      
+        UserIO.setInstance(UserIOGui.getInstance());
         TestUtils.initDecrypter();
         TestUtils.initContainer();
         TestUtils.initHosts();

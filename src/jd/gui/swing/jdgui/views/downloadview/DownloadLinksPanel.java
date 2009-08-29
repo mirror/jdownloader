@@ -127,8 +127,14 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
         MainTabbedPane.getInstance().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).remove(ActionController.getToolBarAction("action.downloadview.moveup").getKeyStroke());
         MainTabbedPane.getInstance().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).remove(ActionController.getToolBarAction("action.downloadview.movedown").getKeyStroke());
         MainTabbedPane.getInstance().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).remove(ActionController.getToolBarAction("action.downloadview.movetobottom").getKeyStroke());
-        MainToolBar.getInstance().updateToolbar();
+
     }
+
+    public DownloadTable getInternalTable() {
+        return internalTable;
+    }
+
+
 
     public void initActions() {
         new ThreadedAction("action.downloadview.movetobottom", "gui.images.go_bottom") {

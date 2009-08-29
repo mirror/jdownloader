@@ -16,10 +16,17 @@
 
 package jd.gui.swing.jdgui.menu.actions;
 
+import java.awt.Toolkit;
+import java.awt.datatransfer.DataFlavor;
 import java.awt.event.ActionEvent;
+import java.util.ArrayList;
 
 import jd.config.MenuAction;
-import jd.gui.swing.jdgui.actions.ActionController;
+import jd.controlling.DistributeData;
+import jd.gui.UserIO;
+import jd.parser.html.HTMLParser;
+import jd.utils.JDTheme;
+import jd.utils.locale.JDL;
 
 public class AddUrlAction extends MenuAction {
 
@@ -30,7 +37,32 @@ public class AddUrlAction extends MenuAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        ActionController.getToolBarAction("action.addurl").actionPerformed(e);
+        String def = "";
+        try {
+            String newText = (String) Toolkit.getDefaultToolkit().getSystemClipboard().getData(DataFlavor.stringFlavor);
+            String[] links = HTMLParser.getHttpLinks(newText, null);
+            ArrayList<String> pws = HTMLParser.findPasswords(newText);
+            for (String l : links)
+                def += l + "\r\n";
+            for (String pw : pws) {
+                def += "password: " + pw + "\r\n";
+            }
+        } catch (Exception e2) {
+        }
+        String link = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN | UserIO.STYLE_LARGE, JDL.L("gui.dialog.addurl.title", "Add URL(s)"), JDL.L("gui.dialog.addurl.message", "Add a URL(s). JDownloader will load and parse them for further links."), def, JDTheme.II("gui.images.taskpanes.linkgrabber", 32, 32), JDL.L("gui.dialog.addurl.okoption_parse", "Parse URL(s)"), null);
+        if (link == null || link.length() == 0) return;
+        DistributeData tmp = new DistributeData(link, false);
+        tmp.setDisableDeepEmergencyScan(false);
+        tmp.start();
     }
 
+    @Override
+    public void initDefaults() {
+        this.setToolTipText(JDL.L("gui.menu.action.addurl", "Add URL(s)"));
+    }
+
+    @Override
+    public void init() {
+
+    }
 }

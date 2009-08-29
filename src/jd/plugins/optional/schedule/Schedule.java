@@ -25,6 +25,7 @@ import java.util.Date;
 import jd.PluginWrapper;
 import jd.config.MenuAction;
 import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
 import jd.plugins.OptionalPlugin;
@@ -191,7 +192,7 @@ public class Schedule extends PluginOptional {
 
     public boolean initAddon() {
         logger.info("Schedule OK");
-        this.activateAction = new MenuAction(MenuAction.TOGGLE, getHost(), 0).setActionListener(this);
+        this.activateAction = new MenuAction(ToolBarAction.Types.TOGGLE, getHost(), 0).setActionListener(this);
         activateAction.setSelected(false);
         return true;
     }

@@ -471,68 +471,11 @@ public class ActionController {
 
         };
 
-        new ToolBarAction("action.addurl", "gui.images.url") {
-            /**
-             * 
-             */
-            private static final long serialVersionUID = -60944746807335951L;
+        
 
-            public void actionPerformed(ActionEvent e) {
-                String def = "";
-                try {
-                    String newText = (String) Toolkit.getDefaultToolkit().getSystemClipboard().getData(DataFlavor.stringFlavor);
-                    String[] links = HTMLParser.getHttpLinks(newText, null);
-                    ArrayList<String> pws = HTMLParser.findPasswords(newText);
-                    for (String l : links)
-                        def += l + "\r\n";
-                    for (String pw : pws) {
-                        def += "password: " + pw + "\r\n";
-                    }
-                } catch (Exception e2) {
-                }
-                String link = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN | UserIO.STYLE_LARGE, JDL.L("gui.dialog.addurl.title", "Add URL(s)"), JDL.L("gui.dialog.addurl.message", "Add a URL(s). JDownloader will load and parse them for further links."), def, JDTheme.II("gui.images.taskpanes.linkgrabber", 32, 32), JDL.L("gui.dialog.addurl.okoption_parse", "Parse URL(s)"), null);
-                if (link == null || link.length() == 0) return;
-                DistributeData tmp = new DistributeData(link, false);
-                tmp.setDisableDeepEmergencyScan(false);
-                tmp.start();
-            }
+     
 
-            @Override
-            public void initDefaults() {
-                this.setToolTipText(JDL.L("gui.menu.action.addurl", "Add URL(s)"));
-            }
-
-            @Override
-            public void init() {
-
-            }
-
-        };
-
-        new ToolBarAction("action.load", "gui.images.load") {
-            /**
-             * 
-             */
-            private static final long serialVersionUID = -60944746807335951L;
-
-            public void actionPerformed(ActionEvent e) {
-                File[] ret = UserIO.getInstance().requestFileChooser("_LOADSAVEDLC", JDL.L("gui.filechooser.loaddlc", "Load DLC file"), JDFileChooser.FILES_ONLY, new JDFileFilter(null, ".dlc|.rsdf|.ccf|.metalink", true), true);
-                if (ret == null) return;
-                for (File r : ret) {
-                    JDUtilities.getController().loadContainerFile(r);
-                }
-            }
-
-            @Override
-            public void initDefaults() {
-                this.setToolTipText(JDL.L("gui.menu.action.load", "Load Containerfile"));
-            }
-
-            @Override
-            public void init() {
-            }
-
-        };
+        
 
         new ToolBarAction("action.opendlfolder", "gui.images.package_opened") {
             /**

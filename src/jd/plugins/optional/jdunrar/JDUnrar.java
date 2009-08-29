@@ -43,6 +43,7 @@ import jd.event.ControlListener;
 import jd.gui.UserIO;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.components.JDFileChooser;
+import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.nutils.Executer;
 import jd.nutils.Formatter;
 import jd.nutils.JDHash;
@@ -156,22 +157,22 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         case ControlEvent.CONTROL_LINKLIST_CONTEXT_MENU:
             ArrayList<MenuAction> items = (ArrayList<MenuAction>) event.getParameter();
             MenuAction m;
-            MenuAction container = new MenuAction(MenuAction.CONTAINER, JDL.L("plugins.optional.jdunrar.linkmenu.container", "JDUnrar"), 0);
+            MenuAction container = new MenuAction(ToolBarAction.Types.CONTAINER, JDL.L("plugins.optional.jdunrar.linkmenu.container", "JDUnrar"), 0);
             items.add(container);
             if (event.getSource() instanceof DownloadLink) {
 
                 link = (DownloadLink) event.getSource();
 
-                container.addMenuItem(m = new MenuAction(MenuAction.NORMAL, JDL.L("plugins.optional.jdunrar.linkmenu.extract", "Extract"), 1000).setActionListener(this));
+                container.addMenuItem(m = new MenuAction(ToolBarAction.Types.NORMAL, JDL.L("plugins.optional.jdunrar.linkmenu.extract", "Extract"), 1000).setActionListener(this));
                 m.setEnabled(false);
                 boolean isLocalyAvailable = (new File(link.getFileOutput()).exists() || new File(link.getStringProperty(DownloadLink.STATIC_OUTPUTFILE, link.getFileOutput())).exists());
                 if (isLocalyAvailable && link.getName().matches(".*rar$")) m.setEnabled(true);
                 m.setProperty("LINK", link);
-                container.addMenuItem(m = new MenuAction(MenuAction.TOGGLE, JDL.L("plugins.optional.jdunrar.linkmenu.autoextract", "Autoextract"), 1005).setActionListener(this));
+                container.addMenuItem(m = new MenuAction(ToolBarAction.Types.TOGGLE, JDL.L("plugins.optional.jdunrar.linkmenu.autoextract", "Autoextract"), 1005).setActionListener(this));
                 m.setSelected(link.getFilePackage().isExtractAfterDownload());
                 m.setProperty("LINK", link);
-                container.addMenuItem(m = new MenuAction(MenuAction.SEPARATOR));
-                container.addMenuItem(m = new MenuAction(MenuAction.NORMAL, JDL.L("plugins.optional.jdunrar.linkmenu.setextract", "Set Extract to..."), 1003).setActionListener(this));
+                container.addMenuItem(m = new MenuAction(ToolBarAction.Types.SEPARATOR));
+                container.addMenuItem(m = new MenuAction(ToolBarAction.Types.NORMAL, JDL.L("plugins.optional.jdunrar.linkmenu.setextract", "Set Extract to..."), 1003).setActionListener(this));
 
                 m.setProperty("LINK", link);
                 File dir = this.getExtractToPath(link);
@@ -180,15 +181,15 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
                     dir = dir.getParentFile();
                 }
                 if (dir == null) break;
-                container.addMenuItem(m = new MenuAction(MenuAction.NORMAL, JDL.LF("plugins.optional.jdunrar.linkmenu.openextract2", "Open directory (%s)", dir.getAbsolutePath()), 1002).setActionListener(this));
+                container.addMenuItem(m = new MenuAction(ToolBarAction.Types.NORMAL, JDL.LF("plugins.optional.jdunrar.linkmenu.openextract2", "Open directory (%s)", dir.getAbsolutePath()), 1002).setActionListener(this));
                 link.setProperty(JDUnrarConstants.DOWNLOADLINK_KEY_EXTRACTEDPATH + "2", dir.getAbsolutePath());
                 m.setProperty("LINK", link);
 
             } else {
                 FilePackage fp = (FilePackage) event.getSource();
-                container.addMenuItem(m = new MenuAction(MenuAction.NORMAL, JDL.L("plugins.optional.jdunrar.linkmenu.package.extract", "Extract package"), 1001).setActionListener(this));
+                container.addMenuItem(m = new MenuAction(ToolBarAction.Types.NORMAL, JDL.L("plugins.optional.jdunrar.linkmenu.package.extract", "Extract package"), 1001).setActionListener(this));
                 m.setProperty("PACKAGE", fp);
-                container.addMenuItem(m = new MenuAction(MenuAction.TOGGLE, JDL.L("plugins.optional.jdunrar.linkmenu.package.autoextract", "Autoextract"), 1006).setActionListener(this));
+                container.addMenuItem(m = new MenuAction(ToolBarAction.Types.TOGGLE, JDL.L("plugins.optional.jdunrar.linkmenu.package.autoextract", "Autoextract"), 1006).setActionListener(this));
                 m.setSelected(fp.isExtractAfterDownload());
                 m.setProperty("PACKAGE", fp);
             }
@@ -415,10 +416,10 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
     public ArrayList<MenuAction> createMenuitems() {
         ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
         MenuAction m;
-        menu.add(m = new MenuAction(MenuAction.TOGGLE, JDL.L("plugins.optional.jdunrar.menu.toggle", "Activate"), 1).setActionListener(this));
+        menu.add(m = new MenuAction(ToolBarAction.Types.TOGGLE, JDL.L("plugins.optional.jdunrar.menu.toggle", "Activate"), 1).setActionListener(this));
         m.setSelected(this.getPluginConfig().getBooleanProperty("ACTIVATED", true));
 
-        menu.add(new MenuAction(MenuAction.NORMAL, JDL.L("plugins.optional.jdunrar.menu.extract.singlefils", "Extract archive(s)"), 21).setActionListener(this));
+        menu.add(new MenuAction(ToolBarAction.Types.NORMAL, JDL.L("plugins.optional.jdunrar.menu.extract.singlefils", "Extract archive(s)"), 21).setActionListener(this));
 
         return menu;
     }

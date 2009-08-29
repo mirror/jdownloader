@@ -167,4 +167,5 @@ public abstract class SwingGui extends UserIF implements ControlListener, Window
      */
     abstract public void disposeView(SwitchPanel view);
 
+
 }

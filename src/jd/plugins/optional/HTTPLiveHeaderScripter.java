@@ -57,6 +57,7 @@ import jd.gui.UserIO;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.components.JDFileChooser;
 import jd.gui.swing.components.linkbutton.JLink;
+import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
@@ -287,7 +288,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
     public ArrayList<MenuAction> createMenuitems() {
         ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
         if (action == null) {
-            action = new MenuAction(MenuAction.TOGGLE, getHost(), 0).setActionListener(this);
+            action = new MenuAction(ToolBarAction.Types.TOGGLE, getHost(), 0).setActionListener(this);
             action.setSelected(false);
         }
         menu.add(action);

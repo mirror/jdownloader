@@ -54,6 +54,7 @@ import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.components.linkbutton.JLink;
+import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.interfaces.SideBarPanel;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
@@ -834,7 +835,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         NAMES = new ArrayList<User>();
         sb = new StringBuilder();
         if (activateAction == null) {
-            this.activateAction = new MenuAction(MenuAction.TOGGLE, JDL.L("plugins.optional.jdchat.menu.windowstatus", "Chatwindow"), 0).setActionListener(this);
+            this.activateAction = new MenuAction(ToolBarAction.Types.TOGGLE, JDL.L("plugins.optional.jdchat.menu.windowstatus", "Chatwindow"), 0).setActionListener(this);
             activateAction.setSelected(false);
         }
         return true;

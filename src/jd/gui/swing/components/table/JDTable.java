@@ -49,6 +49,8 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.jdesktop.swingx.JXTable;
+
 class SortMenuItem extends JMenuItem implements ActionListener {
 
     private static final long serialVersionUID = 6328630034846759725L;
@@ -75,7 +77,7 @@ class SortMenuItem extends JMenuItem implements ActionListener {
     }
 }
 
-public class JDTable extends JTable {
+public class JDTable extends JXTable {
 
     /**
      * 

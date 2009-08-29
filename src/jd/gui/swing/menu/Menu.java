@@ -24,23 +24,24 @@ import jd.config.MenuAction;
 
 public class Menu {
 
-    public static JMenuItem getJMenuItem( MenuAction mi) {
+    public static JMenuItem getJMenuItem(MenuAction mi) {
         JMenuItem m;
         switch (mi.getType()) {
-        case MenuAction.SEPARATOR:
+        case SEPARATOR:
             return null;
-        case MenuAction.NORMAL:
+        case NORMAL:
 
             m = new JMenuItem(mi);
             return m;
-        case MenuAction.TOGGLE:
+        case TOGGLE:
 
             JCheckBoxMenuItem m2 = new JCheckBoxMenuItem(mi);
-//            m2.setSelected(mi.isSelected());
+            // m2.setSelected(mi.isSelected());
 
-//            if (mi.getAccelerator() != null) m2.setAccelerator(KeyStroke.getKeyStroke(mi.getAccelerator()));
+            // if (mi.getAccelerator() != null)
+            // m2.setAccelerator(KeyStroke.getKeyStroke(mi.getAccelerator()));
             return m2;
-        case MenuAction.CONTAINER:
+        case CONTAINER:
             JMenu m3 = new JMenu(mi.getTitle());
             m3.setIcon(mi.getIcon());
             JMenuItem c;

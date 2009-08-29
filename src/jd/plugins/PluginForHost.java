@@ -46,6 +46,7 @@ import jd.controlling.JDLogger;
 import jd.gui.UserIF;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.jdgui.actions.ActionController;
+import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.http.Browser;
 import jd.nutils.Formatter;
 import jd.nutils.JDImage;
@@ -232,14 +233,14 @@ public abstract class PluginForHost extends Plugin {
         if (!enablePremium) return null;
         ArrayList<MenuAction> menuList = new ArrayList<MenuAction>();
         MenuAction account;
-        MenuAction m = new MenuAction(MenuAction.NORMAL, JDL.L("plugins.menu.configs", "Configuration"), 1);
+        MenuAction m = new MenuAction(ToolBarAction.Types.NORMAL, JDL.L("plugins.menu.configs", "Configuration"), 1);
         m.setActionListener(this);
         if (config == null || config.getEntries().size() == 0) m.setEnabled(false);
 
         if (config != null) config.setGroup(new ConfigGroup(getHost(), getHosterIcon()));
         menuList.add(m);
         if (premiumAction == null) {
-            premiumAction = new MenuAction(MenuAction.CONTAINER, JDL.L("plugins.menu.accounts", "Accounts"), 0);
+            premiumAction = new MenuAction(ToolBarAction.Types.CONTAINER, JDL.L("plugins.menu.accounts", "Accounts"), 0);
 
             ArrayList<Account> accounts = getPremiumAccounts();
 
@@ -251,14 +252,14 @@ public abstract class PluginForHost extends Plugin {
                     c++;
                     if (getAccountwithoutUsername()) {
                         if (a.getPass() == null || a.getPass().trim().length() == 0) continue;
-                        new MenuAction(MenuAction.CONTAINER, i++ + ". " + "Account " + (i - 1), 0);
+                        new MenuAction(ToolBarAction.Types.CONTAINER, i++ + ". " + "Account " + (i - 1), 0);
                     } else {
                         if (a.getUser() == null || a.getUser().trim().length() == 0) continue;
-                        account = new MenuAction(MenuAction.CONTAINER, i++ + ". " + a.getUser(), 0);
+                        account = new MenuAction(ToolBarAction.Types.CONTAINER, i++ + ". " + a.getUser(), 0);
                         m = AccountMenuItemSyncer.getInstance().get(a);
 
                         if (m == null) {
-                            m = new MenuAction(MenuAction.TOGGLE, JDL.L("jd.plugins.PluginForHost.enable_premium", "Aktivieren"), 100 + c - 1);
+                            m = new MenuAction(ToolBarAction.Types.TOGGLE, JDL.L("jd.plugins.PluginForHost.enable_premium", "Aktivieren"), 100 + c - 1);
                         }
                         m.setActionID(100 + c - 1);
                         m.setSelected(a.isEnabled());

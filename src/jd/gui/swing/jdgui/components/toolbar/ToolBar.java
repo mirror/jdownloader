@@ -16,6 +16,8 @@
 
 package jd.gui.swing.jdgui.components.toolbar;
 
+import java.util.ArrayList;
+
 import javax.swing.AbstractButton;
 import javax.swing.Action;
 import javax.swing.JButton;
@@ -35,15 +37,63 @@ import jd.gui.swing.jdgui.actions.event.ActionControllerListener;
 import net.miginfocom.swing.MigLayout;
 
 public class ToolBar extends JToolBar implements ActionControllerListener {
-    private static String[] defaultlist = new String[] { "toolbar.control.start", "toolbar.control.pause", "toolbar.control.stop",
 
-    "toolbar.separator", "action.downloadview.movetotop", "action.downloadview.moveup", "action.downloadview.movedown", "action.downloadview.movetobottom", "toolbar.separator", "toolbar.quickconfig.clipboardoberserver", "toolbar.quickconfig.reconnecttoggle", "toolbar.control.stopmark",
-
-    "toolbar.separator", "toolbar.interaction.reconnect", "toolbar.interaction.update", "toolbar.separator", "action.opendlfolder"
-
-    };
 
     private static final long serialVersionUID = 7533137014274040205L;
+
+    public static final ArrayList<String> CONTROL_LIST = new ArrayList<String>();
+    static {
+        CONTROL_LIST.add("toolbar.control.start");
+        CONTROL_LIST.add("toolbar.control.pause");
+        CONTROL_LIST.add("toolbar.control.stop");
+        
+  
+
+    }
+    
+    public static final ArrayList<String> MOVE_LIST = new ArrayList<String>();
+    static {
+
+        MOVE_LIST.add("action.downloadview.movetotop");
+        MOVE_LIST.add("action.downloadview.moveup");
+        MOVE_LIST.add("action.downloadview.movedown");
+        MOVE_LIST.add("action.downloadview.movetobottom");
+        
+  
+
+    }
+
+    public static final ArrayList<String> CONFIG_LIST = new ArrayList<String>();
+    static {
+     
+        CONFIG_LIST.add("toolbar.quickconfig.clipboardoberserver");
+        CONFIG_LIST.add("toolbar.quickconfig.reconnecttoggle");
+        CONFIG_LIST.add("toolbar.control.stopmark");
+
+  
+
+    }
+    public static final ArrayList<String> DEFAULT_LIST = new ArrayList<String>();
+    static {
+        DEFAULT_LIST.add("toolbar.control.start");
+        DEFAULT_LIST.add("toolbar.control.pause");
+        DEFAULT_LIST.add("toolbar.control.stop");
+        DEFAULT_LIST.add("toolbar.separator");
+        DEFAULT_LIST.add("action.downloadview.movetotop");
+        DEFAULT_LIST.add("action.downloadview.moveup");
+        DEFAULT_LIST.add("action.downloadview.movedown");
+        DEFAULT_LIST.add("action.downloadview.movetobottom");
+        DEFAULT_LIST.add("toolbar.separator");
+        DEFAULT_LIST.add("toolbar.quickconfig.clipboardoberserver");
+        DEFAULT_LIST.add("toolbar.quickconfig.reconnecttoggle");
+        DEFAULT_LIST.add("toolbar.control.stopmark");
+        DEFAULT_LIST.add("toolbar.separator");
+        DEFAULT_LIST.add("toolbar.interaction.reconnect");
+        DEFAULT_LIST.add("toolbar.interaction.update");      
+     
+  
+
+    }
 
     private String[] current = null;
 
@@ -60,7 +110,7 @@ public class ToolBar extends JToolBar implements ActionControllerListener {
         ActionController.initActions();
 
         // this.updateToolbar();
-        current = defaultlist;
+        current = DEFAULT_LIST.toArray(new String[]{});
 
         // please add listener here. to avoid the toolbar beiong pained multible
         // times
@@ -72,7 +122,7 @@ public class ToolBar extends JToolBar implements ActionControllerListener {
         if (newlist == current) return;
         synchronized (current) {
             if (newlist == null || newlist.length == 0) {
-                current = defaultlist;
+                current = DEFAULT_LIST.toArray(new String[]{});
             } else {
                 current = newlist;
             }

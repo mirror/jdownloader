@@ -27,6 +27,7 @@ import jd.config.ConfigContainer;
 import jd.config.MenuAction;
 import jd.gui.UserIF;
 import jd.gui.swing.SwingGui;
+import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.menu.Menu;
 import jd.plugins.Plugin;
 import jd.utils.JDTheme;
@@ -63,7 +64,7 @@ public class AddonsMenu extends JStartMenu {
                 SwingGui.getInstance().requestPanel(UserIF.Panels.ADDON_MANAGER, null);
             }
         };
-        cfg.setIcon(JDTheme.II("gui.images.config.packagemanager",16,16));
+        cfg.setIcon(JDTheme.II("gui.images.config.packagemanager", 16, 16));
         this.add(cfg);
 
         ArrayList<JMenuItem> itemsWithSubmenu = new ArrayList<JMenuItem>();
@@ -101,7 +102,7 @@ public class AddonsMenu extends JStartMenu {
                 }
                 if (mis.size() > 1) {
 
-                    MenuAction m = new MenuAction(MenuAction.CONTAINER, plg.getPlugin().getHost(), 0);
+                    MenuAction m = new MenuAction(ToolBarAction.Types.CONTAINER, plg.getPlugin().getHost(), 0);
                     m.setIcon(JDTheme.II(plg.getPlugin().getIconKey(), 16, 16));
                     m.setItems(mis);
                     JMenuItem mi = Menu.getJMenuItem(m);
@@ -118,7 +119,7 @@ public class AddonsMenu extends JStartMenu {
                         c.setIcon(JDTheme.II(plg.getPlugin().getIconKey(), 16, 16));
                         c.setSelectedIcon(JDTheme.II(plg.getPlugin().getIconKey(), 16, 16));
                         c.setDisabledSelectedIcon(null);
-                        if (mi.getType() == MenuAction.TOGGLE) {
+                        if (mi.getType() == ToolBarAction.Types.TOGGLE) {
                             itemsToggle.add(c);
                         } else {
                             if (config) {

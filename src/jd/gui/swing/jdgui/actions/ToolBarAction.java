@@ -30,7 +30,7 @@ public abstract class ToolBarAction extends JDAction {
      * 
      */
     public static enum Types {
-        TOGGLE, NORMAL, SEPARATOR
+        TOGGLE, NORMAL, SEPARATOR,CONTAINER
     }
 
     /**
@@ -69,6 +69,7 @@ public abstract class ToolBarAction extends JDAction {
     }
 
     public ToolBarAction(String menukey, String iconkey) {
+    
         super(JDL.L("gui.menu." + menukey + ".name", menukey));
         setId(menukey);
         if (iconkey != null) setIcon(iconkey);
@@ -80,8 +81,13 @@ public abstract class ToolBarAction extends JDAction {
         ActionController.register(this);
     }
 
+    public ToolBarAction(String name) {
+       super(name);
+    }
+
     public boolean equals(Object o) {
         if (o == null || !(o instanceof ToolBarAction)) return false;
+        if(getID()==null)return false;
         return getID().equals(((ToolBarAction) o).getID());
     }
 
@@ -111,6 +117,7 @@ public abstract class ToolBarAction extends JDAction {
      * @return
      */
     public String getID() {
+        if(getValue(ID)==null)return null;
         return this.getValue(ID).toString();
     }
 

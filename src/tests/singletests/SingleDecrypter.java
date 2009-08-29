@@ -25,6 +25,8 @@ import java.util.Map.Entry;
 
 import jd.DecryptPluginWrapper;
 import jd.controlling.ProgressController;
+import jd.gui.UserIO;
+import jd.gui.swing.jdgui.userio.UserIOGui;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -48,7 +50,8 @@ public class SingleDecrypter {
     @Before
     public void setUp() {
         TestUtils.mainInit();
-        TestUtils.initGUI();
+       // TestUtils.initGUI();
+        UserIO.setInstance(UserIOGui.getInstance());
         TestUtils.initDecrypter();
         TestUtils.initContainer();
         TestUtils.initHosts();

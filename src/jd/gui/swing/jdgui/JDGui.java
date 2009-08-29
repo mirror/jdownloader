@@ -49,6 +49,7 @@ import jd.gui.swing.components.Balloon;
 import jd.gui.swing.components.JDCollapser;
 import jd.gui.swing.jdgui.components.JDStatusBar;
 import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
+import jd.gui.swing.jdgui.components.toolbar.ToolBar;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.interfaces.View;
 import jd.gui.swing.jdgui.menu.AboutMenu;
@@ -163,6 +164,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
 
         multiProgressBar = new TabProgress();
         this.toolBar = MainToolBar.getInstance();
+
         toolBar.registerAccelerators(this);
         downloadView = DownloadView.getInstance();
         linkgrabberView = LinkgrabberView.getInstance();
@@ -182,7 +184,8 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         mainTabbedPane.addTab(logView);
         // mainTabbedPane.addTab(new ClosableView());
         mainTabbedPane.setSelectedComponent(downloadView);
-
+        toolBar.setList(GUIUtils.getConfig().getGenericProperty("TOOLBAR", ToolBar.DEFAULT_LIST).toArray(new String[] {}));
+        
     }
 
     private void layoutComponents() {
@@ -252,6 +255,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
 
         edit.add(new AddLinksMenu());
         edit.add(new CleanupMenu());
+
         ret.add(file);
         ret.add(edit);
         JStartMenu m;

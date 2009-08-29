@@ -40,6 +40,7 @@ import jd.controlling.JDLogger;
 import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlListener;
 import jd.gui.UserIO;
+import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.http.IPCheck;
 import jd.nutils.Formatter;
 import jd.nutils.encoding.Encoding;
@@ -490,7 +491,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
         ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
 
         MenuAction m;
-        menu.add(m = new MenuAction(MenuAction.TOGGLE, JDL.L("plugins.optional.remotecontrol.activate", "Aktivieren"), 0).setActionListener(this));
+        menu.add(m = new MenuAction(ToolBarAction.Types.TOGGLE, JDL.L("plugins.optional.remotecontrol.activate", "Aktivieren"), 0).setActionListener(this));
         m.setSelected(subConfig.getBooleanProperty(PARAM_ENABLED, true));
 
         return menu;

@@ -33,6 +33,7 @@ import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.InteractionTrigger;
 import jd.event.ControlEvent;
 import jd.gui.UserIO;
+import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.nutils.JDFlags;
 import jd.nutils.OSDetector;
 import jd.plugins.OptionalPlugin;
@@ -91,7 +92,7 @@ public class JDShutdown extends PluginOptional {
     public ArrayList<MenuAction> createMenuitems() {
         ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
         if (menuItem == null) {
-            menuItem = new MenuAction(MenuAction.TOGGLE, JDL.L("addons.jdshutdown.menu", "Shutdown after downloads finished"), 0).setActionListener(this);
+            menuItem = new MenuAction(ToolBarAction.Types.TOGGLE, JDL.L("addons.jdshutdown.menu", "Shutdown after downloads finished"), 0).setActionListener(this);
         }
         menu.add(menuItem);
         return menu;

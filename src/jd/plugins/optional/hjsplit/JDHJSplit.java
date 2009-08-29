@@ -34,6 +34,7 @@ import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.components.JDFileChooser;
+import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.nutils.Formatter;
 import jd.nutils.jobber.JDRunnable;
 import jd.nutils.jobber.Jobber;
@@ -115,7 +116,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
             if (event.getSource() instanceof DownloadLink) {
                 link = (DownloadLink) event.getSource();
 
-                items.add(m = new MenuAction(MenuAction.NORMAL, JDL.L("plugins.optional.jdhjsplit.linkmenu.merge", "Merge"), 1000).setActionListener(this));
+                items.add(m = new MenuAction(ToolBarAction.Types.NORMAL, JDL.L("plugins.optional.jdhjsplit.linkmenu.merge", "Merge"), 1000).setActionListener(this));
                 m.setEnabled(false);
                 if (link.getLinkStatus().hasStatus(LinkStatus.FINISHED) && this.isStartVolume(new File(link.getFileOutput()))) m.setEnabled(true);
                 if (new File(link.getFileOutput()).exists() && link.getName().matches(".*rar$")) m.setEnabled(true);
@@ -124,7 +125,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
 
             } else {
                 FilePackage fp = (FilePackage) event.getSource();
-                items.add(m = new MenuAction(MenuAction.NORMAL, JDL.L("plugins.optional.jdhjsplit.linkmenu.package.merge", "Merge package"), 1001).setActionListener(this));
+                items.add(m = new MenuAction(ToolBarAction.Types.NORMAL, JDL.L("plugins.optional.jdhjsplit.linkmenu.package.merge", "Merge package"), 1001).setActionListener(this));
                 m.setProperty("PACKAGE", fp);
             }
             break;
@@ -136,10 +137,10 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
         ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
         MenuAction m;
 
-        menu.add(m = new MenuAction(MenuAction.TOGGLE, JDL.L("plugins.optional.hjsplit.menu.toggle", "Activate"), 1).setActionListener(this));
+        menu.add(m = new MenuAction(ToolBarAction.Types.TOGGLE, JDL.L("plugins.optional.hjsplit.menu.toggle", "Activate"), 1).setActionListener(this));
         m.setSelected(this.getPluginConfig().getBooleanProperty("ACTIVATED", true));
 
-        menu.add(new MenuAction(MenuAction.NORMAL, JDL.L("plugins.optional.hjsplit.menu.extract.singlefils", "Merge archive(s)"), 21).setActionListener(this));
+        menu.add(new MenuAction(ToolBarAction.Types.NORMAL, JDL.L("plugins.optional.hjsplit.menu.extract.singlefils", "Merge archive(s)"), 21).setActionListener(this));
 
         return menu;
     }

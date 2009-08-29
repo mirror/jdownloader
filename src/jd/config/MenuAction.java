@@ -22,26 +22,20 @@ import java.util.ArrayList;
 
 import jd.controlling.JDLogger;
 import jd.gui.action.JDAction;
+import jd.gui.swing.jdgui.actions.ActionController;
+import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.plugins.Plugin;
-import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
-public class MenuAction extends JDAction {
-    public static final int CONTAINER = 0;
-    public static final int NORMAL = 1;
-    public static final int SEPARATOR = 3;
+public class MenuAction extends ToolBarAction {
 
     private static final long serialVersionUID = 9205555751462125274L;
-    public static final int TOGGLE = 2;
+
     private static final String MENUITEMS = "MENUITEMS";
 
-    private int id = NORMAL;
-    private ArrayList<MenuAction> items;
-    private Plugin plugin;
+    private static final String PLUGIN = "PLUGIN";
 
-    public MenuAction(int id) {
-        this(id, null, -1);
-    }
+    private static final ArrayList<MenuAction> EMPTY_ITEMS = new ArrayList<MenuAction>();
 
     /**
      * this is just a delegate to adjust return Type
@@ -52,72 +46,81 @@ public class MenuAction extends JDAction {
         return (MenuAction) super.setActionListener(actionListener);
     }
 
-    public MenuAction(int id, String title, int actionID) {
-        super(title, actionID);
-        this.id = id;
-        if(id==TOGGLE){
-            setSelected(false);
-        }
-    }
-
-    public int getId() {
-        
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
-
-    public MenuAction(String title, int actionID) {
-        this(NORMAL, title, actionID);
-    }
-
     public MenuAction(String menukey, String iconkey) {
-        super(JDL.L("gui.menu." + menukey + ".name", menukey), JDTheme.II(iconkey, 16, 16));
+        super(menukey, iconkey);
 
-        setMnemonic(JDL.L("gui.menu." + menukey + ".mnem", "-"));
-        setAccelerator(JDL.L("gui.menu." + menukey + ".accel", "-"));
+        this.setToolTipText(this.getTitle());
+        
+
+    }
+
+    public MenuAction(Types container, String name, int actionID) {
+        super(name);
+        this.type = container;
+        this.setToolTipText(this.getTitle());
+        this.setId(name);
+        this.putValue(VISIBLE, SubConfiguration.getConfig("Toolbar").getBooleanProperty("VISIBLE_" + this.getID(), true));
+        this.setActionID(actionID);
+        initDefaults();
+        ActionController.register(this);
+    }
+
+    public MenuAction(Types separator) {
+        super("-");
+        this.setId("separator");
+        this.type = separator;
+    }
+
+    public MenuAction(String name, int i) {
+        super(name);
+        this.setId(name);
+        this.setActionID(i);
 
     }
 
     public void addMenuItem(MenuAction m) {
-        if (id != CONTAINER) {
-            JDLogger.getLogger().severe("I am not a Container MenuAction!!");
+
+        ArrayList<MenuAction> items = null;
+        try {
+            items = (ArrayList<MenuAction>) getValue(MENUITEMS);
+        } catch (Exception e) {
         }
+
         if (items == null) {
             items = new ArrayList<MenuAction>();
         }
         items.add(m);
-        this.firePropertyChange(MENUITEMS, null, items);
+        this.putValue(MENUITEMS, items);
 
+    }
+
+    private ArrayList<MenuAction> getItems() {
+        if (getValue(MENUITEMS) == null) { return EMPTY_ITEMS; }
+        return ((ArrayList<MenuAction>) getValue(MENUITEMS));
     }
 
     public MenuAction get(int i) {
-        if (items == null) { return null; }
-        return items.get(i);
-    }
-
-    public int getType() {
-        return id;
+        if (getValue(MENUITEMS) == null) { return null; }
+        return ((ArrayList<MenuAction>) getValue(MENUITEMS)).get(i);
     }
 
     public Plugin getPlugin() {
-        return plugin;
+        if (getValue(PLUGIN) == null) { return null; }
+        return (Plugin) getValue(PLUGIN);
     }
 
     public int getSize() {
-        if (items == null) { return 0; }
-        return items.size();
+        if (getItems() == null) { return 0; }
+        return getItems().size();
     }
 
     public MenuAction setItems(ArrayList<MenuAction> createMenuitems) {
-        items = createMenuitems;
+        putValue(MENUITEMS, createMenuitems);
         return this;
     }
 
     public MenuAction setPlugin(Plugin plugin) {
-        this.plugin = plugin;
+        putValue(PLUGIN, plugin);
         return this;
     }
 
@@ -127,6 +130,18 @@ public class MenuAction extends JDAction {
             return;
         }
         getActionListener().actionPerformed(new ActionEvent(this, getActionID(), getTitle()));
+    }
+
+    @Override
+    public void init() {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public void initDefaults() {
+        // TODO Auto-generated method stub
+
     }
 
 }

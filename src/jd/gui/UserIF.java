@@ -89,4 +89,5 @@ public abstract class UserIF {
      */
     public abstract void setFrameStatus(int id);
 
+   
 }

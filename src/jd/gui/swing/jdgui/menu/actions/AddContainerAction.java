@@ -17,9 +17,14 @@
 package jd.gui.swing.jdgui.menu.actions;
 
 import java.awt.event.ActionEvent;
+import java.io.File;
 
 import jd.config.MenuAction;
-import jd.gui.swing.jdgui.actions.ActionController;
+import jd.gui.UserIO;
+import jd.gui.swing.components.JDFileChooser;
+import jd.nutils.io.JDFileFilter;
+import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 public class AddContainerAction extends MenuAction {
 
@@ -30,7 +35,20 @@ public class AddContainerAction extends MenuAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        ActionController.getToolBarAction("action.load").actionPerformed(e);
+        File[] ret = UserIO.getInstance().requestFileChooser("_LOADSAVEDLC", JDL.L("gui.filechooser.loaddlc", "Load DLC file"), JDFileChooser.FILES_ONLY, new JDFileFilter(null, ".dlc|.rsdf|.ccf|.metalink", true), true);
+        if (ret == null) return;
+        for (File r : ret) {
+            JDUtilities.getController().loadContainerFile(r);
+        }
+    }
+
+    @Override
+    public void initDefaults() {
+        this.setToolTipText(JDL.L("gui.menu.action.load", "Load Containerfile"));
+    }
+
+    @Override
+    public void init() {
     }
 
 }
