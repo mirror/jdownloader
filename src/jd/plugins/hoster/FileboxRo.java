@@ -29,17 +29,15 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filebox.ro" }, urls = { "(http://[\\w\\.]*?(filebox|fbx)\\.ro/(download|down)\\.php\\?key=[0-9a-z]{16})|(http://[\\w\\.]*?(filebox|fbx)\\.ro/video/play_video\\.php\\?key=[0-9a-z]{16})|(http://[\\w\\.]*?fbx\\.ro/[0-9a-z]{16})|(http://[\\w\\.]*?fbx\\.ro/v/[0-9a-z]{16})" }, flags = { 2 })
-
 public class FileboxRo extends PluginForHost {
 
     private boolean isVideo = false;
-    
+
     public FileboxRo(PluginWrapper wrapper) {
         super(wrapper);
     }
-    
-    // @Overrid
-    public void correctDownloadLink(DownloadLink link) throws Exception { 
+
+    public void correctDownloadLink(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setCookie(link.getDownloadURL(), "filebox_language", "en");
         if (!Regex.matches(link.getDownloadURL(), "http://[\\w\\.]*?filebox\\.ro/download\\.php\\?key=[0-9a-z]{16}")) {
@@ -52,98 +50,89 @@ public class FileboxRo extends PluginForHost {
             }
         }
     }
-    
-    // @Override
+
     public String getAGBLink() {
         return "http://www.filebox.ro/disclaimer.php?english=1";
     }
-    
-    // @Override
+
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        
         if (Regex.matches(downloadLink.getDownloadURL(), ".+(/video/|/v/).+")) {
-            this.isVideo = true; 
+            this.isVideo = true;
             String filename = br.getRegex("<h2>(.*?)</h2>.*?<div id=\"player\">").getMatch(0);
-                        
             if (filename != null) {
                 downloadLink.setFinalFileName(filename + ".flv");
                 return AvailableStatus.TRUE;
             }
-            
         } else {
             String redirect = br.getRegex("window.location.href='(.*?)'").getMatch(0);
             br.setCookie(redirect, "filebox_language", "en");
             br.getPage(redirect);
-
             if (!(br.containsHTML("File deleted or file lifespan expired") || br.containsHTML("Wrong link") || br.containsHTML("Filebox.ro is temporarily not available."))) {
                 String filename = br.getRegex("<h3>(.*?)</h3>.*?<hr />").getMatch(0);
                 String filesize = br.getRegex("Size:</span>(.*?)</li>").getMatch(0);
-                
-                if (!(filename == null || filesize  == null)) {
+
+                if (!(filename == null || filesize == null)) {
                     downloadLink.setName(filename);
                     downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
                     return AvailableStatus.TRUE;
                 }
             }
         }
-
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
-    
-    // @Override
+
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String linkurl = null;
-        
         if (isVideo) {
             String urlpart = br.getRegex("s1.addVariable\\(\"source_script\",\"(.*?)\"\\);").getMatch(0);
             String key = br.getRegex("s1.addVariable\\(\"key\",\"(.*?)\"\\);").getMatch(0);
             linkurl = urlpart + "?file=" + key + "&start=0";
-            
         } else {
-            requestFileInformation(downloadLink);
             br.setFollowRedirects(true);
             String id = new Regex(downloadLink.getDownloadURL(), ".+key=([0-9a-z]{16})").getMatch(0);
             br.getPage("http://www.filebox.ro/js/wait.js.php?key=" + id);
             String strwait = br.getRegex("wait=(\\d+)").getMatch(0);
-          
-            if(strwait != null && !br.containsHTML("Start download")) {
-                long waittime = Long.parseLong(strwait.trim());
-                waittime = (waittime * 1000) +1;
-                this.sleep(waittime, downloadLink); 
-            }
 
+            if (strwait != null && !br.containsHTML("Start download")) {
+                long waittime = Long.parseLong(strwait.trim());
+                waittime = (waittime * 1000) + 1;
+                this.sleep(waittime, downloadLink);
+            }
             br.getPage("http://www.filebox.ro/download.php?key=" + id);
             linkurl = br.getRegex("(http://\\w+\\.filebox.ro/get_file.php\\?key=[0-9a-z]{32})").getMatch(0);
         }
 
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, linkurl, false, 1);
+        br.setDebug(true);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, false, 1);
         URLConnectionAdapter con = dl.getConnection();
         if (con.getResponseCode() != 200 && con.getResponseCode() != 206) {
             con.disconnect();
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 1000l);
         }
-        dl.startDownload();
+        if (!dl.startDownload()) {
+            /* workaround for buggy server, there is always 12 bytes missing */
+            if (downloadLink.getDownloadSize() == downloadLink.getDownloadCurrent() + 13) {
+                downloadLink.getLinkStatus().reset();
+                downloadLink.getLinkStatus().addStatus(LinkStatus.FINISHED);
+            }
+        }
     }
-        
-    // @Override
+
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    // @Override
     public void reset() {
     }
 
-    // @Override
     public void resetPluginGlobals() {
     }
-    
-    // @Override
+
     public void resetDownloadlink(DownloadLink link) {
     }
 }

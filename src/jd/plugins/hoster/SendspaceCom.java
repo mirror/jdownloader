@@ -46,7 +46,6 @@ public class SendspaceCom extends PluginForHost {
         setStartIntervall(5000l);
     }
 
-    // @Override
     public String getAGBLink() {
         return "http://www.sendspace.com/terms.html";
     }
@@ -65,7 +64,6 @@ public class SendspaceCom extends PluginForHost {
         return false;
     }
 
-    // @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         this.setBrowserExclusive();
@@ -94,7 +92,6 @@ public class SendspaceCom extends PluginForHost {
         return ai;
     }
 
-    // @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
         login(account);
@@ -106,7 +103,6 @@ public class SendspaceCom extends PluginForHost {
         dl.startDownload();
     }
 
-    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         String url = downloadLink.getDownloadURL();
@@ -123,15 +119,11 @@ public class SendspaceCom extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
+        /* bypass captcha with retry ;) */
+        if (br.containsHTML("User Verification") && br.containsHTML("Please type all the characters")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 1 * 60 * 1000l);
         /* Link holen */
         String script = br.getRegex(Pattern.compile("<script type=\"text/javascript\">(.*?)</script>", Pattern.CASE_INSENSITIVE)).getMatch(0);
         String dec = br.getRegex(Pattern.compile("base64ToText\\('(.*?)'\\)", Pattern.CASE_INSENSITIVE)).getMatch(0);
@@ -172,20 +164,16 @@ public class SendspaceCom extends PluginForHost {
         dl.startDownload();
     }
 
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 2;
     }
 
-    // @Override
     public void reset() {
     }
 
-    // @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 
