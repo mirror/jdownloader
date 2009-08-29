@@ -48,7 +48,7 @@ public class FileShareInUa extends PluginForHost {
         br.getPage(freepage);
         if (br.containsHTML("Возможно, файл был удален по просьбе владельца авторских прав")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = Encoding.htmlDecode(br.getRegex("class=\"dnld_filename\">(.*?)</h1></td>").getMatch(0));
-        String filesize = br.getRegex("размер: <b>(.*?)</b></div>").getMatch(0);
+        String filesize = br.getRegex("class=\"dnld_size\">.*?<strong>(.*?)</strong>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         link.setFinalFileName(filename);
