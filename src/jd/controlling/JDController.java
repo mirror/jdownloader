@@ -300,14 +300,14 @@ public class JDController implements ControlListener {
             if (lastDownloadFinished.getFilePackage().getRemainingLinks() == 0) {
                 Interaction.handleInteraction(Interaction.INTERACTION_DOWNLOAD_PACKAGE_FINISHED, this);
 
-                if (JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION) == 2) {
+                if (JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION, 3) == 2) {
                     JDUtilities.getDownloadController().removePackage(lastDownloadFinished.getFilePackage());
                     break;
                 }
             }
 
             // Prüfen ob der Link entfernt werden soll
-            if (lastDownloadFinished.getLinkStatus().isFinished() && JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION) == 0) {
+            if (lastDownloadFinished.getLinkStatus().isFinished() && JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION, 3) == 0) {
                 lastDownloadFinished.getFilePackage().remove(lastDownloadFinished);
 
             }

@@ -1803,7 +1803,7 @@ abstract public class DownloadInterface {
         }
         if (fileOutput.exists()) {
 
-            if (SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_FILE_EXISTS) == 0) {
+            if (SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_FILE_EXISTS, 1) == 0) {
                 if (!new File(downloadLink.getFileOutput()).delete()) {
                     linkstatus.addStatus(LinkStatus.ERROR_FATAL);
                     linkstatus.setErrorMessage(JDL.L("system.download.errors.couldnotoverwrite", "Could not overwrite existing file"));

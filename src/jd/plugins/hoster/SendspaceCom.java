@@ -111,6 +111,7 @@ public class SendspaceCom extends PluginForHost {
         this.setBrowserExclusive();
         String url = downloadLink.getDownloadURL();
         br.getPage(url);
+        if (br.containsHTML("User Verification") && br.containsHTML("Please type all the characters")) return AvailableStatus.UNCHECKABLE;
         if (!br.containsHTML("the file you requested is not available")) {
             String[] infos = br.getRegex("<b>Name:</b>(.*?)<br><b>Size:</b>(.*?)<br>").getRow(0);
             if (infos != null) {

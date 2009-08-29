@@ -104,11 +104,11 @@ public class General extends ConfigPanel {
 
         String[] removeDownloads = new String[] { JDL.L("gui.config.general.toDoWithDownloads.immediate", "immediately"), JDL.L("gui.config.general.toDoWithDownloads.atStart", "at startup"), JDL.L("gui.config.general.toDoWithDownloads.packageReady", "when package is ready"), JDL.L("gui.config.general.toDoWithDownloads.never", "never") };
         container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, JDUtilities.getConfiguration(), Configuration.PARAM_FINISHED_DOWNLOADS_ACTION, removeDownloads, JDL.L("gui.config.general.toDoWithDownloads", "Remove finished downloads ...")));
-        ce.setDefaultValue(removeDownloads[3]);
+        ce.setDefaultValue(3);
 
         String[] fileExists = new String[] { JDL.L("system.download.triggerfileexists.overwrite", "Datei überschreiben"), JDL.L("system.download.triggerfileexists.skip", "Link überspringen"), JDL.L("system.download.triggerfileexists.rename", "Auto rename"), JDL.L("system.download.triggerfileexists.askpackage", "Ask for each package"), JDL.L("system.download.triggerfileexists.ask", "Ask for each file") };
         container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, config, Configuration.PARAM_FILE_EXISTS, fileExists, JDL.L("system.download.triggerfileexists", "Wenn eine Datei schon vorhanden ist:")));
-        ce.setDefaultValue(fileExists[1]);
+        ce.setDefaultValue(1);
 
         container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, GUIUtils.getConfig(), JDGuiConstants.PARAM_START_DOWNLOADS_AFTER_START, JDL.L("gui.config.download.startDownloadsOnStartUp", "Download beim Programmstart beginnen")));
         ce.setDefaultValue(false);

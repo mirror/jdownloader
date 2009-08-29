@@ -61,20 +61,20 @@ public class JDGrowlNotification extends PluginOptional {
     public void controlEvent(ControlEvent event) {
         switch (event.getID()) {
         case ControlEvent.CONTROL_INIT_COMPLETE:
-            growlNotification(JDL.L(JDL_PREFIX + "started", "jDownloader gestartet..."), getDateAndTime(), JDL.L(JDL_PREFIX + "started.title", "Programmstart"));
+            growlNotification(JDL.L(JDL_PREFIX + "started", "jDownloader started..."), getDateAndTime(), JDL.L(JDL_PREFIX + "started.title", "Programstart"));
             break;
         case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
-            growlNotification(JDL.L(JDL_PREFIX + "allfinished", "Alle Downloads beendet"), "", JDL.L(JDL_PREFIX + "allfinished.title", "Alle Downloads fertig"));
+            growlNotification(JDL.L(JDL_PREFIX + "allfinished", "All downloads stopped"), "", JDL.L(JDL_PREFIX + "allfinished.title", "All downloads finished"));
             break;
         case ControlEvent.CONTROL_PLUGIN_INACTIVE:
             if (!(event.getSource() instanceof PluginForHost)) return;
             DownloadLink lastLink = ((SingleDownloadController) event.getParameter()).getDownloadLink();
             if (lastLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
-                growlNotification(JDL.L(JDL_PREFIX + "finished", "Download beendet"), lastLink.getFinalFileName(), JDL.L(JDL_PREFIX + "finished.title", "Download erfolgreich beendet"));
+                growlNotification(JDL.L(JDL_PREFIX + "finished", "Download stopped"), lastLink.getFinalFileName(), JDL.L(JDL_PREFIX + "finished.title", "Download complete"));
             }
             break;
         case ControlEvent.CONTROL_DOWNLOAD_TERMINATION_INACTIVE:
-            growlNotification(JDL.L(JDL_PREFIX + "aborted", "Download abgebrochen"), "", JDL.L(JDL_PREFIX + "aborted.title", "Download abgebrochen"));
+            growlNotification(JDL.L(JDL_PREFIX + "aborted", "Download aborted"), "", JDL.L(JDL_PREFIX + "aborted.title", "Download aborted"));
             break;
         default:
             break;
@@ -100,7 +100,7 @@ public class JDGrowlNotification extends PluginOptional {
     }
 
     private String getDateAndTime() {
-        DateFormat dfmt = new SimpleDateFormat("'Am 'EEEE.', den' dd.MM.yy 'um' hh:mm:ss");
+        DateFormat dfmt = new SimpleDateFormat("EEEE dd.MM.yy hh:mm:ss");
         return dfmt.format(new Date());
     }
 

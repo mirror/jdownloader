@@ -51,7 +51,7 @@ public class LoadedColumn extends JDTableColumn {
             fp = (FilePackage) value;
             co = getDefaultTableCellRendererComponent(table, "", isSelected, hasFocus, row, column);
             if (fp.getTotalKBLoaded() < 0) {
-                ((JRendererLabel) co).setText("Unknown Filesize");
+                ((JRendererLabel) co).setText("0 B");
             } else {
                 ((JRendererLabel) co).setText(Formatter.formatReadable(fp.getTotalKBLoaded()));
             }
@@ -59,7 +59,7 @@ public class LoadedColumn extends JDTableColumn {
             dLink = (DownloadLink) value;
             co = getDefaultTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             if (dLink.getDownloadCurrent() <= 0) {
-                ((JRendererLabel) co).setText("Unknown Filesize");
+                ((JRendererLabel) co).setText("0 B");
             } else {
                 ((JRendererLabel) co).setText(Formatter.formatReadable(dLink.getDownloadCurrent()));
             }

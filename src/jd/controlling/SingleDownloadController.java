@@ -392,7 +392,7 @@ public class SingleDownloadController extends Thread {
         String[] fileExists = new String[] { JDL.L("system.download.triggerfileexists.overwrite", "Datei überschreiben"), JDL.L("system.download.triggerfileexists.skip", "Link überspringen"), JDL.L("system.download.triggerfileexists.rename", "Auto rename") };
         String title = JDL.L("jd.controlling.SingleDownloadController.askexists.title", "File exists");
         String msg = JDL.LF("jd.controlling.SingleDownloadController.askexists", "The file \r\n%s\r\n already exists. What do you want to do?", downloadLink.getFileOutput());
-        int doit = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_FILE_EXISTS);
+        int doit = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_FILE_EXISTS, 1);
         if (doit == 4) {
 
             // ask
