@@ -1335,4 +1335,3 @@ jd.update.main.error.message = Errors occured!\r\nThere were %s error(s) while u
 #pattern: gui\.menu\.(.+?)\.mnem
 #pattern: gui\.menu\.(.+?)\.accel
 #pattern: plugins\.host\.rapidshare\.errors\.(.+?)
-jd.gui.swing.jdgui.settings.panels.ocr.Advanced.breadcrum = Modules - Advanced
