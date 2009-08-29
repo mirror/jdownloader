@@ -196,7 +196,7 @@ public class UploadingCom extends PluginForHost {
 
     // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 5;
+        return 20;
     }
 
     // @Override
