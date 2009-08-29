@@ -43,50 +43,19 @@ public class PasswordListHTAccess extends ConfigPanel {
         super();
 
         initPanel();
+        // TODO: Warum hier kein load() ?
         // load();
     }
 
     @Override
     public void initPanel() {
-        // ConfigEntry conditionEntry;
-
-        // this.passwordConfig = new
-        // ConfigContainer(JDL.L("plugins.optional.jdunrar.config.passwordtab",
-        // "List of passwords"));
-        // config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER,
-        // passwordConfig));
-        //
-        // passwordConfig.addEntry();
-        //
-        //   
-        // new ConfigEntry(ConfigContainer.TYPE_LISTCONTROLLED, (ListController)
-        // HTACCESSController.getInstance(), JDL.L("plugins.http.htaccess",
-        // "List of all HTAccess passwords. Each line one password."))
-
         addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_LISTCONTROLLED, HTACCESSController.getInstance(), JDL.L("plugins.http.htaccess", "List of all HTAccess passwords. Each line one password."))));
-        // addGUIConfigEntry(new GUIConfigEntry(new
-        // ConfigEntry(ConfigContainer.TYPE_CHECKBOX, CONFIGURATION,
-        // Configuration.LOGGER_FILELOG,
-        // JDLocale.L("gui.config.general.filelogger",
-        // "Erstelle Logdatei im ./logs/ Ordner")).setDefaultValue(false).setGroup(logging)));
 
         JTabbedPane tabbed = new JTabbedPane();
-
         tabbed.setOpaque(false);
         tabbed.add(getBreadcrum(), panel);
 
         this.add(tabbed);
-    }
-
-    @Override
-    public void load() {
-        loadConfigEntries();
-    }
-
-    @Override
-    public void save() {
-        saveConfigEntries();
-
     }
 
 }

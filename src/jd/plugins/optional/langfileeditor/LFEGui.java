@@ -62,7 +62,6 @@ import jd.gui.swing.components.pieapi.ChartAPIEntity;
 import jd.gui.swing.components.pieapi.PieChartAPI;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.nutils.JDFlags;
-import jd.nutils.io.JDIO;
 import jd.nutils.nativeintegration.LocalBrowser;
 import jd.nutils.svn.ResolveHandler;
 import jd.nutils.svn.Subversion;
@@ -124,7 +123,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
 
     private SrcParser sourceParser;
 
-    private long HEAD;
+    // private long HEAD;
 
     private JMenuItem mnuCurrent;
 
@@ -475,25 +474,22 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
             svn = new Subversion(SOURCE_SVN, subConfig.getStringProperty(PROPERTY_SVN_ACCESS_USER), subConfig.getStringProperty(PROPERTY_SVN_ACCESS_PASS));
             svnLanguageDir = new Subversion(LANGUAGE_SVN, subConfig.getStringProperty(PROPERTY_SVN_ACCESS_USER), subConfig.getStringProperty(PROPERTY_SVN_ACCESS_PASS));
 
-            HEAD = svn.latestRevision();
+            // HEAD = svn.latestRevision();
             svn.getBroadcaster().addListener(new MessageListener() {
 
                 public void onMessage(MessageEvent event) {
                     progress.setStatusText(JDL.L(LOCALE_PREFIX + "svn.updating", "Updating SVN: Please wait") + ": " + event.getMessage().replace(dirWorkingCopy.getParentFile().getAbsolutePath(), ""));
-
                 }
 
             });
             try {
                 svnLanguageDir.revert(dirWorkingCopy);
             } catch (Exception e) {
-
                 JDLogger.exception(e);
             }
             try {
                 svn.update(this.dirWorkingCopy, null);
             } catch (Exception e) {
-
                 JDLogger.exception(e);
                 UserIO.getInstance().requestMessageDialog(JDL.L(LOCALE_PREFIX + "error.title", "Error occured"), JDL.LF(LOCALE_PREFIX + "error.updatesource.message", "Error while updating source:\r\n %s", JDLogger.getStackTrace(e)));
             }
@@ -501,17 +497,14 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
                 try {
                     svnLanguageDir.revert(dirLanguages);
                 } catch (Exception e) {
-
                     JDLogger.exception(e);
                 }
-
             }
             try {
                 svnLanguageDir.update(dirLanguages, null);
             } catch (Exception e) {
                 JDLogger.exception(e);
                 UserIO.getInstance().requestMessageDialog(JDL.L(LOCALE_PREFIX + "error.title", "Error occured"), JDL.LF(LOCALE_PREFIX + "error.updatelanguages.message", "Error while updating languages:\r\n %s", JDLogger.getStackTrace(e)));
-
             }
             svnLanguageDir.dispose();
             svn.dispose();
@@ -695,16 +688,17 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
 
         ProgressController progress = new ProgressController(JDL.L(LOCALE_PREFIX + "analyzingSource1", "Analyzing Source Folder"));
         progress.setIndeterminate(true);
-        Subversion svn = null;
-        try {
-
-            svn = new Subversion(SOURCE_SVN, subConfig.getStringProperty(PROPERTY_SVN_ACCESS_USER), subConfig.getStringProperty(PROPERTY_SVN_ACCESS_PASS));
-        } catch (org.tmatesoft.svn.core.SVNAuthenticationException e) {
-            subConfig.setProperty(PROPERTY_SVN_ACCESS_USER, null);
-            subConfig.save();
-        } catch (SVNException e) {
-            e.printStackTrace();
-        }
+        // Subversion svn = null;
+        // try {
+        // svn = new Subversion(SOURCE_SVN,
+        // subConfig.getStringProperty(PROPERTY_SVN_ACCESS_USER),
+        // subConfig.getStringProperty(PROPERTY_SVN_ACCESS_PASS));
+        // } catch (SVNAuthenticationException e) {
+        // subConfig.setProperty(PROPERTY_SVN_ACCESS_USER, null);
+        // subConfig.save();
+        // } catch (SVNException e) {
+        // e.printStackTrace();
+        // }
 
         sourceParser = new SrcParser(this.dirWorkingCopy);
         sourceParser.getBroadcaster().addListener(progress);
@@ -712,7 +706,6 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
 
         JDLogger.getLogger().warning("Patternmatches are not recommened: \r\n" + sourceParser.getPattern());
 
-    
         progress.setStatusText(JDL.L(LOCALE_PREFIX + "analyzingSource.ready", "Analyzing Source Folder: Complete"));
         progress.doFinalize(2 * 1000l);
     }

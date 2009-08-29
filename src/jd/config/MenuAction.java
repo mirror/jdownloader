@@ -25,7 +25,6 @@ import jd.gui.action.JDAction;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.plugins.Plugin;
-import jd.utils.locale.JDL;
 
 public class MenuAction extends ToolBarAction {
 
@@ -50,7 +49,6 @@ public class MenuAction extends ToolBarAction {
         super(menukey, iconkey);
 
         this.setToolTipText(this.getTitle());
-        
 
     }
 
@@ -78,6 +76,7 @@ public class MenuAction extends ToolBarAction {
 
     }
 
+    @SuppressWarnings("unchecked")
     public void addMenuItem(MenuAction m) {
 
         ArrayList<MenuAction> items = null;
@@ -94,11 +93,13 @@ public class MenuAction extends ToolBarAction {
 
     }
 
+    @SuppressWarnings("unchecked")
     private ArrayList<MenuAction> getItems() {
         if (getValue(MENUITEMS) == null) { return EMPTY_ITEMS; }
         return ((ArrayList<MenuAction>) getValue(MENUITEMS));
     }
 
+    @SuppressWarnings("unchecked")
     public MenuAction get(int i) {
         if (getValue(MENUITEMS) == null) { return null; }
         return ((ArrayList<MenuAction>) getValue(MENUITEMS)).get(i);

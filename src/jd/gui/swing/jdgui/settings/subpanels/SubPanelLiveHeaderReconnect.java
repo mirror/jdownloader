@@ -343,15 +343,8 @@ public class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionLi
     }
 
     @Override
-    public void load() {
-        loadConfigEntries();
-    }
-
-    @Override
-    public void save() {
+    public void saveSpecial() {
         configuration.setProperty(Configuration.PARAM_HTTPSEND_REQUESTS, script.getText());
-        saveConfigEntries();
-
     }
 
 }

@@ -85,14 +85,4 @@ public class Linkgrabber extends ConfigPanel {
         this.add(tabbed);
     }
 
-    @Override
-    public void load() {
-        loadConfigEntries();
-    }
-
-    @Override
-    public void save() {
-        saveConfigEntries();
-
-    }
 }

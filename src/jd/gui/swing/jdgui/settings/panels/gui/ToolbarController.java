@@ -225,7 +225,7 @@ public class ToolbarController extends ConfigPanel {
      * @param actions2
      */
     private void setActions(ArrayList<ToolBarAction> actions2) {
-        
+
         Collections.sort(actions2, new Comparator<ToolBarAction>() {
 
             public int compare(ToolBarAction o1, ToolBarAction o2) {
@@ -301,14 +301,6 @@ public class ToolbarController extends ConfigPanel {
         tabbed.add(getBreadcrum(), panel);
 
         this.add(tabbed);
-    }
-
-    @Override
-    public void load() {
-    }
-
-    @Override
-    public void save() {
     }
 
     @Override

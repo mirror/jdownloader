@@ -110,16 +110,6 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
     }
 
     @Override
-    public void load() {
-        loadConfigEntries();
-    }
-
-    @Override
-    public void save() {
-        saveConfigEntries();
-    }
-
-    @Override
     public PropertyType hasChanges() {
         return PropertyType.NORMAL;
     }

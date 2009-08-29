@@ -281,20 +281,8 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
                 add(panel);
             }
 
-            @Override
-            public void load() {
-                loadConfigEntries();
-            }
-
-            @Override
-            public void save() {
-                saveConfigEntries();
-
-            }
-
         });
         cp.initPanel();
-        // cp.load();
 
     }
 
@@ -318,17 +306,6 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
                 add(panel);
             }
 
-            @Override
-            public void load() {
-                loadConfigEntries();
-            }
-
-            @Override
-            public void save() {
-                saveConfigEntries();
-
-            }
-
         });
         cp.initPanel();
         // cp.load();
@@ -343,9 +320,8 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
     }
 
     @Override
-    public void load() {
+    public void loadSpecial() {
         tabbed.setSelectedIndex(configuration.getIntegerProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, 0));
-        loadConfigEntries();
     }
 
     @Override
@@ -354,72 +330,16 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
         return PropertyType.getMax(ret, super.hasChanges(), ((ConfigPanel) tabbed.getSelectedComponent()).hasChanges());
     }
 
+    @Override
     public void setHidden() {
-
         save();
         getBroadcaster().fireEvent(new SwitchPanelEvent(this, SwitchPanelEvent.ON_HIDE));
-
     }
 
     @Override
-    public void save() {
-
-        saveConfigEntries();
+    public void saveSpecial() {
         configuration.setProperty(ReconnectMethod.PARAM_RECONNECT_TYPE, tabbed.getSelectedIndex());
         ((ConfigPanel) tabbed.getSelectedComponent()).save();
-        ((ConfigPanel) tabbed.getSelectedComponent()).saveConfigEntries();
-
     }
 
-    // public PropertyType hasChanges() {
-    //
-    // PropertyType ret = PropertyType.getMax(super.hasChanges(),
-    // cep.hasChanges());
-    //
-    // if (lh != null) {
-    //
-    // return lh.hasChanges().getMax(ret); }
-    // if (er != null) { return er.hasChanges().getMax(ret); }
-    // if (lhclr != null) { return lhclr.hasChanges().getMax(ret); }
-    // return ret;
-    // }
-
-    // private void setReconnectType() {
-    // if (lh != null) {
-    // container.remove(lh);
-    // lh = null;
-    // } else if (er != null) {
-    // container.remove(er);
-    // er = null;
-    // } else if (lhclr != null) {
-    // container.remove(lhclr);
-    // lhclr = null;
-    // }
-    // container.setBorder(BorderFactory.createTitledBorder(types[box.
-    // getSelectedIndex()]));
-    // switch (box.getSelectedIndex()) {
-    // case 0:
-    //           
-    //
-    // container.add(lh);
-    // break;
-    // case 1:
-    //           
-    //
-    // container.add(er);
-    // break;
-    // case 2:
-    //           
-    //
-    // container.add(er);
-    // break;
-    // case 3:
-    //          
-    //
-    // container.add(lhclr);
-    // break;
-    // }
-    //
-    // validate();
-    // }
 }

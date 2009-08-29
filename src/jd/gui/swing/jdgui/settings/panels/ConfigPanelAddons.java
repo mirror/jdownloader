@@ -216,12 +216,4 @@ public class ConfigPanelAddons extends ConfigPanel implements ActionListener, Mo
     public void mouseReleased(MouseEvent e) {
     }
 
-    @Override
-    public void load() {
-    }
-
-    @Override
-    public void save() {
-    }
-
 }

@@ -25,60 +25,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Regex {
-    public static String[] getLines(String arg) {
-        if (arg == null) { return new String[] {}; }
-        String[] temp = arg.split("[\r\n]{1,2}");
-        String[] output = new String[temp.length];
-        for (int i = 0; i < temp.length; i++) {
-            output[i] = temp[i].trim();
-        }
-        return output;
-    }
-
-    /**
-     * Gibt zu einem typischem Sizestring (12,34kb , 45 mb etc) die größe in
-     * bytes zurück.
-     * 
-     * @param sizestring
-     * @return
-     */
-    public static long getSize(String string) {
-
-        String[][] matches = new Regex(string, Pattern.compile("([\\d]+)[\\.|\\,|\\:]([\\d]+)", Pattern.CASE_INSENSITIVE)).getMatches();
-
-        if (matches == null || matches.length == 0) {
-            matches = new Regex(string, Pattern.compile("([\\d]+)", Pattern.CASE_INSENSITIVE)).getMatches();
-
-        }
-        if (matches == null || matches.length == 0) { return -1; }
-
-        double res = 0;
-        if (matches[0].length == 1) {
-            res = Double.parseDouble(matches[0][0]);
-        }
-        if (matches[0].length == 2) {
-            res = Double.parseDouble(matches[0][0] + "." + matches[0][1]);
-        }
-        if (Regex.matches(string, Pattern.compile("(gb|gbyte|gig)", Pattern.CASE_INSENSITIVE))) {
-            res *= 1024 * 1024 * 1024;
-        } else if (Regex.matches(string, Pattern.compile("(mb|mbyte|megabyte)", Pattern.CASE_INSENSITIVE))) {
-            res *= 1024 * 1024;
-        } else if (Regex.matches(string, Pattern.compile("(kb|kbyte|kilobyte)", Pattern.CASE_INSENSITIVE))) {
-            res *= 1024;
-        }
-
-        return Math.round(res);
-    }
-
-    public static boolean matches(Object str, Pattern pat) {
-
-        return new Regex(str, pat).matches();
-    }
-
-    public static boolean matches(Object page, String string) {
-
-        return new Regex(page, string).matches();
-    }
 
     private Matcher matcher;
 
@@ -120,25 +66,28 @@ public class Regex {
     }
 
     public Regex(String data, Pattern pattern) {
-        if (data == null || pattern == null) { return; }
+        if (data == null || pattern == null) return;
         matcher = pattern.matcher(data);
     }
 
     public Regex(String data, String pattern) {
-        if (data == null || pattern == null) { return; }
+        if (data == null || pattern == null) return;
         matcher = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE | Pattern.DOTALL).matcher(data);
 
     }
 
     public Regex(String data, String pattern, int flags) {
-        if (data == null || pattern == null) { return; }
+        if (data == null || pattern == null) return;
         matcher = Pattern.compile(pattern, flags).matcher(data);
     }
 
-    // Gibt die Anzahl der Treffer zurück
-
+    /**
+     * Gibt die Anzahl der Treffer zurück
+     * 
+     * @return
+     */
     public int count() {
-        if (matcher == null) { return 0; }
+        if (matcher == null) return 0;
         matcher.reset();
         int c = 0;
         Matcher matchertmp = matcher;
@@ -149,26 +98,31 @@ public class Regex {
     }
 
     public String getMatch(int group) {
-        if (matcher == null) { return null; }
+        if (matcher == null) return null;
         Matcher matchertmp = matcher;
         matcher.reset();
-        if (matchertmp.find()) { return matchertmp.group(group + 1); }
+        if (matchertmp.find()) return matchertmp.group(group + 1);
 
         return null;
-
     }
 
-    // Gibt den matcher aus
-
+    /**
+     * Gibt den matcher aus
+     * 
+     * @return
+     */
     public Matcher getMatcher() {
         matcher.reset();
         return matcher;
     }
 
-    // Gibt alle Treffer eines Matches in einem 2D array aus
-
+    /**
+     * Gibt alle Treffer eines Matches in einem 2D array aus
+     * 
+     * @return
+     */
     public String[][] getMatches() {
-        if (matcher == null) { return null; }
+        if (matcher == null) return null;
         Matcher matchertmp = matcher;
         matcher.reset();
         ArrayList<String[]> ar = new ArrayList<String[]>();
@@ -193,7 +147,7 @@ public class Regex {
     }
 
     public String[] getColumn(int x) {
-        if (matcher == null) { return null; }
+        if (matcher == null) return null;
         x++;
         Matcher matchertmp = matcher;
         matcher.reset();
@@ -210,13 +164,16 @@ public class Regex {
         return matcher.find();
     }
 
-    // Setzt den Matcher
-
+    /**
+     * Setzt den Matcher
+     * 
+     * @param matcher
+     */
     public void setMatcher(Matcher matcher) {
         this.matcher = matcher;
     }
 
-    // @Override
+    @Override
     public String toString() {
         StringBuilder ret = new StringBuilder();
         String[][] match = getMatches();
@@ -242,7 +199,7 @@ public class Regex {
 
         }
 
-        if (matches == null || matches.length == 0) { return -1; }
+        if (matches == null || matches.length == 0) return -1;
 
         double res = 0;
         if (matches[0].length == 1) {
@@ -272,7 +229,7 @@ public class Regex {
         } else {
             dateFormat = new SimpleDateFormat(timeformat);
         }
-        if (expire == null) { return -1; }
+        if (expire == null) return -1;
 
         Date date;
         try {
@@ -289,14 +246,14 @@ public class Regex {
     }
 
     public String getMatch(int entry, int group) {
-        if (matcher == null) { return null; }
+        if (matcher == null) return null;
         Matcher matchertmp = matcher;
         matcher.reset();
         // group++;
         entry++;
         int groupCount = 0;
         while (matchertmp.find()) {
-            if (groupCount == group) { return matchertmp.group(entry); }
+            if (groupCount == group) return matchertmp.group(entry);
 
             groupCount++;
         }
@@ -304,7 +261,7 @@ public class Regex {
     }
 
     public String[] getRow(int y) {
-        if (matcher == null) { return null; }
+        if (matcher == null) return null;
         Matcher matchertmp = matcher;
         matcher.reset();
         int groupCount = 0;
@@ -364,4 +321,57 @@ public class Regex {
         }
         return sb.toString().trim();
     }
+
+    public static String[] getLines(String arg) {
+        if (arg == null) { return new String[] {}; }
+        String[] temp = arg.split("[\r\n]{1,2}");
+        String[] output = new String[temp.length];
+        for (int i = 0; i < temp.length; i++) {
+            output[i] = temp[i].trim();
+        }
+        return output;
+    }
+
+    /**
+     * Gibt zu einem typischem Sizestring (12,34kb , 45 mb etc) die größe in
+     * bytes zurück.
+     * 
+     * @param sizestring
+     * @return
+     */
+    public static long getSize(String string) {
+
+        String[][] matches = new Regex(string, Pattern.compile("([\\d]+)[\\.|\\,|\\:]([\\d]+)", Pattern.CASE_INSENSITIVE)).getMatches();
+
+        if (matches == null || matches.length == 0) {
+            matches = new Regex(string, Pattern.compile("([\\d]+)", Pattern.CASE_INSENSITIVE)).getMatches();
+        }
+        if (matches == null || matches.length == 0) { return -1; }
+
+        double res = 0;
+        if (matches[0].length == 1) {
+            res = Double.parseDouble(matches[0][0]);
+        }
+        if (matches[0].length == 2) {
+            res = Double.parseDouble(matches[0][0] + "." + matches[0][1]);
+        }
+        if (Regex.matches(string, Pattern.compile("(gb|gbyte|gig)", Pattern.CASE_INSENSITIVE))) {
+            res *= 1024 * 1024 * 1024;
+        } else if (Regex.matches(string, Pattern.compile("(mb|mbyte|megabyte)", Pattern.CASE_INSENSITIVE))) {
+            res *= 1024 * 1024;
+        } else if (Regex.matches(string, Pattern.compile("(kb|kbyte|kilobyte)", Pattern.CASE_INSENSITIVE))) {
+            res *= 1024;
+        }
+
+        return Math.round(res);
+    }
+
+    public static boolean matches(Object str, Pattern pat) {
+        return new Regex(str, pat).matches();
+    }
+
+    public static boolean matches(Object page, String string) {
+        return new Regex(page, string).matches();
+    }
+
 }

@@ -149,19 +149,10 @@ public class Browser extends ConfigPanel {
         }
 
         JTabbedPane tabbed = new JTabbedPane();
-       tabbed.setOpaque(false);  tabbed.add(getBreadcrum(), panel);
+        tabbed.setOpaque(false);
+        tabbed.add(getBreadcrum(), panel);
 
         this.add(tabbed);
     }
 
-    @Override
-    public void load() {
-        loadConfigEntries();
-    }
-
-    @Override
-    public void save() {
-        saveConfigEntries();
-
-    }
 }

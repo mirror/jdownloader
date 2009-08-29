@@ -56,7 +56,6 @@ public class Advanced extends ConfigPanel {
     private ConfigContainer setupContainer() {
 
         ConfigEntry ce;
-        // ConfigEntry conditionEntry;
         ConfigEntry conditionEntry2;
 
         // Extended Tab
@@ -64,13 +63,6 @@ public class Advanced extends ConfigPanel {
         ConfigContainer extended = new ConfigContainer(JDL.L("gui.config.download.network.extended", "Erweiterte Einstellungen"));
 
         extended.setGroup(new ConfigGroup(JDL.L("gui.config.download.ipcheck", "Reconnect IP-Check"), JDTheme.II("gui.images.network", 32, 32)));
-
-        // extended.addEntry(conditionEntry = new
-        // ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config,
-        // Configuration.PARAM_GLOBAL_IP_DISABLE,
-        // JDL.L("gui.config.download.ipcheck.disable",
-        // "IP Überprüfung deaktivieren")));
-        // conditionEntry.setDefaultValue(false);
 
         extended.addEntry(conditionEntry2 = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.PARAM_GLOBAL_IP_BALANCE, JDL.L("gui.config.download.ipcheck.balance", "Use balanced IP-Check")));
         conditionEntry2.setDefaultValue(true);
@@ -114,16 +106,5 @@ public class Advanced extends ConfigPanel {
         JTabbedPane tabbed = new JTabbedPane();
         tabbed.addTab(getBreadcrum(), panel);
         add(tabbed);
-    }
-
-    @Override
-    public void load() {
-        loadConfigEntries();
-    }
-
-    @Override
-    public void save() {
-        saveConfigEntries();
-
     }
 }

@@ -65,7 +65,6 @@ public class General extends ConfigPanel {
     private ConfigContainer setupContainer() {
 
         ConfigEntry ce;
-        /* LANGUAGE */
 
         ConfigContainer look = new ConfigContainer(JDL.L("gui.config.gui.look.tab", "Anzeige & Bedienung"));
 
@@ -104,16 +103,15 @@ public class General extends ConfigPanel {
         ce.setDefaultValue(true);
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDGuiConstants.PARAM_SHOW_BALLOON, JDL.L("gui.config.gui.showBalloon", "Show Balloon infos")).setGroup(feel));
         ce.setDefaultValue(true);
-       
-        
+
         look.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
                 AbstractDialog.resetDialogInformations();
-                UserIO.getInstance().requestMessageDialog( JDL.L("gui.config.gui.resetdialogs.message", "Dialog Information has been reseted."));
+                UserIO.getInstance().requestMessageDialog(JDL.L("gui.config.gui.resetdialogs.message", "Dialog Information has been reseted."));
             }
 
-        }, JDL.L("gui.config.gui.resetdialogs.short", "Reset"), JDL.L("gui.config.gui.resetdialogs2", "Reset Dialog Information"), JDTheme.II("gui.images.restart", 16, 16)).setGroup(feel).setEnabled( SubConfiguration.getConfig(AbstractDialog.DIALOGS_CONFIG).getProperties().size()>0));
+        }, JDL.L("gui.config.gui.resetdialogs.short", "Reset"), JDL.L("gui.config.gui.resetdialogs2", "Reset Dialog Information"), JDTheme.II("gui.images.restart", 16, 16)).setGroup(feel).setEnabled(SubConfiguration.getConfig(AbstractDialog.DIALOGS_CONFIG).getProperties().size() > 0));
 
         ConfigGroup perf = new ConfigGroup(JDL.L("gui.config.gui.performance", "Performance"), JDTheme.II("gui.images.performance", 32, 32));
 
@@ -139,14 +137,4 @@ public class General extends ConfigPanel {
         this.add(tabbed);
     }
 
-    @Override
-    public void load() {
-        loadConfigEntries();
-    }
-
-    @Override
-    public void save() {
-        saveConfigEntries();
-
-    }
 }

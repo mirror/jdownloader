@@ -219,10 +219,6 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         this.add(tabbed);
     }
 
-    @Override
-    public void load() {
-    }
-
     public void mouseClicked(MouseEvent e) {
         if (e.getClickCount() > 1) {
             HostPluginWrapper hpw = pluginsForHost.get(table.getSelectedRow());
@@ -242,11 +238,6 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     }
 
     public void mouseReleased(MouseEvent e) {
-    }
-
-    @Override
-    public void save() {
-
     }
 
     @Override

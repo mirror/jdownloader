@@ -16,7 +16,6 @@
 
 package jd.gui.swing.jdgui.settings;
 
-import java.awt.Graphics;
 import java.util.ArrayList;
 import java.util.Vector;
 import java.util.logging.Logger;
@@ -58,7 +57,6 @@ public class ConfigPanel extends SwitchPanel {
         this.setLayout(new MigLayout("ins 0 0 0 0", "[fill,grow]", "[fill,grow]"));
         panel = new JPanel();
         panel.setLayout(new MigLayout("ins 0 10 10 10,wrap 2", "[fill,grow 10]10[fill,grow]"));
-
     }
 
     /**
@@ -69,21 +67,12 @@ public class ConfigPanel extends SwitchPanel {
     public ConfigPanel(ConfigContainer container) {
         this();
         for (ConfigEntry cfgEntry : container.getEntries()) {
-
             GUIConfigEntry ce = new GUIConfigEntry(cfgEntry);
             if (ce != null) addGUIConfigEntry(ce);
-
         }
 
         this.load();
         this.add(panel);
-    }
-
-    @Override
-    public void paint(Graphics g) {
-
-        super.paint(g);
-
     }
 
     public String getBreadcrum() {
@@ -175,7 +164,6 @@ public class ConfigPanel extends SwitchPanel {
                 case ConfigContainer.TYPE_TEXTAREA:
                 case ConfigContainer.TYPE_LISTCONTROLLED:
                     panel.add(entry.getDecoration(), "gapleft " + getGapLeft() + ",spany " + entry.getInput().length + ",spanx");
-
                     break;
                 default:
                     panel.add(entry.getDecoration(), "gapleft " + getGapLeft() + ",spany " + entry.getInput().length + (entry.getInput().length == 0 ? ",spanx" : ""));
@@ -190,11 +178,7 @@ public class ConfigPanel extends SwitchPanel {
                     panel.add(c, entry.getDecoration() == null ? "spanx,gapright " + this.getGapRight() + ",gapleft " + this.getGapLeft() : "width n:n:160,gapright " + this.getGapRight());
                     header.setVisible(true);
                     break;
-
                 case ConfigContainer.TYPE_TEXTAREA:
-
-                    // panel.add(new JScrollPane(c),
-                    // "spanx,gapleft 35,gapright 20");
                     panel.add(new JScrollPane(c), "spanx,gapright " + getGapRight() + ",growy,pushy,gapleft " + getGapLeft());
                     header.setVisible(true);
                     break;
@@ -211,7 +195,6 @@ public class ConfigPanel extends SwitchPanel {
     }
 
     private String getGapLeft() {
-        // TODO Auto-generated method stub
         return "35";
     }
 
@@ -227,27 +210,36 @@ public class ConfigPanel extends SwitchPanel {
 
     }
 
-    public void load() {
+    public final void load() {
         this.loadConfigEntries();
-
+        this.loadSpecial();
     }
 
-    public void loadConfigEntries() {
+    private final void loadConfigEntries() {
         for (GUIConfigEntry akt : entries) {
             akt.load();
-
         }
     }
 
-    public void save() {
+    public final void save() {
+        this.saveSpecial();
         this.saveConfigEntries();
+    }
 
+    /**
+     * Should be overwritten to do special loading.
+     */
+    protected void loadSpecial() {
+    }
+
+    /**
+     * Should be overwritten to do special saving.
+     */
+    protected void saveSpecial() {
     }
 
     @Override
     public void onShow() {
-
-        // loadConfigEntries();
         load();
     }
 
@@ -302,7 +294,7 @@ public class ConfigPanel extends SwitchPanel {
     /**
      * Saves the configentries in THIS panel.
      */
-    public final void saveConfigEntries() {
+    private final void saveConfigEntries() {
         ArrayList<SubConfiguration> subs = new ArrayList<SubConfiguration>();
         for (GUIConfigEntry akt : entries) {
             if (akt.getConfigEntry().getPropertyInstance() instanceof SubConfiguration && subs.indexOf(akt.getConfigEntry().getPropertyInstance()) < 0) {

@@ -63,19 +63,7 @@ public class ConfigPanelGeneral extends ConfigPanel {
 
         ConfigGroup logging = new ConfigGroup(JDL.L("gui.config.general.logging", "Logging"), JDTheme.II("gui.images.terminal", 32, 32));
 
-        addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, configuration, Configuration.PARAM_LOGGER_LEVEL, new Level[] { Level.ALL, Level.INFO, Level.OFF }, JDL.L("gui.config.general.loggerLevel", "Level für's Logging")).setDefaultValue(Level.INFO).setGroup(logging)/*
-                                                                                                                                                                                                                                                                                                             * .setPropertyType
-                                                                                                                                                                                                                                                                                                             * (
-                                                                                                                                                                                                                                                                                                             * PropertyType
-                                                                                                                                                                                                                                                                                                             * .
-                                                                                                                                                                                                                                                                                                             * NEEDS_RESTART
-                                                                                                                                                                                                                                                                                                             * )
-                                                                                                                                                                                                                                                                                                             */));
-        // addGUIConfigEntry(new GUIConfigEntry(new
-        // ConfigEntry(ConfigContainer.TYPE_CHECKBOX, CONFIGURATION,
-        // Configuration.LOGGER_FILELOG,
-        // JDLocale.L("gui.config.general.filelogger",
-        // "Erstelle Logdatei im ./logs/ Ordner")).setDefaultValue(false).setGroup(logging)));
+        addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, configuration, Configuration.PARAM_LOGGER_LEVEL, new Level[] { Level.ALL, Level.INFO, Level.OFF }, JDL.L("gui.config.general.loggerLevel", "Level für's Logging")).setDefaultValue(Level.INFO).setGroup(logging)));
 
         ConfigGroup update = new ConfigGroup(JDL.L("gui.config.general.update", "Update"), JDTheme.II("gui.splash.update", 32, 32));
 
@@ -103,8 +91,8 @@ public class ConfigPanelGeneral extends ConfigPanel {
             }, JDL.L("gui.config.general.cnl.uninstall", "Uninstall now"), JDL.L("gui.config.general.cnl.uninstall.long", "Uninstall Click'n'load (req. admin)"), JDTheme.II("gui.images.uninstall", 16, 16)).setDefaultValue(false).setGroup(cnl).setEnabled(OSDetector.isWindows())));
 
         }
-       cnl=new ConfigGroup(JDL.L("jd.plugins.optional.interfaces.JDExternInterface.flashgot.configgroup", "Install FlashGot Firefox Addon"), JDTheme.II("gui.images.flashgot", 16, 16));
-       addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
+        cnl = new ConfigGroup(JDL.L("jd.plugins.optional.interfaces.JDExternInterface.flashgot.configgroup", "Install FlashGot Firefox Addon"), JDTheme.II("gui.images.flashgot", 16, 16));
+        addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
                 Installer.installFirefoxaddon();
@@ -121,13 +109,7 @@ public class ConfigPanelGeneral extends ConfigPanel {
     }
 
     @Override
-    public void load() {
-        loadConfigEntries();
-    }
-
-    @Override
-    public void save() {
-        saveConfigEntries();
+    protected void saveSpecial() {
         logger.setLevel((Level) configuration.getProperty(Configuration.PARAM_LOGGER_LEVEL));
     }
 }

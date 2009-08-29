@@ -69,15 +69,6 @@ public class InternetAndNetwork extends ConfigPanel {
         ce.setDefaultValue(100000);
         ce.setStep(500);
 
-        // network.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER,
-        // config, SingleDownloadController.WAIT_TIME_ON_CONNECTION_LOSS,
-        // JDLocale.L("gui.config.download.connectionlost.wait",
-        // "Wartezeit nach Verbindungsabbruch [s]"), 0, 24 * 60 *
-        // 60)/*.setGroupName(JDLocale.L("gui.config.download.timeout",
-        // "Timeout & Connection loss"))*/);
-        // ce.setDefaultValue(5 * 60);
-        // ce.setStep(1);
-
         network.setGroup(new ConfigGroup(JDL.L("gui.config.download.proxy", "Proxy Settings"), JDTheme.II("gui.images.proxy", 32, 32)));
         network.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.USE_PROXY, JDL.L("gui.config.download.use_proxy", "Http-Proxy Verwenden") + " (" + JDL.L("gui.warning.restartNeeded", "JD-Restart needed after changes!") + ")"));
 
@@ -149,14 +140,4 @@ public class InternetAndNetwork extends ConfigPanel {
         this.add(tabbed);
     }
 
-    @Override
-    public void load() {
-        loadConfigEntries();
-    }
-
-    @Override
-    public void save() {
-        saveConfigEntries();
-
-    }
 }

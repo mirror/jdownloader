@@ -86,15 +86,8 @@ public class SubPanelCLRReconnect extends ConfigPanel implements ActionListener 
     }
 
     @Override
-    public void load() {
-        loadConfigEntries();
-    }
-
-    @Override
-    public void save() {
+    public void saveSpecial() {
         configuration.setProperty(Configuration.PARAM_HTTPSEND_REQUESTS_CLR, script.getText());
-
-        saveConfigEntries();
     }
 
 }

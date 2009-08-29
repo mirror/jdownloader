@@ -16,8 +16,6 @@
 
 package jd.gui.swing.jdgui.actions;
 
-import java.awt.Toolkit;
-import java.awt.datatransfer.DataFlavor;
 import java.awt.event.ActionEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -29,7 +27,6 @@ import jd.config.Configuration;
 import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.ClipboardHandler;
-import jd.controlling.DistributeData;
 import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDController;
 import jd.controlling.LinkGrabberController;
@@ -41,14 +38,10 @@ import jd.event.JDBroadcaster;
 import jd.gui.UserIF;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
-import jd.gui.swing.components.JDFileChooser;
 import jd.gui.swing.jdgui.actions.event.ActionControllerListener;
 import jd.gui.swing.jdgui.views.linkgrabberview.LinkGrabberPanel;
 import jd.nutils.JDFlags;
-import jd.nutils.io.JDFileFilter;
-import jd.parser.html.HTMLParser;
 import jd.plugins.LinkGrabberFilePackage;
-import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.WebUpdate;
 import jd.utils.locale.JDL;
@@ -471,12 +464,6 @@ public class ActionController {
             }
 
         };
-
-        
-
-     
-
-        
 
         new ToolBarAction("action.opendlfolder", "gui.images.package_opened") {
             /**

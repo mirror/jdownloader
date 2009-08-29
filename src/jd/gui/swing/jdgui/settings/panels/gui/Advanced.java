@@ -58,9 +58,6 @@ public class Advanced extends ConfigPanel {
         ConfigContainer container = new ConfigContainer();
 
         ConfigEntry ce;
-        /* LANGUAGE */
-
-        /* LOOK */
 
         container.setGroup(new ConfigGroup(JDL.L("gui.config.gui.container", "Container (RSDF,DLC,CCF,..)"), JDTheme.II("gui.images.container", 32, 32)));
 
@@ -102,14 +99,4 @@ public class Advanced extends ConfigPanel {
         this.add(tabbed);
     }
 
-    @Override
-    public void load() {
-        loadConfigEntries();
-    }
-
-    @Override
-    public void save() {
-        saveConfigEntries();
-
-    }
 }

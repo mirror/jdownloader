@@ -43,47 +43,19 @@ public class PasswordList extends ConfigPanel {
         super();
 
         initPanel();
+        // TODO: Warum hier kein load() ?
         // load();
     }
 
     @Override
     public void initPanel() {
-        // ConfigEntry conditionEntry;
-
-        // this.passwordConfig = new
-        // ConfigContainer(JDL.L("plugins.optional.jdunrar.config.passwordtab",
-        // "List of passwords"));
-        // config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER,
-        // passwordConfig));
-        //
-        // passwordConfig.addEntry();
-        //
-        //   
-
         addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_LISTCONTROLLED, PasswordListController.getInstance(), JDL.LF("plugins.optional.jdunrar.config.passwordlist2", "List of all passwords. Each line one password. Available passwords: %s", ""))));
-        // addGUIConfigEntry(new GUIConfigEntry(new
-        // ConfigEntry(ConfigContainer.TYPE_CHECKBOX, CONFIGURATION,
-        // Configuration.LOGGER_FILELOG,
-        // JDLocale.L("gui.config.general.filelogger",
-        // "Erstelle Logdatei im ./logs/ Ordner")).setDefaultValue(false).setGroup(logging)));
 
         JTabbedPane tabbed = new JTabbedPane();
-
         tabbed.setOpaque(false);
         tabbed.add(getBreadcrum(), panel);
 
         this.add(tabbed);
-    }
-
-    @Override
-    public void load() {
-        loadConfigEntries();
-    }
-
-    @Override
-    public void save() {
-        saveConfigEntries();
-
     }
 
 }

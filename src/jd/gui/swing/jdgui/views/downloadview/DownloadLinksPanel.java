@@ -52,7 +52,6 @@ import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.gui.swing.jdgui.MainTabbedPane;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.ThreadedAction;
-import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.DownloadView;
 import jd.nutils.JDFlags;
@@ -133,8 +132,6 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
     public DownloadTable getInternalTable() {
         return internalTable;
     }
-
-
 
     public void initActions() {
         new ThreadedAction("action.downloadview.movetobottom", "gui.images.go_bottom") {

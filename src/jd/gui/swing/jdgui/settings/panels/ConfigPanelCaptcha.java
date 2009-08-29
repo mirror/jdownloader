@@ -34,10 +34,10 @@ public class ConfigPanelCaptcha extends ConfigPanel {
     }
 
     public static String getTitle() {
-        return JDL.L(JDL_PREFIX + "captcha.advanced.title", "Advanced");
+        return JDL.L(JDL_PREFIX + "captcha.title", "JAntiCaptcha");
     }
 
-    private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.ocr.Advanced.";
+    private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.ConfigPanelCaptcha.";
     private static final long serialVersionUID = 3383448498625377495L;
 
     public ConfigPanelCaptcha(Configuration configuration) {
@@ -76,13 +76,4 @@ public class ConfigPanelCaptcha extends ConfigPanel {
         this.add(tabbed);
     }
 
-    @Override
-    public void load() {
-        loadConfigEntries();
-    }
-
-    @Override
-    public void save() {
-        saveConfigEntries();
-    }
 }
