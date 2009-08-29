@@ -2,9 +2,10 @@ package jd.captcha.easy;
 
 import java.awt.Image;
 import java.io.File;
+
 import jd.captcha.pixelgrid.Captcha;
-import jd.controlling.JDLogger;
 import jd.captcha.utils.Utilities;
+import jd.controlling.JDLogger;
 
 public class BackGroundImage extends CPoint {
     /**

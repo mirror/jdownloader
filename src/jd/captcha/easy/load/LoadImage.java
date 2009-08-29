@@ -3,12 +3,11 @@ package jd.captcha.easy.load;
 import java.io.File;
 import java.net.URI;
 
-import jd.nutils.JDHash;
-
-import jd.nutils.io.JDIO;
-import jd.utils.JDUtilities;
 import jd.http.Browser;
+import jd.nutils.JDHash;
+import jd.nutils.io.JDIO;
 import jd.parser.html.HTMLParser;
+import jd.utils.JDUtilities;
 
 /**
  * Diese klasse speichert Bildinformationen wie die Form die verwendet wurde und

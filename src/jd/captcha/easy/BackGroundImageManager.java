@@ -4,11 +4,12 @@ import java.awt.Image;
 import java.io.File;
 import java.util.Iterator;
 import java.util.Vector;
-import jd.captcha.pixelgrid.PixelGrid;
-import jd.nutils.io.JDIO;
+
 import jd.captcha.pixelgrid.Captcha;
+import jd.captcha.pixelgrid.PixelGrid;
 import jd.captcha.utils.Utilities;
 import jd.controlling.JDLogger;
+import jd.nutils.io.JDIO;
 
 /**
  * Verwaltet die hintergrundbilder und sorgt dafür das das richtige entfernt

@@ -16,17 +16,14 @@
 
 package jd.gui.swing.jdgui.settings.panels;
 
-import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 
 import javax.swing.JButton;
-import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
@@ -41,50 +38,15 @@ import jd.config.ConfigGroup;
 import jd.config.Configuration;
 import jd.config.ConfigEntry.PropertyType;
 import jd.gui.UserIF;
-import jd.gui.UserIO;
-import jd.gui.swing.components.linkbutton.JLink;
+import jd.gui.swing.dialog.AgbDialog;
 import jd.gui.swing.jdgui.menu.PremiumMenu;
 import jd.gui.swing.jdgui.settings.ConfigPanel;
-import jd.nutils.JDFlags;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
-class AGBLink extends JLink {
-
-    private HostPluginWrapper plugin;
-    private URL tmpurl = null;
-
-    public AGBLink(HostPluginWrapper plugin) {
-        super(JDL.L("gui.config.plugin.host.readAGB", "AGB"));
-        this.plugin = plugin;
-    }
-
-    @Override
-    public URL getUrl() {
-        if (tmpurl != null) return tmpurl;
-        try {
-            tmpurl = new URL(plugin.getPlugin().getAGBLink());
-        } catch (Exception e) {
-            tmpurl = null;
-        }
-        return tmpurl;
-    }
-
-    public HostPluginWrapper getWrapper() {
-        return plugin;
-    }
-
-    /**
-     * 
-     */
-    private static final long serialVersionUID = 3720972586239414387L;
-
-}
-
 public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListener, MouseListener {
-    private static ArrayList<AGBLink> agblinks = new ArrayList<AGBLink>();
 
     public String getBreadcrum() {
         return JDL.L(this.getClass().getName() + ".breadcrum", this.getClass().getSimpleName());
@@ -106,7 +68,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         }
 
         public int getColumnCount() {
-            return 7;
+            return 6;
         }
 
         @Override
@@ -124,8 +86,6 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
                 return JDL.L("gui.column_agbChecked", "akzeptieren");
             case 5:
                 return JDL.L("gui.column_usePlugin", "verwenden");
-            case 6:
-                return JDL.L("gui.column_agb", "AGB");
             }
             return super.getColumnName(column);
         }
@@ -148,18 +108,8 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
                 return pluginsForHost.get(rowIndex).isAGBChecked();
             case 5:
                 return pluginsForHost.get(rowIndex).usePlugin();
-            case 6:
-                synchronized (agblinks) {
-                    HostPluginWrapper plugin = pluginsForHost.get(rowIndex);
-                    for (AGBLink link : agblinks) {
-                        if (link.getWrapper() == plugin) return link;
-                    }
-                    AGBLink link = new AGBLink(plugin);
-                    agblinks.add(link);
-                    return link;
-                }
             }
-            
+
             return null;
         }
 
@@ -172,13 +122,9 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         public void setValueAt(Object value, int row, int col) {
             if (col == 4) {
                 if ((Boolean) value) {
-                    String ttl = JDL.L("userio.countdownconfirm", "Please confirm");
-                    String msg = JDL.L("gui.config.plugin.host.desc", "Das JD Team übernimmt keine Verantwortung für die Einhaltung der AGB <br> der Hoster. Bitte lesen Sie die AGB aufmerksam und aktivieren Sie das Plugin nur,\r\nfalls Sie sich mit diesen Einverstanden erklären!\r\nDie Reihenfolge der Plugins bestimmt die Prioritäten der automatischen Mirrorauswahl\n\rBevorzugte Hoster sollten oben stehen!") + "\r\n\r\n" + JDL.LF("gui.config.plugin.abg_confirm", "Ich habe die AGB/TOS/FAQ von %s gelesen und erkläre mich damit einverstanden!", pluginsForHost.get(row).getHost());
-                    if (JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(0, ttl, msg, UserIO.getInstance().getIcon(UserIO.ICON_QUESTION), null, null), UserIO.RETURN_OK)) {
-                        pluginsForHost.get(row).setAGBChecked((Boolean) value);
-                    }
+                    AgbDialog.showDialog(pluginsForHost.get(row).getPlugin());
                 } else {
-                    pluginsForHost.get(row).setAGBChecked((Boolean) value);
+                    pluginsForHost.get(row).setAGBChecked(false);
                 }
             } else if (col == 5) {
                 pluginsForHost.get(row).setUsePlugin((Boolean) value);
@@ -255,13 +201,6 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
             case 5:
                 column.setPreferredWidth(100);
                 break;
-            case 6:
-                column.setPreferredWidth(70);
-                column.setMaxWidth(70);
-                column.setMinWidth(70);
-                column.setCellRenderer(JLink.getJLinkButtonRenderer());
-                column.setCellEditor(JLink.getJLinkButtonEditor());
-                break;
             }
         }
 
@@ -269,12 +208,9 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         btnEdit.setEnabled(false);
         btnEdit.addActionListener(this);
 
-        JPanel bpanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
-        bpanel.add(btnEdit);
-
         panel.setLayout(new MigLayout("ins 5,wrap 1", "[fill,grow]", "[fill,grow][]"));
         panel.add(new JScrollPane(table));
-        panel.add(bpanel, "w pref!");
+        panel.add(btnEdit, "w pref!");
 
         JTabbedPane tabbed = new JTabbedPane();
         tabbed.setOpaque(false);

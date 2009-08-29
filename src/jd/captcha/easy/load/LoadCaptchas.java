@@ -1,10 +1,5 @@
 package jd.captcha.easy.load;
 
-import jd.utils.JDUtilities;
-import jd.http.Browser;
-import java.util.ArrayList;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.awt.GridLayout;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
@@ -12,21 +7,36 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.awt.image.BufferedImage;
-import java.io.*;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import javax.swing.*;
+import javax.swing.BorderFactory;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JDialog;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JSpinner;
+import javax.swing.SpinnerNumberModel;
+
 import jd.captcha.easy.EasyMethodeFile;
-
-import jd.parser.html.HTMLParser;
-
-import jd.parser.html.InputField;
-import jd.parser.html.Form;
-import jd.gui.swing.components.JDTextField;
 import jd.gui.swing.GuiRunnable;
-import jd.utils.locale.JDL;
+import jd.gui.swing.components.JDTextField;
+import jd.gui.swing.dialog.ProgressDialog;
+import jd.http.Browser;
 import jd.nutils.JDImage;
 import jd.nutils.Screen;
-import jd.gui.swing.dialog.ProgressDialog;
+import jd.parser.html.Form;
+import jd.parser.html.HTMLParser;
+import jd.parser.html.InputField;
+import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 public class LoadCaptchas {
     private static final long serialVersionUID = 1L;

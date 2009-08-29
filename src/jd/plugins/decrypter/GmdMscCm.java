@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 
 import java.io.File;
 import java.util.ArrayList;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -30,57 +31,55 @@ import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gmd-music.com" }, urls = { "http://[\\w\\.]*?(gmd-music\\.com|uploadr\\.eu)/download/\\d+_[\\w-]+/" }, flags = { 0 })
 public class GmdMscCm extends PluginForDecrypt {
-    
+
     private String domain = null;
-  
+
     public GmdMscCm(PluginWrapper wrapper) {
         super(wrapper);
     }
-    
+
     // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        
+
         if (parameter.matches(".*?gmd-music\\.com.*?"))
             domain = "http://gmd-music.com/";
-        else if (parameter.matches(".*?uploadr\\.eu.*?"))
-            domain = "http://uploadr.eu/";
-        
+        else if (parameter.matches(".*?uploadr\\.eu.*?")) domain = "http://uploadr.eu/";
+
         br.getPage(parameter);
         String[] redirectLinks = br.getRegex("onclick='self.window.location = \"(redirect/\\d+_[\\w-]+/)\";").getColumn(0);
-        
-        if (redirectLinks.length == 0)
-            return null;
-        
-        String pass = br.getRegex("Passwort:.*?<td align='left' width='50%'>(.*?)</td>").getMatch(0);   
+
+        if (redirectLinks.length == 0) return null;
+
+        String pass = br.getRegex("Passwort:.*?<td align='left' width='50%'>(.*?)</td>").getMatch(0);
         ArrayList<String> passwords = new ArrayList<String>();
         passwords.add("gmd.6x.to");
         passwords.add("gmd-music.com");
-    
+
         if ((pass != null) && !pass.equals("-") && !pass.equals("kein Passwort")) {
             passwords.clear();
             passwords.add(pass);
         }
-        
+
         for (String redlnk : redirectLinks) {
             br.getPage(this.domain + redlnk);
             handleCaptcha();
             String[] hostLinks = br.getRegex("<textarea name='links' rows='12' cols='104'>(http://.*?)\\s*</textarea>").getColumn(0);
-            
+
             for (String hstlnk : hostLinks) {
                 DownloadLink dl = createDownloadlink(hstlnk);
                 dl.setSourcePluginPasswordList(passwords);
-                decryptedLinks.add(dl); 
-            } 
+                decryptedLinks.add(dl);
+            }
         }
-        
+
         return decryptedLinks;
     }
 
     public void handleCaptcha() throws Exception {
         boolean valid = true;
-        
+
         for (int i = 0; i < 5; i++) {
             if (br.containsHTML("Klicken Sie auf den ge&ouml;ffneten Kreis!")) {
                 Form captcha = br.getFormbyProperty("name", "captcha");
@@ -90,19 +89,17 @@ public class GmdMscCm extends PluginForDecrypt {
                 String url = this.domain + captcha.getRegex("input type='image' src='(.*?)'").getMatch(0);
                 Browser.download(file, br.cloneBrowser().openGetConnection(url));
                 int[] p = new jd.captcha.specials.GmdMscCm(file).getResult();
-                if (p == null)
-                    throw new DecrypterException(DecrypterException.CAPTCHA);
+                if (p == null) throw new DecrypterException(DecrypterException.CAPTCHA);
                 captcha.put("button", "Send");
                 captcha.put("button.x", p[0] + "");
                 captcha.put("button.y", p[1] + "");
                 br.submitForm(captcha);
-            } else   {
+            } else {
                 valid = true;
                 break;
             }
         }
-        
-        if (valid == false)
-            throw new DecrypterException(DecrypterException.CAPTCHA);
+
+        if (valid == false) throw new DecrypterException(DecrypterException.CAPTCHA);
     }
 }

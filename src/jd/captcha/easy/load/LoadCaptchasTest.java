@@ -1,10 +1,11 @@
 package jd.captcha.easy.load;
 
 import java.awt.Toolkit;
-import jd.gui.userio.DummyFrame;
+
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.events.EDTEventQueue;
 import jd.gui.swing.laf.LookAndFeelController;
+import jd.gui.userio.DummyFrame;
 
 public class LoadCaptchasTest {
     public static void main(String[] args) throws Exception {

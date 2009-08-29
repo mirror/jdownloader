@@ -134,9 +134,6 @@ public class ConfigPanelAddons extends ConfigPanel implements ActionListener, Mo
                 }
                 AddonsMenu.getInstance().update();
                 ConfigSidebar.getInstance(null).updateAddons();
-
-                // TODO
-                // SwingGui.getInstance().getAddonPanel().initGUI();
             }
         }
     }

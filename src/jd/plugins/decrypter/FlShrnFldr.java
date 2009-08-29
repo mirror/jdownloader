@@ -17,8 +17,8 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-
 import java.util.regex.Pattern;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
@@ -39,32 +39,33 @@ public class FlShrnFldr extends PluginForDecrypt {
         String parameter = param.toString();
         String[][] otherPages = null;
         br.getPage(parameter);
-        if(parameter.contains("folder.aspx?id=")){
-            if(!br.containsHTML("Список файлов")){
-                //Folderview link workaround
+        if (parameter.contains("folder.aspx?id=")) {
+            if (!br.containsHTML("Список файлов")) {
+                // Folderview link workaround
                 String newUrl = br.getRegex(Pattern.compile("blank\" href=\"(http://fileshare\\.in\\.ua/f[0-9]+)\">http:", Pattern.CASE_INSENSITIVE)).getMatch(0);
                 br.getPage(newUrl);
             }
-        }else {
-                //check if there are more pages in this folder
-                otherPages = br.getRegex("pager\" href=\"(folder\\.aspx\\?id=[0-9]+&page=[0-9]+)\">").getMatches();
-                //else => only if link is no pagelink, if pagelink only decrypt links on this page
+        } else {
+            // check if there are more pages in this folder
+            otherPages = br.getRegex("pager\" href=\"(folder\\.aspx\\?id=[0-9]+&page=[0-9]+)\">").getMatches();
+            // else => only if link is no pagelink, if pagelink only decrypt
+            // links on this page
         }
-        int pageCnt=0;
-        do
-        {
-              //get the links from current site
-              String[][] linkIDs = br.getRegex(Pattern.compile("<div class=\"list_link\">.*?href=\"/([f0-9]+)\">", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatches();
-              for(int linkCnt=0;linkCnt<linkIDs.length;linkCnt++)
-              {
-                  decryptedLinks.add(createDownloadlink("http://fileshare.in.ua/"+linkIDs[linkCnt][0]));
-              }
-              // if there are more pages load them and get their links
-              if(otherPages != null && pageCnt<otherPages.length) {
-                  br.getPage("http://fileshare.in.ua/"+otherPages[pageCnt][0]);
-              }
-              pageCnt++;
-        }while(otherPages != null && pageCnt<=otherPages.length); //get all sites' links
+        int pageCnt = 0;
+        do {
+            // get the links from current site
+            String[][] linkIDs = br.getRegex(Pattern.compile("<div class=\"list_link\">.*?href=\"/([f0-9]+)\">", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatches();
+            for (int linkCnt = 0; linkCnt < linkIDs.length; linkCnt++) {
+                decryptedLinks.add(createDownloadlink("http://fileshare.in.ua/" + linkIDs[linkCnt][0]));
+            }
+            // if there are more pages load them and get their links
+            if (otherPages != null && pageCnt < otherPages.length) {
+                br.getPage("http://fileshare.in.ua/" + otherPages[pageCnt][0]);
+            }
+            pageCnt++;
+        } while (otherPages != null && pageCnt <= otherPages.length); // get all
+                                                                      // sites'
+                                                                      // links
         return decryptedLinks;
     }
 }

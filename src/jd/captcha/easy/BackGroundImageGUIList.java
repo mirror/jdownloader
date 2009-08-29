@@ -3,12 +3,20 @@ package jd.captcha.easy;
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import javax.swing.*;
+
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JDialog;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+
+import jd.captcha.gui.ImageComponent;
+import jd.gui.swing.GuiRunnable;
 import jd.gui.userio.DummyFrame;
 import jd.nutils.Screen;
-import jd.captcha.gui.ImageComponent;
 import jd.utils.locale.JDL;
-import jd.gui.swing.GuiRunnable;
 
 public class BackGroundImageGUIList implements ActionListener {
     public BackGroundImageGUIList(EasyMethodeFile methode, JFrame owner) {

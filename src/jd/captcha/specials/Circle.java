@@ -5,12 +5,11 @@ import java.util.Comparator;
 import java.util.List;
 
 import jd.captcha.LetterComperator;
-
-import jd.nutils.Colors;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
 import jd.captcha.pixelobject.PixelObject;
 import jd.controlling.JDLogger;
+import jd.nutils.Colors;
 
 public class Circle {
     int inBorder = 4;

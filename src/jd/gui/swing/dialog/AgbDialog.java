@@ -27,6 +27,7 @@ import jd.gui.UserIO;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.nutils.JDFlags;
 import jd.plugins.DownloadLink;
+import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
@@ -45,10 +46,23 @@ public class AgbDialog extends AbstractDialog {
      *            abzuarbeitender Link
      */
     public static void showDialog(DownloadLink downloadLink) {
-        AgbDialog dialog = new AgbDialog(downloadLink);
+        AgbDialog dialog = new AgbDialog(downloadLink.getPlugin());
         if (JDFlags.hasAllFlags(dialog.getReturnValue(), UserIO.RETURN_OK) && dialog.isAccepted()) {
             downloadLink.getPlugin().setAGBChecked(true);
             downloadLink.getLinkStatus().reset();
+        }
+    }
+
+    /**
+     * Zeigt einen Dialog, in dem man die Hoster AGB akzeptieren kann
+     * 
+     * @param plugin
+     *            Hoster-Plugin
+     */
+    public static void showDialog(PluginForHost plugin) {
+        AgbDialog dialog = new AgbDialog(plugin);
+        if (JDFlags.hasAllFlags(dialog.getReturnValue(), UserIO.RETURN_OK) && dialog.isAccepted()) {
+            plugin.setAGBChecked(true);
         }
     }
 
@@ -58,11 +72,11 @@ public class AgbDialog extends AbstractDialog {
 
     private JCheckBox checkAgbAccepted;
 
-    private DownloadLink downloadLink;
+    private PluginForHost plugin;
 
-    private AgbDialog(DownloadLink downloadLink) {
+    private AgbDialog(PluginForHost plugin) {
         super(0, JDL.L("gui.dialogs.agb_tos.title", "Allgemeine Geschäftsbedingungen nicht akzeptiert"), UserIO.getInstance().getIcon(UserIO.ICON_QUESTION), null, null);
-        this.downloadLink = downloadLink;
+        this.plugin = plugin;
         init();
     }
 
@@ -79,10 +93,10 @@ public class AgbDialog extends AbstractDialog {
     public JComponent contentInit() {
         JPanel panel = new JPanel(new MigLayout("wrap 1", "[fill,grow,center]"));
 
-        JLabel labelInfo = new JLabel(JDL.LF("gui.dialogs.agb_tos.description", "Die Allgemeinen Geschäftsbedingungen (AGB) von %s wurden nicht gelesen und akzeptiert.", downloadLink.getPlugin().getHost()));
+        JLabel labelInfo = new JLabel(JDL.LF("gui.dialogs.agb_tos.description", "Die Allgemeinen Geschäftsbedingungen (AGB) von %s wurden nicht gelesen und akzeptiert.", plugin.getHost()));
 
-        linkAgb = new JLink(JDL.LF("gui.dialogs.agb_tos.readAgb", "%s AGB lesen", downloadLink.getPlugin().getHost()), downloadLink.getPlugin().getAGBLink());
-       linkAgb.getBroadcaster().addListener(this);
+        linkAgb = new JLink(JDL.LF("gui.dialogs.agb_tos.readAgb", "%s AGB lesen", plugin.getHost()), plugin.getAGBLink());
+        linkAgb.getBroadcaster().addListener(this);
         linkAgb.setFocusable(false);
 
         checkAgbAccepted = new JCheckBox(JDL.L("gui.dialogs.agb_tos.agbAccepted", "Ich bin mit den Allgemeinen Geschäftsbedingungen einverstanden"));

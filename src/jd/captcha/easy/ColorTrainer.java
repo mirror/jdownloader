@@ -8,10 +8,11 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.Iterator;
 import java.util.Vector;
+
+import jd.captcha.pixelgrid.Captcha;
+import jd.nutils.Colors;
 import jd.nutils.io.JDIO;
 import jd.utils.locale.JDL;
-import jd.nutils.Colors;
-import jd.captcha.pixelgrid.Captcha;
 
 public class ColorTrainer {
     /**

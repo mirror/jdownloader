@@ -18,10 +18,9 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import jd.parser.html.Form;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;

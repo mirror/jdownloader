@@ -36,6 +36,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
 
@@ -52,7 +53,7 @@ public class LnkCrptWs extends PluginForDecrypt {
         String parameter = param.toString();
 
         String containerId = new Regex(parameter, "dir/([a-zA-Z0-9]+)").getMatch(0);
-        
+
         br.getPage("http://linkcrypt.ws/dlc/" + containerId);
         // check for a password. STore latest password in DB
         Form password = br.getForm(0);
@@ -133,7 +134,7 @@ public class LnkCrptWs extends PluginForDecrypt {
             c = c.replace("return p}(", " return p}  f(").replace("function(p,a,c,k,e,d)", "function f(p,a,c,k,e,d)");
 
             Object result = cx.evaluateString(scope, c, "<cmd>", 1, null);
-  
+
             String code = Context.toString(result);
             String[] row = new Regex(code, "href=\"(.*?)\"><img.*?image/(.*?)\\.").getRow(0);
             if (row != null) {
@@ -196,8 +197,7 @@ public class LnkCrptWs extends PluginForDecrypt {
                             if (code.startsWith("var versch")) {
                                 versch = new Regex(code, "versch='([^']*)'").getMatch(0);
 
-                            } else
-                            {
+                            } else {
                                 versch = new Regex(code, ".*?base='([^']*)'").getMatch(0);
                             }
                             versch = Encoding.Base64Decode(versch);
@@ -210,7 +210,7 @@ public class LnkCrptWs extends PluginForDecrypt {
                             if (row != null) {
                                 map.put(row[1], row[0]);
                             } else {
-//                                System.out.println(code);
+                                // System.out.println(code);
                             }
 
                         }
