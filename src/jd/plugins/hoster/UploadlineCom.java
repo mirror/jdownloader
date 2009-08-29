@@ -93,9 +93,10 @@ public class UploadlineCom extends PluginForHost {
                 }
                 form.setAction(downloadLink.getDownloadURL());
                 form.put("code", code.toString());
-
+                if (!br.containsHTML("countdown")){
                 int tt = Integer.parseInt(br.getRegex("countdown\">(\\d+)</span>").getMatch(0));
                 sleep(tt * 1001, downloadLink);
+                }
                 br.submitForm(form);
                 URLConnectionAdapter con2 = br.getHttpConnection();
                 dllink = br.getRedirectLocation();
@@ -112,7 +113,7 @@ public class UploadlineCom extends PluginForHost {
         }
 
         if (dllink != null && dllink != "") {
-            dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, dllink, true, -4);
+            dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, dllink, true, 1);
             dl.startDownload();
         } else
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
