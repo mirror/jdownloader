@@ -22,7 +22,6 @@ import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -44,9 +43,7 @@ public class FileboxRo extends PluginForHost {
         this.setBrowserExclusive();
         br.setCookie(link.getDownloadURL(), "filebox_language", "en");
         if (!Regex.matches(link.getDownloadURL(), "http://[\\w\\.]*?filebox\\.ro/download\\.php\\?key=[0-9a-z]{16}")) {
-            if (Regex.matches(link.getDownloadURL(), ".+(/video/|/v/).+")) {
-                this.isVideo = true;
-            } else {
+            if (!Regex.matches(link.getDownloadURL(), ".+(/video/|/v/).+")) {
                 br.setFollowRedirects(true);
                 br.getPage(link.getDownloadURL());
                 String urlpart = "http://www.filebox.ro/download.php?key=";
@@ -67,14 +64,12 @@ public class FileboxRo extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         
-        if (isVideo) {
-            FilePackage fp = FilePackage.getInstance();
-            String packagename = br.getRegex("<h2>(.*?)</h2>.*?<div id=\"player\">").getMatch(0);
-            fp.setName(packagename);
-            
-            if (packagename != null) {
-                downloadLink.setName(packagename + ".flv");
-                fp.add(downloadLink);
+        if (Regex.matches(downloadLink.getDownloadURL(), ".+(/video/|/v/).+")) {
+            this.isVideo = true; 
+            String filename = br.getRegex("<h2>(.*?)</h2>.*?<div id=\"player\">").getMatch(0);
+                        
+            if (filename != null) {
+                downloadLink.setFinalFileName(filename + ".flv");
                 return AvailableStatus.TRUE;
             }
             
@@ -100,6 +95,7 @@ public class FileboxRo extends PluginForHost {
     
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
         String linkurl = null;
         
         if (isVideo) {
