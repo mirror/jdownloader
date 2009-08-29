@@ -55,15 +55,18 @@ public class EasyCaptcha {
         nextos.add(aos);
     }
 
-    public static int mergeObjectsBasic(List<PixelObject> os, Captcha captcha, int gab) {
+    public static int[] mergeObjectsBasic(List<PixelObject> os, Captcha captcha, int gab) {
         int area = 0;
-        int ret = 0;
+        int[] ret = null;
+        int osSize = 0;
         try {
 
             PixelObject aos = os.get(0);
             PixelObject biggest = aos;
             for (PixelObject pixelObject : os) {
                 area += pixelObject.getArea();
+                osSize += pixelObject.getSize();
+
                 if (aos.getWidth() > pixelObject.getWidth()) aos = pixelObject;
                 if (biggest.getArea() < pixelObject.getArea()) biggest = pixelObject;
             }
@@ -73,13 +76,12 @@ public class EasyCaptcha {
 
             }
             for (PixelObject pixelObject : os) {
-                if(pixelObject!=aos && (pixelObject.getSize()/2)<aos.getSize())
-                {
+                if (pixelObject != aos && (pixelObject.getSize() / 2) < aos.getSize()) {
                     mergeos(pixelObject, os);
                     return mergeObjectsBasic(os, captcha, gab);
                 }
             }
-            ret = area / (os.size() * 3);
+            ret = new int[] { area / (os.size() * 3), osSize / (os.size() * 3) };
             for (PixelObject b : os) {
                 if (b != aos && (b.getXMin() - aos.getXMin()) <= 0 && ((b.getXMin() + b.getWidth()) - ((aos.getXMin() + aos.getWidth())) >= 0)) {
                     b.add(aos);
@@ -136,11 +138,15 @@ public class EasyCaptcha {
 
             }
 
-            if (os.size() <= captcha.owner.getLetterNum())
+            if (os.size() <= captcha.owner.getLetterNum()) {
                 area /= os.size() * 2;
-            else
+                osSize /= os.size() * 2;
+            } else {
+                osSize /= os.size();
                 area /= os.size();
-            if (aos.getArea() < area) {
+
+            }
+            if (aos.getArea() < area || aos.getSize() < osSize) {
                 mergeos(aos, os);
                 return mergeObjectsBasic(os, captcha, gab);
 
@@ -176,13 +182,14 @@ public class EasyCaptcha {
         return ret;
     }
 
-    public static ArrayList<PixelObject> getRightletters(ArrayList<PixelObject> os, Captcha captcha, int[] pixels, int area) {
+    public static ArrayList<PixelObject> getRightletters(ArrayList<PixelObject> os, Captcha captcha, int[] pixels, int[] mergeInfos) {
         for (Iterator<PixelObject> iterator = os.iterator(); iterator.hasNext();) {
             PixelObject elem = iterator.next();
-            if(os.size()<3)break;
-            if (elem.getArea() < (area / ( captcha.owner.getLetterNum()*3)) || elem.getSize()<(area / ( captcha.owner.getLetterNum()*4))) {
+            if (os.size() < 3 || os.size() < os.size() - 1) break;
+            System.out.println(mergeInfos[1]+":"+mergeInfos[0]);
+            if (elem.getArea() < (mergeInfos[0] / (captcha.owner.getLetterNum() * 4)) || elem.getSize() < (mergeInfos[1] / (captcha.owner.getLetterNum() * 5))) {
                 iterator.remove();
-            } 
+            }
         }
         if (os.size() >= captcha.owner.getLetterNum()) return os;
         int minw = pixels[0] / (captcha.owner.getLetterNum() * 3 / 2);
@@ -249,7 +256,6 @@ public class EasyCaptcha {
                         best = i;
                     }
                 } catch (Exception e) {
-                    // TODO: handle exception
                 }
             }
             try {
@@ -264,7 +270,6 @@ public class EasyCaptcha {
                     }
                 }
             } catch (Exception e) {
-                // TODO: handle exception
             }
 
             PixelObject[] bs = biggest.splitAt(best);
@@ -272,7 +277,7 @@ public class EasyCaptcha {
             for (PixelObject pixelObject : bs) {
                 if (pixelObject != null) os.add(pixelObject);
             }
-            return getRightletters(os, captcha, pixels, area);
+            return getRightletters(os, captcha, pixels, mergeInfos);
         }
         return os;
     }
@@ -343,7 +348,8 @@ public class EasyCaptcha {
                     merge = new ArrayList<PixelObject>();
                     for (PixelObject o : reto) {
                         double rgbdiff;
-                        if ((rgbdiff = Colors.getRGBColorDifference2(gc, o.getAverage())) < 6 || (rgbdiff < 25 && Colors.getColorDifference(gc, o.getAverage()) < 8)) {
+                        int mc = o.getMostcolor();
+                        if ((rgbdiff = Colors.getRGBColorDifference2(gc, mc)) < 6 || (rgbdiff < 25 && Colors.getColorDifference(gc, mc) < 8)) {
                             merge.add(o);
                         }
                     }
@@ -375,13 +381,14 @@ public class EasyCaptcha {
 
         }
         int gab = lastgap / (captcha.owner.getLetterNum());
-
         ArrayList<PixelObject> reto2 = new ArrayList<PixelObject>();
         for (PixelObject pixelObject : reto) {
             try {
+
                 Vector<PixelObject> co = getSWCaptcha(pixelObject).getObjects(0.5, 0.5);
                 // BasicWindow.showImage( getSWCaptcha(pixelObject).getImage());
-
+                // System.out.println(Colors.getColorDifference(pixelObject.getMostcolor(),
+                // last));
                 mergeObjectsBasic(co, captcha, gab);
                 reto2.addAll(co);
             } catch (Exception e) {
@@ -417,15 +424,15 @@ public class EasyCaptcha {
         Collections.sort(os);
         int gab = pixels[2] / (captcha.owner.getLetterNum());
 
-        int area = mergeObjectsBasic(os, captcha, gab);
+        int[] mergeInfos = mergeObjectsBasic(os, captcha, gab);
 
-        getRightletters(os, captcha, pixels, area);
+        getRightletters(os, captcha, pixels, mergeInfos);
 
         Collections.sort(os);
         ArrayList<Letter> ret = new ArrayList<Letter>();
         for (PixelObject pixelObject : os) {
             Letter let = pixelObject.toLetter();
-            let.removeSmallObjects(0.75, 0.75, area / 10);
+             let.removeSmallObjects(0.75, 0.75, (mergeInfos[1] / (captcha.owner.getLetterNum() * 5)));
             let = let.toPixelObject(0.75).toLetter();
             ret.add(let);
         }
