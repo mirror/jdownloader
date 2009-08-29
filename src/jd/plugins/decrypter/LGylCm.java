@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2009 JD-Team support@jdownloader.org
+//    Copyright (C) 2009  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -20,30 +20,44 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "foxlink.info" }, urls = { "http://[\\w\\.]*?(foxlink|viplink|zero10|save-link)\\.info/\\d+" }, flags = { 0 })
-public class FxLnknf extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lougyl.com" }, urls = { "http://[\\w\\.]*lougyl\\.com/files/[A-Z0-9]+/.+" }, flags = { 0 })
+public class LGylCm extends PluginForDecrypt {
 
-    public FxLnknf(PluginWrapper wrapper) {
+    public LGylCm(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String[] infos = new Regex(param.toString(), ".*?(foxlink|viplink|zero10|save-link)\\.info/([^/]*)").getRow(0);
-        br.getPage("http://" + infos[0] + ".info/m1.php?id=" + infos[1]);
-        String declink = br.getRegex("onclick=\"NewWindow\\('(.*?)','name'").getMatch(0);
-        decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(declink)));
+        String parameter = param.toString();
+        br.setFollowRedirects(false);
+        br.getPage(parameter);
 
+        String dlsite0 = new Regex(param, "lougyl\\.com/files/(.*?)/").getMatch(0);
+        String dlsite1 = "http://www.lougyl.com/status.php?uid=" + dlsite0;
+        br.getPage(dlsite1);
+        String[] links = br.getRegex(" href=(.*?) target").getColumn(0);
+        if (links == null || links.length == 0) return null;
+        progress.setRange(links.length);
+        for (String link : links) {
+            String link1 = "http://www.lougyl.com" + link;
+            br.getPage(link1);
+            String finallink = br.getRegex("refresh\" content=\"[0-9]+;url=(.*?)\">").getMatch(0);
+            if (finallink == null) return decryptedLinks;
+            DownloadLink dl = createDownloadlink(finallink);
+            decryptedLinks.add(dl);
+            progress.increase(1);
+        }
         return decryptedLinks;
     }
+
 
     // @Override
 
