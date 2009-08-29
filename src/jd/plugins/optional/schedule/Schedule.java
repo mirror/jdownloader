@@ -193,6 +193,7 @@ public class Schedule extends PluginOptional {
     public boolean initAddon() {
         logger.info("Schedule OK");
         this.activateAction = new MenuAction(ToolBarAction.Types.TOGGLE, getHost(), 0).setActionListener(this);
+        activateAction.setIcon(this.getIconKey());
         activateAction.setSelected(false);
         return true;
     }

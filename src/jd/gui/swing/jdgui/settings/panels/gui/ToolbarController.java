@@ -47,39 +47,61 @@ import net.miginfocom.swing.MigLayout;
 import org.jdesktop.swingx.renderer.DefaultTableRenderer;
 
 public class ToolbarController extends ConfigPanel {
-private static final ArrayList<String> WHITELIST= new ArrayList<String>();
-static{
+    private static final ArrayList<String> WHITELIST = new ArrayList<String>();
+    static {
+        // controlls
+        WHITELIST.add("toolbar.control.start");
+        WHITELIST.add("toolbar.control.pause");
+        WHITELIST.add("toolbar.control.stop");
 
-  WHITELIST.add("action.restart");
-  WHITELIST.add("action.exit");
-  WHITELIST.add("action.addurl");
-  WHITELIST.add("action.load");
-  WHITELIST.add("action.remove.links");
-  WHITELIST.add("action.remove.packages");
-  WHITELIST.add("action.remove_dupes");
-  WHITELIST.add("action.remove_disabled");
-  WHITELIST.add("action.remove_offline");
-  WHITELIST.add("action.remove_failed");
-  WHITELIST.add("action.about");
-  WHITELIST.add("action.help");
-  WHITELIST.add("action.changes");
-  WHITELIST.add("toolbar.control.start");
-  WHITELIST.add("toolbar.control.pause");
-  WHITELIST.add("toolbar.control.stop");
-  WHITELIST.add("toolbar.interaction.reconnect");
-  WHITELIST.add("toolbar.interaction.update");
-  WHITELIST.add("toolbar.quickconfig.clipboardoberserver");
-  WHITELIST.add("toolbar.quickconfig.reconnecttoggle");
-  WHITELIST.add("action.opendlfolder");
-  WHITELIST.add("toolbar.control.stopmark");
-  WHITELIST.add("action.downloadview.movetobottom");
-  WHITELIST.add("action.downloadview.movetotop");
-  WHITELIST.add("action.downloadview.moveup");
-  WHITELIST.add("action.downloadview.movedown");
-  WHITELIST.add("action.premiumview.addacc");
-  WHITELIST.add("action.premium.buy");
-    
-}
+        // move
+        WHITELIST.add("separator");
+        WHITELIST.add("action.downloadview.movetobottom");
+        WHITELIST.add("action.downloadview.movetotop");
+        WHITELIST.add("action.downloadview.moveup");
+        WHITELIST.add("action.downloadview.movedown");
+
+        // config
+
+        WHITELIST.add("toolbar.quickconfig.clipboardoberserver");
+        WHITELIST.add("toolbar.quickconfig.reconnecttoggle");
+
+        // Addons
+        WHITELIST.add("separator");
+        WHITELIST.add("Chat Window");
+        WHITELIST.add("Show");
+        WHITELIST.add("Schedule");
+
+        // removes
+        WHITELIST.add("separator");
+        WHITELIST.add("action.remove.links");
+        WHITELIST.add("action.remove.packages");
+        WHITELIST.add("action.remove_dupes");
+        WHITELIST.add("action.remove_disabled");
+        WHITELIST.add("action.remove_offline");
+        WHITELIST.add("action.remove_failed");
+
+        // actions
+        WHITELIST.add("separator");
+        WHITELIST.add("action.addurl");
+        WHITELIST.add("action.load");
+
+        WHITELIST.add("toolbar.interaction.reconnect");
+        WHITELIST.add("toolbar.interaction.update");
+
+        WHITELIST.add("action.opendlfolder");
+        WHITELIST.add("toolbar.control.stopmark");
+
+        WHITELIST.add("action.premiumview.addacc");
+        WHITELIST.add("action.premium.buy");
+
+        WHITELIST.add("action.about");
+        WHITELIST.add("action.help");
+        WHITELIST.add("action.changes");
+        WHITELIST.add("action.restart");
+        WHITELIST.add("action.exit");
+
+    }
     private static final long serialVersionUID = -7024581410075950497L;
 
     public String getBreadcrum() {
@@ -127,7 +149,7 @@ static{
 
         public Object getValueAt(final int rowIndex, final int columnIndex) {
             if (columnIndex == 0) return list.contains(actions.get(rowIndex).getID());
-         
+
             return actions.get(rowIndex);
         }
 
@@ -146,54 +168,31 @@ static{
                 }
                 GUIUtils.getConfig().setProperty("TOOLBAR", list);
                 GUIUtils.getConfig().save();
-                Collections.sort(list,new Comparator<String>() {
+                Collections.sort(list, new Comparator<String>() {
 
                     public int compare(String o1, String o2) {
-                        int ia = ToolBar.DEFAULT_LIST.indexOf(o1);
-                        if(ia<0)ia=Integer.MAX_VALUE;
-                        int ib = ToolBar.DEFAULT_LIST.indexOf(o2);
-                        if(ib<0)ib=Integer.MAX_VALUE;
-                       return ia<ib?-1:1;
-                    
+                        int ia = WHITELIST.indexOf(o1);
+
+                        int ib = WHITELIST.indexOf(o2);
+
+                        return ia < ib ? -1 : 1;
+
                     }
                 });
-                while(list.remove("toolbar.separator")){}
-                boolean controls=false;
-                boolean moves=false;
-                boolean configs=false;
-                boolean custom=false;
-                for( int i=0; i<list.size();i++){
-                    if(!controls&&ToolBar.CONTROL_LIST.contains(list.get(i))){
-                        controls = true;
-                        continue;
-                    }
-                    if(!moves&&ToolBar.MOVE_LIST.contains(list.get(i))){
-                        if(controls){
-                            list.add(i,"toolbar.separator");
+                while (list.remove("toolbar.separator")) {
+                }
+                // adds separatores based on WHITELIST order
+                for (int i = 1; i < list.size(); i++) {
+                    int b = WHITELIST.indexOf(list.get(i));
+                    int a = WHITELIST.indexOf(list.get(i - 1));
+
+                    for (int ii = a; ii < b; ii++) {
+                        if (WHITELIST.get(ii).equals("separator")) {
+                            list.add(i, "toolbar.separator");
                             i++;
+                            break;
                         }
-                        moves = true;
-                        continue;
                     }
-                    if(!configs&&ToolBar.CONFIG_LIST.contains(list.get(i))){
-                        
-                        if((controls&&!moves)||moves ){
-                            list.add(i,"toolbar.separator");
-                            i++;
-                        }
-                        
-                        configs = true;
-                    }
-                    if(!custom&&!ToolBar.CONFIG_LIST.contains(list.get(i))&&!ToolBar.MOVE_LIST.contains(list.get(i))&&!ToolBar.CONTROL_LIST.contains(list.get(i))){
-                        if(i>0&&!list.get(i-1).equals("toolbar.separator")){
-                            list.add(i,"toolbar.separator");
-                            i++;
-                        }
-                        custom=true;
-                        
-                        
-                    }
-                    
                 }
                 MainToolBar.getInstance().setList(list.toArray(new String[] {}));
             }
@@ -226,6 +225,18 @@ static{
      * @param actions2
      */
     private void setActions(ArrayList<ToolBarAction> actions2) {
+        
+        Collections.sort(actions2, new Comparator<ToolBarAction>() {
+
+            public int compare(ToolBarAction o1, ToolBarAction o2) {
+                int ia = WHITELIST.indexOf(o1.getID());
+
+                int ib = WHITELIST.indexOf(o2.getID());
+
+                return ia < ib ? -1 : 1;
+
+            }
+        });
         this.list = GUIUtils.getConfig().getGenericProperty("TOOLBAR", ToolBar.DEFAULT_LIST);
         for (Iterator<ToolBarAction> it = actions2.iterator(); it.hasNext();) {
             ToolBarAction a = it.next();
@@ -234,17 +245,16 @@ static{
                 list.remove(a.getID());
                 continue;
             }
-            if(!WHITELIST.contains(a.getID())){
+            if (!WHITELIST.contains(a.getID())) {
                 it.remove();
                 list.remove(a.getID());
+
+                System.out.println("WHITELIST.add(\"" + a.getID() + "\");");
                 continue;
             }
-          
-           
+
         }
         this.actions = actions2;
-
-     
 
     }
 

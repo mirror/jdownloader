@@ -23,6 +23,7 @@ import javax.swing.Action;
 import javax.swing.JButton;
 import javax.swing.JRootPane;
 import javax.swing.JSeparator;
+import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
 import javax.swing.KeyStroke;
 
@@ -38,7 +39,6 @@ import net.miginfocom.swing.MigLayout;
 
 public class ToolBar extends JToolBar implements ActionControllerListener {
 
-
     private static final long serialVersionUID = 7533137014274040205L;
 
     public static final ArrayList<String> CONTROL_LIST = new ArrayList<String>();
@@ -46,11 +46,9 @@ public class ToolBar extends JToolBar implements ActionControllerListener {
         CONTROL_LIST.add("toolbar.control.start");
         CONTROL_LIST.add("toolbar.control.pause");
         CONTROL_LIST.add("toolbar.control.stop");
-        
-  
 
     }
-    
+
     public static final ArrayList<String> MOVE_LIST = new ArrayList<String>();
     static {
 
@@ -58,19 +56,15 @@ public class ToolBar extends JToolBar implements ActionControllerListener {
         MOVE_LIST.add("action.downloadview.moveup");
         MOVE_LIST.add("action.downloadview.movedown");
         MOVE_LIST.add("action.downloadview.movetobottom");
-        
-  
 
     }
 
     public static final ArrayList<String> CONFIG_LIST = new ArrayList<String>();
     static {
-     
+
         CONFIG_LIST.add("toolbar.quickconfig.clipboardoberserver");
         CONFIG_LIST.add("toolbar.quickconfig.reconnecttoggle");
         CONFIG_LIST.add("toolbar.control.stopmark");
-
-  
 
     }
     public static final ArrayList<String> DEFAULT_LIST = new ArrayList<String>();
@@ -89,9 +83,7 @@ public class ToolBar extends JToolBar implements ActionControllerListener {
         DEFAULT_LIST.add("toolbar.control.stopmark");
         DEFAULT_LIST.add("toolbar.separator");
         DEFAULT_LIST.add("toolbar.interaction.reconnect");
-        DEFAULT_LIST.add("toolbar.interaction.update");      
-     
-  
+        DEFAULT_LIST.add("toolbar.interaction.update");
 
     }
 
@@ -110,7 +102,7 @@ public class ToolBar extends JToolBar implements ActionControllerListener {
         ActionController.initActions();
 
         // this.updateToolbar();
-        current = DEFAULT_LIST.toArray(new String[]{});
+        current = DEFAULT_LIST.toArray(new String[] {});
 
         // please add listener here. to avoid the toolbar beiong pained multible
         // times
@@ -122,7 +114,7 @@ public class ToolBar extends JToolBar implements ActionControllerListener {
         if (newlist == current) return;
         synchronized (current) {
             if (newlist == null || newlist.length == 0) {
-                current = DEFAULT_LIST.toArray(new String[]{});
+                current = DEFAULT_LIST.toArray(new String[] {});
             } else {
                 current = newlist;
             }
@@ -192,7 +184,12 @@ public class ToolBar extends JToolBar implements ActionControllerListener {
                     break;
 
                 case TOGGLE:
-                    ab = add(action);
+                    // ab = add(action);
+                    add(ab = new JToggleButton(action));
+
+                    if ((action.getValue(Action.SMALL_ICON) != null || action.getValue(Action.LARGE_ICON_KEY) != null)) {
+                        ab.setHideActionText(true);
+                    }
                     lastseperator = false;
                     // add(ab = tbt = new JCheckBoxMenuItem(action),
                     // BUTTON_CONSTRAINTS);

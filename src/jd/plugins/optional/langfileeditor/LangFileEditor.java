@@ -134,7 +134,8 @@ public class LangFileEditor extends PluginOptional {
     @Override
     public boolean initAddon() {
         activateAction = new MenuAction(ToolBarAction.Types.TOGGLE, JDL.L("jd.plugins.optional.langfileeditor.LangFileEditor.show", "Show"), 0).setActionListener(this);
-        activateAction.setSelected(false);
+        activateAction.setIcon(this.getIconKey());       
+activateAction.setSelected(false);
         return true;
     }
 

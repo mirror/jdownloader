@@ -97,7 +97,8 @@ public abstract class JDAction extends AbstractAction {
      */
     public void setIcon(String key) {
         if (key.length() < 3) return;
-        putValue(AbstractAction.SMALL_ICON, JDTheme.II(key, 24, 24));
+        putValue(AbstractAction.SMALL_ICON, JDTheme.II(key, 16, 16));
+        putValue(AbstractAction.LARGE_ICON_KEY, JDTheme.II(key, 24, 24));
         putValue(IMAGE_KEY, key);
     }
 
