@@ -104,7 +104,9 @@ public class MainTabbedPane extends JTabbedPane implements MouseListener {
 
         this.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
         this.setOpaque(false);
-        addMouseListener(this);
+        if (JDUtilities.getJavaVersion() < 1.6) {
+            addMouseListener(this);
+        }
 
         this.addChangeListener(new ChangeListener() {
 
@@ -188,9 +190,13 @@ public class MainTabbedPane extends JTabbedPane implements MouseListener {
         int tabNumber = getUI().tabForCoordinate(this, e.getX(), e.getY());
         if (tabNumber < 0) return;
         Rectangle rect = ((CloseTabIcon) getIconAt(tabNumber)).getBounds();
-        if (rect.contains(e.getX(), e.getY())) {
-            // the tab is being closed
-            ((ClosableView) this.getComponentAt(tabNumber)).getCloseAction().actionPerformed(null);
+        try {
+            if (rect.contains(e.getX(), e.getY())) {
+                // the tab is being closed
+                ((ClosableView) this.getComponentAt(tabNumber)).getCloseAction().actionPerformed(null);
+
+            }
+        } catch (Exception e2) {
 
         }
     }

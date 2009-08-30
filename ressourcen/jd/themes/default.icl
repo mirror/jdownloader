@@ -8,6 +8,7 @@ gui.icons.delete = default/edit-delete
 
 
 ##
+gui.images.barrierfree= default/preferences-desktop-assistive-technology
 gui.images.toolbar =default/window-new
 gui.images.add = default/list-add
 gui.images.stopmark = default/record

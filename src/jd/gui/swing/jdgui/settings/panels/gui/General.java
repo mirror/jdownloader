@@ -118,6 +118,12 @@ public class General extends ConfigPanel {
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDGuiConstants.DECORATION_ENABLED, JDL.L("gui.config.gui.decoration", "Enable Windowdecoration")).setGroup(perf));
         ce.setDefaultValue(true);
         ce.setPropertyType(PropertyType.NEEDS_RESTART);
+
+        ConfigGroup barrierfree = new ConfigGroup(JDL.L("gui.config.gui.barrierfree", "Barrier-Free"), JDTheme.II("gui.images.barrierfree", 32, 32));
+        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, JDGuiConstants.PARAM_GENERAL_FONT_SIZE, JDL.L("gui.config.gui.font size", "Font Size (-1: default)"), -1, 26).setDefaultValue(-1).setGroup(barrierfree));
+        ce.setDefaultValue(-1);
+        ce.setPropertyType(PropertyType.NEEDS_RESTART);
+
         return look;
     }
 
