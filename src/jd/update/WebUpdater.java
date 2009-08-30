@@ -42,7 +42,6 @@ import jd.nutils.zip.UnZip;
 import jd.parser.Regex;
 import jd.utils.JDUtilities;
 
-
 /**
  * Webupdater lädt pfad und hash infos von einem server und vergleicht sie mit
  * den lokalen versionen
@@ -162,11 +161,11 @@ public class WebUpdater implements Serializable {
                 it.remove();
             } else {
                 if (!file.exists()) {
-                    broadcaster.fireEvent(new MessageEvent(this, NEW_FILE, "New: "+ WebUpdater.formatPathReadable(file.getLocalPath())));
+                    broadcaster.fireEvent(new MessageEvent(this, NEW_FILE, "New: " + WebUpdater.formatPathReadable(file.getLocalPath())));
                     continue;
                 } else if (!file.equals()) {
 
-                    broadcaster.fireEvent(new MessageEvent(this, UPDATE_FILE,  "Update: "+WebUpdater.formatPathReadable(file.getLocalPath())));
+                    broadcaster.fireEvent(new MessageEvent(this, UPDATE_FILE, "Update: " + WebUpdater.formatPathReadable(file.getLocalPath())));
 
                     continue;
                 } else {
@@ -214,7 +213,7 @@ public class WebUpdater implements Serializable {
      * @return
      */
     public String getBranch() {
-    
+
         String latestBranch = getLatestBranch();
 
         String ret = WebUpdater.getConfig("WEBUPDATE").getStringProperty("BRANCH");
@@ -465,8 +464,6 @@ public class WebUpdater implements Serializable {
 
     private ArrayList<Server> updateAvailableServers() {
 
-     
-
         boolean fnf = true;
         for (int trycount = 0; trycount < 10; trycount++) {
             try {
@@ -498,7 +495,7 @@ public class WebUpdater implements Serializable {
                     } else {
                         s.setPercent((s.getPercent() * 100) / total);
                     }
-                    broadcaster.fireEvent(new MessageEvent(this, 0, "Updateserver: "+ s));
+                    broadcaster.fireEvent(new MessageEvent(this, 0, "Updateserver: " + s));
 
                 }
                 if (servers.size() > 0) {
@@ -526,7 +523,7 @@ public class WebUpdater implements Serializable {
 
     private void errorWait() {
         try {
-            broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_FAILED,  "Server Busy. Wait 10 Seconds"));
+            broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_FAILED, "Server Busy. Wait 10 Seconds"));
             Thread.sleep(10000);
         } catch (InterruptedException e) {
             // TODO Auto-generated catch block
@@ -539,7 +536,7 @@ public class WebUpdater implements Serializable {
 
         String[] tmp = file.elementAt(0).split("\\?");
 
-        broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_FILE,String.format("Download %s to %s", WebUpdater.formatPathReadable(tmp[1]), WebUpdater.formatPathReadable(JDUtilities.getResourceFile(tmp[0]).getAbsolutePath()))));
+        broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_FILE, String.format("Download %s to %s", WebUpdater.formatPathReadable(tmp[1]), WebUpdater.formatPathReadable(JDUtilities.getResourceFile(tmp[0]).getAbsolutePath()))));
 
         Browser.download(JDUtilities.getResourceFile(tmp[0]), tmp[0]);
 
@@ -563,13 +560,13 @@ public class WebUpdater implements Serializable {
         if (prg != null) prg.addToMax(files.size());
         for (FileUpdate file : files) {
             try {
-                broadcaster.fireEvent(new MessageEvent(this, 0, String.format( "Update %s", WebUpdater.formatPathReadable(file.getLocalPath()))));
+                broadcaster.fireEvent(new MessageEvent(this, 0, String.format("Update %s", WebUpdater.formatPathReadable(file.getLocalPath()))));
                 if (updateUpdatefile(file)) {
                     broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_SUCCESS, WebUpdater.formatPathReadable(file.toString())));
-                    broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_SUCCESS,  "Successfull"));
+                    broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_SUCCESS, "Successfull"));
                 } else {
                     broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_FAILED, WebUpdater.formatPathReadable(file.toString())));
-                    broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_FAILED,  "Failed"));
+                    broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_FAILED, "Failed"));
                     if (progressload != null) progressload.setForeground(Color.RED);
                     if (prg != null) prg.setColor(Color.RED);
                 }
@@ -614,7 +611,13 @@ public class WebUpdater implements Serializable {
                     broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_SUCCESS, "Extracted " + file.getLocalTmpFile().getName() + ": " + efiles.length + " files"));
                 } catch (Exception e) {
                     // TODO Auto-generated catch block
+                    broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_FAILED, e.getLocalizedMessage()));
+                    broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_FAILED, "Extracting "+file.getLocalTmpFile().getAbsolutePath()+" failed"));
                     e.printStackTrace();
+                    file.getLocalTmpFile().delete();
+                    file.getLocalTmpFile().deleteOnExit();
+                    errors++;
+                    return false;
                 }
             }
 
@@ -623,7 +626,5 @@ public class WebUpdater implements Serializable {
         errors++;
         return false;
     }
-
-
 
 }
