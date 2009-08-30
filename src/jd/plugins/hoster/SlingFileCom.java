@@ -65,10 +65,27 @@ public class SlingFileCom extends PluginForHost {
         requestFileInformation(downloadLink);
         Form downloadForm = br.getFormbyProperty("name", "form1");
         downloadForm.put("download", "1");
+       
         br.submitForm(downloadForm);
+        long waittime=0;
+        try {
+            waittime = Long.parseLong(br.getRegex("var seconds\\=(\\d+)").getMatch(0)) * 1000l;
+        } catch (Exception e) {
+
+        }
+            if (waittime >31000) {
+
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime); }else{
+              //  this.sleep(waittime, downloadLink);
+            }
+       
         String downloadUrl = br.getRegex(Pattern.compile("<a class=\"link_v3\" href=\"(.*?)\">here</a>")).getMatch(0);
 
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, downloadUrl, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadUrl, true, 0);
+        if (dl.getConnection().getResponseCode() == 410) {
+            dl.getConnection().disconnect();
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60000l);
+        }
         dl.startDownload();
     }
 
