@@ -9,7 +9,7 @@ public class LinkGrabberToolbar extends ViewToolbar {
 
     public LinkGrabberToolbar() {
 
-        setList(new String[] { "action.addurl", "action.load", "action.linkgrabber.addall", "action.linkgrabber.clearlist" });
+        setList(new String[] { "action.addurl", "action.load", "action.linkgrabber.clearlist", "action.linkgrabber.addall" });
         BUTTON_CONSTRAINTS = "gaptop 2";
     }
 
@@ -17,10 +17,15 @@ public class LinkGrabberToolbar extends ViewToolbar {
 
     @Override
     public String getButtonConstraint(int i, ToolBarAction action) {
-        if (i < 3) {
-            return BUTTON_CONSTRAINTS + ", dock west, sizegroup toolbar";
+//        if (i < 3) {
+//            return BUTTON_CONSTRAINTS + ", dock west, sizegroup toolbar";
+//        } else {
+//            return BUTTON_CONSTRAINTS + ", dock east, sizegroup toolbar";
+//        }
+        if (i == 1) {
+            return BUTTON_CONSTRAINTS + ", gapright 20";
         } else {
-            return BUTTON_CONSTRAINTS + ", dock east, sizegroup toolbar";
+            return BUTTON_CONSTRAINTS + ", gapright rel";
         }
     }
 
