@@ -9,7 +9,7 @@ public class LinkGrabberToolbar extends ViewToolbar {
 
     public LinkGrabberToolbar() {
 
-        setList(new String[] { "action.addurl", "action.load", "action.linkgrabber.clearlist", "action.linkgrabber.addall" });
+        setList(new String[] {"action.linkgrabber.clearlist", "action.addurl", "action.load", "action.linkgrabber.addall" });
         BUTTON_CONSTRAINTS = "gaptop 2";
     }
 
@@ -22,8 +22,8 @@ public class LinkGrabberToolbar extends ViewToolbar {
 //        } else {
 //            return BUTTON_CONSTRAINTS + ", dock east, sizegroup toolbar";
 //        }
-        if (i == 1) {
-            return BUTTON_CONSTRAINTS + ", gapright 20";
+        if (i == 0) {
+            return BUTTON_CONSTRAINTS + ", gapright u";
         } else {
             return BUTTON_CONSTRAINTS + ", gapright rel";
         }
