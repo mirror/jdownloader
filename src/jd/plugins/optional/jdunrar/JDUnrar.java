@@ -330,10 +330,8 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         wrapper.setOverwrite(this.getPluginConfig().getBooleanProperty(JDUnrarConstants.CONFIG_KEY_OVERWRITE, true));
         wrapper.setUnrarCommand(getPluginConfig().getStringProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND));
         ArrayList<String> pwList = new ArrayList<String>();
-        String[] linkPws = JDUtilities.passwordStringToArray(link.getFilePackage().getPassword());
-        for (String pw : linkPws) {
-            pwList.add(pw);
-        }
+        if (link.getFilePackage().getPassword().length() > 0) pwList.add(link.getFilePackage().getPassword());
+        pwList.addAll(link.getFilePackage().getPasswordAuto());
         pwList.addAll(PasswordListController.getInstance().getPasswordList());
         // Fügt den Archivnamen und dan dateinamen ans ende der passwortliste
         pwList.add(this.getArchiveName(link));

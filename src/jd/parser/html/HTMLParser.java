@@ -43,7 +43,7 @@ public class HTMLParser {
         ArrayList<String> ret = new ArrayList<String>();
         data = data.replaceAll("(?s)<!-- .*? -->", "").replaceAll("(?s)<script .*?>.*?</script>", "").replaceAll("(?s)<.*?>", "").replaceAll("Spoiler:", "").replaceAll("(no.{0,2}|kein.{0,8}|ohne.{0,8}|nicht.{0,8})(pw|passwort|password|pass)", "").replaceAll("(pw|passwort|password|pass).{0,12}(nicht|falsch|wrong)", "");
 
-        Pattern pattern = Pattern.compile("(ps?w|passwort|password|passw?)[\\s][\\s]*?[\"']([[^\\:\"'\\s]][^\"'\\s]*)[\"']?", Pattern.CASE_INSENSITIVE);
+        Pattern pattern = Pattern.compile("(пароль|пасс|ps?w|passwort|password|passw?)[\\s][\\s]*?[\"']([[^\\:\"'\\s]][^\"'\\s]*)[\"']?", Pattern.CASE_INSENSITIVE);
         Matcher matcher = pattern.matcher(data);
         while (matcher.find()) {
             String pass = matcher.group(2);
@@ -51,7 +51,7 @@ public class HTMLParser {
                 ret.add(pass);
             }
         }
-        pattern = Pattern.compile("(ps?w|passwort|password|passw?)[\\s][\\s]*?([[^\\:\"'\\s]][^\"'\\s]*)[\\s]?", Pattern.CASE_INSENSITIVE);
+        pattern = Pattern.compile("(пароль|пасс|ps?w|passwort|password|passw?)[\\s][\\s]*?([[^\\:\"'\\s]][^\"'\\s]*)[\\s]?", Pattern.CASE_INSENSITIVE);
         matcher = pattern.matcher(data);
         while (matcher.find()) {
             String pass = matcher.group(2);
@@ -59,7 +59,7 @@ public class HTMLParser {
                 ret.add(pass);
             }
         }
-        pattern = Pattern.compile("(ps?w|passwort|password|passw?)[\\s]?\\:[\\s]*?[\"']([^\"']+)[\"']?", Pattern.CASE_INSENSITIVE);
+        pattern = Pattern.compile("(пароль|пасс|ps?w|passwort|password|passw?)[\\s]?\\:[\\s]*?[\"']([^\"']+)[\"']?", Pattern.CASE_INSENSITIVE);
         matcher = pattern.matcher(data);
         while (matcher.find()) {
             String pass = matcher.group(2);
@@ -67,7 +67,7 @@ public class HTMLParser {
                 ret.add(pass);
             }
         }
-        pattern = Pattern.compile("(ps?w|passwort|password|passw?)[\\s]?\\:[\\s]*?([^\"'\\s]+)[\\s]?", Pattern.CASE_INSENSITIVE);
+        pattern = Pattern.compile("(пароль|пасс|ps?w|passwort|password|passw?)[\\s]?\\:[\\s]*?([^\"'\\s]+)[\\s]?", Pattern.CASE_INSENSITIVE);
         matcher = pattern.matcher(data);
         while (matcher.find()) {
             String pass = matcher.group(2);
@@ -279,7 +279,7 @@ public class HTMLParser {
         data = data.replaceAll("(?s)\\[(url|link)\\].*?\\[/(url|link)\\]", "");
         m = Pattern.compile("(" + protocolPattern + "://|www\\.)[^\\s<>'\"]*(((?!\\s" + protocolPattern + "://|\\swww\\.)[^<>'\"]){0,20}([\\?|\\&][^<>'\\s\"]{1,10}\\=[^<>'\\s\"]+|\\.(htm[^<>'\\s\"]*|php|cgi|rar|zip|exe|avi|mpe?g|7z|bz2|doc|jpg|bmp|m4a|mdf|mkv|wav|mp[34]|pdf|wm[^<>'\\s\"]*|xcf|jar|swf|class|cue|bin|dll|cab|png|ico|gif|iso)[^<>'\\s\"]*))?", Pattern.CASE_INSENSITIVE).matcher(data);
         while (m.find()) {
-            link = m.group(0);            
+            link = m.group(0);
             link = link.replaceAll("^h.{2,3}://", "http://");
             link = link.replaceFirst("^www\\.", "http://www\\.");
             link = link.trim();

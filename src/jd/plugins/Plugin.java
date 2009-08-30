@@ -40,7 +40,6 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.Formatter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.parser.html.HTMLParser;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -59,17 +58,6 @@ public abstract class Plugin implements ActionListener {
      * Ein Logger, um Meldungen darzustellen
      */
     protected static Logger logger = jd.controlling.JDLogger.getLogger();
-
-    /**
-     * Gibt die Passwörter als String aus bsp. {"Passwort1","Passwort2"}
-     * 
-     * @param data
-     * @return
-     */
-    public static String findPassword(String data) {
-        ArrayList<String> passwords = HTMLParser.findPasswords(data);
-        return JDUtilities.passwordArrayToString(passwords.toArray(new String[passwords.size()]));
-    }
 
     public static ConversionMode showDisplayDialog(ArrayList<ConversionMode> displaymodes, String name, CryptedLink link) throws DecrypterException {
         link.getProgressController().setStatusText(JDL.L("gui.linkgrabber.waitinguserio", "Waiting for user input"));

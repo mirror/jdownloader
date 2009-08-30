@@ -55,6 +55,8 @@ public class LinkGrabberFilePackageInfo extends JDCollapser implements ActionLis
 
     private LinkGrabberFilePackage fp = null;
 
+    private JDTextField txtPassword2;
+
     public LinkGrabberFilePackageInfo() {
         buildGui();
         fp = null;
@@ -82,6 +84,7 @@ public class LinkGrabberFilePackageInfo extends JDCollapser implements ActionLis
         txtName.setText(fp.getName());
         txtComment.setText(fp.getComment());
         txtPassword.setText(fp.getPassword());
+        txtPassword2.setText(fp.getPasswordAuto().toString());
         brwSaveTo.setText(fp.getDownloadDirectory());
         chbExtract.setSelected(fp.isExtractAfterDownload());
         chbUseSubdirectory.setSelected(fp.useSubDir());
@@ -107,9 +110,10 @@ public class LinkGrabberFilePackageInfo extends JDCollapser implements ActionLis
         txtPassword = new JDTextField(true);
         txtPassword.addActionListener(this);
         txtPassword.addFocusListener(this);
+        txtPassword2 = new JDTextField(true);
+        txtPassword2.setEditable(false);
         txtComment = new JDTextField(true);
         txtComment.addActionListener(this);
-        txtPassword.addFocusListener(this);
         chbExtract = new JCheckBox(JDL.L("gui.linkgrabber.packagetab.chb.extractAfterdownload", "Extract"));
         chbExtract.setSelected(true);
         chbExtract.setHorizontalTextPosition(SwingConstants.LEFT);
@@ -132,9 +136,13 @@ public class LinkGrabberFilePackageInfo extends JDCollapser implements ActionLis
 
         content.add(txtPassword, " gapright 10, growx");
         content.add(chbExtract, "alignx right");
+        content.add(new JLabel(JDL.L("gui.linkgrabber.packagetab.lbl.password2", "Archive Password(auto)")), "newline");
+        content.add(txtPassword2, " gapright 10, growx");
+        content.add(chbUseSubdirectory, "alignx right");
+
         content.add(new JLabel(JDL.L("gui.linkgrabber.packagetab.lbl.comment", "Kommentar")));
         content.add(txtComment, "gapright 10, growx");
-        content.add(chbUseSubdirectory, "alignx right");
+
     }
 
     public void actionPerformed(ActionEvent e) {

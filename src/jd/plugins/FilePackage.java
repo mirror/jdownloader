@@ -63,7 +63,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
     private ArrayList<DownloadLink> downloadLinkList;
     private transient static FilePackage FP = null;
 
-    public static FilePackage getDefaultFilePackage() {
+    public synchronized static FilePackage getDefaultFilePackage() {
         if (FP == null) {
             FP = new FilePackage();
             FP.setName(JDL.L("controller.packages.defaultname", "various"));
@@ -84,7 +84,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
 
     private String name = null;
 
-    private String password;
+    private String password2;
 
     private boolean extractAfterDownload = true;
 
@@ -262,7 +262,6 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
      *         abgegeben hat
      */
     public String getComment() {
-        updateData(null);
         return comment == null ? "" : comment;
     }
 
@@ -382,21 +381,12 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
      *         angegeben hat
      */
     public String getPassword() {
-        updateData(null);
-        return password == null ? "" : password;
+        return password2 == null ? "" : password2;
     }
 
-    public synchronized void updateData(String addpw) {
-        String password = this.password == null ? "" : this.password;
-        StringBuilder comment = new StringBuilder(this.comment == null ? "" : this.comment);
-
+    /* returns a list of archivepasswords set by downloadlinks */
+    public ArrayList<String> getPasswordAuto() {
         ArrayList<String> pwList = new ArrayList<String>();
-        if (password.length() > 0) {
-            String[] pws = JDUtilities.passwordStringToArray(password);
-            for (String element : pws) {
-                pwList.add(element);
-            }
-        }
         synchronized (downloadLinkList) {
             for (DownloadLink element : downloadLinkList) {
                 if (element.getSourcePluginPasswordList() != null) {
@@ -404,28 +394,9 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
                         if (!pwList.contains(pw)) pwList.add(pw);
                     }
                 }
-                if (element.getSourcePluginComment() != null) {
-                    String newComment = element.getSourcePluginComment();
-                    if (newComment != null && comment.indexOf(newComment) < 0) {
-                        comment.append("|");
-                        comment.append(newComment);
-                    }
-                }
             }
         }
-        String cmt = comment.toString();
-        if (cmt.startsWith("|")) {
-            cmt = cmt.substring(1);
-        }
-        this.comment = cmt;
-
-        if (addpw != null && addpw.length() > 0) {
-            String[] pws = JDUtilities.passwordStringToArray(addpw);
-            for (String element : pws) {
-                if (!pwList.contains(element)) pwList.add(element);
-            }
-        }
-        this.password = JDUtilities.passwordArrayToString(pwList.toArray(new String[pwList.size()]));
+        return pwList;
     }
 
     /**
@@ -505,14 +476,6 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
     }
 
     /**
-     * 
-     * @return True/false, je nach dem ob ein Kommentar gespeichert ist
-     */
-    public boolean hasComment() {
-        return comment != null && comment.length() > 0;
-    }
-
-    /**
      * @return True/false, je nach dem ob ein Downloadirectory festgelegt wurde
      */
     public boolean hasDownloadDirectory() {
@@ -559,8 +522,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
     }
 
     public void setPassword(String password) {
-        if (password == null || password.length() == 0) return;
-        updateData(password);
+        this.password2 = password;
     }
 
     public int size() {

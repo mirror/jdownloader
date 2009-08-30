@@ -581,15 +581,13 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
                         nfp.setDownloadDirectory(fp.getDownloadDirectory());
                         nfp.setExtractAfterDownload(fp.isExtractAfterDownload());
                         nfp.setComment(fp.getComment());
-                        ArrayList<String> passwords = null;
                         for (DownloadLink link2 : selectedLinks) {
                             FilePackage fp2 = link2.getFilePackage();
-                            passwords = JDUtilities.mergePasswords(passwords, fp2.getPassword());
+                            link2.addSourcePluginPassword(fp2.getPassword());
                         }
                         for (int i = 0; i < selectedLinks.size(); i++) {
                             selectedLinks.get(i).setFilePackage(nfp);
                         }
-                        if (passwords != null) nfp.setPassword(JDUtilities.passwordArrayToString(passwords.toArray(new String[passwords.size()])));
                         if (GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_INSERT_NEW_LINKS_AT, false)) {
                             JDUtilities.getDownloadController().addPackageAt(nfp, 0, 0);
                         } else {

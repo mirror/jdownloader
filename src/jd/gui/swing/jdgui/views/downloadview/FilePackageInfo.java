@@ -89,6 +89,8 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
 
     private JLabel speed;
 
+    private JDTextField txtPassword2;
+
     public FilePackageInfo() {
         super();
         buildGui();
@@ -97,14 +99,13 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
     }
 
     public void setPackage(FilePackage fp) {
-
+        this.tabbedPane.setSelectedIndex(0);
         this.tabbedPane.setEnabledAt(1, false);
         if (this.fp != null && this.fp == fp) {
             update();
             return;
         }
         this.fp = fp;
-        this.tabbedPane.setSelectedIndex(0);
         if (this.fp != null) {
             update();
         }
@@ -121,6 +122,7 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
         txtName.setText(fp.getName());
         txtComment.setText(fp.getComment());
         txtPassword.setText(fp.getPassword());
+        txtPassword2.setText(fp.getPasswordAuto().toString());
         brwSaveTo.setText(fp.getDownloadDirectory());
         chbExtract.setSelected(fp.isExtractAfterDownload());
         /* neuzeichnen */
@@ -153,6 +155,8 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
         txtPassword = new JDTextField(true);
         txtPassword.addActionListener(this);
         txtPassword.addFocusListener(this);
+        txtPassword2 = new JDTextField(true);
+        txtPassword2.setEditable(false);
         txtComment = new JDTextField(true);
         txtComment.addActionListener(this);
         txtComment.addFocusListener(this);
@@ -184,9 +188,11 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
         panel.add(new JLabel(JDL.L("gui.fileinfopanel.packagetab.lbl.password", "Archivpasswort")));
         panel.add(txtPassword, " gapright 10, growx");
         panel.add(chbExtract, "alignx right");
+        panel.add(new JLabel(JDL.L("gui.fileinfopanel.packagetab.lbl.password2", "Archive Password(auto)")));
+        panel.add(txtPassword2, " gapright 10, growx");
+        panel.add(chbUseSubdirectory, "alignx right");
         panel.add(new JLabel(JDL.L("gui.fileinfopanel.packagetab.lbl.comment", "Kommentar")));
         panel.add(txtComment, "gapright 10, growx");
-        panel.add(chbUseSubdirectory, "alignx right");
         return panel;
     }
 

@@ -133,8 +133,7 @@ public class JDExternInterface extends PluginOptional {
                         /* parse the post data */
                         String urls[] = Regex.getLines(Encoding.htmlDecode(request.getParameters().get("urls")));
                         String passwords[] = Regex.getLines(Encoding.htmlDecode(request.getParameters().get("passwords")));
-                        for (String p : passwords)
-                            PasswordListController.getInstance().addPassword(p);
+                        PasswordListController.getInstance().addPasswords(passwords);
                         if (urls.length != 0) {
                             ArrayList<DownloadLink> links = new DistributeData(Encoding.htmlDecode(request.getParameters().get("urls"))).findLinks();
                             LinkGrabberController.getInstance().addLinks(links, false, false);

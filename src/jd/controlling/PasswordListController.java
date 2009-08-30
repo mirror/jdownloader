@@ -30,7 +30,6 @@ import jd.config.SubConfiguration;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.utils.JDUtilities;
 
 public class PasswordListController implements ActionListener, DownloadControllerListener, ListController {
     private transient static SubConfiguration CONFIG = null;
@@ -142,7 +141,7 @@ public class PasswordListController implements ActionListener, DownloadControlle
         }
     }
 
-    private void addPasswords(String list[]) {
+    public void addPasswords(String list[]) {
         if (list == null || list.length == 0) return;
         synchronized (LIST2) {
             for (String pw : list) {
@@ -200,7 +199,7 @@ public class PasswordListController implements ActionListener, DownloadControlle
             this.addPasswords(((DownloadLink) event.getParameter()).getSourcePluginPasswordList());
             break;
         case DownloadControllerEvent.ADD_FILEPACKAGE:
-            this.addPasswords(JDUtilities.passwordStringToArray((((FilePackage) event.getParameter()).getPassword())));
+            this.addPassword(((FilePackage) event.getParameter()).getPassword());
             break;
         default:
             break;

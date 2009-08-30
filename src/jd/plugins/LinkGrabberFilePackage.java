@@ -190,49 +190,6 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
         }
     }
 
-    public synchronized void updateData(String addpw) {
-        String password = this.password == null ? "" : this.password;
-        StringBuilder comment = new StringBuilder(this.comment == null ? "" : this.comment);
-
-        ArrayList<String> pwList = new ArrayList<String>();
-        if (password.length() > 0) {
-            String[] pws = JDUtilities.passwordStringToArray(password);
-            for (String element : pws) {
-                pwList.add(element);
-            }
-        }
-
-        synchronized (downloadLinks) {
-            for (DownloadLink element : downloadLinks) {
-                if (element.getSourcePluginPasswordList() != null) {
-                    for (String pw : element.getSourcePluginPasswordList()) {
-                        if (!pwList.contains(pw)) pwList.add(pw);
-                    }
-                }
-                if (element.getSourcePluginComment() != null) {
-                    String newComment = element.getSourcePluginComment();
-                    if (newComment != null && comment.indexOf(newComment) < 0) {
-                        comment.append("|");
-                        comment.append(newComment);
-                    }
-                }
-            }
-        }
-        String cmt = comment.toString();
-        if (cmt.startsWith("|")) {
-            cmt = cmt.substring(1);
-        }
-        this.comment = cmt;
-
-        if (addpw != null && addpw.length() > 0) {
-            String[] pws = JDUtilities.passwordStringToArray(addpw);
-            for (String element : pws) {
-                if (!pwList.contains(element)) pwList.add(element);
-            }
-        }
-        this.password = JDUtilities.passwordArrayToString(pwList.toArray(new String[pwList.size()]));
-    }
-
     public int add(int index, DownloadLink link, int repos) {
         if (link == null) return repos;
         synchronized (LinkGrabberController.ControllerLock) {
@@ -315,13 +272,26 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
     }
 
     public String getPassword() {
-        updateData(null);
-        return password;
+        return password != null ? password : "";
+    }
+
+    /* returns a list of archivepasswords set by downloadlinks */
+    public ArrayList<String> getPasswordAuto() {
+        ArrayList<String> pwList = new ArrayList<String>();
+        synchronized (downloadLinks) {
+            for (DownloadLink element : downloadLinks) {
+                if (element.getSourcePluginPasswordList() != null) {
+                    for (String pw : element.getSourcePluginPasswordList()) {
+                        if (!pwList.contains(pw)) pwList.add(pw);
+                    }
+                }
+            }
+        }
+        return pwList;
     }
 
     public String getComment() {
-        updateData(null);
-        return comment;
+        return comment != null ? comment : "";
     }
 
     public boolean remove(DownloadLink link) {
@@ -354,9 +324,7 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
     }
 
     public void setComment(String comment) {
-        if (comment == null) comment = "";
         this.comment = comment;
-        broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));
     }
 
     public void clear() {
@@ -382,9 +350,7 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
     }
 
     public void setPassword(String password) {
-        if (password == null || password.length() == 0) return;
-        updateData(password);
-        broadcaster.fireEvent(new LinkGrabberFilePackageEvent(this, LinkGrabberFilePackageEvent.UPDATE_EVENT));
+        this.password = password;
     }
 
     public int size() {

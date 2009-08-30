@@ -39,7 +39,6 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -877,52 +876,6 @@ public class JDUtilities {
             JDLogger.exception(e);
             return false;
         }
-    }
-
-    public static String[] passwordStringToArray(String password) {
-        if (password == null || password.matches("[\\s]*")) { return new String[] {}; }
-        if (password.matches("[\\s]*\\{[\\s]*\".*\"[\\s]*\\}[\\s]*$")) {
-            password = password.replaceFirst("[\\s]*\\{[\\s]*\"", "").replaceFirst("\"[\\s]*\\}[\\s]*$", "");
-            return password.split("\"[\\s]*\\,[\\s]*\"");
-        }
-        return new String[] { password };
-    }
-
-    public static ArrayList<String> mergePasswords(ArrayList<String> passwords, String newpassword) {
-        String[] newpws = passwordStringToArray(newpassword);
-        if (newpws.length == 0) return passwords;
-        if (passwords == null) passwords = new ArrayList<String>();
-        for (String newpw : newpws) {
-            if (!passwords.contains(newpw)) passwords.add(newpw);
-        }
-        return passwords;
-    }
-
-    public static String passwordArrayToString(String[] passwords) {
-        LinkedList<String> pws = new LinkedList<String>();
-        for (int i = 0; i < passwords.length; i++) {
-            if (!passwords[i].matches("[\\s]*") && !pws.contains(passwords[i])) {
-                pws.add(passwords[i]);
-            }
-        }
-        passwords = pws.toArray(new String[pws.size()]);
-        if (passwords.length == 0) { return ""; }
-        if (passwords.length == 1) { return passwords[0]; }
-
-        int l = passwords.length - 1;
-        StringBuilder ret = new StringBuilder();
-        ret.append(new char[] { '{', '"' });
-        for (int i = 0; i < passwords.length; i++) {
-            if (!passwords[i].matches("[\\s]*")) {
-                ret.append(passwords[i]);
-                if (i == l)
-                    ret.append(new char[] { '"', '}' });
-                else
-                    ret.append(new char[] { '"', ',', '"' });
-            }
-        }
-        return ret.toString();
-
     }
 
     public static Document parseXmlString(String xmlString, boolean validating) {

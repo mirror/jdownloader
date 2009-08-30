@@ -168,7 +168,6 @@ public class ActionController {
                 }
                 new GuiRunnable<Object>() {
                     public Object runSave() {
-                        ActionController.getToolBarAction("toolbar.control.pause").setSelected(false);
                         JDUtilities.getController().pauseDownloads(false);
                         return null;
                     }
@@ -186,7 +185,6 @@ public class ActionController {
 
             public void actionPerformed(ActionEvent e) {
                 boolean b = ActionController.getToolBarAction("toolbar.control.pause").isSelected();
-//                ActionController.getToolBarAction("toolbar.control.pause").setSelected(b);
                 JDUtilities.getController().pauseDownloads(b);
             }
 
@@ -281,8 +279,6 @@ public class ActionController {
 
             @Override
             public void threadedActionPerformed(ActionEvent e) {
-
-                ActionController.getToolBarAction("toolbar.control.pause").setSelected(false);
                 JDUtilities.getController().pauseDownloads(false);
                 final ProgressController pc = new ProgressController(JDL.L("gui.downloadstop", "Stopping current downloads..."));
                 Thread test = new Thread() {
@@ -440,7 +436,7 @@ public class ActionController {
                 this.type = ToolBarAction.Types.TOGGLE;
                 this.setToolTipText(JDL.L("gui.menu.action.reconnect.desc", "-"));
                 setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true));
-               
+
                 setIcon(isSelected() ? "gui.images.reconnect_enabled" : "gui.images.reconnect_disabled");
             }
 
@@ -452,7 +448,6 @@ public class ActionController {
                     @Override
                     public void onPropertyChanged(Property source, final String key) {
                         if (source.getBooleanProperty(key, true)) {
-
                             setSelected(true);
                             setIcon("gui.images.reconnect_enabled");
                         } else {
