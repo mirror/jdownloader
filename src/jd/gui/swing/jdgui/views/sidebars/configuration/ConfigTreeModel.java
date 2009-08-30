@@ -241,7 +241,7 @@ public class ConfigTreeModel implements TreeModel {
          * @param cl
          * @return
          */
-        public static TreeEntry getTreeByClass(Class<? extends SwitchPanel> cl) {
+        public static TreeEntry getTreeByClass(Class<?> cl) {
             return PANELS.get(cl);
         }
 

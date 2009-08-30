@@ -22,12 +22,11 @@ import java.awt.event.MouseEvent;
 import javax.swing.JTree;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
-import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 
 import jd.gui.swing.GuiRunnable;
+import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.interfaces.SideBarPanel;
-import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.ConfigurationView;
 import jd.gui.swing.jdgui.views.sidebars.configuration.ConfigTreeModel.TreeEntry;
 import jd.gui.swing.laf.LookAndFeelController;
@@ -36,6 +35,7 @@ import net.miginfocom.swing.MigLayout;
 public class ConfigSidebar extends SideBarPanel {
 
     private static final long serialVersionUID = 6456662020047832983L;
+    private static final String PROPERTY_LAST_PANEL = "LAST_PANEL";
     private static ConfigSidebar INSTANCE = null;
     private JTree tree;
     private ConfigurationView view;
@@ -55,7 +55,7 @@ public class ConfigSidebar extends SideBarPanel {
         this.view = configurationView;
         this.setLayout(new MigLayout("ins 0", "[grow,fill]", "[grow,fill]"));
 
-        this.add(tree = new JTree(getTreeModel()) {
+        this.add(tree = new JTree(new ConfigTreeModel()) {
             private static final long serialVersionUID = -5018817191000357595L;
 
             /**
@@ -108,6 +108,15 @@ public class ConfigSidebar extends SideBarPanel {
         }
 
         tree.setSelectionRow(1);
+        String lastPanel = GUIUtils.getConfig().getStringProperty(PROPERTY_LAST_PANEL, null);
+        if (lastPanel != null) {
+            try {
+                Class<?> lastPanelClass = Class.forName(lastPanel);
+                this.setSelectedTreeEntry(lastPanelClass);
+            } catch (ClassNotFoundException e1) {
+                e1.printStackTrace();
+            }
+        }
     }
 
     public void expandAll(JTree tree, boolean expand) {
@@ -130,22 +139,23 @@ public class ConfigSidebar extends SideBarPanel {
         }
     }
 
-    private TreeModel getTreeModel() {
-        return new ConfigTreeModel();
-    }
-
     @Override
     protected void onHide() {
+        System.out.println(((TreeEntry) tree.getLastSelectedPathComponent()).getPanel().getPanel().getClass().getName());
+        GUIUtils.getConfig().setProperty(PROPERTY_LAST_PANEL, ((TreeEntry) tree.getLastSelectedPathComponent()).getPanel().getPanel().getClass().getName());
+        GUIUtils.getConfig().save();
     }
 
     @Override
     protected void onShow() {
     }
 
-    public void setSelectedTreeEntry(Class<? extends SwitchPanel> class1) {
+    public void setSelectedTreeEntry(Class<?> class1) {
         TreeEntry root = (TreeEntry) tree.getModel().getRoot();
-        TreePath path = getEntry(new TreePath(root), TreeEntry.getTreeByClass(class1));
-        tree.setSelectionPath(path);
+        TreeEntry child = TreeEntry.getTreeByClass(class1);
+        if (child == null) return;
+        TreePath path = getEntry(new TreePath(root), child);
+        if (path != null) tree.setSelectionPath(path);
     }
 
     private TreePath getEntry(TreePath parent, TreeEntry treeEntry) {
