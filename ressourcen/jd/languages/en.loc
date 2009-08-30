@@ -1,4 +1,3 @@
-action.downloadview.movedown.tooltip = Move down
 action.downloadview.movetobottom.tooltip = Move to bottom
 action.downloadview.movetotop.tooltip = Move to top
 action.downloadview.moveup.tooltip = Move up
