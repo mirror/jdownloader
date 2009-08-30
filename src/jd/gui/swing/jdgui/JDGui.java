@@ -61,6 +61,7 @@ import jd.gui.swing.jdgui.menu.PremiumMenu;
 import jd.gui.swing.jdgui.menu.SaveMenu;
 import jd.gui.swing.jdgui.menu.actions.ExitAction;
 import jd.gui.swing.jdgui.menu.actions.RestartAction;
+import jd.gui.swing.jdgui.menu.actions.RestoreAction;
 import jd.gui.swing.jdgui.settings.panels.ConfigPanelAddons;
 import jd.gui.swing.jdgui.settings.panels.premium.Premium;
 import jd.gui.swing.jdgui.views.ConfigurationView;
@@ -248,6 +249,8 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
 
         file.add(new SaveMenu());
         file.addSeparator();
+        
+        file.add(new RestoreAction());
         file.add(new RestartAction());
         file.add(new ExitAction());
 

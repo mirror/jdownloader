@@ -123,9 +123,21 @@ public class Restarter {
 
             } else {
 
+                // Create relativ path
                 String n = new File("update").getAbsolutePath();
-                File newFile = new File(f.getAbsolutePath().replace(n, "").substring(1)).getAbsoluteFile();
 
+                File newFile = new File(f.getAbsolutePath().replace(n, "").substring(1)).getAbsoluteFile();
+                logger.info("./update -> real  " + n + " ->" + newFile.getAbsolutePath());
+                logger.info("Exists: " + newFile.exists());
+                if (!newFile.getParentFile().exists()) {
+                    logger.info("Parent Exists: false");
+
+                    if (newFile.getParentFile().mkdirs()) {
+                        logger.info("^^CREATED");
+                    } else {
+                        logger.info("^^CREATION FAILED");
+                    }
+                }
                 int waittime = 15000;
                 while (newFile.exists() && !newFile.delete() && !WAIT_FOR_JDOWNLOADER_TERM) {
 
@@ -136,24 +148,24 @@ public class Restarter {
                     }
                     waittime -= 1000;
                     if (waittime < 0) {
-                        logger.severe("COULD NOT DELETE");
+                        logger.severe("^^COULD NOT DELETE");
                         continue main;
                     }
-                    logger.severe("WAIT FOR DELETE");
+                    logger.severe("^^WAIT FOR DELETE");
 
                 }
                 if (!newFile.exists()) {
                     WAIT_FOR_JDOWNLOADER_TERM = true;
-                    logger.severe("DELETE OLD OK");
+                    logger.severe("^^DELETE OLD OK");
                 } else {
-                    logger.severe("DELETE OLD FAILED");
+                    logger.severe("^^DELETE OLD FAILED");
                 }
 
-                newFile.getParentFile().mkdirs();
-                logger.severe(newFile + " exists: " + newFile.exists());
-                logger.severe(f + " new exists: " + f.exists());
                 logger.severe("RENAME :" + f.renameTo(newFile));
-                if (f.getParentFile().list().length == 0) f.getParentFile().delete();
+                if (f.getParentFile().list().length == 0) {
+                    logger.severe("^^REMOVED PARENT DIR");
+                    f.getParentFile().delete();
+                }
             }
         }
         if (dir.list() != null) {

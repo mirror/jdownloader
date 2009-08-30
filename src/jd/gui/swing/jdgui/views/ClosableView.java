@@ -47,12 +47,13 @@ abstract public class ClosableView extends View {
      */
     public void init() {
         menubar = new JMenuBar();
-
+        int count = menubar.getComponentCount();
         initMenu(menubar);
-        if (menubar.getComponentCount() > 0) {
+        closeAction = new CloseAction();
+        if (menubar.getComponentCount() > count) {
             menubar.add(Box.createHorizontalGlue());
 
-            closeAction = new CloseAction();
+          
             Box panel = new Box(1);
             JButton bt;
 

@@ -17,24 +17,30 @@
 package jd.gui.swing.jdgui.menu.actions;
 
 import java.awt.event.ActionEvent;
+import java.io.File;
 
 import jd.config.MenuAction;
 import jd.gui.UserIO;
+import jd.nutils.Executer;
 import jd.nutils.JDFlags;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-public class RestartAction extends MenuAction {
+public class RestoreAction extends MenuAction {
 
-    private static final long serialVersionUID = 1333126351380171619L;
+    private static final long serialVersionUID = -1428029294638573437L;
 
-    public RestartAction() { 
-        super("action.restart", "gui.images.restart");
+    public RestoreAction() {
+        super("action.restore", "gui.images.edit");
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, JDL.L("sys.ask.rlyrestart", "Wollen Sie jDownloader wirklich neustarten?")), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
-            JDUtilities.restartJD(false);
+        if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, JDL.L("sys.ask.rlyrestore", "This will restart JDownloader and do a FULL-Update. Continue?")), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
+            
+        Executer exec = new Executer("java");
+        exec.addParameters(new String[] { "-jar",  "jdupdate.jar", "-restore" });
+        exec.setRunin(new File(".").getAbsolutePath());
+        exec.setWaitTimeout(0);
+        exec.start();
         }
     }
 
