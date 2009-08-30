@@ -1,3 +1,7 @@
+action.downloadview.movedown.tooltip = naar beneden verplaatsen
+action.downloadview.movetobottom.tooltip = naar het einde verplaatsen
+action.downloadview.movetotop.tooltip = naar het begin verplaatsen
+action.downloadview.moveup.tooltip = naar boven verplaatsen
 addons.jdgrowlnotification.menu = Growl Berichten
 addons.jdshutdown.menu = Systeem na het Downloaden Afsluiten
 addons.jdshutdown.statusmessage.disabled = JDownloader zal het Systeem na het Downloaden NIET afsluiten.
