@@ -16,10 +16,14 @@
 
 package jd.gui.swing.jdgui.maintab;
 
+
+import java.awt.event.MouseEvent;
+
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
+import jd.gui.swing.jdgui.interfaces.JDMouseAdapter;
 import jd.gui.swing.jdgui.views.ClosableView;
 import net.miginfocom.swing.MigLayout;
 
@@ -34,9 +38,20 @@ public class ClosableTabHeader extends JPanel {
         JLabel l1 = new JLabel(view.getTitle());
 
         closeIcon = new JButton(view.getCloseAction());
-        // closeIcon.setContentAreaFilled(false);
-        // closeIcon.setBorderPainted(false);
+        closeIcon.setContentAreaFilled(false);
+        closeIcon.setBorderPainted(false);
+        closeIcon.addMouseListener(new JDMouseAdapter() {
+            
+            public void mouseEntered(MouseEvent e) {
+                closeIcon.setContentAreaFilled(true);
+                closeIcon.setBorderPainted(true);
+            }
 
+            public void mouseExited(MouseEvent e) {
+                closeIcon.setContentAreaFilled(false);
+                closeIcon.setBorderPainted(false);
+            }
+        });
         closeIcon.setText(null);
         // closeIcon.setVisible(false);
         putClientProperty("paintActive", Boolean.TRUE);
@@ -49,5 +64,4 @@ public class ClosableTabHeader extends JPanel {
         l1.setOpaque(false);
 
     }
-
 }

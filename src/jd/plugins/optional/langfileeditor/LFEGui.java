@@ -139,6 +139,8 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
 
     private LangFileEditor plugin;
 
+    private JMenuItem mnuSaveLocal;
+
     public LFEGui(SubConfiguration cfg, LangFileEditor plg) {
         subConfig = cfg;
         plugin = plg;
@@ -353,6 +355,11 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
                 }
             }).start();
 
+            
+         
+        } else if (e.getSource() ==   mnuSaveLocal) {
+
+            saveLanguageFile(languageFile, false);
         } else if (e.getSource() == mnuSave) {
 
             saveLanguageFile(languageFile, true);
@@ -671,7 +678,8 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
                 mnuKey.setEnabled(true);
                 mnuCurrent.setEnabled(true);
                 mnuSave.setEnabled(true);
-
+                mnuSaveLocal.setEnabled(true);
+                mnuFile.setEnabled(true);
             }
 
         });
@@ -1037,12 +1045,16 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
 
         mnuFile.add(mnuLoad);
         mnuFile.addSeparator();
-        mnuFile.add(mnuSave = new JMenuItem(JDL.L(LOCALE_PREFIX + "save", "Save")));
+        mnuFile.add(mnuSaveLocal = new JMenuItem(JDL.L(LOCALE_PREFIX + "savelocale", "Save Offline")));
+        mnuFile.setEnabled(false);
+        mnuFile.add(mnuSave = new JMenuItem(JDL.L(LOCALE_PREFIX + "saveandupload", "Save & Upload")));
         mnuFile.addSeparator();
         mnuFile.add(mnuReload = new JMenuItem(JDL.L(LOCALE_PREFIX + "reload", "Revert/Reload")));
 
         mnuReload.addActionListener(this);
+        mnuSaveLocal.addActionListener(this);
 
+        mnuSaveLocal.setEnabled(false);
         mnuSave.addActionListener(this);
 
         mnuSave.setEnabled(false);
