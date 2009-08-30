@@ -23,7 +23,7 @@ public class LinkGrabberToolbar extends ViewToolbar {
 //            return BUTTON_CONSTRAINTS + ", dock east, sizegroup toolbar";
 //        }
         if (i == 0) {
-            return BUTTON_CONSTRAINTS + ", gapright u";
+            return BUTTON_CONSTRAINTS + ", gapright 20";
         } else {
             return BUTTON_CONSTRAINTS + ", gapright rel";
         }
