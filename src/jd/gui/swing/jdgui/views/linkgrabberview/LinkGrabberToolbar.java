@@ -20,7 +20,7 @@ public class LinkGrabberToolbar extends ViewToolbar {
         if (i < 3) {
             return BUTTON_CONSTRAINTS + ", dock west, sizegroup toolbar" + (i == 1 ? ", gapright u" : ", gapright r");
         } else {
-            return BUTTON_CONSTRAINTS + ", dock east, sizegroup toolbar, gapright r";
+            return BUTTON_CONSTRAINTS + ", dock east, sizegroup toolbar";
         }
     }
 
