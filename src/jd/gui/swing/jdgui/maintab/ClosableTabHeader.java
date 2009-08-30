@@ -16,7 +16,6 @@
 
 package jd.gui.swing.jdgui.maintab;
 
-import javax.swing.Action;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -26,13 +25,9 @@ import net.miginfocom.swing.MigLayout;
 
 public class ClosableTabHeader extends JPanel {
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = 4463352125800695922L;
 
     private JButton closeIcon;
-   
 
     public ClosableTabHeader(ClosableView view) {
         setLayout(new MigLayout("ins 0", "[grow,fill]"));
@@ -43,7 +38,7 @@ public class ClosableTabHeader extends JPanel {
         // closeIcon.setBorderPainted(false);
 
         closeIcon.setText(null);
-        //closeIcon.setVisible(false);
+        // closeIcon.setVisible(false);
         putClientProperty("paintActive", Boolean.TRUE);
         l1.setIcon(view.getIcon());
         add(l1);

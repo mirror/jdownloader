@@ -18,8 +18,6 @@ package jd.gui.swing.jdgui.views.toolbar;
 
 import static jd.controlling.JDLogger.warning;
 
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
@@ -169,24 +167,6 @@ public class ViewToolbar extends JPanel implements ActionControllerListener {
 
                 }
                 if (ab != null) {
-                    ab.addMouseListener(new MouseListener() {
-
-                        public void mouseClicked(MouseEvent e) {
-                        }
-
-                        public void mouseEntered(MouseEvent e) {
-                        }
-
-                        public void mouseExited(MouseEvent e) {
-                        }
-
-                        public void mousePressed(MouseEvent e) {
-                        }
-
-                        public void mouseReleased(MouseEvent e) {
-                        }
-
-                    });
                     ab.setContentAreaFilled(contentPainted);
                     ab.setFocusPainted(false);
                     if (action.getValue(Action.MNEMONIC_KEY) != null) {

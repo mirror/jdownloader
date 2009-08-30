@@ -16,25 +16,17 @@
 
 package jd.gui.swing.jdgui.settings.panels;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.util.ArrayList;
 import java.util.Collections;
 
-import javax.swing.JButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
 
 import jd.OptionalPluginWrapper;
 import jd.config.Configuration;
-import jd.gui.UserIF;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.menu.AddonsMenu;
 import jd.gui.swing.jdgui.settings.ConfigPanel;
@@ -47,7 +39,7 @@ import net.miginfocom.swing.MigLayout;
  * 
  */
 
-public class ConfigPanelAddons extends ConfigPanel implements ActionListener, MouseListener {
+public class ConfigPanelAddons extends ConfigPanel {
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.settings.panels.ConfigPanelAddons.";
 
     public String getBreadcrum() {
@@ -140,8 +132,6 @@ public class ConfigPanelAddons extends ConfigPanel implements ActionListener, Mo
 
     private static final long serialVersionUID = 4145243293360008779L;
 
-    private JButton btnEdit;
-
     private Configuration configuration;
 
     private ArrayList<OptionalPluginWrapper> pluginsOptional;
@@ -163,57 +153,17 @@ public class ConfigPanelAddons extends ConfigPanel implements ActionListener, Mo
     public void initPanel() {
         tableModel = new InternalTableModel();
         table = new JTable(tableModel);
-        table.addMouseListener(this);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
-            public void valueChanged(ListSelectionEvent e) {
-                btnEdit.setEnabled(table.getSelectedRow() >= 0 && pluginsOptional.get(table.getSelectedRow()).hasConfig());
-            }
-        });
         table.getColumnModel().getColumn(0).setMaxWidth(80);
 
-        btnEdit = new JButton(JDL.L("gui.btn_settings", "Einstellungen"));
-        btnEdit.setEnabled(false);
-        btnEdit.addActionListener(this);
-
-        panel.setLayout(new MigLayout("ins 5,wrap 1", "[fill,grow]", "[fill,grow][]"));
+        panel.setLayout(new MigLayout("ins 5,wrap 1", "[fill,grow]", "[fill,grow]"));
         panel.add(new JScrollPane(table));
-        panel.add(btnEdit, "w pref!");
 
         JTabbedPane tabbed = new JTabbedPane();
         tabbed.setOpaque(false);
         tabbed.add(getBreadcrum(), panel);
 
         this.add(tabbed);
-    }
-
-    private void editEntry() {
-        UserIF.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL, pluginsOptional.get(table.getSelectedRow()).getPlugin().getConfig());
-
-    }
-
-    public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == btnEdit) {
-            editEntry();
-        }
-    }
-
-    public void mouseClicked(MouseEvent e) {
-        if (e.getClickCount() > 1 && pluginsOptional.get(table.getSelectedRow()).hasConfig()) {
-            editEntry();
-        }
-    }
-
-    public void mouseEntered(MouseEvent e) {
-    }
-
-    public void mouseExited(MouseEvent e) {
-    }
-
-    public void mousePressed(MouseEvent e) {
-    }
-
-    public void mouseReleased(MouseEvent e) {
     }
 
 }

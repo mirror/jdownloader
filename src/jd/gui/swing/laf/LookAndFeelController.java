@@ -357,7 +357,6 @@ public class LookAndFeelController {
      */
     private static void postSetup(String className) {
 
-     
         int fontsize = GUIUtils.getConfig().getIntegerProperty(JDGuiConstants.PARAM_GENERAL_FONT_SIZE, 100);
 
         if (isSynthetica()) {
@@ -374,7 +373,7 @@ public class LookAndFeelController {
             }
         } else {
 
-            for (Enumeration e = UIManager.getDefaults().keys(); e.hasMoreElements();) {
+            for (Enumeration<Object> e = UIManager.getDefaults().keys(); e.hasMoreElements();) {
                 Object key = e.nextElement();
                 Object value = UIManager.get(key);
 

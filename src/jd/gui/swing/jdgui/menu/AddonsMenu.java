@@ -17,19 +17,16 @@
 package jd.gui.swing.jdgui.menu;
 
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.ArrayList;
 
 import javax.swing.JMenuItem;
 
 import jd.OptionalPluginWrapper;
-import jd.config.ConfigContainer;
 import jd.config.MenuAction;
 import jd.gui.UserIF;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.menu.Menu;
-import jd.plugins.Plugin;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
@@ -81,23 +78,28 @@ public class AddonsMenu extends JStartMenu {
             }
             if (mis != null) {
                 if (plg.getPlugin().getConfig() != null && plg.getPlugin().getConfig().getEntries().size() > 0) {
-//                    MenuAction mi;
-//                    mis.add(0, mi = new MenuAction(JDL.LF("gui.startmenu.addons.config2", "%s's settings", plg.getHost()), -10000));
-//                    mi.setProperty("PLUGIN", plg.getPlugin());
-//                    mi.setIcon(JDTheme.II(plg.getPlugin().getIconKey(), 16, 16));
-//                    mi.setActionListener(new ActionListener() {
-//
-//                        public void actionPerformed(ActionEvent e) {
-//
-//                            ConfigContainer cfg = ((Plugin) ((MenuAction) e.getSource()).getProperty("PLUGIN")).getConfig();
-//                            cfg.setTitle(plg.getPlugin().getHost());
-//                            UserIF.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL, cfg);
-//                            // SimpleGUI.displayConfig(((Plugin) ((MenuAction)
-//                            // e.getSource()).getProperty("PLUGIN")).getConfig(),
-//                            // false);
-//                        }
-//
-//                    });
+                    // MenuAction mi;
+                    // mis.add(0, mi = new
+                    // MenuAction(JDL.LF("gui.startmenu.addons.config2",
+                    // "%s's settings", plg.getHost()), -10000));
+                    // mi.setProperty("PLUGIN", plg.getPlugin());
+                    // mi.setIcon(JDTheme.II(plg.getPlugin().getIconKey(), 16,
+                    // 16));
+                    // mi.setActionListener(new ActionListener() {
+                    //
+                    // public void actionPerformed(ActionEvent e) {
+                    //
+                    // ConfigContainer cfg = ((Plugin) ((MenuAction)
+                    // e.getSource()).getProperty("PLUGIN")).getConfig();
+                    // cfg.setTitle(plg.getPlugin().getHost());
+                    // UserIF.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL,
+                    // cfg);
+                    // // SimpleGUI.displayConfig(((Plugin) ((MenuAction)
+                    // // e.getSource()).getProperty("PLUGIN")).getConfig(),
+                    // // false);
+                    // }
+                    //
+                    // });
 
                 }
                 if (mis.size() > 1) {
