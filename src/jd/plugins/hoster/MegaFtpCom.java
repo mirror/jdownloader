@@ -16,7 +16,6 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
-import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
@@ -36,7 +35,7 @@ public class MegaFtpCom extends PluginForHost {
 
     // @Override
     public String getAGBLink() {
-        return "http://upload.megaftp.com/faq.php";
+        return "http://www.megaftp.com/contact";
     }
 
     // @Override
@@ -53,7 +52,6 @@ public class MegaFtpCom extends PluginForHost {
         br.setFollowRedirects(false);
         return AvailableStatus.TRUE;
     }
-
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
@@ -84,11 +82,16 @@ public class MegaFtpCom extends PluginForHost {
                 link.setProperty("pass", passCode);
             }
         }
-
+        // often they only change this form
         Form downloadForm = br.getForm(0);
-        downloadForm.put("download", Encoding.urlEncode("Click Here to Download"));
+        String current = br.getRegex("name=\"current\" value=\"(.*?)\"").getMatch(0);
+        if (current == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        downloadForm.put("current", current);
+        downloadForm.put("limit_reached", "0");
+        downloadForm.put("download_now", "Click Here to Download");
 
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, downloadForm, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadForm, true, -20);
+        if ((dl.getConnection().isContentDisposition())) { throw new PluginException(LinkStatus.ERROR_FATAL); }
         dl.startDownload();
     }
 
