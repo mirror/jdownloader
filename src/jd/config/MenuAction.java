@@ -59,6 +59,7 @@ public class MenuAction extends ToolBarAction {
         this.setId(name);
         this.putValue(VISIBLE, SubConfiguration.getConfig("Toolbar").getBooleanProperty("VISIBLE_" + this.getID(), true));
         this.setActionID(actionID);
+        if(container==Types.TOGGLE)this.setSelected(false);
         initDefaults();
         ActionController.register(this);
     }

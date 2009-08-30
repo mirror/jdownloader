@@ -835,7 +835,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         NAMES = new ArrayList<User>();
         sb = new StringBuilder();
         if (activateAction == null) {
-            this.activateAction = new MenuAction(ToolBarAction.Types.TOGGLE, JDL.L("plugins.optional.jdchat.menu.windowstatus", "Chatwindow"), 0).setActionListener(this);
+            this.activateAction = new MenuAction(ToolBarAction.Types.TOGGLE, getHost(), 0).setActionListener(this);
             activateAction.setIcon(this.getIconKey());
             activateAction.setSelected(false);
         }

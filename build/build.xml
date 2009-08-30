@@ -215,12 +215,7 @@
 			</fileset>
 		</jar>
 
-		<mkdir dir="${dist}/pluginressourcen/121__JDWatchFolder/plugins" />
-		<jar jarfile="${dist}/pluginressourcen/121__JDWatchFolder/plugins/JDFolderWatch.jar" manifest="Manifest.MF">
-			<fileset dir="${cls}">
-				<include name="jd/plugins/optional/JDFolderWatch*" />
-			</fileset>
-		</jar>
+
 
 		<mkdir dir="${dist}/pluginressourcen/122__JDInfoFileWriter/plugins" />
 		<jar jarfile="${dist}/pluginressourcen/122__JDInfoFileWriter/plugins/JDInfoFileWriter.jar" manifest="Manifest.MF">

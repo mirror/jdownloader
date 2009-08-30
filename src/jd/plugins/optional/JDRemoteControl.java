@@ -467,14 +467,15 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
     private DecimalFormat f = new DecimalFormat("#0.00");
 
     private HttpServer server;
+    private MenuAction activate;
 
     public void actionPerformed(ActionEvent e) {
         try {
-            boolean enablePlugin = !subConfig.getBooleanProperty(PARAM_ENABLED, true);
-            subConfig.setProperty(PARAM_ENABLED, enablePlugin);
+       
+            subConfig.setProperty(PARAM_ENABLED, activate.isSelected());
             subConfig.save();
 
-            if (enablePlugin) {
+            if (activate.isSelected()) {
                 server = new HttpServer(subConfig.getIntegerProperty(PARAM_PORT, 10025), new Serverhandler());
                 server.start();
                 UserIO.getInstance().requestMessageDialog(JDL.LF("plugins.optional.remotecontrol.startedonport2", "%s started on port %s\nhttp://127.0.0.1:%s\n/help for Developer Information.", getHost(), subConfig.getIntegerProperty(PARAM_PORT, 10025), subConfig.getIntegerProperty(PARAM_PORT, 10025)));
@@ -490,9 +491,12 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
     public ArrayList<MenuAction> createMenuitems() {
         ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
 
-        MenuAction m;
-        menu.add(m = new MenuAction(ToolBarAction.Types.TOGGLE, JDL.L("plugins.optional.remotecontrol.activate", "Aktivieren"), 0).setActionListener(this));
-        m.setSelected(subConfig.getBooleanProperty(PARAM_ENABLED, true));
+        if(activate==null){
+            activate = new MenuAction(ToolBarAction.Types.TOGGLE, getHost(), 0).setActionListener(this);
+            
+        }
+        menu.add(activate);
+    
 
         return menu;
     }
