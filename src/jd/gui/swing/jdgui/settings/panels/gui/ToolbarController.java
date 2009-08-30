@@ -44,6 +44,7 @@ import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
+import org.jdesktop.swingx.JXTable;
 import org.jdesktop.swingx.renderer.DefaultTableRenderer;
 
 public class ToolbarController extends ConfigPanel {
@@ -199,7 +200,7 @@ public class ToolbarController extends ConfigPanel {
         }
     }
 
-    private JTable table;
+    private JXTable table;
 
     private InternalTableModel tableModel;
 
@@ -261,7 +262,7 @@ public class ToolbarController extends ConfigPanel {
     @Override
     public void initPanel() {
         tableModel = new InternalTableModel();
-        table = new JTable(tableModel) {
+        table = new JXTable(tableModel) {
             private static final long serialVersionUID = -7914266013067863393L;
 
             @Override
@@ -270,7 +271,7 @@ public class ToolbarController extends ConfigPanel {
                 return new TableRenderer();
             }
         };
-
+        table.setSortable(false);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
         table.getTableHeader().setReorderingAllowed(false);

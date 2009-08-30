@@ -26,7 +26,6 @@ import java.util.Collections;
 import javax.swing.JButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
-import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
@@ -45,6 +44,8 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
+
+import org.jdesktop.swingx.JXTable;
 
 public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListener, MouseListener {
 
@@ -139,7 +140,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
     private ArrayList<HostPluginWrapper> pluginsForHost;
 
-    private JTable table;
+    private JXTable table;
 
     private InternalTableModel tableModel;
 
@@ -166,7 +167,8 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     @Override
     public void initPanel() {
         tableModel = new InternalTableModel();
-        table = new JTable(tableModel);
+        table = new JXTable(tableModel);
+        table.setSortable(false);
         table.addMouseListener(this);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {

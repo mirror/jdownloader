@@ -187,6 +187,7 @@ public class DownloadController implements FilePackageListener, DownloadControll
 
     public void saveDownloadLinksAsync() {
         if (saveinprogress) return;
+        asyncSaveIntervalTimer.setDelay(2000);
         asyncSaveIntervalTimer.restart();
     }
 
@@ -202,11 +203,14 @@ public class DownloadController implements FilePackageListener, DownloadControll
             public void run() {
                 this.setName("DownloadController: Saving");
                 saveDownloadLinksSyncnonThread();
+                asyncSaveIntervalTimer.setDelay(10 * 60 * 1000);
+                asyncSaveIntervalTimer.restart();
             }
         }.start();
     }
 
     public void saveDownloadLinksSyncnonThread() {
+        asyncSaveIntervalTimer.stop();
         String id = JDController.requestDelayExit("downloadcontroller");
         synchronized (packages) {
             saveinprogress = true;

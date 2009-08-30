@@ -93,6 +93,7 @@ public class JDTable extends JXTable {
         this.model = model;
         tableconfig = model.getConfig();
         createColumns();
+        setSortable(false);
         setShowHorizontalLines(false);
         setShowVerticalLines(false);
         UIManager.put("Table.focusCellHighlightBorder", null);

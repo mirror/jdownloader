@@ -455,6 +455,7 @@ public class AccountController extends SubConfiguration implements ActionListene
     }
 
     public void saveSync() {
+        asyncSaveIntervalTimer.stop();
         if (saveinprogress == true) return;
         saveinprogress = true;
         new Thread() {

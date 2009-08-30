@@ -132,15 +132,7 @@ public class ProgressColumn extends JDTableColumn {
                 progress.setValue(100);
                 progress.setForeground(COL_PROGRESS_NORMAL);
                 return progress;
-            } else if (dLink.getDownloadCurrent() > 0) {
-                clearSB();
-                sb.append(Formatter.formatReadable(dLink.getDownloadCurrent())).append('/').append(Formatter.formatReadable(Math.max(0, dLink.getDownloadSize())));
-                progress.setMaximum(dLink.getDownloadSize());
-                progress.setString(sb.toString());
-                progress.setValue(dLink.getDownloadCurrent());
-                progress.setForeground(COL_PROGRESS_NORMAL);
-                return progress;
-            } else if (dLink.getDownloadSize() > 0) {
+            } else if (dLink.getDownloadCurrent() > 0 || dLink.getDownloadSize() > 0) {
                 clearSB();
                 sb.append(Formatter.formatReadable(dLink.getDownloadCurrent())).append('/').append(Formatter.formatReadable(Math.max(0, dLink.getDownloadSize())));
                 progress.setMaximum(dLink.getDownloadSize());
