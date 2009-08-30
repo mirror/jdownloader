@@ -227,6 +227,7 @@ public class Megauploadcom extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, resume, chunks);
             if (!dl.getConnection().isOK()) {
                 dl.getConnection().disconnect();
+                String page = br.loadConnection(dl.getConnection());
                 if (dl.getConnection().getResponseCode() == 503) {
                     String wait = dl.getConnection().getHeaderField("Retry-After");
                     if (wait == null) wait = "120";
@@ -579,7 +580,7 @@ public class Megauploadcom extends PluginForHost {
 
     // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return this.getPluginConfig().getIntegerProperty("MAX_FREE_PARALELL_DOWNLOADS", 1);
     }
 
     // @Override

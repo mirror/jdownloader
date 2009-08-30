@@ -110,7 +110,7 @@ public class JDChat extends PluginOptional implements ControlListener {
     public static final String STYLE_SYSTEM_MESSAGE = "system";
     private static final int TEXT_BUFFER = 1024 * 600;
     public static final String USERLIST_STYLE = JDIO.getLocalFile(JDUtilities.getResourceFile("plugins/jdchat/userliststyles.css"));
-    private static final String CHANNEL_LNG = "CHANNEL_LNG2";
+    private static final String CHANNEL_LNG = "CHANNEL_LNG3";
     protected JButton top;
     private boolean changed;
 
@@ -1102,7 +1102,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         } else if (id.getLanguageCode().equals("tr")) {
             lng = JDL.getInstance("tr");
         }
-        lng = this.getPluginConfig().getGenericProperty(CHANNEL_LNG, JDL.getInstance("en"));
+        lng = this.getPluginConfig().getGenericProperty(CHANNEL_LNG, lng);
         String newChannel = null;
         if (lng.getLanguageCode().equals(JDL.getInstance("es").getLanguageCode())) {
             newChannel = "#jdownloader[es]";

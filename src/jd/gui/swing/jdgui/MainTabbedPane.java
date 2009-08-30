@@ -16,24 +16,30 @@
 
 package jd.gui.swing.jdgui;
 
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Graphics;
+import java.awt.Rectangle;
 import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 
-import javax.swing.Action;
+import javax.swing.Icon;
 import javax.swing.JComponent;
 import javax.swing.JTabbedPane;
 import javax.swing.KeyStroke;
+import javax.swing.UIManager;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
 import jd.gui.swing.jdgui.interfaces.View;
-import jd.gui.swing.jdgui.maintab.ChangeHeader;
+import jd.gui.swing.jdgui.maintab.ClosableTabHeader;
+import jd.gui.swing.jdgui.views.ClosableView;
 import jd.utils.JDUtilities;
 
-public class MainTabbedPane extends JTabbedPane {
+public class MainTabbedPane extends JTabbedPane implements MouseListener {
 
     private static final long serialVersionUID = -1531827591735215594L;
     private static MainTabbedPane INSTANCE;
@@ -65,43 +71,31 @@ public class MainTabbedPane extends JTabbedPane {
 
     protected View latestSelection;
 
-    /**
-     * sets a * in the tab to show that the tab contains changes (has to be
-     * saved)
-     * 
-     * @since 1.6
-     * @param b
-     * @param index
-     *            if index <0 the selected tab is used
-     */
-    public void setChanged(boolean b, int index) {
-        if (JDUtilities.getJavaVersion() < 1.6) return;
-        if (index < 0) index = this.getSelectedIndex();
-        ((ChangeHeader) this.getTabComponentAt(index)).setChanged(b);
-    }
-
-    /**
-     * Sets an close Action to a tab.
-     * 
-     * @param a
-     *            Action. if a == null the close button dissapears
-     * @param index
-     *            if index <0 the selected tab is used
-     * @since 1.6
-     */
-    public void setClosableAction(Action a, int index) {
-        if (JDUtilities.getJavaVersion() < 1.6) return;
-        if (index < 0) index = this.getSelectedIndex();
-        ((ChangeHeader) this.getTabComponentAt(index)).setCloseEnabled(a);
-    }
-
     public void addTab(View view) {
         SwingGui.checkEDT();
-        super.addTab(view.getTitle(), view.getIcon(), view, view.getTooltip());
+        if (view instanceof ClosableView) {
+            addClosableTab((ClosableView) view);
+        } else {
+            super.addTab(view.getTitle(), view.getIcon(), view, view.getTooltip());
 
-        view.getBroadcaster().fireEvent(new SwitchPanelEvent(view, SwitchPanelEvent.ON_ADD));
+            view.getBroadcaster().fireEvent(new SwitchPanelEvent(view, SwitchPanelEvent.ON_ADD));
+
+            this.setFocusable(false);
+        }
+
+    }
+
+    private void addClosableTab(ClosableView view) {
+
         if (JDUtilities.getJavaVersion() >= 1.6) {
-            this.setTabComponentAt(this.getTabCount() - 1, new ChangeHeader(view));
+            super.addTab(view.getTitle(), view.getIcon(), view, view.getTooltip());
+            view.getBroadcaster().fireEvent(new SwitchPanelEvent(view, SwitchPanelEvent.ON_ADD));
+
+            this.setTabComponentAt(this.getTabCount() - 1, new ClosableTabHeader(view));
+
+        } else {
+            super.addTab(view.getTitle(), new CloseTabIcon(view.getIcon()), view, view.getTooltip());
+            view.getBroadcaster().fireEvent(new SwitchPanelEvent(view, SwitchPanelEvent.ON_ADD));
         }
         this.setFocusable(false);
     }
@@ -110,6 +104,8 @@ public class MainTabbedPane extends JTabbedPane {
 
         this.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
         this.setOpaque(false);
+        addMouseListener(this);
+
         this.addChangeListener(new ChangeListener() {
 
             public void stateChanged(ChangeEvent e) {
@@ -186,6 +182,115 @@ public class MainTabbedPane extends JTabbedPane {
             if (c.equals(view)) return true;
         }
         return false;
+    }
+
+    public void mouseClicked(MouseEvent e) {
+        int tabNumber = getUI().tabForCoordinate(this, e.getX(), e.getY());
+        if (tabNumber < 0) return;
+        Rectangle rect = ((CloseTabIcon) getIconAt(tabNumber)).getBounds();
+        if (rect.contains(e.getX(), e.getY())) {
+            // the tab is being closed
+            ((ClosableView) this.getComponentAt(tabNumber)).getCloseAction().actionPerformed(null);
+
+        }
+    }
+
+    public void mouseEntered(MouseEvent e) {
+    }
+
+    public void mouseExited(MouseEvent e) {
+    }
+
+    public void mousePressed(MouseEvent e) {
+    }
+
+    public void mouseReleased(MouseEvent e) {
+    }
+
+    /**
+     * The class which generates the 'X' icon for the tabs. The constructor
+     * accepts an icon which is extra to the 'X' icon, so you can have tabs like
+     * in JBuilder. This value is null if no extra icon is required.
+     */
+    class CloseTabIcon implements Icon {
+        private int x_pos;
+        private int y_pos;
+        private int width;
+        private int height;
+        private Icon fileIcon;
+
+        public CloseTabIcon(Icon fileIcon) {
+            this.fileIcon = fileIcon;
+            width = 16;
+            height = 16;
+        }
+
+        public void paintIcon(Component c, Graphics g, int x, int y) {
+            this.x_pos = x;
+            this.y_pos = y;
+            Icon ic = UIManager.getIcon("InternalFrame.closeIcon");
+            int y_p = y + 2;
+
+            Color col;
+            int w, h;
+            if (ic == null) {
+                // draw close X
+                col = g.getColor();
+
+                g.drawLine(x + 3, y_p + 3, x + 10, y_p + 10);
+                g.drawLine(x + 3, y_p + 4, x + 9, y_p + 10);
+                g.drawLine(x + 4, y_p + 3, x + 10, y_p + 9);
+                g.drawLine(x + 10, y_p + 3, x + 3, y_p + 10);
+                g.drawLine(x + 10, y_p + 4, x + 4, y_p + 10);
+                g.drawLine(x + 9, y_p + 3, x + 3, y_p + 9);
+                g.setColor(col);
+                w = 13;
+                h = 13;
+            } else {
+                // use icon
+                ic.paintIcon(c, g, x - 1, y_p - 1);
+                w = ic.getIconWidth() - 3;
+                h = ic.getIconHeight() - 3;
+            }
+            // draw border
+            col = g.getColor();
+
+            // g.setColor(Color.black);
+
+            // --- <<
+            // | |
+            // ---
+            g.drawLine(x + 1, y_p, x + w - 1, y_p);
+            // ---
+            // | |
+            // --- <<
+            g.drawLine(x + 1, y_p + h, x + w - 1, y_p + h);
+            // ---
+            // >> | |
+            // ---
+            g.drawLine(x, y_p + 1, x, y_p + h - 1);
+            // ---
+            // | | <<
+            // ---
+            g.drawLine(x + w, y_p + 1, x + w, y_p + h - 1);
+            g.setColor(col);
+
+            if (fileIcon != null) {
+                fileIcon.paintIcon(c, g, x + width + 2, y_p);
+            }
+        }
+
+        public int getIconWidth() {
+            return width + (fileIcon != null ? fileIcon.getIconWidth() : 0);
+        }
+
+        public int getIconHeight() {
+            return height;
+        }
+
+        public Rectangle getBounds() {
+            return new Rectangle(x_pos, y_pos, width, height);
+        }
     }
 
 }

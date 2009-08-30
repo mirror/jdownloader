@@ -67,6 +67,10 @@ abstract public class ClosableView extends View {
         add(menubar, "dock NORTH,height 16!,gapbottom 2");
     }
 
+    public CloseAction getCloseAction() {
+        return closeAction;
+    }
+
     /**
      * May be overridden to add some more menu Items
      * 
