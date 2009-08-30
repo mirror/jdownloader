@@ -366,6 +366,7 @@ public class JDController implements ControlListener {
         waitDelayExit();
         logger.info("Shutdown Database");
         JDUtilities.getDatabaseConnector().shutdownDatabase();
+        fireControlEventDirect(new ControlEvent(this, ControlEvent.CONTROL_SYSTEM_SHUTDOWN_PREPARED, this));
     }
 
     /**

@@ -246,9 +246,9 @@ public class DatabaseConnector implements Serializable {
                     SubConfiguration conf = SubConfiguration.getConfig((String) rs.getObject(1));
                     if (conf.getProperties().size() > 0) {
                         ret.add(conf);
-                     
+
                     }
-                } catch (Exception e) {                   
+                } catch (Exception e) {
 
                 }
             }
@@ -298,7 +298,6 @@ public class DatabaseConnector implements Serializable {
      */
     public void shutdownDatabase() {
         try {
-
             con.close();
         } catch (SQLException e) {
             JDLogger.exception(e);

@@ -17,12 +17,15 @@
 package jd.gui.swing.jdgui.menu.actions;
 
 import java.awt.event.ActionEvent;
-import java.io.File;
 
 import jd.config.MenuAction;
+import jd.controlling.JDController;
+import jd.event.ControlEvent;
+import jd.event.ControlListener;
 import jd.gui.UserIO;
 import jd.nutils.Executer;
 import jd.nutils.JDFlags;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 public class RestoreAction extends MenuAction {
@@ -35,12 +38,22 @@ public class RestoreAction extends MenuAction {
 
     public void actionPerformed(ActionEvent e) {
         if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, JDL.L("sys.ask.rlyrestore", "This will restart JDownloader and do a FULL-Update. Continue?")), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
-            
-        Executer exec = new Executer("java");
-        exec.addParameters(new String[] { "-jar",  "jdupdate.jar", "-restore" });
-        exec.setRunin(new File(".").getAbsolutePath());
-        exec.setWaitTimeout(0);
-        exec.start();
+            final Executer exec = new Executer("java");
+            exec.addParameters(new String[] { "-jar", "jdupdate.jar", "-restore" });
+            exec.setRunin(JDUtilities.getResourceFile(".").getAbsolutePath());
+            exec.setWaitTimeout(0);
+            JDController.getInstance().addControlListener(new ControlListener() {
+                public void controlEvent(ControlEvent event) {
+                    if (event.getID() == ControlEvent.CONTROL_SYSTEM_SHUTDOWN_PREPARED) {
+                        exec.start();
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException e) {
+                        }
+                    }
+                }
+            });
+            JDController.getInstance().exit();
         }
     }
 
