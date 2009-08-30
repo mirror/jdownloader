@@ -41,7 +41,7 @@ public class LnkBCm extends PluginForDecrypt {
         // I don't know if this pattern still is valid. May be that there is a
         // version for iframes, and one without iframes.
         // Thats why I left it
-        String found = br.getRegex("seconds\\s+or\\s+<a\\s+href=\"(.*)\"").getMatch(0);
+        String found = br.getRegex("seconds or <a href=\"(.*?)\"").getMatch(0);
         if (found == null) {
             found = br.getRegex("<iframe src=\"(.*?)\"").getMatch(0);
         }
