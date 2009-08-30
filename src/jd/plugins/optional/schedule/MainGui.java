@@ -28,12 +28,13 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTabbedPane;
-import javax.swing.JTable;
 import javax.swing.table.AbstractTableModel;
 
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
+
+import org.jdesktop.swingx.JXTable;
 
 public class MainGui extends SwitchPanel implements ActionListener, MouseListener {
     private static final long serialVersionUID = 3439995751143746593L;
@@ -42,7 +43,7 @@ public class MainGui extends SwitchPanel implements ActionListener, MouseListene
 
     private MyTableModel tableModel;
 
-    private JTable table;
+    private JXTable table;
 
     private JButton add;
 
@@ -72,7 +73,9 @@ public class MainGui extends SwitchPanel implements ActionListener, MouseListene
         JPanel p = new JPanel();
 
         tableModel = new MyTableModel();
-        table = new JTable(tableModel);
+        table = new JXTable(tableModel);
+        table.setSortable(false);
+        table.getTableHeader().setReorderingAllowed(false);
         table.addMouseListener(this);
         table.getColumnModel().getColumn(0).setMaxWidth(30);
 

@@ -173,8 +173,8 @@ public class LinkStatus implements Serializable {
      */
     public void addStatus(int status) {
         this.status |= status;
-        if(JDFlags.hasSomeFlags(status, FINISHED)){
-            downloadLink.setFinishedDate(System.currentTimeMillis());
+        if (JDFlags.hasSomeFlags(status, FINISHED)) {
+            if (downloadLink.getFinishedDate() != -1) downloadLink.setFinishedDate(System.currentTimeMillis());
         }
         lastestStatus = status;
     }
@@ -415,7 +415,7 @@ public class LinkStatus implements Serializable {
             resetWaitTime();
         }
         this.status = status;
-        if(JDFlags.hasSomeFlags(status, FINISHED)){
+        if (JDFlags.hasSomeFlags(status, FINISHED)) {
             downloadLink.setFinishedDate(System.currentTimeMillis());
         }
         lastestStatus = status;
