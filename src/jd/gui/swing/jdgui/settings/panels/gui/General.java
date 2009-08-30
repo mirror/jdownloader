@@ -102,7 +102,7 @@ public class General extends ConfigPanel {
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDGuiConstants.PARAM_SHOW_SPLASH, JDL.L("gui.config.gui.showSplash", "Splashscreen beim starten zeigen")).setGroup(feel));
         ce.setDefaultValue(true);
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDGuiConstants.PARAM_SHOW_BALLOON, JDL.L("gui.config.gui.showBalloon", "Show Balloon infos")).setGroup(feel));
-        ce.setDefaultValue(true);
+        ce.setDefaultValue(false);
 
         look.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
 

@@ -18,6 +18,7 @@ package jd;
 
 public class JDInitFlags {
 
+   
     public static boolean SWITCH_RETURNED_FROM_UPDATE = false;
     public static boolean SWITCH_DEBUG=false;
     public static boolean ENOUGH_MEMORY=true;

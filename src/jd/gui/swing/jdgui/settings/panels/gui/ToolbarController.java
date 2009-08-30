@@ -57,15 +57,16 @@ public class ToolbarController extends ConfigPanel {
 
         // move
         WHITELIST.add("separator");
-        WHITELIST.add("action.downloadview.movetobottom");
         WHITELIST.add("action.downloadview.movetotop");
         WHITELIST.add("action.downloadview.moveup");
         WHITELIST.add("action.downloadview.movedown");
+        WHITELIST.add("action.downloadview.movetobottom");
 
         // config
-
+        WHITELIST.add("separator");
         WHITELIST.add("toolbar.quickconfig.clipboardoberserver");
         WHITELIST.add("toolbar.quickconfig.reconnecttoggle");
+        WHITELIST.add("toolbar.control.stopmark");
 
         // Addons
         WHITELIST.add("separator");
@@ -91,7 +92,6 @@ public class ToolbarController extends ConfigPanel {
         WHITELIST.add("toolbar.interaction.update");
 
         WHITELIST.add("action.opendlfolder");
-        WHITELIST.add("toolbar.control.stopmark");
 
         WHITELIST.add("action.premiumview.addacc");
         WHITELIST.add("action.premium.buy");
@@ -145,6 +145,7 @@ public class ToolbarController extends ConfigPanel {
         }
 
         public int getRowCount() {
+            
             return actions.size();
         }
 
@@ -210,7 +211,7 @@ public class ToolbarController extends ConfigPanel {
 
     public ToolbarController(Configuration configuration) {
         super();
-        setActions(ActionController.getActions());
+       actions= new ArrayList<ToolBarAction>();
         initPanel();
         load();
     }
@@ -238,7 +239,9 @@ public class ToolbarController extends ConfigPanel {
 
             }
         });
-        this.list = GUIUtils.getConfig().getGenericProperty("TOOLBAR", ToolBar.DEFAULT_LIST);
+
+        this.list = new ArrayList<String>();
+        list.addAll(GUIUtils.getConfig().getGenericProperty("TOOLBAR", ToolBar.DEFAULT_LIST));
         for (Iterator<ToolBarAction> it = actions2.iterator(); it.hasNext();) {
             ToolBarAction a = it.next();
             if (a.getValue(ToolBarAction.IMAGE_KEY) == null) {

@@ -41,32 +41,7 @@ public class ToolBar extends JToolBar implements ActionControllerListener {
 
     private static final long serialVersionUID = 7533137014274040205L;
 
-    public static final ArrayList<String> CONTROL_LIST = new ArrayList<String>();
-    static {
-        CONTROL_LIST.add("toolbar.control.start");
-        CONTROL_LIST.add("toolbar.control.pause");
-        CONTROL_LIST.add("toolbar.control.stop");
-
-    }
-
-    public static final ArrayList<String> MOVE_LIST = new ArrayList<String>();
-    static {
-
-        MOVE_LIST.add("action.downloadview.movetotop");
-        MOVE_LIST.add("action.downloadview.moveup");
-        MOVE_LIST.add("action.downloadview.movedown");
-        MOVE_LIST.add("action.downloadview.movetobottom");
-
-    }
-
-    public static final ArrayList<String> CONFIG_LIST = new ArrayList<String>();
-    static {
-
-        CONFIG_LIST.add("toolbar.quickconfig.clipboardoberserver");
-        CONFIG_LIST.add("toolbar.quickconfig.reconnecttoggle");
-        CONFIG_LIST.add("toolbar.control.stopmark");
-
-    }
+   
     public static final ArrayList<String> DEFAULT_LIST = new ArrayList<String>();
     static {
         DEFAULT_LIST.add("toolbar.control.start");

@@ -49,22 +49,24 @@ abstract public class ClosableView extends View {
         menubar = new JMenuBar();
 
         initMenu(menubar);
-        menubar.add(Box.createHorizontalGlue());
+        if (menubar.getComponentCount() > 0) {
+            menubar.add(Box.createHorizontalGlue());
 
-        closeAction = new CloseAction();
-        Box panel = new Box(1);
-        JButton bt;
+            closeAction = new CloseAction();
+            Box panel = new Box(1);
+            JButton bt;
 
-        panel.add(bt = new JButton(closeAction));
-        bt.setPreferredSize(new Dimension(closeAction.getWidth(), closeAction.getHeight()));
-        bt.setContentAreaFilled(false);
-        bt.setBorderPainted(false);
-        bt.setToolTipText(JDL.LF("jd.gui.swing.jdgui.views.ClosableView.closebtn.tooltip", "Close %s", this.getTitle()));
-        panel.setOpaque(false);
-        panel.setBorder(BorderFactory.createEmptyBorder(0, 0, 1, 0));
-        menubar.add(panel);
+            panel.add(bt = new JButton(closeAction));
+            bt.setPreferredSize(new Dimension(closeAction.getWidth(), closeAction.getHeight()));
+            bt.setContentAreaFilled(false);
+            bt.setBorderPainted(false);
+            bt.setToolTipText(JDL.LF("jd.gui.swing.jdgui.views.ClosableView.closebtn.tooltip", "Close %s", this.getTitle()));
+            panel.setOpaque(false);
+            panel.setBorder(BorderFactory.createEmptyBorder(0, 0, 1, 0));
+            menubar.add(panel);
 
-        add(menubar, "dock NORTH,height 16!,gapbottom 2");
+            add(menubar, "dock NORTH,height 16!,gapbottom 2");
+        }
     }
 
     public CloseAction getCloseAction() {
