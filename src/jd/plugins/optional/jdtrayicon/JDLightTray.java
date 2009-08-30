@@ -134,7 +134,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
             logger.info("JDLightTrayIcon Init complete");
             guiFrame = SwingGui.getInstance().getMainFrame();
             if (subConfig.getBooleanProperty(PROPERTY_START_MINIMIZED, false)) {
-                guiFrame.setState(JFrame.ICONIFIED);
+                guiFrame.setExtendedState(JFrame.ICONIFIED);
             }
             guiFrame.addWindowListener(this);
             return;
@@ -273,9 +273,23 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
             if (guiFrame.isVisible()) {
                 guiFrame.setVisible(false);
             } else {
-                guiFrame.setState(JFrame.NORMAL);
-                guiFrame.setVisible(true);
-                guiFrame.toFront();
+                new GuiRunnable<Object>() {
+
+                    @Override
+                    public Object runSave() {
+
+                        // It's important,to set the frame visible first then
+                        // set state. otherwise the framestatus may be broken
+                        // (like synthetica: does disable minimize buttons
+                        guiFrame.setVisible(true);
+                        guiFrame.setExtendedState(JFrame.NORMAL);
+
+                        guiFrame.toFront();
+                        return null;
+                    }
+
+                }.start();
+
             }
         }
     }
@@ -309,13 +323,15 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
                 if (guiFrame.isVisible()) {
                     guiFrame.setVisible(false);
                 } else {
-                    guiFrame.setState(JFrame.NORMAL);
                     guiFrame.setVisible(true);
+                    guiFrame.setExtendedState(JFrame.NORMAL);
+
                     guiFrame.toFront();
                 }
             } else {
-                guiFrame.setState(JFrame.NORMAL);
                 guiFrame.setVisible(true);
+                guiFrame.setExtendedState(JFrame.NORMAL);
+
                 miniIt();
             }
 
