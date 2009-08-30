@@ -185,8 +185,8 @@ public class ActionController {
             private static final long serialVersionUID = 7153300370492212502L;
 
             public void actionPerformed(ActionEvent e) {
-                boolean b = !ActionController.getToolBarAction("toolbar.control.pause").isSelected();
-                ActionController.getToolBarAction("toolbar.control.pause").setSelected(b);
+                boolean b = ActionController.getToolBarAction("toolbar.control.pause").isSelected();
+//                ActionController.getToolBarAction("toolbar.control.pause").setSelected(b);
                 JDUtilities.getController().pauseDownloads(b);
             }
 
