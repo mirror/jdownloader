@@ -16,12 +16,14 @@
 
 package jd.gui.swing.laf;
 
+import java.awt.Font;
 import java.io.File;
 import java.io.FileInputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.jar.JarEntry;
@@ -32,6 +34,7 @@ import javax.swing.JFrame;
 import javax.swing.LookAndFeel;
 import javax.swing.UIManager;
 import javax.swing.UIManager.LookAndFeelInfo;
+import javax.swing.plaf.FontUIResource;
 
 import jd.JDInitFlags;
 import jd.config.SubConfiguration;
@@ -220,9 +223,9 @@ public class LookAndFeelController {
 
                     Method method = slaf.getMethod("setLookAndFeel", new Class[] { String.class, boolean.class, boolean.class });
                     method.invoke(null, new Object[] { laf, false, false });
-                    //disable extended filechooser. jd cares itself for setting the latestlocation
-                    slaf.getMethod("setExtendedFileChooserEnabled", new Class[]{boolean.class}).invoke(null, false);
-           
+                    // disable extended filechooser. jd cares itself for setting
+                    // the latestlocation
+                    slaf.getMethod("setExtendedFileChooserEnabled", new Class[] { boolean.class }).invoke(null, false);
 
                 } catch (InvocationTargetException e) {
 
@@ -354,7 +357,34 @@ public class LookAndFeelController {
      */
     private static void postSetup(String className) {
 
-        UIManager.put("Synthetica​.rootPane​.titlePane​.menuButton​.useOriginalImageSize", Boolean.TRUE);
+     
+        int fontsize = GUIUtils.getConfig().getIntegerProperty(JDGuiConstants.PARAM_GENERAL_FONT_SIZE, 100);
+
+        if (isSynthetica()) {
+            try {
+
+                String font = "" + Class.forName("de.javasoft.plaf.synthetica.SyntheticaLookAndFeel").getMethod("getFontName", new Class[] {}).invoke(null, new Object[] {});
+                int fonts = (Integer) Class.forName("de.javasoft.plaf.synthetica.SyntheticaLookAndFeel").getMethod("getFontSize", new Class[] {}).invoke(null, new Object[] {});
+
+                Class.forName("de.javasoft.plaf.synthetica.SyntheticaLookAndFeel").getMethod("setFont", new Class[] { String.class, int.class }).invoke(null, new Object[] { font, (fonts * fontsize) / 100 });
+
+            } catch (Exception e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        } else {
+
+            for (Enumeration e = UIManager.getDefaults().keys(); e.hasMoreElements();) {
+                Object key = e.nextElement();
+                Object value = UIManager.get(key);
+
+                if (value instanceof Font) {
+                    Font f = (Font) value;
+
+                    UIManager.put(key, new FontUIResource(f.getName(), f.getStyle(), (f.getSize() * fontsize) / 100));
+                }
+            }
+        }
 
         //
         // JTattooUtils.setJTattooRootPane(this);

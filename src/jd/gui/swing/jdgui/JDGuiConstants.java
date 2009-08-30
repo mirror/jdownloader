@@ -40,6 +40,6 @@ public class JDGuiConstants {
     public static final String PARAM_INSERT_NEW_LINKS_AT = "PARAM_INSERT_NEW_LINKS_AT2";
     public static final String PARAM_START_AFTER_ADDING_LINKS = "PARAM_START_AFTER_ADDING_LINKS";
     public static final String PARAM_SHOW_BALLOON = "PARAM_SHOW_BALLOON";
-    public static final String PARAM_GENERAL_FONT_SIZE = "PARAM_GENERAL_FONT_SIZE";
+    public static final String PARAM_GENERAL_FONT_SIZE = "PARAM_GENERAL_FONT_SIZE3";
 
 }
