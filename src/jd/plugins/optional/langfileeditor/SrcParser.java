@@ -190,7 +190,7 @@ public class SrcParser {
             currentContent += "\r\nJDL.L(\"" + menukey + "\",\"" + menukey + "\");";
         }
         if (this.currentContent.contains(" ThreadedAction")) {
-            String[] keys = new Regex(currentContent, " ThreadedAction\\s*\\(\"(.*?)\"\\,\\s*\"(.*?)\"").getColumn(0);
+            String[] keys = new Regex(currentContent, " ThreadedAction\\s*\\(\"(.*?)\"\\").getColumn(0);
 
             for (String k : keys) {
                 currentContent += "\r\nJDL.L(\"" + "gui.menu." + k + ".name" + "\",\"" + "gui.menu." + k + ".name" + "\");";
@@ -199,7 +199,17 @@ public class SrcParser {
             }
         }
         if (this.currentContent.contains(" ToolBarAction")) {
-            String[] keys = new Regex(currentContent, " ToolBarAction\\s*\\(\"(.*?)\"\\,\\s*\"(.*?)\"").getColumn(0);
+            String[] keys = new Regex(currentContent, " ToolBarAction\\s*\\(\"(.*?)\"\\").getColumn(0);
+
+            for (String k : keys) {
+                currentContent += "\r\nJDL.L(\"" + "gui.menu." + k + ".name" + "\",\"" + "gui.menu." + k + ".name" + "\");";
+                currentContent += "\r\nJDL.L(\"" + "gui.menu." + k + ".mnem" + "\",\"" + "gui.menu." + k + ".mnem" + "\");";
+                currentContent += "\r\nJDL.L(\"" + "gui.menu." + k + ".accel" + "\",\"" + "-" + "\");";
+            }
+        }
+        
+        if (this.currentContent.contains(" MenuAction")) {
+            String[] keys = new Regex(currentContent, " MenuAction\\s*\\(\"(.*?)\"").getColumn(0);
 
             for (String k : keys) {
                 currentContent += "\r\nJDL.L(\"" + "gui.menu." + k + ".name" + "\",\"" + "gui.menu." + k + ".name" + "\");";

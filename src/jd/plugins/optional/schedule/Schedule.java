@@ -23,11 +23,10 @@ import java.util.Calendar;
 import java.util.Date;
 
 import jd.PluginWrapper;
-import jd.config.MenuAction;
 import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
+import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
 import jd.plugins.optional.schedule.modules.DisablePremium;
@@ -192,7 +191,9 @@ public class Schedule extends PluginOptional {
 
     public boolean initAddon() {
         logger.info("Schedule OK");
-        this.activateAction = new MenuAction(ToolBarAction.Types.TOGGLE, getHost(), 0).setActionListener(this);
+        this.activateAction = new MenuAction(getWrapper().getID(), 0);
+        activateAction.setActionListener(this);
+        activateAction.setTitle(getHost());
         activateAction.setIcon(this.getIconKey());
         activateAction.setSelected(false);
         return true;

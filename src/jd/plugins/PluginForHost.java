@@ -37,7 +37,6 @@ import javax.swing.ImageIcon;
 import jd.PluginWrapper;
 import jd.config.ConfigGroup;
 import jd.config.Configuration;
-import jd.config.MenuAction;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.CaptchaController;
@@ -47,6 +46,8 @@ import jd.gui.UserIF;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
+import jd.gui.swing.jdgui.actions.ToolBarAction.Types;
+import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.http.Browser;
 import jd.nutils.Formatter;
 import jd.nutils.JDImage;
@@ -234,15 +235,15 @@ public abstract class PluginForHost extends Plugin {
         if (!enablePremium) return null;
         ArrayList<MenuAction> menuList = new ArrayList<MenuAction>();
         MenuAction account;
-        MenuAction m = new MenuAction(ToolBarAction.Types.NORMAL, JDL.L("plugins.menu.configs", "Configuration"), 1);
+        MenuAction m = new MenuAction("plugins.configs", 1);
         m.setActionListener(this);
         if (config == null || config.getEntries().size() == 0) m.setEnabled(false);
 
         if (config != null) config.setGroup(new ConfigGroup(getHost(), getHosterIcon()));
         menuList.add(m);
         if (premiumAction == null) {
-            premiumAction = new MenuAction(ToolBarAction.Types.CONTAINER, JDL.L("plugins.menu.accounts", "Accounts"), 0);
-
+            premiumAction = new MenuAction(JDL.L("plugins.menu.accounts", "Accounts"), 0);
+            premiumAction.setType(Types.CONTAINER);
             ArrayList<Account> accounts = getPremiumAccounts();
 
             int i = 1;
@@ -253,14 +254,18 @@ public abstract class PluginForHost extends Plugin {
                     c++;
                     if (getAccountwithoutUsername()) {
                         if (a.getPass() == null || a.getPass().trim().length() == 0) continue;
-                        new MenuAction(ToolBarAction.Types.CONTAINER, i++ + ". " + "Account " + (i - 1), 0);
+                        account = new MenuAction(i + ". " + "Account" + (i - 1), 0);
+                        account.setTitle(i++ + ". " + "Account " + (i - 1));
+                        account.setType(ToolBarAction.Types.CONTAINER);
                     } else {
                         if (a.getUser() == null || a.getUser().trim().length() == 0) continue;
-                        account = new MenuAction(ToolBarAction.Types.CONTAINER, i++ + ". " + a.getUser(), 0);
+                        account = new MenuAction(i + ". " + a.getUser(), 0);
+                        account.setTitle(i++ + ". " + a.getUser());
+                        account.setType(ToolBarAction.Types.CONTAINER);
                         m = AccountMenuItemSyncer.getInstance().get(a);
 
                         if (m == null) {
-                            m = new MenuAction(ToolBarAction.Types.TOGGLE, JDL.L("jd.plugins.PluginForHost.enable_premium", "Aktivieren"), 100 + c - 1);
+                            m = new MenuAction("plugins.PluginForHost.enable_premium", 100 + c - 1);
                         }
                         m.setActionID(100 + c - 1);
                         m.setSelected(a.isEnabled());
@@ -269,7 +274,7 @@ public abstract class PluginForHost extends Plugin {
 
                         AccountMenuItemSyncer.getInstance().map(a, m);
 
-                        m = new MenuAction(JDL.L("jd.plugins.PluginForHost.premiumInfo", "Details"), 200 + c - 1);
+                        m = new MenuAction("plugins.PluginForHost.premiumInfo", 200 + c - 1);
                         m.setActionListener(this);
                         account.addMenuItem(m);
                         premiumAction.addMenuItem(account);
@@ -284,10 +289,10 @@ public abstract class PluginForHost extends Plugin {
         if (premiumAction.getSize() != 0) {
             menuList.add(premiumAction);
         } else {
-            menuList.add(m = new MenuAction(JDL.L("plugins.menu.noaccounts", "Add account"), 2));
+            menuList.add(m = new MenuAction("plugins.menu.noaccounts", 2));
             m.setActionListener(this);
         }
-        menuList.add(m = new MenuAction(JDL.L("plugins.menu.buyaccount", "Buy account"), 3));
+        menuList.add(m = new MenuAction("plugins.menu.buyaccount", 3));
         m.setActionListener(this);
 
         return menuList;
@@ -459,7 +464,7 @@ public abstract class PluginForHost extends Plugin {
         }
         putLastTimeStarted(System.currentTimeMillis());
         if (!isAGBChecked()) {
-            logger.severe("AGB not signed : " + getPluginID());
+            logger.severe("AGB not signed : " + this.getWrapper().getID());
             downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_AGB_NOT_SIGNED);
             return;
         }
@@ -544,6 +549,7 @@ public abstract class PluginForHost extends Plugin {
 
     public boolean isAGBChecked() {
         if (!getPluginConfig().hasProperty(AGB_CHECKED)) {
+            // this is just so complicated to preserv compatibility
             getPluginConfig().setProperty(AGB_CHECKED, SubConfiguration.getConfig(CONFIGNAME).getBooleanProperty("AGBS_CHECKED_" + getPluginID(), false) || SubConfiguration.getConfig(CONFIGNAME).getBooleanProperty("AGB_CHECKED_" + getHost(), false));
             getPluginConfig().save();
         }

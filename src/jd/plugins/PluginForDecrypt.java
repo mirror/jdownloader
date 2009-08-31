@@ -27,7 +27,6 @@ import java.util.HashMap;
 
 import jd.PluginWrapper;
 import jd.captcha.easy.load.LoadImage;
-import jd.config.MenuAction;
 import jd.controlling.CaptchaController;
 import jd.controlling.JDLogger;
 import jd.controlling.LinkGrabberController;
@@ -35,6 +34,7 @@ import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
 import jd.gui.UserIO;
 import jd.gui.swing.components.linkbutton.JLink;
+import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.http.Browser;
 import jd.nutils.Formatter;
 import jd.nutils.JDFlags;
@@ -75,6 +75,7 @@ public abstract class PluginForDecrypt extends Plugin {
     public void setStartIntervall(long interval) {
         WAIT_BETWEEN_STARTS = interval;
     }
+
     @Override
     public String getVersion() {
         // TODO Auto-generated method stub
@@ -207,9 +208,11 @@ public abstract class PluginForDecrypt extends Plugin {
     protected String getCaptchaCode(String captchaAddress, CryptedLink param) throws IOException, DecrypterException {
         return getCaptchaCode(getHost(), captchaAddress, param);
     }
+
     protected String getCaptchaCode(LoadImage li, CryptedLink param) throws IOException, DecrypterException {
         return getCaptchaCode(getHost(), li.file, param);
     }
+
     protected String getCaptchaCode(String method, String captchaAddress, CryptedLink param) throws IOException, DecrypterException {
         if (captchaAddress == null) {
             logger.severe("Captcha Adresse nicht definiert");
@@ -223,7 +226,7 @@ public abstract class PluginForDecrypt extends Plugin {
             logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
             throw new DecrypterException(DecrypterException.CAPTCHA);
         }
-        //erst im Nachhinein das der Bilddownload nicht gestört wird
+        // erst im Nachhinein das der Bilddownload nicht gestört wird
 
         captchaFile.renameTo(getLocalCaptchaFile(br.getHttpConnection().getContentType()));
         String captchaCode = getCaptchaCode(method, captchaFile, param);

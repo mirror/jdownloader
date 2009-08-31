@@ -26,8 +26,9 @@ import javax.swing.JMenuItem;
 import javax.swing.JSeparator;
 
 import jd.HostPluginWrapper;
-import jd.config.MenuAction;
 import jd.controlling.AccountController;
+import jd.gui.swing.jdgui.actions.ToolBarAction;
+import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -51,7 +52,7 @@ public class HosterMenu extends Menu {
 
         for (HostPluginWrapper wrapper : hosts) {
             if (!wrapper.isLoaded() || !wrapper.isPremiumEnabled() || !AccountController.getInstance().hasAccounts(wrapper.getHost())) continue;
-            if(!wrapper.usePlugin())continue;
+            if (!wrapper.usePlugin()) continue;
             plugin = wrapper.getPlugin();
             pluginPopup = new JMenu(wrapper.getHost());
             if (plugin.hasHosterIcon()) pluginPopup.setIcon(plugin.getHosterIcon());
@@ -83,7 +84,7 @@ public class HosterMenu extends Menu {
                 int index = ((ccv - 'a')) / entries;
                 if (jmenus[index] == null) {
                     int start = 'a' + index * entries;
-                    int end = Math.min('a' + ((1 + index) * entries) - 1,'z');
+                    int end = Math.min('a' + ((1 + index) * entries) - 1, 'z');
                     jmenus[index] = new JMenu(JDL.LF("jd.gui.swing.menu.HosterMenu", "Hoster %s", new String(new byte[] { (byte) (start) }).toUpperCase() + " - " + new String(new byte[] { (byte) (end) }).toUpperCase()));
                     c.add(jmenus[index]);
                 }

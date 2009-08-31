@@ -19,13 +19,13 @@ package jd.gui.swing.jdgui.menu.actions;
 import java.awt.event.ActionEvent;
 import java.util.Vector;
 
-import jd.config.MenuAction;
 import jd.controlling.DownloadController;
+import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 
-public class RemoveDupesAction extends MenuAction {
+public class RemoveDupesAction extends ToolBarAction {
 
     private static final long serialVersionUID = -4068088102973973923L;
 
@@ -33,7 +33,7 @@ public class RemoveDupesAction extends MenuAction {
         super("action.remove_dupes", "gui.images.remove_dupes");
     }
 
-    public void actionPerformed(ActionEvent e) {
+    public void onAction(ActionEvent e) {
         DownloadController dlc = DownloadController.getInstance();
         Vector<DownloadLink> downloadstodelete = new Vector<DownloadLink>();
         synchronized (dlc.getPackages()) {
@@ -44,5 +44,17 @@ public class RemoveDupesAction extends MenuAction {
         for (DownloadLink dl : downloadstodelete) {
             dl.getFilePackage().remove(dl);
         }
+    }
+
+    @Override
+    public void init() {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void initDefaults() {
+        // TODO Auto-generated method stub
+        
     }
 }

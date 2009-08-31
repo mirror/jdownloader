@@ -16,10 +16,13 @@
 
 package jd.gui.swing.jdgui.actions;
 
+import java.awt.event.ActionEvent;
+
 import javax.swing.AbstractAction;
 
 import jd.config.SubConfiguration;
 import jd.gui.action.JDAction;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 public abstract class ToolBarAction extends JDAction {
@@ -30,7 +33,7 @@ public abstract class ToolBarAction extends JDAction {
      * 
      */
     public static enum Types {
-        TOGGLE, NORMAL, SEPARATOR,CONTAINER
+        TOGGLE, NORMAL, SEPARATOR, CONTAINER
     }
 
     /**
@@ -38,56 +41,87 @@ public abstract class ToolBarAction extends JDAction {
      */
     protected boolean inited = false;
     private static final long serialVersionUID = -7856598906795360922L;
-    public static final String SELECTED = "SELECTED";
+   
     public static final String PRIORITY = "PRIORITY";
     public static final String ID = "ID";
-    public static final String VISIBLE = "VISIBLE";
+
 
     protected Types type = Types.NORMAL;
 
-    public void setVisible(boolean b) {
-        this.putValue(VISIBLE, b);
-        SubConfiguration.getConfig("Toolbar").setProperty("VISIBLE_"+this.getID(), b);
-        SubConfiguration.getConfig("Toolbar").save();
-    }
 
-    public boolean isVisible() {
-        try {
-            return (Boolean) this.getValue(VISIBLE);
 
-        } catch (Exception e) {
-            return true;
-        }
+
+    public void setType(Types type) {
+        this.type = type;
     }
 
     public void setId(String id) {
         this.putValue(ID, id);
+    
     }
 
     public void setPriority(int priority) {
         this.putValue(PRIORITY, priority);
     }
 
+ 
+
+    public ToolBarAction(String menukey, int id) {
+        this(menukey, null, -1);
+    }
+
     public ToolBarAction(String menukey, String iconkey) {
-    
+        this(menukey, iconkey, -1);
+
+    }
+
+    public ToolBarAction(String menukey, String iconkey, int id) {
+
         super(JDL.L("gui.menu." + menukey + ".name", menukey));
         setId(menukey);
         if (iconkey != null) setIcon(iconkey);
         setMnemonic(JDL.L("gui.menu." + menukey + ".mnem", "-"));
         setAccelerator(JDL.L("gui.menu." + menukey + ".accel", "-"));
-        this.putValue(VISIBLE, SubConfiguration.getConfig("Toolbar").getBooleanProperty("VISIBLE_"+this.getID(), true));
-      
+   
         initDefaults();
         ActionController.register(this);
     }
 
-    public ToolBarAction(String name) {
-       super(name);
+    protected ToolBarAction() {
+      super("");
+    }
+
+    public final void actionPerformed(ActionEvent e) {
+        if (this.type == Types.TOGGLE && JDUtilities.getJavaVersion() < 1.6) {
+            this.setSelected(!this.isSelected());
+        }
+        if (getActionListener() == null) {
+            onAction(e);
+
+            return;
+        }
+
+        getActionListener().actionPerformed(new ActionEvent(this, getActionID(), getTitle()));
+    }
+    public void setSelected(boolean selected) {
+        super.setSelected(selected);
+       this.setType(Types.TOGGLE);
+      
+    }
+    /**
+     * May be overridden acts like actionPerformed, but only of no
+     * actionlistener is set
+     * 
+     * @param e
+     */
+
+    public void onAction(ActionEvent e) {
+
     }
 
     public boolean equals(Object o) {
         if (o == null || !(o instanceof ToolBarAction)) return false;
-        if(getID()==null)return false;
+        if (getID() == null) return false;
         return getID().equals(((ToolBarAction) o).getID());
     }
 
@@ -107,7 +141,7 @@ public abstract class ToolBarAction extends JDAction {
      * @param tt
      */
     public void setToolTipText(String tt) {
-      
+
         putValue(AbstractAction.SHORT_DESCRIPTION, tt);
     }
 
@@ -117,7 +151,7 @@ public abstract class ToolBarAction extends JDAction {
      * @return
      */
     public String getID() {
-        if(getValue(ID)==null)return null;
+        if (getValue(ID) == null) return null;
         return this.getValue(ID).toString();
     }
 

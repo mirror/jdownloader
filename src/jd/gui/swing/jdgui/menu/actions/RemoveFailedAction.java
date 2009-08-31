@@ -19,12 +19,12 @@ package jd.gui.swing.jdgui.menu.actions;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
-import jd.config.MenuAction;
 import jd.controlling.DownloadController;
+import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-public class RemoveFailedAction extends MenuAction {
+public class RemoveFailedAction extends ToolBarAction {
 
     private static final long serialVersionUID = -5425871515927494136L;
 
@@ -32,7 +32,7 @@ public class RemoveFailedAction extends MenuAction {
         super("action.remove_failed", "gui.images.remove_failed");
     }
 
-    public void actionPerformed(ActionEvent e) {
+    public void onAction(ActionEvent e) {
         DownloadController dlc = DownloadController.getInstance();
         ArrayList<DownloadLink> downloadstodelete = new ArrayList<DownloadLink>();
         synchronized (dlc.getPackages()) {
@@ -47,6 +47,18 @@ public class RemoveFailedAction extends MenuAction {
         for (DownloadLink dl : downloadstodelete) {
             dl.getFilePackage().remove(dl);
         }
+    }
+
+    @Override
+    public void init() {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void initDefaults() {
+        // TODO Auto-generated method stub
+        
     }
 
 }

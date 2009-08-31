@@ -40,6 +40,7 @@ import jd.nutils.io.JDIO;
 import jd.nutils.svn.Subversion;
 import jd.nutils.zip.Zip;
 import jd.parser.Regex;
+import jd.update.Branch;
 import jd.update.FileUpdate;
 import jd.update.Restarter;
 import jd.update.WebUpdater;
@@ -69,7 +70,7 @@ public class Updater {
         Browser.setGlobalReadTimeout(500000);
         Updater upd = new Updater();
 
-        if (branch != null) WebUpdater.getConfig("WEBUPDATE").setProperty("BRANCH", branch);
+        if (branch != null) WebUpdater.getConfig("WEBUPDATE").setProperty(WebUpdater.PARAM_BRANCH, branch);
         WebUpdater.getConfig("WEBUPDATE").save();
         System.out.println("STATUS: Webupdate");
 
@@ -168,7 +169,7 @@ public class Updater {
     private static String UPDATE_SERVER = "http://update1.jdownloader.org/";
     private File jars;
 
-    private String latestBranch;
+    private Branch latestBranch;
 
     public Updater() throws IOException, SVNException {
         workingDir = new File(".").getCanonicalFile();

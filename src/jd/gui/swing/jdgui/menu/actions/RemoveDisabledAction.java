@@ -19,12 +19,12 @@ package jd.gui.swing.jdgui.menu.actions;
 import java.awt.event.ActionEvent;
 import java.util.Vector;
 
-import jd.config.MenuAction;
 import jd.controlling.DownloadController;
+import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-public class RemoveDisabledAction extends MenuAction {
+public class RemoveDisabledAction extends ToolBarAction {
 
     private static final long serialVersionUID = -5335194420202699757L;
 
@@ -32,7 +32,7 @@ public class RemoveDisabledAction extends MenuAction {
         super("action.remove_disabled", "gui.images.remove_disabled");
     }
 
-    public void actionPerformed(ActionEvent e) {
+    public void onAction(ActionEvent e) {
         DownloadController dlc = DownloadController.getInstance();
         Vector<DownloadLink> downloadstodelete = new Vector<DownloadLink>();
         synchronized (dlc.getPackages()) {
@@ -47,5 +47,17 @@ public class RemoveDisabledAction extends MenuAction {
         for (DownloadLink dl : downloadstodelete) {
             dl.getFilePackage().remove(dl);
         }
+    }
+
+    @Override
+    public void init() {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void initDefaults() {
+        // TODO Auto-generated method stub
+        
     }
 }

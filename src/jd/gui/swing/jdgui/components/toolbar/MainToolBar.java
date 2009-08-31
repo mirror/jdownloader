@@ -21,6 +21,7 @@ import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.components.SpeedMeterPanel;
+import jd.gui.swing.jdgui.actions.ActionController;
 
 public class MainToolBar extends ToolBar implements ControlListener {
     /**
@@ -51,8 +52,11 @@ public class MainToolBar extends ToolBar implements ControlListener {
         switch (event.getID()) {
         case ControlEvent.CONTROL_DOWNLOAD_START:
             speedmeter.start();
+           ActionController.getToolBarAction("toolbar.control.stopmark").setEnabled(true);
             break;
         case ControlEvent.CONTROL_DOWNLOAD_STOP:
+        case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
+            ActionController.getToolBarAction("toolbar.control.stopmark").setEnabled(false);
             speedmeter.stop();
             break;
         }

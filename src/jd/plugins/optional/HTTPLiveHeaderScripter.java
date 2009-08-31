@@ -31,7 +31,6 @@ import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 
 import jd.PluginWrapper;
-import jd.config.MenuAction;
 import jd.gui.UserIO;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.components.ImportRouterDialog;
@@ -41,6 +40,7 @@ import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
+import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.gui.swing.jdgui.views.ClosableView;
 import jd.nutils.io.JDFileFilter;
 import jd.nutils.io.JDIO;
@@ -75,7 +75,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
     @Override
     @SuppressWarnings("unchecked")
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() instanceof MenuAction && ((MenuAction) e.getSource()).getActionID() == 0) {
+        if (e.getSource() instanceof ToolBarAction && ((ToolBarAction) e.getSource()).getActionID() == 0) {
             if (action.isSelected()) {
                 initGUI();
                 SwingGui.getInstance().setContent(tabbedPanel);
@@ -276,7 +276,9 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
 
     @Override
     public boolean initAddon() {
-        action = new MenuAction(ToolBarAction.Types.TOGGLE, getHost(), 0).setActionListener(this);
+        action = new MenuAction(getWrapper().getID(), 0);
+        action.setActionListener(this);
+        action.setTitle(getHost());
         action.setIcon(this.getIconKey());
         action.setSelected(false);
         return true;

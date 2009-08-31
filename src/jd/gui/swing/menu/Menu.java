@@ -16,11 +16,16 @@
 
 package jd.gui.swing.menu;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 
-import jd.config.MenuAction;
+import jd.gui.swing.jdgui.actions.ToolBarAction;
+import jd.gui.swing.jdgui.menu.MenuAction;
+import jd.utils.JDUtilities;
 
 public class Menu {
 
@@ -35,12 +40,23 @@ public class Menu {
             return m;
         case TOGGLE:
 
-            JCheckBoxMenuItem m2 = new JCheckBoxMenuItem(mi);
-            // m2.setSelected(mi.isSelected());
+            if (JDUtilities.getJavaVersion() >= 1.6) {
+                // Togglebuttons for 1.6
+                JCheckBoxMenuItem m2 = new JCheckBoxMenuItem(mi);
+                return m2;
+            } else {
+                // 1.5 togle buttons need a changelistener in the menuitem
+                final JCheckBoxMenuItem m2 = new JCheckBoxMenuItem(mi);
+                mi.addPropertyChangeListener(new PropertyChangeListener() {
 
-            // if (mi.getAccelerator() != null)
-            // m2.setAccelerator(KeyStroke.getKeyStroke(mi.getAccelerator()));
-            return m2;
+                    public void propertyChange(PropertyChangeEvent evt) {
+                        m2.setSelected(((ToolBarAction) evt.getSource()).isSelected());
+                    }
+                });
+
+                return m2;
+
+            }
         case CONTAINER:
             JMenu m3 = new JMenu(mi.getTitle());
             m3.setIcon(mi.getIcon());

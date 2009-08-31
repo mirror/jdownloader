@@ -19,13 +19,13 @@ package jd.gui.swing.jdgui.menu.actions;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
-import jd.config.MenuAction;
 import jd.controlling.DownloadController;
+import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 
-public class RemoveOfflineAction extends MenuAction {
+public class RemoveOfflineAction extends ToolBarAction {
 
     private static final long serialVersionUID = -5335194420202699757L;
 
@@ -33,7 +33,7 @@ public class RemoveOfflineAction extends MenuAction {
         super("action.remove_offline", "gui.images.remove_failed");
     }
 
-    public void actionPerformed(ActionEvent e) {
+    public void onAction(ActionEvent e) {
         DownloadController dlc = DownloadController.getInstance();
         ArrayList<DownloadLink> downloadstodelete = new ArrayList<DownloadLink>();
         synchronized (dlc.getPackages()) {
@@ -48,5 +48,17 @@ public class RemoveOfflineAction extends MenuAction {
         for (DownloadLink dl : downloadstodelete) {
             dl.getFilePackage().remove(dl);
         }
+    }
+
+    @Override
+    public void init() {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void initDefaults() {
+        // TODO Auto-generated method stub
+        
     }
 }

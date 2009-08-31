@@ -18,10 +18,10 @@ package jd.gui.swing.jdgui.menu.actions;
 
 import java.awt.event.ActionEvent;
 
-import jd.config.MenuAction;
 import jd.gui.swing.components.AboutDialog;
+import jd.gui.swing.jdgui.actions.ToolBarAction;
 
-public class AboutAction extends MenuAction {
+public class AboutAction extends ToolBarAction {
 
     private static final long serialVersionUID = -353145605693194634L;
 
@@ -29,10 +29,22 @@ public class AboutAction extends MenuAction {
         super("action.about", "gui.images.about");
     }
 
-    public void actionPerformed(ActionEvent e) {
+    public void onAction(ActionEvent e) {
 
         new AboutDialog();
 
+    }
+
+    @Override
+    public void init() {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void initDefaults() {
+        // TODO Auto-generated method stub
+        
     }
 
 }

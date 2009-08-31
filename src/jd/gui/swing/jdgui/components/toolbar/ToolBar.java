@@ -16,10 +16,13 @@
 
 package jd.gui.swing.jdgui.components.toolbar;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 
 import javax.swing.AbstractButton;
 import javax.swing.Action;
+import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JRootPane;
 import javax.swing.JSeparator;
@@ -35,13 +38,13 @@ import jd.gui.swing.jdgui.actions.ActionControlEvent;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.actions.event.ActionControllerListener;
+import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
 public class ToolBar extends JToolBar implements ActionControllerListener {
 
     private static final long serialVersionUID = 7533137014274040205L;
 
-   
     public static final ArrayList<String> DEFAULT_LIST = new ArrayList<String>();
     static {
         DEFAULT_LIST.add("toolbar.control.start");
@@ -63,8 +66,6 @@ public class ToolBar extends JToolBar implements ActionControllerListener {
     }
 
     private String[] current = null;
-
-    private boolean updateing = false;
 
     private JRootPane rootpane;
 
@@ -137,10 +138,6 @@ public class ToolBar extends JToolBar implements ActionControllerListener {
                 }
 
                 action.init();
-                if (!action.isVisible()) {
-                    JDLogger.warning("Action " + action + " is set to invisble");
-                    continue;
-                }
 
                 ab = null;
                 switch (action.getType()) {
@@ -161,7 +158,39 @@ public class ToolBar extends JToolBar implements ActionControllerListener {
                 case TOGGLE:
                     // ab = add(action);
                     add(ab = new JToggleButton(action));
+                    if (JDUtilities.getJavaVersion() < 1.6) {
+                        final AbstractButton button = ab;
+                        ab.setSelected(action.isSelected());
+                        action.addPropertyChangeListener(new PropertyChangeListener() {
 
+                            public void propertyChange(final PropertyChangeEvent evt) {
+                                if (evt.getPropertyName() == ToolBarAction.SELECTED_KEY) {
+                                    new GuiRunnable<Object>() {
+
+                                        @Override
+                                        public Object runSave() {
+                                            button.setSelected((Boolean)evt.getNewValue());
+                                            return null;
+                                        }
+
+                                    }.start();
+                                }else if (evt.getPropertyName() == ToolBarAction.LARGE_ICON_KEY) {
+                                    new GuiRunnable<Object>() {
+
+                                        @Override
+                                        public Object runSave() {
+                                            button.setIcon((Icon) evt.getNewValue());
+                                            return null;
+                                        }
+
+                                    }.start();
+
+                                }
+
+                            }
+
+                        });
+                    }
                     if ((action.getValue(Action.SMALL_ICON) != null || action.getValue(Action.LARGE_ICON_KEY) != null)) {
                         ab.setText("");
                     }
@@ -174,7 +203,10 @@ public class ToolBar extends JToolBar implements ActionControllerListener {
                 }
 
                 if (ab != null) {
+                    if (JDUtilities.getJavaVersion() < 1.6) {
+                        if (action.getValue(Action.LARGE_ICON_KEY) != null) ab.setIcon((Icon) action.getValue(Action.LARGE_ICON_KEY));
 
+                    }
                     KeyStroke ks = (KeyStroke) (action.getValue(Action.ACCELERATOR_KEY));
                     rootpane.getInputMap(JButton.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(ks, action);
                     rootpane.getInputMap(JButton.WHEN_IN_FOCUSED_WINDOW).put(ks, action);
@@ -198,16 +230,7 @@ public class ToolBar extends JToolBar implements ActionControllerListener {
     }
 
     public synchronized void onActionControlEvent(ActionControlEvent event) {
-        if (updateing) return;
-        updateing = true;
 
-        // currently visible buttons have a registered propertychangelistener
-        // that updates them on change.
-        // we only need a complete redraw for the visible event.
-        if (event.getParameter() == ToolBarAction.VISIBLE) {
-            updateToolbar();
-        }
-        updateing = false;
     }
 
     /**

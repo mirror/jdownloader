@@ -62,6 +62,7 @@ public class WebUpdater implements Serializable {
     private static final int UPDATE_FILE = 1;
     public static final String[] UPDATE_MIRROR = new String[] { "http://update0.jdownloader.org/", "http://update0.jdownloader.org/", "http://update1.jdownloader.org/", "http://update2.jdownloader.org/", };
     private static final String UPDATE_ZIP_LOCAL_PATH = "tmp/update.zip";
+    public static final String PARAM_BRANCH = "PARAM_BRANCH";
 
     /**
      * Funktion übertragt alle werte aus den alten Config files in die datenbank
@@ -117,7 +118,7 @@ public class WebUpdater implements Serializable {
 
     private Browser br;
 
-    private String[] branches;
+    private Branch[] branches;
     private transient JDBroadcaster<MessageListener, MessageEvent> broadcaster;
     private Integer errors = 0;
 
@@ -131,6 +132,7 @@ public class WebUpdater implements Serializable {
 
     public byte[] sum;
     private File workingdir;
+    private Object betaBranch;
 
     /**
      * @param path
@@ -212,16 +214,19 @@ public class WebUpdater implements Serializable {
      * 
      * @return
      */
-    public String getBranch() {
+    public Branch getBranch() {
+        try {
+            Branch latestBranch = getLatestBranch();
 
-        String latestBranch = getLatestBranch();
-
-        String ret = WebUpdater.getConfig("WEBUPDATE").getStringProperty("BRANCH");
-        if (ret == null) ret = latestBranch;
-        WebUpdater.getConfig("WEBUPDATE").setProperty("BRANCHINUSE", ret);
-        WebUpdater.getConfig("WEBUPDATE").save();
-        if (ret == null || ret.contains("%") || ret.contains(" ")) { return null; }
-        return ret;
+            Object ret = WebUpdater.getConfig("WEBUPDATE").getProperty(WebUpdater.PARAM_BRANCH);
+            if (ret == null) ret = latestBranch;
+            WebUpdater.getConfig("WEBUPDATE").setProperty("BRANCHINUSE", ret);
+            WebUpdater.getConfig("WEBUPDATE").save();
+            if (ret == null) { return null; }
+            return (Branch) ret;
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     /**
@@ -229,7 +234,7 @@ public class WebUpdater implements Serializable {
      * 
      * @return
      */
-    private String[] getBranches() {
+    private Branch[] getBranches() {
         ArrayList<String> mirrors = new ArrayList<String>();
         for (String m : UPDATE_MIRROR)
             mirrors.add(m);
@@ -240,7 +245,20 @@ public class WebUpdater implements Serializable {
 
                 br.getPage(serv + "branches.lst");
                 if (br.getRequest().getHttpConnection().isOK()) {
-                    this.branches = Regex.getLines(br.toString());
+                    String[] bs = Regex.getLines(br.toString());
+
+                    ArrayList<Branch> ret = new ArrayList<Branch>();
+                    this.branches = new Branch[bs.length];
+                    for (int ii = 0; ii < bs.length; ii++) {
+                        Branch branch = new Branch(bs[i]);
+                        if (branch.isBeta() && betaBranch == null) {
+                            betaBranch = branch;
+                        } else if (!branch.isBeta()) {
+                            ret.add(branch);
+                        }
+
+                    }
+                    branches = ret.toArray(new Branch[] {});
                     System.out.println("Found branches on " + serv + ":\r\n" + br);
                     return branches;
                 }
@@ -250,7 +268,7 @@ public class WebUpdater implements Serializable {
             }
             System.err.println("No branches found on " + serv);
         }
-        branches = new String[] {};
+        branches = new Branch[] {};
         return branches;
     }
 
@@ -269,7 +287,7 @@ public class WebUpdater implements Serializable {
      * 
      * @return
      */
-    private synchronized String getLatestBranch() {
+    private synchronized Branch getLatestBranch() {
         if (branches == null) {
             this.getBranches();
         }
@@ -512,9 +530,9 @@ public class WebUpdater implements Serializable {
                 continue;
             }
         }
-        if (fnf && WebUpdater.getConfig("WEBUPDATE").getStringProperty("BRANCH") != null) {
-            System.err.println("Branch " + WebUpdater.getConfig("WEBUPDATE").getStringProperty("BRANCH") + " is not available any more. Reset to default");
-            WebUpdater.getConfig("WEBUPDATE").setProperty("BRANCH", null);
+        if (fnf && WebUpdater.getConfig("WEBUPDATE").getStringProperty(WebUpdater.PARAM_BRANCH) != null) {
+            System.err.println("Branch " + WebUpdater.getConfig("WEBUPDATE").getStringProperty(WebUpdater.PARAM_BRANCH) + " is not available any more. Reset to default");
+            WebUpdater.getConfig("WEBUPDATE").setProperty(WebUpdater.PARAM_BRANCH, null);
             WebUpdater.getConfig("WEBUPDATE").save();
             return updateAvailableServers();
         }
@@ -612,7 +630,7 @@ public class WebUpdater implements Serializable {
                 } catch (Exception e) {
                     // TODO Auto-generated catch block
                     broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_FAILED, e.getLocalizedMessage()));
-                    broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_FAILED, "Extracting "+file.getLocalTmpFile().getAbsolutePath()+" failed"));
+                    broadcaster.fireEvent(new MessageEvent(this, DO_UPDATE_FAILED, "Extracting " + file.getLocalTmpFile().getAbsolutePath() + " failed"));
                     e.printStackTrace();
                     file.getLocalTmpFile().delete();
                     file.getLocalTmpFile().deleteOnExit();

@@ -36,11 +36,11 @@ public abstract class ThreadedAction extends ToolBarAction {
 
     private static final long serialVersionUID = -1483816271981451352L;
 
-    /*
+    /**
      * this action is performed in its own thread, explicit edt queueing is
      * needed
      */
-    public void actionPerformed(final ActionEvent e) {
+    public void onAction(final ActionEvent e) {
         if (actionrunning && !multiplethreadsallowed) return;
         actionrunning = true;
         new Thread() {

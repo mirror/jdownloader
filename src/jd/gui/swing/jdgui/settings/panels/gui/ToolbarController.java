@@ -145,7 +145,7 @@ public class ToolbarController extends ConfigPanel {
         }
 
         public int getRowCount() {
-            
+
             return actions.size();
         }
 
@@ -211,7 +211,7 @@ public class ToolbarController extends ConfigPanel {
 
     public ToolbarController(Configuration configuration) {
         super();
-       actions= new ArrayList<ToolBarAction>();
+        actions = new ArrayList<ToolBarAction>();
         initPanel();
         load();
     }
@@ -328,20 +328,23 @@ public class ToolbarController extends ConfigPanel {
 
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
             co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-            ToolBarAction action = (ToolBarAction) value;
+            ToolBarAction action;
             switch (column) {
             case 0:
-                checkbox.setSelected(action.isVisible());
+                checkbox.setSelected((Boolean) value);
                 return checkbox;
             case 1:
+                action = (ToolBarAction) value;
                 label.setIcon(null);
                 label.setText(action.getTitle());
                 return label;
             case 2:
+                action = (ToolBarAction) value;
                 label.setIcon(null);
                 label.setText(action.getTooltipText());
                 return label;
             case 3:
+                action = (ToolBarAction) value;
                 label.setIcon(JDTheme.II(action.getValue(ToolBarAction.IMAGE_KEY) + "", 16, 16));
                 label.setText("");
                 return label;

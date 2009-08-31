@@ -91,7 +91,14 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
     public String getHost() {
         return host;
     }
-
+    
+    /**
+     * Should always return lifetime id. This means that this id never changes!
+     * @return
+     */
+    public String getID() {
+        return getHost();
+    }
     public void setHost(String host) {
         this.host = host.toLowerCase();
     }

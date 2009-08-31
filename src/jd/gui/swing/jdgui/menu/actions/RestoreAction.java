@@ -18,17 +18,17 @@ package jd.gui.swing.jdgui.menu.actions;
 
 import java.awt.event.ActionEvent;
 
-import jd.config.MenuAction;
 import jd.controlling.JDController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.UserIO;
+import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.nutils.Executer;
 import jd.nutils.JDFlags;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-public class RestoreAction extends MenuAction {
+public class RestoreAction extends ToolBarAction {
 
     private static final long serialVersionUID = -1428029294638573437L;
 
@@ -36,7 +36,7 @@ public class RestoreAction extends MenuAction {
         super("action.restore", "gui.images.edit");
     }
 
-    public void actionPerformed(ActionEvent e) {
+    public void onAction(ActionEvent e) {
         if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, JDL.L("sys.ask.rlyrestore", "This will restart JDownloader and do a FULL-Update. Continue?")), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
             final Executer exec = new Executer("java");
             exec.addParameters(new String[] { "-jar", "jdupdate.jar", "-restore" });
@@ -55,6 +55,18 @@ public class RestoreAction extends MenuAction {
             });
             JDController.getInstance().exit();
         }
+    }
+
+    @Override
+    public void init() {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void initDefaults() {
+        // TODO Auto-generated method stub
+        
     }
 
 }

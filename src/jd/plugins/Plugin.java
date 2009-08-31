@@ -30,11 +30,11 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
-import jd.config.MenuAction;
 import jd.config.SubConfiguration;
 import jd.event.ControlEvent;
 import jd.gui.swing.components.ConvertDialog;
 import jd.gui.swing.components.ConvertDialog.ConversionMode;
+import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.Formatter;
@@ -156,8 +156,8 @@ public abstract class Plugin implements ActionListener {
     /**
      * Create MenuItems erlaubt es den Plugins eine MenuItemliste zurückzugeben.
      * Die Gui kann diese Menüpunkte dann darstellen. Die Gui muss das Menu bei
-     * jedem zugriff neu aufbauen, weil sich das MenuAction Array geändert haben
-     * kann. MenuItems sind Datenmodelle für ein TreeMenü.
+     * jedem zugriff neu aufbauen, weil sich das ToolBarAction Array geändert
+     * haben kann. MenuItems sind Datenmodelle für ein TreeMenü.
      */
     public abstract ArrayList<MenuAction> createMenuitems();
 

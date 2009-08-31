@@ -75,7 +75,7 @@ public class ActionController {
                 public void propertyChange(PropertyChangeEvent evt) {
                     // broadcast only known ids. this avoid recusrion loops and
                     // stack overflow errors
-                    if (evt.getPropertyName() == ToolBarAction.ID || evt.getPropertyName() == ToolBarAction.PRIORITY || evt.getPropertyName() == ToolBarAction.SELECTED || evt.getPropertyName() == ToolBarAction.VISIBLE || evt.getPropertyName() == ToolBarAction.ACCELERATOR_KEY || evt.getPropertyName() == ToolBarAction.ACTION_COMMAND_KEY || evt.getPropertyName() == ToolBarAction.DEFAULT || evt.getPropertyName() == ToolBarAction.DISPLAYED_MNEMONIC_INDEX_KEY || evt.getPropertyName() == ToolBarAction.LARGE_ICON_KEY || evt.getPropertyName() == ToolBarAction.LONG_DESCRIPTION || evt.getPropertyName() == ToolBarAction.MNEMONIC_KEY || evt.getPropertyName() == ToolBarAction.NAME || evt.getPropertyName() == ToolBarAction.SELECTED_KEY || evt.getPropertyName() == ToolBarAction.SHORT_DESCRIPTION || evt.getPropertyName() == ToolBarAction.SMALL_ICON) {
+                    if (evt.getPropertyName() == ToolBarAction.ID || evt.getPropertyName() == ToolBarAction.PRIORITY || evt.getPropertyName() == ToolBarAction.ACCELERATOR_KEY || evt.getPropertyName() == ToolBarAction.ACTION_COMMAND_KEY || evt.getPropertyName() == ToolBarAction.DEFAULT || evt.getPropertyName() == ToolBarAction.DISPLAYED_MNEMONIC_INDEX_KEY || evt.getPropertyName() == ToolBarAction.LARGE_ICON_KEY || evt.getPropertyName() == ToolBarAction.LONG_DESCRIPTION || evt.getPropertyName() == ToolBarAction.MNEMONIC_KEY || evt.getPropertyName() == ToolBarAction.NAME || evt.getPropertyName() == ToolBarAction.SELECTED_KEY || evt.getPropertyName() == ToolBarAction.SHORT_DESCRIPTION || evt.getPropertyName() == ToolBarAction.SMALL_ICON) {
                         getBroadcaster().fireEvent(new ActionControlEvent(evt.getSource(), ActionControlEvent.PROPERTY_CHANGED, evt.getPropertyName()));
                     }
                 }
@@ -95,7 +95,7 @@ public class ActionController {
              */
             private static final long serialVersionUID = -4628452328096482738L;
 
-            public void actionPerformed(ActionEvent e) {
+            public void onAction(ActionEvent e) {
             }
 
             @Override
@@ -183,7 +183,7 @@ public class ActionController {
              */
             private static final long serialVersionUID = 7153300370492212502L;
 
-            public void actionPerformed(ActionEvent e) {
+            public void onAction(ActionEvent e) {
                 boolean b = ActionController.getToolBarAction("toolbar.control.pause").isSelected();
                 JDUtilities.getController().pauseDownloads(b);
             }
@@ -328,7 +328,7 @@ public class ActionController {
                             getToolBarAction("toolbar.quickconfig.reconnecttoggle").setToolTipText(JDL.L("gui.menu.action.reconnect.notconfigured.tooltip", "Your Reconnect is not configured correct"));
                         } else {
                             setToolTipText(JDL.L("gui.menu.action.reconnectman.desc", "Manual reconnect. Get a new IP by resetting your internet connection"));
-                            setIcon("gui.images.reconnect");
+                             setIcon("gui.images.reconnect");
                             getToolBarAction("toolbar.quickconfig.reconnecttoggle").setToolTipText(JDL.L("gui.menu.action.reconnectauto.desc", "Auto reconnect. Get a new IP by resetting your internet connection"));
                         }
                     }
@@ -386,7 +386,7 @@ public class ActionController {
              */
             private static final long serialVersionUID = -6442494647304101403L;
 
-            public void actionPerformed(ActionEvent e) {
+            public void onAction(ActionEvent e) {
                 ClipboardHandler.getClipboard().setEnabled(this.isSelected());
             }
 
@@ -396,26 +396,38 @@ public class ActionController {
                 this.setEnabled(true);
                 this.type = ToolBarAction.Types.TOGGLE;
                 this.setToolTipText(JDL.L("gui.menu.action.clipboard.desc", "-"));
-                setSelected(JDUtilities.getConfiguration().getGenericProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, true));
-                setIcon(isSelected() ? "gui.images.clipboard_enabled" : "gui.images.clipboard_disabled");
+       
+                
             }
 
             @Override
             public void init() {
                 if (inited) return;
                 this.inited = true;
+                
+                
+                this.addPropertyChangeListener(new PropertyChangeListener() {
+                    public void propertyChange(PropertyChangeEvent evt) {
+                        if (evt.getPropertyName() == SELECTED_KEY) {
+                            setIcon((Boolean) evt.getNewValue() ? "gui.images.clipboard_enabled" : "gui.images.clipboard_disabled");
+                        }
+
+                    }
+
+                });
                 JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE) {
                     @Override
                     public void onPropertyChanged(Property source, final String key) {
                         if (source.getBooleanProperty(key, true)) {
                             setSelected(true);
-                            setIcon("gui.images.clipboard_enabled");
+                            
                         } else {
                             setSelected(false);
-                            setIcon("gui.images.clipboard_disabled");
+                            
                         }
                     }
                 });
+                setSelected(JDUtilities.getConfiguration().getGenericProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, true));
             }
         };
 
@@ -425,7 +437,7 @@ public class ActionController {
              */
             private static final long serialVersionUID = -2942320816429047941L;
 
-            public void actionPerformed(ActionEvent e) {
+            public void onAction(ActionEvent e) {
                 Reconnecter.toggleReconnect();
             }
 
@@ -437,22 +449,33 @@ public class ActionController {
                 this.setToolTipText(JDL.L("gui.menu.action.reconnect.desc", "-"));
                 setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true));
 
-                setIcon(isSelected() ? "gui.images.reconnect_enabled" : "gui.images.reconnect_disabled");
+                   setIcon(isSelected() ? "gui.images.reconnect_enabled" : "gui.images.reconnect_disabled");
             }
 
             @Override
             public void init() {
                 if (inited) return;
                 this.inited = true;
+                
+                this.addPropertyChangeListener(new PropertyChangeListener(){
+                    public void propertyChange(PropertyChangeEvent evt) {
+                        if(evt.getPropertyName()==SELECTED_KEY){
+                        setIcon((Boolean)evt.getNewValue()?"gui.images.reconnect_enabled":"gui.images.reconnect_disabled");
+                        }
+                        
+                    }
+                    
+                });
+                
                 JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_ALLOW_RECONNECT) {
                     @Override
                     public void onPropertyChanged(Property source, final String key) {
                         if (source.getBooleanProperty(key, true)) {
                             setSelected(true);
-                            setIcon("gui.images.reconnect_enabled");
+                          
                         } else {
                             setSelected(false);
-                            setIcon("gui.images.reconnect_disabled");
+                          
                         }
                     }
                 });
@@ -466,7 +489,7 @@ public class ActionController {
              */
             private static final long serialVersionUID = -60944746807335951L;
 
-            public void actionPerformed(ActionEvent e) {
+            public void onAction(ActionEvent e) {
                 String dlDir = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, null);
                 if (dlDir == null) return;
                 JDUtilities.openExplorer(new File(dlDir));
@@ -493,12 +516,21 @@ public class ActionController {
             @Override
             public void initDefaults() {
                 setPriority(800);
-                this.setEnabled(true);
+                
                 this.setToolTipText(JDL.L(JDL_PREFIX + "toolbar.control.stopmark.tooltip", "Stop after current Downloads"));
-                this.setEnabled(true);
+                this.setEnabled(false);
                 this.type = ToolBarAction.Types.TOGGLE;
                 this.setSelected(false);
                 this.setIcon("gui.images.stopmark.disabled");
+                this.addPropertyChangeListener(new PropertyChangeListener(){
+                    public void propertyChange(PropertyChangeEvent evt) {
+                        if(evt.getPropertyName()==SELECTED_KEY){
+                        setIcon((Boolean)evt.getNewValue()?"gui.images.stopmark.enabled":"gui.images.stopmark.disabled");
+                        }
+                        
+                    }
+                    
+                });
             }
 
             @Override
@@ -509,9 +541,13 @@ public class ActionController {
             public void threadedActionPerformed(ActionEvent e) {
                 if (DownloadWatchDog.getInstance().isStopMarkSet()) {
                     DownloadWatchDog.getInstance().setStopMark(null);
+                   
                 } else if (DownloadWatchDog.getInstance().getActiveDownloads() > 0) {
                     Object obj = DownloadWatchDog.getInstance().getRunningDownloads().get(0);
                     DownloadWatchDog.getInstance().setStopMark(obj);
+                  
+                }else{
+                    setSelected(false);
                 }
             }
 

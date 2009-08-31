@@ -18,23 +18,35 @@ package jd.gui.swing.jdgui.menu.actions;
 
 import java.awt.event.ActionEvent;
 
-import jd.config.MenuAction;
 import jd.gui.swing.components.linkbutton.JLink;
+import jd.gui.swing.jdgui.actions.ToolBarAction;
 
-public class LatestChanges extends MenuAction {
+public class LatestChangesAction extends ToolBarAction {
 
     private static final long serialVersionUID = 2705114922279833817L;
 
-    public LatestChanges() {
+    public LatestChangesAction() {
         super("action.changes", "gui.images.help");
     }
 
-    public void actionPerformed(ActionEvent e) {
+    public void onAction(ActionEvent e) {
         try {
             JLink.openURL("http://jdownloader.org/changes/index");
         } catch (Exception e1) {
             e1.printStackTrace();
         }
+    }
+
+    @Override
+    public void init() {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void initDefaults() {
+        // TODO Auto-generated method stub
+        
     }
 
 }

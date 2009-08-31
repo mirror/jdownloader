@@ -26,7 +26,6 @@ import javax.swing.filechooser.FileFilter;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.MenuAction;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.controlling.SingleDownloadController;
@@ -34,7 +33,7 @@ import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.components.JDFileChooser;
-import jd.gui.swing.jdgui.actions.ToolBarAction;
+import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.nutils.Formatter;
 import jd.nutils.jobber.JDRunnable;
 import jd.nutils.jobber.Jobber;
@@ -116,7 +115,8 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
             if (event.getSource() instanceof DownloadLink) {
                 link = (DownloadLink) event.getSource();
 
-                items.add(m = new MenuAction(ToolBarAction.Types.NORMAL, JDL.L("plugins.optional.jdhjsplit.linkmenu.merge", "Merge"), 1000).setActionListener(this));
+                items.add(m = new MenuAction("optional.jdhjsplit.linkmenu.merge", 1000));
+                m.setActionListener(this);
                 m.setEnabled(false);
                 if (link.getLinkStatus().hasStatus(LinkStatus.FINISHED) && this.isStartVolume(new File(link.getFileOutput()))) m.setEnabled(true);
                 if (new File(link.getFileOutput()).exists() && link.getName().matches(".*rar$")) m.setEnabled(true);
@@ -125,7 +125,8 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
 
             } else {
                 FilePackage fp = (FilePackage) event.getSource();
-                items.add(m = new MenuAction(ToolBarAction.Types.NORMAL, JDL.L("plugins.optional.jdhjsplit.linkmenu.package.merge", "Merge package"), 1001).setActionListener(this));
+                items.add(m = new MenuAction("optional.jdhjsplit.linkmenu.package.merge", 1001));
+                m.setActionListener(this);
                 m.setProperty("PACKAGE", fp);
             }
             break;
@@ -137,10 +138,12 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
         ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
         MenuAction m;
 
-        menu.add(m = new MenuAction(ToolBarAction.Types.TOGGLE, JDL.L("plugins.optional.hjsplit.menu.toggle", "Activate"), 1).setActionListener(this));
+        menu.add(m = new MenuAction("optional.hjsplit.menu.toggle", 1));
+        m.setActionListener(this);
         m.setSelected(this.getPluginConfig().getBooleanProperty("ACTIVATED", true));
 
-        menu.add(new MenuAction(ToolBarAction.Types.NORMAL, JDL.L("plugins.optional.hjsplit.menu.extract.singlefils", "Merge archive(s)"), 21).setActionListener(this));
+        menu.add(m = new MenuAction("optional.hjsplit.menu.extract.singlefils", 21));
+        m.setActionListener(this);
 
         return menu;
     }

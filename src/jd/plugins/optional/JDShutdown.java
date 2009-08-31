@@ -26,14 +26,13 @@ import jd.OptionalPluginWrapper;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.MenuAction;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.InteractionTrigger;
 import jd.event.ControlEvent;
 import jd.gui.UserIO;
-import jd.gui.swing.jdgui.actions.ToolBarAction;
+import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.nutils.JDFlags;
 import jd.nutils.OSDetector;
 import jd.plugins.OptionalPlugin;
@@ -92,7 +91,11 @@ public class JDShutdown extends PluginOptional {
     public ArrayList<MenuAction> createMenuitems() {
         ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
         if (menuItem == null) {
-            menuItem = new MenuAction(ToolBarAction.Types.TOGGLE, getHost(), 0).setActionListener(this);
+            menuItem = new MenuAction(getWrapper().getID(), 0);
+            menuItem.setTitle(getHost());
+            menuItem.setSelected(false);
+
+            menuItem.setActionListener(this);
         }
         menu.add(menuItem);
         return menu;

@@ -18,11 +18,12 @@ package jd.plugins;
 
 import java.util.HashMap;
 
-import jd.config.MenuAction;
 import jd.controlling.AccountController;
 import jd.controlling.AccountControllerEvent;
 import jd.controlling.AccountControllerListener;
 import jd.gui.swing.GuiRunnable;
+import jd.gui.swing.jdgui.actions.ToolBarAction;
+import jd.gui.swing.jdgui.menu.MenuAction;
 
 /**
  * This calss maps a MenItem to an account, and help to synchronize states like
@@ -57,7 +58,7 @@ public class AccountMenuItemSyncer implements AccountControllerListener {
 
             @Override
             public Object runSave() {
-                MenuAction item = map.get(event.getAccount());
+                ToolBarAction item = map.get(event.getAccount());
                 if (item != null) item.setSelected(event.getAccount().isEnabled());
                 return null;
             }

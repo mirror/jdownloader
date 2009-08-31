@@ -22,9 +22,9 @@ import java.util.ArrayList;
 import java.util.Date;
 
 import jd.PluginWrapper;
-import jd.config.MenuAction;
 import jd.controlling.SingleDownloadController;
 import jd.event.ControlEvent;
+import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.nutils.Executer;
 import jd.nutils.OSDetector;
 import jd.plugins.DownloadLink;

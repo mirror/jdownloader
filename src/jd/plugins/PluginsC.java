@@ -24,12 +24,12 @@ import java.util.Iterator;
 
 import jd.HostPluginWrapper;
 import jd.PluginWrapper;
-import jd.config.MenuAction;
 import jd.controlling.DistributeData;
 import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
 import jd.gui.UserIO;
+import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.nutils.JDFlags;
 import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;

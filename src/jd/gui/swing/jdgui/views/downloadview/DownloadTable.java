@@ -38,7 +38,6 @@ import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
-import jd.config.MenuAction;
 import jd.config.Property;
 import jd.controlling.DownloadController;
 import jd.controlling.DownloadWatchDog;
@@ -46,6 +45,7 @@ import jd.event.ControlEvent;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.components.table.JDRowHighlighter;
 import jd.gui.swing.components.table.JDTable;
+import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.gui.swing.menu.Menu;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;

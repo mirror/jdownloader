@@ -18,10 +18,10 @@ package jd.gui.swing.jdgui.menu.actions;
 
 import java.awt.event.ActionEvent;
 
-import jd.config.MenuAction;
 import jd.gui.swing.components.linkbutton.JLink;
+import jd.gui.swing.jdgui.actions.ToolBarAction;
 
-public class KnowledgeAction extends MenuAction {
+public class KnowledgeAction extends ToolBarAction {
 
     private static final long serialVersionUID = 2227665710503234763L;
 
@@ -29,12 +29,24 @@ public class KnowledgeAction extends MenuAction {
         super("action.help", "gui.images.help");
     }
 
-    public void actionPerformed(ActionEvent e) {
+    public void onAction(ActionEvent e) {
         try {
             JLink.openURL("http://jdownloader.org/knowledge/index");
         } catch (Exception e1) {
             e1.printStackTrace();
         }
+    }
+
+    @Override
+    public void init() {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void initDefaults() {
+        // TODO Auto-generated method stub
+        
     }
 
 }

@@ -81,4 +81,14 @@ public abstract class PluginOptional extends Plugin implements ControlListener {
     public String getVersion() {
         return ((OptionalPluginWrapper) this.getWrapper()).getVersion();
     }
+
+    /**
+     * Shoudl ALWAYS return a lifetime id String.
+     * 
+     * @return
+     */
+    public String getID() {
+        // TODO Auto-generated method stub
+        return getHost();
+    }
 }

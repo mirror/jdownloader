@@ -25,6 +25,8 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -44,7 +46,6 @@ import javax.swing.event.HyperlinkListener;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.MenuAction;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
 import jd.controlling.interaction.Interaction;
@@ -60,6 +61,7 @@ import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
 import jd.gui.swing.jdgui.interfaces.View;
+import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.nutils.OSDetector;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
@@ -621,7 +623,7 @@ public class JDChat extends PluginOptional implements ControlListener {
     // @Override
     public void actionPerformed(ActionEvent e) {
 
-        if (((MenuAction) e.getSource()).isSelected()) {
+        if (((ToolBarAction) e.getSource()).isSelected()) {
 
             if (conn != null) conn.close();
 
@@ -630,7 +632,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         } else {
             setEnabled(false);
         }
-        // ((MenuAction) e.getSource()).setSelected(!((MenuAction)
+        // ((ToolBarAction) e.getSource()).setSelected(!((ToolBarAction)
         // e.getSource()).isSelected());
     }
 
@@ -835,8 +837,18 @@ public class JDChat extends PluginOptional implements ControlListener {
         NAMES = new ArrayList<User>();
         sb = new StringBuilder();
         if (activateAction == null) {
-            this.activateAction = new MenuAction(ToolBarAction.Types.TOGGLE, getHost(), 0).setActionListener(this);
+            this.activateAction = new MenuAction(getWrapper().getID(), 0);
+            activateAction.setActionListener(this);
+            activateAction.setTitle(getHost());
             activateAction.setIcon(this.getIconKey());
+            activateAction.addPropertyChangeListener(new PropertyChangeListener() {
+
+                public void propertyChange(PropertyChangeEvent evt) {
+                    System.out.println(evt);
+
+                }
+
+            });
             activateAction.setSelected(false);
         }
         return true;

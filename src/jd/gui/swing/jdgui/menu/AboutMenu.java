@@ -18,7 +18,7 @@ package jd.gui.swing.jdgui.menu;
 
 import jd.gui.swing.jdgui.menu.actions.AboutAction;
 import jd.gui.swing.jdgui.menu.actions.KnowledgeAction;
-import jd.gui.swing.jdgui.menu.actions.LatestChanges;
+import jd.gui.swing.jdgui.menu.actions.LatestChangesAction;
 
 public class AboutMenu extends JStartMenu {
 
@@ -28,7 +28,7 @@ public class AboutMenu extends JStartMenu {
         super("gui.menu.about", "gui.images.help");
         this.add(new AboutAction());
         this.add(new KnowledgeAction());
-        this.add(new LatestChanges());
+        this.add(new LatestChangesAction());
 
     }
 }

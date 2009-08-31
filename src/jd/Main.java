@@ -172,14 +172,14 @@ public class Main {
             if (args[i].equalsIgnoreCase("-branch")) {
                 SubConfiguration webConfig = WebUpdater.getConfig("WEBUPDATE");
                 if (args[i + 1].equalsIgnoreCase("reset")) {
-                    webConfig.setProperty("BRANCH", null);
+                    webConfig.setProperty(WebUpdater.PARAM_BRANCH, null);
                     if (webConfig.hasChanges()) {
                         webConfig.save();
                         LOGGER.info("Switching back to default JDownloader branch");
                     }
                 } else {
 
-                    webConfig.setProperty("BRANCH", args[i + 1]);
+                    webConfig.setProperty(WebUpdater.PARAM_BRANCH, args[i + 1]);
                     if (webConfig.hasChanges()) {
                         webConfig.save();
                         LOGGER.info("Switching to " + args[i + 1] + " JDownloader branch");
@@ -505,6 +505,9 @@ public class Main {
                     Thread.sleep(5000);
 
                     new WebUpdate().doUpdateCheck(false);
+                    
+                    
+                    //TODO
                 } catch (InterruptedException e) {
                     // TODO Auto-generated catch block
                     e.printStackTrace();

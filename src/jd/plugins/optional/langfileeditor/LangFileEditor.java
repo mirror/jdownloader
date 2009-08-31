@@ -24,11 +24,10 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.MenuAction;
 import jd.gui.UserIO;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.SingletonPanel;
-import jd.gui.swing.jdgui.actions.ToolBarAction;
+import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.nutils.nativeintegration.LocalBrowser;
 import jd.nutils.svn.Subversion;
 import jd.plugins.OptionalPlugin;
@@ -133,7 +132,9 @@ public class LangFileEditor extends PluginOptional {
 
     @Override
     public boolean initAddon() {
-        activateAction = new MenuAction(ToolBarAction.Types.TOGGLE, getHost(), 0).setActionListener(this);
+        activateAction = new MenuAction(getWrapper().getID(), 0);
+        activateAction.setTitle(getHost());
+        activateAction.setActionListener(this);
         activateAction.setIcon(this.getIconKey());
         activateAction.setSelected(false);
         return true;

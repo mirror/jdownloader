@@ -19,12 +19,12 @@ package jd.gui.swing.jdgui.menu.actions;
 import java.awt.event.ActionEvent;
 import java.util.Vector;
 
-import jd.config.MenuAction;
 import jd.controlling.DownloadController;
+import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 
-public class CleanupPackages extends MenuAction {
+public class CleanupPackages extends ToolBarAction {
 
     private static final long serialVersionUID = -7185006215784212976L;
 
@@ -32,7 +32,7 @@ public class CleanupPackages extends MenuAction {
         super("action.remove.packages", "gui.images.delete");
     }
 
-    public void actionPerformed(ActionEvent e) {
+    public void onAction(ActionEvent e) {
         DownloadController dlc = DownloadController.getInstance();
         Vector<FilePackage> packagestodelete = new Vector<FilePackage>();
         synchronized (dlc.getPackages()) {
@@ -43,6 +43,18 @@ public class CleanupPackages extends MenuAction {
         for (FilePackage fp : packagestodelete) {
             dlc.removePackage(fp);
         }
+    }
+
+    @Override
+    public void init() {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void initDefaults() {
+        // TODO Auto-generated method stub
+        
     }
 
 }

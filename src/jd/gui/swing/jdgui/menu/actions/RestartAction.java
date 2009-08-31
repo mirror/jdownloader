@@ -18,24 +18,36 @@ package jd.gui.swing.jdgui.menu.actions;
 
 import java.awt.event.ActionEvent;
 
-import jd.config.MenuAction;
 import jd.gui.UserIO;
+import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.nutils.JDFlags;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-public class RestartAction extends MenuAction {
+public class RestartAction extends ToolBarAction {
 
     private static final long serialVersionUID = 1333126351380171619L;
 
-    public RestartAction() { 
+    public RestartAction() {
         super("action.restart", "gui.images.restart");
     }
 
-    public void actionPerformed(ActionEvent e) {
+    public void onAction(ActionEvent e) {
         if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(0, JDL.L("sys.ask.rlyrestart", "Wollen Sie jDownloader wirklich neustarten?")), UserIO.RETURN_OK, UserIO.RETURN_DONT_SHOW_AGAIN)) {
             JDUtilities.restartJD(false);
         }
+    }
+
+    @Override
+    public void init() {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public void initDefaults() {
+        // TODO Auto-generated method stub
+
     }
 
 }

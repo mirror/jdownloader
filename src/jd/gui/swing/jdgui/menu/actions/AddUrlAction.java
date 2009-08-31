@@ -21,14 +21,14 @@ import java.awt.datatransfer.DataFlavor;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
-import jd.config.MenuAction;
 import jd.controlling.DistributeData;
 import jd.gui.UserIO;
+import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.parser.html.HTMLParser;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
-public class AddUrlAction extends MenuAction {
+public class AddUrlAction extends ToolBarAction {
 
     private static final long serialVersionUID = -7185006215784212976L;
 
@@ -36,7 +36,7 @@ public class AddUrlAction extends MenuAction {
         super("action.addurl", "gui.images.url");
     }
 
-    public void actionPerformed(ActionEvent e) {
+    public void onAction(ActionEvent e) {
         String def = "";
         try {
             String newText = (String) Toolkit.getDefaultToolkit().getSystemClipboard().getData(DataFlavor.stringFlavor);

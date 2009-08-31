@@ -18,10 +18,10 @@ package jd.gui.swing.jdgui.menu.actions;
 
 import java.awt.event.ActionEvent;
 
-import jd.config.MenuAction;
 import jd.gui.swing.SwingGui;
+import jd.gui.swing.jdgui.actions.ToolBarAction;
 
-public class ExitAction extends MenuAction {
+public class ExitAction extends ToolBarAction {
 
     private static final long serialVersionUID = -1428029294638573437L;
 
@@ -29,8 +29,20 @@ public class ExitAction extends MenuAction {
         super("action.exit", "gui.images.exit");
     }
 
-    public void actionPerformed(ActionEvent e) {
+    public void onAction(ActionEvent e) {
         SwingGui.getInstance().closeWindow();
+    }
+
+    @Override
+    public void init() {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void initDefaults() {
+        // TODO Auto-generated method stub
+        
     }
 
 }

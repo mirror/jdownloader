@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import javax.swing.JMenuItem;
 
 import jd.OptionalPluginWrapper;
-import jd.config.MenuAction;
 import jd.gui.UserIF;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
@@ -54,11 +53,23 @@ public class AddonsMenu extends JStartMenu {
 
     private void updateMenu() {
 
-        MenuAction cfg = new MenuAction(JDL.L("jd.gui.swing.jdgui.menu.AddonsMenu.configuration", "Addon Manager"), -9999) {
+        ToolBarAction cfg = new ToolBarAction("addonsMenu.configuration", 9999) {
             private static final long serialVersionUID = -3613887193435347389L;
 
-            public void actionPerformed(ActionEvent e) {
+            public void onAction(ActionEvent e) {
                 SwingGui.getInstance().requestPanel(UserIF.Panels.ADDON_MANAGER, null);
+            }
+
+            @Override
+            public void init() {
+                // TODO Auto-generated method stub
+                
+            }
+
+            @Override
+            public void initDefaults() {
+                // TODO Auto-generated method stub
+                
             }
         };
         cfg.setIcon(JDTheme.II("gui.images.config.packagemanager", 16, 16));
@@ -78,9 +89,9 @@ public class AddonsMenu extends JStartMenu {
             }
             if (mis != null) {
                 if (plg.getPlugin().getConfig() != null && plg.getPlugin().getConfig().getEntries().size() > 0) {
-                    // MenuAction mi;
+                    // ToolBarAction mi;
                     // mis.add(0, mi = new
-                    // MenuAction(JDL.LF("gui.startmenu.addons.config2",
+                    // ToolBarAction(JDL.LF("gui.startmenu.addons.config2",
                     // "%s's settings", plg.getHost()), -10000));
                     // mi.setProperty("PLUGIN", plg.getPlugin());
                     // mi.setIcon(JDTheme.II(plg.getPlugin().getIconKey(), 16,
@@ -89,12 +100,12 @@ public class AddonsMenu extends JStartMenu {
                     //
                     // public void actionPerformed(ActionEvent e) {
                     //
-                    // ConfigContainer cfg = ((Plugin) ((MenuAction)
+                    // ConfigContainer cfg = ((Plugin) ((ToolBarAction)
                     // e.getSource()).getProperty("PLUGIN")).getConfig();
                     // cfg.setTitle(plg.getPlugin().getHost());
                     // UserIF.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL,
                     // cfg);
-                    // // SimpleGUI.displayConfig(((Plugin) ((MenuAction)
+                    // // SimpleGUI.displayConfig(((Plugin) ((ToolBarAction)
                     // // e.getSource()).getProperty("PLUGIN")).getConfig(),
                     // // false);
                     // }
@@ -104,7 +115,8 @@ public class AddonsMenu extends JStartMenu {
                 }
                 if (mis.size() > 1) {
 
-                    MenuAction m = new MenuAction(ToolBarAction.Types.CONTAINER, plg.getPlugin().getHost(), 0);
+                    MenuAction m = new MenuAction(plg.getID(), 0);
+                    m.setTitle(plg.getHost());
                     m.setIcon(JDTheme.II(plg.getPlugin().getIconKey(), 16, 16));
                     m.setItems(mis);
                     JMenuItem mi = Menu.getJMenuItem(m);

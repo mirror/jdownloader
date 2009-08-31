@@ -245,6 +245,7 @@ public abstract class JDAction extends AbstractAction {
      */
     public void setSelected(boolean selected) {
         putValue(SELECTED_KEY, selected);
+      
     }
 
     /**

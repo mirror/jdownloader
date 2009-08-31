@@ -18,13 +18,13 @@ package jd.gui.swing.jdgui.menu.actions;
 
 import java.awt.event.ActionEvent;
 
-import jd.config.MenuAction;
 import jd.gui.swing.components.Balloon;
+import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.update.JDUpdateUtils;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
-public class BackupAction extends MenuAction {
+public class BackupAction extends ToolBarAction {
     /**
      * 
      */
@@ -36,7 +36,7 @@ public class BackupAction extends MenuAction {
         super("action.backup", "gui.images.save");
     }
 
-    public void actionPerformed(ActionEvent e) {
+    public void onAction(ActionEvent e) {
         if (inprogress) return;
         new Thread() {
             public void run() {
@@ -46,5 +46,17 @@ public class BackupAction extends MenuAction {
                 inprogress = false;
             }
         }.start();
+    }
+
+    @Override
+    public void init() {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void initDefaults() {
+        // TODO Auto-generated method stub
+        
     }
 }

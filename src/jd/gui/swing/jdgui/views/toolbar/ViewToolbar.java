@@ -74,7 +74,6 @@ public class ViewToolbar extends JPanel implements ActionControllerListener {
 
     private String[] current = null;
 
-    private boolean updateing = false;
 
     protected int halign = ViewToolbar.WEST;
 
@@ -146,11 +145,7 @@ public class ViewToolbar extends JPanel implements ActionControllerListener {
                 }
 
                 action.init();
-                if (!action.isVisible()) {
-                    warning("Action " + action + " is set to invisble");
-                    continue;
-
-                }
+           
 
                 ab = null;
                 switch (action.getType()) {
@@ -245,16 +240,7 @@ public class ViewToolbar extends JPanel implements ActionControllerListener {
     }
 
     public synchronized void onActionControlEvent(ActionControlEvent event) {
-        if (updateing) return;
-        updateing = true;
-
-        // currently visible buttons have a registered propertychangelistener
-        // that updates them on change.
-        // we only need a complete redraw for the visible event.
-        if (event.getParameter() == ToolBarAction.VISIBLE) {
-            updateToolbar();
-        }
-        updateing = false;
+    
     }
 
     /**

@@ -32,7 +32,6 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
-import jd.config.MenuAction;
 import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
@@ -41,6 +40,7 @@ import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlListener;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
+import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.http.IPCheck;
 import jd.nutils.Formatter;
 import jd.nutils.encoding.Encoding;
@@ -471,7 +471,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
 
     public void actionPerformed(ActionEvent e) {
         try {
-       
+
             subConfig.setProperty(PARAM_ENABLED, activate.isSelected());
             subConfig.save();
 
@@ -491,12 +491,13 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
     public ArrayList<MenuAction> createMenuitems() {
         ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
 
-        if(activate==null){
-            activate = new MenuAction(ToolBarAction.Types.TOGGLE, getHost(), 0).setActionListener(this);
-            
+        if (activate == null) {
+            activate = new MenuAction(getWrapper().getID(), 0);
+            activate.setActionListener(this);
+            activate.setSelected(false);
+            activate.setTitle(getHost());
         }
         menu.add(activate);
-    
 
         return menu;
     }
