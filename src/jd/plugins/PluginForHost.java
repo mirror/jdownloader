@@ -67,6 +67,7 @@ public abstract class PluginForHost extends Plugin {
 
     public PluginForHost(PluginWrapper wrapper) {
         super(wrapper);
+        config.setIcon(getHosterIcon());
     }
 
     protected String getCaptchaCode(String captchaAddress, DownloadLink downloadLink) throws IOException, PluginException {

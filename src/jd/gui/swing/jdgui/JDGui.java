@@ -22,6 +22,7 @@ import java.awt.Image;
 import java.awt.event.WindowEvent;
 import java.util.ArrayList;
 
+import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
@@ -186,7 +187,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         // mainTabbedPane.addTab(new ClosableView());
         mainTabbedPane.setSelectedComponent(downloadView);
         toolBar.setList(GUIUtils.getConfig().getGenericProperty("TOOLBAR", ToolBar.DEFAULT_LIST).toArray(new String[] {}));
-        
+
     }
 
     private void layoutComponents() {
@@ -249,7 +250,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
 
         file.add(new SaveMenu());
         file.addSeparator();
-        
+
         file.add(new RestoreAction());
         file.add(new RestartAction());
         file.add(new ExitAction());
@@ -508,14 +509,17 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         if (container.getTitle() != null) {
             name = container.getTitle();
         }
-        if (container.getGroup() != null && container.getGroup().getName() != null) name = container.getGroup().getName();
+        if (name == null && container.getGroup() != null && container.getGroup().getName() != null) name = container.getGroup().getName();
+
+        ImageIcon icon = null;
+        if (container.getIcon() != null) {
+            icon = container.getIcon();
+        }
+        if (icon == null && container.getGroup() != null && container.getGroup().getIcon() != null) icon = container.getGroup().getIcon();
 
         AddonConfig p = AddonConfig.getInstance(container, name, "_2");
         JDCollapser col = new JDCollapser() {
 
-            /**
-         * 
-         */
             private static final long serialVersionUID = 1L;
 
             @Override
@@ -525,22 +529,18 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
 
             @Override
             protected void onHide() {
-
             }
 
             @Override
             protected void onShow() {
-
             }
 
         };
         col.getContent().add(p.getPanel());
         col.getMenutitle().setText(name);
+        col.getMenutitle().setIcon(icon);
 
-        // this.mainTabbedPane.getSelectedView().setContent(
-        // JDCollapser.getInstance());
         this.mainTabbedPane.getSelectedView().setInfoPanel(col);
-
     }
 
     @Override

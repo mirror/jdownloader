@@ -119,7 +119,7 @@ public abstract class Plugin implements ActionListener {
     public Plugin(PluginWrapper wrapper) {
         this.br = new Browser();
         this.wrapper = wrapper;
-        config = new ConfigContainer();
+        config = new ConfigContainer(getHost());
     }
 
     public PluginWrapper getWrapper() {

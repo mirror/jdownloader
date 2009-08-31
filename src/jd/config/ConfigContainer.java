@@ -19,6 +19,8 @@ package jd.config;
 import java.io.Serializable;
 import java.util.ArrayList;
 
+import javax.swing.ImageIcon;
+
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -115,6 +117,7 @@ public class ConfigContainer implements Serializable {
     private Property propertyInstance;
     private String title;
     private ConfigGroup group;
+    private ImageIcon icon;
 
     public ConfigContainer() {
         this(JDL.L("config.container.defaultname", "Allgemein"));
@@ -210,6 +213,20 @@ public class ConfigContainer implements Serializable {
 
     public ConfigGroup getGroup() {
         return group;
+    }
+
+    /**
+     * Sets the icon for the ConfigContainer. It can be used for the tab-header
+     * or the config-info-panel.
+     * 
+     * @param icon
+     */
+    public void setIcon(ImageIcon icon) {
+        this.icon = icon;
+    }
+
+    public ImageIcon getIcon() {
+        return icon;
     }
 
 }
