@@ -55,7 +55,7 @@ public class PixelObject implements Comparable<PixelObject> {
     /**
      * key=color value=quantity
      */
-    private ArrayList<PixelObjectColor> colors = new ArrayList<PixelObjectColor>();
+    public ArrayList<PixelObjectColor> colors = new ArrayList<PixelObjectColor>();
     /**
      * Kontrastwert für die durchschnisserkennung
      */
@@ -139,9 +139,14 @@ public class PixelObject implements Comparable<PixelObject> {
      */
     public boolean addColor(int color) {
         PixelObjectColor poc = new PixelObjectColor(color);
-        if (!colors.contains(poc)) {
+        int io = colors.indexOf(poc);
+        if (io==-1) {
             colors.add(poc);
             return true;
+        }
+        else
+        {
+            colors.get(io).count++;
         }
         return false;
     }
@@ -228,12 +233,12 @@ public class PixelObject implements Comparable<PixelObject> {
         }
     }
 
-    private int getYMax() {
+    public int getYMax() {
 
         return yMax;
     }
 
-    private int getXMax() {
+    public int getXMax() {
 
         return xMax;
     }
@@ -795,20 +800,3 @@ public class PixelObject implements Comparable<PixelObject> {
 
 }
 
-class PixelObjectColor implements Comparable<PixelObjectColor> {
-    int color = 0;
-    int count = 1;
-
-    public PixelObjectColor(int color) {
-        this.color = color;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        return obj != null && obj instanceof PixelObjectColor && ((PixelObjectColor) obj).color == color;
-    }
-
-    public int compareTo(PixelObjectColor o) {
-        return new Integer(count).compareTo(o.count);
-    }
-}
