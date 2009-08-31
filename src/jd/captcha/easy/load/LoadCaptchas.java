@@ -96,7 +96,8 @@ public class LoadCaptchas {
      */
     public boolean start() {
         try {
-            loadinfo = getLoadInfo();
+            selectedImage = LoadImage.loadFile(host);
+            loadinfo = getLoadInfo(selectedImage);
             if (loadinfo == null) return false;
             final JDialog dialog = new GuiRunnable<JDialog>() {
                 public JDialog runSave() {
@@ -117,7 +118,6 @@ public class LoadCaptchas {
                 new EasyMethodeFile(host).copyExampleImage();
                 return true;
             }
-            selectedImage = LoadImage.loadFile(host);
             if (selectedImage != null)
                 selectedImage.load(host);
             else {
@@ -305,7 +305,7 @@ public class LoadCaptchas {
      * 
      * @return
      */
-    private LoadInfo getLoadInfo() {
+    private LoadInfo getLoadInfo(final LoadImage loadImage) {
         final JDialog dialog = new GuiRunnable<JDialog>() {
             public JDialog runSave() {
                 return new JDialog(owner);
@@ -334,7 +334,8 @@ public class LoadCaptchas {
         JSpinner sm = new GuiRunnable<JSpinner>() {
             public JSpinner runSave() {
                 p.add(new JLabel(JDL.L("easycaptcha.loadcaptchas.howmuch", "How much captchas you need") + ":"));
-
+                if(loadImage!=null)
+                    tfl.setText(loadImage.baseUrl);
                 return new JSpinner(new SpinnerNumberModel(100, 1, 4000, 1));
             }
         }.getReturnValue();
