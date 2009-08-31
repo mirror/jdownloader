@@ -63,33 +63,30 @@ public class JDExternInterface extends PluginOptional {
     public JDExternInterface(PluginWrapper wrapper) {
         super(wrapper);
         handler = new RequestHandler();
-        initpanel();
     }
 
+    @Override
     public String getIconKey() {
         return "gui.images.flashgot";
     }
 
     private void initConfigEntries() {
-
         config.setGroup(new ConfigGroup(JDL.L("jd.plugins.optional.interfaces.JDExternInterface.flashgot.configgroup", "Install FlashGot Firefox Addon"), JDTheme.II("gui.images.flashgot", 16, 16)));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
                 Installer.installFirefoxaddon();
-
             }
-        }, JDL.L("jd.plugins.optional.interfaces.JDExternInterface.flashgot", "Install"), JDL.L("jd.plugins.optional.interfaces.JDExternInterface.flashgot.long", "Install Firefox integration"), null));
 
+        }, JDL.L("jd.plugins.optional.interfaces.JDExternInterface.flashgot", "Install"), JDL.L("jd.plugins.optional.interfaces.JDExternInterface.flashgot.long", "Install Firefox integration"), null));
     }
 
-    // @Override
+    @Override
     public boolean initAddon() {
         logger.info("Extern Interface API initialized on port 9666");
         initConfigEntries();
 
         if (!SubConfiguration.getConfig("FLASHGOT").getBooleanProperty("ASKED_TO_INSTALL_FLASHGOT", false)) {
-
             Installer.askInstallFlashgot();
         }
         try {
@@ -101,7 +98,7 @@ public class JDExternInterface extends PluginOptional {
         return false;
     }
 
-    // @Override
+    @Override
     public void onExit() {
         try {
             if (server != null) server.sstop();
@@ -110,13 +107,9 @@ public class JDExternInterface extends PluginOptional {
         server = null;
     }
 
-    // @Override
+    @Override
     public ArrayList<MenuAction> createMenuitems() {
         return null;
-    }
-
-    public void initpanel() {
-
     }
 
     class RequestHandler implements Handler {
@@ -259,7 +252,6 @@ public class JDExternInterface extends PluginOptional {
             JDLogger.getLogger().warning(request.getParameters().toString());
             JDLogger.getLogger().warning("\r\n-----------------------External request---------------------");
             if (!JDFlags.hasAllFlags(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN, JDL.LF("jd.plugins.optional.interfaces.jdflashgot.security.title", "External request from %s to %s interface!", app, namespace), JDL.LF("jd.plugins.optional.interfaces.jdflashgot.security.message", "An external application tries to add links. See Log for details."), UserIO.getInstance().getIcon(UserIO.ICON_WARNING), JDL.L("jd.plugins.optional.interfaces.jdflashgot.security.btn_allow", "Allow it!"), JDL.L("jd.plugins.optional.interfaces.jdflashgot.security.btn_deny", "Deny access!")), UserIO.RETURN_OK)) {
-
                 JDLogger.getLogger().warning("Denied access.");
                 throw new Exception("User denied access");
             }

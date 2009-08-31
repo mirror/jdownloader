@@ -71,7 +71,9 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
         return FP;
     }
 
-    // Eindeutige PaketID
+    /**
+     * Eindeutige PaketID
+     */
     private String id;
 
     private boolean sortasc = false;
@@ -160,11 +162,6 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
     public void setFinishedDate(long finishedDate) {
         this.finishedDate = finishedDate;
     }
-
-    /**
-     * Diese Methode speichert Paketinformationen ab (falls die Datei noch nicht
-     * bereits besteht)
-     */
 
     public void add(DownloadLink link) {
         synchronized (DownloadController.ControllerLock) {
@@ -384,7 +381,9 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
         return password2 == null ? "" : password2;
     }
 
-    /* returns a list of archivepasswords set by downloadlinks */
+    /**
+     * returns a list of archivepasswords set by downloadlinks
+     */
     public ArrayList<String> getPasswordAuto() {
         ArrayList<String> pwList = new ArrayList<String>();
         synchronized (downloadLinkList) {
@@ -399,12 +398,6 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
         return pwList;
     }
 
-    /**
-     * Diese Werte werden durch itterieren durch die downloadListe ermittelt. Um
-     * dies nicht zu oft machen zu müssen geschiet das intervalartig
-     * 
-     * @return
-     */
     /**
      * Gibt den Fortschritt des pakets in prozent zurück
      */
@@ -428,7 +421,11 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
 
     }
 
-    // Gibt die erste gefundene sfv datei im Paket zurück
+    /**
+     * Gibt die erste gefundene sfv datei im Paket zurück
+     * 
+     * @return
+     */
     public DownloadLink getSFV() {
         synchronized (downloadLinkList) {
             for (DownloadLink dl : downloadLinkList) {

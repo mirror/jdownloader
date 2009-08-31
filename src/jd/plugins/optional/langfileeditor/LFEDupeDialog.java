@@ -20,45 +20,46 @@ import java.awt.Dimension;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import javax.swing.JDialog;
-import javax.swing.JFrame;
+import javax.swing.JComponent;
 import javax.swing.JScrollPane;
+import javax.swing.JTable;
 import javax.swing.table.AbstractTableModel;
 
-import jd.nutils.Screen;
+import jd.gui.UserIO;
+import jd.gui.swing.dialog.AbstractDialog;
 import jd.utils.locale.JDL;
 
-import org.jdesktop.swingx.JXTable;
-
-public class LFEDupeDialog extends JDialog {
+public class LFEDupeDialog extends AbstractDialog {
 
     private static final long serialVersionUID = 1L;
 
-    public static void showDialog(JFrame owner, HashMap<String, ArrayList<String>> dupes) {
-        new LFEDupeDialog(owner, dupes).setVisible(true);
+    private HashMap<String, ArrayList<String>> dupes;
+
+    public LFEDupeDialog(HashMap<String, ArrayList<String>> dupes) {
+        super(UserIO.NO_COUNTDOWN | UserIO.NO_ICON | UserIO.NO_CANCEL_OPTION, JDL.L("plugins.optional.langfileeditor.duplicatedEntries", "Duplicated Entries") + " [" + dupes.size() + "]", null, null, null);
+
+        this.dupes = dupes;
+
+        init();
     }
 
-    private LFEDupeDialog(JFrame owner, HashMap<String, ArrayList<String>> dupes) {
-        super(owner);
+    @Override
+    protected void packed() {
+        setMinimumSize(new Dimension(900, 600));
+        setDefaultCloseOperation(AbstractDialog.DISPOSE_ON_CLOSE);
+    }
 
-        setModal(true);
-        setTitle(JDL.L("plugins.optional.langfileeditor.duplicatedEntries", "Duplicated Entries") + " [" + dupes.size() + "]");
-        setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-
+    @Override
+    public JComponent contentInit() {
         MyDupeTableModel internalTableModel = new MyDupeTableModel(dupes);
-        JXTable table = new JXTable(internalTableModel);
+        JTable table = new JTable(internalTableModel);
         table.getTableHeader().setReorderingAllowed(false);
         table.getColumnModel().getColumn(0).setPreferredWidth(50);
         table.getColumnModel().getColumn(0).setMinWidth(50);
         table.getColumnModel().getColumn(0).setMaxWidth(50);
         table.getColumnModel().getColumn(2).setMinWidth(450);
 
-        add(new JScrollPane(table));
-
-        setMinimumSize(new Dimension(900, 600));
-        setPreferredSize(new Dimension(900, 600));
-        pack();
-        setLocation(Screen.getCenterOfComponent(owner, this));
+        return new JScrollPane(table);
     }
 
     private class MyDupeTableModel extends AbstractTableModel {
@@ -85,7 +86,7 @@ public class LFEDupeDialog extends JDialog {
             return tableData.size();
         }
 
-        // @Override
+        @Override
         public String getColumnName(int col) {
             return columnNames[col];
         }
@@ -102,13 +103,13 @@ public class LFEDupeDialog extends JDialog {
             return "";
         }
 
-        // @Override
+        @Override
         public Class<?> getColumnClass(int col) {
             if (col == 0) return Integer.class;
             return String.class;
         }
 
-        // @Override
+        @Override
         public boolean isCellEditable(int row, int col) {
             return (col == 1);
         }

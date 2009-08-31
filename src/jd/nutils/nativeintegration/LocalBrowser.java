@@ -207,11 +207,7 @@ abstract public class LocalBrowser implements Serializable {
 
                         @Override
                         public Object runSave() {
-                            DnDWebBrowser javaBrowser = new DnDWebBrowser(null);
-                            javaBrowser.goTo(url);
-                            javaBrowser.setDefaultCloseOperation(DnDWebBrowser.DISPOSE_ON_CLOSE);
-                            javaBrowser.setSize(800, 600);
-                            javaBrowser.setVisible(true);
+                            new DnDWebBrowser(url);
                             return null;
                         }
 
@@ -267,26 +263,25 @@ abstract public class LocalBrowser implements Serializable {
             if (path != null) {
                 Executer exec = new Executer(path);
                 exec.addParameters(new String[] { url });
-             
+
                 exec.start();
-            
-                
+
             }
         } else if (OSDetector.isMac()) {
             if (new File("/Applications/Firefox.app").exists()) {
                 path = "/Applications/Firefox.app";
                 Executer exec = new Executer("open");
                 exec.addParameters(new String[] { path, url });
-             
+
                 exec.start();
-              
+
             }
         } else if (OSDetector.isLinux()) {
             Executer exec = new Executer("firefox");
             exec.addParameters(new String[] { url });
-           
+
             exec.start();
-          
+
         }
     }
 }

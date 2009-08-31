@@ -121,7 +121,7 @@ public class ConvertRouterData {
 
     private String[] getUserPass(String routername) {
         if (routerData == null) {
-            routerData = new HTTPLiveHeader().getLHScripts();
+            routerData = HTTPLiveHeader.getLHScripts();
         }
         for (int i = 0; i < routerData.size(); i++) {
             String[] router = routerData.get(i);

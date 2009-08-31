@@ -35,7 +35,6 @@ import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.controlling.reconnect.BatchReconnect;
 import jd.controlling.reconnect.ExternReconnect;
-import jd.controlling.reconnect.HTTPLiveHeader;
 import jd.controlling.reconnect.ReconnectMethod;
 import jd.controlling.reconnect.Reconnecter;
 import jd.gui.swing.Factory;
@@ -314,9 +313,7 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
 
     private void addLiveheader() {
         String name = JDL.L("modules.reconnect.types.liveheader", "LiveHeader/Curl");
-
-        tabbed.addTab(name, new SubPanelLiveHeaderReconnect(configuration, new HTTPLiveHeader()));
-
+        tabbed.addTab(name, new SubPanelLiveHeaderReconnect(configuration));
     }
 
     @Override

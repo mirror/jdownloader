@@ -57,7 +57,6 @@ import jd.event.MessageListener;
 import jd.gui.UserIF;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
-import jd.gui.swing.SwingGui;
 import jd.gui.swing.components.pieapi.ChartAPIEntity;
 import jd.gui.swing.components.pieapi.PieChartAPI;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
@@ -207,7 +206,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
                 boolean cfgRequested = false;
                 while (true) {
                     while (subConfig.getStringProperty(PROPERTY_SVN_ACCESS_USER) == null || subConfig.getStringProperty(PROPERTY_SVN_ACCESS_USER).trim().length() == 0) {
-                        if (!cfgRequested) SwingGui.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL, plugin.getConfig());
+                        if (!cfgRequested) UserIF.getInstance().requestPanel(UserIF.Panels.CONFIGPANEL, plugin.getConfig());
                         cfgRequested = true;
                         try {
                             new GuiRunnable<Object>() {
@@ -413,7 +412,7 @@ public class LFEGui extends SwitchPanel implements ActionListener, MouseListener
 
         } else if (e.getSource() == mnuShowDupes) {
 
-            LFEDupeDialog.showDialog(SwingGui.getInstance().getMainFrame(), dupes);
+            new LFEDupeDialog(dupes);
 
         } else if (e.getSource() == mnuOpenSearchDialog) {
 

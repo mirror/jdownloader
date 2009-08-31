@@ -417,7 +417,7 @@ public class HTTPLiveHeader extends ReconnectMethod {
     }
 
     @SuppressWarnings("unchecked")
-    public ArrayList<String[]> getLHScripts() {
+    public static ArrayList<String[]> getLHScripts() {
         File[] list = new File(new File(JDUtilities.getJDHomeDirectoryFromEnvironment(), "jd"), "router").listFiles();
         ArrayList<String[]> ret = new ArrayList<String[]>();
         for (File element : list) {

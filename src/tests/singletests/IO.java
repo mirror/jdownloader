@@ -17,9 +17,7 @@
 package tests.singletests;
 
 import jd.gui.UserIO;
-import jd.nutils.JDFlags;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 import org.junit.After;
 import org.junit.Before;
@@ -36,25 +34,38 @@ public class IO {
 
     @Test
     public void dontshowagain() {
-//        int ret = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_OK, "My title 2", "Message", null, null, null);
-//
-//        out(ret);
-        
-//        int status = UserIO.getInstance().requestHelpDialog(UserIO.NO_CANCEL_OPTION|UserIO.NO_COUNTDOWN, JDL.LF("system.update.message.title", "Updated to version %s", JDUtilities.getRevision()), JDL.L("system.update.message", "Update successfull"), JDL.L("system.update.showchangelogv2", "What's new?"), "http://jdownloader.org/changes/index");
-//      out(status);        
-//       String ret= UserIO.getInstance().requestInputDialog("Please enter anything");
-       String ret2= UserIO.getInstance().requestInputDialog(0, "message", "defaultmessage");
-       System.out.println(ret2);
+        // int ret =
+        // UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN |
+        // UserIO.DONT_SHOW_AGAIN_IGNORES_OK, "My title 2", "Message", null,
+        // null, null);
+        //
+        // out(ret);
+
+        // int status =
+        // UserIO.getInstance().requestHelpDialog(UserIO.NO_CANCEL_OPTION|UserIO.NO_COUNTDOWN,
+        // JDL.LF("system.update.message.title", "Updated to version %s",
+        // JDUtilities.getRevision()), JDL.L("system.update.message",
+        // "Update successfull"), JDL.L("system.update.showchangelogv2",
+        // "What's new?"), "http://jdownloader.org/changes/index");
+        // out(status);
+        // String ret=
+        // UserIO.getInstance().requestInputDialog("Please enter anything");
+        String ret2 = UserIO.getInstance().requestInputDialog(0, "message", "defaultmessage");
+        System.out.println(ret2);
 
     }
 
-    private void out(int ret) {
-        System.out.println("Cancel: " + JDFlags.hasAllFlags(ret, UserIO.RETURN_CANCEL));
-        System.out.println("OK: " + JDFlags.hasAllFlags(ret, UserIO.RETURN_OK));
-        System.out.println("Timeout: " + JDFlags.hasAllFlags(ret, UserIO.RETURN_COUNTDOWN_TIMEOUT));
-        System.out.println("Dontshowagain: " + JDFlags.hasAllFlags(ret, UserIO.RETURN_DONT_SHOW_AGAIN));
-        System.out.println("Skippedby dontshow: " + JDFlags.hasAllFlags(ret, UserIO.RETURN_SKIPPED_BY_DONT_SHOW));
-    }
+    // private void out(int ret) {
+    // System.out.println("Cancel: " + JDFlags.hasAllFlags(ret,
+    // UserIO.RETURN_CANCEL));
+    // System.out.println("OK: " + JDFlags.hasAllFlags(ret, UserIO.RETURN_OK));
+    // System.out.println("Timeout: " + JDFlags.hasAllFlags(ret,
+    // UserIO.RETURN_COUNTDOWN_TIMEOUT));
+    // System.out.println("Dontshowagain: " + JDFlags.hasAllFlags(ret,
+    // UserIO.RETURN_DONT_SHOW_AGAIN));
+    // System.out.println("Skippedby dontshow: " + JDFlags.hasAllFlags(ret,
+    // UserIO.RETURN_SKIPPED_BY_DONT_SHOW));
+    // }
 
     @After
     public void tearDown() throws Exception {

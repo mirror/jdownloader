@@ -31,7 +31,6 @@ import jd.utils.locale.JDL;
 
 class LinkGrabberFilePackageBroadcaster extends JDBroadcaster<LinkGrabberFilePackageListener, LinkGrabberFilePackageEvent> {
 
-    // @Override
     protected void fireEvent(LinkGrabberFilePackageListener listener, LinkGrabberFilePackageEvent event) {
         listener.handle_LinkGrabberFilePackageEvent(event);
     }
@@ -40,9 +39,6 @@ class LinkGrabberFilePackageBroadcaster extends JDBroadcaster<LinkGrabberFilePac
 
 public class LinkGrabberFilePackage extends Property implements LinkGrabberFilePackageListener {
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = 5865820033205069205L;
     private String downloadDirectory;
     private ArrayList<DownloadLink> downloadLinks = new ArrayList<DownloadLink>();
@@ -275,7 +271,9 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
         return password != null ? password : "";
     }
 
-    /* returns a list of archivepasswords set by downloadlinks */
+    /**
+     * returns a list of archivepasswords set by downloadlinks
+     */
     public ArrayList<String> getPasswordAuto() {
         ArrayList<String> pwList = new ArrayList<String>();
         synchronized (downloadLinks) {

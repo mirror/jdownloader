@@ -16,45 +16,25 @@
 
 package jd.gui.swing.jdgui.settings.subpanels;
 
-import java.awt.Color;
-import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.FocusAdapter;
-import java.awt.event.FocusEvent;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
 
-import javax.swing.DefaultListModel;
 import javax.swing.JButton;
-import javax.swing.JDialog;
-import javax.swing.JLabel;
-import javax.swing.JList;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
-import jd.controlling.reconnect.HTTPLiveHeader;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
+import jd.gui.swing.components.ImportRouterDialog;
 import jd.gui.swing.jdgui.settings.ConfigPanel;
 import jd.gui.swing.jdgui.settings.GUIConfigEntry;
-import jd.nutils.encoding.Encoding;
 import jd.router.FindRouterIP;
 import jd.router.GetRouterInfo;
 import jd.router.reconnectrecorder.Gui;
-import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
@@ -72,8 +52,6 @@ public class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionLi
 
     private GUIConfigEntry ip;
 
-    private HTTPLiveHeader lh;
-
     private GUIConfigEntry pass;
 
     private GUIConfigEntry user;
@@ -82,11 +60,10 @@ public class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionLi
 
     private GUIConfigEntry script;
 
-    public SubPanelLiveHeaderReconnect(Configuration configuration, HTTPLiveHeader interaction) {
+    public SubPanelLiveHeaderReconnect(Configuration configuration) {
         super();
         this.configuration = configuration;
         initPanel();
-        lh = interaction;
         load();
     }
 
@@ -133,152 +110,8 @@ public class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionLi
             }.start();
 
         } else if (e.getSource() == btnSelectRouter) {
-            final ArrayList<String[]> scripts = lh.getLHScripts();
-
-            Collections.sort(scripts, new Comparator<String[]>() {
-                public int compare(String[] a, String[] b) {
-                    return (a[0] + " " + a[1]).compareToIgnoreCase(b[0] + " " + b[1]);
-                }
-
-            });
-
-            HashMap<String, Boolean> ch = new HashMap<String, Boolean>();
-            for (int i = scripts.size() - 1; i >= 0; i--) {
-                if (ch.containsKey(scripts.get(i)[0] + scripts.get(i)[1] + scripts.get(i)[2])) {
-                    scripts.remove(i);
-                } else {
-
-                    ch.put(scripts.get(i)[0] + scripts.get(i)[1] + scripts.get(i)[2], true);
-                }
-            }
-            ch.clear();
-            final String[] d = new String[scripts.size()];
-            for (int i = 0; i < d.length; i++) {
-                d[i] = i + ". " + Encoding.htmlDecode(scripts.get(i)[0] + " : " + scripts.get(i)[1]);
-            }
-
-            JPanel panel = new JPanel(new MigLayout("ins 10,wrap 3", "[grow 30,fill]5[grow 0,fill]10[grow,fill,300!]", "[fill]5[]5[fill,grow]"));
-            final DefaultListModel defaultListModel = new DefaultListModel();
-            final String text = JDL.L("gui.config.reconnect.selectrouter", "Search RouterInfo Model");
-            final JTextField searchField = new JTextField();
-
-            final JList list = new JList(defaultListModel);
-            searchField.getDocument().addDocumentListener(new DocumentListener() {
-                public void changedUpdate(DocumentEvent e) {
-                }
-
-                public void insertUpdate(DocumentEvent e) {
-                    refreshList();
-                }
-
-                private void refreshList() {
-                    String search = searchField.getText().toLowerCase();
-                    String[] hits = search.split(" ");
-                    defaultListModel.removeAllElements();
-                    for (int i = 0; i < d.length; i++) {
-                        for (int j = 0; j < hits.length; j++) {
-                            if (!d[i].toLowerCase().contains(hits[j])) {
-                                break;
-                            }
-                            if (j == hits.length - 1) {
-                                defaultListModel.addElement(d[i]);
-                            }
-                        }
-                    }
-                    list.setModel(defaultListModel);
-                }
-
-                public void removeUpdate(DocumentEvent e) {
-                    refreshList();
-                }
-            });
-            searchField.addFocusListener(new FocusAdapter() {
-
-                @Override
-                public void focusGained(FocusEvent e) {
-
-                    if (searchField.getText().equals(text)) {
-                        searchField.setText("");
-                    }
-                }
-
-                @Override
-                public void focusLost(FocusEvent e) {
-                    if (searchField.getText().equals("")) {
-
-                        searchField.setText(text);
-                        for (String element : d) {
-                            defaultListModel.addElement(element);
-                        }
-                    }
-                }
-            });
-            final JTextArea preview = new JTextArea();
-            preview.setFocusable(true);
-            // !!! Eclipse Clear Console Icon
-
-            JButton reset = new JButton(JDTheme.II("gui.images.undo", 16, 16));
-
-            reset.setBorder(null);
-            reset.setOpaque(false);
-            reset.setContentAreaFilled(false);
-            reset.setBorderPainted(false);
-            reset.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    searchField.setForeground(Color.lightGray);
-                    searchField.setText(text);
-                    preview.setText("");
-                    for (String element : d) {
-                        defaultListModel.addElement(element);
-                    }
-                }
-            });
-            searchField.setText(text);
-            // !!! Lupen-Icon
-
-            list.addListSelectionListener(new ListSelectionListener() {
-
-                public void valueChanged(ListSelectionEvent e) {
-                    String selected = (String) list.getSelectedValue();
-                    if (selected != null) {
-                        int id = Integer.parseInt(selected.split("\\.")[0]);
-                        String[] data = scripts.get(id);
-
-                        preview.setText(data[2]);
-                    }
-                }
-
-            });
-            JLabel example = new JLabel(JDL.L("gui.config.reconnect.selectrouter.example", "Example: 3Com ADSL"));
-
-            for (String element : d) {
-                defaultListModel.addElement(element);
-            }
-            JScrollPane scrollPane = new JScrollPane(list);
-
-            panel.add(searchField);
-            panel.add(reset);
-            panel.add(new JScrollPane(preview), "spany");
-
-            panel.add(example, "spanx 2");
-            panel.add(scrollPane, "spanx 2");
-
-            // panel.setPreferredSize(new Dimension(650, 500));
-
-            JOptionPane op = new JOptionPane(panel, JOptionPane.INFORMATION_MESSAGE, JOptionPane.OK_CANCEL_OPTION, JDTheme.II("gui.images.search"));
-            JDialog dialog = op.createDialog(this, JDL.L("gui.config.liveHeader.dialog.importRouter", "RouterInfo importieren"));
-            dialog.add(op);
-            dialog.setModal(true);
-            dialog.setPreferredSize(new Dimension(700, 500));
-            dialog.pack();
-            dialog.setLocationRelativeTo(null);
-            dialog.setVisible(true);
-            if (op.getValue() == null) return;
-            int answer = ((Integer) op.getValue()).intValue();
-            if (answer != JOptionPane.CANCEL_OPTION && list.getSelectedValue() != null) {
-                String selected = (String) list.getSelectedValue();
-                int id = Integer.parseInt(selected.split("\\.")[0]);
-                String[] data = scripts.get(id);
+            String[] data = ImportRouterDialog.showDialog();
+            if (data != null) {
                 if (data[2].toLowerCase().indexOf("curl") >= 0) {
                     UserIO.getInstance().requestMessageDialog(JDL.L("gui.config.liveHeader.warning.noCURLConvert", "JD could not convert this curl-batch to a Live-Header Script. Please consult your JD-Support Team!"));
                 }

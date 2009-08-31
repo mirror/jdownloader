@@ -16,45 +16,25 @@
 
 package jd.plugins.optional;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Dimension;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.FocusAdapter;
-import java.awt.event.FocusEvent;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
 import java.util.Vector;
 
-import javax.swing.DefaultListModel;
 import javax.swing.Icon;
-import javax.swing.JButton;
-import javax.swing.JDialog;
 import javax.swing.JFileChooser;
-import javax.swing.JLabel;
-import javax.swing.JList;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTextArea;
-import javax.swing.JTextField;
-import javax.swing.border.EmptyBorder;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 
 import jd.PluginWrapper;
 import jd.config.MenuAction;
-import jd.controlling.reconnect.HTTPLiveHeader;
 import jd.gui.UserIO;
 import jd.gui.swing.SwingGui;
+import jd.gui.swing.components.ImportRouterDialog;
 import jd.gui.swing.components.JDFileChooser;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
@@ -62,13 +42,11 @@ import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
 import jd.gui.swing.jdgui.views.ClosableView;
-import jd.nutils.encoding.Encoding;
 import jd.nutils.io.JDFileFilter;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
-import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
@@ -436,127 +414,8 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
     }
 
     private void importLHScript() {
-        ArrayList<String[]> scripts = new HTTPLiveHeader().getLHScripts();
-
-        Collections.sort(scripts, new Comparator<String[]>() {
-            public int compare(String[] a, String[] b) {
-                return (a[0] + " " + a[1]).compareToIgnoreCase(b[0] + " " + b[1]);
-            }
-        });
-
-        HashMap<String, Boolean> ch = new HashMap<String, Boolean>();
-        for (int i = scripts.size() - 1; i >= 0; i--) {
-            if (ch.containsKey(scripts.get(i)[0] + scripts.get(i)[1] + scripts.get(i)[2])) {
-                scripts.remove(i);
-            } else {
-
-                ch.put(scripts.get(i)[0] + scripts.get(i)[1] + scripts.get(i)[2], true);
-            }
-        }
-        ch.clear();
-        final String[] d = new String[scripts.size()];
-        for (int i = 0; i < d.length; i++) {
-            d[i] = i + ". " + Encoding.htmlDecode(scripts.get(i)[0] + " : " + scripts.get(i)[1]);
-        }
-
-        JPanel panel = new JPanel(new BorderLayout(10, 10));
-        final DefaultListModel defaultListModel = new DefaultListModel();
-        final String text = "Search RouterInfo Model";
-        final JTextField searchField = new JTextField();
-        searchField.setForeground(Color.lightGray);
-        final JList list = new JList(defaultListModel);
-        searchField.getDocument().addDocumentListener(new DocumentListener() {
-            public void changedUpdate(DocumentEvent e) {
-            }
-
-            public void insertUpdate(DocumentEvent e) {
-                refreshList();
-            }
-
-            private void refreshList() {
-                String search = searchField.getText().toLowerCase();
-                String[] hits = search.split(" ");
-                defaultListModel.removeAllElements();
-                for (int i = 0; i < d.length; i++) {
-                    for (int j = 0; j < hits.length; j++) {
-                        if (!d[i].toLowerCase().contains(hits[j])) {
-                            break;
-                        }
-                        if (j == hits.length - 1) {
-                            defaultListModel.addElement(d[i]);
-                        }
-                    }
-                }
-                list.setModel(defaultListModel);
-            }
-
-            public void removeUpdate(DocumentEvent e) {
-                refreshList();
-            }
-        });
-        searchField.addFocusListener(new FocusAdapter() {
-            boolean onInit = true;
-
-            public void focusGained(FocusEvent e) {
-                if (onInit) {
-                    onInit = !onInit;
-                    return;
-                }
-                searchField.setForeground(Color.black);
-                if (searchField.getText().equals(text)) {
-                    searchField.setText("");
-                }
-            }
-        });
-
-        JButton reset = new JButton(JDTheme.II("gui.images.exit", 16, 16));
-        reset.setBorder(null);
-        reset.setOpaque(false);
-        reset.setContentAreaFilled(false);
-        reset.setBorderPainted(false);
-        reset.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                searchField.setForeground(Color.lightGray);
-                searchField.setText(text);
-                for (String element : d) {
-                    defaultListModel.addElement(element);
-                }
-            }
-        });
-        searchField.setText(text);
-        // !!! Lupen-Icon
-        Icon icon = JDTheme.II("gui.images.update_manager", 16, 16);
-        JPanel p = new JPanel(new BorderLayout(5, 5));
-        p.add(searchField, BorderLayout.CENTER);
-        p.add(reset, BorderLayout.EAST);
-        JLabel example = new JLabel("Example: 3Com ADSL");
-        example.setForeground(Color.gray);
-        p.add(example, BorderLayout.SOUTH);
-        for (String element : d) {
-            defaultListModel.addElement(element);
-        }
-        // list.setPreferredSize(new Dimension(400, 500));
-        JScrollPane scrollPane = new JScrollPane(list);
-        panel.add(p, BorderLayout.NORTH);
-        panel.add(scrollPane, BorderLayout.CENTER);
-        panel.setPreferredSize(new Dimension(400, 500));
-        int n = 10;
-        panel.setBorder(new EmptyBorder(n, n, n, n));
-        JOptionPane op = new JOptionPane(panel, JOptionPane.INFORMATION_MESSAGE, JOptionPane.OK_CANCEL_OPTION, icon);
-        // JDialog dialog = new
-        // JDialog(SwingUtilities.getWindowAncestor(btnSelectRouter), );
-        JDialog dialog = op.createDialog(tabbedPanel, JDL.L("gui.config.liveHeader.dialog.importRouter", "RouterInfo importieren"));
-        dialog.add(op);
-        dialog.setModal(true);
-        dialog.setPreferredSize(new Dimension(400, 500));
-        dialog.pack();
-        dialog.setLocationRelativeTo(null);
-        dialog.setVisible(true);
-        int answer = ((Integer) op.getValue()).intValue();
-        if (answer != JOptionPane.CANCEL_OPTION && list.getSelectedValue() != null) {
-            String selected = (String) list.getSelectedValue();
-            int id = Integer.parseInt(selected.split("\\.")[0]);
-            String[] data = scripts.get(id);
+        String[] data = ImportRouterDialog.showDialog();
+        if (data != null) {
             if (data[2].toLowerCase().indexOf("curl") >= 0) {
                 UserIO.getInstance().requestMessageDialog(JDL.L("gui.config.liveHeader.warning.noCURLConvert", "JD could not convert this curl-batch to a Live-Header Script. Please consult your JD-Support Team!"));
             }

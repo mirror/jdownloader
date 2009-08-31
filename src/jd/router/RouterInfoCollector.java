@@ -204,7 +204,7 @@ public class RouterInfoCollector {
                                     if (!rn.equals("Reconnect Recorder Methode")) info.setRouterName(info.getRouterName());
                                 }
                             } else if (!reconnectMethode.matches("\\s")) {
-                                for (String[] script : new HTTPLiveHeader().getLHScripts()) {
+                                for (String[] script : HTTPLiveHeader.getLHScripts()) {
                                     if (script[2].trim().equals(reconnectMethode.trim()) && (info.getRouterName() == null || !info.getRouterName().contains(script[0] + " - " + script[1]))) info.setRouterName(info.getRouterName() == null ? script[0] + " - " + script[1] : info.getRouterName() + " | " + script[0] + " - " + script[1]);
                                 }
                             }

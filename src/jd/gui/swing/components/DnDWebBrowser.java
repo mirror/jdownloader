@@ -16,8 +16,6 @@
 
 package jd.gui.swing.components;
 
-import java.awt.BorderLayout;
-import java.awt.Container;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
@@ -34,13 +32,12 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import javax.swing.JButton;
-import javax.swing.JDialog;
+import javax.swing.JComponent;
 import javax.swing.JEditorPane;
-import javax.swing.JFrame;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.JToolBar;
@@ -48,8 +45,11 @@ import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
 import jd.controlling.JDLogger;
+import jd.gui.UserIO;
+import jd.gui.swing.dialog.AbstractDialog;
+import net.miginfocom.swing.MigLayout;
 
-public class DnDWebBrowser extends JDialog {
+public class DnDWebBrowser extends AbstractDialog {
 
     private class DropTargetHandler implements DropTargetListener {
         public void dragEnter(DropTargetDragEvent event) {
@@ -72,12 +72,9 @@ public class DnDWebBrowser extends JDialog {
             if (transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
                 event.acceptDrop(DnDConstants.ACTION_COPY);
                 try {
-                    List fileList = (List) transferable.getTransferData(DataFlavor.javaFileListFlavor);
+                    List<File> fileList = (List<File>) transferable.getTransferData(DataFlavor.javaFileListFlavor);
 
-                    Iterator iterator = fileList.iterator();
-
-                    while (iterator.hasNext()) {
-                        File file = (File) iterator.next();
+                    for (File file : fileList) {
                         browserPane.goToURL(file.toURI().toURL());
                     }
                     event.dropComplete(true);
@@ -100,20 +97,37 @@ public class DnDWebBrowser extends JDialog {
 
     private static final long serialVersionUID = 1L;
 
-    private WebBrowserPane browserPane = new WebBrowserPane();
+    private URL url;
+
+    private WebBrowserPane browserPane;
 
     private WebToolBar toolBar;
 
-    public DnDWebBrowser(JFrame owner) {
-        super(owner);
-        setModal(true);
-        toolBar = new WebToolBar(browserPane);
+    public DnDWebBrowser(URL url) {
+        super(UserIO.NO_COUNTDOWN | UserIO.NO_ICON | UserIO.NO_CANCEL_OPTION | UserIO.NO_OK_OPTION, "Java WebBrowser", null, null, null);
 
+        this.url = url;
+
+        init();
+    }
+
+    @Override
+    protected void packed() {
+        goTo(url);
+        setDefaultCloseOperation(DnDWebBrowser.DISPOSE_ON_CLOSE);
+        setSize(800, 600);
+    }
+
+    @Override
+    public JComponent contentInit() {
+        browserPane = new WebBrowserPane();
+        toolBar = new WebToolBar(browserPane);
         browserPane.setDropTarget(new DropTarget(browserPane, DnDConstants.ACTION_COPY, new DropTargetHandler()));
 
-        Container contentPane = getContentPane();
-        contentPane.add(toolBar, BorderLayout.NORTH);
-        contentPane.add(new JScrollPane(browserPane), BorderLayout.CENTER);
+        JPanel panel = new JPanel(new MigLayout("ins 0, wrap 1", "[grow,fill]"));
+        panel.add(toolBar);
+        panel.add(new JScrollPane(browserPane), "spany");
+        return panel;
     }
 
     public void goTo(URL url) {
@@ -131,7 +145,7 @@ class WebBrowserPane extends JEditorPane {
 
     private static final long serialVersionUID = 1L;
 
-    private List<URL> history = new ArrayList<URL>();
+    private ArrayList<URL> history = new ArrayList<URL>();
 
     private int historyIndex;
 
