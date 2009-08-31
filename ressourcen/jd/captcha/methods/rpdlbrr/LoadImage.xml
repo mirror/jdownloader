@@ -2,7 +2,7 @@
 <java version="1.6.0_14" class="java.beans.XMLDecoder"> 
  <object class="jd.captcha.easy.load.LoadImage"> 
   <void property="baseUrl"> 
-   <string>http://rapidlibrary.com/download_file_i.php?qq=burnout&amp;file=2609632&amp;desc=Burnout+Dominator.part02+.rar</string> 
+   <string></string> 
   </void> 
   <void property="fileType"> 
    <string>.png</string> 

@@ -2,7 +2,7 @@
 <java version="1.6.0_14" class="java.beans.XMLDecoder"> 
  <object class="jd.captcha.easy.load.LoadImage"> 
   <void property="baseUrl"> 
-   <string>http://lix.in/-40b0e7</string> 
+   <string></string> 
   </void> 
   <void property="fileType"> 
    <string>.png</string> 
