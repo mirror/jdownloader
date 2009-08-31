@@ -70,7 +70,7 @@ public class Updater {
         Browser.setGlobalReadTimeout(500000);
         Updater upd = new Updater();
 
-        if (branch != null) WebUpdater.getConfig("WEBUPDATE").setProperty(WebUpdater.PARAM_BRANCH, branch);
+        if (branch != null) WebUpdater.getConfig("WEBUPDATE").setProperty(WebUpdater.PARAM_BRANCH, new Branch(branch));
         WebUpdater.getConfig("WEBUPDATE").save();
         System.out.println("STATUS: Webupdate");
 

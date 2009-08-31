@@ -67,7 +67,7 @@ public abstract class ToolBarAction extends JDAction {
  
 
     public ToolBarAction(String menukey, int id) {
-        this(menukey, null, -1);
+        this(menukey, null, id);
     }
 
     public ToolBarAction(String menukey, String iconkey) {
@@ -79,6 +79,7 @@ public abstract class ToolBarAction extends JDAction {
 
         super(JDL.L("gui.menu." + menukey + ".name", menukey));
         setId(menukey);
+        this.setActionID(id);
         if (iconkey != null) setIcon(iconkey);
         setMnemonic(JDL.L("gui.menu." + menukey + ".mnem", "-"));
         setAccelerator(JDL.L("gui.menu." + menukey + ".accel", "-"));

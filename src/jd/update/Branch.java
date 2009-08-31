@@ -33,7 +33,10 @@ public class Branch implements Serializable {
     public void setDesc(String desc) {
         this.desc = desc;
     }
+public String toString(){
+    return name;
 
+}
     private String name;
     private String desc;
 

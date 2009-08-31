@@ -68,11 +68,14 @@ public class ToolbarController extends ConfigPanel {
         WHITELIST.add("toolbar.quickconfig.reconnecttoggle");
         WHITELIST.add("toolbar.control.stopmark");
 
-        // Addons
+  
+        
+      
         WHITELIST.add("separator");
-        WHITELIST.add("Chat Window");
-        WHITELIST.add("Show");
-        WHITELIST.add("Schedule");
+        WHITELIST.add("scheduler");
+        WHITELIST.add("langfileditor");
+        WHITELIST.add("chat");
+        WHITELIST.add("livescripter");
 
         // removes
         WHITELIST.add("separator");
@@ -92,7 +95,7 @@ public class ToolbarController extends ConfigPanel {
         WHITELIST.add("toolbar.interaction.update");
 
         WHITELIST.add("action.opendlfolder");
-
+        WHITELIST.add("action.restore");
         WHITELIST.add("action.premiumview.addacc");
         WHITELIST.add("action.premium.buy");
 
