@@ -49,7 +49,7 @@ public class AddonConfig extends ConfigPanel {
 
     @Override
     public String getBreadcrum() {
-        return JDL.L("jd.gui.swing.jdgui.settings.panels.ConfigPanelAddons.breadcrum", "") + JDL.L("jd.gui.swing.jdgui.views.sidebars.configuration.AddonConfig.breadcrum.deliminator", " - ") + name;
+        return JDL.L("jd.gui.swing.jdgui.settings.panels.ConfigPanelAddons.breadcrum", "") + " - " + name;
     }
 
     public JPanel getPanel() {
@@ -96,6 +96,7 @@ public class AddonConfig extends ConfigPanel {
         for (ConfigEntry c : cont) {
             ConfigPanel p = new ConfigPanel(c.getContainer());
             tabbed.add(c.getContainer().getTitle(), p);
+            tabbed.setIconAt(tabbed.getTabCount() - 1, c.getContainer().getIcon());
         }
 
         this.add(tabbed);
