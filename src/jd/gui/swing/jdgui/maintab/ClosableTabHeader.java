@@ -41,7 +41,6 @@ public class ClosableTabHeader extends JPanel {
         closeIcon.setContentAreaFilled(false);
         closeIcon.setBorderPainted(false);
         closeIcon.addMouseListener(new JDMouseAdapter() {
-            
             public void mouseEntered(MouseEvent e) {
                 closeIcon.setContentAreaFilled(true);
                 closeIcon.setBorderPainted(true);
