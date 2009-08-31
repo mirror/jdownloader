@@ -30,6 +30,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
+//hamsterfile.com by pspzockerscene
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ugotfile.com" }, urls = { "http://[\\w\\.]*?ugotfile.com/file/\\d+/.+" }, flags = { 2 })
 public class UgotFileCom extends PluginForHost {
 
@@ -101,7 +102,7 @@ public class UgotFileCom extends PluginForHost {
             int block = Integer.parseInt(br.getRegex("<div id='sessionCountDown' style='font-weight:bold; font-size:20px;'>(.*?)</div>").getMatch(0)) * 1000 + 1;
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, block);
         }
-        String Captcha = getCaptchaCode(br.getRegex("<img style=\"cursor: pointer\" onclick=\"captchaReload\\(\\);\" id=\"captchaImage\" src=\"(.*?)\" alt=\"captcha key\" />").getMatch(0), link);
+        String Captcha = getCaptchaCode("http://ugotfile.com" + br.getRegex("<td><img src=\"(.*?)\" onclick=\"captchaReload\\(\\);\"").getMatch(0), link);
         br.getPage("http://ugotfile.com/captcha?key=" + Captcha);
         if (br.containsHTML("invalid key")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         sleep(sleep * 1001, link);
@@ -118,9 +119,10 @@ public class UgotFileCom extends PluginForHost {
         br.getPage(parameter.getDownloadURL());
         if (br.containsHTML("FileId and filename mismatched or file does not exist!")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("has been deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<td>Filename:</td>\\s+<td>(.*?)</td>").getMatch(0);
-        String filesize = br.getRegex("<td>Filesize:</td>\\s+<td>(.*?)</td>").getMatch(0);
+        String filename = br.getRegex("<title>(.*?) - Free File Hosting - uGotFile</title>").getMatch(0);
+        String filesize = br.getRegex("<span style=\"font-size: 14px;\">(.*?)</span>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        filesize.replace("&nbsp;", "");
         parameter.setName(filename.trim());
         parameter.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "")));
         return AvailableStatus.TRUE;

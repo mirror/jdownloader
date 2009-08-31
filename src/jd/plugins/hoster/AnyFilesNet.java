@@ -41,32 +41,51 @@ public class AnyFilesNet extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
         br.setFollowRedirects(false);
-
-        String uid1 = br.getRegex("[^ ]{18,}<input type='hidden' name='uid' value='(.*?)' />").getMatch(0);
-        String uid2 = br.getRegex("<input type='hidden' name='uid2' value='(.*?)' /></th></table></form>").getMatch(0);
-        String hcode = br.getRegex("type='hidden' name='hcode' value='(.*?)'>").getMatch(0);
-        String ip = br.getRegex("<input type='hidden' name='ip' value='(.*?)'>").getMatch(0);
-
-        Form form = br.getFormbyProperty("name", "Premium");
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-
-        form.put("uid1", uid1);
-        form.put("uid2", uid2);
-        form.put("hcode", hcode);
-        form.put("frameset", "Die+Dateien+herunterladen");
-        form.put("ip", ip);
-        form.put("fix", "1");
+        String md5crypt = br.getRegex("md5crypt\" value=\"(.*?)\"").getMatch(0);
+        String host = br.getRegex("host\" value=\"(.*?)\"").getMatch(0);
+        String uid = br.getRegex("uid\" value=\"(.*?)\"").getMatch(0);
+        String name = br.getRegex("name\" value=\"(.*?)\"").getMatch(0);
+        String realuid = br.getRegex("realuid\" value=\"(.*?)\"").getMatch(0);
+        String realname = br.getRegex("realname\" value=\"(.*?)\"").getMatch(0);
+        String optiondir = br.getRegex("optiondir\" value=\"(.*?)\"").getMatch(0);
+        String pin = br.getRegex("pin\" value=\"(.*?)\"").getMatch(0);
+        String ssserver = br.getRegex("ssserver\" value=\"(.*?)\"").getMatch(0);
+        String sssize = br.getRegex("realuid\" value=\"(.*?)\"").getMatch(0);
+        String free = br.getRegex("free\" type=\"submit\" class=\"button\" value=\"(.*?)\"").getMatch(0);
+        
+        Form form = new Form();
+        form.setMethod(Form.MethodType.POST);
+        form.setAction("http://www.anyfiles.net/download3-any.php");
+        form.put("md5crypt", md5crypt);
+        form.put("host", host);
+        form.put("uid", uid);
+        form.put("name", name);
+        form.put("realuid", realuid);
+        form.put("realname", realname);
+        form.put("optiondir", optiondir);
+        form.put("pin", pin);
+        form.put("ssserver", ssserver);
+        form.put("sssize", sssize);
+        form.put("free", free);
 
         br.submitForm(form);
-        String dllink = br.getRegex("<frame src=\"/tmpl/tmpl_frame_top.php\\?link=(.*?)\" name=\"topFrame\"").getMatch(0);
-
+        String dllink = br.getRedirectLocation();
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -20);
+        if (!(dl.getConnection().isContentDisposition())) {
+            br.followConnection();
+            System.out.print(br.toString());
+            if (br.containsHTML("error: Invalid request")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("Too many simultaneous downloads")) {                
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL);
+        }
         dl.startDownload();
     }
 
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return 20;
     }
 
     public String getAGBLink() {
