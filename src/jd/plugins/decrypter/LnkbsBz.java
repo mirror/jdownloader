@@ -23,7 +23,6 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.parser.Regex;
 import jd.parser.html.Form;
