@@ -18,6 +18,7 @@ package jd.gui.swing.components;
 
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
+import java.awt.event.MouseEvent;
 
 import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
@@ -31,6 +32,7 @@ import javax.swing.UIManager;
 
 import jd.gui.swing.jdgui.borders.JDBorderFactory;
 import jd.gui.swing.jdgui.interfaces.DroppedPanel;
+import jd.gui.swing.jdgui.interfaces.JDMouseAdapter;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
@@ -61,9 +63,20 @@ public abstract class JDCollapser extends DroppedPanel {
 
         Box panel = new Box(1);
         panel.add(closeButton = new JButton(closeAction));
-        closeButton.setBorderPainted(false);
-        closeButton.setPreferredSize(new Dimension(closeAction.getWidth(), closeAction.getHeight()));
         closeButton.setContentAreaFilled(false);
+        closeButton.setBorderPainted(false);
+        closeButton.addMouseListener(new JDMouseAdapter() {
+            public void mouseEntered(MouseEvent e) {
+                closeButton.setContentAreaFilled(true);
+                closeButton.setBorderPainted(true);
+            }
+
+            public void mouseExited(MouseEvent e) {
+                closeButton.setContentAreaFilled(false);
+                closeButton.setBorderPainted(false);
+            }
+        });
+        closeButton.setPreferredSize(new Dimension(closeAction.getWidth(), closeAction.getHeight()));
         closeButton.setToolTipText(JDL.LF("jd.gui.swing.components.JDCollapser.closetooltip", "Close %s", ""));
         panel.setOpaque(false);
         panel.setBorder(BorderFactory.createEmptyBorder(0, 0, 1, 5));
@@ -77,8 +90,11 @@ public abstract class JDCollapser extends DroppedPanel {
 
     }
 
-    public JLabel getMenutitle() {
-        return menutitle;
+    public void setInfos(String name, Icon icon) {
+        menutitle.setText(name);
+        menutitle.setIcon(icon);
+
+        closeButton.setToolTipText(JDL.LF("jd.gui.swing.components.JDCollapser.closetooltip", "Close %s", name));
     }
 
     public class CloseAction extends AbstractAction {

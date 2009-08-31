@@ -537,8 +537,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
 
         };
         col.getContent().add(p.getPanel());
-        col.getMenutitle().setText(name);
-        col.getMenutitle().setIcon(icon);
+        col.setInfos(name, icon);
 
         this.mainTabbedPane.getSelectedView().setInfoPanel(col);
     }
