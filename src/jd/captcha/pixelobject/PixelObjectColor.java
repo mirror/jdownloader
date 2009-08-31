@@ -1,7 +1,5 @@
 package jd.captcha.pixelobject;
 
-import java.awt.Color;
-
 public class PixelObjectColor implements Comparable<PixelObjectColor> {
     public int color = 0;
     public int count = 1;
