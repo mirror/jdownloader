@@ -217,6 +217,7 @@ gui.config.general.update = Güncelleme
 gui.config.general.webupdate.auto = Web Güncellemesi: otomatik başlasın!...
 gui.config.general.webupdate.disable = Sadece kullanıcı isterse güncelle..
 gui.config.general.webupdate.disable2 = Önemli güncellemeler hakkında beni uyarma
+gui.config.gui.barrierfree = Engelsiz Yazı Boyutu
 gui.config.gui.browser = İnternet Tarayıcı
 gui.config.gui.container = Konteyner (RSDF,DLC,CCF,..)
 gui.config.gui.custom_browser = Tarayıcının bulunduğu yol
