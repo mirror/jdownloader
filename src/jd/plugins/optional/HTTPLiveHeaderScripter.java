@@ -47,6 +47,7 @@ import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
+import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
@@ -71,6 +72,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
 
     private MenuAction action;
 
+    @Override
     @SuppressWarnings("unchecked")
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() instanceof MenuAction && ((MenuAction) e.getSource()).getActionID() == 0) {
@@ -263,19 +265,26 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
         return ret + "";
     }
 
+    @Override
     public ArrayList<MenuAction> createMenuitems() {
         ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
-        if (action == null) {
-            action = new MenuAction(ToolBarAction.Types.TOGGLE, getHost(), 0).setActionListener(this);
-            action.setSelected(false);
-        }
+
         menu.add(action);
 
         return menu;
     }
 
+    @Override
     public boolean initAddon() {
+        action = new MenuAction(ToolBarAction.Types.TOGGLE, getHost(), 0).setActionListener(this);
+        action.setIcon(this.getIconKey());
+        action.setSelected(false);
         return true;
+    }
+
+    @Override
+    public String getIconKey() {
+        return "gui.images.config.reconnect";
     }
 
     private void initGUI() {
@@ -291,11 +300,10 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
 
             @Override
             public Icon getIcon() {
-                return null;
+                return JDTheme.II(getIconKey(), 16, 16);
             }
 
             public void onHide() {
-
             }
 
             @Override
@@ -308,6 +316,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
                 return JDL.L("jd.plugins.optional.HTTPLiveHeaderScripter.tooltip", "HTTP-Live-Header Scripter: Create Reconnect scripts easily");
             }
 
+            @Override
             protected void initMenu(JMenuBar menuBar) {
 
                 // Filemenu
