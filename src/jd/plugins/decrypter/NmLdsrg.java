@@ -26,9 +26,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anime-loads.org" }, urls = { "http://[\\w\\.]*?anime-loads\\.org/crypt.php\\?cryptid=[\\w]+|http://[\\w\\.]*?anime-loads\\.org/page.php\\?id=[0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anime-loads.org" }, urls = { "http://[\\w\\.]*?anime-loads\\.org/Weiterleitung/\\?cryptid=[0-9a-z]{32}|http://[\\w\\.]*?anime-loads\\.org/page.php\\?id=[0-9]+" }, flags = { 0 })
 public class NmLdsrg extends PluginForDecrypt {
-    static private String host = "anime-loads.org";
 
     public NmLdsrg(PluginWrapper wrapper) {
         super(wrapper);
@@ -38,25 +37,40 @@ public class NmLdsrg extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         ArrayList<String> links = new ArrayList<String>();
+        ArrayList<String> passwords = new ArrayList<String>();
+        passwords.add("www.anime-loads.org");
         String parameter = param.toString();
-
+        
         br.setCookiesExclusive(true);
-        br.clearCookies(host);
 
-        if (parameter.contains("crypt")) {
+        if (parameter.contains("Weiterleitung")) {
             links.add(parameter);
         } else {
             br.getPage(parameter);
-            String[][] help = br.getRegex("<a href=\"(crypt\\.php.*?)\"").getMatches();
-
-            for (String[] help1 : help)
-                links.add((help1[0]).replace("');</script>", ""));
+            String [] ids = br.getRegex("Weiterleitung.*?([0-9a-z]{32})").getColumn(0);
+            
+            if (ids.length == 0) {
+                return null;
+            }   
+            
+            for (String id : ids) {
+                String link = "http://www.anime-loads.org/Weiterleitung/?cryptid=" + id;
+                links.add(link);
+            }
         }
-
+        
         for (String link : links) {
             br.getPage(link);
-            String dllink = Encoding.htmlDecode(br.getRegex("iframe src=\'(.*?)\'").getMatch(0));
-            decryptedLinks.add(createDownloadlink(dllink));
+            String dllink = Encoding.htmlDecode(br.getRegex("<meta http-equiv=\"refresh\" content=\"5; url=(.*?)\">").getMatch(0));
+            
+            if (dllink == null) {
+                return null;
+            }
+                
+            DownloadLink dl = createDownloadlink(dllink);
+            dl.setSourcePluginPasswordList(passwords);
+            dl.setDecrypterPassword(passwords.get(0));
+            decryptedLinks.add(dl);
         }
 
         return decryptedLinks;
