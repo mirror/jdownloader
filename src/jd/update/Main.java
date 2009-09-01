@@ -23,6 +23,7 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.logging.FileHandler;
@@ -50,7 +51,9 @@ import jd.http.Browser;
 import jd.nutils.Formatter;
 import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
+import jd.nutils.nativeintegration.LocalBrowser;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
 
@@ -72,7 +75,7 @@ public class Main {
     private static JTextPane warnings;
     private static int TICKET_TIME = -1;
     private static Logger logger;
-    private static boolean RESTORE=false;
+    private static boolean RESTORE = false;
 
     private static void log(StringBuilder log, String string) {
         if (log != null) log.append(string);
@@ -111,7 +114,7 @@ public class Main {
                 } else if (p.trim().equalsIgnoreCase("-brdebug")) {
                     Browser.setVerbose(true);
                 } else if (p.trim().equalsIgnoreCase("-restore")) {
-                    RESTORE=true;
+                    RESTORE = true;
 
                 } else if (p.trim().equalsIgnoreCase("-branch")) {
                     String br = args[++i];
@@ -171,7 +174,7 @@ public class Main {
             }
             for (int i = 0; i < args.length; i++) {
                 Main.log(log, "Parameter " + i + " " + args[i] + " " + System.getProperty("line.separator"));
-               logWindow.setText(log.toString());
+                logWindow.setText(log.toString());
             }
             final WebUpdater updater = new WebUpdater();
             updater.setOSFilter(OSFilter);
@@ -219,18 +222,18 @@ public class Main {
 
             });
             Main.log(log, "Current Date:" + new Date() + "\r\n");
-             checkBackup();
+            checkBackup();
             updater.ignorePlugins(false);
 
-           checkUpdateMessage();
+            checkUpdateMessage();
             updater.setLogger(log);
 
             updater.setDownloadProgress(progressload);
             Main.trace("Start Webupdate");
-            
-            if(RESTORE){
-                //Remove.extracts
-                JDIO.removeByPattern(JDUtilities.getResourceFile("jd").getParentFile(),Pattern.compile(".*\\.extract",Pattern.CASE_INSENSITIVE));
+
+            if (RESTORE) {
+                // Remove.extracts
+                JDIO.removeByPattern(JDUtilities.getResourceFile("jd").getParentFile(), Pattern.compile(".*\\.extract", Pattern.CASE_INSENSITIVE));
             }
             ArrayList<FileUpdate> files;
             try {
@@ -252,6 +255,8 @@ public class Main {
                 JDUpdateUtils.backupDataBase();
                 updater.updateFiles(files, null);
             }
+
+         
             Restarter.main(new String[] {});
 
             // if (!clone) installAddons(JDUtilities.getResourceFile("."));
@@ -268,9 +273,9 @@ public class Main {
 
             Main.log(log, "Start java -jar -Xmx512m JDownloader.jar in " + JDUtilities.getResourceFile(".").getAbsolutePath());
             JDUtilities.getDatabaseConnector().shutdownDatabase();
-           JDUtilities.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", "-rfu" }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0);
+            JDUtilities.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", "-rfu" }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0);
 
-           logWindow.setText(log.toString());
+            logWindow.setText(log.toString());
             JDIO.writeLocalFile(JDUtilities.getResourceFile("updateLog.txt"), log.toString());
             Main.log(log, "Errors: " + updater.getErrors());
             System.exit(0);

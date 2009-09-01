@@ -19,6 +19,8 @@ package jd.utils;
 import java.awt.Color;
 import java.awt.HeadlessException;
 import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
@@ -40,6 +42,8 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDFlags;
 import jd.nutils.JDHash;
+import jd.nutils.io.JDIO;
+import jd.nutils.nativeintegration.LocalBrowser;
 import jd.update.FileUpdate;
 import jd.update.JDUpdateUtils;
 import jd.update.WebUpdater;
@@ -48,6 +52,7 @@ import jd.utils.locale.JDL;
 public class WebUpdate {
     private static Logger logger = JDLogger.getLogger();
     // private static boolean JD_INIT_COMPLETE = false;
+    protected ArrayList<FileUpdate> unfilteredList;
 
     private static boolean DYNAMIC_PLUGINS_FINISHED = false;
     // private static boolean LISTENER_ADDED = false;
@@ -206,6 +211,8 @@ public class WebUpdate {
             public void run() {
                 MessageListener messageListener = null;
                 if (files != null) {
+                    unfilteredList = new ArrayList<FileUpdate>();
+                    unfilteredList.addAll(files);
                     updater.filterAvailableUpdates(files);
                     JDUtilities.getController().setWaitingUpdates(files);
                     if (files.size() > 0) {
@@ -230,7 +237,7 @@ public class WebUpdate {
                     return;
                 }
 
-                if (files.size() == 0) {
+                if (files==null||files.size() == 0) {
                     logger.severe("Webupdater offline or nothing to update");
                     // ask to restart if there are updates left in the /update/
                     // folder
@@ -245,7 +252,26 @@ public class WebUpdate {
                         }
 
                     }
+                    if (updater.getBetaBranch() != null /*&& !SubConfiguration.getConfig("WEBUPDATE").getBooleanProperty(updater.getBetaBranch().getName(), false)*/) {
 
+                        SubConfiguration.getConfig("WEBUPDATE").setProperty(updater.getBetaBranch().getName(), true);
+                        SubConfiguration.getConfig("WEBUPDATE").save();
+
+                        int ret = UserIO.getInstance().requestConfirmDialog(0, JDL.L("updater.newbeta.title", "New BETA available"), JDL.L("updater.newbeta.message", "Do you want to try the new BETA?\r\nClick OK to get more Information."));
+                        if (UserIO.isOK(ret)) {
+                            try {
+                                LocalBrowser.openDefaultURL(new URL("http://jdownloader.org/beta"));
+                            } catch (MalformedURLException e) {
+                                // TODO Auto-generated catch block
+                                e.printStackTrace();
+                            } catch (Exception e) {
+                                // TODO Auto-generated catch block
+                                e.printStackTrace();
+                            }
+
+                        }
+
+                    }
                     JDController.releaseDelayExit(id);
                     UPDATE_IN_PROGRESS = false;
                     return;
@@ -303,7 +329,7 @@ public class WebUpdate {
         }.start();
     }
 
-    private static void doUpdate(final WebUpdater updater, final ArrayList<FileUpdate> files) {
+    private void doUpdate(final WebUpdater updater, final ArrayList<FileUpdate> files) {
 
         new Thread() {
             public void run() {
@@ -345,6 +371,22 @@ public class WebUpdate {
                         pc.increase(10);
 
                         System.out.println("UPdate: " + files);
+                        updater.cleanUp();
+                        // removes all .extract files that have no entry in the
+                        // hashlist
+                        JDIO.removeRekursive(JDUtilities.getResourceFile("jd").getParentFile(), new JDIO.FileSelector() {
+
+                            @Override
+                            public boolean doIt(File file) {
+                                if (!file.getName().endsWith(".extract") || unfilteredList == null) return false;
+                                if (file.getAbsolutePath().contains("/update/") || file.getAbsolutePath().contains("\\update\\")) return false;
+                                for (FileUpdate f : unfilteredList) {
+                                    if (f.getLocalFile().equals(file)) return true;
+                                }
+
+                                return false;
+                            }
+                        });
 
                         updater.updateFiles(files, pc);
                         if (updater.getErrors() > 0) {

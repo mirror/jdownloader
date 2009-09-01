@@ -30,6 +30,7 @@ import javax.swing.JProgressBar;
 
 import jd.config.CFGConfig;
 import jd.config.SubConfiguration;
+import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.event.JDBroadcaster;
 import jd.event.MessageEvent;
@@ -133,7 +134,7 @@ public class WebUpdater implements Serializable {
 
     public byte[] sum;
     private File workingdir;
-    private Object betaBranch;
+    private Branch betaBranch;
 
     /**
      * @param path
@@ -222,7 +223,7 @@ public class WebUpdater implements Serializable {
             Object ret = WebUpdater.getConfig("WEBUPDATE").getProperty(WebUpdater.PARAM_BRANCH);
 
             if (ret == null) ret = latestBranch;
-            if (!(ret instanceof Branch)) { 
+            if (!(ret instanceof Branch)) {
                 ret = new Branch(ret + "");
             }
             WebUpdater.getConfig("WEBUPDATE").setProperty(WebUpdater.BRANCHINUSE, ret);
@@ -265,6 +266,19 @@ public class WebUpdater implements Serializable {
                     }
                     branches = ret.toArray(new Branch[] {});
                     System.out.println("Found branches on " + serv + ":\r\n" + br);
+
+                    Object savedBranch = WebUpdater.getConfig("WEBUPDATE").getProperty(WebUpdater.PARAM_BRANCH);
+
+                    if (branches.length > 0 && savedBranch != null && savedBranch instanceof Branch && ((Branch) savedBranch).isBeta()) {
+                        String name = ((Branch) savedBranch).getName();
+                        if (betaBranch == null || !name.equals(betaBranch.getName())) {
+                            WebUpdater.getConfig("WEBUPDATE").setProperty(WebUpdater.PARAM_BRANCH, branches[0]);
+                            WebUpdater.getConfig("WEBUPDATE").save();
+                            JDLogger.getLogger().severe("RESETTED BRANCH; SINCE BETA branch " + name + " is not available any more");
+                        }
+
+                    }
+
                     return branches;
                 }
             } catch (Exception e) {
@@ -275,6 +289,10 @@ public class WebUpdater implements Serializable {
         }
         branches = new Branch[] {};
         return branches;
+    }
+
+    public Branch getBetaBranch() {
+        return betaBranch;
     }
 
     public JDBroadcaster<MessageListener, MessageEvent> getBroadcaster() {
@@ -648,6 +666,11 @@ public class WebUpdater implements Serializable {
         }
         errors++;
         return false;
+    }
+
+    public void cleanUp() {
+        // TODO Auto-generated method stub
+
     }
 
 }

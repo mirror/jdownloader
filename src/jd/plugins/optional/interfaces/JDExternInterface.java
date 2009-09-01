@@ -49,6 +49,8 @@ import jd.plugins.OptionalPlugin;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
+import jd.update.Branch;
+import jd.update.WebUpdater;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -120,7 +122,19 @@ public class JDExternInterface extends PluginOptional {
             splitPath = request.getRequestUrl().substring(1).split("[/|\\\\]");
             namespace = splitPath[0];
             try {
-                if (namespace.equalsIgnoreCase("flash")) {
+                if (namespace.equalsIgnoreCase("update")) {
+
+                    String branch = request.getParameters().get("branch");
+                    String ref = request.getHeader("referer");
+                   
+                    if (!ref.equalsIgnoreCase("http://jdownloader.net:8081/beta")) return;
+                    if (UserIO.isOK(UserIO.getInstance().requestConfirmDialog(0, JDL.L("updater.beta.rlyupdate.title", "Update to beta now?"), JDL.LF("updater.beta.rlyupdate.message", "Do you want to update to JD-%s")))) {
+                        WebUpdater.getConfig("WEBUPDATE").setProperty(WebUpdater.PARAM_BRANCH, new Branch(branch));
+                        WebUpdater.getConfig("WEBUPDATE").save();
+                        JDUtilities.restartJDandWait();
+                    }
+
+                } else if (namespace.equalsIgnoreCase("flash")) {
                     if (splitPath.length > 1 && splitPath[1].equalsIgnoreCase("add")) {
                         askPermission(request);
                         /* parse the post data */

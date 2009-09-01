@@ -420,17 +420,41 @@ public class JDIO {
      * @param parentFile
      * @param string
      */
-    public static void removeByPattern(File parentFile, Pattern pattern) {
-        for (File f : parentFile.listFiles()) {
-            if (f.isDirectory()) {
-                removeByPattern(f, pattern);
+    public static void removeByPattern(File parentFile, final Pattern pattern) {
 
+        removeRekursive(parentFile, new FileSelector() {
+
+            @Override
+            public boolean doIt(File file) {
+
+                return Regex.matches(file.getAbsolutePath(), pattern);
             }
-            if (Regex.matches(f.getAbsolutePath(), pattern)) {
+
+        });
+
+    }
+
+    public static abstract class FileSelector {
+        public abstract boolean doIt(File file);
+    }
+
+    /**
+     * Removes all files rekursivly in file, for which fileSelector.doIt returns
+     * true
+     * 
+     * @param file
+     * @param fileSelector
+     */
+    public static void removeRekursive(File file, FileSelector fileSelector) {
+        for (File f : file.listFiles()) {
+            if (f.isDirectory()) {
+                removeRekursive(f, fileSelector);
+            }
+            if (fileSelector.doIt(f)) {
                 f.delete();
             }
 
         }
-    }
 
+    }
 }

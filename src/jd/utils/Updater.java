@@ -65,7 +65,7 @@ public class Updater {
     public static void main(String[] args) throws Exception {
         String branch = null;
 
-        branch = "NIGHTLY";
+        branch = "beta_09";
         Browser.setGlobalConnectTimeout(500000);
         Browser.setGlobalReadTimeout(500000);
         Updater upd = new Updater();
