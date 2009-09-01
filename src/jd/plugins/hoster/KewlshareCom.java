@@ -28,7 +28,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kewlshare.com" }, urls = { "http://[\\w\\.]*?kewlshare\\.com/dl/[\\w]+/.*" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kewlshare.com" }, urls = { "http://[\\w\\.]*?kewlshare\\.com/dl/[\\w]+/" }, flags = { 0 })
 public class KewlshareCom extends PluginForHost {
 
     public KewlshareCom(PluginWrapper wrapper) {
@@ -44,8 +44,9 @@ public class KewlshareCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
         setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
-        String filename = br.getRegex("<tr><td>File Name : <strong>(.*?)\\|\\|").getMatch(0);
-        String filesize = br.getRegex("<tr><td>File Name : <strong>.*?\\|\\|(.*?)</strong></td></tr>").getMatch(0);
+        if (br.containsHTML("The Link You requested not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<title>: (.*?)</title><link rel").getMatch(0);
+        String filesize = br.getRegex("<h4>.*?\\|\\| (.*?)</h4>").getMatch(0);
         if (filesize == null || filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
@@ -60,15 +61,25 @@ public class KewlshareCom extends PluginForHost {
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        Form form = br.getForm(1);
-        br.submitForm(form);
-        if (br.containsHTML("Your Current Download Limit")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1000l);
-        form = br.getForm(0);
-        br.submitForm(form);
-        form = br.getForm(0);
-        br.submitForm(form);
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, br.getMatch("Your download should have started automatically.*?href=\"(.*?)\">"), false, 1);
+        Form freeform = br.getForm(1);
+        if (freeform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        freeform.put("x", "2");
+        freeform.put("y", "68");
+        br.submitForm(freeform);
+        if (br.containsHTML("You can download your next file after")) {
+            int hour = Integer.parseInt(br.getRegex("You can download your next file after (\\d+):(\\d+):(\\d+)</div>").getMatch(0));
+            int minute = Integer.parseInt(br.getRegex("You can download your next file after (\\d+):(\\d+):(\\d+)</div>").getMatch(1));
+            int sec = Integer.parseInt(br.getRegex("You can download your next file after (\\d+):(\\d+):(\\d+)</div>").getMatch(2));
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (hour * 3600 + minute * 60 + sec) * 1001);
+        }
+        br.setFollowRedirects(false);
+        Form form = br.getForm(0);
+        br.submitForm(form);
+        String dllink = br.getRegex("\"padding-right:10px;\">.*?<form action=\"(.*?)\" method").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getURL().toString().contains("MAX_BY_IP")) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1000l);
