@@ -58,7 +58,7 @@ public class AboutDialog extends AbstractDialog {
         JLabel lbl;
         cp.add(lbl = new JLabel(JDL.L(JDL_PREFIX + "name", "JDownloader")), "gaptop 15");
         lbl.setFont(lbl.getFont().deriveFont(lbl.getFont().getSize() * 2.0f));
-        String branch = WebUpdater.getConfig("WEBUPDATE").getStringProperty("BRANCHINUSE", null);
+        String branch = WebUpdater.getConfig("WEBUPDATE").getStringProperty(WebUpdater.BRANCHINUSE, null);
         if (branch == null) {
             branch = "";
         } else {

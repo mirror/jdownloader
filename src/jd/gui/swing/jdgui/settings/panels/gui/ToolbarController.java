@@ -167,7 +167,8 @@ public class ToolbarController extends ConfigPanel {
                 if ((Boolean) value) {
                     list.add(actions.get(row).getID());
                 } else {
-                    list.remove(actions.get(row).getID());
+                    //if there are accidently more entries
+                   while( list.remove(actions.get(row).getID())){};
                 }
                 GUIUtils.getConfig().setProperty("TOOLBAR", list);
                 GUIUtils.getConfig().save();

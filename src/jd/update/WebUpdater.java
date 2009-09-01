@@ -63,7 +63,7 @@ public class WebUpdater implements Serializable {
     public static final String[] UPDATE_MIRROR = new String[] { "http://update0.jdownloader.org/", "http://update0.jdownloader.org/", "http://update1.jdownloader.org/", "http://update2.jdownloader.org/", };
     private static final String UPDATE_ZIP_LOCAL_PATH = "tmp/update.zip";
     public static final String PARAM_BRANCH = "PARAM_BRANCH2";
-    private static final String BRANCHINUSE = "BRANCHINUSE";
+    public static final String BRANCHINUSE = "BRANCHINUSE";
 
     /**
      * Funktion übertragt alle werte aus den alten Config files in die datenbank
