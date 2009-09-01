@@ -183,6 +183,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
 
     private synchronized void updatePremium() {
         updating = true;
+        String id = JDController.requestDelayExit("updatePremium");
         for (HostPluginWrapper wrapper : hosterplugins) {
             String host = wrapper.getHost();
             if (wrapper.isLoaded() && wrapper.usePlugin()) {
@@ -192,6 +193,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
                 }
             }
         }
+        JDController.releaseDelayExit(id);
         updating = false;
     }
 

@@ -27,6 +27,7 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
 import jd.controlling.DownloadController;
+import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDLogger;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.PasswordListController;
@@ -53,7 +54,7 @@ public class JDSimpleWebserverRequestHandler {
     public JDSimpleWebserverRequestHandler(HashMap<String, String> headers, JDSimpleWebserverResponseCreator response) {
         lgi = LinkGrabberController.getInstance();
         this.response = response;
-        
+
         this.headers = headers;
     }
 
@@ -296,9 +297,9 @@ public class JDSimpleWebserverRequestHandler {
                     }
                 }).start();
             } else if (requestParameter.get("do").compareToIgnoreCase("start") == 0) {
-                JDUtilities.getController().startDownloads();
+                DownloadWatchDog.getInstance().startDownloads();
             } else if (requestParameter.get("do").compareToIgnoreCase("stop") == 0) {
-                JDUtilities.getController().stopDownloads();
+                DownloadWatchDog.getInstance().stopDownloads();
             } else if (requestParameter.get("do").compareToIgnoreCase("restart") == 0) {
                 new Thread(new Runnable() {
                     public void run() {
@@ -315,13 +316,13 @@ public class JDSimpleWebserverRequestHandler {
             } else if (requestParameter.get("do").compareToIgnoreCase("add") == 0) {
                 if (requestParameter.containsKey("addlinks")) {
                     String AddLinks = Encoding.htmlDecode(requestParameter.get("addlinks"));
-                    ArrayList<DownloadLink> waitingLinkList = new DistributeData(AddLinks).findLinks();                    
+                    ArrayList<DownloadLink> waitingLinkList = new DistributeData(AddLinks).findLinks();
                     LinkGrabberPanel.getLinkGrabber().addLinks(waitingLinkList);
                 }
             } else if (requestParameter.get("do").compareToIgnoreCase("upload") == 0) {
                 if (requestParameter.containsKey("file")) {
                     File container = JDUtilities.getResourceFile("container/" + requestParameter.get("file"));
-                    ArrayList<DownloadLink> waitingLinkList = JDUtilities.getController().getContainerLinks(container);                    
+                    ArrayList<DownloadLink> waitingLinkList = JDUtilities.getController().getContainerLinks(container);
                     LinkGrabberPanel.getLinkGrabber().addLinks(waitingLinkList);
                 }
             }

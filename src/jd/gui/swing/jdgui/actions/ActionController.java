@@ -166,13 +166,7 @@ public class ActionController {
                     fps = null;
                     UserIF.getInstance().requestPanel(UserIF.Panels.DOWNLOADLIST, null);
                 }
-                new GuiRunnable<Object>() {
-                    public Object runSave() {
-                        JDUtilities.getController().pauseDownloads(false);
-                        return null;
-                    }
-                }.waitForEDT();
-                JDUtilities.getController().startDownloads();
+                DownloadWatchDog.getInstance().startDownloads();
             }
 
         };
@@ -185,7 +179,7 @@ public class ActionController {
 
             public void onAction(ActionEvent e) {
                 boolean b = ActionController.getToolBarAction("toolbar.control.pause").isSelected();
-                JDUtilities.getController().pauseDownloads(b);
+                DownloadWatchDog.getInstance().pauseDownloads(b);
             }
 
             @Override
@@ -193,7 +187,7 @@ public class ActionController {
                 setPriority(999);
                 this.setEnabled(false);
                 this.type = ToolBarAction.Types.TOGGLE;
-                this.setToolTipText(JDL.L(JDL_PREFIX + "toolbar.control.pause.tooltip", "Pause active transfer (decrease speed to 10 kb/s)"));
+                setToolTipText(JDL.LF("gui.menu.action.break2.desc", "Pause downloads. Limits global speed to %s kb/s", SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_PAUSE_SPEED, 10) + ""));
             }
 
             @Override
@@ -225,11 +219,7 @@ public class ActionController {
                 JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_DOWNLOAD_PAUSE_SPEED) {
                     @Override
                     public void onPropertyChanged(Property source, final String key) {
-                        if (source.getBooleanProperty(key, false)) {
-                            setToolTipText(JDL.LF("gui.menu.action.break2.desc", "Pause downloads. Limits global speed to %s kb/s", SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_PAUSE_SPEED, 10) + ""));
-                        } else {
-                            setToolTipText(JDL.L("gui.menu.action.pause.desc", null));
-                        }
+                        setToolTipText(JDL.LF("gui.menu.action.break2.desc", "Pause downloads. Limits global speed to %s kb/s", SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_PAUSE_SPEED, 10) + ""));
                     }
                 });
             }
@@ -279,7 +269,6 @@ public class ActionController {
 
             @Override
             public void threadedActionPerformed(ActionEvent e) {
-                JDUtilities.getController().pauseDownloads(false);
                 final ProgressController pc = new ProgressController(JDL.L("gui.downloadstop", "Stopping current downloads..."));
                 Thread test = new Thread() {
                     public void run() {
@@ -290,12 +279,12 @@ public class ActionController {
                             } catch (InterruptedException e) {
                                 break;
                             }
-                            if (JDUtilities.getController().getDownloadStatus() == JDController.DOWNLOAD_NOT_RUNNING) break;
+                            if (DownloadWatchDog.getInstance().getDownloadStatus() == DownloadWatchDog.STATE.NOT_RUNNING) break;
                         }
                     }
                 };
                 test.start();
-                JDUtilities.getController().stopDownloads();
+                DownloadWatchDog.getInstance().stopDownloads();
                 test.interrupt();
                 pc.doFinalize();
             }
@@ -328,7 +317,7 @@ public class ActionController {
                             getToolBarAction("toolbar.quickconfig.reconnecttoggle").setToolTipText(JDL.L("gui.menu.action.reconnect.notconfigured.tooltip", "Your Reconnect is not configured correct"));
                         } else {
                             setToolTipText(JDL.L("gui.menu.action.reconnectman.desc", "Manual reconnect. Get a new IP by resetting your internet connection"));
-                             setIcon("gui.images.reconnect");
+                            setIcon("gui.images.reconnect");
                             getToolBarAction("toolbar.quickconfig.reconnecttoggle").setToolTipText(JDL.L("gui.menu.action.reconnectauto.desc", "Auto reconnect. Get a new IP by resetting your internet connection"));
                         }
                     }
@@ -396,16 +385,14 @@ public class ActionController {
                 this.setEnabled(true);
                 this.type = ToolBarAction.Types.TOGGLE;
                 this.setToolTipText(JDL.L("gui.menu.action.clipboard.desc", "-"));
-       
-                
+
             }
 
             @Override
             public void init() {
                 if (inited) return;
                 this.inited = true;
-                
-                
+
                 this.addPropertyChangeListener(new PropertyChangeListener() {
                     public void propertyChange(PropertyChangeEvent evt) {
                         if (evt.getPropertyName() == SELECTED_KEY) {
@@ -420,10 +407,10 @@ public class ActionController {
                     public void onPropertyChanged(Property source, final String key) {
                         if (source.getBooleanProperty(key, true)) {
                             setSelected(true);
-                            
+
                         } else {
                             setSelected(false);
-                            
+
                         }
                     }
                 });
@@ -449,33 +436,33 @@ public class ActionController {
                 this.setToolTipText(JDL.L("gui.menu.action.reconnect.desc", "-"));
                 setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true));
 
-                   setIcon(isSelected() ? "gui.images.reconnect_enabled" : "gui.images.reconnect_disabled");
+                setIcon(isSelected() ? "gui.images.reconnect_enabled" : "gui.images.reconnect_disabled");
             }
 
             @Override
             public void init() {
                 if (inited) return;
                 this.inited = true;
-                
-                this.addPropertyChangeListener(new PropertyChangeListener(){
+
+                this.addPropertyChangeListener(new PropertyChangeListener() {
                     public void propertyChange(PropertyChangeEvent evt) {
-                        if(evt.getPropertyName()==SELECTED_KEY){
-                        setIcon((Boolean)evt.getNewValue()?"gui.images.reconnect_enabled":"gui.images.reconnect_disabled");
+                        if (evt.getPropertyName() == SELECTED_KEY) {
+                            setIcon((Boolean) evt.getNewValue() ? "gui.images.reconnect_enabled" : "gui.images.reconnect_disabled");
                         }
-                        
+
                     }
-                    
+
                 });
-                
+
                 JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_ALLOW_RECONNECT) {
                     @Override
                     public void onPropertyChanged(Property source, final String key) {
                         if (source.getBooleanProperty(key, true)) {
                             setSelected(true);
-                          
+
                         } else {
                             setSelected(false);
-                          
+
                         }
                     }
                 });
@@ -516,20 +503,20 @@ public class ActionController {
             @Override
             public void initDefaults() {
                 setPriority(800);
-                
+
                 this.setToolTipText(JDL.L(JDL_PREFIX + "toolbar.control.stopmark.tooltip", "Stop after current Downloads"));
                 this.setEnabled(false);
                 this.type = ToolBarAction.Types.TOGGLE;
                 this.setSelected(false);
                 this.setIcon("gui.images.stopmark.disabled");
-                this.addPropertyChangeListener(new PropertyChangeListener(){
+                this.addPropertyChangeListener(new PropertyChangeListener() {
                     public void propertyChange(PropertyChangeEvent evt) {
-                        if(evt.getPropertyName()==SELECTED_KEY){
-                        setIcon((Boolean)evt.getNewValue()?"gui.images.stopmark.enabled":"gui.images.stopmark.disabled");
+                        if (evt.getPropertyName() == SELECTED_KEY) {
+                            setIcon((Boolean) evt.getNewValue() ? "gui.images.stopmark.enabled" : "gui.images.stopmark.disabled");
                         }
-                        
+
                     }
-                    
+
                 });
             }
 
@@ -541,14 +528,13 @@ public class ActionController {
             public void threadedActionPerformed(ActionEvent e) {
                 if (DownloadWatchDog.getInstance().isStopMarkSet()) {
                     DownloadWatchDog.getInstance().setStopMark(null);
-                   
                 } else if (DownloadWatchDog.getInstance().getActiveDownloads() > 0) {
                     Object obj = DownloadWatchDog.getInstance().getRunningDownloads().get(0);
                     DownloadWatchDog.getInstance().setStopMark(obj);
-                  
-                }else{
+                } else {
                     setSelected(false);
                 }
+                if (DownloadWatchDog.getInstance().getDownloadStatus() != DownloadWatchDog.STATE.RUNNING && !DownloadWatchDog.getInstance().isStopMarkSet()) setEnabled(false);
             }
 
         };

@@ -511,13 +511,13 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
                         String pw = selectedLinks.get(i).getFilePackage().getPassword();
                         if (!List.contains(pw)) {
                             List.add(pw);
-                            build.append(pw + "\n");
+                            build.append(pw + "\r\n");
                         }
                         if (selectedLinks.get(i).getStringProperty("pass", null) != null) {
                             pw = selectedLinks.get(i).getStringProperty("pass", null);
                             if (!List.contains(pw)) {
                                 List.add(pw);
-                                build.append(pw + "\n");
+                                build.append(pw + "\r\n");
                             }
                         }
                     }
@@ -531,7 +531,7 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
                             String url = selectedLinks.get(i).getBrowserUrl();
                             if (!List.contains(url)) {
                                 List.add(url);
-                                build.append(url + "\n\r");
+                                build.append(url + "\r\n");
                             }
                         }
                     }

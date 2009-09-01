@@ -22,6 +22,7 @@ import java.util.logging.Logger;
 
 import jd.captcha.JACController;
 import jd.controlling.DistributeData;
+import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDController;
 import jd.controlling.PasswordListController;
 import jd.controlling.reconnect.Reconnecter;
@@ -104,9 +105,8 @@ public class ParameterManager {
                 addPasswordsSwitch = false;
 
                 logger.info(currentArg + " parameter");
-                if (controller.getDownloadStatus() == JDController.DOWNLOAD_RUNNING) {
-                    JDUtilities.getController().toggleStartStop();
-                }
+
+                DownloadWatchDog.getInstance().stopDownloads();
 
             } else if (currentArg.equals("--show") || currentArg.equals("-s")) {
 
@@ -221,9 +221,7 @@ public class ParameterManager {
             new DistributeData(linksToAddString, hideGrabber).start();
         }
         if (startDownload) {
-            if (controller.getDownloadStatus() == JDController.DOWNLOAD_NOT_RUNNING) {
-                JDController.getInstance().startDownloads();
-            }
+            DownloadWatchDog.getInstance().startDownloads();
         }
     }
 }

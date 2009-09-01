@@ -117,7 +117,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
                 }
             }
             DownloadController.getInstance().addAllAt(fps, 0);
-            if (autostart) JDController.getInstance().startDownloads();
+            if (autostart) DownloadWatchDog.getInstance().startDownloads();
         }
     }
 

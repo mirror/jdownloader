@@ -16,14 +16,14 @@
 
 package jd.plugins.optional.schedule.modules;
 
-import jd.utils.JDUtilities;
+import jd.controlling.DownloadWatchDog;
 import jd.utils.locale.JDL;
 
 public class PauseDownloads implements SchedulerModuleInterface {
     private static final long serialVersionUID = -3871092307047328210L;
 
     public void execute(String parameter) {
-        JDUtilities.getController().getWatchdog().pause(true);
+        DownloadWatchDog.getInstance().pauseDownloads(true);
     }
 
     public String getName() {

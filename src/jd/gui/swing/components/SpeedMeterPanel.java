@@ -42,7 +42,7 @@ import jd.config.ConfigPropertyListener;
 import jd.config.Configuration;
 import jd.config.Property;
 import jd.config.SubConfiguration;
-import jd.controlling.JDController;
+import jd.controlling.DownloadWatchDog;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.JDGuiConstants;
 import jd.nutils.Formatter;
@@ -187,9 +187,9 @@ public class SpeedMeterPanel extends JPanel implements ActionListener, MouseList
             g2.setColor(Color.RED);
             g2.drawLine(0, limitpx, width, limitpx);
             if (limitpx > height / 2) {
-                g2.drawString((JDUtilities.getController().isPaused() ? JDL.L("gui.speedmeter.pause", "pause") + " " : "") + Formatter.formatReadable(limit) + "/s", 5, limitpx - 4);
+                g2.drawString((DownloadWatchDog.getInstance().isPaused() ? JDL.L("gui.speedmeter.pause", "pause") + " " : "") + Formatter.formatReadable(limit) + "/s", 5, limitpx - 4);
             } else {
-                g2.drawString((JDUtilities.getController().isPaused() ? JDL.L("gui.speedmeter.pause", "pause") + " " : "") + Formatter.formatReadable(limit) + "/s", 5, limitpx + 12);
+                g2.drawString((DownloadWatchDog.getInstance().isPaused() ? JDL.L("gui.speedmeter.pause", "pause") + " " : "") + Formatter.formatReadable(limit) + "/s", 5, limitpx + 12);
             }
         } else {
             g2.setColor(fontCol);
@@ -249,7 +249,7 @@ public class SpeedMeterPanel extends JPanel implements ActionListener, MouseList
 
     public void mouseClicked(MouseEvent e) {
         if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
-            if (JDController.getInstance().getDownloadStatus() != JDController.DOWNLOAD_RUNNING) return;
+            if (DownloadWatchDog.getInstance().getDownloadStatus() != DownloadWatchDog.STATE.RUNNING) return;
             JMenuItem mi = new JMenuItem(show ? JDL.L("gui.speedmeter.hide", "Hide Speedmeter") : JDL.L("gui.speedmeter.show", "Show Speedmeter"));
             mi.addActionListener(this);
 

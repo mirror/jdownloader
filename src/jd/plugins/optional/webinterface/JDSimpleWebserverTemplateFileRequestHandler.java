@@ -29,7 +29,7 @@ import java.util.Vector;
 import jd.OptionalPluginWrapper;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
-import jd.controlling.JDController;
+import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDLogger;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.PasswordListController;
@@ -391,7 +391,7 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
             t.setParam("config_autoreconnect", "");
         }
 
-        if (JDUtilities.getController().getDownloadStatus() == JDController.DOWNLOAD_RUNNING) {
+        if (DownloadWatchDog.getInstance().getDownloadStatus() == DownloadWatchDog.STATE.RUNNING) {
             t.setParam("config_startstopbutton", "stop");
         } else {
             t.setParam("config_startstopbutton", "start");

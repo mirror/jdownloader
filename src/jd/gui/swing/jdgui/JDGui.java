@@ -32,6 +32,7 @@ import javax.swing.ToolTipManager;
 import jd.config.ConfigContainer;
 import jd.controlling.ClipboardHandler;
 import jd.controlling.DownloadController;
+import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
 import jd.controlling.LinkCheck;
@@ -344,7 +345,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
                                 break;
                             }
                         }
-                        if (!pc.isAbort()) JDUtilities.getController().startDownloads();
+                        if (!pc.isAbort()) DownloadWatchDog.getInstance().startDownloads();
                     }
                 }.start();
             }
@@ -573,7 +574,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
                     } else {
                         DownloadController.getInstance().addAll(fps);
                     }
-                    if (autostart) JDController.getInstance().startDownloads();
+                    if (autostart) DownloadWatchDog.getInstance().startDownloads();
                 }
             }.start();
         } else {

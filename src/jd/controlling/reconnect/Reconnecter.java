@@ -310,11 +310,9 @@ public class Reconnecter {
     }
 
     public static boolean doManualReconnect() {
-        boolean restartDownloads = JDUtilities.getController().stopDownloads();
+        boolean restartDownloads = DownloadWatchDog.getInstance().stopDownloads();
         boolean success = Reconnecter.waitForNewIP(1);
-        if (restartDownloads) {
-            JDUtilities.getController().startDownloads();
-        }
+        if (restartDownloads) DownloadWatchDog.getInstance().startDownloads();
         return success;
     }
 

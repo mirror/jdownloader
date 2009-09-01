@@ -40,15 +40,6 @@ public class ControlEvent extends AWTEvent {
      */
     public static final int CONTROL_DOWNLOAD_STOP = 6;
 
-    /**
-     * Gibt an dass das Abbrechen der Downloads eingeleitet wurde
-     */
-    public static final int CONTROL_DOWNLOAD_TERMINATION_ACTIVE = 17;
-
-    /**
-     * Gibt an dass der Download nun komplett abgebrochen wurde.
-     */
-    public static final int CONTROL_DOWNLOAD_TERMINATION_INACTIVE = 18;
     public static final int CONTROL_INTERACTION_CALL = 28;
 
     /**
@@ -77,11 +68,6 @@ public class ControlEvent extends AWTEvent {
      */
 
     public final static int CONTROL_PLUGIN_INACTIVE = 4;
-
-    /**
-     * Startet/Stoppt den Download
-     */
-    public static final int CONTROL_STARTSTOP_DOWNLOAD = 21;
 
     /**
      * Wird vom Controller vor dem beeenden des Programms aufgerufen

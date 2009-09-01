@@ -151,18 +151,6 @@ public class JDController implements ControlListener {
     }
 
     /**
-     * Es läuft kein Download
-     */
-    public static final int DOWNLOAD_NOT_RUNNING = 3;
-    /**
-     * Der Download läuft
-     */
-    public static final int DOWNLOAD_RUNNING = 2;
-    /**
-     * Der Download wird gerade abgebrochen.
-     */
-    public static final int DOWNLOAD_TERMINATION_IN_PROGRESS = 0;
-    /**
      * Der Controller wurd fertig initialisiert
      */
     public static final int INIT_STATUS_COMPLETE = 0;
@@ -174,11 +162,6 @@ public class JDController implements ControlListener {
      */
     private transient ArrayList<ControlListener> controlListener = new ArrayList<ControlListener>();
     private transient ArrayList<ControlListener> removeList = new ArrayList<ControlListener>();
-
-    /**
-     * Hier kann de Status des Downloads gespeichert werden.
-     */
-    private int downloadStatus;
 
     private ArrayList<ControlEvent> eventQueue = new ArrayList<ControlEvent>();
 
@@ -200,15 +183,11 @@ public class JDController implements ControlListener {
     /**
      * Der Download Watchdog verwaltet die Downloads
      */
-    private DownloadWatchDog watchdog;
-
-    private final Object StartStopSync = new Object();
 
     private static ArrayList<String> delayMap = new ArrayList<String>();
     private static JDController INSTANCE;
 
     public JDController() {
-        downloadStatus = DOWNLOAD_NOT_RUNNING;
         eventSender = getEventSender();
         JDUtilities.setController(this);
     }
@@ -267,7 +246,7 @@ public class JDController implements ControlListener {
         }
         switch (event.getID()) {
         case ControlEvent.CONTROL_INIT_COMPLETE:
-            watchdog = DownloadWatchDog.getInstance();
+            DownloadWatchDog.getInstance();
             break;
         case ControlEvent.CONTROL_ON_FILEOUTPUT:
             File[] list = (File[]) event.getParameter();
@@ -349,7 +328,7 @@ public class JDController implements ControlListener {
 
     public void prepareShutdown() {
         logger.info("Stop all running downloads");
-        stopDownloads();
+        DownloadWatchDog.getInstance().stopDownloads();
         logger.info("Call Exit event");
         fireControlEventDirect(new ControlEvent(this, ControlEvent.CONTROL_SYSTEM_EXIT, this));
         logger.info("Save Downloadlist");
@@ -463,18 +442,6 @@ public class JDController implements ControlListener {
         fireControlEvent(c);
     }
 
-    /**
-     * Gibt den Status (ID) der downloads zurück
-     * 
-     * @return
-     */
-    public int getDownloadStatus() {
-        if (watchdog == null || watchdog.isAborted() && downloadStatus == DOWNLOAD_RUNNING) {
-            setDownloadStatus(DOWNLOAD_NOT_RUNNING);
-        }
-        return downloadStatus;
-    }
-
     private EventSender getEventSender() {
         if (this.eventSender != null && this.eventSender.isAlive()) return this.eventSender;
         EventSender th = new EventSender();
@@ -541,17 +508,12 @@ public class JDController implements ControlListener {
      * @return gibt das globale speedmeter zurück
      */
     public int getSpeedMeter() {
-        if (getWatchdog() == null || !getWatchdog().isAlive()) { return 0; }
-        return getWatchdog().getTotalSpeed();
+        return DownloadWatchDog.getInstance().getTotalSpeed();
     }
 
     public ArrayList<FileUpdate> getWaitingUpdates() {
         return waitingUpdates;
 
-    }
-
-    public DownloadWatchDog getWatchdog() {
-        return watchdog;
     }
 
     public boolean isContainerFile(File file) {
@@ -597,16 +559,6 @@ public class JDController implements ControlListener {
         progress.setStatusText(downloadLinks.size() + " links found");
         progress.doFinalize();
         return downloadLinks;
-    }
-
-    public boolean isPaused() {
-        if (watchdog == null) return false;
-        return watchdog.isPaused();
-    }
-
-    public void pauseDownloads(boolean value) {
-        if (watchdog == null) return;
-        watchdog.pause(value);
     }
 
     /**
@@ -741,83 +693,12 @@ public class JDController implements ControlListener {
         UserIO.getInstance().requestMessageDialog("Container encryption failed");
     }
 
-    /**
-     * Setzt den Downloadstatus. Status Ids aus JDController.** sollten
-     * verwendet werden
-     * 
-     * @param downloadStatus
-     */
-    public void setDownloadStatus(int downloadStatus) {
-        this.downloadStatus = downloadStatus;
-    }
-
     public void setInitStatus(int initStatus) {
         this.initStatus = initStatus;
     }
 
     public void setWaitingUpdates(ArrayList<FileUpdate> files) {
         waitingUpdates = files;
-    }
-
-    /**
-     * Startet den Downloadvorgang. Dies eFUnkton sendet das startdownload event
-     * und aktiviert die ersten downloads.
-     */
-    public boolean startDownloads() {
-        if (getDownloadStatus() == DOWNLOAD_TERMINATION_IN_PROGRESS) return false;
-        synchronized (StartStopSync) {
-            if (getDownloadStatus() == DOWNLOAD_NOT_RUNNING) {
-                setDownloadStatus(DOWNLOAD_RUNNING);
-                fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOAD_START, this));
-                logger.info("StartDownloads");
-                watchdog = DownloadWatchDog.getInstance();
-                watchdog.start();
-                return true;
-            }
-            return false;
-        }
-    }
-
-    /**
-     * Bricht den Download ab und blockiert bis er abgebrochen wurde.
-     */
-    public boolean stopDownloads() {
-        if (getDownloadStatus() == DOWNLOAD_TERMINATION_IN_PROGRESS) return false;
-        synchronized (StartStopSync) {
-            if (getDownloadStatus() == DOWNLOAD_RUNNING) {
-                setDownloadStatus(DOWNLOAD_TERMINATION_IN_PROGRESS);
-                fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOAD_TERMINATION_ACTIVE, this));
-
-                watchdog.abort();
-                ArrayList<FilePackage> packages = JDUtilities.getDownloadController().getPackages();
-                synchronized (packages) {
-                    for (FilePackage fp : packages) {
-                        for (DownloadLink link : fp.getDownloadLinkList()) {
-                            if (link.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE)) {
-                                link.getLinkStatus().removeStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                                link.setEnabled(true);
-                            }
-                        }
-                    }
-                }
-                logger.info("termination broadcast");
-                fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOAD_TERMINATION_INACTIVE, this));
-                fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOAD_STOP, this));
-                setDownloadStatus(DOWNLOAD_NOT_RUNNING);
-                return true;
-            } else {
-                return false;
-            }
-        }
-    }
-
-    /**
-     * Startet den download wenn er angehalten ist und hält ihn an wenn er läuft
-     */
-    public void toggleStartStop() {
-        if (!startDownloads()) {
-            stopDownloads();
-        }
     }
 
     /**

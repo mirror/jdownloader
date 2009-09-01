@@ -21,6 +21,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -43,6 +44,7 @@ public class SendspaceCom extends PluginForHost {
     public SendspaceCom(PluginWrapper wrapper) {
         super(wrapper);
         enablePremium("http://www.sendspace.com/joinpro_pay.html");
+        br.setRequestIntervalLimit(getHost(), 750);
         setStartIntervall(5000l);
     }
 
@@ -105,9 +107,10 @@ public class SendspaceCom extends PluginForHost {
 
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         String url = downloadLink.getDownloadURL();
         br.getPage(url);
-        if (br.containsHTML("User Verification") && br.containsHTML("Please type all the characters")) return AvailableStatus.UNCHECKABLE;
+        if (br.containsHTML("User Verification") && br.containsHTML("Please type all the characters") || br.containsHTML("No htmlCode read")) { return AvailableStatus.UNCHECKABLE; }
         if (!br.containsHTML("the file you requested is not available")) {
             String[] infos = br.getRegex("<b>Name:</b>(.*?)<br><b>Size:</b>(.*?)<br>").getRow(0);
             if (infos != null) {
@@ -123,7 +126,7 @@ public class SendspaceCom extends PluginForHost {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
         /* bypass captcha with retry ;) */
-        if (br.containsHTML("User Verification") && br.containsHTML("Please type all the characters")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 1 * 60 * 1000l);
+        if (br.containsHTML("User Verification") && br.containsHTML("Please type all the characters") || br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 1 * 60 * 1000l);
         /* Link holen */
         String script = br.getRegex(Pattern.compile("<script type=\"text/javascript\">(.*?)</script>", Pattern.CASE_INSENSITIVE)).getMatch(0);
         String dec = br.getRegex(Pattern.compile("base64ToText\\('(.*?)'\\)", Pattern.CASE_INSENSITIVE)).getMatch(0);

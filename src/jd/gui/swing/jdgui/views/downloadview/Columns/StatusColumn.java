@@ -21,7 +21,7 @@ import java.awt.Component;
 import javax.swing.ImageIcon;
 import javax.swing.JTable;
 
-import jd.controlling.JDController;
+import jd.controlling.DownloadWatchDog;
 import jd.gui.swing.components.table.JDTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.jdgui.views.downloadview.StatusLabel;
@@ -123,7 +123,7 @@ public class StatusColumn extends JDTableColumn {
             if (fp.isFinished()) {
                 statuspanel.setIcon(counter, imgFinished, strFinished);
                 counter++;
-            } else if (JDController.getInstance().getWatchdog() != null && JDController.getInstance().getWatchdog().isStopMark(value)) {
+            } else if (DownloadWatchDog.getInstance().isStopMark(value)) {
                 statuspanel.setIcon(counter, imgStopMark, strStopMark);
                 counter++;
             } else if (fp.getTotalDownloadSpeed() > 0) {
@@ -144,7 +144,7 @@ public class StatusColumn extends JDTableColumn {
             statuspanel.setForeground(co.getForeground());
             statuspanel.setText(dLink.getLinkStatus().getStatusString());
             counter = 0;
-            if (JDController.getInstance().getWatchdog() != null && JDController.getInstance().getWatchdog().isStopMark(value)) {
+            if (DownloadWatchDog.getInstance().isStopMark(value)) {
                 statuspanel.setIcon(counter, imgStopMark, strStopMark);
                 counter++;
             }

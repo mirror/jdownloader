@@ -35,6 +35,7 @@ import jd.config.Configuration;
 import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
+import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDLogger;
 import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlListener;
@@ -281,20 +282,20 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 response.addContent(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true));
             } else if (request.getRequestUrl().equals("/action/start")) {
                 // Do Start Download
-                JDUtilities.getController().startDownloads();
+                DownloadWatchDog.getInstance().startDownloads();
 
                 response.addContent("Downloads started");
             } else if (request.getRequestUrl().equals("/action/pause")) {
                 // Do Pause Download
-                JDUtilities.getController().pauseDownloads(true);
+                DownloadWatchDog.getInstance().pauseDownloads(!DownloadWatchDog.getInstance().isPaused());
                 response.addContent("Downloads paused");
             } else if (request.getRequestUrl().equals("/action/stop")) {
                 // Do Stop Download
-                JDUtilities.getController().stopDownloads();
+                DownloadWatchDog.getInstance().stopDownloads();
                 response.addContent("Downloads stopped");
             } else if (request.getRequestUrl().equals("/action/toggle")) {
                 // Do Toggle Download
-                JDUtilities.getController().toggleStartStop();
+                DownloadWatchDog.getInstance().toggleStartStop();
                 response.addContent("Downloads toggled");
             } else if (request.getRequestUrl().matches("[\\s\\S]*?/action/update/force[01]{1}/[\\s\\S]*")) {
                 // Do Make Webupdate

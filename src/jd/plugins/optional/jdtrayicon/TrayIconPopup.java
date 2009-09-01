@@ -37,7 +37,7 @@ import javax.swing.event.ChangeListener;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.ClipboardHandler;
-import jd.controlling.JDController;
+import jd.controlling.DownloadWatchDog;
 import jd.controlling.reconnect.Reconnecter;
 import jd.gui.swing.Factory;
 import jd.gui.swing.jdgui.actions.ActionController;
@@ -94,12 +94,12 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
     private void initEntryPanel() {
         entryPanel = new JPanel(new MigLayout("ins 0, wrap 1", "[]", "[]0[]0[]0[]0[]0[]0[]0[]0[]0[]"));
 
-        switch (JDUtilities.getController().getDownloadStatus()) {
-        case JDController.DOWNLOAD_NOT_RUNNING:
+        switch (DownloadWatchDog.getInstance().getDownloadStatus()) {
+        case NOT_RUNNING:
             addMenuEntry(ACTION_START, "gui.images.next", JDL.L("plugins.trayicon.popup.menu.start", "Download starten"));
             addDisabledMenuEntry("gui.images.break", JDL.L("plugins.trayicon.popup.menu.pause2", "Download pausieren"));
             break;
-        case JDController.DOWNLOAD_RUNNING:
+        case RUNNING:
             addMenuEntry(ACTION_STOP, "gui.images.stop", JDL.L("plugins.trayicon.popup.menu.stop", "Download anhalten"));
             addMenuEntry(ACTION_PAUSE, "gui.images.break", JDL.L("plugins.trayicon.popup.menu.pause2", "Download pausieren"));
             break;
@@ -247,14 +247,14 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
             ActionController.getToolBarAction("action.load").actionPerformed(e);
             break;
         case TrayIconPopup.ACTION_PAUSE:
-            JDUtilities.getController().pauseDownloads(!JDUtilities.getController().isPaused());
+            DownloadWatchDog.getInstance().pauseDownloads(!DownloadWatchDog.getInstance().isPaused());
             break;
         case TrayIconPopup.ACTION_RECONNECT:
             ActionController.getToolBarAction("toolbar.interaction.reconnect").actionPerformed(null);
             break;
         case TrayIconPopup.ACTION_START:
         case TrayIconPopup.ACTION_STOP:
-            JDUtilities.getController().toggleStartStop();
+            DownloadWatchDog.getInstance().toggleStartStop();
             break;
         case TrayIconPopup.ACTION_TOGGLE_CLIPBOARD:
             ClipboardHandler.getClipboard().setEnabled(!ClipboardHandler.getClipboard().isEnabled());

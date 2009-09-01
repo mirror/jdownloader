@@ -34,7 +34,7 @@ import javax.swing.Timer;
 
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
-import jd.controlling.JDController;
+import jd.controlling.DownloadWatchDog;
 import jd.controlling.LinkCheck;
 import jd.controlling.LinkCheckEvent;
 import jd.controlling.LinkCheckListener;
@@ -646,7 +646,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         }
         LGINSTANCE.throwLinksAdded();
         if (GUIUtils.getConfig().getBooleanProperty(JDGuiConstants.PARAM_START_AFTER_ADDING_LINKS, true)) {
-            JDController.getInstance().startDownloads();
+            DownloadWatchDog.getInstance().startDownloads();
         }
     }
 

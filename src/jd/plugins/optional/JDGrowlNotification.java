@@ -73,9 +73,6 @@ public class JDGrowlNotification extends PluginOptional {
                 growlNotification(JDL.L(JDL_PREFIX + "finished", "Download stopped"), lastLink.getFinalFileName(), JDL.L(JDL_PREFIX + "finished.title", "Download complete"));
             }
             break;
-        case ControlEvent.CONTROL_DOWNLOAD_TERMINATION_INACTIVE:
-            growlNotification(JDL.L(JDL_PREFIX + "aborted", "Download aborted"), "", JDL.L(JDL_PREFIX + "aborted.title", "Download aborted"));
-            break;
         default:
             break;
         }
