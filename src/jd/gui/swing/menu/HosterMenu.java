@@ -27,7 +27,6 @@ import javax.swing.JSeparator;
 
 import jd.HostPluginWrapper;
 import jd.controlling.AccountController;
-import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
@@ -44,7 +43,6 @@ public class HosterMenu extends Menu {
         Collections.sort(hosts, new Comparator<HostPluginWrapper>() {
 
             public int compare(HostPluginWrapper o1, HostPluginWrapper o2) {
-
                 return o1.getHost().compareToIgnoreCase(o2.getHost());
             }
 
@@ -57,7 +55,6 @@ public class HosterMenu extends Menu {
             pluginPopup = new JMenu(wrapper.getHost());
             if (plugin.hasHosterIcon()) pluginPopup.setIcon(plugin.getHosterIcon());
             for (MenuAction next : plugin.createMenuitems()) {
-
                 mi = getJMenuItem(next);
                 if (mi == null) {
                     pluginPopup.addSeparator();
@@ -95,7 +92,6 @@ public class HosterMenu extends Menu {
             pluginPopup = new JMenu(wrapper.getHost());
             if (plugin.hasHosterIcon()) pluginPopup.setIcon(plugin.getHosterIcon());
             for (MenuAction next : plugin.createMenuitems()) {
-
                 mi = getJMenuItem(next);
                 if (mi == null) {
                     pluginPopup.addSeparator();

@@ -40,10 +40,10 @@ import jd.controlling.JDLogger;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.components.AccountDialog;
-import jd.gui.swing.components.IconListRenderer;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.jdgui.actions.ThreadedAction;
 import jd.gui.swing.jdgui.settings.ConfigPanel;
+import jd.gui.swing.jdgui.settings.JDLabelListRenderer;
 import jd.gui.swing.jdgui.views.toolbar.ViewToolbar;
 import jd.nutils.JDFlags;
 import jd.plugins.Account;
@@ -198,7 +198,7 @@ public class Premium extends ConfigPanel implements ActionListener, AccountContr
                             }
                         });
                         HostPluginWrapper[] data = plugins.toArray(new HostPluginWrapper[plugins.size()]);
-                        int selection = UserIO.getInstance().requestComboDialog(0, JDL.L(JDL_PREFIX + "buy.title", "Buy Premium"), JDL.L(JDL_PREFIX + "buy.message", "Which hoster are you interested in?"), data, 0, null, JDL.L(JDL_PREFIX + "continue", "Continue"), null, new IconListRenderer());
+                        int selection = UserIO.getInstance().requestComboDialog(0, JDL.L(JDL_PREFIX + "buy.title", "Buy Premium"), JDL.L(JDL_PREFIX + "buy.message", "Which hoster are you interested in?"), data, 0, null, JDL.L(JDL_PREFIX + "continue", "Continue"), null, new JDLabelListRenderer());
 
                         try {
                             JLink.openURL(data[selection].getPlugin().getBuyPremiumUrl());

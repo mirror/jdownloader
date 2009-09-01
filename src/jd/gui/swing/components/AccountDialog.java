@@ -33,6 +33,7 @@ import jd.controlling.AccountController;
 import jd.gui.UserIO;
 import jd.gui.swing.dialog.AbstractDialog;
 import jd.gui.swing.jdgui.actions.ActionController;
+import jd.gui.swing.jdgui.settings.JDLabelListRenderer;
 import jd.nutils.JDFlags;
 import jd.plugins.Account;
 import jd.plugins.PluginForHost;
@@ -89,7 +90,7 @@ public class AccountDialog extends AbstractDialog {
             } catch (Exception e) {
             }
         }
-        hoster.setRenderer(new IconListRenderer());
+        hoster.setRenderer(new JDLabelListRenderer());
 
         panel.add(new JLabel());
         panel.add(link = new JButton(ActionController.getToolBarAction("action.premium.buy")), "w 200!");

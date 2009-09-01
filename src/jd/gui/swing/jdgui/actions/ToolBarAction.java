@@ -20,7 +20,6 @@ import java.awt.event.ActionEvent;
 
 import javax.swing.AbstractAction;
 
-import jd.config.SubConfiguration;
 import jd.gui.action.JDAction;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -41,15 +40,11 @@ public abstract class ToolBarAction extends JDAction {
      */
     protected boolean inited = false;
     private static final long serialVersionUID = -7856598906795360922L;
-   
+
     public static final String PRIORITY = "PRIORITY";
     public static final String ID = "ID";
 
-
     protected Types type = Types.NORMAL;
-
-
-
 
     public void setType(Types type) {
         this.type = type;
@@ -57,14 +52,12 @@ public abstract class ToolBarAction extends JDAction {
 
     public void setId(String id) {
         this.putValue(ID, id);
-    
+
     }
 
     public void setPriority(int priority) {
         this.putValue(PRIORITY, priority);
     }
-
- 
 
     public ToolBarAction(String menukey, int id) {
         this(menukey, null, id);
@@ -83,13 +76,13 @@ public abstract class ToolBarAction extends JDAction {
         if (iconkey != null) setIcon(iconkey);
         setMnemonic(JDL.L("gui.menu." + menukey + ".mnem", "-"));
         setAccelerator(JDL.L("gui.menu." + menukey + ".accel", "-"));
-   
+
         initDefaults();
         ActionController.register(this);
     }
 
     protected ToolBarAction() {
-      super("");
+        super("");
     }
 
     public final void actionPerformed(ActionEvent e) {
@@ -104,11 +97,13 @@ public abstract class ToolBarAction extends JDAction {
 
         getActionListener().actionPerformed(new ActionEvent(this, getActionID(), getTitle()));
     }
+
     public void setSelected(boolean selected) {
         super.setSelected(selected);
-       this.setType(Types.TOGGLE);
-      
+        this.setType(Types.TOGGLE);
+
     }
+
     /**
      * May be overridden acts like actionPerformed, but only of no
      * actionlistener is set

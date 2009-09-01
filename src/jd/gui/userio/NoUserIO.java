@@ -20,6 +20,7 @@ import java.awt.Point;
 import java.io.File;
 
 import javax.swing.ImageIcon;
+import javax.swing.ListCellRenderer;
 import javax.swing.filechooser.FileFilter;
 
 import jd.gui.UserIO;
@@ -85,7 +86,7 @@ public class NoUserIO extends UserIO {
     }
 
     @Override
-    public int requestComboDialog(int flag, String title, String question, Object[] options, int defaultSelection, ImageIcon icon, String okText, String cancelText, Object renderer) {
+    public int requestComboDialog(int flag, String title, String question, Object[] options, int defaultSelection, ImageIcon icon, String okText, String cancelText, ListCellRenderer renderer) {
         System.out.println("NoUserIO set!");
         return 0;
     }

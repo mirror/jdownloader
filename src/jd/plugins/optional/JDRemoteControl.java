@@ -39,7 +39,6 @@ import jd.controlling.JDLogger;
 import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlListener;
 import jd.gui.UserIO;
-import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.http.IPCheck;
 import jd.nutils.Formatter;

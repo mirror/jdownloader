@@ -18,11 +18,14 @@ package jd;
 
 import java.util.ArrayList;
 
+import javax.swing.ImageIcon;
+
+import jd.config.container.JDLabelContainer;
 import jd.controlling.AccountController;
 import jd.nutils.Formatter;
 import jd.plugins.PluginForHost;
 
-public class HostPluginWrapper extends PluginWrapper {
+public class HostPluginWrapper extends PluginWrapper implements JDLabelContainer {
     private static final ArrayList<HostPluginWrapper> HOST_WRAPPER = new ArrayList<HostPluginWrapper>();
 
     public static ArrayList<HostPluginWrapper> getHostWrapper() {
@@ -108,6 +111,14 @@ public class HostPluginWrapper extends PluginWrapper {
             if(w.canHandle(s))return true;
         }
         return false;
+    }
+
+    public ImageIcon getIcon() {
+        return getPlugin().getHosterIcon();
+    }
+
+    public String getLabel() {
+        return toString();
     }
 
 }

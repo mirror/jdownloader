@@ -18,63 +18,26 @@ package jd.gui.swing.jdgui.settings;
 
 import java.awt.Component;
 
+import javax.swing.DefaultListCellRenderer;
 import javax.swing.JLabel;
 import javax.swing.JList;
-import javax.swing.ListCellRenderer;
 
 import jd.config.container.JDLabelContainer;
-import jd.gui.swing.laf.LookAndFeelController;
 
 /**
  * Cellrenderer für Copmboboxen mit Bildern
  * 
  * @author coalado
  */
-public class JDLabelListRenderer extends JLabel implements ListCellRenderer {
+public class JDLabelListRenderer extends DefaultListCellRenderer {
 
     private static final long serialVersionUID = 3607383089555373774L;
 
-    public JDLabelListRenderer() {
-        if (LookAndFeelController.getPlaf().isSubstance()) {
-            setOpaque(false);
-        } else {
-            setOpaque(true);
-        }
-
-        setHorizontalTextPosition(JLabel.RIGHT);
-    }
-
+    @Override
     public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-        if (LookAndFeelController.getPlaf().isSubstance()) {
-            if (isSelected) {
-                setOpaque(true);
-                setBackground(list.getSelectionBackground());
-                setForeground(list.getSelectionForeground());
-            } else {
-                setOpaque(false);
-                setBackground(list.getBackground());
-                setForeground(list.getForeground());
-            }
-        } else {
-
-            if (isSelected) {
-                setBackground(list.getSelectionBackground());
-                setForeground(list.getSelectionForeground());
-            } else {
-                setBackground(list.getBackground());
-                setForeground(list.getForeground());
-            }
-        }
-
-        if (index == -1) {
-            setIcon(null);
-        } else {
-            setIcon(((JDLabelContainer) value).getIcon());
-        }
-        setText(((JDLabelContainer) value).getLabel());
-        setFont(list.getFont());
-        setToolTipText(((JDLabelContainer) value).getLabel());
-
-        return this;
+        JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+        label.setText(((JDLabelContainer) value).getLabel());
+        label.setIcon(((JDLabelContainer) value).getIcon());
+        return label;
     }
 }

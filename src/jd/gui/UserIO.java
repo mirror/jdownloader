@@ -20,6 +20,7 @@ import java.awt.Point;
 import java.io.File;
 
 import javax.swing.ImageIcon;
+import javax.swing.ListCellRenderer;
 import javax.swing.filechooser.FileFilter;
 
 import jd.config.SubConfiguration;
@@ -292,7 +293,7 @@ public abstract class UserIO {
      *            TODO
      * @return
      */
-    public abstract int requestComboDialog(int flag, String title, String question, Object[] options, int defaultSelection, ImageIcon icon, String okText, String cancelText, Object renderer);
+    public abstract int requestComboDialog(int flag, String title, String question, Object[] options, int defaultSelection, ImageIcon icon, String okText, String cancelText, ListCellRenderer renderer);
 
     /**
      * Checks wether this answerfalg contains the ok option
