@@ -476,6 +476,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
         if (paused == value) return;
         paused = value;
         if (value) {
+            ActionController.getToolBarAction("toolbar.control.pause").setSelected(true);
             SubConfiguration.getConfig("DOWNLOAD").setProperty("MAXSPEEDBEFOREPAUSE", SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0));
             SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_PAUSE_SPEED, 10));
             logger.info("Pause enabled: Reducing downloadspeed to " + SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_PAUSE_SPEED, 10) + " kb/s");
@@ -483,6 +484,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
             SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty("MAXSPEEDBEFOREPAUSE", 0));
             SubConfiguration.getConfig("DOWNLOAD").setProperty("MAXSPEEDBEFOREPAUSE", null);
             logger.info("Pause disabled: Switch back to old downloadspeed");
+            ActionController.getToolBarAction("toolbar.control.pause").setSelected(false);
         }
         SubConfiguration.getConfig("DOWNLOAD").save();
     }

@@ -99,14 +99,14 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     private int containerIndex = -1;
 
     // Aktuell heruntergeladene Bytes der Datei
-    private long downloadCurrent;
+    private long downloadCurrent = 0;
 
     private transient DownloadInterface downloadInstance;
 
     private transient SingleDownloadController downloadLinkController;
 
     // Maximum der heruntergeladenen Datei (Dateilänge)
-    private long downloadMax;
+    private long downloadMax = 0;
 
     private String subdirectory = null;
 
@@ -718,7 +718,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         downloadCurrent = 0;
         finishedDate = -1l;
         linkStatus.reset();
-        this.availableStatus = null;
+        this.availableStatus = AvailableStatus.UNCHECKED;
         this.setEnabled(true);
         this.getTransferStatus().usePremium(false);
         this.getTransferStatus().setResumeSupport(false);

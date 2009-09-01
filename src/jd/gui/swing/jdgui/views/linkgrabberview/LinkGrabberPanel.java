@@ -355,7 +355,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                         /* kein online check, kein multithreaded nötig */
                         afterLinkGrabber(currentList);
                     } else {
-                        lc.checkLinks(currentList);
+                        lc.checkLinks(currentList, false);
                     }
                     try {
                         Thread.sleep(2000);

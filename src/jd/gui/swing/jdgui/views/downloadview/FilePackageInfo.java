@@ -38,6 +38,7 @@ import jd.gui.swing.jdgui.views.DownloadView;
 import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -266,14 +267,18 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
                             int i = 0;
                             for (DownloadLink dl : fp.getDownloadLinkList()) {
                                 max[i] = Math.max(1, dl.getDownloadSize());
-                                values[i] = Math.max(1, dl.getDownloadCurrent());
+                                if (dl.getLinkStatus().hasStatus(LinkStatus.ERROR_FILE_NOT_FOUND)) {
+                                    values[i] = -1;
+                                } else {
+                                    values[i] = Math.max(1, dl.getDownloadCurrent());
+                                }
                                 i++;
                             }
                             FilePackageInfo.this.progressBarFilePackage.setMaximums(max);
                             FilePackageInfo.this.progressBarFilePackage.setValues(values);
                         }
                         if (downloadLink != null) {
-                            if (downloadLink.getChunksProgress() != null) {
+                            if (downloadLink.getChunksProgress() != null && !downloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_FILE_NOT_FOUND)) {
                                 long fileSize = downloadLink.getDownloadSize();
                                 int chunks = downloadLink.getChunksProgress().length;
                                 long part = fileSize / chunks;
@@ -290,7 +295,11 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
                                 FilePackageInfo.this.progressBarDownloadLink.setValues(values);
                             } else {
                                 FilePackageInfo.this.progressBarDownloadLink.setMaximums(new long[] { 10 });
-                                FilePackageInfo.this.progressBarDownloadLink.setValues(new long[] { 0 });
+                                if (downloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_FILE_NOT_FOUND)) {
+                                    FilePackageInfo.this.progressBarDownloadLink.setValues(new long[] { -1 });
+                                } else {
+                                    FilePackageInfo.this.progressBarDownloadLink.setValues(new long[] { 0 });
+                                }
                             }
                             txtNameDl.setText(downloadLink.getName());
                             if (downloadLink.getSourcePluginComment() != null && downloadLink.getSourcePluginComment().trim().length() > 0) {

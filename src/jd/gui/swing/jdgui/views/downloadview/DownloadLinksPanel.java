@@ -547,7 +547,7 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
                     DownloadController.getInstance().fireDownloadLinkUpdate(selectedLinks);
                     break;
                 case TableAction.CHECK:
-                    LinkCheck.getLinkChecker().checkLinks(selectedLinks);
+                    LinkCheck.getLinkChecker().checkLinks(selectedLinks, true);
                     LinkCheck.getLinkChecker().getBroadcaster().addListener(DownloadLinksPanel.this);
                     break;
                 case TableAction.SORT_ALL:

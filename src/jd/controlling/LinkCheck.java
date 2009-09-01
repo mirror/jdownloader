@@ -75,12 +75,15 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
         return this.broadcaster;
     }
 
-    public synchronized void checkLinks(ArrayList<DownloadLink> links) {
+    public synchronized void checkLinks(ArrayList<DownloadLink> links, boolean resetLinkCheck) {
         if (links == null || links.size() == 0) return;
         checkRunning = true;
         for (DownloadLink element : links) {
             synchronized (linksToCheck) {
-                if (!linksToCheck.contains(element)) linksToCheck.add(element);
+                if (!linksToCheck.contains(element)) {
+                    if (resetLinkCheck) element.setAvailableStatus(DownloadLink.AvailableStatus.UNCHECKED);
+                    linksToCheck.add(element);
+                }
             }
         }
         checkTimer.restart();
@@ -89,7 +92,7 @@ public class LinkCheck implements ActionListener, ProgressControllerListener {
     public void checkLinksandWait(ArrayList<DownloadLink> links) {
         final Object lock = new Object();
         final ArrayList<DownloadLink> check = new ArrayList<DownloadLink>(links);
-        this.checkLinks(links);
+        this.checkLinks(links, false);
         getBroadcaster().addListener(new LinkCheckListener() {
 
             @SuppressWarnings("unchecked")

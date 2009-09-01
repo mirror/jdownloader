@@ -50,7 +50,7 @@ public class MultiProgressBar extends JPanel {
         MultiProgressBar pm = new MultiProgressBar();
         pm.setMaximums(10, 20, 30, 10, 20, 15, 5, 25);
         pm.setValues(3, 12, 11, 4, 19, 10, 1, 22);
-//        pm.setValues(10, 20, 30, 10, 20, 15, 5, 25);
+        // pm.setValues(10, 20, 30, 10, 20, 15, 5, 25);
 
         JFrame f = new JFrame();
         f.setLayout(new MigLayout("ins 10"));
@@ -65,7 +65,7 @@ public class MultiProgressBar extends JPanel {
     }
 
     private int scale(long point, double faktor) {
-        return  (int)Math.ceil(point / faktor);
+        return (int) Math.ceil(point / faktor);
     }
 
     private double getFaktor() {
@@ -83,12 +83,21 @@ public class MultiProgressBar extends JPanel {
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g2.setStroke(new BasicStroke(1));
         ProgressEntry e;
+        long pvalue;
         for (int i = 0; i < entries.size(); i++) {
             e = entries.get(i);
             Color col = new Color(50, 255 - ((205 / (entries.size() + 1)) * i), 50);
-            Rectangle rec = new Rectangle(scale(e.getPosition(), faktor), 0, scale(e.getValue(), faktor), height);
-
-            ((Graphics2D) g).setPaint(new GradientPaint(width / 2, 0, col, width / 2, height, col2.darker()));
+            if (e.getValue() >= 0) {
+                pvalue = e.getValue();
+            } else {
+                pvalue = e.getMaximum();
+            }
+            Rectangle rec = new Rectangle(scale(e.getPosition(), faktor), 0, scale(pvalue, faktor), height);
+            if (e.getValue() < 0) {
+                ((Graphics2D) g).setPaint(Color.RED);
+            } else {
+                ((Graphics2D) g).setPaint(new GradientPaint(width / 2, 0, col, width / 2, height, col2.darker()));
+            }
             g2.fill(rec);
             ((Graphics2D) g).setPaint(Color.black);
             g2.drawLine(scale(e.getPosition(), faktor), 0, scale(e.getPosition(), faktor), height);
