@@ -230,7 +230,7 @@ public class FileFactory extends PluginForHost {
                 downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.filefactorycom.errors.nofreeslots", "No slots free available"));
             } else {
                 if (br.containsHTML("File Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                String fileName = br.getRegex("<title>(.*?) - FileFactory</title>").getMatch(0);
+                String fileName = br.getRegex("<title>(.*?) - download now for free").getMatch(0);
                 String fileSize = br.getRegex(FILESIZE).getMatch(0);
                 if (fileName == null || fileSize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 downloadLink.setName(fileName.trim());
