@@ -43,19 +43,19 @@ public class RGhostRu extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("Access to the file was restricted") || br.containsHTML("<title>404")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>(.*?) — RGhost — file sharing</title>").getMatch(0);
+        String filename = br.getRegex("<meta name=\"description\" content=\"(.*?). Download").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("title=\"Comments for the file (.*?)\"").getMatch(0);
         }
         String filesize = br.getRegex("<small>\\((.*?)\\)</small></h1>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("<b>MD5</b>")) {
-            String md5 = br.getRegex("<b>MD5</b></td><td> (.*?)</td></tr>").getMatch(0);
-            link.setMD5Hash(md5);
+            String md5 = br.getRegex("<b>MD5</b></td><td>(.*?)</td></tr>").getMatch(0);
+            if (md5 != null) link.setMD5Hash(md5.trim());
         }
         if (br.containsHTML("<b>SHA1</b>")) {
             String sha1 = br.getRegex("<b>SHA1</b></td><td>(.*?)</td></tr>").getMatch(0);
-            link.setSha1Hash(sha1);
+            if (sha1 != null) link.setSha1Hash(sha1.trim());
         }
         link.setName(filename);
         link.setDownloadSize(Regex.getSize(filesize));
@@ -74,6 +74,7 @@ public class RGhostRu extends PluginForHost {
             br.followConnection();
             if (br.containsHTML(">409</div>")) {
                 sleep(20000l, link);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
             }
             throw new PluginException(LinkStatus.ERROR_FATAL);
         }
@@ -85,7 +86,7 @@ public class RGhostRu extends PluginForHost {
     }
 
     public String getAGBLink() {
-        return "http://hamstershare.com/terms";
+        return "http://rghost.ru/tos";
     }
 
     public void reset() {

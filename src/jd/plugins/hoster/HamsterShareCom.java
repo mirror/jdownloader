@@ -36,14 +36,15 @@ public class HamsterShareCom extends PluginForHost {
 
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setCustomCharset("UTF-8");
+        br.setCookie("http://hamstershare.com", "lang", "en");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("File not exists")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<div id=\"h2\">(.*?)</div>").getMatch(0);
-        String filesize = br.getRegex("�?айла: (.*?)</b></div>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        filesize.replace("�?б", "kb");
+        String fileSize = br.getRegex("<b>File Size: (.*?)</b></div>").getMatch(0);
+        if (filename == null || fileSize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         link.setName(filename);
-        link.setDownloadSize(Regex.getSize(filesize));
+        link.setDownloadSize(Regex.getSize(fileSize));
         return AvailableStatus.TRUE;
     }
 
