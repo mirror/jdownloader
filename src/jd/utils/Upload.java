@@ -32,7 +32,6 @@ public class Upload {
     public static String toJDownloader(String str, String desc) {
         try {
             Browser br = new Browser();
-
             br.postPage("http://jdownloader.org/pastebin", "upload=1&desc=" + Encoding.urlEncode(desc) + "&log=" + Encoding.urlEncode(str));
             String path = br.getRegex("window.location = \"(.*?)\"").getMatch(0);
             return "http://jdownloader.net:8081" + path;
@@ -64,8 +63,8 @@ public class Upload {
             r.addFormData(new FormData("filecontent", file.getName(), file));
             r.addFormData(new FormData("freeaccountid", userid));
             r.addFormData(new FormData("password", pass));
-           br.openRequestConnection(r);
-           
+            br.openRequestConnection(r);
+
             String code = r.read();
             System.out.println(code);
             String[] lines = Regex.getLines(code);

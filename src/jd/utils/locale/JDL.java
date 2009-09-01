@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Locale;
+import java.util.Random;
 import java.util.Map.Entry;
 
 import javax.swing.JComponent;
@@ -110,7 +111,7 @@ public class JDL {
         br.setConnectTimeout(10000);
         br.setReadTimeout(10000);
         try {
-            COUNTRY_CODE = br.getPage("http://jdownloader.net:8081/advert/getLanguage.php");
+            COUNTRY_CODE = br.getPage("http://www.jdownloader.org/advert/getLanguage.php?id=" + System.currentTimeMillis() + new Random(System.currentTimeMillis()).nextLong());
             if (!br.getRequest().getHttpConnection().isOK()) {
                 COUNTRY_CODE = null;
             } else {

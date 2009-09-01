@@ -126,7 +126,7 @@ public class JDExternInterface extends PluginOptional {
 
                     String branch = request.getParameters().get("branch");
                     String ref = request.getHeader("referer");
-                   
+
                     if (!ref.equalsIgnoreCase("http://jdownloader.net:8081/beta")) return;
                     if (UserIO.isOK(UserIO.getInstance().requestConfirmDialog(0, JDL.L("updater.beta.rlyupdate.title", "Update to beta now?"), JDL.LF("updater.beta.rlyupdate.message", "Do you want to update to JD-%s")))) {
                         WebUpdater.getConfig("WEBUPDATE").setProperty(WebUpdater.PARAM_BRANCH, new Branch(branch));
@@ -175,11 +175,11 @@ public class JDExternInterface extends PluginOptional {
                     response.addContent("<allow-access-from domain=\"jdownloader.org\" />\r\n");
                     response.addContent("<allow-access-from domain=\"jdownloader.net\" />\r\n");
                     response.addContent("<allow-access-from domain=\"jdownloader.net:8081\" />\r\n");
+                    response.addContent("<allow-access-from domain=\"jdownloader.org:8081\" />\r\n");
                     response.addContent("<allow-access-from domain=\"*.jdownloader.org\" />\r\n");
                     response.addContent("<allow-access-from domain=\"*.jdownloader.net\" />\r\n");
+                    response.addContent("<allow-access-from domain=\"*.jdownloader.org:8081\" />\r\n");
                     response.addContent("<allow-access-from domain=\"*.jdownloader.net:8081\" />\r\n");
-                    response.addContent("<allow-access-from domain=\"*.jdownloader.org\" />\r\n");
-                    response.addContent("<allow-access-from domain=\"*.jdownloader.net\" />\r\n");
                     response.addContent("<allow-access-from domain=\"linksave.in\" />\r\n");
                     response.addContent("<allow-access-from domain=\"relink.us\" />\r\n");
                     response.addContent("<allow-access-from domain=\"*.linksave.in\" />\r\n");
