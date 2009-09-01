@@ -53,7 +53,7 @@ public class Updater {
         // SERVERLIST.append("-1:http://update4ex.jdownloader.org/branches/%BRANCH%/\r\n");
         // SERVERLIST.append("-1:http://jdupdate.bluehost.to/branches/%BRANCH%/\r\n");
         SERVERLIST.append("-1:http://update1.jdownloader.org/%BRANCH%/\r\n");
-        SERVERLIST.append("-1:http://update3.jdownloader.org/%BRANCH%/\r\n");
+     //   SERVERLIST.append("-1:http://update3.jdownloader.org/%BRANCH%/\r\n");
         // SERVERLIST.append("-1:http://update2.jdownloader.org/%BRANCH%/\r\n");
         // SERVERLIST.append("-1:http://jd.code4everyone.de/%BRANCH%/\r\n");
         // SERVERLIST.append("-1:http://jd.mirrors.cyb0rk.net/%BRANCH%/\r\n");
@@ -64,7 +64,7 @@ public class Updater {
     public static void main(String[] args) throws Exception {
         String branch = null;
 
-        branch = "NIGHTLY";
+        branch = "beta_09";
         Browser.setGlobalConnectTimeout(500000);
         Browser.setGlobalReadTimeout(500000);
         Updater upd = new Updater();

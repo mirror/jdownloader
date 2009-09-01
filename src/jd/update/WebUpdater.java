@@ -63,7 +63,7 @@ public class WebUpdater implements Serializable {
     private static final int UPDATE_FILE = 1;
     public static final String[] UPDATE_MIRROR = new String[] { "http://update0.jdownloader.org/", "http://update0.jdownloader.org/", "http://update1.jdownloader.org/", "http://update2.jdownloader.org/", };
     private static final String UPDATE_ZIP_LOCAL_PATH = "tmp/update.zip";
-    public static final String PARAM_BRANCH = "PARAM_BRANCH";
+    public static final String PARAM_BRANCH = "BRANCH";
     public static final String BRANCHINUSE = "BRANCHINUSE";
 
     /**
