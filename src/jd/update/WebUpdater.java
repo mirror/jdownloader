@@ -250,7 +250,7 @@ public class WebUpdater implements Serializable {
                     ArrayList<Branch> ret = new ArrayList<Branch>();
                     this.branches = new Branch[bs.length];
                     for (int ii = 0; ii < bs.length; ii++) {
-                        Branch branch = new Branch(bs[i]);
+                        Branch branch = new Branch(bs[ii]);
                         if (branch.isBeta() && betaBranch == null) {
                             betaBranch = branch;
                         } else if (!branch.isBeta()) {

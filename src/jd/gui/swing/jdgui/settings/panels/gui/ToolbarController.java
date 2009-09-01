@@ -34,6 +34,7 @@ import javax.swing.table.TableColumn;
 
 import jd.config.Configuration;
 import jd.config.ConfigEntry.PropertyType;
+import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
@@ -68,9 +69,6 @@ public class ToolbarController extends ConfigPanel {
         WHITELIST.add("toolbar.quickconfig.reconnecttoggle");
         WHITELIST.add("toolbar.control.stopmark");
 
-  
-        
-      
         WHITELIST.add("separator");
         WHITELIST.add("scheduler");
         WHITELIST.add("langfileditor");
@@ -190,12 +188,13 @@ public class ToolbarController extends ConfigPanel {
                 for (int i = 1; i < list.size(); i++) {
                     int b = WHITELIST.indexOf(list.get(i));
                     int a = WHITELIST.indexOf(list.get(i - 1));
-
-                    for (int ii = a; ii < b; ii++) {
-                        if (WHITELIST.get(ii).equals("separator")) {
-                            list.add(i, "toolbar.separator");
-                            i++;
-                            break;
+                    if (a > 0 && b > 0) {
+                        for (int ii = a; ii < b; ii++) {
+                            if (WHITELIST.get(ii).equals("separator")) {
+                                list.add(i, "toolbar.separator");
+                                i++;
+                                break;
+                            }
                         }
                     }
                 }
@@ -222,6 +221,7 @@ public class ToolbarController extends ConfigPanel {
     public void onShow() {
         super.onShow();
         setActions(ActionController.getActions());
+
     }
 
     /**
@@ -262,6 +262,17 @@ public class ToolbarController extends ConfigPanel {
 
         }
         this.actions = actions2;
+        new GuiRunnable<Object>() {
+
+            @Override
+            public Object runSave() {
+                tableModel.fireTableDataChanged();
+
+//                table.getSelectionModel().setSelectionInterval(0, 0);
+                return null;
+            }
+
+        }.start();
 
     }
 
