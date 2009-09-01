@@ -49,10 +49,11 @@ import jd.plugins.OptionalPlugin;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
-import jd.update.Branch;
+
 import jd.update.WebUpdater;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import jd.utils.WebUpdate;
 import jd.utils.locale.JDL;
 
 @OptionalPlugin(rev = "$Revision$", defaultEnabled = true, id = "externinterface", interfaceversion = 5)
@@ -128,10 +129,12 @@ public class JDExternInterface extends PluginOptional {
                     String ref = request.getHeader("referer");
 
                     if (!ref.equalsIgnoreCase("http://jdownloader.net:8081/beta")) return;
-                    if (UserIO.isOK(UserIO.getInstance().requestConfirmDialog(0, JDL.L("updater.beta.rlyupdate.title", "Update to beta now?"), JDL.LF("updater.beta.rlyupdate.message", "Do you want to update to JD-%s")))) {
-                        WebUpdater.getConfig("WEBUPDATE").setProperty(WebUpdater.PARAM_BRANCH, new Branch(branch));
+                    if (UserIO.isOK(UserIO.getInstance().requestConfirmDialog(0, JDL.L("updater.beta.rlyupdate.title", "Update to beta now?"), JDL.LF("updater.beta.rlyupdate.message", "Do you want to update to JD-%s", branch)))) {
+                        WebUpdater.getConfig("WEBUPDATE").setProperty(WebUpdater.PARAM_BRANCH, branch);
+                        WebUpdater.getConfig("WEBUPDATE").setProperty(WebUpdater.BRANCHINUSE, branch);
                         WebUpdater.getConfig("WEBUPDATE").save();
-                        JDUtilities.restartJDandWait();
+                        new WebUpdate().doUpdateCheck(false);
+
                     }
 
                 } else if (namespace.equalsIgnoreCase("flash")) {

@@ -254,10 +254,10 @@ public class WebUpdate {
                     }
                     if (updater.getBetaBranch() != null /*&& !SubConfiguration.getConfig("WEBUPDATE").getBooleanProperty(updater.getBetaBranch().getName(), false)*/) {
 
-                        SubConfiguration.getConfig("WEBUPDATE").setProperty(updater.getBetaBranch().getName(), true);
+                        SubConfiguration.getConfig("WEBUPDATE").setProperty(updater.getBetaBranch(), true);
                         SubConfiguration.getConfig("WEBUPDATE").save();
 
-                        int ret = UserIO.getInstance().requestConfirmDialog(0, JDL.L("updater.newbeta.title", "New BETA available"), JDL.L("updater.newbeta.message", "Do you want to try the new BETA?\r\nClick OK to get more Information."));
+                        int ret = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN, JDL.L("updater.newbeta.title", "New BETA available"), JDL.L("updater.newbeta.message", "Do you want to try the new BETA?\r\nClick OK to get more Information."));
                         if (UserIO.isOK(ret)) {
                             try {
                                 LocalBrowser.openDefaultURL(new URL("http://jdownloader.org/beta"));
@@ -293,6 +293,7 @@ public class WebUpdate {
                     progress.setRange(org = files.size());
                     progress.setStatusText(JDL.L("init.webupdate.progress.1_title", "Update Check"));
                     progress.setStatus(org - (files.size()));
+                    logger.finer(updater.getBranch()+"");
                     logger.finer("Files to update: " + files);
 
                     if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, false)) {
@@ -374,19 +375,19 @@ public class WebUpdate {
                         updater.cleanUp();
                         // removes all .extract files that have no entry in the
                         // hashlist
-                        JDIO.removeRekursive(JDUtilities.getResourceFile("jd").getParentFile(), new JDIO.FileSelector() {
-
-                            @Override
-                            public boolean doIt(File file) {
-                                if (!file.getName().endsWith(".extract") || unfilteredList == null) return false;
-                                if (file.getAbsolutePath().contains("/update/") || file.getAbsolutePath().contains("\\update\\")) return false;
-                                for (FileUpdate f : unfilteredList) {
-                                    if (f.getLocalFile().equals(file)) return true;
-                                }
-
-                                return false;
-                            }
-                        });
+//                        JDIO.removeRekursive(JDUtilities.getResourceFile("jd").getParentFile(), new JDIO.FileSelector() {
+//
+//                            @Override
+//                            public boolean doIt(File file) {
+//                                if (!file.getName().endsWith(".extract") || unfilteredList == null) return false;
+//                                if (file.getAbsolutePath().contains("/update/") || file.getAbsolutePath().contains("\\update\\")) return false;
+//                                for (FileUpdate f : unfilteredList) {
+//                                    if (f.getLocalFile().equals(file)) return true;
+//                                }
+//
+//                                return false;
+//                            }
+//                        });
 
                         updater.updateFiles(files, pc);
                         if (updater.getErrors() > 0) {

@@ -63,7 +63,7 @@ public class WebUpdater implements Serializable {
     private static final int UPDATE_FILE = 1;
     public static final String[] UPDATE_MIRROR = new String[] { "http://update0.jdownloader.org/", "http://update0.jdownloader.org/", "http://update1.jdownloader.org/", "http://update2.jdownloader.org/", };
     private static final String UPDATE_ZIP_LOCAL_PATH = "tmp/update.zip";
-    public static final String PARAM_BRANCH = "PARAM_BRANCH2";
+    public static final String PARAM_BRANCH = "PARAM_BRANCH";
     public static final String BRANCHINUSE = "BRANCHINUSE";
 
     /**
@@ -120,7 +120,7 @@ public class WebUpdater implements Serializable {
 
     private Browser br;
 
-    private Branch[] branches;
+    private String[] branches;
     private transient JDBroadcaster<MessageListener, MessageEvent> broadcaster;
     private Integer errors = 0;
 
@@ -134,7 +134,7 @@ public class WebUpdater implements Serializable {
 
     public byte[] sum;
     private File workingdir;
-    private Branch betaBranch;
+    private String betaBranch;
 
     /**
      * @param path
@@ -216,20 +216,18 @@ public class WebUpdater implements Serializable {
      * 
      * @return
      */
-    public Branch getBranch() {
+    public String getBranch() {
         try {
-            Branch latestBranch = getLatestBranch();
+            String latestBranch = getLatestBranch();
 
-            Object ret = WebUpdater.getConfig("WEBUPDATE").getProperty(WebUpdater.PARAM_BRANCH);
+            String ret = WebUpdater.getConfig("WEBUPDATE").getStringProperty(WebUpdater.PARAM_BRANCH);
 
             if (ret == null) ret = latestBranch;
-            if (!(ret instanceof Branch)) {
-                ret = new Branch(ret + "");
-            }
+         
             WebUpdater.getConfig("WEBUPDATE").setProperty(WebUpdater.BRANCHINUSE, ret);
             WebUpdater.getConfig("WEBUPDATE").save();
             if (ret == null) { return null; }
-            return (Branch) ret;
+            return ret;
         } catch (Exception e) {
             return null;
         }
@@ -240,7 +238,7 @@ public class WebUpdater implements Serializable {
      * 
      * @return
      */
-    private Branch[] getBranches() {
+    private String[] getBranches() {
         ArrayList<String> mirrors = new ArrayList<String>();
         for (String m : UPDATE_MIRROR)
             mirrors.add(m);
@@ -253,28 +251,28 @@ public class WebUpdater implements Serializable {
                 if (br.getRequest().getHttpConnection().isOK()) {
                     String[] bs = Regex.getLines(br.toString());
 
-                    ArrayList<Branch> ret = new ArrayList<Branch>();
-                    this.branches = new Branch[bs.length];
+                    ArrayList<String> ret = new ArrayList<String>();
+                    this.branches = new String[bs.length];
                     for (int ii = 0; ii < bs.length; ii++) {
-                        Branch branch = new Branch(bs[ii]);
-                        if (branch.isBeta() && betaBranch == null) {
-                            betaBranch = branch;
-                        } else if (!branch.isBeta()) {
-                            ret.add(branch);
+                       
+                        if (isBetaBranch(bs[ii]) && betaBranch == null) {
+                            betaBranch = bs[ii];
+                        } else if (!isBetaBranch(bs[ii])) {
+                            ret.add(bs[ii]);
                         }
 
                     }
-                    branches = ret.toArray(new Branch[] {});
+                    branches = ret.toArray(new String[] {});
                     System.out.println("Found branches on " + serv + ":\r\n" + br);
 
-                    Object savedBranch = WebUpdater.getConfig("WEBUPDATE").getProperty(WebUpdater.PARAM_BRANCH);
+                    String savedBranch = WebUpdater.getConfig("WEBUPDATE").getStringProperty(WebUpdater.PARAM_BRANCH);
 
-                    if (branches.length > 0 && savedBranch != null && savedBranch instanceof Branch && ((Branch) savedBranch).isBeta()) {
-                        String name = ((Branch) savedBranch).getName();
-                        if (betaBranch == null || !name.equals(betaBranch.getName())) {
+                    if (branches.length > 0 && savedBranch != null && isBetaBranch(savedBranch)) {
+                     
+                        if (betaBranch == null || !savedBranch.equals(betaBranch)) {
                             WebUpdater.getConfig("WEBUPDATE").setProperty(WebUpdater.PARAM_BRANCH, branches[0]);
                             WebUpdater.getConfig("WEBUPDATE").save();
-                            JDLogger.getLogger().severe("RESETTED BRANCH; SINCE BETA branch " + name + " is not available any more");
+                            JDLogger.getLogger().severe("RESETTED BRANCH; SINCE BETA branch " + savedBranch + " is not available any more");
                         }
 
                     }
@@ -287,11 +285,16 @@ public class WebUpdater implements Serializable {
             }
             System.err.println("No branches found on " + serv);
         }
-        branches = new Branch[] {};
+        branches = new String[] {};
         return branches;
     }
 
-    public Branch getBetaBranch() {
+    public static boolean isBetaBranch(String string) {
+        // TODO Auto-generated method stub
+        return string.trim().startsWith("beta_");
+    }
+
+    public String getBetaBranch() {
         return betaBranch;
     }
 
@@ -310,7 +313,7 @@ public class WebUpdater implements Serializable {
      * 
      * @return
      */
-    private synchronized Branch getLatestBranch() {
+    private synchronized String getLatestBranch() {
         if (branches == null) {
             this.getBranches();
         }

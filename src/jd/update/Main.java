@@ -119,7 +119,7 @@ public class Main {
                 } else if (p.trim().equalsIgnoreCase("-branch")) {
                     String br = args[++i];
                     if (br.equalsIgnoreCase("reset")) br = null;
-                    WebUpdater.getConfig("WEBUPDATE").setProperty(WebUpdater.PARAM_BRANCH, new Branch(br));
+                    WebUpdater.getConfig("WEBUPDATE").setProperty(WebUpdater.PARAM_BRANCH, br);
                     WebUpdater.getConfig("WEBUPDATE").save();
                     System.out.println("Switched branch: " + br);
                 } else if (p.trim().equalsIgnoreCase("-clone")) {

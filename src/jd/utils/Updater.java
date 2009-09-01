@@ -40,7 +40,6 @@ import jd.nutils.io.JDIO;
 import jd.nutils.svn.Subversion;
 import jd.nutils.zip.Zip;
 import jd.parser.Regex;
-import jd.update.Branch;
 import jd.update.FileUpdate;
 import jd.update.Restarter;
 import jd.update.WebUpdater;
@@ -57,20 +56,20 @@ public class Updater {
         SERVERLIST.append("-1:http://update3.jdownloader.org/%BRANCH%/\r\n");
         // SERVERLIST.append("-1:http://update2.jdownloader.org/%BRANCH%/\r\n");
         // SERVERLIST.append("-1:http://jd.code4everyone.de/%BRANCH%/\r\n");
-       //  SERVERLIST.append("-1:http://jd.mirrors.cyb0rk.net/%BRANCH%/\r\n");
-        
+        // SERVERLIST.append("-1:http://jd.mirrors.cyb0rk.net/%BRANCH%/\r\n");
+
         // SERVERLIST.append("-1:http://update0.jdownloader.org/%BRANCH%/\r\n");
     }
 
     public static void main(String[] args) throws Exception {
         String branch = null;
 
-        branch = "beta_09";
+        branch = "NIGHTLY";
         Browser.setGlobalConnectTimeout(500000);
         Browser.setGlobalReadTimeout(500000);
         Updater upd = new Updater();
 
-        if (branch != null) WebUpdater.getConfig("WEBUPDATE").setProperty(WebUpdater.PARAM_BRANCH, new Branch(branch));
+        if (branch != null) WebUpdater.getConfig("WEBUPDATE").setProperty(WebUpdater.PARAM_BRANCH, branch);
         WebUpdater.getConfig("WEBUPDATE").save();
         System.out.println("STATUS: Webupdate");
 
@@ -92,8 +91,8 @@ public class Updater {
         // //
         upd.merge();
         upd.checkHashes();
-       // upd.clone2(upd.branch,"http://jd.mirrors.cyb0rk.net/clone.php");
-         upd.clone2(upd.branch,"http://update3.jdownloader.org/clone.php");
+        // upd.clone2(upd.branch,"http://jd.mirrors.cyb0rk.net/clone.php");
+        upd.clone2(upd.branch, "http://update3.jdownloader.org/clone.php");
         // upd.clone2(upd.branch,"http://update2.jdownloader.org/clone.php");
         // list=upd.getLocalFileList(upd.workingDir, false);
 
@@ -169,7 +168,7 @@ public class Updater {
     private static String UPDATE_SERVER = "http://update1.jdownloader.org/";
     private File jars;
 
-    private Branch latestBranch;
+    private String latestBranch;
 
     public Updater() throws IOException, SVNException {
         workingDir = new File(".").getCanonicalFile();
@@ -244,7 +243,6 @@ public class Updater {
         pack(new File(this.updateDir, "jd/languages"));
 
     }
-
 
     private void pack(File file) {
         new File(file, file.getName() + ".extract").delete();
