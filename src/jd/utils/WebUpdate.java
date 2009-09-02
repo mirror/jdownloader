@@ -252,7 +252,7 @@ public class WebUpdate {
                         }
 
                     }
-                    if (updater.getBetaBranch() != null /*&& !SubConfiguration.getConfig("WEBUPDATE").getBooleanProperty(updater.getBetaBranch().getName(), false)*/) {
+                    if (updater.getBetaBranch() != null && !SubConfiguration.getConfig("WEBUPDATE").getBooleanProperty(updater.getBetaBranch(), false)) {
 
                         SubConfiguration.getConfig("WEBUPDATE").setProperty(updater.getBetaBranch(), true);
                         SubConfiguration.getConfig("WEBUPDATE").save();
