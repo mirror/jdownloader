@@ -357,8 +357,6 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
         }
         this.progressBarFilePackage.setMaximums(null);
         this.progressBarDownloadLink.setMaximums(null);
-        downloadLink = null;
-        fp = null;
     }
 
     public DownloadLink getDownloadLink() {

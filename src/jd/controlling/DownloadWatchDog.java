@@ -54,6 +54,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
     private boolean aborting;
 
     private HashMap<DownloadLink, SingleDownloadController> DownloadControllers = new HashMap<DownloadLink, SingleDownloadController>();
+    private ArrayList<DownloadLink> stopMarkTracker = new ArrayList<DownloadLink>();
 
     private static final Object nostopMark = new Object();
     private static final Object hiddenstopMark = new Object();
@@ -172,6 +173,8 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
             if (downloadStatus == STATE.NOT_RUNNING) {
                 /* set state to running */
                 downloadStatus = STATE.RUNNING;
+                /* clear stopMarkTracker */
+                stopMarkTracker.clear();
                 /* remove stopsign if it is reached */
                 if (reachedStopMark()) setStopMark(nostopMark);
                 /* restore speed limit */
@@ -703,13 +706,17 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
         synchronized (stopMark) {
             if (stopMark == hiddenstopMark) return true;
             if (stopMark instanceof DownloadLink) {
-                if (((DownloadLink) stopMark).isEnabled() && (((DownloadLink) stopMark).getLinkStatus().isPluginActive() || ((DownloadLink) stopMark).getLinkStatus().hasStatus(LinkStatus.FINISHED))) return true;
+                if (stopMarkTracker.contains(stopMark)) return true;
+                DownloadLink dl = ((DownloadLink) stopMark);
+                if (!dl.isEnabled()) return true;
+                if (dl.getLinkStatus().isFinished()) return true;
                 return false;
             }
             if (stopMark instanceof FilePackage) {
                 for (DownloadLink dl : ((FilePackage) stopMark).getDownloadLinkList()) {
-                    if (dl.getLinkStatus().hasStatus(LinkStatus.FINISHED)) continue;
-                    if (dl.isEnabled() && !dl.getLinkStatus().isPluginActive()) return false;
+                    if (stopMarkTracker.contains(dl)) continue;
+                    if (dl.isEnabled() && !dl.getLinkStatus().isFinished()) continue;
+                    return false;
                 }
                 return true;
             }
@@ -723,8 +730,9 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
         logger.info("Start new Download: " + dlink.getHost());
         dlink.getLinkStatus().setActive(true);
         this.activateDownload(dlink, download);
+        /* add download to stopMarkTracker */
+        if (!stopMarkTracker.contains(dlink)) stopMarkTracker.add(dlink);
         download.start();
-
     }
 
     public void onDownloadControllerEvent(DownloadControllerEvent event) {

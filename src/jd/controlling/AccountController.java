@@ -479,11 +479,11 @@ public class AccountController extends SubConfiguration implements ActionListene
     }
 
     public Account getValidAccount(PluginForHost pluginForHost) {
+        Account ret = null;
         synchronized (hosteraccounts) {
             ArrayList<Account> accounts = new ArrayList<Account>();
             accounts.addAll(provider.collectAccountsFor(pluginForHost));
             accounts.addAll(getAllAccounts(pluginForHost));
-            Account ret = null;
             switch (this.providemode) {
             case FIFO:
                 break;
@@ -504,14 +504,14 @@ public class AccountController extends SubConfiguration implements ActionListene
                     }
                 }
             }
-            if (ret != null && !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) {
-                if (System.currentTimeMillis() - lastballoon > ballooninterval) {
-                    lastballoon = System.currentTimeMillis();
-                    Balloon.show(JDL.L("gui.ballon.accountmanager.title", "Accountmanager"), JDTheme.II("gui.images.accounts", 32, 32), JDL.L("gui.accountcontroller.globpremdisabled", "Premiumaccounts are globally disabled!<br/>Click <a href='http://jdownloader.org/knowledge/wiki/gui/premiummenu'>here</a> for help."));
-                }
-                ret = null;
-            }
-            return ret;
         }
+        if (ret != null && !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) {
+            if (System.currentTimeMillis() - lastballoon > ballooninterval) {
+                lastballoon = System.currentTimeMillis();
+                Balloon.show(JDL.L("gui.ballon.accountmanager.title", "Accountmanager"), JDTheme.II("gui.images.accounts", 32, 32), JDL.L("gui.accountcontroller.globpremdisabled", "Premiumaccounts are globally disabled!<br/>Click <a href='http://jdownloader.org/knowledge/wiki/gui/premiummenu'>here</a> for help."));
+            }
+            ret = null;
+        }
+        return ret;
     }
 }

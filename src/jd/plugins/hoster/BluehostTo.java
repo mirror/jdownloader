@@ -101,8 +101,7 @@ public class BluehostTo extends PluginForHost {
         this.setBrowserExclusive();
         requestFileInformation(downloadLink);
         // Zeit bis free download möglich
-        String page = br.getPage("http://bluehost.to/fileinfo/urls=" + downloadLink.getDownloadURL());
-        String[] dat = page.split("\\, ");
+        String[] dat = br.toString().split("\\, ");
         int time = Integer.parseInt(dat[4]);
         if (time > 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.bluehostto.time", "BH free only allowed from 0 PM to 10 AM"), time * 1000l);
         br.setDebug(true);

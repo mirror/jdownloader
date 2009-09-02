@@ -58,6 +58,7 @@ public class Megauploadcom extends PluginForHost {
     private static String wwwWorkaround = null;
     private static final Object Lock = new Object();
     private static int simultanpremium = 1;
+    private boolean onlyapi = false;
 
     private String user;
 
@@ -98,6 +99,7 @@ public class Megauploadcom extends PluginForHost {
                     wwwWorkaround = "";
                     return;
                 }
+
             } catch (IOException e) {
             } finally {
                 if (wwwWorkaround == null) wwwWorkaround = "";
@@ -383,6 +385,12 @@ public class Megauploadcom extends PluginForHost {
             br.setCookiesExclusive(true);
             br.setCookie("http://" + wwwWorkaround + "megaupload.com", "l", "en");
             br.getPage("http://" + wwwWorkaround + "megaupload.com/?d=" + getDownloadID(l));
+            if (br.getHttpConnection().getLongContentLength() == 0 || br.containsHTML("No htmlCode read")) {
+                logger.info("It seems Megaupload is blocked! Only API may work!");
+                onlyapi = true;
+                l.setAvailableStatus(AvailableStatus.TRUE);
+                return true;
+            }
             if (br.containsHTML("The file has been deleted because it was violating")) {
                 l.getLinkStatus().setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                 l.getLinkStatus().setStatusText("Link abused or invalid");
@@ -412,6 +420,7 @@ public class Megauploadcom extends PluginForHost {
 
     // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        onlyapi = false;
         checkWWWWorkaround();
         this.checkLinks(new DownloadLink[] { downloadLink });
 
@@ -550,7 +559,11 @@ public class Megauploadcom extends PluginForHost {
         }
         if (br.getRedirectLocation() == null || br.getRedirectLocation().toUpperCase().contains(dlID)) {
             if (this.getPluginConfig().getIntegerProperty(CAPTCHA_MODE, 0) != 2) {
-                handleFree1(link, account);
+                if (onlyapi) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "API ONLY! IP is already Loading or DownloadLimit exceeded!", 5 * 60 * 1000l);
+                } else {
+                    handleFree1(link, account);
+                }
             } else {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "IP is already Loading or DownloadLimit exceeded!", 5 * 60 * 1000l);
             }
