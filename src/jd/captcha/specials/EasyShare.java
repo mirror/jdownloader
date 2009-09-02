@@ -17,15 +17,10 @@
 package jd.captcha.specials;
 
 import java.awt.Color;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.ListIterator;
-import java.util.Vector;
 
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
 import jd.captcha.pixelgrid.PixelGrid;
-import jd.captcha.pixelobject.PixelObject;
 
 /**
  * 
@@ -33,6 +28,7 @@ import jd.captcha.pixelobject.PixelObject;
  * @author JD-Team
  */
 public class EasyShare {
+    /*
     private static void mergeObjects(Vector<PixelObject> os) {
         for (PixelObject a : os) {
             for (PixelObject b : os) {
@@ -54,7 +50,7 @@ public class EasyShare {
         }
 
     }
-
+*/
     private static void clean(Captcha captcha) {
         int[][] newgrid = new int[captcha.getWidth()][captcha.getHeight()];
         for (int x = 0; x < captcha.getWidth(); x++) {
@@ -74,7 +70,7 @@ public class EasyShare {
         }
         captcha.grid = newgrid;
     }
-
+/*
     private static Vector<PixelObject> getRightletters(Vector<PixelObject> os, Captcha captcha) {
         if (os.size() > 5) return os;
         PixelObject biggest = os.get(0);
@@ -94,12 +90,13 @@ public class EasyShare {
         }
         return os;
     }
-
+*/
     public static Letter[] getLetters(Captcha captcha) {
         // captcha.cleanByRGBDistance(1, 25);
         clean(captcha);
         captcha.removeSmallObjects(0.75, 0.75, 6);
         captcha.toBlackAndWhite(0.95);
+        /*
         Vector<PixelObject> os = captcha.getObjects(0.5, 0.5);
         Collections.sort(os);
         mergeObjects(os);
@@ -120,7 +117,8 @@ public class EasyShare {
                 ret.add(let);
             }
         }
-        return ret.toArray(new Letter[] {});
+        */
+        return EasyCaptcha.getLetters(captcha);
 
     }
 

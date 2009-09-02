@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Vector;
 import java.util.Map.Entry;
 
+import jd.captcha.LetterComperator;
 import jd.captcha.easy.BackGroundImageManager;
 import jd.captcha.easy.CPoint;
 import jd.captcha.easy.ColorTrainer;
@@ -161,7 +162,7 @@ public class EasyCaptcha {
                 }
             }
             // if(true) return ret;
- 
+
             if ((biggest.getArea() / (captcha.owner.getLetterNum() * 2)) > aos.getArea() || (osSize / (captcha.owner.getLetterNum() * 2)) > aos.getSize()) {
                 mergeos(aos, os);
                 return mergeObjectsBasic(os, captcha, gab);
@@ -206,7 +207,85 @@ public class EasyCaptcha {
         return ret;
     }
 
-    public static ArrayList<PixelObject> getRightletters(ArrayList<PixelObject> os, Captcha captcha, int[] pixels, int[] mergeInfos) {
+    private static int[] findGab(PixelObject biggest, Captcha captcha) {
+        int[][] grid = captcha.getOrgGridCopy();
+
+        int[] gab = new int[biggest.getWidth()];
+        @SuppressWarnings("unchecked")
+        HashMap<Integer, Integer>[] colorG = new HashMap[gab.length];
+        for (int i = 0; i < biggest.getSize(); i++) {
+            int[] akt = biggest.elementAt(i);
+            int x = akt[0] - biggest.getXMin();
+            gab[x]++;
+            if (colorG[x] == null) {
+                colorG[x] = new HashMap<Integer, Integer>();
+                colorG[x].put(grid[akt[0]][akt[1]], 0);
+            } else {
+                if (colorG[x].containsKey(grid[akt[0]][akt[1]]))
+                    colorG[x].put(grid[akt[0]][akt[1]], colorG[x].get(grid[akt[0]][akt[1]]) + 1);
+                else
+                    colorG[x].put(grid[akt[0]][akt[1]], 0);
+            }
+        }
+        int gabAverage = 0;
+        for (int g : gab) {
+            gabAverage += g;
+        }
+        gabAverage /= gab.length;
+        int[] colorGab = new int[gab.length];
+        for (int i = 0; i < colorGab.length; i++) {
+            try {
+                Iterator<Entry<Integer, Integer>> cga = colorG[i].entrySet().iterator();
+                if (cga.hasNext()) {
+                    Entry<Integer, Integer> bc = cga.next();
+                    while (cga.hasNext()) {
+                        Entry<Integer, Integer> bc2 = cga.next();
+                        if (bc2.getValue() > bc.getValue()) bc = bc2;
+                    }
+                    colorGab[i] = bc.getKey();
+                } else {
+                    colorGab[i] = -1;
+                }
+            } catch (Exception e) {
+                colorGab[i] = -1;
+            }
+
+        }
+
+        int best = gab.length / 4;
+        double bestCGab = Double.MIN_VALUE;
+        int bestCGabPos = best + 1;
+        for (int i = best + 1; i < gab.length * 3 / 4; i++) {
+            try {
+                double dif = Colors.getColorDifference(colorGab[i - 1], colorGab[i]);
+                if (dif > bestCGab) {
+                    bestCGab = dif;
+                    bestCGabPos = i;
+                }
+                if (gab[i] < gab[best]) {
+                    best = i;
+                }
+            } catch (Exception e) {
+            }
+        }
+        if (gab[best] == 0) return new int[] { best, gab[best], gabAverage };
+        try {
+            double t = Colors.getBrightnessColorDifference(colorGab[bestCGabPos], colorGab[bestCGabPos - 1]) / 2;
+            double t2 = Colors.getHueColorDifference(colorGab[bestCGabPos], colorGab[bestCGabPos - 1]) / 2;
+
+            if (Colors.getBrightnessColorDifference(colorGab[best], colorGab[best - 1]) < t && Colors.getBrightnessColorDifference(colorGab[best], colorGab[best + 1]) < t && Colors.getHueColorDifference(colorGab[best], colorGab[best - 1]) < t2 && Colors.getHueColorDifference(colorGab[best], colorGab[best + 1]) < t2) {
+                if (bestCGab > 2 && gab[best] * 2 / 3 < gab[bestCGabPos]) {
+                    best = bestCGabPos;
+                } else if (bestCGab > 13) {
+                    best = bestCGabPos;
+                }
+            }
+        } catch (Exception e) {
+        }
+        return new int[] { best, gab[best], gabAverage };
+    }
+
+    public static List<PixelObject> getRightletters(List<PixelObject> os, Captcha captcha, int[] pixels, int[] mergeInfos) {
         for (Iterator<PixelObject> iterator = os.iterator(); iterator.hasNext();) {
             PixelObject elem = iterator.next();
             if (os.size() < 3 || os.size() < os.size() - 1) break;
@@ -216,88 +295,84 @@ public class EasyCaptcha {
         }
         if (os.size() >= captcha.owner.getLetterNum()) return os;
         int minw = pixels[0] / (captcha.owner.getLetterNum() * 3 / 2);
-        PixelObject biggest = os.get(0);
-        for (int i = 1; i < os.size(); i++) {
-            PixelObject po = os.get(i);
-            if (po.getWidth() > biggest.getWidth()) biggest = po;
+        if (os.size() >= captcha.owner.getLetterNum() - 1) minw = pixels[0] / (captcha.owner.getLetterNum());
+        PixelObject biggest = null;
+        PixelObject second = biggest;
+        for (PixelObject po : os) {
+            if (biggest == null || (po.getWidth() > biggest.getWidth())) {
+                if (po.detected == null) {
+                    second = biggest;
+                    biggest = po;
+                }
+            }
         }
-        if (biggest.getWidth() > minw) {
-            os.remove(biggest);
+        // System.out.println(biggest);
+        if (biggest != null && biggest.getWidth() > minw) {
 
-            int[][] grid = captcha.getOrgGridCopy();
-
-            int[] gab = new int[biggest.getWidth()];
-            @SuppressWarnings("unchecked")
-            HashMap<Integer, Integer>[] colorG = new HashMap[gab.length];
-            for (int i = 0; i < biggest.getSize(); i++) {
-                int[] akt = biggest.elementAt(i);
-                int x = akt[0] - biggest.getXMin();
-                gab[x]++;
-                if (colorG[x] == null) {
-                    colorG[x] = new HashMap<Integer, Integer>();
-                    colorG[x].put(grid[akt[0]][akt[1]], 0);
-                } else {
-                    if (colorG[x].containsKey(grid[akt[0]][akt[1]]))
-                        colorG[x].put(grid[akt[0]][akt[1]], colorG[x].get(grid[akt[0]][akt[1]]) + 1);
-                    else
-                        colorG[x].put(grid[akt[0]][akt[1]], 0);
+            int[] gabBiggest = findGab(biggest, captcha);
+            if (second != null) {
+                int[] gabSecond = findGab(second, captcha);
+                // System.out.println(gabBiggest[1]+":"+gabSecond[1]);
+                if (gabSecond[1] < ((gabBiggest[1] * 3) / 4)) {
+                    gabBiggest = gabSecond;
+                    biggest = second;
                 }
             }
-            int[] colorGab = new int[gab.length];
-            for (int i = 0; i < colorGab.length; i++) {
-                try {
-                    Iterator<Entry<Integer, Integer>> cga = colorG[i].entrySet().iterator();
-                    if (cga.hasNext()) {
-                        Entry<Integer, Integer> bc = cga.next();
-                        while (cga.hasNext()) {
-                            Entry<Integer, Integer> bc2 = cga.next();
-                            if (bc2.getValue() > bc.getValue()) bc = bc2;
+            PixelObject[] bs = biggest.splitAt(gabBiggest[0]);
+            // BasicWindow.showImage(biggest.toLetter().getImage(),"biggest"+gabBiggest[1]);
+
+            if (gabBiggest[1] != 0) {
+                Letter bestBiggest = biggest.toLetter();
+                bestBiggest.toBlackAndWhite();
+                LetterComperator ra = captcha.owner.getLetter(bestBiggest);
+                Letter bestA = biggest.toLetter();
+                bestA.toBlackAndWhite();
+                LetterComperator r2 = captcha.owner.getLetter(bestA);
+                bestA.detected = r2;
+                Letter bestB = bs[1].toLetter();
+                bestB.toBlackAndWhite();
+                LetterComperator r = captcha.owner.getLetter(bestB);
+                bestB.detected = r;
+                boolean be = true;
+                if ((((r2.getDecodedValue() != null && (r2.getDecodedValue().toLowerCase().equals("n") || r2.getDecodedValue().toLowerCase().equals("v") || r2.getDecodedValue().toLowerCase().equals("i")))) && r2.getValityPercent() < r.getValityPercent()) || (r.getDecodedValue() != null && (r.getDecodedValue().toLowerCase().equals("n") || r.getDecodedValue().toLowerCase().equals("v") || r.getDecodedValue().toLowerCase().equals("i")))) {
+                    r = r2;
+                    be = false;
+                }
+                if (ra.getValityPercent() <= r.getValityPercent() && ra.getValityPercent() < 60) {
+                    os.get(os.indexOf(biggest)).detected = ra;
+                    return getRightletters(os, captcha, pixels, mergeInfos);
+                }
+                if (r.getDecodedValue() != null && r.getValityPercent() < 45) {
+                    int[] offset = r.getPosition();
+                    if (offset != null) {
+                        int gab = 0;
+                        if (be)
+                            gab = biggest.getWidth() - (offset[0] + r.getB().getWidth());
+                        else
+                            gab = offset[0] + r.getB().getWidth();
+                        if (gab == biggest.getWidth() || gab == 0) {
+                            gab = gabBiggest[0];
                         }
-                        colorGab[i] = bc.getKey();
-                    } else {
-                        colorGab[i] = -1;
+                        bs = biggest.splitAt(gab);
+                        // BasicWindow.showImage(biggest.toLetter().getImage(),""+gab);
+
                     }
-                } catch (Exception e) {
-                    colorGab[i] = -1;
+                    // BasicWindow.showImage(r.getB().getImage(),""+r.getDecodedValue());
+
                 }
 
             }
 
-            int best = gab.length / 4;
-            double bestCGab = Double.MIN_VALUE;
-            int bestCGabPos = best + 1;
-            for (int i = best + 1; i < gab.length * 3 / 4; i++) {
-                try {
-                    double dif = Colors.getColorDifference(colorGab[i - 1], colorGab[i]);
-                    if (dif > bestCGab) {
-                        bestCGab = dif;
-                        bestCGabPos = i;
-                    }
-                    if (gab[i] < gab[best]) {
-                        best = i;
-                    }
-                } catch (Exception e) {
-                }
-            }
-            try {
-                double t = Colors.getBrightnessColorDifference(colorGab[bestCGabPos], colorGab[bestCGabPos - 1]) / 2;
-                double t2 = Colors.getHueColorDifference(colorGab[bestCGabPos], colorGab[bestCGabPos - 1]) / 2;
-
-                if (Colors.getBrightnessColorDifference(colorGab[best], colorGab[best - 1]) < t && Colors.getBrightnessColorDifference(colorGab[best], colorGab[best + 1]) < t && Colors.getHueColorDifference(colorGab[best], colorGab[best - 1]) < t2 && Colors.getHueColorDifference(colorGab[best], colorGab[best + 1]) < t2) {
-                    if (bestCGab > 2 && gab[best] * 2 / 3 < gab[bestCGabPos]) {
-                        best = bestCGabPos;
-                    } else if (bestCGab > 13) {
-                        best = bestCGabPos;
-                    }
-                }
-            } catch (Exception e) {
-            }
-
-            PixelObject[] bs = biggest.splitAt(best);
-
+            os.remove(biggest);
             for (PixelObject pixelObject : bs) {
-                if (pixelObject != null) os.add(pixelObject);
+                if (pixelObject != null) {
+                    // Letter let = pixelObject.toLetter();
+                    // let.removeSmallObjects(0.75, 0.75, pixelObject.getSize()
+                    // / 7);
+                    os.add(pixelObject);
+                }
             }
+
             return getRightletters(os, captcha, pixels, mergeInfos);
         }
         return os;
@@ -471,10 +546,13 @@ public class EasyCaptcha {
         Collections.sort(os);
         ArrayList<Letter> ret = new ArrayList<Letter>();
         for (PixelObject pixelObject : os) {
-            Letter let = pixelObject.toLetter();
-            let.removeSmallObjects(0.75, 0.75, pixelObject.getSize() / 7);
-            let = let.toPixelObject(0.75).toLetter();
-            ret.add(let);
+            if (pixelObject.getArea() > (mergeInfos[0] / (captcha.owner.getLetterNum() * 3)) && pixelObject.getSize() > (mergeInfos[1] / (captcha.owner.getLetterNum() * 5))) {
+
+                Letter let = pixelObject.toLetter();
+                let.removeSmallObjects(0.75, 0.75, pixelObject.getSize() / 7);
+                let = let.toPixelObject(0.75).toLetter();
+                ret.add(let);
+            }
         }
         return ret.toArray(new Letter[] {});
 
