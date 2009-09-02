@@ -206,9 +206,10 @@ public class BackGroundImageManager {
             }
             Captcha captcha2 = captchaImage.owner.createCaptcha(bImage);
             int val = 0;
-            for (int x = 0; x < captchaImage.getWidth(); x++) {
+            outer:for (int x = 0; x < captchaImage.getWidth(); x++) {
                 for (int y = 0; y < captchaImage.getHeight(); y++) {
                     bgi.setColor(captcha2.getPixelValue(x, y));
+                    if(x==(captchaImage.getWidth()/3)&&val<(bestVal/4))break outer;
                     if (bgi.getColorDifference(backupGrid[x][y]) < bgi.getDistance()) val++;
                 }
             }
