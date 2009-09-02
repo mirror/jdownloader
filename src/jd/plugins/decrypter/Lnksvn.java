@@ -17,7 +17,10 @@
 package jd.plugins.decrypter;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
+
+import org.xml.sax.SAXException;
 
 import jd.PluginWrapper;
 import jd.captcha.specials.Linksave;
@@ -26,6 +29,7 @@ import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.JavaScript;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -64,7 +68,7 @@ public class Lnksvn extends PluginForDecrypt {
             String captchaCode = getCaptchaCode(captchaFile, param);
             form.put("code", captchaCode);
             br.submitForm(form);
-            if (br.containsHTML("Captcha-code ist falsch") || br.containsHTML("Besucherpasswort ist falsch")) {
+            if (br.containsHTML("Falscher Code")||br.containsHTML("Captcha-code ist falsch") || br.containsHTML("Besucherpasswort ist falsch")) {
                 br.getPage(param.getCryptedUrl());
                 form = br.getFormbyProperty("name", "form");
             } else {
@@ -83,35 +87,124 @@ public class Lnksvn extends PluginForDecrypt {
                  * 
                  * c=result.toString();
                  */
+                Browser clone = br.cloneBrowser();
                 String test = Encoding.htmlDecode(c);
                 File file = null;
                 if (test.endsWith(".cnl")) {
-                    URLConnectionAdapter con = br.openGetConnection("http://linksave.in/" + test.replace("dlc://linksave.in/", ""));
+                    URLConnectionAdapter con = clone.openGetConnection("http://linksave.in/" + test.replace("dlc://linksave.in/", ""));
                     if (con.getResponseCode() == 200) {
                         file = JDUtilities.getResourceFile("tmp/linksave/" + test.replace(".cnl", ".dlc").replace("dlc://", "http://").replace("http://linksave.in", ""));
-                        br.downloadConnection(file, con);
+                        clone.downloadConnection(file, con);
                     } else {
                         con.disconnect();
                     }
                 } else if (test.endsWith(".rsdf")) {
-                    URLConnectionAdapter con = br.openGetConnection(test);
+                    URLConnectionAdapter con = clone.openGetConnection(test);
                     if (con.getResponseCode() == 200) {
                         file = JDUtilities.getResourceFile("tmp/linksave/" + test.replace("http://linksave.in", ""));
-                        br.downloadConnection(file, con);
+                        clone.downloadConnection(file, con);
                     } else {
                         con.disconnect();
                     }
                 }
                 if (file != null && file.exists() && file.length() > 100) {
-                    decryptedLinks = JDUtilities.getController().getContainerLinks(file);
-                    if (decryptedLinks.size() > 0) return decryptedLinks;
+                    try {
+                        decryptedLinks = JDUtilities.getController().getContainerLinks(file);
+                    } catch (Exception e) {
+                        // TODO: handle exception
+                    }
+
                 }
             }
+        }
+        if (decryptedLinks.size() == 0) {
+            String[] links = br.getRegex("<a href=\"(http://linksave[^\"]*)\" onclick=\"javascript:document.getElementById").getColumn(0);
+            final class LsDirektLinkTH extends Thread {
+                Browser browser;
+                String result;
+                public LsDirektLinkTH(Browser browser) {
+                    this.browser = browser;
+                }
+                public void run() {
+                    try {
+                        result = getDirektLink(browser);
+                    } catch (IOException e) {
+                        // TODO Auto-generated catch block
+                         e.printStackTrace();
+                    }
+                    synchronized (this) {
+                        this.notify();
+                    }
+                }
+            }
+            LsDirektLinkTH[] dlinks = new LsDirektLinkTH[links.length];
+            for (int i = 0; i < dlinks.length; i++) {
+                Browser clone = br.cloneBrowser();
+                clone.getPage(links[i]);
+                dlinks[i] = new LsDirektLinkTH(clone);
+                dlinks[i].start();
+            }
+            for (LsDirektLinkTH lsDirektLinkTH : dlinks) {
+                while (lsDirektLinkTH.isAlive()) {
+                    synchronized (lsDirektLinkTH) {
+                        try {
+                            lsDirektLinkTH.wait();
+                        } catch (InterruptedException e) {
+                            // TODO Auto-generated catch block
+                            // e.printStackTrace();
+                        }
+                    }
+                }
+                if (lsDirektLinkTH.result != null) decryptedLinks.add(createDownloadlink(lsDirektLinkTH.result));
+            }
             if (decryptedLinks.size() == 0) throw new DecrypterException("Out of date. Try Click'n'Load");
-        } else {
-            throw new DecrypterException("Out of date. Try Click'n'Load");
+
+            // throw new DecrypterException("Out of date. Try Click'n'Load");
         }
         return decryptedLinks;
+    }
+
+    private static String getDirektLink(Browser br) throws IOException {
+        String link = br.getRegex("<frame scrolling=\"auto\" noresize src=\"([^\"]*)\">").getMatch(0);
+        if (link != null) br.getPage(link);
+        String link2 = Encoding.htmlDecode(br.getRegex("iframe src=\"([^\"]*)\"").getMatch(0));
+        if (link2 != null)
+            return link2.trim();
+        else {
+            br.getRequest().setHtmlCode(br.toString().replaceFirst("<script type=\"text/javascript\" src=\"[^\"]*.js\">", ""));
+
+            JavaScript js = new JavaScript(br);
+            try {
+                js.runPage();
+                br.getRequest().setHtmlCode(js.getDocment().getContent().replaceFirst("<script type=\"text/javascript\" src=\"[^\"]*.js\">", ""));
+                link2 = br.getRegex("location.replace\\('([^\']*)").getMatch(0);
+                if (link2 == null) link2 = br.getRegex("src=\"([^\"]*)\"").getMatch(0);
+                if (link2 == null) link2 = br.getRegex("URL=([^\"]*)\"").getMatch(0);
+                br.getPage(link2);
+                link2 = Encoding.htmlDecode(br.getRegex("iframe src=\"([^\"]*)\"").getMatch(0));
+                if (link2 == null) {
+                    js = new JavaScript(br);
+                    js.runPage();
+                    br.getRequest().setHtmlCode(js.getDocment().getContent());
+                    link2 = br.getForm(0).getAction();
+                }
+                if (link2 != null) return link2.trim();
+
+                // br.getRequest().setHtmlCode(js.getVar("o"));
+
+                // String var=js.callFunction(eval);
+                // System.out.println(br);
+                // System.out.println(br.getForm(0).getAction());
+            } catch (SAXException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+
+        }
+        return null;
     }
 
     // @Override
