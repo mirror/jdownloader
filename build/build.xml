@@ -129,37 +129,13 @@
 				<include name="jd/nutils/OSDetector*.class" />	
 				<include name="jd/nutils/DynByteBuff*.class" />
 				<include name="jd/nutils/Executer*.class" />
+				<include name="jd/nutils/zip/**" />
 				<include name="jd/parser/Regex*.class" />
 			</fileset>
 		</jar>
 		<delete file="Manifest.MF" failonerror="false" />
 	</target>
-	<target name="jarHostService">
-		<!--HostService-->
-		<manifest file="Manifest.MF">
-			<attribute name="Created-By" value="coalado" />
-			<attribute name="Main-Class" value="hostservice.HostService" />
-			<attribute name="Class-Path" value="${class-path}" />
-		</manifest>
-		<jar jarfile="${dist}/jdhostservice.jar" manifest="Manifest.MF">
-			<fileset dir="${cls}">
-				<include name="**/*.class" />
-				<exclude name="jd/http/**" />
-				<exclude name="jd/captcha/**" />
-				<exclude name="jd/gui/**" />
-				<exclude name="it/**" />
-				<exclude name="jd/plugins/hoster/**" />
-				<exclude name="jd/plugins/decrypter/**" />
-				<exclude name="jd/captcha/methods/**" />
-				<exclude name="jd/plugins/optional/**" />
-				<exclude name="sun/net/www/protocol/**" />
-				<include name="jd/plugins/hoster/HTTPAllgemein*" />
-				<exclude name="tests/**" />
-			</fileset>
-		</jar>
-		<delete file="Manifest.MF" failonerror="false" />
-	</target>
-
+	
 	<target name="jarOptionals">
 		<!-- Optional Plugins -->
 		<manifest file="Manifest.MF">
@@ -298,11 +274,10 @@
 		<move file="${dist}/JDownloader_obfuscated.jar" tofile="${dist}/JDownloader.jar" />
 	</target>
 
-	<target name="standardBuild" depends="compile,jar,jarOptionals,jarWebupdater,jarHostService,jarRestarter">
+	<target name="standardBuild" depends="compile,jar,jarOptionals,jarWebupdater,jarRestarter">
 	</target>
 
-	<target name="hostservice" depends="compile,jar,jarHostService">
-	</target>
+
 
 	<target name="dlcEnabledBuild" depends="standardBuild,cryptContainer,sign">
 	</target>

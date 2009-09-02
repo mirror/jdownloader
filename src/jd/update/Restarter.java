@@ -26,6 +26,7 @@ import java.util.logging.Logger;
 import jd.nutils.Executer;
 import jd.nutils.OSDetector;
 import jd.nutils.OutdatedParser;
+import jd.nutils.zip.UnZip;
 
 public class Restarter {
 
@@ -74,7 +75,7 @@ public class Restarter {
             }
             new File("update/tools/tinyupdate.jar").deleteOnExit();
             new File("update/tools/tinyupdate.jar").delete();
-
+            extract(new File("update"));
             move(new File("update"));
             int i = 0;
             while (!removeFiles() && i <= 3) {
@@ -106,6 +107,31 @@ public class Restarter {
 
         } catch (Throwable e) {
             logger.severe(getStackTrace(e));
+        }
+
+    }
+/**
+ * Extracts all .extract files
+ * @param file
+ */
+    private static void extract(File file) {
+        for (File f : file.listFiles()) {
+            if (f.isDirectory()) {
+                extract(f);
+            } else {
+                if (f.getName().endsWith(".extract")) {
+                    logger.info("Extract: "+f);
+                    UnZip u = new UnZip(f, f.getParentFile());
+                    u.setOverwrite(false);
+                    try {
+                        File[] efiles = u.extract();
+                        logger.info("-->: "+efiles.length+" files");
+                    } catch (Exception e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
+                }
+            }
         }
 
     }

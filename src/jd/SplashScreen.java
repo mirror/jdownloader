@@ -45,6 +45,7 @@ import jd.event.ControlListener;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.laf.LookAndFeelController;
+import jd.gui.userio.DummyFrame;
 import jd.nutils.nativeintegration.ScreenDevices;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -156,6 +157,7 @@ public class SplashScreen implements ActionListener, ControlListener {
         label.setIcon(drawImage(0.0f));
 
         window = new JWindow(gc);
+     
         window.setLayout(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[grow,fill]0[]"));
         window.setAlwaysOnTop(true);
         window.setSize(image.getWidth(null), image.getHeight(null));

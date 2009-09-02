@@ -111,6 +111,7 @@ public class Installer {
     }
 
     public static void askInstallFlashgot() {
+        if (SubConfiguration.getConfig("FLASHGOT").getBooleanProperty("ASKED_TO_INSTALL_FLASHGOT", false)) { return; }
         int answer = (Integer) new GuiRunnable<Object>() {
 
             private ContainerDialog dialog;
@@ -142,6 +143,7 @@ public class Installer {
 
                     protected void packed() {
                         dialog = this;
+                        this.setAlwaysOnTop(true);
                         this.setSize(550, 400);
                     }
                 };
@@ -272,7 +274,7 @@ public class Installer {
         File file = getFlashGotFile();
 
         LocalBrowser.openinFirefox(file.getAbsolutePath());
-       
+
     }
 
     /**
