@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -30,22 +29,23 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 /*
-Domains:
-album.ee
-mallorca.as.album.ee
-static1.album.ee
-beta.album.ee
-http://wwww.album.ee
-ru.album.ee
-en.album.ee
+ Domains:
+ album.ee
+ mallorca.as.album.ee
+ static1.album.ee
+ beta.album.ee
+ http://wwww.album.ee
+ ru.album.ee
+ en.album.ee
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {"album.ee"}, urls = {"http://[\\w\\.]*?(album.ee|mallorca.as.album.ee|static1.album.ee|beta.album.ee|ru.album.ee|en.album.ee)/(album|node)/[0-9]+/[0-9]+(\\?page=[0-9]+)?"}, flags = {0})
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "album.ee" }, urls = { "http://[\\w\\.]*?(album.ee|mallorca.as.album.ee|static1.album.ee|beta.album.ee|ru.album.ee|en.album.ee)/(album|node)/[0-9]+/[0-9]+(\\?page=[0-9]+)?" }, flags = { 0 })
 public class AlbumEE extends PluginForDecrypt {
 
-    private Pattern fileNamePattern = Pattern.compile("<p class=\"f-left\">photo » <b>(.*?)</b></p>");
-    private Pattern albumNamePattern = Pattern.compile("album » <a href=\"album[0-9/]+\" class=\"active\">(.*?)</a></p>");
+    private Pattern fileNamePattern = Pattern.compile("\">(photo|foto|Фото).*?<b>(.*?)</b></p>");
+    private Pattern albumNamePattern = Pattern.compile(">.*?(album|альбом).*?<a href=\"album[/0-9]+\".*?>(.*?)</a></p>");
+    private Pattern nextPagePattern = Pattern.compile("<a href=\"(album[/0-9]+\\?page=[0-9]+)\">(Next|Järgmine|Следующая)</a>");
     private Pattern singleLinksPattern = Pattern.compile("<div class=\"img\"><a href=\"(node/[0-9]+/[0-9]+)\"><img src");
-    private Pattern pictureURLPattern = Pattern.compile("<img src=\"(http://[\\w\\.]*?album.*?/files/.*?)\" alt", Pattern.CASE_INSENSITIVE);
+    private Pattern pictureURLPattern = Pattern.compile("<img src=\"(http://[\\w\\.]*?album.*?/files/.*?)\" alt");
 
     public AlbumEE(PluginWrapper wrapper) {
         super(wrapper);
@@ -56,23 +56,23 @@ public class AlbumEE extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         ArrayList<String> picLinks = new ArrayList<String>();
         br.setFollowRedirects(true);
-        br.getPage(parameter.toString());
-        String nextPage;
+        String link = parameter.toString();
+        br.getPage(link);
+        String nextPage = null;
         String[] links;
-        String albumName;
+        String albumName = null;
         FilePackage fp = null;
         boolean onePageOnly = false;
-        albumName = br.getRegex(albumNamePattern).getMatch(0);
+        albumName = br.getRegex(albumNamePattern).getMatch(1);
         if (albumName != null) {
             fp = FilePackage.getInstance();
             fp.setName(albumName);
         }
-        Regex linkType = br.getRegex(Pattern.compile("(.*?/node/[0-9]+/[0-9]+)|(.*?/album/[0-9]+/[0-9]+\\?page=[0-9]+)", Pattern.CASE_INSENSITIVE));
-        if (linkType.getMatch(0) != null) {
+        if (link.contains("/node")) {
             picLinks.add(parameter.toString());
         } else {
-            if (linkType.getMatch(1) != null) {
-                onePageOnly = true; //only load this single page
+            if (link.contains("?page=")) {
+                onePageOnly = true; // only load this single page
             }
             do {
                 links = br.getRegex(singleLinksPattern).getColumn(0);
@@ -80,18 +80,18 @@ public class AlbumEE extends PluginForDecrypt {
                     picLinks.add("http://www.album.ee/" + links[i]);
                 }
                 if (onePageOnly) break;
-                nextPage = br.getRegex(Pattern.compile("<a href=\"(album/[0-9]+/[0-9]+\\?page=[0-9]+)\">Next</a>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+                nextPage = br.getRegex(nextPagePattern).getMatch(0);
                 if (nextPage == null) break;
                 br.getPage("http://www.album.ee/" + nextPage);
             } while (true);
         }
-        String pictureURL;
-        String filename;
+        String pictureURL = null;
+        String filename = null;
         DownloadLink dlLink;
         progress.setRange(picLinks.size());
-        for (String link : picLinks) {
-            br.getPage(link);
-            filename = br.getRegex(fileNamePattern).getMatch(0);
+        for (String picLink : picLinks) {
+            br.getPage(picLink);
+            filename = br.getRegex(fileNamePattern).getMatch(1);
             pictureURL = br.getRegex(pictureURLPattern).getMatch(0);
             if (pictureURL == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             dlLink = createDownloadlink(pictureURL);
