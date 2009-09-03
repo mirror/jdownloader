@@ -15,11 +15,14 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.awt.Color;
 import java.util.ArrayList;
-
 import java.util.regex.Pattern;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.controlling.ProgressControllerEvent;
+import jd.controlling.ProgressControllerListener;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -39,13 +42,15 @@ import jd.plugins.PluginForDecrypt;
  en.album.ee
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "album.ee" }, urls = { "http://[\\w\\.]*?(album.ee|mallorca.as.album.ee|static1.album.ee|beta.album.ee|ru.album.ee|en.album.ee)/(album|node)/[0-9]+/[0-9]+(\\?page=[0-9]+)?" }, flags = { 0 })
-public class AlbumEE extends PluginForDecrypt {
+public class AlbumEE extends PluginForDecrypt implements ProgressControllerListener {
 
     private Pattern fileNamePattern = Pattern.compile("\">(photo|foto|Фото).*?<b>(.*?)</b></p>");
     private Pattern albumNamePattern = Pattern.compile(">.*?(album|альбом).*?<a href=\"album[/0-9]+\".*?>(.*?)</a></p>");
     private Pattern nextPagePattern = Pattern.compile("<a href=\"(album[/0-9]+\\?page=[0-9]+)\">(Next|Järgmine|Следующая)</a>");
     private Pattern singleLinksPattern = Pattern.compile("<div class=\"img\"><a href=\"(node/[0-9]+/[0-9]+)\"><img src");
     private Pattern pictureURLPattern = Pattern.compile("<img src=\"(http://[\\w\\.]*?album.*?/files/.*?)\" alt");
+    private boolean abort = false;
+    private ProgressController progress;
 
     public AlbumEE(PluginWrapper wrapper) {
         super(wrapper);
@@ -53,7 +58,9 @@ public class AlbumEE extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
+        this.progress = progress;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        progress.getBroadcaster().addListener(this);
         ArrayList<String> picLinks = new ArrayList<String>();
         br.setFollowRedirects(true);
         String link = parameter.toString();
@@ -75,6 +82,7 @@ public class AlbumEE extends PluginForDecrypt {
                 onePageOnly = true; // only load this single page
             }
             do {
+                if (abort) return new ArrayList<DownloadLink>();
                 links = br.getRegex(singleLinksPattern).getColumn(0);
                 for (int i = 0; i < links.length; i++) {
                     picLinks.add("http://www.album.ee/" + links[i]);
@@ -90,6 +98,7 @@ public class AlbumEE extends PluginForDecrypt {
         DownloadLink dlLink;
         progress.setRange(picLinks.size());
         for (String picLink : picLinks) {
+            if (abort) return new ArrayList<DownloadLink>();
             br.getPage(picLink);
             filename = br.getRegex(fileNamePattern).getMatch(1);
             pictureURL = br.getRegex(pictureURLPattern).getMatch(0);
@@ -101,5 +110,15 @@ public class AlbumEE extends PluginForDecrypt {
             progress.increase(1);
         }
         return decryptedLinks;
+    }
+
+    public void onProgressControllerEvent(ProgressControllerEvent event) {
+        if (event.getID() == ProgressControllerEvent.CANCEL) {
+            progress.setColor(Color.RED);
+            progress.setStatusText(progress.getStatusText() + ": Aborted");
+            progress.doFinalize(5000l);
+            abort = true;
+        }
+
     }
 }
