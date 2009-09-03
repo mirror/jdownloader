@@ -203,8 +203,8 @@ public class ShareOnlineBiz extends PluginForHost {
         String url = Context.toString(result);
         Context.exit();
 
-        /* 15 seks warten */
-        sleep(15000, downloadLink);
+        //Keine Zwangswartezeit, deswegen auskommentiert
+//        sleep(15000, downloadLink);
         br.setFollowRedirects(true);
         /* Datei herunterladen */
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url);
