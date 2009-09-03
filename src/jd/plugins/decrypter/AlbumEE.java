@@ -82,7 +82,12 @@ public class AlbumEE extends PluginForDecrypt implements ProgressControllerListe
                 onePageOnly = true; // only load this single page
             }
             do {
-                if (abort) return new ArrayList<DownloadLink>();
+                if (abort) {
+                    progress.setColor(Color.RED);
+                    progress.setStatusText(progress.getStatusText() + ": Aborted");
+                    progress.doFinalize(5000l);
+                    return new ArrayList<DownloadLink>();
+                }
                 links = br.getRegex(singleLinksPattern).getColumn(0);
                 for (int i = 0; i < links.length; i++) {
                     picLinks.add("http://www.album.ee/" + links[i]);
@@ -98,7 +103,12 @@ public class AlbumEE extends PluginForDecrypt implements ProgressControllerListe
         DownloadLink dlLink;
         progress.setRange(picLinks.size());
         for (String picLink : picLinks) {
-            if (abort) return new ArrayList<DownloadLink>();
+            if (abort) {
+                progress.setColor(Color.RED);
+                progress.setStatusText(progress.getStatusText() + ": Aborted");
+                progress.doFinalize(5000l);
+                return new ArrayList<DownloadLink>();
+            }
             br.getPage(picLink);
             filename = br.getRegex(fileNamePattern).getMatch(1);
             pictureURL = br.getRegex(pictureURLPattern).getMatch(0);
@@ -114,9 +124,6 @@ public class AlbumEE extends PluginForDecrypt implements ProgressControllerListe
 
     public void onProgressControllerEvent(ProgressControllerEvent event) {
         if (event.getID() == ProgressControllerEvent.CANCEL) {
-            progress.setColor(Color.RED);
-            progress.setStatusText(progress.getStatusText() + ": Aborted");
-            progress.doFinalize(5000l);
             abort = true;
         }
 
