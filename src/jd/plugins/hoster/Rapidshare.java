@@ -291,7 +291,7 @@ public class Rapidshare extends PluginForHost {
                         u.getLinkStatus().setStatusText(JDL.L("plugin.host.rapidshare.status.abused", "File abused"));
                         break;
                     case 5:
-                        u.setAvailable(true);
+                        u.setAvailableStatus(AvailableStatus.UNCHECKABLE);
                         u.getLinkStatus().setErrorMessage(JDL.L("plugin.host.rapidshare.status.anonymous", "File without Account(annonymous)"));
                         u.getLinkStatus().setStatusText(JDL.L("plugin.host.rapidshare.status.anonymous", "File without Account(annonymous)"));
                         break;

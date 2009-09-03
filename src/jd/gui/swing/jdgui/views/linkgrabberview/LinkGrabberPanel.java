@@ -785,9 +785,13 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         }
     }
 
-    public boolean isFilePackageInfoVisible() {
-        if (LinkgrabberView.getInstance().getInfoPanel() == filePackageInfo) return true;
-        return false;
+    public boolean isFilePackageInfoVisible(Object obj) {
+        boolean visible = LinkgrabberView.getInstance().getInfoPanel() == filePackageInfo;
+        if (obj != null) {
+            if (obj instanceof LinkGrabberFilePackage && filePackageInfo.getPackage() == obj && visible) return true;
+            return false;
+        }
+        return visible;
     }
 
 }

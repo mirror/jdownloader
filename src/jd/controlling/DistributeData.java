@@ -259,12 +259,13 @@ public class DistributeData extends Thread {
     public ArrayList<DownloadLink> findLinks() {
         /* normal quickcheck */
         ArrayList<DownloadLink> ret = quickHosterCheck(data);
+        foundPasswords.addAll(HTMLParser.findPasswords(data));
         if (ret != null && ret.size() == 1) {
             /* also check for disabled hosterplugin and filtering here */
             if (!ret.get(0).getPlugin().getWrapper().usePlugin() || LinkGrabberController.isFiltered(ret.get(0))) ret.clear();
+            ret.get(0).addSourcePluginPasswordList(foundPasswords);
             return ret;
         }
-        foundPasswords.addAll(HTMLParser.findPasswords(data));
         data = HTMLEntities.unhtmlentities(data);
         data = data.replaceAll("jd://", "http://");
         ret = findLinksIntern();

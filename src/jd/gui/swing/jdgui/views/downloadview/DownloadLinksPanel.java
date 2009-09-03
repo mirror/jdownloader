@@ -688,8 +688,13 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
         return scrollPane;
     }
 
-    public boolean isFilePackageInfoVisible() {
-        if (DownloadView.getInstance().getInfoPanel() == filePackageInfo) return true;
-        return false;
+    public boolean isFilePackageInfoVisible(Object obj) {
+        boolean visible = DownloadView.getInstance().getInfoPanel() == filePackageInfo;
+        if (obj != null) {
+            if (obj instanceof DownloadLink && filePackageInfo.getDownloadLink() == obj && visible) return true;
+            if (obj instanceof FilePackage && filePackageInfo.getPackage() == obj && visible) return true;
+            return false;
+        }
+        return visible;
     }
 }

@@ -46,7 +46,7 @@ public class NarodRu extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("<title>404</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("<title>404</title>") || br.containsHTML("Файл удален с сервиса")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String name = br.getRegex(Pattern.compile("<dt class=\"name\"><i class=\"b-old-icon b-old-icon-arc\"></i>(.*?)</dt>")).getMatch(0);
         if (name == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
@@ -67,18 +67,16 @@ public class NarodRu extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        br.getPage("http://narod.ru/disk/getcapchaxml/?rnd=1");
-        System.out.print(br);
-        String captchaKey = br.getRegex(Pattern.compile("<number.*>(.*?)</number>")).getMatch(0);
-        String captchaUrl = "http://u.captcha.yandex.net/image?key=" + captchaKey;
-
-        Form form = new Form();
-        form.setMethod(Form.MethodType.POST);
-        form.setAction(downloadLink.getDownloadURL());
-        form.put("key", captchaKey);
-        form.put("action", "sendcapcha");
-
         for (int i = 1; i <= 3; i++) {
+            br.getPage("http://narod.ru/disk/getcapchaxml/?rnd=1");
+            String captchaKey = br.getRegex(Pattern.compile("<number.*>(.*?)</number>")).getMatch(0);
+            String captchaUrl = "http://u.captcha.yandex.net/image?key=" + captchaKey;
+
+            Form form = new Form();
+            form.setMethod(Form.MethodType.POST);
+            form.setAction(downloadLink.getDownloadURL());
+            form.put("key", captchaKey);
+            form.put("action", "sendcapcha");
             String captchaCode = getCaptchaCode(captchaUrl, downloadLink);
 
             form.put("rep", captchaCode);

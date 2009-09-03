@@ -449,9 +449,11 @@ public class DownloadTable extends JDTable implements MouseListener, MouseMotion
             }
         }
         if (e.getButton() == MouseEvent.BUTTON1) {
-            if ((e.getClickCount() == 1 && panel.isFilePackageInfoVisible()) || e.getClickCount() == 2) {
+            if ((e.getClickCount() == 1 && panel.isFilePackageInfoVisible(null)) || e.getClickCount() == 2) {
                 Object element = getValueAt(row, 0);
-                if (element instanceof FilePackage) {
+                if (panel.isFilePackageInfoVisible(element) && e.getClickCount() == 2) {
+                    panel.hideFilePackageInfo();
+                } else if (element instanceof FilePackage) {
                     panel.showFilePackageInfo((FilePackage) element);
                 } else {
                     panel.showDownloadLinkInfo((DownloadLink) element);
