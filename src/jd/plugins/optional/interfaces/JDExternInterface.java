@@ -23,6 +23,8 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 
+import javax.swing.JFrame;
+
 import jd.Installer;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -34,6 +36,8 @@ import jd.controlling.JDLogger;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.PasswordListController;
 import jd.gui.UserIO;
+import jd.gui.swing.GuiRunnable;
+import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.nutils.JDFlags;
 import jd.nutils.encoding.Encoding;
@@ -49,7 +53,6 @@ import jd.plugins.OptionalPlugin;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
-
 import jd.update.WebUpdater;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -128,8 +131,19 @@ public class JDExternInterface extends PluginOptional {
                     String branch = request.getParameters().get("branch");
                     String ref = request.getHeader("referer");
 
-                    if (!ref.equalsIgnoreCase("http://jdownloader.org/beta")) return;
-                    if (UserIO.isOK(UserIO.getInstance().requestConfirmDialog(0, JDL.L("updater.beta.rlyupdate.title", "Update to beta now?"), JDL.LF("updater.beta.rlyupdate.message", "Do you want to update to JD-%s", branch)))) {
+                    if (!ref.equalsIgnoreCase("http://jdownloader.org/beta")&&!ref.equalsIgnoreCase("http://jdownloader.net:8081/beta")) return;
+                    new GuiRunnable<Object>(){
+
+                        @Override
+                        public Object runSave() {
+                            SwingGui.getInstance().getMainFrame().toFront();
+                            SwingGui.getInstance().getMainFrame().setExtendedState(JFrame.MAXIMIZED_BOTH);
+                            return null;
+                        }
+                        
+                    }.waitForEDT();
+             
+                    if (UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.NO_COUNTDOWN|UserIO.DONT_SHOW_AGAIN, JDL.L("updater.beta.rlyupdate.title", "Update to beta now?"), JDL.LF("updater.beta.rlyupdate.message", "Do you want to update to JD-%s", branch)))) {
                         WebUpdater.getConfig("WEBUPDATE").setProperty(WebUpdater.PARAM_BRANCH, branch);
                         WebUpdater.getConfig("WEBUPDATE").setProperty(WebUpdater.BRANCHINUSE, branch);
                         WebUpdater.getConfig("WEBUPDATE").save();

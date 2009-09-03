@@ -115,6 +115,7 @@ public class Restarter {
  * @param file
  */
     private static void extract(File file) {
+        try{
         for (File f : file.listFiles()) {
             if (f.isDirectory()) {
                 extract(f);
@@ -133,6 +134,7 @@ public class Restarter {
                 }
             }
         }
+        }catch(Exception e){}
 
     }
 
