@@ -90,9 +90,6 @@ public class ActionController {
     public static void initActions() {
 
         new ToolBarAction("toolbar.separator", "-") {
-            /**
-             * 
-             */
             private static final long serialVersionUID = -4628452328096482738L;
 
             public void onAction(ActionEvent e) {
@@ -110,10 +107,6 @@ public class ActionController {
         };
 
         new ThreadedAction("toolbar.control.start", "gui.images.next") {
-
-            /**
-             * 
-             */
             private static final long serialVersionUID = 1683169623090750199L;
 
             @Override
@@ -171,10 +164,6 @@ public class ActionController {
 
         };
         new ToolBarAction("toolbar.control.pause", "gui.images.break") {
-
-            /**
-             * 
-             */
             private static final long serialVersionUID = 7153300370492212502L;
 
             public void onAction(ActionEvent e) {
@@ -227,10 +216,6 @@ public class ActionController {
         };
 
         new ThreadedAction("toolbar.control.stop", "gui.images.stop") {
-
-            /**
-             * 
-             */
             private static final long serialVersionUID = 1409143759105090751L;
 
             @Override
@@ -292,9 +277,6 @@ public class ActionController {
         };
 
         new ThreadedAction("toolbar.interaction.reconnect", "gui.images.reconnect") {
-            /**
-             * 
-             */
             private static final long serialVersionUID = -1295253607970814759L;
 
             @Override
@@ -344,10 +326,6 @@ public class ActionController {
         };
 
         new ThreadedAction("toolbar.interaction.update", "gui.images.update") {
-
-            /**
-             * 
-             */
             private static final long serialVersionUID = 4359802245569811800L;
 
             @Override
@@ -369,10 +347,6 @@ public class ActionController {
         };
 
         new ToolBarAction("toolbar.quickconfig.clipboardoberserver", "gui.images.clipboard_enabled") {
-
-            /**
-             * 
-             */
             private static final long serialVersionUID = -6442494647304101403L;
 
             public void onAction(ActionEvent e) {
@@ -385,7 +359,7 @@ public class ActionController {
                 this.setEnabled(true);
                 this.type = ToolBarAction.Types.TOGGLE;
                 this.setToolTipText(JDL.L("gui.menu.action.clipboard.desc", "-"));
-
+                setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, true));
             }
 
             @Override
@@ -398,30 +372,23 @@ public class ActionController {
                         if (evt.getPropertyName() == SELECTED_KEY) {
                             setIcon((Boolean) evt.getNewValue() ? "gui.images.clipboard_enabled" : "gui.images.clipboard_disabled");
                         }
-
                     }
-
                 });
+
                 JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE) {
                     @Override
                     public void onPropertyChanged(Property source, final String key) {
                         if (source.getBooleanProperty(key, true)) {
                             setSelected(true);
-
                         } else {
                             setSelected(false);
-
                         }
                     }
                 });
-                setSelected(JDUtilities.getConfiguration().getGenericProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, true));
             }
         };
 
         new ToolBarAction("toolbar.quickconfig.reconnecttoggle", "gui.images.reconnect_disabled") {
-            /**
-             * 
-             */
             private static final long serialVersionUID = -2942320816429047941L;
 
             public void onAction(ActionEvent e) {
@@ -449,9 +416,7 @@ public class ActionController {
                         if (evt.getPropertyName() == SELECTED_KEY) {
                             setIcon((Boolean) evt.getNewValue() ? "gui.images.reconnect_enabled" : "gui.images.reconnect_disabled");
                         }
-
                     }
-
                 });
 
                 JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_ALLOW_RECONNECT) {
@@ -459,10 +424,8 @@ public class ActionController {
                     public void onPropertyChanged(Property source, final String key) {
                         if (source.getBooleanProperty(key, true)) {
                             setSelected(true);
-
                         } else {
                             setSelected(false);
-
                         }
                     }
                 });
@@ -471,9 +434,6 @@ public class ActionController {
         };
 
         new ToolBarAction("action.opendlfolder", "gui.images.package_opened") {
-            /**
-             * 
-             */
             private static final long serialVersionUID = -60944746807335951L;
 
             public void onAction(ActionEvent e) {
@@ -494,10 +454,6 @@ public class ActionController {
         };
 
         new ThreadedAction("toolbar.control.stopmark", "gui.images.stopmark.disabled") {
-
-            /**
-             * 
-             */
             private static final long serialVersionUID = 4359802245569811800L;
 
             @Override
@@ -514,9 +470,7 @@ public class ActionController {
                         if (evt.getPropertyName() == SELECTED_KEY) {
                             setIcon((Boolean) evt.getNewValue() ? "gui.images.stopmark.enabled" : "gui.images.stopmark.disabled");
                         }
-
                     }
-
                 });
             }
 

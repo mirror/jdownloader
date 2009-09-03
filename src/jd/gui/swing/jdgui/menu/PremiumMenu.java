@@ -18,19 +18,24 @@ package jd.gui.swing.jdgui.menu;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 
-import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenuItem;
 import javax.swing.Timer;
 
+import jd.config.ConfigPropertyListener;
 import jd.config.Configuration;
+import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.controlling.AccountControllerEvent;
 import jd.controlling.AccountControllerListener;
+import jd.controlling.JDController;
 import jd.gui.UserIF;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
+import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.menu.HosterMenu;
 import jd.nutils.JDFlags;
 import jd.plugins.Account;
@@ -44,13 +49,9 @@ public class PremiumMenu extends JStartMenu implements ActionListener, AccountCo
 
     private static PremiumMenu INSTANCE;
 
-    private JCheckBoxMenuItem premium;
-
     private JMenuItem config;
 
     private Timer Update_Async;
-
-    // private ConfigPanelView panel;
 
     private PremiumMenu() {
         super("gui.menu.premium", "gui.images.taskpanes.premium");
@@ -67,10 +68,58 @@ public class PremiumMenu extends JStartMenu implements ActionListener, AccountCo
     }
 
     private void updateMenu() {
-        premium = new JCheckBoxMenuItem(JDL.L("gui.menu.action.premium.desc", "Enable Premiumusage globally"));
-        premium.addActionListener(this);
-        premium.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true));
-        this.add(premium);
+        ToolBarAction tba = new ToolBarAction("premiumMenu.toggle", "gui.images.premium_enabled") {
+
+            private static final long serialVersionUID = 4276436625882302179L;
+
+            public void onAction(ActionEvent e) {
+                if (!this.isSelected()) {
+                    int answer = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_COUNTDOWN, JDL.L("dialogs.premiumstatus.global.title", "Disable Premium?"), JDL.L("dialogs.premiumstatus.global.message", "Do you really want to disable all premium accounts?"), JDTheme.II("gui.images.warning", 32, 32), JDL.L("gui.btn_yes", "Yes"), JDL.L("gui.btn_no", "No"));
+                    if (JDFlags.hasAllFlags(answer, UserIO.RETURN_CANCEL) && !JDFlags.hasAllFlags(answer, UserIO.RETURN_DONT_SHOW_AGAIN)) {
+                        this.setSelected(true);
+                        return;
+                    }
+                }
+
+                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, this.isSelected());
+                JDUtilities.getConfiguration().save();
+            }
+
+            @Override
+            public void initDefaults() {
+                this.setEnabled(true);
+                this.type = ToolBarAction.Types.TOGGLE;
+                this.setToolTipText(JDL.L("gui.menu.action.premium.desc", "Enable Premiumusage globally"));
+            }
+
+            @Override
+            public void init() {
+                if (inited) return;
+                this.inited = true;
+
+                this.addPropertyChangeListener(new PropertyChangeListener() {
+                    public void propertyChange(PropertyChangeEvent evt) {
+                        if (evt.getPropertyName() == SELECTED_KEY) {
+                            setIcon((Boolean) evt.getNewValue() ? "gui.images.premium_enabled" : "gui.images.premium_disabled");
+                        }
+
+                    }
+
+                });
+                JDController.getInstance().addControlListener(new ConfigPropertyListener(Configuration.PARAM_USE_GLOBAL_PREMIUM) {
+                    @Override
+                    public void onPropertyChanged(Property source, final String key) {
+                        if (source.getBooleanProperty(key, true)) {
+                            setSelected(true);
+                        } else {
+                            setSelected(false);
+                        }
+                    }
+                });
+                setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true));
+            }
+        };
+        this.add(tba);
         this.addSeparator();
 
         HosterMenu.update(this);
@@ -78,14 +127,12 @@ public class PremiumMenu extends JStartMenu implements ActionListener, AccountCo
 
         config = new JMenuItem(JDL.L("gui.menu.action.config.desc", "Premium Settings"));
         config.addActionListener(this);
-        // config.setSelected(false);
         this.add(config);
     }
 
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == Update_Async) {
             new GuiRunnable<Object>() {
-                // @Override
                 public Object runSave() {
                     update();
                     return null;
@@ -94,40 +141,7 @@ public class PremiumMenu extends JStartMenu implements ActionListener, AccountCo
             return;
         }
         if (e.getSource() == config) {
-            // if (config.isSelected()) {
-            // if (panel == null) {
-            // panel = new ConfigPanelView(new Premium(null),
-            // JDL.L("gui.menu.action.config.desc", "Premium Settings"),
-            // JDTheme.II("gui.images.configuration", 16, 16));
-            // panel.getBroadcaster().addListener(new SwitchPanelListener() {
-            //
-            // @Override
-            // public void onPanelEvent(SwitchPanelEvent event) {
-            // switch (event.getID()) {
-            // case SwitchPanelEvent.ON_REMOVE:
-            // config.setSelected(false);
-            // break;
-            // }
-            // }
-            //
-            // });
-            // }
-            // SwingGui.getInstance().setContent(panel);
-            // } else {
-            // panel.close();
-            // }
             SwingGui.getInstance().requestPanel(UserIF.Panels.PREMIUMCONFIG, null);
-        } else if (e.getSource() == premium) {
-            if (!premium.isSelected()) {
-                int answer = UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_COUNTDOWN, JDL.L("dialogs.premiumstatus.global.title", "Disable Premium?"), JDL.L("dialogs.premiumstatus.global.message", "Do you really want to disable all premium accounts?"), JDTheme.II("gui.images.warning", 32, 32), JDL.L("gui.btn_yes", "Yes"), JDL.L("gui.btn_no", "No"));
-                if (JDFlags.hasAllFlags(answer, UserIO.RETURN_CANCEL) && !JDFlags.hasAllFlags(answer, UserIO.RETURN_DONT_SHOW_AGAIN)) {
-                    premium.setSelected(true);
-                    return;
-                }
-            }
-
-            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, premium.isSelected());
-            JDUtilities.getConfiguration().save();
         }
     }
 
@@ -146,7 +160,6 @@ public class PremiumMenu extends JStartMenu implements ActionListener, AccountCo
     }
 
     public boolean vetoAccountGetEvent(String host, Account account) {
-        // TODO Auto-generated method stub
         return false;
     }
 

@@ -23,7 +23,6 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.logging.FileHandler;
@@ -51,9 +50,7 @@ import jd.http.Browser;
 import jd.nutils.Formatter;
 import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
-import jd.nutils.nativeintegration.LocalBrowser;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
 
@@ -256,7 +253,6 @@ public class Main {
                 updater.updateFiles(files, null);
             }
 
-         
             Restarter.main(new String[] {});
 
             // if (!clone) installAddons(JDUtilities.getResourceFile("."));

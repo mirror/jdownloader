@@ -16,13 +16,10 @@
 
 package jd.plugins.optional.jdtrayicon;
 
-import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionListener;
-import java.util.ArrayList;
 
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -36,45 +33,28 @@ import javax.swing.event.ChangeListener;
 
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
-import jd.controlling.ClipboardHandler;
 import jd.controlling.DownloadWatchDog;
-import jd.controlling.reconnect.Reconnecter;
 import jd.gui.swing.Factory;
 import jd.gui.swing.jdgui.actions.ActionController;
-import jd.utils.JDTheme;
+import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.utils.JDUtilities;
-import jd.utils.WebUpdate;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
-public class TrayIconPopup extends JWindow implements MouseListener, MouseMotionListener, ChangeListener, ActionListener {
+public class TrayIconPopup extends JWindow implements MouseListener, ChangeListener {
 
     private static final long serialVersionUID = 2623190748929934409L;
-
-    private static final int ACTION_START = 0;
-    private static final int ACTION_STOP = 1;
-    private static final int ACTION_PAUSE = 2;
-    private static final int ACTION_ADD = 3;
-    private static final int ACTION_LOAD = 4;
-    private static final int ACTION_UPDATE = 5;
-    private static final int ACTION_RECONNECT = 6;
-    private static final int ACTION_TOGGLE_PREMIUM = 7;
-    private static final int ACTION_TOGGLE_CLIPBOARD = 8;
-    private static final int ACTION_TOGGLE_RECONNECT = 9;
-    private static final int ACTION_DLFOLDER = 10;
-    private static final int ACTION_EXIT = 11;
 
     private JPanel entryPanel;
     private JPanel bottomPanel;
     private boolean enteredPopup;
-    private ArrayList<JButton> entries = new ArrayList<JButton>();
-    private JSpinner spMax;
+    private JSpinner spMaxSpeed;
     private JSpinner spMaxDls;
+    private JSpinner spMaxChunks;
 
     public TrayIconPopup() {
         setVisible(false);
         setLayout(new MigLayout("ins 5, wrap 1", "[]", "[]5[]5[]5[]5[]"));
-        addMouseMotionListener(this);
         addMouseListener(this);
 
         initEntryPanel();
@@ -86,7 +66,6 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
         add(new JSeparator(), "growx, spanx");
         add(bottomPanel);
 
-        // toFront();
         setAlwaysOnTop(true);
         pack();
     }
@@ -96,99 +75,73 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
 
         switch (DownloadWatchDog.getInstance().getDownloadStatus()) {
         case NOT_RUNNING:
-            addMenuEntry(ACTION_START, "gui.images.next", JDL.L("plugins.trayicon.popup.menu.start", "Download starten"));
-            addDisabledMenuEntry("gui.images.break", JDL.L("plugins.trayicon.popup.menu.pause2", "Download pausieren"));
+            addMenuEntry("toolbar.control.start", true);
+            addMenuEntry("toolbar.control.stop", false);
             break;
         case RUNNING:
-            addMenuEntry(ACTION_STOP, "gui.images.stop", JDL.L("plugins.trayicon.popup.menu.stop", "Download anhalten"));
-            addMenuEntry(ACTION_PAUSE, "gui.images.break", JDL.L("plugins.trayicon.popup.menu.pause2", "Download pausieren"));
+            addMenuEntry("toolbar.control.stop", true);
+            addMenuEntry("toolbar.control.pause", true);
             break;
         default:
-            addDisabledMenuEntry("gui.images.next", JDL.L("plugins.trayicon.popup.menu.start", "Download starten"));
-            addDisabledMenuEntry("gui.images.break", JDL.L("plugins.trayicon.popup.menu.pause2", "Download pausieren"));
+            addMenuEntry("toolbar.control.start", false);
+            addMenuEntry("toolbar.control.pause", false);
         }
 
-        addMenuEntry(ACTION_ADD, "gui.images.add", JDL.L("plugins.trayicon.popup.menu.add", "Downloads hinzufügen"));
-        addMenuEntry(ACTION_LOAD, "gui.images.load", JDL.L("plugins.trayicon.popup.menu.load", "Container laden"));
-        addMenuEntry(ACTION_UPDATE, "gui.images.update_manager", JDL.L("plugins.trayicon.popup.menu.update", "JD aktualisieren"));
-        addMenuEntry(ACTION_RECONNECT, "gui.images.reconnect", JDL.L("plugins.trayicon.popup.menu.reconnect", "Reconnect durchführen"));
-        addMenuEntry(ACTION_TOGGLE_PREMIUM, getPremiumImage(), JDL.L("plugins.trayicon.popup.menu.togglePremium", "Premium an/aus"));
-        addMenuEntry(ACTION_TOGGLE_CLIPBOARD, getClipBoardImage(), JDL.L("plugins.trayicon.popup.menu.toggleClipboard", "Zwischenablage an/aus"));
-        addMenuEntry(ACTION_TOGGLE_RECONNECT, getReconnectImage(), JDL.L("plugins.trayicon.popup.menu.toggleReconnect", "Reconnect an/aus"));
-        addMenuEntry(ACTION_DLFOLDER, "gui.images.package_opened", JDL.L("action.opendlfolder.tooltip", "Open default Downloadfolder"));
-        addMenuEntry(ACTION_EXIT, "gui.images.exit", JDL.L("plugins.trayicon.popup.menu.exit", "Beenden"));
+        addMenuEntry("action.addurl", true);
+        addMenuEntry("action.load", true);
+        addMenuEntry("toolbar.interaction.update", true);
+        addMenuEntry("toolbar.interaction.reconnect", true);
+        addMenuEntry("premiumMenu.toggle", true);
+        addMenuEntry("toolbar.quickconfig.clipboardoberserver", true);
+        addMenuEntry("toolbar.quickconfig.reconnecttoggle", true);
+        addMenuEntry("action.opendlfolder", true);
+        addMenuEntry("action.exit", true);
     }
 
     private void initBottomPanel() {
-        int maxspeed = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0);
-
-        spMax = new JSpinner();
-        spMax.setModel(new SpinnerNumberModel(maxspeed, 0, Integer.MAX_VALUE, 50));
-        spMax.setToolTipText(JDL.L("gui.tooltip.statusbar.speedlimiter", "Geschwindigkeitsbegrenzung festlegen (KB/s) [0:unendlich]"));
-        spMax.addChangeListener(this);
+        spMaxSpeed = new JSpinner();
+        spMaxSpeed.setModel(new SpinnerNumberModel(SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0), 0, Integer.MAX_VALUE, 50));
+        spMaxSpeed.setToolTipText(JDL.L("gui.tooltip.statusbar.speedlimiter", "Geschwindigkeitsbegrenzung festlegen (KB/s) [0:unendlich]"));
+        spMaxSpeed.addChangeListener(this);
 
         spMaxDls = new JSpinner();
         spMaxDls.setModel(new SpinnerNumberModel(SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2), 1, 20, 1));
         spMaxDls.setToolTipText(JDL.L("gui.tooltip.statusbar.simultan_downloads", "Max. gleichzeitige Downloads"));
         spMaxDls.addChangeListener(this);
 
-        bottomPanel = new JPanel(new MigLayout("ins 0, wrap 2", "[]5[]", "[]2[]"));
+        spMaxChunks = new JSpinner();
+        spMaxChunks.setModel(new SpinnerNumberModel(SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2), 1, 20, 1));
+        spMaxChunks.setToolTipText(JDL.L("gui.tooltip.statusbar.max_chunks", "Max. Connections/File"));
+        spMaxChunks.addChangeListener(this);
+
+        bottomPanel = new JPanel(new MigLayout("ins 0, wrap 2", "[]5[]", "[]2[]2[]"));
         bottomPanel.setOpaque(false);
         bottomPanel.add(new JLabel(JDL.L("plugins.trayicon.popup.bottom.speed", "Geschwindigkeitsbegrenzung")));
-        bottomPanel.add(spMax, "w 60!, h 20!");
+        bottomPanel.add(spMaxSpeed, "w 60!, h 20!");
         bottomPanel.add(new JLabel(JDL.L("plugins.trayicon.popup.bottom.simDls", "Gleichzeitige Downloads")));
         bottomPanel.add(spMaxDls, "w 60!, h 20!");
+        bottomPanel.add(new JLabel(JDL.L("plugins.trayicon.popup.bottom.simChunks", "Gleichzeitige Verbindungen")));
+        bottomPanel.add(spMaxChunks, "w 60!, h 20!");
     }
 
-    private void addDisabledMenuEntry(String iconKey, String label) {
-        JButton b = Factory.createButton(label, JDTheme.II(iconKey, 16, 16));
+    private void addMenuEntry(String actionId, boolean enabled) {
+        final ToolBarAction action = ActionController.getToolBarAction(actionId);
+
+        JButton b = Factory.createButton(action.getTitle(), action.getIcon(), new ActionListener() {
+
+            public void actionPerformed(ActionEvent e) {
+                TrayIconPopup.this.dispose();
+                action.actionPerformed(e);
+            }
+
+        });
         b.setOpaque(false);
-        b.setEnabled(false);
-        b.setForeground(Color.GRAY);
+        b.setEnabled(enabled);
 
         entryPanel.add(b);
-    }
-
-    private void addMenuEntry(Integer id, String iconKey, String label) {
-        JButton b = Factory.createButton(label, JDTheme.II(iconKey, 16, 16), this);
-        b.setOpaque(false);
-
-        entryPanel.add(b);
-
-        while (entries.size() <= id) {
-            entries.add(null);
-        }
-        entries.set(id, b);
-    }
-
-    private String getClipBoardImage() {
-        if (ClipboardHandler.getClipboard().isEnabled()) {
-            return "gui.images.clipboard_enabled";
-        } else {
-            return "gui.images.clipboard_disabled";
-        }
-    }
-
-    private String getReconnectImage() {
-        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true)) {
-            return "gui.images.reconnect_enabled";
-        } else {
-            return "gui.images.reconnect_disabled";
-        }
-    }
-
-    private String getPremiumImage() {
-        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) {
-            return "gui.images.premium_enabled";
-        } else {
-            return "gui.images.premium_disabled";
-        }
     }
 
     public void mouseClicked(MouseEvent e) {
-    }
-
-    public void mouseDragged(MouseEvent e) {
     }
 
     public void mouseEntered(MouseEvent e) {
@@ -201,9 +154,6 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
         }
     }
 
-    public void mouseMoved(MouseEvent e) {
-    }
-
     public void mousePressed(MouseEvent e) {
     }
 
@@ -211,69 +161,28 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
     }
 
     public void stateChanged(ChangeEvent e) {
-        int max = SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0);
+        if (e.getSource() == spMaxSpeed) {
+            int value = (Integer) spMaxSpeed.getValue();
 
-        if (e.getSource() == spMax) {
-            int value = (Integer) spMax.getValue();
-
-            if (max != value) {
+            if (value != SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0)) {
                 SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, value);
                 SubConfiguration.getConfig("DOWNLOAD").save();
             }
         } else if (e.getSource() == spMaxDls) {
             int value = (Integer) spMaxDls.getValue();
 
-            if (max != value) {
+            if (value != SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2)) {
                 SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, value);
+                SubConfiguration.getConfig("DOWNLOAD").save();
+            }
+        } else if (e.getSource() == spMaxChunks) {
+            int value = (Integer) spMaxChunks.getValue();
+
+            if (value != SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2)) {
+                SubConfiguration.getConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, value);
                 SubConfiguration.getConfig("DOWNLOAD").save();
             }
         }
     }
 
-    public void actionPerformed(ActionEvent e) {
-        int index = entries.indexOf(e.getSource());
-        if (index < 0) return;
-
-        switch (index) {
-        case TrayIconPopup.ACTION_DLFOLDER:
-            ActionController.getToolBarAction("action.opendlfolder").actionPerformed(e);
-            break;
-        case TrayIconPopup.ACTION_ADD:
-            dispose();
-            ActionController.getToolBarAction("action.addurl").actionPerformed(e);
-            break;
-        case TrayIconPopup.ACTION_LOAD:
-            dispose();
-            ActionController.getToolBarAction("action.load").actionPerformed(e);
-            break;
-        case TrayIconPopup.ACTION_PAUSE:
-            DownloadWatchDog.getInstance().pauseDownloads(!DownloadWatchDog.getInstance().isPaused());
-            break;
-        case TrayIconPopup.ACTION_RECONNECT:
-            ActionController.getToolBarAction("toolbar.interaction.reconnect").actionPerformed(null);
-            break;
-        case TrayIconPopup.ACTION_START:
-        case TrayIconPopup.ACTION_STOP:
-            DownloadWatchDog.getInstance().toggleStartStop();
-            break;
-        case TrayIconPopup.ACTION_TOGGLE_CLIPBOARD:
-            ClipboardHandler.getClipboard().setEnabled(!ClipboardHandler.getClipboard().isEnabled());
-            break;
-        case TrayIconPopup.ACTION_TOGGLE_RECONNECT:
-            Reconnecter.toggleReconnect();
-            break;
-        case TrayIconPopup.ACTION_UPDATE:
-            new WebUpdate().doUpdateCheck(true);
-            break;
-        case TrayIconPopup.ACTION_EXIT:
-            // TODO
-            JDUtilities.getController().exit();
-            break;
-        case TrayIconPopup.ACTION_TOGGLE_PREMIUM:
-            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true));
-            JDUtilities.getConfiguration().save();
-            break;
-        }
-        dispose();
-    }
 }

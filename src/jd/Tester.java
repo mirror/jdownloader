@@ -1,32 +1,34 @@
 package jd;
 
-import java.awt.Dimension;
+import java.io.File;
+import java.io.FileFilter;
 
-import javax.swing.JDialog;
-import javax.swing.JFrame;
+import jd.nutils.io.JDIO;
+import jd.parser.Regex;
+
 
 public class Tester {
+ 
     public static void main(String ss[]) throws Exception {
-        JFrame parent = new JFrame("Test");
-        parent.setSize(500, 400);
-        parent.setVisible(true);
-        System.out.println(parent.isAlwaysOnTop());
-        parent.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        new DDialog(parent);
-    }
+        File dir = new File("C:\\Dokumente und Einstellungen\\Towelie\\Eigene Dateien\\Java\\pure-compiler\\src\\pure\\embedded\\");
+        if (dir == null || !dir.exists()) return;
+        
+        File[] files = dir.listFiles(new FileFilter() {
+            
+            public boolean accept(File pathname) {
+                return pathname.getName().matches("(IO|Pure(Boolean|Double|Integer|String))\\.java");
+            }
 
-    static class DDialog extends JDialog {
-        private static final long serialVersionUID = 945369252708744102L;
-
-        public DDialog(JFrame parent) {
-            super(parent);
-            this.setAlwaysOnTop(true);
-            System.out.println(parent.isAlwaysOnTop());
-
-            this.setModal(true);
-            this.setMinimumSize(new Dimension(200, 200));
-            this.setVisible(true);
-            System.out.println(parent.isAlwaysOnTop());
+        });
+        for (File file : files) {
+            String content = JDIO.getLocalFile(file);
+            String[][] matches = new Regex(content, "classFile\\.addMethod\\(Modifiers\\..*?, \"(.*?)\", (.*?), (.*?)\\);").getMatches();
+            System.out.println(file.getName());
+            for (String[] match : matches) {
+                System.out.println("ecn.addFunction(\"" + match[0] + "\", \"" + match[1] + "\", \"" + ((match[2] == null) ? match[2] : match[2].replace("new TypeDesc[] { ", "").replace(" }", "")) + "\");");
+            }
+            System.out.println("=============================");
         }
     }
+
 }

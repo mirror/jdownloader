@@ -45,7 +45,6 @@ import jd.event.ControlListener;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.laf.LookAndFeelController;
-import jd.gui.userio.DummyFrame;
 import jd.nutils.nativeintegration.ScreenDevices;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -108,7 +107,6 @@ public class SplashScreen implements ActionListener, ControlListener {
 
     public SplashScreen(JDController controller) throws IOException, AWTException {
 
-        
         LookAndFeelController.setUIManager();
         this.image = (BufferedImage) JDTheme.I("gui.splash");
         progressimages = new ArrayList<SplashProgressImage>();
@@ -157,7 +155,7 @@ public class SplashScreen implements ActionListener, ControlListener {
         label.setIcon(drawImage(0.0f));
 
         window = new JWindow(gc);
-     
+
         window.setLayout(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[grow,fill]0[]"));
         window.setAlwaysOnTop(true);
         window.setSize(image.getWidth(null), image.getHeight(null));
@@ -197,23 +195,23 @@ public class SplashScreen implements ActionListener, ControlListener {
 
         g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alphaValue));
         g2d.drawImage(image, 0, 0, null);
-        System.out.println("alpha: "+alphaValue);
-        System.out.println("imageCounter: "+imageCounter);
+        System.out.println("alpha: " + alphaValue);
+        System.out.println("imageCounter: " + imageCounter);
         if (progressimages.size() > 0) {
             int steps = (image.getWidth(null) - 20 - progressimages.get(0).getImage().getWidth(null)) / Math.max(2, (progressimages.size() - 1));
             for (int i = 0; i < Math.min(progressimages.size(), imageCounter); i++) {
                 float alpha;
-                g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha=1.0f));
+                g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha = 1.0f));
                 int xx;
                 int yy;
-                g2d.drawImage(this.progressimages.get(i).getImage(), xx=10 + i * steps, yy=image.getHeight() - 10 - progressimages.get(i).getImage().getHeight(null), null);
-                System.out.println("image : "+i+" : "+alpha+" - "+xx+"/"+yy);
+                g2d.drawImage(this.progressimages.get(i).getImage(), xx = 10 + i * steps, yy = image.getHeight() - 10 - progressimages.get(i).getImage().getHeight(null), null);
+                System.out.println("image : " + i + " : " + alpha + " - " + xx + "/" + yy);
             }
 
             for (int i = imageCounter; i < progressimages.size(); i++) {
                 g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.2f));
                 g2d.drawImage(this.progressimages.get(i).getImage(), 10 + i * steps, image.getHeight() - 10 - progressimages.get(i).getImage().getHeight(null), null);
-                System.out.println("image : "+i+" : "+Math.min(alphaValue, 0.2f));
+                System.out.println("image : " + i + " : " + Math.min(alphaValue, 0.2f));
             }
         }
         g2d.dispose();

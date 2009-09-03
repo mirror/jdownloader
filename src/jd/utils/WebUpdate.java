@@ -42,7 +42,6 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDFlags;
 import jd.nutils.JDHash;
-import jd.nutils.io.JDIO;
 import jd.nutils.nativeintegration.LocalBrowser;
 import jd.update.FileUpdate;
 import jd.update.JDUpdateUtils;
@@ -237,7 +236,7 @@ public class WebUpdate {
                     return;
                 }
 
-                if (files==null||files.size() == 0) {
+                if (files == null || files.size() == 0) {
                     logger.severe("Webupdater offline or nothing to update");
                     // ask to restart if there are updates left in the /update/
                     // folder
@@ -293,7 +292,7 @@ public class WebUpdate {
                     progress.setRange(org = files.size());
                     progress.setStatusText(JDL.L("init.webupdate.progress.1_title", "Update Check"));
                     progress.setStatus(org - (files.size()));
-                    logger.finer(updater.getBranch()+"");
+                    logger.finer(updater.getBranch() + "");
                     logger.finer("Files to update: " + files);
 
                     if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, false)) {
@@ -375,19 +374,23 @@ public class WebUpdate {
                         updater.cleanUp();
                         // removes all .extract files that have no entry in the
                         // hashlist
-//                        JDIO.removeRekursive(JDUtilities.getResourceFile("jd").getParentFile(), new JDIO.FileSelector() {
-//
-//                            @Override
-//                            public boolean doIt(File file) {
-//                                if (!file.getName().endsWith(".extract") || unfilteredList == null) return false;
-//                                if (file.getAbsolutePath().contains("/update/") || file.getAbsolutePath().contains("\\update\\")) return false;
-//                                for (FileUpdate f : unfilteredList) {
-//                                    if (f.getLocalFile().equals(file)) return true;
-//                                }
-//
-//                                return false;
-//                            }
-//                        });
+                        // JDIO.removeRekursive(JDUtilities.getResourceFile("jd").getParentFile(),
+                        // new JDIO.FileSelector() {
+                        //
+                        // @Override
+                        // public boolean doIt(File file) {
+                        // if (!file.getName().endsWith(".extract") ||
+                        // unfilteredList == null) return false;
+                        // if (file.getAbsolutePath().contains("/update/") ||
+                        // file.getAbsolutePath().contains("\\update\\")) return
+                        // false;
+                        // for (FileUpdate f : unfilteredList) {
+                        // if (f.getLocalFile().equals(file)) return true;
+                        // }
+                        //
+                        // return false;
+                        // }
+                        // });
 
                         updater.updateFiles(files, pc);
                         if (updater.getErrors() > 0) {
