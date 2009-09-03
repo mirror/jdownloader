@@ -892,6 +892,7 @@ public class JDUtilities {
 
             return doc;
         } catch (Exception e) {
+            JDLogger.getLogger().severe(xmlString);
             JDLogger.exception(e);
         }
         return null;

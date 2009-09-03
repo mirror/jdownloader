@@ -53,22 +53,20 @@ public class PremiumMenu extends JStartMenu implements ActionListener, AccountCo
 
     private Timer Update_Async;
 
+    private ToolBarAction tba;
+
     private PremiumMenu() {
         super("gui.menu.premium", "gui.images.taskpanes.premium");
         Update_Async = new Timer(250, this);
         Update_Async.setInitialDelay(250);
         Update_Async.setRepeats(false);
+        initAction();
         updateMenu();
         AccountController.getInstance().addListener(this);
     }
 
-    public static PremiumMenu getInstance() {
-        if (INSTANCE == null) INSTANCE = new PremiumMenu();
-        return INSTANCE;
-    }
-
-    private void updateMenu() {
-        ToolBarAction tba = new ToolBarAction("premiumMenu.toggle", "gui.images.premium_enabled") {
+    private void initAction() {
+       tba = new ToolBarAction("premiumMenu.toggle", "gui.images.premium_enabled") {
 
             private static final long serialVersionUID = 4276436625882302179L;
 
@@ -88,15 +86,8 @@ public class PremiumMenu extends JStartMenu implements ActionListener, AccountCo
             @Override
             public void initDefaults() {
                 this.setEnabled(true);
-                this.type = ToolBarAction.Types.TOGGLE;
+               
                 this.setToolTipText(JDL.L("gui.menu.action.premium.desc", "Enable Premiumusage globally"));
-            }
-
-            @Override
-            public void init() {
-                if (inited) return;
-                this.inited = true;
-
                 this.addPropertyChangeListener(new PropertyChangeListener() {
                     public void propertyChange(PropertyChangeEvent evt) {
                         if (evt.getPropertyName() == SELECTED_KEY) {
@@ -116,9 +107,28 @@ public class PremiumMenu extends JStartMenu implements ActionListener, AccountCo
                         }
                     }
                 });
+                
+                setType(ToolBarAction.Types.TOGGLE);
                 setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true));
             }
+
+            @Override
+            public void init() {
+                if (inited) return;
+                this.inited = true;
+
+            
+            }
         };
+    }
+
+    public static PremiumMenu getInstance() {
+        if (INSTANCE == null) INSTANCE = new PremiumMenu();
+        return INSTANCE;
+    }
+
+    private void updateMenu() {
+     
         this.add(tba);
         this.addSeparator();
 

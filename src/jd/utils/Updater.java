@@ -47,7 +47,20 @@ import jd.update.WebUpdater;
 import org.tmatesoft.svn.core.SVNException;
 
 public class Updater {
+    private File pluginsDir;
 
+    private WebUpdater webupdater;
+    private ArrayList<FileUpdate> remoteFileList;
+    private File workingDir;
+    private JFrame frame;
+    private static String UPDATE_SUB_DIR = "exclude_jd_update";
+    private static String UPDATE_SUB_SRC = "exclude_jd_src";
+    private File updateDir;
+    private File svn;
+    private static String UPDATE_SERVER = "http://212.117.167.211/";
+    private File jars;
+
+    private String latestBranch;
     public static StringBuilder SERVERLIST = new StringBuilder();
     static {
         SERVERLIST.append("-1:http://update4ex.jdownloader.org/branches/%BRANCH%/\r\n");
@@ -81,7 +94,7 @@ public class Updater {
         upd.movePlugins(getCFG("plugins_dir"));
         upd.moveJars(getCFG("dist_dir"));
         upd.cleanUp();
-
+JOptionPane.showConfirmDialog(upd.frame, "CLEAN NOW MANUALLY");
         if (branch == null) branch = JOptionPane.showInputDialog(upd.frame, "branchname");
         upd.createBranch(branch);
 
@@ -92,8 +105,8 @@ public class Updater {
         upd.merge();
         upd.checkHashes();
         // upd.clone2(upd.branch,"http://jd.mirrors.cyb0rk.net/clone.php");
-        upd.clone2(upd.branch, "http://update3.jdownloader.org/clone.php");
-        upd.clone2(upd.branch,"http://update2.jdownloader.org/clone.php");
+//        upd.clone2(upd.branch, "http://update3.jdownloader.org/clone.php");
+//        upd.clone2(upd.branch,"http://update2.jdownloader.org/clone.php");
         // list=upd.getLocalFileList(upd.workingDir, false);
 
         // SimpleFTP.uploadSecure("jdupdate.bluehost.to", 2100,
@@ -155,20 +168,7 @@ public class Updater {
         return id;
     }
 
-    private File pluginsDir;
-
-    private WebUpdater webupdater;
-    private ArrayList<FileUpdate> remoteFileList;
-    private File workingDir;
-    private JFrame frame;
-    private static String UPDATE_SUB_DIR = "exclude_jd_update";
-    private static String UPDATE_SUB_SRC = "exclude_jd_src";
-    private File updateDir;
-    private File svn;
-    private static String UPDATE_SERVER = "http://update1.jdownloader.org/";
-    private File jars;
-
-    private String latestBranch;
+ 
 
     public Updater() throws IOException, SVNException {
         workingDir = new File(".").getCanonicalFile();
@@ -298,7 +298,7 @@ public class Updater {
 
             map.put("pass", getCFG("updateHashPW2"));
 
-            br.postPage("http://update1.jdownloader.org/checkHashes.php?pass=" + getCFG("updateHashPW2") + "&branch=" + branch, map);
+            br.postPage(UPDATE_SERVER+"checkHashes.php?pass=" + getCFG("updateHashPW2") + "&branch=" + branch, map);
             System.out.println(br + "");
             if (br.containsHTML("success") && !br.containsHTML("<b>Warning</b>") && !br.containsHTML("<b>Error</b>")) break;
 
@@ -313,13 +313,13 @@ public class Updater {
             Browser br = new Browser();
             br.forceDebug(true);
 
-            System.out.println(br.postPage("http://update1.jdownloader.org/unlock.php?pass=" + getCFG("updateHashPW2") + "&branch=" + branch, "server=" + SERVERLIST.toString().replaceAll("\\%BRANCH\\%", branch)));
+            System.out.println(br.postPage(UPDATE_SERVER+"unlock.php?pass=" + getCFG("updateHashPW2") + "&branch=" + branch, "server=" + SERVERLIST.toString().replaceAll("\\%BRANCH\\%", branch)));
             map.put("pass", getCFG("updateHashPW2"));
             // map = map;
             // String addonlist = createAddonList();
             // map.put("addonlist", Encoding.urlEncode(addonlist));
             map.put("addonlist", "");
-            br.postPage("http://update1.jdownloader.org/updateHashList.php?pass=" + getCFG("updateHashPW2") + "&branch=" + branch, map);
+            br.postPage(UPDATE_SERVER+"updateHashList.php?pass=" + getCFG("updateHashPW2") + "&branch=" + branch, map);
             System.out.println(br + "");
             // br = br;
             if (br.containsHTML("success") && !br.containsHTML("<b>Warning</b>") && !br.containsHTML("<b>Error</b>")) break;
@@ -373,7 +373,7 @@ public class Updater {
      * @throws IOException
      */
     private boolean upload(ArrayList<File> list) throws IOException {
-        SimpleFTP.uploadSecure("update1.jdownloader.org", 2121, getCFG("update1_ftp_user"), getCFG("update1_ftp_pass"), "/http/" + this.branch, updateDir, list.toArray(new File[] {}));
+        SimpleFTP.uploadSecure("212.117.167.208", 2121, getCFG("update1_ftp_user"), getCFG("update1_ftp_pass"), "/http/" + this.branch, updateDir, list.toArray(new File[] {}));
 
         return true;
     }

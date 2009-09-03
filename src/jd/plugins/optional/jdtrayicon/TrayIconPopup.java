@@ -16,16 +16,23 @@
 
 package jd.plugins.optional.jdtrayicon;
 
+import java.awt.Cursor;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 
+import javax.swing.AbstractButton;
+import javax.swing.Action;
+import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
 import javax.swing.JSpinner;
+import javax.swing.JToggleButton;
 import javax.swing.JWindow;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.event.ChangeEvent;
@@ -34,9 +41,11 @@ import javax.swing.event.ChangeListener;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.DownloadWatchDog;
-import jd.gui.swing.Factory;
+import jd.gui.swing.GuiRunnable;
+import jd.gui.swing.components.JDUnderlinedText;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
+import jd.gui.swing.jdgui.actions.ToolBarAction.Types;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
@@ -127,18 +136,48 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
     private void addMenuEntry(String actionId, boolean enabled) {
         final ToolBarAction action = ActionController.getToolBarAction(actionId);
 
-        JButton b = Factory.createButton(action.getTitle(), action.getIcon(), new ActionListener() {
+        AbstractButton b = createButton(action);
+        // TrayIconPopup.this.dispose();
+
+        entryPanel.add(b, action.getType() == Types.TOGGLE ? "gapleft 10,growx,pushx" : "");
+    }
+
+    public AbstractButton createButton(final ToolBarAction action) {
+        action.init();
+        final AbstractButton bt;
+        switch (action.getType()) {
+        case TOGGLE:
+            bt = new JToggleButton(action);
+          
+            break;
+
+        default:
+            bt = new JButton(action);
+
+        }
+
+        action.init();
+        bt.setContentAreaFilled(false);
+        bt.setBorderPainted(false);
+        bt.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
+
                 TrayIconPopup.this.dispose();
-                action.actionPerformed(e);
+
             }
 
         });
-        b.setOpaque(false);
-        b.setEnabled(enabled);
+        bt.setOpaque(false);
+        bt.setIcon((Icon) action.getValue(Action.SMALL_ICON));
 
-        entryPanel.add(b);
+        bt.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        bt.setFocusPainted(false);
+
+        bt.setHorizontalAlignment(JButton.LEFT);
+        bt.setIconTextGap(5);
+        bt.addMouseListener(new JDUnderlinedText(bt));
+        return bt;
     }
 
     public void mouseClicked(MouseEvent e) {

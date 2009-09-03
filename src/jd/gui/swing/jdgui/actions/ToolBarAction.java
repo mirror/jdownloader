@@ -44,9 +44,12 @@ public abstract class ToolBarAction extends JDAction {
     public static final String PRIORITY = "PRIORITY";
     public static final String ID = "ID";
 
-    protected Types type = Types.NORMAL;
+    private Types type = Types.NORMAL;
 
     public void setType(Types type) {
+        if (type == Types.TOGGLE && getValue(SELECTED_KEY) == null) {
+            super.setSelected(false);
+        }
         this.type = type;
     }
 
@@ -99,6 +102,7 @@ public abstract class ToolBarAction extends JDAction {
     }
 
     public void setSelected(boolean selected) {
+
         super.setSelected(selected);
         this.setType(Types.TOGGLE);
 

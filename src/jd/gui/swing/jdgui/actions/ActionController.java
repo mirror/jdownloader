@@ -97,7 +97,7 @@ public class ActionController {
 
             @Override
             public void initDefaults() {
-                this.type = ToolBarAction.Types.SEPARATOR;
+               setType(ToolBarAction.Types.SEPARATOR);
             }
 
             @Override
@@ -113,7 +113,7 @@ public class ActionController {
             public void initDefaults() {
                 setPriority(1000);
                 this.setEnabled(true);
-                this.type = ToolBarAction.Types.NORMAL;
+          
                 this.setToolTipText(JDL.L(JDL_PREFIX + "toolbar.control.start.tooltip", "Start downloads in list"));
             }
 
@@ -175,7 +175,7 @@ public class ActionController {
             public void initDefaults() {
                 setPriority(999);
                 this.setEnabled(false);
-                this.type = ToolBarAction.Types.TOGGLE;
+                setType(ToolBarAction.Types.TOGGLE);
                 setToolTipText(JDL.LF("gui.menu.action.break2.desc", "Pause downloads. Limits global speed to %s kb/s", SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_PAUSE_SPEED, 10) + ""));
             }
 
@@ -357,7 +357,7 @@ public class ActionController {
             public void initDefaults() {
                 setPriority(900);
                 this.setEnabled(true);
-                this.type = ToolBarAction.Types.TOGGLE;
+                setType(ToolBarAction.Types.TOGGLE);
                 this.setToolTipText(JDL.L("gui.menu.action.clipboard.desc", "-"));
                 setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, true));
             }
@@ -399,7 +399,7 @@ public class ActionController {
             public void initDefaults() {
                 setPriority(899);
                 this.setEnabled(true);
-                this.type = ToolBarAction.Types.TOGGLE;
+                setType(ToolBarAction.Types.TOGGLE);
                 this.setToolTipText(JDL.L("gui.menu.action.reconnect.desc", "-"));
                 setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true));
 
@@ -462,7 +462,7 @@ public class ActionController {
 
                 this.setToolTipText(JDL.L(JDL_PREFIX + "toolbar.control.stopmark.tooltip", "Stop after current Downloads"));
                 this.setEnabled(false);
-                this.type = ToolBarAction.Types.TOGGLE;
+                setType(ToolBarAction.Types.TOGGLE);
                 this.setSelected(false);
                 this.setIcon("gui.images.stopmark.disabled");
                 this.addPropertyChangeListener(new PropertyChangeListener() {
