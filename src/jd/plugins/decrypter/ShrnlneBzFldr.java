@@ -40,9 +40,10 @@ public class ShrnlneBzFldr extends PluginForDecrypt {
         String[] links = br.getRegex("align=right><a href='(.*?)'>").getColumn(0);
         if (links.length == 0) return null;
         progress.setRange(links.length);
-        for (String dl : links)
+        for (String dl : links) {
             decryptedLinks.add(createDownloadlink(dl));
-        progress.increase(1);
+            progress.increase(1);
+        }
         return decryptedLinks;
     }
 

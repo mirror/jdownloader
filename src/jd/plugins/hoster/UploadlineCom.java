@@ -93,7 +93,7 @@ public class UploadlineCom extends PluginForHost {
                 }
                 form.setAction(downloadLink.getDownloadURL());
                 form.put("code", code.toString());
-                if (!br.containsHTML("countdown")){
+                if (br.containsHTML("countdown")){
                 int tt = Integer.parseInt(br.getRegex("countdown\">(\\d+)</span>").getMatch(0));
                 sleep(tt * 1001, downloadLink);
                 }
