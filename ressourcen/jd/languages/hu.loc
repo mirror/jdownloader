@@ -1005,7 +1005,7 @@ jd.plugins.optional.langfileeditor.langfileeditor.initconfigentries.checklogins.
 jd.plugins.optional.langfileeditor.langfileeditor.initconfigentries.message = A funkció használatához JD-SVN fiók szükséges!
 jd.plugins.optional.langfileeditor.langfileeditor.testlogins = Bejelentkezés ellenőrzése
 jd.plugins.optional.langfileeditor.langfileeditor.testloginsmessage = Ellenőrzi, hogy helyesek-e a bejelentkezési adatok
-jd.plugins.optional.langfileeditor.lfeview.title = Fordítási hiba
+jd.plugins.optional.langfileeditor.lfeview.title = Fordítás-szerkesztő
 jd.plugins.optional.langfileeditor.lfeview.tooltip = Nyelvi fájl szerkesztése
 jd.plugins.optional.langfileeditor.srcparser = Kiindulási adatok elemzése
 jd.plugins.optional.schedule.disabled = letiltva
