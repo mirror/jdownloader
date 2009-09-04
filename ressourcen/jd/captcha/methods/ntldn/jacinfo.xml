@@ -1,0 +1,4 @@
+<jDownloader>
+<method name="netload.in" author="DwD"  services="netload.in" /> 
+<format type="png" letterNum="4" />
+</jDownloader>
