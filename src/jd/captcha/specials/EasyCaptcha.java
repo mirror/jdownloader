@@ -396,7 +396,7 @@ public class EasyCaptcha {
 
     }
 
-    private static Object[] clean(Captcha captcha) {
+    public static Object[] clean(Captcha captcha) {
         captcha.owner.jas.executePrepareCommands(captcha.getCaptchaFile(), captcha);
         File file = captcha.owner.getResourceFile("CPoints.xml");
         BackGroundImageManager bgit = new BackGroundImageManager(captcha);
