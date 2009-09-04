@@ -56,7 +56,6 @@ public class MegaFtpCom extends PluginForHost {
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-
         // Datei hat Passwortschutz?
         if (br.containsHTML("This file is password-protected")) {
             String passCode;
@@ -85,13 +84,18 @@ public class MegaFtpCom extends PluginForHost {
         // often they only change this form
         Form downloadForm = br.getForm(0);
         String current = br.getRegex("name=\"current\" value=\"(.*?)\"").getMatch(0);
+        String wait = br.getRegex("wait for the countdown.*?<script type=\"text/javascript\">.*?var.*?= (\\d+);").getMatch(0);
+        if (wait != null) sleep(Long.parseLong(wait.trim()) * 1000, downloadLink);
         if (current == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         downloadForm.put("current", current);
         downloadForm.put("limit_reached", "0");
-        downloadForm.put("download_now", "Click Here to Download");
-
+        downloadForm.put("download_now", "Click+Here+to+Download");
+        br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadForm, true, -20);
-        if ((dl.getConnection().isContentDisposition())) { throw new PluginException(LinkStatus.ERROR_FATAL); }
+        if (!(dl.getConnection().isContentDisposition()) && !dl.getConnection().getContentType().contains("octet")) {
+            dl.getConnection().disconnect();
+            throw new PluginException(LinkStatus.ERROR_FATAL);
+        }
         dl.startDownload();
     }
 
