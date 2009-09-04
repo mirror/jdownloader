@@ -65,7 +65,7 @@ public class LetitBitNet extends PluginForHost {
         Form form = br.getForm(3);
         form.put("pass", Encoding.urlEncode(account.getPass()));
         br.submitForm(form);
-        String url = br.getRegex("middle.*?href='(.*?letit.*?download.*?)'").getMatch(0);
+        String url = br.getRegex("middle.*?href='(http://.*?download.*?)'").getMatch(0);
         if (url == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
         dl.startDownload();
@@ -96,7 +96,8 @@ public class LetitBitNet extends PluginForHost {
         con.disconnect();
         down.setMethod(Form.MethodType.POST);
         down.put("frameset", "Download+file");
-        String id2 = dl1.getVarsMap().get("uid");
+        String id2 = null;
+        if (dl1 != null) id2 = dl1.getVarsMap().get("uid");
         // first trying to bypass captcha
         down.put("cap", "2f2411");
         down.put("uid2", "c0862b659695");

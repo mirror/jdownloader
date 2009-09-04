@@ -71,7 +71,6 @@ public class Shareplacecom extends PluginForHost {
         String page = Encoding.urlDecode(br.toString(), true);
         String[] links = HTMLParser.getHttpLinks(page, null);
         boolean found = false;
-        br.setDebug(true);
         // waittime
         if (br.containsHTML("var ziptime =")) {
             int tt = Integer.parseInt(br.getRegex("var ziptime = (\\d+);").getMatch(0));

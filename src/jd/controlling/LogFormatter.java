@@ -31,7 +31,6 @@ import jd.nutils.Formatter;
  * 
  */
 public class LogFormatter extends SimpleFormatter {
-    public static final long START_TIME = System.currentTimeMillis();
     // private final static String format = "{0,date} {0,time}";
     private Object args[] = new Object[1];
     Date dat = new Date();
@@ -58,7 +57,7 @@ public class LogFormatter extends SimpleFormatter {
         // sb.append(text);
         // sb.append(" - ");
         if (JDLogger.getLogger().getLevel() == Level.ALL) {
-            sb.append(Formatter.formatMilliseconds( record.getMillis()-START_TIME));
+            sb.append(Formatter.formatMilliseconds(record.getMillis()));
             sb.append(" - ");
             sb.append(record.getLevel().getName());
             sb.append(" [");
