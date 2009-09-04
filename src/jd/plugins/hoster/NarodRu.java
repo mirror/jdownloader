@@ -45,6 +45,7 @@ public class NarodRu extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (compatible; MSIE 6.0; Windows NT 5.0; YB/3.5.2.0;. NET CLR 1.1.4322)");
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("<title>404</title>") || br.containsHTML("Файл удален с сервиса")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String name = br.getRegex(Pattern.compile("<dt class=\"name\"><i class=\"b-old-icon b-old-icon-arc\"></i>(.*?)</dt>")).getMatch(0);

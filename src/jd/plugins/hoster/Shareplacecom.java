@@ -71,13 +71,14 @@ public class Shareplacecom extends PluginForHost {
         String page = Encoding.urlDecode(br.toString(), true);
         String[] links = HTMLParser.getHttpLinks(page, null);
         boolean found = false;
-        //waittime
+        br.setDebug(true);
+        // waittime
         if (br.containsHTML("var ziptime =")) {
-        int tt = Integer.parseInt(br.getRegex("var ziptime = (\\d+);").getMatch(0));
-        sleep(tt * 1001l, downloadLink);
+            int tt = Integer.parseInt(br.getRegex("var ziptime = (\\d+);").getMatch(0));
+            sleep(tt * 1001l, downloadLink);
         }
         for (String link : links) {
-            if (!new Regex(link, ".*?.getfile\\.php.*?$").matches()) continue;
+            if (!new Regex(link, ".*?\\.php.*?&.*?$").matches()) continue;
             Browser brc = br.cloneBrowser();
             dl = BrowserAdapter.openDownload(brc, downloadLink, link);
             if (dl.getConnection().isContentDisposition()) {

@@ -45,9 +45,13 @@ public class ShareOnlineBiz extends PluginForHost {
         this.enablePremium("http://www.share-online.biz/service.php?p=31353834353B4A44616363");
     }
 
-    // @Override
     public String getAGBLink() {
         return "http://share-online.biz/rules.php";
+    }
+
+    public void correctDownloadLink(DownloadLink link) throws Exception {
+        String id = new Regex(link.getDownloadURL(), "id\\=([a-zA-Z0-9]+)").getMatch(0);
+        link.setUrlDownload("http://www.share-online.biz/download.php?id=" + id + "&?setlang=en");
     }
 
     public void login(Account account) throws IOException, PluginException {
@@ -69,7 +73,6 @@ public class ShareOnlineBiz extends PluginForHost {
         return false;
     }
 
-    // @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         setBrowserExclusive();
@@ -93,14 +96,13 @@ public class ShareOnlineBiz extends PluginForHost {
         return ai;
     }
 
-    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCookie("http://www.share-online.biz", "king_mylang", "en");
         br.setAcceptLanguage("en, en-gb;q=0.8");
         String id = new Regex(downloadLink.getDownloadURL(), "id\\=([a-zA-Z0-9]+)").getMatch(0).toUpperCase();
         if (br.postPage("http://www.share-online.biz/linkcheck/linkcheck.php", "links=" + id).matches("\\s*")) {
-            br.getPage("http://www.share-online.biz/download.php?id=" + id + "&setlang=en");
+            br.getPage(downloadLink.getDownloadURL());
             String[] strings = br.getRegex("</font> \\((.*?)\\) \\.</b></div></td>.*?<b>File name:</b>.*?<b>(.*?)</b></div></td>").getRow(0);
             if (strings == null || strings.length != 2) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             downloadLink.setDownloadSize(Regex.getSize(strings[0].trim()));
@@ -114,18 +116,11 @@ public class ShareOnlineBiz extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
     public void handlePremium(DownloadLink parameter, Account account) throws Exception {
         requestFileInformation(parameter);
         login(account);
         if (!this.isPremium()) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
-        String id = new Regex(parameter.getDownloadURL(), "id\\=([a-zA-Z0-9]+)").getMatch(0);
-        br.getPage("http://www.share-online.biz/download.php?id=" + id + "&?setlang=en");
+        br.getPage(parameter.getDownloadURL());
         Form form = br.getForm(0);
         if (form.containsHTML("name=downloadpw")) {
             String passCode = null;
@@ -156,11 +151,9 @@ public class ShareOnlineBiz extends PluginForHost {
         dl.startDownload();
     }
 
-    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String id = new Regex(downloadLink.getDownloadURL(), "id\\=([a-zA-Z0-9]+)").getMatch(0);
-        br.getPage("http://www.share-online.biz/download.php?id=" + id + "&?setlang=en");
+        br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("Probleme mit einem Fileserver")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.shareonlinebiz.errors.servernotavailable", "Server temporarily down"), 15 * 60 * 1000l);
 
         /* CaptchaCode holen */
@@ -203,30 +196,25 @@ public class ShareOnlineBiz extends PluginForHost {
         String url = Context.toString(result);
         Context.exit();
 
-        //Keine Zwangswartezeit, deswegen auskommentiert
-//        sleep(15000, downloadLink);
+        // Keine Zwangswartezeit, deswegen auskommentiert
+        // sleep(15000, downloadLink);
         br.setFollowRedirects(true);
         /* Datei herunterladen */
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url);
         dl.startDownload();
     }
 
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    // @Override
     public void reset() {
     }
 
-    // @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
     public void resetDownloadlink(DownloadLink link) {
-        // TODO Auto-generated method stub
 
     }
 

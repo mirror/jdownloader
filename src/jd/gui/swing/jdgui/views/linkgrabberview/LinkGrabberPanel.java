@@ -55,6 +55,7 @@ import jd.gui.swing.jdgui.actions.ThreadedAction;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.LinkgrabberView;
 import jd.gui.swing.jdgui.views.toolbar.ViewToolbar;
+import jd.nutils.JDFlags;
 import jd.nutils.io.JDFileFilter;
 import jd.nutils.io.JDIO;
 import jd.nutils.jobber.Jobber;
@@ -170,15 +171,17 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
             }
 
             public void threadedActionPerformed(ActionEvent e) {
-                synchronized (LinkGrabberController.ControllerLock) {
-                    synchronized (LGINSTANCE.getPackages()) {
-                        stopLinkGatherer();
-                        lc.abortLinkCheck();
-                        LGINSTANCE.getFILTERPACKAGE().clear();
-                        ArrayList<LinkGrabberFilePackage> selected_packages = new ArrayList<LinkGrabberFilePackage>(LGINSTANCE.getPackages());
-                        selected_packages.add(LGINSTANCE.getFILTERPACKAGE());
-                        for (LinkGrabberFilePackage fp2 : selected_packages) {
-                            fp2.setDownloadLinks(new ArrayList<DownloadLink>());
+                if (JDFlags.hasSomeFlags(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_COUNTDOWN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, JDL.L("gui.linkgrabberv2.lg.clear.ask", "Clear linkgrabber list?")), UserIO.RETURN_OK)) {
+                    synchronized (LinkGrabberController.ControllerLock) {
+                        synchronized (LGINSTANCE.getPackages()) {
+                            stopLinkGatherer();
+                            lc.abortLinkCheck();
+                            LGINSTANCE.getFILTERPACKAGE().clear();
+                            ArrayList<LinkGrabberFilePackage> selected_packages = new ArrayList<LinkGrabberFilePackage>(LGINSTANCE.getPackages());
+                            selected_packages.add(LGINSTANCE.getFILTERPACKAGE());
+                            for (LinkGrabberFilePackage fp2 : selected_packages) {
+                                fp2.setDownloadLinks(new ArrayList<DownloadLink>());
+                            }
                         }
                     }
                 }

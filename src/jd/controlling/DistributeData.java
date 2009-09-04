@@ -292,6 +292,10 @@ public class DistributeData extends Thread {
      */
     private ArrayList<DownloadLink> quickHosterCheck(String data) {
         String lowercasedata = data.toLowerCase();
+        /*
+         * multiple links without new line
+         */
+        if (new Regex(data, " http").count() > 1) return null;
         for (HostPluginWrapper pw : JDUtilities.getPluginsForHost()) {
             Pattern pattern = pw.getPattern();
 

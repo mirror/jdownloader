@@ -44,15 +44,14 @@ public class LetitBitNet extends PluginForHost {
         enablePremium("http://letitbit.net/");
     }
 
-    // @Override
     public String getAGBLink() {
         return "http://letitbit.net/page/terms.php";
     }
 
-    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
+        br.postPage(downloadLink.getDownloadURL(), "en.x=10&en.y=8&vote_cr=en");
         String filename = br.getRegex("<span>File::</span>(.*?)</h1>").getMatch(0);
         String size = br.getRegex("<span>File size::</span>(.*?)</h1>").getMatch(0);
         if (filename == null || size == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -61,25 +60,17 @@ public class LetitBitNet extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
         Form form = br.getForm(3);
         form.put("pass", Encoding.urlEncode(account.getPass()));
         br.submitForm(form);
-
         String url = br.getRegex("middle.*?href='(.*?letit.*?download.*?)'").getMatch(0);
         if (url == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
         dl.startDownload();
     }
 
-    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String url = null;
@@ -140,20 +131,16 @@ public class LetitBitNet extends PluginForHost {
         dl.startDownload();
     }
 
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    // @Override
     public void reset() {
     }
 
-    // @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 }

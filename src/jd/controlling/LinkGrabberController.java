@@ -22,6 +22,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 import jd.config.ConfigPropertyListener;
 import jd.config.Property;
@@ -196,7 +197,12 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
         ArrayList<String> ret = new ArrayList<String>();
         for (String line : lines) {
             if (line.trim().startsWith("#") || line.trim().length() == 0) continue;
-            ret.add(line.trim());
+            try {
+                Pattern.compile(line.trim());
+                ret.add(line.trim());
+            } catch (Exception e) {
+                logger.severe("Filter " + line.trim() + " is invalid!");
+            }
         }
         return ret.toArray(new String[] {});
     }
