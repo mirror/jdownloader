@@ -41,8 +41,8 @@ public class EasyCaptchaTool {
     public static final String CONFIG_AUTHOR = "AUTHOR";
     public static JFrame ownerFrame = DummyFrame.getDialogParent();
 
-    public static EasyMethodeFile showMethodes() {
-        final EasyMethodeFile ef = new EasyMethodeFile();
+    public static EasyMethodFile showMethodes() {
+        final EasyMethodFile ef = new EasyMethodFile();
         new GuiRunnable<Object>() {
             public Object runSave() {
                 final JDialog cHosterDialog = new JDialog(ownerFrame);
@@ -55,7 +55,7 @@ public class EasyCaptchaTool {
                 JPanel pa = new JPanel(new GridLayout(2, 1));
 
                 pa.add(new JLabel(JDL.L("easycaptcha.tool.mothodedialog.selectmethode", "select the methode:")));
-                EasyMethodeFile[] paths = EasyMethodeFile.getMethodeList();
+                EasyMethodFile[] paths = EasyMethodFile.getMethodeList();
 
                 final JComboBox combox = new JComboBox(paths);
                 combox.setRenderer(new JDLabelListRenderer());
@@ -68,7 +68,7 @@ public class EasyCaptchaTool {
                 ok.addActionListener(new ActionListener() {
 
                     public void actionPerformed(ActionEvent e) {
-                        EasyMethodeFile ef2 = (EasyMethodeFile) combox.getSelectedItem();
+                        EasyMethodFile ef2 = (EasyMethodFile) combox.getSelectedItem();
                         if (ef2 != null) {
                             ef.file = ef2.file;
                             cHosterDialog.dispose();
@@ -99,17 +99,17 @@ public class EasyCaptchaTool {
         return ef;
     }
 
-    private static EasyMethodeFile getCaptchaMethode() {
-        return new GuiRunnable<EasyMethodeFile>() {
-            public EasyMethodeFile runSave() {
-                final EasyMethodeFile ef = new EasyMethodeFile();
+    private static EasyMethodFile getCaptchaMethode() {
+        return new GuiRunnable<EasyMethodFile>() {
+            public EasyMethodFile runSave() {
+                final EasyMethodFile ef = new EasyMethodFile();
                 final JDialog dialog = new JDialog(ownerFrame);
                 dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
                 dialog.setTitle(JDL.L("easycaptcha.tool.title", "EasyCaptcha"));
                 dialog.setModal(true);
                 JPanel box = new JPanel(new GridLayout(3, 1));
                 JButton btcs = new JButton(JDL.L("easycaptcha.tool.continuelastsession", "Continue Last Session"));
-                final EasyMethodeFile lastEF = (EasyMethodeFile) config.getProperty(CONFIG_LASTSESSION, null);
+                final EasyMethodFile lastEF = (EasyMethodFile) config.getProperty(CONFIG_LASTSESSION, null);
                 if (lastEF == null) btcs.setEnabled(false);
                 btcs.addActionListener(new ActionListener() {
 
@@ -128,7 +128,7 @@ public class EasyCaptchaTool {
                 btl.addActionListener(new ActionListener() {
 
                     public void actionPerformed(ActionEvent e) {
-                        EasyMethodeFile ef2 = showMethodes();
+                        EasyMethodFile ef2 = showMethodes();
                         if (ef2 != null) {
                             ef.file = ef2.file;
                             dialog.dispose();
@@ -169,7 +169,7 @@ public class EasyCaptchaTool {
                                             dialog.dispose();
                                             cHosterDialog.dispose();
                                             if (tfAuthor.getText() != null && !tfAuthor.getText().matches("\\s*")) config.setProperty(CONFIG_AUTHOR, tfAuthor.getText());
-                                            CreateHoster.create(new EasyMethodeFile("easycaptcha"), ef, tfAuthor.getText(), (Integer) spMaxLetters.getValue());
+                                            CreateHoster.create(new EasyMethodFile("easycaptcha"), ef, tfAuthor.getText(), (Integer) spMaxLetters.getValue());
 
                                         } else {
                                             JOptionPane.showConfirmDialog(null, JDL.L("easycaptcha.tool.warning.hostnamemissing", "the hostname is missing"), JDL.L("easycaptcha.tool.warning.hostnamemissing", "the hostname is missing"), JOptionPane.CLOSED_OPTION, JOptionPane.WARNING_MESSAGE);
@@ -215,7 +215,7 @@ public class EasyCaptchaTool {
         JDUtilities.getConfiguration().save();
     }
 
-    public static void checkReadyToTrain(final EasyMethodeFile meth, final JButton btnTrain) {
+    public static void checkReadyToTrain(final EasyMethodFile meth, final JButton btnTrain) {
         new GuiRunnable<Object>() {
             public Object runSave() {
                 btnTrain.setEnabled(meth.isReadyToTrain());
@@ -224,7 +224,7 @@ public class EasyCaptchaTool {
         }.waitForEDT();
     }
 
-    public static void showToolKid(final EasyMethodeFile meth) {
+    public static void showToolKid(final EasyMethodFile meth) {
 
         CreateHoster.setImageType(meth);
         File folder = meth.getCaptchaFolder();
@@ -357,7 +357,7 @@ public class EasyCaptchaTool {
                 new Thread(new Runnable() {
 
                     public void run() {
-                        new LoadCaptchas(ownerFrame, meth.getName()).start();
+                        new LoadCaptchas(ownerFrame, meth.file.getName()).start();
                     }
                 }).start();
 
@@ -398,7 +398,7 @@ public class EasyCaptchaTool {
                 return null;
             }
         }.waitForEDT();
-        EasyMethodeFile meth = EasyCaptchaTool.getCaptchaMethode();
+        EasyMethodFile meth = EasyCaptchaTool.getCaptchaMethode();
 
         showToolKid(meth);
 

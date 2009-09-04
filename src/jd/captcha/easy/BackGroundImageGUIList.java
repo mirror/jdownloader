@@ -19,7 +19,7 @@ import jd.nutils.Screen;
 import jd.utils.locale.JDL;
 
 public class BackGroundImageGUIList implements ActionListener {
-    public BackGroundImageGUIList(EasyMethodeFile methode, JFrame owner) {
+    public BackGroundImageGUIList(EasyMethodFile methode, JFrame owner) {
         this.manager = new BackGroundImageManager(methode);
         this.owner = owner;
     }

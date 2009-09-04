@@ -25,7 +25,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
 
-import jd.captcha.easy.EasyMethodeFile;
+import jd.captcha.easy.EasyMethodFile;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.components.JDTextField;
 import jd.gui.swing.dialog.ProgressDialog;
@@ -115,7 +115,7 @@ public class LoadCaptchas {
             new File(dir).mkdir();
             if (loadDirect()) {
                 if (opendir) openDir(dir);
-                new EasyMethodeFile(host).copyExampleImage();
+                new EasyMethodFile(host).copyExampleImage();
                 return true;
             }
             if (selectedImage != null)
@@ -214,7 +214,7 @@ public class LoadCaptchas {
             if (selectedImage != null && selectedImage.file != null) {
                 loadProcess();
                 if (opendir) openDir(dir);
-                new EasyMethodeFile(host).copyExampleImage();
+                new EasyMethodFile(host).copyExampleImage();
                 return dir.length() > 0;
             } else
                 return false;

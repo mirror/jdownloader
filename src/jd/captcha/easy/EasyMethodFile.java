@@ -20,17 +20,18 @@ import jd.gui.swing.jdgui.userio.UserIOGui;
 import jd.nutils.JDFlags;
 import jd.nutils.JDImage;
 import jd.nutils.io.JDIO;
+import jd.parser.Regex;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-public class EasyMethodeFile implements JDLabelContainer, Serializable {
+public class EasyMethodFile implements JDLabelContainer, Serializable {
     public File file = null;
 
-    public EasyMethodeFile(String methodename) {
+    public EasyMethodFile(String methodename) {
         this.file = new File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/" + JDUtilities.getJACMethodsDirectory(), methodename);
     }
 
-    public EasyMethodeFile(File file) {
+    public EasyMethodFile(File file) {
         this.file = file;
     }
 
@@ -51,7 +52,7 @@ public class EasyMethodeFile implements JDLabelContainer, Serializable {
         return false;
     }
 
-    public EasyMethodeFile() {
+    public EasyMethodFile() {
     }
 
     public boolean isReadyToTrain() {
@@ -104,19 +105,19 @@ public class EasyMethodeFile implements JDLabelContainer, Serializable {
     /**
      * erstellt eine Liste aller vorhandener Methoden
      */
-    public static EasyMethodeFile[] getMethodeList() {
+    public static EasyMethodFile[] getMethodeList() {
         File[] files = new File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/" + JDUtilities.getJACMethodsDirectory()).listFiles();
-        ArrayList<EasyMethodeFile> ret = new ArrayList<EasyMethodeFile>();
+        ArrayList<EasyMethodFile> ret = new ArrayList<EasyMethodFile>();
         for (int i = 0; i < files.length; i++) {
-            EasyMethodeFile ef = new EasyMethodeFile(files[i]);
+            EasyMethodFile ef = new EasyMethodFile(files[i]);
             if (ef.getScriptJas().exists()) ret.add(ef);
 
         }
-        return ret.toArray(new EasyMethodeFile[] {});
+        return ret.toArray(new EasyMethodFile[] {});
     }
 
     public File getCaptchaFolder() {
-        return new File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/captchas/" + getName());
+        return new File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/captchas/" + file.getName());
     }
 
     /**
@@ -157,7 +158,7 @@ public class EasyMethodeFile implements JDLabelContainer, Serializable {
                 } else {
                     return new GuiRunnable<String>() {
                         public String runSave() {
-                            if (!new LoadCaptchas(EasyCaptchaTool.ownerFrame, getName()).start()) {
+                            if (!new LoadCaptchas(EasyCaptchaTool.ownerFrame, file.getName()).start()) {
                                 openCaptchaFolder();
                                 return "jpg";
                             }
@@ -235,7 +236,17 @@ public class EasyMethodeFile implements JDLabelContainer, Serializable {
 
     @Override
     public String toString() {
-        return file.getName();
+        File infoxml = getJacinfoXml();
+        String ret= null;
+        try {
+            if(infoxml.exists())
+                ret= new Regex(JDIO.getLocalFile(infoxml),"name=\"([^\"]*)").getMatch(0);
+        } catch (Exception e) {
+//e.printStackTrace();
+        }
+        if(ret==null)
+            ret = file.getName();
+        return ret;
     }
 
     public String getLabel() {

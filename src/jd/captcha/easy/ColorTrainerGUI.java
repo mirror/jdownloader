@@ -480,8 +480,8 @@ public class ColorTrainerGUI {
      * @param file
      * @return
      */
-    public static Vector<CPoint> getColor(EasyMethodeFile file, JFrame owner) {
-        return getColors(file.getCaptchaFolder(), file.getName(), null, owner);
+    public static Vector<CPoint> getColor(EasyMethodFile file, JFrame owner) {
+        return getColors(file.getCaptchaFolder(), file.file.getName(), null, owner);
     }
 
     public static void main(String[] args) {

@@ -34,7 +34,7 @@ public class BackGroundImage extends CPoint {
      * @param methode
      * @return
      */
-    public Image getImage(EasyMethodeFile methode) {
+    public Image getImage(EasyMethodFile methode) {
         if(image==null)
         {
             image=Utilities.loadImage(new File(methode.file, getBackgroundImage()));
@@ -47,7 +47,7 @@ public class BackGroundImage extends CPoint {
      */
     public void clearCaptcha(Captcha captchaImage) {
         
-        EasyMethodeFile methode = new EasyMethodeFile(captchaImage.owner.getResourceFile("jacinfo.xml").getParentFile());
+        EasyMethodFile methode = new EasyMethodFile(captchaImage.owner.getResourceFile("jacinfo.xml").getParentFile());
         Image bImage = getImage(methode);
 
         if (bImage==null||bImage.getWidth(null) != captchaImage.getWidth() || bImage.getHeight(null) != captchaImage.getHeight()) {

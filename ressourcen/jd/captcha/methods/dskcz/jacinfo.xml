@@ -1,4 +1,4 @@
 <jDownloader>
-<method name="dskcz" author="DwD" services="edisk.cz" />
+<method name="edisk.cz" author="DwD" services="edisk.cz" />
 <format type="jpg" letterNum="4" />
 </jDownloader>

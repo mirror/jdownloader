@@ -23,7 +23,7 @@ public class BackGroundImageManager {
      * Liste mit Hintergrundbildern
      */
     private Vector<BackGroundImage> backgroundList = null;
-    protected EasyMethodeFile methode;
+    protected EasyMethodFile methode;
     private Captcha captchaImage;
     public int zoom;
     protected int[][] backupGrid;
@@ -42,7 +42,7 @@ public class BackGroundImageManager {
      * 
      * @param originalCaptcha
      */
-    public BackGroundImageManager(EasyMethodeFile methode) {
+    public BackGroundImageManager(EasyMethodFile methode) {
         this(methode.getRandomCaptcha());
     }
 
@@ -53,7 +53,7 @@ public class BackGroundImageManager {
      * @param originalCaptcha
      */
     public BackGroundImageManager(String hoster) {
-        this(new EasyMethodeFile(hoster));
+        this(new EasyMethodFile(hoster));
     }
 
     /**
@@ -66,7 +66,7 @@ public class BackGroundImageManager {
         this.captchaImage = captcha;
         backupGrid=PixelGrid.getGridCopy(captcha.getGrid());
         autoSetZoomFaktor();
-        methode = new EasyMethodeFile(captchaImage.owner.getResourceFile("jacinfo.xml").getParentFile());
+        methode = new EasyMethodFile(captchaImage.owner.getResourceFile("jacinfo.xml").getParentFile());
         load();
     }
 

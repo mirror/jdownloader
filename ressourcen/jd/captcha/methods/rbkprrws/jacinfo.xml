@@ -1,5 +1,5 @@
 <jDownloader>
-  <method name="rbkprrws" author="ManiacMansion" />
+  <method name="raubkopierer.ws" author="ManiacMansion" services="raubkopierer.ws" />
   <format type="png" letterNum="4" />
 
 </jDownloader>

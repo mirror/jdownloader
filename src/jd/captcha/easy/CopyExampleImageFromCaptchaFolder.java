@@ -7,8 +7,8 @@ public class CopyExampleImageFromCaptchaFolder {
      * @param args
      */
     public static void main(String[] args) {
-        EasyMethodeFile[] list = EasyMethodeFile.getMethodeList();
-        for (EasyMethodeFile easyMethodeFile : list) {
+        EasyMethodFile[] list = EasyMethodFile.getMethodeList();
+        for (EasyMethodFile easyMethodeFile : list) {
             if(easyMethodeFile.copyExampleImage())
                 System.out.println(easyMethodeFile.file);
         }
