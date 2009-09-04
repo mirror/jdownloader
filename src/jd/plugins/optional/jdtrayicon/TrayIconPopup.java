@@ -21,8 +21,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 
 import javax.swing.AbstractButton;
 import javax.swing.Action;
@@ -41,7 +39,6 @@ import javax.swing.event.ChangeListener;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.DownloadWatchDog;
-import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.components.JDUnderlinedText;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
@@ -142,29 +139,15 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
         entryPanel.add(b, action.getType() == Types.TOGGLE ? "gapleft 10,growx,pushx" : "");
     }
 
-    public AbstractButton createButton(final ToolBarAction action) {
+    private AbstractButton createButton(final ToolBarAction action) {
         action.init();
-        final AbstractButton bt;
-        switch (action.getType()) {
-        case TOGGLE:
-            bt = new JToggleButton(action);
-          
-            break;
-
-        default:
-            bt = new JButton(action);
-
-        }
-
-        action.init();
+        final AbstractButton bt = (action.getType() == Types.TOGGLE) ? new JToggleButton(action) : new JButton(action);
         bt.setContentAreaFilled(false);
         bt.setBorderPainted(false);
         bt.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
-
                 TrayIconPopup.this.dispose();
-
             }
 
         });

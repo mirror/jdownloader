@@ -50,7 +50,6 @@ public class AlbumEE extends PluginForDecrypt implements ProgressControllerListe
     private Pattern singleLinksPattern = Pattern.compile("<div class=\"img\"><a href=\"(node/[0-9]+/[0-9]+)\"><img src");
     private Pattern pictureURLPattern = Pattern.compile("<img src=\"(http://[\\w\\.]*?album.*?/files/.*?)\" alt");
     private boolean abort = false;
-    private ProgressController progress;
 
     public AlbumEE(PluginWrapper wrapper) {
         super(wrapper);
@@ -58,7 +57,6 @@ public class AlbumEE extends PluginForDecrypt implements ProgressControllerListe
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
-        this.progress = progress;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         progress.getBroadcaster().addListener(this);
         ArrayList<String> picLinks = new ArrayList<String>();

@@ -20,8 +20,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import org.xml.sax.SAXException;
-
 import jd.PluginWrapper;
 import jd.captcha.specials.Linksave;
 import jd.controlling.ProgressController;
@@ -37,6 +35,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
+
+import org.xml.sax.SAXException;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "Linksave.in" }, urls = { "http://[\\w\\.]*?linksave\\.in/(view.php\\?id=)?[\\w]+" }, flags = { 0 })
 public class Lnksvn extends PluginForDecrypt {
@@ -68,7 +68,7 @@ public class Lnksvn extends PluginForDecrypt {
             String captchaCode = getCaptchaCode(captchaFile, param);
             form.put("code", captchaCode);
             br.submitForm(form);
-            if (br.containsHTML("Falscher Code")||br.containsHTML("Captcha-code ist falsch") || br.containsHTML("Besucherpasswort ist falsch")) {
+            if (br.containsHTML("Falscher Code") || br.containsHTML("Captcha-code ist falsch") || br.containsHTML("Besucherpasswort ist falsch")) {
                 br.getPage(param.getCryptedUrl());
                 form = br.getFormbyProperty("name", "form");
             } else {
@@ -122,15 +122,17 @@ public class Lnksvn extends PluginForDecrypt {
             final class LsDirektLinkTH extends Thread {
                 Browser browser;
                 String result;
+
                 public LsDirektLinkTH(Browser browser) {
                     this.browser = browser;
                 }
+
                 public void run() {
                     try {
                         result = getDirektLink(browser);
                     } catch (IOException e) {
                         // TODO Auto-generated catch block
-                         e.printStackTrace();
+                        e.printStackTrace();
                     }
                     synchronized (this) {
                         this.notify();

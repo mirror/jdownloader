@@ -50,12 +50,12 @@ public class JACScript {
     private int color;
 
     /**
-     * nternes Farbarray. Hier werden die Eingaben über setColorFormat abgelegt
+     * Internes Farbarray. Hier werden die Eingaben über setColorFormat abgelegt
      */
     private int[] colorComponents = { 3, 3, 3 };
 
     /**
-     * Internet Umrechnungsfaktor. Jenach verwendetem farbmodell. Wird
+     * Internet Umrechnungsfaktor. Je nach verwendetem Farbmodell. Wird
      * automatisch gesetzt
      */
     private int colorFaktor;
@@ -414,7 +414,7 @@ public class JACScript {
                             Class<?>[] types = method.getParameterTypes();
                             for (int c = 0; c < types.length; c++) {
                                 Class<?> class1 = types[c];
-                                parm[c]=parm[c].trim();
+                                parm[c] = parm[c].trim();
                                 Object d = parm[c];
                                 if (class1.getName().equals("String"))
                                     d = parm[c];
@@ -432,8 +432,10 @@ public class JACScript {
                                     d = Byte.parseByte(parm[c]);
                                 else if (class1.getName().equals("boolean"))
                                     d = Boolean.parseBoolean(parm[c]);
-                                else if (class1.getName().equals("char")) d = Byte.parseByte(parm[c]);
-                                else d=class1.cast(d);
+                                else if (class1.getName().equals("char"))
+                                    d = Byte.parseByte(parm[c]);
+                                else
+                                    d = class1.cast(d);
                                 paramObj[c] = d;
                             }
                         }
@@ -1084,16 +1086,7 @@ public class JACScript {
             return;
 
         }
-        String[] lines = script.split("\r\n");
-        if (lines.length == 1) {
-            lines = script.split("\n\r");
-        }
-        if (lines.length == 1) {
-            lines = script.split("\n");
-        }
-        if (lines.length == 1) {
-            lines = script.split("\r");
-        }
+        String[] lines = Regex.getLines(script);
         Vector<String[]> localCaptchaPrepareCommands = new Vector<String[]>();
         Vector<String[]> localJacCommands = new Vector<String[]>();
         Vector<String[]> localLetterCommands = new Vector<String[]>();
@@ -1151,22 +1144,8 @@ public class JACScript {
      * @param value
      */
     public void set(String key, Object value) {
-        try {
-            key = key.toLowerCase();
-            if (get(key) == null) {
-                // if(Utilities.isLoggerActive())logger.finer("INIT
-                // Parameter: "+key+" =
-                // "+value+"("+value.getClass().getName()+")");
-            } else {
-                // if(Utilities.isLoggerActive())logger.finer("Update
-                // Parameter: "+key+" =
-                // "+value+"("+value.getClass().getName()+")");
-            }
-
-            parameter.put(key, value);
-        } catch (Exception e) {
-
-        }
+        key = key.toLowerCase();
+        parameter.put(key, value);
     }
 
     /**
@@ -1183,28 +1162,23 @@ public class JACScript {
                 components[i + 3 - type.length()] = 0;
                 colorFaktor *= 256;
                 color = 0;
-            }
-            if (type.charAt(i) == 's') {
+            } else if (type.charAt(i) == 's') {
                 components[i + 3 - type.length()] = 1;
                 colorFaktor *= 256;
                 color = 0;
-            }
-            if (type.charAt(i) == 'b') {
+            } else if (type.charAt(i) == 'b') {
                 components[i + 3 - type.length()] = 2;
                 colorFaktor *= 256;
                 color = 0;
-            }
-            if (type.charAt(i) == 'R') {
+            } else if (type.charAt(i) == 'R') {
                 components[i + 3 - type.length()] = 0;
                 colorFaktor *= 256;
                 color = 1;
-            }
-            if (type.charAt(i) == 'G') {
+            } else if (type.charAt(i) == 'G') {
                 components[i + 3 - type.length()] = 1;
                 colorFaktor *= 256;
                 color = 1;
-            }
-            if (type.charAt(i) == 'B') {
+            } else if (type.charAt(i) == 'B') {
                 components[i + 3 - type.length()] = 2;
                 colorFaktor *= 256;
                 color = 1;
@@ -1235,11 +1209,11 @@ public class JACScript {
      */
     private Object toType(String arg, String key) {
         Object current = get(key);
-        if (current instanceof String) { return arg; }
-        if (current instanceof Integer) { return Integer.parseInt(arg); }
-        if (current instanceof Float) { return Float.parseFloat(arg); }
-        if (current instanceof Double) { return Double.parseDouble(arg); }
-        if (current instanceof Boolean) { return arg.equalsIgnoreCase("true"); }
+        if (current instanceof String) return arg;
+        if (current instanceof Integer) return Integer.parseInt(arg);
+        if (current instanceof Float) return Float.parseFloat(arg);
+        if (current instanceof Double) return Double.parseDouble(arg);
+        if (current instanceof Boolean) return arg.equalsIgnoreCase("true");
         if (Utilities.isLoggerActive()) {
             if (current == null) {
                 logger.severe("Parameter " + key + " ist nicht initialisiert worden!");
