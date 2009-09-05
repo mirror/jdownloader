@@ -88,6 +88,10 @@ public class LookAndFeelController {
                 LookAndFeelWrapper lafm = new LookAndFeelWrapper(lafis[i]);
                 lafm.setName("Light(Metal)");
                 ret.add(lafm);
+            } else if (clname.endsWith("GTKLookAndFeel") && OSDetector.isLinux()) {
+                LookAndFeelWrapper lafm = new LookAndFeelWrapper(lafis[i]);
+                lafm.setName("Light(GTK)");
+                ret.add(lafm);
             } else if (clname.startsWith("com.jtattoo")) {
                 LookAndFeelWrapper lafm = new LookAndFeelWrapper(lafis[i]);
                 lafm.setName(lafis[i].getName());

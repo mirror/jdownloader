@@ -480,8 +480,8 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
     public static String cleanFileName(String name) {
         /** remove rar extensions */
 
-        name = getNameMatch(name, "(.*)\\.part[0]*[1].rar$");
-        name = getNameMatch(name, "(.*)\\.part[0-9]+.rar$");
+        name = getNameMatch(name, "(.*)(\\.|_)part[0]*[1].rar$");
+        name = getNameMatch(name, "(.*)(\\.|_)part[0-9]+.rar$");
         name = getNameMatch(name, "(.*)\\.rar$");
         name = getNameMatch(name, "(.*)\\.r\\d+$");
         name = getNameMatch(name, "(.*)(\\.|_)\\d+$");

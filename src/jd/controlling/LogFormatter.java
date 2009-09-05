@@ -16,12 +16,11 @@
 
 package jd.controlling;
 
+import java.text.DateFormat;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.SimpleFormatter;
-
-import jd.nutils.Formatter;
 
 /**
  * Mit dieser Klasse können die Logmeldungen anders dargestellt werden. Der Code
@@ -31,22 +30,22 @@ import jd.nutils.Formatter;
  * 
  */
 public class LogFormatter extends SimpleFormatter {
-    // private final static String format = "{0,date} {0,time}";
-    private Object args[] = new Object[1];
+
     Date dat = new Date();
+    DateFormat longTimestamp = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM);
     // private MessageFormat formatter;
     // Line separator string. This is the value of the line.separator
     // property at the moment that the SimpleFormatter was created.
     private String lineSeparator = System.getProperty("line.separator");
-    private StringBuilder sb;
+    private StringBuilder sb = new StringBuilder();
 
     public synchronized String format(LogRecord record) {
 
-        sb = new StringBuilder();
+        /* clear StringBuilder buffer */
+        sb.delete(0, sb.capacity());
 
         // Minimize memory allocations here.
         dat.setTime(record.getMillis());
-        args[0] = dat;
 
         // text = new StringBuffer();
         // if (formatter == null) {
@@ -57,7 +56,7 @@ public class LogFormatter extends SimpleFormatter {
         // sb.append(text);
         // sb.append(" - ");
         if (JDLogger.getLogger().getLevel() == Level.ALL) {
-            sb.append(Formatter.formatMilliseconds(record.getMillis()));
+            sb.append(longTimestamp.format(dat));
             sb.append(" - ");
             sb.append(record.getLevel().getName());
             sb.append(" [");
