@@ -59,9 +59,10 @@ public class QJNet extends PluginForHost {
 
     //@Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
         String id = new Regex(downloadLink.getBrowserUrl(), "/(\\d+)/catid/").getMatch(0);
         String linkurl = "http://dl.qj.net/dl.php?fid=" + id;
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, linkurl, false, -20); 
+        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, linkurl, true, -20); 
         String requestUrl = dl.getConnection().getURL().toString();
         if (!requestUrl.matches("http://\\w+.amazonaws.com/dlqjnet/.+\\?.+")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -89,14 +90,5 @@ public class QJNet extends PluginForHost {
     
     //@Override
     public void resetDownloadlink(DownloadLink link) {
-        try {
-            requestFileInformation(link);
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (PluginException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
     }
 }
