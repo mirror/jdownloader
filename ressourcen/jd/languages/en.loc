@@ -1349,6 +1349,7 @@ plugins.serienjunkies.catdialog.scatnewestdownload = Add the newest download of 
 plugins.serienjunkies.catdialog.scatnothing = Do not add category
 plugins.serienjunkies.catdialog.scatsave = Settings for this session?
 plugins.serienjunkies.catdialog.title = SerienJunkies ::CAT::
+plugins.trayicon.popup.bottom.simchunks = Concurrent Connections
 plugins.trayicon.popup.bottom.simdls = Simultaneous downloads
 plugins.trayicon.popup.bottom.speed = Speed limit(kb/s)
 plugins.trayicon.popup.menu.add = Add downloads
