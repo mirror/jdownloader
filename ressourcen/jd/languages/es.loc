@@ -1348,6 +1348,7 @@ plugins.serienjunkies.catdialog.scatnewestdownload = Añadir la última descarga
 plugins.serienjunkies.catdialog.scatnothing = No añadir Categoría
 plugins.serienjunkies.catdialog.scatsave = ¿Configurar este período de sesiones?
 plugins.serienjunkies.catdialog.title = SerienJunkies ::CAT::
+plugins.trayicon.popup.bottom.simchunks = Conexiones simultáneas
 plugins.trayicon.popup.bottom.simdls = Descargas simultáneas
 plugins.trayicon.popup.bottom.speed = Limitar velocidad (kb/s)
 quickhelp.premiumstatusbar = Premium statusbar
