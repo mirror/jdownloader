@@ -20,7 +20,6 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -65,7 +64,7 @@ public class Dataupde extends PluginForHost {
 
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-   
+
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         requestFileInformation(downloadLink);
         this.setBrowserExclusive();
@@ -74,21 +73,21 @@ public class Dataupde extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
 
         if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
-      
+
         /* DownloadLink holen */
-        Form form;
-        if (br.containsHTML("class=\"button_divx\" value")) {
-            form = br.getForms()[3];
-            br.submitForm(form);
-            form = br.getForms()[2];
+        String dllink = null;
+        if (br.containsHTML("DivXBrowserPlugin.cab")) {
+            // Stream-links handling
+            dllink = br.getRegex("autoPlay\"/>.*?<param value=\"(.*?)\"").getMatch(0);
         } else {
-            form = br.getForms()[2];
+            // Normal-links handling
+            dllink = br.getRegex("div align=\"center\">.*?<form action=\"(.*?)\"").getMatch(0);
         }
         /* 10 seks warten, kann weggelassen werden */
 
-//        this.sleep(10000, downloadLink);
-
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, true, 1);
+        // this.sleep(10000, downloadLink);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
 
         if (dl.getConnection().getLongContentLength() == 0) {
             dl.getConnection().disconnect();
@@ -106,12 +105,12 @@ public class Dataupde extends PluginForHost {
 
     private void correctURL(DownloadLink downloadLink) {
         downloadLink.setUrlDownload(downloadLink.getDownloadURL().replace(".de/", ".to/"));
-        
+
     }
 
     // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 2;
+        return 1;
     }
 
     // @Override
