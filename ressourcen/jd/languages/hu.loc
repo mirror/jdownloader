@@ -397,6 +397,7 @@ gui.linkgrabberv2.lg.addall = Minden csomag hozzáadása
 gui.linkgrabberv2.lg.addselected = Kiválasztott csomag(ok) hozzáadása
 gui.linkgrabberv2.lg.addselectedlinks = Kiválasztott link(ek) hozzáadása
 gui.linkgrabberv2.lg.clear = Lista törlése
+gui.linkgrabberv2.lg.clear.ask = Törli a linkgyűjtő listáját?
 gui.linkgrabberv2.lg.rmoffline = Minden offline eltávolítása
 gui.linkgrabberv2.onlyselectedhoster = Csak kiválasztott szerver megtartása
 gui.linkgrabberv2.splithoster = Szolgáltató által darabolva
