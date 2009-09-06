@@ -129,15 +129,17 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
                         } catch (InterruptedException e) {
                             return;
                         }
+                        if (progress.isFinalizing()) break;
                     }
                 }
             };
             timer.start();
-            JDUtilities.getConfiguration().setProperty(ReconnectMethod.PARAM_RETRIES, 0);
+            final int retries = JDUtilities.getConfiguration().getIntegerProperty(ReconnectMethod.PARAM_RETRIES, 5);
             progress.setStatus(30);
             new Thread() {
                 @Override
                 public void run() {
+                    JDUtilities.getConfiguration().setProperty(ReconnectMethod.PARAM_RETRIES, 0);
                     if (Reconnecter.doManualReconnect()) {
                         progress.setStatusText(JDL.L("gui.warning.reconnectSuccess", "Reconnect successfull"));
 
@@ -154,11 +156,10 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
                         success.setEnabled(true);
                         currentip.setText(IPCheck.getIPAddress(null));
                     }
-
                     timer.interrupt();
                     progress.setStatus(100);
                     progress.doFinalize(5000);
-
+                    JDUtilities.getConfiguration().setProperty(ReconnectMethod.PARAM_RETRIES, retries);
                 }
             }.start();
         }

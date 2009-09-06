@@ -40,33 +40,30 @@ public class NmLdsrg extends PluginForDecrypt {
         ArrayList<String> passwords = new ArrayList<String>();
         passwords.add("www.anime-loads.org");
         String parameter = param.toString();
-        
-        br.setCookiesExclusive(true);
 
+        br.setCookiesExclusive(true);
         if (parameter.contains("Weiterleitung")) {
             links.add(parameter);
         } else {
             br.getPage(parameter);
-            String [] ids = br.getRegex("Weiterleitung.*?([0-9a-z]{32})").getColumn(0);
-            
-            if (ids.length == 0) {
-                return null;
-            }   
-            
+            Thread.sleep(200);
+            br.getPage(parameter);
+            String[] ids = br.getRegex("Weiterleitung.*?([0-9a-z]{32})").getColumn(0);
+
+            if (ids.length == 0) { return null; }
+
             for (String id : ids) {
                 String link = "http://www.anime-loads.org/Weiterleitung/?cryptid=" + id;
                 links.add(link);
             }
         }
-        
+
         for (String link : links) {
             br.getPage(link);
             String dllink = Encoding.htmlDecode(br.getRegex("<meta http-equiv=\"refresh\" content=\"5; url=(.*?)\">").getMatch(0));
-            
-            if (dllink == null) {
-                return null;
-            }
-                
+
+            if (dllink == null) { return null; }
+
             DownloadLink dl = createDownloadlink(dllink);
             dl.setSourcePluginPasswordList(passwords);
             dl.setDecrypterPassword(passwords.get(0));
