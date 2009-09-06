@@ -23,13 +23,12 @@ import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hsbsitez.com" }, urls = { "http://[\\w\\.]*?hsbsitez\\.com/files/\\d+/.*" }, flags = { 0 })
-public class Hsbstzcm extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tekdosya.com" }, urls = { "http://[\\w\\.]*?tekdosya\\.com/(redirect|files)/.*" }, flags = { 0 })
+public class TkdsyCm extends PluginForDecrypt {
 
-    public Hsbstzcm(PluginWrapper wrapper) {
+    public TkdsyCm(PluginWrapper wrapper) {
         super(wrapper);
         // TODO Auto-generated constructor stub
     }
@@ -37,20 +36,28 @@ public class Hsbstzcm extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        br.getPage(parameter.toString());
-        String[] links = br.getRegex("<b>Original Url: </b> 	&nbsp; (http://.*?)<BR>").getColumn(0);
-        progress.setRange(links.length);
-        FilePackage fp = FilePackage.getInstance();
+        if (parameter.toString().contains("http://www.tekdosya.com/redirect/")) {
+            br.setFollowRedirects(false);
+            br.getPage(parameter.toString());
+            DownloadLink dl = createDownloadlink(br.getRedirectLocation());
+            decryptedLinks.add(dl);
+        } else {
+            String url = parameter.toString();
+            url = url.replace("/files/", "/links/");
+            br.getPage(url);
+            br.setFollowRedirects(false);
+            String[] links = br.getRegex("<a href=\"(.*?)\" target=\"_blank\">indir</a></div>").getColumn(0);
+            if (links.length == 0) return null;
+            progress.setRange(links.length);
+            for (String dl : links) {
+                br.getPage("http://www.tekdosya.com" + dl);
+                decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
+                progress.increase(1);
+            }
 
-        for (String data : links) {
-
-            decryptedLinks.add(createDownloadlink(data));
-            progress.increase(1);
         }
-        String fpname = null;
-        fpname = br.getRegex("<TITLE>(.*?) \\| FilesCollection</TITLE>").getMatch(0);
-        fp.setName(fpname);
-        fp.addLinks(decryptedLinks);
+
         return decryptedLinks;
     }
+
 }
