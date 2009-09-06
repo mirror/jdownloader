@@ -44,6 +44,7 @@ public class Mega1280Com extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setCustomCharset("UTF-8");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("upload.php")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = Encoding.htmlDecode(br.getRegex("clr05\"><b>(.*?)</b>").getMatch(0));
@@ -58,6 +59,9 @@ public class Mega1280Com extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
+        if (br.containsHTML("Vui lòng chờ cho lượt download kế tiếp")) {                
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
+        }
         // Link zum Captcha (kann bei anderen Hostern auch mit ID sein)
         String captchaurl = "http://mega.1280.com/security_code.php";
         String code = getCaptchaCode(captchaurl, downloadLink);
@@ -73,7 +77,10 @@ public class Mega1280Com extends PluginForHost {
         String dllink1 = br.getRegex("<div id=\"hdfolder\" style=\"display:none\">(.*?)</div>").getMatch(0);
         String dllink2 = br.getRegex("<div id=\"hdcode\" style=\"display:none\">(.*?)</div>").getMatch(0);
         String dllink3 = br.getRegex("<div id=\"hdfilename\" style=\"display:none\">(.*?)</div>").getMatch(0);
+        if (dllink0 == null || dllink1 == null|| dllink2 == null|| dllink3 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         String downloadURL = dllink0 + dllink1 + dllink2 + "/" + dllink3 ;
+        int tt = Integer.parseInt(br.getRegex("hdcountdown\" style=\"display:none\">(\\d+)</div>").getMatch(0));
+        sleep(tt * 1001l, downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, downloadURL, true, 1);
         
         
