@@ -119,18 +119,15 @@ public class Schedule extends PluginOptional {
     }
 
     public void removeAction(int row) {
+        if (row < 0) return;
         actions.remove(row);
-
         saveActions();
-
         stopCheck();
     }
 
     public void addAction(Actions act) {
         actions.add(act);
-
         saveActions();
-
         startCheck();
     }
 

@@ -385,7 +385,7 @@ public class Megauploadcom extends PluginForHost {
             br.setCookiesExclusive(true);
             br.setCookie("http://" + wwwWorkaround + "megaupload.com", "l", "en");
             br.getPage("http://" + wwwWorkaround + "megaupload.com/?d=" + getDownloadID(l));
-            if (br.getHttpConnection().getLongContentLength() == 0 || br.containsHTML("No htmlCode read")) {
+            if (br.containsHTML("No htmlCode read") || br.containsHTML("This service is temporarily not available from your service area")) {
                 logger.info("It seems Megaupload is blocked! Only API may work!");
                 onlyapi = true;
                 l.setAvailableStatus(AvailableStatus.TRUE);
