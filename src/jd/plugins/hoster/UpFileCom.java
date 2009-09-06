@@ -43,6 +43,7 @@ public class UpFileCom extends PluginForHost {
     // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
+        br.setCookie("http://up-file.com", "country", "DE");
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("Das von Ihnen angefordete File ist nicht gefunden")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<h1><span>Filename::</span>(.*?)</h1>").getMatch(0);
