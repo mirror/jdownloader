@@ -32,8 +32,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zippyshare.com" }, urls = { "http://www\\d{0,}\\.zippyshare\\.com/(v/\\d+/file\\.html|.*?key=\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {"zippyshare.com"}, urls = {"http://www\\d{0,}\\.zippyshare\\.com/(v/\\d+/file\\.html|.*?key=\\d+)"}, flags = {0})
 public class Zippysharecom extends PluginForHost {
+
+    private Pattern linkIDPattern = Pattern.compile(".*?zippyshare\\.com/v/([0-9]+)/file.html");
+    private Pattern fileExtPattern = Pattern.compile("pong = 'fckhttp.*?(\\.\\w+)';");
 
     public Zippysharecom(PluginWrapper wrapper) {
         super(wrapper);
@@ -57,17 +60,24 @@ public class Zippysharecom extends PluginForHost {
         if (filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String name = br.getRegex(Pattern.compile("<title>Zippyshare.com -(.*?)</title>", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (name == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (name.endsWith("...")) {
+            String linkID = new Regex(downloadLink.getDownloadURL(), linkIDPattern).getMatch(0);
+            String fileExt = br.getRegex(fileExtPattern).getMatch(0);
+            if (linkID != null)
+                name = (name.substring(0, name.length() - 3) + "_" + linkID);
+            if (fileExt != null)
+                name = name + fileExt;
+        }
         downloadLink.setName(name.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
         return AvailableStatus.TRUE;
     }
-
     // @Override
     /*
      * public String getVersion() { return getVersion("$Revision$"); }
      */
-
     // @Override
+
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
