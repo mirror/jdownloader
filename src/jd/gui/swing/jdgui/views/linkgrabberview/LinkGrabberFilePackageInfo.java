@@ -114,6 +114,7 @@ public class LinkGrabberFilePackageInfo extends JDCollapser implements ActionLis
         txtPassword2.setEditable(false);
         txtComment = new JDTextField(true);
         txtComment.addActionListener(this);
+        txtComment.addFocusListener(this);
         chbExtract = new JCheckBox(JDL.L("gui.linkgrabber.packagetab.chb.extractAfterdownload", "Extract"));
         chbExtract.setSelected(true);
         chbExtract.setHorizontalTextPosition(SwingConstants.LEFT);
