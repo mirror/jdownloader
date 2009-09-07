@@ -83,7 +83,7 @@ public class MegaShareCom extends PluginForHost {
                 break;
             }
         }
-        String captchaCode = getCaptchaCode(getHost(), captchaFile, downloadLink);
+        String captchaCode = getCaptchaCode(captchaFile, downloadLink);
 
         form.remove("accel");
         form.remove("yesss");
