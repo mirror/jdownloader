@@ -1210,6 +1210,7 @@ plugins.hoster.sharebaseto.errors.servicenotavailable = Servizio non disponibile
 plugins.hoster.sharebaseto.errors.toomanyusers = Troppi utenti
 plugins.hoster.sharenownet.errors.servererror = Errore del server
 plugins.hoster.shareonlinebiz.errors.servernotavailable = Server al momento non disponibile
+plugins.hoster.shareonlinebiz.errors.servernotavailable2 = Nessuno slot disponibile
 plugins.hoster.speedysharecom.password = Inserire password:
 plugins.hoster.uploadedto.errors.indirectlinkerror = Errore di link indiretto
 plugins.hoster.uploadedto.errors.notpremium = L'account è gratuito
