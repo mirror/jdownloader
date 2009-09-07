@@ -37,7 +37,7 @@ public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController p
   ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
   String parameter = param.toString();
   br.getPage(parameter);
-  String[] links = br.getRegex("Mirror \\d+:.*?href=\"(.*?)\".*?Link \\d+").getColumn(0);
+  String[] links = br.getRegex("<a href=\"(http://.*?)\" target=\"_blank\" title=\".*?\"><font color=\"#ff9966\">Link \\d+</font></a>").getColumn(0);
   if (links.length == 0) return null;
   String pass = br.getRegex("Passwort:</font>.*?<font color=\"red\">(.*?)</font>").getMatch(0);
   ArrayList<String> passwords = new ArrayList<String>();
