@@ -66,7 +66,7 @@ public class FrstLnkzNt extends PluginForDecrypt {
             if (checkform != null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             // // Wrong-captcha errorhandling
             // if
-            // (br.containsHTML("Bitte überprüfen Sie die Eingabe des Captchas"))
+            // (br.containsHTML("Bitte Ã¼berprÃ¼fen Sie die Eingabe des Captchas"))
             // throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             // }
         }
