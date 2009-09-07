@@ -7,10 +7,8 @@ import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
 import jd.captcha.pixelgrid.PixelGrid;
 import jd.captcha.pixelobject.PixelObject;
-import jd.nutils.Colors;
-
 public class FlDRR {
-    static void clearlines(Captcha captcha) {
+    private static void clearlines(Captcha captcha) {
 
         int[][] grid = PixelGrid.getGridCopy(captcha.grid);
         for (int x = 1; x < captcha.getWidth() - 1; x++) {
@@ -30,27 +28,6 @@ public class FlDRR {
             }
         }
         captcha.grid = grid;
-    }
-
-    static void toBlack(Captcha captcha) {
-        try {
-            int color = captcha.getAverage();
-
-            for (int x = 0; x < captcha.getWidth(); x++) {
-                for (int y = 0; y < captcha.getHeight(); y++) {
-                    // System.out.println(Colors.getRGBColorDifference2(captcha.grid[x][y],
-                    // color));
-                    if (Colors.getRGBColorDifference2(captcha.grid[x][y], color) > 25) {
-                        captcha.grid[x][y] = 0x000000;
-                    } else
-                        captcha.grid[x][y] = 0xffffff;
-
-                }
-            }
-        } catch (Exception e) {
-            // TODO: handle exception
-        }
-
     }
 
     private static void merge(Vector<PixelObject> objects) {
