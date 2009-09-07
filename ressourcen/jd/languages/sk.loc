@@ -186,6 +186,7 @@ gui.config.clr.script = CLR Skript
 gui.config.download.buffersize = Max. veľkost bufferu [MB]
 gui.config.download.buffersize2 = Max. veľkost bufferu [KB]
 gui.config.download.crc = skontrolovať SFV/CRC ak je to možné
+gui.config.download.download.tab = Ovládanie sťahovania
 gui.config.download.ipcheck = Reconnect - kontrola IP
 gui.config.download.ipcheck.disable = Zakázať kontrolu IP
 gui.config.download.ipcheck.externalinterval = Interval kontroly externej IP [sec]
