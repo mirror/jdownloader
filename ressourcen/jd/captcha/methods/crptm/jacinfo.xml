@@ -1,4 +1,4 @@
 <jDownloader>
-<method name="crypt-me.com" author="DwD" services="crypt-me.com"/>
+<method name="crypt-me.com" author="DwD" services="crypt-me.com;linkprotect.in;filesavr.com;filedropper.com;ultraupload.info"/>
 <format type="png" letterNum="4" />
 </jDownloader>
