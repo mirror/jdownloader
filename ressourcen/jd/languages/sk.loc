@@ -182,6 +182,7 @@ gui.config.captcha.jac_disable = Vypnúť automatickú CAPTCHA-u
 gui.config.captcha.list = Metódy CAPTCHA
 gui.config.captcha.settings = Nastavenie CAPTCHA
 gui.config.captcha.train.level.instanthelp = http://jdownloader.org/knowledge/wiki/gui/configuration/advanced-view/janticaptcha
+gui.config.captcha.train.show_timeout = Doba zobrazenia CAPTCHA okna
 gui.config.clr.script = CLR Skript
 gui.config.download.buffersize = Max. veľkost bufferu [MB]
 gui.config.download.buffersize2 = Max. veľkost bufferu [KB]
