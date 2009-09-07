@@ -43,7 +43,10 @@ public class DuckLoad extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         boolean stream = false;
         requestFileInformation(link);
+        //waittime check
+        if (br.containsHTML("Your downloadticket was booked")){
         sleep(10 * 1000l, link);
+        }
         Form form = br.getForm(0);
         String capurl = "/design/Captcha"+br.getRegex("src=\"/design/Captcha\\d?(.*?\\.php\\?.*?key=.*?)\"").getMatch(0);
         if (capurl == null) capurl = "/design/Captcha"+br.getRegex("src='/design/Captcha\\d?(.*?\\.php.*?key=.*?)'").getMatch(0);

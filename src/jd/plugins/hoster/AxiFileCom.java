@@ -16,28 +16,20 @@
 
 package jd.plugins.hoster;
 
-import java.io.BufferedInputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.http.URLConnectionAdapter;
-import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "axifile.com" }, urls = { "http://[\\w\\.]*?axifile\\.com/\\?\\d+" }, flags = { 0 })
 public class AxiFileCom extends PluginForHost {
-    /*
-     * TODO: PW support, problem: filename und filesize sind ohne pw nicht zu
-     * bekommen
-     */
     public AxiFileCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -51,17 +43,10 @@ public class AxiFileCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
         br.setCookiesExclusive(true);
         br.getPage(downloadLink.getDownloadURL());
-        String filesize = null;
-        try {
-            filesize = br.getRegex(Pattern.compile("You have request \".*?\" file \\((.*?)\\)<SCRIPT", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-        } catch (Exception e) {
-            // TODO: handle exception
-        }
-
-        String filename = br.getRegex("You have request \"(.*?)\"").getMatch(0);
+        if (br.containsHTML("Please insert here File ID")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("FILE DOWNLOAD</h1>.*?<h2>(.*?)</h2>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setName(filename.trim());
-        if (filesize != null) downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
+        downloadLink.setName(filename);
         return AvailableStatus.TRUE;
     }
 
@@ -73,40 +58,36 @@ public class AxiFileCom extends PluginForHost {
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        br.setFollowRedirects(true);
-        String link = br.getRegex(Pattern.compile("<DIV id=\"pnlLink1\">.*?href=\"(.*?)\".*?</DIV>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-        br.getPage("http://www.axifile.com/javascript/donwload.js");
-        br.setCookie("http://" + br.getHost(), "pv", br.getRegex("setCookie\\(\"pv\",\"(.*?)\"").getMatch(0));
-        br.setCookie("http://" + br.getHost(), "flv", "y");
-        URLConnectionAdapter con = br.openGetConnection("http://www.axifile.com/flash/baner.swf");
-        BufferedInputStream is = new BufferedInputStream(con.getInputStream());
-
-        int i;
-        char[] lastone = new char[11];
-        ArrayList<Character> pool = new ArrayList<Character>();
-        ArrayList<Short> ifs = new ArrayList<Short>();
-        ArrayList<Short> poolindex = new ArrayList<Short>();
-        while ((i = is.read()) != -1) {
-            char[] backlast = lastone;
-            for (int j = 1; j < backlast.length; j++) {
-                lastone[j - 1] = backlast[j];
+        br.setFollowRedirects(false);
+        String link = (downloadLink.getDownloadURL());
+        String link2 = link.replace(".com/?", ".com/mydownload.php?file=");
+        br.getPage(link2);
+        // password protected-links-handling
+        if (br.containsHTML("This file is password protected")) {
+            String passCode = null;
+            Form pwform = br.getForm(0);
+            if (pwform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if (downloadLink.getStringProperty("pass", null) == null) {
+                passCode = Plugin.getUserInput("Password?", downloadLink);
+            } else {
+                /* gespeicherten PassCode holen */
+                passCode = downloadLink.getStringProperty("pass", null);
             }
-            lastone[10] = (char) i;
-            if (lastone[7] == 0x00 && lastone[6] == 0x02 && lastone[5] == 0x9D && lastone[4] == 0x49) ifs.add((short) lastone[0]);
-            if (lastone[0] == 0x00 && lastone[2] == 0x00 && ("" + lastone[1]).matches("[0-9a-f]")) pool.add(lastone[1]);
-            if (lastone[0] == 0x00 && lastone[1] == 0x08 && lastone[2] == 0x00 && lastone[3] == 0x96 && lastone[4] == 0x04 && lastone[5] == 0x00 && lastone[6] == 0x08 && lastone[7] == 0x0F && lastone[8] == 0x08 && lastone[10] == 0x1D) poolindex.add((short) (lastone[9] - 0x11));
-
+            pwform.put("pwd", passCode);
+            br.submitForm(pwform);
+            if (br.containsHTML("This file is password protected")) {
+                logger.warning("Wrong password!");
+                downloadLink.setProperty("pass", null);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+            if (passCode != null) {
+                downloadLink.setProperty("pass", passCode);
+            }
         }
-        Collections.reverse(poolindex);
-
-        char[] mycode = new char[32];
-        for (int j = 0; j < mycode.length; j++) {
-            mycode[ifs.get(j)] = pool.get(poolindex.get(j));
-        }
-        is.close();
-        String code = new String(mycode);
-        if (link == null || code == null) throw new PluginException(LinkStatus.ERROR_FATAL);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, link.replaceFirst(".*?axifile.com/.*?/", "http://dl.axifile.com/" + code + "/"), false, 3);
+        String dllink = br.getRegex("pnlLink1\"><b>.*?</b><br> <A href=\"(.*?)\"").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        sleep(13000l, downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -3);
         /*
          * hoster supported wahlweise 3 files mit 1 chunk oder 1 file mit 3
          * chunks
@@ -116,7 +97,7 @@ public class AxiFileCom extends PluginForHost {
 
     // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return 3;
     }
 
     // @Override

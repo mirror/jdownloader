@@ -17,11 +17,14 @@
 package jd.plugins.decrypter;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -83,75 +86,19 @@ public class CrptTo extends PluginForDecrypt {
         }
 
         // container handling (if no containers found, use webprotection)
-         if (br.containsHTML("Links im dlc-Format herunterladen")) {
-         String link =
-         br.getRegex("<td><a href=\"(.*?)\" title=\"Links im dlc").getMatch(0);
-         if (link == null) return null;
-         String test = "http://crypt.to/" + link;
-         File file = null;
-         URLConnectionAdapter con = br.openGetConnection(link);
-         if (con.getResponseCode() == 200) {
-         file = JDUtilities.getResourceFile("tmp/cryptto/" +
-         test.replace("http://crypt.to/", "") + System.currentTimeMillis() + ".dlc");
-         br.downloadConnection(file, con);
-         } else {
-         con.disconnect();
-         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-         }
-        
-         if (file != null && file.exists() && file.length() > 100) {
-         decryptedLinks = JDUtilities.getController().getContainerLinks(file);
-         if (decryptedLinks.size() > 0) return decryptedLinks;
-         } else {
-         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-         }
-                    
-         }
 
         if (br.containsHTML("Links im rsdf-Format herunterladen")) {
-            String link = br.getRegex("<td><a href=\"(.*?)\"").getMatch(0);
-            if (link == null) return null;
-            String test = "http://crypt.to/" + link;
-            File file = null;
-            URLConnectionAdapter con = br.openGetConnection(link);
-            if (con.getResponseCode() == 200) {
-                file = JDUtilities.getResourceFile("tmp/cryptto/" + test.replace("http://crypt.to/", "") + ".rsdf");
-                br.downloadConnection(file, con);
-            } else {
-                con.disconnect();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-            }
-
-            if (file != null && file.exists() && file.length() > 100) {
-                decryptedLinks = JDUtilities.getController().getContainerLinks(file);
-                if (decryptedLinks.size() > 0) return decryptedLinks;
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-            }
-
+            decryptedLinks = loadcontainer(br, "1");
+            if (decryptedLinks != null && decryptedLinks.size() > 0) return decryptedLinks;
+        }
+        if (br.containsHTML("Links im dlc-Format herunterladen")) {
+            decryptedLinks = loadcontainer(br, "0");
+            if (decryptedLinks != null && decryptedLinks.size() > 0) return decryptedLinks;
         }
 
         if (br.containsHTML("Links im ccf-Format herunterladen")) {
-            String link = br.getRegex("<td><a href=\"(.*?)\" title=\"Links im ccf").getMatch(0);
-            if (link == null) return null;
-            String test = "http://crypt.to/" + link;
-            File file = null;
-            URLConnectionAdapter con = br.openGetConnection(link);
-            if (con.getResponseCode() == 200) {
-                file = JDUtilities.getResourceFile("tmp/cryptto/" + test.replace("http://crypt.to/", "") + ".ccf");
-                br.downloadConnection(file, con);
-            } else {
-                con.disconnect();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-            }
-
-            if (file != null && file.exists() && file.length() > 100) {
-                decryptedLinks = JDUtilities.getController().getContainerLinks(file);
-                if (decryptedLinks.size() > 0) return decryptedLinks;
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-            }
-
+            decryptedLinks = loadcontainer(br, "2");
+            if (decryptedLinks != null && decryptedLinks.size() > 0) return decryptedLinks;
         }
 
         // Webprotection decryption
@@ -172,5 +119,33 @@ public class CrptTo extends PluginForDecrypt {
     }
 
     // @Override
+    private ArrayList<DownloadLink> loadcontainer(Browser br, String format) throws IOException, PluginException {
+        Browser brc = br.cloneBrowser();
+        String[] dlclinks = br.getRegex("(dlc://crypt.to/container,[0-9]+," + format + ".*?)\"").getColumn(0);
+        if (dlclinks == null || dlclinks.length == 0) return null;
+        for (String link : dlclinks) {
+            String test0 = Encoding.htmlDecode(link);
+            String test = test0.replace("dlc", "http");
+            File file = null;
+            URLConnectionAdapter con = brc.openGetConnection(link);
+            if (con.getResponseCode() == 200) {
+                file = JDUtilities.getResourceFile("tmp/cryptto/" + test.replace("http://crypt.to/", "") + "." + format);
+                if (file == null) return null;
+                file.deleteOnExit();
+                brc.downloadConnection(file, con);
+            } else {
+                con.disconnect();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            }
+
+            if (file != null && file.exists() && file.length() > 100) {
+                ArrayList<DownloadLink> decryptedLinks = JDUtilities.getController().getContainerLinks(file);
+                if (decryptedLinks.size() > 0) return decryptedLinks;
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            }
+        }
+        return null;
+    }
 
 }
