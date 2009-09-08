@@ -136,7 +136,8 @@ public class LnkCrptWs extends PluginForDecrypt {
             Object result = cx.evaluateString(scope, c, "<cmd>", 1, null);
 
             String code = Context.toString(result);
-            String[] row = new Regex(code, "href=\"(.*?)\"><img.*?image/(.*?)\\.").getRow(0);
+//            System.out.println(code);
+            String[] row = new Regex(code, "href=\"([^\"]+)\"[^>]*><img.*?image/(.*?)\\.").getRow(0);
             if (row != null) {
 
                 map.put(row[1], row[0]);
@@ -146,20 +147,21 @@ public class LnkCrptWs extends PluginForDecrypt {
         File container = null;
         if (map.containsKey("dlc")) {
             container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
+//            System.out.println(map.get("dlc"));
             if (!container.exists()) container.createNewFile();
-            Browser.download(container, map.get("dlc"));
+            br.cloneBrowser().getDownload(container, map.get("dlc"));
         } else if (map.containsKey("cnl")) {
             container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
             if (!container.exists()) container.createNewFile();
-            Browser.download(container, map.get("cnl").replace("dlc://", "http://"));
+            br.cloneBrowser().getDownload(container, map.get("cnl").replace("dlc://", "http://"));
         } else if (map.containsKey("ccf")) {
             container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".ccf");
             if (!container.exists()) container.createNewFile();
-            Browser.download(container, map.get("ccf"));
+            br.cloneBrowser().getDownload(container, map.get("ccf"));
         } else if (map.containsKey("rsdf")) {
             container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".rsdf");
             if (!container.exists()) container.createNewFile();
-            Browser.download(container, map.get("rsdf"));
+            br.cloneBrowser().getDownload(container, map.get("rsdf"));
         }
         if (container != null) {
             // container available
