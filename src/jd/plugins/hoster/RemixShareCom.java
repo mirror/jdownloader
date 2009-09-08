@@ -32,7 +32,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "remixshare.com" }, urls = { "http://[\\w\\.]*?remixshare\\.com/.*?\\?file=[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {"remixshare.com"}, urls = {"http://[\\w\\.]*?remixshare\\.com/.*?\\?file=[a-z0-9]+"}, flags = {0})
 public class RemixShareCom extends PluginForHost {
 
     public RemixShareCom(PluginWrapper wrapper) {
@@ -52,13 +52,15 @@ public class RemixShareCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         br.setFollowRedirects(false);
-        if (br.containsHTML("Error Code: 600")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("Download:</span>&nbsp;<span class='title_darkgrey' title='.*?'>(.*?)<", Pattern.CASE_INSENSITIVE)).getMatch(0));
-        String filesize = br.getRegex("</span></td><td[^>]*>(.*?)\\|").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("Error Code: 500.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("<span title='(.*?)'>", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        String filesize = br.getRegex("</span><span class='light'><br />([0-9\\.]+&nbsp;MB)&").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
-        filesize = filesize.replaceAll("&nbsp;", " ");
-        downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
+        if(filesize != null) {
+            filesize = filesize.replaceAll("&nbsp;", " ");
+            downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -93,7 +95,7 @@ public class RemixShareCom extends PluginForHost {
         br.submitForm(down);
         // br.openGetConnection(downloadLink.getDownloadURL());
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, br.getRedirectLocation(), false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), false, 1);
         dl.startDownload();
 
     }
@@ -114,6 +116,6 @@ public class RemixShareCom extends PluginForHost {
     // @Override
     public void resetDownloadlink(DownloadLink link) {
         // TODO Auto-generated method stub
-
     }
+
 }
