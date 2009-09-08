@@ -48,18 +48,30 @@ public class MainToolBar extends ToolBar implements ControlListener {
         add(speedmeter, "dock east,hidemode 3,height 30!,width 30:200:300");
     }
 
-    public void controlEvent(ControlEvent event) {
+    public void controlEvent(final ControlEvent event) {
         switch (event.getID()) {
         case ControlEvent.CONTROL_DOWNLOAD_START:
-            speedmeter.start();
-           ActionController.getToolBarAction("toolbar.control.stopmark").setEnabled(true);
-            break;
         case ControlEvent.CONTROL_DOWNLOAD_STOP:
         case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
-            ActionController.getToolBarAction("toolbar.control.stopmark").setEnabled(false);
-            speedmeter.stop();
-            break;
+            new GuiRunnable<Object>() {
+                @Override
+                public Object runSave() {
+                    switch (event.getID()) {
+                    case ControlEvent.CONTROL_DOWNLOAD_START:
+                        speedmeter.start();
+                        ActionController.getToolBarAction("toolbar.control.stopmark").setEnabled(true);
+                        break;
+                    case ControlEvent.CONTROL_DOWNLOAD_STOP:
+                    case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
+                        ActionController.getToolBarAction("toolbar.control.stopmark").setEnabled(false);
+                        speedmeter.stop();
+                        break;
+                    }
+                    return null;
+                }
+            }.start();
         }
+
     }
 
     public void updateToolbar() {
@@ -75,7 +87,5 @@ public class MainToolBar extends ToolBar implements ControlListener {
             }
         }.waitForEDT();
     }
-
-
 
 }

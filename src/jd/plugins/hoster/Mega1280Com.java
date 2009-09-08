@@ -59,9 +59,7 @@ public class Mega1280Com extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
-        if (br.containsHTML("Vui lòng chờ cho lượt download kế tiếp")) {                
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
-        }
+        if (br.containsHTML("Vui lòng chờ cho lượt download kế tiếp")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l); }
         // Link zum Captcha (kann bei anderen Hostern auch mit ID sein)
         String captchaurl = "http://mega.1280.com/security_code.php";
         String code = getCaptchaCode(captchaurl, downloadLink);
@@ -71,19 +69,19 @@ public class Mega1280Com extends PluginForHost {
         captchaForm.put("code_security", code);
         br.submitForm(captchaForm);
         if (br.containsHTML("frm_download")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        
-        //setzt den downloadlink zusammen (damit wird die Wartezeit umgangen)
+
+        // setzt den downloadlink zusammen (damit wird die Wartezeit umgangen)
         String dllink0 = br.getRegex("<div id=\"hddomainname\" style=\"display:none\">(.*?)</div>").getMatch(0);
         String dllink1 = br.getRegex("<div id=\"hdfolder\" style=\"display:none\">(.*?)</div>").getMatch(0);
         String dllink2 = br.getRegex("<div id=\"hdcode\" style=\"display:none\">(.*?)</div>").getMatch(0);
         String dllink3 = br.getRegex("<div id=\"hdfilename\" style=\"display:none\">(.*?)</div>").getMatch(0);
-        if (dllink0 == null || dllink1 == null|| dllink2 == null|| dllink3 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        String downloadURL = dllink0 + dllink1 + dllink2 + "/" + dllink3 ;
-        int tt = Integer.parseInt(br.getRegex("hdcountdown\" style=\"display:none\">(\\d+)</div>").getMatch(0));
+        if (dllink0 == null || dllink1 == null || dllink2 == null || dllink3 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        String downloadURL = dllink0 + dllink1 + dllink2 + "/" + dllink3;
+        String wait = br.getRegex("hdcountdown\" style=\"display:none\">(\\d+)</div>").getMatch(0);
+        if (wait == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        long tt = Long.parseLong(wait.trim());
         sleep(tt * 1001l, downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, downloadURL, true, 1);
-        
-        
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadURL, true, 1);
         dl.startDownload();
     }
 
