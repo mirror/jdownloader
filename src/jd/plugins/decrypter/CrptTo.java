@@ -37,7 +37,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 //by pspzockerscene
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "crypt.to" }, urls = { "http://[\\w\\.]*?(crypt\\.to|mamangu\\.com)/(fid|links),[0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "crypt.to" }, urls = { "http://[\\w\\.]*?(crypt\\.to|mamangu\\.com)/(fid|links),[0-9a-zA-Z]+" }, flags = { 0 })
 public class CrptTo extends PluginForDecrypt {
 
     public CrptTo(PluginWrapper wrapper) {
@@ -60,23 +60,37 @@ public class CrptTo extends PluginForDecrypt {
         }
 
         if (br.containsHTML("Passwort bitte hier") || br.containsHTML("/captcha.inc.php")) {
-            Form captchaForm = br.getForm(0);
-            if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            Form captchaForm = null;
             String passCode = null;
-            // Captcha handling
-            if (br.containsHTML("/captcha.inc.php")) {
-                String captchalink = "http://crypt.to/inc/captcha.inc.php";
-                String code = getCaptchaCode(captchalink, param);
-                captchaForm.put("pruefcode", code);
-            }
-            // Password handling
             if (br.containsHTML("Passwort bitte hier")) {
-                passCode = Plugin.getUserInput("Password?", param);
-                captchaForm.put("pw", passCode);
+                passCode = Plugin.getUserInput("Password?", passCode, param);
             }
-            br.submitForm(captchaForm);
-            // Wrong-captcha/PW errorhandling
-            if (br.containsHTML("Passwort falsch oder das Captcha wurde nicht richtig")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            for (int i = 0; i < 5; i++) {
+                // Captcha handling
+                long time = System.currentTimeMillis();
+                captchaForm = br.getForm(0);
+                if (passCode != null) captchaForm.put("pw", passCode);
+
+                if (br.containsHTML("/captcha.inc.php")) {
+
+                    String captchalink = "http://crypt.to/inc/captcha.inc.php";
+                    String code = getCaptchaCode(captchalink, param);
+
+                    captchaForm.put("pruefcode", code);
+                }
+                if (br.containsHTML("delaySubmit")) {
+                    long delay = Long.parseLong(br.getRegex("delaySubmit\\(this, 1000, (\\d+)").getMatch(0)) - (System.currentTimeMillis() - time);
+                    sleep(delay, param);
+                }
+                br.submitForm(captchaForm);
+                if (br.containsHTML("Passwort falsch oder das Captcha")) {
+                    br.getPage(parameter);
+                } else
+                    break;
+            }
+            if (br.containsHTML("Passwort bitte hier") || br.containsHTML("/captcha.inc.php")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+
         }
         // "waittime"-check
 
@@ -87,17 +101,16 @@ public class CrptTo extends PluginForDecrypt {
 
         // container handling (if no containers found, use webprotection)
 
-        if (br.containsHTML("Links im rsdf-Format herunterladen")) {
-            decryptedLinks = loadcontainer(br, "1");
-            if (decryptedLinks != null && decryptedLinks.size() > 0) return decryptedLinks;
-        }
         if (br.containsHTML("Links im dlc-Format herunterladen")) {
-            decryptedLinks = loadcontainer(br, "0");
+            decryptedLinks = loadcontainer(br, 0);
             if (decryptedLinks != null && decryptedLinks.size() > 0) return decryptedLinks;
         }
-
+        if (br.containsHTML("Links im rsdf-Format herunterladen")) {
+            decryptedLinks = loadcontainer(br, 1);
+            if (decryptedLinks != null && decryptedLinks.size() > 0) return decryptedLinks;
+        }
         if (br.containsHTML("Links im ccf-Format herunterladen")) {
-            decryptedLinks = loadcontainer(br, "2");
+            decryptedLinks = loadcontainer(br, 2);
             if (decryptedLinks != null && decryptedLinks.size() > 0) return decryptedLinks;
         }
 
@@ -106,43 +119,50 @@ public class CrptTo extends PluginForDecrypt {
         String[] links = br.getRegex("window\\.setTimeout\\('out\\(\\\\'[0-9a-z]+\\\\', \\\\'(\\d+)\\\\'").getColumn(0);
         if (links == null || links.length == 0) return null;
         progress.setRange(links.length);
+        decryptedLinks = new ArrayList<DownloadLink>();
         for (String link : links) {
             String link0 = "http://crypt.to/iframe.php?linkkey=" + linkid + "&row=" + link;
-            br.getPage(link0);
-            String finallink = br.getRedirectLocation();
-            if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-            DownloadLink dl = createDownloadlink(finallink);
-            decryptedLinks.add(dl);
+            Browser clone = br.cloneBrowser();
+            clone.getPage(link0);
+            String finallink = clone.getRedirectLocation();
+            // System.out.println(finallink);
+
+            // if (finallink == null) throw new
+            // PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            decryptedLinks.add(createDownloadlink(finallink));
+
             progress.increase(1);
+            Thread.sleep(200);
         }
+        if (decryptedLinks.size() == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         return decryptedLinks;
     }
 
     // @Override
-    private ArrayList<DownloadLink> loadcontainer(Browser br, String format) throws IOException, PluginException {
+    /**
+     * 0 = dlc 1 = rsdf 2 = ccf
+     */
+    private ArrayList<DownloadLink> loadcontainer(Browser br, int format) throws IOException, PluginException {
         Browser brc = br.cloneBrowser();
-        String[] dlclinks = br.getRegex("(dlc://crypt.to/container,[0-9]+," + format + ".*?)\"").getColumn(0);
+        String[] dlclinks = brc.getRegex("(dlc://crypt.to/container\\,[0-9a-zA-Z]+\\," + format + ".*?)\"").getColumn(0);
         if (dlclinks == null || dlclinks.length == 0) return null;
         for (String link : dlclinks) {
             String test0 = Encoding.htmlDecode(link);
-            String test = test0.replace("dlc", "http");
+            String test = test0.replaceFirst("dlc", "http");
             File file = null;
-            URLConnectionAdapter con = brc.openGetConnection(link);
+            URLConnectionAdapter con = brc.openGetConnection(test);
             if (con.getResponseCode() == 200) {
-                file = JDUtilities.getResourceFile("tmp/cryptto/" + test.replace("http://crypt.to/", "") + "." + format);
+                file = JDUtilities.getResourceFile("tmp/cryptto/" + test.replace("http://crypt.to/", "") + "." + (format == 0 ? "dlc" : format == 1 ? "rsdf" : "ccf"));
                 if (file == null) return null;
                 file.deleteOnExit();
                 brc.downloadConnection(file, con);
             } else {
                 con.disconnect();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             }
 
             if (file != null && file.exists() && file.length() > 100) {
                 ArrayList<DownloadLink> decryptedLinks = JDUtilities.getController().getContainerLinks(file);
                 if (decryptedLinks.size() > 0) return decryptedLinks;
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             }
         }
         return null;
