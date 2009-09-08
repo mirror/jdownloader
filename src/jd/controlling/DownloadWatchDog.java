@@ -290,6 +290,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
         int curState;
         int curLState;
         String tmp2;
+        String tmp3;
         synchronized (fps) {
             for (FilePackage filePackage : fps) {
                 links = filePackage.getDownloadLinkList();
@@ -298,14 +299,16 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
                     curState = LinkStatus.TODO;
                     curLState = LinkStatus.TODO;
                     tmp2 = null;
+                    tmp3 = null;
                     if (link.getLinkStatus().isFinished() || link.getLinkStatus().hasStatus(LinkStatus.ERROR_FILE_NOT_FOUND)) {
                         curState = link.getLinkStatus().getStatus();
                         curLState = link.getLinkStatus().getLatestStatus();
                         tmp2 = link.getLinkStatus().getErrorMessage();
+                        tmp3 = link.getLinkStatus().getStatusText();
                     }
                     curState = JDFlags.filterFlags(curState, LinkStatus.ERROR_FILE_NOT_FOUND | LinkStatus.FINISHED | LinkStatus.ERROR_ALREADYEXISTS | LinkStatus.TODO);
                     curLState = JDFlags.filterFlags(curLState, LinkStatus.ERROR_FILE_NOT_FOUND | LinkStatus.FINISHED | LinkStatus.ERROR_ALREADYEXISTS | LinkStatus.TODO);
-                    link.getLinkStatus().setStatusText(null);
+                    link.getLinkStatus().setStatusText(tmp3);
                     link.getLinkStatus().setErrorMessage(tmp2);
                     link.setAborted(false);
                     link.getLinkStatus().setStatus(curState);
@@ -715,7 +718,7 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
             if (stopMark instanceof FilePackage) {
                 for (DownloadLink dl : ((FilePackage) stopMark).getDownloadLinkList()) {
                     if (stopMarkTracker.contains(dl)) continue;
-                    if (dl.isEnabled() && !dl.getLinkStatus().isFinished()) continue;
+                    if (dl.isEnabled() && dl.getLinkStatus().isFinished()) continue;
                     return false;
                 }
                 return true;
