@@ -97,7 +97,7 @@ public class ActionController {
 
             @Override
             public void initDefaults() {
-               setType(ToolBarAction.Types.SEPARATOR);
+                setType(ToolBarAction.Types.SEPARATOR);
             }
 
             @Override
@@ -113,7 +113,7 @@ public class ActionController {
             public void initDefaults() {
                 setPriority(1000);
                 this.setEnabled(true);
-          
+
                 this.setToolTipText(JDL.L(JDL_PREFIX + "toolbar.control.start.tooltip", "Start downloads in list"));
             }
 
@@ -359,7 +359,9 @@ public class ActionController {
                 this.setEnabled(true);
                 setType(ToolBarAction.Types.TOGGLE);
                 this.setToolTipText(JDL.L("gui.menu.action.clipboard.desc", "-"));
-                setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, true));
+                boolean b = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, true);
+                setSelected(b);
+                setIcon(b ? "gui.images.clipboard_enabled" : "gui.images.clipboard_disabled");
             }
 
             @Override
@@ -402,7 +404,6 @@ public class ActionController {
                 setType(ToolBarAction.Types.TOGGLE);
                 this.setToolTipText(JDL.L("gui.menu.action.reconnect.desc", "-"));
                 setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true));
-
                 setIcon(isSelected() ? "gui.images.reconnect_enabled" : "gui.images.reconnect_disabled");
             }
 
