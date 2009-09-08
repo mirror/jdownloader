@@ -20,9 +20,7 @@ import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.http.RandomUserAgent;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -46,7 +44,6 @@ public class UploadingCom extends PluginForHost {
         this.enablePremium("http://www.uploading.com/premium/");
     }
 
-    // @Override
     public String getAGBLink() {
         return "http://uploading.com/terms/";
     }
@@ -60,16 +57,15 @@ public class UploadingCom extends PluginForHost {
 
     public void login(Account account) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setDebug(true);
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.setCookie("http://www.uploading.com/", "_lang", "en");
         br.setCookie("http://www.uploading.com/", "setlang", "en");
         br.getPage("http://www.uploading.com/");
-        br.getPage("http://www.uploading.com/login/");
-        br.postPage("http://www.uploading.com/login/", "log_ref=&login=" + Encoding.urlEncode(account.getUser()) + "&pwd=" + Encoding.urlEncode(account.getPass()));
-        if (br.getCookie("http://www.uploading.com/", "ulogin") == null || br.getCookie("http://www.uploading.com/", "upass") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        br.postPage("http://uploading.com/general/login_form/", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=on");
+        if (br.getCookie("http://www.uploading.com/", "remembered_user") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
     }
 
-    // @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         this.setBrowserExclusive();
@@ -84,16 +80,11 @@ public class UploadingCom extends PluginForHost {
             ai.setStatus("Free Membership");
             return ai;
         }
-        String validUntil = br.getRegex("Valid until:(.*?)</div").getMatch(0);
         account.setValid(true);
-        /* Workaround for buggy expire date */
-        if (!validUntil.trim().equalsIgnoreCase("00/00/0000")) {
-            ai.setValidUntil(Regex.getMilliSeconds(validUntil.trim(), "dd/MM/yyyy", null));
-        }
+        ai.setValidUntil(br.getCookies("http://www.uploading.com/").get("remembered_user").getExpireDate());
         return ai;
     }
 
-    // @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
         login(account);
@@ -109,13 +100,31 @@ public class UploadingCom extends PluginForHost {
             }
         }
         br.getPage(link.getDownloadURL());
-        Form form = br.getForm(1);
-        br.setDebug(true);
+        String fileID = br.getRegex("file_id: (\\d+)").getMatch(0);
+        if (fileID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        String redirect = null;
+        for (int i = 0; i < 5; i++) {
+            br.postPage("http://uploading.com/files/get/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "file_id=" + fileID + "&action=step_1");
+            String wait = br.getRegex("\"answer\": \"(\\d+)\"").getMatch(0);
+            if (wait != null) {
+                sleep(1000l * Long.parseLong(wait.trim()), link);
+            } else {
+                sleep(1000l, link);
+            }
+            br.postPage("http://uploading.com/files/get/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "file_id=" + fileID + "&action=step_2");
+            redirect = br.getRegex("redirect\": \"(http.*?)\"").getMatch(0);
+            if (redirect != null) {
+                redirect = redirect.replaceAll("\\\\/", "/");
+                break;
+            }
+            sleep(1000l, link);
+        }
+        if (redirect == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, form, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, redirect, true, 1);
         if (!dl.getConnection().isContentDisposition()) {
-            dl.getConnection().disconnect();
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, form, true, 1);
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
         dl.startDownload();
     }
@@ -132,36 +141,41 @@ public class UploadingCom extends PluginForHost {
         br.submitForm(form);
         if (br.containsHTML("Only Premium users can download files larger than")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium"); }
         br.setFollowRedirects(false);
-        form = br.getFormbyProperty("id", "downloadform");
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        // this.sleep(70000l, link);
-        int tt = Integer.parseInt(br.getRegex("<script>.*?var.*?=(\\d+);").getMatch(0));
-        sleep(tt * 1001l, link);
-        br.submitForm(form);
-        if (br.getRedirectLocation() == null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
+        String fileID = br.getRegex("file_id: (\\d+)").getMatch(0);
+        if (fileID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        String redirect = null;
+        for (int i = 0; i < 5; i++) {
+            br.postPage("http://uploading.com/files/get/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "file_id=" + fileID + "&action=step_1");
+            String wait = br.getRegex("\"answer\": \"(\\d+)\"").getMatch(0);
+            if (wait != null) {
+                sleep(1000l * Long.parseLong(wait.trim()), link);
+            } else {
+                sleep(1000l, link);
+            }
+            br.postPage("http://uploading.com/files/get/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "file_id=" + fileID + "&action=step_2");
+            redirect = br.getRegex("redirect\": \"(http.*?)\"").getMatch(0);
+            if (redirect != null) {
+                redirect = redirect.replaceAll("\\\\/", "/");
+                break;
+            }
+            sleep(1000l, link);
+        }
+        if (redirect == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, br.getRedirectLocation(), false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, redirect, false, 1);
         dl.startDownload();
     }
 
-    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCookie("http://www.uploading.com/", "_lang", "en");
         br.setCookie("http://www.uploading.com/", "setlang", "en");
         br.getPage(downloadLink.getDownloadURL());
-        br.cloneBrowser().getPage("http://img.uploading.com/css/blue.main.css");
-        String quant = br.getRegex("<img src=\"(http://pixel.quantserve.com/pixel/.*?)\"").getMatch(0);
-        Browser brc = br.cloneBrowser();
-        URLConnectionAdapter con = brc.openGetConnection(quant);
-        con.disconnect();
-        con = brc.openGetConnection("http://img.uploading.com/bb_bg_big.png");
-        con.disconnect();
-        Regex info = br.getRegex(Pattern.compile("<img src=\"http://uploading.com/images/ico_big_download_file.gif\" class=\"big_ico\" alt=\"\"/>.*<h2>(.*?)</h2><br/>.*<b>Size:</b>(.*?)<br/><br/>", Pattern.DOTALL));
+        Regex info = br.getRegex(Pattern.compile("ico_big_download_file.gif\" class=\"big_ico\" alt=\"\"/>.*<h2>(.*?)</h2><br/>.*<b>Size:</b>(.*?)<br/><br/>", Pattern.DOTALL));
         String filesize = info.getMatch(1);
         String filename = info.getMatch(0);
-        if (filesize == null || filename == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (filesize == null || filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
         return AvailableStatus.TRUE;
@@ -181,46 +195,52 @@ public class UploadingCom extends PluginForHost {
         if (br.containsHTML("You have reached the daily downloads limit")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 1 * 60 * 60 * 1000l); }
         if (br.containsHTML("Only Premium users can download files larger than")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium"); }
         br.setFollowRedirects(false);
-        form = br.getFormbyProperty("id", "downloadform");
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        // this.sleep(100000l, downloadLink);
-        int tt = Integer.parseInt(br.getRegex("<script>.*?var.*?=(\\d+);").getMatch(0));
-        sleep(tt * 1001l, downloadLink);
-        br.submitForm(form);
-        if (br.getRedirectLocation() == null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
+        String fileID = br.getRegex("file_id: (\\d+)").getMatch(0);
+        if (fileID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        String redirect = null;
+        for (int i = 0; i < 5; i++) {
+            br.postPage("http://uploading.com/files/get/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "file_id=" + fileID + "&action=step_1");
+            String wait = br.getRegex("\"answer\": \"(\\d+)\"").getMatch(0);
+            if (wait != null) {
+                sleep(1000l * Long.parseLong(wait.trim()), downloadLink);
+            } else {
+                sleep(1000l, downloadLink);
+            }
+            br.postPage("http://uploading.com/files/get/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "file_id=" + fileID + "&action=step_2");
+            redirect = br.getRegex("redirect\": \"(http.*?)\"").getMatch(0);
+            if (redirect != null) {
+                redirect = redirect.replaceAll("\\\\/", "/");
+                break;
+            }
+            sleep(1000l, downloadLink);
+        }
+        if (redirect == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, redirect, false, 1);
         dl.setFilenameFix(true);
         dl.startDownload();
     }
 
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    // @Override
     public int getTimegapBetweenConnections() {
         return 100;
     }
 
-    // @Override
     public void reset() {
     }
 
-    // @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return simultanpremium;
     }
 
-    // @Override
     public void resetPluginGlobals() {
 
     }
 
-    // @Override
     public void resetDownloadlink(DownloadLink link) {
-        // TODO Auto-generated method stub
 
     }
 
