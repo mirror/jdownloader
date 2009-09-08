@@ -411,6 +411,7 @@ gui.linkgrabberv2.lg.addall = 添加所有任务
 gui.linkgrabberv2.lg.addselected = 添加选定任务(s)
 gui.linkgrabberv2.lg.addselectedlinks = 添加选定链接(s)
 gui.linkgrabberv2.lg.clear = 清空
+gui.linkgrabberv2.lg.clear.ask = 清空链接抓取器列表？
 gui.linkgrabberv2.lg.rmoffline = 移除所有不可用的项
 gui.linkgrabberv2.onlyselectedhoster = 仅保留选定网盘
 gui.linkgrabberv2.splithoster = 按网盘分割任务
