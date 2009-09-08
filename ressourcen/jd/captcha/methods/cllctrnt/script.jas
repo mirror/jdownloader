@@ -27,9 +27,9 @@ param.errorBWeight=4;
 param.coverageFaktorAWeight=1;
 param.coverageFaktorBWeight=0.2;
 
-param.LetterSearchLimitPerfectPercent=4;
-param.quickScanReliabilityLimit=3.0;
-param.quickScanValityLimit=6;
+param.LetterSearchLimitPerfectPercent=1;
+param.quickScanReliabilityLimit=1.0;
+param.quickScanValityLimit=1;
 param.preScanFilter=100;
 param.preScanFaktor=3;
 param.preScanEmergencyFilter=80;
