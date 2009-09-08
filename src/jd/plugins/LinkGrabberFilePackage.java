@@ -55,6 +55,8 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
     private String hosts;
     private boolean ignorePackage = false;
     private transient LinkGrabberFilePackageBroadcaster broadcaster = new LinkGrabberFilePackageBroadcaster();
+    private long lastEnabledCount = 0;
+    private int lastenabled = 0;
 
     public boolean isIgnored() {
         return ignorePackage;
@@ -106,6 +108,19 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
         }
         lastFailCount = System.currentTimeMillis();
         lastfail = newfail;
+        return lastfail;
+    }
+
+    public synchronized int countEnabledLinks(boolean forceUpdate) {
+        if (!forceUpdate && System.currentTimeMillis() - lastEnabledCount < 5000) return lastenabled;
+        int newenabled = 0;
+        synchronized (downloadLinks) {
+            for (DownloadLink dl : downloadLinks) {
+                if (dl.isEnabled()) newenabled++;
+            }
+        }
+        lastEnabledCount = System.currentTimeMillis();
+        lastenabled = newenabled;
         return lastfail;
     }
 
