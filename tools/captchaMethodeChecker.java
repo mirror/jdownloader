@@ -10,6 +10,8 @@ import jd.parser.Regex;
 import jd.utils.JDUtilities;
 
 public class captchaMethodeChecker {
+    public static int count = 0;
+    public static int count2 = 0;
 
     private static String getLocalFile(File file) {
         if (!file.exists()) return "";
@@ -61,8 +63,10 @@ public class captchaMethodeChecker {
                         // System.out.println("");
                         // System.out.println(string);
                         System.out.println("__________________________");
-
+                        count2++;
                     }
+                    else
+                        count++;
                 } else {
                     String host2 = string.replaceFirst(".*?\"", "").replaceFirst("\".*", "");
                     String meth = getMethode(host2);
@@ -73,8 +77,11 @@ public class captchaMethodeChecker {
                         // System.out.println("");
                         // System.out.println(string);
                         System.out.println("__________________________");
-
+                        count2++;
                     }
+                    else
+                        count++;
+
                 }
             }
 
@@ -114,6 +121,9 @@ public class captchaMethodeChecker {
 
     public static void main(String[] args) {
         parse("(getCaptchaCode\\(.*?\\);)");
+        System.out.println(count);
+        System.out.println(count2);
+
     }
 
 }
