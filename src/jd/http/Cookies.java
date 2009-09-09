@@ -169,5 +169,12 @@ public class Cookies {
         return cookies;
 
     }
-
+    @Override
+    public String toString() {
+        StringBuilder ret = new StringBuilder();
+        for (Cookie el : cookies) {
+            ret.append(el.toString()+"\r\n");
+        }
+        return ret.toString();
+    }
 }
