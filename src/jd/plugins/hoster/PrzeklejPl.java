@@ -53,7 +53,7 @@ public class PrzeklejPl extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("<h1 style=\"font-size: 40px;\">Podana strona nie istnieje</h1>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("title=\"Pobierz pli.*?\">(.*?)<", Pattern.CASE_INSENSITIVE)).getMatch(0));
-        String filesize = br.getRegex(Pattern.compile("class=\"size\">\\((.*?)\\)<", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        String filesize = br.getRegex(Pattern.compile("class=\"size\".*?\\((.*?)\\)</span>", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
