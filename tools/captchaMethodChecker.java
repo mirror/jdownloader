@@ -9,7 +9,7 @@ import jd.captcha.JACMethod;
 import jd.parser.Regex;
 import jd.utils.JDUtilities;
 
-public class captchaMethodeChecker {
+public class captchaMethodChecker {
     public static int count = 0;
     public static int count2 = 0;
 
@@ -51,36 +51,70 @@ public class captchaMethodeChecker {
         // text = text.replaceAll("(?is)/\\*.*?\\*/", "");
         // text = text.replaceAll("//.*", "");
         // text = text.replaceAll(".*final .*", ""); // kann man nich verändern
+        boolean showPluginsWithountMethod = true;
         String[] res = new Regex(text, regexp).getRow(0);
+
         if (res != null && res.length > 0) {
+            String[] lines = text.split("(\\r\\n)|\\r|\\n");
+            int ln = 0;
+            for (; ln < lines.length; ln++) {
+                String string = lines[ln];
+                if (string.contains("getCaptchaCode"))
+                {
+                    ln ++;
+                    break;
+                }
+            }
             String host = getHost(text);
             for (String string : res) {
                 if (string.split(",").length == 2) {
                     String meth = getMethode(host);
-                    if (meth == null) {
-                        System.out.println(host);
-                        System.out.println(file.getName());
-                        // System.out.println("");
-                        // System.out.println(string);
-                        System.out.println("__________________________");
-                        count2++;
+
+                    if (showPluginsWithountMethod) {
+                        if (meth == null) {
+                            //new line in print cause System.out.println ignores System.err.println
+                            System.out.print(host+"\r\n");
+                            if (text.toLowerCase().contains("recaptcha")) System.out.print("ReCaptcha\r\n");
+
+                            System.err.print("getCaptchaCode at (" + file.getName() + ":" + ln + ")\r\n");
+                            // System.out.println("");
+                            // System.out.println(string);
+                            System.out.println("__________________________");
+                            count2++;
+                        } else
+                            count++;
+                    } else {
+                        if (meth != null) {
+                            System.out.println(host);
+                            System.out.println("Methodname: " + meth);
+                            System.out.println("__________________________");
+                        }
                     }
-                    else
-                        count++;
                 } else {
                     String host2 = string.replaceFirst(".*?\"", "").replaceFirst("\".*", "");
                     String meth = getMethode(host2);
-                    if (meth == null) {
-                        System.out.println(host2);
-                        if (host != null && !host.equals(host2)) System.out.println(host);
-                        System.out.println(file.getName());
-                        // System.out.println("");
-                        // System.out.println(string);
-                        System.out.println("__________________________");
-                        count2++;
+                    if (showPluginsWithountMethod) {
+
+                        if (meth == null) {
+                            System.out.print(host+"\r\n");
+                            if (text.toLowerCase().contains("recaptcha"))
+                                System.out.print("ReCaptcha\r\n");
+                            else if (host != null && !host.equals(host2)) System.out.print(host2+"\r\n");
+                            // System.out.println(); //
+
+                            System.err.print("getCaptchaCode at (" + file.getName() + ":" + ln + ")\r\n");
+                            // System.out.println(string);
+                            System.out.println("__________________________");
+                            count2++;
+                        } else
+                            count++;
+                    } else {
+                        if (meth != null) {
+                            System.out.println(host2);
+                            System.out.println("Methodname: " + meth);
+                            System.out.println("__________________________");
+                        }
                     }
-                    else
-                        count++;
 
                 }
             }

@@ -102,7 +102,8 @@ public class UgotFileCom extends PluginForHost {
             int block = Integer.parseInt(br.getRegex("<div id='sessionCountDown' style='font-weight:bold; font-size:20px;'>(.*?)</div>").getMatch(0)) * 1000 + 1;
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, block);
         }
-        String Captcha = getCaptchaCode("http://ugotfile.com" + br.getRegex("<td><img src=\"(.*?)\" onclick=\"captchaReload\\(\\);\"").getMatch(0), link);
+        String cUrl="http://ugotfile.com" + br.getRegex("<td><img src=\"(.*?)\" onclick=\"captchaReload\\(\\);\"").getMatch(0);
+        String Captcha = getCaptchaCode(cUrl, link);
         br.getPage("http://ugotfile.com/captcha?key=" + Captcha);
         if (br.containsHTML("invalid key")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         sleep(sleep * 1001, link);
