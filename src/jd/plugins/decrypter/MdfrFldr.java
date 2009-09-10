@@ -39,6 +39,7 @@ public class MdfrFldr extends PluginForDecrypt {
         String parameter = param.toString();
 
         br.getPage(parameter);
+        if (br.containsHTML("The page cannot be found")) return decryptedLinks;
         Thread.sleep(500);
         String reqlink = br.getRegex(Pattern.compile("script language=\"JavaScript\" src=\"/js/myfiles\\.php/(.*?)\"")).getMatch(0);
         if (reqlink == null) { return null; }

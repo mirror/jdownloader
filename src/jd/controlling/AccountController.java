@@ -451,25 +451,26 @@ public class AccountController extends SubConfiguration implements ActionListene
     }
 
     public void saveAsync() {
+        if (saveinprogress == true) return;
         asyncSaveIntervalTimer.restart();
     }
 
     public void saveSync() {
-        asyncSaveIntervalTimer.stop();
         if (saveinprogress == true) return;
-        saveinprogress = true;
         new Thread() {
             public void run() {
                 saveSyncnonThread();
-                saveinprogress = false;
             }
         }.start();
     }
 
     public void saveSyncnonThread() {
+        asyncSaveIntervalTimer.stop();
         String id = JDController.requestDelayExit("accountcontroller");
         synchronized (hosteraccounts) {
+            saveinprogress = true;
             save();
+            saveinprogress = false;
         }
         JDController.releaseDelayExit(id);
     }

@@ -163,6 +163,7 @@ public class PasswordListController implements ActionListener, DownloadControlle
     }
 
     public void save() {
+        if (saveinprogress) return;
         asyncSaveIntervalTimer.restart();
     }
 
@@ -171,18 +172,19 @@ public class PasswordListController implements ActionListener, DownloadControlle
         new Thread() {
             public void run() {
                 this.setName("PasswordList: Saving");
-                saveinprogress = true;
                 saveSync();
-                saveinprogress = false;
             }
         }.start();
     }
 
     public void saveSync() {
+        asyncSaveIntervalTimer.stop();
         String id = JDController.requestDelayExit("passwordcontroller");
         synchronized (LIST2) {
+            saveinprogress = true;
             CONFIG.setProperty("LIST2", LIST2);
             CONFIG.save();
+            saveinprogress = false;
         }
         JDController.releaseDelayExit(id);
     }
