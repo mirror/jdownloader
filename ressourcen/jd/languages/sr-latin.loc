@@ -255,7 +255,7 @@ gui.config.httpliveheader.script = Skripta ponovnog uspostavljanja veze
 gui.config.httpliveheader.user = Korisnik
 gui.config.jac.column.author = Autor
 gui.config.jac.extern = Spoljašnja metoda
-gui.config.jdrr.infolable = <span color=\"#4682B4\"> Proverite IP adresu rutera i pritisnite start <br>Matična stranica rutera se otvara u pregledaču <br> Ponovno uspostavljanje veze nakon pritiska na zaustavi i sačuvaj. <br> Više informacija možete dobiti </ span> <a href=\"http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder\"> ovde </ a>
+gui.config.jdrr.infolable = <span color="#4682B4"> Proverite IP adresu rutera i pritisnite start <br>Matična stranica rutera se otvara u pregledaču <br> Ponovno uspostavljanje veze nakon pritiska na zaustavi i sačuvaj. <br> Više informacija možete dobiti </span> <a href="http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder"> ovde</a>
 gui.config.jdrr.popup.title = JDRRPopup
 gui.config.jdrr.reconnectfaild = Ponovno uspostavljanje veze nije uspelo
 gui.config.jdrr.savereconnect = Veza je ponovo uspostavljena. Sačuvati sada?

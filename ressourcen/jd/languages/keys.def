@@ -1238,7 +1238,7 @@ gui.config.liveheader.warning.notfound = jDownloader konnte ihre Routereinstellu
 gui.config.liveheader.warning.yourrouter = Sie haben einen
 gui.config.jdrr.title = Reconnect Recorder
 gui.btn_start = Start
-gui.config.jdrr.infolable = <span color="#4682B4">Überprüfe die IP-Adresse des Routers und drück auf Start,<br>ein Browserfenster mit der Startseite des Routers öffnet sich,<br>nach dem Reconnect drückst du auf Stop und speicherst.<br>Mehr Informationen gibt es </span><a href="http://wiki.jdownloader.org/index.php?title=Recorder">hier</a>
+gui.config.jdrr.infolable = <span color="#4682B4">Überprüfe die IP-Adresse des Routers und drück auf Start,<br>ein Browserfenster mit der Startseite des Routers öffnet sich,<br>nach dem Reconnect drückst du auf Stop und speicherst.<br>Mehr Informationen gibt es </span><a href="http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder">hier</a>
 gui.fengshuiconfig.routerip = RouterIP
 gui.config.jdrr.success = Success!
 gui.config.jdrr.savereconnect = Der Reconnect war erfolgreich möchten sie jetzt speichern?

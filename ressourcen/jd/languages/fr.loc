@@ -255,7 +255,7 @@ gui.config.httpliveheader.script = Script de reconnexion
 gui.config.httpliveheader.user = Utilisateur
 gui.config.jac.column.author = Auteur
 gui.config.jac.extern = Méthode extérieure
-gui.config.jdrr.infolable = <span color=\"#4682B4\"> Vérifier l'adresse IP du routeur et appuyer sur Démarrer <br> Ouvrer la page d'acceuil du routeur avec le navigateur <br> Faite une reconnexion après avoir appuyer sur stop et sauvegarder. <br> Plus d'information disponible </ span> <a href=\"http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder\"> ici </ a>
+gui.config.jdrr.infolable = <span color="#4682B4"> Vérifier l'adresse IP du routeur et appuyer sur Démarrer <br> Ouvrer la page d'acceuil du routeur avec le navigateur <br> Faite une reconnexion après avoir appuyer sur stop et sauvegarder. <br> Plus d'information disponible </span> <a href="http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder"> ici</a>
 gui.config.jdrr.popup.title = JDRRPopup
 gui.config.jdrr.reconnectfaild = Reconnexion échouée
 gui.config.jdrr.savereconnect = Reconnexion réussie. Enregistrer maintenant?

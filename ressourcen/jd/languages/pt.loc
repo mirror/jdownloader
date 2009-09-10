@@ -253,7 +253,7 @@ gui.config.jac.column.use = Usar
 gui.config.jac.column.usedmethod = Método usado
 gui.config.jac.extern = Método externo
 gui.config.jdrr.close = Fechar
-gui.config.jdrr.infolable = <span color=\"#4682B4\"> Verifique o endereço IP do roteador e pressione o navegador da Web Iniciar <br>janela com a home page do router abre <br> Reconnection depois de bater de parar e guardar. Mais informação está <br>disponível </ span> <a href=\"http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder\"> aqui </ a>
+gui.config.jdrr.infolable = <span color="#4682B4"> Verifique o endereço IP do roteador e pressione o navegador da Web Iniciar <br>janela com a home page do router abre <br> Reconnection depois de bater de parar e guardar. Mais informação está <br>disponível </span> <a href="http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder"> aqui</a>
 gui.config.jdrr.popup.title = JDRRPopup
 gui.config.jdrr.reconnectfaild = Falha de reconexão
 gui.config.jdrr.savereconnect = Sucesso na reconexão, salvar agora?

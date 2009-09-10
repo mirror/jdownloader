@@ -191,7 +191,7 @@ gui.config.jac.column.use = 使用
 gui.config.jac.column.usedmethod = 利用できる方法
 gui.config.jac.extern = 外部の方法
 gui.config.jdrr.close = 閉じる
-gui.config.jdrr.infolable = <span color=\"#4682B4\"> ルータの IP アドレスをチェックします. 開始 をクリックすると<br> ルータのホームページをウェブブラウザで開きます. <br> ヒットしたら停止して、保存後に再接続してください. <br> 利用可能な詳細情報 </ span> <a href=\"http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder\"> 参照する </ a>
+gui.config.jdrr.infolable = <span color="#4682B4"> ルータの IP アドレスをチェックします. 開始 をクリックすると<br> ルータのホームページをウェブブラウザで開きます. <br> ヒットしたら停止して、保存後に再接続してください. <br> 利用可能な詳細情報 </span> <a href="http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder"> 参照する </a>
 gui.config.jdrr.popup.title = JDRRPopup
 gui.config.jdrr.reconnectfaild = 再接続に失敗
 gui.config.jdrr.savereconnect = 再接続に成功しました、保存しますか?

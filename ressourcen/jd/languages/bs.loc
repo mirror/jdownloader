@@ -215,7 +215,7 @@ gui.config.jac.column.use = Koristi
 gui.config.jac.status.auto = Automatska detekcija
 gui.config.jac.status.noauto = Ručna kontrola
 gui.config.jdrr.close = Zatvori
-gui.config.jdrr.infolable = <span color=\"#4682B4\"> Provjeri IP adresu rutera i pritisni Start <br> W otvara početnu stranicu pretraživača <br> Ponovo se spoji poslije pritiskanja Stop i Spremi. <br> Više informacija je dostupno </ span> <a href=\"http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder\"> ovdje </ a>
+gui.config.jdrr.infolable = <span color="#4682B4"> Provjeri IP adresu rutera i pritisni Start <br> W otvara početnu stranicu pretraživača <br> Ponovo se spoji poslije pritiskanja Stop i Spremi. <br> Više informacija je dostupno </span> <a href="http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder"> ovdje</a>
 gui.config.jdrr.popup.title = JDRRProzor
 gui.config.jdrr.reconnectfaild = Spajanje neuspješno
 gui.config.jdrr.savereconnect = Spajanje je uspješno. Spremi odmah?

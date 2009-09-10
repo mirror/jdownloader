@@ -255,7 +255,7 @@ gui.config.httpliveheader.script = Αρχείο επανασύνδεσης
 gui.config.httpliveheader.user = Χρήστης
 gui.config.jac.column.author = Εκδότης
 gui.config.jac.extern = Εξωτερική μέθοδος
-gui.config.jdrr.infolable = <span color=\"#4682B4\"> Ελέγξτε τη διεύθυνση IP του router και πατήστε Εκκίνηση <br> Ανοίγει παράθυρο του Περιηγητή με τη σελίδα του router <br> Επανασύνδεση αφού επιλεγεί Διακοπή και Αποθήκευση. <br> Περισσότερες πληροφορίες διαθέσιμες </ span> <a href=\"http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder\"> εδώ </ a>gui.config.jdrr.popup.title = JDRRPopup
+gui.config.jdrr.infolable = <span color="#4682B4"> Ελέγξτε τη διεύθυνση IP του router και πατήστε Εκκίνηση <br> Ανοίγει παράθυρο του Περιηγητή με τη σελίδα του router <br> Επανασύνδεση αφού επιλεγεί Διακοπή και Αποθήκευση. <br> Περισσότερες πληροφορίες διαθέσιμες </span> <a href="http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder"> εδώ</a>
 gui.config.jdrr.popup.title = JDRRPopup
 gui.config.jdrr.reconnectfaild = Η επανασύνδεση απέτυχε
 gui.config.jdrr.savereconnect = Επανασύνδεση επιτυχής. Αποθήκευση;

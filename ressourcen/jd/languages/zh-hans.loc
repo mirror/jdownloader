@@ -264,7 +264,7 @@ gui.config.jac.column.use = 使用
 gui.config.jac.column.usedmethod = 使用模态
 gui.config.jac.extern = 外部模态
 gui.config.jdrr.close = 关闭
-gui.config.jdrr.infolable = <span color=\"#4682B4\"> 检查路由器的IP地址并点击开始Check the IP address of the router and press the Start <br> 路由器设置首页在将在您的浏览器中打开 <br> 在您停正并保存后重新连接。<br></ span>在<a href=\"http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder\">这里</ a>可以找到详细信息
+gui.config.jdrr.infolable = <span color="#4682B4"> 检查路由器的IP地址并点击开始Check the IP address of the router and press the Start <br> 路由器设置首页在将在您的浏览器中打开 <br> 在您停正并保存后重新连接。<br></span>在<a href="http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder">这里</a>可以找到详细信息
 gui.config.jdrr.popup.title = JDRRPopup
 gui.config.jdrr.reconnectfaild = 重连失败
 gui.config.jdrr.savereconnect = 重连成功. 立即保存?

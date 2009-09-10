@@ -262,7 +262,7 @@ gui.config.jac.column.use = Použít
 gui.config.jac.column.usedmethod = Použitá metoda
 gui.config.jac.extern = Vnější Metoda
 gui.config.jdrr.close = Zavřít
-gui.config.jdrr.infolable = <span color=\"#4682B4\"> Zkontolujte IP adresu routeru a stiskněte Start, <br>otevře se okno se stránkou routeru <br> Reconnect after you hit to stop and save. <br> Chtělo by to lepší překlad. <br> Více informací najdete </ span> <a href=\"http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder\"> tady </ a>
+gui.config.jdrr.infolable = <span color="#4682B4"> Zkontolujte IP adresu routeru a stiskněte Start, <br>otevře se okno se stránkou routeru <br> Reconnect after you hit to stop and save. <br> Chtělo by to lepší překlad. <br> Více informací najdete </ span> <a href="http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder"> tady</a>
 gui.config.jdrr.popup.title = JDRRPopup
 gui.config.jdrr.reconnectfaild = Reconnect selhal
 gui.config.jdrr.savereconnect = Reconnect úspěšný. Uložit?
