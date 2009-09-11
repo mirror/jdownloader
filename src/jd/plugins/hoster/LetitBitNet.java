@@ -114,9 +114,7 @@ public class LetitBitNet extends PluginForHost {
             br.submitForm(down);
         }
         if (!br.containsHTML("<frame")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        br.getPage(br.getRegex("<frame.*?src=\"(.*?)\"").getMatch(0));
-        url = br.getRegex("<div.*?id=\"links\".*?>\\s+<a\\s+href=\"(.*?)\"").getMatch(0);
-        if (url == null) url = br.getRegex("DownloadClick\\(\\).*?href=\"(.*?letit.*?)\">").getMatch(0);
+        url = br.getRegex("<frame src=\"http://letitbit.net/tmpl/tmpl_frame_top.php\\?link=(.*?)\" name=\"topFrame\" scrolling=\"No\" noresize=\"noresize\" id=\"topFrame\" title=\"topFrame\" />").getMatch(0);
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         this.sleep(2000, downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 1);
