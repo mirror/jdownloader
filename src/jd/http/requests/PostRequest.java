@@ -25,6 +25,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 
+import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.parser.html.Form;
@@ -40,7 +41,7 @@ public class PostRequest extends Request {
     }
 
     public PostRequest(String url) throws MalformedURLException {
-        super(url);
+        super(Browser.correctURL(url));
         postData = new ArrayList<RequestVariable>();
 
     }

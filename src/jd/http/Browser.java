@@ -728,7 +728,7 @@ public class Browser {
                 string = base + string;
             }
         }
-        return Encoding.urlEncode_light(string);
+        return Browser.correctURL(Encoding.urlEncode_light(string));
     }
 
     private String getBase(String string) {
@@ -1383,5 +1383,67 @@ public class Browser {
             if (f.hasInputFieldByName(key)) return f;
         }
         return null;
+    }
+
+    /**
+     * Returns a corrected url, where multiple / and ../. are removed
+     * 
+     * @param url
+     * @return
+     */
+    public static String correctURL(String url) {
+        /* check if we need to correct url */
+        if (url == null || (!url.contains("//") && !url.contains("./"))) return url;
+        String ret = url;
+        String end = null;
+        String tmp = null;
+        int begin;
+        if (url.startsWith("http://")) {
+            begin = 8;
+        } else if (url.startsWith("https://")) {
+            begin = 9;
+        } else {
+            begin = 0;
+        }
+        int first = url.indexOf("/", begin);
+        if (first < 0) return ret;
+        ret = url.substring(0, first);
+        int endp = url.indexOf("?", first);
+        if (endp > 0) {
+            end = url.substring(endp);
+            tmp = url.substring(first, endp);
+        } else {
+            tmp = url.substring(first);
+        }
+        /* filter multiple / */
+        tmp = tmp.replaceAll("/+", "/");
+
+        /* filter .. and . */
+        String parts[] = tmp.split("/");
+        for (int i = 0; i < parts.length; i++) {
+            if (parts[i].equalsIgnoreCase(".")) {
+                parts[i] = "";
+            } else if (parts[i].equalsIgnoreCase("..")) {
+                if (i > 0) {
+                    int j = i - 1;
+                    while (true && j > 0) {
+                        if (parts[j].length() > 0) {
+                            parts[j] = "";
+                            break;
+                        }
+                        j--;
+                    }
+                }
+                parts[i] = "";
+            }
+        }
+        tmp = "";
+        for (String part : parts) {
+            if (part.length() > 0) {
+                tmp = tmp + "/" + part;
+            }
+        }
+        ret = ret + tmp + (end != null ? end : "");
+        return ret;
     }
 }

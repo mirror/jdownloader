@@ -19,22 +19,23 @@ package jd.http.requests;
 import java.io.IOException;
 import java.net.MalformedURLException;
 
+import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 
 public class GetRequest extends Request {
 
     public GetRequest(String url) throws MalformedURLException {
-        super(url);
+        super(Browser.correctURL(url));
 
     }
 
-    //@Override
+    // @Override
     public void postRequest(URLConnectionAdapter httpConnection) throws IOException {
 
     }
 
-    //@Override
+    // @Override
     public void preRequest(URLConnectionAdapter httpConnection) throws IOException {
         httpConnection.setRequestMethod("GET");
 

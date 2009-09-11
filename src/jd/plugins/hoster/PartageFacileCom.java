@@ -33,6 +33,7 @@ public class PartageFacileCom extends PluginForHost {
     public PartageFacileCom(PluginWrapper wrapper) {
         super(wrapper);
         br.setFollowRedirects(true);
+        br.setRequestIntervalLimit(getHost(), 500);
     }
 
     public String getAGBLink() {
@@ -71,6 +72,7 @@ public class PartageFacileCom extends PluginForHost {
         br.submitForm(dlform0);
         Form dlform1 = br.getForm(0);
         if (dlform1 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        dlform1.remove("u");
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlform1, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {

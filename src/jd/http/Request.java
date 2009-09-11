@@ -271,7 +271,7 @@ public abstract class Request {
             }
             red = "http://" + this.getHttpConnection().getURL().getHost() + (red.charAt(0) == '/' ? red : path + "/" + red);
         }
-        return Encoding.urlEncode_light(red);
+        return Browser.correctURL(Encoding.urlEncode_light(red));
 
     }
 

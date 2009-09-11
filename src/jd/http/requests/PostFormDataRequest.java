@@ -25,6 +25,7 @@ import java.io.OutputStreamWriter;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 
+import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 
@@ -50,13 +51,13 @@ public class PostFormDataRequest extends Request {
     }
 
     public PostFormDataRequest(String url) throws MalformedURLException {
-        super(url);
+        super(Browser.correctURL(url));
         generateBoundary();
         this.formDatas = new ArrayList<FormData>();
 
     }
 
-    //@Override
+    // @Override
     public void postRequest(URLConnectionAdapter httpConnection) throws IOException {
         httpConnection.setDoOutput(true);
 
@@ -126,7 +127,7 @@ public class PostFormDataRequest extends Request {
 
     }
 
-    //@Override
+    // @Override
     public void preRequest(URLConnectionAdapter httpConnection) throws IOException {
         httpConnection.setRequestMethod("POST");
         httpConnection.setRequestProperty("Content-Type", encodeType + "; boundary=" + boundary.substring(2));
@@ -141,7 +142,6 @@ public class PostFormDataRequest extends Request {
         // boundary="-----------------------------41184676334";
 
     }
-
 
     public void addFormData(FormData fd) {
         this.formDatas.add(fd);
