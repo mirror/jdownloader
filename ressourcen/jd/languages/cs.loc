@@ -1245,6 +1245,7 @@ plugins.hoster.sharebaseto.errors.servicenotavailable = Služba nedostupná
 plugins.hoster.sharebaseto.errors.toomanyusers = Příliš mnoho uživatelů
 plugins.hoster.sharenownet.errors.servererror = Chyba serveru
 plugins.hoster.shareonlinebiz.errors.servernotavailable = Server dočasně nedostupný
+plugins.hoster.shareonlinebiz.errors.servernotavailable2 = Nejsou dostupné sloty
 plugins.hoster.speedysharecom.password = Vložte heslo:
 plugins.hoster.uploadedto.errors.indirectlinkerror = Chyba nepřímého odkazu
 plugins.hoster.uploadedto.errors.notpremium = Toto je volný účet
