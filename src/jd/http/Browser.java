@@ -1393,11 +1393,13 @@ public class Browser {
      */
     public static String correctURL(String url) {
         /* check if we need to correct url */
-        if (url == null || (!url.contains("//") && !url.contains("./"))) return url;
+        int begin;
+        begin = url.indexOf("://");
+        if (url == null || ((begin > 0) && !url.substring(begin).contains("//")) || !url.contains("./")) return url;
         String ret = url;
         String end = null;
         String tmp = null;
-        int begin;
+        boolean endisslash = false;
         if (url.startsWith("http://")) {
             begin = 8;
         } else if (url.startsWith("https://")) {
@@ -1415,6 +1417,9 @@ public class Browser {
         } else {
             tmp = url.substring(first);
         }
+        /* is the end of url a / */
+        endisslash = tmp.endsWith("/");
+
         /* filter multiple / */
         tmp = tmp.replaceAll("/+", "/");
 
@@ -1443,6 +1448,7 @@ public class Browser {
                 tmp = tmp + "/" + part;
             }
         }
+        if (endisslash) tmp = tmp + "/";
         ret = ret + tmp + (end != null ? end : "");
         return ret;
     }

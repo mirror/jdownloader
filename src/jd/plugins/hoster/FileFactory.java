@@ -17,10 +17,12 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -202,6 +204,48 @@ public class FileFactory extends PluginForHost {
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceAll(".com//", ".com/"));
         link.setUrlDownload(link.getDownloadURL().replaceAll("http://filefactory", "http://www.filefactory"));
+    }
+
+    public boolean checkLinks(DownloadLink[] urls) {
+        if (urls == null || urls.length == 0) { return false; }
+        try {
+            Browser br = new Browser();
+            StringBuilder sb = new StringBuilder();
+            br.setCookiesExclusive(true);
+            ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+            int index = 0;
+            while (true) {
+                br.getPage("http://filefactory.com/tool/links.php");
+                links.clear();
+                while (true) {
+                    if (index == urls.length || links.size() > 25) break;
+                    links.add(urls[index]);
+                    index++;
+                }
+                sb.delete(0, sb.capacity());
+                sb.append("func=links&links=");
+                for (DownloadLink dl : links) {
+                    sb.append(Encoding.urlEncode(dl.getDownloadURL()));
+                    sb.append("%0D%0A");
+                }
+                br.postPage("http://filefactory.com/tool/links.php", sb.toString());
+                for (DownloadLink dl : links) {
+                    String size = br.getRegex("div class=\"metadata\".*?" + dl.getDownloadURL() + ".*?</div>.*?</td>.*?<td>(.*?)</td>").getMatch(0);
+                    String name = br.getRegex("<a href=.*?" + dl.getDownloadURL() + ".*?\">(.*?)<").getMatch(0);
+                    if (name != null && size != null) {
+                        dl.setName(name.trim());
+                        dl.setDownloadSize(Regex.getSize(size.trim()));
+                        dl.setAvailable(true);
+                    } else {
+                        dl.setAvailable(false);
+                    }
+                }
+                if (index == urls.length) break;
+            }
+        } catch (Exception e) {
+            return false;
+        }
+        return true;
     }
 
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
