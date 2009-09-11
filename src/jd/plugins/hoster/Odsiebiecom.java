@@ -133,14 +133,7 @@ public class Odsiebiecom extends PluginForHost {
             URLConnectionAdapter fake = brc.openGetConnection("http://odsiebie.com/v_fake.php");
             fake.disconnect();
             while (capform != null) {
-                String adrs[] = capform.getRegex("<img src=\"(.*?)\">").getColumn(0);
-                String adr = null;
-                for (String tmp : adrs) {
-                    if (!tmp.contains(" ")) {
-                        adr = tmp;
-                        break;
-                    }
-                }
+                String adr = br.getRegex("<img src=\"http://odsiebie.com/v_auth.php\" style=\"display: none;\"><img src=\"(.*?)\"  style=\"display:").getMatch(0);
                 if (adr == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
                 URLConnectionAdapter con = brc.openGetConnection(adr);
                 File file = this.getLocalCaptchaFile();
