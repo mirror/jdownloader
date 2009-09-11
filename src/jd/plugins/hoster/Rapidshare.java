@@ -396,7 +396,7 @@ public class Rapidshare extends PluginForHost {
 
             // Post um freedownload auszuwählen
             Form[] forms = br.getForms();
-
+            if (forms.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             br.submitForm(forms[0]);
             // PostRequest pReq = new PostRequest(freeOrPremiumSelectPostURL);
             // pReq.setPostVariable("dl.start", "free");
