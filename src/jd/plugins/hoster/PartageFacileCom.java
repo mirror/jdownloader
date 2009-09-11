@@ -27,7 +27,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "partage-facile.com" }, urls = { "http://[\\w\\.]*?partage-facile\\.com/[0-9A-Z]+/.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "partage-facile.com" }, urls = { "http://[\\w\\.]*?partage-facile\\.com/([0-9A-Z]+/.+|\\d+.*?\\.html)" }, flags = { 0 })
 public class PartageFacileCom extends PluginForHost {
 
     public PartageFacileCom(PluginWrapper wrapper) {
@@ -35,46 +35,35 @@ public class PartageFacileCom extends PluginForHost {
         br.setFollowRedirects(true);
     }
 
-    // @Override
     public String getAGBLink() {
         return "http://www.partage-facile.com/cgu.php";
     }
 
-    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
-        br.getPage(downloadLink.getDownloadURL());
         this.setBrowserExclusive();
-        // br.setCustomCharset("UTF-8");
-        // br.setFollowRedirects(false);
-        // Wrong links show the mainpage so here we check if we got the mainpage
-        // or not
+        br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("title\">Envoyez vos fichiers maintenant</td>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         Regex reg = br.getRegex("<br>Fichier : <b>(.*?)</b> \\((.*?)\\)<br>");
         String filesize = reg.getMatch(1);
         if (filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = reg.getMatch(0);
-        String filesize2 = null;
         if (filesize.contains("Mo")) {
-            filesize2 = filesize.replaceAll("Mo", "MB");
+            filesize = filesize.replaceAll("Mo", "MB");
+        } else if (filesize.contains("Go")) {
+            filesize = filesize.replaceAll("Go", "GB");
+        } else if (filesize.contains("Ko")) {
+            filesize = filesize.replaceAll("Ko", "KB");
+        } else if (filesize.contains("oct")) {
+            filesize = filesize.replaceAll("oct", "b");
+        } else {
+            filesize = null;
         }
-        if (filesize.contains("Go")) {
-            filesize2 = filesize.replaceAll("Go", "GB");
-        }
-        if (filesize.contains("Ko")) {
-            filesize2 = filesize.replaceAll("Ko", "KB");
-        }
-        if (filesize.contains("oct")) {
-            filesize2 = filesize.replaceAll("oct", "b");
-        }
-
-        if (filename == null || filesize2 == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
-        downloadLink.setDownloadSize(Regex.getSize(filesize2));
-
+        downloadLink.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
-    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         Form dlform0 = br.getForm(1);
@@ -82,25 +71,27 @@ public class PartageFacileCom extends PluginForHost {
         br.submitForm(dlform0);
         Form dlform1 = br.getForm(0);
         if (dlform1 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlform1, true, -20);
+        br.setFollowRedirects(true);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlform1, false, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            if (br.containsHTML("Taille maximum du fichier")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        }
         dl.startDownload();
     }
 
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return getMaxSimultanDownloadNum();
     }
 
-    // @Override
     public void reset() {
     }
 
-    // @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
     public void resetDownloadlink(DownloadLink link) {
-        // TODO Auto-generated method stub
+
     }
 }

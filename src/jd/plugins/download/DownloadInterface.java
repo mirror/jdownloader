@@ -45,7 +45,6 @@ import jd.controlling.SpeedMeter;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
-import jd.http.requests.PostRequest;
 import jd.nutils.Formatter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -255,7 +254,7 @@ abstract public class DownloadInterface {
                 br.getHeaders().put("Range", "bytes=" + start + "-" + end);
                 URLConnectionAdapter con;
                 if (connection.getDoOutput()) {
-                    con = br.openPostConnection(connection.getURL() + "", ((PostRequest) connection.getRequest()).getPostDataString());
+                    con = br.openRequestConnection(connection.getRequest());
                 } else {
                     con = br.openGetConnection(connection.getURL() + "");
                 }
