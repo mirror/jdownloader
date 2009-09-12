@@ -48,19 +48,21 @@ public class MyShareAt extends PluginForHost {
 
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
-        br.setDebug(true);
-        if (br.containsHTML("You have to wait")) {
-            long wait = 0;
-            String waittimemins = br.getRegex("You have to wait(.*?)minutes").getMatch(0);
-            if (waittimemins != null) wait += Long.parseLong(waittimemins.trim()) * 1000 * 60;
-            String waittimesecs = br.getRegex("minutes,(.*?)seconds").getMatch(0);
-            if (waittimesecs != null) wait += Long.parseLong(waittimesecs.trim()) * 1000;
-            if (wait > 4 * 60 * 1000) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait);
-            sleep(wait, link);
-        }
         Form form = br.getForm(1);
         form.setPreferredSubmit("Free+Download");
         br.submitForm(form);
+        if (br.containsHTML("You have to wait")) {
+            int minutes = 0, seconds = 0, hours = 0;
+            String tmphrs = br.getRegex("\\s+(\\d+)\\s+hours?").getMatch(0);
+            if (tmphrs != null) hours = Integer.parseInt(tmphrs);
+            String tmpmin = br.getRegex("\\s+(\\d+)\\s+minutes?").getMatch(0);
+            if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
+            String tmpsec = br.getRegex("\\s+(\\d+)\\s+seconds?").getMatch(0);
+            if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
+            int waittime = ((3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
+        }
+        if (br.containsHTML("You can download files up to 100 Mb only")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium"); }
         Recaptcha rc = new Recaptcha(br);
         rc.parse();
         rc.load();
