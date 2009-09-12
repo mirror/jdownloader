@@ -1,7 +1,7 @@
 action.downloadview.movedown.tooltip = Aşağı endir
 action.downloadview.movetobottom.tooltip = Ən alta endir
-action.downloadview.movetotop.tooltip = Yuxarı qaldır
-action.downloadview.moveup.tooltip = Ən üstə qaldır
+action.downloadview.movetotop.tooltip = Ən üstə qaldır
+action.downloadview.moveup.tooltip = Yuxarı qaldır
 action.opendlfolder.tooltip = Downloadfolder-in ilkin halı açılsın
 action.premiumview.addacc.tooltip = Yeni Hesab əlavə et
 action.premiumview.removeacc.accs = % Hesab
