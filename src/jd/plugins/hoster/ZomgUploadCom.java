@@ -20,12 +20,12 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 import jd.PluginWrapper;
-import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -68,28 +68,32 @@ public class ZomgUploadCom extends PluginForHost {
             code.append(value);
         }
         form.put("code", code.toString());
-        form.setAction(link.getDownloadURL());
         // Ticket Time
         int tt = Integer.parseInt(br.getRegex("countdown\">(\\d+)</span>").getMatch(0));
         sleep(tt * 1001, link);
-        br.submitForm(form);
-        URLConnectionAdapter con2 = br.getHttpConnection();
-        String dllink = br.getRedirectLocation();
-        if (con2.getContentType().contains("html")) {
-            String error = br.getRegex("class=\"err\">(.*?)</font>").getMatch(0);
-            if (error != null) {
-                logger.warning(error);
-                con2.disconnect();
-                if (error.equalsIgnoreCase("Wrong captcha") || error.equalsIgnoreCase("Expired session")) {
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, error, 10000);
-                }
+        String passCode = null;
+        if (br.containsHTML("<br><b>Passwort:</b>")) {
+            if (link.getStringProperty("pass", null) == null) {
+                passCode = Plugin.getUserInput("Password?", link);
+            } else {
+                /* gespeicherten PassCode holen */
+                passCode = link.getStringProperty("pass", null);
             }
-            if (br.containsHTML("Download Link Generated")) dllink = br.getRegex("padding:7px;\">\\s+<a\\s+href=\"(.*?)\">").getMatch(0);
+            form.put("password", passCode);
         }
+        br.submitForm(form);
+        if (br.containsHTML("Wrong captcha")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (br.containsHTML("Wrong password")) {
+            logger.warning("Wrong password!");
+            link.setProperty("pass", null);
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        }
+        if (passCode != null) {
+            link.setProperty("pass", passCode);
+        }
+        String dllink = br.getRegex("#bbb;padding:[0-9]px;\">.*?<a href=\"(.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,link, dllink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         dl.startDownload();
 
     }
@@ -97,8 +101,11 @@ public class ZomgUploadCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
+        br.setCookie("http://www.zomgupload.com", "lang", "english");
         br.getPage(parameter.getDownloadURL());
-        if (br.containsHTML("<Title>ZOMG Upload - Free File Hosting</Title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("No such file with this filename")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("No such user exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         Form[] forms = br.getForms();
         forms[0].remove("method_premium");
         br.submitForm(forms[0]);
