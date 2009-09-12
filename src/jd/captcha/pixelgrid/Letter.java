@@ -186,6 +186,146 @@ public class Letter extends PixelGrid {
         return res;
 
     }
+    public void invertIfMoreBackground()
+    {
+        long b = 0;
+        long w = 0;
+        int avg = getAverage();
+
+        for (int y = 0; y < getHeight(); y++) {
+            for (int x = 0; x < getWidth(); x++) {
+                if (isElement(getPixelValue(x, y), avg)) 
+                  b++;
+                else w++;
+            }
+        }
+        if(b>w)invert();
+    }
+    public Letter autoAlign() {
+        int avg = getAverage();
+        double bestOL = Double.MAX_VALUE;
+        int xOL = 0;
+        int yOL = 0;
+        double bestOR = Double.MAX_VALUE;
+        int xOR = 0;
+        int yOR = 0;
+        double bestUL = Double.MAX_VALUE;
+        int xUL = 0;
+        int yUL = 0;
+        double bestUR = Double.MAX_VALUE;
+        int xUR = 0;
+        int yUR = 0;
+        for (int y = 0; y < getHeight(); y++) {
+            for (int x = 0; x < getWidth(); x++) {
+                if (isElement(getPixelValue(x, y), avg)) {
+                    double diff = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
+                    if (diff < bestOL) {
+                        xOL = x;
+                        yOL = y;
+                        bestOL = diff;
+                    }
+                    diff = Math.sqrt(Math.pow((getWidth() - x), 2) + Math.pow(y, 2));
+                    if (diff < bestOR) {
+                        xOR = x;
+                        yOR = y;
+                        bestOR = diff;
+                    }
+                    diff = Math.sqrt(Math.pow(x, 2) + Math.pow((getHeight() - y), 2));
+                    if (diff < bestUL) {
+                        xUL = x;
+                        yUL = y;
+                        bestUL = diff;
+                    }
+                    diff = Math.sqrt(Math.pow((getWidth() - x), 2) + Math.pow((getHeight() - y), 2));
+                    if (diff < bestUR) {
+                        xUR = x;
+                        yUR = y;
+                        bestUR = diff;
+                    }
+                }
+            }
+        }
+//        grid[xOL][yOL] = 0xff0000;
+//        grid[xOR][yOR] = 0x00FFCC;
+//        grid[xUR][yUR] = 0x3366FF;
+//        grid[xUL][yUL] = 0xFFCC33;
+
+        int g = 0;
+        double distBest = getM(xOL, xOR, yOL, yOR);
+        if (distBest == 0) distBest = 0.0001;
+        double dist = getM(xUL, xUR, yUL, yUR);
+        double distWBest = distBest / ((xOR - xOL+1)/4);
+        double distW;
+        boolean skipw=(xOR - xOL)<(getWidth()/3)||yOL>getHeight()/3||yOR>getHeight()/3;
+        if (dist == 0)
+            distW = distBest / ((xUR - xUL+1)/4);
+        else
+            distW = dist / ((xUR - xUL+1)/4);
+        if (skipw||Math.abs(distW) < Math.abs(distWBest)) {
+            distWBest = distW;
+            distBest = dist;
+            g = 1;
+        }
+
+        skipw=(xUR - xUL)<(getHeight()/3)||yUL<(getHeight()*2/3)||yUR<(getHeight()*2/3);
+
+        dist = getM(yOL, yUL, xOL, xUL);
+        if (dist == 0)
+            distW = distBest /((yUL - yOL+1)/4);
+        else
+            distW = dist / ((yUL - yOL+1)/4);
+        if (skipw||Math.abs(distW) < Math.abs(distWBest)) {
+            distWBest = distW;
+            distBest = dist;
+            g = 2;
+        }
+        skipw=(yUL - yOL)<(getHeight()/4)||xUL>(getWidth()/3)||xOL>(getWidth()/3);
+
+        dist = getM(yOR, yUR, xOR, xUR);
+        if (dist == 0)
+            distW = distBest / ((yUR - yOR+1)/4);
+        else
+            distW = dist / ((yUR - yOR+1)/4);
+
+        if (skipw||Math.abs(distW) < Math.abs(distWBest)) {
+            skipw=(yUR - yOR)<(getHeight()/4)||xUR>(getHeight()*2/3)||xOR>(getWidth()*2/3);
+            if(!skipw)
+            {
+            distWBest = distW;
+            distBest = dist;
+            g = 3;
+            }
+        }
+
+        // System.out.println(distWBest);
+        /*
+        int color = 0xff0000;
+        if (g == 0) {
+            drawLine(xOL, xOR, yOL, yOR, color);
+        } else if (g == 1)
+            drawLine(xUL, xUR, yUL, yUR, color);
+        else if (g == 2) {
+            System.out.println(xOL + ":" + xUL + ":" + yOL + ":" + yUL);
+            drawLine(xOL, xUL, yOL, yUL, color);
+        } else if (g == 3) drawLine(xOR, xUR, yOR, yUR, color);
+        */
+        int turn = 60;
+//        if(Math.abs( Math.round(distBest * turn))>6)
+//        BasicWindow.showImage(getImage().getScaledInstance(getWidth() * 10, getHeight() * 10, 1), "Orginal:" +  Math.round(distBest * turn)  + " G:" + g);
+        if (g > 1)
+            this.grid = turn((distBest * turn)).grid;
+        else
+            this.grid = turn((-distBest * turn)).grid;
+//        if(Math.abs( Math.round(distBest * turn))>6)
+            
+//        BasicWindow.showImage(getImage().getScaledInstance(getWidth() * 10, getHeight() * 10, 1), "Turned:" + Math.round(distBest * turn) + " G:" + g);
+        
+        return this;
+    }
+    
+    double getM(int x0, int x1, int y0, int y1) {
+        return ((double) (y0 - y1)) / (x0 - x1);
+    }
 
     public void colorize(int color) {
         for (int x = 0; x < getWidth(); x++) {
@@ -845,7 +985,8 @@ public class Letter extends PixelGrid {
             width = line.length();
             if (grid == null) {
                 grid = new int[width][code.length];
-                //TODO war vorher width < 2 kann zu regressionen führen beobachten
+                // TODO war vorher width < 2 kann zu regressionen führen
+                // beobachten
                 if (width < 1 || code.length < 2) { return false; }
 
             }

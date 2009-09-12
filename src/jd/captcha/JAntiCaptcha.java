@@ -22,6 +22,7 @@ import java.awt.GridLayout;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.image.BufferedImage;
 import java.awt.image.RenderedImage;
 import java.io.File;
 import java.io.FileFilter;
@@ -434,6 +435,48 @@ public class JAntiCaptcha {
             captcha.setValityPercent(100.0);
         }
         return ret;
+    }
+
+    /**
+     * 826
+     * 
+     * Exportiert die aktelle Datenbank als PONG einzelbilder
+     * 
+     * 827
+     */
+
+    public void exportDB() {
+
+        File path = Utilities.directoryChooser();
+
+        File file;
+
+        BufferedImage img;
+
+        int i = 0;
+
+        for (Letter letter : letterDB) {
+
+            img = (BufferedImage) letter.getFullImage();
+
+            file = new File(path + "/letterDB/" + i++ + "_" + letter.getDecodedValue() + ".png");
+
+            file.mkdirs();
+
+            try {
+
+                logger.info("Write Db: " + file);
+
+                ImageIO.write(img, "png", file);
+
+            } catch (IOException e) {
+
+                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Exception occured", e);
+
+            }
+
+        }
+
     }
 
     private String callExtern() {
@@ -1325,7 +1368,7 @@ public class JAntiCaptcha {
      * neue db
      */
     public void importDB(File path) {
-        String pattern = JOptionPane.showInputDialog("PATTERN", "(\\w).*");
+        String pattern = JOptionPane.showInputDialog("PATTERN", "\\d+_(.*?)\\.");
         if (JOptionPane.showConfirmDialog(null, "Delete old db?") == JOptionPane.OK_OPTION) letterDB = new ArrayList<Letter>();
         getResourceFile("letters.mth").delete();
         System.out.println("LETTERS BEFORE: " + letterDB.size());
@@ -1353,7 +1396,6 @@ public class JAntiCaptcha {
             letter = new Letter();
 
             letter.setOwner(this);
-
             letter.setGrid(cap.grid);
             // letter = letter.align(-40, +40);
             // PixelGrid.fillLetter(letter);
@@ -1365,9 +1407,11 @@ public class JAntiCaptcha {
 
             // BasicWindow.showImage(letter.getImage(1),element.getName());
             letter.clean();
-
+//            letter.autoAlign();
+//            letter.invertIfMoreBackground();
+//            letter.resizetoHeight(15);
             letter.removeSmallObjects(0.3, 0.5, 10);
-            letter = letter.getSimplified(getJas().getDouble("simplifyFaktor"));
+//            letter = letter.getSimplified(getJas().getDouble("simplifyFaktor"));
             letter.setDecodedValue(let);
             if (letter == null) continue;
             // BasicWindow.showImage(letter.getImage(1),element.getName());
@@ -2199,15 +2243,17 @@ public class JAntiCaptcha {
         main: for (Letter let : letterDB) {
 
             for (Letter n : newDB) {
-
+                if(let.getDecodedValue().endsWith(n.getDecodedValue()))
+                {
                 LetterComperator lc = new LetterComperator(let, n);
 
                 lc.setOwner(this);
                 lc.run();
 
                 n.getElementPixel();
+
                 if (lc.getValityPercent() <= d) {
-                    // BasicWindow.showImage(let.getImage(), " OK ");
+                     BasicWindow.showImage(let.getImage(), " OK ");
                     // BasicWindow.showImage(n.getImage(), " FILTERED " +
                     // lc.getValityPercent());
                     if (n.getElementPixel() > let.getElementPixel()) {
@@ -2217,9 +2263,10 @@ public class JAntiCaptcha {
                         continue main;
                     }
                 }
+                }
             }
-
             newDB.add(let);
+
 
         }
         letterDB = newDB;

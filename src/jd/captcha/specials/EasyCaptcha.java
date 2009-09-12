@@ -29,6 +29,7 @@ import jd.captcha.LetterComperator;
 import jd.captcha.easy.BackGroundImageManager;
 import jd.captcha.easy.CPoint;
 import jd.captcha.easy.ColorTrainer;
+import jd.captcha.gui.BasicWindow;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
 import jd.captcha.pixelobject.PixelObject;
@@ -549,8 +550,12 @@ public class EasyCaptcha {
             if (pixelObject.getArea() > (mergeInfos[0] / (captcha.owner.getLetterNum() * 3)) && pixelObject.getSize() > (mergeInfos[1] / (captcha.owner.getLetterNum() * 5))) {
 
                 Letter let = pixelObject.toLetter();
+                if(captcha.owner.jas.getBoolean("easyCaptchaRemoveSmallObjects"))
+                {
                 let.removeSmallObjects(0.75, 0.75, pixelObject.getSize() / 7);
                 let = let.toPixelObject(0.75).toLetter();
+                }
+                captcha.owner.jas.executeLetterPrepareCommands(let);
                 ret.add(let);
             }
         }

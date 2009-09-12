@@ -150,6 +150,12 @@ public class JACScript {
                     } else if (cmd[1].equalsIgnoreCase("clean")) {
                         letter.clean();
                         continue;
+                    } else if (cmd[1].equalsIgnoreCase("autoAlign")) {
+                        letter.autoAlign();
+                        continue;
+                    } else if (cmd[1].equalsIgnoreCase("invertIfMoreBackground")) {
+                        letter.invertIfMoreBackground();
+                        continue;
                     } else if (cmd[1].equalsIgnoreCase("toBlackAndWhite")) {
                         letter.toBlackAndWhite();
                         continue;
@@ -966,7 +972,11 @@ public class JACScript {
          * werden (true) oder alle (False)
          */
         set("trainOnlyUnknown", true);
-
+        /**
+         * Gibt an ob bei EasyCaptcha kleine objekte entfernt werden sollen
+         * 
+         */
+        set("easyCaptchaRemoveSmallObjects", true);
         /**
          * Gibt an ob bei der objekterenntung pixeln gefolg twerden die quer
          * liegen.
