@@ -35,41 +35,34 @@ public class ZShareNet extends PluginForHost {
         super(wrapper);
     }
 
-    // @Override
     public String getAGBLink() {
         return "http://www.zshare.net/TOS.html";
     }
 
-    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         if (downloadLink.getDownloadURL().contains(".html")) {
             br.setFollowRedirects(false);
             br.getPage(downloadLink.getDownloadURL());
-            br.getPage(br.getRedirectLocation().replaceFirst("zshare.net/(download|video|audio|flash)", "zshare.net/image"));
+            br.getPage(br.getRedirectLocation().replaceFirst("zshare.net/(download|video|audio|flash)", "zshare.net/download"));
         } else {
-            br.getPage(downloadLink.getDownloadURL().replaceFirst("zshare.net/(download|video|audio|flash)", "zshare.net/image"));
+            br.getPage(downloadLink.getDownloadURL().replaceFirst("zshare.net/(download|video|audio|flash)", "zshare.net/download"));
         }
         if (br.containsHTML("File Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String[] fileInfo = br.getRegex("File Name: .*?<font color=\".666666\">(.*?)</font>.*?Image Size: <font color=\".666666\">(.*?)</font>").getRow(0);
-        if (fileInfo[0] == null || fileInfo[1] == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setName(fileInfo[0]);
-        downloadLink.setDownloadSize(Regex.getSize(fileInfo[1].replaceAll(",", "")));
-        // Datei ist noch verfuegbar
+        String filename = br.getRegex("File Name:.*?<font color=\"#666666\".*?>(.*?)</font>").getMatch(0);
+        String filesize = br.getRegex("File Size:.*?<font color=\"#666666\".*?>(.*?)</font>").getMatch(0);
+        if (filename != null && filesize == null) filesize = br.getRegex("Image Size:.*?<font color=\"#666666\".*?>(.*?)</font>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        downloadLink.setName(filename);
+        downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "")));
+
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         // Form abrufen
-        br.setDebug(true);
         Form download = br.getForm(0);
         String dlUrl = null;
         if (download != null) {
@@ -84,34 +77,34 @@ public class ZShareNet extends PluginForHost {
             dlUrl = fnc;
         } else {
             dlUrl = br.getRegex("<td bgcolor=\"#CCCCCC\">.*?<img src=\"(http://.*?.zshare.net/download/.*?)\"").getMatch(0);
+            if (dlUrl == null) {
+                dlUrl = br.getRegex("<td bgcolor=\"#CCCCCC\">.*?<img src=\"(.*?)\"").getMatch(0);
+                if (!dlUrl.startsWith("/")) dlUrl = "/" + dlUrl;
+            }
         }
         if (dlUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlUrl, true, 1);
 
         // Möglicherweise serverfehler...
-        if (!dl.getConnection().isContentDisposition()) {
-            dl.getConnection().disconnect();
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
+        if (!dl.getConnection().isContentDisposition() || dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            if (br.containsHTML("404 - Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
         dl.startDownload();
     }
 
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    // @Override
     public void reset() {
     }
 
-    // @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
     public void resetDownloadlink(DownloadLink link) {
-        // TODO Auto-generated method stub
 
     }
 }
