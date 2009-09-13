@@ -21,6 +21,7 @@ import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenuItem;
 import javax.swing.Timer;
 
@@ -66,7 +67,7 @@ public class PremiumMenu extends JStartMenu implements ActionListener, AccountCo
     }
 
     private void initAction() {
-       tba = new ToolBarAction("premiumMenu.toggle", "gui.images.premium_enabled") {
+        tba = new ToolBarAction("premiumMenu.toggle", "gui.images.premium_enabled") {
 
             private static final long serialVersionUID = 4276436625882302179L;
 
@@ -86,7 +87,7 @@ public class PremiumMenu extends JStartMenu implements ActionListener, AccountCo
             @Override
             public void initDefaults() {
                 this.setEnabled(true);
-               
+
                 this.setToolTipText(JDL.L("gui.menu.action.premium.desc", "Enable Premiumusage globally"));
                 this.addPropertyChangeListener(new PropertyChangeListener() {
                     public void propertyChange(PropertyChangeEvent evt) {
@@ -107,7 +108,7 @@ public class PremiumMenu extends JStartMenu implements ActionListener, AccountCo
                         }
                     }
                 });
-                
+
                 setType(ToolBarAction.Types.TOGGLE);
                 setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true));
             }
@@ -117,7 +118,6 @@ public class PremiumMenu extends JStartMenu implements ActionListener, AccountCo
                 if (inited) return;
                 this.inited = true;
 
-            
             }
         };
     }
@@ -128,8 +128,8 @@ public class PremiumMenu extends JStartMenu implements ActionListener, AccountCo
     }
 
     private void updateMenu() {
-     
-        this.add(tba);
+
+        this.add(new JCheckBoxMenuItem(tba));
         this.addSeparator();
 
         HosterMenu.update(this);

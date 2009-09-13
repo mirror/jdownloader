@@ -33,7 +33,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-//megaloaded by pspzockerscene + premium
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megaloaded.com" }, urls = { "http://[\\w\\.]*?megaloaded\\.com/[a-z|0-9]+/.+" }, flags = { 2 })
 public class MegaLoadedCom extends PluginForHost {
 
@@ -42,7 +41,6 @@ public class MegaLoadedCom extends PluginForHost {
         this.enablePremium("http://megaloaded.com/premium.html");
     }
 
-    @Override
     public String getAGBLink() {
         return "http://megaloaded.com/tos.html";
     }
@@ -57,9 +55,10 @@ public class MegaLoadedCom extends PluginForHost {
         form.put("login", Encoding.urlEncode(account.getUser()));
         form.put("password", Encoding.urlEncode(account.getPass()));
         br.submitForm(form);
-        System.out.print(br.toString());
         br.setFollowRedirects(false);
         if (!br.containsHTML(">Renew premium</a>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        br.getPage("http://megaloaded.com/?op=my_account");
+        if (!br.containsHTML("Premium-Account expire")) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
     }
 
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
@@ -72,59 +71,55 @@ public class MegaLoadedCom extends PluginForHost {
             return ai;
         }
         String usedspace = br.getRegex("Used space (.*?) of").getMatch(0);
-        br.getPage("http://megaloaded.com/?op=my_account");
+        if (usedspace != null) ai.setUsedSpace(usedspace);
         String validUntil = br.getRegex("Premium-Account expire:</TD><TD><b>(.*?)</b>").getMatch(0);
         if (validUntil == null) {
             account.setValid(false);
         } else {
-            if (usedspace != null) {
-                ai.setUsedSpace(usedspace);
-            }
             ai.setValidUntil(Regex.getMilliSeconds(validUntil, "dd MMMMM yyyy", Locale.ENGLISH));
             account.setValid(true);
         }
         return ai;
     }
 
-    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        requestFileInformation(downloadLink);
+    public void handlePremium(DownloadLink parameter, Account account) throws Exception {
+        requestFileInformation(parameter);
         login(account);
         br.setFollowRedirects(false);
-        br.getPage(downloadLink.getDownloadURL());
-        Form DLForm = br.getFormbyProperty("name", "F1");
-        if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        String passCode = null;
-        if (br.containsHTML("<br><b>Password:</b>")) {
-            if (downloadLink.getStringProperty("pass", null) == null) {
-                passCode = Plugin.getUserInput("Password?", downloadLink);
-            } else {
-                /* gespeicherten PassCode holen */
-                passCode = downloadLink.getStringProperty("pass", null);
+        br.getPage(parameter.getDownloadURL());
+        String url = null;
+        if (br.getRedirectLocation() == null) {
+            Form form = br.getFormbyProperty("name", "F1");
+            if (form.hasInputFieldByName("password")) {
+                String passCode = null;
+                if (parameter.getStringProperty("pass", null) == null) {
+                    passCode = Plugin.getUserInput(null, parameter);
+                } else {
+                    /* gespeicherten PassCode holen */
+                    passCode = parameter.getStringProperty("pass", null);
+                }
+                form.put("password", passCode);
+                parameter.setProperty("pass", passCode);
             }
-            DLForm.put("password", passCode);
+            br.submitForm(form);
+            if (br.containsHTML(">Wrong password<")) {
+                parameter.setProperty("pass", null);
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
+            url = br.getRegex("#bbb;padding:[0-9]px;\">.*?<a href=\"(.*?)\"").getMatch(0);
+        } else {
+            url = br.getRedirectLocation();
         }
-        br.submitForm(DLForm);
-        if (br.containsHTML("Wrong password")) {
-            logger.warning("Wrong password");
-            downloadLink.setProperty("pass", null);
-            throw new PluginException(LinkStatus.ERROR_RETRY);
-        }
-        if (passCode != null) {
-            downloadLink.setProperty("pass", passCode);
-        }
-        String dllink = br.getRegex("#bbb;padding:[0-9]px;\">.*?<a href=\"(.*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        br.setFollowRedirects(true);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, url, true, 0);
         dl.startDownload();
     }
-    
+
     public int getMaxSimultanPremiumDownloadNum() {
         return 20;
     }
-    
-    
 
-    // @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCookie("http://www.megaloaded.com", "lang", "english");
@@ -140,8 +135,6 @@ public class MegaLoadedCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
@@ -191,16 +184,13 @@ public class MegaLoadedCom extends PluginForHost {
         }
     }
 
-    @Override
     public void reset() {
     }
 
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 

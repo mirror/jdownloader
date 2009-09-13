@@ -32,7 +32,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-//file2upload by pspzockerscene
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file2upload.net" }, urls = { "http://[\\w\\.]*?file2upload\\.(net|com)/download/[0-9]+/" }, flags = { 2 })
 public class File2UploadNet extends PluginForHost {
 
@@ -66,7 +65,17 @@ public class File2UploadNet extends PluginForHost {
             account.setValid(false);
             return ai;
         }
+        br.getPage("http://file2upload.net/account");
+        String hostedFiles = br.getRegex("<td><b>Hosted Files</b></td>.*?<td>(\\d+).*?</td>").getMatch(0);
+        if (hostedFiles != null) ai.setFilesNum(Long.parseLong(hostedFiles));
+        String expired = br.getRegex("<td><b>Expired\\?</b></td>.*?<td>.*?<span>(.*?)</span>").getMatch(0);
         account.setValid(true);
+        if (expired != null && expired.contains("No")) {
+            String expireDate = br.getRegex("<td><b>Package Expire Date</b></td>.*?<table.*?</table>.*?<span>(.*?)</span>").getMatch(0);
+            ai.setValidUntil(Regex.getMilliSeconds(expireDate, "dd.MM.yyyy", null));
+        } else {
+            ai.setExpired(true);
+        }
         return ai;
     }
 
@@ -99,6 +108,7 @@ public class File2UploadNet extends PluginForHost {
         if (passCode != null) {
             downloadLink.setProperty("pass", passCode);
         }
+        if (br.containsHTML("This file was expired")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String dllink = br.getRegex("class=\"important\" href=\"(.*?)\">Click").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.setFollowRedirects(true);
@@ -115,11 +125,9 @@ public class File2UploadNet extends PluginForHost {
         br.getPage(link.getDownloadURL());
         br.setFollowRedirects(false);
         if (br.containsHTML("File does not exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-
         String filename = Encoding.htmlDecode(br.getRegex("content=\"The new file hosting service! we provides web space for your documents, pictures, music and movies., (.*?)\"></meta>").getMatch(0));
         String filesize = Encoding.htmlDecode(br.getRegex("<tr><td><b>File size</b>:</td><td>(.*?)</td></tr>").getMatch(0));
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-
         link.setName(filename);
         link.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -156,6 +164,7 @@ public class File2UploadNet extends PluginForHost {
         if (passCode != null) {
             downloadLink.setProperty("pass", passCode);
         }
+        if (br.containsHTML("This file was expired")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String dllink = br.getRegex("class=\"important\" href=\"(.*?)\">Click to download! <").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.setFollowRedirects(true);
