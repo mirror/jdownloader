@@ -124,7 +124,7 @@ public class Moosharenet extends PluginForHost {
             throw e2;
         } catch (Exception e) {
             e.printStackTrace();
-            return AvailableStatus.FALSE;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
 
         br.getPage("http://mooshare.net/api/checkfilesize.php?name=" + infos[1] + "&id=" + infos[0]);
@@ -159,8 +159,10 @@ public class Moosharenet extends PluginForHost {
             sleep(Integer.parseInt(wait) * 100l, downloadLink);
         } else
             sleep(15000, downloadLink);
-        String captchaurl = br.getRegex("<img src=\"(http://mooshare.net/html/images/captcha.php.*?)\" alt=\"captcha\"").getMatch(0);
-        String captchaCode = getCaptchaCode(captchaurl, downloadLink);
+        String captchaurl = br.getRegex("<img src=\"(http://mooshare.net/html/images/captcha.php.*?)\\{.*?\" alt=\"captcha\"").getMatch(0);
+        if (captchaurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        captchaurl = captchaurl + System.currentTimeMillis();
+        String captchaCode = getCaptchaCode(null, captchaurl, downloadLink);
         form = br.getForm(1);
         form.put("captcha", captchaCode);
         br.setFollowRedirects(false);
@@ -174,8 +176,8 @@ public class Moosharenet extends PluginForHost {
         br.setDebug(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlLink, false, 1);
         if (!dl.getConnection().isContentDisposition()) {
-            dl.getConnection().disconnect();
-            throw new PluginException(LinkStatus.ERROR_RETRY);
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_FATAL);
         }
         dl.startDownload();
     }

@@ -78,7 +78,6 @@ public class Zippysharecom extends PluginForHost {
             String page = Encoding.urlDecode(br.toString(), true);
             String[] links = HTMLParser.getHttpLinks(page, null);
             if (index > links.length - 1) break;
-            br.setDebug(true);
             if (!new Regex(links[index], ".*?www\\d*\\.zippyshare\\.com/[^\\?]*\\..{1,4}$").matches()) {
                 continue;
             }

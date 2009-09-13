@@ -122,6 +122,7 @@ public class JACMethod implements Comparable<JACMethod> {
     }
 
     public static boolean hasMethod(String service) {
+        if (service == null) return false;
         String methodName = forServiceName(service);
         File method = JDUtilities.getResourceFile(JDUtilities.getJACMethodsDirectory() + "/" + methodName + "/jacinfo.xml");
         return (method.exists() && isAvailableExternMethod(method));
