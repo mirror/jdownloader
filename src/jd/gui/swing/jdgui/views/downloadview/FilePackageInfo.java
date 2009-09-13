@@ -270,17 +270,19 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
                                 if (dl.getLinkStatus().hasStatus(LinkStatus.ERROR_FILE_NOT_FOUND)) {
                                     values[i] = -1;
                                 } else {
-                                    values[i] = Math.max(1, dl.getDownloadCurrent());
+                                    values[i] = Math.max(0, dl.getDownloadCurrent());
                                 }
                                 i++;
                             }
                             FilePackageInfo.this.progressBarFilePackage.setMaximums(max);
                             FilePackageInfo.this.progressBarFilePackage.setValues(values);
+                            txtSize.setText(Formatter.formatReadable(fp.getTotalKBLoaded()) + "/" + Formatter.formatReadable(fp.getTotalEstimatedPackageSize()));
                         }
                         if (downloadLink != null) {
                             if (downloadLink.getChunksProgress() != null && !downloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_FILE_NOT_FOUND)) {
                                 long fileSize = downloadLink.getDownloadSize();
                                 int chunks = downloadLink.getChunksProgress().length;
+                                typeicon.setText(chunks + " " + JDL.L("gui.fileinfopanel.linktab.chunks", "Chunks"));
                                 long part = fileSize / chunks;
 
                                 long[] max = new long[chunks];
@@ -313,7 +315,7 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
                                 txtPasswordDl.setText(downloadLink.getFilePackage().getPassword());
                             }
                             txtStatusDl.setText(downloadLink.getLinkStatus().getStatusString());
-
+                            txtSizeDl.setText(Formatter.formatReadable(downloadLink.getDownloadCurrent()) + "/" + Formatter.formatReadable(downloadLink.getDownloadSize()));
                             if (downloadLink.getDownloadSpeed() <= 0) {
                                 eta.setVisible(false);
                                 speed.setVisible(false);
@@ -380,7 +382,7 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
 
             hosterlabel.setToolTipText(downloadLink.getHost());
             typeicon.setToolTipText(downloadLink.getHost());
-            this.txtSizeDl.setText(Formatter.formatReadable(downloadLink.getDownloadSize()));
+            this.txtSizeDl.setText(Formatter.formatReadable(downloadLink.getDownloadCurrent()) + "/" + Formatter.formatReadable(downloadLink.getDownloadSize()));
             if (downloadLink.getLinkType() == DownloadLink.LINKTYPE_NORMAL) {
                 this.txtURL.setText(downloadLink.getBrowserUrl());
             } else {

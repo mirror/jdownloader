@@ -82,12 +82,12 @@ public class Formatter {
     }
 
     public static String formatReadable(long value) {
+        if (value < 0) value = 0;
         DecimalFormat c = new DecimalFormat("0.00");
         if (value >= (1024 * 1024 * 1024 * 1024l)) return c.format(value / (1024 * 1024 * 1024 * 1024.0)) + " TB";
         if (value >= (1024 * 1024 * 1024l)) return c.format(value / (1024 * 1024 * 1024.0)) + " GB";
         if (value >= (1024 * 1024l)) return c.format(value / (1024 * 1024.0)) + " MB";
         if (value >= 1024l) return c.format(value / 1024.0) + " KB";
-
         return value + " B";
     }
 
