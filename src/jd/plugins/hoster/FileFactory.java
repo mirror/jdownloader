@@ -39,16 +39,12 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filefactory.com" }, urls = { "http://[\\w\\.]*?filefactory\\.com(/|//)file/[\\w]+/?" }, flags = { 2 })
 public class FileFactory extends PluginForHost {
 
-    private static Pattern baseLink = Pattern.compile("action=\"(\\/dlf.*).\\ ", Pattern.CASE_INSENSITIVE);
-
-    private static final String FILESIZE = "<span>(.*? (B|KB|MB)) file";
+    private static final String FILESIZE = "<span>(.*? (B|KB|MB|GB)) file";
 
     private static final String NO_SLOT = "no free download slots";
     private static final String NOT_AVAILABLE = "class=\"box error\"";
 
     private static final String LOGIN_ERROR = "The email or password you have entered is incorrect";
-
-    private static Pattern patternForDownloadlink = Pattern.compile("downloadLink.*href..(.*)..Click", Pattern.DOTALL);
 
     private static final String SERVER_DOWN = "server hosting the file you are requesting is currently down";
 
@@ -91,23 +87,18 @@ public class FileFactory extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML(SERVER_DOWN) || br.containsHTML(NO_SLOT)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l); }
 
-        // URL von zweiter Seite ermitteln
-        String urlWithFilename = Encoding.htmlDecode("http://www.filefactory.com" + br.getRegex(baseLink).getMatch(0));
+        String urlWithFilename = br.getRegex("class=\"basicBtn\".*?href=\"(.*?)\"").getMatch(0);
+        if (urlWithFilename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        br.getPage("http://www.filefactory.com" + urlWithFilename);
 
-        // Zweite Seite laden
-        br.getPage(urlWithFilename);
-
-        // Datei Downloadlink filtern
-        String downloadUrl = Encoding.htmlDecode(br.getRegex(patternForDownloadlink).getMatch(0));
-        long waittime = 31000l;
-
-        try {
-            waittime = Long.parseLong(br.getRegex("<p id=\"countdown\">(\\d+?)</p>").getMatch(0)) * 1000l;
-        } catch (Exception e) {
-        }
+        String downloadUrl = br.getRegex("downloadLink\".*?href=\"(http://.*?filefactory.*?)\"").getMatch(0);
+        String wait = br.getRegex("id=\"startWait\" value=\"(\\d+)\"").getMatch(0);
+        if (wait == null || downloadUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        long waittime = Long.parseLong(wait) * 1000l;
         if (waittime > 60000l) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime); }
         waittime += 1000;
         sleep(waittime, parameter);
+
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, downloadUrl);
 
@@ -126,7 +117,6 @@ public class FileFactory extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
-
     }
 
     public int getMaxRetries() {
@@ -137,25 +127,21 @@ public class FileFactory extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage("http://filefactory.com");
-
         Form login = br.getForm(0);
         login.put("email", account.getUser());
         login.put("password", account.getPass());
         br.submitForm(login);
-
         if (br.containsHTML(LOGIN_ERROR)) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
     }
 
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-
         try {
             login(account);
         } catch (PluginException e) {
             account.setValid(false);
             return ai;
         }
-
         br.getPage("http://www.filefactory.com/member/");
         String expire = br.getMatch("Your account is valid until the <strong>(.*?)</strong>");
         if (expire == null) {
@@ -164,7 +150,9 @@ public class FileFactory extends PluginForHost {
         }
         expire = expire.replaceFirst("([^\\d].*?) ", " ");
         ai.setValidUntil(Regex.getMilliSeconds(expire, "dd MMMM, yyyy", Locale.UK));
-
+        Regex traffic = br.getRegex("You have downloaded(.*?)out of your daily limit of(.*?\\. )");
+        ai.setTrafficMax(Regex.getSize(traffic.getMatch(1)));
+        ai.setTrafficLeft(ai.getTrafficMax() - Regex.getSize(traffic.getMatch(0)));
         br.getPage("http://www.filefactory.com/reward/summary.php");
         String points = br.getMatch("Available reward points.*?class=\"amount\">(.*?) points").replaceAll("\\,", "");
         ai.setPremiumPoints(Long.parseLong(points.trim()));

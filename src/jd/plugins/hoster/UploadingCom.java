@@ -58,7 +58,6 @@ public class UploadingCom extends PluginForHost {
 
     public void login(Account account) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setDebug(true);
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.setCookie("http://www.uploading.com/", "_lang", "en");
         br.setCookie("http://www.uploading.com/", "setlang", "en");
