@@ -31,7 +31,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadcell.com" }, urls = { "http://uploadcell.com/[0-9a-z]+/[0-9a-zA-Z_.-]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadcell.com" }, urls = { "http://[\\w\\.]*?uploadcell.com/[0-9a-z]+/[0-9a-zA-Z_.-]+" }, flags = { 0 })
 public class UploadcellCom extends PluginForHost {
 
     public UploadcellCom(PluginWrapper wrapper) {
@@ -94,7 +94,7 @@ public class UploadcellCom extends PluginForHost {
 
             br.setFollowRedirects(true);
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-            dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, dllink, false, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
             dl.startDownload();
         }
     }
