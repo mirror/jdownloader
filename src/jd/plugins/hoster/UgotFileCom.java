@@ -16,12 +16,11 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -31,7 +30,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-//hamsterfile.com by pspzockerscene
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ugotfile.com" }, urls = { "http://[\\w\\.]*?ugotfile.com/file/\\d+/.+" }, flags = { 2 })
 public class UgotFileCom extends PluginForHost {
 
@@ -44,11 +42,14 @@ public class UgotFileCom extends PluginForHost {
         return "http://ugotfile.com/doc/terms/";
     }
 
-    public void login(Account account) throws IOException, PluginException {
+    public void login(Account account) throws Exception {
         this.setBrowserExclusive();
         br.setCookie("http://my-share.at/", "lang", "english");
         br.getPage("http://ugotfile.com/user/login/");
-        br.postPage("http://ugotfile.com/user/login/", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&rememberMe=0&rememberMe=1&login=Login");
+        Form form = br.getForm(0);
+        form.put(form.getBestVariable("userName"), Encoding.urlEncode(account.getUser()));
+        form.put(form.getBestVariable("password"), Encoding.urlEncode(account.getPass()));
+        br.submitForm(form);
         br.getPage("http://ugotfile.com/my/profile/");
         if (!br.containsHTML("Your premium membership is expired")) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
     }
@@ -63,18 +64,18 @@ public class UgotFileCom extends PluginForHost {
             return ai;
         }
 
-        String validUntil = br.getRegex("<h3>Your premium membership is expired on (.*?).</h3></div>").getMatch(0);
+        String validUntil = br.getRegex("<h3>Your premium membership is expired on (.*?).</h3>").getMatch(0);
         if (validUntil == null) {
             account.setValid(false);
         } else {
             ai.setValidUntil(Regex.getMilliSeconds(validUntil, "yyyy-MM-dd", null));
             account.setValid(true);
         }
-        br.getPage("http://ugotfile.com/traffic/");
-        String trafficleft = br.getRegex("Download Available</th>.*?<td>(.*?)</td>").getMatch(0);
-        if (trafficleft != null) ai.setTrafficLeft(trafficleft);
-        String trafficmax = br.getRegex("Download Available</th>.*?<td>.*?</td>.*?<td>(.*?)</td>").getMatch(0);
-        if (trafficmax != null) ai.setTrafficMax(Regex.getSize(trafficmax));
+        br.getPage("http://ugotfile.com/traffic/summary");
+        String trafficleft = br.getRegex("Remaining Downloads</h3>.*?>((\\d+.*?)/.*?\\d+.*?)<").getMatch(1);
+        if (trafficleft != null) ai.setTrafficLeft(Encoding.htmlDecode(trafficleft));
+        String trafficmax = br.getRegex("Remaining Downloads</h3>.*?>(\\d+.*?/(.*?\\d+.*?))<").getMatch(1);
+        if (trafficmax != null) ai.setTrafficMax(Regex.getSize(Encoding.htmlDecode(trafficmax)));
         return ai;
     }
 
@@ -86,7 +87,7 @@ public class UgotFileCom extends PluginForHost {
         if (br.getRedirectLocation() != null) {
             finalUrl = br.getRedirectLocation();
         } else {
-            finalUrl = br.getRegex("Filesize:</td>.*?<a href='(http://.*?ugotfile.com/.*?)'>").getMatch(0);
+            finalUrl = br.getRegex("Content.*?<a.*?href='(http://.*?ugotfile.com/.*?)'>").getMatch(0);
         }
         if (finalUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.setFollowRedirects(true);
@@ -129,7 +130,7 @@ public class UgotFileCom extends PluginForHost {
         String filename = br.getRegex("<title>(.*?) - Free File Hosting - uGotFile</title>").getMatch(0);
         String filesize = br.getRegex("<span style=\"font-size: 14px;\">(.*?)</span>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        filesize.replace("&nbsp;", "");
+        filesize = filesize.replace("&nbsp;", "");
         parameter.setName(filename.trim());
         parameter.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "")));
         return AvailableStatus.TRUE;
