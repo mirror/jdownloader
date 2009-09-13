@@ -32,7 +32,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {"zippyshare.com"}, urls = {"http://www\\d{0,}\\.zippyshare\\.com/(v/\\d+/file\\.html|.*?key=\\d+)"}, flags = {0})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zippyshare.com" }, urls = { "http://www\\d{0,}\\.zippyshare\\.com/(v/\\d+/file\\.html|.*?key=\\d+)" }, flags = { 0 })
 public class Zippysharecom extends PluginForHost {
 
     private Pattern linkIDPattern = Pattern.compile(".*?zippyshare\\.com/v/([0-9]+)/file.html");
@@ -44,12 +44,10 @@ public class Zippysharecom extends PluginForHost {
         br.setFollowRedirects(true);
     }
 
-    // @Override
     public String getAGBLink() {
         return "http://www.zippyshare.com/terms.html";
     }
 
-    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
@@ -63,60 +61,58 @@ public class Zippysharecom extends PluginForHost {
         if (name.endsWith("...")) {
             String linkID = new Regex(downloadLink.getDownloadURL(), linkIDPattern).getMatch(0);
             String fileExt = br.getRegex(fileExtPattern).getMatch(0);
-            if (linkID != null)
-                name = (name.substring(0, name.length() - 3) + "_" + linkID);
-            if (fileExt != null)
-                name = name + fileExt;
+            if (linkID != null) name = (name.substring(0, name.length() - 3) + "_" + linkID);
+            if (fileExt != null) name = name + fileExt;
         }
         downloadLink.setName(name.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
         return AvailableStatus.TRUE;
     }
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-    // @Override
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
-
-        String page = Encoding.urlDecode(br.toString(), true);
-        String[] links = HTMLParser.getHttpLinks(page, null);
-        boolean found = false;
-        sleep(10000l, downloadLink);
-        for (String link : links) {
-            if (!new Regex(link, ".*?www\\d*\\.zippyshare\\.com/[^\\?]*\\..{1,4}$").matches()) continue;
+        int index = -1;
+        while (true) {
+            index++;
+            String page = Encoding.urlDecode(br.toString(), true);
+            String[] links = HTMLParser.getHttpLinks(page, null);
+            if (index > links.length - 1) break;
+            br.setDebug(true);
+            if (!new Regex(links[index], ".*?www\\d*\\.zippyshare\\.com/[^\\?]*\\..{1,4}$").matches()) {
+                continue;
+            }
+            // sleep(10000l, downloadLink);
             Browser brc = br.cloneBrowser();
-            dl = BrowserAdapter.openDownload(brc, downloadLink, link);
+            brc.getCookies(getHost()).remove(brc.getCookies(getHost()).get("zippop"));
+            dl = BrowserAdapter.openDownload(brc, downloadLink, links[index]);
             if (dl.getConnection().isContentDisposition()) {
-                found = true;
-                break;
+                dl.setFilenameFix(true);
+                dl.startDownload();
+                return;
             } else {
                 dl.getConnection().disconnect();
+                br = new Browser();
+                this.setBrowserExclusive();
+                br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+                br.setCookie("http://www.zippyshare.com", "ziplocale", "en");
+                br.getPage(downloadLink.getDownloadURL().replaceAll("locale=..", "locale=en"));
             }
         }
-        if (!found) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        dl.setFilenameFix(true);
-        dl.startDownload();
+        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
     }
 
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return this.getMaxSimultanDownloadNum();
     }
 
-    // @Override
     public void reset() {
     }
 
-    // @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
     public void resetDownloadlink(DownloadLink link) {
-        // TODO Auto-generated method stub
+
     }
 }
