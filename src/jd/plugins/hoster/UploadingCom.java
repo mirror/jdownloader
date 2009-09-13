@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -90,6 +91,7 @@ public class UploadingCom extends PluginForHost {
         login(account);
         if (!isPremium()) {
             simultanpremium = 1;
+            br.getPage(link.getDownloadURL());
             handleFree0(link);
             return;
         } else {
@@ -100,37 +102,18 @@ public class UploadingCom extends PluginForHost {
             }
         }
         br.getPage(link.getDownloadURL());
-        String fileID = br.getRegex("file_id: (\\d+)").getMatch(0);
-        if (fileID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        String redirect = null;
-        for (int i = 0; i < 5; i++) {
-            br.postPage("http://uploading.com/files/get/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "file_id=" + fileID + "&action=step_1");
-            String wait = br.getRegex("\"answer\": \"(\\d+)\"").getMatch(0);
-            if (wait != null) {
-                sleep(1000l * Long.parseLong(wait.trim()), link);
-            } else {
-                sleep(1000l, link);
-            }
-            br.postPage("http://uploading.com/files/get/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "file_id=" + fileID + "&action=step_2");
-            redirect = br.getRegex("redirect\": \"(http.*?)\"").getMatch(0);
-            if (redirect != null) {
-                redirect = redirect.replaceAll("\\\\/", "/");
-                break;
-            }
-            sleep(1000l, link);
-        }
-        if (redirect == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        String redirect = getDownloadUrl(br, link);
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, redirect, true, 1);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
+        dl.setFilenameFix(true);
         dl.startDownload();
     }
 
     public void handleFree0(DownloadLink link) throws Exception {
-        br.getPage(link.getDownloadURL());
         if (br.containsHTML("YOU REACHED YOUR COUNTRY DAY LIMIT")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.uploadingcom.errors.countrylimitreached", "You reached your country daily limit"), 60 * 60 * 1000l);
         Form form = br.getFormbyProperty("id", "downloadform");
         try {
@@ -140,29 +123,15 @@ public class UploadingCom extends PluginForHost {
         }
         br.submitForm(form);
         if (br.containsHTML("Only Premium users can download files larger than")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium"); }
-        br.setFollowRedirects(false);
-        String fileID = br.getRegex("file_id: (\\d+)").getMatch(0);
-        if (fileID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        String redirect = null;
-        for (int i = 0; i < 5; i++) {
-            br.postPage("http://uploading.com/files/get/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "file_id=" + fileID + "&action=step_1");
-            String wait = br.getRegex("\"answer\": \"(\\d+)\"").getMatch(0);
-            if (wait != null) {
-                sleep(1000l * Long.parseLong(wait.trim()), link);
-            } else {
-                sleep(1000l, link);
-            }
-            br.postPage("http://uploading.com/files/get/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "file_id=" + fileID + "&action=step_2");
-            redirect = br.getRegex("redirect\": \"(http.*?)\"").getMatch(0);
-            if (redirect != null) {
-                redirect = redirect.replaceAll("\\\\/", "/");
-                break;
-            }
-            sleep(1000l, link);
-        }
-        if (redirect == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (br.containsHTML("You have reached the daily downloads limit")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 1 * 60 * 60 * 1000l); }
+        String redirect = getDownloadUrl(br, link);
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, redirect, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, redirect, true, 1);
+        if (!dl.getConnection().isContentDisposition()) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        }
+        dl.setFilenameFix(true);
         dl.startDownload();
     }
 
@@ -184,41 +153,45 @@ public class UploadingCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
-        if (br.containsHTML("YOU REACHED YOUR COUNTRY DAY LIMIT")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.uploadingcom.errors.countrylimitreached", "You reached your country daily limit"), 60 * 60 * 1000l);
-        Form form = br.getFormbyProperty("id", "downloadform");
-        try {
-            Thread.sleep(2000);
-        } catch (InterruptedException e) {
-            return;
-        }
-        br.submitForm(form);
-        if (br.containsHTML("You have reached the daily downloads limit")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 1 * 60 * 60 * 1000l); }
-        if (br.containsHTML("Only Premium users can download files larger than")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium"); }
+        handleFree0(downloadLink);
+    }
+
+    public String getDownloadUrl(Browser br, DownloadLink downloadLink) throws PluginException, IOException {
         br.setFollowRedirects(false);
         String fileID = br.getRegex("file_id: (\\d+)").getMatch(0);
         if (fileID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        String starttimer = br.getRegex("start_timer\\((\\d+)\\);").getMatch(0);
         String redirect = null;
-        for (int i = 0; i < 5; i++) {
-            br.postPage("http://uploading.com/files/get/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "file_id=" + fileID + "&action=step_1");
-            String wait = br.getRegex("\"answer\": \"(\\d+)\"").getMatch(0);
-            if (wait != null) {
-                sleep(1000l * Long.parseLong(wait.trim()), downloadLink);
-            } else {
-                sleep(1000l, downloadLink);
-            }
-            br.postPage("http://uploading.com/files/get/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "file_id=" + fileID + "&action=step_2");
-            redirect = br.getRegex("redirect\": \"(http.*?)\"").getMatch(0);
+        if (starttimer != null) {
+            sleep((Long.parseLong(starttimer) + 2) * 1000l, downloadLink);
+            br.postPage("http://uploading.com/files/get/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "file_id=" + fileID + "&action=get_link&pass=");
+            redirect = br.getRegex("link\": \"(http.*?)\"").getMatch(0);
             if (redirect != null) {
                 redirect = redirect.replaceAll("\\\\/", "/");
-                break;
+            } else {
+                if (br.containsHTML("Please wait")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             }
-            sleep(1000l, downloadLink);
+        } else {
+            for (int i = 0; i < 5; i++) {
+                br.postPage("http://uploading.com/files/get/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "file_id=" + fileID + "&action=step_1");
+                String wait = br.getRegex("\"answer\": \"(\\d+)\"").getMatch(0);
+                if (wait != null) {
+                    sleep(1000l * Long.parseLong(wait.trim()), downloadLink);
+                } else {
+                    sleep(1000l, downloadLink);
+                }
+                br.postPage("http://uploading.com/files/get/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", "file_id=" + fileID + "&action=step_2");
+                redirect = br.getRegex("redirect\": \"(http.*?)\"").getMatch(0);
+                if (redirect != null) {
+                    redirect = redirect.replaceAll("\\\\/", "/");
+                    break;
+                }
+                sleep(1000l, downloadLink);
+            }
         }
         if (redirect == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, redirect, false, 1);
-        dl.setFilenameFix(true);
-        dl.startDownload();
+        return redirect;
     }
 
     public int getMaxSimultanFreeDownloadNum() {
