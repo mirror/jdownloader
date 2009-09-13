@@ -16,9 +16,14 @@
 
 package jd.plugins.hoster;
 
+import java.io.IOException;
+
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -26,14 +31,14 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadbox.com" }, urls = { "http://[\\w\\.]*?uploadbox\\.com/.*?files/[0-9a-zA-Z]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadbox.com" }, urls = { "http://[\\w\\.]*?uploadbox\\.com/.*?files/[0-9a-zA-Z]+" }, flags = { 2 })
 public class UploadBoxCom extends PluginForHost {
 
     public UploadBoxCom(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("http://uploadbox.com/en/premium/");
     }
 
-    // @Override
     public String getAGBLink() {
         return "http://uploadbox.com/en/terms/";
     }
@@ -43,7 +48,33 @@ public class UploadBoxCom extends PluginForHost {
         parameter.setUrlDownload("http://www.uploadbox.com/en/files/" + id);
     }
 
-    // @Override
+    public void login(Account account) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.getPage("http://uploadbox.com/en/premium/?ac=lang&lang_new=en");
+        br.getPage("http://uploadbox.com/en/premium/");
+        br.postPage("http://uploadbox.com/en", "login=" + Encoding.urlEncode(account.getUser()) + "&passwd=" + Encoding.urlEncode(account.getPass()) + "&ac=auth&back=");
+        if (br.containsHTML("You enter wrong user name or password")) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        br.getPage("http://uploadbox.com/en/");
+        if (br.containsHTML("Your account type:</strong> FREE")) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        this.setBrowserExclusive();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        /*
+         * TODO: seems like hoster has some problems, becase there is now way to
+         * get infos like trafficlimit, expiredate
+         */
+        account.setValid(true);
+        return ai;
+    }
+
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
         br.getPage(parameter.getDownloadURL());
@@ -57,7 +88,17 @@ public class UploadBoxCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
+    public void handlePremium(DownloadLink parameter, Account account) throws Exception {
+        requestFileInformation(parameter);
+        login(account);
+        br.setFollowRedirects(false);
+        br.getPage(parameter.getDownloadURL());
+        String dlUrl = br.getRegex("title=\"Direct link\">(http://.*?)</a>").getMatch(0);
+        if (dlUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, dlUrl, true, 0);
+        dl.startDownload();
+    }
+
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
         Form form = br.getFormbyProperty("id", "free");
@@ -78,25 +119,17 @@ public class UploadBoxCom extends PluginForHost {
         br.setDebug(true);
         String dlUrl = br.getRegex("please <a href=\"(.*?)\">click").getMatch(0);
         if (dlUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,link, dlUrl, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlUrl, true, 1);
         dl.startDownload();
     }
 
-    // @Override
     public void reset() {
     }
 
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 
