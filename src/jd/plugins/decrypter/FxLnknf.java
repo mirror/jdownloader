@@ -27,7 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "foxlink.info" }, urls = { "http://[\\w\\.]*?(foxlink|viplink|zero10|save-link)\\.info/\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "foxlink.info" }, urls = { "http://[\\w\\.]*?(foxlink|viplink|zero10|save-link|share-link)\\.info/\\d+" }, flags = { 0 })
 public class FxLnknf extends PluginForDecrypt {
 
     public FxLnknf(PluginWrapper wrapper) {
@@ -37,7 +37,7 @@ public class FxLnknf extends PluginForDecrypt {
     // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String[] infos = new Regex(param.toString(), ".*?(foxlink|viplink|zero10|save-link)\\.info/([^/]*)").getRow(0);
+        String[] infos = new Regex(param.toString(), ".*?(foxlink|viplink|zero10|save-link|share-link)\\.info/([^/]*)").getRow(0);
         br.getPage("http://" + infos[0] + ".info/m1.php?id=" + infos[1]);
         String declink = br.getRegex("onclick=\"NewWindow\\('(.*?)','name'").getMatch(0);
         decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(declink)));
