@@ -16,23 +16,42 @@
 
 package jd.nrouter;
 
-import java.io.File;
-import java.io.IOException;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
-import jd.controlling.JDLogger;
-import jd.nutils.Executer;
-import jd.nutils.OSDetector;
-import jd.nutils.Threader;
-import jd.nutils.jobber.JDRunnable;
-import jd.parser.Regex;
+import jd.controlling.reconnect.Reconnecter;
+import jd.http.IPCheck;
 
 public class Router {
-   
+    private InetAddress address;
 
+    public InetAddress getAddress() {
+        return address;
+    }
+
+    /**
+     * 
+     * @param address
+     *            the router's IP
+     */
+    public Router(InetAddress address) {
+        this.address = address;
+    }
+
+    /**
+     * Return the external IP Address
+     * 
+     * @return
+     */
+    public String getExternalIPAddress() {
+        return IPCheck.getIPAddress(null);
+
+    }
+/**
+ * Performs an reconnect delegating the request to Reconnecter class
+ */
+    public boolean refreshIP() {
+       return Reconnecter.doReconnect();
+        
+    }
 
 }

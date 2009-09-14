@@ -16,11 +16,11 @@
 
 package tests.singletests;
 
-import java.util.Date;
+import java.net.InetAddress;
 
-import org.cybergarage.net.HostInterface;
-import org.cybergarage.upnp.ControlPoint;
-import org.cybergarage.upnp.DeviceList;
+import jd.nrouter.RouterUtils;
+import jd.nrouter.UPNPRouter;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -34,37 +34,44 @@ public class UPNP {
 
     @Test
     public void ipcheck() {
-        // InetAddress address = RouterUtils.getAddress(true);
+        InetAddress address = RouterUtils.getAddress(true);
 
-        int nHostAddrs = HostInterface.getNHostAddresses();
-        for (int n = 0; n < nHostAddrs; n++) {
-            System.out.println(HostInterface.getHostAddress(n));
-        }
+        UPNPRouter upnp = new UPNPRouter(address);
+        if (upnp.isUPNPDevice()) {
+            System.out.println("UPNP Router at " + address);
 
-        final ControlPoint c = new ControlPoint();
-        for (int i = 0; i < 1000000; i++) {
+            String oldip = upnp.getExternalIPAddress();
+            System.out.println(upnp + " external ip " + oldip);
 
-      
-            c.start();
+            System.out.println("Refresh IP Request: ");
+            System.out.println(upnp.getRefreshIPRequest());
+            upnp.refreshIP();
 
-            try {
-                Thread.sleep(2000);
-            } catch (InterruptedException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+            String ip;
+            int i = 0;
+            while (true) {
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+
+                    e.printStackTrace();
+                }
+                i += 500;
+                System.out.println(i + " ms");
+                ip = upnp.getExternalIPAddress();
+                if (!ip.equals(oldip)) {
+                    if (ip.equals("0.0.0.0")) {
+                        oldip=ip;
+                        System.out.println("OFFLINE");
+                    } else {
+                        System.out.println(upnp + "NEW external ip " + ip);
+                        break;
+                    }
+                }
+
             }
 
-            DeviceList list = c.getDeviceList();
-            System.out.println("Found");
-            for (int n = 0; n < list.size(); n++) {
-
-                System.out.println(new Date());
-                System.out.println(list.getDevice(n).getFriendlyName());
-                System.out.println(list.getDevice(n).getLocation());
-            }
-
         }
-
     }
 
     @After
