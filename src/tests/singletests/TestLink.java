@@ -72,7 +72,7 @@ public class TestLink {
                         for (HostPluginWrapper pw : JDUtilities.getPluginsForHost()) {
 
                             if (pw.canHandle(l)) {
-                                TestUtils.log(Encoding.urlDecode(l, true));
+                               // TestUtils.log(Encoding.urlDecode(l, true));
                                 DownloadLink dl = new DownloadLink((PluginForHost) pw.getNewPluginInstance(), null, pw.getHost(), Encoding.urlDecode(l, true), true);
                                 dl.isAvailable();
                                 if (dl.isAvailable()) {

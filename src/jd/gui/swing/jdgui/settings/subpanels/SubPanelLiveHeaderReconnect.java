@@ -141,13 +141,13 @@ public class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionLi
         add(btnSelectRouter, "gaptop 10");
         add(panel, "spany 3,gapbottom 20");
 
-        btnFindIP = new JButton(JDL.L("gui.config.liveHeader.btnFindIP", "RouterInfo IP ermitteln"));
+        btnFindIP = new JButton(JDL.L("gui.config.liveHeader.btnFindIP", "Router IP ermitteln"));
         btnFindIP.addActionListener(this);
         add(btnFindIP);
         // JDUtilities.addToGridBag(panel, btnFindIP, 1, 0, 1, 1, 0, 1, insets,
         // GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        btnAutoConfig = new JButton(JDL.L("gui.config.liveHeader.autoConfig", "RouterInfo automatisch setzten"));
+        btnAutoConfig = new JButton(JDL.L("gui.config.liveHeader.autoConfig", "Router automatisch setzten"));
         btnAutoConfig.addActionListener(this);
 
         // add(btnAutoConfig,"aligny top");
@@ -162,7 +162,7 @@ public class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionLi
         addGUIConfigEntry(user);
         pass = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, configuration, Configuration.PARAM_HTTPSEND_PASS, JDL.L("gui.config.httpliveheader.password", "Password")));
         addGUIConfigEntry(pass);
-        ip = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, configuration, Configuration.PARAM_HTTPSEND_IP, JDL.L("gui.config.httpliveheader.routerIP", "RouterInfo's ip")));
+        ip = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, configuration, Configuration.PARAM_HTTPSEND_IP, JDL.L("gui.config.httpliveheader.routerIP", "Router's ip")));
         addGUIConfigEntry(ip);
 
         add(new JScrollPane((script = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, configuration, Configuration.PARAM_HTTPSEND_REQUESTS, JDL.L("gui.config.httpliveheader.script", "Reconnect Script")))).getInput()[0]), "gaptop 10,spanx,gapright 20,pushy, growy");

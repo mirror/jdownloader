@@ -21,7 +21,7 @@ import java.net.InetAddress;
 
 import jd.controlling.ProgressController;
 import jd.gui.swing.jdgui.settings.GUIConfigEntry;
-import jd.nrouter.RouterInfo;
+import jd.nrouter.RouterUtils;
 import jd.utils.locale.JDL;
 
 public class FindRouterIP {
@@ -29,10 +29,9 @@ public class FindRouterIP {
         final ProgressController progress = new ProgressController(JDL.L("gui.config.routeripfinder.featchIP", "Search for routers hostname..."), 100);
 
         ip.setData(JDL.L("gui.config.routeripfinder.featchIP", "Search for routers hostname..."));
-   
-    
+
         progress.setStatus(80);
-        InetAddress ia = RouterInfo.getInstance().getAddress();
+        InetAddress ia = RouterUtils.getAddress(false);
         if (ia != null) ip.setData(ia.getHostAddress());
         progress.setStatus(100);
         if (ia != null) {
@@ -52,7 +51,7 @@ public class FindRouterIP {
     public FindRouterIP(final GUIConfigEntry ip) {
 
         new Thread() {
-            //@Override
+            // @Override
             public void run() {
                 findIP(ip);
             }

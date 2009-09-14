@@ -73,7 +73,7 @@ public class UPnP {
      */
     public boolean load(final long timeout) {
         final ControlPoint c = new ControlPoint();
-        c.start();
+       
 
         final Threader th = new Threader();
 
@@ -81,13 +81,14 @@ public class UPnP {
 
             public void deviceSearchResponseReceived(SSDPPacket ssdpPacket) {
                 InetAddress ia = ssdpPacket.getRemoteInetAddress();
+                JDLogger.getLogger().info("Received foreign package: " + ssdpPacket);
                 if (ia.getHostAddress().equals(host.getHostAddress())) {
                     // SSDPPacket ssdpP = ssdpPacket;
-                    parseSSDPPacket(ssdpPacket);
-                    c.stop();
-                    th.interrupt();
+//                    parseSSDPPacket(ssdpPacket);
+//                    c.stop();
+//                    th.interrupt();
                 } else {
-                    JDLogger.getLogger().info("Received foreign package: " + ssdpPacket);
+                 
                 }
             }
         });
@@ -96,17 +97,17 @@ public class UPnP {
 
             public void go() throws Exception {
                 try {
-                    Thread.sleep(timeout);
+                    Thread.sleep(timeout*5);
                 } catch (InterruptedException e) {
                 }
-                c.stop();
+              //  c.stop();
                 // wait for
-                parseSSDPPacket(null);
-                th.interrupt();
+               // parseSSDPPacket(null);
+               // th.interrupt();
 
             }
         });
-
+        c.start();
         th.startAndWait();
         if (ssdpPacket == null) {
             JDLogger.getLogger().info("No ssdpPackage on " + host + " received. no upnp?");
@@ -126,5 +127,6 @@ public class UPnP {
     public UpnpDevice getDevice() {
         return device;
     }
+
 
 }

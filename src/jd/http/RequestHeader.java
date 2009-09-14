@@ -42,6 +42,7 @@ public class RequestHeader {
     }
 
     public RequestHeader(HashMap<String, String> h) {
+        this();
         this.putAll(h);
     }
 

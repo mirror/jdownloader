@@ -24,7 +24,7 @@ import java.util.regex.Pattern;
 
 
 /**
- * Hier werden die Daten für einen RouterInfo gespeichert
+ * Hier werden die Daten für einen Router gespeichert
  * 
  * @author astaldo
  */
@@ -80,7 +80,7 @@ public class RouterData implements Serializable {
      */
     private int disconnectType = TYPE_WEB_GET;
     /**
-     * Dieser Text zeigt an, daß der RouterInfo offline ist (Keine IP)
+     * Dieser Text zeigt an, daß der Router offline ist (Keine IP)
      */
     private String ipAddressOffline = null;
     /**

@@ -16,11 +16,11 @@
 
 package tests.singletests;
 
-import java.net.InetAddress;
+import java.util.Date;
 
-import jd.nrouter.RouterInfo;
-import jd.nrouter.UPnP;
-
+import org.cybergarage.net.HostInterface;
+import org.cybergarage.upnp.ControlPoint;
+import org.cybergarage.upnp.DeviceList;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -34,11 +34,36 @@ public class UPNP {
 
     @Test
     public void ipcheck() {
-        RouterInfo router = RouterInfo.getInstance();
+        // InetAddress address = RouterUtils.getAddress(true);
 
-        InetAddress address = router.getAddress();
+        int nHostAddrs = HostInterface.getNHostAddresses();
+        for (int n = 0; n < nHostAddrs; n++) {
+            System.out.println(HostInterface.getHostAddress(n));
+        }
 
-        UPnP upnp = router.getUpnpInfo();
+        final ControlPoint c = new ControlPoint();
+        for (int i = 0; i < 1000000; i++) {
+
+      
+            c.start();
+
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+
+            DeviceList list = c.getDeviceList();
+            System.out.println("Found");
+            for (int n = 0; n < list.size(); n++) {
+
+                System.out.println(new Date());
+                System.out.println(list.getDevice(n).getFriendlyName());
+                System.out.println(list.getDevice(n).getLocation());
+            }
+
+        }
 
     }
 

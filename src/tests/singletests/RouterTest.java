@@ -18,13 +18,15 @@ package tests.singletests;
 
 import java.net.InetAddress;
 
+import jd.nrouter.RouterUtils;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import tests.utils.TestUtils;
 
-public class Router {
+public class RouterTest {
 
     @Before
     public void setUp() {
@@ -33,16 +35,15 @@ public class Router {
 
     @Test
     public void ipcheck() {
-        jd.nrouter.RouterInfo router = jd.nrouter.RouterInfo.getInstance();
 
-        InetAddress address = router.getIPFormNetStat();
+        InetAddress address = RouterUtils.getIPFormNetStat();
 
-        TestUtils.log("Router getIPFormNetStat check: " + address);
+        TestUtils.log("RouterTest getIPFormNetStat check: " + address);
 
-        address = router.getIPFromRouteCommand();
-        TestUtils.log("Router getIPFromRouteCommand check: " + address);
-        address = router.getIpFormHostTable();
-        TestUtils.log("Router getIpFormHostTable check: " + address);
+        address = RouterUtils.getIPFromRouteCommand();
+        TestUtils.log("RouterTest getIPFromRouteCommand check: " + address);
+        address = RouterUtils.getIpFormHostTable();
+        TestUtils.log("RouterTest getIpFormHostTable check: " + address);
 
     }
 

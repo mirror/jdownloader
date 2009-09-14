@@ -49,7 +49,7 @@ public class ImportRouterDialog extends AbstractDialog {
     private JList list;
 
     private ImportRouterDialog() {
-        super(UserIO.NO_COUNTDOWN, JDL.L("gui.config.liveHeader.dialog.importRouter", "RouterInfo importieren"), JDTheme.II("gui.images.search", 32, 32), null, null);
+        super(UserIO.NO_COUNTDOWN, JDL.L("gui.config.liveHeader.dialog.importRouter", "Router importieren"), JDTheme.II("gui.images.search", 32, 32), null, null);
 
         scripts = HTTPLiveHeader.getLHScripts();
         Collections.sort(scripts, new Comparator<String[]>() {
@@ -85,7 +85,7 @@ public class ImportRouterDialog extends AbstractDialog {
 
         JPanel panel = new JPanel(new MigLayout("ins 10,wrap 3", "[grow 30,fill]5[grow 0,fill]10[grow,fill,300!]", "[fill]5[]5[fill,grow]"));
         final DefaultListModel defaultListModel = new DefaultListModel();
-        final String text = JDL.L("gui.config.reconnect.selectrouter", "Search RouterInfo Model");
+        final String text = JDL.L("gui.config.reconnect.selectrouter", "Search Router Model");
         final JTextField searchField = new JTextField();
 
         list = new JList(defaultListModel);

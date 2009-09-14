@@ -428,11 +428,11 @@ public abstract class Request {
             try {
                 isr = new InputStreamReader(is, cs);
             } catch (Exception e) {
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Could not Handle Charset " + cs, e);
+                //jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Could not Handle Charset " + cs, e);
                 try {
                     isr = new InputStreamReader(is, cs.replace("-", ""));
                 } catch (Exception e2) {
-                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Could not Handle Charset " + cs, e);
+//                    jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Could not Handle Charset " + cs, e);
                     isr = new InputStreamReader(is);
                 }
             }
