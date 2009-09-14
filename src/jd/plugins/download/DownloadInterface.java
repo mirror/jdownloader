@@ -115,6 +115,8 @@ abstract public class DownloadInterface {
 
         private boolean chunkinprogress = false;
 
+        private boolean clonedconnection = false;
+
         private SpeedMeter speed = new SpeedMeter();
 
         /**
@@ -138,8 +140,22 @@ abstract public class DownloadInterface {
             chunkBytesLoaded += limit;
         }
 
+        /**
+         * is this Chunk still in progress?
+         * 
+         * @return
+         */
         public boolean inProgress() {
             return chunkinprogress;
+        }
+
+        /**
+         * is this Chunk using the root connection or a cloned one
+         * 
+         * @return
+         */
+        public boolean isClonedConnection() {
+            return clonedconnection;
         }
 
         public void setInProgress(boolean b) {
@@ -278,6 +294,7 @@ abstract public class DownloadInterface {
                     // logger.finer("Server chunk Headers: " + this.getID() +
                     // ":" + httpConnection.getHeaderFields());
                 }
+                clonedconnection = true;
                 return con;
 
             } catch (Exception e) {
@@ -766,24 +783,49 @@ abstract public class DownloadInterface {
             addToChunksInProgress(-1);
 
             while (true) {
-                /*
-                 * schließt die erste connection erst wenn alle andren gestartet
-                 * wurden
-                 */
-                if (chunksStarted == chunkNum) break;
-
+                /* wait for all chunks being started */
+                if (getChunksStarted() == chunkNum) {
+                    break;
+                }
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
-                    // TODO Auto-generated catch block
-                    // e.printStackTrace();
                     break;
                 }
+                /* external abort, proceed to close connection */
                 if (this.isExternalyAborted()) break;
             }
-
-            if (connection != null && connection.isConnected()) {
-                this.connection.disconnect();
+            /* check if we can close the root connection */
+            boolean rootconnectioninuse = false;
+            Vector<Chunk> chunks = dl.getChunks();
+            synchronized (chunks) {
+                for (Chunk chunk : chunks) {
+                    if (chunk.inProgress() && !chunk.isClonedConnection()) {
+                        /*
+                         * at least one chunk with root connection is still
+                         * active, so dont close the root connection
+                         */
+                        rootconnectioninuse = true;
+                        break;
+                    }
+                }
+            }
+            if (isClonedConnection()) {
+                /* cloned connection is okay to close */
+                if (connection != null && connection.isConnected()) {
+                    this.connection.disconnect();
+                }
+            } else {
+                /*
+                 * chunk is using root connection, only close it if its not used
+                 * by any other chunk
+                 */
+                if (!rootconnectioninuse) {
+                    /* root connection is no longer in use, so we can close it */
+                    if (connection != null && connection.isConnected()) {
+                        this.connection.disconnect();
+                    }
+                }
             }
             onChunkFinished();
         }
@@ -1107,7 +1149,10 @@ abstract public class DownloadInterface {
 
     public synchronized void addChunksStarted(int i) {
         chunksStarted += i;
+    }
 
+    public synchronized int getChunksStarted() {
+        return chunksStarted;
     }
 
     public boolean fixFilename() {
