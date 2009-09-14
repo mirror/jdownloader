@@ -36,6 +36,7 @@ import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -284,26 +285,27 @@ public class Megauploadcom extends PluginForHost {
     }
 
     public boolean checkLinks(DownloadLink urls[]) {
-        checkWWWWorkaround();
         if (urls == null || urls.length == 0) return false;
-        this.setBrowserExclusive();
-        if (urls.length == 1 && urls[0].getFinalFileName() != null) {
+        checkWWWWorkaround();
+        if (urls.length == 1 && urls[0].getBooleanProperty("webcheck", false) == true && !onlyapi) {
             // SingleFileCheck before Download, bypass api only if api check
             // already done
             websiteFileCheck(urls[0]);
             return true;
         }
+        this.setBrowserExclusive();
         LinkedHashMap<String, String> map = new LinkedHashMap<String, String>();
         int i = 0;
         String id;
         for (DownloadLink u : urls) {
+            /* mark link being checked by api */
             id = "00000";
             try {
                 id = getDownloadID(u);
+                map.put("id" + i, id);
             } catch (Exception e) {
                 logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
             }
-            map.put("id" + i, id);
             i++;
         }
 
@@ -348,7 +350,7 @@ public class Megauploadcom extends PluginForHost {
         br.getHeaders().put("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1)");
         br.getHeaders().put("Content-Length", "12");
         br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
-
+        boolean ret = false;
         try {
             String[] Dls = br.postPage("http://" + wwwWorkaround + "megaupload.com/mgr_linkcheck.php", map).split("&?(?=id[\\d]+=)");
             br.getHeaders().clear();
@@ -366,20 +368,34 @@ public class Megauploadcom extends PluginForHost {
                         downloadLink.setAvailable(true);
                     } else {
                         downloadLink.setAvailable(false);
+                        /* crosscheck if api says offline */
+                        if (Dls.length < 10) {
+                            websiteFileCheck(downloadLink);
+                        }
                     }
-                    if (Dls.length < 6) {
-                        websiteFileCheck(downloadLink);
-                    }
+                    downloadLink.setProperty("webcheck", true);
                 } catch (Exception e) {
                 }
             }
         } catch (Exception e) {
-            return false;
+            ret = false;
         }
-        return true;
+        ret = true;
+        /* check files that could not checked by api */
+        for (DownloadLink u : urls) {
+            if (urls[0].getBooleanProperty("webcheck", false) == false) {
+                websiteFileCheck(u);
+            }
+        }
+        return ret;
     }
 
     private boolean websiteFileCheck(DownloadLink l) {
+        if (onlyapi) {
+            l.setAvailable(true);
+            /* api only, modus, dont try to check via webpage */
+            return true;
+        }
         try {
             Browser br = new Browser();
             br.setCookiesExclusive(true);
@@ -388,19 +404,19 @@ public class Megauploadcom extends PluginForHost {
             if (br.containsHTML("No htmlCode read") || br.containsHTML("This service is temporarily not available from your service area")) {
                 logger.info("It seems Megaupload is blocked! Only API may work!");
                 onlyapi = true;
-                l.setAvailableStatus(AvailableStatus.TRUE);
+                l.setAvailable(true);
                 return true;
             }
             if (br.containsHTML("The file has been deleted because it was violating")) {
                 l.getLinkStatus().setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                 l.getLinkStatus().setStatusText("Link abused or invalid");
-                l.setAvailableStatus(AvailableStatus.FALSE);
+                l.setAvailable(false);
                 return false;
             }
             if (br.containsHTML("Invalid link")) {
                 l.getLinkStatus().setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                 l.getLinkStatus().setStatusText("Link invalid");
-                l.setAvailableStatus(AvailableStatus.FALSE);
+                l.setAvailable(false);
                 return false;
             }
 
@@ -409,6 +425,12 @@ public class Megauploadcom extends PluginForHost {
             if (filename == null || filesize == null) {
                 l.setAvailable(false);
             } else {
+                /* maybe api check failed, then set name,size here */
+                if (l.getBooleanProperty("webcheck", false) == false) {
+                    l.setName(filename.trim());
+                    l.setDownloadSize(Regex.getSize(filesize.trim()));
+                    l.setProperty("webcheck", true);
+                }
                 l.setAvailable(true);
             }
             return true;
