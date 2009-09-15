@@ -37,7 +37,7 @@ public class Paid4ShareNet extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://usershare.net/tos.html";
+        return "http://paid4share.net/contact.php";
     }
 
     @Override
