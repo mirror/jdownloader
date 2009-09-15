@@ -25,14 +25,15 @@ import java.util.List;
 import java.util.Vector;
 import java.util.Map.Entry;
 
+import jd.captcha.JAntiCaptcha;
 import jd.captcha.LetterComperator;
 import jd.captcha.easy.BackGroundImageManager;
 import jd.captcha.easy.CPoint;
 import jd.captcha.easy.ColorTrainer;
-import jd.captcha.gui.BasicWindow;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
 import jd.captcha.pixelobject.PixelObject;
+import jd.captcha.testunit.LevenShteinLetterComperator;
 import jd.nutils.Colors;
 
 /**
@@ -561,5 +562,9 @@ public class EasyCaptcha {
         }
         return ret.toArray(new Letter[] {});
 
+    }
+    public static Letter[] letterFilter(Letter[] org, JAntiCaptcha jac) {
+        new LevenShteinLetterComperator(jac).run(org);
+        return org;
     }
 }
