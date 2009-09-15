@@ -254,31 +254,31 @@ public abstract class PluginForHost extends Plugin {
                     c++;
                     if (getAccountwithoutUsername()) {
                         if (a.getPass() == null || a.getPass().trim().length() == 0) continue;
-                        account = new MenuAction(i + ". " + "Account" + (i - 1), 0);
+                        account = new MenuAction("account." + getHost() + "." + i, 0);
                         account.setTitle(i++ + ". " + "Account " + (i - 1));
                         account.setType(ToolBarAction.Types.CONTAINER);
                     } else {
                         if (a.getUser() == null || a.getUser().trim().length() == 0) continue;
-                        account = new MenuAction(i + ". " + a.getUser(), 0);
+                        account = new MenuAction("account." + getHost() + "." + i, 0);
                         account.setTitle(i++ + ". " + a.getUser());
                         account.setType(ToolBarAction.Types.CONTAINER);
-                        m = AccountMenuItemSyncer.getInstance().get(a);
-
-                        if (m == null) {
-                            m = new MenuAction("plugins.PluginForHost.enable_premium", 100 + c - 1);
-                        }
-                        m.setActionID(100 + c - 1);
-                        m.setSelected(a.isEnabled());
-                        m.setActionListener(this);
-                        account.addMenuItem(m);
-
-                        AccountMenuItemSyncer.getInstance().map(a, m);
-
-                        m = new MenuAction("plugins.PluginForHost.premiumInfo", 200 + c - 1);
-                        m.setActionListener(this);
-                        account.addMenuItem(m);
-                        premiumAction.addMenuItem(account);
                     }
+                    m = AccountMenuItemSyncer.getInstance().get(a);
+
+                    if (m == null) {
+                        m = new MenuAction("plugins.PluginForHost.enable_premium", 100 + c - 1);
+                    }
+                    m.setActionID(100 + c - 1);
+                    m.setSelected(a.isEnabled());
+                    m.setActionListener(this);
+                    account.addMenuItem(m);
+
+                    AccountMenuItemSyncer.getInstance().map(a, m);
+
+                    m = new MenuAction("plugins.PluginForHost.premiumInfo", 200 + c - 1);
+                    m.setActionListener(this);
+                    account.addMenuItem(m);
+                    premiumAction.addMenuItem(account);
 
                 } catch (Exception e) {
                     JDLogger.exception(e);

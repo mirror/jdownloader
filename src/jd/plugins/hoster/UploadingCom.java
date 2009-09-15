@@ -59,8 +59,7 @@ public class UploadingCom extends PluginForHost {
     public void login(Account account) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-        br.setCookie("http://www.uploading.com/", "_lang", "en");
-        br.setCookie("http://www.uploading.com/", "setlang", "en");
+        br.setCookie("http://www.uploading.com/", "language", "1");
         br.getPage("http://www.uploading.com/");
         br.postPage("http://uploading.com/general/login_form/", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=on");
         if (br.getCookie("http://www.uploading.com/", "remembered_user") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
@@ -136,9 +135,9 @@ public class UploadingCom extends PluginForHost {
 
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.setFollowRedirects(true);
-        br.setCookie("http://www.uploading.com/", "_lang", "en");
-        br.setCookie("http://www.uploading.com/", "setlang", "en");
+        br.setCookie("http://www.uploading.com/", "language", "1");
         br.getPage(downloadLink.getDownloadURL());
         Regex info = br.getRegex(Pattern.compile("ico_big_download_file.gif\" class=\"big_ico\" alt=\"\"/>.*<h2>(.*?)</h2><br/>.*<b>Size:</b>(.*?)<br/><br/>", Pattern.DOTALL));
         String filesize = info.getMatch(1);
