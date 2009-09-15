@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
@@ -41,7 +42,6 @@ public class RapidSharkPl extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
-        br.setDebug(true);
         Form form = br.getForm(0);
         form.setAction(downloadLink.getDownloadURL());
         form.remove("method_premium");
@@ -57,54 +57,36 @@ public class RapidSharkPl extends PluginForHost {
             if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
             int waittime = ((3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
-        } else {
-            form = br.getFormbyProperty("name", "F1");
-            if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-            String code = "";
-            String captchascope = br.getRegex("<div style='width:80px[^>]*>(.*?)</div>").getMatch(0);
-            String[] captchaletters = new Regex(captchascope, "<span[^>]*>(\\d)</span>").getColumn(0);
-            String[] captchalpositions = new Regex(captchascope, "padding-left:(\\d+)px").getColumn(0);
-            int i, k = 0, position = 0, less = -1;
-            for (k = 0; k < captchalpositions.length; k++) {
-                for (i = 0; i < captchalpositions.length; i++) {
-                    if (less == -1 || less > Integer.parseInt(captchalpositions[i])) {
-                        less = Integer.parseInt(captchalpositions[i]);
-                        position = i;
-                    }
-                }
-                captchalpositions[position] = "99999";
-                less = -1;
-                code = code + captchaletters[position];
-                position = 0;
-
-            }
-            System.out.println(captchascope);
-            System.out.println(code);
-            form.put("code", code);
-            form.setAction(downloadLink.getDownloadURL());
-            // Ticket Time
-            int ticketwait = Integer.parseInt(br.getRegex("id=\"countdown\">(.*?)</span>").getMatch(0));
-            this.sleep(ticketwait * 1001, downloadLink);
-            br.submitForm(form);
-            URLConnectionAdapter con2 = br.getHttpConnection();
-            String dllink = br.getRedirectLocation();
-            if (con2.getContentType().contains("html")) {
-                String error = br.getRegex("class=\"err\">(.*?)</font>").getMatch(0);
-                if (error != null) {
-                    logger.warning(error);
-                    con2.disconnect();
-                    if (error.equalsIgnoreCase("Wrong captcha") || error.equalsIgnoreCase("Expired session")) {
-                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, error, 10000);
-                    }
-                }
-                if (br.containsHTML("Download Link Generated")) dllink = br.getRegex("padding:7px;\">\\s+<a\\s+href=\"(.*?)\">").getMatch(0);
-            }
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-            dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, dllink);
-            dl.startDownload();
         }
+        Form dlform = br.getFormbyProperty("name", "F1");
+        if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        String captchaurl = br.getRegex("(http://www.rapidshark.pl/captchas.*?)\"").getMatch(0);
+        if (captchaurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        String code = getCaptchaCode(captchaurl, downloadLink);
+        form.put("code", code);
+        // Ticket Time
+        int ticketwait = Integer.parseInt(br.getRegex("id=\"countdown\">(.*?)</span>").getMatch(0));
+        this.sleep(ticketwait * 1001, downloadLink);
+        br.submitForm(dlform);
+        System.out.print(br.toString());
+        URLConnectionAdapter con2 = br.getHttpConnection();
+        String dllink = br.getRedirectLocation();
+        if (con2.getContentType().contains("html")) {
+            String error = br.getRegex("class=\"err\">(.*?)</font>").getMatch(0);
+            if (error != null) {
+                logger.warning(error);
+                con2.disconnect();
+                if (error.equalsIgnoreCase("Wrong captcha") || error.equalsIgnoreCase("Expired session")) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, error, 10000);
+                }
+            }
+            if (br.containsHTML("Download Link Generated")) dllink = br.getRegex("padding:7px;\">\\s+<a\\s+href=\"(.*?)\">").getMatch(0);
+        }
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl.startDownload();
     }
 
     // @Override
@@ -124,7 +106,6 @@ public class RapidSharkPl extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        // br.setCookie("http://rapidshark.pl/", "lang", "english");
         br.getPage("http://www.rapidshark.pl/?op=change_lang&lang=english");
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("No such file")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
