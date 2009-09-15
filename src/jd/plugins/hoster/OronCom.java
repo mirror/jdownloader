@@ -103,8 +103,9 @@ public class OronCom extends PluginForHost {
             if (passCode != null) {
                 downloadLink.setProperty("pass", passCode);
             }
-            String dllink = br.getRegex("center\"><a href=\"(.*?)\" class=\"atitle\">Download File").getMatch(0);
-            jd.plugins.BrowserAdapter.openDownload(br,downloadLink, dllink, true, 1);
+            String dllink = br.getRegex("height=\"[0-9]+\"><a href=\"(.*?)\"").getMatch(0);
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
 
             dl.startDownload();
         }
