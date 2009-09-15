@@ -165,7 +165,7 @@ public class MediafireCom extends PluginForHost {
 
                     String error = br.getRegex("var et=(.*?);").getMatch(0);
                     if (error != null && !error.trim().equalsIgnoreCase("15")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
-                    String js = br.getRegex("'Your download is starting.*?(http.*)\\+ '\"> Click here to start download..</a>'").getMatch(0).trim();
+                    String js = br.getRegex("'Your download is starting.*?(http://.*?)\\+'\"> Click here to start download..</a>'").getMatch(0).trim();
                     String vars = br.getRegex("<!--(.*?)function").getMatch(0).trim();
                     Context cx = Context.enter();
                     Scriptable scope = cx.initStandardObjects();
