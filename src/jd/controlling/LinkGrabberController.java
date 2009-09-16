@@ -379,9 +379,19 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
                     if (fp == this.FP_UNCHECKED || fp == this.FP_OFFLINE || fp == this.FP_UNSORTED) continue;
                     ArrayList<DownloadLink> links = new ArrayList<DownloadLink>(fp.getDownloadLinks());
                     for (DownloadLink dl : links) {
+                        // save old filepackagename, so we can put it in package
+                        // with same name again
+                        LinkGrabberFilePackage oldfp = getFPwithLink(dl);
+                        if (oldfp != null && oldfp != FP_FILTERED) {
+                            dl.setProperty("oldfp", oldfp.getName());
+                        }
                         if (this.isExtensionFiltered(dl)) {
-                            FP_FILTERED.add(dl);
+                            // attach to filterd, if its not already in it
+                            if (!FP_FILTERED.contains(dl)) {
+                                FP_FILTERED.add(dl);
+                            }
                         } else {
+                            // reattach to visible list
                             attachToPackagesSecondStage(dl);
                         }
                     }
@@ -426,7 +436,11 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
         synchronized (LinkGrabberController.ControllerLock) {
             String packageName;
             boolean autoPackage = false;
-            if (this.isExtensionFiltered(link)) {
+            if (link.getStringProperty("oldfp", null) != null) {
+                /* get old packagename */
+                packageName = link.getStringProperty("oldfp");
+                link.setProperty("oldfp", Property.NULL);
+            } else if (this.isExtensionFiltered(link)) {
                 this.FP_FILTERED.add(link);
                 return;
             } else if (link.getFilePackage() != FilePackage.getDefaultFilePackage()) {

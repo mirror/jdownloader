@@ -196,7 +196,8 @@ public class Property implements Serializable {
             properties = new HashMap<String, Object>();
         }
         if (properties.get(key) == null) {
-            setProperty(key, def);
+            // do not save defaults, only save value set with setXY
+            // setProperty(key, def);
             return def;
         }
         return properties.get(key);
