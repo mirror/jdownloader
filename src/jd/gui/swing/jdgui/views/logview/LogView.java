@@ -81,13 +81,13 @@ public class LogView extends View implements ControlListener {
         ArrayList<LogRecord> buff = JDLogHandler.getHandler().getBuffer();
 
         for (LogRecord r : buff) {
-            if (r.getMessage().contains("exception"))
+            if (r.getMessage() != null && r.getMessage().contains("exception"))
                 exceptions++;
             else if (r.getLevel() == Level.SEVERE)
                 severe++;
             else if (r.getLevel() == Level.WARNING)
                 warning++;
-            else if (r.getMessage().contains("--Request--")) http++;
+            else if (r.getMessage() != null && r.getMessage().contains("--Request--")) http++;
         }
         lip.setSevereCount(severe);
         lip.setWarningCount(warning);
@@ -99,7 +99,7 @@ public class LogView extends View implements ControlListener {
     public void controlEvent(ControlEvent event) {
         if (event.getID() == ControlEvent.CONTROL_LOG_OCCURED) {
             LogRecord r = (LogRecord) event.getParameter();
-            if (r.getMessage().contains("exception")) {
+            if (r.getMessage() != null && r.getMessage().contains("exception")) {
                 lip.setExceptionCount(lip.getExceptionCount() + 1);
                 lip.update();
             } else if (r.getLevel() == Level.SEVERE) {
@@ -108,7 +108,7 @@ public class LogView extends View implements ControlListener {
             } else if (r.getLevel() == Level.WARNING) {
                 lip.setWarningCount(lip.getWarningCount() + 1);
                 lip.update();
-            } else if (r.getMessage().contains("--Request--")) {
+            } else if (r.getMessage() != null && r.getMessage().contains("--Request--")) {
                 lip.setHttpCount(lip.getHttpCount() + 1);
                 lip.update();
             }

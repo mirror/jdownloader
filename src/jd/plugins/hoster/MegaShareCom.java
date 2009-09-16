@@ -38,12 +38,10 @@ public class MegaShareCom extends PluginForHost {
         this.setStartIntervall(2000l);
     }
 
-    // @Override
     public String getAGBLink() {
         return "http://www.megashare.com/tos.php";
     }
 
-    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
@@ -57,12 +55,6 @@ public class MegaShareCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         // Optional handling if they change the page
@@ -82,6 +74,7 @@ public class MegaShareCom extends PluginForHost {
         // if (!br.containsHTML("security\\.php")) throw new
         // PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         Form form = br.getFormbyProperty("name", "downloader");
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         // Waittime handling could be useful if they check if the users are
         // really waiting
         // if (form == null) throw new
@@ -114,8 +107,7 @@ public class MegaShareCom extends PluginForHost {
         String captchaCode = null;
         for (int o = 0; o <= 3; o++) {
             captchaCode = getCaptchaCode(captchaFile, downloadLink);
-            if (captchaCode.length() != 5) continue;
-            break;
+            if (captchaCode.length() == 5) break;
         }
         if (captchaCode.length() != 5) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         String accel = br.getRegex("name=\"(accel.*?)\"").getMatch(0);
@@ -134,29 +126,24 @@ public class MegaShareCom extends PluginForHost {
         form.put("yesss", "Download");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, true, 1);
         if (!dl.getConnection().isContentDisposition()) {
-            String page = br.loadConnection(dl.getConnection());
-            if (page.contains("Invalid Captcha Value")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
+            br.followConnection();
+            if (br.containsHTML("Invalid Captcha Value")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
         dl.startDownload();
     }
 
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
-    // @Override
     public void reset() {
     }
 
-    // @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
     public void resetDownloadlink(DownloadLink link) {
-        // TODO Auto-generated method stub
 
     }
 }
