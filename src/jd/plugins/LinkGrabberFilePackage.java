@@ -121,7 +121,7 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
         }
         lastEnabledCount = System.currentTimeMillis();
         lastenabled = newenabled;
-        return lastfail;
+        return lastenabled;
     }
 
     public void keepHostersOnly(Set<String> hoster) {
@@ -404,7 +404,18 @@ public class LinkGrabberFilePackage extends Property implements LinkGrabberFileP
         default:
             break;
         }
+    }
 
+    public ArrayList<DownloadLink> getLinksListbyStatus(int status) {
+        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        synchronized (downloadLinks) {
+            for (DownloadLink dl : downloadLinks) {
+                if (dl.getLinkStatus().hasStatus(status)) {
+                    ret.add(dl);
+                }
+            }
+        }
+        return ret;
     }
 
 }

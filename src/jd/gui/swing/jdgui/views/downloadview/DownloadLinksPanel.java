@@ -507,21 +507,7 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
                     }.start();
                     break;
                 case TableAction.DOWNLOAD_COPY_PASSWORD:
-                    for (int i = 0; i < selectedLinks.size(); i++) {
-                        String pw = selectedLinks.get(i).getFilePackage().getPassword();
-                        if (!List.contains(pw)) {
-                            List.add(pw);
-                            build.append(pw + "\r\n");
-                        }
-                        if (selectedLinks.get(i).getStringProperty("pass", null) != null) {
-                            pw = selectedLinks.get(i).getStringProperty("pass", null);
-                            if (!List.contains(pw)) {
-                                List.add(pw);
-                                build.append(pw + "\r\n");
-                            }
-                        }
-                    }
-                    string = build.toString();
+                    string = getPasswordSelectedLinks(selectedLinks);
                     ClipboardHandler.getClipboard().setOldData(string);
                     Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(string), null);
                     break;
@@ -530,8 +516,9 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
                         if (selectedLinks.get(i).getLinkType() == DownloadLink.LINKTYPE_NORMAL) {
                             String url = selectedLinks.get(i).getBrowserUrl();
                             if (!List.contains(url)) {
+                                if (List.size() > 0) build.append("\r\n");
                                 List.add(url);
-                                build.append(url + "\r\n");
+                                build.append(url);
                             }
                         }
                     }
@@ -616,9 +603,30 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
 
     }
 
+    public static String getPasswordSelectedLinks(ArrayList<DownloadLink> selectedLinks) {
+        HashSet<String> List = new HashSet<String>();
+        StringBuilder build = new StringBuilder("");
+        for (int i = 0; i < selectedLinks.size(); i++) {
+            String pw = selectedLinks.get(i).getFilePackage().getPassword();
+            if (!List.contains(pw)) {
+                if (List.size() > 0) build.append("\r\n");
+                List.add(pw);
+                build.append(pw);
+            }
+            if (selectedLinks.get(i).getStringProperty("pass", null) != null) {
+                pw = selectedLinks.get(i).getStringProperty("pass", null);
+                if (!List.contains(pw)) {
+                    if (List.size() > 0) build.append("\r\n");
+                    List.add(pw);
+                    build.append(pw);
+                }
+            }
+        }
+        return build.toString();
+    }
+
     private void sort(final int col) {
         lastSort = !lastSort;
-        System.out.println("sorting " + lastSort);
         ArrayList<FilePackage> packages = JDUtilities.getDownloadController().getPackages();
         synchronized (packages) {
 

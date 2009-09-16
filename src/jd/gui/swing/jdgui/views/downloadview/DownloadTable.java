@@ -343,7 +343,8 @@ public class DownloadTable extends JDTable implements MouseListener, MouseMotion
             if (obj instanceof FilePackage || obj instanceof DownloadLink) {
                 popup.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.dlc", 16, 16), JDL.L("gui.table.contextmenu.dlc", "DLC erstellen") + " (" + alllinks.size() + ")", TableAction.DOWNLOAD_DLC, new Property("links", alllinks))));
                 popup.add(buildpriomenu(alllinks));
-                popup.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.icons.copy", 16, 16), JDL.L("gui.table.contextmenu.copyPassword", "Copy Password") + " (" + alllinks.size() + ")", TableAction.DOWNLOAD_COPY_PASSWORD, new Property("links", alllinks))));
+                popup.add(tmp = new JMenuItem(new TableAction(panel, JDTheme.II("gui.icons.copy", 16, 16), JDL.L("gui.table.contextmenu.copyPassword", "Copy Password") + " (" + alllinks.size() + ")", TableAction.DOWNLOAD_COPY_PASSWORD, new Property("links", alllinks))));
+                if (DownloadLinksPanel.getPasswordSelectedLinks(alllinks).length() == 0) tmp.setEnabled(false);
                 popup.add(tmp = new JMenuItem(new TableAction(panel, JDTheme.II("gui.icons.cut", 16, 16), JDL.L("gui.table.contextmenu.copyLink", "Copy URL") + " (" + allnoncon.size() + ")", TableAction.DOWNLOAD_COPY_URL, new Property("links", allnoncon))));
                 if (allnoncon.size() == 0) tmp.setEnabled(false);
                 popup.add(new JMenuItem(new TableAction(panel, JDTheme.II("gui.images.config.network_local", 16, 16), JDL.L("gui.table.contextmenu.check", "Check OnlineStatus") + " (" + alllinks.size() + ")", TableAction.CHECK, new Property("links", alllinks))));

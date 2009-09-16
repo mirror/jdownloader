@@ -127,6 +127,12 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
         return new FilePackage();
     }
 
+    public void remove(ArrayList<DownloadLink> links) {
+        for (DownloadLink dl : links) {
+            this.remove(dl);
+        }
+    }
+
     private FilePackage() {
         links_Disabled = new Integer(0);
         downloadDirectory = JDUtilities.getConfiguration().getDefaultDownloadDirectory();

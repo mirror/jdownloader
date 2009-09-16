@@ -26,14 +26,13 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "link-protector.com" }, urls = { "http://[\\w\\.]*?link-protector\\.com/(x-)?\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "link-protector.com" }, urls = { "http://[\\w\\.]*?link-protector\\.com(/(x-)?\\d+)?" }, flags = { 0 })
 public class LnkPrtctrCm extends PluginForDecrypt {
 
     public LnkPrtctrCm(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -57,19 +56,24 @@ public class LnkPrtctrCm extends PluginForDecrypt {
                 break;
             }
         }
-
+        String link = null;
         if (do_continue == true) {
-            String link = br.getRegex("onClick=\"window.location='(.*?)'\" style=").getMatch(0);
-            if (link != null) {
-                decryptedLinks.add(createDownloadlink(link));
-            } else {
-                return null;
+            link = br.getRegex("onClick=\"window.location='(.*?)'\" style=").getMatch(0);
+            if (link == null || link.length() < 10) {
+                Form form = br.getForm(0);
+                if (form != null) {
+                    br.setFollowRedirects(false);
+                    br.submitForm(form);
+                }
+                link = br.getRegex("frame name=\"protected\" src=\"(.*?)\"").getMatch(0);
             }
         }
-
+        if (link != null && link.length() > 10) {
+            decryptedLinks.add(createDownloadlink(link));
+        } else {
+            return null;
+        }
         return decryptedLinks;
     }
-
-    // @Override
 
 }

@@ -447,6 +447,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                                 selected_packages.add(LGINSTANCE.getFILTERPACKAGE());
                                 break;
                             case LinkGrabberTableAction.DELETE_OFFLINE:
+                            case LinkGrabberTableAction.DELETE_DUPS:
                                 selected_packages = new ArrayList<LinkGrabberFilePackage>(fps);
                                 selected_packages.add(LGINSTANCE.getFILTERPACKAGE());
                                 break;
@@ -532,6 +533,12 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                         case LinkGrabberTableAction.DELETE_OFFLINE:
                             for (LinkGrabberFilePackage fp2 : selected_packages) {
                                 fp2.removeOffline();
+                            }
+                            break;
+                        case LinkGrabberTableAction.DELETE_DUPS:
+                            for (LinkGrabberFilePackage fp2 : selected_packages) {
+                                selected_links = fp2.getLinksListbyStatus(LinkStatus.ERROR_ALREADYEXISTS);
+                                fp2.remove(selected_links);
                             }
                             break;
                         case LinkGrabberTableAction.SELECT_HOSTER:
