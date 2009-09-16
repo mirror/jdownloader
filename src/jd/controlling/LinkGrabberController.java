@@ -510,6 +510,9 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
         name = getNameMatch(name, "(?is).*\\.7z\\.[\\d]+$");
         name = getNameMatch(name, "(.*)\\.a.$");
 
+        /* FFSJ splitted files */
+        name = getNameMatch(name, "(.*)\\.[_a-z]{3}(\\.|$)");
+
         name = getNameMatch(name, "(.*)(\\.|_)[\\d]+($|" + HTTPAllgemein.ENDINGS + "$)");
 
         int lastPoint = name.lastIndexOf(".");
