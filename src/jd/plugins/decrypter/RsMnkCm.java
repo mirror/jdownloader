@@ -25,7 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rsmonkey.com" }, urls = { "http://[\\w\\.]*?rsmonkey\\.com/\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rsmonkey.com" }, urls = { "http://[\\w\\.]*?((rsmonkey\\.com|oneddl\\.canhaz\\.it)/\\d+|[0-9]\\.(rsmonkey\\.com|oneddl\\.canhaz\\.it))" }, flags = { 0 })
 public class RsMnkCm extends PluginForDecrypt {
 
     public RsMnkCm(PluginWrapper wrapper) {
@@ -36,6 +36,7 @@ public class RsMnkCm extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        br.setFollowRedirects(true);
         br.getPage(parameter);
         String fileId = br.getRegex("iframe.*?src=\"(.*?)\"").getMatch(0);
         if (fileId == null) { return null; }
