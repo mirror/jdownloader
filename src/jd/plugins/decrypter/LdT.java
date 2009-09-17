@@ -49,13 +49,14 @@ public class LdT extends PluginForDecrypt {
             for (String link : links_page) {
                 String dllink = new Regex(link, Pattern.compile("href='/go/(\\d+)/'", Pattern.CASE_INSENSITIVE)).getMatch(0);
                 DownloadLink dl_link = createDownloadlink("http://iload.to/go/" + dllink + "/");
-                dl_link.addSourcePluginPassword(password);
+                dl_link.addSourcePluginPassword(password + "iload.to");
                 decryptedLinks.add(dl_link);
             }
         } else {
             br.getPage(parameter);
             DownloadLink dl;
             decryptedLinks.add(dl = createDownloadlink(br.getRedirectLocation()));
+            dl.addSourcePluginPassword("iload.to");
             dl.setUrlDownload(br.getRedirectLocation());
         }
         return decryptedLinks;
