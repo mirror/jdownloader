@@ -47,7 +47,11 @@ public class WrzucTo extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         String filesize = br.getRegex(Pattern.compile("class=\"info\">.*?<tr>.*?<td>(.*?)</td>", Pattern.DOTALL)).getMatch(0);
-        String name = br.getRegex(Pattern.compile("<div id=\"file_info\">.*<strong>(.*?)</strong><br />", Pattern.DOTALL)).getMatch(0);
+        filesize = filesize.replace("MiB", "mb");
+        String name = br.getRegex(Pattern.compile("id=\"file_info\">.*?<strong>(.*?)</strong>", Pattern.DOTALL)).getMatch(0);
+        if (name == null) {
+            name = br.getRegex(Pattern.compile("<title>(.*?)</title>", Pattern.DOTALL)).getMatch(0);
+        }
         if (name == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(name.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
@@ -56,12 +60,9 @@ public class WrzucTo extends PluginForHost {
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String dllink = br.getRegex(("DwnlButton\">.*?<a href=\"(.*?)\">Download file")).getMatch(0);
-        // To the original Coder of this plugin: Please check if the dllink is
-        // null, else JD will show a "browser Fehler null" and then we have
-        // confused users ;)
+        String dllink = br.getRegex(("\"(http://www.wrzuc.to/pobierz/.*?)\"")).getMatch(0);
         if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -20);
         dl.startDownload();
     }
 
