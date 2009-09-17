@@ -2,7 +2,6 @@ package jd.captcha;
 
 import java.util.Arrays;
 import java.util.List;
-
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.LetterComperator;
 import jd.captcha.pixelgrid.Letter;
@@ -10,12 +9,15 @@ import jd.captcha.pixelgrid.Letter;
 public class LevenShteinLetterComperator {
     private boolean[][][][] letterDB;
     private JAntiCaptcha jac;
+    public boolean onlySameWidth=false;
+    public int dimension = 1;
     public void run(Letter letter) {
         int bestdist = Integer.MAX_VALUE;
         boolean[][][] b = getBooleanArrays(letter);
         int best = 0;
         for (int i = 0; i < letterDB.length; i++) {
-            int dist = getLevenshteinDistance(b, letterDB[i]);
+            if(onlySameWidth&&jac.letterDB.get(i).getWidth()!=letter.getWidth())continue;
+            int dist = getLevenshteinDistance(b, letterDB[i], bestdist, dimension);
             if (bestdist > dist) {
                 bestdist = dist;
                 best = i;
@@ -23,42 +25,9 @@ public class LevenShteinLetterComperator {
         }
         Letter bestLetter = jac.letterDB.get(best);
         letter.detected= new LetterComperator(letter, bestLetter);
-        letter.detected.setValityPercent(((double )letter.getArea())*((double)bestdist)/100);
+        //75 weil zeilen und reihen gescannt werden
+        letter.detected.setValityPercent(((double)75*bestdist)/((double )letter.getArea()));
         letter.setDecodedValue(bestLetter.getDecodedValue());
-    }
-    public LevenShteinLetterComperator(final JAntiCaptcha jac) {
-        letterDB=new boolean[jac.letterDB.size()][][][];
-        this.jac=jac;
-        Thread[] ths = new Thread[letterDB.length];
-        for (int i = 0; i < ths.length; i++) {
-            final int j = i;
-            ths[i]=new Thread(new Runnable() {
-                public void run() {
-                    letterDB[j]=getBooleanArrays(jac.letterDB.get(j));
-                    synchronized(this)
-                    {
-                        notify();
-                    }
-                }
-
-            });
-            ths[i].start();
-            
-        }
-        for (Thread thread : ths) {
-            while(thread.isAlive())
-            {
-            synchronized(thread)
-            {
-                try {
-                    thread.wait();
-                } catch (InterruptedException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
-            }
-            }
-        }
     }
     public void run(final Letter[] letters) {
         Thread[] ths = new Thread[letters.length];
@@ -96,13 +65,26 @@ public class LevenShteinLetterComperator {
     public void run(List<Letter> letters) {
         run(letters.toArray(new Letter[]{}));
     }
-
+    public LevenShteinLetterComperator(JAntiCaptcha jac) {
+        letterDB=new boolean[jac.letterDB.size()][][][];
+        this.jac=jac;
+        for (int i = 0; i < letterDB.length; i++) {
+            letterDB[i]=getBooleanArrays(jac.letterDB.get(i));
+        }
+    }
 
     private static boolean[][][] getBooleanArrays(Letter letter) {
         boolean[][] leth1 = new boolean[letter.getWidth()][letter.getHeight()];
+        int avg = letter.getAverage();
         for (int x = 0; x < leth1.length; x++) {
             for (int y = 0; y < leth1[0].length; y++) {
-                leth1[x][y] = letter.getPixelValue(x, y) == 0;
+                int pix = letter.getPixelValue(x, y);
+                if(pix==0)
+                    leth1[x][y]=true;
+                else if(pix==1)
+                    leth1[x][y]=false;
+                else
+                leth1[x][y] =  letter.isElement(pix, avg);
             }
         }
         boolean[][] leth12 = new boolean[letter.getHeight()][letter.getWidth()];
@@ -118,23 +100,26 @@ public class LevenShteinLetterComperator {
     public static int getLevenshteinDistance(Letter a, Letter b) {
         boolean[][][] ba = getBooleanArrays(a);
         boolean[][][] bb = getBooleanArrays(b);
-        return getLevenshteinDistance(ba, bb);
+        return getLevenshteinDistance(ba, bb, Integer.MAX_VALUE, 1);
     }
 
-    private static int getLevenshteinDistance(boolean[][][] ba, boolean[][][] bb) {
+    private static int getLevenshteinDistance(boolean[][][] ba, boolean[][][] bb, int best,int dimension) {
         int res = 0;
         boolean[][] bba1 = ba[0];
         boolean[][] bbb1 = bb[0];
         boolean[][] bba2 = ba[1];
         boolean[][] bbb2 = bb[1];
+        res += (((Math.abs(bba1.length - bbb1.length) * Math.max(bba2.length, bbb2.length))+(Math.abs(bba2.length - bbb2.length) * Math.max(bba1.length, bbb1.length)))/dimension);
+        if(best<res)return Integer.MAX_VALUE;
         for (int c = 0; c < Math.min(bba1.length, bbb1.length); c++) {
             res += getLevenshteinDistance(bba1[c], bbb1[c]);
+            if(best<res)return Integer.MAX_VALUE;
         }
         for (int c = 0; c < Math.min(bba2.length, bbb2.length); c++) {
             res += getLevenshteinDistance(bba2[c], bbb2[c]);
+            if(best<res)return Integer.MAX_VALUE;
         }
-        res += Math.abs(bba1.length - bbb1.length) * Math.max(bba2.length, bbb2.length);
-        res += Math.abs(bba2.length - bbb2.length) * Math.max(bba1.length, bbb1.length);
+
         return res;
     }
 
