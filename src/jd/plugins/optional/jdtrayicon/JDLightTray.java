@@ -17,6 +17,7 @@
 package jd.plugins.optional.jdtrayicon;
 
 import java.awt.Dimension;
+import java.awt.Frame;
 import java.awt.Image;
 import java.awt.Point;
 import java.awt.SystemTray;
@@ -27,6 +28,7 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.awt.event.WindowStateListener;
 import java.util.ArrayList;
 
 import javax.swing.JFrame;
@@ -39,6 +41,9 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.SubConfiguration;
 import jd.controlling.JDLogger;
+import jd.controlling.LinkGrabberController;
+import jd.controlling.LinkGrabberControllerEvent;
+import jd.controlling.LinkGrabberControllerListener;
 import jd.event.ControlEvent;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
@@ -51,7 +56,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 @OptionalPlugin(rev = "$Revision$", defaultEnabled = true, id = "trayicon", interfaceversion = 5, minJVM = 1.6)
-public class JDLightTray extends PluginOptional implements MouseListener, MouseMotionListener, WindowListener {
+public class JDLightTray extends PluginOptional implements MouseListener, MouseMotionListener, WindowListener, LinkGrabberControllerListener, WindowStateListener {
 
     private SubConfiguration subConfig = null;
 
@@ -62,6 +67,8 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     private static final String PROPERTY_SINGLE_CLICK = "PROPERTY_SINGLE_CLICK";
 
     private static final String PROPERTY_TOOLTIP = "PROPERTY_TOOLTIP";
+
+    private static final String PROPERTY_SHOW_ON_LINKGRAB = "PROPERTY_SHOW_ON_LINKGRAB";
 
     private TrayIconPopup trayIconPopup;
 
@@ -74,6 +81,8 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     private TrayMouseAdapter ma;
 
     private boolean shutdown = false;
+
+    private boolean iconified = false;
 
     public JDLightTray(PluginWrapper wrapper) {
         super(wrapper);
@@ -107,6 +116,8 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
                         if (guiFrame != null) {
                             guiFrame.removeWindowListener(JDLightTray.this);
                             guiFrame.addWindowListener(JDLightTray.this);
+                            guiFrame.removeWindowStateListener(JDLightTray.this);
+                            guiFrame.addWindowStateListener(JDLightTray.this);
                         }
                     }
                     logger.info("Systemtray OK");
@@ -114,6 +125,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
                 } catch (Exception e) {
                     return false;
                 }
+                LinkGrabberController.getInstance().addListener(JDLightTray.this);
                 return true;
             }
 
@@ -128,6 +140,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_SINGLE_CLICK, JDL.L("plugins.optional.JDLightTray.singleClick", "Toggle window status with single click")).setDefaultValue(false));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_TOOLTIP, JDL.L("plugins.optional.JDLightTray.tooltip", "Show Tooltip")).setDefaultValue(true));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_SHOW_ON_LINKGRAB, JDL.L("plugins.optional.JDLightTray.linkgrabber", "Show on Linkgrabbing")).setDefaultValue(true));
     }
 
     // @Override
@@ -138,6 +151,8 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
             if (guiFrame != null) {
                 guiFrame.removeWindowListener(JDLightTray.this);
                 guiFrame.addWindowListener(JDLightTray.this);
+                guiFrame.removeWindowStateListener(JDLightTray.this);
+                guiFrame.addWindowStateListener(JDLightTray.this);
             }
             if (subConfig.getBooleanProperty(PROPERTY_START_MINIMIZED, false)) {
                 miniIt(true);
@@ -231,8 +246,10 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     // @Override
     public void onExit() {
         removeTrayIcon();
+        LinkGrabberController.getInstance().removeListener(this);
         if (guiFrame != null) {
             guiFrame.removeWindowListener(JDLightTray.this);
+            guiFrame.removeWindowStateListener(JDLightTray.this);
             if (!shutdown) miniIt(false);
         }
     }
@@ -335,7 +352,6 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     }
 
     public void windowClosing(WindowEvent e) {
-        System.out.println("wanna close?");
         if (subConfig.getBooleanProperty(PROPERTY_MINIMIZE_TO_TRAY, true)) {
             miniIt(true);
         }
@@ -353,4 +369,51 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     public void windowOpened(WindowEvent e) {
     }
 
+    public void onLinkGrabberControllerEvent(LinkGrabberControllerEvent event) {
+        if (event.getID() == LinkGrabberControllerEvent.ADD_FILEPACKAGE && subConfig.getBooleanProperty(PROPERTY_SHOW_ON_LINKGRAB, true)) {
+            if (!guiFrame.isVisible()) {
+                /* set visible */
+                new GuiRunnable<Object>() {
+                    @Override
+                    public Object runSave() {
+                        guiFrame.setVisible(true);
+                        return null;
+                    }
+                }.start();
+            }
+            if (iconified) {
+                /* restore normale state,if windows was iconified */
+                new GuiRunnable<Object>() {
+                    @Override
+                    public Object runSave() {
+                        /* after this normal, its back to iconified */
+                        guiFrame.setState(JFrame.NORMAL);
+                        guiFrame.toFront();
+                        /* after this normal,its finally normal */
+                        guiFrame.setState(JFrame.NORMAL);
+                        return null;
+                    }
+                }.start();
+            }
+        }
+    }
+
+    public void windowStateChanged(WindowEvent evt) {
+        int oldState = evt.getOldState();
+        int newState = evt.getNewState();
+
+        if ((oldState & Frame.ICONIFIED) == 0 && (newState & Frame.ICONIFIED) != 0) {
+            iconified = true;
+            // Frame was not iconified
+        } else if ((oldState & Frame.ICONIFIED) != 0 && (newState & Frame.ICONIFIED) == 0) {
+            iconified = false;
+            // Frame was iconified
+        }
+        if ((oldState & Frame.MAXIMIZED_BOTH) == 0 && (newState & Frame.MAXIMIZED_BOTH) != 0) {
+            // Frame was maximized
+        } else if ((oldState & Frame.MAXIMIZED_BOTH) != 0 && (newState & Frame.MAXIMIZED_BOTH) == 0) {
+            // Frame was minimized
+        }
+
+    }
 }
