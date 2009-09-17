@@ -29,6 +29,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JPanel;
 import javax.swing.ToolTipManager;
 
+import jd.OptionalPluginWrapper;
 import jd.config.ConfigContainer;
 import jd.controlling.ClipboardHandler;
 import jd.controlling.DownloadController;
@@ -399,7 +400,14 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
     }
 
     public void windowClosing(WindowEvent e) {
-        if (e.getComponent() == getMainFrame()) closeWindow();
+        if (e.getComponent() == getMainFrame()) {
+            /* dont close/exit if trayicon minimizing is enabled */
+            OptionalPluginWrapper addon = JDUtilities.getOptionalPlugin("trayicon");
+            if (addon != null && addon.isEnabled()) {
+                if ((Boolean) addon.getPlugin().interact("enabled", null) == true) return;
+            }
+            closeWindow();
+        }
     }
 
     public void closeWindow() {

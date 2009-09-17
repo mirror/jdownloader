@@ -17,7 +17,6 @@
 package jd.plugins.optional.jdtrayicon;
 
 import java.awt.Dimension;
-import java.awt.Frame;
 import java.awt.Image;
 import java.awt.Point;
 import java.awt.SystemTray;
@@ -28,7 +27,6 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-import java.awt.event.WindowStateListener;
 import java.util.ArrayList;
 
 import javax.swing.JFrame;
@@ -71,11 +69,11 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
 
     private JFrame guiFrame;
 
-    private long lastDeIconifiedEvent = System.currentTimeMillis() - 1000;
-
     private TrayIconTooltip trayIconTooltip;
 
     private TrayMouseAdapter ma;
+
+    private boolean shutdown = false;
 
     public JDLightTray(PluginWrapper wrapper) {
         super(wrapper);
@@ -104,11 +102,10 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
                 }
                 try {
                     JDUtilities.getController().addControlListener(JDLightTray.this);
-                    if (SwingGui.getInstance() != null && SwingGui.getInstance() != null) {
+                    if (SwingGui.getInstance() != null) {
                         guiFrame = SwingGui.getInstance().getMainFrame();
                         if (guiFrame != null) {
-
-                            
+                            guiFrame.removeWindowListener(JDLightTray.this);
                             guiFrame.addWindowListener(JDLightTray.this);
                         }
                     }
@@ -118,7 +115,6 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
                     return false;
                 }
                 return true;
-
             }
 
         }.getReturnValue();
@@ -139,34 +135,15 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
         if (event.getID() == ControlEvent.CONTROL_INIT_COMPLETE && event.getSource() instanceof Main) {
             logger.info("JDLightTrayIcon Init complete");
             guiFrame = SwingGui.getInstance().getMainFrame();
-            if (subConfig.getBooleanProperty(PROPERTY_START_MINIMIZED, false)) {
-                guiFrame.setExtendedState(JFrame.ICONIFIED);
+            if (guiFrame != null) {
+                guiFrame.removeWindowListener(JDLightTray.this);
+                guiFrame.addWindowListener(JDLightTray.this);
             }
-            guiFrame.addWindowStateListener(new WindowStateListener() {
-
-                public void windowStateChanged(WindowEvent evt) {
-
-                    int oldState = evt.getOldState();
-                    int newState = evt.getNewState();
-
-                    if ((oldState & Frame.ICONIFIED) == 0 && (newState & Frame.ICONIFIED) != 0) {
-                      System.out.println("// Frame was iconized");
-                    } else if ((oldState & Frame.ICONIFIED) != 0 && (newState & Frame.ICONIFIED) == 0) {
-                        System.out.println("// Frame was deiconized");
-                    }
-
-                    if ((oldState & Frame.MAXIMIZED_BOTH) == 0 && (newState & Frame.MAXIMIZED_BOTH) != 0) {
-                        System.out.println("// Frame was maximized");
-                    } else if ((oldState & Frame.MAXIMIZED_BOTH) != 0 && (newState & Frame.MAXIMIZED_BOTH) == 0) {
-                        System.out.println("// Frame was minimized");
-
-                    }
-
-                }
-
-            });
-            guiFrame.addWindowListener(this);
-            return;
+            if (subConfig.getBooleanProperty(PROPERTY_START_MINIMIZED, false)) {
+                miniIt(true);
+            }
+        } else if (event.getID() == ControlEvent.CONTROL_SYSTEM_EXIT) {
+            shutdown = true;
         }
         super.controlEvent(event);
     }
@@ -202,12 +179,11 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     }
 
     public void mousePressed(MouseEvent e) {
-
         trayIconTooltip.hideWindow();
         if (e.getSource() instanceof TrayIcon) {
             if (!OSDetector.isMac()) {
                 if (e.getClickCount() >= (subConfig.getBooleanProperty(PROPERTY_SINGLE_CLICK, false) ? 1 : 2) && !SwingUtilities.isRightMouseButton(e)) {
-                    miniIt();
+                    miniIt(guiFrame.isVisible());
                 } else {
                     if (trayIconPopup != null && trayIconPopup.isShowing()) {
                         trayIconPopup.dispose();
@@ -223,7 +199,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
             } else {
                 if (SwingUtilities.isLeftMouseButton(e)) {
                     if (e.getClickCount() >= (subConfig.getBooleanProperty(PROPERTY_SINGLE_CLICK, false) ? 1 : 2) && !SwingUtilities.isLeftMouseButton(e)) {
-                        miniIt();
+                        miniIt(guiFrame.isVisible());
                     } else {
                         if (trayIconPopup != null && trayIconPopup.isShowing()) {
                             trayIconPopup.dispose();
@@ -255,7 +231,10 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     // @Override
     public void onExit() {
         removeTrayIcon();
-        if (guiFrame != null) guiFrame.removeWindowListener(this);
+        if (guiFrame != null) {
+            guiFrame.removeWindowListener(JDLightTray.this);
+            if (!shutdown) miniIt(false);
+        }
     }
 
     private void calcLocation(final JWindow window, final Point p) {
@@ -296,81 +275,14 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
         }.waitForEDT();
     }
 
-    private void miniIt() {
-        if (System.currentTimeMillis() > this.lastDeIconifiedEvent + 750) {
-            this.lastDeIconifiedEvent = System.currentTimeMillis();
-            if (guiFrame.isVisible()) {
-                guiFrame.setVisible(false);
-            } else {
-                new GuiRunnable<Object>() {
-
-                    @Override
-                    public Object runSave() {
-
-                        // It's important,to set the frame visible first then
-                        // set state. otherwise the framestatus may be broken
-                        // (like synthetica: does disable minimize buttons
-                        guiFrame.setVisible(true);
-                        guiFrame.setExtendedState(JFrame.NORMAL);
-
-                        guiFrame.toFront();
-                        return null;
-                    }
-
-                }.start();
-
+    private void miniIt(final boolean minimize) {
+        new GuiRunnable<Object>() {
+            @Override
+            public Object runSave() {
+                guiFrame.setVisible(!minimize);
+                return null;
             }
-        }
-    }
-
-    public void windowActivated(WindowEvent arg0) {
-    }
-
-    public void windowClosed(WindowEvent arg0) {
-    }
-
-    public void windowClosing(WindowEvent arg0) {
-    }
-
-    public void windowDeactivated(WindowEvent arg0) {
-    }
-
-    public void windowDeiconified(WindowEvent arg0) {
-    }
-
-    public void windowIconified(WindowEvent arg0) {
-
-        System.out.println(arg0.getOldState() + " " + arg0.getNewState());
-        System.out.println(arg0);
-        /*
-         * this is a workaround because on some linux systems, the minimize
-         * effect happens after reshowing jd (getting back from tray), so its
-         * always/often in taskbar instead of open window TODO: find a better
-         * way, eg do not minimize at all
-         */
-        if (subConfig.getBooleanProperty(PROPERTY_MINIMIZE_TO_TRAY, true)) {
-
-            if (System.currentTimeMillis() > this.lastDeIconifiedEvent + 750) {
-                this.lastDeIconifiedEvent = System.currentTimeMillis();
-                if (guiFrame.isVisible()) {
-                    guiFrame.setVisible(false);
-                } else {
-                    guiFrame.setVisible(true);
-                    guiFrame.setExtendedState(JFrame.NORMAL);
-
-                    guiFrame.toFront();
-                }
-            } else {
-                guiFrame.setVisible(true);
-                guiFrame.setExtendedState(JFrame.NORMAL);
-
-                miniIt();
-            }
-
-        }
-    }
-
-    public void windowOpened(WindowEvent arg0) {
+        }.start();
     }
 
     /**
@@ -380,12 +292,9 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
      * @param me
      */
     public void mouseStay(MouseEvent e) {
-
         if (!subConfig.getBooleanProperty(PROPERTY_TOOLTIP, true)) return;
         if (trayIconPopup != null && trayIconPopup.isVisible()) return;
-
         trayIconTooltip.show(((TrayMouseAdapter) e.getSource()).getEstimatedTopLeft(), this.trayIcon);
-
     }
 
     private void removeTrayIcon() {
@@ -404,9 +313,9 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
 
     public Object interact(String command, Object parameter) {
         if (command == null) return null;
+        if (command.equalsIgnoreCase("enabled")) return subConfig.getBooleanProperty(PROPERTY_MINIMIZE_TO_TRAY, true);
         if (command.equalsIgnoreCase("refresh")) {
             new GuiRunnable<Object>() {
-
                 @Override
                 public Object runSave() {
                     removeTrayIcon();
@@ -417,4 +326,31 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
         }
         return null;
     }
+
+    public void windowActivated(WindowEvent e) {
+
+    }
+
+    public void windowClosed(WindowEvent e) {
+    }
+
+    public void windowClosing(WindowEvent e) {
+        System.out.println("wanna close?");
+        if (subConfig.getBooleanProperty(PROPERTY_MINIMIZE_TO_TRAY, true)) {
+            miniIt(true);
+        }
+    }
+
+    public void windowDeactivated(WindowEvent e) {
+    }
+
+    public void windowDeiconified(WindowEvent e) {
+    }
+
+    public void windowIconified(WindowEvent e) {
+    }
+
+    public void windowOpened(WindowEvent e) {
+    }
+
 }
