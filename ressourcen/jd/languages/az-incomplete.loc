@@ -836,6 +836,7 @@ plugins.host.meinupload.serverdefect = Serverin istifadəsi mümkün deyil
 plugins.host.rapidshare.errors.0b37866ecbc00ce1857fa40852df6fef = Endirmə seansının müddəti bitib. Bir daha yoxlayın.
 plugins.host.rapidshare.errors.15fb70be386bb33e91b8e31b3b94c021 = Fayl tapılmadı. Endirmə keçidinizi yoxlayın.
 plugins.host.rapidshare.errors.33f66fa600e57edd85714127295c7bcc = Fayl tapılmadı. Endirmə keçidinizi yoxlayın.
+plugins.host.rapidshare.errors.8da4051e59062d67a39a7e10cc026831 = Günlük endirmə həddinə çatdınız.
 plugins.host.rapidshare.errors.d11f499020a3607ffdf987ce3968c692 = 10 GB-lıq həddə çatdın.
 plugins.host.rapidshare.loadedvia = %s vasitəsiylə yükləndi
 plugins.hoster.2sharedcom.errors.wrongcaptcha = Səhv CAPTCHA
