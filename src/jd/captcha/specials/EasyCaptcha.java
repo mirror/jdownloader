@@ -27,13 +27,13 @@ import java.util.Map.Entry;
 
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.LetterComperator;
+import jd.captcha.LevenShteinLetterComperator;
 import jd.captcha.easy.BackGroundImageManager;
 import jd.captcha.easy.CPoint;
 import jd.captcha.easy.ColorTrainer;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
 import jd.captcha.pixelobject.PixelObject;
-import jd.captcha.testunit.LevenShteinLetterComperator;
 import jd.nutils.Colors;
 
 /**
