@@ -20,16 +20,17 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagebam.com" }, urls = { "http://[\\w\\.]*?imagebam\\.com/image/[a-z0-9]+" }, flags = { 0 })
-public class MgBmCm extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagevenue.com" }, urls = { "http://[\\w\\.]*?img[0-9]+\\.imagevenue\\.com/img\\.php\\?image=.+" }, flags = { 0 })
+public class ImgVenueCm extends PluginForDecrypt {
 
-    public MgBmCm(PluginWrapper wrapper) {
+    public ImgVenueCm(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -41,15 +42,16 @@ public class MgBmCm extends PluginForDecrypt {
         br.getPage(parameter);
 
         /* Error handling */
-        if (br.containsHTML("Image not found")) {
+        if (br.containsHTML("This image does not exist on this server")) {
             logger.warning("Wrong link");
             logger.warning(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
             return new ArrayList<DownloadLink>();
         }
 
-        String links = br.getRegex("'(http://[0-9]\\.imagebam\\.com/dl\\.php\\?ID=.*?)'").getMatch(0);
+        String links = br.getRegex("scaleImg\\(\\)\"  SRC=\"(.*?)\"").getMatch(0);
         if (links == null) return null;
-        links = "directhttp://" + links;
+        String server = new Regex(parameter, "(img[0-9]+\\.imagevenue\\.com/)").getMatch(0);
+        links = "directhttp://http://" + server + links;
         String decryptedlink = links;
         DownloadLink dl = createDownloadlink(decryptedlink);
         dl.setName("pic");
