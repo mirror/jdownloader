@@ -17,6 +17,7 @@
 package jd.plugins.optional.jdtrayicon;
 
 import java.awt.Dimension;
+import java.awt.Frame;
 import java.awt.Image;
 import java.awt.Point;
 import java.awt.SystemTray;
@@ -27,6 +28,7 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.awt.event.WindowStateListener;
 import java.util.ArrayList;
 
 import javax.swing.JFrame;
@@ -104,7 +106,11 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
                     JDUtilities.getController().addControlListener(JDLightTray.this);
                     if (SwingGui.getInstance() != null && SwingGui.getInstance() != null) {
                         guiFrame = SwingGui.getInstance().getMainFrame();
-                        if (guiFrame != null) guiFrame.addWindowListener(JDLightTray.this);
+                        if (guiFrame != null) {
+
+                            
+                            guiFrame.addWindowListener(JDLightTray.this);
+                        }
                     }
                     logger.info("Systemtray OK");
                     initGUI();
@@ -136,6 +142,29 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
             if (subConfig.getBooleanProperty(PROPERTY_START_MINIMIZED, false)) {
                 guiFrame.setExtendedState(JFrame.ICONIFIED);
             }
+            guiFrame.addWindowStateListener(new WindowStateListener() {
+
+                public void windowStateChanged(WindowEvent evt) {
+
+                    int oldState = evt.getOldState();
+                    int newState = evt.getNewState();
+
+                    if ((oldState & Frame.ICONIFIED) == 0 && (newState & Frame.ICONIFIED) != 0) {
+                      System.out.println("// Frame was iconized");
+                    } else if ((oldState & Frame.ICONIFIED) != 0 && (newState & Frame.ICONIFIED) == 0) {
+                        System.out.println("// Frame was deiconized");
+                    }
+
+                    if ((oldState & Frame.MAXIMIZED_BOTH) == 0 && (newState & Frame.MAXIMIZED_BOTH) != 0) {
+                        System.out.println("// Frame was maximized");
+                    } else if ((oldState & Frame.MAXIMIZED_BOTH) != 0 && (newState & Frame.MAXIMIZED_BOTH) == 0) {
+                        System.out.println("// Frame was minimized");
+
+                    }
+
+                }
+
+            });
             guiFrame.addWindowListener(this);
             return;
         }
@@ -310,6 +339,9 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     }
 
     public void windowIconified(WindowEvent arg0) {
+
+        System.out.println(arg0.getOldState() + " " + arg0.getNewState());
+        System.out.println(arg0);
         /*
          * this is a workaround because on some linux systems, the minimize
          * effect happens after reshowing jd (getting back from tray), so its
