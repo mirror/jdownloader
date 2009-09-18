@@ -61,7 +61,7 @@ import jd.utils.locale.JDL;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-@OptionalPlugin(rev = "$Revision$", id = "remotecontrol", interfaceversion = 5)
+@OptionalPlugin(rev = "$Revision$", id = "remotecontrol", interfaceversion = 6)
 public class JDRemoteControl extends PluginOptional implements ControlListener {
 
     private static final String PARAM_PORT = "PORT";
@@ -120,6 +120,9 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 commandvec.add("/get/isreconnect");
                 infovector.add("Get If Reconnect");
 
+                commandvec.add("/get/downloadstatus");
+                infovector.add("Get Downloadstatus<br/>Values: RUNNING, NOT_RUNNING, STOPPING");
+                
                 commandvec.add("/get/downloads/currentcount");
                 infovector.add("Get amount of current downloads");
                 commandvec.add("/get/downloads/currentlist");
@@ -280,10 +283,12 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             } else if (request.getRequestUrl().equals("/get/isreconnect")) {
                 // Get IsReconnect
                 response.addContent(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true));
-            } else if (request.getRequestUrl().equals("/action/start")) {
+            } else if (request.getRequestUrl().equals("/get/downloadstatus")) {
+                // Get downloadstatus
+                response.addContent(DownloadWatchDog.getInstance().getDownloadStatus().toString());
+            }else if (request.getRequestUrl().equals("/action/start")) {
                 // Do Start Download
                 DownloadWatchDog.getInstance().startDownloads();
-
                 response.addContent("Downloads started");
             } else if (request.getRequestUrl().equals("/action/pause")) {
                 // Do Pause Download
