@@ -21,7 +21,6 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 import jd.PluginWrapper;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
@@ -33,28 +32,28 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
 //quickupload by pspzockerscene
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "quickupload.net" }, urls = { "http://[\\w\\.]*?quickupload\\.net/[a-z0-9]+" }, flags = { 0 })
-public class QuickUploadNet extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sendfile.to" }, urls = { "http://[\\w\\.]*?sendfile.to/[a-z0-9]+" }, flags = { 0 })
+public class SendFileTo extends PluginForHost {
 
-    public QuickUploadNet(PluginWrapper wrapper) {
+    public SendFileTo(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://quickupload.net/tos.html";
+        return "http://www.sendfile.to/tos.html";
     }
 
     // @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setCookie("http://www.quickupload.net", "lang", "english");
+        br.setCookie("http://www.sendfile.to", "lang", "english");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("No such file with this filename")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("No such file")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("No such user exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = Encoding.htmlDecode(br.getRegex("<input type=\"hidden\" name=\"fname\" value=\"(.*?)\">").getMatch(0));
-        String filesize = br.getRegex("You have requested <font color=\"red\">http://quickupload.net/.*?/.*?</font> \\((.*?)\\)</font>").getMatch(0);
+        String filename = br.getRegex("<h2>Download  (.*?)</h2>").getMatch(0);
+        String filesize = br.getRegex("You have requested <font color=.*?</font> \\((.*?)\\)</f").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         link.setName(filename);
         link.setDownloadSize(Regex.getSize(filesize));
@@ -67,10 +66,21 @@ public class QuickUploadNet extends PluginForHost {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
         // Form um auf free zu "klicken"
-        Form DLForm0 = br.getForm(0);
+        Form DLForm0 = br.getForm(2);
         if (DLForm0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         DLForm0.remove("method_premium");
         br.submitForm(DLForm0);
+        if (br.containsHTML("You have to wait")) {
+            int minutes = 0, seconds = 0, hours = 0;
+            String tmphrs = br.getRegex("\\s+(\\d+)\\s+hours?").getMatch(0);
+            if (tmphrs != null) hours = Integer.parseInt(tmphrs);
+            String tmpmin = br.getRegex("\\s+(\\d+)\\s+minutes?").getMatch(0);
+            if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
+            String tmpsec = br.getRegex("\\s+(\\d+)\\s+seconds?").getMatch(0);
+            if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
+            int waittime = ((3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
+        }
         // Form um auf "Datei herunterladen" zu klicken
         Form DLForm = br.getFormbyProperty("name", "F1");
         if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
@@ -109,9 +119,9 @@ public class QuickUploadNet extends PluginForHost {
         }
 
         if (br.containsHTML("Wrong captcha")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        String dllink = br.getRegex("dotted #bbb;padding:7px;\">.*?<a href=\"(.*?)\">.*?</a>.*?</span>.*?<br><br><br>").getMatch(0);
+        String dllink = br.getRegex("dotted #bbb;padding:[0-9]px;\">.*?<a href=\"(.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -20);
         dl.startDownload();
     }
 
@@ -121,7 +131,7 @@ public class QuickUploadNet extends PluginForHost {
 
     // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return 1;
     }
 
     @Override
