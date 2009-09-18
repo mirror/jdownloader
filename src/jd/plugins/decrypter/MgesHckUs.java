@@ -28,10 +28,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagebam.com" }, urls = { "http://[\\w\\.]*?imagebam\\.com/image/[a-z0-9]+" }, flags = { 0 })
-public class MgBmCm extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imageshack.us" }, urls = { "http://[\\w\\.]*?img[0-9]{1,4}\\.imageshack\\.us/i/[a-z]+\\.[a-zA-Z]{1,3}/" }, flags = { 0 })
+public class MgesHckUs extends PluginForDecrypt {
 
-    public MgBmCm(PluginWrapper wrapper) {
+    public MgesHckUs(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -43,17 +43,17 @@ public class MgBmCm extends PluginForDecrypt {
         br.getPage(parameter);
 
         /* Error handling */
-        if (br.containsHTML("Image not found")) {
+        String offlinecheck = br.getRedirectLocation();
+        if (offlinecheck != null) {
             logger.warning("Wrong link");
             logger.warning(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
             return new ArrayList<DownloadLink>();
         }
 
-        String links = br.getRegex("'(http://[0-9]\\.imagebam\\.com/dl\\.php\\?ID=.*?)'").getMatch(0);
+        String links = br.getRegex("/rss\\+xml\" href=\"(.*?)\\.comments\\.xml\"").getMatch(0);
         if (links == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         links = "directhttp://" + links;
-        String decryptedlink = links;
-        DownloadLink dl = createDownloadlink(decryptedlink);
+        DownloadLink dl = createDownloadlink(links);
         dl.setName("pic");
         decryptedLinks.add(dl);
         return decryptedLinks;
