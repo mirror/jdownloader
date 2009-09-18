@@ -61,7 +61,7 @@ import jd.utils.locale.JDL;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-@OptionalPlugin(rev = "$Revision$", id = "remotecontrol", interfaceversion = 6)
+@OptionalPlugin(rev = "$Revision$", id = "remotecontrol", interfaceversion = 5)
 public class JDRemoteControl extends PluginOptional implements ControlListener {
 
     private static final String PARAM_PORT = "PORT";
