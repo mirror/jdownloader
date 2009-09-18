@@ -19,6 +19,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.URLConnectionAdapter;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -26,42 +28,47 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "l4dmods.com" }, urls = { "http://[\\w\\.]*?l4dmods\\.com/index\\.php\\?option=com_joomloads\\&(view=package|controller=package&task=download)\\&Itemid=[0-9]\\&packageId=[0-9]+" }, flags = { 2 })
-public class L4dModsCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagehaven.net" }, urls = { "http://[\\w\\.]*?[a-z]{1,4}[0-9]{1,2}\\.imagehaven\\.net/img\\.php\\?id=.+\\.[a-z]+" }, flags = { 2 })
+public class ImageHavenNet extends PluginForHost {
 
-    public L4dModsCom(PluginWrapper wrapper) {
+    public ImageHavenNet(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public String getAGBLink() {
-        return "http://www.l4dmods.com/forums/ucp.php?mode=register";
+        return "http://imagehaven.net/index.php?page=tos";
     }
 
-    
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("(view=package|controller=package&task=download)", "view=package"));
-    }
-    
-    
-    
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setDebug(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("<h3></h3>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<h3>(.*?)</h3>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        filename = filename.replaceAll("(&quot;|&#039;)", "");
-        downloadLink.setName(filename);
+        String server = new Regex((downloadLink.getDownloadURL()), "(http://[a-z]{1,4}[0-9]{1,2}\\.imagehaven\\.net)").getMatch(0);
+        if (br.containsHTML("This ad is shown once a day.<")) {
+            br.getPage(downloadLink.getDownloadURL());
+        }
+        String checklink = br.getRegex("<img src='\\.(.*?)'").getMatch(0);
+        if (checklink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        checklink = server + checklink;
+        URLConnectionAdapter con = br.openGetConnection(checklink);
+        if ((con.getContentType().contains("text/html"))) {
+            br.getPage(checklink);
+            if (br.containsHTML("404 - Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        }
+        String filename = new Regex(checklink, "imagehaven\\.net/images/.*?/.*?/.*?_(.*?\\.[a-zA-Z]+)").getMatch(0);
+        if (filename != null) {
+            downloadLink.setName(filename);
+        }
         return AvailableStatus.TRUE;
     }
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String dllink = br.getRegex("oad\"><a href=\"(.*?)\"").getMatch(0);
+        br.getPage(downloadLink.getDownloadURL());
+        String dllink = br.getRegex("<img src='\\.(.*?)'").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        dllink = "http://www.l4dmods.com" + dllink;
-        br.setFollowRedirects(true);
+        String server = new Regex((downloadLink.getDownloadURL()), "(http://img[0-9]{1,2}\\.imagehaven\\.net)").getMatch(0);
+        dllink = server + dllink;
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         dl.startDownload();
     }
