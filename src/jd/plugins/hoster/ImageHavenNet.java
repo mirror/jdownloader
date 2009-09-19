@@ -28,8 +28,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagehaven.net" }, urls = { "http://[\\w\\.]*?[a-z]{1,4}[0-9]{1,2}\\.imagehaven\\.net/img\\.php\\?id=.+\\.[a-z]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagehaven.net" }, urls = { "http://[\\w\\.]*?[a-z]{1,4}[0-9]{1,2}\\.imagehaven\\.net/img\\.php\\?id=.+\\.[a-z]+" }, flags = { 0 })
 public class ImageHavenNet extends PluginForHost {
+
+    private String checklink;
 
     public ImageHavenNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -41,19 +43,23 @@ public class ImageHavenNet extends PluginForHost {
 
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
+        checklink = null;
         br.getPage(downloadLink.getDownloadURL());
         String server = new Regex((downloadLink.getDownloadURL()), "(http://[a-z]{1,4}[0-9]{1,2}\\.imagehaven\\.net)").getMatch(0);
         if (br.containsHTML("This ad is shown once a day.<")) {
             br.getPage(downloadLink.getDownloadURL());
         }
-        String checklink = br.getRegex("<img src='\\.(.*?)'").getMatch(0);
+        checklink = br.getRegex("<img src='\\.(.*?)'").getMatch(0);
         if (checklink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         checklink = server + checklink;
         URLConnectionAdapter con = br.openGetConnection(checklink);
-        if ((con.getContentType().contains("text/html"))) {
-            br.getPage(checklink);
+        if ((con.getContentType().contains("html"))) {
+            br.followConnection();
             if (br.containsHTML("404 - Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        } else {
+            downloadLink.setDownloadSize(con.getLongContentLength());
+            con.disconnect();
         }
         String filename = new Regex(checklink, "imagehaven\\.net/images/.*?/.*?/.*?_(.*?\\.[a-zA-Z]+)").getMatch(0);
         if (filename != null) {
@@ -64,12 +70,7 @@ public class ImageHavenNet extends PluginForHost {
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        br.getPage(downloadLink.getDownloadURL());
-        String dllink = br.getRegex("<img src='\\.(.*?)'").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        String server = new Regex((downloadLink.getDownloadURL()), "(http://img[0-9]{1,2}\\.imagehaven\\.net)").getMatch(0);
-        dllink = server + dllink;
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, checklink, true, 0);
         dl.startDownload();
     }
 

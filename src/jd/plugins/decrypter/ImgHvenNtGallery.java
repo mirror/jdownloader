@@ -33,7 +33,6 @@ public class ImgHvenNtGallery extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -44,7 +43,7 @@ public class ImgHvenNtGallery extends PluginForDecrypt {
         if (br.containsHTML("410 - Gone") || br.containsHTML("There are no images in this gallery")) {
             logger.warning("Wrong link");
             logger.warning(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-            return new ArrayList<DownloadLink>();
+            return decryptedLinks;
         }
 
         String[] links = br.getRegex("<a href=\"(http://[a-z]{1,4}[0-9]{1,2}\\.imagehaven\\.net/img\\.php\\?.*?)\"").getColumn(0);
@@ -57,7 +56,5 @@ public class ImgHvenNtGallery extends PluginForDecrypt {
         }
         return decryptedLinks;
     }
-
-    // @Override
 
 }

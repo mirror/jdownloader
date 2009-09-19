@@ -32,7 +32,7 @@ public class FileShareRo extends PluginForHost {
 
     public FileShareRo(PluginWrapper wrapper) {
         super(wrapper);
-        // TODO Auto-generated constructor stub
+
     }
 
     @Override
@@ -53,7 +53,6 @@ public class FileShareRo extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    @Override
     public void handleFree(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
@@ -63,19 +62,14 @@ public class FileShareRo extends PluginForHost {
         jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1).startDownload();
     }
 
-    @Override
     public void reset() {
-        // TODO Auto-generated method stub
 
     }
 
-    @Override
     public void resetDownloadlink(DownloadLink link) {
-        // TODO Auto-generated method stub
 
     }
 
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }

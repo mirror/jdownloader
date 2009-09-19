@@ -39,12 +39,10 @@ public class SendFileTo extends PluginForHost {
         super(wrapper);
     }
 
-    @Override
     public String getAGBLink() {
         return "http://www.sendfile.to/tos.html";
     }
 
-    // @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCookie("http://www.sendfile.to", "lang", "english");
@@ -60,8 +58,6 @@ public class SendFileTo extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
@@ -78,7 +74,7 @@ public class SendFileTo extends PluginForHost {
             if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
             String tmpsec = br.getRegex("\\s+(\\d+)\\s+seconds?").getMatch(0);
             if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
-            int waittime = ((3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
+            long waittime = ((3600 * hours) + (60 * minutes) + seconds + 1) * 1000l;
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
         }
         // Form um auf "Datei herunterladen" zu klicken
@@ -121,20 +117,17 @@ public class SendFileTo extends PluginForHost {
         if (br.containsHTML("Wrong captcha")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         String dllink = br.getRegex("dotted #bbb;padding:[0-9]px;\">.*?<a href=\"(.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -20);
+        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         dl.startDownload();
     }
 
-    @Override
     public void reset() {
     }
 
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 

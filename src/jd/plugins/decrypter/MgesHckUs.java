@@ -23,8 +23,6 @@ import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
@@ -35,7 +33,6 @@ public class MgesHckUs extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -47,18 +44,17 @@ public class MgesHckUs extends PluginForDecrypt {
         if (offlinecheck != null) {
             logger.warning("Wrong link");
             logger.warning(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-            return new ArrayList<DownloadLink>();
+            return decryptedLinks;
         }
 
         String links = br.getRegex("/rss\\+xml\" href=\"(.*?)\\.comments\\.xml\"").getMatch(0);
-        if (links == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (links == null) return null;
+        /* directhttp so the link will get downloaded by directhttp plugin */
         links = "directhttp://" + links;
         DownloadLink dl = createDownloadlink(links);
         dl.setName("pic");
         decryptedLinks.add(dl);
         return decryptedLinks;
     }
-
-    // @Override
 
 }
