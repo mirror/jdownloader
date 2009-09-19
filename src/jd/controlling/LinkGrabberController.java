@@ -81,6 +81,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
     private LinkGrabberFilePackage FP_OFFLINE;
     private LinkGrabberFilePackage FP_FILTERED;
     private LinkGrabberDistributeEvent distributer = null;
+    private LinkGrabberPackagingEvent customizedpackager = null;
 
     private Logger logger;
 
@@ -95,6 +96,10 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
 
     public void setDistributer(LinkGrabberDistributeEvent dist) {
         this.distributer = dist;
+    }
+
+    public void setCustomizedPackager(LinkGrabberPackagingEvent pack) {
+        customizedpackager = pack;
     }
 
     public void addLinks(ArrayList<DownloadLink> links, boolean hidegrabber, boolean autostart) {
@@ -401,6 +406,10 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
     }
 
     public void attachToPackagesFirstStage(DownloadLink link) {
+        if (customizedpackager != null) {
+            customizedpackager.attachToPackagesFirstStage(link);
+            return;
+        }
         synchronized (LinkGrabberController.ControllerLock) {
             String packageName;
             LinkGrabberFilePackage fp = null;
@@ -433,6 +442,10 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
     }
 
     public void attachToPackagesSecondStage(DownloadLink link) {
+        if (customizedpackager != null) {
+            customizedpackager.attachToPackagesSecondStage(link);
+            return;
+        }
         synchronized (LinkGrabberController.ControllerLock) {
             String packageName;
             boolean autoPackage = false;
