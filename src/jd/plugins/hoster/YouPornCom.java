@@ -42,7 +42,7 @@ public class YouPornCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.openGetConnection(parameter.getDownloadURL());
-        parameter.setName(Plugin.getFileNameFormHeader(br.getHttpConnection()));
+        parameter.setName(Plugin.getFileNameFromHeader(br.getHttpConnection()));
         parameter.setDownloadSize(br.getHttpConnection().getLongContentLength());
         br.getHttpConnection().disconnect();
         return AvailableStatus.TRUE;

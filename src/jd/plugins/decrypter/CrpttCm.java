@@ -73,7 +73,7 @@ public class CrpttCm extends PluginForDecrypt {
             con = br.openGetConnection(parameter);
         }
 
-        String name = Plugin.getFileNameFormHeader(con);
+        String name = Plugin.getFileNameFromHeader(con);
 
         if (name.equals("redir.ccf") || !name.contains(".ccf")) {
             logger.severe("Container not found");

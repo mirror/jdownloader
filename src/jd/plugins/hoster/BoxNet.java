@@ -80,7 +80,7 @@ public class BoxNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
 
-        parameter.setFinalFileName(Plugin.getFileNameFormHeader(urlConnection));
+        parameter.setFinalFileName(Plugin.getFileNameFromHeader(urlConnection));
         parameter.setDownloadSize(urlConnection.getLongContentLength());
         urlConnection.disconnect();
         return AvailableStatus.TRUE;

@@ -137,7 +137,7 @@ public class DirectHTTP extends PluginForHost {
                 urlConnection.disconnect();
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            if (downloadLink.getFinalFileName() == null) downloadLink.setFinalFileName(Plugin.getFileNameFormHeader(urlConnection));
+            if (downloadLink.getFinalFileName() == null) downloadLink.setFinalFileName(Plugin.getFileNameFromHeader(urlConnection));
             downloadLink.setDownloadSize(urlConnection.getLongContentLength());
             this.contentType = urlConnection.getContentType();
             urlConnection.disconnect();

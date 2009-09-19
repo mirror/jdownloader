@@ -60,7 +60,7 @@ public class AdriveCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         }
-        downloadLink.setFinalFileName(AdriveCom.getFileNameFormHeader(con));
+        downloadLink.setFinalFileName(AdriveCom.getFileNameFromHeader(con));
         downloadLink.setDownloadSize(con.getLongContentLength());
         con.disconnect();
         return AvailableStatus.TRUE;

@@ -86,7 +86,7 @@ public class DepositFiles extends PluginForHost {
         String dllink = br.getRegex("<div id=\"download_url\" style=\"display:none;\">.*?<form action=\"(.*?)\" method=\"get\" onSubmit=\"download_start").getMatch(0);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         URLConnectionAdapter con = dl.getConnection();
-        if (Plugin.getFileNameFormHeader(con) == null || Plugin.getFileNameFormHeader(con).indexOf("?") >= 0) {
+        if (Plugin.getFileNameFromHeader(con) == null || Plugin.getFileNameFromHeader(con).indexOf("?") >= 0) {
             con.disconnect();
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }
@@ -187,7 +187,7 @@ public class DepositFiles extends PluginForHost {
         br.setDebug(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, 0);
         URLConnectionAdapter con = dl.getConnection();
-        if (Plugin.getFileNameFormHeader(con) == null || Plugin.getFileNameFormHeader(con).indexOf("?") >= 0) {
+        if (Plugin.getFileNameFromHeader(con) == null || Plugin.getFileNameFromHeader(con).indexOf("?") >= 0) {
             con.disconnect();
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }

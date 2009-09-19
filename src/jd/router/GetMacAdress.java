@@ -22,7 +22,6 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 
 import jd.controlling.JDLogger;
-import jd.nrouter.Router;
 import jd.nrouter.RouterUtils;
 import jd.nutils.OSDetector;
 import jd.parser.Regex;

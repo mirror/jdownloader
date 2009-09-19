@@ -145,7 +145,7 @@ public class PrtctrT extends PluginForDecrypt {
             if (containerlink != null) {
                 try {
                     URLConnectionAdapter con = br.cloneBrowser().openGetConnection(containerlink);
-                    File container = JDUtilities.getResourceFile("container/" + getFileNameFormHeader(con));
+                    File container = JDUtilities.getResourceFile("container/" + getFileNameFromHeader(con));
                     Browser.download(container, con);
                     ArrayList<DownloadLink> link = JDUtilities.getController().getContainerLinks(container);
                     for (DownloadLink downloadLink : link) {

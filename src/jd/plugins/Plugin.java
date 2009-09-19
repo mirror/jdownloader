@@ -208,15 +208,13 @@ public abstract class Plugin implements ActionListener {
      * 
      * @param urlConnection
      * @return Filename aus dem header (content disposition) extrahiert
-     * @throws Exception
      */
-    public static String getFileNameFormHeader(URLConnectionAdapter urlConnection) {
-        if (urlConnection.getHeaderField("content-disposition") == null || urlConnection.getHeaderField("content-disposition").indexOf("filename") < 0) { return Plugin.getFileNameFormURL(urlConnection.getURL()); }
+    public static String getFileNameFromHeader(URLConnectionAdapter urlConnection) {
+        if (urlConnection.getHeaderField("content-disposition") == null || urlConnection.getHeaderField("content-disposition").indexOf("filename") < 0) { return Plugin.getFileNameFromURL(urlConnection.getURL()); }
         return getFileNameFromDispositionHeader(urlConnection.getHeaderField("content-disposition"));
     }
 
     public static String getFileNameFromDispositionHeader(String header) {
-        // http://greenbytes.de/tech/tc2231/
         if (header == null) return null;
         String orgheader = header;
         String contentdisposition = header;
@@ -306,7 +304,7 @@ public abstract class Plugin implements ActionListener {
         return filename;
     }
 
-    public static String getFileNameFormURL(URL url) {
+    public static String getFileNameFromURL(URL url) {
         return extractFileNameFromURL(url.toExternalForm());
     }
 

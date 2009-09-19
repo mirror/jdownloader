@@ -252,7 +252,7 @@ public class JDExternInterface extends PluginOptional {
                             } else {
                                 /* directlinks here */
                                 PluginForHost plg = JDUtilities.getNewPluginForHostInstance("DirectHTTP");
-                                String name = Plugin.getFileNameFormURL(new URL(url));
+                                String name = Plugin.getFileNameFromURL(new URL(url));
                                 DownloadLink direct = new DownloadLink(plg, name, "DirectHTTP", url, true);
                                 direct.setBrowserUrl(referer);
                                 if (i < desc.length) direct.setSourcePluginComment(desc[i]);

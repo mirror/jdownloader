@@ -258,25 +258,25 @@ JOptionPane.showConfirmDialog(upd.frame, "CLEAN NOW MANUALLY");
         }
     }
 
-    private void clone2(String branch, String path) throws IOException {
-
-        LinkedHashMap<String, String> map = createHashList(this.workingDir);
-        Browser br = new Browser();
-        br.forceDebug(true);
-
-        map.put("pass", getCFG("updateHashPW2"));
-
-        br.postPage(path + "?pass=" + getCFG("updateHashPW2") + "&branch=" + branch, map);
-        System.out.println(br + "");
-        // map = map;
-        if (!br.containsHTML("<b>fail</b>") && !br.containsHTML("<b>Warning</b>") && !br.containsHTML("<b>Error</b>")) {
-            System.out.println("CLONE OK " + path);
-            return;
-        }
-
-        JOptionPane.showConfirmDialog(frame, "MD5 ERROR!!!! See log" + path);
-
-    }
+//    private void clone2(String branch, String path) throws IOException {
+//
+//        LinkedHashMap<String, String> map = createHashList(this.workingDir);
+//        Browser br = new Browser();
+//        br.forceDebug(true);
+//
+//        map.put("pass", getCFG("updateHashPW2"));
+//
+//        br.postPage(path + "?pass=" + getCFG("updateHashPW2") + "&branch=" + branch, map);
+//        System.out.println(br + "");
+//        // map = map;
+//        if (!br.containsHTML("<b>fail</b>") && !br.containsHTML("<b>Warning</b>") && !br.containsHTML("<b>Error</b>")) {
+//            System.out.println("CLONE OK " + path);
+//            return;
+//        }
+//
+//        JOptionPane.showConfirmDialog(frame, "MD5 ERROR!!!! See log" + path);
+//
+//    }
 
     // private void lockUpdate() throws IOException {
     // Browser br = new Browser();

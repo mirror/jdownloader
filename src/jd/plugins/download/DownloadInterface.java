@@ -1229,7 +1229,7 @@ abstract public class DownloadInterface {
         request.getHttpConnection().disconnect();
 
         if (this.downloadLink.getFinalFileName() == null) {
-            String name = Plugin.getFileNameFormHeader(request.getHttpConnection());
+            String name = Plugin.getFileNameFromHeader(request.getHttpConnection());
             this.downloadLink.setFinalFileName(name);
             if (this.fixWrongContentDispositionHeader) this.downloadLink.setFinalFileName(Encoding.htmlDecode(name));
         }
@@ -1880,7 +1880,7 @@ abstract public class DownloadInterface {
         // Erst hier Dateinamen holen, somit umgeht man das Problem das bei
         // mehrfachAufruf von connect entstehen kann
         if (this.downloadLink.getFinalFileName() == null && connection != null && connection.isContentDisposition()) {
-            String name = Plugin.getFileNameFormHeader(connection);
+            String name = Plugin.getFileNameFromHeader(connection);
             this.downloadLink.setFinalFileName(name);
             if (this.fixWrongContentDispositionHeader) this.downloadLink.setFinalFileName(Encoding.htmlDecode(name));
         }

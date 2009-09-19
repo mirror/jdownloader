@@ -30,7 +30,6 @@ import jd.controlling.JDLogger;
 import jd.controlling.reconnect.HTTPLiveHeader;
 import jd.controlling.reconnect.ReconnectMethod;
 import jd.http.Browser;
-import jd.nrouter.Router;
 import jd.nrouter.RouterUtils;
 import jd.nutils.Threader;
 import jd.nutils.jobber.JDRunnable;

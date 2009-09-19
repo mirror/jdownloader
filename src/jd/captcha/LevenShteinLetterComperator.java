@@ -2,8 +2,7 @@ package jd.captcha;
 
 import java.util.Arrays;
 import java.util.List;
-import jd.captcha.JAntiCaptcha;
-import jd.captcha.LetterComperator;
+
 import jd.captcha.pixelgrid.Letter;
 
 public class LevenShteinLetterComperator {

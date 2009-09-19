@@ -48,7 +48,7 @@ public class DlFreeFr extends PluginForHost {
         br.setFollowRedirects(true);
         URLConnectionAdapter con = br.openGetConnection(downloadLink.getDownloadURL());
         if (con.isContentDisposition()) {
-            downloadLink.setFinalFileName(Plugin.getFileNameFormHeader(con));
+            downloadLink.setFinalFileName(Plugin.getFileNameFromHeader(con));
             downloadLink.setDownloadSize(con.getLongContentLength());
             con.disconnect();
             return AvailableStatus.TRUE;

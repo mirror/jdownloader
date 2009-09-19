@@ -18,7 +18,6 @@ package jd.captcha.pixelgrid;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
-import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -52,9 +51,7 @@ import com.sun.image.codec.jpeg.JPEGImageEncoder;
  */
 
 public class PixelGrid extends Property {
-    /**
-     * 
-     */
+
     private static final long serialVersionUID = 1L;
     public void drawLine(int x0,  int x1,int y0, int y1, int color)
     {
@@ -1175,7 +1172,7 @@ public class PixelGrid extends Property {
         return "(" + getWidth() + "/" + getHeight() + ")";
     }
 
-    public Image getFullImage() {
+    public BufferedImage getFullImage() {
         if (getWidth() <= 0 || getHeight() <= 0) {
             if (Utilities.isLoggerActive()) {
                 logger.severe("Dimensionen falsch: " + getDim());
@@ -1229,7 +1226,7 @@ public class PixelGrid extends Property {
      * 
      * @return Image
      */
-    public Image getImage() {
+    public BufferedImage getImage() {
         if (getWidth() <= 0 || getHeight() <= 0) {
             if (Utilities.isLoggerActive()) {
                 logger.severe("Dimensionen falsch: " + getDim());
@@ -1256,7 +1253,7 @@ public class PixelGrid extends Property {
      *            Vergrößerung
      * @return Neues Bild
      */
-    public Image getImage(int faktor) {
+    public BufferedImage getImage(int faktor) {
         if (getWidth() * faktor <= 0 || getHeight() * faktor <= 0) {
             // if(Utilities.isLoggerActive())logger.severe("Bild zu Klein.
             // Fehler!!. Buhcstbaen nicht richtig erkannt?");

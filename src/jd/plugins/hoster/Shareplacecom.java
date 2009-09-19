@@ -89,7 +89,7 @@ public class Shareplacecom extends PluginForHost {
         }
         if (!found) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         /* Workaround für fehlerhaften Filename Header */
-        String name = Plugin.getFileNameFormHeader(dl.getConnection());
+        String name = Plugin.getFileNameFromHeader(dl.getConnection());
         if (name != null) downloadLink.setFinalFileName(Encoding.urlDecode(name, false));
         dl.startDownload();
     }

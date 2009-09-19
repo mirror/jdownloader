@@ -211,7 +211,7 @@ public class FilerNet extends PluginForHost {
                     downloadLink.setName(filename);
                 } else {
                     br.submitForm(forms[1]);
-                    downloadLink.setName(Plugin.getFileNameFormURL(new URL(br.getRedirectLocation())));
+                    downloadLink.setName(Plugin.getFileNameFromURL(new URL(br.getRedirectLocation())));
                 }
                 return AvailableStatus.TRUE;
             } catch (Exception e) {
