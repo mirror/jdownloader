@@ -19,6 +19,7 @@ package jd.nutils.zip;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
@@ -65,20 +66,20 @@ public class Zip {
 
     }
 
-    private void addFileToZip(String path, String srcFile, ZipOutputStream zip) throws Exception {
-   
-            if (srcFile.endsWith("Thumbs.db")) { return; }
+    private ArrayList<File> addFileToZip(String path, String srcFile, ZipOutputStream zip) throws Exception {
+    	ArrayList<File> ret = new ArrayList<File>();
+            if (srcFile.endsWith("Thumbs.db")) { return null; }
             if (excludeFilter != null) {
                 if (Regex.matches(srcFile, excludeFilter)) {
 
                     System.out.println("Filtered: " + srcFile);
-                    return;
+                    return ret;
                 }
             }
             File folder = new File(srcFile);
-            if (excludeFiles != null && excludeFiles.contains(folder)) { return; }
+            if (excludeFiles != null && excludeFiles.contains(folder)) { return ret; }
             if (folder.isDirectory()) {
-                addFolderToZip(path, srcFile, zip);
+            	ret.addAll(addFolderToZip(path, srcFile, zip));
                 if (this.deleteAfterPack) new File(srcFile).delete();
             } else {
                 byte[] buf = new byte[1024];
@@ -95,14 +96,16 @@ public class Zip {
                 }
                 in.close();
                 if (this.deleteAfterPack) new File(srcFile).delete();
+                ret.add(new File(srcFile));
             }
+            return ret;
       
     }
 
-    private void addFolderToZip(String path, String srcFolder, ZipOutputStream zip) throws Exception {
-
+    private ArrayList<File> addFolderToZip(String path, String srcFolder, ZipOutputStream zip) throws Exception {
+    	ArrayList<File> ret = new ArrayList<File>();
         File folder = new File(srcFolder);
-        if (excludeFiles.contains(folder)) { return; }
+        if (excludeFiles.contains(folder)) { return ret; }
         for (String fileName : folder.list()) {
             if (excludeFilter != null) {
                 if (Regex.matches(fileName, excludeFilter)) {
@@ -111,11 +114,12 @@ public class Zip {
                 }
             }
             if (path.equals("")) {
-                addFileToZip(folder.getName(), srcFolder + "/" + fileName, zip);
+                ret.addAll(addFileToZip(folder.getName(), srcFolder + "/" + fileName, zip));
             } else {
-                addFileToZip(path + "/" + folder.getName(), srcFolder + "/" + fileName, zip);
+            	ret.addAll(addFileToZip(path + "/" + folder.getName(), srcFolder + "/" + fileName, zip));
             }
         }
+        return ret;
 
 
     }
@@ -130,7 +134,8 @@ public class Zip {
      * 
      * @throws Exception
      */
-    public void zip() throws Exception {
+    public ArrayList<File>  zip() throws Exception {
+    	ArrayList<File> ret = new ArrayList<File>();
         ZipOutputStream zip = null;
         FileOutputStream fileWriter = null;
 
@@ -138,9 +143,9 @@ public class Zip {
         zip = new ZipOutputStream(fileWriter);
         for (File element : srcFiles) {
             if (element.isDirectory()) {
-                addFolderToZip("", element.getAbsolutePath(), zip);
+            	ret.addAll(addFolderToZip("", element.getAbsolutePath(), zip));
             } else if (element.isFile()) {
-                addFileToZip("", element.getAbsolutePath(), zip);
+                ret.addAll(addFileToZip("", element.getAbsolutePath(), zip));
             }
         }
 
@@ -165,6 +170,7 @@ public class Zip {
             destinationFile.delete();
             newTarget.renameTo(destinationFile);
         }
+        return ret;
 
     }
 
