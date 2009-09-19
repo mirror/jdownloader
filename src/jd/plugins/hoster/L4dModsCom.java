@@ -25,9 +25,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.Plugin;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {"l4dmods.com"}, urls = {"http://[\\w\\.]*?l4dmods\\.com/index\\.php\\?option=com_joomloads\\&(view=package|controller=package&task=download)\\&Itemid=[0-9]\\&packageId=[0-9]+"}, flags = {2})
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "l4dmods.com" }, urls = { "http://[\\w\\.]*?l4dmods\\.com/index\\.php\\?option=com_joomloads\\&(view=package|controller=package&task=download)\\&Itemid=[0-9]\\&packageId=[0-9]+" }, flags = { 2 })
 public class L4dModsCom extends PluginForHost {
 
     public L4dModsCom(PluginWrapper wrapper) {
@@ -61,8 +60,7 @@ public class L4dModsCom extends PluginForHost {
         dllink = "http://www.l4dmods.com" + dllink;
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        String fileName = Plugin.getFileNameFormHeader(dl.getConnection());
-        if (fileName != null) downloadLink.setFinalFileName(fileName);
+        dl.setAllowFilenameFromURL(true);
         dl.startDownload();
     }
 

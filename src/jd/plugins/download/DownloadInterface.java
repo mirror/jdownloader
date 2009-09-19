@@ -1098,6 +1098,8 @@ abstract public class DownloadInterface {
 
     private boolean fixWrongContentDispositionHeader = false;
 
+    private boolean allowFilenameFromURL = false;
+
     protected boolean speedDebug = false;
 
     protected long totaleLinkBytesLoaded = 0;
@@ -1157,6 +1159,14 @@ abstract public class DownloadInterface {
 
     public boolean fixFilename() {
         return this.fixWrongContentDispositionHeader;
+    }
+
+    public boolean FilenameFromURLAllowed() {
+        return this.allowFilenameFromURL;
+    }
+
+    public void setAllowFilenameFromURL(boolean b) {
+        this.allowFilenameFromURL = b;
     }
 
     private DownloadInterface(PluginForHost plugin, DownloadLink downloadLink) {
@@ -1228,7 +1238,7 @@ abstract public class DownloadInterface {
         // }
         request.getHttpConnection().disconnect();
 
-        if (this.downloadLink.getFinalFileName() == null) {
+        if (this.downloadLink.getFinalFileName() == null && ((request.getHttpConnection() != null && request.getHttpConnection().isContentDisposition()) || this.allowFilenameFromURL)) {
             String name = Plugin.getFileNameFromHeader(request.getHttpConnection());
             this.downloadLink.setFinalFileName(name);
             if (this.fixWrongContentDispositionHeader) this.downloadLink.setFinalFileName(Encoding.htmlDecode(name));
@@ -1879,7 +1889,7 @@ abstract public class DownloadInterface {
         }
         // Erst hier Dateinamen holen, somit umgeht man das Problem das bei
         // mehrfachAufruf von connect entstehen kann
-        if (this.downloadLink.getFinalFileName() == null && connection != null && connection.isContentDisposition()) {
+        if (this.downloadLink.getFinalFileName() == null && ((connection != null && connection.isContentDisposition()) || this.allowFilenameFromURL)) {
             String name = Plugin.getFileNameFromHeader(connection);
             this.downloadLink.setFinalFileName(name);
             if (this.fixWrongContentDispositionHeader) this.downloadLink.setFinalFileName(Encoding.htmlDecode(name));
