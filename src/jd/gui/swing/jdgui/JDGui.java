@@ -75,6 +75,7 @@ import jd.gui.swing.jdgui.views.linkgrabberview.LinkGrabberPanel;
 import jd.gui.swing.jdgui.views.logview.LogView;
 import jd.gui.swing.jdgui.views.sidebars.configuration.AddonConfig;
 import jd.gui.swing.jdgui.views.sidebars.configuration.ConfigSidebar;
+import jd.nutils.Formatter;
 import jd.nutils.JDFlags;
 import jd.nutils.JDImage;
 import jd.plugins.Account;
@@ -103,6 +104,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
     private MainToolBar toolBar;
     private JPanel waitingPane;
     private boolean exitRequested = false;
+    private boolean iconified = false;
 
     private JDGui() {
         super("");
@@ -117,7 +119,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         initComponents();
 
         setWindowIcon();
-        setWindowTitle();
+        setWindowTitle(JDUtilities.getJDTitle());
         layoutComponents();
 
         mainFrame.pack();
@@ -219,8 +221,14 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
     /**
      * Sets the windowtitle depüending on the used branch
      */
-    private void setWindowTitle() {
-        mainFrame.setTitle(JDUtilities.getJDTitle());
+    public void setWindowTitle(final String msg) {
+        new GuiRunnable<Object>() {
+            @Override
+            public JDGui runSave() {
+                mainFrame.setTitle(msg);
+                return null;
+            }
+        }.start();
     }
 
     /**
@@ -382,12 +390,40 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
 
             break;
         case ControlEvent.CONTROL_DOWNLOAD_START:
+            new Thread() {
+                public void run() {
+                    boolean needupdate = false;
+                    while (true) {
+                        if (DownloadWatchDog.getInstance().getDownloadStatus() != DownloadWatchDog.STATE.RUNNING) break;
+                        if (iconified) {
+                            needupdate = true;
+                            setWindowTitle("JD " + "AC: " + DownloadWatchDog.getInstance().getActiveDownloads() + " DL: " + Formatter.formatReadable(DownloadWatchDog.getInstance().getTotalSpeed()));
+                        } else {
+                            if (needupdate) setWindowTitle(JDUtilities.getJDTitle());
+                            needupdate = false;
+                        }
+                        try {
+                            Thread.sleep(1000);
+                        } catch (Exception e) {
+                        }
+                    }
+                    setWindowTitle(JDUtilities.getJDTitle());
+                }
+            }.start();
             Balloon.showIfHidden(JDL.L("ballon.download.title", "Download"), JDTheme.II("gui.images.next", 32, 32), JDL.L("ballon.download.finished.started", "Download started"));
             break;
         case ControlEvent.CONTROL_DOWNLOAD_STOP:
             Balloon.showIfHidden(JDL.L("ballon.download.title", "Download"), JDTheme.II("gui.images.next", 32, 32), JDL.L("ballon.download.finished.stopped", "Download stopped"));
             break;
         }
+    }
+
+    public void windowIconified(WindowEvent e) {
+        iconified = true;
+    }
+
+    public void windowDeiconified(WindowEvent e) {
+        iconified = false;
     }
 
     /**

@@ -429,7 +429,11 @@ public class JDController implements ControlListener {
                 }
                 if (controlListener.size() > 0) {
                     for (ControlListener cl : controlListener) {
-                        cl.controlEvent(controlEvent);
+                        try {
+                            cl.controlEvent(controlEvent);
+                        } catch (Exception e) {
+                            JDLogger.exception(e);
+                        }
                     }
                 }
             }
