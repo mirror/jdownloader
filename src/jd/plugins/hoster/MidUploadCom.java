@@ -99,7 +99,7 @@ public class MidUploadCom extends PluginForHost {
         String dllink = null;
         dllink = br.getRegex(Pattern.compile("<br>.*<a href=\"(.*?)\"><img src=\"http://www.midupload.com/images/download-button.gif\" border=\"0\">", Pattern.DOTALL)).getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0).startDownload();
+        jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1).startDownload();
     }
 
     @Override
@@ -130,7 +130,7 @@ public class MidUploadCom extends PluginForHost {
 
     // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return 4;
     }
 
 }
