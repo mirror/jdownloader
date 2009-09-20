@@ -56,34 +56,38 @@ public class StrPrtctNet extends PluginForDecrypt {
 
         /* File package handling */
         if (br.containsHTML("Sicherheitscode") || br.containsHTML("Passwort")) {
-            Form captchaForm = br.getForm(0);
-            if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-            String passCode = null;
-            if (br.containsHTML("Sicherheitscode")) {
-                String captchalink = br.getRegex("Sicherheitscode.*?img src=\"(.*?)\"").getMatch(0);
-                String code = getCaptchaCode(captchalink, param);
-                captchaForm.put("txtCaptcha", code);
-            }
-            if (br.containsHTML("Passwort")) {
-                if (param.getStringProperty("pass", null) == null) {
-                    passCode = Plugin.getUserInput("Password?", param);
-                } else {
-                    /* gespeicherten PassCode holen */
-                    passCode = param.getStringProperty("pass", null);
+            for (int i = 0; i <= 5; i++) {
+                Form captchaForm = br.getForm(0);
+                if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                String passCode = null;
+                if (br.containsHTML("Sicherheitscode")) {
+                    String captchalink = br.getRegex("Sicherheitscode.*?img src=\"(.*?)\"").getMatch(0);
+                    String code = getCaptchaCode(captchalink, param);
+                    captchaForm.put("txtCaptcha", code);
                 }
-                captchaForm.put("txtPassword", passCode);
+                if (br.containsHTML("Passwort")) {
+                    if (param.getStringProperty("pass", null) == null) {
+                        passCode = Plugin.getUserInput("Password?", param);
+                    } else {
+                        /* gespeicherten PassCode holen */
+                        passCode = param.getStringProperty("pass", null);
+                    }
+                    captchaForm.put("txtPassword", passCode);
+                }
+                br.submitForm(captchaForm);
+                if (br.containsHTML("Passwort ist falsch")) {
+                    logger.warning("Wrong password!");
+                    param.setProperty("pass", null);
+                    throw new DecrypterException(DecrypterException.PASSWORD);
+                }
+                if (passCode != null) {
+                    param.setProperty("pass", passCode);
+                }
+                if (br.containsHTML("Sicherheitscode ist falsch")) continue;
+                break;
             }
-            br.submitForm(captchaForm);
-            if (br.containsHTML("Passwort ist falsch")) {
-                logger.warning("Wrong password!");
-                param.setProperty("pass", null);
-                throw new DecrypterException(DecrypterException.PASSWORD);
-            }
-            if (passCode != null) {
-                param.setProperty("pass", passCode);
-            }
-            if (br.containsHTML("Sicherheitscode ist falsch")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
+        if (br.containsHTML("Sicherheitscode ist falsch")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         String cryptframe = br.getRegex("frameborder=.*?<frame src=\"(.*?)\" name").getMatch(0);
         if (cryptframe == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.getPage(cryptframe);

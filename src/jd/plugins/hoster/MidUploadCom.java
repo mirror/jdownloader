@@ -19,11 +19,11 @@ package jd.plugins.hoster;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -44,22 +44,32 @@ public class MidUploadCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
+        requestFileInformation(link);
         br.getPage(link.getDownloadURL());
-        Form form = br.getForm(0);
+        Form form = br.getFormBySubmitvalue("Kostenloser+Download");
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         form.remove("method_premium");
         br.submitForm(form);
         if (br.containsHTML("You have to wait")) {
             if (br.containsHTML("minute")) {
                 int minute = Integer.parseInt(br.getRegex("You have to wait (\\d+) minute, (\\d+) seconds till next download").getMatch(0));
                 int sec = Integer.parseInt(br.getRegex("You have to wait (\\d+) minute, (\\d+) seconds till next download").getMatch(1));
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (minute * 60 + sec) * 1001);
+                int wait = minute * 60 + sec;
+                if (wait * 1001l < 13120){
+                    sleep(wait * 1000l, link);
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1001);
             } else {
                 int sec = Integer.parseInt(br.getRegex("You have to wait (\\d+) minute, (\\d+) seconds till next download").getMatch(1));
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, sec * 1001);
+                int wait = sec * 10001;
+                sleep(wait * 1000l, link);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
             }
         }
-        form = br.getForm(0);
-        //waittime
+        form = br.getFormbyProperty("name", "F1");
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        // waittime
         int tt = Integer.parseInt(br.getRegex("countdown\">(\\d+)</span>").getMatch(0));
         sleep(tt * 1001l, link);
         String captcha = null;
@@ -67,26 +77,42 @@ public class MidUploadCom extends PluginForHost {
         if (captcha == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         String code = getCaptchaCode(captcha, link);
         form.put("code", code);
+        String passCode = null;
+        if (br.containsHTML("<br><b>Password:</b>")) {
+            if (link.getStringProperty("pass", null) == null) {
+                passCode = Plugin.getUserInput("Password?", link);
+            } else {
+                /* gespeicherten PassCode holen */
+                passCode = link.getStringProperty("pass", null);
+            }
+            form.put("password", passCode);
+        }
         br.submitForm(form);
-        if (br.containsHTML("Wrong captcha") || br.containsHTML("Expired session")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (br.containsHTML("Wrong captcha") || br.containsHTML("Expired session")|| br.containsHTML("Wrong password")){
+            logger.warning("Wrong captcha or wrong password");
+            link.setProperty("pass", null);
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
+        if (passCode != null) {
+            link.setProperty("pass", passCode);
+        }
         String dllink = null;
         dllink = br.getRegex(Pattern.compile("<br>.*<a href=\"(.*?)\"><img src=\"http://www.midupload.com/images/download-button.gif\" border=\"0\">", Pattern.DOTALL)).getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        jd.plugins.BrowserAdapter.openDownload(br,link, dllink, true, 1).startDownload();
+        jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0).startDownload();
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
+        br.setCookie("http://www.midupload.com", "lang", "english");
         br.getPage(parameter.getDownloadURL());
         if (br.containsHTML("No such user exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("Datei nicht gefunden")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("No such file with this filename")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<h2>Datei herunterladen (.*?)</h2>").getMatch(0);
-        String filesize = br.getRegex("Sie haben angefordert <font color=\"red\">.*</font> \\((.*?)\\)</font>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("\"fname\" value=\"(.*?)\"").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         parameter.setName(filename.trim());
-        parameter.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
         return AvailableStatus.TRUE;
     }
 
@@ -104,7 +130,7 @@ public class MidUploadCom extends PluginForHost {
 
     // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return 20;
     }
 
 }

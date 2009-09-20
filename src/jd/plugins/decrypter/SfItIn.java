@@ -17,10 +17,15 @@
 package jd.plugins.decrypter;
 
 //import java.io.File;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -29,6 +34,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "safe-it.in" }, urls = { "http://[\\w\\.]*?(safe-it\\.in|evil-warez\\.com)(/\\?s|\\?s)=7&get=[0-9|a-z]+" }, flags = { 0 })
@@ -54,6 +60,13 @@ public class SfItIn extends PluginForDecrypt {
             return new ArrayList<DownloadLink>();
         }
 
+        /* Password handling */
+        String pass = br.getRegex("Passwort:.*?style=\"color:#FF0000\">(.*?)</span></td>").getMatch(0);
+        ArrayList<String> passwords = new ArrayList<String>();
+        if (pass != null && !pass.equals("kein Passwort") && pass.length() != 0) {
+            passwords.add(pass);
+        }
+
         /* File package handling */
         //
         if (br.containsHTML("codes/rand.php")) {
@@ -66,36 +79,18 @@ public class SfItIn extends PluginForDecrypt {
             if (br.containsHTML("codes/rand.php")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
 
+        // Container handling
+        if (br.containsHTML("href=\"container") && br.containsHTML("\\.dlc")) {
+            decryptedLinks = loadcontainer(br, "dlc");
+            if (decryptedLinks != null && decryptedLinks.size() > 0) return decryptedLinks;
+        }
+
         String fpName = br.getRegex("<h1 align=\"center\">(.*?)</h1>").getMatch(0).trim();
         fp.setName(fpName);
-        
+
         String[] links = br.getRegex("background=\"#dbf2f8\";'><a href=\"(.*?)\" target=").getColumn(0);
-        if (links == null || links.length == 0) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        }
-        //non-working if-else DLC Handling which is supposed to work if there are no links on the page but usually there are always links on the page
-//        if (links == null || links.length == 0) {
-//            String c = "http://www.safe-it.in/" + br.getRegex("<div align=\"center\"><a href=\"(.*?)\"").getMatch(0);
-//            String test = Encoding.htmlDecode(c);
-//            File file = null;
-//            if (test.endsWith(".dlc")) {
-//                URLConnectionAdapter con = br.openGetConnection(c);
-//                if (con.getResponseCode() == 200) {
-//                    file = JDUtilities.getResourceFile("tmp/safe-it/" + test.replace("http://www.safe-it.in/", ""));
-//                    br.downloadConnection(file, con);
-//                } else{
-//                    con.disconnect();
-//                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-//                }
-//            }
-//            if (file != null && file.exists() && file.length() > 100) {
-//                decryptedLinks = JDUtilities.getController().getContainerLinks(file);
-//                if (decryptedLinks.size() > 0) return decryptedLinks;
-//            } else {
-//                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-//            }
-//        }
-            progress.setRange(links.length);
+        if (links == null || links.length == 0) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
+        progress.setRange(links.length);
         for (String link : links) {
             decryptedLinks.add(createDownloadlink(link));
             progress.increase(1);
@@ -103,7 +98,36 @@ public class SfItIn extends PluginForDecrypt {
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
-    
+
+    // by jiaz
+    private ArrayList<DownloadLink> loadcontainer(Browser br, String format) throws IOException, PluginException {
+        Browser brc = br.cloneBrowser();
+        String[] dlclinks = br.getRegex("ter\"><a href=\"(.*?)\"").getColumn(0);
+        if (dlclinks == null || dlclinks.length == 0) return null;
+        for (String link : dlclinks) {
+            link = "http://www.safe-it.in/" + link;
+            String test = Encoding.htmlDecode(link);
+            File file = null;
+            URLConnectionAdapter con = brc.openGetConnection(link);
+            if (con.getResponseCode() == 200) {
+                file = JDUtilities.getResourceFile("tmp/safeit/" + test.replaceAll("(http://www.safe-it.in/|/)", ""));
+                if (file == null) return null;
+                file.deleteOnExit();
+                brc.downloadConnection(file, con);
+            } else {
+                con.disconnect();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            }
+
+            if (file != null && file.exists() && file.length() > 100) {
+                ArrayList<DownloadLink> decryptedLinks = JDUtilities.getController().getContainerLinks(file);
+                if (decryptedLinks.size() > 0) return decryptedLinks;
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            }
+        }
+        return null;
+    }
 
     // @Override
 }

@@ -68,7 +68,7 @@ public class NarodRu extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        for (int i = 1; i <= 3; i++) {
+        for (int i = 1; i <= 10; i++) {
             br.getPage("http://narod.ru/disk/getcapchaxml/?rnd=1");
             String captchaKey = br.getRegex(Pattern.compile("<number.*>(.*?)</number>")).getMatch(0);
             String captchaUrl = "http://u.captcha.yandex.net/image?key=" + captchaKey;
