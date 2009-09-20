@@ -33,7 +33,6 @@ public class MidUploadCom extends PluginForHost {
 
     public MidUploadCom(PluginWrapper wrapper) {
         super(wrapper);
-        // TODO Auto-generated constructor stub
     }
 
     @Override
@@ -55,15 +54,13 @@ public class MidUploadCom extends PluginForHost {
                 int minute = Integer.parseInt(br.getRegex("You have to wait (\\d+) minute, (\\d+) seconds till next download").getMatch(0));
                 int sec = Integer.parseInt(br.getRegex("You have to wait (\\d+) minute, (\\d+) seconds till next download").getMatch(1));
                 int wait = minute * 60 + sec;
-                if (wait * 1001l < 13120){
+                if (wait * 1001l < 13120) {
                     sleep(wait * 1000l, link);
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1001);
             } else {
-                int sec = Integer.parseInt(br.getRegex("You have to wait (\\d+) minute, (\\d+) seconds till next download").getMatch(1));
-                int wait = sec * 10001;
-                sleep(wait * 1000l, link);
+                sleep(60 * 1000l, link);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
         }
@@ -72,8 +69,7 @@ public class MidUploadCom extends PluginForHost {
         // waittime
         int tt = Integer.parseInt(br.getRegex("countdown\">(\\d+)</span>").getMatch(0));
         sleep(tt * 1001l, link);
-        String captcha = null;
-        captcha = br.getRegex(Pattern.compile("Bitte Code eingeben:</b></td></tr>.*<tr><td align=right>.*<img src=\"(.*?)\">.*class=\"captcha_code\">", Pattern.DOTALL)).getMatch(0);
+        String captcha = br.getRegex(Pattern.compile("Bitte Code eingeben:</b></td></tr>.*<tr><td align=right>.*<img src=\"(.*?)\">.*class=\"captcha_code\">", Pattern.DOTALL)).getMatch(0);
         if (captcha == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         String code = getCaptchaCode(captcha, link);
         form.put("code", code);
@@ -88,8 +84,7 @@ public class MidUploadCom extends PluginForHost {
             form.put("password", passCode);
         }
         br.submitForm(form);
-        if (br.containsHTML("Wrong captcha") || br.containsHTML("Expired session")|| br.containsHTML("Wrong password")){
-            logger.warning("Wrong captcha or wrong password");
+        if (br.containsHTML("Wrong captcha") || br.containsHTML("Expired session") || br.containsHTML("Wrong password")) {
             link.setProperty("pass", null);
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
@@ -116,21 +111,14 @@ public class MidUploadCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    @Override
     public void reset() {
-        // TODO Auto-generated method stub
-
     }
 
-    @Override
     public void resetDownloadlink(DownloadLink link) {
-        // TODO Auto-generated method stub
-
     }
 
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 4;
+        return 1;
     }
 
 }

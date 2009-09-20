@@ -33,10 +33,8 @@ public class FilesHackCom extends PluginForHost {
 
     public FilesHackCom(PluginWrapper wrapper) {
         super(wrapper);
-        // TODO Auto-generated constructor stub
     }
 
-    @Override
     public String getAGBLink() {
         return "http://www.fileshack.com/extras/tos.x";
     }
@@ -58,7 +56,6 @@ public class FilesHackCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    @Override
     public void handleFree(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -74,37 +71,30 @@ public class FilesHackCom extends PluginForHost {
         if (PublicWesternUSA == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         PublicWesternUSA = "http://www.fileshack.com" + PublicWesternUSA;
         br.getPage(PublicWesternUSA);
-        System.out.print(br.toString());
         String frameserver = new Regex(br.getURL(), "(http://[a-z]+\\.[a-z0-9]+\\.fileshack\\.com)").getMatch(0);
         if (frameserver == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         String dlframe = br.getRegex("frameborder=\"[0-9]\" src=\"(.*?)\"").getMatch(0);
         if (dlframe == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         dlframe = frameserver + dlframe;
         br.getPage(dlframe);
-        System.out.print(br.toString());
         String nextframe = br.getRegex("\"><a href=\"(.*?)\"").getMatch(0);
         if (nextframe == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         nextframe = frameserver + nextframe;
         sleep(6000l, link);
         br.getPage(nextframe);
-        System.out.print(br.toString());
         String dllink = br.getRegex("downloadbutton\"><a href=\"(.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0).startDownload();
     }
 
     public void reset() {
-        // TODO Auto-generated method stub
 
     }
 
-    @Override
     public void resetDownloadlink(DownloadLink link) {
-        // TODO Auto-generated method stub
 
     }
 
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }

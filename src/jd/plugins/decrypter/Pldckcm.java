@@ -21,12 +21,13 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadjockey.com" }, urls = { "http://[\\w\\.]*?uploadjockey\\.com/download/[\\w]+/(.*)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadjockey.com" }, urls = { "http://[\\w\\.]*?uploadjockey\\.com/((download/[\\w]+/(.*))|redirect\\.php\\?url=.+)" }, flags = { 0 })
 public class Pldckcm extends PluginForDecrypt {
 
     public Pldckcm(PluginWrapper wrapper) {
@@ -37,16 +38,20 @@ public class Pldckcm extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-
-        br.getPage(parameter);
-        String links[] = br.getRegex("<a href=\"http://www\\.uploadjockey\\.com/redirect\\.php\\?url=(.*?)\"").getColumn(0);
-        progress.setRange(links.length);
-        for (String element : links) {
-            String link = Encoding.Base64Decode(element);
-            decryptedLinks.add(createDownloadlink(link));
-            progress.increase(1);
+        if (parameter.contains("redirect.php")) {
+            String link = new Regex(parameter, "redirect\\.php\\?url=(.+)").getMatch(0);
+            if (link == null) return null;
+            decryptedLinks.add(createDownloadlink(Encoding.Base64Decode(link)));
+        } else {
+            br.getPage(parameter);
+            String links[] = br.getRegex("<a href=\"http://www\\.uploadjockey\\.com/redirect\\.php\\?url=(.*?)\"").getColumn(0);
+            progress.setRange(links.length);
+            for (String element : links) {
+                String link = Encoding.Base64Decode(element);
+                decryptedLinks.add(createDownloadlink(link));
+                progress.increase(1);
+            }
         }
-
         return decryptedLinks;
     }
 
