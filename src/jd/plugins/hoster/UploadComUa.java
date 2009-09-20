@@ -54,6 +54,11 @@ public class UploadComUa extends PluginForHost {
         String filename = br.getRegex("\">Скачать (.*?)</a>").getMatch(0);
         String filesize = br.getRegex("file_size\">(.*?)</div>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String md5 = br.getRegex("\\(md5\\):</b>(.*?)<br>").getMatch(0);
+        if (md5 != null) {
+            md5 = md5.replace(" ", "");
+            link.setMD5Hash(md5.trim());
+        }
         link.setName(filename);
         link.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -77,7 +82,7 @@ public class UploadComUa extends PluginForHost {
         // holt sich den dllink und entfernt danach (dllink) bestimmte
         // Zeichen[+Zeilenumbrüche], die reingesetzt wurden um das Downloaden
         // per Downloadmanager zu erschweren
-        String dllink0 = br.getRegex("var pf_url = 'http://bs.upload.com.ua/banners/upload_popander.html.*?new Array\\((.*?)\\);").getMatch(0);
+        String dllink0 = br.getRegex("new Array\\((.*?)\\);").getMatch(0);
         if (dllink0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         String dllink = dllink0.replaceAll("(,|\"| |\r|\n)", "");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
