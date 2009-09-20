@@ -652,6 +652,7 @@ gui.tooltip.progressicon = Modul aktivdir
 gui.tooltip.statusbar.max_chunks = Hər Fayl Üçün Ən Çox Bağlantı
 gui.tooltip.statusbar.simultan_downloads = Ən çox eyni zamanda endirmələr
 gui.tooltip.statusbar.speedlimiter = Sürət həddi(kb/s) [0:sonsuz]
+gui.tooltips.quickhelp = Tez Kömək mövcuddur: %s (ctrl+shift+TIQQILDATK)
 gui.treetable.added = Tarix əlavə olundu
 gui.treetable.error.plugin = Əlavə xətası
 gui.treetable.finished = Bitmiş tarix
