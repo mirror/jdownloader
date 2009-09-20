@@ -84,7 +84,7 @@ public class FilerCx extends PluginForHost {
     }
 
     public int getMaxSimultanFreeDownloadNum() {
-        return 5;
+        return 20;
     }
 
 }

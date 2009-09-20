@@ -59,9 +59,9 @@ public class EdiskCz extends PluginForHost {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
         Form captchaForm = br.getForm(0);
-        String code="";
+        String code = "";
         for (int i = 0; i < 5; i++) {
-            if (!br.containsHTML("Opište text z obrázku"))break;
+            if (!br.containsHTML("Opište text z obrázku")) break;
             String captchaurl0 = br.getRegex("captchaImgWrapper.*?src=\"(.*?)\"").getMatch(0);
             if (captchaurl0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             String captchaurl = "http://www.edisk.cz" + captchaurl0;
@@ -72,30 +72,21 @@ public class EdiskCz extends PluginForHost {
         }
 
         if (br.containsHTML("Opište text z obrázku")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        // works till this line
-        
-        // what to do now ? I can't see/get the dllink anywhere and HttpFox
-        // tells me that there is a post request but that's probably wrong so
-        // till here,
-        // you have to make the plugin work ;)
-        //        System.out.print(br.toString());
         String[] countDownInfo = br.getRegex("countDown\\('([^']*)',\\s*'([^']*)'").getRow(0);
-        //you dont have to wait
-        //        sleep(25001l, downloadLink);
+        // you dont have to wait
+        // sleep(25001l, downloadLink);
         // make sure the form have cookies
         Form dlform = br.getForm(0);
         dlform.getInputFields().clear();
-        dlform.setAction("/x-download/"+countDownInfo[1]);
+        dlform.setAction("/x-download/" + countDownInfo[1]);
         dlform.setMethod(Form.MethodType.POST);
         dlform.put("captchaCode", code);
         dlform.put("type", countDownInfo[0]);
-//        System.out.println(dlform);
+        // System.out.println(dlform);
         br.submitForm(dlform);
-//        System.out.println(br.toString());
-
-//        System.out.print(br.toString());
-//        String dllink = br.getRegex("captchaImgWrapper.*?src=\"(.*?)\"").getMatch(0);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.toString().trim(), true, 20);
+        // String dllink =
+        // br.getRegex("captchaImgWrapper.*?src=\"(.*?)\"").getMatch(0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.toString().trim(), true, 0);
 
         dl.startDownload();
     }

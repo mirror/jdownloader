@@ -30,87 +30,85 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filedropper.com" }, urls = { "http://[\\w\\.]*?filedropper\\.com/[A-Za-z0-9]+(_\\d+)?" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filedropper.com" }, urls = { "http://[\\w\\.]*?filedropper\\.com/[A-Za-z0-9-_]+" }, flags = { 0 })
 public class FiledropperCom extends PluginForHost {
-      
+
     public FiledropperCom(PluginWrapper wrapper) {
         super(wrapper);
     }
-    
+
     // @Override
     public String getAGBLink() {
         return "http://www.filedropper.com/terms.php";
     }
-    
+
     // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
-        
         if (br.containsHTML("Share This Link:")) {
             String filename = br.getRegex("File Details:.*?Filename: (.*?) <br>").getMatch(0);
-            String filesize = br.getRegex("File Details:.*?Size: (.*? KB), Type:.*?<br>").getMatch(0);
-            
-            if (!(filename == null || filesize  == null)) {
+            String filesize = br.getRegex("File Details:.*?Size: (.*?), Type:.*?<br>").getMatch(0);
+            if (!(filename == null || filesize == null)) {
                 downloadLink.setName(filename);
                 downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
                 return AvailableStatus.TRUE;
-            } 
-            
+            }
+
         }
-        
-        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); 
+
+        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
-    
+
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         Form captchaForm = null;
         URLConnectionAdapter con = null;
         boolean valid = false;
-        
+
         for (int i = 0; i <= 5; i++) {
             captchaForm = br.getForm(0);
-            
+
             if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-            
+
             String captchaUrl = br.getRegex("src=\"(securimage/securimage_show\\.php\\?sid=[0-9a-z]{32})\"").getMatch(0);
             String code = getCaptchaCode(captchaUrl, downloadLink);
             captchaForm.put("code", code);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, captchaForm, false, 1);
             con = dl.getConnection();
-            
+
             if (dl.getConnection().isContentDisposition()) {
                 valid = true;
                 break;
             } else {
                 con.disconnect();
-            } 
+            }
         }
-        
+
         if (valid == false) throw new DecrypterException(DecrypterException.CAPTCHA);
-        
+
         if (con.getResponseCode() != 200 && con.getResponseCode() != 206) {
             con.disconnect();
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 1000l);     
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 1000l);
         }
-        
-        dl.startDownload();    
+
+        dl.startDownload();
     }
-    
+
     // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
-    
+
     // @Override
     public void reset() {
     }
-    
+
     // @Override
     public void resetPluginGlobals() {
     }
-    
+
     // @Override
     public void resetDownloadlink(DownloadLink link) {
     }
