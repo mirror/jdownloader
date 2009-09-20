@@ -21,6 +21,7 @@ import java.io.IOException;
 
 import jd.controlling.JDLogger;
 import jd.http.Browser;
+import jd.nutils.JDHash;
 
 /**
  * JAC Tester
@@ -47,17 +48,27 @@ public class JACLoad {
     }
 
     private void loadMegaUpload() {
-        final String dir = "/home/dwd/.jd_home/captchas/badongo.com/";
-
+        final String dir = "/home/dwd/.jd_home/captchas/nrdr/";
+        final Browser fbr = new Browser();
+        try {
+            fbr.getPage("http://narod.ru/disk/3192829000/Vol.55%20-%20Wilhelm%20Kempff%20I%20(Flac).rar.html");
+        } catch (IOException e1) {
+            // TODO Auto-generated catch block
+            e1.printStackTrace();
+        }
         for (int i = 0; i < 500; i++) {
         	final int b = i;
             new Thread(new Runnable() {
                 public void run() {
-                    Browser br = new Browser();
+                    Browser br = fbr.cloneBrowser();
                     try {
-                    	br.getPage("http://www.badongo.com/de/file/14240881"+ "?rs=displayCaptcha&rst=&rsrnd=" + System.currentTimeMillis() + "&rsargs[]=yellow");
-                        String cid = br.getRegex("cid=(\\d+)").getMatch(0);
-                        br.getDownload(new File(dir + b + ".jpg"), "http://www.badongo.com/ccaptcha.php?cid=" + cid);
+                    	br.getPage("http://narod.ru/disk/getcapchaxml/?rnd=423");
+                        String cid = br.getRegex("url=\"([^\"]+)\"").getMatch(0);
+                        System.out.println(cid);
+                        System.out.println(dir + b + ".gif");
+                        File file = new File(dir + b + ".gif");
+                        br.getDownload(file, cid);
+                        file.renameTo(new File(dir, JDHash.getMD5(file)+".gif"));
                     } catch (IOException e) {
                         JDLogger.exception(e);
                     }

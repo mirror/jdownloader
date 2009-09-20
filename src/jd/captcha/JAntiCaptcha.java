@@ -693,6 +693,14 @@ public class JAntiCaptcha {
 
             JLabel lbl = new GuiRunnable<JLabel>() {
                 public JLabel runSave() {
+                    if ((tmp.getGoodDetections() == 0 && tmp.getBadDetections() > 3) || ((double) tmp.getBadDetections() / (double) tmp.getGoodDetections() >= 3)) 
+                        {
+                        return new JLabel("<html><p><font color=\"#ff0000\" "
+        + "size=\"3\">"+tmp.getId() + ": " + tmp.getDecodedValue() + "(" + tmp.getGoodDetections() + "/" + tmp.getBadDetections() + ") Size: " + tmp.toPixelObject(0.85).getSize()+"</font> </p>"
+        + "</html>");
+                        }
+
+                        else
                     return new JLabel(tmp.getId() + ": " + tmp.getDecodedValue() + "(" + tmp.getGoodDetections() + "/" + tmp.getBadDetections() + ") Size: " + tmp.toPixelObject(0.85).getSize());
                 }
             }.getReturnValue();
@@ -771,7 +779,7 @@ public class JAntiCaptcha {
 
     }
 
-    private String getCodeFromFileName(String name) {
+    public String getCodeFromFileName(String name) {
         return new Regex(name, "captcha_(.*?)_code(.*?)\\.(.*?)").getMatch(1);
     }
 
@@ -781,7 +789,7 @@ public class JAntiCaptcha {
      * @param path
      * @return File Array
      */
-    private File[] getImages(String path) {
+    public File[] getImages(String path) {
         File dir = new File(path);
 
         if (dir == null || !dir.exists()) {
@@ -1487,7 +1495,7 @@ public class JAntiCaptcha {
         ListIterator<Letter> iter = letterDB.listIterator(letterDB.size());
         while (iter.hasPrevious()) {
             tmp = iter.previous();
-            if (tmp.getGoodDetections() == 0 && tmp.getBadDetections() > 0 || (double) tmp.getBadDetections() / (double) tmp.getGoodDetections() >= jas.getDouble("findBadLettersRatio")) {
+            if (tmp.getBadDetections()>tmp.getGoodDetections()+2) {
                 if (Utilities.isLoggerActive()) {
                     logger.info("bad Letter entfernt: " + tmp.getDecodedValue() + " (" + tmp.getBadDetections() + "/" + tmp.getGoodDetections() + ")");
                 }
@@ -1755,7 +1763,7 @@ public class JAntiCaptcha {
      * 
      * @TODO Sortoer ALGO ändern. zu langsam!!
      */
-    private void sortLetterDB() {
+    public void sortLetterDB() {
 
         // ArrayList<Letter> ret = new ArrayList<Letter>();
         // Iterator<Letter> iter = letterDB.iterator();

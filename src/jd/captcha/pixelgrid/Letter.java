@@ -872,6 +872,33 @@ public class Letter extends PixelGrid {
     }
 
     /**
+     * Resize auf newWidth. die proportionen bleiben erhalten
+     * 
+     * @param newWidth
+     */
+    public void resizetoWidth(int newWidth) {
+        double faktor = (double) newWidth / (double) getWidth();
+
+        int newHeight = (int) Math.ceil(getHeight() * faktor);
+
+        int[][] newGrid = new int[newWidth][newHeight];
+        int elementPixel = 0;
+        for (int x = 0; x < newWidth; x++) {
+            for (int y = 0; y < newHeight; y++) {
+                int v = grid[(int) Math.floor(x / faktor)][(int) Math.floor(y / faktor)];
+                newGrid[x][y] = v;
+                if (newGrid[x][y] == 0) {
+                    elementPixel++;
+                }
+
+            }
+        }
+        setElementPixel(elementPixel);
+        setGrid(newGrid);
+
+    }
+    
+    /**
      * Resize auf newHeight. die proportionen bleiben erhalten
      * 
      * @param newHeight

@@ -46,10 +46,11 @@ public class JACTrain {
     private void go() {
 
         // String hoster="rscat.com";
-        final String hoster = "canna.to";
+        final String hoster = "nrdr";
         final JAntiCaptcha jac = new JAntiCaptcha(hoster);
+
         // jac.runTestMode(new File("1186941165349_captcha.jpg"));
-        jac.displayLibrary();
+//        jac.displayLibrary();
 
         // jac.setShowDebugGui(true);
         // jac.showPreparedCaptcha(new
