@@ -385,14 +385,14 @@ public class Srnnks extends PluginForDecrypt {
 
                         continue;
                     }
-                    active++;
+//                    active++;
                     try {
                         capTxt = getCaptchaCode("einzellinks.serienjunkies.org", captchaFile, downloadLink);
                     } catch (DecrypterException e) {
-                        active--;
+//                        active--;
                         throw e;
                     }
-                    active--;
+//                    active--;
 
                     htmlcode = postPage(br3, url, "s=" + captchaRegex.getMatch(0) + "&c=" + capTxt + "&dl.start=Download");
                 } else {
@@ -410,8 +410,12 @@ public class Srnnks extends PluginForDecrypt {
     private boolean isEinzelLink(String link) {
         return link.indexOf("/safe/") >= 0 || link.indexOf("/save/") >= 0 || link.matches("(?is).*part\\d+.rar");
     }
-
-    private ArrayList<DownloadLink> getDLinks(String parameter, CryptedLink cryptedLink) throws DecrypterException {
+    
+    /**
+     * 
+     * Unterscheidet einzellinks von Containerlinks und schreibt die eigentlichen downloadlinks in ein array
+     */
+    private ArrayList<DownloadLink> getDownloadLinks(String parameter, CryptedLink cryptedLink) throws DecrypterException {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         Browser br3 = getBrowser();
 
@@ -545,7 +549,7 @@ public class Srnnks extends PluginForDecrypt {
         return br;
     }
 
-    private SrnnksLinks createdl(String parameter, String[] info) {
+    private SrnnksLinks createDownloadLink(String parameter, String[] info) {
         int size = 100;
         String name = null, linkName = null, title = null;
         String[] mirrors = null;
@@ -654,20 +658,20 @@ public class Srnnks extends PluginForDecrypt {
                         for (String element : links) {
                             if (getHostname(element).equals(wh)) {
                                 String[] info = getLinkName(element, lastHtmlCode);
-                                decryptedLinks.add(createdl(element, info));
+                                decryptedLinks.add(createDownloadLink(element, info));
                             }
                         }
                     } else if (mirror.equals(mirrorManagement[2])) {
                         for (String element : links) {
                             String[] info = getLinkName(element, lastHtmlCode);
-                            decryptedLinks.add(createdl(element, info));
+                            decryptedLinks.add(createDownloadLink(element, info));
                         }
                     } else {
 
                         boolean got = false;
                         for (String element : links) {
                             String[] info = getLinkName(element, lastHtmlCode);
-                            SrnnksLinks dl_link = createdl(element, info);
+                            SrnnksLinks dl_link = createDownloadLink(element, info);
 
                             if (JDUtilities.getPluginForHost(getHostname(element)).getMaxSimultanDownloadNum(null) > 1) {
 
@@ -681,7 +685,7 @@ public class Srnnks extends PluginForDecrypt {
                         if (!got) {
                             for (String element : links) {
                                 String[] info = getLinkName(element, lastHtmlCode);
-                                SrnnksLinks dl_link = createdl(element, info);
+                                SrnnksLinks dl_link = createDownloadLink(element, info);
                                 decryptedLinks.add(dl_link);
                                 break;
 
@@ -737,7 +741,7 @@ public class Srnnks extends PluginForDecrypt {
                                     String[] links2 = HTMLParser.getHttpLinks(bb, parameter);
                                     for (String element4 : links2) {
                                         if (canHandle(element4) && getHostname(element4).equals(wh)) {
-                                            SrnnksLinks dl = createdl(element4, new String[] { size, element3[0], element3[1], title });
+                                            SrnnksLinks dl = createDownloadLink(element4, new String[] { size, element3[0], element3[1], title });
                                             decryptedLinks.add(dl);
                                             if (!isEinzelLink(element4)) break outer;
                                         }
@@ -748,7 +752,7 @@ public class Srnnks extends PluginForDecrypt {
                                     String[] links2 = HTMLParser.getHttpLinks(bb, parameter);
                                     for (String element4 : links2) {
                                         if (canHandle(element4)) {
-                                            SrnnksLinks dl = createdl(element4, new String[] { size, element3[0], element3[1], title });
+                                            SrnnksLinks dl = createDownloadLink(element4, new String[] { size, element3[0], element3[1], title });
                                             decryptedLinks.add(dl);
                                         }
                                     }
@@ -762,7 +766,7 @@ public class Srnnks extends PluginForDecrypt {
                                         String[] links2 = HTMLParser.getHttpLinks(bb, parameter);
                                         for (String element4 : links2) {
                                             if (canHandle(element4)) {
-                                                SrnnksLinks dl = createdl(element4, new String[] { size, element3[0], element3[1], title });
+                                                SrnnksLinks dl = createDownloadLink(element4, new String[] { size, element3[0], element3[1], title });
                                                 if (JDUtilities.getPluginForHost(getHostname(element4)).getMaxSimultanDownloadNum() > 1) {
                                                     decryptedLinks.add(dl);
                                                     breakit = true;
@@ -787,7 +791,7 @@ public class Srnnks extends PluginForDecrypt {
                                                 if (!mirrors.containsKey(hostn)) {
                                                     mirrors.put(hostn, 1);
                                                     link = null;
-                                                    SrnnksLinks dl = createdl(element4, new String[] { size, element3[0], element3[1], title });
+                                                    SrnnksLinks dl = createDownloadLink(element4, new String[] { size, element3[0], element3[1], title });
                                                     decryptedLinks.add(dl);
                                                     break out;
                                                 } else {
@@ -807,7 +811,7 @@ public class Srnnks extends PluginForDecrypt {
                                     if (link != null) {
                                         mirrors.put(lastHost, (mirrors.get(lastHost) + 1));
                                         for (String element4 : link) {
-                                            SrnnksLinks dl = createdl(element4, new String[] { size, element3[0], element3[1], title });
+                                            SrnnksLinks dl = createDownloadLink(element4, new String[] { size, element3[0], element3[1], title });
                                             decryptedLinks.add(dl);
                                             break;
                                         }
@@ -822,7 +826,7 @@ public class Srnnks extends PluginForDecrypt {
         }
 
         String[] info = getLinkName(parameter, lastHtmlCode);
-        decryptedLinks.add(createdl(parameter, info));
+        decryptedLinks.add(createDownloadLink(parameter, info));
         return decryptedLinks;
     }
 
@@ -960,7 +964,7 @@ public class Srnnks extends PluginForDecrypt {
                         e.printStackTrace();
                     }
                 }
-                ArrayList<DownloadLink> dls = getDLinks(link, cryptedLink);
+                ArrayList<DownloadLink> dls = getDownloadLinks(link, cryptedLink);
                 if (dls != null && dls.size() > 0) {
                     down = (ArrayList<DownloadLink>) dls.clone();
                     ArrayList<DownloadLink> finaldls = null;
@@ -1004,7 +1008,7 @@ public class Srnnks extends PluginForDecrypt {
                         if (mirrors != null) {
                             for (String element : mirrors) {
                                 try {
-                                    dls = getDLinks(element, cryptedLink);
+                                    dls = getDownloadLinks(element, cryptedLink);
                                     finaldls = new ArrayList<DownloadLink>();
 
                                     for (DownloadLink dls2 : dls) {
