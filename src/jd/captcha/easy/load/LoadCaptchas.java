@@ -51,6 +51,7 @@ public class LoadCaptchas {
     private LoadImage selectedImage;
     private JFrame owner;
     public int maxHeight = 400;
+    public boolean threaded = false;
     public int maxWeight = 600;
     /**
      * Ordner in den die Bilder geladen werden (default: jdCaptchaFolder/host)
@@ -316,7 +317,7 @@ public class LoadCaptchas {
 
         final JPanel p = new GuiRunnable<JPanel>() {
             public JPanel runSave() {
-                JPanel ret = new JPanel(new GridLayout(5, 2));
+                JPanel ret = new JPanel(new GridLayout(6, 2));
                 ret.add(new JLabel(JDL.L("easycaptcha.loadcaptchas.link", "Link") + ":"));
                 return ret;
 
@@ -343,6 +344,15 @@ public class LoadCaptchas {
         JCheckBox followLinks = new GuiRunnable<JCheckBox>() {
             public JCheckBox runSave() {
                 p.add(new JLabel(JDL.L("easycaptcha.loadcaptchas.followlinks", "follow normal Links (very slow)") + ":"));
+                JCheckBox checkBox = new JCheckBox();
+                checkBox.setSelected(false);
+                p.add(checkBox);
+                return checkBox;
+            }
+        }.getReturnValue();
+        JCheckBox threadedCheck = new GuiRunnable<JCheckBox>() {
+            public JCheckBox runSave() {
+                p.add(new JLabel(JDL.L("easycaptcha.loadcaptchas.threaded", "threaded image Download (very fast)") + ":"));
                 JCheckBox checkBox = new JCheckBox();
                 checkBox.setSelected(false);
                 p.add(checkBox);
@@ -428,6 +438,7 @@ public class LoadCaptchas {
         dialog.dispose();
         LoadInfo retLI = new LoadInfo(link, menge);
         retLI.followLinks = followLinks.isSelected();
+        this.threaded=threadedCheck.isSelected();
         retLI.directLoad = loadDirect.isSelected();
         return retLI;
 
@@ -474,8 +485,11 @@ public class LoadCaptchas {
             pd.setAlwaysOnTop(true);
             Runnable runnable = new Runnable() {
                 public void run() {
+                    if(!threaded)
+                    {
                     for (int k = 0; k < loadinfo.menge; k++) {
                         try {
+
                             File f2 = new File(dir + System.currentTimeMillis() + imageType);
                             br.getDownload(f2, loadinfo.link);
                             final int c = k;
@@ -485,10 +499,57 @@ public class LoadCaptchas {
                                     return null;
                                 }
                             }.waitForEDT();
+
                         } catch (Exception ev) {
                             ev.printStackTrace();
                         }
 
+                    }
+                    }
+                    else
+                    {
+                        Thread[] ths = new Thread[loadinfo.menge];
+                        for (int k = 0; k < loadinfo.menge; k++) {
+                            ths[k]=new Thread(new Runnable() {
+                                public void run() {
+                                    try {
+
+                                        File f2 = new File(dir + System.currentTimeMillis() + imageType);
+                                        br.getDownload(f2, loadinfo.link);
+
+                                    } catch (Exception ev) {
+                                        ev.printStackTrace();
+                                    }
+                                    synchronized (this) {
+                                        this.notify();
+
+                                    }
+                                }
+                            });
+                            ths[k].start();
+                        }
+                        int k = 0;
+                        for (Thread thread : ths) {
+                            while(thread.isAlive())
+                            {
+                                synchronized (thread) {
+                                 try {
+                                    thread.wait(30000);
+                                } catch (InterruptedException e) {
+                                    // TODO Auto-generated catch block
+                                    e.printStackTrace();
+                                }   
+                                }
+                            }
+                            final int c = k;
+                            k++;
+                            new GuiRunnable<Object>() {
+                                public Object runSave() {
+                                    pd.setValue(c);
+                                    return null;
+                                }
+                            }.waitForEDT();
+                        }
                     }
                     pd.dispose();
                 }
@@ -676,29 +737,124 @@ public class LoadCaptchas {
                         }
                     }.waitForEDT();
                     if (direct && loadinfo.directLoad) {
-                        for (int k = 1; k < loadinfo.menge - 1; k++) {
-                            selectedImage.directCaptchaLoad(dir);
-                            final int d = k;
-                            new GuiRunnable<Object>() {
-                                public Object runSave() {
-                                    pd.setValue(d);
-                                    return null;
-                                }
-                            }.waitForEDT();
+                        if(!threaded)
+                        {
+                            for (int k = 1; k < loadinfo.menge - 1; k++) {
+                                selectedImage.directCaptchaLoad(dir);
+                                final int d = k;
+                                new GuiRunnable<Object>() {
+                                    public Object runSave() {
+                                        pd.setValue(d);
+                                        return null;
+                                    }
+                                }.waitForEDT();
+                            }
                         }
+                        else
+                        {
+                            Thread[] ths = new Thread[loadinfo.menge];
+                            for (int k = 1; k < loadinfo.menge - 1; k++) {
+                                ths[k]=new Thread(new Runnable() {
+                                    public void run() {
+                                        try {
+                                            selectedImage.directCaptchaLoad(dir);
+
+                                        } catch (Exception ev) {
+                                            ev.printStackTrace();
+                                        }
+                                        synchronized (this) {
+                                            this.notify();
+
+                                        }
+                                    }
+                                });
+                                ths[k].start();
+                            }
+                            int k = 0;
+                            for (Thread thread : ths) {
+                                while(thread!=null&&thread.isAlive())
+                                {
+                                    synchronized (thread) {
+                                     try {
+                                        thread.wait(30000);
+                                    } catch (InterruptedException e) {
+                                        // TODO Auto-generated catch block
+                                        e.printStackTrace();
+                                    }   
+                                    }
+                                }
+                                final int c = k;
+                                k++;
+                                new GuiRunnable<Object>() {
+                                    public Object runSave() {
+                                        pd.setValue(c);
+                                        return null;
+                                    }
+                                }.waitForEDT();
+                            }
+                        }
+
                     } else {
                         selectedImage.file.delete();
-                        for (int k = 1; k < loadinfo.menge - 1; k++) {
-                            selectedImage.load(host);
-                            final int d = k;
-                            new GuiRunnable<Object>() {
-                                public Object runSave() {
-                                    pd.setValue(d);
-                                    return null;
-                                }
-                            }.waitForEDT();
 
+                        if(!threaded)
+                        {
+                            for (int k = 1; k < loadinfo.menge - 1; k++) {
+                                selectedImage.load(host);
+                                final int d = k;
+                                new GuiRunnable<Object>() {
+                                    public Object runSave() {
+                                        pd.setValue(d);
+                                        return null;
+                                    }
+                                }.waitForEDT();
+
+                            }
                         }
+                        else
+                        {
+                            Thread[] ths = new Thread[loadinfo.menge];
+                            for (int k = 1; k < loadinfo.menge - 1; k++) {
+                                ths[k]=new Thread(new Runnable() {
+                                    public void run() {
+                                        try {
+                                            selectedImage.load(host);
+
+                                        } catch (Exception ev) {
+                                            ev.printStackTrace();
+                                        }
+                                        synchronized (this) {
+                                            this.notify();
+
+                                        }
+                                    }
+                                });
+                                ths[k].start();
+                            }
+                            int k = 0;
+                            for (Thread thread : ths) {
+                                while(thread!=null&&thread.isAlive())
+                                {
+                                    synchronized (thread) {
+                                     try {
+                                        thread.wait(30000);
+                                    } catch (InterruptedException e) {
+                                        // TODO Auto-generated catch block
+                                        e.printStackTrace();
+                                    }   
+                                    }
+                                }
+                                final int c = k;
+                                k++;
+                                new GuiRunnable<Object>() {
+                                    public Object runSave() {
+                                        pd.setValue(c);
+                                        return null;
+                                    }
+                                }.waitForEDT();
+                            }
+                        }
+
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
