@@ -42,55 +42,37 @@ public class YourFileSendercom extends PluginForHost {
     }
 
     // @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        String downloadurl = downloadLink.getDownloadURL();
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.getPage(downloadurl);
-        if (!br.containsHTML("alert('File Not Found")) {
-            String linkInfo[] = new Regex(br, Pattern.compile("<P>You have requested the file <strong>(.*?)</strong> \\(([0-9\\.,]+) (.*?)\\)\\.<br", Pattern.CASE_INSENSITIVE)).getRow(0);
-
-            if (linkInfo[2].matches("KBytes")) {
-                downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(linkInfo[1].replaceAll(",", "").replaceAll("\\.0+", "")) * 1024.0));
-            }
-            downloadLink.setName(linkInfo[0]);
-            return AvailableStatus.TRUE;
-        } else {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("File was deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<title>YourFileSender - (.*?)</title>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("alt=\"Click here to download (.*?)\"").getMatch(0);
         }
-
+        String filesize = br.getRegex("</strong> \\((.*?)\\)\\.<br").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        filesize = filesize.replace(",", "");
+        link.setName(filename);
+        link.setDownloadSize(Regex.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * public String getVersion() {
-     * 
-     * return getVersion("$Revision$"); }
-     */
-
-    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
 
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
-        if (br.containsHTML("<span>You have got max allowed download sessions from the same IP!</span>")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000L);
-
-        }
-
+        if (br.containsHTML("<span>You have got max allowed download sessions from the same IP!</span>")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000L); }
         String link = Encoding.htmlDecode(new Regex(br, Pattern.compile("unescape\\('(.*?)'\\)", Pattern.CASE_INSENSITIVE)).getMatch(0));
         if (link == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
-        /* 10 Seks warten */
-        sleep(10000, downloadLink);
-
         /* Datei herunterladen */
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, link);
-        dl.setFilesizeCheck(false);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, false, 1);
         dl.startDownload();
     }
 
     // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        /* TODO: Wert prüfen */
-        return 1;
+        return 20;
     }
 
     // @Override
