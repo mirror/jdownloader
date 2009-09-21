@@ -28,11 +28,34 @@ import jd.captcha.JAntiCaptcha;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.utils.GifDecoder;
 import jd.nutils.Colors;
+import jd.utils.JDUtilities;
 
 public class Linksave {
     public static void main(String args[]) throws IOException {
-        File file = new File("C:\\Users\\coalado\\.jd_home\\captchas\\linksave.in\\").listFiles()[7];
-        prepareCaptcha(file);
+        String hoster = "linksave.in";
+        File[] list = JDUtilities.getResourceFile("/captchas/" + hoster).listFiles();
+        int id = (int) (Math.random() * (list.length - 1));
+        id = 3;
+        File f = list[id];
+//        prepareCaptcha(f);
+
+        for (File file : list) {
+            prepareCaptcha(file);
+
+        }
+        System.out.println(id);
+        System.out.println(f);
+    }
+
+    private static void cleanBlack(int x, int y, int[][] grid) {
+        for (int x1 = Math.max(x - 2, 0); x1 < Math.min(x + 2, grid.length); x1++) {
+            for (int y1 = Math.max(y - 2, 0); y1 < Math.min(y + 2, grid[0].length); y1++) {
+                if (grid[x1][y1] == 0x000000) {
+                    grid[x1][y1] = 0xffffff;
+                    cleanBlack(x1, y1, grid);
+                }
+            }
+        }
     }
 
     public static void prepareCaptcha(File file) {
@@ -64,7 +87,7 @@ public class Linksave {
                         } else {
                             colors.put(frames[i].getGrid()[x][y], colors.get(frames[i].getGrid()[x][y]) + 1);
                         }
-                        if (hsb[2] < 0.8 && distance < 100) continue;
+                        if (hsb[2] < 0.2 && distance < 100) continue;
 
                         max = Math.max(max, frames[i].getGrid()[x][y]);
                     }
@@ -79,8 +102,40 @@ public class Linksave {
                     grid[x][y] = mainColor;
                 }
             }
+            int gl1 = grid[0].length - 1;
+            for (int x = 0; x < grid.length; x++) {
+                int bl1 = 0;
+                int bl2 = 0;
+                for (int i = Math.max(0, x - 6); i < Math.min(grid.length, x + 6); i++) {
+                    if (grid[i][0] == 0x000000) {
+                        bl1++;
+                    }
+                    if (grid[i][gl1] == 0x000000) {
+                        bl2++;
+                    }
+                }
+                if (bl1 == 12) cleanBlack(x, 0, grid);
+                if (bl2 == 12) cleanBlack(x, gl1, grid);
+            }
+            gl1 = grid.length - 1;
+
+            for (int y = 0; y < grid.length; y++) {
+                int bl1 = 0;
+                int bl2 = 0;
+                for (int i = Math.max(0, y - 6); i < Math.min(grid[0].length, y + 6); i++) {
+                    if (grid[0][i] == 0x000000) {
+                        bl1++;
+                    }
+                    if (grid[gl1][i] == 0x000000) {
+                        bl2++;
+                    }
+                }
+                if (bl1 == 12) cleanBlack(0, y, grid);
+                if (bl2 == 12) cleanBlack(gl1, y, grid);
+            }
             frames[0].setGrid(grid);
-            // BasicWindow.showImage(frames[0].getImage(1));
+
+//            BasicWindow.showImage(frames[0].getImage(1));
             ImageIO.write((BufferedImage) (frames[0].getImage(1)), "png", file);
         } catch (Exception e) {
 
