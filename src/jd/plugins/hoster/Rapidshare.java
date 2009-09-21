@@ -971,6 +971,7 @@ public class Rapidshare extends PluginForHost {
             ai.setUsedSpace(Long.parseLong(data.get("curspace")));
             ai.setTrafficShareLeft((long) (Long.parseLong(data.get("bodkb")) / 1000.0) * 1024l * 1024l);
             ai.setValidUntil(Long.parseLong(data.get("validuntil")) * 1000);
+            Regex.getMilliSeconds(wait)
             if (ai.getValidUntil() < System.currentTimeMillis()) {
                 ai.setExpired(true);
             }
