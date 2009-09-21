@@ -21,7 +21,6 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
@@ -32,7 +31,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 import java.io.File;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rom-freaks.net" }, urls = { "http://[\\w\\.]*?rom-freaks\\.net/(download-[0-9]+-file-[0-9a-zA-Z-_%\\(\\)\\.]+|link-[0-9]-[0-9]+-file-[0-9a-zA-Z-_%\\.]+)\\.html" }, flags = { 0 })
@@ -68,8 +66,11 @@ public class RmFrksNt extends PluginForDecrypt {
         for (int i = 0; i <= 3; i++) {
             File file = this.getLocalCaptchaFile();
             Browser.download(file, br.cloneBrowser().openGetConnection("http://www.rom-freaks.net/captcha/go.php"));
-            Point p = UserIO.getInstance().requestClickPositionDialog(file, JDL.L("plugins.decrypt.rmfrks.captcha.title", "Captcha"), JDL.L("plugins.decrypt.rmfrks.captcha", "Please click on the Circle with a gap"));
-            if (p == null) throw new DecrypterException(DecrypterException.CAPTCHA);
+            String code = getCaptchaCode(file, param);
+            if (code == null) continue;
+            String[] codep = code.split(":");
+            Point p = new Point(Integer.parseInt(codep[0]), Integer.parseInt(codep[1]));
+            if (p == null)continue;
             captchaForm.put("button.x", p.x + "");
             captchaForm.put("button.y", p.y + "");
             br.submitForm(captchaForm);
