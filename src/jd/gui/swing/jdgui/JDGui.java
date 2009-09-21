@@ -340,7 +340,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
                 new Thread() {
                     public void run() {
                         this.setName("Autostart counter");
-                        final ProgressController pc = new ProgressController(JDL.L("gui.autostart", "Autostart downloads in few secounds..."));
+                        final ProgressController pc = new ProgressController(JDL.L("gui.autostart", "Autostart downloads in few seconds..."));
                         pc.getBroadcaster().addListener(new ProgressControllerListener() {
                             public void onProgressControllerEvent(ProgressControllerEvent event) {
                                 pc.setStatusText("Autostart aborted!");
