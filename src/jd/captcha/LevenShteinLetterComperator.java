@@ -12,6 +12,7 @@ public class LevenShteinLetterComperator {
     public int costs = 6;
 
     public void run(Letter letter) {
+        if(letterDB.length==0)return;
         int bestdist = Integer.MAX_VALUE;
         boolean[][][] b = getBooleanArrays(letter);
 
@@ -28,9 +29,12 @@ public class LevenShteinLetterComperator {
             }
         }
         Letter bestLetter = jac.letterDB.get(best);
+//        LetterComperator r = new LetterComperator(letter,bestBiggest.detected.getB() );
+
         letter.detected = new LetterComperator(letter, bestLetter);
         // 75 weil zeilen und reihen gescannt werden
         letter.detected.setValityPercent(((double) 75 * bestdist / costs) / ((double) letter.getArea()));
+
         letter.setDecodedValue(bestLetter.getDecodedValue());
     }
 

@@ -27,6 +27,7 @@ public class BackGroundImageManager {
     private Captcha captchaImage;
     public int zoom;
     protected int[][] backupGrid;
+
     private void autoSetZoomFaktor() {
         if (captchaImage.getWidth() > 200 || captchaImage.getHeight() > 100)
             zoom = 100;
@@ -64,7 +65,7 @@ public class BackGroundImageManager {
      */
     public BackGroundImageManager(Captcha captcha) {
         this.captchaImage = captcha;
-        backupGrid=PixelGrid.getGridCopy(captcha.getGrid());
+        backupGrid = PixelGrid.getGridCopy(captcha.getGrid());
         autoSetZoomFaktor();
         methode = new EasyMethodFile(captchaImage.owner.getResourceFile("jacinfo.xml").getParentFile());
         load();
@@ -178,38 +179,76 @@ public class BackGroundImageManager {
      * @param preview
      */
     public void clearCaptchaPreview(BackGroundImage preview) {
-        captchaImage.grid=PixelGrid.getGridCopy(backupGrid);
+        captchaImage.grid = PixelGrid.getGridCopy(backupGrid);
         preview.clearCaptcha(captchaImage);
     }
-    public void resetCaptcha()
-    {
-        captchaImage.grid=PixelGrid.getGridCopy(backupGrid);
+
+    public void resetCaptcha() {
+        captchaImage.grid = PixelGrid.getGridCopy(backupGrid);
     }
+
     /**
      * Sucht das Hintergrundbild bei dem die größte Übereinstimmung vorhanden
      * ist und reinigt das Captcha damit
      * 
      * @param preview
      */
-    public void clearCaptchaAll(Vector<BackGroundImage> preview) {
+    public void clearCaptchaAll(final Vector<BackGroundImage> preview) {
         Captcha best = null;
         BackGroundImage bestBgi = null;
         int bestVal = -1;
-        for (BackGroundImage bgi : preview) {
-            int color = bgi.getColor();
-            Image bImage = bgi.getImage(methode);
-            if (bImage == null || bImage.getWidth(null) != captchaImage.getWidth() || bImage.getHeight(null) != captchaImage.getHeight()) {
-                if (Utilities.isLoggerActive()) {
-                    JDLogger.getLogger().info("ERROR Maske und Bild passen nicht zusammmen");
+        final Captcha[] bgic = new Captcha[preview.size()];
+        Thread[] cths = new Thread[bgic.length];
+        for (int i = 0; i < cths.length; i++) {
+            final int c = i;
+            Thread th = new Thread(new Runnable() {
+                public void run() {
+                    try {
+                        BackGroundImage bgi = preview.get(c);
+                        Image bImage = bgi.getImage(methode);
+                        if (bImage == null || bImage.getWidth(null) != captchaImage.getWidth() || bImage.getHeight(null) != captchaImage.getHeight()) {
+                            if (Utilities.isLoggerActive()) {
+                                JDLogger.getLogger().info("ERROR Maske und Bild passen nicht zusammmen");
+                            }
+                            synchronized (this) {
+                                this.notify();
+                            }
+                            bgic[c] = null;
+                            return;
+                        }
+                        bgic[c] = captchaImage.owner.createCaptcha(bImage);
+                    } catch (Exception e) {
+                        bgic[c] = null;
+                    }
+                    synchronized (this) {
+                        this.notify();
+                    }
+
                 }
-                continue;
+            });
+            cths[i] = th;
+            th.start();
+        }
+        for (int i = 0; i < cths.length; i++) {
+            BackGroundImage bgi = preview.get(i);
+            while (cths[i].isAlive()) {
+                synchronized (cths[i]) {
+                    try {
+                        cths[i].wait(3000);
+                    } catch (InterruptedException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
+                }
             }
-            Captcha captcha2 = captchaImage.owner.createCaptcha(bImage);
+            Captcha captcha2 = bgic[i];
+            if (captcha2 == null) continue;
+            int color = bgi.getColor();
             int val = 0;
-            outer:for (int x = 0; x < captchaImage.getWidth(); x++) {
+            outer: for (int x = 0; x < captchaImage.getWidth(); x++) {
                 for (int y = 0; y < captchaImage.getHeight(); y++) {
                     bgi.setColor(captcha2.getPixelValue(x, y));
-                    if(x==(captchaImage.getWidth()/3)&&val<(bestVal/4))break outer;
+                    if (x == (captchaImage.getWidth() / 3) && val < (bestVal / 4)) break outer;
                     if (bgi.getColorDifference(backupGrid[x][y]) < bgi.getDistance()) val++;
                 }
             }

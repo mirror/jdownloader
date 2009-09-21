@@ -20,9 +20,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Vector;
 
+import jd.captcha.gui.BasicWindow;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
 import jd.captcha.pixelobject.PixelObject;
+import jd.nutils.Colors;
 
 /**
  * 
@@ -55,22 +57,46 @@ public class DuckLoad {
 		}
 
 	}
+    /**
+     * enbtfernt eine farbe... die tolleranz gibt die farbdistanz an die njoch
+     * entfernt wird
+     * 
+     * @param i
+     *            vergleichsfarbe
+     * @param d
+     *            tolleranz
+     */
+    public static void cleanByColor(int i, double d, Captcha captcha) {
+        int mv = captcha.getMaxPixelValue();
+        for (int x = 0; x < captcha.getWidth(); x++) {
+            for (int y = 0; y < captcha.getHeight(); y++) {
+                int c = captcha.getPixelValue(x, y);
+                if (c!=mv&&Colors.getRGBColorDifference2(i, c) < d) {
+                    captcha.setPixelValue(x, y, mv);
+                }
 
+            }
+        }
+        // grid = newgrid;
+    }
 	private static void clean(Captcha captcha) {
 		int mv = captcha.getMaxPixelValue();
 		ArrayList<Integer[]> a = new ArrayList<Integer[]>();
+		int dist=2;
+		Vector<Integer> cleaned = new Vector<Integer>();
 		for (int x = 0; x < captcha.getWidth(); x++) {
-			for (int y = 0; y < 11; y++) {
+			for (int y = 0; y < 3; y++) {
 				int p = captcha.getPixelValue(x, y);
-				if (p != mv) {
-					captcha.cleanByColor(p, 10);
-
+				if (p != mv && !cleaned.contains(p)) {
+					cleanByColor(p, dist, captcha);
+					cleaned.add(p);
 				}
 			}
-			for (int y = 69; y < 80; y++) {
+			for (int y = captcha.getHeight()-3; y <  captcha.getHeight(); y++) {
 				int p = captcha.getPixelValue(x, y);
-				if (p != mv) {
-					captcha.cleanByColor(p, 10);
+				if (p != mv&& !cleaned.contains(p)) {
+                    cleanByColor(p, dist, captcha);
+                    cleaned.add(p);
 
 				}
 			}
@@ -89,22 +115,16 @@ public class DuckLoad {
 							break;
 						}
 					}
-					if (pos != -1 && (x - pos) > 30) {
-						captcha.cleanByColor(p, 10);
+					if (pos != -1 && (x - pos) > 50&& !cleaned.contains(p)) {
+	                    cleanByColor(p, dist, captcha);
+	                    cleaned.add(p);
+
 					} else
 						a.add(new Integer[] { p, x });
 
 				}
 			}
 
-		}
-		for (int x = 0; x < captcha.getWidth(); x++) {
-			for (int y = 0; y < captcha.getHeight(); y++) {
-				int p = captcha.getPixelValue(x, y);
-
-				if (p != mv) 
-					captcha.setPixelValue(x, y,0);
-			}
 		}
 	}
 
@@ -147,24 +167,7 @@ public class DuckLoad {
 		// captcha.cleanByRGBDistance(1, 25);
 		clean(captcha);
 		captcha.removeSmallObjects(0.75, 0.75, 10);
-//		captcha.toBlackAndWhite(1);
-		Vector<PixelObject> os = captcha.getObjects(0.5, 0.5);
-		mergeObjects(os);
-		mergeObjects2(os);
-		Collections.sort(os);
-		ArrayList<Letter> ret = new ArrayList<Letter>();
-		for (PixelObject pixelObject : os) {
-			if (pixelObject.getArea() > 30) {
-				// pixelObject.
-				Letter let = pixelObject.toLetter();
-				let.removeSmallObjects(0.75, 0.75, 6);
-				let = let.toPixelObject(0.95).toLetter();
-				let.resizetoHeight(25);
-				let.betterAlign(-20, 20);
-				ret.add(let);
-			}
-		}
-		return ret.toArray(new Letter[] {});
+		return EasyCaptcha.getLetters(captcha);
 
 	}
 

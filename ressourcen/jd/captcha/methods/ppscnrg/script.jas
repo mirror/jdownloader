@@ -40,3 +40,4 @@ param.autoLetterNum=true;
 captcha.prepare.captchacommand.blur(1, 1, 3);
 captcha.prepare.captchacommand.setContrast(2);
 param.useSpecialGetLetters=EasyCaptcha.getLetters;
+param.useLetterFilter=EasyCaptcha.letterFilter;

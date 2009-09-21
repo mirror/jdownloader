@@ -2076,6 +2076,33 @@ public class PixelGrid extends Property {
 
         }
     }
+    /**
+     * @param contrast
+     * @param objectContrast
+     * @param maxSize
+     */
+    public void removeSmallObjects(double contrast, double objectContrast, int maxSize, int mindistx,int mindisty) {
+        int tmp = owner.getJas().getInteger("minimumObjectArea");
+
+        owner.getJas().set("minimumObjectArea", 0);
+        Vector<PixelObject> ret = getObjects(contrast, objectContrast);
+        owner.getJas().set("minimumObjectArea", tmp);
+
+        outer:for (int i = 0; i < ret.size(); i++) {
+            // BasicWindow.showImage(ret.elementAt(i).toLetter().getImage(),"LL "
+            // +ret.elementAt(i).getSize());
+            PixelObject el=ret.elementAt(i);
+            if (el.getSize() < maxSize) {
+                for (PixelObject o : ret) {
+                    if (el.getSize() >= maxSize && o.isTouching(el, true, mindistx, mindisty)) {
+                        continue outer;
+                    }
+                }
+                removeObjectFromGrid(el);
+            }
+
+        }
+    }
 
     /**
      * Macht das Bild gröber

@@ -38,3 +38,4 @@ param.objectDetectionContrast = 0.5;
 param.relativecontrast=0.85;
 param.autoLetterNum=true;
 param.useSpecialGetLetters=EasyCaptcha.getLetters;
+param.useLetterFilter=EasyCaptcha.letterFilter;

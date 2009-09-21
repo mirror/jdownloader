@@ -29,7 +29,7 @@ param.coverageFaktorBWeight=0.2;
 param.LetterSearchLimitPerfectPercent=5;
 param.quickScanReliabilityLimit=3.0;
 param.quickScanValityLimit=8.1;
-param.preScanFilter=100;
+param.preScanFilter=60;
 param.preScanFaktor=3;
 param.preScanEmergencyFilter=80;
 
@@ -46,7 +46,10 @@ param.usepeakgapdetection=true;
 param.useaveragegapdetection=true;
 param.splitPixelObjectsOverlap=0;
 param.splitGapsOverlap=0;
-
+param.autoLetterNum=true;
+param.easyCaptchaRemoveSmallObjects=false;
+param.useLetterFilter=EasyCaptcha.letterFilter;
 param.useSpecialGetLetters=DuckLoad.getLetters;
-
+letter.prepare.autoAlign();
+letter.prepare.resizetoHeight(20);
 
