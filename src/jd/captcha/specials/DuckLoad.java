@@ -17,13 +17,9 @@
 package jd.captcha.specials;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Vector;
-
-import jd.captcha.gui.BasicWindow;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
-import jd.captcha.pixelobject.PixelObject;
 import jd.nutils.Colors;
 
 /**
@@ -32,33 +28,8 @@ import jd.nutils.Colors;
  * @author JD-Team
  */
 public class DuckLoad {
-	private static void mergeObjects(Vector<PixelObject> os) {
-		for (PixelObject a : os) {
-			for (PixelObject b : os) {
-				if (a == b)
-					continue;
-
-				int xMin = Math.max(a.getXMin(), b.getXMin());
-				int xMax = Math.min(a.getXMin() + a.getWidth(), b.getXMin()
-						+ b.getWidth());
-				if (xMax <= xMin)
-					continue;
-				int yMin = Math.max(a.getYMin(), b.getYMin());
-				int yMax = Math.min(a.getYMin() + a.getHeight(), b.getYMin()
-						+ b.getHeight());
-
-				if (((xMax - xMin) < 30) && ((yMax - yMin) < 30)) {
-					a.add(b);
-					os.remove(b);
-					mergeObjects(os);
-					return;
-				}
-			}
-		}
-
-	}
     /**
-     * enbtfernt eine farbe... die tolleranz gibt die farbdistanz an die njoch
+     * entfernt eine farbe... die tolleranz gibt die farbdistanz an die njoch
      * entfernt wird
      * 
      * @param i
@@ -128,43 +99,7 @@ public class DuckLoad {
 		}
 	}
 
-	private static void mergeObjects2(Vector<PixelObject> os) {
-		if (os.size() > 6) {
-			PixelObject smallest = os.get(0);
-			PixelObject mergepo = smallest;
-			for (int i = 1; i < os.size(); i++) {
-				PixelObject po = os.get(i);
-				if (po.getArea() < smallest.getArea())
-					smallest = po;
-			}
-			int xMin = Math.max(mergepo.getXMin(), smallest.getXMin());
-			int xMax = Math.min(mergepo.getXMin() + mergepo.getWidth(),
-					smallest.getXMin() + smallest.getWidth());
-			int m = Math.abs(xMax - xMin);
-			for (int i = 1; i < os.size(); i++) {
-				PixelObject po = os.get(i);
-				xMin = Math.max(po.getXMin(), smallest.getXMin());
-				xMax = Math.min(po.getXMin() + po.getWidth(), smallest
-						.getXMin()
-						+ smallest.getWidth());
-				int mi = Math.abs(xMax - xMin);
-				if (mi < m) {
-					m = mi;
-					mergepo = po;
-				}
-			}
-
-			os.remove(smallest);
-			if (smallest.getArea() > 5)
-				mergepo.add(smallest);
-			mergeObjects2(os);
-
-		}
-
-	}
-
 	public static Letter[] getLetters(Captcha captcha) {
-		// captcha.cleanByRGBDistance(1, 25);
 		clean(captcha);
 		captcha.removeSmallObjects(0.75, 0.75, 10);
 		return EasyCaptcha.getLetters(captcha);
