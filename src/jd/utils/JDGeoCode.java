@@ -235,6 +235,7 @@ public class JDGeoCode {
         LANGUAGES.put("ty", new String[] { "Tahitian", "Reo Mā`ohi" });
         LANGUAGES.put("ug", new String[] { "Uighur", "Українська" });
         LANGUAGES.put("ur", new String[] { "Urdu", "اردو" });
+        LANGUAGES.put("uk", new String[] { "Ukrainian", "Ukraïna" });
         LANGUAGES.put("uz", new String[] { "Uzbek", "Tshivenḓa" });
         LANGUAGES.put("vi", new String[] { "Vietnamese", "Tiếng Việt" });
         LANGUAGES.put("vo", new String[] { "Volapük", "Volapük" });
@@ -552,7 +553,7 @@ public class JDGeoCode {
      */
     public static String toLonger(String string) {
         String[] p = JDGeoCode.parseLanguageCode(string);
-        if(p==null)return null;
+        if (p == null) return null;
         String language = LANGUAGES.get(p[0])[0];
         String country = COUNTRIES.get(p[1]);
         String extension = EXTENSIONS.get(p[2]);
