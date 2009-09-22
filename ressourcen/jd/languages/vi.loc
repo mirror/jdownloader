@@ -996,4 +996,4 @@ train.choose.folder = Chọn thư mục
 train.chooser.title = JDownloader :: TrainAll
 train.method = Chọn cách CAPTCHA 
 wrapper.webupdate.updatefile = Update plugin %s
-wrapper.webupdate.updateupdater.error_rename = Could not rename jdupdate.jar.tmp to jdupdate.jar
+wrapper.webupdate.updateupdater.error_rename = Không thể đổi tên jdupdate.jar.tmp sang jdupdate.jar
