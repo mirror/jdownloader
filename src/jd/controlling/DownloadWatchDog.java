@@ -16,6 +16,7 @@
 
 package jd.controlling;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -27,6 +28,7 @@ import jd.controlling.interaction.Interaction;
 import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
+import jd.gui.UserIO;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.nutils.JDFlags;
 import jd.plugins.DownloadLink;
@@ -34,6 +36,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 /**
  * Dieser Controller verwaltet die downloads. Während StartDownloads.java für
@@ -82,6 +85,9 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
     private STATE downloadStatus = STATE.NOT_RUNNING;
 
     private static DownloadWatchDog INSTANCE;
+    
+    /** The path separator used by the underlying operating system */
+    private static final String PATH_SEPARATOR = System.getProperty("file.separator");
 
     public synchronized static DownloadWatchDog getInstance() {
         if (INSTANCE == null) INSTANCE = new DownloadWatchDog();
@@ -729,13 +735,51 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
 
     private void startDownloadThread(DownloadLink dlink) {
         Interaction.handleInteraction(Interaction.INTERACTION_BEFORE_DOWNLOAD, dlink);
-        SingleDownloadController download = new SingleDownloadController(dlink);
-        logger.info("Start new Download: " + dlink.getHost());
-        dlink.getLinkStatus().setActive(true);
-        this.activateDownload(dlink, download);
-        /* add download to stopMarkTracker */
-        if (!stopMarkTracker.contains(dlink)) stopMarkTracker.add(dlink);
-        download.start();
+        
+        String outputFilePath = dlink.getFileOutput();
+        int index = outputFilePath.lastIndexOf(PATH_SEPARATOR);
+        String outputFolder = outputFilePath.substring(0, index);
+        
+        File destinationFolder = new File(outputFolder);
+        if (!destinationFolder.exists()) {
+			if (!destinationFolder.mkdir()) {
+				logger.warning("The folder '" + destinationFolder + "' couldn't be created, cannot get free space");
+				LinkStatus status = dlink.getLinkStatus(); 
+	        	status.setErrorMessage("Cannot create folder " + outputFolder);
+	        	status.addStatus(LinkStatus.ERROR_LOCAL_IO);
+	        	
+	        	dlink.setEnabled(false);
+	        	dlink.requestGuiUpdate();
+			}
+        }
+        
+        long freeDiskSpace = destinationFolder.getUsableSpace();
+        long fileSize = dlink.getDownloadSize();
+        if (freeDiskSpace > fileSize) {
+        	SingleDownloadController download = new SingleDownloadController(dlink);
+            logger.info("Start new Download: " + dlink.getHost());
+            dlink.getLinkStatus().setActive(true);
+            this.activateDownload(dlink, download);
+            /* add download to stopMarkTracker */
+            if (!stopMarkTracker.contains(dlink)) stopMarkTracker.add(dlink);
+            download.start();
+        } else {
+        	String fileName = dlink.getName();
+        	logger.warning("The file '" + fileName + "' is bigger than the available free space on '" 
+        			+ outputFolder + "' [" + fileSize + " > " + freeDiskSpace + "]");
+        	
+        	String title = JDL.L("system.download.errors.notenoughfreespace.title", "There is not enough free space on '" + outputFolder + "'");
+        	String message = JDL.L("system.download.errors.notenoughfreespace.message", 
+        			"There is not enough free space to download the file '" + fileName + "', please relocate the file");
+        	UserIO.getInstance().requestConfirmDialog(UserIO.NO_CANCEL_OPTION, title, message);
+        	
+        	LinkStatus status = dlink.getLinkStatus(); 
+        	status.setErrorMessage(message);
+        	status.addStatus(LinkStatus.ERROR_LOCAL_IO);
+        	
+        	dlink.setEnabled(false);
+        	dlink.requestGuiUpdate();
+        }
     }
 
     public void onDownloadControllerEvent(DownloadControllerEvent event) {

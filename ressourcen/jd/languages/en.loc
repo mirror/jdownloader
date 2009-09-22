@@ -1420,3 +1420,5 @@ wrapper.webupdate.updatefile = Update plugin %s
 wrapper.webupdate.updatenewupdater = Downloading new jdupdate.jar
 wrapper.webupdate.updateupdater.error_rename = Could not rename jdupdate.jar.tmp to jdupdate.jar
 wrapper.webupdate.updateupdater.error_reqeust2 = Could not download new jdupdate.jar
+system.download.errors.notenoughfreespace.message=There is not enough free space to download the file %s, please relocate the file
+system.download.errors.notenoughfreespace.title=There is not enough free space on %s
