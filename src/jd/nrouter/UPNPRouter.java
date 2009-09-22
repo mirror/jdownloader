@@ -17,7 +17,6 @@
 package jd.nrouter;
 
 import java.net.InetAddress;
-import java.util.Iterator;
 
 import jd.controlling.JDLogger;
 import jd.nutils.Threader;
@@ -34,12 +33,13 @@ import org.cybergarage.upnp.device.SearchResponseListener;
 import org.cybergarage.upnp.ssdp.SSDPPacket;
 
 public class UPNPRouter extends Router {
-    private SSDPPacket ssdpPacket;
+    // private SSDPPacket ssdpPacket;
     private int timeout = 10000;
     private static final String ROUTER_DEVICE = "urn:schemas-upnp-org:device:InternetGatewayDevice:1";
     private static final String WAN_DEVICE = "urn:schemas-upnp-org:device:WANDevice:1";
     private static final String WANCON_DEVICE = "urn:schemas-upnp-org:device:WANConnectionDevice:1";
-    private static final String SERVICE_TYPE = "urn:schemas-upnp-org:service:WANIPConnection:1";
+    // private static final String SERVICE_TYPE =
+    // "urn:schemas-upnp-org:service:WANIPConnection:1";
 
     private ControlPoint controlPoint = null;
     protected Device device;
@@ -55,12 +55,14 @@ public class UPNPRouter extends Router {
 
         discover();
     }
-public String toString(){
-    return device.getFriendlyName()+" @ "+device.getInterfaceAddress();
-}
+
+    public String toString() {
+        return device.getFriendlyName() + " @ " + device.getInterfaceAddress();
+    }
+
     public String getRefreshIPRequest() {
         Device wcd = getWanConnectionDevice();
-        Action action = wcd.getAction("ForceTermination"); 
+        Action action = wcd.getAction("ForceTermination");
         ArgumentList actionInputArgList = action.getInputArgumentList();
         ActionRequest ctrlReq = new ActionRequest();
         ctrlReq.setRequest(action, actionInputArgList);
@@ -97,11 +99,11 @@ public String toString(){
                 InetAddress ia = ssdpPacket.getRemoteInetAddress();
                 JDLogger.getLogger().info("Received foreign package: " + ssdpPacket);
                 if (ia.getHostAddress().equals(getAddress().getHostAddress())) {
-                    UPNPRouter.this.ssdpPacket = ssdpPacket;
+                    // UPNPRouter.this.ssdpPacket = ssdpPacket;
                     controlPoint.stop();
 
-                    for (Iterator iter = controlPoint.getDeviceList().iterator(); iter.hasNext();) {
-                        Device current = (Device) iter.next();
+                    for (Object o : controlPoint.getDeviceList()) {
+                        Device current = (Device) o;
                         System.out.println("Device: " + current.getFriendlyName() + current.getDeviceType());
                         if (!current.getDeviceType().equals(ROUTER_DEVICE)) continue;
 
@@ -145,8 +147,8 @@ public String toString(){
             int nOutArgs = outArgList.size();
             for (int n = 0; n < nOutArgs; n++) {
                 Argument outArg = outArgList.getArgument(n);
+                /* Why return in a for-loop without condition ? */
                 return outArg.getValue();
-
             }
             return super.getExternalIPAddress();
         } else {
@@ -163,8 +165,8 @@ public String toString(){
     public Device getWanConnectionDevice() {
         discover();
         if (wanConnectionDevice != null) return wanConnectionDevice;
-        for (Iterator iter = device.getDeviceList().iterator(); iter.hasNext();) {
-            Device current = (Device) iter.next();
+        for (Object o : device.getDeviceList()) {
+            Device current = (Device) o;
             System.out.println("Device: " + current.getFriendlyName() + current.getDeviceType());
             if (!current.getDeviceType().equals(WAN_DEVICE)) continue;
 

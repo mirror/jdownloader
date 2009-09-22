@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.awt.Point;
+import java.io.File;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
@@ -31,7 +32,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import java.io.File;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rom-freaks.net" }, urls = { "http://[\\w\\.]*?rom-freaks\\.net/(download-[0-9]+-file-[0-9a-zA-Z-_%\\(\\)\\.]+|link-[0-9]-[0-9]+-file-[0-9a-zA-Z-_%\\.]+)\\.html" }, flags = { 0 })
 public class RmFrksNt extends PluginForDecrypt {

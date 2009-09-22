@@ -571,8 +571,11 @@ public class JDGeoCode {
 
     public static String toLongerNative(String string) {
         String[] p = JDGeoCode.parseLanguageCode(string);
-        String language = LANGUAGES.get(p[0])[1];
+        String[] languages = LANGUAGES.get(p[0]);
+        if (languages == null) languages = LANGUAGES.get("en");
+        String language = languages[1];
         String country = COUNTRIES.get(p[1]);
+        if (country == null) return COUNTRIES.get("en");
         String extension = EXTENSIONS.get(p[2]);
         if (extension == null) extension = p[2];
 
