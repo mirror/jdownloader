@@ -19,6 +19,7 @@ package jd.utils;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
+import jd.controlling.JDLogger;
 import jd.parser.Regex;
 
 /**
@@ -572,24 +573,26 @@ public class JDGeoCode {
 
     public static String toLongerNative(String string) {
         String[] p = JDGeoCode.parseLanguageCode(string);
-        String[] languages = LANGUAGES.get(p[0]);
-        if (languages == null) languages = LANGUAGES.get("en");
-        String language = languages[1];
-        String country = COUNTRIES.get(p[1]);
-        if (country == null) return COUNTRIES.get("en");
-        String extension = EXTENSIONS.get(p[2]);
-        if (extension == null) extension = p[2];
+        try {
+            String language = LANGUAGES.get(p[0])[1];
+            String country = COUNTRIES.get(p[1]);
+            String extension = EXTENSIONS.get(p[2]);
+            if (extension == null) extension = p[2];
 
-        String ret = language;
-        if (country != null) {
-            ret += " [" + country;
-            if (extension != null) ret += " | " + extension;
-            ret += "]";
-        } else if (extension != null) {
-            ret += " [" + extension + "]";
+            String ret = language;
+            if (country != null) {
+                ret += " [" + country;
+                if (extension != null) ret += " | " + extension;
+                ret += "]";
+            } else if (extension != null) {
+                ret += " [" + extension + "]";
+            }
+
+            return ret;
+        } catch (Exception e) {
+            JDLogger.getLogger().severe("Bad languagecode: " + string);
+            return toLongerNative("en");
         }
-
-        return ret;
     }
 
     public static String longToShort(String lng) {
