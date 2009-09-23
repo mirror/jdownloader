@@ -27,8 +27,10 @@ public abstract class JDBroadcaster<T extends EventListener, TT extends JDEvent>
 
     transient protected Vector<T> removeList = null;
 
-    public JDBroadcaster() {
+    private static int index = 0;
 
+    public JDBroadcaster() {
+        index++;
         callList = new Vector<T>();
         removeList = new Vector<T>();
     }
@@ -43,7 +45,7 @@ public abstract class JDBroadcaster<T extends EventListener, TT extends JDEvent>
     }
 
     public boolean fireEvent(TT event) {
-        // System.out.println("Broadcast start" + this.getClass());
+        System.out.println("Broadcast start" + this.getClass() + " " + index);
         synchronized (removeList) {
             callList.removeAll(removeList);
             removeList.clear();
@@ -55,8 +57,8 @@ public abstract class JDBroadcaster<T extends EventListener, TT extends JDEvent>
                 JDLogger.exception(e);
             }
         }
+        System.out.println("Broadcast stop" + this.getClass() + " " + index);
         return false;
-        // System.out.println("Broadcast stop" + this.getClass());
     }
 
     protected abstract void fireEvent(T listener, TT event);
