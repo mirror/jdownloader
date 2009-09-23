@@ -22,7 +22,6 @@ import java.util.TreeMap;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
@@ -32,7 +31,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "6giga.com" }, urls = { "http://[\\w\\.]*?6giga\\.com/." }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "6giga.com" }, urls = { "http://[\\w\\.]*?6giga\\.com/[a-z0-9]+" }, flags = { 0 })
 public class SixGigaCom extends PluginForHost {
 
     public SixGigaCom(PluginWrapper wrapper) {
@@ -91,14 +90,14 @@ public class SixGigaCom extends PluginForHost {
                 if (br.containsHTML("Download Link Generated")) dllink = br.getRegex("padding:7px;\">\\s+<a\\s+href=\"(.*?)\">").getMatch(0);
             }
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-            dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, dllink, false, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
             dl.startDownload();
         }
     }
 
     // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 10;
+        return 20;
     }
 
     // @Override
@@ -112,8 +111,11 @@ public class SixGigaCom extends PluginForHost {
         br.setCookie("http://www.6giga.com/", "lang", "english");
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("No such file")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = Encoding.htmlDecode(br.getRegex("Filename:</b></td><td\\s+nowrap>(.*?)</b>").getMatch(0));
-        String filesize = br.getRegex("Size:</b></td><td>(.*?)\\s+<small>").getMatch(0);
+        String filename = br.getRegex("Filename:</b></td><td\\s+nowrap>(.*?)</b>").getMatch(0);
+        String filesize = br.getRegex("\\((\\d+) bytes\\)").getMatch(0);
+        if (filesize == null) {
+            filesize = br.getRegex("<b>Size:</b></td><td>(.*?)<").getMatch(0);
+        }
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename);
         downloadLink.setDownloadSize(Regex.getSize(filesize));
