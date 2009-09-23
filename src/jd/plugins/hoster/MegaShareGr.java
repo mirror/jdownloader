@@ -47,6 +47,7 @@ public class MegaShareGr extends PluginForHost {
     public void login(Account account) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
+        br.setCookie("http://megashare.gr", "yab_mylang", "en");
         br.getPage("http://megashare.gr/login.php");
         Form form = br.getFormbyProperty("name", "lOGIN");
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
