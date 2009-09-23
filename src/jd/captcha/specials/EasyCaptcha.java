@@ -315,7 +315,8 @@ public class EasyCaptcha {
 
             if (gabBiggest[1] != 0 &&  captcha.owner.letterDB.size()>3) {
                 LevenShteinLetterComperator lc = new LevenShteinLetterComperator(captcha.owner);
-
+                lc.detectHorizonalOffset=true;
+                lc.detectVerticalOffset=true;
                 Letter bestBiggest = biggest.toLetter();
                 bestBiggest.toBlackAndWhite();
                 captcha.owner.jas.executeLetterPrepareCommands(bestBiggest);
@@ -339,18 +340,18 @@ public class EasyCaptcha {
                     os.get(os.indexOf(biggest)).detected = bestA.detected;
                     return getRightletters(os, captcha, pixels, mergeInfos);
                 }
+                
                 if (bestBiggest.getDecodedValue() != null && bestBiggest.detected.getValityPercent() < 30) {
-                    LetterComperator r = new LetterComperator(bestBiggestBack,bestBiggest.detected.getB() );
-                    r.run();
 
-                    int[] offset = r.getPosition();
+                    int[] offset = bestBiggest.detected.getOffset();
+//                    System.out.println(offset[0]);
                     if (offset != null) {
                         double bwd = (double)biggest.getWidth()/(double)bestBiggestBack.getWidth();
                         int gab = 0;
                         if (be)
-                            gab = (int) (biggest.getWidth() - ((offset[0] + r.getB().getWidth())*bwd));
+                            gab = (int) (biggest.getWidth() - ((offset[0] + bestBiggest.detected.getB().getWidth())*bwd));
                         else
-                            gab = (int) ((offset[0] + r.getB().getWidth())*bwd);
+                            gab = (int) ((offset[0] + bestBiggest.detected.getB().getWidth())*bwd);
                         if (gab == biggest.getWidth() || gab == 0) {
                             gab = gabBiggest[0];
                         }

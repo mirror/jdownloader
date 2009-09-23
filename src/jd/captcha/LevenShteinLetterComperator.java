@@ -10,28 +10,35 @@ public class LevenShteinLetterComperator {
     private JAntiCaptcha jac;
     public boolean onlySameWidth = false;
     public int costs = 6;
+    public boolean detectVerticalOffset = false;
+    public boolean detectHorizonalOffset = false;
 
     public void run(Letter letter) {
         if(letterDB.length==0)return;
-        int bestdist = Integer.MAX_VALUE;
         boolean[][][] b = getBooleanArrays(letter);
 
         // dimension/=b[0].length;
         // System.out.println(this.costs+":"+dimension);
 
         int best = 0;
+        int bestdist = Integer.MAX_VALUE;
+        int[] bestOffset = null;
         for (int i = 0; i < letterDB.length; i++) {
             if (onlySameWidth && jac.letterDB.get(i).getWidth() != letter.getWidth()) continue;
-            int dist = getLevenshteinDistance(b, letterDB[i], bestdist);
-            if (bestdist > dist) {
-                bestdist = dist;
+            int[] dist = getLevenshteinDistance(b, letterDB[i], bestdist);
+            if (dist!=null&&bestdist > dist[0]) {
+                bestOffset = dist;
+                bestdist=dist[0];
                 best = i;
             }
         }
+        if(bestOffset==null)return;
         Letter bestLetter = jac.letterDB.get(best);
 //        LetterComperator r = new LetterComperator(letter,bestBiggest.detected.getB() );
 
         letter.detected = new LetterComperator(letter, bestLetter);
+        letter.detected.setOffset(new int[] { bestOffset[1], bestOffset[2] });
+
         // 75 weil zeilen und reihen gescannt werden
         letter.detected.setValityPercent(((double) 75 * bestdist / costs) / ((double) letter.getArea()));
 
@@ -105,34 +112,54 @@ public class LevenShteinLetterComperator {
         return new boolean[][][] { leth1, leth12 };
     }
 
-    public int getLevenshteinDistance(Letter a, Letter b) {
+    public double getLevenshteinDistance(Letter a, Letter b) {
         boolean[][][] ba = getBooleanArrays(a);
         boolean[][][] bb = getBooleanArrays(b);
-        return getLevenshteinDistance(ba, bb, Integer.MAX_VALUE);
+        int[] d = getLevenshteinDistance(ba, bb, Integer.MAX_VALUE);
+        if (d != null) {
+            a.detected = new LetterComperator(a, b);
+            a.detected.setOffset(new int[] { d[1], d[2] });
+            // 75 weil zeilen und reihen gescannt werden
+            double ret = (double) (((double) 75 * d[0] / costs) / ((double) a.getArea()));
+            a.detected.setValityPercent(ret);
+            return ret;
+        }
+        return Double.MAX_VALUE;
     }
 
-    private int[] getBounds(int lengthLong, int lengthShort) {
+    private int getBounds(boolean[][] lengthLong, boolean[][] lengthShort, boolean detectOffset) {
+        int d = lengthLong.length - lengthShort.length;
 
-        int d = lengthLong - lengthShort;
-        double diff = d / 2;
-        int diff11 = (int) Math.round(diff);
-        int diff12 = (int) Math.round(diff);
-        int d2 = diff11 + diff12;
-        if (d > d2)
-            diff11++;
-        else if (d < d2) diff12--;
-        diff12 = lengthLong - diff12;
-        return new int[] { diff11, diff12 };
+        if (!detectOffset) {
+            return d / 2;
+        } else {
+            int bestDist = Integer.MAX_VALUE;
+            int besti = 0;
+            int lsm1 = lengthShort.length - 1;
+            for (int i = 0; i < d; i++) {
+                int dist = getLevenshteinDistance(lengthLong[i], lengthShort[0]);
+                dist += getLevenshteinDistance(lengthLong[i + lsm1], lengthShort[lsm1]);
+
+                if (dist < bestDist) {
+                    bestDist = dist;
+                    besti = i;
+                }
+
+            }
+            return besti;
+
+        }
+
     }
 
-    private int getBoundDiff(boolean[][] bba1, int[] bounds1) {
+    private int getBoundDiff(boolean[][] bba1, int start, int end) {
         int res = 0;
-        for (int i = 0; i < bounds1[0]; i++) {
+        for (int i = 0; i < start; i++) {
             for (int c = 0; c < bba1[i].length; c++) {
                 if (bba1[i][c]) res++;
             }
         }
-        for (int i = bounds1[1]; i < bba1.length; i++) {
+        for (int i = end; i < bba1.length; i++) {
             for (int c = 0; c < bba1[i].length; c++) {
                 if (bba1[i][c]) res++;
             }
@@ -140,58 +167,63 @@ public class LevenShteinLetterComperator {
         return res;
     }
 
-    private int getLevenshteinDistance(boolean[][][] ba, boolean[][][] bb, int best) {
+    private int[] getLevenshteinDistance(boolean[][][] ba, boolean[][][] bb, int best) {
         int res = 0;
         boolean[][] bba1 = ba[0];
         boolean[][] bbb1 = bb[0];
         boolean[][] bba2 = ba[1];
         boolean[][] bbb2 = bb[1];
 
-        int[] bounds1 = null;
+        int bounds1 = 0;
         int diff1 = bba1.length - bbb1.length;
+        boolean swV = false;
+        boolean swH = false;
 
         if (diff1 > 0) {
-            bounds1 = getBounds(bba1.length, bbb1.length);
+            bounds1 = getBounds(bba1, bbb1, detectVerticalOffset);
         } else if (diff1 < 0) {
             boolean[][] bac = bbb1;
             bbb1 = bba1;
             bba1 = bac;
-            bounds1 = getBounds(bba1.length, bbb1.length);
+            swV = true;
+            bounds1 = getBounds(bba1, bbb1, detectVerticalOffset);
         } else
-            bounds1 = new int[] { 0, bbb1.length };
-        res += getBoundDiff(bba1, bounds1) * costs;
-        if (best < res) return Integer.MAX_VALUE;
+            bounds1 = 0;
+        res += getBoundDiff(bba1, bounds1, bbb1.length) * costs;
+        if (best < res) return null;
 
-        int[] bounds2 = null;
+        int bounds2 = 0;
         int diff2 = bba2.length - bbb2.length;
 
         if (diff2 > 0) {
-            bounds2 = getBounds(bba2.length, bbb2.length);
+            bounds2 = getBounds(bba2, bbb2, detectHorizonalOffset);
         } else if (diff2 < 0) {
             boolean[][] bac = bbb2;
             bbb2 = bba2;
             bba2 = bac;
-            bounds2 = getBounds(bba2.length, bbb2.length);
+            swH = true;
+            bounds2 = getBounds(bba2, bbb2, detectHorizonalOffset);
         } else
-            bounds2 = new int[] { 0, bbb2.length };
-        res += getBoundDiff(bba2, bounds2) * costs;
-        if (best < res) return Integer.MAX_VALUE;
+            bounds2 = 0;
+        res += getBoundDiff(bba2, bounds2, bbb2.length) * costs;
+
+        if (best < res) return null;
 
         // res += (((Math.abs(bba1.length - bbb1.length) * Math.max(bba2.length,
         // bbb2.length))+(Math.abs(bba2.length - bbb2.length) *
         // Math.max(bba1.length, bbb1.length)))/dimension);
 
         // System.out.println(bba1.length+":"+bbb1.length+":"+bounds1[1]+":"+bounds1[0]);
-        for (int c = bounds1[0]; c < bounds1[1]; c++) {
+        for (int c = 0; c < bbb1.length; c++) {
             // System.out.println(c-bounds1[0]);
-            res += getLevenshteinDistance(bba1[c], bbb1[c - bounds1[0]]);
-            if (best < res) return Integer.MAX_VALUE;
+            res += getLevenshteinDistance(bba1[c + bounds1], bbb1[c]);
+            if (best < res) return null;
         }
-        for (int c = bounds2[0]; c < bounds2[1]; c++) {
-            res += getLevenshteinDistance(bba2[c], bbb2[c - bounds2[0]]);
-            if (best < res) return Integer.MAX_VALUE;
+        for (int c = 0; c < bbb2.length; c++) {
+            res += getLevenshteinDistance(bba2[c + bounds2], bbb2[c]);
+            if (best < res) return null;
         }
-        return res;
+        return new int[] { res, swV ? -bounds1 : bounds1, swH ? -bounds2 : bounds2 };
     }
 
     private int getLevenshteinDistance(boolean[] l1, boolean[] l2) {

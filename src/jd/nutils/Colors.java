@@ -59,6 +59,19 @@ public class Colors {
         return new float[] { C * 100, M * 100, Y * 100, var_K * 100 };
     }
 
+    public static int Lab2RGB(int[] lab) {
+
+        double P = ((lab[0] + 16) / 116.0);
+        double x =  Math.pow((P + lab[1] / 500.0), 3);
+        double y =  Math.pow(P, 3);
+        double z = Math.pow((P - lab[2] / 200.0), 3);
+        double[] rgb= new double[3];
+        rgb[0] = (2.365 * x - 0.896 * y - 0.468 * z);
+        rgb[1] = (-0.515 * x + 1.425 * y + 0.088 * z);
+        rgb[2] = (0.005 * x - 0.014 * y + 1.009 * z);
+        return (((int)(rgb[0] * 255)) << 16 | ((int)(rgb[1] * 255)) << 8 | ((int)(rgb[2] * 255)));
+    }
+
     /**
      * Rechnet RGB werte in den LAB Farbraum um. Der LAB Farbraum wird vor allem
      * zu Farbabstandsberechnungen verwendet Wert für L* enthält die

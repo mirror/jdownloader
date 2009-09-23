@@ -441,7 +441,10 @@ public class LetterComperator {
     public int[] getOffset() {
         return offset;
     }
-
+    public void setOffset(int[] offset)
+    {
+        this.offset=offset;
+    }
     public JAntiCaptcha getOwner() {
         return owner;
     }
