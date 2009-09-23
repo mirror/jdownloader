@@ -84,6 +84,12 @@ public class FlyFileUs extends PluginForHost {
             }
             DLForm.put("password", passCode);
         }
+        if (br.containsHTML("flyfile.us/captchas/")) {
+            String captcha = br.getRegex("\"(http://flyfile.us/captchas.*?)\"").getMatch(0);
+            if (captcha == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            String code = getCaptchaCode(captcha, downloadLink);
+            DLForm.put("code", code);
+        }
         jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLForm, true, 1);
         if (!(dl.getConnection().getContentType().contains("octet"))) {
             /*
@@ -91,11 +97,12 @@ public class FlyFileUs extends PluginForHost {
              * content-type
              */
             br.followConnection();
-            if (br.containsHTML("Wrong password")) {
-                logger.warning("Wrong password!");
+            if (br.containsHTML("Wrong password") || br.containsHTML("Wrong captcha")) {
+                logger.warning("Wrong password or wrong captcha!");
                 downloadLink.setProperty("pass", null);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
+            if (br.containsHTML("404 Not Found")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_FATAL);
         }
         if (passCode != null) {
