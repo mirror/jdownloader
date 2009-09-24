@@ -41,6 +41,9 @@ import org.mozilla.javascript.Scriptable;
 public class MediafireCom extends PluginForHost {
 
     static private final String offlinelink = "tos_aup_violation";
+    
+    /** The name of the error page used by MediaFire */
+    private static final String ERROR_PAGE = "error.php";
 
     public MediafireCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -58,6 +61,16 @@ public class MediafireCom extends PluginForHost {
 
         for (int i = 0; i < 3; i++) {
             try {
+            	String redirectURL = br.getRedirectLocation();
+            	if (redirectURL.indexOf(ERROR_PAGE) > 0) {
+            		String errorCode = redirectURL.substring(redirectURL.indexOf("=") + 1, redirectURL.length());
+            		if (errorCode.equals("320")) {
+            			logger.warning("The requested file ['" + url + "'] is invalid");
+            		}
+            		
+            		return AvailableStatus.FALSE;
+            	}
+            
                 br.getPage(url);
                 // rc= new Recaptcha(this);
                 if (br.getRedirectLocation() != null && br.getCookie("http://www.mediafire.com", "ukey") != null) {
