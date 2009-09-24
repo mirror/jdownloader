@@ -1,5 +1,5 @@
 $translater$ = TomVeo.com
-$version$ = $Revision: 6190 $
+$version$ = $Compatible: 7.5xx $
 action.downloadview.movedown.tooltip = Dời xuống dưới
 action.downloadview.movetobottom.tooltip = Dời xuống dưới cùng
 action.downloadview.movetotop.tooltip = Dời lên trên cùng
@@ -588,6 +588,7 @@ gui.menu.addonsmenu.configuration = 9999
 gui.menu.addurl.action.mnem = U
 gui.menu.premium = Tài khoản trả phí
 gui.menu.premiummenu.toggle.accel = -
+gui.menu.premiummenu.toggle.mnem = -
 gui.menu.premiummenu.toggle.name = -
 gui.menu.remove = Xóa sạch
 gui.menu.save = Lưu
