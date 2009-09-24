@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anyfiles.net" }, urls = { "http://[\\w\\.]*?anyfiles.net/download/[a-z|0-9]+/.+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anyfiles.net" }, urls = { "http://[\\w\\.]*?anyfiles.net/download/[A-Za-z0-9./_]+\\.html" }, flags = { 0 })
 public class AnyFilesNet extends PluginForHost {
 
     public AnyFilesNet(PluginWrapper wrapper) {
@@ -40,7 +40,7 @@ public class AnyFilesNet extends PluginForHost {
     // @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         String md5crypt = br.getRegex("md5crypt\" value=\"(.*?)\"").getMatch(0);
         String host = br.getRegex("host\" value=\"(.*?)\"").getMatch(0);
         String uid = br.getRegex("uid\" value=\"(.*?)\"").getMatch(0);
@@ -52,10 +52,10 @@ public class AnyFilesNet extends PluginForHost {
         String ssserver = br.getRegex("ssserver\" value=\"(.*?)\"").getMatch(0);
         String sssize = br.getRegex("realuid\" value=\"(.*?)\"").getMatch(0);
         String free = br.getRegex("free\" type=\"submit\" class=\"button\" value=\"(.*?)\"").getMatch(0);
-        
+
         Form form = new Form();
         form.setMethod(Form.MethodType.POST);
-        form.setAction("http://www.anyfiles.net/download3-any.php");
+        form.setAction("http://www.anyfiles.net/download3.php");
         form.put("md5crypt", md5crypt);
         form.put("host", host);
         form.put("uid", uid);
@@ -69,17 +69,25 @@ public class AnyFilesNet extends PluginForHost {
         form.put("free", free);
 
         br.submitForm(form);
-        String dllink = br.getRedirectLocation();
+        System.out.print(br.toString());
+        if (!br.containsHTML("free-link.php")) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        }
+        String freepage = "http://www.anyfiles.net/free-link.php";
+        br.getPage(freepage);
+        System.out.print(br.toString());
+        // waittime
+        int tt = Integer.parseInt(br.getRegex("Wartezeit (\\d+) Sekunden").getMatch(0));
+        sleep(tt * 1101l, link);
+        br.getPage(freepage);
+        System.out.print(br.toString());
+        String dllink = br.getRegex("href='(.*?)'").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -20);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();
             System.out.print(br.toString());
-            if (br.containsHTML("error: Invalid request")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            if (br.containsHTML("Too many simultaneous downloads")) {                
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
         dl.startDownload();
     }
