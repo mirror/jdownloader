@@ -202,7 +202,7 @@ public class JDGeoCode {
         LANGUAGES.put("qu", new String[] { "Quechua", "Runa Simi; Kichwa" });
         LANGUAGES.put("rm", new String[] { "Raeto-Romance", "rumantsch grischun" });
         LANGUAGES.put("rn", new String[] { "Kirundi", "kiRundi" });
-        LANGUAGES.put("ro", new String[] { "Romanian", "română" });
+        LANGUAGES.put("ro", new String[] { "Romanian", "Română" });
         LANGUAGES.put("ru", new String[] { "Russian", "русский язык" });
         LANGUAGES.put("rw", new String[] { "Kinyarwanda", "Ikinyarwanda" });
         LANGUAGES.put("sa", new String[] { "Sanskrit", "संस्कृतम्" });
