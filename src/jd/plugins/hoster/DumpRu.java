@@ -19,6 +19,8 @@ package jd.plugins.hoster;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -42,6 +44,7 @@ public class DumpRu extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException {
         try {
             setBrowserExclusive();
+            br.setCustomCharset("UTF-8");
             br.setFollowRedirects(true);
             br.getPage(downloadLink.getDownloadURL());
             // File not found
@@ -49,20 +52,20 @@ public class DumpRu extends PluginForHost {
                 logger.warning("File not found");
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-
-            // Filesize
-
-            // String size =
-            // br.getRegex(Pattern.compile("<span class=\"comment\">(.*&nbsp;.*)</span><br>")).getMatch(0);
-            // size = size.replaceAll("Кб", "KB").replaceAll("Mб", "MB"); <<<
-            // does NOT WORK ...
-            // System.out.println(size);
-            // downloadLink.setDownloadSize(Regex.getSize(size.replaceAll("Кб",
-            // "KB").replaceAll("Mб", "MB")));
-
-            // Filename
             String name = br.getRegex("name_of_file\">\\s(.*?)</span>").getMatch(0).trim();
+            String filesize = br.getRegex("Размер: <span class=\"comment\">(.*?)</span").getMatch(0).trim();
+            if (filesize.contains("Мб")) {
+                filesize = filesize.replace("Мб", "MB");
+            }
+            if (filesize.contains("Кб")) {
+                filesize = filesize.replace("Кб", "KB");
+            }
+            if (filesize.contains("&nbsp;")) {
+                filesize = filesize.replace("&nbsp;", "");
+            }
+            if (name == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             downloadLink.setName(name);
+            downloadLink.setDownloadSize(Regex.getSize(filesize));
 
             return AvailableStatus.TRUE;
         } catch (Exception e) {
@@ -71,27 +74,19 @@ public class DumpRu extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
-    // @Override
-    /*
-     * /* public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        br.submitForm(br.getForm(1));
+        Form DLForm = br.getForm(1);
+        if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        br.submitForm(DLForm);
         String link = br.getRegex(Pattern.compile("<a href=\"(http://.*?dump\\.ru/file_download/.*?)\">")).getMatch(0);
-        // final filename can't be taken from the header due to encoding
-        // problems, set it here
-        downloadLink.setFinalFileName(downloadLink.toString());
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, link);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, 0);
         dl.startDownload();
     }
 
     // @Override
     public int getMaxSimultanFreeDownloadNum() {
-        /* TODO: Wert nachprüfen */
-        return 1;
+        return 20;
     }
 
     // @Override
