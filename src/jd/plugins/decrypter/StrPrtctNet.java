@@ -59,35 +59,30 @@ public class StrPrtctNet extends PluginForDecrypt {
             for (int i = 0; i <= 5; i++) {
                 Form captchaForm = br.getForm(0);
                 if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-                String passCode = null;
                 if (br.containsHTML("Sicherheitscode")) {
                     String captchalink = br.getRegex("Sicherheitscode.*?img src=\"(.*?)\"").getMatch(0);
                     String code = getCaptchaCode(captchalink, param);
                     captchaForm.put("txtCaptcha", code);
                 }
                 if (br.containsHTML("Passwort")) {
-                    if (param.getStringProperty("pass", null) == null) {
-                        passCode = Plugin.getUserInput("Password?", param);
-                    } else {
-                        /* gespeicherten PassCode holen */
-                        passCode = param.getStringProperty("pass", null);
-                    }
+                    String passCode = null;
+                    passCode = Plugin.getUserInput("Password?", param);
                     captchaForm.put("txtPassword", passCode);
                 }
                 br.submitForm(captchaForm);
                 if (br.containsHTML("Passwort ist falsch")) {
                     logger.warning("Wrong password!");
-                    param.setProperty("pass", null);
-                    throw new DecrypterException(DecrypterException.PASSWORD);
-                }
-                if (passCode != null) {
-                    param.setProperty("pass", passCode);
+                    continue;
                 }
                 if (br.containsHTML("Sicherheitscode ist falsch")) continue;
                 break;
             }
         }
         if (br.containsHTML("Sicherheitscode ist falsch")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (br.containsHTML("Passwort ist falsch")) {
+            logger.warning("Wrong password!");
+            throw new DecrypterException(DecrypterException.PASSWORD);
+        }
         String cryptframe = br.getRegex("frameborder=.*?<frame src=\"(.*?)\" name").getMatch(0);
         if (cryptframe == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.getPage(cryptframe);
@@ -100,9 +95,11 @@ public class StrPrtctNet extends PluginForDecrypt {
             if (clink0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             br.getPage(clink0);
             Form ajax = br.getForm(0);
+            if (ajax == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             ajax.setAction("http://streamprotect.net/ajax/l2ex.php");
             br.submitForm(ajax);
             String b64 = br.getRegex("\\{\"state\":\"ok\",\"data\":\"(.*?)\"\\}").getMatch(0);
+            if (b64 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             b64 = Encoding.Base64Decode(b64);
             DownloadLink dl = createDownloadlink(b64);
             decryptedLinks.add(dl);
