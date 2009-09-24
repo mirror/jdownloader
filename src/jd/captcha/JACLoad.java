@@ -48,10 +48,12 @@ public class JACLoad {
     }
 
     private void loadMegaUpload() {
-        final String dir = "/home/dwd/.jd_home/captchas/nrdr/";
+        final String dir = "/home/dwd/.jd_home/captchas/gtthbtcm/";
         final Browser fbr = new Browser();
         try {
-            fbr.getPage("http://narod.ru/disk/3192829000/Vol.55%20-%20Wilhelm%20Kempff%20I%20(Flac).rar.html");
+            fbr.setCookie("getthebit.com"
+, "gb_guest_sid", "c79803a2c3656a0a36ebed436a19348f");
+//            fbr.getPage("http://narod.ru/disk/3192829000/Vol.55%20-%20Wilhelm%20Kempff%20I%20(Flac).rar.html");
         } catch (IOException e1) {
             // TODO Auto-generated catch block
             e1.printStackTrace();
@@ -62,13 +64,15 @@ public class JACLoad {
                 public void run() {
                     Browser br = fbr.cloneBrowser();
                     try {
-                    	br.getPage("http://narod.ru/disk/getcapchaxml/?rnd=423");
-                        String cid = br.getRegex("url=\"([^\"]+)\"").getMatch(0);
-                        System.out.println(cid);
-                        System.out.println(dir + b + ".gif");
-                        File file = new File(dir + b + ".gif");
-                        br.getDownload(file, cid);
-                        file.renameTo(new File(dir, JDHash.getMD5(file)+".gif"));
+                        br.setCookie("getthebit.com"
+                                , "gb_guest_sid", "c79803a2c3656a0a36ebed436a19348f");
+//                    	br.getPage();
+//                        String cid = br.getRegex("url=\"([^\"]+)\"").getMatch(0);
+//                        System.out.println(cid);
+                        System.out.println(dir + b + ".jpg");
+                        File file = new File(dir + b + ".jpg");
+                        br.getDownload(file, "http://st2.srv.getthebit.com/plain.php?s=files&ev=kcapcha");
+                        file.renameTo(new File(dir, JDHash.getMD5(file)+".jpg"));
                     } catch (IOException e) {
                         JDLogger.exception(e);
                     }
@@ -76,5 +80,4 @@ public class JACLoad {
             }).start();
         }
     }
-
 }

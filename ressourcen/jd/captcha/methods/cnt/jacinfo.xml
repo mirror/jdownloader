@@ -1,0 +1,4 @@
+<jDownloader>
+<method name="cine.to" author="DwD"  services="cine.to" /> 
+<format type="jpg" letterNum="5" />
+</jDownloader>

@@ -27,7 +27,7 @@ public class BackGroundImageManager {
     private Captcha captchaImage;
     public int zoom;
     protected int[][] backupGrid;
-
+    private String fileName="bgimages.xml";
     private void autoSetZoomFaktor() {
         if (captchaImage.getWidth() > 200 || captchaImage.getHeight() > 100)
             zoom = 100;
@@ -70,7 +70,8 @@ public class BackGroundImageManager {
         methode = new EasyMethodFile(captchaImage.owner.getResourceFile("jacinfo.xml").getParentFile());
         load();
     }
-
+    
+    
     /**
      * gibt ein um den Zoomfaktor Scalliertes Image zurück
      * 
@@ -123,7 +124,11 @@ public class BackGroundImageManager {
     public void setCaptchaImage(Captcha captchaImage) {
         this.captchaImage = captchaImage;
     }
-
+    public void setBackGroundImageListFileName(String name)
+    {
+        fileName=name;
+        load();
+    }
     /**
      * gibt die Xmldatei zurück in der die Informationen der Huntergrundbilder
      * gespeichert sind
@@ -131,7 +136,7 @@ public class BackGroundImageManager {
      * @return methodenpfad/bgimages.xml
      */
     private File getBgImagesXmlFile() {
-        return new File(methode.getJacinfoXml().getParent(), "bgimages.xml");
+        return new File(methode.getJacinfoXml().getParent(), fileName);
     }
 
     /**
@@ -139,13 +144,11 @@ public class BackGroundImageManager {
      */
     @SuppressWarnings("unchecked")
     private void load() {
-        if (backgroundList == null) {
             File file = getBgImagesXmlFile();
             if (file.exists())
                 backgroundList = (Vector<BackGroundImage>) JDIO.loadObject(null, file, true);
             else
                 backgroundList = new Vector<BackGroundImage>();
-        }
     }
 
     /**
