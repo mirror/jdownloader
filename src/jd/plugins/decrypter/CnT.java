@@ -43,7 +43,7 @@ public class CnT extends PluginForDecrypt {
         synchronized (LOCK) {
             br.getPage(parameter);
             if (parameter.matches(patternLink_Protected)) {
-                for (int i = 0; i < 6; i++) {
+                for (int i = 0; i < 15; i++) {
                     String code = getCaptchaCode("http://cine.to/securimage_show.php", param);
                     br.postPage(param.toString(), "captcha=" + code + "&submit=Senden");
                     if (!br.containsHTML("Code ist falsch"))
