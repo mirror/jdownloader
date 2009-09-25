@@ -231,10 +231,10 @@ public class LinkGrabberTableTransferHandler extends TransferHandler {
                 }
             } else if (tr.isDataFlavorSupported(DataFlavor.stringFlavor)) {
                 String files = (String) tr.getTransferData(DataFlavor.stringFlavor);
-                String linuxfiles[] = new Regex(files, "file://(.*?)\n").getColumn(0);
+                String linuxfiles[] = new Regex(files, "file://(.*?)(\r\n|\r|\n)").getColumn(0);
                 if (linuxfiles != null && linuxfiles.length > 0) {
                     for (String file : linuxfiles) {
-                        JDUtilities.getController().loadContainerFile(new File(file));
+                        JDUtilities.getController().loadContainerFile(new File(file.trim()));
                     }
                 } else
                     JDUtilities.getController().distributeLinks(files);
