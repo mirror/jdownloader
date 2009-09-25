@@ -43,7 +43,7 @@ public class FlDRR {
     private static void split(Vector<PixelObject> objects, Captcha captcha)
     {
         if(objects.size()<4)
-        EasyCaptcha.getRightletters(objects, captcha, new int[]{70}, new int[] {10,10});
+        EasyCaptcha.getRightletters(objects, captcha, new int[]{70}, new int[] {10,10},0);
     }
     public static Letter[] getLetters(Captcha captcha) {
 

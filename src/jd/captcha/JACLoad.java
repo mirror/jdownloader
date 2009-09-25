@@ -21,6 +21,8 @@ import java.io.IOException;
 
 import jd.controlling.JDLogger;
 import jd.http.Browser;
+import jd.http.JDProxy;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
 
 /**
@@ -43,10 +45,41 @@ public class JACLoad {
         // String methodsPath=Utilities.getFullPath(new String[] {
         // JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(),
         // "jd", "captcha", "methods"});
-
-        loadMegaUpload();
+        load();
+//        loadMegaUpload();
     }
+    private void load() {
+        final Browser br = new Browser();
+        br.setProxy(new JDProxy("www-proxy.t-online.de:80"));
 
+//        System.out.println(br);
+        for (int i = 0; i < 100; i++) {
+            final int c = i;
+            new Thread(new Runnable() {
+                public void run() {
+                    String dir = "/home/dwd/.jd_home/captchas/ppscnrg/";
+                    File file = new File(dir + c + ".jpg");
+                 try {
+                     Browser cln = br.cloneBrowser();
+                     try {
+                         cln.getPage("http://www.appscene.org/download.php?id=289845362");
+                     } catch (IOException e1) {
+                         // TODO Auto-generated catch block
+                         e1.printStackTrace();
+                         
+                     }
+                    String url=cln.getRegex("<img src=\"(http://www.appscene.org/captcha/[^\\.]*\\.jpg)\" />").getMatch(0);
+                    cln.cloneBrowser().getDownload(file, url);
+                } catch (IOException e) {
+                    file.delete();
+                    e.printStackTrace();
+                }   
+                }
+            }).start();
+        }
+
+
+    }
     private void loadMegaUpload() {
         final String dir = "/home/dwd/.jd_home/captchas/gtthbtcm/";
         final Browser fbr = new Browser();

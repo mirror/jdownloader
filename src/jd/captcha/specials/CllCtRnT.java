@@ -19,7 +19,7 @@ public class CllCtRnT {
         Collections.sort(os);
         int gab = pixels[2] / (captcha.owner.getLetterNum());
         int[] mergeInfos = EasyCaptcha.mergeObjectsBasic(os, captcha, gab);
-        EasyCaptcha.getRightletters(os, captcha, pixels, mergeInfos);
+        EasyCaptcha.getRightletters(os, captcha, pixels, mergeInfos, 0);
         Collections.sort(os);
         ArrayList<Letter> ret = new ArrayList<Letter>();
         for (PixelObject pixelObject : os) {

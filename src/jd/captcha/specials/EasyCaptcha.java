@@ -26,7 +26,6 @@ import java.util.Vector;
 import java.util.Map.Entry;
 
 import jd.captcha.JAntiCaptcha;
-import jd.captcha.LetterComperator;
 import jd.captcha.LevenShteinLetterComperator;
 import jd.captcha.easy.BackGroundImageManager;
 import jd.captcha.easy.CPoint;
@@ -287,7 +286,9 @@ public class EasyCaptcha {
         return new int[] { best, gab[best], gabAverage };
     }
 
-    public static List<PixelObject> getRightletters(List<PixelObject> os, Captcha captcha, int[] pixels, int[] mergeInfos) {
+    public static List<PixelObject> getRightletters(List<PixelObject> os, Captcha captcha, int[] pixels, int[] mergeInfos, int i) {
+        i++;
+        if(i>captcha.owner.getLetterNum()*2)return os;
         for (Iterator<PixelObject> iterator = os.iterator(); iterator.hasNext();) {
             PixelObject elem = iterator.next();
             if (os.size() < 3 || os.size() < os.size() - 1) break;
@@ -338,7 +339,7 @@ public class EasyCaptcha {
                 }
                 if (bestA.detected.getValityPercent() <= bestBiggest.detected.getValityPercent() && bestA.detected.getValityPercent() < 30) {
                     os.get(os.indexOf(biggest)).detected = bestA.detected;
-                    return getRightletters(os, captcha, pixels, mergeInfos);
+                    return getRightletters(os, captcha, pixels, mergeInfos,i);
                 }
                 
                 if (bestBiggest.getDecodedValue() != null && bestBiggest.detected.getValityPercent() < 30) {
@@ -372,7 +373,7 @@ public class EasyCaptcha {
                 }
             }
 
-            return getRightletters(os, captcha, pixels, mergeInfos);
+            return getRightletters(os, captcha, pixels, mergeInfos,i);
         }
         return os;
     }
@@ -543,7 +544,7 @@ public class EasyCaptcha {
         int gab = pixels[2] / (captcha.owner.getLetterNum());
 
         int[] mergeInfos = mergeObjectsBasic(os, captcha, gab);
-        getRightletters(os, captcha, pixels, mergeInfos);
+        getRightletters(os, captcha, pixels, mergeInfos,0);
         Collections.sort(os);
         ArrayList<Letter> ret = new ArrayList<Letter>();
         for (PixelObject pixelObject : os) {

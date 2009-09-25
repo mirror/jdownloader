@@ -14,9 +14,9 @@ public class LevenShteinLetterComperator {
     public boolean detectHorizonalOffset = false;
 
     public void run(Letter letter) {
-        if(letterDB.length==0)return;
+        if(letterDB.length==0||letter.getWidth()==0||letter.getHeight()==0)return;
         boolean[][][] b = getBooleanArrays(letter);
-
+        
         // dimension/=b[0].length;
         // System.out.println(this.costs+":"+dimension);
 
@@ -89,6 +89,7 @@ public class LevenShteinLetterComperator {
     }
 
     private boolean[][][] getBooleanArrays(Letter letter) {
+        if(letter.getWidth()==0||letter.getWidth()==0)return null;
         boolean[][] leth1 = new boolean[letter.getWidth()][letter.getHeight()];
         int avg = letter.getAverage();
         for (int x = 0; x < leth1.length; x++) {
@@ -169,6 +170,7 @@ public class LevenShteinLetterComperator {
 
     private int[] getLevenshteinDistance(boolean[][][] ba, boolean[][][] bb, int best) {
         int res = 0;
+        if(ba==null||bb==null)return null;
         boolean[][] bba1 = ba[0];
         boolean[][] bbb1 = bb[0];
         boolean[][] bba2 = ba[1];
