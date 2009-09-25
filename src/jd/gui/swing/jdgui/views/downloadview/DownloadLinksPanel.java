@@ -508,7 +508,7 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
                     break;
                 case TableAction.DOWNLOAD_COPY_PASSWORD:
                     string = getPasswordSelectedLinks(selectedLinks);
-                    ClipboardHandler.getClipboard().setOldData(string);
+                    ClipboardHandler.getClipboard().setOldText(string);
                     Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(string), null);
                     break;
                 case TableAction.DOWNLOAD_COPY_URL:
@@ -523,7 +523,7 @@ public class DownloadLinksPanel extends SwitchPanel implements ActionListener, D
                         }
                     }
                     string = build.toString();
-                    ClipboardHandler.getClipboard().setOldData(string);
+                    ClipboardHandler.getClipboard().setOldText(string);
                     Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(string), null);
                     break;
                 case TableAction.DOWNLOAD_PRIO:
