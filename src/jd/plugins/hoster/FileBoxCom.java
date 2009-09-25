@@ -31,7 +31,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
 //filebox by pspzockerscene
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filebox.com" }, urls = { "http://[\\w\\.]*?filebox\\.com/[0-9a-z]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filebox.com" }, urls = { "http://[\\w\\.]*?filebox\\.com/.*?/[0-9a-z]{12}" }, flags = { 0 })
 public class FileBoxCom extends PluginForHost {
 
     public FileBoxCom(PluginWrapper wrapper) {
@@ -65,34 +65,34 @@ public class FileBoxCom extends PluginForHost {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
         // Form um auf "Datei herunterladen" zu klicken
-            Form DLForm = br.getFormbyProperty("name", "F1");
-            if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-            String passCode = null;
-            if (br.containsHTML("valign=top><b>Password:</b></td>")) {
-                if (downloadLink.getStringProperty("pass", null) == null) {
-                    passCode = Plugin.getUserInput("Password?", downloadLink);
-                } else {
-                    /* gespeicherten PassCode holen */
-                    passCode = downloadLink.getStringProperty("pass", null);
-                }
-                DLForm.put("password", passCode);
+        Form DLForm = br.getFormbyProperty("name", "F1");
+        if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        String passCode = null;
+        if (br.containsHTML("valign=top><b>Password:</b></td>")) {
+            if (downloadLink.getStringProperty("pass", null) == null) {
+                passCode = Plugin.getUserInput("Password?", downloadLink);
+            } else {
+                /* gespeicherten PassCode holen */
+                passCode = downloadLink.getStringProperty("pass", null);
             }
-            //waittime
-            int tt = Integer.parseInt(br.getRegex("countdown\">(\\d+)</span>").getMatch(0));
-            sleep(tt * 1001, downloadLink);
-            jd.plugins.BrowserAdapter.openDownload(br,downloadLink, DLForm, false, 1);
-            if (!(dl.getConnection().isContentDisposition())) {
-                br.followConnection();
-                if (br.containsHTML("Wrong password")) {
-                    logger.warning("Wrong password!");
-                    downloadLink.setProperty("pass", null);
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
+            DLForm.put("password", passCode);
+        }
+        // waittime
+        int tt = Integer.parseInt(br.getRegex("countdown\">(\\d+)</span>").getMatch(0));
+        sleep(tt * 1001, downloadLink);
+        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLForm, false, 1);
+        if (!(dl.getConnection().isContentDisposition())) {
+            br.followConnection();
+            if (br.containsHTML("Wrong password")) {
+                logger.warning("Wrong password!");
+                downloadLink.setProperty("pass", null);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
             }
-            if (passCode != null) {
-                downloadLink.setProperty("pass", passCode);
-            }
-            dl.startDownload();
+        }
+        if (passCode != null) {
+            downloadLink.setProperty("pass", passCode);
+        }
+        dl.startDownload();
     }
 
     @Override

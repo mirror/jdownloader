@@ -41,15 +41,13 @@ public class StatusLabel extends JPanel {
 
     public StatusLabel() {
         super(new MigLayout("ins 0", "[]0[fill,grow,align right]"));
-        this.setOpaque(true);
-
         add(left = new JRendererLabel());
-        left.setOpaque(false);
-
         for (int i = 0; i < ICONCOUNT; i++) {
             add(rights[i] = new JRendererLabel(), "dock east");
             rights[i].setOpaque(false);
         }
+        left.setOpaque(false);
+        this.setOpaque(true);
     }
 
     /**

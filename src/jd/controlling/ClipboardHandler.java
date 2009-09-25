@@ -18,7 +18,9 @@ package jd.controlling;
 
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.ClipboardOwner;
 import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
 import java.io.File;
 import java.util.List;
 
@@ -26,6 +28,7 @@ import jd.Main;
 import jd.config.Configuration;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
+import jd.parser.Regex;
 import jd.utils.JDUtilities;
 
 /**
@@ -46,16 +49,22 @@ public class ClipboardHandler extends Thread implements ControlListener {
 
     private Clipboard clipboard;
 
-    // private Logger logger;
-
     private boolean enabled = false;
 
-    private String olddata;
+    private String oldText = null;
 
-    private List<?> oldList;
+    private List<File> oldFiles = null;
 
     private boolean waitFlag;
     private boolean tempdisabled = true;
+    private boolean clipboardchanged = true;
+
+    private ClipboardOwner clipboardwatch = new ClipboardOwner() {
+        public void lostOwnership(Clipboard clipboard, Transferable contents) {
+            /* notifies us when clipboard content changed */
+            clipboardchanged = true;
+        }
+    };
 
     /**
      */
@@ -64,11 +73,13 @@ public class ClipboardHandler extends Thread implements ControlListener {
         JDUtilities.getController().addControlListener(this);
         this.enabled = false;
         this.setName("ClipboardHandler");
+        /* set clipboardchanged to true, so we check it at least once */
+        clipboardchanged = true;
         this.start();
     }
 
-    public void setOldData(String data) {
-        olddata = data;
+    public void setOldText(String data) {
+        oldText = data;
     }
 
     /**
@@ -80,11 +91,12 @@ public class ClipboardHandler extends Thread implements ControlListener {
         return JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, true);
     }
 
-    // @Override
+    @SuppressWarnings("unchecked")
     public void run() {
+        Transferable cur = null;
         while (true) {
-            waitFlag = true;
             synchronized (this) {
+                waitFlag = true;
                 while (waitFlag) {
                     try {
                         wait();
@@ -94,50 +106,91 @@ public class ClipboardHandler extends Thread implements ControlListener {
                 }
             }
             while (enabled && !this.tempdisabled) {
-                try {
-                    for (DataFlavor element : clipboard.getAvailableDataFlavors()) {
-
-                        if (element.isFlavorJavaFileListType()) {
-                            List<?> list = (List<?>) clipboard.getData(element);
-
-                            boolean ch = oldList == null || list.size() != oldList.size();
-                            if (!ch) {
-                                for (int t = 0; t < list.size(); t++) {
-                                    if (!((File) list.get(t)).getAbsolutePath().equals(((File) oldList.get(t)).getAbsolutePath())) {
-                                        ch = true;
-                                        break;
+                while (clipboardchanged) {
+                    try {
+                        /* get current content of clipboard */
+                        cur = clipboard.getContents(null);
+                        if (cur != null) {
+                            try {
+                                if (cur.isDataFlavorSupported(DataFlavor.stringFlavor)) {
+                                    /*
+                                     * we have text in clipboard, also can be
+                                     * files in linux
+                                     */
+                                    String text = (String) cur.getTransferData(DataFlavor.stringFlavor);
+                                    if (!text.equals(oldText)) {
+                                        /* content changed */
+                                        oldText = text;
+                                        String files[] = Regex.getLines(text);
+                                        boolean isTextContent = true;
+                                        if (files.length > 0) {
+                                            /*
+                                             * workaround for files under linux
+                                             */
+                                            if (new File(files[0].trim()).exists()) {
+                                                isTextContent = false;
+                                                for (String file : files) {
+                                                    JDUtilities.getController().loadContainerFile(new File(file.trim()));
+                                                }
+                                            }
+                                        }
+                                        /* parsing clipboard for Links */
+                                        if (isTextContent) new DistributeData(text.trim()).start();
                                     }
-
-                                }
+                                } else if (cur.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
+                                    /* we have files in cliploard */
+                                    List<File> files = (List<File>) cur.getTransferData(DataFlavor.javaFileListFlavor);
+                                    /* check for changes */
+                                    boolean fileschanged = (oldFiles == null) || oldFiles.size() != files.size();
+                                    if (!fileschanged) {
+                                        /* second check for changes */
+                                        for (File file : oldFiles) {
+                                            boolean found = false;
+                                            for (File file2 : files) {
+                                                if (file2.getAbsolutePath().equals(file.getAbsolutePath())) {
+                                                    found = true;
+                                                    break;
+                                                }
+                                            }
+                                            if (!found) {
+                                                fileschanged = true;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    if (fileschanged) {
+                                        /* changes detected, add files */
+                                        oldFiles = files;
+                                        for (File file : files) {
+                                            JDUtilities.getController().loadContainerFile(file);
+                                        }
+                                    }
+                                } /*
+                                   * now let the clipboardwatcher check for
+                                   * changes
+                                   */
+                                clipboardchanged = false;
+                                clipboard.setContents(cur, clipboardwatch);
+                            } catch (Exception e) {
+                                /*
+                                 * an error occurred, lets check clipboard again
+                                 * to be sure
+                                 */
+                                clipboardchanged = true;
                             }
-                            if (ch) {
-                                oldList = list;
-                                for (int t = 0; t < list.size(); t++) {
-                                    JDUtilities.getController().loadContainerFile((File) list.get(t));
-                                }
-                            }
-
-                            break;
-
+                        } else {
+                            /*
+                             * an error occurred, lets check clipboard again to
+                             * be sure
+                             */
+                            clipboardchanged = true;
                         }
-                        if (element.isFlavorTextType() && element.getRepresentationClass() == String.class && element.getHumanPresentableName().equals("Unicode String")) {
-
-                            // if (olddata == null) {
-                            // olddata = data;
-                            // }
-                            if (!((String) clipboard.getData(element)).equals(olddata)) {
-                                olddata = (String) clipboard.getData(element);
-
-                                new DistributeData(olddata.trim()).start();
-                            }
-                            break;
-
-                        }
-
+                    } catch (Exception e2) {
                     }
+                }
+                try {
                     Thread.sleep(500);
-                } catch (Exception e2) {
-                    // JDLogger.exception(e2);
+                } catch (Exception e) {
                 }
             }
         }
@@ -145,9 +198,9 @@ public class ClipboardHandler extends Thread implements ControlListener {
 
     public void setTempDisabled(boolean v) {
         this.tempdisabled = v;
-        if (waitFlag) {
-            waitFlag = false;
-            synchronized (this) {
+        synchronized (this) {
+            if (waitFlag) {
+                waitFlag = false;
                 notify();
             }
         }
@@ -170,9 +223,9 @@ public class ClipboardHandler extends Thread implements ControlListener {
         enabled = enabled2;
         JDUtilities.getConfiguration().setProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, enabled2);
         JDUtilities.getConfiguration().save();
-        if (waitFlag) {
-            waitFlag = false;
-            synchronized (this) {
+        synchronized (this) {
+            if (waitFlag) {
+                waitFlag = false;
                 notify();
             }
         }
