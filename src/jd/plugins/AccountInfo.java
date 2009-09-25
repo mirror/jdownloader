@@ -141,7 +141,7 @@ public class AccountInfo extends Property {
     }
 
     public void setAccountBalance(long parseInt) {
-        this.account_accountBalance = parseInt;
+        this.account_accountBalance = parseInt >= 0 ? parseInt : 0;
     }
 
     public void setAccountBalance(String string) {
@@ -153,11 +153,11 @@ public class AccountInfo extends Property {
     }
 
     public void setFilesNum(long parseInt) {
-        this.account_filesNum = parseInt;
+        this.account_filesNum = parseInt >= 0 ? parseInt : 0;
     }
 
     public void setPremiumPoints(long parseInt) {
-        this.account_premiumPoints = parseInt;
+        this.account_premiumPoints = parseInt >= 0 ? parseInt : 0;
     }
 
     public void setPremiumPoints(String string) {
@@ -168,14 +168,14 @@ public class AccountInfo extends Property {
         this.account_status = string;
     }
 
-    /**
-     * -1 = unlimited Traffic
-     */
     public void setTrafficLeft(long size) {
-        this.account_trafficLeft = size;
-        if (account_trafficLeft != -1) {
-            unlimitedTraffic = false;
-        }
+        this.account_trafficLeft = size >= 0 ? size : 0;
+        unlimitedTraffic = false;
+    }
+
+    public void setUnlimitedTraffic() {
+        unlimitedTraffic = true;
+        account_trafficLeft = -1;
     }
 
     public boolean isUnlimitedTraffic() {
@@ -187,15 +187,15 @@ public class AccountInfo extends Property {
     }
 
     public void setTrafficMax(long trafficMax) {
-        this.account_trafficMax = trafficMax;
+        this.account_trafficMax = trafficMax >= 0 ? trafficMax : 0;
     }
 
     public void setTrafficShareLeft(long size) {
-        this.account_trafficShareLeft = size;
+        this.account_trafficShareLeft = size >= 0 ? size : 0;
     }
 
-    public void setUsedSpace(long usedSpace) {
-        this.account_usedSpace = usedSpace;
+    public void setUsedSpace(long size) {
+        this.account_usedSpace = size >= 0 ? size : 0;
     }
 
     public void setUsedSpace(String string) {

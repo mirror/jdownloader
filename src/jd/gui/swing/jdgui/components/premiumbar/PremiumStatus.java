@@ -242,7 +242,7 @@ public class PremiumStatus extends JPanel implements AccountControllerListener, 
                                                      * normal and premium accs
                                                      */
                                                     left += ai.getTrafficLeft();
-                                                    if (!special && ai.isSpecialTraffic()) special = true;
+                                                    if (ai.isSpecialTraffic()) special = true;
                                                 }
                                             }
                                         } else {

@@ -62,7 +62,7 @@ public class TrafficLeftColumn extends JDTableColumn {
                 progress.setMaximum(10);
                 progress.setValue(0);
             } else {
-                if (ai.getTrafficLeft() < 0) {
+                if (ai.isUnlimitedTraffic()) {
                     value = "Unlimited";
                     progress.setMaximum(10);
                     progress.setValue(10);
