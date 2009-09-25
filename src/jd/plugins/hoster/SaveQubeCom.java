@@ -62,21 +62,23 @@ public class SaveQubeCom extends PluginForHost {
 
         Form dlform = br.getFormbyProperty("id", "form_free");
         dlform.setAction(downloadLink.getDownloadURL());
-
         dlform.put("free", "");
         dlform.put("x", "59");
         dlform.put("y", "31");
-
         if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.submitForm(dlform);
-
         String dllink = br.getRegex("<span id=\"db\" style=\"display:none\"><a href=\"(.*?)\" id=\"freedownload\"><img src=\"images/butt1_2.jpg\"").getMatch(0);
-
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         if (br.containsHTML("bot detected")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-
-        sleep(60001l, downloadLink);
-
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink);
+        // waittime
+        int tt = Integer.parseInt(br.getRegex("\"timer\">(\\d+)<").getMatch(0));
+        sleep(tt * 1001l, downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        if (!(dl.getConnection().isContentDisposition())) {
+            br.followConnection();
+            System.out.print(br.toString());
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        }
         dl.startDownload();
     }
 
