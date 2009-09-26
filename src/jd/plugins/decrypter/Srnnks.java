@@ -18,7 +18,6 @@ package jd.plugins.decrypter;
 
 import java.awt.Color;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
@@ -33,8 +32,9 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
-import javax.swing.JDialog;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.table.AbstractTableModel;
@@ -44,13 +44,13 @@ import jd.PluginWrapper;
 import jd.controlling.DistributeData;
 import jd.controlling.ProgressController;
 import jd.controlling.reconnect.Reconnecter;
+import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
-import jd.gui.swing.SwingGui;
+import jd.gui.swing.dialog.AbstractDialog;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.Formatter;
 import jd.nutils.JDImage;
-import jd.nutils.Screen;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -385,14 +385,14 @@ public class Srnnks extends PluginForDecrypt {
 
                         continue;
                     }
-//                    active++;
+                    // active++;
                     try {
                         capTxt = getCaptchaCode("einzellinks.serienjunkies.org", captchaFile, downloadLink);
                     } catch (DecrypterException e) {
-//                        active--;
+                        // active--;
                         throw e;
                     }
-//                    active--;
+                    // active--;
 
                     htmlcode = postPage(br3, url, "s=" + captchaRegex.getMatch(0) + "&c=" + capTxt + "&dl.start=Download");
                 } else {
@@ -410,10 +410,11 @@ public class Srnnks extends PluginForDecrypt {
     private boolean isEinzelLink(String link) {
         return link.indexOf("/safe/") >= 0 || link.indexOf("/save/") >= 0 || link.matches("(?is).*part\\d+.rar");
     }
-    
+
     /**
      * 
-     * Unterscheidet einzellinks von Containerlinks und schreibt die eigentlichen downloadlinks in ein array
+     * Unterscheidet einzellinks von Containerlinks und schreibt die
+     * eigentlichen downloadlinks in ein array
      */
     private ArrayList<DownloadLink> getDownloadLinks(String parameter, CryptedLink cryptedLink) throws DecrypterException {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -574,7 +575,7 @@ public class Srnnks extends PluginForDecrypt {
         return dlink;
     }
 
-    // @Override
+    @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         Browser.setRequestIntervalLimitGlobal("serienjunkies.org", 400);
         Browser.setRequestIntervalLimitGlobal("download.serienjunkies.org", 400);
@@ -582,19 +583,7 @@ public class Srnnks extends PluginForDecrypt {
         br = getBrowser();
         final ArrayList<SrnnksLinks> ar2 = decryptItMain(param);
         ArrayList<SrnnksLinks> ar = ar2;
-        if (ar2.size() > 1) {
-
-            ar = new GuiRunnable<ArrayList<SrnnksLinks>>() {
-
-                // @Override
-                public ArrayList<SrnnksLinks> runSave() {
-                    SrnnksSJTable sjt = new SrnnksSJTable(ar2);
-
-                    return sjt.dls;
-                }
-            }.getReturnValue();
-
-        }
+        if (ar2.size() > 1) ar = SrnnksSJTable.showDialog(ar2);
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         SrnnksThread[] threads = new SrnnksThread[ar.size()];
         this.progress = progress;
@@ -925,18 +914,15 @@ public class Srnnks extends PluginForDecrypt {
         if (useScat[1] != saveScat) {
             new GuiRunnable<Object>() {
 
-                // @Override
+                @Override
                 public Object runSave() {
-                    new SrnnksCatDialog().setVisible(true);
-
+                    new SrnnksCatDialog();
                     return null;
                 }
             }.waitForEDT();
         }
         return useScat[0];
     }
-
-    // @Override
 
     private class SrnnksThread extends Thread {
         private SrnnksLinks downloadLink;
@@ -948,7 +934,7 @@ public class Srnnks extends PluginForDecrypt {
             this.cryptedLink = cryptedLink;
         }
 
-        // @Override
+        @Override
         @SuppressWarnings("unchecked")
         public void run() {
             ArrayList<DownloadLink> down = null;
@@ -1105,69 +1091,61 @@ public class Srnnks extends PluginForDecrypt {
 
     }
 
-    private class SrnnksCatDialog extends JDialog {
+    private class SrnnksCatDialog extends AbstractDialog {
 
         private static final long serialVersionUID = -6111708970744373146L;
+
+        private JComboBox methods;
+        private JComboBox settings;
+        private JCheckBox checkScat;
 
         /**
          * TODO NO GUI IN PLUGINS
          */
         public SrnnksCatDialog() {
-            super(SwingGui.getInstance().getMainFrame());
+            super(UserIO.NO_COUNTDOWN | UserIO.NO_ICON, JDL.L("plugins.SerienJunkies.CatDialog.title", "SerienJunkies ::CAT::"), null, null, null);
 
-            initGUI();
+            init();
         }
 
-        private void initGUI() {
+        public JComponent contentInit() {
             SrnnksMeth[] meths = new SrnnksMeth[3];
             meths[0] = new SrnnksMeth(JDL.L("plugins.SerienJunkies.CatDialog.sCatNoThing", "Kategorie nicht hinzufügen"), sCatNoThing);
             meths[1] = new SrnnksMeth(JDL.L("plugins.SerienJunkies.CatDialog.sCatGrabb", "Alle Serien in dieser Kategorie hinzufügen"), sCatGrabb);
             meths[2] = new SrnnksMeth(JDL.L("plugins.SerienJunkies.CatDialog.sCatNewestDownload", "Den neusten Download dieser Kategorie hinzufügen"), sCatNewestDownload);
 
-            final JComboBox methods = new JComboBox(meths);
-            final JComboBox settings = new JComboBox(mirrorManagement);
-            final JCheckBox checkScat = new JCheckBox(JDL.L("plugins.SerienJunkies.CatDialog.sCatSave", "Einstellungen für diese Sitzung beibehalten?"));
-            JButton btnOK = new JButton(JDL.L("gui.btn_ok", "OK"));
-            btnOK.addActionListener(new ActionListener() {
+            methods = new JComboBox(meths);
+            settings = new JComboBox(mirrorManagement);
+            checkScat = new JCheckBox(JDL.L("plugins.SerienJunkies.CatDialog.sCatSave", "Einstellungen für diese Sitzung beibehalten?"));
 
-                public void actionPerformed(ActionEvent e) {
-                    useScat = new int[] { ((SrnnksMeth) methods.getSelectedItem()).var, checkScat.isSelected() ? saveScat : 0 };
-                    mirror = (String) settings.getSelectedItem();
-                    dispose();
-                }
-
-            });
-            JButton btnCancel = new JButton(JDL.L("gui.btn_cancel", "Cancel"));
-            btnCancel.addActionListener(new ActionListener() {
-
-                public void actionPerformed(ActionEvent e) {
-                    useScat = new int[] { sCatNoThing, 0 };
-                    dispose();
-                }
-
-            });
-
-            setLayout(new MigLayout("wrap 1"));
-            setModal(true);
-            setTitle(JDL.L("plugins.SerienJunkies.CatDialog.title", "SerienJunkies ::CAT::"));
-            setAlwaysOnTop(true);
             addWindowListener(new WindowAdapter() {
 
+                @Override
                 public void windowClosing(WindowEvent e) {
                     useScat = new int[] { sCatNoThing, 0 };
                     dispose();
                 }
 
             });
-            add(new JLabel(JDL.L("plugins.SerienJunkies.CatDialog.action", "Wählen sie eine Aktion aus:")));
-            add(methods);
-            add(new JLabel(JDL.L("plugins.SerienJunkies.CatDialog.mirror", "Wählen sie eine Mirrorverwalung:")));
-            add(settings);
-            add(checkScat);
-            add(btnOK, "split 2, center");
-            add(btnCancel);
-            pack();
-            setLocation(Screen.getCenterOfComponent(null, this));
+
+            JPanel panel = new JPanel(new MigLayout("wrap 1"));
+            panel.add(new JLabel(JDL.L("plugins.SerienJunkies.CatDialog.action", "Wählen sie eine Aktion aus:")));
+            panel.add(methods);
+            panel.add(new JLabel(JDL.L("plugins.SerienJunkies.CatDialog.mirror", "Wählen sie eine Mirrorverwalung:")));
+            panel.add(settings);
+            panel.add(checkScat);
+            return panel;
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            if (e.getSource() == btnOK) {
+                useScat = new int[] { ((SrnnksMeth) methods.getSelectedItem()).var, checkScat.isSelected() ? saveScat : 0 };
+                mirror = (String) settings.getSelectedItem();
+            } else if (e.getSource() == btnCancel) {
+                useScat = new int[] { sCatNoThing, 0 };
+            }
+            super.actionPerformed(e);
         }
 
         private class SrnnksMeth {
@@ -1180,40 +1158,70 @@ public class Srnnks extends PluginForDecrypt {
                 this.var = var;
             }
 
-            // @Override
+            @Override
             public String toString() {
                 return name;
             }
         }
     }
 
-    private class SrnnksSJTable extends JDialog {
+    private static class SrnnksSJTable extends AbstractDialog {
         private static final long serialVersionUID = 4525944250937805028L;
 
-        public ArrayList<SrnnksLinks> dls;
+        public static ArrayList<SrnnksLinks> showDialog(final ArrayList<SrnnksLinks> dLinks) {
+            return new GuiRunnable<ArrayList<SrnnksLinks>>() {
+
+                @Override
+                public ArrayList<SrnnksLinks> runSave() {
+                    SrnnksSJTable dialog = new SrnnksSJTable(dLinks);
+                    if (UserIO.isOK(dialog.getReturnValue())) {
+                        return dialog.getLinks();
+                    } else {
+                        return new ArrayList<SrnnksLinks>();
+                    }
+                }
+
+            }.getReturnValue();
+        }
+
+        private JButton btnDelete;
+        private SrnnksTM model;
+        private JTable table;
+
+        private ArrayList<SrnnksLinks> dls;
 
         /**
          * TODO NO GUI IN PLUGINS
-         * 
-         * @param dLinks
          */
         public SrnnksSJTable(ArrayList<SrnnksLinks> dLinks) {
-            super(SwingGui.getInstance().getMainFrame());
+            super(UserIO.NO_COUNTDOWN | UserIO.NO_ICON, JDL.L("plugin.serienjunkies.manager.title", "SerienJunkies Linkverwaltung"), null, JDL.L("gui.component.textarea.context.paste", "Einfügen"), null);
 
             dls = dLinks;
-            initGUI();
+
+            init();
         }
 
-        private void initGUI() {
+        public ArrayList<SrnnksLinks> getLinks() {
+            return dls;
+        }
+
+        @Override
+        protected void addButtons(JPanel buttonBar) {
+            btnDelete = new JButton(JDL.L("gui.component.textarea.context.delete", "Löschen"));
+            btnDelete.addActionListener(this);
+            buttonBar.add(btnDelete, "alignx left,sizegroup confirms");
+        }
+
+        public JComponent contentInit() {
             JLabel m_title = new JLabel(JDL.L("plugin.serienjunkies.manager.dllinks", "Unerwünschte Links einfach löschen"));
             m_title.setIcon(new ImageIcon(JDImage.getImage(JDTheme.V("gui.images.config.addons"))));
 
-            final SrnnksTM m_tablemodel = new SrnnksTM(dls);
-            final JTable m_table = new JTable(m_tablemodel);
+            model = new SrnnksTM(dls);
+            table = new JTable(model);
 
             TableColumn column = null;
-            for (int c = 0; c < m_table.getColumnCount(); c++) {
-                column = m_table.getColumnModel().getColumn(c);
+            for (int c = 0; c < table.getColumnCount(); c++) {
+                column = table.getColumnModel().getColumn(c);
                 switch (c) {
                 case 0:
                     column.setPreferredWidth(400);
@@ -1227,62 +1235,35 @@ public class Srnnks extends PluginForDecrypt {
                 }
             }
 
-            JButton deleteButton = new JButton(JDL.L("gui.component.textarea.context.delete", "Löschen"));
-            deleteButton.addActionListener(new ActionListener() {
-
-                public void actionPerformed(ActionEvent e) {
-                    int[] rows = m_table.getSelectedRows();
-                    ArrayList<SrnnksLinks> delDls = new ArrayList<SrnnksLinks>();
-                    for (int j : rows) {
-                        delDls.add(dls.get(j));
-                    }
-                    dls.removeAll(delDls);
-                    m_tablemodel.fireTableDataChanged();
-                }
-
-            });
-
-            final JButton insertButton = new JButton(JDL.L("gui.component.textarea.context.paste", "Einfügen"));
-            insertButton.addActionListener(new ActionListener() {
-
-                public void actionPerformed(ActionEvent e) {
-                    dispose();
-                }
-
-            });
-
-            final JButton closeButton = new JButton(JDL.L("gui.btn_cancel", "Cancel"));
-            closeButton.addActionListener(new ActionListener() {
-
-                public void actionPerformed(ActionEvent e) {
-                    dls = new ArrayList<SrnnksLinks>();
-                    dispose();
-                }
-
-            });
-
             addWindowListener(new WindowAdapter() {
 
-                public void windowClosed(WindowEvent e) {
+                @Override
+                public void windowClosing(WindowEvent e) {
+                    dls = new ArrayList<SrnnksLinks>();
                     dispose();
                 }
 
-                public void windowClosing(WindowEvent e) {
-                    dls = new ArrayList<SrnnksLinks>();
-                }
-
             });
-            setTitle(JDL.L("plugin.serienjunkies.manager.title", "SerienJunkies Linkverwaltung"));
-            setModal(true);
-            setLayout(new MigLayout("ins 5", "[left, grow][right]"));
-            add(m_title, "left, wrap");
-            add(new JScrollPane(m_table), "growx, span, w :600:, wrap");
-            add(deleteButton, "w pref!");
-            add(insertButton, "split 2, w pref!");
-            add(closeButton, "w pref!");
-            pack();
-            setLocation(Screen.getCenterOfComponent(null, this));
-            setVisible(true);
+
+            JPanel panel = new JPanel(new MigLayout("ins 5", "[left, grow][right]"));
+            panel.add(m_title, "left, wrap");
+            panel.add(new JScrollPane(table), "growx, span, w :600:, wrap");
+            return panel;
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            if (e.getSource() == btnDelete) {
+                int[] rows = table.getSelectedRows();
+                ArrayList<SrnnksLinks> delDls = new ArrayList<SrnnksLinks>();
+                for (int j : rows) {
+                    delDls.add(dls.get(j));
+                }
+                dls.removeAll(delDls);
+                model.fireTableDataChanged();
+            } else {
+                super.actionPerformed(e);
+            }
         }
 
         private class SrnnksTM extends AbstractTableModel {
@@ -1305,12 +1286,12 @@ public class Srnnks extends PluginForDecrypt {
                 return m_columns.length;
             }
 
-            // @Override
+            @Override
             public String getColumnName(int column) {
                 return m_columns[column];
             }
 
-            // @Override
+            @Override
             public boolean isCellEditable(int nRow, int nCol) {
                 return false;
             }

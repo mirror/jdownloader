@@ -218,13 +218,10 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
 
     }
 
-    /**
-     * Sets the windowtitle depüending on the used branch
-     */
     public void setWindowTitle(final String msg) {
         new GuiRunnable<Object>() {
             @Override
-            public JDGui runSave() {
+            public Object runSave() {
                 mainFrame.setTitle(msg);
                 return null;
             }

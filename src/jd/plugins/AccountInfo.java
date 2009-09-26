@@ -141,7 +141,7 @@ public class AccountInfo extends Property {
     }
 
     public void setAccountBalance(long parseInt) {
-        this.account_accountBalance = parseInt >= 0 ? parseInt : 0;
+        this.account_accountBalance = Math.max(0, parseInt);
     }
 
     public void setAccountBalance(String string) {
@@ -153,11 +153,11 @@ public class AccountInfo extends Property {
     }
 
     public void setFilesNum(long parseInt) {
-        this.account_filesNum = parseInt >= 0 ? parseInt : 0;
+        this.account_filesNum = Math.max(0, parseInt);
     }
 
     public void setPremiumPoints(long parseInt) {
-        this.account_premiumPoints = parseInt >= 0 ? parseInt : 0;
+        this.account_premiumPoints = Math.max(0, parseInt);
     }
 
     public void setPremiumPoints(String string) {
@@ -169,7 +169,7 @@ public class AccountInfo extends Property {
     }
 
     public void setTrafficLeft(long size) {
-        this.account_trafficLeft = size >= 0 ? size : 0;
+        this.account_trafficLeft = Math.max(0, size);
         unlimitedTraffic = false;
     }
 
@@ -187,15 +187,15 @@ public class AccountInfo extends Property {
     }
 
     public void setTrafficMax(long trafficMax) {
-        this.account_trafficMax = trafficMax >= 0 ? trafficMax : 0;
+        this.account_trafficMax = Math.max(0, trafficMax);
     }
 
     public void setTrafficShareLeft(long size) {
-        this.account_trafficShareLeft = size >= 0 ? size : 0;
+        this.account_trafficShareLeft = Math.max(0, size);
     }
 
     public void setUsedSpace(long size) {
-        this.account_usedSpace = size >= 0 ? size : 0;
+        this.account_usedSpace = Math.max(0, size);
     }
 
     public void setUsedSpace(String string) {
