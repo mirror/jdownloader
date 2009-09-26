@@ -876,7 +876,7 @@ jd.gui.swing.jdgui.settings.panels.downloadandnetwork.advanced.download.advanced
 jd.gui.swing.jdgui.settings.panels.downloadandnetwork.general.breadcrum = Geral
 jd.gui.swing.jdgui.settings.panels.downloadandnetwork.general.download.title = Descargas e Ligações
 jd.gui.swing.jdgui.settings.panels.downloadandnetwork.internetandnetwork.breadcrum = Internet e Rede
-jd.gui.swing.jdgui.settings.panels.downloadandnetwork.internetandnetwork.download.internetandnetwork.title = Interner e Rede
+jd.gui.swing.jdgui.settings.panels.downloadandnetwork.internetandnetwork.download.internetandnetwork.title = Internet e Rede
 jd.gui.swing.jdgui.settings.panels.gui.advanced.breadcrum = Avançadas
 jd.gui.swing.jdgui.settings.panels.gui.advanced.gui.advanced.title = Avançadas
 jd.gui.swing.jdgui.settings.panels.gui.browser.breadcrum = Navegador
