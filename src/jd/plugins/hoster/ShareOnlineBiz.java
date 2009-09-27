@@ -153,6 +153,7 @@ public class ShareOnlineBiz extends PluginForHost {
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("Probleme mit einem Fileserver")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.shareonlinebiz.errors.servernotavailable", "Server temporarily down"), 15 * 60 * 1000l);
 
@@ -160,6 +161,7 @@ public class ShareOnlineBiz extends PluginForHost {
         /* CaptchaCode holen */
         String captchaCode = getCaptchaCode("http://www.share-online.biz/captcha.php", downloadLink);
         Form form = br.getForm(1);
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         String passCode = null;
         if (form.containsHTML("name=downloadpw")) {
             if (downloadLink.getStringProperty("pass", null) == null) {

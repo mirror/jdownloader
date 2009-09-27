@@ -31,7 +31,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megashare.gr" }, urls = { "http://[\\w\\.]*?megashare\\.gr/file/[0-9]+/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megashare.gr" }, urls = { "http://[\\w\\.]*?megashare\\.gr/file/[0-9]+/" }, flags = { 2 })
 public class MegaShareGr extends PluginForHost {
 
     public MegaShareGr(PluginWrapper wrapper) {

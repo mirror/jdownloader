@@ -71,30 +71,46 @@ public class DepositFiles extends PluginForHost {
         }
 
         if (br.containsHTML(DOWNLOAD_NOTALLOWED)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l); }
+        String dllink = br.getRegex("download_url\".*?<form action=\"(.*?)\"").getMatch(0);
+        if (dllink != null) {
+            // handling for txt file downloadlinks, dunno why they made a
+            // completely different page for txt files
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+            URLConnectionAdapter con = dl.getConnection();
+            if (Plugin.getFileNameFromHeader(con) == null || Plugin.getFileNameFromHeader(con).indexOf("?") >= 0) {
+                con.disconnect();
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+            if (!con.isContentDisposition()) {
+                con.disconnect();
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
+            }
+            dl.startDownload();
+        } else {
 
-        Form form = br.getFormBySubmitvalue("Kostenlosen+download");
-        if (form != null) {
+            Form form = br.getFormBySubmitvalue("Kostenlosen+download");
+            if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             br.submitForm(form);
-        }
-        if (br.containsHTML("We are sorry, but all downloading slots for your country are busy")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.depositfilescom.errors.allslotsbusy", "All download slots for your country are busy"), 10 * 60 * 1000l);
-        String wait = br.getRegex("Bitte versuchen Sie noch mal nach(.*?)<\\/strong>").getMatch(0);
-        if (wait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Regex.getMilliSeconds(wait));
-        if (br.containsHTML("Von Ihren IP-Addresse werden schon einige")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 2 * 60 * 1001l);
+            if (br.containsHTML("We are sorry, but all downloading slots for your country are busy")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.depositfilescom.errors.allslotsbusy", "All download slots for your country are busy"), 10 * 60 * 1000l);
+            String wait = br.getRegex("Bitte versuchen Sie noch mal nach(.*?)<\\/strong>").getMatch(0);
+            if (wait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Regex.getMilliSeconds(wait));
+            if (br.containsHTML("Von Ihren IP-Addresse werden schon einige")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 2 * 60 * 1001l);
 
-        if (br.getRedirectLocation() != null && br.getRedirectLocation().indexOf("error") > 0) { throw new PluginException(LinkStatus.ERROR_RETRY); }
-
-        String dllink = br.getRegex("<div id=\"download_url\" style=\"display:none;\">.*?<form action=\"(.*?)\" method=\"get\" onSubmit=\"download_start").getMatch(0);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
-        URLConnectionAdapter con = dl.getConnection();
-        if (Plugin.getFileNameFromHeader(con) == null || Plugin.getFileNameFromHeader(con).indexOf("?") >= 0) {
-            con.disconnect();
-            throw new PluginException(LinkStatus.ERROR_RETRY);
+            if (br.getRedirectLocation() != null && br.getRedirectLocation().indexOf("error") > 0) { throw new PluginException(LinkStatus.ERROR_RETRY); }
+            dllink = br.getRegex("<div id=\"download_url\" style=\"display:none;\">.*?<form action=\"(.*?)\" method=\"get\" onSubmit=\"download_start").getMatch(0);
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+            URLConnectionAdapter con = dl.getConnection();
+            if (Plugin.getFileNameFromHeader(con) == null || Plugin.getFileNameFromHeader(con).indexOf("?") >= 0) {
+                con.disconnect();
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+            if (!con.isContentDisposition()) {
+                con.disconnect();
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
+            }
+            dl.startDownload();
         }
-        if (!con.isContentDisposition()) {
-            con.disconnect();
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
-        }
-        dl.startDownload();
     }
 
     public void login(Account account) throws Exception {
