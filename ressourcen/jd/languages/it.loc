@@ -267,6 +267,7 @@ gui.config.jdshutdown.forceshutdown = Arresta il sistema  (non in tutti i S.O.)
 gui.config.jdshutdown.hibernate = Iberna (non in tutti i S.O.)
 gui.config.jdshutdown.standby = Standby (non in tutti i S.O.)
 gui.config.linkgrabber.controlposition = Metti nella tabella i bottoni del cattura collegamenti
+gui.config.linkgrabber.infopanel.onlinkgrab = Visualizzza pannello informazioni nel Cattura collegamento
 gui.config.linkgrabber.iognorelist = Il filtro link è utilizzato per filtrare i link sulla base di espressioni regolari.
 gui.config.linkgrabber.onlincheck = Verifica informazioni collegamento e stato online
 gui.config.liveheader.autoconfig = Configura automaticamente il router
