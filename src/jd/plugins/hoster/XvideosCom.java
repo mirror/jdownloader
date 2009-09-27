@@ -32,35 +32,38 @@ public class XvideosCom extends PluginForHost {
         super(wrapper);
     }
 
-    @Override
     public String getAGBLink() {
         return "http://info.xvideos.com/contact/";
     }
 
-    @Override
-    public void handleFree(DownloadLink link) throws Exception {
-        requestFileInformation(link);
-        br.setFollowRedirects(false);
-        String infolink = link.getDownloadURL();
-        br.getPage(infolink);
-        String dllink = br.getRegex("default&amp;flv_url=(.*?)&amp;url_bigthu").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        link.setFinalFileName(null);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,link, dllink, true, -20);
-        dl.startDownload();
-    }
-
-    @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
         br.getPage(parameter.getDownloadURL());
         if (br.containsHTML("This video has been deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("Page not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename1 = br.getRegex("<title>XVIDEOS.COM  - (.*?) - XVIDEOS</title>").getMatch(0);
-        if (filename1==null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = filename1 + ".flv";
+        String filename = br.getRegex("<title>XVIDEOS.COM Free Porn  -(.*?)- XVIDEOS</title>").getMatch(0).trim();
+        if (filename == null) {
+            filename = br.getRegex("description content=\"XVIDEOS  -(.*?)\"").getMatch(0).trim();
+            if (filename == null) {
+                filename = br.getRegex("font-size: [0-9]+px;\">.*?<strong>(.*?)</strong>").getMatch(0).trim();
+            }
+        }
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        filename = filename + ".flv";
         parameter.setName(filename.trim());
         return AvailableStatus.TRUE;
+    }
+
+    public void handleFree(DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        br.setFollowRedirects(false);
+        String infolink = link.getDownloadURL();
+        br.getPage(infolink);
+        String dllink = br.getRegex("flv_url=(.*?\\.flv)&").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        link.setFinalFileName(null);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        dl.startDownload();
     }
 
     @Override

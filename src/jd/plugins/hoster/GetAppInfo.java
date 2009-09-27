@@ -46,15 +46,11 @@ public class GetAppInfo extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        // Eingefügter Link wird geändert um die Werbeseite zu umgehen
         br.getPage(link.getDownloadURL());
-
         if (br.containsHTML("The file requested is either invalid or may have been claimed by copyright holders.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-
         String filename = Encoding.htmlDecode(br.getRegex("File Name:<font color=\"#0088CC\">(.*?)</font><br>").getMatch(0));
         String filesize = br.getRegex("File Size:\\s+<font color=\"#0088CC\">(.*?( MB| KB| GB| b))</font><br>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-
         link.setName(filename);
         link.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -76,7 +72,6 @@ public class GetAppInfo extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        // Eingefügter Link wird geändert um die Werbeseite zu umgehen
         String infolink = downloadLink.getDownloadURL();
         br.getPage(infolink);
         br.setFollowRedirects(true);
@@ -91,19 +86,17 @@ public class GetAppInfo extends PluginForHost {
         }
 
         String code = getCaptchaCode("getapp.info", captchaFile, UserIO.NO_USER_INTERACTION, downloadLink, null, null);
-//        br.getPage(infolink);
+        // br.getPage(infolink);
         Form captchaForm = br.getForm(1);
         if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         // Captcha Usereingabe in die Form einfügen
         captchaForm.put("secure", "" + getCode(code));
-        // Auskommentierte Wartezeit, die momentan nicht gebraucht wird, da man
-        // sie überspringen kann
-        // sleep(13000l, downloadLink);
-        // sendet die ganze Form
+        // sendet die Form
         br.submitForm(captchaForm);
         if (!br.containsHTML("Download!</font>")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         String downloadURL = br.getRegex("href='(.*?)'>").getMatch(0);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, downloadURL, false, 1);
+        if (downloadURL == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadURL, true, -2);
         dl.startDownload();
     }
 
