@@ -267,6 +267,7 @@ gui.config.jdshutdown.forceshutdown = Vypnúť počítač (Nie všetky OS)
 gui.config.jdshutdown.hibernate = Hibernovať (Nie všetky OS)
 gui.config.jdshutdown.standby = Úsporný Režim (Nie všetky OS)
 gui.config.linkgrabber.controlposition = Umiestniť tlačidlá Zachytávača Linkov nad tabuľku
+gui.config.linkgrabber.infopanel.onlinkgrab = V zachytávači linkov zobraziť informačný panel
 gui.config.linkgrabber.iognorelist = Filter linkov sa používa na triedenie linkov podľa spoločných znakov.
 gui.config.linkgrabber.onlincheck = Získať informácie o linku a jeho dostupnosť
 gui.config.liveheader.autoconfig = Nastaviť Router Automaticky
