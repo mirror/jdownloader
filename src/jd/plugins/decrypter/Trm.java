@@ -17,7 +17,6 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
@@ -25,7 +24,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: $", interfaceVersion = 2, names = { "tr.im" }, urls = { "http://[\\w\\.]*?tr\\.im/[\\w]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tr.im" }, urls = { "http://[\\w\\.]*?tr\\.im/\\w+(-\\w+)?" }, flags = { 0 })
 public class Trm extends PluginForDecrypt {
 
     public Trm(PluginWrapper wrapper) {
@@ -38,7 +37,9 @@ public class Trm extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(false);
         br.getPage(parameter);
-        decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
+        String linkurl = br.getRedirectLocation();
+        if (linkurl == null) return null;
+        decryptedLinks.add(createDownloadlink(linkurl));
         return decryptedLinks;
     }
 

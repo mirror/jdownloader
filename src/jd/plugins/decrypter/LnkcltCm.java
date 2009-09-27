@@ -24,10 +24,10 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "minilink.us" }, urls = { "http://[\\w\\.]*?minilink\\.us/[A-Zaz0-9-_]+" }, flags = { 0 })
-public class MnlnkUs extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linkoculto.com" }, urls = { "http://[\\w\\.]*?linkoculto\\.com/[a-z0-9]{6}(\\.html)?" }, flags = { 0 })
+public class LnkcltCm extends PluginForDecrypt {
 
-    public MnlnkUs(PluginWrapper wrapper) {
+    public LnkcltCm(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -35,15 +35,19 @@ public class MnlnkUs extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        br.setFollowRedirects(false);
         br.getPage(parameter);
-        if (!br.containsHTML("Sorry, this short URL is not valid")) {
+
+        if (!br.containsHTML("Esa url no se encuentra en nuestra base de datos")) {
             String linkurl = br.getRegex("<iframe.*?src=\"(.*?)\".*?>").getMatch(0);
+
             if (linkurl == null) return null;
+
             decryptedLinks.add(createDownloadlink(linkurl));
         }
+
         return decryptedLinks;
     }
 
     // @Override
+
 }
