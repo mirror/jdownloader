@@ -776,9 +776,19 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
 
     public void onLinkGrabberControllerEvent(LinkGrabberControllerEvent event) {
         switch (event.getID()) {
+        case LinkGrabberControllerEvent.ADD_FILEPACKAGE:
+            if (SubConfiguration.getConfig(LinkGrabberController.CONFIG).getBooleanProperty(LinkGrabberController.PARAM_INFOPANEL_ONLINKGRAB)) {
+                showFilePackageInfo((LinkGrabberFilePackage) event.getParameter());
+            }
+            Update_Async.restart();
+            break;
         case LinkGrabberControllerEvent.REMOVE_FILEPACKAGE:
             if (filePackageInfo.getPackage() != null && filePackageInfo.getPackage() == ((LinkGrabberFilePackage) event.getParameter())) {
-                hideFilePackageInfo();
+                if (!LGINSTANCE.getPackages().isEmpty()) {
+                    showFilePackageInfo(LGINSTANCE.getPackages().get(0));
+                } else {
+                    hideFilePackageInfo();
+                }
             }
             Update_Async.restart();
             break;
