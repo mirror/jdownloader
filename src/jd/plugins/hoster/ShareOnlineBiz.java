@@ -208,7 +208,7 @@ public class ShareOnlineBiz extends PluginForHost {
     }
 
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return 4;
     }
 
     public void reset() {
