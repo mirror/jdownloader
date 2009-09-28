@@ -742,7 +742,8 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
         
         File destinationFolder = new File(outputFolder);
         if (!destinationFolder.exists()) {
-			if (!destinationFolder.mkdir()) {
+        	boolean createFolder = destinationFolder.mkdirs();
+			if (!createFolder) {
 				logger.warning("The folder '" + destinationFolder + "' couldn't be created, cannot get free space");
 				LinkStatus status = dlink.getLinkStatus(); 
 	        	status.setErrorMessage("Cannot create folder " + outputFolder);
@@ -750,6 +751,8 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
 	        	
 	        	dlink.setEnabled(false);
 	        	dlink.requestGuiUpdate();
+			} else {
+				logger.info("The folder '" + destinationFolder + "' was successfully created, continuing download...");
 			}
         }
         
