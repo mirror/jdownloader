@@ -37,7 +37,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-//pspzockerscenes first decrypter hehe
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "crypturl.us" }, urls = { "http://[\\w\\.]*?crypturl\\.us/o/[a-z0-9]+" }, flags = { 0 })
 public class CrptRlS extends PluginForDecrypt {
 

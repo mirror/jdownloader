@@ -16,21 +16,21 @@
 
 package jd.plugins.decrypter;
 
-import java.awt.Point;
 import java.io.File;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protectbox.in" }, urls = { "http://[\\w\\.]*?protectbox\\.in/.*" }, flags = { 0 })
 public class PrtctBxn extends PluginForDecrypt {
@@ -42,25 +42,44 @@ public class PrtctBxn extends PluginForDecrypt {
     // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        br.setFollowRedirects(false);
         String parameter = param.toString();
-
+        FilePackage fp = FilePackage.getInstance();
         br.getPage(parameter);
-
-        File file = this.getLocalCaptchaFile();
-
-        Form form = br.getForm(0);
-        Browser.download(file, br.cloneBrowser().openGetConnection("http://www.protectbox.in/captcha/imagecreate.php"));
-        Point p = UserIO.getInstance().requestClickPositionDialog(file, JDL.L("plugins.decrypt.stealthto.captcha.title", "Captcha"), JDL.L("plugins.decrypt.stealthto.captcha", "Please click on the Circle with a gap"));
-        if (p == null) throw new DecrypterException(DecrypterException.CAPTCHA);
-        form.remove("x");
-        form.remove("y");
-        form.put("button.x", p.x + "");
-        form.put("button.y", p.y + "");
-        br.submitForm(form);
-        String[] links = br.getRegex("<td style=.*?<a href=\"(.*?)\"(?= onmouse)").getColumn(0);
-        for (String link : links) {
-            decryptedLinks.add(createDownloadlink(link.trim()));
+        if (br.containsHTML("includes/captcha/")) {
+            for (int i = 0; i <= 5; i++) {
+                Form captchaform = br.getForm(0);
+                if (captchaform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                File file = this.getLocalCaptchaFile();
+                Browser.download(file, br.cloneBrowser().openGetConnection("http://www.protectbox.in/includes/captcha/imagecreate.php"));
+                int[] p = new jd.captcha.specials.GmdMscCm(file).getResult();
+                if (p == null) throw new DecrypterException(DecrypterException.CAPTCHA);
+                captchaform.put("button.x", p[0] + "");
+                captchaform.put("button.y", p[1] + "");
+                br.submitForm(captchaform);
+                if (!br.containsHTML("/includes/captcha/")) break;
+            }
         }
+        /* Password handling */
+        String pass = br.getRegex("<b>Passwort:</b>.*?</td>.*?<td>(.*?)</td>").getMatch(0).trim();
+        String fpName = br.getRegex("<b>Ordnername:</b>.*?</td>.*?<td>(.*?)</td>").getMatch(0).trim();
+        fp.setName(fpName);
+        String[] links = br.getRegex("\"(out\\.php\\?id=.*?)\"").getColumn(0);
+        if (links == null || links.length == 0) return null;
+        progress.setRange(links.length);
+        for (String link : links) {
+            link = "http://www.protectbox.in/" + link;
+            br.getPage(link);
+            String finallink = br.getRedirectLocation();
+            if (finallink == null) throw new DecrypterException(DecrypterException.CAPTCHA);
+            DownloadLink dl_link = createDownloadlink(finallink);
+            if (pass != null && pass.length() != 0) {
+                dl_link.addSourcePluginPassword(pass);
+            }
+            decryptedLinks.add(dl_link);
+            progress.increase(1);
+        }
+        fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
 

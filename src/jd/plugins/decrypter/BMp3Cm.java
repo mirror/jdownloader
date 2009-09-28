@@ -71,7 +71,7 @@ public class BMp3Cm extends PluginForDecrypt {
         if (br.containsHTML(">Wrong code<")) throw new DecrypterException(DecrypterException.CAPTCHA);
         String finallink = br.getRegex("size:.*?[0-9]+px;\"><a href=\"((http://|ftp://).*?)\"").getMatch(0);
         if (finallink == null) {
-            finallink = br.getRegex("file=(http://.*?)&amp;").getMatch(0);
+            finallink = br.getRegex("file=((http://|ftp://).*?)&amp;").getMatch(0);
         }
         if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         String fpname = br.getRegex("Song name:.*?<strong>(.*?)</strong>").getMatch(0).trim();

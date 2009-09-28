@@ -21,6 +21,9 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -30,9 +33,11 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.JDUtilities;
 import java.io.File;
+import java.io.IOException;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dlbase.ws" }, urls = { "http://[\\w\\.]*?dlbase\\.ws/(season|game|program|music|xxx|movie)_details\\.php\\?id=[0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dlbase.ws" }, urls = { "http://[\\w\\.]*?dlbase\\.ws/(season|game|program|music|xxx|movie|gamereport)_details\\.php\\?id=[0-9]+" }, flags = { 0 })
 public class DlBseWs extends PluginForDecrypt {
 
     public DlBseWs(PluginWrapper wrapper) {
@@ -45,19 +50,27 @@ public class DlBseWs extends PluginForDecrypt {
         FilePackage fp = FilePackage.getInstance();
         br.setFollowRedirects(true);
         br.getPage(parameter);
+        // "gamereport"-links handling
+        if (parameter.contains("gamereport")) {
+            parameter = br.getRegex("\"(game_details\\.php\\?id=.*?)\"").getMatch(0);
+            if (parameter == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            parameter = "http://dlbase.ws/" + parameter;
+            br.getPage(parameter);
+        }
         String fpName = br.getRegex("\"top\"><strong>(.*?)</strong>").getMatch(0).trim();
         fp.setName(fpName);
+        // Container handling
+        if (br.containsHTML(">Download DLC<")) {
+            decryptedLinks = loadcontainer(br, parameter);
+            if (decryptedLinks != null && decryptedLinks.size() > 0) return decryptedLinks;
+        }
         String[] dlinks = br.getRegex("\"((season|game|program|music|xxx|movie)_details\\.php\\?.*?&download=.*?)\"").getColumn(0);
         if (dlinks == null || dlinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         for (String dlink : dlinks) {
             dlink = "http://dlbase.ws/" + dlink;
             br.getPage(dlink);
             // Password handling
-            String password = br.getRegex("\"top\"><strong>(.*?)</strong>").getMatch(0).trim();
-            ArrayList<String> passwords = new ArrayList<String>();
-            if (password != null && !password.equals("-kein Passwort-") && password.length() != 0) {
-                passwords.add(password);
-            }
+            String password = br.getRegex("<br>Passwort: <input type=\"text\" style=\"color:red;\" value=\"(.*?)\"").getMatch(0).trim();
             String[] links = br.getRegex("\"(go\\.php\\?.*?)\"").getColumn(0);
             if (links == null || links.length == 0) return null;
             progress.setRange(links.length);
@@ -67,7 +80,7 @@ public class DlBseWs extends PluginForDecrypt {
                 /* captcha handling */
                 String downlink = null;
                 if (!br.containsHTML("kreiscaptcha.php")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-                for (int i = 0; i <= 3; i++) {
+                for (int i = 0; i <= 5; i++) {
                     File file = this.getLocalCaptchaFile();
                     Browser.download(file, br.cloneBrowser().openGetConnection("http://dlbase.ws/kreiscaptcha.php"));
                     int[] p = new jd.captcha.specials.GmdMscCm(file).getResult();
@@ -86,11 +99,48 @@ public class DlBseWs extends PluginForDecrypt {
                 }
                 if (downlink == null && br.containsHTML("kreiscaptcha\\.php")) throw new DecrypterException(DecrypterException.CAPTCHA);
                 if (downlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-                decryptedLinks.add(createDownloadlink(downlink));
+                DownloadLink dl_link = createDownloadlink(downlink);
+                if (password != null && !password.equals("-kein Passwort-") && !password.equals("keins") && !password.equals("n/a") && password.length() != 0) {
+                    dl_link.addSourcePluginPassword(password);
+                }
+                decryptedLinks.add(dl_link);
                 progress.increase(1);
             }
         }
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
+
+    // by jiaz
+    private ArrayList<DownloadLink> loadcontainer(Browser br, String parameter) throws IOException, PluginException {
+        Browser brc = br.cloneBrowser();
+        String category = new Regex(parameter, "dlbase\\.ws/(.*?)_details").getMatch(0);
+        String id = "&id=";
+        if (category.equals("game") || category.equals("season") || category.equals("movie")) {
+            id = "sid=";
+        }
+        String containerid = new Regex(parameter, "dlbase\\.ws/.*?_details\\.php\\?id=(\\d+)").getMatch(0);
+        String containerlink = "http://dlbase.ws/container_download.php?type=" + category + id + containerid + "&dl=dlc";
+        String test = Encoding.htmlDecode(containerlink);
+        File file = null;
+        URLConnectionAdapter con = brc.openGetConnection(test);
+        if (con.getResponseCode() == 200) {
+            file = JDUtilities.getResourceFile("tmp/dlbase/" + test.replaceAll("(http://dlbase.ws|/|\\?)", "") + ".dlc");
+            if (file == null) return null;
+            file.deleteOnExit();
+            brc.downloadConnection(file, con);
+        } else {
+            con.disconnect();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        }
+
+        if (file != null && file.exists() && file.length() > 100) {
+            ArrayList<DownloadLink> decryptedLinks = JDUtilities.getController().getContainerLinks(file);
+            if (decryptedLinks.size() > 0) return decryptedLinks;
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        }
+        return null;
+    }
+
 }
