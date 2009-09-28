@@ -91,7 +91,7 @@ public class LnkCrptWs extends PluginForDecrypt {
                 valid = false;
                 File file = this.getLocalCaptchaFile();
                 String id = url.replaceFirst(".*id=", "");
-                System.out.println(id);
+//                System.out.println(id);
                 Browser.download(file, br.cloneBrowser().openGetConnection("http://linkcrypt.ws/captx.php?id=" + id));
                 // redr System.out.println(url);
                 Point p;
