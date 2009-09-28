@@ -21,6 +21,7 @@ import java.awt.Color;
 import javax.swing.Icon;
 import javax.swing.JPanel;
 
+import jd.nutils.JDImage;
 import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingx.renderer.JRendererLabel;
@@ -83,6 +84,12 @@ public class StatusLabel extends JPanel {
 
     @Override
     public void setEnabled(boolean b) {
+        if (left != null) left.setDisabledIcon(JDImage.getDisabledIcon(left.getIcon()));
+        if (rights != null) {
+            for (int i = 0; i < ICONCOUNT; i++) {
+                rights[i].setDisabledIcon(JDImage.getDisabledIcon(rights[i].getIcon()));
+            }
+        }
         if (rights != null) {
             for (int i = 0; i < ICONCOUNT; i++) {
                 rights[i].setEnabled(b);

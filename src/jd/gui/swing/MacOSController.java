@@ -16,8 +16,8 @@
 
 package jd.gui.swing;
 
+import jd.controlling.JDController;
 import jd.gui.swing.components.AboutDialog;
-import jd.utils.JDUtilities;
 
 import com.apple.eawt.Application;
 import com.apple.eawt.ApplicationAdapter;
@@ -34,7 +34,7 @@ public class MacOSController extends Application {
     class Handler extends ApplicationAdapter {
 
         public void handleQuit(ApplicationEvent e) {
-            JDUtilities.getController().exit();
+            JDController.getInstance().exit();
         }
 
         public void handleAbout(ApplicationEvent e) {

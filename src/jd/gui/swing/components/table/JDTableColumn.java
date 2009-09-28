@@ -22,13 +22,16 @@ import java.awt.Dimension;
 import java.util.EventObject;
 
 import javax.swing.AbstractCellEditor;
+import javax.swing.Icon;
 import javax.swing.JComponent;
+import javax.swing.JLabel;
 import javax.swing.JTable;
 import javax.swing.UIManager;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
 
 import jd.gui.swing.jdgui.views.downloadview.JDProgressBar;
+import jd.nutils.JDImage;
 
 import org.jdesktop.swingx.renderer.DefaultTableRenderer;
 
@@ -110,7 +113,15 @@ public abstract class JDTableColumn extends AbstractCellEditor implements TableC
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         hasFocus = false;
         Component c = myTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-        c.setEnabled(isEnabled(value));
+        if (!isEnabled(value)) {
+            if (c instanceof JLabel) {
+                Icon icon = ((JLabel) c).getIcon();
+                ((JLabel) c).setDisabledIcon(JDImage.getDisabledIcon(icon));
+            }
+            c.setEnabled(false);
+        } else {
+            c.setEnabled(true);
+        }
         if (c instanceof JDProgressBar) return c;
         if (!isSelected) {
             for (JDRowHighlighter high : this.table.getJDRowHighlighter()) {

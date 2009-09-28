@@ -82,10 +82,11 @@ public class HosterColumn extends JDTableColumn {
             value = fp.getHoster();
             co = getDefaultTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
         } else if (value instanceof DownloadLink) {
+            /* enable statuspanel because we do not disable ourself */
+            statuspanel.setEnabled(true);
             dLink = (DownloadLink) value;
             co = getDefaultTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             statuspanel.setBackground(co.getBackground());
-            statuspanel.setEnabled(co.isEnabled());
             statuspanel.setForeground(co.getForeground());
             statuspanel.setText(dLink.getLinkStatus().getStatusString());
             counter = 0;

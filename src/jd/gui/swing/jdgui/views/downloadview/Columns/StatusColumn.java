@@ -100,10 +100,11 @@ public class StatusColumn extends JDTableColumn {
     @Override
     public Component myTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         if (value instanceof FilePackage) {
+            /* enable statuspanel because we do not disable ourself */
+            statuspanel.setEnabled(true);
             fp = (FilePackage) value;
             co = getDefaultTableCellRendererComponent(table, "", isSelected, hasFocus, row, column);
             statuspanel.setBackground(co.getBackground());
-            statuspanel.setEnabled(co.isEnabled());
             statuspanel.setForeground(co.getForeground());
             if (fp.isFinished()) {
                 statuspanel.setText("");

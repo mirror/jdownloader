@@ -31,6 +31,7 @@ import javax.imageio.ImageIO;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
+import javax.swing.UIManager;
 
 import jd.controlling.JDLogger;
 import jd.utils.JDUtilities;
@@ -43,6 +44,7 @@ public class JDImage {
      */
     private static HashMap<String, BufferedImage> BUFFERED_IMAGE_CACHE = new HashMap<String, BufferedImage>();
     private static HashMap<String, ImageIcon> IMAGE_ICON_CACHE = new HashMap<String, ImageIcon>();
+    private static HashMap<Icon, Icon> DISABLED_ICON_CACHE = new HashMap<Icon, Icon>();
     private static HashMap<String, Image> SCALED_IMAGE_CACHE = new HashMap<String, Image>();
 
     public static BufferedImage createEmptyBufferedImage(int w, int h) {
@@ -186,6 +188,15 @@ public class JDImage {
         if (ret != null) return ret;
         ret = new ImageIcon(getImage(string));
         IMAGE_ICON_CACHE.put(string, ret);
+        return ret;
+    }
+
+    public static Icon getDisabledIcon(Icon icon) {
+        if (icon == null) return null;
+        Icon ret = DISABLED_ICON_CACHE.get(icon);
+        if (ret != null) return ret;
+        ret = UIManager.getLookAndFeel().getDisabledIcon(null, icon);
+        DISABLED_ICON_CACHE.put(icon, ret);
         return ret;
     }
 
