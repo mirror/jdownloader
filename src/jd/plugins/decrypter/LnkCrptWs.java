@@ -90,9 +90,10 @@ public class LnkCrptWs extends PluginForDecrypt {
             if (br.containsHTML("cursor:crosshair")) {
                 valid = false;
                 File file = this.getLocalCaptchaFile();
-                String url = captcha.getRegex("src=\"([^\"]*)\"[^>]*style=\"cursor:").getMatch(0);
-                if (url == null) url = captcha.getRegex("style=\"cursor:[^>]*src=\"([^\"]*)\"").getMatch(0);
+                String url = captcha.getRegex("src=\"([^\"]*)\"[^>]*style=\"cursor:(?![^>]*display[^>]*none)").getMatch(0);
+                if (url == null) url = captcha.getRegex("style=\"cursor:(?![^>]*display[^>]*none)src=\"([^\"]*)\"").getMatch(1);
                 Browser.download(file, br.cloneBrowser().openGetConnection(url));
+//              redr  System.out.println(url);
                 Point p;
                 if (url.contains("captx.php")) {
                     String code = getCaptchaCode("lnkcrptwsCircles", file, param);
@@ -128,7 +129,7 @@ public class LnkCrptWs extends PluginForDecrypt {
         String[] containers = br.getRegex("eval\\((.*?\\,\\{\\}\\))\\)").getColumn(0);
         HashMap<String, String> map = new HashMap<String, String>();
         for (String c : containers) {
-
+            @SuppressWarnings("deprecation")
             Context cx = Context.enter();
             Scriptable scope = cx.initStandardObjects();
             c = c.replace("return p}(", " return p}  f(").replace("function(p,a,c,k,e,d)", "function f(p,a,c,k,e,d)");
@@ -190,18 +191,14 @@ public class LnkCrptWs extends PluginForDecrypt {
                         String[] evals = clone.getRegex("eval\\((.*?\\,\\{\\}\\))\\)").getColumn(0);
 
                         for (String c : evals) {
+                            @SuppressWarnings("deprecation")
                             Context cx = Context.enter();
                             Scriptable scope = cx.initStandardObjects();
                             c = c.replace("return p}(", " return p}  f(").replace("function(p,a,c,k,e", "function f(p,a,c,k,e");
                             Object result = cx.evaluateString(scope, c, "<cmd>", 1, null);
                             String code = Context.toString(result);
                             String versch;
-                            if (code.startsWith("var versch")) {
-                                versch = new Regex(code, "versch='([^']*)'").getMatch(0);
-
-                            } else {
-                                versch = new Regex(code, ".*?base='([^']*)'").getMatch(0);
-                            }
+                                versch = new Regex(code, ".*?='([^']*)'").getMatch(0);
                             versch = Encoding.Base64Decode(versch);
                             versch = new Regex(versch, "<iframe.*?src\\s*?=\\s*?\"?([^\"> ]{20,})\"?\\s?").getMatch(0);
                             versch = Encoding.htmlDecode(versch);
@@ -212,7 +209,7 @@ public class LnkCrptWs extends PluginForDecrypt {
                             if (row != null) {
                                 map.put(row[1], row[0]);
                             } else {
-                                // System.out.println(code);
+//                                 System.out.println(code);
                             }
 
                         }
