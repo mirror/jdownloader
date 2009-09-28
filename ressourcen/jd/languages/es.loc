@@ -267,6 +267,7 @@ gui.config.jdshutdown.forceshutdown = Apagar (No para todos los Sistemas Operati
 gui.config.jdshutdown.hibernate = Hibernar (No para todos los Sistemas Operativos)
 gui.config.jdshutdown.standby = Suspender (No para todos los Sistemas Operativos)
 gui.config.linkgrabber.controlposition = Ubicar botones del Capturador de Enlances arriba
+gui.config.linkgrabber.infopanel.onlinkgrab = Mostrar panel de informacion del Capturador de Enlaces
 gui.config.linkgrabber.iognorelist = El filtro de enlaces se úsa para filtrar los enlaces basado en expresiones regulares.
 gui.config.linkgrabber.onlincheck = Comprobar estado en línea de los enlaces
 gui.config.liveheader.autoconfig = Configurar router automáticamente
