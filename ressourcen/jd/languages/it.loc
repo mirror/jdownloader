@@ -174,7 +174,7 @@ gui.config.download.crc = Controlla quando possibile SFV/CRC
 gui.config.download.download.tab = Controllo download
 gui.config.download.ipcheck = Riconnessione IP-Check
 gui.config.download.ipcheck.balance = Usa controllo IP bilanciato
-gui.config.download.ipcheck.externalinterval = Intervallo controllo IP esterno [sec]
+gui.config.download.ipcheck.externalinterval2 = Controllo Intervallo IP Esterno [min]
 gui.config.download.ipcheck.mask = IP abilitati
 gui.config.download.ipcheck.regex = Filtro IP RegEx
 gui.config.download.ipcheck.website = Controllo online IP
@@ -1048,6 +1048,7 @@ jd.update.main.error.title = Si è verificato un errore
 jd.update.main.error.title.old = Aggiornamenti trovati!
 jd.utils.webupdate.ballon.message.updateinprogress = Un aggiornamento è già in esecuzione.
 jd.utils.webupdate.ballon.title = Aggiorna
+jd.utils.webupdate.doupdatecheck.noupdates = Nessun aggiornamento disponibile
 jd.utils.webupdate.message = <font size="2" face="Verdana, Arial, Helvetica, sans-serif">%s aggiornamenti  disponibili. Installare ora?</font>
 jd.utils.webupdate.message2 = <font size="4" face="Verdana, Arial, Helvetica, sans-serif">%s aggiornamento(i) avviabili. Installare adesso?</font>
 jd.utils.webupdate.progresscontroller.text = Aggiornamento in esecuzione
