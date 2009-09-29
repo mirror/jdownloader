@@ -32,7 +32,15 @@ import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "l4dmaps.com" }, urls = { "http://[\\w\\.]*?l4dmaps\\.com/(details|mirrors|file-download)\\.php\\?file=[0-9]+" }, flags = { 0 })
 public class L4dMapsCom extends PluginForHost {
-    private static final String l4dservers = "l4dservers";
+	private static final String l4dservers;
+	
+	 /** The list of server values displayed to the user */
+    private static final String[] servers;
+	
+	static {
+		l4dservers = "l4dservers";
+		servers = new String[] { "Server #1", "Server #2" };
+	}
 
     public L4dMapsCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -49,17 +57,24 @@ public class L4dMapsCom extends PluginForHost {
     }
     
     private void setConfigElements() {
-        String[] servers = new String[] { "1", "2" };
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, JDUtilities.getConfiguration(), l4dservers, servers, JDL.L("plugins.host.L4dMapsCom.servers", "Use this server:")).setDefaultValue(0));
+    	config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, JDUtilities.getConfiguration(), l4dservers, servers, JDL.L("plugins.host.L4dMapsCom.servers", "Use this server:")).setDefaultValue(1));
     }
     
-    public int servers() {
+    /**
+     * Get the server configured by the user
+     * 
+     * @return the number of the configured server
+     */
+    private int getConfiguredServer() {
         switch (JDUtilities.getConfiguration().getIntegerProperty(l4dservers, 0)) {
         case 1:
+        	logger.fine("The server #1 is configured");
             return 1;
         case 2:
+        	logger.fine("The server #2 is configured");
             return 2;
         default:
+        	logger.fine("No server is configured, returning 1st one...");
             return 1;
         }
     }
@@ -83,9 +98,20 @@ public class L4dMapsCom extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         requestFileInformation(link);
-        String server1 = br.getRegex("\">E-Frag #1<.*?\"(http://www\\.l4dmaps\\.com/file-download\\.php\\?file=[0-9]+&entry=[0-9]+)\"").getMatch(0);
-//        String server2 = br.getRegex("\">E-Frag #2<.*?\"(http://www\\.l4dmaps\\.com/file-download\\.php\\?file=[0-9]+&entry=[0-9]+)\"").getMatch(0);
-        br.getPage(server1);
+        
+        int configuredServer = getConfiguredServer();
+        logger.info("The configured server is " + configuredServer);
+        
+        String usedServer = "";
+        if (configuredServer == 1) {
+        	usedServer = br.getRegex("\">E-Frag #1<.*?\"(http://www\\.l4dmaps\\.com/file-download\\.php\\?file=[0-9]+&entry=[0-9]+)\"").getMatch(0);
+        } else if (configuredServer == 2) {
+        	usedServer = br.getRegex("\">E-Frag #2<.*?\"(http://www\\.l4dmaps\\.com/file-download\\.php\\?file=[0-9]+&entry=[0-9]+)\"").getMatch(0);
+        }
+
+        logger.fine("Using link '" + usedServer + "'");
+        br.getPage(usedServer);
+        
         String dllink = br.getRegex("begin, <a href=\"(.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         dllink = dllink.replace("amp;", "");
@@ -93,7 +119,7 @@ public class L4dMapsCom extends PluginForHost {
         br.getPage(dllink);
         dllink = br.getRedirectLocation();
         if (dllink.contains("index.php")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        // You can download up to 3 files simultaniously from one server so if
+        // You can download up to 3 files simultaneously from one server so if
         // someone knows how to make JD know that it is downloading 3 files from
         // one server you could make jd switch to the other servers so you can
         // download 6 files at the same time
