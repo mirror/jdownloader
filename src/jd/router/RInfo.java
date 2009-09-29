@@ -29,7 +29,7 @@ import jd.parser.Regex;
 import jd.utils.EditDistance;
 import jd.utils.JDUtilities;
 
-public class RInfo implements Serializable {
+public class RInfo implements Serializable, Comparable<RInfo> {
 
     private static final long serialVersionUID = -2119228262137830055L;
 
@@ -314,5 +314,9 @@ public class RInfo implements Serializable {
         }
 
         setUPnPSCPDs(UPnPSCPDs);
+    }
+
+    public int compareTo(RInfo o) {
+        return Integer.valueOf(getIntegrety()).compareTo(Integer.valueOf(o.getIntegrety()));
     }
 }

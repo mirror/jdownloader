@@ -42,9 +42,9 @@ import jd.controlling.reconnect.ReconnectMethod;
 import jd.controlling.reconnect.Reconnecter;
 import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
-import jd.gui.swing.SwingGui;
 import jd.gui.swing.dialog.ProgressDialog;
 import jd.gui.swing.jdgui.settings.GUIConfigEntry;
+import jd.gui.userio.DummyFrame;
 import jd.http.Browser;
 import jd.http.RequestHeader;
 import jd.http.URLConnectionAdapter;
@@ -107,21 +107,19 @@ public class GetRouterInfo {
         return false;
     }
 
-
     public InetAddress adress = null;
 
     public boolean testAll = false;
 
-    @SuppressWarnings("unchecked")
     public static ArrayList<InetAddress> getInterfaces() {
         ArrayList<InetAddress> ret = new ArrayList<InetAddress>();
         try {
-            Enumeration e = NetworkInterface.getNetworkInterfaces();
+            Enumeration<NetworkInterface> e = NetworkInterface.getNetworkInterfaces();
 
             while (e.hasMoreElements()) {
                 NetworkInterface ni = (NetworkInterface) e.nextElement();
 
-                Enumeration e2 = ni.getInetAddresses();
+                Enumeration<InetAddress> e2 = ni.getInetAddresses();
 
                 while (e2.hasMoreElements()) {
                     InetAddress ip = (InetAddress) e2.nextElement();
@@ -167,20 +165,18 @@ public class GetRouterInfo {
         return checkport(host, 80);
     }
 
-    @SuppressWarnings("unchecked")
-    public static Map sortByIntegrety(Map<RInfo, Integer> map) {
-        LinkedList list = new LinkedList(map.entrySet());
-        Collections.sort(list, new Comparator() {
-            public int compare(Object o1, Object o2) {
-                if (((Comparable) ((Map.Entry<RInfo, Integer>) (o1)).getValue()).equals(((Map.Entry<RInfo, Integer>) (o2)).getValue())) {
-                    return ((Comparable) ((Map.Entry<RInfo, Integer>) (o2)).getKey().getIntegrety()).compareTo(((Map.Entry<RInfo, Integer>) (o1)).getKey().getIntegrety());
+    public static LinkedHashMap<RInfo, Integer> sortByIntegrety(Map<RInfo, Integer> map) {
+        LinkedList<Entry<RInfo, Integer>> list = new LinkedList<Entry<RInfo, Integer>>(map.entrySet());
+        Collections.sort(list, new Comparator<Entry<RInfo, Integer>>() {
+            public int compare(Entry<RInfo, Integer> o1, Entry<RInfo, Integer> o2) {
+                if (o1.getValue().equals((o2).getValue())) {
+                    return o2.getKey().compareTo(o1.getKey());
                 } else
-                    return ((Comparable) ((Map.Entry) (o1)).getValue()).compareTo(((Map.Entry) (o2)).getValue());
+                    return o1.getValue().compareTo(o2.getValue());
             }
         });
-        LinkedHashMap result = new LinkedHashMap();
-        for (Iterator it = list.iterator(); it.hasNext();) {
-            Map.Entry entry = (Map.Entry) it.next();
+        LinkedHashMap<RInfo, Integer> result = new LinkedHashMap<RInfo, Integer>();
+        for (Entry<RInfo, Integer> entry : list) {
             result.put(entry.getKey(), entry.getValue());
         }
         return result;
@@ -325,7 +321,7 @@ public class GetRouterInfo {
                     }
                 }
                 setProgress(80);
-                routers = (HashMap<RInfo, Integer>) sortByIntegrety(routers);
+                routers = sortByIntegrety(routers);
                 HashMap<String, RInfo> methodes = new HashMap<String, RInfo>();
                 Iterator<Entry<RInfo, Integer>> inter = routers.entrySet().iterator();
                 while (inter.hasNext()) {
@@ -337,7 +333,7 @@ public class GetRouterInfo {
                     } else
                         methodes.put(entry.getKey().getReconnectMethode(), entry.getKey());
                 }
-                routers = (HashMap<RInfo, Integer>) sortByIntegrety(routers);
+                routers = sortByIntegrety(routers);
                 if (upnp > 0) {
                     setProgressText(JDL.L("gui.config.routeripfinder.status.searchingforupnp", "Searching for UPnP..."));
                     while (isalv.isAlv) {
@@ -475,7 +471,7 @@ public class GetRouterInfo {
                         }
                     }
 
-                    routers = (LinkedHashMap<RInfo, Integer>) sortByIntegrety(routers);
+                    routers = sortByIntegrety(routers);
                     HashMap<String, RInfo> methodes = new HashMap<String, RInfo>();
                     Iterator<Entry<RInfo, Integer>> inter = routers.entrySet().iterator();
                     while (inter.hasNext()) {
@@ -487,7 +483,7 @@ public class GetRouterInfo {
                         } else
                             methodes.put(entry.getKey().getReconnectMethode(), entry.getKey());
                     }
-                    routers = (LinkedHashMap<RInfo, Integer>) sortByIntegrety(routers);
+                    routers = sortByIntegrety(routers);
                     /*
                      * experimentalRouters = (HashMap<RInfo, Integer>)
                      * sortByIntegrety(experimentalRouters); methodes = new
@@ -613,7 +609,7 @@ public class GetRouterInfo {
 
     public static void autoConfig(final Object pass, final Object user, final Object ip, final Object routerScript) {
 
-        final ProgressDialog progress = new ProgressDialog(SwingGui.getInstance().getMainFrame(), JDL.L("gui.config.liveHeader.progress.message", "jDownloader sucht nach Ihren Routereinstellungen"), null, false, true);
+        final ProgressDialog progress = new ProgressDialog(DummyFrame.getDialogParent(), JDL.L("gui.config.liveHeader.progress.message", "jDownloader sucht nach Ihren Routereinstellungen"), null, false, true);
         final GetRouterInfo routerInfo = new GetRouterInfo(progress);
         final Thread th = new Thread() {
             // @Override

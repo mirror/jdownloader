@@ -78,59 +78,29 @@ public class ProgressDialog extends JDialog implements ActionListener {
             if (thread != null && thread.isAlive()) {
                 thread.interrupt();
             }
-            setVisible(false);
             dispose();
         } else if (e.getSource() == btnNotOK) {
             if (thread != null && thread.isAlive()) {
                 thread.interrupt();
             }
-            setVisible(false);
             dispose();
         }
-    }
-
-    public int getMaximum() {
-        return progress.getMaximum();
-    }
-
-    public String getMessage() {
-        return lblMessage.getText();
-    }
-
-    public int getMinimum() {
-        return progress.getMinimum();
-    }
-
-    public String getString() {
-        return progress.getString();
-    }
-
-    public int getValue() {
-        return progress.getValue();
     }
 
     public void setMaximum(int value) {
         progress.setMaximum(value);
     }
 
-    public void setMessage(String txt) {
-        lblMessage.setText(txt);
-    }
-
-    public void setMinimum(int value) {
-        progress.setMinimum(value);
-    }
-
     public void setString(String txt) {
         progress.setString(txt);
     }
 
-    public void setStringPainted(boolean v) {
-        progress.setStringPainted(v);
+    public void setStringPainted(boolean b) {
+        progress.setStringPainted(b);
     }
 
-    public void setThread(Thread th) {
-        thread = th;
+    public void setThread(Thread thread) {
+        this.thread = thread;
     }
 
     public void setValue(int value) {

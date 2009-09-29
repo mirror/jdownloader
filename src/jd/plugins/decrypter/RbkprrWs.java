@@ -18,27 +18,26 @@ package jd.plugins.decrypter;
 
 import java.awt.Color;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
-import javax.swing.JDialog;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
+import javax.swing.JPanel;
 import javax.swing.JSeparator;
 
 import jd.PluginWrapper;
 import jd.captcha.specials.Rbkprr;
 import jd.controlling.ProgressController;
+import jd.gui.UserIO;
 import jd.gui.swing.GuiRunnable;
-import jd.gui.swing.SwingGui;
+import jd.gui.swing.dialog.AbstractDialog;
 import jd.http.Browser;
-import jd.nutils.Screen;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
@@ -72,7 +71,7 @@ public class RbkprrWs extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
+    @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -113,8 +112,9 @@ public class RbkprrWs extends PluginForDecrypt {
                 mirrors.add(name, "", true, false);
             }
             if (mirrors.isEmpty()) return null;
-        } else
+        } else {
             return null;
+        }
 
         showMirrorDialog();
 
@@ -236,7 +236,16 @@ public class RbkprrWs extends PluginForDecrypt {
     }
 
     private void showMirrorDialog() {
-        mirrorDialog();
+        new GuiRunnable<Object>() {
+            private static final long serialVersionUID = 7264910846281984510L;
+
+            @Override
+            public Object runSave() {
+                new RbkprrWsDialog();
+                return null;
+            }
+
+        };
     }
 
     /**
@@ -244,132 +253,114 @@ public class RbkprrWs extends PluginForDecrypt {
      * 
      * @info Hab mich beim Serienjunkies Plugin bedient ;) greetz ManiacMansion
      */
-    private void mirrorDialog() {
+    private class RbkprrWsDialog extends AbstractDialog {
 
-        new GuiRunnable<Object>() {
-            private static final long serialVersionUID = 7264910846281984510L;
+        private static final long serialVersionUID = 1981746297816350752L;
 
-            // @Override
-            public Object runSave() {
-                /**
-                 * TODO NO GUI IN PLUGINS!!
-                 */
-                new JDialog(SwingGui.getInstance().getMainFrame()) {
-                    private static final long serialVersionUID = 1981746297816350752L;
+        private JCheckBox[] checkMirror;
+        private JCheckBox checkNFO;
+        private JCheckBox checkSample;
+        private JCheckBox checkExtraFP;
+        private JComboBox comboSampleMirror;
 
-                    private void init() {
+        /**
+         * TODO NO GUI IN PLUGINS
+         */
+        public RbkprrWsDialog() {
+            super(UserIO.NO_COUNTDOWN | UserIO.NO_ICON, JDL.L("plugins.decrypt.RaubkopiererWS.mirrorDialog.title", "Rbkprr.ws::Mirrors"), null, null, null);
 
-                        setLayout(new MigLayout("wrap 1"));
-                        setModal(true);
-                        setTitle(JDL.L("plugins.decrypt.RaubkopiererWS.mirrorDialog.title", "Rbkprr.ws::Mirrors"));
-                        setAlwaysOnTop(true);
+            init();
+        }
 
-                        addWindowListener(new WindowAdapter() {
+        public JComponent contentInit() {
+            addWindowListener(new WindowAdapter() {
 
-                            public void windowClosing(WindowEvent e) {
-                                mirrors.clear();
-                                dispose();
-                            }
+                public void windowClosing(WindowEvent e) {
+                    mirrors.clear();
+                    dispose();
+                }
 
-                        });
+            });
 
-                        add(new JLabel(JDL.L("plugins.decrypt.RbkprrWs.mirrorDialog.mirror", "Available Mirrors:")), "split 2");
-                        add(new JSeparator(), "gaptop 3, growx, spanx");
+            JPanel panel = new JPanel(new MigLayout("wrap 1"));
+            panel.add(new JLabel(JDL.L("plugins.decrypt.RbkprrWs.mirrorDialog.mirror", "Available Mirrors:")), "split 2");
+            panel.add(new JSeparator(), "gaptop 3, growx, spanx");
 
-                        final JCheckBox[] checkMirror = new JCheckBox[mirrors.useNum()];
-                        for (int i = 0; i <= mirrors.size() - 1; i++) {
-                            if (!mirrors.get(i).getUse()) continue;
-                            mirrors.get(i).setName(mirrors.get(i).getKey());
-                            for (String knownMirror : knownMirrors) {
-                                if (knownMirror.toLowerCase().contains(mirrors.get(i).getKey().toLowerCase())) {
-                                    mirrors.get(i).setName(knownMirror);
-                                    break;
-                                }
-                            }
-                            checkMirror[i] = new JCheckBox(mirrors.get(i).getName(), true);
-                            checkMirror[i].setFocusPainted(false);
-                            add(checkMirror[i]);
-                        }
-
-                        add(new JLabel(JDL.L("plugins.decrypt.RbkprrWs.mirrorDialog.additional", "Additional files (if available):")), "split 2");
-                        add(new JSeparator(), "gaptop 3, growx, spanx");
-
-                        final JCheckBox checkNFO = new JCheckBox(JDL.L("plugins.decrypt.RbkprrWs.mirrorDialog.nfo", "NFO File"), false);
-                        checkNFO.setFocusPainted(false);
-                        final JCheckBox checkSample = new JCheckBox(JDL.L("plugins.decrypt.RbkprrWs.mirrorDialog.sample", "Sample Video from"), false);
-                        checkSample.setFocusPainted(false);
-                        final JCheckBox checkExtraFP = new JCheckBox(JDL.L("plugins.decrypt.RbkprrWs.mirrorDialog.extrapackage", "Additional package for NFO/Sample"), false);
-                        checkExtraFP.setFocusPainted(false);
-                        checkExtraFP.setSelected(true);
-                        checkExtraFP.setEnabled(false);
-                        final JComboBox comboSampleMirror = new JComboBox(mirrors.getNames());
-                        comboSampleMirror.setFocusable(false);
-                        comboSampleMirror.setEnabled(false);
-
-                        ActionListener action = new ActionListener() {
-                            public void actionPerformed(ActionEvent e) {
-                                if (checkNFO.isSelected() || checkSample.isSelected()) {
-                                    checkExtraFP.setEnabled(true);
-                                    if (e.getSource() == checkSample && checkSample.isSelected())
-                                        comboSampleMirror.setEnabled(true);
-                                    else if (e.getSource() == checkSample) comboSampleMirror.setEnabled(false);
-                                } else {
-                                    // checkExtraFP.setSelected(false);
-                                    checkExtraFP.setEnabled(false);
-                                    comboSampleMirror.setEnabled(false);
-                                }
-                            }
-                        };
-
-                        checkNFO.addActionListener(action);
-                        checkSample.addActionListener(action);
-                        add(checkNFO);
-                        add(checkSample, "split 2");
-                        add(comboSampleMirror);
-                        add(checkExtraFP);
-
-                        JButton btnOK = new JButton(JDL.L("gui.btn_ok", "OK"));
-                        btnOK.addActionListener(new ActionListener() {
-
-                            public void actionPerformed(ActionEvent e) {
-                                /* Submit Mirror selection */
-                                for (int i = 0; i <= checkMirror.length - 1; i++) {
-                                    if (!checkMirror[i].isSelected()) mirrors.get(i).setUse(false);
-
-                                }
-
-                                /* Submit Additional Files Info */
-                                mirrors.get(comboSampleMirror.getSelectedIndex()).setUseForSample(checkSample.isSelected());
-                                getNFO = checkNFO.isSelected();
-                                getSample = checkSample.isSelected();
-                                extraPackage = checkExtraFP.isSelected() && checkExtraFP.isEnabled();
-                                dispose();
-                            }
-
-                        });
-                        add(btnOK, "align center, split 2, gaptop 8");
-
-                        JButton btnAbort = new JButton(JDL.L("gui.btn_cancel", "Cancel"));
-                        btnAbort.addActionListener(new ActionListener() {
-
-                            public void actionPerformed(ActionEvent e) {
-                                mirrors.clear();
-                                dispose();
-                            }
-
-                        });
-                        add(btnAbort);
-
-                        getRootPane().setDefaultButton(btnOK);
-                        pack();
-                        setLocation(Screen.getCenterOfComponent(null, this));
-                        setResizable(false);
-                        setVisible(true);
+            checkMirror = new JCheckBox[mirrors.useNum()];
+            for (int i = 0; i <= mirrors.size() - 1; i++) {
+                if (!mirrors.get(i).getUse()) continue;
+                mirrors.get(i).setName(mirrors.get(i).getKey());
+                for (String knownMirror : knownMirrors) {
+                    if (knownMirror.toLowerCase().contains(mirrors.get(i).getKey().toLowerCase())) {
+                        mirrors.get(i).setName(knownMirror);
+                        break;
                     }
-                }.init();
-                return null;
+                }
+                checkMirror[i] = new JCheckBox(mirrors.get(i).getName(), true);
+                checkMirror[i].setFocusPainted(false);
+                panel.add(checkMirror[i]);
             }
-        }.waitForEDT();
+
+            panel.add(new JLabel(JDL.L("plugins.decrypt.RbkprrWs.mirrorDialog.additional", "Additional files (if available):")), "split 2");
+            panel.add(new JSeparator(), "gaptop 3, growx, spanx");
+
+            checkNFO = new JCheckBox(JDL.L("plugins.decrypt.RbkprrWs.mirrorDialog.nfo", "NFO File"), false);
+            checkNFO.setFocusPainted(false);
+            checkNFO.addActionListener(this);
+
+            checkSample = new JCheckBox(JDL.L("plugins.decrypt.RbkprrWs.mirrorDialog.sample", "Sample Video from"), false);
+            checkSample.setFocusPainted(false);
+            checkSample.addActionListener(this);
+
+            checkExtraFP = new JCheckBox(JDL.L("plugins.decrypt.RbkprrWs.mirrorDialog.extrapackage", "Additional package for NFO/Sample"), false);
+            checkExtraFP.setFocusPainted(false);
+            checkExtraFP.setSelected(true);
+            checkExtraFP.setEnabled(false);
+
+            comboSampleMirror = new JComboBox(mirrors.getNames());
+            comboSampleMirror.setFocusable(false);
+            comboSampleMirror.setEnabled(false);
+
+            panel.add(checkNFO);
+            panel.add(checkSample, "split 2");
+            panel.add(comboSampleMirror);
+            panel.add(checkExtraFP);
+
+            return panel;
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            if (e.getSource() == btnOK) {
+                /* Submit Mirror selection */
+                for (int i = 0; i <= checkMirror.length - 1; i++) {
+                    if (!checkMirror[i].isSelected()) mirrors.get(i).setUse(false);
+
+                }
+
+                /* Submit Additional Files Info */
+                mirrors.get(comboSampleMirror.getSelectedIndex()).setUseForSample(checkSample.isSelected());
+                getNFO = checkNFO.isSelected();
+                getSample = checkSample.isSelected();
+                extraPackage = checkExtraFP.isSelected() && checkExtraFP.isEnabled();
+                dispose();
+            } else if (e.getSource() == btnCancel) {
+                mirrors.clear();
+                dispose();
+            } else if (e.getSource() == checkNFO || e.getSource() == checkSample) {
+                if (checkNFO.isSelected() || checkSample.isSelected()) {
+                    checkExtraFP.setEnabled(true);
+                    if (e.getSource() == checkSample && checkSample.isSelected())
+                        comboSampleMirror.setEnabled(true);
+                    else if (e.getSource() == checkSample) comboSampleMirror.setEnabled(false);
+                } else {
+                    // checkExtraFP.setSelected(false);
+                    checkExtraFP.setEnabled(false);
+                    comboSampleMirror.setEnabled(false);
+                }
+            }
+
+        }
     }
 
     private class Mirrors {
@@ -459,7 +450,5 @@ public class RbkprrWs extends PluginForDecrypt {
             return this.mirrorArray.size();
         }
     }
-
-    // @Override
 
 }
