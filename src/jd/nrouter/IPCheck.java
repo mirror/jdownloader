@@ -24,6 +24,7 @@ import java.util.regex.Pattern;
 
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
+import jd.controlling.JDLogger;
 import jd.http.Browser;
 
 class WebIPCheck implements IPCheckProvider {
@@ -59,6 +60,7 @@ class WebIPCheck implements IPCheckProvider {
                 }
             }
         } catch (Exception e) {
+            JDLogger.exception(e);
         }
         /* error occured, return failed */
         errorcount++;
@@ -110,6 +112,7 @@ public class IPCheck {
                     }
                 }
             } catch (Exception e) {
+                JDLogger.exception(e);
             }
             /* error occured, return failed */
             errorcount++;
@@ -178,7 +181,10 @@ public class IPCheck {
                 ip = CustomWebIPCheck.getIP();
             }
         }
-        if (ip == null || ip instanceof CHECK || !(ip instanceof String)) return "na";
+        if (ip == null || ip instanceof CHECK || !(ip instanceof String)) {
+            JDLogger.getLogger().severe("IPCheck failed");
+            return "na";
+        }
         return (String) ip;
     }
 

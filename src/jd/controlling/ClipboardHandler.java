@@ -107,7 +107,7 @@ public class ClipboardHandler extends Thread implements ControlListener {
                 }
             }
             while (enabled && !this.tempdisabled) {
-                while (clipboardchanged) {
+                while (clipboardchanged && enabled && !this.tempdisabled) {
                     try {
                         /* get current content of clipboard */
                         cur = clipboard.getContents(null);
@@ -197,6 +197,11 @@ public class ClipboardHandler extends Thread implements ControlListener {
                             wait = 1000;
                         }
                     } catch (Exception e2) {
+                    }
+                    /* wait in case of fileselection */
+                    try {
+                        Thread.sleep(wait);
+                    } catch (Exception e) {
                     }
                 }
                 try {
