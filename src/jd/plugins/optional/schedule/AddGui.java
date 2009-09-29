@@ -150,39 +150,36 @@ public class AddGui extends JPanel implements ActionListener, ChangeListener, Do
 
         day = new JSpinner();
         day.setModel(new SpinnerNumberModel(Calendar.getInstance().get(Calendar.DAY_OF_MONTH), 1, 31, 1));
-        datepre.add(day,"sizegroup spinner");
+        datepre.add(day, "sizegroup spinner");
 
         datepre.add(new JLabel(JDL.L("plugin.optional.scheduler.add.month", "Month: ")));
 
         month = new JSpinner();
         month.setModel(new SpinnerNumberModel(Calendar.getInstance().get(Calendar.MONTH) + 1, 1, 12, 1));
-        datepre.add(month,"sizegroup spinner");
+        datepre.add(month, "sizegroup spinner");
 
         datepre.add(new JLabel(JDL.L("plugin.optional.scheduler.add.year", "Year: ")));
 
         year = new JSpinner();
         year.setModel(new SpinnerNumberModel(Calendar.getInstance().get(Calendar.YEAR), 2009, 2015, 1));
-        datepre.add(year,"sizegroup spinner");
+        datepre.add(year, "sizegroup spinner");
 
- 
-      
-        datepre.add(new JLabel(JDL.L("plugin.optional.scheduler.add.hour", "Hour: ")),"newline");
+        datepre.add(new JLabel(JDL.L("plugin.optional.scheduler.add.hour", "Hour: ")), "newline");
 
         hour = new JSpinner();
         hour.setModel(new SpinnerNumberModel(Calendar.getInstance().get(Calendar.HOUR_OF_DAY), 00, 23, 1));
-        datepre.add(hour,"sizegroup spinner");
+        datepre.add(hour, "sizegroup spinner");
 
         datepre.add(new JLabel(JDL.L("plugin.optional.scheduler.add.minute", "Minute: ")));
 
         minute = new JSpinner();
         minute.setModel(new SpinnerNumberModel(Calendar.getInstance().get(Calendar.MINUTE), 00, 59, 1));
-        datepre.add(minute,"sizegroup spinner");
+        datepre.add(minute, "sizegroup spinner");
 
-   
-        date.add(new JLabel(JDL.L("plugin.optional.scheduler.add.date", "Date")));       
-        date.add(datepre,"spany 2");
+        date.add(new JLabel(JDL.L("plugin.optional.scheduler.add.date", "Date")));
+        date.add(datepre, "spany 2");
         date.add(new JLabel(JDL.L("plugin.optional.scheduler.add.time", "Time")));
-     
+
         JPanel actions = new JPanel();
         actions.setLayout(new MigLayout("ins 5, wrap 2", "[fill, grow]10[fill, grow]"));
         actions.setBorder(BorderFactory.createLineBorder(getBackground().darker()));
