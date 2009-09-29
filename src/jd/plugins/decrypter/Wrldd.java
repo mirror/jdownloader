@@ -21,13 +21,14 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wii-reloaded.info" }, urls = { "http://[\\w\\.]*?wii-reloaded\\.(info|org)(/protect)?/get\\.php\\?i=.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wii-reloaded.info" }, urls = { "http://[\\w\\.]*?(protect\\.wii|wii)-reloaded\\.(info|org)(/protect)?/get\\.php\\?i=[a-zA-Z-0-9]+" }, flags = { 0 })
 public class Wrldd extends PluginForDecrypt {
 
     public Wrldd(PluginWrapper wrapper) {
@@ -45,6 +46,11 @@ public class Wrldd extends PluginForDecrypt {
         br.setFollowRedirects(false);
         this.setBrowserExclusive();
         progress.setRange(3);
+        //Fix for redirect-links of the mainpage
+        if (parameter.contains("protect.wii")){
+            String linkid = new Regex(parameter, "get\\.php\\?i=([a-zA-Z-0-9]+)").getMatch(0);
+            parameter = "http://www.wii-reloaded.org/protect/get.php?i=" + linkid;
+        }
         br.getPage(parameter);
         try {
             Thread.sleep(500);
