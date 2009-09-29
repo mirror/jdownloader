@@ -23,7 +23,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 
-import jd.gui.swing.jdgui.views.downloadview.JDProgressBar;
+import jd.gui.swing.jdgui.components.JDProgressBar;
 import jd.plugins.PluginForHost;
 import net.miginfocom.swing.MigLayout;
 

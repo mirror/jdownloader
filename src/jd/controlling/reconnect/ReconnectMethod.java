@@ -23,7 +23,7 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.gui.UserIF;
-import jd.http.IPCheck;
+import jd.nrouter.IPCheck;
 import jd.nutils.IPAddress;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -63,7 +63,7 @@ public abstract class ReconnectMethod {
         int waitForIp = JDUtilities.getConfiguration().getIntegerProperty(PARAM_WAITFORIPCHANGE, 30);
 
         logger.info("Starting " + this.toString() + " #" + retries);
-        String preIp = IPCheck.getIPAddress(null);
+        String preIp = IPCheck.getIPAddress();
 
         progress.increase(1);
         progress.setStatusText(JDL.L("reconnect.progress.2_oldIP", "Reconnect Old IP:") + preIp);
@@ -76,44 +76,47 @@ public abstract class ReconnectMethod {
             Thread.sleep(waittime * 1000);
         } catch (InterruptedException e) {
         }
-        String afterIP = IPCheck.getIPAddress(null);
+        String afterIP = IPCheck.getIPAddress();
         progress.setStatusText(JDL.LF("reconnect.progress.3_ipcheck", "Reconnect New IP: %s / %s", afterIP, preIp));
         long endTime = System.currentTimeMillis() + waitForIp * 1000;
         logger.info("Wait " + waitForIp + " sec for new ip");
-        while (System.currentTimeMillis() <= endTime && (afterIP.equals(preIp) || afterIP.equals("offline"))) {
+        while (System.currentTimeMillis() <= endTime && (afterIP.equals(preIp) || afterIP.equals("na"))) {
             logger.finer("IP before: " + preIp + " after: " + afterIP);
             try {
-                Thread.sleep(5 * 1000);
+                Thread.sleep(10 * 1000);
+                /* wait 10 secs between ipchecks to reduce serverload */
             } catch (InterruptedException e) {
             }
-            afterIP = IPCheck.getIPAddress(null);
+            afterIP = IPCheck.getIPAddress();
             progress.setStatusText(JDL.LF("reconnect.progress.3_ipcheck", "Reconnect New IP: %s / %s", afterIP, preIp));
         }
 
         logger.finer("IP before: " + preIp + " after: " + afterIP);
-        if (afterIP.equals("offline") && !afterIP.equals(preIp)) {
+        if (afterIP.equals("na") && !afterIP.equals(preIp)) {
             logger.warning("JD could disconnect your router, but could not connect afterwards. Try to rise the option 'Wait until first IP Check'");
             endTime = System.currentTimeMillis() + 120 * 1000;
-            while (System.currentTimeMillis() <= endTime && (afterIP.equals(preIp) || afterIP.equals("offline"))) {
+            while (System.currentTimeMillis() <= endTime && (afterIP.equals(preIp) || afterIP.equals("na"))) {
                 logger.finer("IP before: " + preIp + " after: " + afterIP);
                 try {
-                    Thread.sleep(5 * 1000);
+                    Thread.sleep(10 * 1000);
+                    /* wait 10 secs between ipchecks to reduce serverload */
                 } catch (InterruptedException e) {
                 }
-                afterIP = IPCheck.getIPAddress(null);
+                afterIP = IPCheck.getIPAddress();
                 progress.setStatusText(JDL.LF("reconnect.progress.3_ipcheck", "Reconnect New IP: %s / %s", preIp, afterIP));
             }
         }
 
-        if (!afterIP.equals(preIp) && !afterIP.equals("offline")) {
+        if (!afterIP.equals(preIp) && !afterIP.equals("na")) {
             /* Reconnect scheint erfolgreich gewesen zu sein */
             /* nun IP validieren */
             if (!IPAddress.validateIP(afterIP)) {
                 logger.warning("IP " + afterIP + " was filtered by mask: " + SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_MASK, "\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).)" + "{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b"));
                 UserIF.getInstance().displayMiniWarning(JDL.L("reconnect.ipfiltered.warning.title", "Wrong IP!"), JDL.LF("reconnect.ipfiltered.warning.short", "Die IP %s wurde als nicht erlaubt identifiziert", afterIP));
-                afterIP = "offline";
+                Reconnecter.setCurrentIP("na");
             } else {
                 progress.doFinalize();
+                Reconnecter.setCurrentIP(afterIP);
                 return true;
             }
         }

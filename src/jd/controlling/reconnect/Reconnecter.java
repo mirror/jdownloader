@@ -30,7 +30,7 @@ import jd.controlling.ProgressController;
 import jd.controlling.interaction.Interaction;
 import jd.gui.UserIF;
 import jd.gui.UserIO;
-import jd.http.IPCheck;
+import jd.nrouter.IPCheck;
 import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -62,11 +62,18 @@ public class Reconnecter {
         if (!newState) UserIF.getInstance().displayMiniWarning(JDL.L("gui.warning.reconnect.hasbeendisabled", "Reconnect deaktiviert!"), JDL.L("gui.warning.reconnect.hasbeendisabled.tooltip", "Um erfolgreich einen Reconnect durchführen zu können muss diese Funktion wieder aktiviert werden."));
     }
 
+    public static void setCurrentIP(String ip) {
+        if (ip == null) ip = "na";
+        CURRENT_IP = ip;
+        LAST_UP_UPDATE_TIME = System.currentTimeMillis();
+    }
+
     private static boolean checkExternalIPChange() {
         LAST_UP_UPDATE_TIME = System.currentTimeMillis();
         String tmp = CURRENT_IP;
-        CURRENT_IP = IPCheck.getIPAddress(null);
-        if (CURRENT_IP != null && tmp.length() > 0 && !tmp.equals(CURRENT_IP)) {
+        CURRENT_IP = IPCheck.getIPAddress();
+        if (tmp == null) tmp = CURRENT_IP;
+        if (!CURRENT_IP.equals("na") && tmp.length() > 0 && !tmp.equals(CURRENT_IP)) {
             logger.info("Detected external IP Change.");
             return true;
         }
@@ -82,16 +89,8 @@ public class Reconnecter {
     public static boolean doReconnect() {
         JDController controller = JDUtilities.getController();
         boolean ipChangeSuccess = false;
-        if (System.currentTimeMillis() - LAST_UP_UPDATE_TIME > 1000 * SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty("EXTERNAL_IP_CHECK_INTERVAL", 60 * 10)) {
-            /*
-             * gab schon nen externen reconnect , checke nur falls wirklich
-             * ipcheck aktiv ist!
-             */
-            // if
-            // (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE,
-            // false)) {
+        if (System.currentTimeMillis() - LAST_UP_UPDATE_TIME > (1000 * 60) * SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty("EXTERNAL_IP_CHECK_INTERVAL2", 10)) {
             if (Reconnecter.checkExternalIPChange()) return true;
-            // }
         }
 
         Interaction.handleInteraction(Interaction.INTERACTION_BEFORE_RECONNECT, controller);
@@ -136,8 +135,6 @@ public class Reconnecter {
         for (DownloadLink link : disabled) {
             link.setEnabled(true);
         }
-        LAST_UP_UPDATE_TIME = System.currentTimeMillis();
-        CURRENT_IP = IPCheck.getIPAddress(null);
         return ipChangeSuccess;
     }
 
@@ -157,17 +154,10 @@ public class Reconnecter {
 
     public static boolean doReconnectIfRequested(boolean doit) {
         if (RECONNECT_IN_PROGRESS) return false;
-        /* falls nen Linkcheck läuft, kein Reconnect */
-        if (LinkCheck.getLinkChecker().isRunning()) {
-            // JDLogger.getLogger().info("No Reconnect: Linkgrabber is active");
-            return false;
-        }
-        if (JDUtilities.getController().getForbiddenReconnectDownloadNum() > 0) {
-            /* darf keinen reconnect machen */
-            // JDLogger.getLogger().info("No Reconnect: " + num +
-            // " no resumable downloads are running");
-            return false;
-        }
+        /* running linkgrabber will not allow a reconnect */
+        if (LinkCheck.getLinkChecker().isRunning()) return false;
+        /* not allowed to do a reconnect */
+        if (JDUtilities.getController().getForbiddenReconnectDownloadNum() > 0) return false;
         RECONNECT_IN_PROGRESS = true;
         boolean ret = false;
         try {
@@ -192,16 +182,7 @@ public class Reconnecter {
                  * auto reconnect ist AUS, dann nur noch schaun ob sich ip
                  * geändert hat
                  */
-                if (System.currentTimeMillis() - LAST_UP_UPDATE_TIME > 1000 * SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty("EXTERNAL_IP_CHECK_INTERVAL", 60 * 10)) {
-                    /*
-                     * hier nur ein ip check falls auch ip check wirklich aktiv,
-                     * sonst gibts ne endlos reconnectschleife
-                     */
-                    // if
-                    // (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE,
-                    // false))
-                    return Reconnecter.checkExternalIPChange();
-                }
+                if (System.currentTimeMillis() - LAST_UP_UPDATE_TIME > (1000 * 60) * SubConfiguration.getConfig("DOWNLOAD").getIntegerProperty("EXTERNAL_IP_CHECK_INTERVAL2", 10)) return Reconnecter.checkExternalIPChange();
                 return false;
 
             } else {

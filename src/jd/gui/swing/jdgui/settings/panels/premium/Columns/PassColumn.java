@@ -34,6 +34,8 @@ import jd.gui.swing.jdgui.settings.panels.premium.HostAccounts;
 import jd.plugins.Account;
 import jd.utils.JDUtilities;
 
+import org.jdesktop.swingx.renderer.JRendererLabel;
+
 class JDPasswordField extends JPasswordField implements ClipboardOwner {
 
     private static final long serialVersionUID = -7981118302661369727L;
@@ -77,10 +79,13 @@ class JDPasswordField extends JPasswordField implements ClipboardOwner {
 public class PassColumn extends JDTableColumn implements ActionListener {
 
     private jd.gui.swing.jdgui.settings.panels.premium.Columns.JDPasswordField passw;
+    private JRendererLabel jlr;
 
     public PassColumn(String name, JDTableModel table) {
         super(name, table);
         passw = new JDPasswordField();
+        jlr = new JRendererLabel();
+        jlr.setBorder(null);
     }
 
     /**
@@ -101,13 +106,20 @@ public class PassColumn extends JDTableColumn implements ActionListener {
 
     @Override
     public Component myTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+        co = jlr;
         if (value instanceof Account) {
-            co = getDefaultTableCellRendererComponent(table, "*****", isSelected, hasFocus, row, column);
+            jlr.setText("*****");
         } else {
-            co = getDefaultTableCellRendererComponent(table, "", isSelected, hasFocus, row, column);
-            co.setBackground(table.getBackground().darker());
+            jlr.setText("");
         }
         return co;
+    }
+
+    @Override
+    public void postprocessCell(Component c, JTable table, Object value, boolean isSelected, int row, int column) {
+        if (!(value instanceof Account)) {
+            c.setBackground(table.getBackground().darker());
+        }
     }
 
     @Override

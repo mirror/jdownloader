@@ -25,6 +25,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -44,7 +45,7 @@ import jd.gui.swing.jdgui.settings.ConfigPanel;
 import jd.gui.swing.jdgui.settings.GUIConfigEntry;
 import jd.gui.swing.jdgui.settings.subpanels.SubPanelCLRReconnect;
 import jd.gui.swing.jdgui.settings.subpanels.SubPanelLiveHeaderReconnect;
-import jd.http.IPCheck;
+import jd.nrouter.IPCheck;
 import jd.nutils.Formatter;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -142,19 +143,31 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
                     JDUtilities.getConfiguration().setProperty(ReconnectMethod.PARAM_RETRIES, 0);
                     if (Reconnecter.doManualReconnect()) {
                         progress.setStatusText(JDL.L("gui.warning.reconnectSuccess", "Reconnect successfull"));
+                        new GuiRunnable<Object>() {
 
-                        message.setText(JDL.L("gui.warning.reconnectSuccess", "Reconnect successfull"));
-                        success.setIcon(JDTheme.II("gui.images.selected", 32, 32));
-                        success.setEnabled(true);
-                        currentip.setText(IPCheck.getIPAddress(null));
+                            @Override
+                            public Object runSave() {
+                                message.setText(JDL.L("gui.warning.reconnectSuccess", "Reconnect successfull"));
+                                success.setIcon(JDTheme.II("gui.images.selected", 32, 32));
+                                success.setEnabled(true);
+                                currentip.setText(IPCheck.getIPAddress());
+                                return null;
+                            }
+                        }.start();
                     } else {
                         progress.setStatusText(JDL.L("gui.warning.reconnectFailed", "Reconnect failed!"));
                         progress.setColor(Color.RED);
+                        new GuiRunnable<Object>() {
 
-                        message.setText(JDL.L("gui.warning.reconnectFailed", "Reconnect failed!"));
-                        success.setIcon(JDTheme.II("gui.images.unselected", 32, 32));
-                        success.setEnabled(true);
-                        currentip.setText(IPCheck.getIPAddress(null));
+                            @Override
+                            public Object runSave() {
+                                message.setText(JDL.L("gui.warning.reconnectFailed", "Reconnect failed!"));
+                                success.setIcon(JDTheme.II("gui.images.unselected", 32, 32));
+                                success.setEnabled(true);
+                                currentip.setText(IPCheck.getIPAddress());
+                                return null;
+                            }
+                        }.start();
                     }
                     timer.interrupt();
                     progress.setStatus(100);
@@ -215,8 +228,12 @@ public class MethodSelection extends ConfigPanel implements ActionListener {
         new Thread() {
             @Override
             public void run() {
-                String ip = IPCheck.getIPAddress(null);
-                currentip.setText(ip);
+                final String ip = IPCheck.getIPAddress();
+                SwingUtilities.invokeLater(new Runnable() {
+                    public void run() {
+                        currentip.setText(ip);
+                    }
+                });
             }
         }.start();
 

@@ -42,7 +42,6 @@ public class FileColumn extends JDTableColumn {
      * 
      */
     private static final long serialVersionUID = 2228210790952050305L;
-    private Component co;
     private DownloadLink dLink;
     private Border leftGap;
     private ImageIcon icon_fp_open;
@@ -51,6 +50,7 @@ public class FileColumn extends JDTableColumn {
     private ImageIcon icon_fp_closed_error;
     private ImageIcon imgFileFailed;
     private FilePackage fp;
+    private JRendererLabel jlr;
 
     public FileColumn(String name, JDTableModel table) {
         super(name, table);
@@ -60,6 +60,7 @@ public class FileColumn extends JDTableColumn {
         icon_fp_closed = JDTheme.II("gui.images.package_closed_tree", 16, 16);
         icon_fp_closed_error = JDTheme.II("gui.images.package_closed_error_tree", 16, 16);
         imgFileFailed = JDTheme.II("gui.images.offlinefile", 16, 16);
+        jlr = new JRendererLabel();
     }
 
     @Override
@@ -76,26 +77,24 @@ public class FileColumn extends JDTableColumn {
     public Component myTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         if (value instanceof FilePackage) {
             fp = (FilePackage) value;
-            co = getDefaultTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-            ((JRendererLabel) co).setText(fp.getName() + " [" + fp.size() + "]");
+            jlr.setText(fp.getName() + " [" + fp.size() + "]");
             if (fp.getLinksFailed() > 0) {
-                ((JRendererLabel) co).setIcon(!fp.getBooleanProperty(DownloadTable.PROPERTY_EXPANDED, false) ? icon_fp_closed_error : icon_fp_open_error);
+                jlr.setIcon(!fp.getBooleanProperty(DownloadTable.PROPERTY_EXPANDED, false) ? icon_fp_closed_error : icon_fp_open_error);
             } else {
-                ((JRendererLabel) co).setIcon(!fp.getBooleanProperty(DownloadTable.PROPERTY_EXPANDED, false) ? icon_fp_closed : icon_fp_open);
+                jlr.setIcon(!fp.getBooleanProperty(DownloadTable.PROPERTY_EXPANDED, false) ? icon_fp_closed : icon_fp_open);
             }
-            ((JRendererLabel) co).setBorder(null);
-        } else if (value instanceof DownloadLink) {
+            jlr.setBorder(null);
+        } else {
             dLink = (DownloadLink) value;
-            co = getDefaultTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             if (dLink.getLinkStatus().isFailed()) {
-                ((JRendererLabel) co).setIcon(imgFileFailed);
+                jlr.setIcon(imgFileFailed);
             } else {
-                ((JRendererLabel) co).setIcon(dLink.getIcon());
+                jlr.setIcon(dLink.getIcon());
             }
-            ((JRendererLabel) co).setText(dLink.getName());
-            ((JRendererLabel) co).setBorder(leftGap);
+            jlr.setText(dLink.getName());
+            jlr.setBorder(leftGap);
         }
-        return co;
+        return jlr;
     }
 
     @Override

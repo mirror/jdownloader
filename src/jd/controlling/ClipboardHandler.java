@@ -58,6 +58,7 @@ public class ClipboardHandler extends Thread implements ControlListener {
     private boolean waitFlag;
     private boolean tempdisabled = true;
     private boolean clipboardchanged = true;
+    private int wait = 500;
 
     private ClipboardOwner clipboardwatch = new ClipboardOwner() {
         public void lostOwnership(Clipboard clipboard, Transferable contents) {
@@ -137,6 +138,13 @@ public class ClipboardHandler extends Thread implements ControlListener {
                                         /* parsing clipboard for Links */
                                         if (isTextContent) new DistributeData(text.trim()).start();
                                     }
+                                    /*
+                                     * now let the clipboardwatcher check for
+                                     * changes
+                                     */
+                                    clipboardchanged = false;
+                                    clipboard.setContents(cur, clipboardwatch);
+                                    wait = 500;
                                 } else if (cur.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
                                     /* we have files in cliploard */
                                     List<File> files = (List<File>) cur.getTransferData(DataFlavor.javaFileListFlavor);
@@ -165,18 +173,20 @@ public class ClipboardHandler extends Thread implements ControlListener {
                                             JDUtilities.getController().loadContainerFile(file);
                                         }
                                     }
-                                } /*
-                                   * now let the clipboardwatcher check for
-                                   * changes
-                                   */
-                                clipboardchanged = false;
-                                clipboard.setContents(cur, clipboardwatch);
+                                    /*
+                                     * cannot install clipboardwatcher for
+                                     * files, because else windows cut paste
+                                     * will no longer work, increase waittime
+                                     */
+                                    wait = 2000;
+                                }
                             } catch (Exception e) {
                                 /*
                                  * an error occurred, lets check clipboard again
                                  * to be sure
                                  */
                                 clipboardchanged = true;
+                                wait = 1000;
                             }
                         } else {
                             /*
@@ -184,12 +194,13 @@ public class ClipboardHandler extends Thread implements ControlListener {
                              * be sure
                              */
                             clipboardchanged = true;
+                            wait = 1000;
                         }
                     } catch (Exception e2) {
                     }
                 }
                 try {
-                    Thread.sleep(500);
+                    Thread.sleep(wait);
                 } catch (Exception e) {
                 }
             }

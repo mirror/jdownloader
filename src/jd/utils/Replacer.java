@@ -21,7 +21,7 @@ import java.util.Calendar;
 
 import jd.controlling.JDController;
 import jd.controlling.JDLogger;
-import jd.http.IPCheck;
+import jd.nrouter.IPCheck;
 import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
 import jd.utils.locale.JDL;
@@ -131,7 +131,7 @@ public class Replacer {
             return dLink.isAvailable() ? "YES" : "NO";
         }
 
-        if (key.equalsIgnoreCase("SYSTEM.IP")) return IPCheck.getIPAddress(null);
+        if (key.equalsIgnoreCase("SYSTEM.IP")) return IPCheck.getIPAddress();
 
         if (key.equalsIgnoreCase("SYSTEM.DATE")) {
             Calendar c = Calendar.getInstance();

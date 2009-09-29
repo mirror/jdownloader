@@ -22,12 +22,14 @@ public class LoadedColumn extends JDTableColumn {
      * 
      */
     private static final long serialVersionUID = 2228210790952050305L;
-    private Component co;
     private DownloadLink dLink;
     private FilePackage fp;
+    private JRendererLabel jlr;
 
     public LoadedColumn(String name, JDTableModel table) {
         super(name, table);
+        jlr = new JRendererLabel();
+        jlr.setBorder(null);
     }
 
     @Override
@@ -49,23 +51,20 @@ public class LoadedColumn extends JDTableColumn {
     public Component myTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         if (value instanceof FilePackage) {
             fp = (FilePackage) value;
-            co = getDefaultTableCellRendererComponent(table, "", isSelected, hasFocus, row, column);
             if (fp.getTotalKBLoaded() < 0) {
-                ((JRendererLabel) co).setText("0 B");
+                jlr.setText("0 B");
             } else {
-                ((JRendererLabel) co).setText(Formatter.formatReadable(fp.getTotalKBLoaded()));
+                jlr.setText(Formatter.formatReadable(fp.getTotalKBLoaded()));
             }
-        } else if (value instanceof DownloadLink) {
+        } else {
             dLink = (DownloadLink) value;
-            co = getDefaultTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             if (dLink.getDownloadCurrent() <= 0) {
-                ((JRendererLabel) co).setText("0 B");
+                jlr.setText("0 B");
             } else {
-                ((JRendererLabel) co).setText(Formatter.formatReadable(dLink.getDownloadCurrent()));
+                jlr.setText(Formatter.formatReadable(dLink.getDownloadCurrent()));
             }
         }
-        ((JRendererLabel) co).setBorder(null);
-        return co;
+        return jlr;
     }
 
     @Override

@@ -26,7 +26,6 @@ import jd.config.SubConfiguration;
 import jd.controlling.ByteBufferController;
 import jd.gui.swing.jdgui.settings.ConfigPanel;
 import jd.gui.swing.jdgui.settings.GUIConfigEntry;
-import jd.http.IPCheck;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 
@@ -68,19 +67,19 @@ public class Advanced extends ConfigPanel {
         conditionEntry2.setDefaultValue(true);
 
         extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PARAM_GLOBAL_IP_CHECK_SITE, JDL.L("gui.config.download.ipcheck.website", "IP prüfen über (Website)")));
-        ce.setDefaultValue(IPCheck.IP_CHECK_SERVICES.get(0)[0]);
+        ce.setDefaultValue("Please enter Website for IPCheck here");
         ce.setEnabledCondidtion(conditionEntry2, "==", false);
 
         extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PARAM_GLOBAL_IP_PATTERN, JDL.L("gui.config.download.ipcheck.regex", "RegEx zum filtern der IP")));
-        ce.setDefaultValue(IPCheck.IP_CHECK_SERVICES.get(0)[1]);
+        ce.setDefaultValue("Please enter Regex for IPCheck here");
         ce.setEnabledCondidtion(conditionEntry2, "==", false);
 
         extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PARAM_GLOBAL_IP_MASK, JDL.L("gui.config.download.ipcheck.mask", "Erlaubte IPs")));
         ce.setDefaultValue("\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).)" + "{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b");
         ce.setEnabledCondidtion(conditionEntry2, "==", false);
 
-        extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, "EXTERNAL_IP_CHECK_INTERVAL", JDL.L("gui.config.download.ipcheck.externalinterval", "External IP Check Interval [sec]"), 10, 60 * 60));
-        ce.setDefaultValue(10 * 60);
+        extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, "EXTERNAL_IP_CHECK_INTERVAL2", JDL.L("gui.config.download.ipcheck.externalinterval2", "External IP Check Interval [min]"), 10, 240));
+        ce.setDefaultValue(10);
         ce.setEnabledCondidtion(conditionEntry2, "==", false);
 
         extended.setGroup(new ConfigGroup(JDL.L("gui.config.download.write", "File writing"), JDTheme.II("gui.images.save", 32, 32)));

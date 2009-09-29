@@ -37,11 +37,13 @@ public class PartColumn extends JDTableColumn {
      * 
      */
     private static final long serialVersionUID = 2228210790952050305L;
-    private Component co;
     private DownloadLink dLink;
+    private JRendererLabel jlr;
 
     public PartColumn(String name, JDTableModel table) {
         super(name, table);
+        jlr = new JRendererLabel();
+        jlr.setBorder(null);
     }
 
     @Override
@@ -62,14 +64,12 @@ public class PartColumn extends JDTableColumn {
     @Override
     public Component myTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         if (value instanceof FilePackage) {
-            co = getDefaultTableCellRendererComponent(table, "", isSelected, hasFocus, row, column);
-        } else if (value instanceof DownloadLink) {
+            jlr.setText("");
+        } else {
             dLink = (DownloadLink) value;
-            co = getDefaultTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-            ((JRendererLabel) co).setText(dLink.getPart());
-            ((JRendererLabel) co).setBorder(null);
+            jlr.setText(dLink.getPart());
         }
-        return co;
+        return jlr;
     }
 
     @Override

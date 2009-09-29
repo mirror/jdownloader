@@ -20,7 +20,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 
-import jd.http.Browser;
+import jd.nrouter.IPCheckProvider;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -37,31 +37,31 @@ public class IPCheck {
     @Test
     public void checkIPTable() {
 
-        ArrayList<String[]> table = jd.http.IPCheck.IP_CHECK_SERVICES;
+        ArrayList<IPCheckProvider> table = jd.nrouter.IPCheck.IP_CHECK_SERVICES;
         System.out.println("IPCHECKS:" + table.size());
-        // for (int i = 0; i < 20; i++) {
-        for (String[] entry : table) {
-            Browser br = new Browser();
-            // br.setDebug(true);
+        for (IPCheckProvider prov : table) {
             try {
 
-                br.getPage(entry[0]);
-                String lip = br.getRegex(entry[1]).getMatch(0).trim();
-                System.out.println(entry[0] + " reports: " + lip);
-                if (ip == null) ip = lip;
+                Object lip = prov.getIP();
+                String curip = null;
+                if (lip instanceof String) {
+                    curip = (String) lip;
+                    System.out.println(prov.getInfo() + " reported: " + curip);
+                    if (ip == null) ip = curip;
+                }
 
-                if (!ip.equals(lip)) {
-                    System.out.println("regex for " + entry[0] + " may be invalid");
+                if (curip == null || !ip.equals(curip)) {
+                    System.out.println("regex for " + prov.getIP() + " may be invalid");
                     assertTrue(false);
                 }
             } catch (Exception e) {
-                // TODO Auto-generated catch block
-                // e.printStackTrace();
-                System.out.println(entry[0] + " broken");
+                System.out.println(prov.getIP() + " broken");
                 assertTrue(false);
             }
-
         }
+
+        // for (int i = 0; i < 30; i++) {
+        // System.out.println(jd.nrouter.IPCheck.getIPAddress());
         // }
 
     }

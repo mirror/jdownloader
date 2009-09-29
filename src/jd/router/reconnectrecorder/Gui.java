@@ -35,7 +35,7 @@ import jd.controlling.reconnect.ReconnectMethod;
 import jd.gui.UserIO;
 import jd.gui.swing.components.linkbutton.JLink;
 import jd.gui.swing.dialog.AbstractDialog;
-import jd.http.IPCheck;
+import jd.nrouter.IPCheck;
 import jd.nutils.JDFlags;
 import jd.parser.Regex;
 import jd.utils.JDTheme;
@@ -56,7 +56,7 @@ public class Gui extends AbstractDialog implements ActionListener {
     public String methode = null;
     public String user = null;
     public String pass = null;
-    private static long check_intervall = 3000;
+    private static long check_intervall = 5000;
     private static long reconnect_duration = 0;
 
     public Gui(String ip) {
@@ -136,7 +136,7 @@ public class Gui extends AbstractDialog implements ActionListener {
                 host = host.replaceAll("http://", "").replaceAll("https://", "");
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_IP, host);
 
-                ip_before = IPCheck.getIPAddress(null);
+                ip_before = IPCheck.getIPAddress();
                 ReconnectRecorder.startServer(host, rawmode.isSelected());
 
                 try {
@@ -193,11 +193,11 @@ public class Gui extends AbstractDialog implements ActionListener {
                             Thread.sleep(check_intervall);
                         } catch (Exception e) {
                         }
-                        ip_after = IPCheck.getIPAddress(null);
-                        if (ip_after.contains("offline") && reconnect_timer == 0) {
+                        ip_after = IPCheck.getIPAddress();
+                        if (ip_after.contains("na") && reconnect_timer == 0) {
                             reconnect_timer = System.currentTimeMillis();
                         }
-                        if (!ip_after.contains("offline") && !ip_after.equalsIgnoreCase(ip_before)) {
+                        if (!ip_after.contains("na") && !ip_after.equalsIgnoreCase(ip_before)) {
                             statusicon.setStatus(1);
                             if (ReconnectRecorder.running == true) closePopup();
                             return;
@@ -253,7 +253,7 @@ public class Gui extends AbstractDialog implements ActionListener {
                 public void run() {
                     btnCancel.setEnabled(false);
 
-                    ip_after = IPCheck.getIPAddress(null);
+                    ip_after = IPCheck.getIPAddress();
                     if (!ip_after.contains("offline") && !ip_after.equalsIgnoreCase(ip_before)) {
                         if (reconnect_timer == 0) {
                             /*

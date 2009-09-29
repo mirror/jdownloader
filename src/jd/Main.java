@@ -505,9 +505,8 @@ public class Main {
                     Thread.sleep(5000);
 
                     new WebUpdate().doUpdateCheck(false);
-                    
-                    
-                    //TODO
+
+                    // TODO
                 } catch (InterruptedException e) {
                     // TODO Auto-generated catch block
                     e.printStackTrace();
@@ -596,5 +595,4 @@ public class Main {
         }
     }
 
-    
 }

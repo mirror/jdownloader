@@ -27,14 +27,19 @@ import jd.nutils.Formatter;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 
+import org.jdesktop.swingx.renderer.JRendererLabel;
+
 public class ExpireDateColumn extends JDTableColumn {
+
+    private JRendererLabel jlr;
 
     public ExpireDateColumn(String name, JDTableModel table) {
         super(name, table);
+        jlr = new JRendererLabel();
+        jlr.setBorder(null);
     }
 
     private static final long serialVersionUID = -5291590062503352550L;
-    private Component co;
 
     @Override
     public Component myTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
@@ -48,24 +53,29 @@ public class ExpireDateColumn extends JDTableColumn {
             Account ac = (Account) value;
             AccountInfo ai = ac.getAccountInfo();
             if (!ac.isValid()) {
-                value = "Invalid account";
+                jlr.setText("Invalid account");
             } else if (ai == null) {
-                value = "Unkown";
+                jlr.setText("Unkown");
             } else {
                 if (ai.getValidUntil() == -1) {
-                    value = "Unlimited";
+                    jlr.setText("Unlimited");
                 } else if (ai.isExpired()) {
-                    value = "Expired";
+                    jlr.setText("Expired");
                 } else {
-                    value = Formatter.formatTime(ai.getValidUntil());
+                    jlr.setText(Formatter.formatTime(ai.getValidUntil()));
                 }
             }
-            co = getDefaultTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
         } else {
-            co = getDefaultTableCellRendererComponent(table, "", isSelected, hasFocus, row, column);
-            co.setBackground(table.getBackground().darker());
+            jlr.setText("");
         }
-        return co;
+        return jlr;
+    }
+
+    @Override
+    public void postprocessCell(Component c, JTable table, Object value, boolean isSelected, int row, int column) {
+        if (!(value instanceof Account)) {
+            c.setBackground(table.getBackground().darker());
+        }
     }
 
     @Override

@@ -341,7 +341,9 @@ public class ActionController {
 
             @Override
             public void threadedActionPerformed(ActionEvent e) {
-                new WebUpdate().doUpdateCheck(true);
+                WebUpdate wu = new WebUpdate();
+                wu.showProgressNoUpdate();
+                wu.doUpdateCheck(true);
             }
 
         };

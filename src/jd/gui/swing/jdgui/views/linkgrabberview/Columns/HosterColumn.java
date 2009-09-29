@@ -37,12 +37,14 @@ public class HosterColumn extends JDTableColumn {
      * 
      */
     private static final long serialVersionUID = 2228210790952050305L;
-    private Component co;
     private DownloadLink dLink;
     private LinkGrabberFilePackage fp;
+    private JRendererLabel jlr;
 
     public HosterColumn(String name, JDTableModel table) {
         super(name, table);
+        jlr = new JRendererLabel();
+        jlr.setBorder(null);
     }
 
     @Override
@@ -59,24 +61,17 @@ public class HosterColumn extends JDTableColumn {
     public Component myTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         if (value instanceof LinkGrabberFilePackage) {
             fp = (LinkGrabberFilePackage) value;
-            value = fp.getHoster();
-            co = getDefaultTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-            ((JRendererLabel) co).setBorder(null);
-        } else if (value instanceof DownloadLink) {
+            jlr.setText(fp.getHoster());
+        } else {
             dLink = (DownloadLink) value;
             if (dLink.getPlugin().hasHosterIcon()) {
-                co = getDefaultTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                ((JRendererLabel) co).setText(dLink.getPlugin().getSessionInfo());
-                ((JRendererLabel) co).setIcon(dLink.getPlugin().getHosterIcon());
-                ((JRendererLabel) co).setBorder(null);
-                return co;
+                jlr.setText(dLink.getPlugin().getSessionInfo());
+                jlr.setIcon(dLink.getPlugin().getHosterIcon());
             } else {
-                value = dLink.getPlugin().getHost();
-                co = getDefaultTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                ((JRendererLabel) co).setBorder(null);
+                jlr.setText(dLink.getPlugin().getHost());
             }
         }
-        return co;
+        return jlr;
     }
 
     @Override

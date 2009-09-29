@@ -19,7 +19,6 @@ package jd.utils;
 import java.awt.Color;
 import java.awt.HeadlessException;
 import java.io.File;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.logging.Logger;
@@ -56,6 +55,12 @@ public class WebUpdate {
     private static boolean DYNAMIC_PLUGINS_FINISHED = false;
     // private static boolean LISTENER_ADDED = false;
     private static boolean UPDATE_IN_PROGRESS = false;
+
+    private boolean SHOWNOUPDATE = false;
+
+    public void showProgressNoUpdate() {
+        SHOWNOUPDATE = true;
+    }
 
     public static void DynamicPluginsFinished() {
         DYNAMIC_PLUGINS_FINISHED = true;
@@ -200,7 +205,6 @@ public class WebUpdate {
                 SubConfiguration.getConfig("a" + "pckage").save();
             }
         } catch (Exception e) {
-
             UPDATE_IN_PROGRESS = false;
             JDController.releaseDelayExit(id);
             return;
@@ -210,8 +214,6 @@ public class WebUpdate {
             public void run() {
                 MessageListener messageListener = null;
                 if (files != null) {
-                    unfilteredList = new ArrayList<FileUpdate>();
-                    unfilteredList.addAll(files);
                     updater.filterAvailableUpdates(files);
                     JDUtilities.getController().setWaitingUpdates(files);
                     if (files.size() > 0) {
@@ -229,15 +231,13 @@ public class WebUpdate {
                 // only ignore updaterequest of all plugins are present
                 if (DecryptPluginWrapper.getDecryptWrapper().size() > 50 && !JDInitFlags.SWITCH_RETURNED_FROM_UPDATE && !forceguiCall && SubConfiguration.getConfig("WEBUPDATE").getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false)) {
                     logger.severe("Webupdater disabled");
-
                     JDController.releaseDelayExit(id);
-
                     UPDATE_IN_PROGRESS = false;
                     return;
                 }
 
                 if (files == null || files.size() == 0) {
-                    logger.severe("Webupdater offline or nothing to update");
+
                     // ask to restart if there are updates left in the /update/
                     // folder
                     File[] updates = JDUtilities.getResourceFile("update").listFiles();
@@ -260,16 +260,16 @@ public class WebUpdate {
                         if (UserIO.isOK(ret)) {
                             try {
                                 LocalBrowser.openDefaultURL(new URL("http://jdownloader.org/beta"));
-                            } catch (MalformedURLException e) {
-                                // TODO Auto-generated catch block
-                                e.printStackTrace();
                             } catch (Exception e) {
-                                // TODO Auto-generated catch block
                                 e.printStackTrace();
                             }
-
                         }
-
+                    }
+                    logger.severe("Webupdater offline or nothing to update");
+                    if (SHOWNOUPDATE) {
+                        ProgressController progress = new ProgressController("Webupdater offline or nothing to update");
+                        progress.doFinalize(10000);
+                        SHOWNOUPDATE = false;
                     }
                     JDController.releaseDelayExit(id);
                     UPDATE_IN_PROGRESS = false;

@@ -41,7 +41,6 @@ public class StatusColumn extends JDTableColumn {
      * 
      */
     private static final long serialVersionUID = 2228210790952050305L;
-    private Component co;
     private DownloadLink dLink;
     private LinkGrabberFilePackage fp;
     private String strOnline;
@@ -56,6 +55,7 @@ public class StatusColumn extends JDTableColumn {
     private ImageIcon imgPriority2;
     private ImageIcon imgPriority3;
     private ImageIcon imgUnknown;
+    private JRendererLabel jlr;
 
     public StatusColumn(String name, JDTableModel table) {
         super(name, table);
@@ -70,6 +70,8 @@ public class StatusColumn extends JDTableColumn {
         imgPriority2 = JDTheme.II("gui.images.priority2", 16, 16);
         imgPriority3 = JDTheme.II("gui.images.priority3", 16, 16);
         imgUnknown = JDTheme.II("gui.images.help", 16, 16);
+        jlr = new JRendererLabel();
+        jlr.setBorder(null);
     }
 
     @Override
@@ -89,18 +91,15 @@ public class StatusColumn extends JDTableColumn {
             int failedCount = fp.countFailedLinks(false);
             int size = fp.getDownloadLinks().size();
             if (failedCount > 0) {
-                value = JDL.LF("gui.linkgrabber.packageofflinepercent", "%s offline", JDUtilities.getPercent(failedCount, size));
+                jlr.setText(JDL.LF("gui.linkgrabber.packageofflinepercent", "%s offline", JDUtilities.getPercent(failedCount, size)));
             } else {
-                value = "";
+                jlr.setText("");
             }
-            co = getDefaultTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-            ((JRendererLabel) co).setBorder(null);
         } else if (value instanceof DownloadLink) {
             dLink = (DownloadLink) value;
-            co = getDefaultTableCellRendererComponent(table, "", isSelected, hasFocus, row, column);
             clearSB();
             if (!dLink.isAvailabilityStatusChecked()) {
-                ((JRendererLabel) co).setIcon(null);
+                jlr.setIcon(null);
                 sb.append(strUnchecked);
             } else {
                 if (dLink.isAvailable()) {
@@ -111,31 +110,31 @@ public class StatusColumn extends JDTableColumn {
                         default:
                             break;
                         case -1:
-                            ((JRendererLabel) co).setIcon(imgPriorityS);
+                            jlr.setIcon(imgPriorityS);
                             break;
                         case 1:
-                            ((JRendererLabel) co).setIcon(imgPriority1);
+                            jlr.setIcon(imgPriority1);
                             break;
                         case 2:
-                            ((JRendererLabel) co).setIcon(imgPriority2);
+                            jlr.setIcon(imgPriority2);
                             break;
                         case 3:
-                            ((JRendererLabel) co).setIcon(imgPriority3);
+                            jlr.setIcon(imgPriority3);
                             break;
                         }
                     } else {
                         switch (dLink.getAvailableStatus()) {
                         case UNCHECKABLE:
-                            ((JRendererLabel) co).setIcon(this.imgUnknown);
+                            jlr.setIcon(this.imgUnknown);
                             clearSB();
                             sb.append(strUnCheckable);
                             break;
                         default:
-                            ((JRendererLabel) co).setIcon(imgFinished);
+                            jlr.setIcon(imgFinished);
                         }
                     }
                 } else {
-                    ((JRendererLabel) co).setIcon(imgFailed);
+                    jlr.setIcon(imgFailed);
                     sb.append(strOffline);
                 }
             }
@@ -144,10 +143,9 @@ public class StatusColumn extends JDTableColumn {
             } else if (dLink.getLinkStatus().getStatusString() != null && dLink.getLinkStatus().getStatusString().trim().length() > 0) {
                 sb.append(">" + dLink.getLinkStatus().getStatusString());
             }
-            ((JRendererLabel) co).setText(sb.toString());
-            ((JRendererLabel) co).setBorder(null);
+            jlr.setText(sb.toString());
         }
-        return co;
+        return jlr;
     }
 
     @Override

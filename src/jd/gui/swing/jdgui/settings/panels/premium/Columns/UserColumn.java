@@ -28,13 +28,18 @@ import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.jdgui.settings.panels.premium.HostAccounts;
 import jd.plugins.Account;
 
+import org.jdesktop.swingx.renderer.JRendererLabel;
+
 public class UserColumn extends JDTableColumn implements ActionListener {
 
     private JTextField user;
+    private JRendererLabel jlr;
 
     public UserColumn(String name, JDTableModel table) {
         super(name, table);
         user = new JTextField();
+        jlr = new JRendererLabel();
+        jlr.setBorder(null);
     }
 
     private static final long serialVersionUID = -5291590062503352550L;
@@ -52,15 +57,21 @@ public class UserColumn extends JDTableColumn implements ActionListener {
 
     @Override
     public Component myTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+        co = jlr;
         if (value instanceof Account) {
             Account ac = (Account) value;
-            value = ac.getUser();
-            co = getDefaultTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            jlr.setText(ac.getUser());
         } else {
-            co = getDefaultTableCellRendererComponent(table, "", isSelected, hasFocus, row, column);
-            co.setBackground(table.getBackground().darker());
+            jlr.setText("");
         }
         return co;
+    }
+
+    @Override
+    public void postprocessCell(Component c, JTable table, Object value, boolean isSelected, int row, int column) {
+        if (!(value instanceof Account)) {
+            c.setBackground(table.getBackground().darker());
+        }
     }
 
     @Override

@@ -38,12 +38,14 @@ public class SizeColumn extends JDTableColumn {
      * 
      */
     private static final long serialVersionUID = 2228210790952050305L;
-    private Component co;
     private DownloadLink dLink;
     private LinkGrabberFilePackage fp;
+    private JRendererLabel jlr;
 
     public SizeColumn(String name, JDTableModel table) {
         super(name, table);
+        jlr = new JRendererLabel();
+        jlr.setBorder(null);
     }
 
     @Override
@@ -60,14 +62,12 @@ public class SizeColumn extends JDTableColumn {
     public Component myTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         if (value instanceof LinkGrabberFilePackage) {
             fp = (LinkGrabberFilePackage) value;
-            value = fp.getDownloadSize(false) > 0 ? Formatter.formatReadable(fp.getDownloadSize(false)) : "~";
+            jlr.setText(fp.getDownloadSize(false) > 0 ? Formatter.formatReadable(fp.getDownloadSize(false)) : "~");
         } else if (value instanceof DownloadLink) {
             dLink = (DownloadLink) value;
-            value = dLink.getDownloadSize() > 0 ? Formatter.formatReadable(dLink.getDownloadSize()) : "~";
+            jlr.setText(dLink.getDownloadSize() > 0 ? Formatter.formatReadable(dLink.getDownloadSize()) : "~");
         }
-        co = getDefaultTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-        ((JRendererLabel) co).setBorder(null);
-        return co;
+        return jlr;
     }
 
     @Override

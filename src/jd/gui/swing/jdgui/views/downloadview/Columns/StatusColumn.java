@@ -24,7 +24,7 @@ import javax.swing.JTable;
 import jd.controlling.DownloadWatchDog;
 import jd.gui.swing.components.table.JDTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
-import jd.gui.swing.jdgui.views.downloadview.StatusLabel;
+import jd.gui.swing.jdgui.components.StatusLabel;
 import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -39,7 +39,6 @@ public class StatusColumn extends JDTableColumn {
      */
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.views.downloadview.TableRenderer.";
     private static final long serialVersionUID = 2228210790952050305L;
-    private Component co;
     private DownloadLink dLink;
     private StatusLabel statuspanel;
     private int counter = 0;
@@ -67,6 +66,7 @@ public class StatusColumn extends JDTableColumn {
     public StatusColumn(String name, JDTableModel table) {
         super(name, table);
         statuspanel = new StatusLabel();
+        statuspanel.setBorder(null);
         imgFinished = JDTheme.II("gui.images.ok", 16, 16);
         imgFailed = JDTheme.II("gui.images.bad", 16, 16);
         imgExtract = JDTheme.II("gui.images.update_manager", 16, 16);
@@ -100,12 +100,7 @@ public class StatusColumn extends JDTableColumn {
     @Override
     public Component myTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         if (value instanceof FilePackage) {
-            /* enable statuspanel because we do not disable ourself */
-            statuspanel.setEnabled(true);
             fp = (FilePackage) value;
-            co = getDefaultTableCellRendererComponent(table, "", isSelected, hasFocus, row, column);
-            statuspanel.setBackground(co.getBackground());
-            statuspanel.setForeground(co.getForeground());
             if (fp.isFinished()) {
                 statuspanel.setText("");
             } else if (fp.getTotalDownloadSpeed() > 0) {
@@ -127,22 +122,10 @@ public class StatusColumn extends JDTableColumn {
             } else if (DownloadWatchDog.getInstance().isStopMark(value)) {
                 statuspanel.setIcon(counter, imgStopMark, strStopMark);
                 counter++;
-            } else if (fp.getTotalDownloadSpeed() > 0) {
-
-            } else if (fp.getLinksInProgress() > 0) {
-
-            } else {
-
             }
             statuspanel.clearIcons(counter);
-            statuspanel.setBorder(null);
-            co = statuspanel;
-        } else if (value instanceof DownloadLink) {
+        } else {
             dLink = (DownloadLink) value;
-            co = getDefaultTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-            statuspanel.setBackground(co.getBackground());
-            statuspanel.setEnabled(co.isEnabled());
-            statuspanel.setForeground(co.getForeground());
             statuspanel.setText(dLink.getLinkStatus().getStatusString());
             counter = 0;
             if (DownloadWatchDog.getInstance().isStopMark(value)) {
@@ -187,10 +170,8 @@ public class StatusColumn extends JDTableColumn {
                 }
             }
             statuspanel.clearIcons(counter);
-            statuspanel.setBorder(null);
-            co = statuspanel;
         }
-        return co;
+        return statuspanel;
     }
 
     @Override

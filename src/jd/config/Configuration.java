@@ -65,15 +65,15 @@ public class Configuration extends SubConfiguration implements Serializable {
 
     public static final String PARAM_FINISHED_DOWNLOADS_ACTION = "FINISHED_DOWNLOADS_ACTION";
 
-    public static final String PARAM_GLOBAL_IP_CHECK_SITE = "GLOBAL_IP_CHECK_SITE2";
+    public static final String PARAM_GLOBAL_IP_CHECK_SITE = "GLOBAL_IP_CHECK_SITE3";
 
     public static final String PARAM_GLOBAL_IP_DISABLE = "GLOBAL_IP_DISABLE";
 
-    public static final String PARAM_GLOBAL_IP_BALANCE = "GLOBAL_IP_BALANCE2";
+    public static final String PARAM_GLOBAL_IP_BALANCE = "GLOBAL_IP_BALANCE3";
 
     public static final String PARAM_GLOBAL_IP_MASK = "PARAM_GLOBAL_IP_MASK2";
 
-    public static final String PARAM_GLOBAL_IP_PATTERN = "GLOBAL_IP_PATTERN2";
+    public static final String PARAM_GLOBAL_IP_PATTERN = "GLOBAL_IP_PATTERN3";
 
     public static final String PARAM_HTTPSEND_IP = "HTTPSEND_IP";
 

@@ -41,7 +41,7 @@ import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlListener;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.menu.MenuAction;
-import jd.http.IPCheck;
+import jd.nrouter.IPCheck;
 import jd.nutils.Formatter;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.httpserver.Handler;
@@ -122,7 +122,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
 
                 commandvec.add("/get/downloadstatus");
                 infovector.add("Get Downloadstatus<br/>Values: RUNNING, NOT_RUNNING, STOPPING");
-                
+
                 commandvec.add("/get/downloads/currentcount");
                 infovector.add("Get amount of current downloads");
                 commandvec.add("/get/downloads/currentlist");
@@ -193,7 +193,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 response.addContent("</table><br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;</p></body></html>");
             } else if (request.getRequestUrl().equals("/get/ip")) {
                 // Get IP
-                response.addContent(IPCheck.getIPAddress(null));
+                response.addContent(IPCheck.getIPAddress());
             } else if (request.getRequestUrl().equals("/get/config")) {
                 // Get Config
                 Property config = JDUtilities.getConfiguration();
@@ -286,7 +286,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             } else if (request.getRequestUrl().equals("/get/downloadstatus")) {
                 // Get downloadstatus
                 response.addContent(DownloadWatchDog.getInstance().getDownloadStatus().toString());
-            }else if (request.getRequestUrl().equals("/action/start")) {
+            } else if (request.getRequestUrl().equals("/action/start")) {
                 // Do Start Download
                 DownloadWatchDog.getInstance().startDownloads();
                 response.addContent("Downloads started");

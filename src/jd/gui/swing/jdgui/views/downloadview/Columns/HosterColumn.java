@@ -27,11 +27,13 @@ import javax.swing.JTable;
 import jd.controlling.DownloadController;
 import jd.gui.swing.components.table.JDTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
-import jd.gui.swing.jdgui.views.downloadview.StatusLabel;
+import jd.gui.swing.jdgui.components.StatusLabel;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
+
+import org.jdesktop.swingx.renderer.JRendererLabel;
 
 public class HosterColumn extends JDTableColumn {
 
@@ -42,7 +44,6 @@ public class HosterColumn extends JDTableColumn {
     private static final String JDL_PREFIX = "jd.gui.swing.jdgui.views.downloadview.TableRenderer.";
 
     private static final long serialVersionUID = 2228210790952050305L;
-    private Component co;
     private DownloadLink dLink;
     private FilePackage fp;
     private StatusLabel statuspanel;
@@ -55,9 +56,14 @@ public class HosterColumn extends JDTableColumn {
 
     private String strLoadingFrom;
 
+    private JRendererLabel jlr;
+
     public HosterColumn(String name, JDTableModel table) {
         super(name, table);
         statuspanel = new StatusLabel();
+        statuspanel.setBorder(null);
+        jlr = new JRendererLabel();
+        jlr.setBorder(null);
         imgResume = JDTheme.II("gui.images.resume", 16, 16);
         imgPremium = JDTheme.II("gui.images.premium", 16, 16);
         strResume = JDL.L(JDL_PREFIX + "resume", "Resumable download");
@@ -79,15 +85,10 @@ public class HosterColumn extends JDTableColumn {
     public Component myTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         if (value instanceof FilePackage) {
             fp = (FilePackage) value;
-            value = fp.getHoster();
-            co = getDefaultTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-        } else if (value instanceof DownloadLink) {
-            /* enable statuspanel because we do not disable ourself */
-            statuspanel.setEnabled(true);
+            jlr.setText(fp.getHoster());
+            return jlr;
+        } else {
             dLink = (DownloadLink) value;
-            co = getDefaultTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-            statuspanel.setBackground(co.getBackground());
-            statuspanel.setForeground(co.getForeground());
             statuspanel.setText(dLink.getLinkStatus().getStatusString());
             counter = 0;
             if (dLink.getPlugin() == null) {
@@ -112,10 +113,8 @@ public class HosterColumn extends JDTableColumn {
                 counter++;
             }
             statuspanel.clearIcons(counter);
-            statuspanel.setBorder(null);
-            co = statuspanel;
         }
-        return co;
+        return statuspanel;
     }
 
     @Override

@@ -35,11 +35,13 @@ import org.jdesktop.swingx.renderer.JRendererLabel;
 public class HosterColumn extends JDTableColumn {
 
     private static final long serialVersionUID = -6741644821097309670L;
-    private Component co;
     private static Border leftGap = BorderFactory.createEmptyBorder(0, 30, 0, 0);
+    private JRendererLabel jlr;
 
     public HosterColumn(String name, JDTableModel table) {
         super(name, table);
+        jlr = new JRendererLabel();
+        jlr.setBorder(null);
     }
 
     @Override
@@ -50,19 +52,24 @@ public class HosterColumn extends JDTableColumn {
     @Override
     public Component myTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         if (value instanceof Account) {
-            co = getDefaultTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-            ((JRendererLabel) co).setText(JDL.L("jd.gui.swing.jdgui.settings.panels.premium.PremiumTableRenderer.account", "Account"));
-            ((JRendererLabel) co).setBorder(leftGap);
-            ((JRendererLabel) co).setHorizontalAlignment(SwingConstants.RIGHT);
+            jlr.setText(JDL.L("jd.gui.swing.jdgui.settings.panels.premium.PremiumTableRenderer.account", "Account"));
+            jlr.setBorder(leftGap);
+            jlr.setIcon(null);
+            jlr.setHorizontalAlignment(SwingConstants.RIGHT);
         } else {
             HostAccounts ha = (HostAccounts) value;
             String host = ha.getHost();
-            co = getDefaultTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-            ((JRendererLabel) co).setIcon(JDUtilities.getPluginForHost(host).getHosterIcon());
-            ((JRendererLabel) co).setText(host);
-            co.setBackground(table.getBackground().darker());
+            jlr.setIcon(JDUtilities.getPluginForHost(host).getHosterIcon());
+            jlr.setText(host);
         }
-        return co;
+        return jlr;
+    }
+
+    @Override
+    public void postprocessCell(Component c, JTable table, Object value, boolean isSelected, int row, int column) {
+        if (!(value instanceof Account)) {
+            c.setBackground(table.getBackground().darker());
+        }
     }
 
     @Override

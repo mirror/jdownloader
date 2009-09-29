@@ -40,23 +40,21 @@ public class DateAddedColumn extends JDTableColumn {
      * 
      */
     private static final long serialVersionUID = 2228210790952050305L;
-    private Component co;
     private DownloadLink dLink;
     private Date date;
     private SimpleDateFormat dateFormat;
     private FilePackage fp;
+    private JRendererLabel jlr;
 
     public DateAddedColumn(String name, JDTableModel table) {
         super(name, table);
         date = new Date();
+        jlr = new JRendererLabel();
+        jlr.setBorder(null);
         try {
-
             dateFormat = new SimpleDateFormat(JDL.L("jd.gui.swing.jdgui.views.downloadview.TableRenderer.TableRenderer.dateformat", "dd.MM.yy HH:mm"));
-
         } catch (Exception e) {
-
             dateFormat = new SimpleDateFormat("dd.MM.yy HH:mm");
-
         }
     }
 
@@ -79,26 +77,22 @@ public class DateAddedColumn extends JDTableColumn {
     public Component myTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         if (value instanceof FilePackage) {
             fp = (FilePackage) value;
-            co = getDefaultTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             if (fp.getCreated() <= 0) {
-                ((JRendererLabel) co).setText("");
+                jlr.setText("");
             } else {
                 date.setTime(fp.getCreated());
-                ((JRendererLabel) co).setText(dateFormat.format(date));
+                jlr.setText(dateFormat.format(date));
             }
-            ((JRendererLabel) co).setBorder(null);
-        } else if (value instanceof DownloadLink) {
+        } else {
             dLink = (DownloadLink) value;
-            co = getDefaultTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             if (dLink.getCreated() <= 0) {
-                ((JRendererLabel) co).setText("");
+                jlr.setText("");
             } else {
                 date.setTime(dLink.getCreated());
-                ((JRendererLabel) co).setText(dateFormat.format(date));
+                jlr.setText(dateFormat.format(date));
             }
-            ((JRendererLabel) co).setBorder(null);
         }
-        return co;
+        return jlr;
     }
 
     @Override

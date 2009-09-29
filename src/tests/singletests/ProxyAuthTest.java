@@ -23,8 +23,8 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 
 import jd.http.Browser;
-import jd.http.IPCheck;
 import jd.http.JDProxy;
+import jd.nrouter.IPCheck;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -55,29 +55,20 @@ public class ProxyAuthTest {
         }
         Browser.setGlobalProxy(pr);
 
-        Browser br = new Browser();
-        br.setConnectTimeout(10000);
-        br.setReadTimeout(10000);
         try {
 
-            String ip = IPCheck.getIPAddress(br);
+            String ip = IPCheck.getIPAddress();
             InetSocketAddress proxyadress = new InetSocketAddress(pr.getHost(), pr.getPort());
             String proxyip = proxyadress.getAddress().getHostAddress();
 
             assertFalse("Coult not connect to proxy", ip.equals("offline"));
 
-            if (!ip.equals(proxyip)) {
+            if (ip == null || !(ip instanceof String) || !ip.equals(proxyip)) {
                 fail("Request did not use the proxy");
             }
         } catch (Exception e) {
             fail("proxy error: " + e.getLocalizedMessage());
 
-        }
-        if (br.getHttpConnection().isOK()) {
-            TestUtils.log("proxy ok");
-        } else {
-            TestUtils.log("proxy  FAILED");
-            fail("proxy error: " + br.getHttpConnection().toString());
         }
     }
 }

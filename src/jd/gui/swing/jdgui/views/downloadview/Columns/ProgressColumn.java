@@ -29,7 +29,7 @@ import javax.swing.border.Border;
 import jd.controlling.DownloadController;
 import jd.gui.swing.components.table.JDTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
-import jd.gui.swing.jdgui.views.downloadview.JDProgressBar;
+import jd.gui.swing.jdgui.components.JDProgressBarRender;
 import jd.nutils.Formatter;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -44,9 +44,8 @@ public class ProgressColumn extends JDTableColumn {
      * 
      */
     private static final long serialVersionUID = 2228210790952050305L;
-    private Component co;
     private DownloadLink dLink;
-    private JDProgressBar progress;
+    private JDProgressBarRender progress;
 
     private String strPluginDisabled;
 
@@ -56,16 +55,20 @@ public class ProgressColumn extends JDTableColumn {
     private StringBuilder sb = new StringBuilder();
     private Color COL_PROGRESS_NORMAL = null;
     private FilePackage fp;
+    private JRendererLabel jlr;
 
     public ProgressColumn(String name, JDTableModel table) {
         super(name, table);
-        progress = new JDProgressBar();
+        progress = new JDProgressBarRender();
         progress.setStringPainted(true);
         progress.setOpaque(true);
+        progress.setBorder(null);
         COL_PROGRESS_NORMAL = progress.getForeground();
         strPluginDisabled = JDL.L("gui.downloadlink.plugindisabled", "[Plugin disabled]");
         strPluginError = JDL.L("gui.treetable.error.plugin", "Plugin error");
         ERROR_BORDER = BorderFactory.createLineBorder(COL_PROGRESS_ERROR);
+        jlr = new JRendererLabel();
+        jlr.setBorder(null);
     }
 
     @Override
@@ -82,8 +85,6 @@ public class ProgressColumn extends JDTableColumn {
     public Component myTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         if (value instanceof FilePackage) {
             fp = (FilePackage) value;
-            co = getDefaultTableCellRendererComponent(table, "", isSelected, hasFocus, row, column);
-            progress.setBorder(null);
             progress.setString(null);
             if (fp.isFinished()) {
                 progress.setMaximum(100);
@@ -97,22 +98,16 @@ public class ProgressColumn extends JDTableColumn {
             progress.setString(sb.toString());
             progress.setForeground(COL_PROGRESS_NORMAL);
             return progress;
-        } else if (value instanceof DownloadLink) {
+        } else {
             dLink = (DownloadLink) value;
-            progress.setBorder(null);
             if (dLink.getPlugin() == null) {
-                co = getDefaultTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                ((JRendererLabel) co).setIcon(null);
-                ((JRendererLabel) co).setText(strPluginError);
-                ((JRendererLabel) co).setBorder(null);
-                return co;
+                jlr.setText(strPluginError);
+                return jlr;
             } else if (!dLink.getPlugin().getWrapper().usePlugin() && !dLink.getLinkStatus().isPluginActive()) {
-                co = getDefaultTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                ((JRendererLabel) co).setIcon(null);
-                ((JRendererLabel) co).setText(strPluginDisabled);
-                ((JRendererLabel) co).setBorder(null);
-                return co;
+                jlr.setText(strPluginDisabled);
+                return jlr;
             } else if (dLink.getPluginProgress() != null) {
+                progress.setString("");
                 progress.setMaximum(dLink.getPluginProgress().getTotal());
                 progress.setValue(dLink.getPluginProgress().getCurrent());
                 progress.setForeground(COL_PROGRESS_NORMAL);
@@ -120,15 +115,13 @@ public class ProgressColumn extends JDTableColumn {
             } else if ((dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED) && dLink.getPlugin().getRemainingHosterWaittime() > 0) || (dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) && dLink.getLinkStatus().getRemainingWaittime() > 0)) {
                 progress.setMaximum(dLink.getLinkStatus().getTotalWaitTime());
                 progress.setForeground(COL_PROGRESS_ERROR);
-                progress.setBorder(ERROR_BORDER);
+                // progress.setBorder(ERROR_BORDER);
                 progress.setString(Formatter.formatSeconds(dLink.getLinkStatus().getRemainingWaittime() / 1000));
                 progress.setValue(dLink.getLinkStatus().getRemainingWaittime());
                 return progress;
             } else if (dLink.getLinkStatus().isFinished()) {
-                clearSB();
-                sb.append((Formatter.formatReadable(Math.max(0, dLink.getDownloadSize()))));
                 progress.setMaximum(100);
-                progress.setString(sb.toString());
+                progress.setString((Formatter.formatReadable(Math.max(0, dLink.getDownloadSize()))));
                 progress.setValue(100);
                 progress.setForeground(COL_PROGRESS_NORMAL);
                 return progress;
@@ -141,12 +134,9 @@ public class ProgressColumn extends JDTableColumn {
                 progress.setForeground(COL_PROGRESS_NORMAL);
                 return progress;
             }
-            co = getDefaultTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-            ((JRendererLabel) co).setIcon(null);
-            ((JRendererLabel) co).setText("Unknown FileSize");
-            ((JRendererLabel) co).setBorder(null);
         }
-        return co;
+        jlr.setText("Unknown FileSize");
+        return jlr;
     }
 
     @Override

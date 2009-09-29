@@ -33,10 +33,6 @@ public class IPAddress {
      * @return
      */
     public static boolean validateIP(String ip) {
-        // /* Zeitstempel nicht der Validierung unterziehen */
-        // if
-        // (SubConfiguration.getConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE,
-        // false)) return true;
         try {
             return Pattern.compile(SubConfiguration.getConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_MASK, IP_PATTERN)).matcher(ip).matches();
         } catch (Exception e) {

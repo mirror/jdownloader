@@ -26,14 +26,19 @@ import jd.gui.swing.jdgui.settings.panels.premium.HostAccounts;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 
+import org.jdesktop.swingx.renderer.JRendererLabel;
+
 public class FilesNumColumn extends JDTableColumn {
+
+    private JRendererLabel jlr;
 
     public FilesNumColumn(String name, JDTableModel table) {
         super(name, table);
+        jlr = new JRendererLabel();
+        jlr.setBorder(null);
     }
 
     private static final long serialVersionUID = -5291590062503352550L;
-    private Component co;
 
     @Override
     public Component myTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
@@ -52,16 +57,21 @@ public class FilesNumColumn extends JDTableColumn {
             Account ac = (Account) value;
             AccountInfo ai = ac.getAccountInfo();
             if (ai == null || ai.getFilesNum() < 0) {
-                value = "";
+                jlr.setText("");
             } else {
-                value = "" + ai.getFilesNum();
+                jlr.setText("" + ai.getFilesNum());
             }
-            co = getDefaultTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
         } else {
-            co = getDefaultTableCellRendererComponent(table, "", isSelected, hasFocus, row, column);
-            co.setBackground(table.getBackground().darker());
+            jlr.setText("");
         }
-        return co;
+        return jlr;
+    }
+
+    @Override
+    public void postprocessCell(Component c, JTable table, Object value, boolean isSelected, int row, int column) {
+        if (!(value instanceof Account)) {
+            c.setBackground(table.getBackground().darker());
+        }
     }
 
     @Override

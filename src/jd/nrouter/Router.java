@@ -19,7 +19,6 @@ package jd.nrouter;
 import java.net.InetAddress;
 
 import jd.controlling.reconnect.Reconnecter;
-import jd.http.IPCheck;
 
 public class Router {
     private InetAddress address;
@@ -43,15 +42,16 @@ public class Router {
      * @return
      */
     public String getExternalIPAddress() {
-        return IPCheck.getIPAddress(null);
+        return IPCheck.getIPAddress();
 
     }
-/**
- * Performs an reconnect delegating the request to Reconnecter class
- */
+
+    /**
+     * Performs an reconnect delegating the request to Reconnecter class
+     */
     public boolean refreshIP() {
-       return Reconnecter.doReconnect();
-        
+        return Reconnecter.doReconnect();
+
     }
 
 }

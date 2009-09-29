@@ -18,22 +18,18 @@ package jd.gui.swing.components.table;
 
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.Dimension;
 import java.util.EventObject;
 
 import javax.swing.AbstractCellEditor;
-import javax.swing.Icon;
-import javax.swing.JComponent;
-import javax.swing.JLabel;
 import javax.swing.JTable;
-import javax.swing.UIManager;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
 
-import jd.gui.swing.jdgui.views.downloadview.JDProgressBar;
+import jd.gui.swing.jdgui.components.StatusLabel;
 import jd.nutils.JDImage;
 
 import org.jdesktop.swingx.renderer.DefaultTableRenderer;
+import org.jdesktop.swingx.renderer.JRendererLabel;
 
 public abstract class JDTableColumn extends AbstractCellEditor implements TableCellEditor, TableCellRenderer {
 
@@ -43,8 +39,13 @@ public abstract class JDTableColumn extends AbstractCellEditor implements TableC
     private DefaultTableRenderer defaultrenderer;
     private boolean sortingToggle = false; /* eg Asc and Desc sorting, a toggle */
     private Thread sortThread = null;
-    private static Color color = UIManager.getColor("TableHeader.background");
-    private static Dimension dim = new Dimension(200, 30);
+    private static Color background = null;
+    private static Color foreground = null;
+    private static Color backgroundselected = null;
+    private static Color foregroundselected = null;
+    private Color currentbackground = null;
+    private Color currentforeground = null;
+    private StatusLabel sl = null;
 
     public JDTableColumn(String name, JDTableModel table) {
         this.name = name;
@@ -113,32 +114,52 @@ public abstract class JDTableColumn extends AbstractCellEditor implements TableC
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         hasFocus = false;
         Component c = myTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-        if (!isEnabled(value)) {
-            if (c instanceof JLabel) {
-                Icon icon = ((JLabel) c).getIcon();
-                ((JLabel) c).setDisabledIcon(JDImage.getDisabledIcon(icon));
-            }
-            c.setEnabled(false);
+        /* restore foreground,background color */
+        if (background == null) background = getDefaultTableCellRendererComponent(table, value, false, hasFocus, row, column).getBackground();
+        if (foreground == null) foreground = getDefaultTableCellRendererComponent(table, value, false, hasFocus, row, column).getForeground();
+        if (backgroundselected == null) backgroundselected = getDefaultTableCellRendererComponent(table, value, true, hasFocus, row, column).getBackground();
+        if (foregroundselected == null) foregroundselected = getDefaultTableCellRendererComponent(table, value, true, hasFocus, row, column).getForeground();
+        if (isSelected) {
+            currentbackground = backgroundselected;
+            currentforeground = foregroundselected;
         } else {
-            c.setEnabled(true);
-        }
-        if (c instanceof JDProgressBar) return c;
-        if (!isSelected) {
+            currentbackground = background;
+            currentforeground = foreground;
             for (JDRowHighlighter high : this.table.getJDRowHighlighter()) {
                 if (high.doHighlight(value)) {
-                    c.setBackground(high.getColor());
+                    currentbackground = high.getColor();
                     break;
                 }
             }
-        } else {
-            if (color == null) {
-                ((JComponent) c).setBackground(c.getBackground().darker());
-            } else {
-                ((JComponent) c).setBackground(color.darker());
-            }
         }
-        c.setSize(dim);
+        if (c instanceof StatusLabel) {
+            sl = (StatusLabel) c;
+            sl.setBackground(currentbackground);
+            sl.setForeground(currentforeground);
+        } else {
+            c.setBackground(currentbackground);
+            c.setForeground(currentforeground);
+        }
+        /* check enabled,disabled */
+        if (isEnabled(value)) {
+            if (c instanceof StatusLabel) {
+                ((StatusLabel) c).setEnabled(true);
+            } else
+                c.setEnabled(true);
+        } else {
+            if (c instanceof JRendererLabel) {
+                ((JRendererLabel) c).setDisabledIcon(JDImage.getDisabledIcon(((JRendererLabel) c).getIcon()));
+                c.setEnabled(false);
+            } else if (c instanceof StatusLabel) {
+                ((StatusLabel) c).setEnabled(false);
+            } else
+                c.setEnabled(false);
+        }
+        postprocessCell(c, table, value, isSelected, row, column);
         return c;
+    }
+
+    public void postprocessCell(Component c, JTable table, Object value, boolean isSelected, int row, int column) {
     }
 
     abstract public boolean isEnabled(Object obj);

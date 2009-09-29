@@ -22,56 +22,28 @@ import java.awt.event.ActionListener;
 import java.util.ArrayList;
 
 import javax.swing.JCheckBox;
-import javax.swing.JLabel;
 import javax.swing.JTable;
-import javax.swing.plaf.UIResource;
-import javax.swing.table.TableCellRenderer;
 
 import jd.controlling.AccountController;
 import jd.gui.swing.components.table.JDTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.jdgui.settings.panels.premium.HostAccounts;
-import jd.gui.swing.laf.LookAndFeelController;
 import jd.plugins.Account;
 
-class BooleanRenderer extends JCheckBox implements TableCellRenderer, UIResource {
-
-    private static final long serialVersionUID = 5635326369148415608L;
-
-    public BooleanRenderer() {
-        super();
-        setHorizontalAlignment(JLabel.CENTER);
-        setBorderPainted(false);
-        setOpaque(true);
-        if (LookAndFeelController.isSubstance()) this.setOpaque(false);
-        this.setFocusable(false);
-    }
-
-    public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-        if (isSelected) {
-            setForeground(table.getSelectionForeground());
-            super.setBackground(table.getSelectionBackground());
-        } else {
-            setForeground(table.getForeground());
-            setBackground(table.getBackground());
-        }
-        setSelected((value != null && ((Boolean) value).booleanValue()));
-
-        return this;
-    }
-}
+import org.jdesktop.swingx.renderer.JRendererCheckBox;
 
 public class EnabledColumn extends JDTableColumn implements ActionListener {
     private static final long serialVersionUID = -1043261559739746995L;
     private Component co;
     private Component coedit;
-    private BooleanRenderer boolrend;
+    private JRendererCheckBox boolrend;
     private JCheckBox checkbox;
     boolean enabled = false;
 
     public EnabledColumn(String name, JDTableModel table) {
         super(name, table);
-        boolrend = new BooleanRenderer();
+        boolrend = new JRendererCheckBox();
+        boolrend.setHorizontalAlignment(JCheckBox.CENTER);
         checkbox = new JCheckBox();
         checkbox.setHorizontalAlignment(JCheckBox.CENTER);
     }
@@ -92,17 +64,22 @@ public class EnabledColumn extends JDTableColumn implements ActionListener {
 
     @Override
     public Component myTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+        co = boolrend;
         if (value instanceof Account) {
             Account ac = (Account) value;
-            value = ac.isEnabled();
-            co = boolrend.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            boolrend.setSelected(ac.isEnabled());
         } else {
             HostAccounts ha = (HostAccounts) value;
-            value = ha.isEnabled();
-            co = boolrend.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-            co.setBackground(table.getBackground().darker());
+            boolrend.setSelected(ha.isEnabled());
         }
         return co;
+    }
+
+    @Override
+    public void postprocessCell(Component c, JTable table, Object value, boolean isSelected, int row, int column) {
+        if (!(value instanceof Account)) {
+            c.setBackground(table.getBackground().darker());
+        }
     }
 
     @Override
