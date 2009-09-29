@@ -37,7 +37,6 @@ public class L4dMapsCom extends PluginForHost {
     public L4dMapsCom(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
-        // TODO Auto-generated constructor stub
     }
 
     @Override
@@ -48,9 +47,6 @@ public class L4dMapsCom extends PluginForHost {
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceAll("(details|mirrors|file-download)", "mirrors"));
     }
-
-    
-    
     
     private void setConfigElements() {
         String[] servers = new String[] { "1", "2" };
@@ -67,8 +63,6 @@ public class L4dMapsCom extends PluginForHost {
             return 1;
         }
     }
-    
-    
     
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
@@ -109,14 +103,10 @@ public class L4dMapsCom extends PluginForHost {
 
     @Override
     public void reset() {
-        // TODO Auto-generated method stub
-
     }
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-        // TODO Auto-generated method stub
-
     }
 
     // @Override
