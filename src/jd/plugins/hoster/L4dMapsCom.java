@@ -39,7 +39,7 @@ public class L4dMapsCom extends PluginForHost {
 	
 	static {
 		l4dservers = "l4dservers";
-		servers = new String[] { "Server #1", "Server #2" };
+		servers = new String[] { "E-Frag #1", "E-Frag #2" };
 	}
 
     public L4dMapsCom(PluginWrapper wrapper) {
@@ -105,10 +105,16 @@ public class L4dMapsCom extends PluginForHost {
         String usedServer = "";
         if (configuredServer == 1) {
         	usedServer = br.getRegex("\">E-Frag #1<.*?\"(http://www\\.l4dmaps\\.com/file-download\\.php\\?file=[0-9]+&entry=[0-9]+)\"").getMatch(0);
+        	if (usedServer == null){
+        	    usedServer = br.getRegex("\">E-Frag #2<.*?\"(http://www\\.l4dmaps\\.com/file-download\\.php\\?file=[0-9]+&entry=[0-9]+)\"").getMatch(0);
+        	}
         } else if (configuredServer == 2) {
         	usedServer = br.getRegex("\">E-Frag #2<.*?\"(http://www\\.l4dmaps\\.com/file-download\\.php\\?file=[0-9]+&entry=[0-9]+)\"").getMatch(0);
+            if (usedServer == null){
+                br.getRegex("\">E-Frag #1<.*?\"(http://www\\.l4dmaps\\.com/file-download\\.php\\?file=[0-9]+&entry=[0-9]+)\"").getMatch(0);
+            }
         }
-
+        if (usedServer == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         logger.fine("Using link '" + usedServer + "'");
         br.getPage(usedServer);
         

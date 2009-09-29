@@ -24,6 +24,7 @@ import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filestube.com" }, urls = { "http://[\\w\\.]*?filestube\\.com/.+" }, flags = { 0 })
@@ -37,7 +38,23 @@ public class FlStbCm extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        FilePackage fp = FilePackage.getInstance();
         br.getPage(parameter.toString());
+        String fpName = br.getRegex("<title>(.*?)- Download").getMatch(0).trim();
+        //Hmm this plugin should always have a name with that mass of alternative ways to get the name
+        if (fpName == null) {
+            fpName = br.getRegex("content=\"Download(.*?)from").getMatch(0).trim();
+            if (fpName == null) {
+                fpName = br.getRegex("\">Download:(.*?)</h2>").getMatch(0).trim();
+                if (fpName == null) {
+                    fpName = br.getRegex("widgetTitle: '(.*?)',").getMatch(0).trim();
+                    if (fpName == null) {
+                        fpName = br.getRegex("&quot;\\](.*?)\\[/url\\]\"").getMatch(0).trim();
+                    }
+                }
+            }
+        }
+        fp.setName(fpName);
         String temp = br.getRegex(Pattern.compile("<pre  id=\"copy_paste_links\" style=\".*auto\">(.*?)</pre></div>", Pattern.DOTALL)).getMatch(0);
         String[] links = temp.split("<br />");
         progress.setRange(links.length);
@@ -45,6 +62,7 @@ public class FlStbCm extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(data));
             progress.increase(1);
         }
+        fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
 
