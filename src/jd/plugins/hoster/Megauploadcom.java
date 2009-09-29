@@ -290,7 +290,7 @@ public class Megauploadcom extends PluginForHost {
         if (urls.length == 1 && urls[0].getBooleanProperty("webcheck", false) == true && !onlyapi) {
             // SingleFileCheck before Download, bypass api only if api check
             // already done
-            websiteFileCheck(urls[0]);
+            websiteFileCheck(urls[0], null);
             return true;
         }
         this.setBrowserExclusive();
@@ -370,7 +370,7 @@ public class Megauploadcom extends PluginForHost {
                         downloadLink.setAvailable(false);
                         /* crosscheck if api says offline */
                         if (Dls.length < 10) {
-                            websiteFileCheck(downloadLink);
+                            websiteFileCheck(downloadLink, null);
                         }
                     }
                     downloadLink.setProperty("webcheck", true);
@@ -384,27 +384,34 @@ public class Megauploadcom extends PluginForHost {
         /* check files that could not checked by api */
         for (DownloadLink u : urls) {
             if (urls[0].getBooleanProperty("webcheck", false) == false) {
-                websiteFileCheck(u);
+                websiteFileCheck(u, null);
             }
         }
         return ret;
     }
 
-    private boolean websiteFileCheck(DownloadLink l) {
+    private boolean websiteFileCheck(DownloadLink l, Browser br) {
         if (onlyapi) {
             l.setAvailable(true);
             /* api only, modus, dont try to check via webpage */
             return true;
         }
         try {
-            Browser br = new Browser();
-            br.setCookiesExclusive(true);
-            br.setCookie("http://" + wwwWorkaround + "megaupload.com", "l", "en");
+            if (br == null) {
+                br = new Browser();
+                br.setCookiesExclusive(true);
+                br.setCookie("http://" + wwwWorkaround + "megaupload.com", "l", "en");
+            }
             br.getPage("http://" + wwwWorkaround + "megaupload.com/?d=" + getDownloadID(l));
             if (br.containsHTML("No htmlCode read") || br.containsHTML("This service is temporarily not available from your service area")) {
                 logger.info("It seems Megaupload is blocked! Only API may work!");
                 onlyapi = true;
                 l.setAvailable(true);
+                return true;
+            }
+            if (br.containsHTML("A temporary access restriction is place") || br.containsHTML("We have detected an elevated")) {
+                logger.info("Megaupload blocked this IP: log" + br.toString());
+                l.setAvailableStatus(AvailableStatus.UNCHECKABLE);
                 return true;
             }
             if (br.containsHTML("The file has been deleted because it was violating")) {
@@ -444,9 +451,18 @@ public class Megauploadcom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         onlyapi = false;
         checkWWWWorkaround();
-        this.checkLinks(new DownloadLink[] { downloadLink });
-
-        if (!downloadLink.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        this.setBrowserExclusive();
+        br.setCookie("http://" + wwwWorkaround + "megaupload.com", "l", "en");
+        websiteFileCheck(downloadLink, br);
+        /* in case of ip blocking, set ip blocked */
+        if (downloadLink.getAvailableStatus() == AvailableStatus.UNCHECKABLE) {
+            String wait = br.getRegex("Please check back in (\\+d) minutes").getMatch(0);
+            if (wait != null) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait.trim()) * 60 * 1000l);
+            } else
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 25 * 60 * 1000l);
+        }
+        if (downloadLink.getAvailableStatus() == AvailableStatus.FALSE) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         return downloadLink.getAvailableStatus();
     }
 
@@ -608,7 +624,6 @@ public class Megauploadcom extends PluginForHost {
         user = null;
         br.setCookie("http://" + wwwWorkaround + "megaupload.com", "l", "en");
         requestFileInformation(parameter);
-        if (!parameter.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         handleFree0(parameter, null);
     }
 

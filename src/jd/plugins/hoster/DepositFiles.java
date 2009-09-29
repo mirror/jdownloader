@@ -134,7 +134,8 @@ public class DepositFiles extends PluginForHost {
         setLangtoGer();
         br.getPage("http://depositfiles.com/de/gold/");
         if (br.containsHTML("Ihre aktuelle Status: Frei - Mitglied</div>")) return true;
-        if (br.containsHTML("<ins>Gold-Mitgliedschaft</ins>")) return false;
+        if (br.containsHTML(">Goldmitgliedschaft<")) return false;
+        if (br.containsHTML("noch den Gold-Zugriff")) return false;
         return true;
     }
 
