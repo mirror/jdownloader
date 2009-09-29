@@ -16,8 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
-
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -44,18 +42,24 @@ public class FlyFileUs extends PluginForHost {
     }
 
     // @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setCookie("http://www.flyfile.us", "lang", "english");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("No such file with this filename")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("No such user exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("File Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-
+        //old filesize handling
+        // String filesize = br.getRegex("</font> \\((.*?)\\)</font>").getMatch(0);
         String filename = Encoding.htmlDecode(br.getRegex("<font style=\"font-size:12px;\">You have requested <font color=\"red\">http://flyfile.us/[a-z|0-9]+/(.*?)</font>").getMatch(0));
         if (filename == null) filename = br.getRegex("<h2>Download File (.*?)</h2>").getMatch(0);
-        String filesize = br.getRegex("</font> \\((.*?)\\)</font>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        Form DLForm0 = br.getFormBySubmitvalue("Free+Download");
+        if (DLForm0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        DLForm0.remove("method_premium");
+        br.submitForm(DLForm0);
+        if (br.containsHTML(">File was deleted by administrator<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filesize = br.getRegex("\\((.*?) bytes\\)").getMatch(0);
         link.setName(filename);
         if (filesize != null) link.setDownloadSize(Regex.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -66,11 +70,6 @@ public class FlyFileUs extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
-        // Form um auf free zu "klicken"
-        Form DLForm0 = br.getForm(2);
-        if (DLForm0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        DLForm0.remove("method_premium");
-        br.submitForm(DLForm0);
         Form DLForm = br.getFormbyProperty("name", "F1");
         if (br.containsHTML("You have reached the download-limit")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1000l);
         if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
