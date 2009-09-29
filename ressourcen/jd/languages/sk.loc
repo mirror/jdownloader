@@ -174,7 +174,7 @@ gui.config.download.crc = Vykonať SFV/CRC kontrolu
 gui.config.download.download.tab = Nastavenie Sťahovania
 gui.config.download.ipcheck = Kontrola Znovupripojenia IP
 gui.config.download.ipcheck.balance = Použiť vyváženú kontrolu IP
-gui.config.download.ipcheck.externalinterval = Interval kontroly externej IP [sek]
+gui.config.download.ipcheck.externalinterval2 = Interval kontroly externej IP [min]
 gui.config.download.ipcheck.mask = Povolené IP
 gui.config.download.ipcheck.regex = IP Filter RegEx
 gui.config.download.ipcheck.website = Skontrolovať IP online
@@ -1053,6 +1053,7 @@ jd.update.main.error.title = Došlo k chybám
 jd.update.main.error.title.old = Boli nájdené aktualizácie!
 jd.utils.webupdate.ballon.message.updateinprogress = Aktualizácia práve prebieha.
 jd.utils.webupdate.ballon.title = Aktualizácia
+jd.utils.webupdate.doupdatecheck.noupdates = Nie sú dostupné žiadne aktualizácie
 jd.utils.webupdate.message = <font size="4" face="Verdana, Arial, Helvetica, sans-serif">%s aktualizácií dostupných. Inštalovať teraz?</font>
 jd.utils.webupdate.message2 = <font size="4" face="Verdana, Arial, Helvetica, sans-serif">%s aktualizácií dostupných. Inštalovať teraz?</font>
 jd.utils.webupdate.progresscontroller.text = Prebieha aktualizácia
@@ -1396,6 +1397,7 @@ sys.ask.rlyclose = Naozaj si prajete ukončiť JDownloader?
 sys.ask.rlyrestart = Naozaj si prajete reštartovať JDownloader?
 sys.ask.rlyrestore = Týmto reštartujete JDownloader a vykonáte ÚPLNÚ Aktualizáciu. Pokračovať?
 sys.dlc.success = Dešifrovanie DLC úspešné. Rozbaliť pre okamžité testovanie?
+sys.warning.noclose = JDownloader bude minimalizovaný do tray!
 system.dialogs.update = Sú dostupné aktualizácie
 system.download.docrc2 = Prebieha Kontrola CRC (%s)
 system.download.docrc2.failed = CRC Kontrola ZLYHALA (%s)
