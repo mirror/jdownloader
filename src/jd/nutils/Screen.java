@@ -55,7 +55,7 @@ public class Screen {
     public static Point getDockBottomRight(Component child) {
 
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        return new Point((int) (screenSize.getWidth() - child.getWidth()), (int) (screenSize.getHeight() - child.getHeight()));
+        return new Point((int) (screenSize.getWidth() - child.getWidth()-20), (int) (screenSize.getHeight() - child.getHeight()-60));
 
     }
 
