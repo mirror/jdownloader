@@ -437,7 +437,10 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
             /* dont close/exit if trayicon minimizing is enabled */
             OptionalPluginWrapper addon = JDUtilities.getOptionalPlugin("trayicon");
             if (addon != null && addon.isEnabled()) {
-                if ((Boolean) addon.getPlugin().interact("enabled", null) == true) return;
+                if ((Boolean) addon.getPlugin().interact("enabled", null) == true) {
+                    UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_COUNTDOWN | UserIO.NO_CANCEL_OPTION, JDL.L("sys.warning.noclose", "JDownloader will be minimized to tray!"));
+                    return;
+                }
             }
             closeWindow();
         }
