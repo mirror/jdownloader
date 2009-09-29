@@ -56,11 +56,7 @@ public class WebUpdate {
     // private static boolean LISTENER_ADDED = false;
     private static boolean UPDATE_IN_PROGRESS = false;
 
-    private boolean SHOWNOUPDATE = false;
 
-    public void showProgressNoUpdate() {
-        SHOWNOUPDATE = true;
-    }
 
     public static void DynamicPluginsFinished() {
         DYNAMIC_PLUGINS_FINISHED = true;
@@ -287,11 +283,7 @@ public class WebUpdate {
                         }
                     }
                     logger.severe("Webupdater offline or nothing to update");
-                    if (SHOWNOUPDATE) {
-                        ProgressController progress = new ProgressController("Webupdater offline or nothing to update");
-                        progress.doFinalize(10000);
-                        SHOWNOUPDATE = false;
-                    }
+             
                     JDController.releaseDelayExit(id);
                     UPDATE_IN_PROGRESS = false;
                     return;
