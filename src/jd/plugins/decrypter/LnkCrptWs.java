@@ -122,7 +122,6 @@ public class LnkCrptWs extends PluginForDecrypt {
         String[] containers = br.getRegex("eval\\((.*?\\,\\{\\}\\))\\)").getColumn(0);
         HashMap<String, String> map = new HashMap<String, String>();
         for (String c : containers) {
-            @SuppressWarnings("deprecation")
             Context cx = Context.enter();
             Scriptable scope = cx.initStandardObjects();
             c = c.replace("return p}(", " return p}  f(").replace("function(p,a,c,k,e,d)", "function f(p,a,c,k,e,d)");
@@ -133,15 +132,16 @@ public class LnkCrptWs extends PluginForDecrypt {
             // System.out.println(code);
             String[] row = new Regex(code, "href=\"([^\"]+)\"[^>]*>(<u>)?<img.*?image/(.*?)\\.").getRow(0);
             if (row != null) {
-
                 map.put(row[2], row[0]);
-            } else {
-            }
+            } 
         }
+        
+        File containersFolder = JDUtilities.getResourceFile("container/");
+        if (!containersFolder.exists()) containersFolder.mkdir();
+        
         File container = null;
         if (map.containsKey("dlc")) {
             container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
-            // System.out.println(map.get("dlc"));
             if (!container.exists()) container.createNewFile();
             br.cloneBrowser().getDownload(container, map.get("dlc"));
         } else if (map.containsKey("cnl")) {
@@ -157,14 +157,15 @@ public class LnkCrptWs extends PluginForDecrypt {
             if (!container.exists()) container.createNewFile();
             br.cloneBrowser().getDownload(container, map.get("rsdf"));
         }
+        
         if (container != null) {
             // container available
             decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
 
             container.delete();
             if (decryptedLinks.size() > 0) return decryptedLinks;
-
         }
+        
         // IF container decryption failed, try webdecryption
         Form[] forms = br.getForms();
         progress.setRange(forms.length / 2);
@@ -184,7 +185,6 @@ public class LnkCrptWs extends PluginForDecrypt {
                         String[] evals = clone.getRegex("eval\\((.*?\\,\\{\\}\\))\\)").getColumn(0);
 
                         for (String c : evals) {
-                            @SuppressWarnings("deprecation")
                             Context cx = Context.enter();
                             Scriptable scope = cx.initStandardObjects();
                             c = c.replace("return p}(", " return p}  f(").replace("function(p,a,c,k,e", "function f(p,a,c,k,e");
