@@ -174,7 +174,7 @@ gui.config.download.crc = Comprobar SFV/CRC cuando sea posible
 gui.config.download.download.tab = Control de descarga
 gui.config.download.ipcheck = Comprobación de IP
 gui.config.download.ipcheck.balance = Usar verificación de IP balanceada
-gui.config.download.ipcheck.externalinterval = Intervalo de comprobación de IP externa [seg]
+gui.config.download.ipcheck.externalinterval2 = Intervalo de comprobación de IP externa [min]
 gui.config.download.ipcheck.mask = IPs permitidas
 gui.config.download.ipcheck.regex = Filtro de IP RegEx
 gui.config.download.ipcheck.website = Comprobar IP en línea [URL]
@@ -1051,6 +1051,7 @@ jd.update.main.error.title = Han ocurrido errores!
 jd.update.main.error.title.old = Actualizaciones encontradas!
 jd.utils.webupdate.ballon.message.updateinprogress = Ya hay una actualización en proceso
 jd.utils.webupdate.ballon.title = Actualizar
+jd.utils.webupdate.doupdatecheck.noupdates = No hay actualizaciones.
 jd.utils.webupdate.message = <face="Verdana, Arial, Helvetica, sans-serif">%s actualizaciones disponibles. Instalar ahora?</font>
 jd.utils.webupdate.message2 = <font size="4" face="Verdana, Arial, Helvetica, sans-serif">%s actualizaciones disponibles. Instalar ahora?</font>
 jd.utils.webupdate.progresscontroller.text = Actualización ejecutándose
@@ -1394,6 +1395,7 @@ sys.ask.rlyclose = ¿Desea cerrar JDownloader?
 sys.ask.rlyrestart = ¿Desea reiniciar JDownloader?
 sys.ask.rlyrestore = Esto reiniciará JDownloader y hará una actualización COMPLETA. Desea continuar?
 sys.dlc.success = Encriptación DLC satisfactoria. ¿Extraer para probar?
+sys.warning.noclose = JDownloader se minimizará al area de notificación!
 system.dialogs.update = Actualizaciones disponibles
 system.download.docrc2 = Comprobando-CRC(%s)
 system.download.docrc2.failed = Comprobacion FALLIDA-CRC(%s)
