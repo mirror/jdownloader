@@ -187,8 +187,8 @@ public class WebUpdate {
         if (forceguiCall) {
             guiPrgs = new ProgressController(JDL.L("init.webupdate.progress.0_title", "Webupdate"), 9);
             guiPrgs.setStatus(3);
-        }else{
-            guiPrgs=null;
+        } else {
+            guiPrgs = null;
         }
         UPDATE_IN_PROGRESS = true;
 
@@ -211,7 +211,7 @@ public class WebUpdate {
                 SubConfiguration.getConfig("a" + "pckage").setProperty(new String(new byte[] { 97, 112, 99, 107, 97, 103, 101 }), updater.sum);
                 SubConfiguration.getConfig("a" + "pckage").save();
             }
-           
+
         } catch (Exception e) {
 
             UPDATE_IN_PROGRESS = false;
@@ -225,22 +225,26 @@ public class WebUpdate {
                 if (files != null) {
                     updater.filterAvailableUpdates(files);
                     JDUtilities.getController().setWaitingUpdates(files);
-                   
+
                     if (files.size() > 0) {
                         new GuiRunnable<Object>() {
                             @Override
                             public Object runSave() {
                                 SwingGui.getInstance().getMainFrame().setTitle(JDUtilities.getJDTitle());
-                                guiPrgs.setStatus(9);
-                               guiPrgs.doFinalize(3000);
+                                if (guiPrgs != null) {
+                                    guiPrgs.setStatus(9);
+                                    guiPrgs.doFinalize(3000);
+                                }
                                 return null;
                             }
                         }.start();
-                    }else{
-                        guiPrgs.setStatus(9);
-                        guiPrgs.setColor(Color.RED);
-                        guiPrgs.setStatusText(JDL.L("jd.utils.WebUpdate.doUpdateCheck.noupdates", "No Updates available"));
-                        guiPrgs.doFinalize(3000);
+                    } else {
+                        if (guiPrgs != null) {
+                            guiPrgs.setStatus(9);
+                            guiPrgs.setColor(Color.RED);
+                            guiPrgs.setStatusText(JDL.L("jd.utils.WebUpdate.doUpdateCheck.noupdates", "No Updates available"));
+                            guiPrgs.doFinalize(3000);
+                        }
                     }
 
                 }
