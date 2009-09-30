@@ -61,16 +61,18 @@ public class TurboBitNet extends PluginForHost {
         requestFileInformation(downloadLink);
 
         String id = new Regex(downloadLink.getDownloadURL(), Pattern.compile(".*/(.*?)\\.html")).getMatch(0);
-
         br.getPage("http://turbobit.net/download/free/" + id);
-        String waittime = br.getRegex("<span id='timeout'>(.*?)</span></h1>").getMatch(0);
-        if (waittime != null) {
-            sleep(Long.parseLong(waittime) * 1000, downloadLink);
+        if (br.containsHTML("Попробуйте повторить через")) {
+            int wait = Integer.parseInt(br.getRegex("<span id='timeout'>(\\d+)</span></h1>").getMatch(0));
+            if (wait < 31) {
+                sleep(wait * 1000l, downloadLink);
+            }
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1001);
         }
         String captchaUrl = br.getRegex("<img alt=\"Captcha\" src=\"(.*?)\" width=\"150\" height=\"50\" />").getMatch(0);
-
+        if (captchaUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         Form form = br.getForm(0);
-
+        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         for (int i = 1; i <= 3; i++) {
             String captchaCode = getCaptchaCode(captchaUrl, downloadLink);
 
@@ -80,12 +82,13 @@ public class TurboBitNet extends PluginForHost {
         }
         if (!br.containsHTML("updateTime: function()")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
 
-        sleep(61 * 1000, downloadLink);
+        int tt = Integer.parseInt(br.getRegex("limit: (\\d+),").getMatch(0));
+        sleep(tt * 1001l, downloadLink);
         br.getPage("http://turbobit.net/download/timeout/" + id);
 
         String downloadUrl = br.getRegex("<a href='(.*?)'>").getMatch(0);
-
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadUrl, true, 0);
+        if (downloadUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadUrl, true, 1);
         dl.startDownload();
     }
 

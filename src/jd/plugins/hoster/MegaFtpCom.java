@@ -41,9 +41,9 @@ public class MegaFtpCom extends PluginForHost {
     // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception, PluginException, InterruptedException {
         this.setBrowserExclusive();
-
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("MegaFTP is currently under scheduled maintenance")) return AvailableStatus.UNCHECKABLE;
         if (br.containsHTML("404 Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         String filename = br.getRegex("<b><font color=\"#000000\" size=\"4\">File Name: </font><font color=\"#FC8622\" size=\"4\">(.*?)</font></b>").getMatch(0);
