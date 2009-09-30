@@ -39,6 +39,7 @@ import javax.swing.event.ChangeListener;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.DownloadWatchDog;
+import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.components.JDUnderlinedText;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
@@ -74,6 +75,28 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
 
         setAlwaysOnTop(true);
         pack();
+    }
+
+    /*
+     * start autohide in 3 secs if mouse did not enter popup before
+     */
+    public void startAutoHide() {
+        new Thread() {
+            public void run() {
+                try {
+                    Thread.sleep(3000);
+                } catch (InterruptedException e) {
+                }
+                if (enteredPopup == false) {
+                    new GuiRunnable<Object>() {
+                        public Object runSave() {
+                            dispose();
+                            return null;
+                        }
+                    }.start();
+                }
+            }
+        }.start();
     }
 
     private void initEntryPanel() {

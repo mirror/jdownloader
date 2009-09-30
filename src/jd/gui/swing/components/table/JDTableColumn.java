@@ -39,10 +39,10 @@ public abstract class JDTableColumn extends AbstractCellEditor implements TableC
     private DefaultTableRenderer defaultrenderer;
     private boolean sortingToggle = false; /* eg Asc and Desc sorting, a toggle */
     private Thread sortThread = null;
-    private static Color background = null;
-    private static Color foreground = null;
-    private static Color backgroundselected = null;
-    private static Color foregroundselected = null;
+    protected static Color background = null;
+    protected static Color foreground = null;
+    protected static Color backgroundselected = null;
+    protected static Color foregroundselected = null;
     private Color currentbackground = null;
     private Color currentforeground = null;
     private StatusLabel sl = null;
@@ -113,19 +113,69 @@ public abstract class JDTableColumn extends AbstractCellEditor implements TableC
 
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         hasFocus = false;
-        Component c = myTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-        /* restore foreground,background color */
+        /* render the component */
+        Component c = myTableCellRendererComponent(this.table, value, isSelected, hasFocus, row, column);
+        /* store default foreground,background color for later use */
         if (background == null) background = getDefaultTableCellRendererComponent(table, value, false, hasFocus, row, column).getBackground();
         if (foreground == null) foreground = getDefaultTableCellRendererComponent(table, value, false, hasFocus, row, column).getForeground();
         if (backgroundselected == null) backgroundselected = getDefaultTableCellRendererComponent(table, value, true, hasFocus, row, column).getBackground();
         if (foregroundselected == null) foregroundselected = getDefaultTableCellRendererComponent(table, value, true, hasFocus, row, column).getForeground();
+        /* call functions for processing component */
+        handleSelected(c, this.table, value, isSelected, row, column);
+        handleEnabled(c, this.table, value, isSelected, row, column);
+        postprocessCell(c, this.table, value, isSelected, row, column);
+        return c;
+    }
+
+    /*
+     * default function to handle Enabled State, overwrite to customize
+     */
+    public void handleEnabled(Component c, JDTableModel table, Object value, boolean isSelected, int row, int column) {
+        /* check enabled,disabled */
+        if (isEnabled(value)) {
+            if (c instanceof StatusLabel) {
+                /*
+                 * statuslabe has its own setEnabled function, so we have to
+                 * cast
+                 */
+                ((StatusLabel) c).setEnabled(true);
+            } else
+                c.setEnabled(true);
+        } else {
+            if (c instanceof JRendererLabel) {
+                /*
+                 * to avoid the memory leak in java caused by the laf iconcache,
+                 * we have to set the disabled icon here
+                 */
+                ((JRendererLabel) c).setDisabledIcon(JDImage.getDisabledIcon(((JRendererLabel) c).getIcon()));
+                c.setEnabled(false);
+            } else if (c instanceof StatusLabel) {
+                /*
+                 * statuslabe has its own setEnabled function, so we have to
+                 * cast
+                 * 
+                 * this setEnabled also sets the disabled icons, so no memleak
+                 * happens
+                 */
+                ((StatusLabel) c).setEnabled(false);
+            } else
+                c.setEnabled(false);
+        }
+    }
+
+    /*
+     * default function to handle Selected State, overwrite to customize
+     */
+    public void handleSelected(Component c, JDTableModel table, Object value, boolean isSelected, int row, int column) {
+        /* check selected state */
         if (isSelected) {
             currentbackground = backgroundselected;
             currentforeground = foregroundselected;
         } else {
             currentbackground = background;
             currentforeground = foreground;
-            for (JDRowHighlighter high : this.table.getJDRowHighlighter()) {
+            /* check if we have to highlight an unselected cell */
+            for (JDRowHighlighter high : table.getJDRowHighlighter()) {
                 if (high.doHighlight(value)) {
                     currentbackground = high.getColor();
                     break;
@@ -140,41 +190,28 @@ public abstract class JDTableColumn extends AbstractCellEditor implements TableC
             c.setBackground(currentbackground);
             c.setForeground(currentforeground);
         }
-        /* check enabled,disabled */
-        if (isEnabled(value)) {
-            if (c instanceof StatusLabel) {
-                ((StatusLabel) c).setEnabled(true);
-            } else
-                c.setEnabled(true);
-        } else {
-            if (c instanceof JRendererLabel) {
-                ((JRendererLabel) c).setDisabledIcon(JDImage.getDisabledIcon(((JRendererLabel) c).getIcon()));
-                c.setEnabled(false);
-            } else if (c instanceof StatusLabel) {
-                ((StatusLabel) c).setEnabled(false);
-            } else
-                c.setEnabled(false);
-        }
-        postprocessCell(c, table, value, isSelected, row, column);
-        return c;
     }
 
-    public void postprocessCell(Component c, JTable table, Object value, boolean isSelected, int row, int column) {
+    /*
+     * default (empty) function to postprocess the component, overwrite to
+     * customize
+     */
+    public void postprocessCell(Component c, JDTableModel table, Object value, boolean isSelected, int row, int column) {
     }
 
     abstract public boolean isEnabled(Object obj);
 
     public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
-        return myTableCellEditorComponent(table, value, isSelected, row, column);
+        return myTableCellEditorComponent(this.table, value, isSelected, row, column);
     }
 
     public abstract void setValue(Object value, Object object);
 
     public abstract boolean isEditable(Object obj);
 
-    public abstract Component myTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column);
+    public abstract Component myTableCellEditorComponent(JDTableModel table, Object value, boolean isSelected, int row, int column);
 
-    public abstract Component myTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column);
+    public abstract Component myTableCellRendererComponent(JDTableModel table, Object value, boolean isSelected, boolean hasFocus, int row, int column);
 
     public abstract Object getCellEditorValue();
 

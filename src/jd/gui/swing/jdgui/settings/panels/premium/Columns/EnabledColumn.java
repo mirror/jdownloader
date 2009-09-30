@@ -22,7 +22,6 @@ import java.awt.event.ActionListener;
 import java.util.ArrayList;
 
 import javax.swing.JCheckBox;
-import javax.swing.JTable;
 
 import jd.controlling.AccountController;
 import jd.gui.swing.components.table.JDTableColumn;
@@ -49,7 +48,7 @@ public class EnabledColumn extends JDTableColumn implements ActionListener {
     }
 
     @Override
-    public Component myTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
+    public Component myTableCellEditorComponent(JDTableModel table, Object value, boolean isSelected, int row, int column) {
         if (value instanceof Account) {
             enabled = ((Account) value).isEnabled();
         } else {
@@ -63,7 +62,7 @@ public class EnabledColumn extends JDTableColumn implements ActionListener {
     }
 
     @Override
-    public Component myTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+    public Component myTableCellRendererComponent(JDTableModel table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         co = boolrend;
         if (value instanceof Account) {
             Account ac = (Account) value;
@@ -76,9 +75,9 @@ public class EnabledColumn extends JDTableColumn implements ActionListener {
     }
 
     @Override
-    public void postprocessCell(Component c, JTable table, Object value, boolean isSelected, int row, int column) {
+    public void postprocessCell(Component c, JDTableModel table, Object value, boolean isSelected, int row, int column) {
         if (!(value instanceof Account)) {
-            c.setBackground(table.getBackground().darker());
+            c.setBackground(table.getJDTable().getBackground().darker());
         }
     }
 

@@ -22,11 +22,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 
-import javax.swing.BorderFactory;
-import javax.swing.JTable;
-import javax.swing.border.Border;
-
 import jd.controlling.DownloadController;
+import jd.gui.swing.components.table.JDRowHighlighter;
 import jd.gui.swing.components.table.JDTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.jdgui.components.JDProgressBarRender;
@@ -50,10 +47,10 @@ public class ProgressColumn extends JDTableColumn {
     private String strPluginDisabled;
 
     private String strPluginError;
-    private Border ERROR_BORDER;
     private Color COL_PROGRESS_ERROR = new Color(0xCC3300);
-    private StringBuilder sb = new StringBuilder();
     private Color COL_PROGRESS_NORMAL = null;
+    private StringBuilder sb = new StringBuilder();
+    private Color COL_PROGRESS = null;
     private FilePackage fp;
     private JRendererLabel jlr;
 
@@ -66,7 +63,6 @@ public class ProgressColumn extends JDTableColumn {
         COL_PROGRESS_NORMAL = progress.getForeground();
         strPluginDisabled = JDL.L("gui.downloadlink.plugindisabled", "[Plugin disabled]");
         strPluginError = JDL.L("gui.treetable.error.plugin", "Plugin error");
-        ERROR_BORDER = BorderFactory.createLineBorder(COL_PROGRESS_ERROR);
         jlr = new JRendererLabel();
         jlr.setBorder(null);
     }
@@ -77,15 +73,14 @@ public class ProgressColumn extends JDTableColumn {
     }
 
     @Override
-    public Component myTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
+    public Component myTableCellEditorComponent(JDTableModel table, Object value, boolean isSelected, int row, int column) {
         return null;
     }
 
     @Override
-    public Component myTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+    public Component myTableCellRendererComponent(JDTableModel table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         if (value instanceof FilePackage) {
             fp = (FilePackage) value;
-            progress.setString(null);
             if (fp.isFinished()) {
                 progress.setMaximum(100);
                 progress.setValue(100);
@@ -96,7 +91,7 @@ public class ProgressColumn extends JDTableColumn {
             clearSB();
             sb.append(Formatter.formatReadable(fp.getTotalKBLoaded())).append('/').append(Formatter.formatReadable(Math.max(0, fp.getTotalEstimatedPackageSize())));
             progress.setString(sb.toString());
-            progress.setForeground(COL_PROGRESS_NORMAL);
+            COL_PROGRESS = COL_PROGRESS_NORMAL;
             return progress;
         } else {
             dLink = (DownloadLink) value;
@@ -110,12 +105,11 @@ public class ProgressColumn extends JDTableColumn {
                 progress.setString("");
                 progress.setMaximum(dLink.getPluginProgress().getTotal());
                 progress.setValue(dLink.getPluginProgress().getCurrent());
-                progress.setForeground(COL_PROGRESS_NORMAL);
+                COL_PROGRESS = COL_PROGRESS_NORMAL;
                 return progress;
             } else if ((dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED) && dLink.getPlugin().getRemainingHosterWaittime() > 0) || (dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) && dLink.getLinkStatus().getRemainingWaittime() > 0)) {
                 progress.setMaximum(dLink.getLinkStatus().getTotalWaitTime());
-                progress.setForeground(COL_PROGRESS_ERROR);
-                // progress.setBorder(ERROR_BORDER);
+                COL_PROGRESS = COL_PROGRESS_ERROR;
                 progress.setString(Formatter.formatSeconds(dLink.getLinkStatus().getRemainingWaittime() / 1000));
                 progress.setValue(dLink.getLinkStatus().getRemainingWaittime());
                 return progress;
@@ -123,7 +117,7 @@ public class ProgressColumn extends JDTableColumn {
                 progress.setMaximum(100);
                 progress.setString((Formatter.formatReadable(Math.max(0, dLink.getDownloadSize()))));
                 progress.setValue(100);
-                progress.setForeground(COL_PROGRESS_NORMAL);
+                COL_PROGRESS = COL_PROGRESS_NORMAL;
                 return progress;
             } else if (dLink.getDownloadCurrent() > 0 || dLink.getDownloadSize() > 0) {
                 clearSB();
@@ -131,12 +125,36 @@ public class ProgressColumn extends JDTableColumn {
                 progress.setMaximum(dLink.getDownloadSize());
                 progress.setString(sb.toString());
                 progress.setValue(dLink.getDownloadCurrent());
-                progress.setForeground(COL_PROGRESS_NORMAL);
+                COL_PROGRESS = COL_PROGRESS_NORMAL;
                 return progress;
             }
         }
         jlr.setText("Unknown FileSize");
         return jlr;
+    }
+
+    @Override
+    public void handleSelected(Component c, JDTableModel table, Object value, boolean isSelected, int row, int column) {
+        /* customized handleSelected for ProgressBar */
+        if (c instanceof JDProgressBarRender) {
+            ((JDProgressBarRender) c).setForeground(COL_PROGRESS);
+            /* check selected state */
+            if (isSelected) {
+                ((JDProgressBarRender) c).setBackground(JDTableColumn.backgroundselected);
+                return;
+            } else {
+                ((JDProgressBarRender) c).setBackground(JDTableColumn.background);
+                /* check if we have to highlight an unselected cell */
+                for (JDRowHighlighter high : table.getJDRowHighlighter()) {
+                    if (high.doHighlight(value)) {
+                        ((JDProgressBarRender) c).setBackground(high.getColor());
+                        return;
+                    }
+                }
+            }
+        } else {
+            super.handleSelected(c, table, value, isSelected, row, column);
+        }
     }
 
     @Override

@@ -147,11 +147,11 @@ public class AccountController extends SubConfiguration implements ActionListene
 
     private AccountController() {
         super("AccountController");
-        hosteraccounts = loadAccounts();
-        importOld();
         asyncSaveIntervalTimer = new Timer(2000, this);
         asyncSaveIntervalTimer.setInitialDelay(2000);
         asyncSaveIntervalTimer.setRepeats(false);
+        hosteraccounts = loadAccounts();
+        importOld();        
         broadcaster.addListener(this);
     }
 

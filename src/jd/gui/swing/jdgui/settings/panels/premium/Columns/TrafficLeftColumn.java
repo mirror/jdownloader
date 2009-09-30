@@ -16,10 +16,10 @@
 
 package jd.gui.swing.jdgui.settings.panels.premium.Columns;
 
+import java.awt.Color;
 import java.awt.Component;
 
-import javax.swing.JTable;
-
+import jd.gui.swing.components.table.JDRowHighlighter;
 import jd.gui.swing.components.table.JDTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.jdgui.components.JDProgressBarRender;
@@ -34,12 +34,16 @@ public class TrafficLeftColumn extends JDTableColumn {
 
     private JDProgressBarRender progress;
     private JRendererLabel jlr;
+    private Color COL_PROGRESS_NORMAL;
+    private Color COL_PROGRESS_ERROR = new Color(0xCC3300);
+    private Color COL_PROGRESS = null;
 
     public TrafficLeftColumn(String name, JDTableModel table) {
         super(name, table);
         progress = new JDProgressBarRender();
         progress.setStringPainted(true);
         progress.setOpaque(true);
+        COL_PROGRESS_NORMAL = progress.getForeground();
         jlr = new JRendererLabel();
         jlr.setBorder(null);
     }
@@ -48,25 +52,28 @@ public class TrafficLeftColumn extends JDTableColumn {
     private Component co;
 
     @Override
-    public Component myTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
+    public Component myTableCellEditorComponent(JDTableModel table, Object value, boolean isSelected, int row, int column) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Component myTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+    public Component myTableCellRendererComponent(JDTableModel table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         if (value instanceof Account) {
             Account ac = (Account) value;
             AccountInfo ai = ac.getAccountInfo();
             if (!ac.isValid()) {
                 value = "Invalid account";
                 progress.setMaximum(10);
-                progress.setValue(0);
+                progress.setValue(10);
+                COL_PROGRESS = COL_PROGRESS_ERROR;
             } else if (ai == null) {
                 value = "Unknown";
                 progress.setMaximum(10);
-                progress.setValue(0);
+                progress.setValue(10);
+                COL_PROGRESS = COL_PROGRESS_ERROR;
             } else {
+                COL_PROGRESS = COL_PROGRESS_NORMAL;
                 if (ai.isUnlimitedTraffic()) {
                     value = "Unlimited";
                     progress.setMaximum(10);
@@ -98,9 +105,33 @@ public class TrafficLeftColumn extends JDTableColumn {
     }
 
     @Override
-    public void postprocessCell(Component c, JTable table, Object value, boolean isSelected, int row, int column) {
+    public void handleSelected(Component c, JDTableModel table, Object value, boolean isSelected, int row, int column) {
+        /* customized handleSelected for ProgressBar */
+        if (c instanceof JDProgressBarRender) {
+            ((JDProgressBarRender) c).setForeground(COL_PROGRESS);
+            /* check selected state */
+            if (isSelected) {
+                ((JDProgressBarRender) c).setBackground(JDTableColumn.backgroundselected);
+                return;
+            } else {
+                ((JDProgressBarRender) c).setBackground(JDTableColumn.background);
+                /* check if we have to highlight an unselected cell */
+                for (JDRowHighlighter high : table.getJDRowHighlighter()) {
+                    if (high.doHighlight(value)) {
+                        ((JDProgressBarRender) c).setBackground(high.getColor());
+                        return;
+                    }
+                }
+            }
+        } else {
+            super.handleSelected(c, table, value, isSelected, row, column);
+        }
+    }
+
+    @Override
+    public void postprocessCell(Component c, JDTableModel table, Object value, boolean isSelected, int row, int column) {
         if (!(value instanceof Account)) {
-            c.setBackground(table.getBackground().darker());
+            c.setBackground(table.getJDTable().getBackground().darker());
         }
     }
 

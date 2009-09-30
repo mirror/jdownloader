@@ -166,8 +166,11 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     private void initGUI() {
         SystemTray systemTray = SystemTray.getSystemTray();
         Image img = JDImage.getImage("logo/jd_logo_128_128").getScaledInstance((int) systemTray.getTrayIconSize().getWidth(), (int) systemTray.getTrayIconSize().getHeight(), Image.SCALE_SMOOTH);
-
-        trayIcon = new TrayIcon(img);
+        /*
+         * trayicon message must be set, else windows cannot handle icon right
+         * (eg autohide feature)
+         */
+        trayIcon = new TrayIcon(img, "JDownloader");
         trayIcon.addActionListener(this);
 
         ma = new TrayMouseAdapter(this, trayIcon);
@@ -207,6 +210,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
                         trayIconPopup = new TrayIconPopup();
                         calcLocation(trayIconPopup, e.getPoint());
                         trayIconPopup.setVisible(true);
+                        trayIconPopup.startAutoHide();
                     }
                 }
             } else if (e.getSource() instanceof JWindow) {
@@ -225,6 +229,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
                             if (e.getX() > 0) pointOnScreen.x -= e.getPoint().x;
                             calcLocation(trayIconPopup, pointOnScreen);
                             trayIconPopup.setVisible(true);
+                            trayIconPopup.startAutoHide();
                         }
                     }
                 }

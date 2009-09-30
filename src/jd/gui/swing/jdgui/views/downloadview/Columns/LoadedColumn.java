@@ -5,8 +5,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 
-import javax.swing.JTable;
-
 import jd.controlling.DownloadController;
 import jd.gui.swing.components.table.JDTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
@@ -43,12 +41,12 @@ public class LoadedColumn extends JDTableColumn {
     }
 
     @Override
-    public Component myTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
+    public Component myTableCellEditorComponent(JDTableModel table, Object value, boolean isSelected, int row, int column) {
         return null;
     }
 
     @Override
-    public Component myTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+    public Component myTableCellRendererComponent(JDTableModel table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         if (value instanceof FilePackage) {
             fp = (FilePackage) value;
             if (fp.getTotalKBLoaded() < 0) {

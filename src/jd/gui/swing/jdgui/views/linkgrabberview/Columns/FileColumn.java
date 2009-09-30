@@ -23,7 +23,6 @@ import java.util.Comparator;
 
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
-import javax.swing.JTable;
 import javax.swing.border.Border;
 
 import jd.controlling.LinkGrabberController;
@@ -70,12 +69,12 @@ public class FileColumn extends JDTableColumn {
     }
 
     @Override
-    public Component myTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
+    public Component myTableCellEditorComponent(JDTableModel table, Object value, boolean isSelected, int row, int column) {
         return null;
     }
 
     @Override
-    public Component myTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+    public Component myTableCellRendererComponent(JDTableModel table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         if (value instanceof LinkGrabberFilePackage) {
             fp = (LinkGrabberFilePackage) value;
             jlr.setText(fp.getName() + " [" + fp.size() + "]");

@@ -20,7 +20,6 @@ import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-import javax.swing.JTable;
 import javax.swing.JTextField;
 
 import jd.gui.swing.components.table.JDTableColumn;
@@ -47,7 +46,7 @@ public class UserColumn extends JDTableColumn implements ActionListener {
     private Component coedit;
 
     @Override
-    public Component myTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
+    public Component myTableCellEditorComponent(JDTableModel table, Object value, boolean isSelected, int row, int column) {
         user.removeActionListener(this);
         user.setText(((Account) value).getUser());
         user.addActionListener(this);
@@ -56,7 +55,7 @@ public class UserColumn extends JDTableColumn implements ActionListener {
     }
 
     @Override
-    public Component myTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+    public Component myTableCellRendererComponent(JDTableModel table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         co = jlr;
         if (value instanceof Account) {
             Account ac = (Account) value;
@@ -68,9 +67,9 @@ public class UserColumn extends JDTableColumn implements ActionListener {
     }
 
     @Override
-    public void postprocessCell(Component c, JTable table, Object value, boolean isSelected, int row, int column) {
+    public void postprocessCell(Component c, JDTableModel table, Object value, boolean isSelected, int row, int column) {
         if (!(value instanceof Account)) {
-            c.setBackground(table.getBackground().darker());
+            c.setBackground(table.getJDTable().getBackground().darker());
         }
     }
 

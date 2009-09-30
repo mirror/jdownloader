@@ -97,6 +97,7 @@ public class JDTable extends JXTable {
     public JDTable(JDTableModel model) {
         super(model);
         this.model = model;
+        model.setJDTable(this);
         tableconfig = model.getConfig();
         createColumns();
         setSortable(false);

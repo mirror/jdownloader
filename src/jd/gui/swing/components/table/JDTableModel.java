@@ -34,10 +34,22 @@ public abstract class JDTableModel extends AbstractTableModel {
     protected ArrayList<Object> list = new ArrayList<Object>();
     protected ArrayList<JDTableColumn> columns = new ArrayList<JDTableColumn>();
     private ArrayList<JDRowHighlighter> highlighter = new ArrayList<JDRowHighlighter>();
+    private JDTable table = null;
 
     public JDTableModel(String configname) {
         super();
         config = SubConfiguration.getConfig(configname);
+    }
+
+    public void setJDTable(JDTable table) {
+        this.table = table;
+    }
+
+    /*
+     * attention: may return null if not set
+     */
+    public JDTable getJDTable() {
+        return table;
     }
 
     public void addColumn(JDTableColumn e) {

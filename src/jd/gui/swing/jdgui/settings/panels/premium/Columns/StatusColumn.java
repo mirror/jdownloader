@@ -18,8 +18,6 @@ package jd.gui.swing.jdgui.settings.panels.premium.Columns;
 
 import java.awt.Component;
 
-import javax.swing.JTable;
-
 import jd.gui.swing.components.table.JDTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.jdgui.settings.panels.premium.HostAccounts;
@@ -41,13 +39,13 @@ public class StatusColumn extends JDTableColumn {
     private static final long serialVersionUID = -5291590062503352550L;
 
     @Override
-    public Component myTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
+    public Component myTableCellEditorComponent(JDTableModel table, Object value, boolean isSelected, int row, int column) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Component myTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+    public Component myTableCellRendererComponent(JDTableModel table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         if (value instanceof Account) {
             Account ac = (Account) value;
             AccountInfo ai = ac.getAccountInfo();
@@ -63,9 +61,9 @@ public class StatusColumn extends JDTableColumn {
     }
 
     @Override
-    public void postprocessCell(Component c, JTable table, Object value, boolean isSelected, int row, int column) {
+    public void postprocessCell(Component c, JDTableModel table, Object value, boolean isSelected, int row, int column) {
         if (!(value instanceof Account)) {
-            c.setBackground(table.getBackground().darker());
+            c.setBackground(table.getJDTable().getBackground().darker());
         }
     }
 
