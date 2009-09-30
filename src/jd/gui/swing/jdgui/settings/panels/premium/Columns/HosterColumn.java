@@ -59,6 +59,8 @@ public class HosterColumn extends JDTableColumn {
         } else {
             HostAccounts ha = (HostAccounts) value;
             String host = ha.getHost();
+            jlr.setBorder(null);
+            jlr.setHorizontalAlignment(SwingConstants.LEFT);
             jlr.setIcon(JDUtilities.getPluginForHost(host).getHosterIcon());
             jlr.setText(host);
         }

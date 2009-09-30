@@ -62,6 +62,7 @@ public class HosterColumn extends JDTableColumn {
         if (value instanceof LinkGrabberFilePackage) {
             fp = (LinkGrabberFilePackage) value;
             jlr.setText(fp.getHoster());
+            jlr.setIcon(null);
         } else {
             dLink = (DownloadLink) value;
             if (dLink.getPlugin().hasHosterIcon()) {
@@ -69,6 +70,7 @@ public class HosterColumn extends JDTableColumn {
                 jlr.setIcon(dLink.getPlugin().getHosterIcon());
             } else {
                 jlr.setText(dLink.getPlugin().getHost());
+                jlr.setIcon(null);
             }
         }
         return jlr;

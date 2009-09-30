@@ -126,7 +126,7 @@ public class IPCheck {
 
     static {
         /* IPCheck Service powered by JDownloader */
-        IP_CHECK_SERVICES.add(new WebIPCheck("http://ipcheck.jdownloader.org", "([\\d+\\.]+)"));
+        IP_CHECK_SERVICES.add(new WebIPCheck("http://ipcheck1.jdownloader.org", "([\\d+\\.]+)"));
         IP_CHECK_SERVICES.add(new WebIPCheck("http://ipcheck0.jdownloader.org", "([\\d+\\.]+)"));
         Collections.shuffle(IP_CHECK_SERVICES);
     }
