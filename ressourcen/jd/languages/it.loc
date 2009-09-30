@@ -68,6 +68,7 @@ downloadlink.status.error.fatal = Errore critico
 downloadlink.status.error.file_exists = File già esistente
 downloadlink.status.error.file_not_found = File non trovato
 downloadlink.status.error.no_connection = Nessuna connessione
+downloadlink.status.error.no_plugin_available = Nessun plugin disponibile
 downloadlink.status.error.post_process = Errore di esecuzione
 downloadlink.status.error.premium = Errore Premium
 downloadlink.status.error.retry = Errore sconosciuto, sto riprovando
