@@ -27,7 +27,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "l4dmaps.com" }, urls = { "http://[\\w\\.]*?l4dmaps\\.com/(details|mirrors|file-download)\\.php\\?file=[0-9]+" }, flags = { 0 })
@@ -65,7 +64,7 @@ public class L4dMapsCom extends PluginForHost {
      * @return the number of the configured server
      */
     private int getConfiguredServer() {
-        switch (JDUtilities.getConfiguration().getIntegerProperty(l4dservers, 0)) {
+        switch (getPluginConfig().getIntegerProperty(l4dservers, 0)) {
         case 1:
             logger.fine("The server #1 is configured");
             return 1;
