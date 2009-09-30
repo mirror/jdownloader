@@ -1393,6 +1393,7 @@ sys.ask.rlyclose = Wollen Sie den jDownloader wirklich schließen?
 sys.ask.rlyrestart = Wollen Sie jDownloader wirklich neustarten?
 sys.ask.rlyrestore = JDownloader wird neu gestartet um ein Komplettupdate zu machen. Weiter?
 sys.dlc.success = DLC Erstellung erfolgreich. Entpacken testen?
+sys.warning.noclose = JDownloader wird in den Tray minimiert
 system.dialogs.update = Updates verfügbar
 system.download.docrc2 = CRC-Check läuft (%s)
 system.download.docrc2.failed = CRC-Check fehlgeschlagen (%s)
