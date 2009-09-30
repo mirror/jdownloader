@@ -26,6 +26,7 @@ import java.awt.event.MouseListener;
 
 import javax.swing.AbstractButton;
 import javax.swing.Action;
+import javax.swing.BorderFactory;
 import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -63,18 +64,20 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
 
     public TrayIconPopup() {
         setVisible(false);
-        setLayout(new MigLayout("ins 5, wrap 1", "[]", "[]5[]5[]5[]5[]"));
+        setLayout(new MigLayout("ins 0", "[grow,fill]", "[grow,fill]"));
         addMouseListener(this);
 
         initEntryPanel();
         initBottomPanel();
+        JPanel content = new JPanel(new MigLayout("ins 5, wrap 1", "[]", "[]5[]5[]5[]5[]"));
+        add(content);
+        content.add(new JLabel("<html><b>" + JDUtilities.getJDTitle() + "</b></html>"), "align center");
+        content.add(new JSeparator(), "growx, spanx");
+        content.add(entryPanel);
 
-        add(new JLabel("<html><b>" + JDUtilities.getJDTitle() + "</b></html>"), "align center");
-        add(new JSeparator(), "growx, spanx");
-        add(entryPanel);
-
-        add(new JSeparator(), "growx, spanx");
-        add(bottomPanel);
+        content.add(new JSeparator(), "growx, spanx");
+        content.add(bottomPanel);
+        content.setBorder(BorderFactory.createLineBorder(content.getBackground().darker()));
         Dimension size = new Dimension(this.getPreferredSize().width, entryPanel.getComponent(0).getPreferredSize().height);
         for (Component c : entryPanel.getComponents()) {
             c.setPreferredSize(size);
@@ -154,17 +157,17 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
         bottomPanel = new JPanel(new MigLayout("ins 0, wrap 2", "[]5[]", "[]2[]2[]"));
         bottomPanel.setOpaque(false);
         bottomPanel.add(new JLabel(JDL.L("plugins.trayicon.popup.bottom.speed", "Geschwindigkeitsbegrenzung")));
-        bottomPanel.add(spMaxSpeed, "w 60!, h 20!");
+        bottomPanel.add(spMaxSpeed, "width 60!,h 20!");
         bottomPanel.add(new JLabel(JDL.L("plugins.trayicon.popup.bottom.simDls", "Gleichzeitige Downloads")));
-        bottomPanel.add(spMaxDls, "w 60!, h 20!");
+        bottomPanel.add(spMaxDls, "width 60!, h 20!");
         bottomPanel.add(new JLabel(JDL.L("plugins.trayicon.popup.bottom.simChunks", "Gleichzeitige Verbindungen")));
-        bottomPanel.add(spMaxChunks, "w 60!, h 20!");
+        bottomPanel.add(spMaxChunks, "width 60!,h 20!");
     }
 
     private void addMenuEntry(String actionId, boolean enabled) {
         final ToolBarAction action = ActionController.getToolBarAction(actionId);
         AbstractButton b = createButton(action);
-        entryPanel.add(b, action.getType() == Types.TOGGLE ? "gapleft 10,growx,pushx" : "");
+        entryPanel.add(b, action.getType() == Types.TOGGLE ? "growx,pushx" : "");
     }
 
     private AbstractButton createButton(final ToolBarAction action) {
