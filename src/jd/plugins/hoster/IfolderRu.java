@@ -91,8 +91,9 @@ public class IfolderRu extends PluginForHost {
             Form captchaForm = br.getFormbyProperty("name", "form1");
             String captchaurl = br.getRegex("(/random/images/.*?)\"").getMatch(0);
             String tag = br.getRegex("tag.value = \"(.*?)\"").getMatch(0);
-            String secret = br.getRegex("var\\s+s=\\s+'(.*?)';").getMatch(0).substring(2);
-            if (captchaForm == null || captchaurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            String secret = br.getRegex("var\\s+s=\\s+'(.*?)';").getMatch(0);
+            if (secret == null || captchaForm == null || captchaurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            secret = secret.substring(2);
             if (tag != null && secret != null) {
                 captchaForm.put("interstitials_session", tag);
                 InputField nv = new InputField(secret, "1");
@@ -111,7 +112,7 @@ public class IfolderRu extends PluginForHost {
             }
             String directLink = br.getRegex("id=\"download_file_href\"\\s+href=\"(.*?)\"").getMatch(0);
             if (directLink != null) {
-                dl = jd.plugins.BrowserAdapter.openDownload(br,downloadLink, directLink, true, -2);
+                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, directLink, true, -2);
                 do_download = true;
                 break;
             }
