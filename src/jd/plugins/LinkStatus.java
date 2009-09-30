@@ -99,6 +99,13 @@ public class LinkStatus implements Serializable {
     public static final int ERROR_PLUGIN_DEFEKT = 1 << 22;
 
     /**
+     * Beispiel:HTTP-Plugin Ein als HTTP-Direktlink erkannter Link verweist auf
+     * den contenttype text/html was bedeutet, dass es sich wahrscheinlich um
+     * ein Hosting Service handelt für das es noch kein Plugin gibt.
+     */
+    public static final int ERROR_PLUGIN_NEEDED = 1 << 30;
+
+    /**
      * Plugins | Controlling zeigt einen Premiumspezifischen fehler an
      */
     public static final int ERROR_PREMIUM = 1 << 8;
@@ -189,6 +196,8 @@ public class LinkStatus implements Serializable {
             return JDL.L("downloadlink.status.error.retry", "Unknown error, retrying");
         case LinkStatus.ERROR_PLUGIN_DEFEKT:
             return JDL.L("downloadlink.status.error.defect", "Plugin outdated");
+        case LinkStatus.ERROR_PLUGIN_NEEDED:
+            return JDL.L("downloadlink.status.error.no_plugin_available", "No plugin available");
         case LinkStatus.ERROR_DOWNLOAD_INCOMPLETE:
             return JDL.L("downloadlink.status.incomplete", "Incomplete");
         case LinkStatus.ERROR_AGB_NOT_SIGNED:
