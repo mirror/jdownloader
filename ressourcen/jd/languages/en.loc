@@ -1053,6 +1053,7 @@ jd.update.main.error.title = Errors occured
 jd.update.main.error.title.old = Updates found!
 jd.utils.webupdate.ballon.message.updateinprogress = There is already an update in progress.
 jd.utils.webupdate.ballon.title = Update
+jd.utils.webupdate.doupdatecheck.noupdates = No updates available
 jd.utils.webupdate.message = <font size="4" face="Verdana, Arial, Helvetica, sans-serif">%s update(s) available. Install now?</font>
 jd.utils.webupdate.message2 = <font size="4" face="Verdana, Arial, Helvetica, sans-serif">%s update(s) available. Install now?</font>
 jd.utils.webupdate.progresscontroller.text = Update is running
@@ -1396,6 +1397,7 @@ sys.ask.rlyclose = Are you sure that you want to exit JDownloader?
 sys.ask.rlyrestart = Are you sure that you want to restart JDownloader?
 sys.ask.rlyrestore = This will restart JDownloader and do a FULL-Update. Continue?
 sys.dlc.success = DLC encryption successfully. Extract for testing now?
+sys.warning.noclose = JDownloader will be minimized to tray!
 system.dialogs.update = Updates available
 system.download.docrc2 = CRC-Check running (%s)
 system.download.docrc2.failed = CRC-Check FAILED (%s)
