@@ -17,7 +17,6 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -139,12 +138,25 @@ public class UploadingCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.setCookie("http://www.uploading.com/", "language", "1");
         br.getPage(downloadLink.getDownloadURL());
-        Regex info = br.getRegex(Pattern.compile("ico_big_download_file.gif\" class=\"big_ico\" alt=\"\"/>.*<h2>(.*?)</h2><br/>.*<b>Size:</b>(.*?)<br/><br/>", Pattern.DOTALL));
-        String filesize = info.getMatch(1);
-        String filename = info.getMatch(0);
-        if (filesize == null || filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filesize = br.getRegex("File size: <b>(.*?)</b>").getMatch(0);
+        String filename = br.getRegex(">Download(.*?)for free on uploading.com").getMatch(0).trim();
+        if (filename == null) {
+            filename = br.getRegex(">File download</h2><br/>.*?<h2>(.*?)</h2>").getMatch(0);
+            if (filename == null) {
+                //Last try to get the filename, if this 
+                String fname = new Regex(downloadLink.getDownloadURL(), "uploading\\.com/files/\\w+/([a-zA-Z0-9 ._]+)").getMatch(0);
+                fname = fname.replace(" ", "_");
+                if (br.containsHTML(fname)) {
+                    filename = fname;
+                }
+
+            }
+        }
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
-        downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
+        if (filesize != null) {
+            downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
+        }
         return AvailableStatus.TRUE;
     }
 
