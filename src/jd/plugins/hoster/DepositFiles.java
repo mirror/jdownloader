@@ -87,7 +87,11 @@ public class DepositFiles extends PluginForHost {
             }
             dl.startDownload();
         } else {
-
+            if (br.containsHTML("You used up your limit") || br.containsHTML("Please try in")) {
+                String wait = br.getRegex("html_download_api-limit_interval\">(\\d+)</span>").getMatch(0);
+                if (wait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait.trim()) * 1000l);
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1000l);
+            }
             Form form = br.getFormBySubmitvalue("Kostenlosen+download");
             if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             br.submitForm(form);
