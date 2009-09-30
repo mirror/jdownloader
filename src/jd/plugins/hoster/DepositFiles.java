@@ -200,7 +200,7 @@ public class DepositFiles extends PluginForHost {
 
         if (br.containsHTML(DOWNLOAD_NOTALLOWED)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l); }
         link = br.getRegex(PATTERN_PREMIUM_FINALURL).getMatch(0);
-        if (link == null) throw new PluginException(LinkStatus.ERROR_FATAL);
+        if (link == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.setDebug(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, 0);
         URLConnectionAdapter con = dl.getConnection();
