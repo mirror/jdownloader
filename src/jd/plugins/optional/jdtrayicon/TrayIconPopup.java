@@ -16,7 +16,9 @@
 
 package jd.plugins.optional.jdtrayicon;
 
+import java.awt.Component;
 import java.awt.Cursor;
+import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
@@ -70,9 +72,15 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
         add(new JLabel("<html><b>" + JDUtilities.getJDTitle() + "</b></html>"), "align center");
         add(new JSeparator(), "growx, spanx");
         add(entryPanel);
+
         add(new JSeparator(), "growx, spanx");
         add(bottomPanel);
-
+        Dimension size = new Dimension(this.getPreferredSize().width, entryPanel.getComponent(0).getPreferredSize().height);
+        for (Component c : entryPanel.getComponents()) {
+            c.setPreferredSize(size);
+            c.setMinimumSize(size);
+            c.setMaximumSize(size);
+        }
         setAlwaysOnTop(true);
         pack();
     }
@@ -155,10 +163,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
 
     private void addMenuEntry(String actionId, boolean enabled) {
         final ToolBarAction action = ActionController.getToolBarAction(actionId);
-
         AbstractButton b = createButton(action);
-        // TrayIconPopup.this.dispose();
-
         entryPanel.add(b, action.getType() == Types.TOGGLE ? "gapleft 10,growx,pushx" : "");
     }
 

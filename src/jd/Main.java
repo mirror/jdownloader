@@ -482,7 +482,7 @@ public class Main {
             LOGGER.finer(key + "=" + pr.get(key));
         }
 
-        LOGGER.info("Revision: " + JDUtilities.getJDTitle());
+        LOGGER.info("Revision: " + JDUtilities.getRevision());
         LOGGER.finer("Runtype: " + JDUtilities.getRunType());
 
         init.checkUpdate();

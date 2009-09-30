@@ -508,11 +508,11 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
     public static String cleanFileName(String name) {
         /** remove rar extensions */
 
-        name = getNameMatch(name, "(.*)(\\.|_)part[0]*[1].rar$");
-        name = getNameMatch(name, "(.*)(\\.|_)part[0-9]+.rar$");
+        name = getNameMatch(name, "(.*)(\\.|_|-)part[0]*[1].rar$");
+        name = getNameMatch(name, "(.*)(\\.|_|-)part[0-9]+.rar$");
         name = getNameMatch(name, "(.*)\\.rar$");
         name = getNameMatch(name, "(.*)\\.r\\d+$");
-        name = getNameMatch(name, "(.*)(\\.|_)\\d+$");
+        name = getNameMatch(name, "(.*)(\\.|_|-)\\d+$");
 
         /**
          * remove 7zip and hjmerge extensions
@@ -527,7 +527,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
         /* FFSJ splitted files */
         name = getNameMatch(name, "(.*)\\.[_a-z]{3}(\\.|$)");
 
-        name = getNameMatch(name, "(.*)(\\.|_)[\\d]+($|" + HTTPAllgemein.ENDINGS + "$)");
+        name = getNameMatch(name, "(.*)(\\.|_|-)[\\d]+($|" + HTTPAllgemein.ENDINGS + "$)");
 
         int lastPoint = name.lastIndexOf(".");
         if (lastPoint <= 0) lastPoint = name.lastIndexOf("_");
