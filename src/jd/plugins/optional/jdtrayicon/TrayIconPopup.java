@@ -47,6 +47,7 @@ import jd.gui.swing.components.JDUnderlinedText;
 import jd.gui.swing.jdgui.actions.ActionController;
 import jd.gui.swing.jdgui.actions.ToolBarAction;
 import jd.gui.swing.jdgui.actions.ToolBarAction.Types;
+import jd.gui.swing.laf.LookAndFeelController;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
@@ -167,7 +168,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, ChangeListe
     private void addMenuEntry(String actionId, boolean enabled) {
         final ToolBarAction action = ActionController.getToolBarAction(actionId);
         AbstractButton b = createButton(action);
-        entryPanel.add(b, action.getType() == Types.TOGGLE ? "growx,pushx" : "");
+        entryPanel.add(b, action.getType() == Types.TOGGLE ? (LookAndFeelController.isSynthetica() ? "gapleft 10,growx,pushx" : "growx,pushx") : "");
     }
 
     private AbstractButton createButton(final ToolBarAction action) {
