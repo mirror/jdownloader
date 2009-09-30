@@ -49,7 +49,10 @@ public class UploadingCom extends PluginForHost {
     }
 
     public boolean isPremium() throws IOException {
+        boolean follow = br.isFollowingRedirects();
+        br.setFollowRedirects(true);
         br.getPage("http://www.uploading.com/");
+        br.setFollowRedirects(follow);
         if (br.containsHTML("UPGRADE TO PREMIUM")) return false;
         if (br.containsHTML("Membership: Premium")) return true;
         return false;
@@ -101,7 +104,7 @@ public class UploadingCom extends PluginForHost {
         br.getPage(link.getDownloadURL());
         String redirect = getDownloadUrl(br, link);
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, redirect, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, redirect, true, 0);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
@@ -143,7 +146,7 @@ public class UploadingCom extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex(">File download</h2><br/>.*?<h2>(.*?)</h2>").getMatch(0);
             if (filename == null) {
-                //Last try to get the filename, if this 
+                // Last try to get the filename, if this
                 String fname = new Regex(downloadLink.getDownloadURL(), "uploading\\.com/files/\\w+/([a-zA-Z0-9 ._]+)").getMatch(0);
                 fname = fname.replace(" ", "_");
                 if (br.containsHTML(fname)) {
@@ -167,6 +170,8 @@ public class UploadingCom extends PluginForHost {
     }
 
     public String getDownloadUrl(Browser br, DownloadLink downloadLink) throws PluginException, IOException {
+        String varLink = br.getRegex("var file_link = '(http://.*?)'").getMatch(0);
+        if (varLink != null) return varLink;
         br.setFollowRedirects(false);
         String fileID = br.getRegex("file_id: (\\d+)").getMatch(0);
         if (fileID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);

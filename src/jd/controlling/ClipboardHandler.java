@@ -18,7 +18,6 @@ package jd.controlling;
 
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
-import java.awt.datatransfer.ClipboardOwner;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.io.File;
@@ -57,15 +56,6 @@ public class ClipboardHandler extends Thread implements ControlListener {
 
     private boolean waitFlag;
     private boolean tempdisabled = true;
-    private boolean clipboardchanged = true;
-    private int wait = 500;
-
-    private ClipboardOwner clipboardwatch = new ClipboardOwner() {
-        public void lostOwnership(Clipboard clipboard, Transferable contents) {
-            /* notifies us when clipboard content changed */
-            clipboardchanged = true;
-        }
-    };
 
     /**
      */
@@ -74,8 +64,6 @@ public class ClipboardHandler extends Thread implements ControlListener {
         JDUtilities.getController().addControlListener(this);
         this.enabled = false;
         this.setName("ClipboardHandler");
-        /* set clipboardchanged to true, so we check it at least once */
-        clipboardchanged = true;
         this.start();
     }
 
@@ -107,105 +95,69 @@ public class ClipboardHandler extends Thread implements ControlListener {
                 }
             }
             while (enabled && !this.tempdisabled) {
-                while (clipboardchanged && enabled && !this.tempdisabled) {
-                    try {
-                        /* get current content of clipboard */
-                        cur = clipboard.getContents(null);
-                        if (cur != null) {
-                            try {
-                                if (cur.isDataFlavorSupported(DataFlavor.stringFlavor)) {
-                                    /*
-                                     * we have text in clipboard, also can be
-                                     * files in linux
-                                     */
-                                    String text = (String) cur.getTransferData(DataFlavor.stringFlavor);
-                                    if (!text.equals(oldText)) {
-                                        /* content changed */
-                                        oldText = text;
-                                        String files[] = Regex.getLines(text);
-                                        boolean isTextContent = true;
-                                        if (files.length > 0) {
-                                            /*
-                                             * workaround for files under linux
-                                             */
-                                            if (new File(files[0].trim()).exists()) {
-                                                isTextContent = false;
-                                                for (String file : files) {
-                                                    JDUtilities.getController().loadContainerFile(new File(file.trim()));
-                                                }
-                                            }
-                                        }
-                                        /* parsing clipboard for Links */
-                                        if (isTextContent) new DistributeData(text.trim()).start();
-                                    }
-                                    /*
-                                     * now let the clipboardwatcher check for
-                                     * changes
-                                     */
-                                    clipboardchanged = false;
-                                    clipboard.setContents(cur, clipboardwatch);
-                                    wait = 500;
-                                } else if (cur.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
-                                    /* we have files in cliploard */
-                                    List<File> files = (List<File>) cur.getTransferData(DataFlavor.javaFileListFlavor);
-                                    /* check for changes */
-                                    boolean fileschanged = (oldFiles == null) || oldFiles.size() != files.size();
-                                    if (!fileschanged) {
-                                        /* second check for changes */
-                                        for (File file : oldFiles) {
-                                            boolean found = false;
-                                            for (File file2 : files) {
-                                                if (file2.getAbsolutePath().equals(file.getAbsolutePath())) {
-                                                    found = true;
-                                                    break;
-                                                }
-                                            }
-                                            if (!found) {
-                                                fileschanged = true;
-                                                break;
-                                            }
-                                        }
-                                    }
-                                    if (fileschanged) {
-                                        /* changes detected, add files */
-                                        oldFiles = files;
-                                        for (File file : files) {
-                                            JDUtilities.getController().loadContainerFile(file);
-                                        }
-                                    }
-                                    /*
-                                     * cannot install clipboardwatcher for
-                                     * files, because else windows cut paste
-                                     * will no longer work, increase waittime
-                                     */
-                                    wait = 2000;
-                                }
-                            } catch (Exception e) {
-                                /*
-                                 * an error occurred, lets check clipboard again
-                                 * to be sure
-                                 */
-                                clipboardchanged = true;
-                                wait = 1000;
-                            }
-                        } else {
+                try {
+                    /* get current content of clipboard */
+                    cur = clipboard.getContents(null);
+                    if (cur != null) {
+                        if (cur.isDataFlavorSupported(DataFlavor.stringFlavor)) {
                             /*
-                             * an error occurred, lets check clipboard again to
-                             * be sure
+                             * we have text in clipboard, also can be files in
+                             * linux
                              */
-                            clipboardchanged = true;
-                            wait = 1000;
+                            String text = (String) cur.getTransferData(DataFlavor.stringFlavor);
+                            if (!text.equals(oldText)) {
+                                /* content changed */
+                                oldText = text;
+                                String files[] = Regex.getLines(text);
+                                boolean isTextContent = true;
+                                if (files.length > 0) {
+                                    /*
+                                     * workaround for files under linux
+                                     */
+                                    if (new File(files[0].trim()).exists()) {
+                                        isTextContent = false;
+                                        for (String file : files) {
+                                            JDUtilities.getController().loadContainerFile(new File(file.trim()));
+                                        }
+                                    }
+                                }
+                                /* parsing clipboard for Links */
+                                if (isTextContent) new DistributeData(text.trim()).start();
+                            }
+                        } else if (cur.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
+                            /* we have files in cliploard */
+                            List<File> files = (List<File>) cur.getTransferData(DataFlavor.javaFileListFlavor);
+                            /* check for changes */
+                            boolean fileschanged = (oldFiles == null) || oldFiles.size() != files.size();
+                            if (!fileschanged) {
+                                /* second check for changes */
+                                for (File file : oldFiles) {
+                                    boolean found = false;
+                                    for (File file2 : files) {
+                                        if (file2.getAbsolutePath().equals(file.getAbsolutePath())) {
+                                            found = true;
+                                            break;
+                                        }
+                                    }
+                                    if (!found) {
+                                        fileschanged = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (fileschanged) {
+                                /* changes detected, add files */
+                                oldFiles = files;
+                                for (File file : files) {
+                                    JDUtilities.getController().loadContainerFile(file);
+                                }
+                            }
                         }
-                    } catch (Exception e2) {
                     }
-                    /* wait in case of fileselection */
-                    try {
-                        Thread.sleep(wait);
-                    } catch (Exception e) {
-                    }
+                } catch (Exception e2) {
                 }
                 try {
-                    Thread.sleep(wait);
+                    Thread.sleep(750);
                 } catch (Exception e) {
                 }
             }
