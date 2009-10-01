@@ -74,42 +74,32 @@ public class JDFileReg {
             AbstractDialog.setDefaultDimension(new Dimension(550, 400));
             JDIO.writeLocalFile(JDUtilities.getResourceFile("tmp/installcnl.reg"), "Windows Registry Editor Version 5.00\r\n\r\n\r\n\r\n" + sb.toString());
             int answer = showQuestion();
+            AbstractDialog.setDefaultDimension(null);
             if ((answer & UserIO.RETURN_OK) > 0) {
                 JDUtilities.runCommand("cmd", new String[] { "/c", "regedit", JDUtilities.getResourceFile("tmp/installcnl.reg").getAbsolutePath() }, JDUtilities.getResourceFile("tmp").getAbsolutePath(), 600);
                 JDUtilities.runCommand("cmd", new String[] { "/c", "regedit", "/e", JDUtilities.getResourceFile("tmp/test.reg").getAbsolutePath(), "HKEY_CLASSES_ROOT\\.dlc" }, JDUtilities.getResourceFile("tmp").getAbsolutePath(), 600);
                 if (JDUtilities.getResourceFile("tmp/test.reg").exists()) {
-
                     JDLogger.getLogger().info("Installed Click'n'Load and associated .*dlc,.*ccf,.*rsdf and .*jd with JDownloader. Uninstall with " + JDUtilities.getResourceFile("tools/windows/uninstall.reg"));
                 } else {
-
                     UserIO.getInstance().requestConfirmDialog(UserIO.NO_CANCEL_OPTION, JDL.L("gui.cnl.install.error.title", "Click'n'Load Installation"), JDL.LF("gui.cnl.install.error.message", "Installation of CLick'n'Load failed. Try these alternatives:\r\n * Start JDownloader as Admin.\r\n * Try to execute %s manually.\r\n * Open Configuration->General->Click'n'load-> [Install].\r\nFor details, visit http://jdownloader.org/click-n-load.", JDUtilities.getResourceFile("tmp/installcnl.reg").getAbsolutePath()), JDTheme.II("gui.clicknload", 48, 48), null, null);
-
                     JDLogger.getLogger().severe("Installation of CLick'n'Load failed. Please try to start JDownloader as Admin. For details, visit http://jdownloader.org/click-n-load. Try to execute " + JDUtilities.getResourceFile("tmp/installcnl.reg").getAbsolutePath() + " manually");
                 }
-
             }
             SubConfiguration.getConfig("CNL2").setProperty("INSTALLED", true);
             SubConfiguration.getConfig("CNL2").save();
         }
         JDUtilities.getResourceFile("tmp/test.reg").delete();
-
     }
 
     private static int showQuestion() {
-        return (Integer) new GuiRunnable<Object>() {
-
-            private ContainerDialog dialog;
+        return new GuiRunnable<Integer>() {
 
             @Override
-            public Object runSave() {
+            public Integer runSave() {
                 JPanel c = new JPanel(new MigLayout("ins 10,wrap 1", "[grow,fill]", "[][][grow,fill]"));
 
                 JLabel lbl = new JLabel(JDL.L("installer.gui.message", "After Installation, JDownloader will update to the latest version."));
 
-                if (OSDetector.isWindows()) {
-                    JDUtilities.getResourceFile("downloads");
-
-                }
                 c.add(lbl, "pushx,growx,split 2");
 
                 Font f = lbl.getFont();
@@ -127,25 +117,7 @@ public class JDFileReg {
                 txt.setOpaque(false);
                 txt.putClientProperty("Synthetica.opaque", Boolean.FALSE);
 
-                new ContainerDialog(UserIO.NO_COUNTDOWN, JDL.L("gui.cnl.install.title", "Click'n'Load Installation"), c, null, null) {
-                    /**
-                     * 
-                     */
-                    private static final long serialVersionUID = 6102497815556948120L;
-
-                    protected void packed() {
-                        dialog = this;
-                        this.setIconImage(JDImage.getImage("logo/jd_logo_54_54"));
-                        this.setSize(550, 400);
-                    }
-
-                    protected void setReturnValue(boolean b) {
-                        super.setReturnValue(b);
-
-                    }
-                };
-
-                return dialog.getReturnValue();
+                return new ContainerDialog(UserIO.NO_COUNTDOWN, JDL.L("gui.cnl.install.title", "Click'n'Load Installation"), c, JDImage.getImage("logo/jd_logo_54_54"), null, null).getReturnValue();
             }
 
         }.getReturnValue();

@@ -112,12 +112,10 @@ public class Installer {
 
     public static void askInstallFlashgot() {
         if (SubConfiguration.getConfig("FLASHGOT").getBooleanProperty("ASKED_TO_INSTALL_FLASHGOT", false)) { return; }
-        int answer = (Integer) new GuiRunnable<Object>() {
-
-            private ContainerDialog dialog;
+        int answer = new GuiRunnable<Integer>() {
 
             @Override
-            public Object runSave() {
+            public Integer runSave() {
                 JPanel c = new JPanel(new MigLayout("ins 10,wrap 1", "[grow,fill]", "[][][grow,fill]"));
 
                 JLabel lbl = new JLabel(JDL.L("installer.gui.message", "After Installation, JDownloader will update to the latest version."));
@@ -138,17 +136,14 @@ public class Installer {
                 lbl.setVerticalAlignment(SwingConstants.TOP);
                 lbl.setHorizontalAlignment(SwingConstants.LEFT);
 
-                new ContainerDialog(UserIO.NO_COUNTDOWN, JDL.L("installer.firefox.title", "Install firefox integration?"), c, null, null) {
+                return new ContainerDialog(UserIO.NO_COUNTDOWN, JDL.L("installer.firefox.title", "Install firefox integration?"), c, null, null, null) {
                     private static final long serialVersionUID = -7983868276841947499L;
 
+                    @Override
                     protected void packed() {
-                        dialog = this;
-                        this.setAlwaysOnTop(true);
                         this.setSize(550, 400);
                     }
-                };
-
-                return dialog.getReturnValue();
+                }.getReturnValue();
             }
 
         }.getReturnValue();
@@ -243,18 +238,16 @@ public class Installer {
                 } else {
                     br.setCurrentPath(JDUtilities.getResourceFile("downloads"));
                 }
-                new ContainerDialog(UserIO.NO_COUNTDOWN, JDL.L("installer.gui.title", "JDownloader Installation"), p, null, null) {
+                new ContainerDialog(UserIO.NO_COUNTDOWN, JDL.L("installer.gui.title", "JDownloader Installation"), p, JDImage.getImage("logo/jd_logo_54_54"), null, null) {
                     private static final long serialVersionUID = 4685519683324833575L;
 
+                    @Override
                     protected void packed() {
                         dialog = this;
-                        this.setIconImage(JDImage.getImage("logo/jd_logo_54_54"));
                         this.setSize(550, 400);
-                        // if (error) {
-                        // this.btnOK.setEnabled(false);
-                        // }
                     }
 
+                    @Override
                     protected void setReturnValue(boolean b) {
                         super.setReturnValue(b);
                         if (b) {
