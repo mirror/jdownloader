@@ -104,7 +104,7 @@ public class LinkGrabberFilePackageInfo extends JDCollapser implements ActionLis
         brwSaveTo = new ComboBrowseFile("DownloadSaveTo");
         brwSaveTo.setEditable(true);
         brwSaveTo.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
-        brwSaveTo.setText(JDUtilities.getConfiguration().getDefaultDownloadDirectory());
+        brwSaveTo.setText(JDUtilities.getDefaultDownloadDirectory());
         brwSaveTo.addActionListener(this);
 
         txtPassword = new JDTextField(true);

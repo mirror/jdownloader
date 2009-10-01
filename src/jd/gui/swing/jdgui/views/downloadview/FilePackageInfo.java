@@ -150,7 +150,7 @@ public class FilePackageInfo extends JDCollapser implements ActionListener, Focu
         brwSaveTo = new ComboBrowseFile("DownloadSaveTo");
         brwSaveTo.setEditable(true);
         brwSaveTo.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
-        brwSaveTo.setText(JDUtilities.getConfiguration().getDefaultDownloadDirectory());
+        brwSaveTo.setText(JDUtilities.getDefaultDownloadDirectory());
         brwSaveTo.addActionListener(this);
         brwSaveTo.addFocusListener(this);
         txtPassword = new JDTextField(true);

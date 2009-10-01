@@ -83,8 +83,9 @@ public class DownloadWatchDog implements ControlListener, DownloadControllerList
 
     private static DownloadWatchDog INSTANCE;
 
-    /** The path separator used by the underlying operating system */
-    private static final String PATH_SEPARATOR = System.getProperty("file.separator");
+    // /** The path separator used by the underlying operating system */
+    // private static final String PATH_SEPARATOR =
+    // System.getProperty("file.separator");
 
     public synchronized static DownloadWatchDog getInstance() {
         if (INSTANCE == null) INSTANCE = new DownloadWatchDog();

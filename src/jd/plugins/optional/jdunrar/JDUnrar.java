@@ -368,7 +368,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         if (!getPluginConfig().getBooleanProperty(JDUnrarConstants.CONFIG_KEY_USE_EXTRACT_PATH, false)) {
             path = new File(link.getFileOutput()).getParent();
         } else {
-            path = this.getPluginConfig().getStringProperty(JDUnrarConstants.CONFIG_KEY_UNRARPATH, JDUtilities.getConfiguration().getDefaultDownloadDirectory());
+            path = this.getPluginConfig().getStringProperty(JDUnrarConstants.CONFIG_KEY_UNRARPATH, JDUtilities.getDefaultDownloadDirectory());
         }
 
         File ret = new File(path);
@@ -395,7 +395,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
                 logger.severe("link.getFilePackage().getName() ==null");
             }
 
-            String dif = new File(JDUtilities.getConfiguration().getDefaultDownloadDirectory()).getAbsolutePath().replace(new File(link.getFileOutput()).getParent(), "");
+            String dif = new File(JDUtilities.getDefaultDownloadDirectory()).getAbsolutePath().replace(new File(link.getFileOutput()).getParent(), "");
             if (new File(dif).isAbsolute()) {
                 dif = "";
             }
@@ -643,7 +643,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         conditionEntry.setDefaultValue(false);
 
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, subConfig, JDUnrarConstants.CONFIG_KEY_UNRARPATH, JDL.L("gui.config.unrar.path", "Extract to")));
-        ce.setDefaultValue(JDUtilities.getConfiguration().getDefaultDownloadDirectory());
+        ce.setDefaultValue(JDUtilities.getDefaultDownloadDirectory());
         ce.setEnabledCondidtion(conditionEntry, "==", true);
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDUnrarConstants.CONFIG_KEY_REMVE_AFTER_EXTRACT, JDL.L("gui.config.unrar.remove_after_extract", "Delete archives after suc. extraction?")));
         ce.setDefaultValue(false);

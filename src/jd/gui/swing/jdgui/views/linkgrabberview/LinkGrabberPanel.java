@@ -661,7 +661,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
     }
 
     private void addToDownloadDirs(String downloadDirectory, String packageName) {
-        if (packageName.length() < 5 || downloadDirectory.equalsIgnoreCase(JDUtilities.getConfiguration().getDefaultDownloadDirectory())) return;
+        if (packageName.length() < 5 || downloadDirectory.equalsIgnoreCase(JDUtilities.getDefaultDownloadDirectory())) return;
         getDownloadDirList().add(new String[] { downloadDirectory, packageName });
         GUIUtils.getConfig().save();
     }

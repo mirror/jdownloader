@@ -350,11 +350,8 @@ public class RbkprrWs extends PluginForDecrypt {
             } else if (e.getSource() == checkNFO || e.getSource() == checkSample) {
                 if (checkNFO.isSelected() || checkSample.isSelected()) {
                     checkExtraFP.setEnabled(true);
-                    if (e.getSource() == checkSample && checkSample.isSelected())
-                        comboSampleMirror.setEnabled(true);
-                    else if (e.getSource() == checkSample) comboSampleMirror.setEnabled(false);
+                    if (e.getSource() == checkSample) comboSampleMirror.setEnabled(checkSample.isSelected());
                 } else {
-                    // checkExtraFP.setSelected(false);
                     checkExtraFP.setEnabled(false);
                     comboSampleMirror.setEnabled(false);
                 }

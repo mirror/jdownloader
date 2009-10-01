@@ -135,7 +135,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
 
     private FilePackage() {
         links_Disabled = new Integer(0);
-        downloadDirectory = JDUtilities.getConfiguration().getDefaultDownloadDirectory();
+        downloadDirectory = JDUtilities.getDefaultDownloadDirectory();
         counter++;
         id = System.currentTimeMillis() + "_" + counter;
         downloadLinkList = new ArrayList<DownloadLink>();
@@ -273,7 +273,7 @@ public class FilePackage extends Property implements Serializable, DownloadLinkL
      *         festgelegt hat
      */
     public String getDownloadDirectory() {
-        return downloadDirectory == null ? JDUtilities.getConfiguration().getDefaultDownloadDirectory() : downloadDirectory;
+        return downloadDirectory == null ? JDUtilities.getDefaultDownloadDirectory() : downloadDirectory;
     }
 
     /**

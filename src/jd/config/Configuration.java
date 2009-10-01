@@ -89,17 +89,11 @@ public class Configuration extends SubConfiguration implements Serializable {
 
     public static final String PARAM_INTERACTIONS = "INTERACTIONS";
 
-    // public static final String PARAM_JAC_METHODS = "JAC_METHODS_";
-
     public static final String PARAM_LOGGER_LEVEL = "LOGGER_LEVEL3";
 
     public static final String PARAM_RELOADCONTAINER = "RELOADCONTAINER";
 
     public static final String PARAM_SHOW_CONTAINER_ONLOAD_OVERVIEW = "SHOW_CONTAINER_ONLOAD_OVERVIEW";
-
-    // public static final String PARAM_UNRAR_INSTANCE = "UNRAR_INSTANCE";
-
-    // public static final String PARAM_UPDATE_HASH = "UPDATE_HASH";
 
     public static final String PARAM_UPDATE_VERSION = "UPDATE_VERSION";
 
@@ -156,15 +150,12 @@ public class Configuration extends SubConfiguration implements Serializable {
     public Configuration() {
     }
 
-    public String getDefaultDownloadDirectory() {
-        return JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, JDUtilities.getResourceFile("downloads").getAbsolutePath());
-    }
-
+    @Override
     public String toString() {
         return Configuration.NAME;
-
     }
 
+    @Override
     public void save() {
         JDUtilities.getDatabaseConnector().saveConfiguration(Configuration.NAME, this);
         changes = false;

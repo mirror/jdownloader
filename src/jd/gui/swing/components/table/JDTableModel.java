@@ -45,7 +45,7 @@ public abstract class JDTableModel extends AbstractTableModel {
         this.table = table;
     }
 
-    /*
+    /**
      * attention: may return null if not set
      */
     public JDTable getJDTable() {

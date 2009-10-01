@@ -101,7 +101,7 @@ public class LinkStatus implements Serializable {
     /**
      * Beispiel:HTTP-Plugin Ein als HTTP-Direktlink erkannter Link verweist auf
      * den contenttype text/html was bedeutet, dass es sich wahrscheinlich um
-     * ein Hosting Service handelt für das es noch kein Plugin gibt.
+     * ein Hosting Service handelt fÃ¼r das es noch kein Plugin gibt.
      */
     public static final int ERROR_PLUGIN_NEEDED = 1 << 30;
 

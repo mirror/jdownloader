@@ -928,4 +928,8 @@ public class JDUtilities {
         return att.getNamedItem(key).getNodeValue();
     }
 
+    public static String getDefaultDownloadDirectory() {
+        return JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, JDUtilities.getResourceFile("downloads").getAbsolutePath());
+    }
+
 }
