@@ -55,7 +55,7 @@ public class L4dMapsCom extends PluginForHost {
     }
 
     private void setConfigElements() {
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, this.getPluginConfig(), l4dservers, servers, JDL.L("plugins.host.L4dMapsCom.servers", "Use this server:")).setDefaultValue(1));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), l4dservers, servers, JDL.L("plugins.host.L4dMapsCom.servers", "Use this server:")).setDefaultValue(0));
     }
 
     /**
@@ -64,11 +64,11 @@ public class L4dMapsCom extends PluginForHost {
      * @return the number of the configured server
      */
     private int getConfiguredServer() {
-        switch (getPluginConfig().getIntegerProperty(l4dservers, 0)) {
-        case 1:
+        switch (getPluginConfig().getIntegerProperty(l4dservers, -1)) {
+        case 0:
             logger.fine("The server #1 is configured");
             return 1;
-        case 2:
+        case 1:
             logger.fine("The server #2 is configured");
             return 2;
         default:

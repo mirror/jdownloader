@@ -47,7 +47,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megaupload.com" }, urls = { "http://[\\w\\.]*?(megaupload)\\.com/.*?(\\?|&)d=[0-9A-Za-z]+" }, flags = { 2 })
@@ -75,7 +74,7 @@ public class Megauploadcom extends PluginForHost {
     }
 
     public int usePort() {
-        switch (JDUtilities.getConfiguration().getIntegerProperty(MU_PARAM_PORT, 0)) {
+        switch (this.getPluginConfig().getIntegerProperty(MU_PARAM_PORT, 0)) {
         case 1:
             return 800;
         case 2:

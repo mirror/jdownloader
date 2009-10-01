@@ -44,7 +44,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megaporn.com" }, urls = { "http://[\\w\\.]*?(megaporn)\\.com/.*?(\\?|&)d=[\\w]+" }, flags = { 2 })
@@ -70,7 +69,7 @@ public class MegaPornCom extends PluginForHost {
     }
 
     public int usePort() {
-        switch (JDUtilities.getConfiguration().getIntegerProperty(MU_PARAM_PORT, 0)) {
+        switch (this.getPluginConfig().getIntegerProperty(MU_PARAM_PORT, 0)) {
         case 1:
             return 800;
         case 2:
@@ -560,7 +559,7 @@ public class MegaPornCom extends PluginForHost {
 
     private void setConfigElements() {
         String[] ports = new String[] { "80", "800", "1723" };
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, JDUtilities.getConfiguration(), MU_PARAM_PORT, ports, JDL.L("plugins.host.megaupload.ports", "Use this port:")).setDefaultValue(0));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, this.getPluginConfig(), MU_PARAM_PORT, ports, JDL.L("plugins.host.megaupload.ports", "Use this port:")).setDefaultValue(0));
         String[] captchmodes = new String[] { JDL.L("plugins.host.megaupload.captchamode_auto", "auto"), JDL.L("plugins.host.megaupload.captchamode_no_reconnect", "avoid reconnects"), JDL.L("plugins.host.megaupload.captchamode_no_captcha", "avoid captchas") };
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, this.getPluginConfig(), CAPTCHA_MODE, captchmodes, JDL.L("plugins.host.megaupload.captchamode.title", "Captcha mode:")).setDefaultValue(0));
     }
