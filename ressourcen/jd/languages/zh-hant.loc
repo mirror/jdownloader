@@ -7,7 +7,6 @@ action.premiumview.addacc.tooltip = 加入一組新帳號
 action.premiumview.removeacc.accs = %s 帳號
 action.premiumview.removeacc.ask = 移除選擇的
 action.premiumview.removeacc.tooltip = 移除選擇的
-addons.jdshutdown.menu = 下載完成後，自動關機。
 addons.jdshutdown.statusmessage.disabled = 系統將不會由 JDownloader 來關機
 addons.jdshutdown.statusmessage.enabled = 下載完成後，將會由 JDownloader 來關閉您的系統
 ballon.download.connectionlost.message = <b>%s<b><hr>連線遺失
