@@ -43,14 +43,14 @@ public class DuckLoad extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         boolean stream = false;
         requestFileInformation(link);
-        //waittime check
-        if (br.containsHTML("Your downloadticket was booked")){
-        sleep(10 * 1000l, link);
+        // waittime check
+        if (br.containsHTML("Your downloadticket was booked")) {
+            sleep(10 * 1000l, link);
         }
         Form form = br.getForm(0);
-        String capurl = "/design/Captcha"+br.getRegex("src=\"/design/Captcha\\d?(.*?\\.php\\?.*?key=.*?)\"").getMatch(0);
-        if (capurl == null) capurl = "/design/Captcha"+br.getRegex("src='/design/Captcha\\d?(.*?\\.php.*?key=.*?)'").getMatch(0);
-        String code = getCaptchaCode(capurl, link);
+        String capurl = "/design/Captcha" + br.getRegex("src=\"/design/Captcha\\d?(.*?\\.php\\?.*?key=.*?)\"").getMatch(0);
+        if (capurl == null) capurl = "/design/Captcha" + br.getRegex("src='/design/Captcha\\d?(.*?\\.php.*?key=.*?)'").getMatch(0);
+        String code = getCaptchaCode(null, capurl, link);
         if (form.containsHTML("appl_code")) {
             form = new Form();
             form.setAction(br.getForm(0).getAction());
@@ -60,8 +60,8 @@ public class DuckLoad extends PluginForHost {
             stream = true;
         } else {
             form.put("cap", code);
-            form.put("_____download.x", ""+((int)(Math.random()*168)));
-            form.put("_____download.y", ""+((int)(Math.random()*44)));
+            form.put("_____download.x", "" + ((int) (Math.random() * 168)));
+            form.put("_____download.y", "" + ((int) (Math.random() * 44)));
         }
         br.submitForm(form);
         String url = null;
@@ -76,7 +76,7 @@ public class DuckLoad extends PluginForHost {
             if (url == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br,link, url, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, true, 0);
         dl.startDownload();
     }
 
