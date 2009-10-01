@@ -44,11 +44,18 @@ public class FilesHackCom extends PluginForHost {
     /** The list of servers displayed in the plugin configuration pane */
     private static final String[] FILESHACK_SERVERS = new String[] { "Public Central USA", "Public Eastern USA", "Public Europe", "Public Western USA" };
     
-    /** The default server [used if no server is configured] */
-    private static final String DEFAULT_SERVER = FILESHACK_SERVERS[2];
+    /** The number of the default server [used if no server is configured 
+     * or if the configured server was not found in the list of obtained servers] 
+     */
+    private static final int DEFAULT_SERVER_NUMBER = 2;
+    
+    /** The name of the default server [used if no server is configured 
+     * or if the configured server was not found in the list of obtained servers] 
+     */
+    private static final String DEFAULT_SERVER_NAME = FILESHACK_SERVERS[DEFAULT_SERVER_NUMBER];
     
     /** The {@link Pattern} used to get the server strings from the HTML page */
-    private static final Pattern SERVERS_STRINGS_REGEX = Pattern.compile("'(/popup\\..*?(central|east|europe|west)\\.public.*?pay=0)'");
+    private static final Pattern SERVERS_STRINGS_PATTERN = Pattern.compile("'(/popup\\..*?(central|east|europe|west)\\.public.*?pay=0)'");
     
     public FilesHackCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -83,8 +90,8 @@ public class FilesHackCom extends PluginForHost {
             logger.fine("The server " + FILESHACK_SERVERS[3] + " is configured");
             return 3;
         default:
-            logger.fine("No server is configured, returning default server [" + DEFAULT_SERVER + "]");
-            return 2;
+            logger.fine("No server is configured, returning default server [" + DEFAULT_SERVER_NAME + "]");
+            return DEFAULT_SERVER_NUMBER;
         }
     }
 
@@ -112,18 +119,43 @@ public class FilesHackCom extends PluginForHost {
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.submitForm(form);
         
-        String[] strings = br.getRegex(SERVERS_STRINGS_REGEX).getColumn(0);
+        String[] strings = br.getRegex(SERVERS_STRINGS_PATTERN).getColumn(0);
         if (strings.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         
         List<String> serversList = Arrays.asList(strings);
 		if (serversList.size() > 1) Collections.sort(serversList);
         
         int configuredServerNumber = getConfiguredServer();
-        if (configuredServerNumber > serversList.size()) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        int numberOfObtainedServerStrings = serversList.size();
+        if (configuredServerNumber > numberOfObtainedServerStrings) {
+        	logger.warning("The configured server number [" + configuredServerNumber + "] is bigger than the number of obtained server strings [" + numberOfObtainedServerStrings + "]");
+        	
+        	if (numberOfObtainedServerStrings > 1) {
+        		// verify if the configured default server was found in the page
+				int which = -1;
+				for (String server : serversList) {
+					if (server.indexOf("europe") > 0) {
+						which = serversList.indexOf(server);
+						logger.info("Using default server [" + DEFAULT_SERVER_NAME + "]");
+						configuredServerNumber = which;
+						break;
+					}
+				}
+				
+				if (which == -1) {
+					logger.info("The default server [" + DEFAULT_SERVER_NAME + "] was not found in the list of obtained servers, using the first server from the list of obtained servers");
+					configuredServerNumber = 0;
+				}
+        	} else {
+        		logger.warning("There is only one server string obtained, using it...");
+        		configuredServerNumber = 0;
+        	}
+        }
 
         String usedString = serversList.get(configuredServerNumber);
+        if (usedString == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        
         logger.fine("Using server string '" + usedString + "'");
-
         br.getPage("http://www.fileshack.com" + usedString);
         String frameserver = new Regex(br.getURL(), "(http://[a-z]+\\.[a-z0-9]+\\.fileshack\\.com)").getMatch(0);
         if (frameserver == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
