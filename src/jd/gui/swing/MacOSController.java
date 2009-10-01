@@ -56,6 +56,7 @@ public class MacOSController extends Application {
         // }
 
         public void handleReOpenApplication(ApplicationEvent e) {
+            if (SwingGui.getInstance() == null || SwingGui.getInstance().getMainFrame() == null) return;
             if (SwingGui.getInstance().getMainFrame().isVisible() == false) {
                 SwingGui.getInstance().getMainFrame().setVisible(true);
             }

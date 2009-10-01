@@ -158,7 +158,7 @@ public class ParameterManager {
                 addContainersSwitch = false;
                 addPasswordsSwitch = false;
                 logger.info(currentArg + " parameter");
-                Reconnecter.waitForNewIP(1);
+                Reconnecter.waitForNewIP(1, true);
 
             } else if (addLinksSwitch && currentArg.charAt(0) != '-') {
 

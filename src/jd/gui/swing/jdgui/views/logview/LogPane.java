@@ -57,6 +57,7 @@ import net.miginfocom.swing.MigLayout;
 public class LogPane extends SwitchPanel implements ActionListener, ControlListener {
 
     private static final long serialVersionUID = -5753733398829409112L;
+    private static final Object LOCK = new Object();
 
     /**
      * JTextField wo der Logger Output eingetragen wird
@@ -71,7 +72,7 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
         this.setLayout(new MigLayout("ins 3", "[fill,grow]", "[fill,grow]"));
 
         logField = new JTextPane();
-//        logField.setContentType("text/html");
+        // logField.setContentType("text/html");
         logField.setEditable(true);
         logField.setAutoscrolls(true);
 
@@ -102,12 +103,13 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
                 int status = UserIO.getInstance().requestHelpDialog(UserIO.NO_COUNTDOWN, JDL.L("gui.logdialog.loglevelwarning.title", "Wrong Loglevel for Uploading selected!"), JDL.LF("gui.logdialog.loglevelwarning", "The selected loglevel (%s) isn't preferred to upload a log! Please change it to ALL and create a new log!", level.getName()), null, "http://jdownloader.org/knowledge/wiki/support/create-a-jd-log");
                 if (JDFlags.hasSomeFlags(status, UserIO.RETURN_CANCEL, UserIO.RETURN_COUNTDOWN_TIMEOUT)) return;
             }
-
-            String content = logField.getSelectedText();
-            if (content == null || content.length() == 0) {
-                content = Encoding.UTF8Encode(logField.getText());
+            String content = null;
+            synchronized (LOCK) {
+                content = logField.getSelectedText();
+                if (content == null || content.length() == 0) {
+                    content = Encoding.UTF8Encode(logField.getText());
+                }
             }
-
             if (content == null || content.length() == 0) return;
 
             String name = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN, JDL.L("userio.input.title", "Please enter!"), JDL.L("gui.askName", "Your name?"), null, null, null, null);
@@ -131,8 +133,9 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
                 append(JDL.L("gui.logDialog.warning.uploadFailed", "Upload failed"));
             }
             append("\r\n\r\n-------------------------------------------------------------\r\n\r\n");
-
-            logField.setCaretPosition(logField.getText().length());
+            synchronized (LOCK) {
+                logField.setCaretPosition(logField.getText().length());
+            }
             break;
         }
 
@@ -140,11 +143,13 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
 
     @Override
     public String toString() {
-        String content = logField.getSelectedText();
-        if (content == null || content.length() == 0) {
-            content = logField.getText();
+        synchronized (LOCK) {
+            String content = logField.getSelectedText();
+            if (content == null || content.length() == 0) {
+                content = logField.getText();
+            }
+            return content;
         }
-        return content;
     }
 
     @Override
@@ -165,12 +170,12 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
             LogFormatter formater = (LogFormatter) JDLogHandler.getHandler().getFormatter();
             StringBuilder sb = new StringBuilder();
 
-//            sb.append("<style type=\"text/css\">");
-//            sb.append(".warning { background-color:yellow;}");
-//            sb.append(".severe { background-color:red;}");
-//            sb.append(".exception { background-color:red;}");
-//            // sb.append(".normal { background-color:black;}");
-//            sb.append("</style>");
+            // sb.append("<style type=\"text/css\">");
+            // sb.append(".warning { background-color:yellow;}");
+            // sb.append(".severe { background-color:red;}");
+            // sb.append(".exception { background-color:red;}");
+            // // sb.append(".normal { background-color:black;}");
+            // sb.append("</style>");
 
             for (LogRecord lr : buff) {
                 // if (lr.getLevel().intValue() >=
@@ -178,10 +183,10 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
 
                 sb.append(format(lr, formater));
             }
-            logField.setText(sb.toString());
-            System.out.println(sb.toString());
-
-            logField.setCaretPosition(logField.getDocument().getEndPosition().getOffset() - 1);
+            synchronized (LOCK) {
+                logField.setText(sb.toString());
+                logField.setCaretPosition(logField.getDocument().getEndPosition().getOffset() - 1);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -203,21 +208,21 @@ public class LogPane extends SwitchPanel implements ActionListener, ControlListe
     }
 
     public void append(String sb) {
-       Document doc = logField.getDocument();
+        synchronized (LOCK) {
+            Document doc = logField.getDocument();
 
-        EditorKit editorkit = logField.getEditorKit();
-        Reader r = new StringReader(sb);
-        try {
-            editorkit.read(r, doc, doc.getEndPosition().getOffset() - 1);
-        } catch (IOException e1) {
-            // TODO Auto-generated catch block
-            e1.printStackTrace();
-        } catch (BadLocationException e1) {
-            // TODO Auto-generated catch block
-            e1.printStackTrace();
+            EditorKit editorkit = logField.getEditorKit();
+            Reader r = new StringReader(sb);
+            try {
+                editorkit.read(r, doc, doc.getEndPosition().getOffset() - 1);
+            } catch (IOException e1) {
+                // TODO Auto-generated catch block
+                e1.printStackTrace();
+            } catch (BadLocationException e1) {
+                // TODO Auto-generated catch block
+                e1.printStackTrace();
+            }
         }
-      
-
     }
 
     public void controlEvent(ControlEvent event) {

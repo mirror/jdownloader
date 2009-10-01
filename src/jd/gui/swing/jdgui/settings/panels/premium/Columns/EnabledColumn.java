@@ -27,6 +27,7 @@ import jd.controlling.AccountController;
 import jd.gui.swing.components.table.JDTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
 import jd.gui.swing.jdgui.settings.panels.premium.HostAccounts;
+import jd.gui.swing.laf.LookAndFeelController;
 import jd.plugins.Account;
 
 import org.jdesktop.swingx.renderer.JRendererCheckBox;
@@ -43,6 +44,10 @@ public class EnabledColumn extends JDTableColumn implements ActionListener {
         super(name, table);
         boolrend = new JRendererCheckBox();
         boolrend.setHorizontalAlignment(JCheckBox.CENTER);
+        boolrend.setBorderPainted(false);
+        boolrend.setOpaque(true);
+        if (LookAndFeelController.isSubstance()) boolrend.setOpaque(false);
+        boolrend.setFocusable(false);
         checkbox = new JCheckBox();
         checkbox.setHorizontalAlignment(JCheckBox.CENTER);
     }

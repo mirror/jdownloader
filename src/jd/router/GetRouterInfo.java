@@ -205,7 +205,7 @@ public class GetRouterInfo {
             setProgress(i++ * 100 / size);
 
             JDUtilities.getConfiguration().save();
-            if (Reconnecter.waitForNewIP(1)) {
+            if (Reconnecter.waitForNewIP(1, true)) {
                 JDUtilities.getConfiguration().setProperty(ReconnectMethod.PARAM_RETRIES, retries);
                 JDUtilities.getConfiguration().setProperty(ReconnectMethod.PARAM_WAITFORIPCHANGE, wipchange);
                 JDUtilities.getConfiguration().save();

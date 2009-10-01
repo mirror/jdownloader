@@ -245,7 +245,11 @@ public class Reconnecter {
         }
     }
 
-    public static boolean waitForNewIP(long i) {
+    /*
+     * doit will start reconnectrequest even if user disabled autoreconnect
+     */
+    public static boolean waitForNewIP(long i, boolean doit) {
+        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_ALLOW_RECONNECT, true) == false && doit == false) return false;
         setReconnectRequested(true);
         final ProgressController progress = new ProgressController(JDL.LF("gui.reconnect.progress.status", "Reconnect running: %s m:s", "0:00s"), 2);
         if (i > 0) {
@@ -292,7 +296,7 @@ public class Reconnecter {
 
     public static boolean doManualReconnect() {
         boolean restartDownloads = DownloadWatchDog.getInstance().stopDownloads();
-        boolean success = Reconnecter.waitForNewIP(1);
+        boolean success = Reconnecter.waitForNewIP(1, true);
         if (restartDownloads) DownloadWatchDog.getInstance().startDownloads();
         return success;
     }

@@ -184,7 +184,7 @@ public class Srnnks extends PluginForDecrypt {
                             }
                         }).start();
                         rc = true;
-                        if (!Reconnecter.waitForNewIP(2 * 60 * 1000l)) {
+                        if (!Reconnecter.waitForNewIP(2 * 60 * 1000l, false)) {
                             rc = false;
                             progress.setColor(Color.red);
                             progress.setStatus(0);
@@ -437,7 +437,7 @@ public class Srnnks extends PluginForDecrypt {
             }
             if (br3.containsHTML("Du hast zu oft das Captcha falsch")) {
                 rc = true;
-                if (Reconnecter.waitForNewIP(2 * 60 * 1000l)) {
+                if (Reconnecter.waitForNewIP(2 * 60 * 1000l, false)) {
                     rc = false;
                     logger.info("Reconnect successfull. try again");
                     br3.setFollowRedirects(true);
@@ -469,7 +469,7 @@ public class Srnnks extends PluginForDecrypt {
                     }
                 }).start();
                 rc = true;
-                if (Reconnecter.waitForNewIP(2 * 60 * 1000l)) {
+                if (Reconnecter.waitForNewIP(2 * 60 * 1000l, false)) {
                     rc = false;
                     logger.info("Reconnect successfull. try again");
                     br3.setFollowRedirects(true);
