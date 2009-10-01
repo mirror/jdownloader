@@ -68,6 +68,7 @@ downloadlink.status.error.fatal = Μοιραίο σφάλμα
 downloadlink.status.error.file_exists = Το αρχείο υπάρχει ήδη
 downloadlink.status.error.file_not_found = Το αρχείο δε βρέθηκε
 downloadlink.status.error.no_connection = Δεν υπάρχει σύνδεση
+downloadlink.status.error.no_plugin_available = Δεν υπάρχει διαθέσιμο plugin
 downloadlink.status.error.post_process = Σφάλμα επεξεργασίας
 downloadlink.status.error.premium = Σφάλμα Premium
 downloadlink.status.error.retry = Άγνωστο σφάλμα, νέα προσπάθεια...
