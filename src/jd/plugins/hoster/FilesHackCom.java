@@ -17,22 +17,42 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
+
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileshack.com" }, urls = { "http://[\\w\\.]*?fileshack\\.com/(file|file_download)\\.x/[0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileshack.com" }, urls = { "http://[\\w\\.]*?fileshack\\.com/(file|file_download)\\.x/[0-9]+" }, flags = { 2 })
 public class FilesHackCom extends PluginForHost {
 
+    private static final String fileshackservers = "fileshackservers";
+
+    /** The list of servers displayed in the plugin configuration pane */
+    private static final String[] FILESHACK_SERVERS = new String[] { "Public Central USA", "Public Eastern USA", "Public Europe", "Public Western USA" };
+    
+    /** The default server [used if no server is configured] */
+    private static final String DEFAULT_SERVER = FILESHACK_SERVERS[2];
+    
+    /** The {@link Pattern} used to get the server strings from the HTML page */
+    private static final Pattern SERVERS_STRINGS_REGEX = Pattern.compile("'(/popup\\..*?(central|east|europe|west)\\.public.*?pay=0)'");
+    
     public FilesHackCom(PluginWrapper wrapper) {
         super(wrapper);
+        setConfigElements();
     }
 
     public String getAGBLink() {
@@ -40,7 +60,32 @@ public class FilesHackCom extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("(file|file_download)", "file"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("(file\\.|file_download\\.)", "file\\."));
+    }
+
+    private void setConfigElements() {
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), fileshackservers, FILESHACK_SERVERS, JDL.L("plugins.host.FilesHackCom.servers", "Use this server:")).setDefaultValue(0));
+    }
+
+    // thx to jiaz & bogdan.solga for the help ;)
+    private int getConfiguredServer() {
+        switch (getPluginConfig().getIntegerProperty(fileshackservers, -1)) {
+        case 0:
+            logger.fine("The server " + FILESHACK_SERVERS[0] + " is configured");
+            return 0;
+        case 1:
+            logger.fine("The server " + FILESHACK_SERVERS[1] + " is configured");
+            return 1;
+        case 2:
+            logger.fine("The server " + FILESHACK_SERVERS[2] + " is configured");
+            return 2;
+        case 3:
+            logger.fine("The server " + FILESHACK_SERVERS[3] + " is configured");
+            return 3;
+        default:
+            logger.fine("No server is configured, returning default server [" + DEFAULT_SERVER + "]");
+            return 2;
+        }
     }
 
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -66,11 +111,20 @@ public class FilesHackCom extends PluginForHost {
         Form form = br.getFormbyProperty("name", "nologinform");
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.submitForm(form);
+        
+        String[] strings = br.getRegex(SERVERS_STRINGS_REGEX).getColumn(0);
+        if (strings.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        
+        List<String> serversList = Arrays.asList(strings);
+		if (serversList.size() > 1) Collections.sort(serversList);
+        
+        int configuredServerNumber = getConfiguredServer();
+        if (configuredServerNumber > serversList.size()) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
 
-        String PublicWesternUSA = br.getRegex("'(/popup\\..*?pay=0)'").getMatch(0);
-        if (PublicWesternUSA == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        PublicWesternUSA = "http://www.fileshack.com" + PublicWesternUSA;
-        br.getPage(PublicWesternUSA);
+        String usedString = serversList.get(configuredServerNumber);
+        logger.fine("Using server string '" + usedString + "'");
+
+        br.getPage("http://www.fileshack.com" + usedString);
         String frameserver = new Regex(br.getURL(), "(http://[a-z]+\\.[a-z0-9]+\\.fileshack\\.com)").getMatch(0);
         if (frameserver == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         String dlframe = br.getRegex("frameborder=\"[0-9]\" src=\"(.*?)\"").getMatch(0);
