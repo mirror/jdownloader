@@ -1152,6 +1152,7 @@ plugins.errors.nointernetconn = Ste pripojení k Internetu?
 plugins.errors.pluginerror = Chyba pluginu. Kontaktujte podporu
 plugins.errors.wrongpassword = Nesprávne heslo
 plugins.host.anyfilesnet.premiumonly = Anyfiles.net: Vlastník tohto súboru obmedzil počet voľných sťahovaní za deň. Buď si kúpite prémiový účet, alebo počkajte kým budete môcť súbor opäť stiahnuť ako voľný užívateľ!
+plugins.host.fileshackcom.servers = Použiť tento server:
 plugins.host.l4dmapscom.servers = Použiť tento server:
 plugins.host.megaupload.captchamode.title = CAPTCHA mód:
 plugins.host.megaupload.captchamode_auto = automatický
