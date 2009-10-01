@@ -75,6 +75,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
         initConfig();
     }
 
+    @Override
     public String getIconKey() {
         return "gui.images.network";
     }
@@ -474,9 +475,9 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
     private HttpServer server;
     private MenuAction activate;
 
+    @Override
     public void actionPerformed(ActionEvent e) {
         try {
-
             subConfig.setProperty(PARAM_ENABLED, activate.isSelected());
             subConfig.save();
 
@@ -493,13 +494,14 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
         }
     }
 
+    @Override
     public ArrayList<MenuAction> createMenuitems() {
         ArrayList<MenuAction> menu = new ArrayList<MenuAction>();
 
         if (activate == null) {
             activate = new MenuAction(getWrapper().getID(), 0);
             activate.setActionListener(this);
-            activate.setSelected(false);
+            activate.setSelected(subConfig.getBooleanProperty(PARAM_ENABLED, true));
             activate.setTitle(getHost());
         }
         menu.add(activate);
@@ -507,6 +509,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
         return menu;
     }
 
+    @Override
     public boolean initAddon() {
         logger.info("RemoteControl OK");
         initRemoteControl();
@@ -525,13 +528,15 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             try {
                 server = new HttpServer(subConfig.getIntegerProperty(PARAM_PORT, 10025), new Serverhandler());
                 server.start();
+                activate.setSelected(true);
             } catch (Exception e) {
                 JDLogger.exception(e);
             }
         }
     }
 
+    @Override
     public void onExit() {
-
     }
+
 }
