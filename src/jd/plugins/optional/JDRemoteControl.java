@@ -189,9 +189,9 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
 
                 response.addContent("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\"\"http://www.w3.org/TR/html4/strict.dtd\"><html><head><title>JDRemoteControl Help</title><style type=\"text/css\">a {    font-size: 14px;    text-decoration: none;    background: none;    color: #599ad6;}a:hover {    text-decoration: underline;    color:#333333;}body {    color: #333333;    background:#f0f0f0;    font-family: Verdana, Arial, Helvetica, sans-serif;    font-size: 14px;    vertical-align: top;  }</style></head><body><p><br /><b>JDRemoteControl " + getVersion() + "<br /><br />Usage:</b><br />&nbsp;<br />1)Replace %X% with your value<br />Sample: /action/save/container/C:\\backup.dlc <br />2)Replace (true|false) with true or false<br /><table border=\"0\" cellspacing=\"5\">");
                 for (int commandcount = 0; commandcount < commandvec.size(); commandcount++) {
-                    response.addContent("<tr><td valign=\"top\"><a href=\"http://127.0.0.1:" + subConfig.getIntegerProperty(PARAM_PORT, 10025) + commandvec.get(commandcount) + "\">" + commandvec.get(commandcount) + "</a></td><td valign=\"top\">" + infovector.get(commandcount) + "</td></tr>");
+                    response.addContent("\r\n<tr><td valign=\"top\"><a href=\"" + commandvec.get(commandcount) + "\">" + commandvec.get(commandcount) + "</a></td><td valign=\"top\">" + infovector.get(commandcount) + "</td></tr>");
                 }
-                response.addContent("</table><br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;</p></body></html>");
+                response.addContent("\r\n</table><br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;</p></body></html>");
             } else if (request.getRequestUrl().equals("/get/ip")) {
                 // Get IP
                 response.addContent(IPCheck.getIPAddress());
@@ -528,7 +528,6 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             try {
                 server = new HttpServer(subConfig.getIntegerProperty(PARAM_PORT, 10025), new Serverhandler());
                 server.start();
-                activate.setSelected(true);
             } catch (Exception e) {
                 JDLogger.exception(e);
             }
