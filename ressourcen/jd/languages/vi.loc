@@ -70,6 +70,7 @@ downloadlink.status.error.fatal = Lỗi nghiêm trọng
 downloadlink.status.error.file_exists = Tập tin đang tồn tại
 downloadlink.status.error.file_not_found = Không tìm ra tập tin
 downloadlink.status.error.no_connection = Không có kết nối
+downloadlink.status.error.no_plugin_available = Không có Plugin khả dụng
 downloadlink.status.error.post_process = Xử lý bị lỗi
 downloadlink.status.error.premium = Lỗi Tài khoản trả phí
 downloadlink.status.error.retry = Lỗi chưa rõ, đang thử lại
