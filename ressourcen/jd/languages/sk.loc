@@ -68,6 +68,7 @@ downloadlink.status.error.fatal = Fatálna chyba
 downloadlink.status.error.file_exists = Súbor už existuje
 downloadlink.status.error.file_not_found = Súbor nebol nájdený
 downloadlink.status.error.no_connection = Nemám spojenie
+downloadlink.status.error.no_plugin_available = Plugin nie je dostupný
 downloadlink.status.error.post_process = Spracúvam chybu
 downloadlink.status.error.premium = Chyba Premium účtu
 downloadlink.status.error.retry = Neznáma chyba, skúšam znova
