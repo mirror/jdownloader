@@ -440,6 +440,7 @@ public class Megauploadcom extends PluginForHost {
                 }
                 l.setAvailable(true);
             }
+            l.setAvailable(true);
             return true;
         } catch (Exception e) {
             l.setAvailable(false);
@@ -454,6 +455,10 @@ public class Megauploadcom extends PluginForHost {
         this.setBrowserExclusive();
         br.setCookie("http://" + wwwWorkaround + "megaupload.com", "l", "en");
         websiteFileCheck(downloadLink, br);
+        /* TODO: remove after needed info found */
+        if (downloadLink.getAvailableStatus() != AvailableStatus.TRUE) {
+            logger.info("DebugInfo: FIXME Filecheck! " + br.toString());
+        }
         /* in case of ip blocking, set ip blocked */
         if (downloadLink.getAvailableStatus() == AvailableStatus.UNCHECKABLE) {
             String wait = br.getRegex("Please check back in (\\+d) minutes").getMatch(0);
