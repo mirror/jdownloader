@@ -1,11 +1,16 @@
 package jd.plugins.optional.customizer;
 
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.util.ArrayList;
 
 import javax.swing.AbstractButton;
+import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JScrollPane;
+import javax.swing.JTextField;
 
 import jd.config.SubConfiguration;
 import jd.gui.UserIO;
@@ -14,16 +19,22 @@ import jd.gui.swing.jdgui.actions.ThreadedAction;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.toolbar.ViewToolbar;
 import jd.nutils.JDFlags;
+import jd.utils.JDTheme;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
-public class CustomizerGui extends SwitchPanel {
+public class CustomizerGui extends SwitchPanel implements KeyListener, ActionListener {
 
     private static final long serialVersionUID = 7508784076121700378L;
+    private static final String JDL_PREFIX = "jd.plugins.optional.customizer.CustomizerGui.";
 
     private final SubConfiguration config;
 
     private CustomizerTable table;
+
+    private JTextField tester;
+
+    private JButton reset;
 
     public CustomizerGui(SubConfiguration config) {
         this.config = config;
@@ -33,7 +44,7 @@ public class CustomizerGui extends SwitchPanel {
     }
 
     private void initGUI() {
-        this.setLayout(new MigLayout("ins 5, wrap 1", "[grow,fill]", "[][grow,fill]"));
+        this.setLayout(new MigLayout("ins 5, wrap 1", "[grow,fill]", "[][grow,fill][]"));
         ViewToolbar vt = new ViewToolbar() {
             private static final long serialVersionUID = -2194834048392779383L;
 
@@ -45,7 +56,13 @@ public class CustomizerGui extends SwitchPanel {
         vt.setList(new String[] { "action.customize.addsetting", "action.customize.removesetting" });
 
         this.add(vt, "dock north,gapleft 3");
-        this.add(new JScrollPane(table = new CustomizerTable(config.getGenericProperty(JDPackageCustomizer.PROPERTY_SETTINGS, new ArrayList<CustomizeSetting>()))), "growx,growy");
+        this.add(new JScrollPane(table = new CustomizerTable(this, config.getGenericProperty(JDPackageCustomizer.PROPERTY_SETTINGS, new ArrayList<CustomizeSetting>()))), "growx,growy");
+        this.add(new JLabel(JDL.L(JDL_PREFIX + "tester", "Insert examplelinks here to highlight the matched setting:")), "split 3, h pref!");
+        this.add(tester = new JTextField(), "growx, h pref!");
+        this.add(reset = new JButton(JDTheme.II("gui.images.undo", 16, 16)), "h pref!");
+
+        tester.addKeyListener(this);
+        reset.addActionListener(this);
     }
 
     private void initActions() {
@@ -118,6 +135,27 @@ public class CustomizerGui extends SwitchPanel {
     protected void onShow() {
         table.getModel().setSettings(config.getGenericProperty(JDPackageCustomizer.PROPERTY_SETTINGS, new ArrayList<CustomizeSetting>()));
         table.getModel().refreshModel();
+    }
+
+    public String getTestText() {
+        return tester.getText();
+    }
+
+    public void keyPressed(KeyEvent e) {
+        table.getModel().fireTableDataChanged();
+    }
+
+    public void keyReleased(KeyEvent e) {
+    }
+
+    public void keyTyped(KeyEvent e) {
+    }
+
+    public void actionPerformed(ActionEvent e) {
+        if (e.getSource() == reset) {
+            tester.setText("");
+            table.getModel().fireTableDataChanged();
+        }
     }
 
 }

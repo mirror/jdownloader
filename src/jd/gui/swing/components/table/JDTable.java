@@ -16,7 +16,6 @@
 
 package jd.gui.swing.components.table;
 
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.Rectangle;
@@ -28,10 +27,8 @@ import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
-import javax.swing.JButton;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenuItem;
-import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
@@ -46,14 +43,11 @@ import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 
 import jd.config.SubConfiguration;
-import jd.gui.swing.Factory;
-import jd.gui.swing.components.JDTextField;
 import jd.gui.swing.components.JExtCheckBoxMenuItem;
 import jd.gui.swing.jdgui.interfaces.JDMouseAdapter;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingx.JXTable;
 
@@ -187,28 +181,6 @@ public class JDTable extends JXTable {
 
     public JDTableModel getJDTableModel() {
         return model;
-    }
-
-    private JDTextField searchField;
-    private JButton reset;
-
-    public JPanel getFilterField() {
-        final String text = "Search after Link";
-
-        JPanel panel = new JPanel(new MigLayout("ins 0"));
-
-        panel.add(searchField = new JDTextField(true), "growx, w 200!");
-        searchField.setText(text);
-
-        panel.add(reset = Factory.createButton(null, JDTheme.II("gui.images.undo", 16, 16), new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                searchField.setForeground(Color.LIGHT_GRAY);
-                searchField.setText(text);
-            }
-        }));
-        reset.setBorder(null);
-
-        return panel;
     }
 
     @Override

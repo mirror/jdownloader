@@ -1,5 +1,6 @@
 package jd.plugins.optional.customizer.columns;
 
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -9,6 +10,7 @@ import javax.swing.JCheckBox;
 import jd.gui.swing.components.table.JDTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
 import jd.plugins.optional.customizer.CustomizeSetting;
+import jd.plugins.optional.customizer.CustomizerTableModel;
 
 import org.jdesktop.swingx.renderer.JRendererCheckBox;
 
@@ -72,6 +74,13 @@ public class EnabledColumn extends JDTableColumn implements ActionListener {
     public void actionPerformed(ActionEvent e) {
         checkbox.removeActionListener(this);
         this.fireEditingStopped();
+    }
+
+    @Override
+    public void postprocessCell(Component c, JDTableModel table, Object value, boolean isSelected, int row, int column) {
+        if (((CustomizeSetting) value).matches(((CustomizerTableModel) table).getJDTable().getGui().getTestText())) {
+            c.setBackground(new Color(204, 255, 170));
+        }
     }
 
 }

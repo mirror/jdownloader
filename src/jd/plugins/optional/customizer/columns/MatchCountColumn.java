@@ -1,5 +1,6 @@
 package jd.plugins.optional.customizer.columns;
 
+import java.awt.Color;
 import java.awt.Component;
 
 import javax.swing.SwingConstants;
@@ -7,6 +8,7 @@ import javax.swing.SwingConstants;
 import jd.gui.swing.components.table.JDTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
 import jd.plugins.optional.customizer.CustomizeSetting;
+import jd.plugins.optional.customizer.CustomizerTableModel;
 
 import org.jdesktop.swingx.renderer.JRendererLabel;
 
@@ -59,6 +61,13 @@ public class MatchCountColumn extends JDTableColumn {
 
     @Override
     public void sort(Object obj, boolean sortingToggle) {
+    }
+
+    @Override
+    public void postprocessCell(Component c, JDTableModel table, Object value, boolean isSelected, int row, int column) {
+        if (((CustomizeSetting) value).matches(((CustomizerTableModel) table).getJDTable().getGui().getTestText())) {
+            c.setBackground(new Color(204, 255, 170));
+        }
     }
 
 }

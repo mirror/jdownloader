@@ -192,7 +192,7 @@ public abstract class JDTableColumn extends AbstractCellEditor implements TableC
         }
     }
 
-    /*
+    /**
      * default (empty) function to postprocess the component, overwrite to
      * customize
      */

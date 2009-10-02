@@ -8,8 +8,16 @@ public class CustomizerTable extends JDTable {
 
     private static final long serialVersionUID = 2767338885884748758L;
 
-    public CustomizerTable(ArrayList<CustomizeSetting> settings) {
+    private CustomizerGui gui;
+
+    public CustomizerTable(CustomizerGui gui, ArrayList<CustomizeSetting> settings) {
         super(new CustomizerTableModel("customizerview", settings));
+
+        this.gui = gui;
+    }
+
+    public CustomizerGui getGui() {
+        return gui;
     }
 
     @Override
