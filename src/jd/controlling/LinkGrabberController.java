@@ -91,7 +91,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
         return INSTANCE;
     }
 
-    public LinkGrabberFilePackage getFILTERPACKAGE() {
+    public LinkGrabberFilePackage getFilterPackage() {
         return this.FP_FILTERED;
     }
 

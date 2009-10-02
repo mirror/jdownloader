@@ -12,6 +12,7 @@ import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelListener;
 import jd.gui.swing.jdgui.menu.MenuAction;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkGrabberFilePackage;
 import jd.plugins.OptionalPlugin;
 import jd.plugins.PluginOptional;
 import jd.utils.locale.JDL;
@@ -23,6 +24,8 @@ public class JDPackageCustomizer extends PluginOptional implements LinkGrabberPa
 
     private static final String PROPERTY_ENABLE = "ENABLE";
     public static final String PROPERTY_SETTINGS = "SETTINGS";
+
+    private LinkGrabberController ctrl;
 
     private CustomizerView view;
 
@@ -40,18 +43,17 @@ public class JDPackageCustomizer extends PluginOptional implements LinkGrabberPa
 
     @Override
     public boolean initAddon() {
-        LinkGrabberController.getInstance().setCustomizedPackager(this);
+        ctrl = LinkGrabberController.getInstance();
+        ctrl.setCustomizedPackager(this);
 
         enableAction = new MenuAction(getWrapper().getID(), 1);
         enableAction.setActionListener(this);
         enableAction.setTitle(JDL.L(JDL_PREFIX + "enabled", "Enable Customizer"));
-        enableAction.setIcon(this.getIconKey());
         enableAction.setSelected(getPluginConfig().getBooleanProperty(PROPERTY_ENABLE, true));
 
         showAction = new MenuAction(getWrapper().getID(), 0);
         showAction.setActionListener(this);
         showAction.setTitle(JDL.L(JDL_PREFIX + "settings", "Show Settings-GUI"));
-        showAction.setIcon(this.getIconKey());
         showAction.setSelected(false);
 
         logger.info("Customizer OK");
@@ -60,7 +62,7 @@ public class JDPackageCustomizer extends PluginOptional implements LinkGrabberPa
 
     @Override
     public void onExit() {
-        LinkGrabberController.getInstance().setCustomizedPackager(null);
+        ctrl.setCustomizedPackager(null);
     }
 
     @Override
@@ -113,16 +115,7 @@ public class JDPackageCustomizer extends PluginOptional implements LinkGrabberPa
     }
 
     public void attachToPackagesFirstStage(DownloadLink link) {
-        if (enableAction.isSelected()) {
-            ArrayList<CustomizeSetting> settings = getPluginConfig().getGenericProperty(PROPERTY_SETTINGS, new ArrayList<CustomizeSetting>());
-            for (CustomizeSetting setting : settings) {
-                if (setting.matches(link.getName())) {
-                    // TODO
-                    return;
-                }
-            }
-        }
-        LinkGrabberController.getInstance().attachToPackagesFirstStageInternal(link);
+        ctrl.attachToPackagesFirstStageInternal(link);
     }
 
     public void attachToPackagesSecondStage(DownloadLink link) {
@@ -130,7 +123,20 @@ public class JDPackageCustomizer extends PluginOptional implements LinkGrabberPa
             ArrayList<CustomizeSetting> settings = getPluginConfig().getGenericProperty(PROPERTY_SETTINGS, new ArrayList<CustomizeSetting>());
             for (CustomizeSetting setting : settings) {
                 if (setting.matches(link.getName())) {
-                    // TODO
+                    logger.info("Customizer: Using customization of FilePackage for Link " + link.getName());
+                    if (ctrl.isExtensionFiltered(link)) {
+                        ctrl.getFilterPackage().add(link);
+                        return;
+                    }
+                    String packageName = setting.getPackageName();
+                    LinkGrabberFilePackage fp = ctrl.getFPwithName(packageName);
+                    if (fp == null) {
+                        fp = new LinkGrabberFilePackage(packageName, ctrl);
+                    }
+                    fp.setExtractAfterDownload(setting.isExtract());
+                    fp.setDownloadDirectory(setting.getDownloadDir());
+                    fp.setPassword(setting.getPassword());
+                    fp.add(link);
                     return;
                 }
             }

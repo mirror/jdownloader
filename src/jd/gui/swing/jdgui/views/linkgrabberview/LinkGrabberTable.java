@@ -287,7 +287,7 @@ public class LinkGrabberTable extends JDTable implements MouseListener, MouseMot
         if (getValueAt(row, 0) == null) {
             clearSelection();
             if (e.getButton() == MouseEvent.BUTTON3) {
-                if (LinkGrabberController.getInstance().getFILTERPACKAGE().size() > 0 || LinkGrabberController.getInstance().size() > 0) {
+                if (LinkGrabberController.getInstance().getFilterPackage().size() > 0 || LinkGrabberController.getInstance().size() > 0) {
                     JPopupMenu popup = new JPopupMenu();
                     popup.add(new JMenuItem(ActionController.getToolBarAction("action.linkgrabber.addall")));
                     popup.add(new JMenuItem(new LinkGrabberTableAction(linkgrabber, JDTheme.II("gui.images.removefailed", 16, 16), JDL.L("gui.linkgrabberv2.lg.rmoffline", "Remove all Offline"), LinkGrabberTableAction.DELETE_OFFLINE)));

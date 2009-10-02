@@ -176,9 +176,9 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                         synchronized (LGINSTANCE.getPackages()) {
                             stopLinkGatherer();
                             lc.abortLinkCheck();
-                            LGINSTANCE.getFILTERPACKAGE().clear();
+                            LGINSTANCE.getFilterPackage().clear();
                             ArrayList<LinkGrabberFilePackage> selected_packages = new ArrayList<LinkGrabberFilePackage>(LGINSTANCE.getPackages());
-                            selected_packages.add(LGINSTANCE.getFILTERPACKAGE());
+                            selected_packages.add(LGINSTANCE.getFilterPackage());
                             for (LinkGrabberFilePackage fp2 : selected_packages) {
                                 fp2.setDownloadLinks(new ArrayList<DownloadLink>());
                             }
@@ -206,7 +206,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
             public void threadedActionPerformed(ActionEvent e) {
                 synchronized (LinkGrabberController.ControllerLock) {
                     synchronized (LGINSTANCE.getPackages()) {
-                        LGINSTANCE.getFILTERPACKAGE().clear();
+                        LGINSTANCE.getFilterPackage().clear();
                         ArrayList<LinkGrabberFilePackage> fps = new ArrayList<LinkGrabberFilePackage>(LGINSTANCE.getPackages());
                         confirmPackages(fps);
                     }
@@ -324,7 +324,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
         ArrayList<String> extensions = new ArrayList<String>();
         String ext = null;
         ArrayList<LinkGrabberFilePackage> fps = new ArrayList<LinkGrabberFilePackage>(LGINSTANCE.getPackages());
-        fps.add(LGINSTANCE.getFILTERPACKAGE());
+        fps.add(LGINSTANCE.getFilterPackage());
         for (LinkGrabberFilePackage fp : fps) {
             for (DownloadLink l : new ArrayList<DownloadLink>(fp.getDownloadLinks())) {
                 ext = JDIO.getFileExtension(l.getName());
@@ -444,12 +444,12 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
                             case LinkGrabberTableAction.SELECT_HOSTER:
                                 hoster = (Set<String>) ((LinkGrabberTableAction) ((JMenuItem) arg0.getSource()).getAction()).getProperty().getProperty("hoster");
                                 selected_packages = new ArrayList<LinkGrabberFilePackage>(fps);
-                                selected_packages.add(LGINSTANCE.getFILTERPACKAGE());
+                                selected_packages.add(LGINSTANCE.getFilterPackage());
                                 break;
                             case LinkGrabberTableAction.DELETE_OFFLINE:
                             case LinkGrabberTableAction.DELETE_DUPS:
                                 selected_packages = new ArrayList<LinkGrabberFilePackage>(fps);
-                                selected_packages.add(LGINSTANCE.getFILTERPACKAGE());
+                                selected_packages.add(LGINSTANCE.getFilterPackage());
                                 break;
                             case LinkGrabberTableAction.ADD_SELECTED_PACKAGES:
                             case LinkGrabberTableAction.EDIT_DIR:
@@ -771,7 +771,7 @@ public class LinkGrabberPanel extends SwitchPanel implements ActionListener, Lin
     }
 
     public boolean hasLinks() {
-        return this.addinginprogress || waitingList.size() > 0 || LGINSTANCE.size() > 0 || LGINSTANCE.getFILTERPACKAGE().size() > 0;
+        return this.addinginprogress || waitingList.size() > 0 || LGINSTANCE.size() > 0 || LGINSTANCE.getFilterPackage().size() > 0;
     }
 
     public void onLinkGrabberControllerEvent(LinkGrabberControllerEvent event) {

@@ -21,12 +21,13 @@ public class CustomizeSetting implements Serializable {
 
     private boolean extract = true;
 
+    private String password;
+
     public CustomizeSetting(String name) {
         setName(name);
     }
 
     public boolean matches(String fileName) {
-        if (regex == null) return false;
         return new Regex(fileName, regex).matches();
     }
 
@@ -76,6 +77,14 @@ public class CustomizeSetting implements Serializable {
 
     public void setExtract(boolean extract) {
         this.extract = extract;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 
 }

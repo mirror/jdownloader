@@ -120,7 +120,7 @@ public class LinkGrabberInfoPanel extends InfoPanel {
                 }
                 updateInfo(JDL.L(JDL_PREFIX + "packages", "Package(s)"), fps.size());
                 updateInfo(JDL.L(JDL_PREFIX + "links", "Links(s)"), links);
-                updateInfo(JDL.L(JDL_PREFIX + "filteredlinks", "filtered Links(s)"), lgi.getFILTERPACKAGE().size());
+                updateInfo(JDL.L(JDL_PREFIX + "filteredlinks", "filtered Links(s)"), lgi.getFilterPackage().size());
                 updateInfo(JDL.L(JDL_PREFIX + "size", "Total size"), Formatter.formatReadable(tot));
                 fps.clear();
                 return null;

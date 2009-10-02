@@ -12,21 +12,17 @@ import jd.plugins.optional.customizer.CustomizeSetting;
 
 import org.jdesktop.swingx.renderer.JRendererLabel;
 
-public class PackageNameColumn extends JDTableColumn implements ActionListener {
+public class PasswordColumn extends JDTableColumn implements ActionListener {
 
     private static final long serialVersionUID = -2305836770033923728L;
     private JRendererLabel jlr;
     private JTextField text;
 
-    public PackageNameColumn(String name, JDTableModel table) {
+    public PasswordColumn(String name, JDTableModel table) {
         super(name, table);
         jlr = new JRendererLabel();
-        // jlr.setToolTipText(JDL.L("jd.plugins.optional.customizer.columns.PackageNameColumn.tooltip",
-        // "Leave it empty for default"));
         jlr.setBorder(null);
         text = new JTextField();
-        // text.setToolTipText(JDL.L("jd.plugins.optional.customizer.columns.PackageNameColumn.tooltip",
-        // "Leave it empty for default"));
     }
 
     @Override
@@ -52,20 +48,20 @@ public class PackageNameColumn extends JDTableColumn implements ActionListener {
     @Override
     public Component myTableCellEditorComponent(JDTableModel table, Object value, boolean isSelected, int row, int column) {
         text.removeActionListener(this);
-        text.setText(((CustomizeSetting) value).getPackageName());
+        text.setText(((CustomizeSetting) value).getPassword());
         text.addActionListener(this);
         return text;
     }
 
     @Override
     public Component myTableCellRendererComponent(JDTableModel table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-        jlr.setText(((CustomizeSetting) value).getPackageName());
+        jlr.setText(((CustomizeSetting) value).getPassword());
         return jlr;
     }
 
     @Override
     public void setValue(Object value, Object object) {
-        ((CustomizeSetting) object).setPackageName((String) value);
+        ((CustomizeSetting) object).setPassword((String) value);
     }
 
     @Override

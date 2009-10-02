@@ -8,6 +8,7 @@ import jd.plugins.optional.customizer.columns.EnabledColumn;
 import jd.plugins.optional.customizer.columns.ExtractColumn;
 import jd.plugins.optional.customizer.columns.NameColumn;
 import jd.plugins.optional.customizer.columns.PackageNameColumn;
+import jd.plugins.optional.customizer.columns.PasswordColumn;
 import jd.plugins.optional.customizer.columns.RegexColumn;
 import jd.utils.locale.JDL;
 
@@ -33,6 +34,7 @@ public class CustomizerTableModel extends JDTableModel {
         this.addColumn(new PackageNameColumn(JDL.L(JDL_PREFIX + "packageName", "FilePackage name"), this));
         this.addColumn(new DownloadDirColumn(JDL.L(JDL_PREFIX + "downloadDir", "Download directory"), this));
         this.addColumn(new ExtractColumn(JDL.L(JDL_PREFIX + "extract", "Extract"), this));
+        this.addColumn(new PasswordColumn(JDL.L(JDL_PREFIX + "password", "Password"), this));
     }
 
     @Override

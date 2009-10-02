@@ -29,7 +29,7 @@ public class Regex {
     private Matcher matcher;
 
     public Regex(Matcher matcher) {
-        if (matcher == null) { return; }
+        if (matcher == null) return;
         this.matcher = matcher;
     }
 
@@ -112,6 +112,7 @@ public class Regex {
      * @return
      */
     public Matcher getMatcher() {
+        if (matcher == null) return null;
         matcher.reset();
         return matcher;
     }
@@ -160,6 +161,7 @@ public class Regex {
     }
 
     public boolean matches() {
+        if (matcher == null) return false;
         matcher.reset();
         return matcher.find();
     }
