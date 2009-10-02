@@ -92,14 +92,29 @@ public class IfolderRu extends PluginForHost {
             String captchaurl = br.getRegex("(/random/images/.*?)\"").getMatch(0);
             String tag = br.getRegex("tag.value = \"(.*?)\"").getMatch(0);
             String secret = br.getRegex("var\\s+s=\\s+'(.*?)';").getMatch(0);
-            if (secret == null || captchaForm == null || captchaurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-            secret = secret.substring(2);
+            if (captchaForm == null || captchaurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             if (tag != null && secret != null) {
+                /* first sort of download form */
+                /* ads first, download then */
+                secret = secret.substring(2);
                 captchaForm.put("interstitials_session", tag);
                 InputField nv = new InputField(secret, "1");
                 captchaForm.addInputField(nv);
-            } else
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            } else {
+                /* second sort of download form */
+                /* download while viewing ads */
+                secret = br.getRegex("var . = \\[.*?'.*?'.*?'(.*?)'").getMatch(0);
+                String name = br.getRegex("var . = \\[.*?'(.*?)'").getMatch(0);
+                if (name != null && secret != null) {
+                    secret = secret.substring(2);
+                    captchaForm.put(name, secret);
+                    captchaForm.remove("activate_ads_free");
+                    captchaForm.remove("activate_ads_free");
+                    captchaForm.remove("activate_ads_free");
+                    captchaForm.put("activate_ads_free", "0");
+                } else
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            }
             captchaForm.setAction(br.getURL());
 
             /* Captcha */
@@ -110,7 +125,7 @@ public class IfolderRu extends PluginForHost {
             } catch (Exception e) {
                 br.submitForm(captchaForm);
             }
-            String directLink = br.getRegex("id=\"download_file_href\"\\s+href=\"(.*?)\"").getMatch(0);
+            String directLink = br.getRegex("id=\"download_file_href\".*?href=\"(.*?)\"").getMatch(0);
             if (directLink != null) {
                 dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, directLink, true, -2);
                 do_download = true;
@@ -118,7 +133,7 @@ public class IfolderRu extends PluginForHost {
             }
         }
         if (!do_download) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("downloadlink.status.error.captcha_wrong", "Captcha wrong"));
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA, JDL.L("downloadlink.status.error.captcha_wrong", "Captcha wrong"));
         } else
             dl.startDownload();
     }
