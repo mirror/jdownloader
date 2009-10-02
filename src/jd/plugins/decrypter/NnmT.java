@@ -16,6 +16,7 @@
 
 package jd.plugins.decrypter;
 
+import java.net.URI;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
@@ -25,8 +26,50 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anonym.to" }, urls = { "http://[\\w\\.]*?anonym\\.to/\\?.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {}, flags = {})
 public class NnmT extends PluginForDecrypt {
+    private static final String[] ANNOTATION_NAMES = new String[] { "anonym.to", "dereferer.info" };
+
+    /**
+     * Returns the annotations names array
+     * 
+     * @return
+     */
+    public static String[] getAnnotationNames() {
+        return ANNOTATION_NAMES;
+    }
+
+    /**
+     * returns the annotation pattern array
+     * 
+     * @return
+     */
+    public static String[] getAnnotationUrls() {
+        String[] names = getAnnotationNames();
+        String[] ret = new String[names.length];
+// "http://[\\w\\.]*?anonym\\.to/\\?.+" 
+        for (int i = 0; i < ret.length; i++) {
+            ret[i] = "(http://[\\w\\.]*?" + names[i].replaceAll("\\.", "\\\\.") + "\\?/.+)|(http://[\\w\\-]{5,16}\\." + names[i].replaceAll("\\.", "\\\\.") + ")";
+
+        }
+        return ret;
+    }
+
+    /**
+     * Returns the annotations flags array
+     * 
+     * @return
+     */
+    public static int[] getAnnotationFlags() {
+        String[] names = getAnnotationNames();
+        int[] ret = new int[names.length];
+
+        for (int i = 0; i < ret.length; i++) {
+            ret[i] = 0;
+
+        }
+        return ret;
+    }
 
     public NnmT(PluginWrapper wrapper) {
         super(wrapper);
@@ -37,7 +80,8 @@ public class NnmT extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         this.setBrowserExclusive();
         ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
-        links.add(this.createDownloadlink(parameter.getCryptedUrl().replaceFirst("http://.*?anonym.to/\\?", "")));
+        String host = new URI(parameter.getCryptedUrl()).getHost();
+        links.add(this.createDownloadlink(parameter.getCryptedUrl().replaceFirst("http://.*?"+host+"/\\?", "")));
         return links;
     }
 

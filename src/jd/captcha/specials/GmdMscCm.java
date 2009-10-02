@@ -7,6 +7,8 @@ import java.io.IOException;
 
 import javax.imageio.ImageIO;
 
+import jd.nutils.Colors;
+
 /**
  * Captcha Recognition for gmd,uploadr
  * 
@@ -26,7 +28,6 @@ public class GmdMscCm {
     public GmdMscCm(File file) {
         this.file = file;
     }
-
     public int[] getResult() {
         try {
             pic = ImageIO.read(this.file);
@@ -75,14 +76,7 @@ public class GmdMscCm {
     }
 
     private boolean colorCompare(Color color1,Color color2) {
-      int unterschied = 75;
-      
-      if((color1.getRed() + unterschied) >= color2.getRed()
-              && (color1.getRed() - unterschied) <= color2.getRed()
-              && (color1.getGreen() + unterschied) >= color2.getGreen()
-              && (color1.getGreen() - unterschied) <= color2.getGreen()
-              && (color1.getBlue() + unterschied) >= color2.getBlue()
-              && (color1.getBlue() - unterschied) <= color2.getBlue()) {
+      if(Colors.getColorDifference(color1.getRGB(), color2.getRGB())<70) {
           return true;
       } else {
           return false;
@@ -90,7 +84,7 @@ public class GmdMscCm {
     }
     
     private boolean colorCompare2(Color color1, Color color2) {
-        if ((Color.RGBtoHSB(color1.getRed(), color1.getGreen(), color1.getBlue(), null)[0] == Color.RGBtoHSB(color2.getRed(), color2.getGreen(), color2.getBlue(), null)[0] || colorCompare(color1, color2))
+        if (color1.getRGB()!=0xffffff&&color1.getRGB()!=0x000000&&(Color.RGBtoHSB(color1.getRed(), color1.getGreen(), color1.getBlue(), null)[0] == Color.RGBtoHSB(color2.getRed(), color2.getGreen(), color2.getBlue(), null)[0] || colorCompare(color1, color2))
                 && !colorCompare(color1,new Color(255, 255, 255))
                 && !colorCompare(color1,new Color(0, 0, 0))) {
             return true;
