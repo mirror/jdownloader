@@ -157,7 +157,7 @@ public class ShareOnlineBiz extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("Probleme mit einem Fileserver")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.shareonlinebiz.errors.servernotavailable", "Server temporarily down"), 15 * 60 * 1000l);
 
-        if (br.containsHTML("Server Info: no slots available")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.shareonlinebiz.errors.servernotavailable2", "No slots available"), 15 * 60 * 1000l);
+        if (br.containsHTML("Server Info: no slots available")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.shareonlinebiz.errors.servernotavailable3", "No free Free-User Slots! Get PremiumAccount or wait!"), 15 * 60 * 1000l);
         /* CaptchaCode holen */
         String captchaCode = getCaptchaCode("http://www.share-online.biz/captcha.php", downloadLink);
         Form form = br.getForm(1);

@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2008  JD-Team support@jdownloader.org
+//    Copyright (C) 2009  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -42,8 +42,6 @@ import com.sun.org.apache.xerces.internal.impl.xpath.regex.ParseException;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "depositfiles.com" }, urls = { "http://[\\w\\.]*?depositfiles\\.com(/\\w{1,3})?/files/[\\w]+" }, flags = { 2 })
 public class DepositFiles extends PluginForHost {
 
-    private static final String DOWNLOAD_NOTALLOWED = "Entschuldigung aber im Moment koennen Sie nur diesen Downloadmodus anwenden";
-
     static private final String FILE_NOT_FOUND = "Dieser File existiert nicht";
 
     private static final String PATTERN_PREMIUM_FINALURL = "<div id=\"download_url\">.*?<a href=\"(.*?)\"";
@@ -59,7 +57,6 @@ public class DepositFiles extends PluginForHost {
         this.enablePremium("http://depositfiles.com/signup.php?ref=down1");
     }
 
-    // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
         requestFileInformation(downloadLink);
@@ -69,8 +66,7 @@ public class DepositFiles extends PluginForHost {
             link = br.getRedirectLocation().replaceAll("/\\w{2}/files/", "/de/files/");
             br.getPage(link);
         }
-
-        if (br.containsHTML(DOWNLOAD_NOTALLOWED)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l); }
+        checkErrors();
         String dllink = br.getRegex("download_url\".*?<form action=\"(.*?)\"").getMatch(0);
         if (dllink != null) {
             // handling for txt file downloadlinks, dunno why they made a
@@ -87,19 +83,10 @@ public class DepositFiles extends PluginForHost {
             }
             dl.startDownload();
         } else {
-            if (br.containsHTML("You used up your limit") || br.containsHTML("Please try in")) {
-                String wait = br.getRegex("html_download_api-limit_interval\">(\\d+)</span>").getMatch(0);
-                if (wait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait.trim()) * 1000l);
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1000l);
-            }
             Form form = br.getFormBySubmitvalue("Kostenlosen+download");
             if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             br.submitForm(form);
-            if (br.containsHTML("We are sorry, but all downloading slots for your country are busy")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.depositfilescom.errors.allslotsbusy", "All download slots for your country are busy"), 10 * 60 * 1000l);
-            String wait = br.getRegex("Bitte versuchen Sie noch mal nach(.*?)<\\/strong>").getMatch(0);
-            if (wait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Regex.getMilliSeconds(wait));
-            if (br.containsHTML("Von Ihren IP-Addresse werden schon einige")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 2 * 60 * 1001l);
-
+            checkErrors();
             if (br.getRedirectLocation() != null && br.getRedirectLocation().indexOf("error") > 0) { throw new PluginException(LinkStatus.ERROR_RETRY); }
             dllink = br.getRegex("<div id=\"download_url\" style=\"display:none;\">.*?<form action=\"(.*?)\" method=\"get\" onSubmit=\"download_start").getMatch(0);
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
@@ -115,6 +102,28 @@ public class DepositFiles extends PluginForHost {
             }
             dl.startDownload();
         }
+    }
+
+    public void checkErrors() throws NumberFormatException, PluginException {
+        /* download not available at the moment */
+        if (br.containsHTML("Entschuldigung aber im Moment koennen Sie nur diesen Downloadmodus")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
+        /* limit reached */
+        if (br.containsHTML("You used up your limit") || br.containsHTML("Please try in")) {
+            String wait = br.getRegex("html_download_api-limit_interval\">(\\d+)</span>").getMatch(0);
+            if (wait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait.trim()) * 1000l);
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1000l);
+        }
+        /* county slots full */
+        if (br.containsHTML("but all downloading slots for your country")) {
+            String wait = br.getRegex("html_download_api-limit_country\">(\\d+)</span>").getMatch(0);
+            if (wait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait.trim()) * 1000l);
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.depositfilescom.errors.allslotsbusy", "All download slots for your country are busy"), 30 * 60 * 1000l);
+        }
+        /* already loading */
+        if (br.containsHTML("Von Ihren IP-Addresse werden schon einige")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1001l);
+        /* unknown error, try again */
+        String wait = br.getRegex("Bitte versuchen Sie noch mal nach(.*?)<\\/strong>").getMatch(0);
+        if (wait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Regex.getMilliSeconds(wait));
     }
 
     public void login(Account account) throws Exception {
@@ -143,7 +152,6 @@ public class DepositFiles extends PluginForHost {
         return true;
     }
 
-    // @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         setBrowserExclusive();
@@ -179,7 +187,6 @@ public class DepositFiles extends PluginForHost {
         return ai;
     }
 
-    // @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
         login(account);
@@ -202,7 +209,7 @@ public class DepositFiles extends PluginForHost {
             br.getPage(link);
         }
 
-        if (br.containsHTML(DOWNLOAD_NOTALLOWED)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l); }
+        checkErrors();
         link = br.getRegex(PATTERN_PREMIUM_FINALURL).getMatch(0);
         if (link == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.setDebug(true);
@@ -219,7 +226,6 @@ public class DepositFiles extends PluginForHost {
         dl.startDownload();
     }
 
-    // @Override
     public String getAGBLink() {
         return "http://depositfiles.com/en/agreem.html";
     }
@@ -228,7 +234,6 @@ public class DepositFiles extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replaceAll("\\.com(/.*?)?/files", ".com/de/files"));
     }
 
-    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
         String link = downloadLink.getDownloadURL();
@@ -251,30 +256,20 @@ public class DepositFiles extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
-    /*
-     * /* public String getVersion() { return getVersion("$Revision$"); }
-     */
-
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    // @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return simultanpremium;
     }
 
-    // @Override
     public void reset() {
     }
 
-    // @Override
     public void resetPluginGlobals() {
     }
 
-    // @Override
     public int getTimegapBetweenConnections() {
         return 800;
     }

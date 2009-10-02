@@ -266,7 +266,7 @@ public class SingleDownloadController extends Thread {
 
     private void onErrorPluginDefect(DownloadLink downloadLink2, PluginForHost currentPlugin2) {
         logger.warning("The Plugin for " + currentPlugin.getHost() + " seems to be out of date(rev" + downloadLink.getPlugin().getVersion() + "). Please inform the Support-team http://jdownloader.org/support.");
-        logger.warning(downloadLink2.getLinkStatus().getErrorMessage());
+        if (downloadLink2.getLinkStatus().getErrorMessage() != null) logger.warning(downloadLink2.getLinkStatus().getErrorMessage());
         // Dieser Exception deutet meistens auf einen PLuginfehler hin. Deshalb
         // wird in diesem Fall die zuletzt geladene browserseite aufgerufen.
         try {
