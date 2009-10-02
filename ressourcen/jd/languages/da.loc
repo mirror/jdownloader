@@ -99,6 +99,7 @@ easycaptcha.loadcaptchas.link = Link
 easycaptcha.loadcaptchas.loaddirect = Load direkte hvis det er muligt (meget hurtigere)
 easycaptcha.loadcaptchas.loadimages = Loader billeder, vent venligst
 easycaptcha.loadcaptchas.title = Load Captchas
+easycaptcha.mask = Maske:
 easycaptcha.needcaptchas = Du mangler Captchas først!
 easycaptcha.opencaptchafolder = Åben Captcha Mappe
 easycaptcha.orginal = Original:
