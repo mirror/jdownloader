@@ -127,8 +127,9 @@ public class FilesHackCom extends PluginForHost {
         
         int configuredServerNumber = getConfiguredServer();
         int numberOfObtainedServerStrings = serversList.size();
-        if (configuredServerNumber > numberOfObtainedServerStrings) {
-        	logger.warning("The configured server number [" + configuredServerNumber + "] is bigger than the number of obtained server strings [" + numberOfObtainedServerStrings + "]");
+        if (configuredServerNumber >= numberOfObtainedServerStrings) {
+        	String how = configuredServerNumber == numberOfObtainedServerStrings ? "equal to" : "bigger than";
+        	logger.warning("The configured server number [" + configuredServerNumber + "] is " + how + " the number of obtained server strings [" + numberOfObtainedServerStrings + "]");
         	
         	if (numberOfObtainedServerStrings > 1) {
         		// verify if the configured default server was found in the page
