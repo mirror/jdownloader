@@ -26,27 +26,33 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megaftp.com" }, urls = { "http://[\\w\\.]*?megaftp\\.com/[0-9]+" }, flags = { 0 })
-public class MegaFtpCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bigandfree.com" }, urls = { "http://[\\w\\.]*?(megaftp|bigandfree)\\.com/[0-9]+" }, flags = { 0 })
+public class BigAndFreeCom extends PluginForHost {
 
-    public MegaFtpCom(PluginWrapper wrapper) {
+    public BigAndFreeCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     // @Override
     public String getAGBLink() {
-        return "http://www.megaftp.com/contact";
+        return "http://www.bigandfree.com/tos";
     }
 
+    
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replaceAll("(megaftp|bigandfree)", "bigandfree"));
+    }
+    
+    
+    
     // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception, PluginException, InterruptedException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("MegaFTP is currently under scheduled maintenance")) return AvailableStatus.UNCHECKABLE;
-        if (br.containsHTML("404 Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("The file you requested has been removed")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
-        String filename = br.getRegex("<b><font color=\"#000000\" size=\"4\">File Name: </font><font color=\"#FC8622\" size=\"4\">(.*?)</font></b>").getMatch(0);
+        String filename = br.getRegex("File Name: </font><font class=.*?>(.*?)</font>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
         br.setFollowRedirects(false);
@@ -56,11 +62,17 @@ public class MegaFtpCom extends PluginForHost {
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        Form freeform = br.getFormbyProperty("name", "chosen");
+        if (freeform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        freeform.setAction(downloadLink.getDownloadURL());
+        freeform.remove("chosen_prem");
+        br.submitForm(freeform);
         // Datei hat Passwortschutz?
         if (br.containsHTML("This file is password-protected")) {
             String passCode;
             DownloadLink link = downloadLink;
             Form form = br.getFormbyProperty("name", "pswcheck");
+            if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             if (link.getStringProperty("pass", null) == null) {
                 /* Usereingabe */
                 passCode = Plugin.getUserInput(null, link);
@@ -71,27 +83,30 @@ public class MegaFtpCom extends PluginForHost {
 
             /* Passwort übergeben */
             form.put("psw", passCode);
+            form.setAction(downloadLink.getDownloadURL());
             br.submitForm(form);
 
             form = br.getFormbyProperty("name", "pswcheck");
             if (form != null && br.containsHTML("Invalid Password")) {
                 link.setProperty("pass", null);
-                throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.errors.wrongpassword", "Password wrong"));
+                throw new PluginException(LinkStatus.ERROR_RETRY, JDL.L("plugins.errors.wrongpassword", "Password wrong"));
             } else {
                 link.setProperty("pass", passCode);
             }
         }
         // often they only change this form
-        Form downloadForm = br.getForm(0);
+        Form downloadForm = br.getForm(1);
+        if (downloadForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         String current = br.getRegex("name=\"current\" value=\"(.*?)\"").getMatch(0);
-        String wait = br.getRegex("wait for the countdown.*?<script type=\"text/javascript\">.*?var.*?= (\\d+);").getMatch(0);
-        if (wait != null) sleep(Long.parseLong(wait.trim()) * 1000, downloadLink);
         if (current == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        String wait = br.getRegex("var x = (\\d+);").getMatch(0);
+        if (wait != null) sleep(Long.parseLong(wait.trim()) * 1000, downloadLink);
         downloadForm.put("current", current);
         downloadForm.put("limit_reached", "0");
-        downloadForm.put("download_now", "Click+Here+to+Download");
+        downloadForm.put("download_now", "Click+here+to+download");
+        downloadForm.setAction(downloadLink.getDownloadURL());
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadForm, true, -20);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadForm, true, 0);
         if (!(dl.getConnection().isContentDisposition()) && !dl.getConnection().getContentType().contains("octet")) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_FATAL);

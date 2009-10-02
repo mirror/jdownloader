@@ -68,6 +68,10 @@ public class Shareplacecom extends PluginForHost {
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("File name: </b>(.*?)<b>", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        filename = filename.replace("(", "%2528");
+        filename = filename.replace(")", "%2529");
         String page = Encoding.urlDecode(br.toString(), true);
         String[] links = HTMLParser.getHttpLinks(page, null);
         boolean found = false;
@@ -77,7 +81,7 @@ public class Shareplacecom extends PluginForHost {
             sleep(tt * 1001l, downloadLink);
         }
         for (String link : links) {
-            if (!new Regex(link, ".*?\\.php.*?&.*?$").matches()) continue;
+            if (!link.contains(filename)) continue;
             Browser brc = br.cloneBrowser();
             dl = BrowserAdapter.openDownload(brc, downloadLink, link);
             if (dl.getConnection().isContentDisposition()) {

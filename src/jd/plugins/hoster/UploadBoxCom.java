@@ -80,11 +80,20 @@ public class UploadBoxCom extends PluginForHost {
         br.getPage(parameter.getDownloadURL());
         if (br.containsHTML("class=\"not_found\">")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("id=\"error\">")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<.*?>File name:<.*?>(.*?)</.*?>").getMatch(0);
-        String filesize = br.getRegex("<.*?>File size:<.*?>(.*?)</.*?>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex(">File name:</td>.*?<b>(.*?)</b>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>UploadBox.*?Downloading(.*?)</title>").getMatch(0).trim();
+            if (filename == null) {
+                filename = br.getRegex("description\" content=\"Downloading(.*?)! Free").getMatch(0).trim();
+
+            }
+        }
+        String filesize = br.getRegex(">S[ie]+ze:</td>.*?<td>.*?<b>(.*?)</b>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         parameter.setName(filename.trim());
-        parameter.setDownloadSize(Regex.getSize(filesize));
+        if (filesize != null) {
+            parameter.setDownloadSize(Regex.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 

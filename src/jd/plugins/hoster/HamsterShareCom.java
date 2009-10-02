@@ -55,7 +55,7 @@ public class HamsterShareCom extends PluginForHost {
         String dllink = br.getRegex("window\\.document\\.location\\.href='(.*?)'\"").getMatch(0);
 
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -20);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         dl.startDownload();
     }
 
