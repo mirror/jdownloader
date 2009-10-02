@@ -21,6 +21,7 @@ import java.awt.event.ActionEvent;
 import javax.swing.AbstractAction;
 
 import jd.gui.action.JDAction;
+import jd.gui.swing.GuiRunnable;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -101,11 +102,18 @@ public abstract class ToolBarAction extends JDAction {
         getActionListener().actionPerformed(new ActionEvent(this, getActionID(), getTitle()));
     }
 
-    public void setSelected(boolean selected) {
+    public void setSelected(final boolean selected) {
+        new GuiRunnable<Object>() {
+            public Object runSave() {
+                setSelectedInternal(selected);
+                return null;
+            }
+        }.start();
+    }
 
+    private void setSelectedInternal(boolean selected) {
         super.setSelected(selected);
-        this.setType(Types.TOGGLE);
-
+        setType(Types.TOGGLE);
     }
 
     /**

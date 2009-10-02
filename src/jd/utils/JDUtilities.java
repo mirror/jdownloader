@@ -727,6 +727,19 @@ public class JDUtilities {
         return null;
     }
 
+    public static File getResourceFile(String resource, boolean mkdirs) {
+        URL clURL = getResourceURL(resource);
+        if (clURL != null) {
+            try {
+                File f = new File(clURL.toURI());
+                if (mkdirs) f.mkdirs();
+                return f;
+            } catch (URISyntaxException e) {
+            }
+        }
+        return null;
+    }
+
     /**
      * Führt einen Externen befehl aus.
      * 

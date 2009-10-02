@@ -143,25 +143,22 @@ public class LnkCrptWs extends PluginForDecrypt {
             }
         }
 
-        File containersFolder = JDUtilities.getResourceFile("container/");
-        if (!containersFolder.exists()) containersFolder.mkdir();
-
         File container = null;
         if (map.containsKey("dlc")) {
-            container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
+            container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc", true);
             if (!container.exists()) container.createNewFile();
 
             br.cloneBrowser().getDownload(container, map.get("dlc"));
         } else if (map.containsKey("cnl")) {
-            container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
+            container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc", true);
             if (!container.exists()) container.createNewFile();
             br.cloneBrowser().getDownload(container, map.get("cnl").replace("dlc://", "http://"));
         } else if (map.containsKey("ccf")) {
-            container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".ccf");
+            container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".ccf", true);
             if (!container.exists()) container.createNewFile();
             br.cloneBrowser().getDownload(container, map.get("ccf"));
         } else if (map.containsKey("rsdf")) {
-            container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".rsdf");
+            container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".rsdf", true);
             if (!container.exists()) container.createNewFile();
             br.cloneBrowser().getDownload(container, map.get("rsdf"));
         }
