@@ -75,7 +75,6 @@ import jd.gui.swing.jdgui.views.linkgrabberview.LinkGrabberPanel;
 import jd.gui.swing.jdgui.views.logview.LogView;
 import jd.gui.swing.jdgui.views.sidebars.configuration.AddonConfig;
 import jd.gui.swing.jdgui.views.sidebars.configuration.ConfigSidebar;
-import jd.nutils.Formatter;
 import jd.nutils.JDFlags;
 import jd.nutils.JDImage;
 import jd.plugins.Account;
@@ -104,7 +103,6 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
     private MainToolBar toolBar;
     private JPanel waitingPane;
     private boolean exitRequested = false;
-    private boolean iconified = false;
 
     private JDGui() {
         super("");
@@ -112,8 +110,6 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         ClipboardHandler.getClipboard().setTempDisabled(true);
         // Important for unittests
         mainFrame.setName("MAINFRAME");
-        // GUIUtils.getConfig() =
-        // SubConfiguration.getConfig(JDGuiConstants.CONFIG_PARAMETER);
 
         initDefaults();
         initComponents();
@@ -177,10 +173,6 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         configurationView = new ConfigurationView();
 
         logView = new LogView();
-        // mainTabbedPane.add());
-        // mainTabbedPane.add(new JLabel("III2"));
-        // mainTabbedPane.add(new JLabel("III3"));
-        // mainTabbedPane.add(new JLabel("III4"));
 
         mainTabbedPane.addTab(downloadView);
 
@@ -188,7 +180,6 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         mainTabbedPane.addTab(configurationView);
 
         mainTabbedPane.addTab(logView);
-        // mainTabbedPane.addTab(new ClosableView());
         mainTabbedPane.setSelectedComponent(downloadView);
         toolBar.setList(GUIUtils.getConfig().getGenericProperty("TOOLBAR", ToolBar.DEFAULT_LIST).toArray(new String[] {}));
 
@@ -203,7 +194,6 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
         mainFrame.add(toolBar, "dock NORTH");
 
         contentPane.add(mainTabbedPane);
-
         contentPane.add(multiProgressBar, "hidemode 3");
         contentPane.add(statusBar, "dock SOUTH");
 
@@ -387,40 +377,12 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
 
             break;
         case ControlEvent.CONTROL_DOWNLOAD_START:
-            new Thread() {
-                public void run() {
-                    boolean needupdate = false;
-                    while (true) {
-                        if (DownloadWatchDog.getInstance().getDownloadStatus() != DownloadWatchDog.STATE.RUNNING) break;
-                        if (iconified) {
-                            needupdate = true;
-                            setWindowTitle("JD " + "AC: " + DownloadWatchDog.getInstance().getActiveDownloads() + " DL: " + Formatter.formatReadable(DownloadWatchDog.getInstance().getTotalSpeed()));
-                        } else {
-                            if (needupdate) setWindowTitle(JDUtilities.getJDTitle());
-                            needupdate = false;
-                        }
-                        try {
-                            Thread.sleep(1000);
-                        } catch (Exception e) {
-                        }
-                    }
-                    setWindowTitle(JDUtilities.getJDTitle());
-                }
-            }.start();
             Balloon.showIfHidden(JDL.L("ballon.download.title", "Download"), JDTheme.II("gui.images.next", 32, 32), JDL.L("ballon.download.finished.started", "Download started"));
             break;
         case ControlEvent.CONTROL_DOWNLOAD_STOP:
             Balloon.showIfHidden(JDL.L("ballon.download.title", "Download"), JDTheme.II("gui.images.next", 32, 32), JDL.L("ballon.download.finished.stopped", "Download stopped"));
             break;
         }
-    }
-
-    public void windowIconified(WindowEvent e) {
-        iconified = true;
-    }
-
-    public void windowDeiconified(WindowEvent e) {
-        iconified = false;
     }
 
     /**
@@ -454,9 +416,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
 
     @Override
     public void setWaiting(final boolean b) {
-
         internalSetWaiting(b);
-
     }
 
     protected void internalSetWaiting(final boolean b) {
@@ -468,9 +428,7 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
                 getMainFrame().getGlassPane().setVisible(b);
                 return null;
             }
-
         }.waitForEDT();
-
     }
 
     @Override
@@ -494,14 +452,10 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
     }
 
     public void requestPanel(final Panels panel, final Object param) {
-
         new GuiRunnable<Object>() {
-
             @Override
             public Object runSave() {
-
                 switch (panel) {
-
                 case DOWNLOADLIST:
                     mainTabbedPane.setSelectedComponent(downloadView);
                     break;
@@ -515,20 +469,12 @@ public class JDGui extends SwingGui implements LinkGrabberDistributeEvent {
                         Premium p = (Premium) configurationView.getContent();
                         p.setSelectedAccount((Account) param);
                     }
-
                     mainTabbedPane.setSelectedComponent(JDGui.this.configurationView);
-
-                    // Premium.showAccountInformation(this, account);
                     break;
-
                 case ADDON_MANAGER:
                     ((ConfigSidebar) JDGui.this.configurationView.getSidebar()).setSelectedTreeEntry(ConfigPanelAddons.class);
-
                     mainTabbedPane.setSelectedComponent(JDGui.this.configurationView);
-
-                    // Premium.showAccountInformation(this, account);
                     break;
-
                 case CONFIGPANEL:
                     if (param instanceof ConfigContainer) {
                         if (((ConfigContainer) param).getEntries().size() == 0) return null;

@@ -40,6 +40,7 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.SubConfiguration;
+import jd.controlling.DownloadWatchDog;
 import jd.controlling.JDLogger;
 import jd.controlling.LinkGrabberController;
 import jd.controlling.LinkGrabberControllerEvent;
@@ -47,7 +48,9 @@ import jd.controlling.LinkGrabberControllerListener;
 import jd.event.ControlEvent;
 import jd.gui.swing.GuiRunnable;
 import jd.gui.swing.SwingGui;
+import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.menu.MenuAction;
+import jd.nutils.Formatter;
 import jd.nutils.JDImage;
 import jd.nutils.OSDetector;
 import jd.plugins.OptionalPlugin;
@@ -70,6 +73,8 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
 
     private static final String PROPERTY_SHOW_ON_LINKGRAB = "PROPERTY_SHOW_ON_LINKGRAB";
 
+    private static final String PROPERTY_SHOW_INFO_IN_TITLE = "PROPERTY_SHOW_INFO_IN_TITLE";
+
     private TrayIconPopup trayIconPopup;
 
     private TrayIcon trayIcon;
@@ -79,6 +84,8 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     private TrayIconTooltip trayIconTooltip;
 
     private TrayMouseAdapter ma;
+
+    private Thread updateThread;
 
     private boolean shutdown = false;
 
@@ -90,12 +97,12 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
         initConfig();
     }
 
-    // @Override
+    @Override
     public ArrayList<MenuAction> createMenuitems() {
         return null;
     }
 
-    // @Override
+    @Override
     public boolean initAddon() {
         return new GuiRunnable<Boolean>() {
 
@@ -141,9 +148,10 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_TOOLTIP, JDL.L("plugins.optional.JDLightTray.tooltip", "Show Tooltip")).setDefaultValue(true));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_SHOW_ON_LINKGRAB, JDL.L("plugins.optional.JDLightTray.linkgrabber", "Show on Linkgrabbing")).setDefaultValue(true));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_SHOW_INFO_IN_TITLE, JDL.L("plugins.optional.JDLightTray.titleinfo", "Show info in TaskBar when minimized")).setDefaultValue(true));
     }
 
-    // @Override
+    @Override
     public void controlEvent(ControlEvent event) {
         if (event.getID() == ControlEvent.CONTROL_INIT_COMPLETE && event.getSource() instanceof Main) {
             logger.info("JDLightTrayIcon Init complete");
@@ -159,6 +167,34 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
             }
         } else if (event.getID() == ControlEvent.CONTROL_SYSTEM_EXIT) {
             shutdown = true;
+        } else if (event.getID() == ControlEvent.CONTROL_DOWNLOAD_START) {
+            updateThread = new Thread() {
+                @Override
+                public void run() {
+                    boolean needupdate = false;
+                    while (true) {
+                        if (DownloadWatchDog.getInstance().getDownloadStatus() != DownloadWatchDog.STATE.RUNNING) break;
+                        if (iconified && subConfig.getBooleanProperty(PROPERTY_SHOW_INFO_IN_TITLE, true)) {
+                            needupdate = true;
+                            JDGui.getInstance().setWindowTitle("JD AC: " + DownloadWatchDog.getInstance().getActiveDownloads() + " DL: " + Formatter.formatReadable(DownloadWatchDog.getInstance().getTotalSpeed()));
+                        } else {
+                            if (needupdate) {
+                                JDGui.getInstance().setWindowTitle(JDUtilities.getJDTitle());
+                                needupdate = false;
+                            }
+                        }
+                        try {
+                            Thread.sleep(1000);
+                        } catch (Exception e) {
+                        }
+                    }
+                    JDGui.getInstance().setWindowTitle(JDUtilities.getJDTitle());
+                }
+            };
+            updateThread.start();
+        } else if (event.getID() == ControlEvent.CONTROL_DOWNLOAD_STOP) {
+            if (updateThread != null) updateThread.interrupt();
+            JDGui.getInstance().setWindowTitle(JDUtilities.getJDTitle());
         }
         super.controlEvent(event);
     }
@@ -241,27 +277,25 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     }
 
     public void mouseDragged(MouseEvent e) {
-
     }
 
     public void mouseMoved(MouseEvent e) {
-
     }
 
-    // @Override
+    @Override
     public void onExit() {
         removeTrayIcon();
         LinkGrabberController.getInstance().removeListener(this);
         if (guiFrame != null) {
-            guiFrame.removeWindowListener(JDLightTray.this);
-            guiFrame.removeWindowStateListener(JDLightTray.this);
+            guiFrame.removeWindowListener(this);
+            guiFrame.removeWindowStateListener(this);
             if (!shutdown) miniIt(false);
         }
     }
 
     private void calcLocation(final JWindow window, final Point p) {
         new GuiRunnable<Object>() {
-            // @Override
+            @Override
             public Object runSave() {
                 Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
                 int limitX = (int) screenSize.getWidth() / 2;
@@ -333,6 +367,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
         }
     }
 
+    @Override
     public Object interact(String command, Object parameter) {
         if (command == null) return null;
         if (command.equalsIgnoreCase("enabled")) return subConfig.getBooleanProperty(PROPERTY_MINIMIZE_TO_TRAY, true);
@@ -350,7 +385,6 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     }
 
     public void windowActivated(WindowEvent e) {
-
     }
 
     public void windowClosed(WindowEvent e) {
