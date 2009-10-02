@@ -23,6 +23,7 @@ import java.util.HashMap;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -34,6 +35,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginUtils;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
+
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
 
@@ -82,17 +85,22 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         // Different captcha types
         boolean valid = true;
-        for (int i = 0; i < 5; ++i) {
+        for (int i = 0; i < 15; ++i) {
             Form captcha = br.getForm(0);
-            String url = captcha.getRegex("src=\"([^\"]*)\"[^>]*style=\"cursor:(?![^>]*display[^>]*none)").getMatch(0);
-            if (url == null) url = captcha.getRegex("style=\"cursor:(?![^>]*display[^>]*none)src=\"([^\"]*)\"").getMatch(1);
-            if (url == null && captcha != null && !captcha.hasInputFieldByName("key")) url = captcha.getRegex("src=\"(.*?)\"").getMatch(0);
+            String url = captcha.getRegex("src=\"([^\"]*\\.php\\?id=[^\"]*)\"[^>]*style=\"cursor:(?![^>]*display[^>]*none)").getMatch(0);
+            if (url == null) url = captcha.getRegex("style=\"cursor:(?![^>]*display[^>]*none)src=\"([^\"]*\\.php\\?id=[^\"]*)\"").getMatch(1);
+            if (url == null && captcha != null && !captcha.hasInputFieldByName("key")) url = captcha.getRegex("src=\"([^\"]*\\.php\\?id=[^\"]*)\"").getMatch(0);
             if (url != null) {
                 valid = false;
                 File file = this.getLocalCaptchaFile();
                 String id = url.replaceFirst(".*id=", "");
-//                System.out.println(id);
-                Browser.download(file, br.cloneBrowser().openGetConnection("http://linkcrypt.ws/captx.php?id=" + id));
+                // System.out.println(url);
+                // System.out.println(id);
+                // br.cloneBrowser().getDownload(file, url);
+                br.cloneBrowser().getDownload(file, "http://linkcrypt.ws/captx.php?id=" + id);
+
+                // Browser.download(file,
+                // br.cloneBrowser().openGetConnection(url));
                 // redr System.out.println(url);
                 Point p;
                 // if (url.contains("captx.php")) {
@@ -116,8 +124,9 @@ public class LnkCrptWs extends PluginForDecrypt {
                 break;
             }
         }
-
         if (valid == false) throw new DecrypterException(DecrypterException.CAPTCHA);
+        // System.out.println(br);
+
         // Look for containers
         String[] containers = br.getRegex("eval\\((.*?\\,\\{\\}\\))\\)").getColumn(0);
         HashMap<String, String> map = new HashMap<String, String>();
@@ -130,19 +139,20 @@ public class LnkCrptWs extends PluginForDecrypt {
 
             String code = Context.toString(result);
             // System.out.println(code);
-            String[] row = new Regex(code, "href=\"([^\"]+)\"[^>]*>(<u>)?<img.*?image/(.*?)\\.").getRow(0);
+            String[] row = new Regex(code, "href=\"([^\"]+)\"[^>]*>.*?<img.*?image/(.*?)\\.").getRow(0);
             if (row != null) {
-                map.put(row[2], row[0]);
-            } 
+                map.put(row[1], row[0]);
+            }
         }
-        
+
         File containersFolder = JDUtilities.getResourceFile("container/");
         if (!containersFolder.exists()) containersFolder.mkdir();
-        
+
         File container = null;
         if (map.containsKey("dlc")) {
             container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
             if (!container.exists()) container.createNewFile();
+
             br.cloneBrowser().getDownload(container, map.get("dlc"));
         } else if (map.containsKey("cnl")) {
             container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
@@ -157,7 +167,7 @@ public class LnkCrptWs extends PluginForDecrypt {
             if (!container.exists()) container.createNewFile();
             br.cloneBrowser().getDownload(container, map.get("rsdf"));
         }
-        
+
         if (container != null) {
             // container available
             decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
@@ -165,7 +175,7 @@ public class LnkCrptWs extends PluginForDecrypt {
             container.delete();
             if (decryptedLinks.size() > 0) return decryptedLinks;
         }
-        
+
         // IF container decryption failed, try webdecryption
         Form[] forms = br.getForms();
         progress.setRange(forms.length / 2);

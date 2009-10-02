@@ -9,7 +9,7 @@ import jd.captcha.pixelgrid.PixelGrid;
 import jd.captcha.pixelobject.PixelObject;
 
 public class NrDr {
-    private static boolean checkLine(int x0, int x1, int y0, int y1, PixelGrid grid, int color) {
+    public static boolean checkLine(int x0, int x1, int y0, int y1, PixelGrid grid, int color) {
         int dy = y1 - y0;
         int dx = x1 - x0;
         int stepx, stepy;
