@@ -23,6 +23,10 @@ public class CustomizeSetting implements Serializable {
 
     private String password;
 
+    private boolean useSubDirectory = false;
+
+    private transient int matchCount = 0;
+
     public CustomizeSetting(String name) {
         setName(name);
     }
@@ -85,6 +89,22 @@ public class CustomizeSetting implements Serializable {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public boolean isUseSubDirectory() {
+        return useSubDirectory;
+    }
+
+    public void setUseSubDirectory(boolean useSubDirectory) {
+        this.useSubDirectory = useSubDirectory;
+    }
+
+    public String getMatchCount() {
+        return String.valueOf(matchCount);
+    }
+
+    public void incMatchCount() {
+        ++matchCount;
     }
 
 }

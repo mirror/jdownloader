@@ -6,10 +6,12 @@ import jd.gui.swing.components.table.JDTableModel;
 import jd.plugins.optional.customizer.columns.DownloadDirColumn;
 import jd.plugins.optional.customizer.columns.EnabledColumn;
 import jd.plugins.optional.customizer.columns.ExtractColumn;
+import jd.plugins.optional.customizer.columns.MatchCountColumn;
 import jd.plugins.optional.customizer.columns.NameColumn;
 import jd.plugins.optional.customizer.columns.PackageNameColumn;
 import jd.plugins.optional.customizer.columns.PasswordColumn;
 import jd.plugins.optional.customizer.columns.RegexColumn;
+import jd.plugins.optional.customizer.columns.SubDirectoryColumn;
 import jd.utils.locale.JDL;
 
 public class CustomizerTableModel extends JDTableModel {
@@ -33,8 +35,10 @@ public class CustomizerTableModel extends JDTableModel {
         this.addColumn(new RegexColumn(JDL.L(JDL_PREFIX + "regex", "Regex"), this));
         this.addColumn(new PackageNameColumn(JDL.L(JDL_PREFIX + "packageName", "FilePackage name"), this));
         this.addColumn(new DownloadDirColumn(JDL.L(JDL_PREFIX + "downloadDir", "Download directory"), this));
+        this.addColumn(new SubDirectoryColumn(JDL.L(JDL_PREFIX + "subDirectory", "Use SubDirectory"), this));
         this.addColumn(new ExtractColumn(JDL.L(JDL_PREFIX + "extract", "Extract"), this));
         this.addColumn(new PasswordColumn(JDL.L(JDL_PREFIX + "password", "Password"), this));
+        this.addColumn(new MatchCountColumn(JDL.L(JDL_PREFIX + "matchCount", "Match count from Start"), this));
     }
 
     @Override

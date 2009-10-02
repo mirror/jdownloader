@@ -5,7 +5,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import javax.swing.JTextField;
-import javax.swing.SwingConstants;
 
 import jd.gui.swing.components.table.JDTableColumn;
 import jd.gui.swing.components.table.JDTableModel;
@@ -23,7 +22,6 @@ public class NameColumn extends JDTableColumn implements ActionListener {
         super(name, table);
         jlr = new JRendererLabel();
         jlr.setBorder(null);
-        jlr.setHorizontalAlignment(SwingConstants.RIGHT);
         text = new JTextField();
     }
 
