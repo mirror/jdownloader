@@ -435,6 +435,23 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
                          * windows only blinking)
                          */
                         guiFrame.setAlwaysOnTop(true);
+                        guiFrame.toFront();
+                        guiFrame.setAlwaysOnTop(false);
+                        return null;
+                    }
+                }.start();
+            } else {
+                /* bring window to front */
+                new GuiRunnable<Object>() {
+                    @Override
+                    public Object runSave() {
+                        guiFrame.toFront();
+                        /*
+                         * workaround for vm that does not allow toFront() (eg
+                         * windows only blinking)
+                         */
+                        guiFrame.setAlwaysOnTop(true);
+                        guiFrame.toFront();
                         guiFrame.setAlwaysOnTop(false);
                         return null;
                     }

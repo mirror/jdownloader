@@ -85,6 +85,7 @@ public class StatusColumn extends JDTableColumn {
 
     @Override
     public Component myTableCellRendererComponent(JDTableModel table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+        jlr.setIcon(null);
         if (value instanceof LinkGrabberFilePackage) {
             fp = (LinkGrabberFilePackage) value;
             int failedCount = fp.countFailedLinks(false);
@@ -98,7 +99,6 @@ public class StatusColumn extends JDTableColumn {
             dLink = (DownloadLink) value;
             clearSB();
             if (!dLink.isAvailabilityStatusChecked()) {
-                jlr.setIcon(null);
                 sb.append(strUnchecked);
             } else {
                 if (dLink.isAvailable()) {
