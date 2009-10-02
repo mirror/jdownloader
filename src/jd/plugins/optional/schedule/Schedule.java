@@ -182,10 +182,6 @@ public class Schedule extends PluginOptional {
         return menu;
     }
 
-    public String getCoder() {
-        return "JD-Team ";
-    }
-
     public boolean initAddon() {
         logger.info("Schedule OK");
         this.activateAction = new MenuAction(getWrapper().getID(), 0);

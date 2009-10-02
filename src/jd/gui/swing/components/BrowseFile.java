@@ -16,6 +16,7 @@
 
 package jd.gui.swing.components;
 
+import java.awt.LayoutManager;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -45,7 +46,11 @@ public class BrowseFile extends JPanel implements ActionListener {
     private JTextField txtInput;
 
     public BrowseFile() {
-        super();
+        this(null);
+    }
+
+    public BrowseFile(LayoutManager layout) {
+        super(layout != null ? layout : new MigLayout("ins 0", "[grow 100,fill,160:null:null]3[grow 30,fill]"));
         initGUI();
     }
 
@@ -132,11 +137,10 @@ public class BrowseFile extends JPanel implements ActionListener {
     }
 
     private void initGUI() {
-
-        setLayout(new MigLayout("ins 0", "[grow 100,fill,160:null:null]3[grow 30,fill]"));
         txtInput = new JTextField();
         txtInput.setEditable(editable);
         txtInput.addActionListener(this);
+
         btnBrowse = new JButton(JDL.L("gui.btn_select", "Browse"));
         btnBrowse.addActionListener(this);
 
@@ -193,6 +197,10 @@ public class BrowseFile extends JPanel implements ActionListener {
             text = "";
         }
         setCurrentPath(new File(text));
+    }
+
+    public JTextField getTextField() {
+        return txtInput;
     }
 
 }

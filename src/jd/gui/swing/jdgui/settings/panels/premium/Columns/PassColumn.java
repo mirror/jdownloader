@@ -77,7 +77,7 @@ class JDPasswordField extends JPasswordField implements ClipboardOwner {
 
 public class PassColumn extends JDTableColumn implements ActionListener {
 
-    private jd.gui.swing.jdgui.settings.panels.premium.Columns.JDPasswordField passw;
+    private JDPasswordField passw;
     private JRendererLabel jlr;
 
     public PassColumn(String name, JDTableModel table) {

@@ -107,25 +107,29 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
         if (distributer != null) {
             distributer.addLinks(links, hidegrabber, autostart);
         } else {
-            /*
-             * TODO: evtl autopackaging auch hier, aber eigentlich net nötig, da
-             * es sache des coders ist was genau er machen soll
-             */
-            JDLogger.getLogger().info("No Distributer set, using minimal version");
-            ArrayList<FilePackage> fps = new ArrayList<FilePackage>();
-            FilePackage fp = FilePackage.getInstance();
-            fp.setName("Added");
-            for (DownloadLink link : links) {
-                if (link.getFilePackage() == FilePackage.getDefaultFilePackage()) {
-                    fp.add(link);
-                    if (!fps.contains(fp)) fps.add(fp);
-                } else {
-                    if (!fps.contains(link.getFilePackage())) fps.add(link.getFilePackage());
-                }
-            }
-            DownloadController.getInstance().addAllAt(fps, 0);
-            if (autostart) DownloadWatchDog.getInstance().startDownloads();
+            addLinksInternal(links, hidegrabber, autostart);
         }
+    }
+
+    public void addLinksInternal(ArrayList<DownloadLink> links, boolean hidegrabber, boolean autostart) {
+        /*
+         * TODO: evtl autopackaging auch hier, aber eigentlich net nötig, da es
+         * sache des coders ist was genau er machen soll
+         */
+        JDLogger.getLogger().info("No Distributer set, using minimal version");
+        ArrayList<FilePackage> fps = new ArrayList<FilePackage>();
+        FilePackage fp = FilePackage.getInstance();
+        fp.setName("Added");
+        for (DownloadLink link : links) {
+            if (link.getFilePackage() == FilePackage.getDefaultFilePackage()) {
+                fp.add(link);
+                if (!fps.contains(fp)) fps.add(fp);
+            } else {
+                if (!fps.contains(link.getFilePackage())) fps.add(link.getFilePackage());
+            }
+        }
+        DownloadController.getInstance().addAllAt(fps, 0);
+        if (autostart) DownloadWatchDog.getInstance().startDownloads();
     }
 
     public void addListener(LinkGrabberControllerListener l) {
@@ -409,8 +413,12 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
     public void attachToPackagesFirstStage(DownloadLink link) {
         if (customizedpackager != null) {
             customizedpackager.attachToPackagesFirstStage(link);
-            return;
+        } else {
+            attachToPackagesFirstStageInternal(link);
         }
+    }
+
+    public void attachToPackagesFirstStageInternal(DownloadLink link) {
         synchronized (LinkGrabberController.ControllerLock) {
             String packageName;
             LinkGrabberFilePackage fp = null;
@@ -445,8 +453,12 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
     public void attachToPackagesSecondStage(DownloadLink link) {
         if (customizedpackager != null) {
             customizedpackager.attachToPackagesSecondStage(link);
-            return;
+        } else {
+            attachToPackagesSecondStageInternal(link);
         }
+    }
+
+    public void attachToPackagesSecondStageInternal(DownloadLink link) {
         synchronized (LinkGrabberController.ControllerLock) {
             String packageName;
             boolean autoPackage = false;
