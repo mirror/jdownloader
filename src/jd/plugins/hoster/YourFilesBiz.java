@@ -17,15 +17,18 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.RandomUserAgent;
-import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.HTMLParser;
+import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -60,14 +63,33 @@ public class YourFilesBiz extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String url = br.getRegex(Pattern.compile("document.location=\"(http.*?getfile\\.php.*?)\"'>", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url);
-        URLConnectionAdapter con = dl.getConnection();
-        if (!con.isContentDisposition()) {
-            con.disconnect();
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
+        String filename = br.getRegex("<b>File name:</b></td>\\s+<td align=left width=[0-9]+%>(.*?)</td>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        filename = filename.replace("(", "%2528");
+        filename = filename.replace(")", "%2529");
+        filename = filename.replace("'", "%27");
+        filename = filename.replace(" ", "%20");
+        String page = Encoding.urlDecode(br.toString(), true);
+        String[] links = HTMLParser.getHttpLinks(page, null);
+        if (br.containsHTML("var timeout=")) {
+            int tt = Integer.parseInt(br.getRegex("var timeout='(\\d+)';").getMatch(0));
+            sleep(tt * 1001l, downloadLink);
         }
+        boolean found = false;
+        for (String link : links) {
+            if (!link.contains(filename)) continue;
+            Browser brc = br.cloneBrowser();
+            dl = BrowserAdapter.openDownload(brc, downloadLink, link);
+            if (dl.getConnection().isContentDisposition()) {
+                String fakename = Plugin.getFileNameFromHeader(dl.getConnection());
+                if (fakename.contains("README.TXT") || !fakename.equals(filename))continue;
+                found = true;
+                break;
+            } else {
+                dl.getConnection().disconnect();
+            }
+        }
+        if (!found) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         dl.startDownload();
     }
 

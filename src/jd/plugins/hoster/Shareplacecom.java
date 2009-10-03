@@ -72,12 +72,13 @@ public class Shareplacecom extends PluginForHost {
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         filename = filename.replace("(", "%2528");
         filename = filename.replace(")", "%2529");
+        filename = filename.replace("'", "%27");
         String page = Encoding.urlDecode(br.toString(), true);
         String[] links = HTMLParser.getHttpLinks(page, null);
         boolean found = false;
         // waittime
-        if (br.containsHTML("var ziptime =")) {
-            int tt = Integer.parseInt(br.getRegex("var ziptime = (\\d+);").getMatch(0));
+        if (br.containsHTML("iptime =")) {
+            int tt = Integer.parseInt(br.getRegex("iptime = (\\d+);").getMatch(0));
             sleep(tt * 1001l, downloadLink);
         }
         for (String link : links) {
@@ -85,6 +86,8 @@ public class Shareplacecom extends PluginForHost {
             Browser brc = br.cloneBrowser();
             dl = BrowserAdapter.openDownload(brc, downloadLink, link);
             if (dl.getConnection().isContentDisposition()) {
+                String fakename = Plugin.getFileNameFromHeader(dl.getConnection());
+                if (fakename.contains("README.TXT") || !fakename.equals(filename))continue;
                 found = true;
                 break;
             } else {
