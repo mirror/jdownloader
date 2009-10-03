@@ -31,7 +31,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision: 7387 $", interfaceVersion = 2, names = { "sexvideo.to" }, urls = { "http://[\\w\\.]*(sexvideo\\.to)/.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sexvideo.to" }, urls = { "http://[\\w\\.]*(sexvideo\\.to)/.+" }, flags = { 0 })
 public class SxVdT extends PluginForDecrypt {
 
     public SxVdT(PluginWrapper wrapper) {
@@ -52,9 +52,9 @@ public class SxVdT extends PluginForDecrypt {
                 form = br.getForm(0);
                 form.getInputFieldByType("text").setValue(code);
                 br.submitForm(form);
-                if(!br.containsHTML("id=\"captcha\""))break;
+                if (!br.containsHTML("id=\"captcha\"")) break;
             }
-            if(br.containsHTML("id=\"captcha\""))throw new DecrypterException(DecrypterException.CAPTCHA);
+            if (br.containsHTML("id=\"captcha\"")) throw new DecrypterException(DecrypterException.CAPTCHA);
 
             Form[] links = br.getForms();
             for (Form form2 : links) {
@@ -63,26 +63,22 @@ public class SxVdT extends PluginForDecrypt {
                 String link = clone.getRegex("content=\"5;URL=([^\"]*)").getMatch(0);
                 decryptedLinks.add(createDownloadlink(link));
             }
-            if(decryptedLinks.size()==0)
-            {
+            if (decryptedLinks.size() == 0) {
 
                 String[] linkar = br.getRegex("<A HREF=\"(dl\\-[^\"]\\.[dlcrsf]{3}\\.html)\" TARGET").getColumn(0);
                 for (String string : linkar) {
-                    File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + "."+string.replaceFirst("\\.html", "").replaceFirst(".*\\.", ""));
+                    File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + "." + string.replaceFirst("\\.html", "").replaceFirst(".*\\.", ""));
                     if (!container.exists()) container.createNewFile();
                     Browser clone = br.cloneBrowser();
-                    clone.getDownload(container, "http://" + br.getHost() + "/" +container);
+                    clone.getDownload(container, "http://" + br.getHost() + "/" + container);
                     decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
 
                 }
             }
-        }
-        else
-        {
+        } else {
             String[] links = HTMLParser.getHttpLinks(br.toString(), param.getCryptedUrl());
             for (String string : links) {
-             if(string.toLowerCase().contains("crypt.sexvideo.to") || string.toLowerCase().contains("linksave"))
-                 decryptedLinks.add(createDownloadlink(string));
+                if (string.toLowerCase().contains("crypt.sexvideo.to") || string.toLowerCase().contains("linksave")) decryptedLinks.add(createDownloadlink(string));
             }
         }
         return decryptedLinks;

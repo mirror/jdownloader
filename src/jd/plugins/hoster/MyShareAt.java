@@ -34,7 +34,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.pluginUtils.Recaptcha;
 
-@HostPlugin(revision = "$Revision: 7973 $", interfaceVersion = 2, names = { "my-share.at" }, urls = { "http://[\\w\\.]*?my-share\\.at/[a-zA-Z0-9]+/?" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "my-share.at" }, urls = { "http://[\\w\\.]*?my-share\\.at/[a-zA-Z0-9]+/?" }, flags = { 2 })
 public class MyShareAt extends PluginForHost {
 
     public MyShareAt(PluginWrapper wrapper) {

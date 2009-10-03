@@ -33,7 +33,11 @@ public class CustomizeSetting implements Serializable {
 
     public boolean matches(String fileName) {
         if (regex.length() == 0) return false;
-        return new Regex(fileName, regex).matches();
+        try {
+            return new Regex(fileName, regex).matches();
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     public String getName() {

@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Vector;
+
 import jd.captcha.easy.CPoint;
 import jd.captcha.easy.ColorTrainer;
 import jd.captcha.pixelgrid.Captcha;
@@ -99,7 +100,7 @@ public class TrbBt {
         for (PixelObject pixelObject : os) {
             int mg = pixelObject.getSize();
             PixelObject nos = getNexTOS(pixelObject, os);
-            double cd = Colors.getColorDifference(pixelObject.getMostcolor(), nos.getMostcolor())/100+mg;
+            double cd = Colors.getColorDifference(pixelObject.getMostcolor(), nos.getMostcolor()) / 100 + mg;
             if (mergeos > cd) {
                 mergeos = cd;
                 aos = pixelObject;

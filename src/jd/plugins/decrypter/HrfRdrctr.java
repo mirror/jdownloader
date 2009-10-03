@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
@@ -27,37 +28,34 @@ import jd.plugins.PluginForDecrypt;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "forex-fileupload.co.cc", "r1one.co.cc" }, urls = { "http://[\\w\\.]*?forex-fileupload\\.co\\.cc/\\?\\w+", "http://[\\w\\.]*?r1one\\.co\\.cc/\\d+" }, flags = { 0, 0 })
 public class HrfRdrctr extends PluginForDecrypt {
 
-  String[] regxps = { 
-          "<a href=\"(.*?)\"><img src=\".*?dwn_btn.gif\"></a>",
-          "<a href=\"(.*?)\"><img src=\"http://r1one\\.co\\.cc/aa\\.png\"></a>"
-  };
+    String[] regxps = { "<a href=\"(.*?)\"><img src=\".*?dwn_btn.gif\"></a>", "<a href=\"(.*?)\"><img src=\"http://r1one\\.co\\.cc/aa\\.png\"></a>" };
 
-  public HrfRdrctr(PluginWrapper wrapper) {
-      super(wrapper);
-  }
+    public HrfRdrctr(PluginWrapper wrapper) {
+        super(wrapper);
+    }
 
-  // @Override
-  public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-      ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-      String link = null;
-      String parameter = param.toString();
-      br.getPage(parameter);
-     
-      for (int i = 0; i < regxps.length; i++) {
-          if (link == null) {
-              link = br.getRegex(regxps[i]).getMatch(0);
-          } else {
-              break;
-          }
-      }
+    // @Override
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        String link = null;
+        String parameter = param.toString();
+        br.getPage(parameter);
 
-      if (link == null) return null;
+        for (int i = 0; i < regxps.length; i++) {
+            if (link == null) {
+                link = br.getRegex(regxps[i]).getMatch(0);
+            } else {
+                break;
+            }
+        }
 
-      decryptedLinks.add(createDownloadlink(link));
+        if (link == null) return null;
 
-      return decryptedLinks;
-  }
+        decryptedLinks.add(createDownloadlink(link));
 
-  // @Override
+        return decryptedLinks;
+    }
+
+    // @Override
 
 }

@@ -16,6 +16,8 @@
 
 package jd.plugins.decrypter;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
@@ -34,8 +36,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
-import java.io.File;
-import java.io.IOException;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dlbase.ws" }, urls = { "http://[\\w\\.]*?dlbase\\.ws/(season|game|program|music|xxx|movie|gamereport)_details\\.php\\?id=[0-9]+" }, flags = { 0 })
 public class DlBseWs extends PluginForDecrypt {

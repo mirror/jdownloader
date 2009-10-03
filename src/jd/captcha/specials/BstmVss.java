@@ -3,6 +3,7 @@ package jd.captcha.specials;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Vector;
+
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.LetterComperator;
 import jd.captcha.easy.CPoint;
@@ -61,7 +62,7 @@ public class BstmVss {
         int h = 0;
         for (Letter letter : org) {
             double m = getM(letter);
-//            System.out.println("m"+m);
+            // System.out.println("m"+m);
 
             double del = 0;
             // if (letter.grid[letter.getWidth()-1][0] != 0xffffff ||
@@ -70,13 +71,10 @@ public class BstmVss {
             int x = letter.getLocation()[0] + letter.getWidth();
             int y = letter.getLocation()[1] + letter.getHeight();
             if (x < 60) {
-                if (letter.grid[0][0] != 0xffffff || letter.grid[letter.getWidth() - 1][letter.getHeight() - 1] != 0xffffff)
-                {
-                    if(y!=100&&y!=76)
-                    m += 15;
-                }
-                else
-                    m=15-m;
+                if (letter.grid[0][0] != 0xffffff || letter.grid[letter.getWidth() - 1][letter.getHeight() - 1] != 0xffffff) {
+                    if (y != 100 && y != 76) m += 15;
+                } else
+                    m = 15 - m;
                 m += 30;
             } else {
                 if (letter.grid[0][0] != 0xffffff || letter.grid[letter.getWidth() - 1][letter.getHeight() - 1] != 0xffffff)
@@ -84,20 +82,20 @@ public class BstmVss {
                 else
                     m = 15 - m;
             }
-//            System.out.println(m);
+            // System.out.println(m);
 
             if (m > 59)
                 m = 0;
             else
                 m -= del;
             if (letter.grid[0][0] == 0xff0000 || letter.grid[letter.getWidth() - 1][0] == 0xff0000) {
-                m = (int) Math.round((double)m / (double)5);
-//                System.out.println("m"+m);
+                m = (int) Math.round((double) m / (double) 5);
+                // System.out.println("m"+m);
 
                 h = (int) m;
             } else
                 min = (int) m;
-//            BasicWindow.showImage(letter.getImage(), x + ":" + y + ":" + m);
+            // BasicWindow.showImage(letter.getImage(), x + ":" + y + ":" + m);
         }
         String time = "";
         if (h < 10) time += "0";

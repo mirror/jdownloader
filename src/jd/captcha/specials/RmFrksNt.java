@@ -3,13 +3,13 @@ package jd.captcha.specials;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
+
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
 import jd.captcha.pixelobject.PixelObject;
 import jd.nutils.Colors;
 
 public class RmFrksNt {
-
 
     public static Letter[] getLetters(Captcha captcha) {
         ArrayList<PixelObject> ob = ColorObjects.getObjects(captcha, 80, 15);
@@ -28,8 +28,8 @@ public class RmFrksNt {
                 return Colors.getColorDifference(o1, o2) < 80 ? 1 : 0;
             }
         };
-//         BasicWindow.showImage(captcha.getImage());
-//         BasicWindow.showImage(circle.getOpenCircle().getImage());
+        // BasicWindow.showImage(captcha.getImage());
+        // BasicWindow.showImage(circle.getOpenCircle().getImage());
         return circle.getOpenCirclePositionAsLetters();
     }
 }

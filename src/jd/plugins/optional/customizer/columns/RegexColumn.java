@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.regex.Pattern;
 
 import javax.swing.JTextField;
 
@@ -81,6 +82,11 @@ public class RegexColumn extends JDTableColumn implements ActionListener {
     public void postprocessCell(Component c, JDTableModel table, Object value, boolean isSelected, int row, int column) {
         if (((CustomizeSetting) value).matches(((CustomizerTableModel) table).getJDTable().getGui().getTestText())) {
             c.setBackground(new Color(204, 255, 170));
+        }
+        try {
+            Pattern.compile(((CustomizeSetting) value).getRegex());
+        } catch (Exception e) {
+            c.setBackground(new Color(221, 34, 34));
         }
     }
 
