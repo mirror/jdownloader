@@ -1,3 +1,4 @@
+action.customize.addsetting.tooltip = Yeni Tənzimləmə əlavə et
 action.downloadview.movedown.tooltip = Aşağı endir
 action.downloadview.movetobottom.tooltip = Ən alta endir
 action.downloadview.movetotop.tooltip = Ən üstə qaldır
@@ -1291,5 +1292,5 @@ userio.errorregex = .*(xəta|alınmadı).*
 userio.input.title = Lütfən xadil edin!
 wrapper.webupdate.updatefile = %s əlavəsin yenilə
 wrapper.webupdate.updatenewupdater = Yeni jdupdate.rar endirilir
-wrapper.webupdate.updateupdater.error_rename =  jdupdate.jar.tmp, jdupdate.jar olaraq dəyişdirilə bilinmədi
+wrapper.webupdate.updateupdater.error_rename = jdupdate.jar.tmp, jdupdate.jar olaraq dəyişdirilə bilinmədi
 wrapper.webupdate.updateupdater.error_reqeust2 = Yeni jdupdate.rar endirilə bilinmədi
