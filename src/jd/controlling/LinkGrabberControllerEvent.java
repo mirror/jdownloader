@@ -27,6 +27,8 @@ public class LinkGrabberControllerEvent extends JDEvent {
         super(source, ID, param);
     }
 
+    public static final int NEW_LINKS = 0;
+
     public static final int REFRESH_STRUCTURE = 1;
 
     public static final int ADD_FILEPACKAGE = 2;

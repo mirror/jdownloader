@@ -104,6 +104,7 @@ public class LinkGrabberController implements LinkGrabberFilePackageListener, Li
     }
 
     public void addLinks(ArrayList<DownloadLink> links, boolean hidegrabber, boolean autostart) {
+        broadcaster.fireEvent(new LinkGrabberControllerEvent(this, LinkGrabberControllerEvent.NEW_LINKS));
         if (distributer != null) {
             distributer.addLinks(links, hidegrabber, autostart);
         } else {
